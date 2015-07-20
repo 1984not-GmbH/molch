@@ -11,6 +11,7 @@ There's still a long way to go.
 
 Currently implemented:
 * HKDF (HMAC based Key Derivation Function), see RFC 5869
+* ECDH (Eccliptic Curve Diffie Hellman key exchange)
 
 license
 -------

@@ -11,6 +11,12 @@ add_library(hkdf hkdf)
 
 add_library(utils utils)
 
+add_library(diffie-hellman diffie-hellman)
+
 add_executable(hkdf-test hkdf-test)
 target_link_libraries(hkdf-test hkdf utils)
 add_test(hkdf-test hkdf-test)
+
+add_executable(diffie-hellman-test diffie-hellman-test)
+target_link_libraries(diffie-hellman-test diffie-hellman utils)
+add_test(diffie-hellman-test diffie-hellman-test)
