@@ -46,7 +46,7 @@ int main(void) {
 	putchar('\n');
 
 	//info
-	unsigned char* info = "This is some info!";
+	unsigned char* info = (unsigned char*) "This is some info!";
 	unsigned int info_length = sizeof(info);
 	printf("Info (%i Bytes):\n", info_length); //this could also be binary data
 	printf("%s\n\n", info);

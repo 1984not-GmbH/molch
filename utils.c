@@ -53,7 +53,7 @@ void print_hex(unsigned char* data, size_t length, unsigned short width) {
 	//buffer for hex string
 	unsigned char* hex = malloc(2 * length + 1);
 
-	if (sodium_bin2hex(hex, 2 * length + 1, data, length) == NULL) {
+	if (sodium_bin2hex((char *) hex, 2 * length + 1, data, length) == NULL) {
 		fprintf(stderr, "ERROR: Failed printing hex.\n");
 		sodium_memzero(hex, 2 * length + 1);
 		free(hex);
