@@ -20,3 +20,7 @@ add_test(hkdf-test hkdf-test)
 add_executable(diffie-hellman-test diffie-hellman-test)
 target_link_libraries(diffie-hellman-test diffie-hellman utils)
 add_test(diffie-hellman-test diffie-hellman-test)
+
+add_executable(triple-diffie-hellman-test triple-diffie-hellman-test)
+target_link_libraries(triple-diffie-hellman-test diffie-hellman utils)
+add_test(triple-diffie-hellman-test triple-diffie-hellman-test)

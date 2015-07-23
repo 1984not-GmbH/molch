@@ -25,8 +25,8 @@
  * from the actual output of the diffie hellman exchange (see
  * documentation of libsodium).
  *
- * i_am_alice specifies if I am Alice or Bob. This determines in
- * what order the public key get hashed.
+ * am_i_alice specifies if I am Alice or Bob. This determines in
+ * what order the public keys get hashed.
  *
  * OUTPUT:
  * Alice: H(ECDH(our_private_key,their_public_key)|our_public_key|their_public_key)
@@ -37,7 +37,7 @@ int diffie_hellman(
 		unsigned char* our_private_key, //needs to be crypto_box_SECRETKEYBYTES long
 		unsigned char* our_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
 		unsigned char* their_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
-		bool i_am_alice) {
+		bool am_i_alice) {
 	//make sure that the assumptions are correct
 	if ((crypto_box_PUBLICKEYBYTES != crypto_scalarmult_SCALARBYTES) || (crypto_box_SECRETKEYBYTES != crypto_scalarmult_SCALARBYTES)) {
 		return -10;
@@ -74,7 +74,7 @@ int diffie_hellman(
 	}
 
 	//add public keys to the input of the hash
-	if (i_am_alice) { //Alice (our_public_key|their_public_key)
+	if (am_i_alice) { //Alice (our_public_key|their_public_key)
 		//add our_public_key to the input of the hash
 		status = crypto_generichash_update(&hash_state, our_public_key, crypto_box_PUBLICKEYBYTES);
 		if (status != 0) {
@@ -102,8 +102,151 @@ int diffie_hellman(
 
 	//finally write the hash to derived_key
 	status = crypto_generichash_final(&hash_state, derived_key, crypto_generichash_BYTES);
-
-	//generate hash over diffie hellman secret and public keys
 	sodium_memzero(dh_secret, crypto_scalarmult_BYTES);
-	return 0;
+	return status;
+}
+
+/*
+ * Triple Diffie Hellman with two keys.
+ *
+ * am_i_alice specifies if I am Alice or Bob. This determines in
+ * what order the public keys get hashed.
+ *
+ * OUTPUT:
+ * HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0))
+ * Where:
+ * A: Alice's identity
+ * A0: Alice's ephemeral
+ * B: Bob's identity
+ * B0: Bob's ephemeral
+ * -->Alice: HASH(DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_identity)||DH(our_ephemeral, their_ephemeral))
+ * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
+ */
+int triple_diffie_hellman(
+		unsigned char* derived_key,
+		unsigned char* our_private_identity,
+		unsigned char* our_public_identity,
+		unsigned char* our_private_ephemeral,
+		unsigned char* our_public_ephemeral,
+		unsigned char* their_public_identity,
+		unsigned char* their_public_ephemeral,
+		bool am_i_alice) {
+	//buffers for all 3 Diffie Hellman exchanges
+	unsigned char dh1[crypto_generichash_BYTES];
+	unsigned char dh2[crypto_generichash_BYTES];
+	unsigned char dh3[crypto_generichash_BYTES];
+
+	int status;
+
+	if (am_i_alice) {
+		//DH(our_identity, their_ephemeral)
+		status = diffie_hellman(
+				dh1,
+				our_private_identity,
+				our_public_identity,
+				their_public_ephemeral,
+				am_i_alice);
+		if (status != 0) {
+			sodium_memzero(dh1, crypto_generichash_BYTES);
+			return status;
+		}
+
+		//DH(our_ephemeral, their_identity)
+		status = diffie_hellman(
+				dh2,
+				our_private_ephemeral,
+				our_public_ephemeral,
+				their_public_identity,
+				am_i_alice);
+		if (status != 0) {
+			sodium_memzero(dh2, crypto_generichash_BYTES);
+			sodium_memzero(dh1, crypto_generichash_BYTES);
+			return status;
+		}
+	} else {
+		//DH(our_ephemeral, their_identity)
+		status = diffie_hellman(
+				dh1,
+				our_private_ephemeral,
+				our_public_ephemeral,
+				their_public_identity,
+				am_i_alice);
+		if (status != 0) {
+			sodium_memzero(dh1, crypto_generichash_BYTES);
+			return status;
+		}
+
+		//DH(our_identity, their_ephemeral)
+		status = diffie_hellman(
+				dh2,
+				our_private_identity,
+				our_public_identity,
+				their_public_ephemeral,
+				am_i_alice);
+		if (status != 0) {
+			sodium_memzero(dh2, crypto_generichash_BYTES);
+			sodium_memzero(dh1, crypto_generichash_BYTES);
+			return status;
+		}
+	}
+
+	//DH(our_ephemeral, their_ephemeral)
+	//this is identical for both Alice and Bob
+	status = diffie_hellman(
+			dh3,
+			our_private_ephemeral,
+			our_public_ephemeral,
+			their_public_ephemeral,
+			am_i_alice);
+	if (status != 0) {
+		sodium_memzero(dh3, crypto_generichash_BYTES);
+		sodium_memzero(dh2, crypto_generichash_BYTES);
+		sodium_memzero(dh1, crypto_generichash_BYTES);
+		return status;
+	}
+
+	//now calculate HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0))
+	//( HASH(dh1|| dh2 || dh3) )
+
+	//initialize hashing
+	crypto_generichash_state hash_state;
+	status = crypto_generichash_init(
+			&hash_state,
+			NULL, //key
+			0, //key_length
+			crypto_generichash_BYTES); //output_length
+	if (status != 0) {
+		sodium_memzero(dh1, crypto_generichash_BYTES);
+		sodium_memzero(dh2, crypto_generichash_BYTES);
+		sodium_memzero(dh3, crypto_generichash_BYTES);
+		return status;
+	}
+
+	//add dh1 to hash input
+	status = crypto_generichash_update(&hash_state, dh1, crypto_generichash_BYTES);
+	sodium_memzero(dh1, crypto_generichash_BYTES);
+	if (status != 0) {
+		sodium_memzero(dh2, crypto_generichash_BYTES);
+		sodium_memzero(dh3, crypto_generichash_BYTES);
+		return status;
+	}
+
+	//add dh2 to hash input
+	status = crypto_generichash_update(&hash_state, dh2, crypto_generichash_BYTES);
+	sodium_memzero(dh2, crypto_generichash_BYTES);
+	if (status != 0) {
+		sodium_memzero(dh3, crypto_generichash_BYTES);
+		return status;
+	}
+
+	//add dh3 to hash input
+	status = crypto_generichash_update(&hash_state, dh3, crypto_generichash_BYTES);
+	sodium_memzero(dh3, crypto_generichash_BYTES);
+	if (status != 0) {
+		return status;
+	}
+
+	//write final hash to output (derived_key)
+	status = crypto_generichash_final(&hash_state, derived_key, crypto_generichash_BYTES);
+	return status;
 }

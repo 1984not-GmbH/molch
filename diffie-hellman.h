@@ -27,8 +27,8 @@
  * from the actual output of the diffie hellman exchange (see
  * documentation of libsodium).
  *
- * i_am_alice specifies if I am Alice or Bob. This determines in
- * what order the public key get hashed.
+ * am_i_alice specifies if I am Alice or Bob. This determines in
+ * what order the public keys get hashed.
  *
  * OUTPUT:
  * Alice: H(ECDH(our_private_key,their_public_key)|our_public_key|their_public_key)
@@ -39,5 +39,31 @@ int diffie_hellman(
 		unsigned char* our_private_key, //needs to be crypto_box_SECRETKEYBYTES long
 		unsigned char* our_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
 		unsigned char* their_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
-		bool i_am_alice);
+		bool am_i_alice);
+
+/*
+ * Triple Diffie Hellman with two keys.
+ *
+ * am_i_alice specifies if I am Alice or Bob. This determines in
+ * what order the public keys get hashed.
+ *
+ * OUTPUT:
+ * HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0))
+ * Where:
+ * A: Alice's identity
+ * A0: Alice's ephemeral
+ * B: Bob's identity
+ * B0: Bob's ephemeral
+ * -->Alice: HASH(DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_identity)||DH(our_ephemeral, their_ephemeral))
+ * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
+ */
+int triple_diffie_hellman(
+		unsigned char* derived_key,
+		unsigned char* our_private_identity,
+		unsigned char* our_public_identity,
+		unsigned char* our_private_ephemeral,
+		unsigned char* our_public_ephemeral,
+		unsigned char* their_public_identity,
+		unsigned char* their_public_ephemeral,
+		bool am_i_alice);
 #endif
