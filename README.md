@@ -16,6 +16,9 @@ Currently implemented:
   - H(ECDH(A,B0)||ECDH(A0,B)||ECDH(A0,B0))
   - Where A and B are the identity keys and A0 and B0 the ephemeral keys of Alice and Bob
 
+Axolotl specific:
+* Chain key derivation (derive next chain key from previous one, CK = HMAC-Hash(CK, 0x01))
+
 license
 -------
 This library is licensed under the LGPLv2.1.
