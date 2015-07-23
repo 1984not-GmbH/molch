@@ -19,6 +19,21 @@ Currently implemented:
 Axolotl specific:
 * Chain key derivation (derive next chain key from previous one, CK = HMAC-Hash(CK, 0x01))
 
+how to build
+------------
+This has been tested on GNU/Linux and Mac OS X.
+
+First make sure `libsodium` and `cmake` are installed.
+
+Then do the following:
+```
+$ mkdir build #make build directory
+$ cd build    #change into it
+$ cmake ..    #run cmake (only required once)
+$ make        #finally compile the software
+```
+
+
 license
 -------
 This library is licensed under the LGPLv2.1.
