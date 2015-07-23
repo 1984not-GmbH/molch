@@ -19,8 +19,8 @@
 #include <stdlib.h>
 #include <sodium.h>
 
-#include "hkdf.h"
-#include "utils.h"
+#include "../hkdf.h"
+#include "../utils.h"
 
 int main(void) {
 	sodium_init();

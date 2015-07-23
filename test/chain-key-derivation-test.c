@@ -20,8 +20,8 @@
 #include <string.h>
 #include <sodium.h>
 
-#include "key-derivation.h"
-#include "utils.h"
+#include "../key-derivation.h"
+#include "../utils.h"
 
 int main(void) {
 	sodium_init();
