@@ -30,4 +30,16 @@
 int derive_chain_key(
 		unsigned char* new_chain_key,
 		unsigned char* previous_chain_key);
+
+/*
+ * Derive a message key from a chain key.
+ *
+ * The chain and message keys have to be crypto_auth_BYTES long.
+ *
+ * MK = HMAC-Hash(CK, 0x00)
+ * (chain_key as key, 0x00 as message)
+ */
+int derive_message_key(
+		unsigned char* message_key,
+		unsigned char* chain_key);
 #endif

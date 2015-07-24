@@ -41,3 +41,26 @@ int derive_chain_key(
 	//and return status
 	return crypto_auth(new_chain_key, &input_message, 1, previous_chain_key);
 }
+
+/*
+ * Derive a message key from a chain key.
+ *
+ * The chain and message keys have to be crypto_auth_BYTES long.
+ *
+ * MK = HMAC-Hash(CK, 0x00)
+ * (chain_key as key, 0x00 as message)
+ */
+int derive_message_key(
+		unsigned char* message_key,
+		unsigned char* chain_key) {
+	//make sure assumptions about length are correct
+	if (crypto_auth_BYTES != crypto_auth_KEYBYTES) {
+		return -10;
+	}
+
+	unsigned char input_message = 0x00;
+
+	//message_key = HMAC-Hash(chain_key, 0x00)
+	//and return status
+	return crypto_auth(message_key, &input_message, 1, chain_key);
+}

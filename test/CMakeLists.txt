@@ -15,3 +15,7 @@ add_test(triple-diffie-hellman-test triple-diffie-hellman-test)
 add_executable(chain-key-derivation-test chain-key-derivation-test)
 target_link_libraries(chain-key-derivation-test key-derivation utils)
 add_test(chain-key-derivation-test chain-key-derivation-test)
+
+add_executable(message-key-derivation-test message-key-derivation-test)
+target_link_libraries(message-key-derivation-test key-derivation utils)
+add_test(message-key-derivation-test message-key-derivation-test)

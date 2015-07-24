@@ -18,6 +18,7 @@ Currently implemented:
 
 Axolotl specific:
 * Chain key derivation (derive next chain key from previous one, CK = HMAC-Hash(CK, 0x01))
+* Message key derivatin (derive message key from chain key, MK = HMACH-Hash(MK, 0x00))
 
 how to build
 ------------
