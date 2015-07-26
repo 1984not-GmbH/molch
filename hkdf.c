@@ -33,6 +33,9 @@ int expand(
 
 	//buffer to store T(x)|info|0x?? (HMAC input)
 	unsigned char* round_buffer = malloc(crypto_auth_BYTES + info_length + 1);
+	if (round_buffer == NULL) {
+		return -10;
+	}
 
 	//round_buffer = <empty>|info|0x01
 	memcpy(round_buffer, info, info_length);
