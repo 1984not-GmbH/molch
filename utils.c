@@ -21,7 +21,7 @@
 
 #include "utils.h"
 
-char* get_file_as_string(FILE* file, size_t* length) {
+char* get_file_as_string(FILE *file, size_t * const length) {
 	char* line = malloc(100);
 	char* line_pointer = line;
 	size_t lenmax = 100;
@@ -49,9 +49,9 @@ char* get_file_as_string(FILE* file, size_t* length) {
 	return line_pointer;
 }
 
-void print_hex(unsigned char* data, size_t length, unsigned short width) {
+void print_hex(const unsigned char * const data, const size_t length, unsigned short width) {
 	//buffer for hex string
-	unsigned char* hex = malloc(2 * length + 1);
+	unsigned char * const hex = malloc(2 * length + 1);
 
 	if (sodium_bin2hex((char *) hex, 2 * length + 1, data, length) == NULL) {
 		fprintf(stderr, "ERROR: Failed printing hex.\n");

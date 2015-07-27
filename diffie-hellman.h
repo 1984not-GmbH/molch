@@ -35,11 +35,11 @@
  * Bob:   H(ECDH(our_private_key,their_public_key)|their_public_key|our_public_key)
  */
 int diffie_hellman(
-		unsigned char* derived_key, //needs to be crypto_generichash_BYTES long
-		unsigned char* our_private_key, //needs to be crypto_box_SECRETKEYBYTES long
-		unsigned char* our_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
-		unsigned char* their_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
-		bool am_i_alice);
+		unsigned char * const derived_key, //needs to be crypto_generichash_BYTES long
+		const unsigned char * const our_private_key, //needs to be crypto_box_SECRETKEYBYTES long
+		const unsigned char * const our_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
+		const unsigned char * const their_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
+		const bool am_i_alice);
 
 /*
  * Triple Diffie Hellman with two keys.
@@ -58,12 +58,12 @@ int diffie_hellman(
  * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
  */
 int triple_diffie_hellman(
-		unsigned char* derived_key,
-		unsigned char* our_private_identity,
-		unsigned char* our_public_identity,
-		unsigned char* our_private_ephemeral,
-		unsigned char* our_public_ephemeral,
-		unsigned char* their_public_identity,
-		unsigned char* their_public_ephemeral,
-		bool am_i_alice);
+		unsigned char * const derived_key,
+		const unsigned char * const our_private_identity,
+		const unsigned char * const our_public_identity,
+		const unsigned char * const our_private_ephemeral,
+		const unsigned char * const our_public_ephemeral,
+		const unsigned char * const their_public_identity,
+		const unsigned char * const their_public_ephemeral,
+		const bool am_i_alice);
 #endif

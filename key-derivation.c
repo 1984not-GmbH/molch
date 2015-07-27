@@ -28,14 +28,14 @@
  * (previous chain key as key, 0x01 as message)
  */
 int derive_chain_key(
-		unsigned char* new_chain_key,
-		unsigned char* previous_chain_key) {
+		unsigned char * const new_chain_key,
+		const unsigned char * const previous_chain_key) {
 	//make sure assumptions about length are correct
 	if (crypto_auth_BYTES != crypto_auth_KEYBYTES) {
 		return -10;
 	}
 
-	unsigned char input_message = 0x01;
+	const unsigned char input_message = 0x01;
 
 	//new_chain_key = HMAC-Hash(previous_chain_key, 0x01)
 	//and return status
@@ -51,14 +51,14 @@ int derive_chain_key(
  * (chain_key as key, 0x00 as message)
  */
 int derive_message_key(
-		unsigned char* message_key,
-		unsigned char* chain_key) {
+		unsigned char * const message_key,
+		const unsigned char * const chain_key) {
 	//make sure assumptions about length are correct
 	if (crypto_auth_BYTES != crypto_auth_KEYBYTES) {
 		return -10;
 	}
 
-	unsigned char input_message = 0x00;
+	const unsigned char input_message = 0x00;
 
 	//message_key = HMAC-Hash(chain_key, 0x00)
 	//and return status

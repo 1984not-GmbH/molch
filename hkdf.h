@@ -23,11 +23,11 @@
  * as defined in RFC 5869 using the primitives provided by libsodium.
  */
 int hkdf(
-        unsigned char* output_key,
-        unsigned int output_key_length, //needs to be less than 255 * crypto_auth_KEYBYTES!!!
-        unsigned char* salt, //the salt needs to be crypto_auth_KEYBYTES long
-        unsigned char* input_key,
-        unsigned long long input_key_length,
-        unsigned char* info,
-        unsigned int info_length);
+        unsigned char * const output_key,
+        const unsigned int output_key_length, //needs to be less than 255 * crypto_auth_KEYBYTES!!!
+        const unsigned char * const salt, //the salt needs to be crypto_auth_KEYBYTES long
+        const unsigned char * const input_key,
+        const unsigned long long input_key_length,
+        const unsigned char * const info,
+        const unsigned int info_length);
 #endif

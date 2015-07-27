@@ -28,8 +28,8 @@
  * (previous chain key as key, 0x01 as message)
  */
 int derive_chain_key(
-		unsigned char* new_chain_key,
-		unsigned char* previous_chain_key);
+		unsigned char * const new_chain_key,
+		const unsigned char * const previous_chain_key);
 
 /*
  * Derive a message key from a chain key.
@@ -40,6 +40,6 @@ int derive_chain_key(
  * (chain_key as key, 0x00 as message)
  */
 int derive_message_key(
-		unsigned char* message_key,
-		unsigned char* chain_key);
+		unsigned char * const message_key,
+		const unsigned char * const chain_key);
 #endif
