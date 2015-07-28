@@ -19,6 +19,8 @@ Currently implemented:
 Axolotl specific:
 * Chain key derivation (derive next chain key from previous one, CK = HMAC-Hash(CK, 0x01))
 * Message key derivatin (derive message key from chain key, MK = HMACH-Hash(MK, 0x00))
+* Symmetrically encrypt a message and authenticate header.
+  - `header_length (1Byte) || header || nonce || MAC(Header + nonce + header_length) || CIPHERTEXT (crypto_secretbox)`
 
 how to build
 ------------

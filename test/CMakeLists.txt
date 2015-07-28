@@ -19,3 +19,7 @@ add_test(chain-key-derivation-test chain-key-derivation-test)
 add_executable(message-key-derivation-test message-key-derivation-test)
 target_link_libraries(message-key-derivation-test key-derivation utils)
 add_test(message-key-derivation-test message-key-derivation-test)
+
+add_executable(message-test message-test)
+target_link_libraries(message-test utils message)
+add_test(message-test message-test)
