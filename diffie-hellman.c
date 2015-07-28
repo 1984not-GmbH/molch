@@ -16,6 +16,7 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include <sodium.h>
+#include <assert.h>
 
 #include "diffie-hellman.h"
 
@@ -39,9 +40,8 @@ int diffie_hellman(
 		const unsigned char * const their_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
 		const bool am_i_alice) {
 	//make sure that the assumptions are correct
-	if ((crypto_box_PUBLICKEYBYTES != crypto_scalarmult_SCALARBYTES) || (crypto_box_SECRETKEYBYTES != crypto_scalarmult_SCALARBYTES)) {
-		return -10;
-	}
+	assert(crypto_box_PUBLICKEYBYTES == crypto_scalarmult_SCALARBYTES);
+	assert(crypto_box_SECRETKEYBYTES == crypto_scalarmult_SCALARBYTES);
 
 	//buffer for diffie hellman shared secret
 	unsigned char dh_secret[crypto_scalarmult_BYTES];

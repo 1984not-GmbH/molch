@@ -16,6 +16,7 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 #include <sodium.h>
+#include <assert.h>
 
 #include "key-derivation.h"
 
@@ -31,9 +32,7 @@ int derive_chain_key(
 		unsigned char * const new_chain_key,
 		const unsigned char * const previous_chain_key) {
 	//make sure assumptions about length are correct
-	if (crypto_auth_BYTES != crypto_auth_KEYBYTES) {
-		return -10;
-	}
+	assert(crypto_auth_BYTES == crypto_auth_KEYBYTES);
 
 	const unsigned char input_message = 0x01;
 
@@ -54,9 +53,7 @@ int derive_message_key(
 		unsigned char * const message_key,
 		const unsigned char * const chain_key) {
 	//make sure assumptions about length are correct
-	if (crypto_auth_BYTES != crypto_auth_KEYBYTES) {
-		return -10;
-	}
+	assert(crypto_auth_BYTES == crypto_auth_KEYBYTES);
 
 	const unsigned char input_message = 0x00;
 

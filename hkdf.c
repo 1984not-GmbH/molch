@@ -17,6 +17,7 @@
  */
 #include <sodium.h>
 #include <string.h>
+#include <assert.h>
 
 #include "hkdf.h"
 
@@ -56,6 +57,11 @@ int expand(
 
 	//N (number of T(x) needed to fill the output_key_length
 	unsigned int n = 1 + ((output_key_length - 1) / crypto_auth_BYTES); //N = ceil(L/HashLen)
+	if (n > 0xff) { //n has to fit into one byte
+		sodium_memzero(round_buffer, crypto_auth_BYTES + info_length + 1);
+		free(round_buffer);
+		return -10;
+	}
 
 	//T(2) ... T(N-1)
 	unsigned int pos;
@@ -121,9 +127,7 @@ int hkdf(
         const unsigned char * const info,
         const size_t info_length) {
 	//ensure that the length-assumption is correct
-	if (! (crypto_auth_KEYBYTES <= crypto_auth_BYTES)) {
-		return -10;
-	}
+	assert(crypto_auth_KEYBYTES == crypto_auth_BYTES);
 
 	//extract phase of hkdf
 	unsigned char pseudo_random_key[crypto_auth_BYTES];
