@@ -25,10 +25,10 @@
  */
 int expand(
 		unsigned char * const output_key,
-		const unsigned int output_key_length,
+		const size_t output_key_length,
 		const unsigned char * const pseudo_random_key,
 		const unsigned char * const info,
-		const unsigned int info_length) {
+		const size_t info_length) {
 	//expand phase of hkdf
 
 	//buffer to store T(x)|info|0x?? (HMAC input)
@@ -114,12 +114,12 @@ int expand(
  */
 int hkdf(
         unsigned char * const output_key,
-        const unsigned int output_key_length, //needs to be less than 255 * crypto_auth_KEYBYTES!!!
+        const size_t output_key_length, //needs to be less than 255 * crypto_auth_KEYBYTES!!!
         const unsigned char * const salt, //the salt needs to be crypto_auth_KEYBYTES long
         const unsigned char * const input_key,
-        const unsigned long long input_key_length,
+        const size_t input_key_length,
         const unsigned char * const info,
-        const unsigned int info_length) {
+        const size_t info_length) {
 	//ensure that the length-assumption is correct
 	if (! (crypto_auth_KEYBYTES <= crypto_auth_BYTES)) {
 		return -10;

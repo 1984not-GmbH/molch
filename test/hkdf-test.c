@@ -28,7 +28,7 @@ int main(void) {
 	printf("HKDF as described in RFC 5869 based on HMAC-SHA512256!\n\n");
 
 	unsigned char output_key[200];
-	unsigned int output_key_length = sizeof(output_key);
+	size_t output_key_length = sizeof(output_key);
 
 	//create random salt
 	unsigned char salt[crypto_auth_KEYBYTES];
@@ -39,16 +39,16 @@ int main(void) {
 
 	//create key to derive from
 	unsigned char input_key[100];
-	unsigned int input_key_length = sizeof(input_key);
+	size_t input_key_length = sizeof(input_key);
 	randombytes_buf(input_key, input_key_length);
-	printf("Input key (%i Bytes):\n", input_key_length);
+	printf("Input key (%zu Bytes):\n", input_key_length);
 	print_hex(input_key, input_key_length, 30);
 	putchar('\n');
 
 	//info
 	unsigned char* info = (unsigned char*) "This is some info!";
-	unsigned int info_length = sizeof(info);
-	printf("Info (%i Bytes):\n", info_length); //this could also be binary data
+	size_t info_length = sizeof(info);
+	printf("Info (%zu Bytes):\n", info_length); //this could also be binary data
 	printf("%s\n\n", info);
 
 	int status;
@@ -58,7 +58,7 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
-	printf("Derived key (%i Bytes):\n", output_key_length);
+	printf("Derived key (%zu Bytes):\n", output_key_length);
 	print_hex(output_key, output_key_length, 30);
 	putchar('\n');
 	return EXIT_SUCCESS;
