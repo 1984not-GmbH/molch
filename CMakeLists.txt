@@ -18,3 +18,5 @@ add_library(diffie-hellman diffie-hellman)
 add_library(key-derivation key-derivation)
 
 add_library(message message)
+
+add_library(message-keystore message-keystore)

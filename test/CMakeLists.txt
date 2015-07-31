@@ -23,3 +23,7 @@ add_test(message-key-derivation-test message-key-derivation-test)
 add_executable(message-test message-test)
 target_link_libraries(message-test utils message)
 add_test(message-test message-test)
+
+add_executable(message-keystore-test message-keystore-test)
+target_link_libraries(message-keystore-test utils message-keystore)
+add_test(message-keystore-test message-keystore-test)
