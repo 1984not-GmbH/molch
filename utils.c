@@ -23,12 +23,15 @@
 
 char* get_file_as_string(FILE *file, size_t * const length) {
 	char* line = malloc(100);
+	if (line == NULL) {
+		return NULL;
+	}
 	char* line_pointer = line;
 	size_t lenmax = 100;
 	size_t len = lenmax;
 	int c;
 
-	for(;;) {
+	while(1) {
 		c = fgetc(file);
 		if(c == EOF)
 			break;
@@ -36,6 +39,9 @@ char* get_file_as_string(FILE *file, size_t * const length) {
 		if(--len == 0) {
 			len = lenmax;
 			char* line_new = realloc(line_pointer, lenmax *= 2);
+			if (line_new == NULL) {
+				return NULL;
+			}
 
 			line = line_new + (line - line_pointer);
 			line_pointer = line_new;
@@ -52,6 +58,10 @@ char* get_file_as_string(FILE *file, size_t * const length) {
 void print_hex(const unsigned char * const data, const size_t length, unsigned short width) {
 	//buffer for hex string
 	unsigned char * const hex = malloc(2 * length + 1);
+	if (hex == NULL) {
+		fprintf(stderr, "ERROR: Failed printing hex. Couldn't allocate memory.\n");
+		return;
+	}
 
 	if (sodium_bin2hex((char *) hex, 2 * length + 1, data, length) == NULL) {
 		fprintf(stderr, "ERROR: Failed printing hex.\n");
