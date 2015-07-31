@@ -19,8 +19,8 @@
 #include <stdlib.h>
 #include <sodium.h>
 
-#include "../diffie-hellman.h"
-#include "../utils.h"
+#include "../lib/diffie-hellman.h"
+#include "../lib/utils.h"
 
 int main(void) {
 	sodium_init();

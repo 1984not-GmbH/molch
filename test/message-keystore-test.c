@@ -20,8 +20,8 @@
 #include <sodium.h>
 #include <assert.h>
 
-#include "../message-keystore.h"
-#include "../utils.h"
+#include "../lib/message-keystore.h"
+#include "../lib/utils.h"
 
 void print_keystore(message_keystore *keystore) {
 	printf("KEYSTORE-START-----------------------------------------------------------------\n");

@@ -19,8 +19,8 @@
 #include <stdlib.h>
 #include <sodium.h>
 
-#include "../message.h"
-#include "../utils.h"
+#include "../lib/message.h"
+#include "../lib/utils.h"
 
 int encrypt(unsigned char* ciphertext, size_t* ciphertext_length, unsigned char* key) {
 	unsigned char message[] = "Hello World, this is a message!";
