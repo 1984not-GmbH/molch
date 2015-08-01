@@ -152,6 +152,7 @@ int decrypt_message(
 			key);
 	if (status != 0) {
 		sodium_memzero(plaintext_buffer, PLAINTEXT_LENGTH);
+		free(plaintext_buffer);
 		return status;
 	}
 
@@ -164,6 +165,7 @@ int decrypt_message(
 	//copy plaintext to message (output)
 	memcpy(message, plaintext_buffer, *message_length);
 	sodium_memzero(plaintext_buffer, PLAINTEXT_LENGTH);
+	free(plaintext_buffer);
 
 	//copy header length to output
 	*header_length = HEADER_LENGTH;
