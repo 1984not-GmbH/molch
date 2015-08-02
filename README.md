@@ -37,6 +37,11 @@ $ cmake ..    #run cmake (only required once)
 $ make        #finally compile the software
 ```
 
+Run the tests:
+```
+$ cd build
+$ make test
+```
 
 license
 -------
