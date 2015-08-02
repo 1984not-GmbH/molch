@@ -226,3 +226,27 @@ int decrypt_message(
 
 	return 0;
 }
+
+/*
+ * Extract the header from a packet without verifying it's integrity.
+ * This is required to get the message number before actually being
+ * able to derive the message key that's needed to verify it.
+ *
+ * The header buffer should be as long as the packet buffer.
+ */
+int extract_header_without_verifying(
+		unsigned char * const header, //buffer to put the header into
+		size_t * const header_length,
+		const unsigned char * const packet,
+		const size_t packet_length) {
+	unsigned char nonce[crypto_secretbox_NONCEBYTES];
+	unsigned char mac[crypto_secretbox_MACBYTES];
+
+	return extract_header_nonce_and_mac_without_verifying(
+			header,
+			header_length,
+			nonce,
+			mac,
+			packet,
+			packet_length);
+}
