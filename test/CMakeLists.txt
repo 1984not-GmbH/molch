@@ -24,6 +24,10 @@ add_executable(message-test message-test)
 target_link_libraries(message-test molch utils)
 add_test(message-test message-test)
 
+add_executable(message-manipulated-test message-manipulated-test)
+target_link_libraries(message-manipulated-test molch utils)
+add_test(message-manipulated-test message-manipulated-test)
+
 add_executable(message-extract-header-test message-extract-header-test)
 target_link_libraries(message-extract-header-test molch utils)
 add_test(message-extract-header-test message-extract-header-test)
