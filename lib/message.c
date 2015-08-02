@@ -157,7 +157,7 @@ int decrypt_message(
 
 	int status;
 	status = extract_header_nonce_and_mac_without_verifying(
-			header,
+			header_buffer,
 			header_length,
 			nonce,
 			mac,

@@ -22,8 +22,11 @@
 #include "../lib/message.h"
 #include "../lib/utils.h"
 
+#define MESSAGE "Hello World, this is a message!"
+#define HEADER "This is a header!"
+
 int encrypt(unsigned char* ciphertext, size_t* ciphertext_length, unsigned char* key) {
-	unsigned char message[] = "Hello World, this is a message!";
+	unsigned char message[] = MESSAGE;
 	printf("Message (%lu Bytes):\n%s\n\n", sizeof(message), message);
 
 	//create random nonce
@@ -35,7 +38,7 @@ int encrypt(unsigned char* ciphertext, size_t* ciphertext_length, unsigned char*
 	print_hex(nonce, crypto_secretbox_NONCEBYTES, 30);
 	putchar('\n');
 
-	const unsigned char header[] = "This is a header!";
+	const unsigned char header[] = HEADER;
 	printf("Header (%lu Bytes):\n%s\n\n", sizeof(header), header);
 
 	int status = encrypt_message(
@@ -106,13 +109,29 @@ int main(void) {
 	//print header
 	printf("Received header (%zu Bytes):\n%s\n\n", header_length, header);
 
+	//check header
+	if (sodium_memcmp(header, HEADER, header_length) != 0) {
+		fprintf(stderr, "ERROR: Headers aren't the same.\n");
+		sodium_memzero(message, ciphertext_length);
+		free(message);
+		free(header);
+		return -1;
+	}
+	free(header);
+
 	//print message
 	printf("Received message (%zu Bytes):\n%s\n\n", message_length, message);
 
+	//check message
+	if (sodium_memcmp(message, MESSAGE, message_length) != 0) {
+		fprintf(stderr, "ERROR: Messages aren't the same.\n");
+		sodium_memzero(message, message_length);
+		free(message);
+		return -1;
+	}
+
 	sodium_memzero(message, ciphertext_length);
-	sodium_memzero(header, ciphertext_length);
 	free(message);
-	free(header);
 
 	return EXIT_SUCCESS;
 }
