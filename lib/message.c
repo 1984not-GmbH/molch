@@ -159,6 +159,13 @@ int decrypt_message(
 	//get amount of padding (from last byte of the plaintext buffer
 	const unsigned char padding = plaintext_buffer[PLAINTEXT_LENGTH - 1];
 
+	//make sure the amount of padding is actually possible
+	if (padding > PLAINTEXT_LENGTH) {
+		sodium_memzero(plaintext_buffer, PLAINTEXT_LENGTH);
+		free(plaintext_buffer);
+		return -10;
+	}
+
 	//calculate length of the message
 	*message_length = PLAINTEXT_LENGTH - padding;
 
