@@ -4,6 +4,8 @@ project (molch)
 
 subdirs(test lib)
 
+set(CMAKE_BUILD_TYPE Debug)
+
 enable_testing()
 
 #Set the linker flag for sodium
