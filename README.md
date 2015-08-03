@@ -37,7 +37,7 @@ $ cmake ..    #run cmake (only required once)
 $ make        #finally compile the software
 ```
 
-Run the tests:
+Run the tests (you need to have valgrind installed):
 ```
 $ cd build
 $ make test
