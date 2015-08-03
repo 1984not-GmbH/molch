@@ -18,15 +18,17 @@
 
 #include <sodium.h>
 #include <string.h>
+#include <assert.h>
 
 #include "ratchet.h"
 #include "diffie-hellman.h"
+#include "hkdf.h"
 
 /*
  * Start a new ratchet chain. This derives an initial root key and returns a new ratchet state.
  *
- * All the keys will be copied so you can free the buffers afterwards.
- * TODO: This probably isn't a good idea for the private identity key. I need some better way to deal with this.
+ * All the keys will be copied so you can free the buffers afterwards. (private identity get's
+ * immediately deleted after deriving the initial root key though!)
  *
  * The return value is a valid ratchet state or NULL if an error occured.
  */
@@ -40,11 +42,13 @@ ratchet_state* ratchet_create(
 		bool am_i_alice) {
 	ratchet_state *state = malloc(sizeof(ratchet_state));
 
-	//derive initial root key via triple diffie Hellman
-	//RK = HASH( DH(A,B0) || DH(A0,B) || DH(A0,B0) )
-	state->root_key = malloc(crypto_secretbox_KEYBYTES);
+	//derive pre root key to later derive the initial root key
+	//and the first send chain key from
+	//pre_root_key = HASH( DH(A,B0) || DH(A0,B) || DH(A0,B0) )
+	assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES);
+	unsigned char * const pre_root_key = malloc(crypto_secretbox_KEYBYTES);
 	int status = triple_diffie_hellman(
-			state->root_key,
+			pre_root_key,
 			our_private_identity,
 			our_public_identity,
 			our_private_ephemeral,
@@ -54,15 +58,45 @@ ratchet_state* ratchet_create(
 			am_i_alice);
 	if (status != 0) {
 		sodium_memzero(state->root_key, crypto_secretbox_KEYBYTES);
-		free(state->root_key);
+		free(pre_root_key);
 		free(state);
 		return NULL;
 	}
 
+	//derive chain and root key from pre_root_key via HKDF
+	unsigned char * const hkdf_buffer = malloc(crypto_secretbox_KEYBYTES * 2);
+	const unsigned char salt[] = "molch--libsodium-crypto-library"; //TODO: Maybe use better salt?
+	assert(sizeof(salt) == crypto_auth_KEYBYTES);
+	const unsigned char info[] = "molch"; //TODO use another info string
+	status = hkdf(
+			hkdf_buffer,
+			2 * crypto_secretbox_KEYBYTES,
+			salt,
+			pre_root_key,
+			crypto_secretbox_KEYBYTES,
+			info,
+			sizeof(info));
+	sodium_memzero(pre_root_key, crypto_secretbox_KEYBYTES);
+	free(pre_root_key);
+	if (status != 0) {
+		sodium_memzero(hkdf_buffer, crypto_secretbox_KEYBYTES * 2);
+		free(hkdf_buffer);
+		return NULL;
+	}
+	//initialise chain and root key
+	state->root_key = malloc(crypto_secretbox_KEYBYTES);
+	state->send_chain_key = malloc(crypto_secretbox_KEYBYTES);
+	state->receive_chain_key = malloc(crypto_secretbox_KEYBYTES);
+	//copy hkdf buffer to actual root/chain key
+	//TODO This kind of deviates from axolotl because the first chain key is identical for
+	//send/receive, only one of them is used though
+	memcpy(state->root_key, hkdf_buffer, crypto_secretbox_KEYBYTES);
+	memcpy(state->send_chain_key, hkdf_buffer + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	memcpy(state->receive_chain_key, state->send_chain_key, crypto_secretbox_KEYBYTES);
+	sodium_memzero(hkdf_buffer, crypto_secretbox_KEYBYTES * 2);
+	free(hkdf_buffer);
+
 	//copy keys into state
-	//our private identity
-	state->our_private_identity = malloc(crypto_box_SECRETKEYBYTES);
-	memcpy(state->our_private_identity, our_private_identity, crypto_box_SECRETKEYBYTES);
 	//our public identity
 	state->our_public_identity = malloc(crypto_box_PUBLICKEYBYTES);
 	memcpy(state->our_public_identity, our_public_identity, crypto_box_PUBLICKEYBYTES);
@@ -78,10 +112,6 @@ ratchet_state* ratchet_create(
 	//their_public_ephemeral
 	state->their_public_ephemeral = malloc(crypto_box_PUBLICKEYBYTES);
 	memcpy(state->their_public_ephemeral, their_public_ephemeral, crypto_box_PUBLICKEYBYTES);
-
-	//initialise chain key buffers
-	state->send_chain_key = malloc(crypto_secretbox_KEYBYTES);
-	state->receive_chain_key = malloc(crypto_secretbox_KEYBYTES);
 
 	//initialise message keystore for skipped messages
 	state->skipped_message_keys = message_keystore_init();
@@ -104,9 +134,6 @@ void ratchet_destroy(ratchet_state *state) {
 	//root key
 	sodium_memzero(state->root_key, crypto_secretbox_KEYBYTES);
 	free(state->root_key);
-	//our private identity
-	sodium_memzero(state->our_private_identity, crypto_box_SECRETKEYBYTES);
-	free(state->our_private_identity);
 	//our public identity
 	free(state->our_public_identity);
 	//their_public_identity

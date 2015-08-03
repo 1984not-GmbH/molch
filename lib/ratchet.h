@@ -30,7 +30,6 @@ typedef struct ratchet_state {
 	unsigned char *send_chain_key; //CKs
 	unsigned char *receive_chain_key; //CKr
 	//identity keys
-	unsigned char *our_private_identity; //DHIs
 	unsigned char *our_public_identity; //DHIs
 	unsigned char *their_public_identity; //DHIr
 	//ephemeral keys (ratchet keys)
@@ -50,8 +49,8 @@ typedef struct ratchet_state {
 /*
  * Start a new ratchet chain. This derives an initial root key and returns a new ratchet state.
  *
- * All the keys will be copied so you can free the buffers afterwards.
- * TODO: This probably isn't a good idea for the private identity key. I need some better way to deal with this.
+ * All the keys will be copied so you can free the buffers afterwards. (private identity get's
+ * immediately deleted after deriving the initial root key though!)
  *
  * The return value is a valid ratchet state or NULL if an error occured.
  */
