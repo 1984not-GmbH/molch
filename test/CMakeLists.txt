@@ -43,3 +43,9 @@ add_test(valgrind-message-extract-header-test valgrind --error-exitcode=10 ./mes
 add_executable(message-keystore-test message-keystore-test)
 target_link_libraries(message-keystore-test molch utils)
 add_test(message-keystore-test message-keystore-test)
+add_test(valgrind-message-keystore-test valgrind --error-exitcode=10 ./message-keystore-test)
+
+add_executable(ratchet-test ratchet-test)
+target_link_libraries(ratchet-test molch utils)
+add_test(ratchet-test ratchet-test)
+add_test(valgrind-ratchet-test valgrind --error-exitcode=10 ./ratchet-test)
