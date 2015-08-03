@@ -42,6 +42,7 @@ typedef struct ratchet_state {
 	unsigned int previous_message_number; //PNs (number of messages sent in previous chain)
 	//ratchet flag
 	bool ratchet_flag;
+	bool am_i_alice;
 	//list of previous message keys
 	message_keystore skipped_message_keys; //skipped_MK (list containing message keys for messages that weren't received)
 } ratchet_state;

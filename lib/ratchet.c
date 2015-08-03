@@ -46,7 +46,7 @@ ratchet_state* ratchet_create(
 	//and the first send chain key from
 	//pre_root_key = HASH( DH(A,B0) || DH(A0,B) || DH(A0,B0) )
 	assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES);
-	unsigned char * const pre_root_key = malloc(crypto_secretbox_KEYBYTES);
+	unsigned char pre_root_key[crypto_secretbox_KEYBYTES];
 	int status = triple_diffie_hellman(
 			pre_root_key,
 			our_private_identity,
@@ -57,30 +57,28 @@ ratchet_state* ratchet_create(
 			their_public_ephemeral,
 			am_i_alice);
 	if (status != 0) {
-		sodium_memzero(state->root_key, crypto_secretbox_KEYBYTES);
-		free(pre_root_key);
+		sodium_memzero(pre_root_key, sizeof(pre_root_key));
 		free(state);
 		return NULL;
 	}
 
 	//derive chain and root key from pre_root_key via HKDF
-	unsigned char * const hkdf_buffer = malloc(crypto_secretbox_KEYBYTES * 2);
+	unsigned char hkdf_buffer[2 * crypto_secretbox_KEYBYTES];
 	const unsigned char salt[] = "molch--libsodium-crypto-library"; //TODO: Maybe use better salt?
 	assert(sizeof(salt) == crypto_auth_KEYBYTES);
 	const unsigned char info[] = "molch"; //TODO use another info string
 	status = hkdf(
 			hkdf_buffer,
-			2 * crypto_secretbox_KEYBYTES,
+			sizeof(hkdf_buffer),
 			salt,
 			pre_root_key,
-			crypto_secretbox_KEYBYTES,
+			sizeof(pre_root_key),
 			info,
 			sizeof(info));
-	sodium_memzero(pre_root_key, crypto_secretbox_KEYBYTES);
-	free(pre_root_key);
+	sodium_memzero(pre_root_key, sizeof(pre_root_key));
 	if (status != 0) {
-		sodium_memzero(hkdf_buffer, crypto_secretbox_KEYBYTES * 2);
-		free(hkdf_buffer);
+		sodium_memzero(hkdf_buffer, sizeof(hkdf_buffer));
+		free(state);
 		return NULL;
 	}
 	//initialise chain and root key
@@ -93,8 +91,7 @@ ratchet_state* ratchet_create(
 	memcpy(state->root_key, hkdf_buffer, crypto_secretbox_KEYBYTES);
 	memcpy(state->send_chain_key, hkdf_buffer + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	memcpy(state->receive_chain_key, state->send_chain_key, crypto_secretbox_KEYBYTES);
-	sodium_memzero(hkdf_buffer, crypto_secretbox_KEYBYTES * 2);
-	free(hkdf_buffer);
+	sodium_memzero(hkdf_buffer, sizeof(hkdf_buffer));
 
 	//copy keys into state
 	//our public identity
@@ -117,6 +114,7 @@ ratchet_state* ratchet_create(
 	state->skipped_message_keys = message_keystore_init();
 
 	//set other state
+	state->am_i_alice = am_i_alice;
 	state->ratchet_flag = am_i_alice;
 	state->send_message_number = 0;
 	state->receive_message_number = 0;
