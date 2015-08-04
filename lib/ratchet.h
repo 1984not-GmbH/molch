@@ -26,6 +26,7 @@
 //struct that represents the state of a conversation
 typedef struct ratchet_state {
 	unsigned char *root_key; //RK
+	unsigned char *purported_root_key; //RKp
 	//chain keys
 	unsigned char *send_chain_key; //CKs
 	unsigned char *receive_chain_key; //CKr
@@ -36,15 +37,22 @@ typedef struct ratchet_state {
 	unsigned char *our_private_ephemeral; //DHRs
 	unsigned char *our_public_ephemeral; //DHRs
 	unsigned char *their_public_ephemeral; //DHRr
+	unsigned char *their_purported_public_ephemeral; //DHp
 	//message numbers
 	unsigned int send_message_number; //Ns
 	unsigned int receive_message_number; //Nr
+	unsigned int purported_message_number; //Np
 	unsigned int previous_message_number; //PNs (number of messages sent in previous chain)
+	unsigned int purported_previous_message_number; //PNp
 	//ratchet flag
 	bool ratchet_flag;
 	bool am_i_alice;
+	bool received_valid; //is false until the validity of a received message has been verified until the validity of a received message has been verified,
+	                     //this is necessary to be able to split key derivation from message
+	                     //decryption
 	//list of previous message keys
 	message_keystore skipped_message_keys; //skipped_MK (list containing message keys for messages that weren't received)
+	message_keystore purported_message_keys; //this represents the staging area specified in the axolotl ratchet
 } ratchet_state;
 
 /*

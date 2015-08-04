@@ -113,10 +113,12 @@ ratchet_state* ratchet_create(
 
 	//initialise message keystore for skipped messages
 	state->skipped_message_keys = message_keystore_init();
+	state->purported_message_keys = message_keystore_init();
 
 	//set other state
 	state->am_i_alice = am_i_alice;
 	state->ratchet_flag = am_i_alice;
+	state->received_valid = true; //allowing the receival of new messages
 	state->send_message_number = 0;
 	state->receive_message_number = 0;
 	state->previous_message_number = 0;
