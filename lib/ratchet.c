@@ -209,6 +209,76 @@ int ratchet_next_send_key(
 }
 
 /*
+ * This corresponds to "stage_skipped_header_and_message_keys" from the
+ * axolotl protocol description.
+ *
+ * Calculate all the message keys up the the purported message number
+ * and save them in the current ratchet state's staging area.
+ *
+ * TODO: This could easily be used to make clients hang. Because there are
+ * currently no header keys in use, an attacker could specify an arbitrarily
+ * high purported message number, thereby making this function calculate
+ * all of them -> program hangs. Current workaround: Limiting number
+ * of message keys that get precalculated.
+ */
+int stage_skipped_message_keys(
+		const unsigned int purported_message_number,
+		ratchet_state *state) {
+	//limit number of message keys to calculate
+	const unsigned int LIMIT = 100;
+	if ((purported_message_number - state->receive_message_number) > LIMIT) {
+		return -10;
+	}
+
+	//copy current chain key to purported chain key
+	unsigned char purported_previous_chain_key[crypto_secretbox_KEYBYTES];
+	unsigned char purported_current_chain_key[crypto_secretbox_KEYBYTES];
+	memcpy(purported_previous_chain_key, state->receive_chain_key, sizeof(purported_previous_chain_key));
+
+	//message key buffer
+	unsigned char message_key_buffer[crypto_secretbox_KEYBYTES];
+
+	//create all message keys
+	int status;
+	unsigned int pos;
+	for (pos = state->receive_message_number; pos <= purported_message_number; pos++) {
+		status = derive_chain_key(purported_current_chain_key, purported_previous_chain_key);
+		if (status != 0) {
+			sodium_memzero(purported_previous_chain_key, sizeof(purported_previous_chain_key));
+			sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
+			return status;
+		}
+
+		status = derive_message_key(message_key_buffer, purported_current_chain_key);
+		if (status != 0) {
+			sodium_memzero(purported_previous_chain_key, sizeof(purported_previous_chain_key));
+			sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
+			sodium_memzero(message_key_buffer, sizeof(message_key_buffer));
+			return status;
+		}
+
+		//add message key to list of purported message keys
+		status = message_keystore_add(
+				&(state->purported_message_keys),
+				message_key_buffer);
+		sodium_memzero(message_key_buffer, sizeof(message_key_buffer));
+		if (status != 0) {
+			sodium_memzero(purported_previous_chain_key, sizeof(purported_previous_chain_key));
+			sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
+			return status;
+		}
+
+		//shift chain keys
+		memcpy(purported_previous_chain_key, purported_current_chain_key, sizeof(purported_previous_chain_key));
+	}
+
+	sodium_memzero(purported_previous_chain_key, sizeof(purported_previous_chain_key));
+	sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
+
+	return 0;
+}
+
+/*
  * End the ratchet chain and free the memory.
  */
 void ratchet_destroy(ratchet_state *state) {
