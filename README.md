@@ -43,8 +43,8 @@ $ cd build
 $ make test
 ```
 
-size of a message
------------------
+size of a packet
+----------------
 NOTE: This may be subject to change.
 
 ```
@@ -52,14 +52,14 @@ header length (1)
 version_info (2)
 + header (96) {
     public_ephemeral_key (32)
-    + message_counter (32)
-    + previous_message_counter (32)
+    + message_counter (4)
+    + previous_message_counter (4)
 }
 + crypto_secretbox_NONCEBYTES (24)
 + crypto_onetimeauth_BYTES (16)
 + message (>=255)
 + crypto_secretbox_MACBYTES (16)
->= 410 Bytes
+>= 354 Bytes
 ```
 
 If the message length exceeds 255 Bytes, you have to add another 255 bytes because of the padding. The length of the padded message is always the following:
