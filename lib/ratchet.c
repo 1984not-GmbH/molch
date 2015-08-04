@@ -23,6 +23,7 @@
 #include "ratchet.h"
 #include "diffie-hellman.h"
 #include "hkdf.h"
+#include "key-derivation.h"
 
 /*
  * Start a new ratchet chain. This derives an initial root key and returns a new ratchet state.
@@ -122,6 +123,87 @@ ratchet_state* ratchet_create(
 
 	return state;
 
+}
+
+/*
+ * Create message key to encrypt the next sent message with.
+ */
+int ratchet_next_send_key(
+		unsigned char * const next_message_key,
+		bool *new_ephemeral,
+		ratchet_state *state) {
+	int status;
+	*new_ephemeral = false;
+	if (state->ratchet_flag) {
+		//generate new ephemeral key
+		status = crypto_box_keypair(state->our_public_ephemeral, state->our_private_ephemeral);
+		if (status != 0) {
+			return status;
+		}
+		*new_ephemeral = true;
+
+		//input key for HKDF (root key and chain key derivation)
+		//input_key = DH(our_private_ephemeral, their_public_ephemeral)
+		unsigned char input_key[crypto_secretbox_KEYBYTES];
+		status = diffie_hellman(
+				input_key,
+				state->our_private_ephemeral,
+				state->our_public_ephemeral,
+				state->their_public_ephemeral,
+				state->am_i_alice);
+		if (status != 0) {
+			sodium_memzero(input_key, sizeof(input_key));
+			return status;
+		}
+
+		//buffer for temporarily putting new root key and new chain key into
+		const unsigned char info[] = "molch";
+		unsigned char hkdf_buffer[2 * crypto_secretbox_KEYBYTES];
+		status = hkdf(
+				hkdf_buffer,
+				sizeof(hkdf_buffer),
+				state->root_key, //salt
+				input_key,
+				sizeof(input_key),
+				info,
+				sizeof(info));
+		sodium_memzero(input_key, sizeof(input_key));
+		if (status != 0) {
+			sodium_memzero(hkdf_buffer, sizeof(hkdf_buffer));
+			return status;
+		}
+
+		//copy hkdf buffer to root_key, send chain key
+		//RK, CKs = HKDF(DH(DHs, DHr))
+		memcpy(state->root_key, hkdf_buffer, crypto_secretbox_KEYBYTES);
+		memcpy(state->send_chain_key, hkdf_buffer + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+		sodium_memzero(hkdf_buffer, sizeof(hkdf_buffer));
+
+		state->previous_message_number = state->send_message_number;
+		state->send_message_number = 0;
+		state->ratchet_flag = false;
+	}
+
+	//MK = HMAC-HASH(CKs, 0x00)
+	status = derive_message_key(
+			next_message_key,
+			state->send_chain_key);
+	if (status != 0) {
+		return status;
+	}
+
+	state->send_message_number++;
+
+	//derive next chain key
+	//CKs = HMAC-HASH(CKs, 0x01)
+	unsigned char old_chain_key[crypto_secretbox_KEYBYTES];
+	memcpy(old_chain_key, state->send_chain_key, sizeof(old_chain_key));
+	status = derive_chain_key(
+			state->send_chain_key,
+			old_chain_key);
+	sodium_memzero(old_chain_key, sizeof(old_chain_key));
+
+	return 0;
 }
 
 /*

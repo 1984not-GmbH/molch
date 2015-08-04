@@ -65,6 +65,15 @@ ratchet_state* ratchet_create(
 		bool am_i_alice);
 
 /*
+ * Create message key to encrypt the next send message with.
+ */
+int ratchet_next_send_key(
+		unsigned char * const next_message_key, //crypto_secretbox_KEYBYTES
+		bool *new_ephemeral, //was a new ephemeral created? If yes the caller has to get it
+		                     //from the ratchet_state struct
+		ratchet_state *state);
+
+/*
  * End the ratchet chain and free the memory.
  */
 void ratchet_destroy(ratchet_state *state);
