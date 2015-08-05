@@ -99,6 +99,7 @@ int expand(
 	if (status != 0) {
 		sodium_memzero(t_n_buffer, crypto_auth_BYTES);
 		sodium_memzero(round_buffer, crypto_auth_BYTES + info_length + 1);
+		free(round_buffer);
 		return status;
 	}
 
