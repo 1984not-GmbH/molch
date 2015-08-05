@@ -43,6 +43,15 @@ $ cd build
 $ make test
 ```
 
+Run the static analysis (you need clang and clangs static analyzer):
+```
+$ mkdir static-analysis
+$ cd static-analysis
+$ scan-build cmake ..
+$ scan-build make
+```
+or run the script `run-static-analysis.sh` from the projects root directory.
+
 size of a packet
 ----------------
 NOTE: This may be subject to change.
