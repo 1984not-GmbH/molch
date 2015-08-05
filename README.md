@@ -36,6 +36,7 @@ $ cd build    #change into it
 $ cmake ..    #run cmake (only required once)
 $ make        #finally compile the software
 ```
+or run the script `run-build.sh` from the projects root directory.
 
 Run the tests (you need to have valgrind installed):
 ```
