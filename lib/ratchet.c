@@ -205,7 +205,7 @@ int ratchet_next_send_key(
 			old_chain_key);
 	sodium_memzero(old_chain_key, sizeof(old_chain_key));
 
-	return 0;
+	return status;
 }
 
 /*
