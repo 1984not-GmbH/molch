@@ -85,8 +85,8 @@ int main(void) {
 
 	puts("NOW DECRYPT -------------------------------------------------------------------\n");
 
-	unsigned char* message = malloc(ciphertext_length);
-	unsigned char* header = malloc(ciphertext_length);
+	unsigned char message[ciphertext_length];
+	unsigned char header[ciphertext_length];
 
 	size_t message_length = 0;
 	size_t header_length = 0;
@@ -99,10 +99,8 @@ int main(void) {
 			key);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to decrypt ciphertext. (%i)\n", status);
-		sodium_memzero(message, ciphertext_length);
-		sodium_memzero(header, ciphertext_length);
-		free(message);
-		free(header);
+		sodium_memzero(message, sizeof(message));
+		sodium_memzero(header, sizeof(header));
 		return status;
 	}
 
@@ -112,12 +110,10 @@ int main(void) {
 	//check header
 	if (sodium_memcmp(header, HEADER, header_length) != 0) {
 		fprintf(stderr, "ERROR: Headers aren't the same.\n");
-		sodium_memzero(message, ciphertext_length);
-		free(message);
-		free(header);
+		sodium_memzero(message, sizeof(message));
+		sodium_memzero(header, sizeof(header));
 		return -1;
 	}
-	free(header);
 
 	//print message
 	printf("Received message (%zu Bytes):\n%s\n\n", message_length, message);
@@ -125,13 +121,11 @@ int main(void) {
 	//check message
 	if (sodium_memcmp(message, MESSAGE, message_length) != 0) {
 		fprintf(stderr, "ERROR: Messages aren't the same.\n");
-		sodium_memzero(message, message_length);
-		free(message);
+		sodium_memzero(message, sizeof(message));
 		return -1;
 	}
 
-	sodium_memzero(message, ciphertext_length);
-	free(message);
+	sodium_memzero(message, sizeof(message));
 
 	return EXIT_SUCCESS;
 }

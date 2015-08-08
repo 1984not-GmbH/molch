@@ -33,10 +33,7 @@ int expand(
 	//expand phase of hkdf
 
 	//buffer to store T(x)|info|0x?? (HMAC input)
-	unsigned char* const round_buffer = malloc(crypto_auth_BYTES + info_length + 1);
-	if (round_buffer == NULL) {
-		return -10;
-	}
+	unsigned char round_buffer[crypto_auth_BYTES + info_length + 1];
 
 	//round_buffer = <empty>|info|0x01
 	memcpy(round_buffer, info, info_length);
@@ -47,19 +44,17 @@ int expand(
 	status = crypto_auth(
 			output_key, //will be T(0)|T(1) .... T(N) in the end (only T(0) for now)
 			round_buffer,
-			info_length + 1, //length of round_buffer
+			info_length + 1, //length of round_buffer in first step
 			pseudo_random_key);
 	if (status != 0) {
-		sodium_memzero(round_buffer, crypto_auth_BYTES + info_length + 1);
-		free(round_buffer);
+		sodium_memzero(round_buffer, sizeof(round_buffer));
 		return status;
 	}
 
 	//N (number of T(x) needed to fill the output_key_length
 	unsigned int n = 1 + ((output_key_length - 1) / crypto_auth_BYTES); //N = ceil(L/HashLen)
 	if (n > 0xff) { //n has to fit into one byte
-		sodium_memzero(round_buffer, crypto_auth_BYTES + info_length + 1);
-		free(round_buffer);
+		sodium_memzero(round_buffer, sizeof(round_buffer));
 		return -10;
 	}
 
@@ -75,11 +70,10 @@ int expand(
 		status = crypto_auth(
 				output_key + pos * crypto_auth_BYTES, // ...|T(pos+1)|...
 				round_buffer,
-				crypto_auth_BYTES + info_length + 1, //length of round_buffer
+				sizeof(round_buffer), //length of round_buffer
 				pseudo_random_key);
 		if (status != 0) {
-			sodium_memzero(round_buffer, crypto_auth_BYTES + info_length + 1);
-			free(round_buffer);
+			sodium_memzero(round_buffer, sizeof(round_buffer));
 			return status;
 		}
 	}
@@ -94,12 +88,11 @@ int expand(
 	status = crypto_auth(
 			t_n_buffer, //T(N)
 			round_buffer,
-			crypto_auth_BYTES + info_length + 1, //length of round buffer
+			sizeof(round_buffer), //length of round buffer
 			pseudo_random_key);
 	if (status != 0) {
-		sodium_memzero(t_n_buffer, crypto_auth_BYTES);
-		sodium_memzero(round_buffer, crypto_auth_BYTES + info_length + 1);
-		free(round_buffer);
+		sodium_memzero(t_n_buffer, sizeof(t_n_buffer));
+		sodium_memzero(round_buffer, sizeof(round_buffer));
 		return status;
 	}
 
@@ -109,9 +102,8 @@ int expand(
 			t_n_buffer,
 			crypto_auth_BYTES - ((n * crypto_auth_BYTES) - output_key_length));
 
-	sodium_memzero(t_n_buffer, crypto_auth_BYTES);
-	sodium_memzero(round_buffer, crypto_auth_BYTES + info_length + 1);
-	free(round_buffer);
+	sodium_memzero(t_n_buffer, sizeof(t_n_buffer));
+	sodium_memzero(round_buffer, sizeof(round_buffer));
 	return 0;
 }
 
@@ -138,13 +130,13 @@ int hkdf(
 	//PRK = HMAC-Hash(salt, IKM)
 	status = crypto_auth(pseudo_random_key, input_key, input_key_length, salt);
 	if (status != 0) {
-		sodium_memzero(pseudo_random_key, crypto_auth_BYTES);
+		sodium_memzero(pseudo_random_key, sizeof(pseudo_random_key));
 		return status;
 	}
 
 	//expand phase of hkdf
 	status = expand(output_key, output_key_length, pseudo_random_key, info, info_length);
-	sodium_memzero(pseudo_random_key, crypto_auth_BYTES);
+	sodium_memzero(pseudo_random_key, sizeof(pseudo_random_key));
 	if (status != 0) {
 		return status;
 	}

@@ -87,7 +87,7 @@ int main(void) {
 
 	puts("NOW DECRYPT -------------------------------------------------------------------\n");
 
-	unsigned char* const header = malloc(ciphertext_length);
+	unsigned char header[ciphertext_length];
 
 	size_t header_length = 0;
 
@@ -98,7 +98,6 @@ int main(void) {
 			ciphertext_length);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to extract header from packet. (%i)\n", status);
-		free(header);
 		return status;
 	}
 
@@ -108,11 +107,8 @@ int main(void) {
 	//check header
 	if (sodium_memcmp(header, HEADER, sizeof(HEADER)) != 0) {
 		fprintf(stderr, "ERROR: Headers aren't the same!\n");
-		free(header);
 		return -1;
 	}
-
-	free(header);
 
 	return EXIT_SUCCESS;
 }

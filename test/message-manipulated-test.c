@@ -85,12 +85,12 @@ int main(void) {
 	putchar('\n');
 
 	//manipulate header
-	unsigned char *packet_with_modified_header = malloc(ciphertext_length);
+	unsigned char packet_with_modified_header[ciphertext_length];
 	memcpy(packet_with_modified_header, ciphertext, ciphertext_length);
 	packet_with_modified_header[3] = '\n';
 
-	unsigned char *message = malloc(ciphertext_length);
-	unsigned char *header = malloc(ciphertext_length);
+	unsigned char message[ciphertext_length];
+	unsigned char header[ciphertext_length];
 
 	size_t message_length = 0;
 	size_t header_length = 0;
@@ -101,18 +101,15 @@ int main(void) {
 			header, &header_length,
 			packet_with_modified_header, ciphertext_length,
 			key);
-	free(packet_with_modified_header);
 	if (status == 0) {
 		fprintf(stderr, "ERROR: Failed to detect manipulated header.");
-		sodium_memzero(message, ciphertext_length);
-		free(message);
-		free(header);
+		sodium_memzero(message, sizeof(message));
 		return -1;
 	}
 	printf("Header manipulation successfully detected!\n");
 
 	//manipulate header_length
-	unsigned char *packet_with_modified_header_length = malloc(ciphertext_length);
+	unsigned char packet_with_modified_header_length[ciphertext_length];
 	memcpy(packet_with_modified_header_length, ciphertext, ciphertext_length);
 	packet_with_modified_header_length[0] = 0xff;
 
@@ -122,18 +119,15 @@ int main(void) {
 			header, &header_length,
 			packet_with_modified_header_length, ciphertext_length,
 			key);
-	free(packet_with_modified_header_length);
 	if (status == 0) {
 		fprintf(stderr, "ERROR: Failed to detect manipulated header length.");
-		sodium_memzero(message, ciphertext_length);
-		free(message);
-		free(header);
+		sodium_memzero(message, sizeof(message));
 		return -1;
 	}
 	printf("Header length manipulation successfully detected!\n");
 
 	//manipulate message
-	unsigned char *packet_with_modified_message = malloc(ciphertext_length);
+	unsigned char packet_with_modified_message[ciphertext_length];
 	memcpy(packet_with_modified_message, ciphertext, ciphertext_length);
 	packet_with_modified_message[sizeof(HEADER) + 1 + crypto_secretbox_NONCEBYTES + crypto_onetimeauth_BYTES + 3] = 0xff;
 	packet_with_modified_message[sizeof(HEADER) + 1 + crypto_secretbox_NONCEBYTES + crypto_onetimeauth_BYTES + 4] = 0xff;
@@ -144,19 +138,14 @@ int main(void) {
 			header, &header_length,
 			packet_with_modified_message, ciphertext_length,
 			key);
-	free(packet_with_modified_message);
 	if (status == 0) {
 		fprintf(stderr, "ERROR: Failed to detect manipulated message.");
-		sodium_memzero(message, ciphertext_length);
-		free(message);
-		free(header);
+		sodium_memzero(message, sizeof(message));
 		return -1;
 	}
 	printf("Message manipulation successfully detected!\n");
 
-	free(header);
-	sodium_memzero(message, ciphertext_length);
-	free(message);
+	sodium_memzero(message, sizeof(message));
 
 	return EXIT_SUCCESS;
 }

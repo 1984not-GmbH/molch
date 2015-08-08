@@ -57,16 +57,11 @@ char* get_file_as_string(FILE *file, size_t * const length) {
 
 void print_hex(const unsigned char * const data, const size_t length, unsigned short width) {
 	//buffer for hex string
-	unsigned char * const hex = malloc(2 * length + 1);
-	if (hex == NULL) {
-		fprintf(stderr, "ERROR: Failed printing hex. Couldn't allocate memory.\n");
-		return;
-	}
+	unsigned char hex[2 * length + 1];
 
 	if (sodium_bin2hex((char *) hex, 2 * length + 1, data, length) == NULL) {
 		fprintf(stderr, "ERROR: Failed printing hex.\n");
-		sodium_memzero(hex, 2 * length + 1);
-		free(hex);
+		sodium_memzero(hex, sizeof(hex));
 		return;
 	}
 
@@ -84,6 +79,5 @@ void print_hex(const unsigned char * const data, const size_t length, unsigned s
 	putchar('\n');
 
 	//cleanup
-	sodium_memzero(hex, 2 * length + 1);
-	free(hex);
+	sodium_memzero(hex, sizeof(hex));
 }

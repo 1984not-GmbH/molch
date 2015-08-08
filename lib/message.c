@@ -48,10 +48,7 @@ int encrypt_message(
 	unsigned char padding = 255 - (message_length % 255);
 
 	//allocate buffer for the message + padding
-	unsigned char * const plaintext_buffer = malloc(message_length + padding);
-	if (plaintext_buffer == NULL) {
-		return -10;
-	}
+	unsigned char plaintext_buffer[message_length + padding];
 
 	//copy message to plaintext buffer
 	memcpy(plaintext_buffer, message, message_length);
@@ -71,8 +68,7 @@ int encrypt_message(
 			message_length + padding, //message length
 			nonce,
 			key);
-	sodium_memzero(plaintext_buffer, message_length + padding);
-	free(plaintext_buffer);
+	sodium_memzero(plaintext_buffer, sizeof(plaintext_buffer));
 	if (status != 0) {
 		return status;
 	}
@@ -151,7 +147,7 @@ int decrypt_message(
 		const size_t packet_length,
 		const unsigned char * const key) { //crypto_secretbox_KEYBYTES
 	//buffers for the header components
-	unsigned char * const header_buffer = malloc(packet_length);
+	unsigned char header_buffer[packet_length];
 	unsigned char nonce[crypto_secretbox_NONCEBYTES];
 	unsigned char mac[crypto_onetimeauth_BYTES];
 
@@ -165,7 +161,6 @@ int decrypt_message(
 			packet_length);
 	if (status != 0) {
 		*header_length = 0;
-		free(header_buffer);
 		return status;
 	}
 
@@ -179,19 +174,16 @@ int decrypt_message(
 			key);
 	if (status != 0) {
 		*header_length = 0;
-		free(header_buffer);
 		return status;
 	}
 
 	//copy header
 	memcpy(header, header_buffer, *header_length);
-	free(header_buffer);
 
 	const size_t CIPHERTEXT_LENGTH = packet_length - PRE_CIPHERTEXT_LENGTH;
 
 	//buffer to store decrypted message into
-	const size_t PLAINTEXT_LENGTH = CIPHERTEXT_LENGTH - crypto_secretbox_MACBYTES;
-	unsigned char * const plaintext_buffer = malloc(PLAINTEXT_LENGTH);
+	unsigned char plaintext_buffer[CIPHERTEXT_LENGTH - crypto_secretbox_MACBYTES];
 
 	//decrypt the message
 	status = crypto_secretbox_open_easy(
@@ -201,28 +193,25 @@ int decrypt_message(
 			packet + 1 + *header_length, //nonce
 			key);
 	if (status != 0) {
-		sodium_memzero(plaintext_buffer, PLAINTEXT_LENGTH);
-		free(plaintext_buffer);
+		sodium_memzero(plaintext_buffer, sizeof(plaintext_buffer));
 		return status;
 	}
 
 	//get amount of padding (from last byte of the plaintext buffer
-	const unsigned char padding = plaintext_buffer[PLAINTEXT_LENGTH - 1];
+	const unsigned char padding = plaintext_buffer[sizeof(plaintext_buffer) - 1];
 
 	//make sure the amount of padding is actually possible
-	if (padding > PLAINTEXT_LENGTH) {
-		sodium_memzero(plaintext_buffer, PLAINTEXT_LENGTH);
-		free(plaintext_buffer);
+	if (padding > sizeof(plaintext_buffer)) {
+		sodium_memzero(plaintext_buffer, sizeof(plaintext_buffer));
 		return -10;
 	}
 
 	//calculate length of the message
-	*message_length = PLAINTEXT_LENGTH - padding;
+	*message_length = sizeof(plaintext_buffer) - padding;
 
 	//copy plaintext to message (output)
 	memcpy(message, plaintext_buffer, *message_length);
-	sodium_memzero(plaintext_buffer, PLAINTEXT_LENGTH);
-	free(plaintext_buffer);
+	sodium_memzero(plaintext_buffer, sizeof(plaintext_buffer));
 
 	return 0;
 }
