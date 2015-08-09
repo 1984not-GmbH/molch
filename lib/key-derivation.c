@@ -23,6 +23,9 @@
 #include "diffie-hellman.h"
 #include "hkdf.h"
 
+//TODO maybe use another info string?
+#define INFO "molch"
+
 /*
  * Derive the next chain key in a message chain.
  *
@@ -98,7 +101,7 @@ int derive_root_and_chain_key(
 
 	//now create root and chain key in temporary buffer
 	//RK, CK = HKDF(previous_root_key, input_key)
-	const unsigned char info[] = "molch"; //TODO is this the final info string?
+	const unsigned char info[] = INFO;
 	unsigned char hkdf_buffer[2 * crypto_secretbox_KEYBYTES];
 	status = hkdf(
 			hkdf_buffer,
@@ -119,5 +122,69 @@ int derive_root_and_chain_key(
 	memcpy(chain_key, hkdf_buffer + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 
 	sodium_memzero(hkdf_buffer, sizeof(hkdf_buffer));
+	return 0;
+}
+
+/*
+ * Derive initial root and chain keys.
+ *
+ * The chain and root key have to be crypto_secretbox_KEYBYTES long.
+ *
+ * RK, CK = HKDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
+ */
+int derive_initial_root_and_chain_key(
+		unsigned char * const root_key,
+		unsigned char * const chain_key,
+		const unsigned char * const our_private_identity,
+		const unsigned char * const our_public_identity,
+		const unsigned char * const their_public_identity,
+		const unsigned char * const our_private_ephemeral,
+		const unsigned char * const our_public_ephemeral,
+		const unsigned char * const their_public_ephemeral,
+		bool am_i_alice) {
+	//derive pre_root_key to later derive the initial root key
+	//and the first send chain key from
+	//pre_root_key = HASH( DH(A,B0) || DH(A0,B) || DH(A0,B0) )
+	assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES);
+	unsigned char pre_root_key[crypto_secretbox_KEYBYTES];
+	int status = triple_diffie_hellman(
+			pre_root_key,
+			our_private_identity,
+			our_public_identity,
+			our_private_ephemeral,
+			our_public_ephemeral,
+			their_public_identity,
+			their_public_ephemeral,
+			am_i_alice);
+	if (status != 0) {
+		sodium_memzero(pre_root_key, sizeof(pre_root_key));
+		return status;
+	}
+
+	//derive chain and root key from pre_root_key via HKDF
+	//RK, CK = HKDF(salt, pre_root_key)
+	unsigned char hkdf_buffer[2 * crypto_secretbox_KEYBYTES];
+	const unsigned char salt[] = "molch--libsodium-crypto-library"; //TODO: Maybe use better salt?
+	assert(sizeof(salt) == crypto_auth_KEYBYTES);
+	const unsigned char info[] = INFO;
+	status = hkdf(
+			hkdf_buffer,
+			sizeof(hkdf_buffer),
+			salt,
+			pre_root_key,
+			sizeof(pre_root_key),
+			info,
+			sizeof(info));
+	sodium_memzero(pre_root_key, sizeof(pre_root_key));
+	if (status != 0) {
+		sodium_memzero(hkdf_buffer, sizeof(hkdf_buffer));
+		return status;
+	}
+
+	//now copy the keys
+	memcpy(root_key, hkdf_buffer, crypto_secretbox_KEYBYTES);
+	memcpy(chain_key, hkdf_buffer + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	sodium_memzero(hkdf_buffer, sizeof(hkdf_buffer));
+
 	return 0;
 }

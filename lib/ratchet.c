@@ -43,57 +43,34 @@ ratchet_state* ratchet_create(
 		bool am_i_alice) {
 	ratchet_state *state = malloc(sizeof(ratchet_state));
 
-	//derive pre root key to later derive the initial root key
-	//and the first send chain key from
-	//pre_root_key = HASH( DH(A,B0) || DH(A0,B) || DH(A0,B0) )
-	assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES);
-	unsigned char pre_root_key[crypto_secretbox_KEYBYTES];
-	int status = triple_diffie_hellman(
-			pre_root_key,
-			our_private_identity,
-			our_public_identity,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_identity,
-			their_public_ephemeral,
-			am_i_alice);
-	if (status != 0) {
-		sodium_memzero(pre_root_key, sizeof(pre_root_key));
-		free(state);
-		return NULL;
-	}
-
-	//derive chain and root key from pre_root_key via HKDF
-	unsigned char hkdf_buffer[2 * crypto_secretbox_KEYBYTES];
-	const unsigned char salt[] = "molch--libsodium-crypto-library"; //TODO: Maybe use better salt?
-	assert(sizeof(salt) == crypto_auth_KEYBYTES);
-	const unsigned char info[] = "molch"; //TODO use another info string
-	status = hkdf(
-			hkdf_buffer,
-			sizeof(hkdf_buffer),
-			salt,
-			pre_root_key,
-			sizeof(pre_root_key),
-			info,
-			sizeof(info));
-	sodium_memzero(pre_root_key, sizeof(pre_root_key));
-	if (status != 0) {
-		sodium_memzero(hkdf_buffer, sizeof(hkdf_buffer));
-		free(state);
-		return NULL;
-	}
 	//initialise chain and root key
 	state->root_key = malloc(crypto_secretbox_KEYBYTES);
 	state->send_chain_key = malloc(crypto_secretbox_KEYBYTES);
 	state->receive_chain_key = malloc(crypto_secretbox_KEYBYTES);
 	state->purported_receive_chain_key = malloc(crypto_secretbox_KEYBYTES);
-	//copy hkdf buffer to actual root/chain key
+
+	//derive initial chain and root key
+	int status = derive_initial_root_and_chain_key(
+			state->root_key,
+			state->send_chain_key,
+			our_private_identity,
+			our_public_identity,
+			their_public_identity,
+			our_private_ephemeral,
+			our_public_ephemeral,
+			their_public_ephemeral,
+			am_i_alice);
+	if (status != 0) {
+		sodium_memzero(state->root_key, crypto_secretbox_KEYBYTES);
+		sodium_memzero(state->send_chain_key, crypto_secretbox_KEYBYTES);
+		free(state);
+		return NULL;
+	}
+
+	//copy send_chain_key -> receive_chain_key
 	//TODO This kind of deviates from axolotl because the first chain key is identical for
 	//send/receive, only one of them is used though
-	memcpy(state->root_key, hkdf_buffer, crypto_secretbox_KEYBYTES);
-	memcpy(state->send_chain_key, hkdf_buffer + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	memcpy(state->receive_chain_key, state->send_chain_key, crypto_secretbox_KEYBYTES);
-	sodium_memzero(hkdf_buffer, sizeof(hkdf_buffer));
 
 	//copy keys into state
 	//our public identity
