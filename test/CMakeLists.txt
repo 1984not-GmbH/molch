@@ -1,5 +1,7 @@
 cmake_minimum_required (VERSION 2.6)
 
+add_library(utils utils)
+
 add_executable(hkdf-test hkdf-test)
 target_link_libraries(hkdf-test molch utils)
 add_test(hkdf-test hkdf-test)

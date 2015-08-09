@@ -20,7 +20,7 @@
 #include <sodium.h>
 
 #include "../lib/hkdf.h"
-#include "../lib/utils.h"
+#include "utils.h"
 
 int main(void) {
 	sodium_init();

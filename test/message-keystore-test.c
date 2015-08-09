@@ -21,7 +21,7 @@
 #include <assert.h>
 
 #include "../lib/message-keystore.h"
-#include "../lib/utils.h"
+#include "utils.h"
 
 void print_keystore(message_keystore *keystore) {
 	printf("KEYSTORE-START-----------------------------------------------------------------\n");

@@ -20,7 +20,7 @@
 #include <sodium.h>
 
 #include "../lib/message.h"
-#include "../lib/utils.h"
+#include "utils.h"
 
 #define MESSAGE "Hello World, this is a message!"
 #define HEADER "This is a header!"
