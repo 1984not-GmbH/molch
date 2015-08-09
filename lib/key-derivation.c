@@ -17,8 +17,11 @@
  */
 #include <sodium.h>
 #include <assert.h>
+#include <string.h>
 
 #include "key-derivation.h"
+#include "diffie-hellman.h"
+#include "hkdf.h"
 
 /*
  * Derive the next chain key in a message chain.
@@ -60,4 +63,61 @@ int derive_message_key(
 	//message_key = HMAC-Hash(chain_key, 0x00)
 	//and return status
 	return crypto_auth(message_key, &input_message, 1, chain_key);
+}
+
+/*
+ * Derive a root and initial chain key for a new ratchet.
+ *
+ * The chain and root key have to be crypto_secretbox_KEYBYTES long.
+ *
+ * RK, CK = HKDF( RK, DH(DHRr, DHRs) )
+ */
+int derive_root_and_chain_key(
+		unsigned char * const root_key,
+		unsigned char * const chain_key,
+		const unsigned char * const our_private_ephemeral,
+		const unsigned char * const our_public_ephemeral,
+		const unsigned char * const their_public_ephemeral,
+		const unsigned char * const previous_root_key,
+		bool am_i_alice) {
+	assert(crypto_secretbox_KEYBYTES == crypto_auth_KEYBYTES);
+
+	//input key for HKDF (root key and chain key derivation)
+	//input_key = DH(our_private_ephemeral, their_public_ephemeral)
+	unsigned char input_key[crypto_secretbox_KEYBYTES];
+	int status = diffie_hellman(
+			input_key,
+			our_private_ephemeral,
+			our_public_ephemeral,
+			their_public_ephemeral,
+			am_i_alice);
+	if (status != 0) {
+		sodium_memzero(input_key, sizeof(input_key));
+		return status;
+	}
+
+	//now create root and chain key in temporary buffer
+	//RK, CK = HKDF(previous_root_key, input_key)
+	const unsigned char info[] = "molch"; //TODO is this the final info string?
+	unsigned char hkdf_buffer[2 * crypto_secretbox_KEYBYTES];
+	status = hkdf(
+			hkdf_buffer,
+			sizeof(hkdf_buffer),
+			previous_root_key, //salt
+			input_key,
+			sizeof(input_key),
+			info,
+			sizeof(info));
+	sodium_memzero(input_key, sizeof(input_key));
+	if (status != 0) {
+		sodium_memzero(hkdf_buffer, sizeof(hkdf_buffer));
+		return status;
+	}
+
+	//copy keys from hkdf buffer
+	memcpy(root_key, hkdf_buffer, crypto_secretbox_KEYBYTES);
+	memcpy(chain_key, hkdf_buffer + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+
+	sodium_memzero(hkdf_buffer, sizeof(hkdf_buffer));
+	return 0;
 }

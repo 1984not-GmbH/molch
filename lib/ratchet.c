@@ -144,42 +144,22 @@ int ratchet_next_send_key(
 		}
 		*new_ephemeral = true;
 
-		//input key for HKDF (root key and chain key derivation)
-		//input_key = DH(our_private_ephemeral, their_public_ephemeral)
-		unsigned char input_key[crypto_secretbox_KEYBYTES];
-		status = diffie_hellman(
-				input_key,
+		//derive next root key and send chain key
+		//RK, CKs = HKDF(DH(DHs, DHr))
+		unsigned char previous_root_key[crypto_secretbox_KEYBYTES];
+		memcpy(previous_root_key, state->root_key, sizeof(previous_root_key));
+		status = derive_root_and_chain_key(
+				state->root_key,
+				state->send_chain_key,
 				state->our_private_ephemeral,
 				state->our_public_ephemeral,
 				state->their_public_ephemeral,
+				previous_root_key,
 				state->am_i_alice);
+		sodium_memzero(previous_root_key, sizeof(previous_root_key));
 		if (status != 0) {
-			sodium_memzero(input_key, sizeof(input_key));
 			return status;
 		}
-
-		//buffer for temporarily putting new root key and new chain key into
-		const unsigned char info[] = "molch";
-		unsigned char hkdf_buffer[2 * crypto_secretbox_KEYBYTES];
-		status = hkdf(
-				hkdf_buffer,
-				sizeof(hkdf_buffer),
-				state->root_key, //salt
-				input_key,
-				sizeof(input_key),
-				info,
-				sizeof(info));
-		sodium_memzero(input_key, sizeof(input_key));
-		if (status != 0) {
-			sodium_memzero(hkdf_buffer, sizeof(hkdf_buffer));
-			return status;
-		}
-
-		//copy hkdf buffer to root_key, send chain key
-		//RK, CKs = HKDF(DH(DHs, DHr))
-		memcpy(state->root_key, hkdf_buffer, crypto_secretbox_KEYBYTES);
-		memcpy(state->send_chain_key, hkdf_buffer + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-		sodium_memzero(hkdf_buffer, sizeof(hkdf_buffer));
 
 		state->previous_message_number = state->send_message_number;
 		state->send_message_number = 0;
