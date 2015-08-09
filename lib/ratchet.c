@@ -86,6 +86,7 @@ ratchet_state* ratchet_create(
 	state->root_key = malloc(crypto_secretbox_KEYBYTES);
 	state->send_chain_key = malloc(crypto_secretbox_KEYBYTES);
 	state->receive_chain_key = malloc(crypto_secretbox_KEYBYTES);
+	state->purported_receive_chain_key = malloc(crypto_secretbox_KEYBYTES);
 	//copy hkdf buffer to actual root/chain key
 	//TODO This kind of deviates from axolotl because the first chain key is identical for
 	//send/receive, only one of them is used though
@@ -203,6 +204,7 @@ int ratchet_next_send_key(
  */
 int stage_skipped_message_keys(
 		const unsigned int purported_message_number,
+		const unsigned char  * const receive_chain_key,
 		ratchet_state *state) {
 	//limit number of message keys to calculate
 	const unsigned int LIMIT = 100;
@@ -213,7 +215,7 @@ int stage_skipped_message_keys(
 	//copy current chain key to purported chain key
 	unsigned char purported_previous_chain_key[crypto_secretbox_KEYBYTES];
 	unsigned char purported_current_chain_key[crypto_secretbox_KEYBYTES];
-	memcpy(purported_previous_chain_key, state->receive_chain_key, sizeof(purported_previous_chain_key));
+	memcpy(purported_previous_chain_key, receive_chain_key, sizeof(purported_previous_chain_key));
 
 	//message key buffer
 	unsigned char message_key_buffer[crypto_secretbox_KEYBYTES];
@@ -252,6 +254,9 @@ int stage_skipped_message_keys(
 		memcpy(purported_previous_chain_key, purported_current_chain_key, sizeof(purported_previous_chain_key));
 	}
 
+	//copy chain key to purported_receive_chain_key (this will be used in commit_skipped_message_keys)
+	memcpy(state->purported_receive_chain_key, purported_current_chain_key, sizeof(purported_current_chain_key));
+
 	sodium_memzero(purported_previous_chain_key, sizeof(purported_previous_chain_key));
 	sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
 
@@ -283,6 +288,8 @@ void ratchet_destroy(ratchet_state *state) {
 	free(state->send_chain_key);
 	sodium_memzero(state->receive_chain_key, crypto_secretbox_KEYBYTES);
 	free(state->receive_chain_key);
+	sodium_memzero(state->purported_receive_chain_key, crypto_secretbox_KEYBYTES);
+	free(state->purported_receive_chain_key);
 
 	free(state);
 }

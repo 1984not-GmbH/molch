@@ -30,6 +30,7 @@ typedef struct ratchet_state {
 	//chain keys
 	unsigned char *send_chain_key; //CKs
 	unsigned char *receive_chain_key; //CKr
+	unsigned char *purported_receive_chain_key; //CKp
 	//identity keys
 	unsigned char *our_public_identity; //DHIs
 	unsigned char *their_public_identity; //DHIr
