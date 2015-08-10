@@ -21,6 +21,7 @@
 
 #include "../lib/diffie-hellman.h"
 #include "utils.h"
+#include "common.h"
 
 int main(void) {
 	sodium_init();
@@ -32,78 +33,62 @@ int main(void) {
 	//create Alice's identity keypair
 	unsigned char alice_public_identity[crypto_box_PUBLICKEYBYTES];
 	unsigned char alice_private_identity[crypto_box_SECRETKEYBYTES];
-	status = crypto_box_keypair(alice_public_identity, alice_private_identity);
+	status = generate_and_print_keypair(
+			alice_public_identity,
+			alice_private_identity,
+			"Alice",
+			"identity");
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Couldn't create Alice's identity keypair. (%i)\n", status);
 		sodium_memzero(alice_private_identity, crypto_box_SECRETKEYBYTES);
 		return status;
 	}
-	//print Alice's identity keypair
-	printf("Alice's public identity key A_pub (%i Bit):\n", 8 * crypto_box_PUBLICKEYBYTES);
-	print_hex(alice_public_identity, crypto_box_PUBLICKEYBYTES, 30);
-	putchar('\n');
-	printf("Alice's private identity key A_priv (%i Bit):\n", 8 * crypto_box_SECRETKEYBYTES);
-	print_hex(alice_private_identity, crypto_box_SECRETKEYBYTES, 30);
-	putchar('\n');
 
 	//create Alice's ephemeral keypair
 	unsigned char alice_public_ephemeral[crypto_box_PUBLICKEYBYTES];
 	unsigned char alice_private_ephemeral[crypto_box_SECRETKEYBYTES];
-	status = crypto_box_keypair(alice_public_ephemeral, alice_private_ephemeral);
+	status = generate_and_print_keypair(
+			alice_public_ephemeral,
+			alice_private_ephemeral,
+			"Alice",
+			"ephemeral");
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Couldn't create Alice's ephemeral keypair. (%i)\n", status);
 		sodium_memzero(alice_private_ephemeral, crypto_box_SECRETKEYBYTES);
 		sodium_memzero(alice_private_identity, crypto_box_SECRETKEYBYTES);
 		return status;
 	}
-	//print Alice's ephemeral keypair
-	printf("Alice's public ephemeral key A0_pub (%i Bit):\n", 8 * crypto_box_PUBLICKEYBYTES);
-	print_hex(alice_public_ephemeral, crypto_box_PUBLICKEYBYTES, 30);
-	putchar('\n');
-	printf("Alice's private ephemeral key A0_priv (%i Bit):\n", 8 * crypto_box_SECRETKEYBYTES);
-	print_hex(alice_private_ephemeral, crypto_box_SECRETKEYBYTES, 30);
-	putchar('\n');
 
 	printf("Generate Bob's keys ---------------------------------------------------------\n\n");
 
 	//create Bob's identity keypair
 	unsigned char bob_public_identity[crypto_box_PUBLICKEYBYTES];
 	unsigned char bob_private_identity[crypto_box_SECRETKEYBYTES];
-	status = crypto_box_keypair(bob_public_identity, bob_private_identity);
+	status = generate_and_print_keypair(
+			bob_public_identity,
+			bob_private_identity,
+			"Bob",
+			"identity");
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Couldn't create Bob's identity keypair. (%i)\n", status);
 		sodium_memzero(alice_private_identity, crypto_box_SECRETKEYBYTES);
 		sodium_memzero(alice_private_ephemeral, crypto_box_SECRETKEYBYTES);
 		sodium_memzero(bob_private_identity, crypto_box_SECRETKEYBYTES);
 		return status;
 	}
-	//print Bob's identity keypair
-	printf("Bob's public identity key B_pub (%i Bit):\n", 8 * crypto_box_PUBLICKEYBYTES);
-	print_hex(bob_public_identity, crypto_box_PUBLICKEYBYTES, 30);
-	putchar('\n');
-	printf("Bob's private identity key B_priv (%i Bit):\n", 8 * crypto_box_SECRETKEYBYTES);
-	print_hex(bob_private_identity, crypto_box_SECRETKEYBYTES, 30);
-	putchar('\n');
 
 	//create Bob's ephemeral keypair
 	unsigned char bob_public_ephemeral[crypto_box_PUBLICKEYBYTES];
 	unsigned char bob_private_ephemeral[crypto_box_SECRETKEYBYTES];
-	status = crypto_box_keypair(bob_public_ephemeral, bob_private_ephemeral);
+	status = generate_and_print_keypair(
+			bob_public_ephemeral,
+			bob_private_ephemeral,
+			"Bob",
+			"ephemeral");
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Couldn't create Bob's ephemeral keypair. (%i)\n", status);
 		sodium_memzero(alice_private_identity, crypto_box_SECRETKEYBYTES);
 		sodium_memzero(alice_private_ephemeral, crypto_box_SECRETKEYBYTES);
 		sodium_memzero(bob_private_identity, crypto_box_SECRETKEYBYTES);
 		sodium_memzero(bob_private_ephemeral, crypto_box_SECRETKEYBYTES);
 		return status;
 	}
-	//print Bob's ephemeral keypair
-	printf("Bob's public ephemeral key B0_pub (%i Bit):\n", 8 * crypto_box_PUBLICKEYBYTES);
-	print_hex(bob_public_ephemeral, crypto_box_PUBLICKEYBYTES, 30);
-	putchar('\n');
-	printf("Bob's private ephemeral key B0_priv (%i Bit):\n", 8 * crypto_box_SECRETKEYBYTES);
-	print_hex(bob_private_ephemeral, crypto_box_SECRETKEYBYTES, 30);
-	putchar('\n');
 
 	printf("Calculate shared secret via Triple Diffie Hellman ---------------------------\n\n");
 

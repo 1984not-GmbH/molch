@@ -21,55 +21,64 @@
 
 #include "../lib/ratchet.h"
 #include "utils.h"
+#include "common.h"
 
 int main(void) {
 	sodium_init();
 
 	int status;
 
-	//create Alice's identity keypair
-	printf("Creating Alice's identity keypair ...\n");
+	//creating Alice's identity keypair
 	unsigned char alice_private_identity[crypto_box_SECRETKEYBYTES];
 	unsigned char alice_public_identity[crypto_box_PUBLICKEYBYTES];
-	status = crypto_box_keypair(alice_public_identity, alice_private_identity);
+	status = generate_and_print_keypair(
+			alice_public_identity,
+			alice_private_identity,
+			"Alice",
+			"identity");
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate Alice's identity keypair! (%i)\n", status);
 		sodium_memzero(alice_private_identity, crypto_box_SECRETKEYBYTES);
 		return status;
 	}
 
-	//create Alice's ephemeral keypair
-	printf("Creating Alice's ephemeral keypair ...\n");
+	//creating Alice's ephemeral keypair
 	unsigned char alice_private_ephemeral[crypto_box_SECRETKEYBYTES];
 	unsigned char alice_public_ephemeral[crypto_box_PUBLICKEYBYTES];
-	status = crypto_box_keypair(alice_public_ephemeral, alice_private_ephemeral);
+	status = generate_and_print_keypair(
+			alice_public_ephemeral,
+			alice_private_ephemeral,
+			"Alice",
+			"ephemeral");
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate Alice's ephemeral keypair! (%i)\n", status);
 		sodium_memzero(alice_private_identity, crypto_box_SECRETKEYBYTES);
 		sodium_memzero(alice_private_ephemeral, crypto_box_SECRETKEYBYTES);
 		return status;
 	}
 
-	//create Bob's identity keypair
-	printf("Creating Bob's identity keypair ...\n");
+	//creating Bob's identity keypair
 	unsigned char bob_private_identity[crypto_box_SECRETKEYBYTES];
 	unsigned char bob_public_identity[crypto_box_PUBLICKEYBYTES];
-	status = crypto_box_keypair(bob_public_identity, bob_private_identity);
+	status = generate_and_print_keypair(
+			bob_public_identity,
+			bob_private_identity,
+			"Bob",
+			"identity");
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate Bob's identity keypair! (%i)\n", status);
 		sodium_memzero(alice_private_identity, crypto_box_SECRETKEYBYTES);
 		sodium_memzero(alice_private_ephemeral, crypto_box_SECRETKEYBYTES);
 		sodium_memzero(bob_private_identity, crypto_box_SECRETKEYBYTES);
 		return status;
 	}
 
-	//create Bob's ephemeral keypair
-	printf("Creating Bob's ephemeral keypair ...\n");
+	//creating Bob's ephemeral keypair
 	unsigned char bob_private_ephemeral[crypto_box_SECRETKEYBYTES];
 	unsigned char bob_public_ephemeral[crypto_box_PUBLICKEYBYTES];
-	status = crypto_box_keypair(bob_public_ephemeral, bob_private_ephemeral);
+	status = generate_and_print_keypair(
+			bob_public_ephemeral,
+			bob_private_ephemeral,
+			"Bob",
+			"ephemeral");
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate Bob's ephemeral keypair! (%i)\n", status);
 		sodium_memzero(alice_private_identity, crypto_box_SECRETKEYBYTES);
 		sodium_memzero(alice_private_ephemeral, crypto_box_SECRETKEYBYTES);
 		sodium_memzero(bob_private_identity, crypto_box_SECRETKEYBYTES);

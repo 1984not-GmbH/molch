@@ -21,6 +21,7 @@
 
 #include "../lib/key-derivation.h"
 #include "utils.h"
+#include "common.h"
 
 int main(void) {
 	sodium_init();
@@ -30,37 +31,29 @@ int main(void) {
 	//create Alice's keypair
 	unsigned char alice_public_ephemeral[crypto_box_PUBLICKEYBYTES];
 	unsigned char alice_private_ephemeral[crypto_box_SECRETKEYBYTES];
-	status = crypto_box_keypair(alice_public_ephemeral, alice_private_ephemeral);
+	status = generate_and_print_keypair(
+			alice_public_ephemeral,
+			alice_private_ephemeral,
+			"Alice",
+			"ephemeral");
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Couldn't create Alice's ephemeral keypair. (%i)\n", status);
 		sodium_memzero(alice_private_ephemeral, sizeof(alice_private_ephemeral));
 		return status;
 	}
-	//print Alice's keypair
-	printf("Alice's public ephemeral key (%zi Bit):\n", 8 * sizeof(alice_public_ephemeral));
-	print_hex(alice_public_ephemeral, sizeof(alice_public_ephemeral), 30);
-	putchar('\n');
-	printf("Alice's private ephemeral key (%zi Bit):\n", 8 * sizeof(alice_private_ephemeral));
-	print_hex(alice_private_ephemeral, sizeof(alice_private_ephemeral), 30);
-	putchar('\n');
 
 	//create Bob's keypair
 	unsigned char bob_public_ephemeral[crypto_box_PUBLICKEYBYTES];
 	unsigned char bob_private_ephemeral[crypto_box_SECRETKEYBYTES];
-	status = crypto_box_keypair(bob_public_ephemeral, bob_private_ephemeral);
+	status = generate_and_print_keypair(
+			bob_public_ephemeral,
+			bob_private_ephemeral,
+			"Bob",
+			"ephemeral");
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Couldn't create Bob's ephemeral keypair. (%i)\n", status);
 		sodium_memzero(alice_private_ephemeral, sizeof(alice_private_ephemeral));
 		sodium_memzero(bob_private_ephemeral, sizeof(bob_private_ephemeral));
 		return status;
 	}
-	//print Bob's keypair
-	printf("Bob's public ephemeral key (%zi Bit):\n", 8 * sizeof(bob_public_ephemeral));
-	print_hex(bob_public_ephemeral, sizeof(bob_public_ephemeral), 30);
-	putchar('\n');
-	printf("Bob's private ephemeral key (%zi Bit):\n", 8 * sizeof(bob_private_ephemeral));
-	print_hex(bob_private_ephemeral, sizeof(bob_private_ephemeral), 30);
-	putchar('\n');
 
 	//create previous root key
 	unsigned char previous_root_key[crypto_secretbox_KEYBYTES];
