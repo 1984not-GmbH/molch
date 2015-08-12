@@ -35,6 +35,11 @@ target_link_libraries(root-and-chain-key-derivation-test molch utils common)
 add_test(root-and-chain-key-derivation-test root-and-chain-key-derivation-test)
 add_test(valgrind-root-and-chain-key-derivation-test valgrind --error-exitcode=10 ./root-and-chain-key-derivation-test)
 
+add_executable(initial-root-and-chain-key-derivation-test initial-root-and-chain-key-derivation-test)
+target_link_libraries(initial-root-and-chain-key-derivation-test molch utils common)
+add_test(initial-root-and-chain-key-derivation-test initial-root-and-chain-key-derivation-test)
+add_test(valgrind-initial-root-and-chain-key-derivation-test valgrind --error-exitcode=10 ./initial-root-and-chain-key-derivation-test)
+
 add_executable(message-test message-test)
 target_link_libraries(message-test molch utils)
 add_test(message-test message-test)
