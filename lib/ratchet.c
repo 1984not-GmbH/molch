@@ -267,6 +267,146 @@ int commit_skipped_message_keys(ratchet_state *state) {
 }
 
 /*
+ * First step after receiving a message: Calculate purported keys.
+ *
+ * This is only staged until it is later verified that the message was
+ * authentic.
+ *
+ * To verify that the message was authentic, encrypt it with the tail of
+ * state->purported_message_keys and delete this key afterwards.
+ */
+int ratchet_receive(
+		const unsigned char * const their_purported_public_ephemeral,
+		const unsigned int purported_message_number,
+		const unsigned int purported_previous_message_number,
+		ratchet_state * const state) {
+	if (!state->received_valid) {
+		//abort because the previously received message hasn't been verified yet.
+		return -10;
+	}
+
+	//check if the ratchet (ephemeral) key has changed
+	int status;
+	status = sodium_memcmp(
+			their_purported_public_ephemeral,
+			state->their_public_ephemeral,
+			crypto_box_PUBLICKEYBYTES);
+	if (status == 0) { //still the same message chain
+		//copy purported message number
+		state->purported_message_number = purported_message_number;
+
+		//create message keys up to the current one
+		status = stage_skipped_message_keys(
+				purported_message_number,
+				state->receive_chain_key,
+				state);
+		if (status != 0) {
+			return status;
+		}
+
+		//copy their purported public ephemeral (this is necessary to detect if a new chain was started later on when validating the authenticity)
+		memcpy(state->their_purported_public_ephemeral, their_purported_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+
+		state->received_valid = false; //waiting for validation
+		return 0;
+	} else { //new message chain
+		if (state->ratchet_flag) {
+			//didn't expect to receive a new ratchet
+			return -10;
+		}
+
+		//copy purported message numbers and ephemerals
+		state->purported_message_number = purported_message_number; //Np
+		state->purported_previous_message_number = purported_previous_message_number; //PNp
+		memcpy(state->their_purported_public_ephemeral, their_purported_public_ephemeral, crypto_box_PUBLICKEYBYTES); //DHRp
+
+		//stage message keys for previous message chain
+		status = stage_skipped_message_keys(
+				purported_previous_message_number,
+				state->receive_chain_key,
+				state);
+		if (status != 0) {
+			return status;
+		}
+
+		//derive purported root and chain keys
+		//first: input key for hkdf (root and chain key derivation)
+		status = derive_root_and_chain_key(
+				state->purported_root_key,
+				state->purported_receive_chain_key,
+				state->our_private_ephemeral,
+				state->our_public_ephemeral,
+				their_purported_public_ephemeral,
+				state->root_key,
+				state->am_i_alice);
+		if (status != 0) {
+			return status;
+		}
+
+		//stage message keys for current message chain
+		status = stage_skipped_message_keys(
+				purported_message_number,
+				state->purported_receive_chain_key,
+				state);
+		if (status != 0) {
+			return status;
+		}
+
+		state->received_valid = false; //waiting for validation
+	}
+
+	return 0;
+}
+
+/*
+ * Call this function after trying to decrypt a message and pass it if
+ * the decryption was successful or if it wasn't.
+ */
+int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
+	//prepare for being able to receive new messages
+	state->received_valid = true;
+
+	//check if the ratchet (ephemeral) key has changed
+	int status = sodium_memcmp(
+			state->their_purported_public_ephemeral,
+			state->their_public_ephemeral,
+			crypto_box_PUBLICKEYBYTES);
+	if ((status == 0) && valid) { //still the same message chain and message wasn't valid
+		//clear purported message keys
+		message_keystore_clear(&(state->purported_message_keys));
+		return 0;
+	} else if (status != 0){ //new message chain
+		if (!valid) { //received message was invalid
+			//clear purported message keys
+			message_keystore_clear(&(state->purported_message_keys));
+			return 0;
+		}
+
+		//otherwise, received message was valid
+		//accept purported values
+		//RK = RKp
+		memcpy(state->root_key, state->purported_root_key, crypto_secretbox_KEYBYTES);
+		//DHRr = DHRp
+		memcpy(state->their_public_ephemeral, state->their_purported_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+		//erase(DHRs)
+		sodium_memzero(state->our_private_ephemeral, crypto_box_SECRETKEYBYTES);
+		//ratchet_flag = True
+		state->ratchet_flag = true;
+	}
+
+	status = commit_skipped_message_keys(state);
+	if (status != 0) {
+		return status;
+	}
+	//Nr = Np + 1
+	state->receive_message_number = state->purported_message_number + 1;
+	//CKr = CKp
+	memcpy(state->receive_chain_key, state->purported_receive_chain_key, crypto_secretbox_KEYBYTES);
+
+	return 0;
+}
+
+/*
  * End the ratchet chain and free the memory.
  */
 void ratchet_destroy(ratchet_state *state) {

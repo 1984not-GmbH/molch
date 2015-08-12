@@ -83,6 +83,27 @@ int ratchet_next_send_key(
 		ratchet_state *state);
 
 /*
+ * First step after receiving a message: Calculate purported keys.
+ *
+ * This is only staged until it is later verified that the message was
+ * authentic.
+ *
+ * To verify that the message was authentic, encrypt it with the tail of
+ * state->purported_message_keys and delete this key afterwards.
+ */
+int ratchet_receive(
+		const unsigned char * const their_purported_public_ephemeral,
+		const unsigned int purported_message_number,
+		const unsigned int purported_previous_message_number,
+		ratchet_state *state);
+
+/*
+ * Call this function after trying to decrypt a message and pass it if
+ * the decryption was successful or if it wasn't.
+ */
+int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid);
+
+/*
  * End the ratchet chain and free the memory.
  */
 void ratchet_destroy(ratchet_state *state);
