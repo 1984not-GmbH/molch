@@ -241,6 +241,32 @@ int stage_skipped_message_keys(
 }
 
 /*
+ * This corresponds to "commit_skipped_header_and_message_keys" from the
+ * axolotl protocol description.
+ *
+ * Commit all the purported message keys into the message key store thats used
+ * to actually decrypt late messages.
+ */
+int commit_skipped_message_keys(ratchet_state *state) {
+	int status;
+	//as long as the list of purported message keys isn't empty,
+	//add them to the list of skipped message keys
+	while (state->purported_message_keys.length != 0) {
+		status = message_keystore_add(
+				&(state->skipped_message_keys),
+				state->purported_message_keys.tail->message_key);
+		if (status != 0) {
+			//TODO more cleanup neede?
+			return status;
+		}
+		message_keystore_remove(
+				&(state->purported_message_keys),
+				state->purported_message_keys.tail);
+	}
+	return 0;
+}
+
+/*
  * End the ratchet chain and free the memory.
  */
 void ratchet_destroy(ratchet_state *state) {
