@@ -25,20 +25,20 @@
 
 //struct that represents the state of a conversation
 typedef struct ratchet_state {
-	unsigned char *root_key; //RK
-	unsigned char *purported_root_key; //RKp
+	unsigned char root_key[crypto_secretbox_KEYBYTES]; //RK
+	unsigned char purported_root_key[crypto_secretbox_KEYBYTES]; //RKp
 	//chain keys
-	unsigned char *send_chain_key; //CKs
-	unsigned char *receive_chain_key; //CKr
-	unsigned char *purported_receive_chain_key; //CKp
+	unsigned char send_chain_key[crypto_secretbox_KEYBYTES]; //CKs
+	unsigned char receive_chain_key[crypto_secretbox_KEYBYTES]; //CKr
+	unsigned char purported_receive_chain_key[crypto_secretbox_KEYBYTES]; //CKp
 	//identity keys
-	unsigned char *our_public_identity; //DHIs
-	unsigned char *their_public_identity; //DHIr
+	unsigned char our_public_identity[crypto_box_PUBLICKEYBYTES]; //DHIs
+	unsigned char their_public_identity[crypto_box_PUBLICKEYBYTES]; //DHIr
 	//ephemeral keys (ratchet keys)
-	unsigned char *our_private_ephemeral; //DHRs
-	unsigned char *our_public_ephemeral; //DHRs
-	unsigned char *their_public_ephemeral; //DHRr
-	unsigned char *their_purported_public_ephemeral; //DHp
+	unsigned char our_private_ephemeral[crypto_box_SECRETKEYBYTES]; //DHRs
+	unsigned char our_public_ephemeral[crypto_box_PUBLICKEYBYTES]; //DHRs
+	unsigned char their_public_ephemeral[crypto_box_PUBLICKEYBYTES]; //DHRr
+	unsigned char their_purported_public_ephemeral[crypto_box_PUBLICKEYBYTES]; //DHp
 	//message numbers
 	unsigned int send_message_number; //Ns
 	unsigned int receive_message_number; //Nr

@@ -43,12 +43,6 @@ ratchet_state* ratchet_create(
 		bool am_i_alice) {
 	ratchet_state *state = malloc(sizeof(ratchet_state));
 
-	//initialise chain and root key
-	state->root_key = malloc(crypto_secretbox_KEYBYTES);
-	state->send_chain_key = malloc(crypto_secretbox_KEYBYTES);
-	state->receive_chain_key = malloc(crypto_secretbox_KEYBYTES);
-	state->purported_receive_chain_key = malloc(crypto_secretbox_KEYBYTES);
-
 	//derive initial chain and root key
 	int status = derive_initial_root_and_chain_key(
 			state->root_key,
@@ -61,8 +55,8 @@ ratchet_state* ratchet_create(
 			their_public_ephemeral,
 			am_i_alice);
 	if (status != 0) {
-		sodium_memzero(state->root_key, crypto_secretbox_KEYBYTES);
-		sodium_memzero(state->send_chain_key, crypto_secretbox_KEYBYTES);
+		sodium_memzero(state->root_key, sizeof(state->root_key));
+		sodium_memzero(state->send_chain_key, sizeof(state->send_chain_key));
 		free(state);
 		return NULL;
 	}
@@ -70,24 +64,19 @@ ratchet_state* ratchet_create(
 	//copy send_chain_key -> receive_chain_key
 	//TODO This kind of deviates from axolotl because the first chain key is identical for
 	//send/receive, only one of them is used though
-	memcpy(state->receive_chain_key, state->send_chain_key, crypto_secretbox_KEYBYTES);
+	memcpy(state->receive_chain_key, state->send_chain_key, sizeof(state->receive_chain_key));
 
 	//copy keys into state
 	//our public identity
-	state->our_public_identity = malloc(crypto_box_PUBLICKEYBYTES);
-	memcpy(state->our_public_identity, our_public_identity, crypto_box_PUBLICKEYBYTES);
+	memcpy(state->our_public_identity, our_public_identity, sizeof(state->our_public_identity));
 	//their_public_identity
-	state->their_public_identity = malloc(crypto_box_PUBLICKEYBYTES);
-	memcpy(state->their_public_identity, their_public_identity, crypto_box_PUBLICKEYBYTES);
+	memcpy(state->their_public_identity, their_public_identity, sizeof(state->their_public_identity));
 	//our_private_ephemeral
-	state->our_private_ephemeral = malloc(crypto_box_SECRETKEYBYTES);
-	memcpy(state->our_private_ephemeral, our_private_ephemeral, crypto_box_SECRETKEYBYTES);
+	memcpy(state->our_private_ephemeral, our_private_ephemeral, sizeof(state->our_private_ephemeral));
 	//our_public_ephemeral
-	state->our_public_ephemeral = malloc(crypto_box_PUBLICKEYBYTES);
-	memcpy(state->our_public_ephemeral, our_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+	memcpy(state->our_public_ephemeral, our_public_ephemeral, sizeof(state->our_public_ephemeral));
 	//their_public_ephemeral
-	state->their_public_ephemeral = malloc(crypto_box_PUBLICKEYBYTES);
-	memcpy(state->their_public_ephemeral, their_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+	memcpy(state->their_public_ephemeral, their_public_ephemeral, sizeof(state->their_public_ephemeral));
 
 	//initialise message keystore for skipped messages
 	state->skipped_message_keys = message_keystore_init();
@@ -410,30 +399,17 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
  * End the ratchet chain and free the memory.
  */
 void ratchet_destroy(ratchet_state *state) {
-	//free keys
+	//delete keys
 	//root key
 	sodium_memzero(state->root_key, crypto_secretbox_KEYBYTES);
-	free(state->root_key);
-	//our public identity
-	free(state->our_public_identity);
-	//their_public_identity
-	free(state->their_public_identity);
 	//our private ephemeral
 	sodium_memzero(state->our_private_ephemeral, crypto_box_SECRETKEYBYTES);
-	free(state->our_private_ephemeral);
-	//our public ephemeral
-	free(state->our_public_ephemeral);
-	//their public ephemeral
-	free(state->their_public_ephemeral);
 
 	//chain keys
 	sodium_memzero(state->send_chain_key, crypto_secretbox_KEYBYTES);
-	free(state->send_chain_key);
 	sodium_memzero(state->receive_chain_key, crypto_secretbox_KEYBYTES);
-	free(state->receive_chain_key);
 	sodium_memzero(state->purported_receive_chain_key, crypto_secretbox_KEYBYTES);
-	free(state->purported_receive_chain_key);
-	
+
 	//empty message keystores
 	message_keystore_clear(&(state->skipped_message_keys));
 	message_keystore_clear(&(state->purported_message_keys));
