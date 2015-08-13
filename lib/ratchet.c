@@ -42,6 +42,9 @@ ratchet_state* ratchet_create(
 		const unsigned char * const their_public_ephemeral,
 		bool am_i_alice) {
 	ratchet_state *state = malloc(sizeof(ratchet_state));
+	if (state == NULL) { //failed to allocate memory
+		return NULL;
+	}
 
 	//derive initial chain and root key
 	int status = derive_initial_root_and_chain_key(
