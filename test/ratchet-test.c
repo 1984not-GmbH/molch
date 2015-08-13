@@ -37,7 +37,7 @@ int main(void) {
 			"Alice",
 			"identity");
 	if (status != 0) {
-		sodium_memzero(alice_private_identity, crypto_box_SECRETKEYBYTES);
+		sodium_memzero(alice_private_identity, sizeof(alice_private_identity));
 		return status;
 	}
 
@@ -50,8 +50,8 @@ int main(void) {
 			"Alice",
 			"ephemeral");
 	if (status != 0) {
-		sodium_memzero(alice_private_identity, crypto_box_SECRETKEYBYTES);
-		sodium_memzero(alice_private_ephemeral, crypto_box_SECRETKEYBYTES);
+		sodium_memzero(alice_private_identity, sizeof(alice_private_identity));
+		sodium_memzero(alice_private_ephemeral, sizeof(alice_private_ephemeral));
 		return status;
 	}
 
@@ -64,9 +64,9 @@ int main(void) {
 			"Bob",
 			"identity");
 	if (status != 0) {
-		sodium_memzero(alice_private_identity, crypto_box_SECRETKEYBYTES);
-		sodium_memzero(alice_private_ephemeral, crypto_box_SECRETKEYBYTES);
-		sodium_memzero(bob_private_identity, crypto_box_SECRETKEYBYTES);
+		sodium_memzero(alice_private_identity, sizeof(alice_private_identity));
+		sodium_memzero(alice_private_ephemeral, sizeof(alice_private_ephemeral));
+		sodium_memzero(bob_private_identity, sizeof(bob_private_identity));
 		return status;
 	}
 
@@ -79,10 +79,10 @@ int main(void) {
 			"Bob",
 			"ephemeral");
 	if (status != 0) {
-		sodium_memzero(alice_private_identity, crypto_box_SECRETKEYBYTES);
-		sodium_memzero(alice_private_ephemeral, crypto_box_SECRETKEYBYTES);
-		sodium_memzero(bob_private_identity, crypto_box_SECRETKEYBYTES);
-		sodium_memzero(bob_private_ephemeral, crypto_box_SECRETKEYBYTES);
+		sodium_memzero(alice_private_identity, sizeof(alice_private_identity));
+		sodium_memzero(alice_private_ephemeral, sizeof(alice_private_ephemeral));
+		sodium_memzero(bob_private_identity, sizeof(bob_private_identity));
+		sodium_memzero(bob_private_ephemeral, sizeof(bob_private_ephemeral));
 		return status;
 	}
 
@@ -97,10 +97,10 @@ int main(void) {
 			bob_private_ephemeral,
 			true);
 	if (alice_state == NULL) {
-		sodium_memzero(alice_private_identity, crypto_box_SECRETKEYBYTES);
-		sodium_memzero(alice_private_ephemeral, crypto_box_SECRETKEYBYTES);
-		sodium_memzero(bob_private_identity, crypto_box_SECRETKEYBYTES);
-		sodium_memzero(bob_private_ephemeral, crypto_box_SECRETKEYBYTES);
+		sodium_memzero(alice_private_identity, sizeof(alice_private_identity));
+		sodium_memzero(alice_private_ephemeral, sizeof(alice_private_ephemeral));
+		sodium_memzero(bob_private_identity, sizeof(bob_private_identity));
+		sodium_memzero(bob_private_ephemeral, sizeof(bob_private_ephemeral));
 		return EXIT_FAILURE;
 	}
 
@@ -110,10 +110,10 @@ int main(void) {
 
 	//TODO test everything else
 
-	sodium_memzero(alice_private_identity, crypto_box_SECRETKEYBYTES);
-	sodium_memzero(alice_private_ephemeral, crypto_box_SECRETKEYBYTES);
-	sodium_memzero(bob_private_identity, crypto_box_SECRETKEYBYTES);
-	sodium_memzero(bob_private_ephemeral, crypto_box_SECRETKEYBYTES);
+	sodium_memzero(alice_private_identity, sizeof(alice_private_identity));
+	sodium_memzero(alice_private_ephemeral, sizeof(alice_private_ephemeral));
+	sodium_memzero(bob_private_identity, sizeof(bob_private_identity));
+	sodium_memzero(bob_private_ephemeral, sizeof(bob_private_ephemeral));
 
 	return EXIT_SUCCESS;
 }
