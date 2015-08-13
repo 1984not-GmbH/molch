@@ -94,7 +94,7 @@ int main(void) {
 			bob_public_identity,
 			alice_private_ephemeral,
 			alice_public_ephemeral,
-			bob_private_ephemeral,
+			bob_public_ephemeral,
 			true);
 	if (alice_state == NULL) {
 		sodium_memzero(alice_private_identity, sizeof(alice_private_identity));
