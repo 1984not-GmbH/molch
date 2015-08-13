@@ -96,9 +96,9 @@ int main(void) {
 			alice_public_ephemeral,
 			bob_public_ephemeral,
 			true);
+	sodium_memzero(alice_private_ephemeral, sizeof(alice_private_ephemeral));
+	sodium_memzero(alice_private_identity, sizeof(alice_private_identity));
 	if (alice_state == NULL) {
-		sodium_memzero(alice_private_identity, sizeof(alice_private_identity));
-		sodium_memzero(alice_private_ephemeral, sizeof(alice_private_ephemeral));
 		sodium_memzero(bob_private_identity, sizeof(bob_private_identity));
 		sodium_memzero(bob_private_ephemeral, sizeof(bob_private_ephemeral));
 		return EXIT_FAILURE;
@@ -110,8 +110,6 @@ int main(void) {
 
 	//TODO test everything else
 
-	sodium_memzero(alice_private_identity, sizeof(alice_private_identity));
-	sodium_memzero(alice_private_ephemeral, sizeof(alice_private_ephemeral));
 	sodium_memzero(bob_private_identity, sizeof(bob_private_identity));
 	sodium_memzero(bob_private_ephemeral, sizeof(bob_private_ephemeral));
 
