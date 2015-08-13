@@ -23,6 +23,29 @@
 #include "utils.h"
 
 /*
+ * Print a message keystore with all of it's entries.
+ */
+void print_message_keystore(message_keystore *keystore) {
+	printf("KEYSTORE-START-----------------------------------------------------------------\n");
+	printf("Length: %i\n", keystore->length);
+	printf("Head: %p\n", keystore->head);
+	printf("Tail: %p\n\n", keystore->tail);
+
+	message_keystore_node* node = keystore->head;
+
+	//print all the keys in the keystore
+	unsigned int i;
+	for (i = 0; i < keystore->length; node = node->next, i++) {
+		printf("Message key %u:\n", i);
+		print_hex(node->message_key, crypto_secretbox_KEYBYTES, 30);
+		if (i != keystore->length - 1) { //omit last one
+			putchar('\n');
+		}
+	}
+	puts("KEYSTORE-END-------------------------------------------------------------------\n");
+}
+
+/*
  * Generates and prints a crypto_box keypair.
  */
 int generate_and_print_keypair(

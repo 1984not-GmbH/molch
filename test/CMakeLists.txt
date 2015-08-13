@@ -56,7 +56,7 @@ add_test(message-extract-header-test message-extract-header-test)
 add_test(valgrind-message-extract-header-test valgrind --error-exitcode=10 ./message-extract-header-test)
 
 add_executable(message-keystore-test message-keystore-test)
-target_link_libraries(message-keystore-test molch utils)
+target_link_libraries(message-keystore-test molch utils common)
 add_test(message-keystore-test message-keystore-test)
 add_test(valgrind-message-keystore-test valgrind --error-exitcode=10 ./message-keystore-test)
 

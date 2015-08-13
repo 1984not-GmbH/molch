@@ -16,8 +16,15 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "../lib/message-keystore.h"
+
 #ifndef COMMON_H
 #define COMMON_H
+/*
+ * Print a message keystore with all of it's entries.
+ */
+void print_message_keystore(message_keystore *keystore);
+
 /*
  * Generates and prints a crypto_box keypair.
  */
