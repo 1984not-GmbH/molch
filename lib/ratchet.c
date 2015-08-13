@@ -433,6 +433,10 @@ void ratchet_destroy(ratchet_state *state) {
 	free(state->receive_chain_key);
 	sodium_memzero(state->purported_receive_chain_key, crypto_secretbox_KEYBYTES);
 	free(state->purported_receive_chain_key);
+	
+	//empty message keystores
+	message_keystore_clear(&(state->skipped_message_keys));
+	message_keystore_clear(&(state->purported_message_keys));
 
 	free(state);
 }
