@@ -179,9 +179,9 @@ int stage_skipped_message_keys(
 	}
 
 	//copy current chain key to purported chain key
-	unsigned char purported_previous_chain_key[crypto_secretbox_KEYBYTES];
 	unsigned char purported_current_chain_key[crypto_secretbox_KEYBYTES];
-	memcpy(purported_previous_chain_key, receive_chain_key, sizeof(purported_previous_chain_key));
+	unsigned char purported_next_chain_key[crypto_secretbox_KEYBYTES];
+	memcpy(purported_current_chain_key, receive_chain_key, sizeof(purported_current_chain_key));
 
 	//message key buffer
 	unsigned char message_key_buffer[crypto_secretbox_KEYBYTES];
@@ -190,17 +190,10 @@ int stage_skipped_message_keys(
 	int status;
 	unsigned int pos;
 	for (pos = state->receive_message_number; pos <= purported_message_number; pos++) {
-		status = derive_chain_key(purported_current_chain_key, purported_previous_chain_key);
-		if (status != 0) {
-			sodium_memzero(purported_previous_chain_key, sizeof(purported_previous_chain_key));
-			sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
-			return status;
-		}
-
 		status = derive_message_key(message_key_buffer, purported_current_chain_key);
 		if (status != 0) {
-			sodium_memzero(purported_previous_chain_key, sizeof(purported_previous_chain_key));
 			sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
+			sodium_memzero(purported_next_chain_key, sizeof(purported_next_chain_key));
 			sodium_memzero(message_key_buffer, sizeof(message_key_buffer));
 			return status;
 		}
@@ -211,20 +204,27 @@ int stage_skipped_message_keys(
 				message_key_buffer);
 		sodium_memzero(message_key_buffer, sizeof(message_key_buffer));
 		if (status != 0) {
-			sodium_memzero(purported_previous_chain_key, sizeof(purported_previous_chain_key));
 			sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
+			sodium_memzero(purported_next_chain_key, sizeof(purported_next_chain_key));
+			return status;
+		}
+
+		status = derive_chain_key(purported_next_chain_key, purported_current_chain_key);
+		if (status != 0) {
+			sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
+			sodium_memzero(purported_next_chain_key, sizeof(purported_next_chain_key));
 			return status;
 		}
 
 		//shift chain keys
-		memcpy(purported_previous_chain_key, purported_current_chain_key, sizeof(purported_previous_chain_key));
+		memcpy(purported_current_chain_key, purported_next_chain_key, sizeof(purported_current_chain_key));
 	}
 
 	//copy chain key to purported_receive_chain_key (this will be used in commit_skipped_message_keys)
-	memcpy(state->purported_receive_chain_key, purported_current_chain_key, sizeof(purported_current_chain_key));
+	memcpy(state->purported_receive_chain_key, purported_next_chain_key, sizeof(purported_next_chain_key));
 
-	sodium_memzero(purported_previous_chain_key, sizeof(purported_previous_chain_key));
 	sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
+	sodium_memzero(purported_next_chain_key, sizeof(purported_next_chain_key));
 
 	return 0;
 }
