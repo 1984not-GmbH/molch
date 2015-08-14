@@ -78,7 +78,6 @@ ratchet_state* ratchet_create(
  */
 int ratchet_next_send_key(
 		unsigned char * const next_message_key, //crypto_secretbox_KEYBYTES
-		bool *new_ephemeral, //was a new ephemeral created? If yes the caller has to get it
 		                     //from the ratchet_state struct
 		ratchet_state *state);
 

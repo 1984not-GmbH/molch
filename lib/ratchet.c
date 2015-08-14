@@ -102,17 +102,14 @@ ratchet_state* ratchet_create(
  */
 int ratchet_next_send_key(
 		unsigned char * const next_message_key,
-		bool *new_ephemeral,
 		ratchet_state *state) {
 	int status;
-	*new_ephemeral = false;
 	if (state->ratchet_flag) {
 		//generate new ephemeral key
 		status = crypto_box_keypair(state->our_public_ephemeral, state->our_private_ephemeral);
 		if (status != 0) {
 			return status;
 		}
-		*new_ephemeral = true;
 
 		//derive next root key and send chain key
 		//RK, CKs = HKDF(DH(DHs, DHr))
