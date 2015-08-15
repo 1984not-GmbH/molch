@@ -87,10 +87,12 @@ int ratchet_next_send_key(
  * This is only staged until it is later verified that the message was
  * authentic.
  *
- * To verify that the message was authentic, encrypt it with the tail of
- * state->purported_message_keys and delete this key afterwards.
+ * To verify that the message was authentic, encrypt it with the message key
+ * returned by this function and call ratchet_set_last_message_authenticity
+ * after having verified the message.
  */
 int ratchet_receive(
+		unsigned char * const message_key, //used to get the message key back
 		const unsigned char * const their_purported_public_ephemeral,
 		const unsigned int purported_message_number,
 		const unsigned int purported_previous_message_number,

@@ -176,6 +176,8 @@ int ratchet_next_send_key(
  * of message keys that get precalculated.
  */
 int stage_skipped_message_keys(
+		unsigned char * const purported_chain_key, //CKp
+		unsigned char * const message_key, //MK
 		const unsigned int purported_message_number,
 		const unsigned char  * const receive_chain_key,
 		ratchet_state *state) {
@@ -189,11 +191,13 @@ int stage_skipped_message_keys(
 
 	//if chain key is <none>, don't do anything
 	if (sodium_memcmp(receive_chain_key, none, sizeof(none)) == 0) {
+		sodium_memzero(message_key, crypto_secretbox_KEYBYTES);
+		sodium_memzero(purported_chain_key, crypto_secretbox_KEYBYTES);
 		return 0;
 	}
 
 	//limit number of message keys to calculate
-	const unsigned int LIMIT = 100;
+	static const unsigned int LIMIT = 100;
 	if ((purported_message_number - state->receive_message_number) > LIMIT) {
 		return -10;
 	}
@@ -219,15 +223,19 @@ int stage_skipped_message_keys(
 		}
 
 		//add message key to list of purported message keys
-		status = message_keystore_add(
-				&(state->purported_message_keys),
-				message_key_buffer);
-		sodium_memzero(message_key_buffer, sizeof(message_key_buffer));
-		if (status != 0) {
-			sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
-			sodium_memzero(purported_next_chain_key, sizeof(purported_next_chain_key));
-			return status;
+		if (pos < purported_message_number) { //only stage previous message keys
+			status = message_keystore_add(
+					&(state->purported_message_keys),
+					message_key_buffer);
+			if (status != 0) {
+				sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
+				sodium_memzero(purported_next_chain_key, sizeof(purported_next_chain_key));
+				return status;
+			}
+		} else { //current message key is not staged, but copied to return it's value
+			memcpy(message_key, message_key_buffer, sizeof(message_key_buffer));
 		}
+		sodium_memzero(message_key_buffer, sizeof(message_key_buffer));
 
 		status = derive_chain_key(purported_next_chain_key, purported_current_chain_key);
 		if (status != 0) {
@@ -241,7 +249,7 @@ int stage_skipped_message_keys(
 	}
 
 	//copy chain key to purported_receive_chain_key (this will be used in commit_skipped_message_keys)
-	memcpy(state->purported_receive_chain_key, purported_next_chain_key, sizeof(purported_next_chain_key));
+	memcpy(purported_chain_key, purported_next_chain_key, sizeof(purported_next_chain_key));
 
 	sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
 	sodium_memzero(purported_next_chain_key, sizeof(purported_next_chain_key));
@@ -282,10 +290,12 @@ int commit_skipped_message_keys(ratchet_state *state) {
  * This is only staged until it is later verified that the message was
  * authentic.
  *
- * To verify that the message was authentic, encrypt it with the tail of
- * state->purported_message_keys and delete this key afterwards.
+ * To verify that the message was authentic, encrypt it with the message key
+ * returned by this function and call ratchet_set_last_message_authenticity
+ * after having verified the message.
  */
 int ratchet_receive(
+		unsigned char * const message_key,
 		const unsigned char * const their_purported_public_ephemeral,
 		const unsigned int purported_message_number,
 		const unsigned int purported_previous_message_number,
@@ -305,8 +315,10 @@ int ratchet_receive(
 		//copy purported message number
 		state->purported_message_number = purported_message_number;
 
-		//create message keys up to the current one
+		//create skipped message keys and store current one
 		status = stage_skipped_message_keys(
+				state->purported_receive_chain_key,
+				message_key,
 				purported_message_number,
 				state->receive_chain_key,
 				state);
@@ -330,12 +342,18 @@ int ratchet_receive(
 		state->purported_previous_message_number = purported_previous_message_number; //PNp
 		memcpy(state->their_purported_public_ephemeral, their_purported_public_ephemeral, crypto_box_PUBLICKEYBYTES); //DHRp
 
+		//temporary storage for the purported chain key (CKp)
+		unsigned char temp_purported_chain_key[crypto_secretbox_KEYBYTES];
+
 		//stage message keys for previous message chain
 		status = stage_skipped_message_keys(
+				temp_purported_chain_key,
+				message_key,
 				purported_previous_message_number,
 				state->receive_chain_key,
 				state);
 		if (status != 0) {
+			sodium_memzero(temp_purported_chain_key, sizeof(temp_purported_chain_key));
 			return status;
 		}
 
@@ -355,12 +373,18 @@ int ratchet_receive(
 
 		//stage message keys for current message chain
 		status = stage_skipped_message_keys(
+				temp_purported_chain_key,
+				message_key,
 				purported_message_number,
 				state->purported_receive_chain_key,
 				state);
 		if (status != 0) {
+			sodium_memzero(temp_purported_chain_key, sizeof(temp_purported_chain_key));
 			return status;
 		}
+
+		//copy the temporary purported chain key to the state
+		memcpy(state->purported_receive_chain_key, temp_purported_chain_key, sizeof(state->purported_receive_chain_key));
 
 		state->received_valid = false; //waiting for validation
 	}
