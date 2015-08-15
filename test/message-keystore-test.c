@@ -22,26 +22,8 @@
 
 #include "../lib/message-keystore.h"
 #include "utils.h"
+#include "common.h"
 
-void print_keystore(message_keystore *keystore) {
-	printf("KEYSTORE-START-----------------------------------------------------------------\n");
-	printf("Length: %i\n", keystore->length);
-	printf("Head: %p\n", keystore->head);
-	printf("Tail: %p\n\n", keystore->tail);
-
-	message_keystore_node* node = keystore->head;
-
-	//print all the keys in the keystore
-	unsigned int i;
-	for (i = 0; i < keystore->length; node = node->next, i++) {
-		printf("Message key %u:\n", i);
-		print_hex(node->message_key, crypto_secretbox_KEYBYTES, 30);
-		if (i != keystore->length - 1) { //omit last one
-			putchar('\n');
-		}
-	}
-	puts("KEYSTORE-END-------------------------------------------------------------------\n");
-}
 
 int main(void) {
 	sodium_init();
@@ -77,7 +59,7 @@ int main(void) {
 			return EXIT_FAILURE;
 		}
 
-		print_keystore(&keystore);
+		print_message_keystore(&keystore);
 
 		assert(keystore.length == (i + 1));
 	}
@@ -86,19 +68,19 @@ int main(void) {
 	printf("Remove head!\n");
 	message_keystore_remove(&keystore, keystore.head);
 	assert(keystore.length == (i - 1));
-	print_keystore(&keystore);
+	print_message_keystore(&keystore);
 
 	//remove key from the tail
 	printf("Remove Tail:\n");
 	message_keystore_remove(&keystore, keystore.tail);
 	assert(keystore.length == (i - 2));
-	print_keystore(&keystore);
+	print_message_keystore(&keystore);
 
 	//remove from inside
 	printf("Remove from inside:\n");
 	message_keystore_remove(&keystore, keystore.head->next);
 	assert(keystore.length == (i - 3));
-	print_keystore(&keystore);
+	print_message_keystore(&keystore);
 
 	//clear the keystore
 	printf("Clear the keystore:\n");
@@ -106,6 +88,6 @@ int main(void) {
 	assert(keystore.length == 0);
 	assert(keystore.head == NULL);
 	assert(keystore.tail == NULL);
-	print_keystore(&keystore);
+	print_message_keystore(&keystore);
 	return EXIT_SUCCESS;
 }

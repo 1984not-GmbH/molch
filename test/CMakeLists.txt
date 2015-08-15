@@ -2,18 +2,21 @@ cmake_minimum_required (VERSION 2.6)
 
 add_library(utils utils)
 
+add_library(common common)
+target_link_libraries(common utils)
+
 add_executable(hkdf-test hkdf-test)
 target_link_libraries(hkdf-test molch utils)
 add_test(hkdf-test hkdf-test)
 add_test(valgrind-hkdf-test valgrind --error-exitcode=10 ./hkdf-test)
 
 add_executable(diffie-hellman-test diffie-hellman-test)
-target_link_libraries(diffie-hellman-test molch utils)
+target_link_libraries(diffie-hellman-test molch utils common)
 add_test(diffie-hellman-test diffie-hellman-test)
 add_test(valgrind-diffie-hellman-test valgrind --error-exitcode=10 ./diffie-hellman-test)
 
 add_executable(triple-diffie-hellman-test triple-diffie-hellman-test)
-target_link_libraries(triple-diffie-hellman-test molch utils)
+target_link_libraries(triple-diffie-hellman-test molch utils common)
 add_test(triple-diffie-hellman-test triple-diffie-hellman-test)
 add_test(valgrind-diffie-hellman-test valgrind --error-exitcode=10 ./diffie-hellman-test)
 
@@ -26,6 +29,16 @@ add_executable(message-key-derivation-test message-key-derivation-test)
 target_link_libraries(message-key-derivation-test molch utils)
 add_test(message-key-derivation-test message-key-derivation-test)
 add_test(valgrind-message-key-derivation-test valgrind --error-exitcode=10 ./message-key-derivation-test)
+
+add_executable(root-and-chain-key-derivation-test root-and-chain-key-derivation-test)
+target_link_libraries(root-and-chain-key-derivation-test molch utils common)
+add_test(root-and-chain-key-derivation-test root-and-chain-key-derivation-test)
+add_test(valgrind-root-and-chain-key-derivation-test valgrind --error-exitcode=10 ./root-and-chain-key-derivation-test)
+
+add_executable(initial-root-and-chain-key-derivation-test initial-root-and-chain-key-derivation-test)
+target_link_libraries(initial-root-and-chain-key-derivation-test molch utils common)
+add_test(initial-root-and-chain-key-derivation-test initial-root-and-chain-key-derivation-test)
+add_test(valgrind-initial-root-and-chain-key-derivation-test valgrind --error-exitcode=10 ./initial-root-and-chain-key-derivation-test)
 
 add_executable(message-test message-test)
 target_link_libraries(message-test molch utils)
@@ -43,11 +56,11 @@ add_test(message-extract-header-test message-extract-header-test)
 add_test(valgrind-message-extract-header-test valgrind --error-exitcode=10 ./message-extract-header-test)
 
 add_executable(message-keystore-test message-keystore-test)
-target_link_libraries(message-keystore-test molch utils)
+target_link_libraries(message-keystore-test molch utils common)
 add_test(message-keystore-test message-keystore-test)
 add_test(valgrind-message-keystore-test valgrind --error-exitcode=10 ./message-keystore-test)
 
 add_executable(ratchet-test ratchet-test)
-target_link_libraries(ratchet-test molch utils)
+target_link_libraries(ratchet-test molch utils common)
 add_test(ratchet-test ratchet-test)
 add_test(valgrind-ratchet-test valgrind --error-exitcode=10 ./ratchet-test)

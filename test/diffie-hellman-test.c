@@ -21,6 +21,7 @@
 
 #include "../lib/diffie-hellman.h"
 #include "utils.h"
+#include "common.h"
 
 int main(void) {
 	sodium_init();
@@ -30,37 +31,29 @@ int main(void) {
 	//create Alice's keypair
 	unsigned char alice_public_key[crypto_box_PUBLICKEYBYTES];
 	unsigned char alice_private_key[crypto_box_SECRETKEYBYTES];
-	status = crypto_box_keypair(alice_public_key, alice_private_key);
+	status = generate_and_print_keypair(
+			alice_public_key,
+			alice_private_key,
+			"Alice",
+			"");
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Couldn't create Alice's keypair. (%i)\n", status);
 		sodium_memzero(alice_private_key, crypto_box_SECRETKEYBYTES);
 		return status;
 	}
-	//print Alice's keypair
-	printf("Alice's public key (%i Bit):\n", 8 * crypto_box_PUBLICKEYBYTES);
-	print_hex(alice_public_key, crypto_box_PUBLICKEYBYTES, 30);
-	putchar('\n');
-	printf("Alice's private key (%i Bit):\n", 8 * crypto_box_SECRETKEYBYTES);
-	print_hex(alice_private_key, crypto_box_SECRETKEYBYTES, 30);
-	putchar('\n');
 
 	//create Bob's keypair
 	unsigned char bob_public_key[crypto_box_PUBLICKEYBYTES];
 	unsigned char bob_private_key[crypto_box_SECRETKEYBYTES];
-	status = crypto_box_keypair(bob_public_key, bob_private_key);
+	status = generate_and_print_keypair(
+			bob_public_key,
+			bob_private_key,
+			"Bob",
+			"");
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Couldn't create Bob's keypair. (%i)\n", status);
 		sodium_memzero(alice_private_key, crypto_box_SECRETKEYBYTES);
 		sodium_memzero(bob_private_key, crypto_box_SECRETKEYBYTES);
 		return status;
 	}
-	//print Bob's keypair
-	printf("Bob's public key (%i Bit):\n", 8 * crypto_box_PUBLICKEYBYTES);
-	print_hex(bob_public_key, crypto_box_PUBLICKEYBYTES, 30);
-	putchar('\n');
-	printf("Bob's private key (%i Bit):\n", 8 * crypto_box_SECRETKEYBYTES);
-	print_hex(bob_private_key, crypto_box_SECRETKEYBYTES, 30);
-	putchar('\n');
 
 	//Diffie Hellman on Alice's side
 	unsigned char alice_shared_secret[crypto_generichash_BYTES];
