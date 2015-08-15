@@ -179,6 +179,19 @@ int stage_skipped_message_keys(
 		const unsigned int purported_message_number,
 		const unsigned char  * const receive_chain_key,
 		ratchet_state *state) {
+	static const unsigned char none[] = {
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'
+	};
+	assert(sizeof(none) == crypto_secretbox_KEYBYTES);
+
+	//if chain key is <none>, don't do anything
+	if (sodium_memcmp(receive_chain_key, none, sizeof(none)) == 0) {
+		return 0;
+	}
+
 	//limit number of message keys to calculate
 	const unsigned int LIMIT = 100;
 	if ((purported_message_number - state->receive_message_number) > LIMIT) {
