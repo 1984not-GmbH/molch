@@ -16,8 +16,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef HKDF_H
-#define HKDF_H
+#ifndef LIB_HKDF_H
+#define LIB_HKDF_H
 /*
  * This function implements HKDF (HMAC based key derivation function)
  * as defined in RFC 5869 using the primitives provided by libsodium.

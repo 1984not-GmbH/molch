@@ -18,8 +18,8 @@
 
 #include "../lib/message-keystore.h"
 
-#ifndef COMMON_H
-#define COMMON_H
+#ifndef TEST_COMMON_H
+#define TEST_COMMON_H
 /*
  * Print a message keystore with all of it's entries.
  */

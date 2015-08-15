@@ -18,8 +18,8 @@
 
 #include <stdbool.h>
 
-#ifndef KEY_DERIVATION_H
-#define KEY_DERIVATION_H
+#ifndef LIB_KEY_DERIVATION_H
+#define LIB_KEY_DERIVATION_H
 
 /*
  * Derive the next chain key in a message chain.

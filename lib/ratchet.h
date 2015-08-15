@@ -20,8 +20,8 @@
 
 #include "message-keystore.h"
 
-#ifndef RATCHET_H
-#define RATCHET_H
+#ifndef LIB_RATCHET_H
+#define LIB_RATCHET_H
 
 //struct that represents the state of a conversation
 typedef struct ratchet_state {

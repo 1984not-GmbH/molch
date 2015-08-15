@@ -19,8 +19,8 @@
 #include <sodium.h>
 #include <time.h>
 
-#ifndef MESSAGE_KEY_STORE_H
-#define MESSAGE_KEY_STORE_H
+#ifndef LIB_MESSAGE_KEY_STORE_H
+#define LIB_MESSAGE_KEY_STORE_H
 //the message key store is currently a double linked list with all the message keys that haven't been
 //used yet. (the keys are stored to still be able to decrypt old messages that weren't received)
 

@@ -16,8 +16,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#ifndef MESSAGE_H
-#define MESSAGE_H
+#ifndef LIB_MESSAGE_H
+#define LIB_MESSAGE_H
 
 /*
  * Encrypt a message and header with a symmetric key and a nonce.

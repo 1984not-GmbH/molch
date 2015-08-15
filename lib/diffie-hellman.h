@@ -18,8 +18,8 @@
 
 #include <stdbool.h>
 
-#ifndef DIFFIE_HELLMAN_H
-#define DIFFIE_HELLMAN_H
+#ifndef LIB_DIFFIE_HELLMAN_H
+#define LIB_DIFFIE_HELLMAN_H
 
 /*
  * Diffie Hellman key exchange using our private key and the
