@@ -240,17 +240,18 @@ int commit_skipped_message_keys(ratchet_state *state) {
 	int status;
 	//as long as the list of purported message keys isn't empty,
 	//add them to the list of skipped message keys
+	//TODO: Don't add the last one, because it's already been used?????
 	while (state->purported_message_keys.length != 0) {
 		status = message_keystore_add(
 				&(state->skipped_message_keys),
-				state->purported_message_keys.tail->message_key);
+				state->purported_message_keys.head->message_key);
 		if (status != 0) {
-			//TODO more cleanup neede?
+			//TODO more cleanup needed?
 			return status;
 		}
 		message_keystore_remove(
 				&(state->purported_message_keys),
-				state->purported_message_keys.tail);
+				state->purported_message_keys.head);
 	}
 	return 0;
 }
