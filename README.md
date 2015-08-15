@@ -22,7 +22,7 @@ Axolotl specific:
 * Symmetrically encrypt a message and authenticate header.
   - `header_length (1Byte) || header || nonce || MAC(Header + nonce + header_length) || CIPHERTEXT (crypto_secretbox)`
 * double linked list for storing message keys that haven't been used yet
-* Ratchet (deriving root, chain and message keys, no message description and authentication yet)
+* Ratchet (deriving root, chain and message keys, no message decryption and authentication yet)
 
 how to build
 ------------
