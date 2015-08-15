@@ -60,9 +60,9 @@ NOTE: This may be subject to change.
 
 ```
 header length (1)
-version_info (2)
-+ header (96) {
-    public_ephemeral_key (32)
++ header (42) {
+    version_info (2)
+    + public_ephemeral_key (32)
     + message_counter (4)
     + previous_message_counter (4)
 }
