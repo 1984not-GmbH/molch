@@ -14,3 +14,7 @@ set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINKER_FLAGS} -lsodium")
 
 find_program(MEMORYCHECK_COMMAND valgrind)
 set(MEMORYCHECK_COMMAND_OPTIONS --trace-children=yes --leak-check=full --error-exitcode=10)
+
+if("${MEMORYCHECK_COMMAND}" MATCHES "MEMORYCHECK_COMMAND-NOTFOUND")
+    message(WARNING "valgrind not found")
+endif("${MEMORYCHECK_COMMAND}" MATCHES "MEMORYCHECK_COMMAND-NOTFOUND")
