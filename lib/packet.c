@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "message.h"
+#include "packet.h"
 
 /*
  * Encrypt a message and header with a symmetric key and a nonce.

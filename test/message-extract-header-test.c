@@ -21,7 +21,7 @@
 #include <sodium.h>
 #include <assert.h>
 
-#include "../lib/message.h"
+#include "../lib/packet.h"
 #include "utils.h"
 
 #define MESSAGE "Hello World, this is a message!"
