@@ -19,6 +19,8 @@
 #ifndef LIB_MESSAGE_H
 #define LIB_MESSAGE_H
 
+//FIXME: Consider little and big endian architectures!
+
 /*
  * Encrypt a message and header with a symmetric key and a nonce.
  *
