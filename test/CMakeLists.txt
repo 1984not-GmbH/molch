@@ -12,9 +12,9 @@ set(tests hkdf-test
           message-key-derivation-test
           root-and-chain-key-derivation-test
           initial-root-and-chain-key-derivation-test
-          message-test
-          message-manipulated-test
-          message-extract-header-test
+          #message-test
+          #message-manipulated-test
+          #message-extract-header-test
           message-keystore-test
           ratchet-test)
 
