@@ -25,24 +25,87 @@
 /*
  * Encrypt a message and header with a symmetric key and a nonce.
  *
- * packet = header || nonce || MAC (header and nonce) || authenticated ciphertext
+ * For the header, AEAD is used (authenticated encryption with
+ * additional data) to authenticate the header length, version
+ * and packet type.
+ *
+ * packet has to have at least the following length:
+ *
+ * The packet has the following format:
+ * packet = {
+ *   protocol_version(1), //4MSB: current version; 4LSB: highest supported version
+ *   packet_type(1),
+ *   header_length(1),
+ *   header_nonce(crypto_aead_chacha20poly1305_NPUBBYTES),
+ *   header {
+ *       axolotl_header(?),
+ *       message_nonce(crypto_secretbox_NONCEBYTES)
+ *   },
+ *   header_and_additional_data_MAC(crypto_aead_chacha20poly1305_ABYTES),
+ *   authenticated_encrypted_message {
+ *       message(?),
+ *       MAC(crypto_secretbox_MACBYTES)
+ *   }
+ * }
  */
-int encrypt_message(
-		unsigned char * const packet, //output
+int packet_encrypt(
+		unsigned char * const packet, //output, has to be long enough, see format above
 		size_t * const packet_length, //length of the output
+		const unsigned char packet_type,
+		const unsigned char current_protocol_version, //this can't be larger than 0xF = 15
+		const unsigned char highest_supported_protocol_version, //this can't be larger than 0xF = 15
+		const unsigned char * const header_nonce, //crypto_aead_chacha20poly1305_NPUBBYTES
+		const unsigned char * const header,
+		const size_t header_length,
+		const unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
 		const unsigned char * const message,
 		const size_t message_length,
-		const unsigned char * const header, //additional (plaintext) header data
-		const size_t header_length,
-		const unsigned char * const nonce,
-		const unsigned char * const key) {
+		const unsigned char * const message_nonce, //crypto_secretbox_NONCEBYTES
+		const unsigned char * const message_key) { //crypto_secretbox_KEYBYTES
 	//make sure that the length assumptions are correct
 	assert(crypto_onetimeauth_KEYBYTES == crypto_secretbox_KEYBYTES);
 
+	//protocol version has to be equal or less than 0xF
+	assert(current_protocol_version <= 0x0f);
+	assert(highest_supported_protocol_version <= 0x0f);
+
 	//make sure the header length fits into one byte
-	if (header_length > 0xff) {
-		return -10;
+	assert(header_length <= (0xff - crypto_aead_chacha20poly1305_ABYTES));
+
+	//put packet type and protocol version into the packet
+	packet[0] = header_length + crypto_aead_chacha20poly1305_ABYTES; //header length with authenticator
+	packet[1] = packet_type;
+	packet[2] = 0xf0 & (current_protocol_version << 4); //put current version into 4MSB
+	packet[2] |= (0x0f & highest_supported_protocol_version); //put highest version into 4LSB
+
+	//copy the header nonce
+	memcpy(packet + 3, header_nonce, crypto_aead_chacha20poly1305_NPUBBYTES);
+
+	//create buffer for the encrypted part of the header
+	unsigned char header_buffer[header_length + crypto_secretbox_NONCEBYTES];
+
+	//encrypt the header and authenticate the additional data (1st 3 Bytes)
+	int status;
+	unsigned long long header_ciphertext_length;
+	status = crypto_aead_chacha20poly1305_encrypt(
+			packet + 3 + crypto_aead_chacha20poly1305_NPUBBYTES, //ciphertext
+			&header_ciphertext_length, //ciphertext length
+			header, //plaintext
+			header_length, //message length
+			packet,
+			3 + crypto_aead_chacha20poly1305_NPUBBYTES,
+			NULL,
+			header_nonce,
+			header_key);
+	sodium_memzero(header_buffer, sizeof(header_buffer));
+	if (status != 0) {
+		return status;
 	}
+
+	//make sure the header_length property in the packet is correct
+	assert((header_length + crypto_aead_chacha20poly1305_ABYTES) == header_ciphertext_length);
+
+	//now encrypt the message
 
 	//calculate amount of padding (PKCS7 padding to 255 byte blocks, see RFC5652 section 6.3)
 	unsigned char padding = 255 - (message_length % 255);
@@ -57,43 +120,23 @@ int encrypt_message(
 	memset(plaintext_buffer + message_length, padding, padding);
 
 	//length of everything in front of the ciphertext
-	const size_t PRE_CIPHERTEXT_LENGTH = 1 + header_length +
-		crypto_secretbox_NONCEBYTES + crypto_onetimeauth_BYTES;
+	const size_t PRE_CIPHERTEXT_LENGTH = 3 + crypto_aead_chacha20poly1305_NPUBBYTES + header_ciphertext_length;
 
 	//encrypt the message
-	int status;
 	status = crypto_secretbox_easy(
 			packet + PRE_CIPHERTEXT_LENGTH, //ciphertext
 			plaintext_buffer, //message
 			message_length + padding, //message length
-			nonce,
-			key);
+			message_nonce,
+			message_key);
 	sodium_memzero(plaintext_buffer, sizeof(plaintext_buffer));
 	if (status != 0) {
 		return status;
 	}
 
-	//copy header to output
-	memcpy(packet + 1, header, header_length);
-
-	//set first byte of output to header_length
-	packet[0] = header_length;
-
-	//copy nonce to output (after header)
-	memcpy(packet + header_length + 1, nonce, crypto_secretbox_NONCEBYTES);
-
-	//create authentication tag for header and nonce and add it after header and nonce
-	//TODO is it cryptographically secure to use the same key to authenticate the header
-	//as is used to encrypt the plaintext?
-	status = crypto_onetimeauth(
-			packet + header_length + crypto_secretbox_NONCEBYTES + 1, //output
-			packet, //input
-			header_length + crypto_secretbox_NONCEBYTES + 1, //input length
-			key);
-
 	//set length of entire encrypted message
-	*packet_length = PRE_CIPHERTEXT_LENGTH + message_length + padding  + crypto_secretbox_MACBYTES;
-	return status;
+	*packet_length = PRE_CIPHERTEXT_LENGTH + message_length + padding + crypto_secretbox_MACBYTES;
+	return 0;
 }
 
 /*

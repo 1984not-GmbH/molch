@@ -24,22 +24,43 @@
 /*
  * Encrypt a message and header with a symmetric key and a nonce.
  *
- * packet has to have at least the following length:
- *   header_length + crypto_box_NONCEBYTES + crypto_onetimeauth_BYTES
- *   + message_length + crypto_secretbox_MACBYTES + 256
+ * For the header, AEAD is used (authenticated encryption with
+ * additional data) to authenticate the header length, version
+ * and packet type.
  *
- * encrypted_message =
- *     header_length (1Byte) || header || nonce || MAC (header and nonce) || authenticated ciphertext
+ * packet has to have at least the following length:
+ *
+ * The packet has the following format:
+ * packet = {
+ *   protocol_version(1), //4MSB: current version; 4LSB: highest supported version
+ *   packet_type(1),
+ *   header_length(1),
+ *   header_nonce(crypto_aead_chacha20poly1305_NPUBBYTES),
+ *   header {
+ *       axolotl_header(?),
+ *       message_nonce(crypto_secretbox_NONCEBYTES)
+ *   },
+ *   header_and_additional_data_MAC(crypto_aead_chacha20poly1305_ABYTES),
+ *   authenticated_encrypted_message {
+ *       message(?),
+ *       MAC(crypto_secretbox_MACBYTES)
+ *   }
+ * }
  */
-int encrypt_message(
-		unsigned char * const packet, //output
+int packet_encrypt(
+		unsigned char * const packet, //output, has to be long enough, see format above
 		size_t * const packet_length, //length of the output
+		const unsigned char packet_type,
+		const unsigned char current_protocol_version, //this can't be larger than 0xF = 15
+		const unsigned char highest_supported_protocol_version, //this can't be larger than 0xF = 15
+		const unsigned char * const header_nonce, //crypto_aead_chacha20poly1305_NPUBBYTES
+		const unsigned char * const header,
+		const size_t header_length,
+		const unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
 		const unsigned char * const message,
 		const size_t message_length,
-		const unsigned char * const header, //additional (plaintext) header data
-		const size_t header_length,
-		const unsigned char * const nonce, //crypto_secretbox_NONCEBYTES
-		const unsigned char * const key); //crypto_secretbox_KEYBYTES
+		const unsigned char * const message_nonce, //crypto_secretbox_NONCEBYTES
+		const unsigned char * const message_key); //crypto_secretbox_KEYBYTES
 
 /*
  * Decrypt a message with a symmetric key and verify the headers integrity.
