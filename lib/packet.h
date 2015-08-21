@@ -61,20 +61,6 @@ int packet_encrypt(
 		const unsigned char * const message_key); //crypto_secretbox_KEYBYTES
 
 /*
- * Decrypt a message with a symmetric key and verify the headers integrity.
- *
- * The message and header buffers should be as long as the packet buffer.
- */
-int decrypt_message(
-		unsigned char * const message,
-		size_t * const message_length, //return length of the message
-		unsigned char* const header,
-		size_t * const header_length, //return length of the header
-		const unsigned char * const packet,
-		const size_t packet_length,
-		const unsigned char * const key); //crypto_secretbox_KEYBYTES
-
-/*
  * Get the metadata of a packet (without verifying it's authenticity).
  */
 int packet_get_metadata_without_verification(
@@ -84,18 +70,5 @@ int packet_get_metadata_without_verification(
 		unsigned char * const current_protocol_version, //1 Byte, no array
 		unsigned char * const highest_supported_protocol_version, //1 Byte, no array
 		unsigned char * const header_length); //this is the raw header length, without the authenticator
-
-/*
- * Extract the header from a packet without verifying it's integrity.
- * This is required to get the message number before actually being
- * able to derive the message key that's needed to verify it.
- *
- * The header buffer should be as long as the packet buffer.
- */
-int extract_header_without_verifying(
-		unsigned char * const header, //buffer to put the header into
-		size_t * const header_length,
-		const unsigned char * const packet,
-		const size_t packet_length);
 
 #endif
