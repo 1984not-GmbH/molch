@@ -169,3 +169,58 @@ int packet_get_metadata_without_verification(
 	*header_length = packet[2] - crypto_aead_chacha20poly1305_ABYTES - crypto_secretbox_NONCEBYTES;
 	return 0;
 }
+
+/*
+ * Decrypt the header of a packet. (This also authenticates the metadata)
+ */
+int packet_decrypt_header(
+		const unsigned char * const packet,
+		const size_t packet_length,
+		unsigned char * const header, //As long as the packet or at most 255 bytes
+		size_t * const header_length,
+		unsigned char * const message_nonce,
+		const unsigned char * const header_key) {
+	//extract the purported header length from the packet
+	unsigned char irrelevant_metadata;
+	unsigned char purported_header_length;
+	int status = packet_get_metadata_without_verification(
+			packet,
+			packet_length,
+			&irrelevant_metadata,
+			&irrelevant_metadata,
+			&irrelevant_metadata,
+			&purported_header_length);
+	if (status != 0) {
+		return status;
+	}
+
+	//encrypt the header
+	unsigned char header_buffer[purported_header_length + crypto_secretbox_NONCEBYTES];
+	unsigned long long decrypted_length;
+	status = crypto_aead_chacha20poly1305_decrypt(
+			header_buffer,
+			&decrypted_length,
+			NULL,
+			packet + 3 + crypto_aead_chacha20poly1305_NPUBBYTES, //ciphertext of header
+			purported_header_length + crypto_secretbox_NONCEBYTES + crypto_aead_chacha20poly1305_ABYTES, //ciphertext length
+			packet, //additional data
+			3 + crypto_aead_chacha20poly1305_NPUBBYTES, //additional data length
+			packet + 3, //nonce
+			header_key);
+	if (status != 0) {
+		sodium_memzero(header_buffer, sizeof(header_buffer));
+		return status;
+	}
+
+	assert(purported_header_length == decrypted_length - crypto_secretbox_NONCEBYTES);
+
+	//copy the header
+	memcpy(header, header_buffer, purported_header_length);
+	//copy the message nonce
+	memcpy(message_nonce, header_buffer + purported_header_length, crypto_secretbox_NONCEBYTES);
+
+	*header_length = purported_header_length;
+
+	sodium_memzero(header_buffer, sizeof(header_buffer));
+	return 0;
+}

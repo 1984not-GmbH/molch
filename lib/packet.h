@@ -71,4 +71,15 @@ int packet_get_metadata_without_verification(
 		unsigned char * const highest_supported_protocol_version, //1 Byte, no array
 		unsigned char * const header_length); //this is the raw header length, without the authenticator
 
+/*
+ * Decrypt the header of a packet. (This also authenticates the metadata!)
+ */
+int packet_decrypt_header(
+		const unsigned char * const packet,
+		const size_t packet_length,
+		unsigned char * const header, //As long as the packet or at most 255 bytes
+		size_t * const header_length, //output, 1 Byte, no array
+		unsigned char * const message_nonce, //output
+		const unsigned char * const header_key); //crypto_aead_chacha20poly1305_KEYBYTES
+
 #endif
