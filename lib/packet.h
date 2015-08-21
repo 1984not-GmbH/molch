@@ -82,9 +82,9 @@ int decrypt_message(
 int packet_get_metadata_without_verification(
 		const unsigned char * const packet,
 		const size_t packet_length,
-		unsigned char * const packet_type,
-		unsigned char * const current_protocol_version,
-		unsigned char * const highest_supported_protocol_version,
+		unsigned char * const packet_type, //1 Byte, no array
+		unsigned char * const current_protocol_version, //1 Byte, no array
+		unsigned char * const highest_supported_protocol_version, //1 Byte, no array
 		unsigned char * const header_length); //this is the raw header length, without the authenticator
 
 /*
