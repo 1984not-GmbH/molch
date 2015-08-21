@@ -77,6 +77,17 @@ int decrypt_message(
 		const unsigned char * const key); //crypto_secretbox_KEYBYTES
 
 /*
+ * Get the metadata of a packet (without verifying it's authenticity).
+ */
+int packet_get_metadata_without_verification(
+		const unsigned char * const packet,
+		const size_t packet_length,
+		unsigned char * const packet_type,
+		unsigned char * const current_protocol_version,
+		unsigned char * const highest_supported_protocol_version,
+		unsigned char * const header_length); //this is the raw header length, without the authenticator
+
+/*
  * Extract the header from a packet without verifying it's integrity.
  * This is required to get the message number before actually being
  * able to derive the message key that's needed to verify it.

@@ -48,8 +48,9 @@
  *   }
  * }
  */
+//TODO put message Nonce inside the header automatically
 int packet_encrypt(
-		unsigned char * const packet, //output, has to be long enough, see format above
+		unsigned char * const packet, //output, has to be long enough, see format above TODO: Be more specific
 		size_t * const packet_length, //length of the output
 		const unsigned char packet_type,
 		const unsigned char current_protocol_version, //this can't be larger than 0xF = 15
@@ -60,7 +61,7 @@ int packet_encrypt(
 		const unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
 		const unsigned char * const message,
 		const size_t message_length,
-		const unsigned char * const message_nonce, //crypto_secretbox_NONCEBYTES
+		const unsigned char * const message_nonce, //crypto_secretbox_NONCEBYTES TODO: Change order of function arguments so it's consistent
 		const unsigned char * const message_key) { //crypto_secretbox_KEYBYTES
 	//make sure that the length assumptions are correct
 	assert(crypto_onetimeauth_KEYBYTES == crypto_secretbox_KEYBYTES);
@@ -73,10 +74,10 @@ int packet_encrypt(
 	assert(header_length <= (0xff - crypto_aead_chacha20poly1305_ABYTES));
 
 	//put packet type and protocol version into the packet
-	packet[0] = header_length + crypto_aead_chacha20poly1305_ABYTES; //header length with authenticator
-	packet[1] = packet_type;
-	packet[2] = 0xf0 & (current_protocol_version << 4); //put current version into 4MSB
-	packet[2] |= (0x0f & highest_supported_protocol_version); //put highest version into 4LSB
+	packet[0] = packet_type;
+	packet[1] = 0xf0 & (current_protocol_version << 4); //put current version into 4MSB
+	packet[1] |= (0x0f & highest_supported_protocol_version); //put highest version into 4LSB
+	packet[2] = header_length + crypto_aead_chacha20poly1305_ABYTES; //header length with authenticator
 
 	//copy the header nonce
 	memcpy(packet + 3, header_nonce, crypto_aead_chacha20poly1305_NPUBBYTES);
@@ -136,6 +137,32 @@ int packet_encrypt(
 
 	//set length of entire encrypted message
 	*packet_length = PRE_CIPHERTEXT_LENGTH + message_length + padding + crypto_secretbox_MACBYTES;
+	return 0;
+}
+
+/*
+ * Get the metadata of a packet (without verifying it's authenticity).
+ */
+int packet_get_metadata_without_verification(
+		const unsigned char * const packet,
+		const size_t packet_length,
+		unsigned char * const packet_type,
+		unsigned char * const current_protocol_version,
+		unsigned char * const highest_supported_protocol_version,
+		unsigned char * const header_length) { //this is the raw header length, without the authenticator
+	//check if packet_length is long enough to get the header length
+	if (packet_length < 3) {
+		return -10;
+	}
+	//check if packet is long enough
+	if (packet_length < (3 + packet[2] +  crypto_aead_chacha20poly1305_NPUBBYTES)) {
+		return -10;
+	}
+
+	*packet_type = packet[0];
+	*current_protocol_version = (0xf0 & packet[1]) >> 4;
+	*highest_supported_protocol_version = 0x0f & packet[1];
+	*header_length = packet[2] - crypto_aead_chacha20poly1305_ABYTES;
 	return 0;
 }
 
