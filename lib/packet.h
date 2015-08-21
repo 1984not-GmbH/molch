@@ -53,13 +53,11 @@ int packet_encrypt(
 		const unsigned char packet_type,
 		const unsigned char current_protocol_version, //this can't be larger than 0xF = 15
 		const unsigned char highest_supported_protocol_version, //this can't be larger than 0xF = 15
-		const unsigned char * const header_nonce, //crypto_aead_chacha20poly1305_NPUBBYTES
 		const unsigned char * const header,
 		const size_t header_length,
 		const unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
 		const unsigned char * const message,
 		const size_t message_length,
-		const unsigned char * const message_nonce, //crypto_secretbox_NONCEBYTES
 		const unsigned char * const message_key); //crypto_secretbox_KEYBYTES
 
 /*

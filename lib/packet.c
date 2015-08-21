@@ -48,20 +48,17 @@
  *   }
  * }
  */
-//TODO put message Nonce inside the header automatically
 int packet_encrypt(
 		unsigned char * const packet, //output, has to be long enough, see format above TODO: Be more specific
 		size_t * const packet_length, //length of the output
 		const unsigned char packet_type,
 		const unsigned char current_protocol_version, //this can't be larger than 0xF = 15
 		const unsigned char highest_supported_protocol_version, //this can't be larger than 0xF = 15
-		const unsigned char * const header_nonce, //crypto_aead_chacha20poly1305_NPUBBYTES
 		const unsigned char * const header,
 		const size_t header_length,
 		const unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
 		const unsigned char * const message,
 		const size_t message_length,
-		const unsigned char * const message_nonce, //crypto_secretbox_NONCEBYTES TODO: Change order of function arguments so it's consistent
 		const unsigned char * const message_key) { //crypto_secretbox_KEYBYTES
 	//make sure that the length assumptions are correct
 	assert(crypto_onetimeauth_KEYBYTES == crypto_secretbox_KEYBYTES);
@@ -71,19 +68,25 @@ int packet_encrypt(
 	assert(highest_supported_protocol_version <= 0x0f);
 
 	//make sure the header length fits into one byte
-	assert(header_length <= (0xff - crypto_aead_chacha20poly1305_ABYTES));
+	assert(header_length <= (0xff - crypto_aead_chacha20poly1305_ABYTES - crypto_secretbox_NONCEBYTES));
 
 	//put packet type and protocol version into the packet
 	packet[0] = packet_type;
 	packet[1] = 0xf0 & (current_protocol_version << 4); //put current version into 4MSB
 	packet[1] |= (0x0f & highest_supported_protocol_version); //put highest version into 4LSB
-	packet[2] = header_length + crypto_aead_chacha20poly1305_ABYTES; //header length with authenticator
+	packet[2] = header_length + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES; //header length with authenticator and message nonce
 
-	//copy the header nonce
-	memcpy(packet + 3, header_nonce, crypto_aead_chacha20poly1305_NPUBBYTES);
+	//create the header nonce
+	unsigned char * const header_nonce = packet + 3;
+	randombytes_buf(header_nonce, crypto_aead_chacha20poly1305_NPUBBYTES);
 
 	//create buffer for the encrypted part of the header
 	unsigned char header_buffer[header_length + crypto_secretbox_NONCEBYTES];
+	//copy header
+	memcpy(header_buffer, header, header_length);
+	//create message nonce
+	unsigned char * const message_nonce = header_buffer + header_length;
+	randombytes_buf(message_nonce, crypto_secretbox_NONCEBYTES);
 
 	//encrypt the header and authenticate the additional data (1st 3 Bytes)
 	int status;
@@ -91,8 +94,8 @@ int packet_encrypt(
 	status = crypto_aead_chacha20poly1305_encrypt(
 			packet + 3 + crypto_aead_chacha20poly1305_NPUBBYTES, //ciphertext
 			&header_ciphertext_length, //ciphertext length
-			header, //plaintext
-			header_length, //message length
+			header_buffer, //plaintext
+			sizeof(header_buffer), //message length
 			packet,
 			3 + crypto_aead_chacha20poly1305_NPUBBYTES,
 			NULL,
@@ -104,7 +107,7 @@ int packet_encrypt(
 	}
 
 	//make sure the header_length property in the packet is correct
-	assert((header_length + crypto_aead_chacha20poly1305_ABYTES) == header_ciphertext_length);
+	assert((header_length + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES) == header_ciphertext_length);
 
 	//now encrypt the message
 
@@ -162,7 +165,7 @@ int packet_get_metadata_without_verification(
 	*packet_type = packet[0];
 	*current_protocol_version = (0xf0 & packet[1]) >> 4;
 	*highest_supported_protocol_version = 0x0f & packet[1];
-	*header_length = packet[2] - crypto_aead_chacha20poly1305_ABYTES;
+	*header_length = packet[2] - crypto_aead_chacha20poly1305_ABYTES - crypto_secretbox_NONCEBYTES;
 	return 0;
 }
 
@@ -216,6 +219,7 @@ int decrypt_message(
 		const unsigned char * const packet,
 		const size_t packet_length,
 		const unsigned char * const key) { //crypto_secretbox_KEYBYTES
+	//TODO put message nonce inside of the header
 	//buffers for the header components
 	unsigned char header_buffer[packet_length];
 	unsigned char nonce[crypto_secretbox_NONCEBYTES];

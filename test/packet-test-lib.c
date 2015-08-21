@@ -45,24 +45,10 @@ int create_and_print_message(
 	print_hex(header_key, sizeof(header_key), 30);
 	putchar('\n');
 
-	//create header nonce
-	unsigned char header_nonce[crypto_aead_chacha20poly1305_NPUBBYTES];
-	randombytes_buf(header_nonce, sizeof(header_nonce));
-	printf("Header Nonce (%zi Bytes):\n", sizeof(header_nonce));
-	print_hex(header_nonce, sizeof(header_nonce), 30);
-	putchar('\n');
-
 	//create message key
 	randombytes_buf(message_key, crypto_secretbox_KEYBYTES);
 	printf("Message key (%i Bytes):\n", crypto_secretbox_KEYBYTES);
 	print_hex(message_key, crypto_secretbox_KEYBYTES, 30);
-	putchar('\n');
-
-	//create message nonce
-	unsigned char message_nonce[crypto_secretbox_NONCEBYTES];
-	randombytes_buf(message_nonce, sizeof(message_nonce));
-	printf("Message Nonce (%zi Bytes):\n", sizeof(message_nonce));
-	print_hex(message_nonce, sizeof(message_nonce), 30);
 	putchar('\n');
 
 	//print the header (as hex):
@@ -80,19 +66,21 @@ int create_and_print_message(
 			packet_type,
 			current_protocol_version,
 			highest_supported_protocol_version,
-			header_nonce,
 			header,
 			header_length,
 			header_key,
 			message,
 			message_length,
-			message_nonce,
 			message_key);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to encrypt message and header. (%i)\n", status);
 		return status;
 	}
 
+	//print header nonce
+	printf("Header Nonce (%i Bytes):\n", crypto_aead_chacha20poly1305_NPUBBYTES);
+	print_hex(packet + 3, crypto_aead_chacha20poly1305_NPUBBYTES, 30);
+	putchar('\n');
 
 	//print encrypted packet
 	printf("Encrypted Packet (%zi Bytes):\n", *packet_length);
