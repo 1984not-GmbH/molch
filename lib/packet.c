@@ -224,3 +224,63 @@ int packet_decrypt_header(
 	sodium_memzero(header_buffer, sizeof(header_buffer));
 	return 0;
 }
+
+/*
+ * Decrypt the message inside a packet.
+ */
+int packet_decrypt_message(
+		const unsigned char * const packet,
+		const size_t packet_length,
+		unsigned char * const message, //This buffer should be as large as the packet
+		size_t * const message_length, //output
+		const unsigned char * const message_nonce,
+		const unsigned char * const message_key) { //crypto_secretbox_KEYBYTES
+	//get the header length
+	unsigned char irrelevant_metadata;
+	unsigned char purported_header_length;
+	int status = packet_get_metadata_without_verification(
+			packet,
+			packet_length,
+			&irrelevant_metadata,
+			&irrelevant_metadata,
+			&irrelevant_metadata,
+			&purported_header_length);
+	if (status != 0) {
+		return status;
+	}
+
+	//length of message and padding
+	const size_t purported_plaintext_length = packet_length - 3 - purported_header_length - crypto_aead_chacha20poly1305_NPUBBYTES - crypto_secretbox_NONCEBYTES - crypto_secretbox_MACBYTES - crypto_aead_chacha20poly1305_ABYTES;
+	if (purported_plaintext_length >= packet_length) {
+		return -10;
+	}
+
+	//decrypt the message (padding included)
+	unsigned char plaintext[purported_plaintext_length];
+	status = crypto_secretbox_open_easy(
+			plaintext,
+			packet + (packet_length - purported_plaintext_length) - crypto_secretbox_MACBYTES,
+			purported_plaintext_length + crypto_secretbox_MACBYTES,
+			message_nonce,
+			message_key);
+	if (status != 0) {
+		sodium_memzero(plaintext, sizeof(plaintext));
+		return status;
+	}
+
+	//get amount of padding from last byte (pkcs7)
+	const unsigned char padding = plaintext[purported_plaintext_length - 1];
+	if (padding > purported_plaintext_length) { //check if pdding is valid
+		sodium_memzero(plaintext, sizeof(plaintext));
+		return -10;
+	}
+
+	//copy the message from the plaintext
+	memcpy(message, plaintext, purported_plaintext_length - padding);
+
+	//set the message length
+	*message_length = purported_plaintext_length - padding;
+
+	sodium_memzero(plaintext, sizeof(plaintext));
+	return 0;
+}

@@ -78,8 +78,19 @@ int packet_decrypt_header(
 		const unsigned char * const packet,
 		const size_t packet_length,
 		unsigned char * const header, //As long as the packet or at most 255 bytes
-		size_t * const header_length, //output, 1 Byte, no array
+		size_t * const header_length, //output
 		unsigned char * const message_nonce, //output
 		const unsigned char * const header_key); //crypto_aead_chacha20poly1305_KEYBYTES
+
+/*
+ * Decrypt the message inside a packet.
+ */
+int packet_decrypt_message(
+		const unsigned char * const packet,
+		const size_t packet_length,
+		unsigned char * const message, //This buffer should be as large as the packet
+		size_t * const message_length, //output
+		const unsigned char * const message_nonce,
+		const unsigned char * const message_key); //crypto_secretbox_KEYBYTES
 
 #endif
