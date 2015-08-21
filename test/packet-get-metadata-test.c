@@ -28,7 +28,7 @@ int main(void) {
 
 	//generate keys and message
 	unsigned char header_key[crypto_aead_chacha20poly1305_KEYBYTES];
-	unsigned char message_key[crypto_aead_chacha20poly1305_KEYBYTES];
+	unsigned char message_key[crypto_secretbox_KEYBYTES];
 	unsigned char message[] = "Hello world!\n";
 	unsigned char header[] = {0x01, 0x02, 0x03, 0x04};
 	unsigned char packet[3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + sizeof(message) + sizeof(header) + crypto_secretbox_MACBYTES + 255];
