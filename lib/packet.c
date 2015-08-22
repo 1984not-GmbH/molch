@@ -145,6 +145,64 @@ int packet_encrypt(
 }
 
 /*
+ * Decrypt and authenticate a packet.
+ */
+int packet_decrypt(
+		const unsigned char * const packet,
+		const size_t packet_length,
+		unsigned char * const packet_type, //1 Byte, no array
+		unsigned char * const current_protocol_version, //1 Byte, no array
+		unsigned char * const highest_supported_protocol_version, //1 Byte, no array
+		unsigned char * const header, //As long as the packet or at most 255 bytes
+		size_t *header_length, //output
+		const unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		unsigned char * const message, //should be as long as the packet
+		size_t *message_length, //output
+		const unsigned char * const message_key) { //crypto_secretbox_KEYBYTES
+	//get the packet metadata
+	unsigned char purported_header_length;
+	int status = packet_get_metadata_without_verification(
+			packet,
+			packet_length,
+			packet_type,
+			current_protocol_version,
+			highest_supported_protocol_version,
+			&purported_header_length);
+	if (status != 0) {
+		return status;
+	}
+
+	//decrypt the header
+	unsigned char message_nonce[crypto_secretbox_NONCEBYTES];
+	status = packet_decrypt_header(
+			packet,
+			packet_length,
+			header,
+			header_length,
+			message_nonce,
+			header_key);
+	if (status != 0) {
+		sodium_memzero(message_nonce, sizeof(message_nonce));
+		return status;
+	}
+
+	//decrypt the message
+	status = packet_decrypt_message(
+			packet,
+			packet_length,
+			message,
+			message_length,
+			message_nonce,
+			message_key);
+	sodium_memzero(message_nonce, sizeof(message_nonce));
+	if (status != 0) {
+		return status;
+	}
+
+	return 0;
+}
+
+/*
  * Get the metadata of a packet (without verifying it's authenticity).
  */
 int packet_get_metadata_without_verification(
