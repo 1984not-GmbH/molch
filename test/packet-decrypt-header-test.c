@@ -71,18 +71,22 @@ int main(void) {
 			&decrypted_header_length,
 			decrypted_message_nonce,
 			header_key);
-	sodium_memzero(header_key, sizeof(header_key));
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to decrypt the header. (%i)\n", status);
 		sodium_memzero(header, sizeof(header));
 		sodium_memzero(decrypted_header, sizeof(decrypted_header));
+		sodium_memzero(decrypted_message_nonce, sizeof(decrypted_message_nonce));
+		sodium_memzero(header_key, sizeof(header_key));
 		return status;
 	}
+
 
 	if (decrypted_header_length != sizeof(header)) {
 		fprintf(stderr, "ERROR: Decrypted header isn't of the same length!\n");
 		sodium_memzero(header, sizeof(header));
 		sodium_memzero(decrypted_header, sizeof(decrypted_header));
+		sodium_memzero(decrypted_message_nonce, sizeof(decrypted_message_nonce));
+		sodium_memzero(header_key, sizeof(header_key));
 		return EXIT_SUCCESS;
 	}
 	printf("Decrypted header has the same length.\n\n");
@@ -90,19 +94,65 @@ int main(void) {
 	printf("Decrypted message nonce (%i Bytes):\n", crypto_secretbox_NONCEBYTES);
 	print_hex(decrypted_message_nonce, crypto_secretbox_NONCEBYTES, 30);
 	putchar('\n');
+	sodium_memzero(decrypted_message_nonce, sizeof(decrypted_message_nonce));
 
 	//compare headers
 	if (sodium_memcmp(header, decrypted_header, decrypted_header_length) != 0) {
 		fprintf(stderr, "ERROR: Decrypted header doesn't match!\n");
 		sodium_memzero(header, sizeof(header));
 		sodium_memzero(decrypted_header, sizeof(decrypted_header));
+		sodium_memzero(header_key, sizeof(header_key));
 		return EXIT_FAILURE;
 	}
+	printf("Decrypted header matches.\n\n");
+
+	//check if it decrypts manipulated packets (manipulated metadata)
+	printf("Manipulating header length.\n");
+	packet[2]++;
+	status = packet_decrypt_header(
+			packet,
+			packet_length,
+			decrypted_header,
+			&decrypted_header_length,
+			decrypted_message_nonce,
+			header_key);
+	sodium_memzero(decrypted_message_nonce, sizeof(decrypted_message_nonce));
+	if (status == 0) { //header was decrypted despite manipulation
+		fprintf(stderr, "ERROR: Manipulated packet was accepted!\n");
+		sodium_memzero(header, sizeof(header));
+		sodium_memzero(decrypted_header, sizeof(decrypted_header));
+		sodium_memzero(header_key, sizeof(header_key));
+		return EXIT_FAILURE;
+	}
+	printf("Header manipulation detected.\n\n");
+
+	//repair manipulation
+	packet[2]--;
+	//check if it decrypts manipulated packets (manipulated header)
+	printf("Manipulate header.\n");
+	packet[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= 0x12;
+	status = packet_decrypt_header(
+			packet,
+			packet_length,
+			decrypted_header,
+			&decrypted_header_length,
+			decrypted_message_nonce,
+			header_key);
+	if (status == 0) { //header was decrypted desp
+		fprintf(stderr, "ERROR: Manipulated packet was accepted!\n");
+		sodium_memzero(header, sizeof(header));
+		sodium_memzero(decrypted_header, sizeof(decrypted_header));
+		sodium_memzero(header_key, sizeof(header_key));
+		return EXIT_FAILURE;
+	}
+	printf("Header manipulation detected!\n");
+
+	//undo header manipulation
+	packet[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= 0x12;
+
 	sodium_memzero(header, sizeof(header));
 	sodium_memzero(decrypted_header, sizeof(decrypted_header));
-
-	printf("Decrypted header matches.\n");
-
+	sodium_memzero(header_key, sizeof(header_key));
 
 	return EXIT_SUCCESS;
 }
