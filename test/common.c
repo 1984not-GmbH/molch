@@ -36,6 +36,10 @@ void print_message_keystore(message_keystore *keystore) {
 	//print all the keys in the keystore
 	unsigned int i;
 	for (i = 0; i < keystore->length; node = node->next, i++) {
+		printf("Header key %u:\n", i);
+		print_hex(node->header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+		putchar('\n');
+
 		printf("Message key %u:\n", i);
 		print_hex(node->message_key, crypto_secretbox_KEYBYTES, 30);
 		if (i != keystore->length - 1) { //omit last one

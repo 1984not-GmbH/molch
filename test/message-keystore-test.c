@@ -29,6 +29,7 @@ int main(void) {
 	sodium_init();
 
 	//buffer for message keys
+	unsigned char header_key[crypto_aead_chacha20poly1305_KEYBYTES];
 	unsigned char message_key[crypto_secretbox_KEYBYTES];
 
 	//initialise message keystore
@@ -42,17 +43,24 @@ int main(void) {
 	//add keys to the keystore
 	unsigned int i;
 	for (i = 0; i < 6; i++) {
-		//create new key
+		//create new keys
+		randombytes_buf(header_key, sizeof(header_key));
 		randombytes_buf(message_key, sizeof(message_key));
 
-		//print the new key
+		//print the new header key
+		printf("New Header Key No. %u:\n", i);
+		print_hex(header_key, sizeof(header_key), 30);
+		putchar('\n');
+
+		//print the new message key
 		printf("New message key No. %u:\n", i);
 		print_hex(message_key, sizeof(message_key), 30);
 		putchar('\n');
 
-		//add key to the keystore
-		status = message_keystore_add(&keystore, message_key);
+		//add keys to the keystore
+		status = message_keystore_add(&keystore, message_key, header_key);
 		sodium_memzero(message_key, sizeof(message_key));
+		sodium_memzero(header_key, sizeof(header_key));
 		if (status != 0) {
 			fprintf(stderr, "ERROR: Failed to add key to keystore. (%i)\n", status);
 			message_keystore_clear(&keystore);

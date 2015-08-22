@@ -226,7 +226,8 @@ int stage_skipped_message_keys(
 		if (pos < purported_message_number) { //only stage previous message keys
 			status = message_keystore_add(
 					&(state->purported_message_keys),
-					message_key_buffer);
+					message_key_buffer,
+					message_key_buffer); //FIXME: this should be the corresponding header key
 			if (status != 0) {
 				sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
 				sodium_memzero(purported_next_chain_key, sizeof(purported_next_chain_key));
@@ -271,7 +272,8 @@ int commit_skipped_message_keys(ratchet_state *state) {
 	while (state->purported_message_keys.length != 0) {
 		status = message_keystore_add(
 				&(state->skipped_message_keys),
-				state->purported_message_keys.head->message_key);
+				state->purported_message_keys.head->message_key,
+				state->purported_message_keys.head->message_key); //FIXME: This should be the corresponding header key
 		if (status != 0) {
 			return status;
 		}

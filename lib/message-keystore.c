@@ -30,18 +30,20 @@ message_keystore message_keystore_init() {
 }
 
 //add a message key to the keystore
-//NOTE: The entire message key is copied, not only the pointer
+//NOTE: The entire keys are copied, not only the pointer
 int message_keystore_add(
 		message_keystore *keystore,
-		const unsigned char * const message_key) {
+		const unsigned char * const message_key,
+		const unsigned char * const header_key) {
 	message_keystore_node *new_node = malloc(sizeof(message_keystore_node));
 	if (new_node == NULL) { //couldn't allocate memory
 		return -1;
 	}
 
-	//set message and timestamp
+	//set keys and timestamp
 	new_node->timestamp = time(NULL);
 	memcpy(new_node->message_key, message_key, crypto_secretbox_KEYBYTES);
+	memcpy(new_node->header_key, header_key, crypto_aead_chacha20poly1305_KEYBYTES);
 
 	if (keystore->length == 0) { //first node in the list
 		new_node->previous = NULL;
@@ -79,8 +81,9 @@ void message_keystore_remove(message_keystore *keystore, message_keystore_node *
 		keystore->head = node->next;
 	}
 
-	//overwrite key in memory
+	//overwrite keys in memory
 	sodium_memzero(node->message_key, crypto_secretbox_KEYBYTES);
+	sodium_memzero(node->header_key, crypto_aead_chacha20poly1305_KEYBYTES);
 
 	free(node);
 

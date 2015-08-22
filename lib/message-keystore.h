@@ -30,6 +30,7 @@ struct message_keystore_node {
 	message_keystore_node *previous;
 	message_keystore_node *next;
 	unsigned char message_key[crypto_secretbox_KEYBYTES];
+	unsigned char header_key[crypto_aead_chacha20poly1305_KEYBYTES];
 	time_t timestamp;
 };
 
@@ -44,10 +45,11 @@ typedef struct message_keystore {
 message_keystore message_keystore_init();
 
 //add a message key to the keystore
-//NOTE: The entire message key is copied, not only the pointer
+//NOTE: The entire keys are copied, not only the pointer
 int message_keystore_add(
 		message_keystore *keystore,
-		const unsigned char * const message_key);
+		const unsigned char * const message_key,
+		const unsigned char * const header_key);
 
 //remove a message key from the keystore
 void message_keystore_remove(message_keystore *keystore, message_keystore_node *node);
