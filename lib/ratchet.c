@@ -446,6 +446,8 @@ void ratchet_destroy(ratchet_state *state) {
 	//delete keys
 	//root key
 	sodium_memzero(state->root_key, crypto_secretbox_KEYBYTES);
+	sodium_memzero(state->purported_root_key, crypto_secretbox_KEYBYTES);
+
 	//our private ephemeral
 	sodium_memzero(state->our_private_ephemeral, crypto_box_SECRETKEYBYTES);
 
