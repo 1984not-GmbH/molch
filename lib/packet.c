@@ -101,8 +101,8 @@ int packet_encrypt(
 			NULL,
 			header_nonce,
 			header_key);
-	sodium_memzero(header_buffer, sizeof(header_buffer));
 	if (status != 0) {
+		sodium_memzero(header_buffer, sizeof(header_buffer));
 		return status;
 	}
 
@@ -134,6 +134,7 @@ int packet_encrypt(
 			message_nonce,
 			message_key);
 	sodium_memzero(plaintext_buffer, sizeof(plaintext_buffer));
+	sodium_memzero(header_buffer, sizeof(header_buffer));
 	if (status != 0) {
 		return status;
 	}
