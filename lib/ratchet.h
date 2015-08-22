@@ -27,6 +27,11 @@
 typedef struct ratchet_state {
 	unsigned char root_key[crypto_secretbox_KEYBYTES]; //RK
 	unsigned char purported_root_key[crypto_secretbox_KEYBYTES]; //RKp
+	//header keys
+	unsigned char send_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
+	unsigned char receive_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
+	unsigned char next_send_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
+	unsigned char next_receive_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
 	//chain keys
 	unsigned char send_chain_key[crypto_secretbox_KEYBYTES]; //CKs
 	unsigned char receive_chain_key[crypto_secretbox_KEYBYTES]; //CKr

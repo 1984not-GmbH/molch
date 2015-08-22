@@ -453,6 +453,12 @@ void ratchet_destroy(ratchet_state *state) {
 	//our private ephemeral
 	sodium_memzero(state->our_private_ephemeral, crypto_box_SECRETKEYBYTES);
 
+	//header keys
+	sodium_memzero(state->send_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+	sodium_memzero(state->receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+	sodium_memzero(state->next_send_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+	sodium_memzero(state->next_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+
 	//chain keys
 	sodium_memzero(state->send_chain_key, crypto_secretbox_KEYBYTES);
 	sodium_memzero(state->receive_chain_key, crypto_secretbox_KEYBYTES);
