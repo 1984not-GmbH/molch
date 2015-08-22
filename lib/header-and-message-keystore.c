@@ -18,11 +18,11 @@
 
 #include <string.h>
 
-#include "message-keystore.h"
+#include "header-and-message-keystore.h"
 
 //create new keystore
-message_keystore message_keystore_init() {
-	message_keystore keystore;
+header_and_message_keystore header_and_message_keystore_init() {
+	header_and_message_keystore keystore;
 	keystore.length = 0;
 	keystore.head = NULL;
 	keystore.tail = NULL;
@@ -31,11 +31,11 @@ message_keystore message_keystore_init() {
 
 //add a message key to the keystore
 //NOTE: The entire keys are copied, not only the pointer
-int message_keystore_add(
-		message_keystore *keystore,
+int header_and_message_keystore_add(
+		header_and_message_keystore *keystore,
 		const unsigned char * const message_key,
 		const unsigned char * const header_key) {
-	message_keystore_node *new_node = malloc(sizeof(message_keystore_node));
+	header_and_message_keystore_node *new_node = malloc(sizeof(header_and_message_keystore_node));
 	if (new_node == NULL) { //couldn't allocate memory
 		return -1;
 	}
@@ -68,8 +68,8 @@ int message_keystore_add(
 	return 0;
 }
 
-//remove a message key from the keystore
-void message_keystore_remove(message_keystore *keystore, message_keystore_node *node) {
+//remove a set of header and message keys from the keystore
+void header_and_message_keystore_remove(header_and_message_keystore *keystore, header_and_message_keystore_node *node) {
 	if (node->next != NULL) { //node is not the tail
 		node->next->previous = node->previous;
 	} else { //node ist the tail
@@ -92,8 +92,8 @@ void message_keystore_remove(message_keystore *keystore, message_keystore_node *
 }
 
 //clear the entire keystore
-void message_keystore_clear(message_keystore *keystore){
+void header_and_message_keystore_clear(header_and_message_keystore *keystore){
 	while (keystore->length > 0) {
-		message_keystore_remove(keystore, keystore->head);
+		header_and_message_keystore_remove(keystore, keystore->head);
 	}
 }

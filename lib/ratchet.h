@@ -18,7 +18,7 @@
 
 #include <stdbool.h>
 
-#include "message-keystore.h"
+#include "header-and-message-keystore.h"
 
 #ifndef LIB_RATCHET_H
 #define LIB_RATCHET_H
@@ -56,9 +56,9 @@ typedef struct ratchet_state {
 	bool received_valid; //is false until the validity of a received message has been verified until the validity of a received message has been verified,
 	                     //this is necessary to be able to split key derivation from message
 	                     //decryption
-	//list of previous message keys
-	message_keystore skipped_message_keys; //skipped_MK (list containing message keys for messages that weren't received)
-	message_keystore purported_message_keys; //this represents the staging area specified in the axolotl ratchet
+	//list of previous message and header keys
+	header_and_message_keystore skipped_header_and_message_keys; //skipped_HK_MK (list containing message keys for messages that weren't received)
+	header_and_message_keystore purported_header_and_message_keys; //this represents the staging area specified in the axolotl ratchet
 } ratchet_state;
 
 /*

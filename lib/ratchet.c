@@ -89,8 +89,8 @@ ratchet_state* ratchet_create(
 	memcpy(state->their_public_ephemeral, their_public_ephemeral, sizeof(state->their_public_ephemeral));
 
 	//initialise message keystore for skipped messages
-	state->skipped_message_keys = message_keystore_init();
-	state->purported_message_keys = message_keystore_init();
+	state->skipped_header_and_message_keys = header_and_message_keystore_init();
+	state->purported_header_and_message_keys = header_and_message_keystore_init();
 
 	//set other state
 	state->am_i_alice = am_i_alice;
@@ -175,7 +175,7 @@ int ratchet_next_send_key(
  * all of them -> program hangs. Current workaround: Limiting number
  * of message keys that get precalculated.
  */
-int stage_skipped_message_keys(
+int stage_skipped_header_and_message_keys( //FIXME add header key functionality
 		unsigned char * const purported_chain_key, //CKp
 		unsigned char * const message_key, //MK
 		const unsigned int purported_message_number,
@@ -224,8 +224,8 @@ int stage_skipped_message_keys(
 
 		//add message key to list of purported message keys
 		if (pos < purported_message_number) { //only stage previous message keys
-			status = message_keystore_add(
-					&(state->purported_message_keys),
+			status = header_and_message_keystore_add(
+					&(state->purported_header_and_message_keys),
 					message_key_buffer,
 					message_key_buffer); //FIXME: this should be the corresponding header key
 			if (status != 0) {
@@ -249,7 +249,7 @@ int stage_skipped_message_keys(
 		memcpy(purported_current_chain_key, purported_next_chain_key, sizeof(purported_current_chain_key));
 	}
 
-	//copy chain key to purported_receive_chain_key (this will be used in commit_skipped_message_keys)
+	//copy chain key to purported_receive_chain_key (this will be used in commit_skipped_header_and_message_keys)
 	memcpy(purported_chain_key, purported_next_chain_key, sizeof(purported_next_chain_key));
 
 	sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
@@ -265,21 +265,21 @@ int stage_skipped_message_keys(
  * Commit all the purported message keys into the message key store thats used
  * to actually decrypt late messages.
  */
-int commit_skipped_message_keys(ratchet_state *state) {
+int commit_skipped_header_and_message_keys(ratchet_state *state) { //FIXME: Add header key functionality
 	int status;
 	//as long as the list of purported message keys isn't empty,
 	//add them to the list of skipped message keys
-	while (state->purported_message_keys.length != 0) {
-		status = message_keystore_add(
-				&(state->skipped_message_keys),
-				state->purported_message_keys.head->message_key,
-				state->purported_message_keys.head->message_key); //FIXME: This should be the corresponding header key
+	while (state->purported_header_and_message_keys.length != 0) {
+		status = header_and_message_keystore_add(
+				&(state->skipped_header_and_message_keys),
+				state->purported_header_and_message_keys.head->message_key,
+				state->purported_header_and_message_keys.head->message_key); //FIXME: This should be the corresponding header key
 		if (status != 0) {
 			return status;
 		}
-		message_keystore_remove(
-				&(state->purported_message_keys),
-				state->purported_message_keys.head);
+		header_and_message_keystore_remove(
+				&(state->purported_header_and_message_keys),
+				state->purported_header_and_message_keys.head);
 	}
 	return 0;
 }
@@ -316,7 +316,7 @@ int ratchet_receive(
 		state->purported_message_number = purported_message_number;
 
 		//create skipped message keys and store current one
-		status = stage_skipped_message_keys(
+		status = stage_skipped_header_and_message_keys(
 				state->purported_receive_chain_key,
 				message_key,
 				purported_message_number,
@@ -346,7 +346,7 @@ int ratchet_receive(
 		unsigned char temp_purported_chain_key[crypto_secretbox_KEYBYTES];
 
 		//stage message keys for previous message chain
-		status = stage_skipped_message_keys(
+		status = stage_skipped_header_and_message_keys(
 				temp_purported_chain_key,
 				message_key,
 				purported_previous_message_number,
@@ -372,7 +372,7 @@ int ratchet_receive(
 		}
 
 		//stage message keys for current message chain
-		status = stage_skipped_message_keys(
+		status = stage_skipped_header_and_message_keys(
 				temp_purported_chain_key,
 				message_key,
 				purported_message_number,
@@ -408,12 +408,12 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
 	//TODO I can do those if's better. This only happens to be this way because of the specification
 	if ((status == 0) && !valid) { //still the same message chain and message wasn't valid
 		//clear purported message keys
-		message_keystore_clear(&(state->purported_message_keys));
+		header_and_message_keystore_clear(&(state->purported_header_and_message_keys));
 		return 0;
 	} else if (status != 0){ //new message chain
 		if (!valid) { //received message was invalid
 			//clear purported message keys
-			message_keystore_clear(&(state->purported_message_keys));
+			header_and_message_keystore_clear(&(state->purported_header_and_message_keys));
 			return 0;
 		}
 
@@ -429,7 +429,7 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
 		state->ratchet_flag = true;
 	}
 
-	status = commit_skipped_message_keys(state);
+	status = commit_skipped_header_and_message_keys(state);
 	if (status != 0) {
 		return status;
 	}
@@ -465,8 +465,8 @@ void ratchet_destroy(ratchet_state *state) {
 	sodium_memzero(state->purported_receive_chain_key, crypto_secretbox_KEYBYTES);
 
 	//empty message keystores
-	message_keystore_clear(&(state->skipped_message_keys));
-	message_keystore_clear(&(state->purported_message_keys));
+	header_and_message_keystore_clear(&(state->skipped_header_and_message_keys));
+	header_and_message_keystore_clear(&(state->purported_header_and_message_keys));
 
 	free(state);
 }

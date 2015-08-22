@@ -500,7 +500,7 @@ int main(void) {
 	print_hex(alice_receive_key3, sizeof(alice_receive_key3), 30);
 	putchar('\n');
 
-	assert(alice_state->purported_message_keys.length == 1);
+	assert(alice_state->purported_header_and_message_keys.length == 1);
 
 	//confirm validity of the message key
 	status = ratchet_set_last_message_authenticity(alice_state, true);
@@ -516,12 +516,12 @@ int main(void) {
 		return status;
 	}
 
-	assert(alice_state->purported_message_keys.length == 0);
-	assert(alice_state->skipped_message_keys.length == 1);
+	assert(alice_state->purported_header_and_message_keys.length == 0);
+	assert(alice_state->skipped_header_and_message_keys.length == 1);
 
 	//get the second receive key from the message keystore
 	unsigned char alice_receive_key2[crypto_secretbox_KEYBYTES];
-	memcpy(alice_receive_key2, alice_state->skipped_message_keys.tail->message_key, sizeof(alice_receive_key2));
+	memcpy(alice_receive_key2, alice_state->skipped_header_and_message_keys.tail->message_key, sizeof(alice_receive_key2));
 	printf("Alice Ratchet 2 receive message key 2:\n");
 	print_hex(alice_receive_key2, sizeof(alice_receive_key2), 30);
 	putchar('\n');

@@ -19,7 +19,7 @@ set(tests hkdf-test
           packet-decrypt-header-test
           packet-decrypt-message-test
           packet-decrypt-test
-          message-keystore-test
+          header-and-message-keystore-test
           ratchet-test)
 
 foreach(test ${tests})
