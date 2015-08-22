@@ -43,18 +43,18 @@ int main(void) {
 	unsigned int i;
 	for (i = 0; i < 6; i++) {
 		//create new key
-		randombytes_buf(message_key, crypto_secretbox_KEYBYTES);
+		randombytes_buf(message_key, sizeof(message_key));
 
 		//print the new key
 		printf("New message key No. %u:\n", i);
-		print_hex(message_key, crypto_secretbox_KEYBYTES, 30);
+		print_hex(message_key, sizeof(message_key), 30);
 		putchar('\n');
 
 		//add key to the keystore
 		status = message_keystore_add(&keystore, message_key);
+		sodium_memzero(message_key, sizeof(message_key));
 		if (status != 0) {
 			fprintf(stderr, "ERROR: Failed to add key to keystore. (%i)\n", status);
-			sodium_memzero(message_key, crypto_secretbox_KEYBYTES);
 			message_keystore_clear(&keystore);
 			return EXIT_FAILURE;
 		}
