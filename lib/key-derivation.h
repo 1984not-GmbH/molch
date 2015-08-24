@@ -62,16 +62,16 @@ int derive_root_and_chain_key(
 		bool am_i_alice);
 
 /*
- * Derive initial root and chain keys.
+ * Derive initial root, chain and header keys.
  *
- * The chain and root key have to be crypto_secretbox_KEYBYTES long.
- *
- * RK, CK = HKDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
+ * RK, CKs/r, HKs/r = HKDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
  */
-int derive_initial_root_and_chain_key(
-		unsigned char * const root_key,
-		unsigned char * const send_chain_key,
-		unsigned char * const receive_chain_key,
+int derive_initial_root_chain_and_header_keys(
+		unsigned char * const root_key, //crypto_secretbox_KEYBYTES
+		unsigned char * const send_chain_key, //crypto_secretbox_KEYBYTES
+		unsigned char * const receive_chain_key, //crypto_secretbox_KEYBYTES
+		unsigned char * const send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		unsigned char * const receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
 		const unsigned char * const our_private_identity,
 		const unsigned char * const our_public_identity,
 		const unsigned char * const their_public_identity,

@@ -14,7 +14,7 @@ set(tests hkdf-test
           chain-key-derivation-test
           message-key-derivation-test
           root-and-chain-key-derivation-test
-          initial-root-and-chain-key-derivation-test
+          initial-root-chain-and-header-key-derivation-test
           packet-get-metadata-test
           packet-decrypt-header-test
           packet-decrypt-message-test

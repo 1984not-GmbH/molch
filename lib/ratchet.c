@@ -46,11 +46,13 @@ ratchet_state* ratchet_create(
 		return NULL;
 	}
 
-	//derive initial chain and root key
-	int status = derive_initial_root_and_chain_key(
+	//derive initial chain, root and header keys
+	int status = derive_initial_root_chain_and_header_keys(
 			state->root_key,
 			state->send_chain_key,
 			state->receive_chain_key,
+			state->send_header_key,
+			state->receive_header_key,
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,
@@ -62,6 +64,8 @@ ratchet_state* ratchet_create(
 		sodium_memzero(state->root_key, sizeof(state->root_key));
 		sodium_memzero(state->send_chain_key, sizeof(state->send_chain_key));
 		sodium_memzero(state->receive_chain_key, sizeof(state->receive_chain_key));
+		sodium_memzero(state->send_header_key, sizeof(state->send_header_key));
+		sodium_memzero(state->receive_header_key, sizeof(state->receive_header_key));
 		free(state);
 		return NULL;
 	}
