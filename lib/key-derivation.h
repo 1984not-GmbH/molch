@@ -70,7 +70,8 @@ int derive_root_and_chain_key(
  */
 int derive_initial_root_and_chain_key(
 		unsigned char * const root_key,
-		unsigned char * const chain_key,
+		unsigned char * const send_chain_key,
+		unsigned char * const receive_chain_key,
 		const unsigned char * const our_private_identity,
 		const unsigned char * const our_public_identity,
 		const unsigned char * const their_public_identity,

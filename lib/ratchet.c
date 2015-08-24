@@ -47,10 +47,10 @@ ratchet_state* ratchet_create(
 	}
 
 	//derive initial chain and root key
-	unsigned char initial_chain_key[crypto_secretbox_KEYBYTES];
 	int status = derive_initial_root_and_chain_key(
 			state->root_key,
-			initial_chain_key,
+			state->send_chain_key,
+			state->receive_chain_key,
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,
@@ -59,22 +59,12 @@ ratchet_state* ratchet_create(
 			their_public_ephemeral,
 			am_i_alice);
 	if (status != 0) {
-		sodium_memzero(initial_chain_key, sizeof(initial_chain_key));
 		sodium_memzero(state->root_key, sizeof(state->root_key));
 		sodium_memzero(state->send_chain_key, sizeof(state->send_chain_key));
+		sodium_memzero(state->receive_chain_key, sizeof(state->receive_chain_key));
 		free(state);
 		return NULL;
 	}
-
-	//copy send_chain_key -> receive_chain_key
-	if (am_i_alice) {
-		memset(state->send_chain_key, 0, sizeof(state->send_chain_key));
-		memcpy(state->receive_chain_key, initial_chain_key, sizeof(state->receive_chain_key));
-	} else {
-		memset(state->receive_chain_key, 0, sizeof(state->receive_chain_key));
-		memcpy(state->send_chain_key, initial_chain_key, sizeof(state->send_chain_key));
-	}
-	sodium_memzero(initial_chain_key, sizeof(initial_chain_key));
 
 	//copy keys into state
 	//our public identity

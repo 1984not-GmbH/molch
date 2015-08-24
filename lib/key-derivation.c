@@ -134,7 +134,8 @@ int derive_root_and_chain_key(
  */
 int derive_initial_root_and_chain_key(
 		unsigned char * const root_key,
-		unsigned char * const chain_key,
+		unsigned char * const send_chain_key,
+		unsigned char * const receive_chain_key,
 		const unsigned char * const our_private_identity,
 		const unsigned char * const our_public_identity,
 		const unsigned char * const their_public_identity,
@@ -143,7 +144,7 @@ int derive_initial_root_and_chain_key(
 		const unsigned char * const their_public_ephemeral,
 		bool am_i_alice) {
 	//derive pre_root_key to later derive the initial root key
-	//and the first send chain key from
+	//and the chain keys from
 	//pre_root_key = HASH( DH(A,B0) || DH(A0,B) || DH(A0,B0) )
 	assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES);
 	unsigned char pre_root_key[crypto_secretbox_KEYBYTES];
@@ -182,8 +183,18 @@ int derive_initial_root_and_chain_key(
 	}
 
 	//now copy the keys
+	//root key:
 	memcpy(root_key, hkdf_buffer, crypto_secretbox_KEYBYTES);
-	memcpy(chain_key, hkdf_buffer + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	//chain keys
+	if (am_i_alice) {
+		//Alice: CKs=<none>, CKr=HKDF
+		memset(send_chain_key, 0, crypto_secretbox_KEYBYTES);
+		memcpy(receive_chain_key, hkdf_buffer + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	} else {
+		//Bob: CKs=HKDF, CKr=<none>
+		memset(receive_chain_key, 0, crypto_secretbox_KEYBYTES);
+		memcpy(send_chain_key, hkdf_buffer + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	}
 	sodium_memzero(hkdf_buffer, sizeof(hkdf_buffer));
 
 	return 0;
