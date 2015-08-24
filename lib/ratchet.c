@@ -116,9 +116,10 @@ int ratchet_next_send_key(
 		//RK, CKs = HKDF(DH(DHs, DHr))
 		unsigned char previous_root_key[crypto_secretbox_KEYBYTES];
 		memcpy(previous_root_key, state->root_key, sizeof(previous_root_key));
-		status = derive_root_and_chain_key(
+		status = derive_root_chain_and_header_keys(
 				state->root_key,
 				state->send_chain_key,
+				state->next_send_header_key,
 				state->our_private_ephemeral,
 				state->our_public_ephemeral,
 				state->their_public_ephemeral,
@@ -353,9 +354,10 @@ int ratchet_receive(
 
 		//derive purported root and chain keys
 		//first: input key for hkdf (root and chain key derivation)
-		status = derive_root_and_chain_key(
+		status = derive_root_chain_and_header_keys(
 				state->purported_root_key,
 				state->purported_receive_chain_key,
+				state->next_receive_header_key, //FIXME: This is wrong! Wire up header keys correctly
 				state->our_private_ephemeral,
 				state->our_public_ephemeral,
 				their_purported_public_ephemeral,

@@ -46,15 +46,14 @@ int derive_message_key(
 		const unsigned char * const chain_key);
 
 /*
- * Derive a root and initial chain key for a new ratchet.
+ * Derive a root, header and initial chain key for a new ratchet.
  *
- * The chain and root key have to be crypto_secretbox_KEYBYTES long.
- *
- * RK, CK = HKDF( RK, DH(DHRr, DHRs) )
+ * RK, CK, HK = HKDF( RK, DH(DHRr, DHRs) )
  */
-int derive_root_and_chain_key(
-		unsigned char * const root_key,
-		unsigned char * const chain_key,
+int derive_root_chain_and_header_keys(
+		unsigned char * const root_key, //crypto_secretbox_KEYBYTES
+		unsigned char * const chain_key, //crypto_secretbox_KEYBYTES
+		unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
 		const unsigned char * const our_private_ephemeral,
 		const unsigned char * const our_public_ephemeral,
 		const unsigned char * const their_public_ephemeral,
