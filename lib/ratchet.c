@@ -443,22 +443,22 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
 void ratchet_destroy(ratchet_state *state) {
 	//delete keys
 	//root key
-	sodium_memzero(state->root_key, crypto_secretbox_KEYBYTES);
-	sodium_memzero(state->purported_root_key, crypto_secretbox_KEYBYTES);
+	sodium_memzero(state->root_key, sizeof(state->root_key));
+	sodium_memzero(state->purported_root_key, sizeof(state->purported_root_key));
 
 	//our private ephemeral
-	sodium_memzero(state->our_private_ephemeral, crypto_box_SECRETKEYBYTES);
+	sodium_memzero(state->our_private_ephemeral, sizeof(state->our_private_ephemeral));
 
 	//header keys
-	sodium_memzero(state->send_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
-	sodium_memzero(state->receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
-	sodium_memzero(state->next_send_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
-	sodium_memzero(state->next_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+	sodium_memzero(state->send_header_key, sizeof(state->send_header_key));
+	sodium_memzero(state->receive_header_key, sizeof(state->receive_header_key));
+	sodium_memzero(state->next_send_header_key, sizeof(state->next_send_header_key));
+	sodium_memzero(state->next_receive_header_key, sizeof(state->next_receive_header_key));
 
 	//chain keys
-	sodium_memzero(state->send_chain_key, crypto_secretbox_KEYBYTES);
-	sodium_memzero(state->receive_chain_key, crypto_secretbox_KEYBYTES);
-	sodium_memzero(state->purported_receive_chain_key, crypto_secretbox_KEYBYTES);
+	sodium_memzero(state->send_chain_key, sizeof(state->send_chain_key));
+	sodium_memzero(state->receive_chain_key, sizeof(state->send_chain_key));
+	sodium_memzero(state->purported_receive_chain_key, sizeof(state->purported_receive_chain_key));
 
 	//empty message keystores
 	header_and_message_keystore_clear(&(state->skipped_header_and_message_keys));
