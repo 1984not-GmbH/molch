@@ -454,6 +454,8 @@ void ratchet_destroy(ratchet_state *state) {
 	sodium_memzero(state->receive_header_key, sizeof(state->receive_header_key));
 	sodium_memzero(state->next_send_header_key, sizeof(state->next_send_header_key));
 	sodium_memzero(state->next_receive_header_key, sizeof(state->next_receive_header_key));
+	sodium_memzero(state->purported_receive_header_key, sizeof(state->purported_receive_header_key));
+	sodium_memzero(state->purported_next_receive_header_key, sizeof(state->purported_next_receive_header_key));
 
 	//chain keys
 	sodium_memzero(state->send_chain_key, sizeof(state->send_chain_key));
