@@ -81,11 +81,12 @@ ratchet_state* ratchet_create(
 		bool am_i_alice);
 
 /*
- * Create message key to encrypt the next send message with.
+ * Create message and header keys to encrypt the next send message with.
  */
-int ratchet_next_send_key(
+int ratchet_next_send_keys(
 		unsigned char * const next_message_key, //crypto_secretbox_KEYBYTES
 		                     //from the ratchet_state struct
+		unsigned char * const next_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
 		ratchet_state *state);
 
 /*

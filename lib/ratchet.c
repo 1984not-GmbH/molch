@@ -70,6 +70,10 @@ ratchet_state* ratchet_create(
 		return NULL;
 	}
 
+	//FIXME: how to correctly derive next header keys?
+	memcpy(state->next_send_header_key, state->send_header_key, sizeof(state->next_send_header_key));
+	memcpy(state->next_receive_header_key, state->receive_header_key, sizeof(state->next_receive_header_key));
+
 	//copy keys into state
 	//our public identity
 	memcpy(state->our_public_identity, our_public_identity, sizeof(state->our_public_identity));
@@ -99,10 +103,11 @@ ratchet_state* ratchet_create(
 }
 
 /*
- * Create message key to encrypt the next sent message with.
+ * Create message and header keys to encrypt the next sent message with.
  */
-int ratchet_next_send_key(
+int ratchet_next_send_keys(
 		unsigned char * const next_message_key,
+		unsigned char * const next_header_key,
 		ratchet_state *state) {
 	int status;
 	if (state->ratchet_flag) {
@@ -112,8 +117,11 @@ int ratchet_next_send_key(
 			return status;
 		}
 
+		//HKs = NHKs (shift header keys)
+		memcpy(state->send_header_key, state->next_send_header_key, sizeof(state->send_header_key));
+
 		//derive next root key and send chain key
-		//RK, CKs = HKDF(DH(DHs, DHr))
+		//RK, CKs, NHKs = HKDF(DH(DHs, DHr))
 		unsigned char previous_root_key[crypto_secretbox_KEYBYTES];
 		memcpy(previous_root_key, state->root_key, sizeof(previous_root_key));
 		status = derive_root_chain_and_header_keys(
@@ -142,6 +150,9 @@ int ratchet_next_send_key(
 	if (status != 0) {
 		return status;
 	}
+
+	//copy the header key
+	memcpy(next_header_key, state->send_header_key, sizeof(state->send_header_key));
 
 	state->send_message_number++;
 
