@@ -28,8 +28,8 @@
 void print_message_keystore(message_keystore *keystore) {
 	printf("KEYSTORE-START-----------------------------------------------------------------\n");
 	printf("Length: %i\n", keystore->length);
-	printf("Head: %p\n", keystore->head);
-	printf("Tail: %p\n\n", keystore->tail);
+	printf("Head: %p\n", (void*) keystore->head);
+	printf("Tail: %p\n\n", (void*) keystore->tail);
 
 	message_keystore_node* node = keystore->head;
 

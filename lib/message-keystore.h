@@ -26,12 +26,12 @@
 
 //node of the linked list
 typedef struct message_keystore_node message_keystore_node;
-typedef struct message_keystore_node {
+struct message_keystore_node {
 	message_keystore_node *previous;
 	message_keystore_node *next;
 	unsigned char message_key[crypto_secretbox_KEYBYTES];
 	time_t timestamp;
-} message_keystore_node;
+};
 
 //header of the key store
 typedef struct message_keystore {
