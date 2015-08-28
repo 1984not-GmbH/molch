@@ -240,6 +240,21 @@ int main(void) {
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
 	//now the receive end, Bob recreates the message keys
+
+	//set the header to 'decryptable'
+	status = ratchet_set_header_decryptability(
+			NEXT_DECRYPTABLE,
+			bob_state);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to set Bob's header decryptability. (%i)\n", status);
+		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
+		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
+		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
+
 	unsigned char bob_receive_key1[crypto_secretbox_KEYBYTES];
 	status = ratchet_receive(
 			bob_receive_key1,
@@ -267,6 +282,21 @@ int main(void) {
 	status = ratchet_set_last_message_authenticity(bob_state, true);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set authenticity state. (%i)\n", status);
+		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
+		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
+		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
+		sodium_memzero(bob_receive_key1, sizeof(bob_receive_key1));
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
+
+	//set the header to 'decryptable'
+	status = ratchet_set_header_decryptability(
+			CURRENT_DECRYPTABLE,
+			bob_state);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to set header decryptability. (%i)\n", status);
 		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
 		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
 		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
@@ -314,6 +344,23 @@ int main(void) {
 		ratchet_destroy(bob_state);
 		return status;
 	}
+
+	//set the header to 'decryptable'
+	status = ratchet_set_header_decryptability(
+			CURRENT_DECRYPTABLE,
+			bob_state);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to set header decryptability. (%i)\n", status);
+		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
+		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
+		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
+		sodium_memzero(bob_receive_key1, sizeof(bob_receive_key1));
+		sodium_memzero(bob_receive_key2, sizeof(bob_receive_key2));
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
+
 
 	//third receive message key
 	unsigned char bob_receive_key3[crypto_secretbox_KEYBYTES];
@@ -477,6 +524,21 @@ int main(void) {
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
 	//now alice receives the first, then the third message (second message skipped)
+
+	//set the header to 'decryptable'
+	status = ratchet_set_header_decryptability(
+			NEXT_DECRYPTABLE,
+			alice_state);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to set header decryptability. (%i)\n", status);
+		sodium_memzero(bob_send_message_key1, sizeof(bob_send_message_key1));
+		sodium_memzero(bob_send_message_key2, sizeof(bob_send_message_key2));
+		sodium_memzero(bob_send_message_key3, sizeof(bob_send_message_key3));
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
+
 	unsigned char alice_receive_key1[crypto_secretbox_KEYBYTES];
 	status = ratchet_receive(
 			alice_receive_key1,
@@ -503,6 +565,21 @@ int main(void) {
 	status = ratchet_set_last_message_authenticity(alice_state, true);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set authenticity state. (%i)\n", status);
+		sodium_memzero(bob_send_message_key1, sizeof(bob_send_message_key1));
+		sodium_memzero(bob_send_message_key2, sizeof(bob_send_message_key2));
+		sodium_memzero(bob_send_message_key3, sizeof(bob_send_message_key3));
+		sodium_memzero(alice_receive_key1, sizeof(alice_receive_key1));
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
+
+	//set the header to 'decryptable'
+	status = ratchet_set_header_decryptability(
+			CURRENT_DECRYPTABLE,
+			alice_state);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to set header decryptability. (%i)\n", status);
 		sodium_memzero(bob_send_message_key1, sizeof(bob_send_message_key1));
 		sodium_memzero(bob_send_message_key2, sizeof(bob_send_message_key2));
 		sodium_memzero(bob_send_message_key3, sizeof(bob_send_message_key3));

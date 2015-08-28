@@ -23,6 +23,13 @@
 #ifndef LIB_RATCHET_H
 #define LIB_RATCHET_H
 
+typedef enum ratchet_header_decryptability {
+	CURRENT_DECRYPTABLE, //decryptable with current receive header key
+	NEXT_DECRYPTABLE, //decryptable with next receive header key
+	UNDECRYPTABLE, //not decryptable
+	NOT_TRIED //not tried to decrypt yet
+} ratchet_header_decryptability;
+
 //struct that represents the state of a conversation
 typedef struct ratchet_state {
 	unsigned char root_key[crypto_secretbox_KEYBYTES]; //RK
@@ -58,6 +65,7 @@ typedef struct ratchet_state {
 	bool received_valid; //is false until the validity of a received message has been verified until the validity of a received message has been verified,
 	                     //this is necessary to be able to split key derivation from message
 	                     //decryption
+	ratchet_header_decryptability header_decryptable; //could the last received header be decrypted?
 	//list of previous message and header keys
 	header_and_message_keystore skipped_header_and_message_keys; //skipped_HK_MK (list containing message keys for messages that weren't received)
 	header_and_message_keystore purported_header_and_message_keys; //this represents the staging area specified in the axolotl ratchet
@@ -87,6 +95,14 @@ int ratchet_next_send_keys(
 		unsigned char * const next_message_key, //crypto_secretbox_KEYBYTES
 		                     //from the ratchet_state struct
 		unsigned char * const next_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		ratchet_state *state);
+
+/*
+ * Set if the header is decryptable with the current (state->receive_header_key)
+ * or next (next_receive_header_key) header key, or isn't decryptable.
+ */
+int ratchet_set_header_decryptability(
+		ratchet_header_decryptability header_decryptable,
 		ratchet_state *state);
 
 /*

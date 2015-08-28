@@ -71,8 +71,13 @@ ratchet_state* ratchet_create(
 	}
 
 	//FIXME: how to correctly derive next header keys?
-	memcpy(state->next_send_header_key, state->send_header_key, sizeof(state->next_send_header_key));
-	memcpy(state->next_receive_header_key, state->receive_header_key, sizeof(state->next_receive_header_key));
+	if (am_i_alice) {
+		memcpy(state->next_send_header_key, state->receive_header_key, sizeof(state->next_send_header_key));
+		memcpy(state->next_receive_header_key, state->receive_header_key, sizeof(state->next_receive_header_key));
+	} else {
+		memcpy(state->next_send_header_key, state->send_header_key, sizeof(state->next_send_header_key));
+		memcpy(state->next_receive_header_key, state->send_header_key, sizeof(state->next_receive_header_key));
+	}
 
 	//copy keys into state
 	//our public identity
@@ -94,6 +99,7 @@ ratchet_state* ratchet_create(
 	state->am_i_alice = am_i_alice;
 	state->ratchet_flag = am_i_alice;
 	state->received_valid = true; //allowing the receival of new messages
+	state->header_decryptable = NOT_TRIED;
 	state->send_message_number = 0;
 	state->receive_message_number = 0;
 	state->previous_message_number = 0;
@@ -166,6 +172,28 @@ int ratchet_next_send_keys(
 	sodium_memzero(old_chain_key, sizeof(old_chain_key));
 
 	return status;
+}
+
+/*
+ * Set if the header is decryptable with the current (state->receive_header_key)
+ * or next (next_receive_header_key) header key, or isn't decryptable.
+ */
+int ratchet_set_header_decryptability(
+		ratchet_header_decryptability header_decryptable,
+		ratchet_state *state) {
+	if ((state->header_decryptable != NOT_TRIED)) {
+		//if the last message hasn't been properly handled yet, abort
+		return -10;
+	}
+
+	if (header_decryptable == NOT_TRIED) {
+		//can't set to "NOT_TRIED"
+		return -10;
+	}
+
+	state->header_decryptable = header_decryptable;
+
+	return 0;
 }
 
 /*
@@ -311,13 +339,28 @@ int ratchet_receive(
 		return -10;
 	}
 
-	//check if the ratchet (ephemeral) key has changed
+	//none value to compare to
+	static const unsigned char header_none[] = {
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'
+	};
+	assert(sizeof(header_none) == crypto_aead_chacha20poly1305_KEYBYTES);
+
+	//header decryption hasn't been tried yet
+	if (state->header_decryptable == NOT_TRIED) {
+		return -10;
+	}
+
+	//check if the header key is none
 	int status;
 	status = sodium_memcmp(
-			their_purported_public_ephemeral,
-			state->their_public_ephemeral,
-			crypto_box_PUBLICKEYBYTES);
-	if (status == 0) { //still the same message chain
+			state->receive_header_key,
+			header_none,
+			sizeof(state->receive_header_key));
+
+	if ((status != 0) && (state->header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
 		//copy purported message number
 		state->purported_message_number = purported_message_number;
 
@@ -338,8 +381,7 @@ int ratchet_receive(
 		state->received_valid = false; //waiting for validation
 		return 0;
 	} else { //new message chain
-		if (state->ratchet_flag) {
-			//didn't expect to receive a new ratchet
+		if ((state->ratchet_flag) || (state->header_decryptable != NEXT_DECRYPTABLE)) {
 			return -10;
 		}
 
@@ -363,12 +405,15 @@ int ratchet_receive(
 			return status;
 		}
 
+		//HKp = NHKr
+		memcpy(state->purported_receive_header_key, state->next_receive_header_key, sizeof(state->purported_receive_header_key));
+
 		//derive purported root and chain keys
 		//first: input key for hkdf (root and chain key derivation)
 		status = derive_root_chain_and_header_keys(
 				state->purported_root_key,
 				state->purported_receive_chain_key,
-				state->next_receive_header_key, //FIXME: This is wrong! Wire up header keys correctly
+				state->purported_next_receive_header_key,
 				state->our_private_ephemeral,
 				state->our_public_ephemeral,
 				their_purported_public_ephemeral,
@@ -407,27 +452,50 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
 	//prepare for being able to receive new messages
 	state->received_valid = true;
 
-	//check if the ratchet (ephemeral) key has changed
+	//backup header decryptability
+	ratchet_header_decryptability header_decryptable = state->header_decryptable;
+	state->header_decryptable = NOT_TRIED;
+
+	//TODO make sure this function aborts if it is called at the wrong time
+
+	//none value to compare to
+	static const unsigned char header_none[] = {
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'
+	};
+	assert(sizeof(header_none) == crypto_aead_chacha20poly1305_KEYBYTES);
+
+	//check if header key is none
 	int status = sodium_memcmp(
-			state->their_purported_public_ephemeral,
-			state->their_public_ephemeral,
-			crypto_box_PUBLICKEYBYTES);
+			state->receive_header_key,
+			header_none,
+			sizeof(state->receive_header_key));
 	//TODO I can do those if's better. This only happens to be this way because of the specification
-	if ((status == 0) && !valid) { //still the same message chain and message wasn't valid
-		//clear purported message keys
-		header_and_message_keystore_clear(&(state->purported_header_and_message_keys));
-		return 0;
-	} else if (status != 0){ //new message chain
-		if (!valid) { //received message was invalid
-			//clear purported message keys
+	if ((status != 0) && (header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
+		//if HKr != <none> and Dec(HKr, header)
+		if (!valid) { //message couldn't be decrypted
+			//clear purported message and header keys
 			header_and_message_keystore_clear(&(state->purported_header_and_message_keys));
-			return 0;
+			return 0; //TODO: Should this really be 0?
+		}
+	} else { //new message chain
+		if (state->ratchet_flag || (header_decryptable != NEXT_DECRYPTABLE) || !valid) {
+			//if ratchet_flag or not Dec(NHKr, header)
+			//clear purported message and header keys
+			header_and_message_keystore_clear(&(state->purported_header_and_message_keys));
+			return 0; //TODO: Should this really be 0?
 		}
 
 		//otherwise, received message was valid
 		//accept purported values
 		//RK = RKp
 		memcpy(state->root_key, state->purported_root_key, crypto_secretbox_KEYBYTES);
+		//HKr = HKp
+		memcpy(state->receive_header_key, state->purported_receive_header_key, sizeof(state->receive_header_key));
+		//NHKr = NHKp
+		memcpy(state->next_receive_header_key, state->purported_next_receive_header_key, sizeof(state->next_receive_header_key));
 		//DHRr = DHRp
 		memcpy(state->their_public_ephemeral, state->their_purported_public_ephemeral, crypto_box_PUBLICKEYBYTES);
 		//erase(DHRs)
