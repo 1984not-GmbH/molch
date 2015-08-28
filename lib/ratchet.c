@@ -105,7 +105,6 @@ ratchet_state* ratchet_create(
 	state->previous_message_number = 0;
 
 	return state;
-
 }
 
 /*
