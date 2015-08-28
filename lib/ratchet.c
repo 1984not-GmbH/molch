@@ -220,11 +220,11 @@ int ratchet_set_header_decryptability(
  * all of them -> program hangs. Current workaround: Limiting number
  * of message keys that get precalculated.
  */
-int stage_skipped_header_and_message_keys( //FIXME add header key functionality
+int stage_skipped_header_and_message_keys(
 		unsigned char * const purported_chain_key, //CKp
 		unsigned char * const message_key, //MK
 		const unsigned int purported_message_number,
-		const unsigned char  * const receive_chain_key,
+		const unsigned char * const receive_chain_key,
 		ratchet_state *state) {
 	static const unsigned char none[] = {
 		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
@@ -272,7 +272,7 @@ int stage_skipped_header_and_message_keys( //FIXME add header key functionality
 			status = header_and_message_keystore_add(
 					&(state->purported_header_and_message_keys),
 					message_key_buffer,
-					message_key_buffer); //FIXME: this should be the corresponding header key
+					state->receive_header_key);
 			if (status != 0) {
 				sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
 				sodium_memzero(purported_next_chain_key, sizeof(purported_next_chain_key));
@@ -310,7 +310,7 @@ int stage_skipped_header_and_message_keys( //FIXME add header key functionality
  * Commit all the purported message keys into the message key store thats used
  * to actually decrypt late messages.
  */
-int commit_skipped_header_and_message_keys(ratchet_state *state) { //FIXME: Add header key functionality
+int commit_skipped_header_and_message_keys(ratchet_state *state) {
 	int status;
 	//as long as the list of purported message keys isn't empty,
 	//add them to the list of skipped message keys
@@ -318,7 +318,7 @@ int commit_skipped_header_and_message_keys(ratchet_state *state) { //FIXME: Add 
 		status = header_and_message_keystore_add(
 				&(state->skipped_header_and_message_keys),
 				state->purported_header_and_message_keys.head->message_key,
-				state->purported_header_and_message_keys.head->message_key); //FIXME: This should be the corresponding header key
+				state->purported_header_and_message_keys.head->header_key);
 		if (status != 0) {
 			return status;
 		}
