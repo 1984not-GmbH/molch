@@ -239,6 +239,20 @@ int main(void) {
 
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
+	//get pointers to bob's receive header keys
+	const unsigned char *bob_current_receive_header_key;
+	const unsigned char *bob_next_receive_header_key;
+	ratchet_get_receive_header_keys(
+			&bob_current_receive_header_key,
+			&bob_next_receive_header_key,
+			bob_state);
+
+	printf("Bob's current receive header key:\n");
+	print_hex(bob_current_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	printf("Bob's next receive_header_key:\n");
+	print_hex(bob_next_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	putchar('\n');
+
 	//now the receive end, Bob recreates the message keys
 
 	//set the header to 'decryptable'
@@ -290,6 +304,12 @@ int main(void) {
 		ratchet_destroy(bob_state);
 		return status;
 	}
+
+	printf("Bob's current receive header key:\n");
+	print_hex(bob_current_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	printf("Bob's next receive_header_key:\n");
+	print_hex(bob_next_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	putchar('\n');
 
 	//set the header to 'decryptable'
 	status = ratchet_set_header_decryptability(
@@ -344,6 +364,12 @@ int main(void) {
 		ratchet_destroy(bob_state);
 		return status;
 	}
+
+	printf("Bob's current receive header key:\n");
+	print_hex(bob_current_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	printf("Bob's next receive_header_key:\n");
+	print_hex(bob_next_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	putchar('\n');
 
 	//set the header to 'decryptable'
 	status = ratchet_set_header_decryptability(
@@ -523,6 +549,20 @@ int main(void) {
 
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
+	//get pointers to alice's receive header keys
+	const unsigned char *alice_current_receive_header_key;
+	const unsigned char *alice_next_receive_header_key;
+	ratchet_get_receive_header_keys(
+			&alice_current_receive_header_key,
+			&alice_next_receive_header_key,
+			alice_state);
+
+	printf("Alice's current receive header key:\n");
+	print_hex(alice_current_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	printf("Alice's next receive_header_key:\n");
+	print_hex(alice_next_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	putchar('\n');
+
 	//now alice receives the first, then the third message (second message skipped)
 
 	//set the header to 'decryptable'
@@ -573,6 +613,12 @@ int main(void) {
 		ratchet_destroy(bob_state);
 		return status;
 	}
+
+	printf("Alice's current receive header key:\n");
+	print_hex(alice_current_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	printf("Alice's next receive_header_key:\n");
+	print_hex(alice_next_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	putchar('\n');
 
 	//set the header to 'decryptable'
 	status = ratchet_set_header_decryptability(
