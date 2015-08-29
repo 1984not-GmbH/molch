@@ -23,19 +23,23 @@
 #include "utils.h"
 
 /*
- * Print a message keystore with all of it's entries.
+ * Print a header and message keystore with all of it's entries.
  */
-void print_message_keystore(message_keystore *keystore) {
+void print_header_and_message_keystore(header_and_message_keystore *keystore) {
 	printf("KEYSTORE-START-----------------------------------------------------------------\n");
 	printf("Length: %i\n", keystore->length);
 	printf("Head: %p\n", (void*) keystore->head);
 	printf("Tail: %p\n\n", (void*) keystore->tail);
 
-	message_keystore_node* node = keystore->head;
+	header_and_message_keystore_node* node = keystore->head;
 
 	//print all the keys in the keystore
 	unsigned int i;
 	for (i = 0; i < keystore->length; node = node->next, i++) {
+		printf("Header key %u:\n", i);
+		print_hex(node->header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+		putchar('\n');
+
 		printf("Message key %u:\n", i);
 		print_hex(node->message_key, crypto_secretbox_KEYBYTES, 30);
 		if (i != keystore->length - 1) { //omit last one

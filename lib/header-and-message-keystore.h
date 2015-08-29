@@ -19,39 +19,41 @@
 #include <sodium.h>
 #include <time.h>
 
-#ifndef LIB_MESSAGE_KEY_STORE_H
-#define LIB_MESSAGE_KEY_STORE_H
+#ifndef LIB_HEADER_AND_MESSAGE_KEY_STORE_H
+#define LIB_HEADER_AND_MESSAGE_KEY_STORE_H
 //the message key store is currently a double linked list with all the message keys that haven't been
 //used yet. (the keys are stored to still be able to decrypt old messages that weren't received)
 
 //node of the linked list
-typedef struct message_keystore_node message_keystore_node;
-struct message_keystore_node {
-	message_keystore_node *previous;
-	message_keystore_node *next;
+typedef struct header_and_message_keystore_node header_and_message_keystore_node;
+struct header_and_message_keystore_node {
+	header_and_message_keystore_node *previous;
+	header_and_message_keystore_node *next;
 	unsigned char message_key[crypto_secretbox_KEYBYTES];
+	unsigned char header_key[crypto_aead_chacha20poly1305_KEYBYTES];
 	time_t timestamp;
 };
 
 //header of the key store
-typedef struct message_keystore {
+typedef struct header_and_message_keystore {
 	unsigned int length;
-	message_keystore_node *head;
-	message_keystore_node *tail;
-} message_keystore;
+	header_and_message_keystore_node *head;
+	header_and_message_keystore_node *tail;
+} header_and_message_keystore;
 
 //initialise a new keystore
-message_keystore message_keystore_init();
+header_and_message_keystore header_and_message_keystore_init();
 
-//add a message key to the keystore
-//NOTE: The entire message key is copied, not only the pointer
-int message_keystore_add(
-		message_keystore *keystore,
-		const unsigned char * const message_key);
+//add a hader and message key to the keystore
+//NOTE: The entire keys are copied, not only the pointer
+int header_and_message_keystore_add(
+		header_and_message_keystore *keystore,
+		const unsigned char * const message_key,
+		const unsigned char * const header_key);
 
 //remove a message key from the keystore
-void message_keystore_remove(message_keystore *keystore, message_keystore_node *node);
+void header_and_message_keystore_remove(header_and_message_keystore *keystore, header_and_message_keystore_node *node);
 
 //clear the entire keystore
-void message_keystore_clear(message_keystore *keystore);
+void header_and_message_keystore_clear(header_and_message_keystore *keystore);
 #endif

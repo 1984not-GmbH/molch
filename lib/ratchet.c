@@ -46,11 +46,15 @@ ratchet_state* ratchet_create(
 		return NULL;
 	}
 
-	//derive initial chain and root key
-	unsigned char initial_chain_key[crypto_secretbox_KEYBYTES];
-	int status = derive_initial_root_and_chain_key(
+	//derive initial chain, root and header keys
+	int status = derive_initial_root_chain_and_header_keys(
 			state->root_key,
-			initial_chain_key,
+			state->send_chain_key,
+			state->receive_chain_key,
+			state->send_header_key,
+			state->receive_header_key,
+			state->next_send_header_key,
+			state->next_receive_header_key,
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,
@@ -59,22 +63,16 @@ ratchet_state* ratchet_create(
 			their_public_ephemeral,
 			am_i_alice);
 	if (status != 0) {
-		sodium_memzero(initial_chain_key, sizeof(initial_chain_key));
 		sodium_memzero(state->root_key, sizeof(state->root_key));
 		sodium_memzero(state->send_chain_key, sizeof(state->send_chain_key));
+		sodium_memzero(state->receive_chain_key, sizeof(state->receive_chain_key));
+		sodium_memzero(state->send_header_key, sizeof(state->send_header_key));
+		sodium_memzero(state->receive_header_key, sizeof(state->receive_header_key));
+		sodium_memzero(state->next_send_header_key, sizeof(state->next_send_header_key));
+		sodium_memzero(state->next_receive_header_key, sizeof(state->receive_header_key));
 		free(state);
 		return NULL;
 	}
-
-	//copy send_chain_key -> receive_chain_key
-	if (am_i_alice) {
-		memset(state->send_chain_key, 0, sizeof(state->send_chain_key));
-		memcpy(state->receive_chain_key, initial_chain_key, sizeof(state->receive_chain_key));
-	} else {
-		memset(state->receive_chain_key, 0, sizeof(state->receive_chain_key));
-		memcpy(state->send_chain_key, initial_chain_key, sizeof(state->send_chain_key));
-	}
-	sodium_memzero(initial_chain_key, sizeof(initial_chain_key));
 
 	//copy keys into state
 	//our public identity
@@ -89,26 +87,27 @@ ratchet_state* ratchet_create(
 	memcpy(state->their_public_ephemeral, their_public_ephemeral, sizeof(state->their_public_ephemeral));
 
 	//initialise message keystore for skipped messages
-	state->skipped_message_keys = message_keystore_init();
-	state->purported_message_keys = message_keystore_init();
+	state->skipped_header_and_message_keys = header_and_message_keystore_init();
+	state->purported_header_and_message_keys = header_and_message_keystore_init();
 
 	//set other state
 	state->am_i_alice = am_i_alice;
 	state->ratchet_flag = am_i_alice;
 	state->received_valid = true; //allowing the receival of new messages
+	state->header_decryptable = NOT_TRIED;
 	state->send_message_number = 0;
 	state->receive_message_number = 0;
 	state->previous_message_number = 0;
 
 	return state;
-
 }
 
 /*
- * Create message key to encrypt the next sent message with.
+ * Create message and header keys to encrypt the next sent message with.
  */
-int ratchet_next_send_key(
+int ratchet_next_send_keys(
 		unsigned char * const next_message_key,
+		unsigned char * const next_header_key,
 		ratchet_state *state) {
 	int status;
 	if (state->ratchet_flag) {
@@ -118,13 +117,17 @@ int ratchet_next_send_key(
 			return status;
 		}
 
+		//HKs = NHKs (shift header keys)
+		memcpy(state->send_header_key, state->next_send_header_key, sizeof(state->send_header_key));
+
 		//derive next root key and send chain key
-		//RK, CKs = HKDF(DH(DHs, DHr))
+		//RK, CKs, NHKs = HKDF(DH(DHs, DHr))
 		unsigned char previous_root_key[crypto_secretbox_KEYBYTES];
 		memcpy(previous_root_key, state->root_key, sizeof(previous_root_key));
-		status = derive_root_and_chain_key(
+		status = derive_root_chain_and_header_keys(
 				state->root_key,
 				state->send_chain_key,
+				state->next_send_header_key,
 				state->our_private_ephemeral,
 				state->our_public_ephemeral,
 				state->their_public_ephemeral,
@@ -148,6 +151,9 @@ int ratchet_next_send_key(
 		return status;
 	}
 
+	//copy the header key
+	memcpy(next_header_key, state->send_header_key, sizeof(state->send_header_key));
+
 	state->send_message_number++;
 
 	//derive next chain key
@@ -163,6 +169,40 @@ int ratchet_next_send_key(
 }
 
 /*
+ * Get pointers to the current and next receive header key.
+ * TODO: Copy them instead?
+ */
+void ratchet_get_receive_header_keys(
+		const unsigned char* *current_receive_header_key,
+		const unsigned char* *next_receive_header_key,
+		ratchet_state *state) {
+	*current_receive_header_key = state->receive_header_key;
+	*next_receive_header_key = state->next_receive_header_key;
+}
+
+/*
+ * Set if the header is decryptable with the current (state->receive_header_key)
+ * or next (next_receive_header_key) header key, or isn't decryptable.
+ */
+int ratchet_set_header_decryptability(
+		ratchet_header_decryptability header_decryptable,
+		ratchet_state *state) {
+	if ((state->header_decryptable != NOT_TRIED)) {
+		//if the last message hasn't been properly handled yet, abort
+		return -10;
+	}
+
+	if (header_decryptable == NOT_TRIED) {
+		//can't set to "NOT_TRIED"
+		return -10;
+	}
+
+	state->header_decryptable = header_decryptable;
+
+	return 0;
+}
+
+/*
  * This corresponds to "stage_skipped_header_and_message_keys" from the
  * axolotl protocol description.
  *
@@ -175,11 +215,11 @@ int ratchet_next_send_key(
  * all of them -> program hangs. Current workaround: Limiting number
  * of message keys that get precalculated.
  */
-int stage_skipped_message_keys(
+int stage_skipped_header_and_message_keys(
 		unsigned char * const purported_chain_key, //CKp
 		unsigned char * const message_key, //MK
 		const unsigned int purported_message_number,
-		const unsigned char  * const receive_chain_key,
+		const unsigned char * const receive_chain_key,
 		ratchet_state *state) {
 	static const unsigned char none[] = {
 		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
@@ -224,9 +264,10 @@ int stage_skipped_message_keys(
 
 		//add message key to list of purported message keys
 		if (pos < purported_message_number) { //only stage previous message keys
-			status = message_keystore_add(
-					&(state->purported_message_keys),
-					message_key_buffer);
+			status = header_and_message_keystore_add(
+					&(state->purported_header_and_message_keys),
+					message_key_buffer,
+					state->receive_header_key);
 			if (status != 0) {
 				sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
 				sodium_memzero(purported_next_chain_key, sizeof(purported_next_chain_key));
@@ -248,7 +289,7 @@ int stage_skipped_message_keys(
 		memcpy(purported_current_chain_key, purported_next_chain_key, sizeof(purported_current_chain_key));
 	}
 
-	//copy chain key to purported_receive_chain_key (this will be used in commit_skipped_message_keys)
+	//copy chain key to purported_receive_chain_key (this will be used in commit_skipped_header_and_message_keys)
 	memcpy(purported_chain_key, purported_next_chain_key, sizeof(purported_next_chain_key));
 
 	sodium_memzero(purported_current_chain_key, sizeof(purported_current_chain_key));
@@ -264,20 +305,21 @@ int stage_skipped_message_keys(
  * Commit all the purported message keys into the message key store thats used
  * to actually decrypt late messages.
  */
-int commit_skipped_message_keys(ratchet_state *state) {
+int commit_skipped_header_and_message_keys(ratchet_state *state) {
 	int status;
 	//as long as the list of purported message keys isn't empty,
 	//add them to the list of skipped message keys
-	while (state->purported_message_keys.length != 0) {
-		status = message_keystore_add(
-				&(state->skipped_message_keys),
-				state->purported_message_keys.head->message_key);
+	while (state->purported_header_and_message_keys.length != 0) {
+		status = header_and_message_keystore_add(
+				&(state->skipped_header_and_message_keys),
+				state->purported_header_and_message_keys.head->message_key,
+				state->purported_header_and_message_keys.head->header_key);
 		if (status != 0) {
 			return status;
 		}
-		message_keystore_remove(
-				&(state->purported_message_keys),
-				state->purported_message_keys.head);
+		header_and_message_keystore_remove(
+				&(state->purported_header_and_message_keys),
+				state->purported_header_and_message_keys.head);
 	}
 	return 0;
 }
@@ -303,18 +345,33 @@ int ratchet_receive(
 		return -10;
 	}
 
-	//check if the ratchet (ephemeral) key has changed
+	//none value to compare to
+	static const unsigned char header_none[] = {
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'
+	};
+	assert(sizeof(header_none) == crypto_aead_chacha20poly1305_KEYBYTES);
+
+	//header decryption hasn't been tried yet
+	if (state->header_decryptable == NOT_TRIED) {
+		return -10;
+	}
+
+	//check if the header key is none
 	int status;
 	status = sodium_memcmp(
-			their_purported_public_ephemeral,
-			state->their_public_ephemeral,
-			crypto_box_PUBLICKEYBYTES);
-	if (status == 0) { //still the same message chain
+			state->receive_header_key,
+			header_none,
+			sizeof(state->receive_header_key));
+
+	if ((status != 0) && (state->header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
 		//copy purported message number
 		state->purported_message_number = purported_message_number;
 
 		//create skipped message keys and store current one
-		status = stage_skipped_message_keys(
+		status = stage_skipped_header_and_message_keys(
 				state->purported_receive_chain_key,
 				message_key,
 				purported_message_number,
@@ -330,8 +387,7 @@ int ratchet_receive(
 		state->received_valid = false; //waiting for validation
 		return 0;
 	} else { //new message chain
-		if (state->ratchet_flag) {
-			//didn't expect to receive a new ratchet
+		if ((state->ratchet_flag) || (state->header_decryptable != NEXT_DECRYPTABLE)) {
 			return -10;
 		}
 
@@ -344,7 +400,7 @@ int ratchet_receive(
 		unsigned char temp_purported_chain_key[crypto_secretbox_KEYBYTES];
 
 		//stage message keys for previous message chain
-		status = stage_skipped_message_keys(
+		status = stage_skipped_header_and_message_keys(
 				temp_purported_chain_key,
 				message_key,
 				purported_previous_message_number,
@@ -355,11 +411,15 @@ int ratchet_receive(
 			return status;
 		}
 
+		//HKp = NHKr
+		memcpy(state->purported_receive_header_key, state->next_receive_header_key, sizeof(state->purported_receive_header_key));
+
 		//derive purported root and chain keys
 		//first: input key for hkdf (root and chain key derivation)
-		status = derive_root_and_chain_key(
+		status = derive_root_chain_and_header_keys(
 				state->purported_root_key,
 				state->purported_receive_chain_key,
+				state->purported_next_receive_header_key,
 				state->our_private_ephemeral,
 				state->our_public_ephemeral,
 				their_purported_public_ephemeral,
@@ -370,7 +430,7 @@ int ratchet_receive(
 		}
 
 		//stage message keys for current message chain
-		status = stage_skipped_message_keys(
+		status = stage_skipped_header_and_message_keys(
 				temp_purported_chain_key,
 				message_key,
 				purported_message_number,
@@ -398,27 +458,50 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
 	//prepare for being able to receive new messages
 	state->received_valid = true;
 
-	//check if the ratchet (ephemeral) key has changed
+	//backup header decryptability
+	ratchet_header_decryptability header_decryptable = state->header_decryptable;
+	state->header_decryptable = NOT_TRIED;
+
+	//TODO make sure this function aborts if it is called at the wrong time
+
+	//none value to compare to
+	static const unsigned char header_none[] = {
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
+		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'
+	};
+	assert(sizeof(header_none) == crypto_aead_chacha20poly1305_KEYBYTES);
+
+	//check if header key is none
 	int status = sodium_memcmp(
-			state->their_purported_public_ephemeral,
-			state->their_public_ephemeral,
-			crypto_box_PUBLICKEYBYTES);
+			state->receive_header_key,
+			header_none,
+			sizeof(state->receive_header_key));
 	//TODO I can do those if's better. This only happens to be this way because of the specification
-	if ((status == 0) && !valid) { //still the same message chain and message wasn't valid
-		//clear purported message keys
-		message_keystore_clear(&(state->purported_message_keys));
-		return 0;
-	} else if (status != 0){ //new message chain
-		if (!valid) { //received message was invalid
-			//clear purported message keys
-			message_keystore_clear(&(state->purported_message_keys));
-			return 0;
+	if ((status != 0) && (header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
+		//if HKr != <none> and Dec(HKr, header)
+		if (!valid) { //message couldn't be decrypted
+			//clear purported message and header keys
+			header_and_message_keystore_clear(&(state->purported_header_and_message_keys));
+			return 0; //TODO: Should this really be 0?
+		}
+	} else { //new message chain
+		if (state->ratchet_flag || (header_decryptable != NEXT_DECRYPTABLE) || !valid) {
+			//if ratchet_flag or not Dec(NHKr, header)
+			//clear purported message and header keys
+			header_and_message_keystore_clear(&(state->purported_header_and_message_keys));
+			return 0; //TODO: Should this really be 0?
 		}
 
 		//otherwise, received message was valid
 		//accept purported values
 		//RK = RKp
 		memcpy(state->root_key, state->purported_root_key, crypto_secretbox_KEYBYTES);
+		//HKr = HKp
+		memcpy(state->receive_header_key, state->purported_receive_header_key, sizeof(state->receive_header_key));
+		//NHKr = NHKp
+		memcpy(state->next_receive_header_key, state->purported_next_receive_header_key, sizeof(state->next_receive_header_key));
 		//DHRr = DHRp
 		memcpy(state->their_public_ephemeral, state->their_purported_public_ephemeral, crypto_box_PUBLICKEYBYTES);
 		//erase(DHRs)
@@ -427,7 +510,7 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
 		state->ratchet_flag = true;
 	}
 
-	status = commit_skipped_message_keys(state);
+	status = commit_skipped_header_and_message_keys(state);
 	if (status != 0) {
 		return status;
 	}
@@ -445,20 +528,28 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
 void ratchet_destroy(ratchet_state *state) {
 	//delete keys
 	//root key
-	sodium_memzero(state->root_key, crypto_secretbox_KEYBYTES);
-	sodium_memzero(state->purported_root_key, crypto_secretbox_KEYBYTES);
+	sodium_memzero(state->root_key, sizeof(state->root_key));
+	sodium_memzero(state->purported_root_key, sizeof(state->purported_root_key));
 
 	//our private ephemeral
-	sodium_memzero(state->our_private_ephemeral, crypto_box_SECRETKEYBYTES);
+	sodium_memzero(state->our_private_ephemeral, sizeof(state->our_private_ephemeral));
+
+	//header keys
+	sodium_memzero(state->send_header_key, sizeof(state->send_header_key));
+	sodium_memzero(state->receive_header_key, sizeof(state->receive_header_key));
+	sodium_memzero(state->next_send_header_key, sizeof(state->next_send_header_key));
+	sodium_memzero(state->next_receive_header_key, sizeof(state->next_receive_header_key));
+	sodium_memzero(state->purported_receive_header_key, sizeof(state->purported_receive_header_key));
+	sodium_memzero(state->purported_next_receive_header_key, sizeof(state->purported_next_receive_header_key));
 
 	//chain keys
-	sodium_memzero(state->send_chain_key, crypto_secretbox_KEYBYTES);
-	sodium_memzero(state->receive_chain_key, crypto_secretbox_KEYBYTES);
-	sodium_memzero(state->purported_receive_chain_key, crypto_secretbox_KEYBYTES);
+	sodium_memzero(state->send_chain_key, sizeof(state->send_chain_key));
+	sodium_memzero(state->receive_chain_key, sizeof(state->send_chain_key));
+	sodium_memzero(state->purported_receive_chain_key, sizeof(state->purported_receive_chain_key));
 
 	//empty message keystores
-	message_keystore_clear(&(state->skipped_message_keys));
-	message_keystore_clear(&(state->purported_message_keys));
+	header_and_message_keystore_clear(&(state->skipped_header_and_message_keys));
+	header_and_message_keystore_clear(&(state->purported_header_and_message_keys));
 
 	free(state);
 }

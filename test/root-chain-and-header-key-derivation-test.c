@@ -67,9 +67,11 @@ int main(void) {
 	//derive root and chain key for Alice
 	unsigned char alice_root_key[crypto_secretbox_KEYBYTES];
 	unsigned char alice_chain_key[crypto_secretbox_KEYBYTES];
-	status = derive_root_and_chain_key(
+	unsigned char alice_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
+	status = derive_root_chain_and_header_keys(
 			alice_root_key,
 			alice_chain_key,
+			alice_header_key,
 			alice_private_ephemeral,
 			alice_public_ephemeral,
 			bob_public_ephemeral,
@@ -80,6 +82,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to derive root and chain key for Alice. (%i)\n", status);
 		sodium_memzero(alice_root_key, sizeof(alice_root_key));
 		sodium_memzero(alice_chain_key, sizeof(alice_chain_key));
+		sodium_memzero(alice_header_key, sizeof(alice_header_key));
 		sodium_memzero(bob_private_ephemeral, sizeof(bob_private_ephemeral));
 		sodium_memzero(previous_root_key, sizeof(previous_root_key));
 		return status;
@@ -90,14 +93,18 @@ int main(void) {
 	print_hex(alice_root_key, sizeof(alice_root_key), 30);
 	printf("Alice's chain key (%zi Bytes):\n", sizeof(alice_chain_key));
 	print_hex(alice_chain_key, sizeof(alice_chain_key), 30);
+	printf("Alice's header key (%zi Bytes):\n", sizeof(alice_header_key));
+	print_hex(alice_header_key, sizeof(alice_header_key), 30);
 	putchar('\n');
 
 	//derive root and chain key for Bob
 	unsigned char bob_root_key[crypto_secretbox_KEYBYTES];
 	unsigned char bob_chain_key[crypto_secretbox_KEYBYTES];
-	status = derive_root_and_chain_key(
+	unsigned char bob_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
+	status = derive_root_chain_and_header_keys(
 			bob_root_key,
 			bob_chain_key,
+			bob_header_key,
 			bob_private_ephemeral,
 			bob_public_ephemeral,
 			alice_public_ephemeral,
@@ -109,8 +116,10 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to derive root and chain key for Bob. (%i)\n", status);
 		sodium_memzero(alice_root_key, sizeof(alice_root_key));
 		sodium_memzero(alice_chain_key, sizeof(alice_chain_key));
+		sodium_memzero(alice_header_key, sizeof(alice_header_key));
 		sodium_memzero(bob_root_key, sizeof(bob_root_key));
 		sodium_memzero(bob_chain_key, sizeof(bob_chain_key));;
+		sodium_memzero(bob_header_key, sizeof(bob_header_key));
 		return status;
 	}
 
@@ -119,6 +128,8 @@ int main(void) {
 	print_hex(bob_root_key, sizeof(bob_root_key), 30);
 	printf("Bob's chain key (%zi Bytes):\n", sizeof(bob_chain_key));
 	print_hex(bob_chain_key, sizeof(bob_chain_key), 30);
+	printf("Bob's header key (%zi Bytes):\n", sizeof(bob_header_key));
+	print_hex(bob_header_key, sizeof(bob_header_key), 30);
 	putchar('\n');
 
 	//compare Alice's and Bob's root keys
@@ -129,7 +140,9 @@ int main(void) {
 		sodium_memzero(alice_root_key, sizeof(alice_root_key));
 		sodium_memzero(bob_root_key, sizeof(bob_root_key));
 		sodium_memzero(alice_chain_key, sizeof(alice_chain_key));
+		sodium_memzero(alice_header_key, sizeof(alice_header_key));
 		sodium_memzero(bob_chain_key, sizeof(bob_chain_key));;
+		sodium_memzero(bob_header_key, sizeof(bob_header_key));
 		return -1;
 	}
 	sodium_memzero(alice_root_key, sizeof(alice_root_key));
@@ -141,12 +154,27 @@ int main(void) {
 	} else {
 		fprintf(stderr, "ERROR: Alice's and Bob's chain keys don't match.\n");
 		sodium_memzero(alice_chain_key, sizeof(alice_chain_key));
-		sodium_memzero(bob_chain_key, sizeof(bob_chain_key));;
+		sodium_memzero(alice_header_key, sizeof(alice_header_key));
+		sodium_memzero(bob_chain_key, sizeof(bob_chain_key));
+		sodium_memzero(bob_header_key, sizeof(bob_header_key));
 		return -1;
 	}
 
 	sodium_memzero(alice_chain_key, sizeof(alice_chain_key));
 	sodium_memzero(bob_chain_key, sizeof(bob_chain_key));;
+
+	//compare Alice's and Bob's header keys
+	if (sodium_memcmp(alice_header_key, bob_header_key, sizeof(bob_header_key)) == 0) {
+		printf("Alice's and Bob's header keys match.\n");
+	} else {
+		fprintf(stderr, "ERROR: Alice's and Bob's header keys don't match.\n");
+		sodium_memzero(alice_header_key, sizeof(alice_header_key));
+		sodium_memzero(bob_header_key, sizeof(bob_header_key));
+		return -1;
+	}
+
+	sodium_memzero(alice_header_key, sizeof(alice_header_key));
+	sodium_memzero(bob_header_key, sizeof(bob_header_key));;
 
 	return EXIT_SUCCESS;
 }

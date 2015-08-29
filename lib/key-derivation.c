@@ -73,11 +73,12 @@ int derive_message_key(
  *
  * The chain and root key have to be crypto_secretbox_KEYBYTES long.
  *
- * RK, CK = HKDF( RK, DH(DHRr, DHRs) )
+ * RK, CK, HK = HKDF( RK, DH(DHRr, DHRs) )
  */
-int derive_root_and_chain_key(
-		unsigned char * const root_key,
-		unsigned char * const chain_key,
+int derive_root_chain_and_header_keys(
+		unsigned char * const root_key, //crypto_secretbox_KEYBYTES
+		unsigned char * const chain_key, //crypto_secretbox_KEYBYTES
+		unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
 		const unsigned char * const our_private_ephemeral,
 		const unsigned char * const our_public_ephemeral,
 		const unsigned char * const their_public_ephemeral,
@@ -102,7 +103,7 @@ int derive_root_and_chain_key(
 	//now create root and chain key in temporary buffer
 	//RK, CK = HKDF(previous_root_key, input_key)
 	const unsigned char info[] = INFO;
-	unsigned char hkdf_buffer[2 * crypto_secretbox_KEYBYTES];
+	unsigned char hkdf_buffer[2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES];
 	status = hkdf(
 			hkdf_buffer,
 			sizeof(hkdf_buffer),
@@ -120,21 +121,25 @@ int derive_root_and_chain_key(
 	//copy keys from hkdf buffer
 	memcpy(root_key, hkdf_buffer, crypto_secretbox_KEYBYTES);
 	memcpy(chain_key, hkdf_buffer + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	memcpy(header_key, hkdf_buffer + 2 * crypto_secretbox_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 
 	sodium_memzero(hkdf_buffer, sizeof(hkdf_buffer));
 	return 0;
 }
 
 /*
- * Derive initial root and chain keys.
+ * Derive initial root, chain and header keys.
  *
- * The chain and root key have to be crypto_secretbox_KEYBYTES long.
- *
- * RK, CK = HKDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
+ * RK, CKs/r, HKs/r, NHKs/r = HKDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
  */
-int derive_initial_root_and_chain_key(
-		unsigned char * const root_key,
-		unsigned char * const chain_key,
+int derive_initial_root_chain_and_header_keys(
+		unsigned char * const root_key, //crypto_secretbox_KEYBYTES
+		unsigned char * const send_chain_key, //crypto_secretbox_KEYBYTES
+		unsigned char * const receive_chain_key, //crypto_secretbox_KEYBYTES
+		unsigned char * const send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		unsigned char * const receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		unsigned char * const next_send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		unsigned char * const next_receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
 		const unsigned char * const our_private_identity,
 		const unsigned char * const our_public_identity,
 		const unsigned char * const their_public_identity,
@@ -142,8 +147,8 @@ int derive_initial_root_and_chain_key(
 		const unsigned char * const our_public_ephemeral,
 		const unsigned char * const their_public_ephemeral,
 		bool am_i_alice) {
-	//derive pre_root_key to later derive the initial root key
-	//and the first send chain key from
+	//derive pre_root_key to later derive the initial root key,
+	//header keys and chain keys from
 	//pre_root_key = HASH( DH(A,B0) || DH(A0,B) || DH(A0,B0) )
 	assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES);
 	unsigned char pre_root_key[crypto_secretbox_KEYBYTES];
@@ -161,9 +166,9 @@ int derive_initial_root_and_chain_key(
 		return status;
 	}
 
-	//derive chain and root key from pre_root_key via HKDF
-	//RK, CK = HKDF(salt, pre_root_key)
-	unsigned char hkdf_buffer[2 * crypto_secretbox_KEYBYTES];
+	//derive chain, root and header keys from pre_root_key via HKDF
+	//RK, CK, HK, NHK1, NHK2 = HKDF(salt, pre_root_key)
+	unsigned char hkdf_buffer[2 * crypto_secretbox_KEYBYTES + 3 * crypto_aead_chacha20poly1305_KEYBYTES];
 	const unsigned char salt[] = "molch--libsodium-crypto-library"; //TODO: Maybe use better salt?
 	assert(sizeof(salt) == crypto_auth_KEYBYTES);
 	const unsigned char info[] = INFO;
@@ -182,8 +187,32 @@ int derive_initial_root_and_chain_key(
 	}
 
 	//now copy the keys
+	//root key:
 	memcpy(root_key, hkdf_buffer, crypto_secretbox_KEYBYTES);
-	memcpy(chain_key, hkdf_buffer + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	//chain keys and header keys
+	if (am_i_alice) {
+		//Alice: CKs=<none>, CKr=HKDF
+		memset(send_chain_key, 0, crypto_secretbox_KEYBYTES);
+		memcpy(receive_chain_key, hkdf_buffer + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+		//HKs=<none>, HKr=HKDF
+		memset(send_header_key, 0, crypto_secretbox_KEYBYTES);
+		memcpy(receive_header_key, hkdf_buffer + 2 * crypto_secretbox_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+
+		//NHKs, NHKr
+		memcpy(next_send_header_key, hkdf_buffer + 2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+		memcpy(next_receive_header_key, hkdf_buffer + 2 * crypto_secretbox_KEYBYTES + 2 * crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	} else {
+		//Bob: CKs=HKDF, CKr=<none>
+		memset(receive_chain_key, 0, crypto_secretbox_KEYBYTES);
+		memcpy(send_chain_key, hkdf_buffer + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+		//HKs=HKDF, HKr=<none>
+		memset(receive_header_key, 0, crypto_secretbox_KEYBYTES);
+		memcpy(send_header_key, hkdf_buffer + 2 * crypto_secretbox_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+
+		//NHKr, NHKs
+		memcpy(next_receive_header_key, hkdf_buffer + 2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+		memcpy(next_send_header_key, hkdf_buffer + 2 * crypto_secretbox_KEYBYTES + 2 * crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	}
 	sodium_memzero(hkdf_buffer, sizeof(hkdf_buffer));
 
 	return 0;
