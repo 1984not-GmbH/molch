@@ -59,18 +59,27 @@ size of a packet
 NOTE: This may be subject to change.
 
 ```
-header length (1)
-+ header (42) {
-    version_info (2)
-    + public_ephemeral_key (32)
-    + message_counter (4)
-    + previous_message_counter (4)
+packet (>=362) = {
+  protocol_version(1),
+  packet_type(1),
+  header_length(1),
+  header_nonce(crypto_aead_chacha20poly1305_NPUBBYTES = 8),
+  header (64) {
+      axolotl_header(crypto_box_PUBLICKEYBYTES + 8 = 40) {
+        sender_public_ephemeral (crypto_box_PUBLICKEYBYTES = 32),
+        message_number (4),
+        previous_message_number (4)
+      }
+      message_nonce(crypto_secretbox_NONCEBYTES = 24)
+  },
+  header_and_additional_data_MAC(crypto_aead_chacha20poly1305_ABYTES = 16),
+  authenticated_encrypted_message (>=271) {
+      message(>=255),
+      MAC(crypto_secretbox_MACBYTES = 16)
+  }
 }
-+ crypto_secretbox_NONCEBYTES (24)
-+ crypto_onetimeauth_BYTES (16)
-+ message (>=255)
-+ crypto_secretbox_MACBYTES (16)
->= 354 Bytes
+
+To be precise: 362 + n*255 with n = 0, 1, 2, ...
 ```
 
 If the message length exceeds 255 Bytes, you have to add another 255 bytes because of the padding. The length of the padded message is always the following:
