@@ -193,6 +193,7 @@ int main(void) {
 
 	//compare Alice's and Bob's initial root key
 	if (sodium_memcmp(alice_root_key, bob_root_key, sizeof(alice_root_key)) != 0) {
+		fprintf(stderr, "ERROR: Alice's and Bob's initial root keys don't match.\n");
 		sodium_memzero(alice_root_key, sizeof(alice_root_key));
 		sodium_memzero(alice_send_chain_key, sizeof(alice_send_chain_key));
 		sodium_memzero(alice_receive_chain_key, sizeof(alice_receive_chain_key));
@@ -203,7 +204,6 @@ int main(void) {
 		sodium_memzero(bob_receive_chain_key, sizeof(bob_receive_chain_key));
 		sodium_memzero(bob_send_header_key, sizeof(bob_send_header_key));
 		sodium_memzero(bob_receive_header_key, sizeof(bob_receive_header_key));
-		fprintf(stderr, "ERROR: Alice's and Bob's initial root keys don't match.\n");
 		return -10;
 	}
 	printf("Alice's and Bob's initial root keys match.\n");
@@ -222,7 +222,7 @@ int main(void) {
 		sodium_memzero(bob_receive_chain_key, sizeof(bob_receive_chain_key));
 		sodium_memzero(bob_send_header_key, sizeof(bob_send_header_key));
 		sodium_memzero(bob_receive_header_key, sizeof(bob_receive_header_key));
-		return status;
+		return -10;
 	}
 	printf("Alice's and Bob's initial chain keys match.\n");
 
@@ -237,7 +237,7 @@ int main(void) {
 		sodium_memzero(bob_send_chain_key, sizeof(bob_send_chain_key));
 		sodium_memzero(bob_send_header_key, sizeof(bob_send_header_key));
 		sodium_memzero(bob_receive_header_key, sizeof(bob_receive_header_key));
-		return status;
+		return -10;
 	}
 	printf("Alice's and Bob's initial chain keys match.\n");
 
@@ -248,7 +248,7 @@ int main(void) {
 		sodium_memzero(alice_receive_header_key, sizeof(alice_receive_header_key));
 		sodium_memzero(bob_send_header_key, sizeof(bob_send_header_key));
 		sodium_memzero(bob_receive_header_key, sizeof(bob_receive_header_key));
-		return status;
+		return -10;
 	}
 	printf("Alice's and Bob's initial header keys match.\n");
 
@@ -259,7 +259,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Alice's and Bob's initial header keys don't match.\n");
 		sodium_memzero(alice_receive_header_key, sizeof(alice_receive_header_key));
 		sodium_memzero(bob_send_header_key, sizeof(bob_send_header_key));
-		return status;
+		return -10;
 	}
 	printf("Alice's and Bob's initial header keys match.\n");
 
