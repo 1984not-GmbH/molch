@@ -19,6 +19,7 @@ set(tests hkdf-test
           packet-decrypt-header-test
           packet-decrypt-message-test
           packet-decrypt-test
+          header-test
           header-and-message-keystore-test
           ratchet-test)
 
