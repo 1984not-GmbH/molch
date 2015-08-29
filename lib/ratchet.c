@@ -53,6 +53,8 @@ ratchet_state* ratchet_create(
 			state->receive_chain_key,
 			state->send_header_key,
 			state->receive_header_key,
+			state->next_send_header_key,
+			state->next_receive_header_key,
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,
@@ -66,17 +68,10 @@ ratchet_state* ratchet_create(
 		sodium_memzero(state->receive_chain_key, sizeof(state->receive_chain_key));
 		sodium_memzero(state->send_header_key, sizeof(state->send_header_key));
 		sodium_memzero(state->receive_header_key, sizeof(state->receive_header_key));
+		sodium_memzero(state->next_send_header_key, sizeof(state->next_send_header_key));
+		sodium_memzero(state->next_receive_header_key, sizeof(state->receive_header_key));
 		free(state);
 		return NULL;
-	}
-
-	//FIXME: how to correctly derive next header keys?
-	if (am_i_alice) {
-		memcpy(state->next_send_header_key, state->receive_header_key, sizeof(state->next_send_header_key));
-		memcpy(state->next_receive_header_key, state->receive_header_key, sizeof(state->next_receive_header_key));
-	} else {
-		memcpy(state->next_send_header_key, state->send_header_key, sizeof(state->next_send_header_key));
-		memcpy(state->next_receive_header_key, state->send_header_key, sizeof(state->next_receive_header_key));
 	}
 
 	//copy keys into state

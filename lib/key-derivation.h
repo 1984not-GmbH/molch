@@ -71,6 +71,8 @@ int derive_initial_root_chain_and_header_keys(
 		unsigned char * const receive_chain_key, //crypto_secretbox_KEYBYTES
 		unsigned char * const send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
 		unsigned char * const receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		unsigned char * const next_send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		unsigned char * const next_receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
 		const unsigned char * const our_private_identity,
 		const unsigned char * const our_public_identity,
 		const unsigned char * const their_public_identity,

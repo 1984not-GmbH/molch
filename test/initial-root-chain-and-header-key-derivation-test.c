@@ -92,12 +92,16 @@ int main(void) {
 	unsigned char alice_receive_chain_key[crypto_secretbox_KEYBYTES];
 	unsigned char alice_send_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
 	unsigned char alice_receive_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
+	unsigned char alice_next_send_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
+	unsigned char alice_next_receive_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
 	status = derive_initial_root_chain_and_header_keys(
 			alice_root_key,
 			alice_send_chain_key,
 			alice_receive_chain_key,
 			alice_send_header_key,
 			alice_receive_header_key,
+			alice_next_send_header_key,
+			alice_next_receive_header_key,
 			alice_private_identity,
 			alice_public_identity,
 			bob_public_identity,
@@ -114,6 +118,8 @@ int main(void) {
 		sodium_memzero(alice_receive_chain_key, sizeof(alice_receive_chain_key));
 		sodium_memzero(alice_send_header_key, sizeof(alice_send_header_key));
 		sodium_memzero(alice_receive_header_key, sizeof(alice_receive_header_key));
+		sodium_memzero(alice_next_send_header_key, sizeof(alice_next_send_header_key));
+		sodium_memzero(alice_next_receive_header_key, sizeof(alice_next_receive_header_key));
 
 		sodium_memzero(bob_private_identity, sizeof(bob_private_identity));
 		sodium_memzero(bob_private_ephemeral, sizeof(bob_private_ephemeral));
@@ -136,6 +142,11 @@ int main(void) {
 	putchar('\n');
 	printf("Alice's initial receive header key (%zi Bytes):\n", sizeof(alice_receive_header_key));
 	print_hex(alice_receive_header_key, sizeof(alice_receive_header_key), 30);
+	printf("Alice's initial next send header key (%zi Bytes):\n", sizeof(alice_next_send_header_key));
+	print_hex(alice_next_send_header_key, sizeof(alice_next_send_header_key), 30);
+	putchar('\n');
+	printf("Alice's initial next receive header key (%zi Bytes):\n", sizeof(alice_next_receive_header_key));
+	print_hex(alice_next_receive_header_key, sizeof(alice_next_receive_header_key), 30);
 	putchar('\n');
 
 	//derive Bob's initial root and chain key
@@ -144,12 +155,16 @@ int main(void) {
 	unsigned char bob_receive_chain_key[crypto_secretbox_KEYBYTES];
 	unsigned char bob_send_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
 	unsigned char bob_receive_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
+	unsigned char bob_next_send_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
+	unsigned char bob_next_receive_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
 	status = derive_initial_root_chain_and_header_keys(
 			bob_root_key,
 			bob_send_chain_key,
 			bob_receive_chain_key,
 			bob_send_header_key,
 			bob_receive_header_key,
+			bob_next_send_header_key,
+			bob_next_receive_header_key,
 			bob_private_identity,
 			bob_public_identity,
 			alice_public_identity,
@@ -166,11 +181,15 @@ int main(void) {
 		sodium_memzero(alice_receive_chain_key, sizeof(alice_receive_chain_key));
 		sodium_memzero(alice_send_header_key, sizeof(alice_send_header_key));
 		sodium_memzero(alice_receive_header_key, sizeof(alice_receive_header_key));
+		sodium_memzero(alice_next_send_header_key, sizeof(alice_next_send_header_key));
+		sodium_memzero(alice_next_receive_header_key, sizeof(alice_next_receive_header_key));
 		sodium_memzero(bob_root_key, sizeof(bob_root_key));
 		sodium_memzero(bob_send_chain_key, sizeof(bob_send_chain_key));
 		sodium_memzero(bob_receive_chain_key, sizeof(bob_receive_chain_key));
 		sodium_memzero(bob_send_header_key, sizeof(bob_send_header_key));
 		sodium_memzero(bob_receive_header_key, sizeof(bob_receive_header_key));
+		sodium_memzero(bob_next_send_header_key, sizeof(bob_next_send_header_key));
+		sodium_memzero(bob_next_receive_header_key, sizeof(bob_next_receive_header_key));
 		return status;
 	}
 
@@ -189,6 +208,11 @@ int main(void) {
 	putchar('\n');
 	printf("Bob's initial receive header key (%zi Bytes):\n", sizeof(bob_receive_header_key));
 	print_hex(bob_receive_header_key, sizeof(bob_receive_header_key), 30);
+	printf("Bob's initial next send header key (%zi Bytes):\n", sizeof(bob_next_send_header_key));
+	print_hex(bob_next_send_header_key, sizeof(bob_next_send_header_key), 30);
+	putchar('\n');
+	printf("Bob's initial next receive header key (%zi Bytes):\n", sizeof(bob_next_receive_header_key));
+	print_hex(bob_next_receive_header_key, sizeof(bob_next_receive_header_key), 30);
 	putchar('\n');
 
 	//compare Alice's and Bob's initial root key
@@ -199,11 +223,15 @@ int main(void) {
 		sodium_memzero(alice_receive_chain_key, sizeof(alice_receive_chain_key));
 		sodium_memzero(alice_send_header_key, sizeof(alice_send_header_key));
 		sodium_memzero(alice_receive_header_key, sizeof(alice_receive_header_key));
+		sodium_memzero(alice_next_send_header_key, sizeof(alice_next_send_header_key));
+		sodium_memzero(alice_next_receive_header_key, sizeof(alice_next_receive_header_key));
 		sodium_memzero(bob_root_key, sizeof(bob_root_key));
 		sodium_memzero(bob_send_chain_key, sizeof(bob_send_chain_key));
 		sodium_memzero(bob_receive_chain_key, sizeof(bob_receive_chain_key));
 		sodium_memzero(bob_send_header_key, sizeof(bob_send_header_key));
 		sodium_memzero(bob_receive_header_key, sizeof(bob_receive_header_key));
+		sodium_memzero(bob_next_send_header_key, sizeof(bob_next_send_header_key));
+		sodium_memzero(bob_next_receive_header_key, sizeof(bob_next_receive_header_key));
 		return -10;
 	}
 	printf("Alice's and Bob's initial root keys match.\n");
@@ -218,10 +246,14 @@ int main(void) {
 		sodium_memzero(alice_receive_chain_key, sizeof(alice_receive_chain_key));
 		sodium_memzero(alice_send_header_key, sizeof(alice_send_header_key));
 		sodium_memzero(alice_receive_header_key, sizeof(alice_receive_header_key));
+		sodium_memzero(alice_next_send_header_key, sizeof(alice_next_send_header_key));
+		sodium_memzero(alice_next_receive_header_key, sizeof(alice_next_receive_header_key));
 		sodium_memzero(bob_send_chain_key, sizeof(bob_send_chain_key));
 		sodium_memzero(bob_receive_chain_key, sizeof(bob_receive_chain_key));
 		sodium_memzero(bob_send_header_key, sizeof(bob_send_header_key));
 		sodium_memzero(bob_receive_header_key, sizeof(bob_receive_header_key));
+		sodium_memzero(bob_next_send_header_key, sizeof(bob_next_send_header_key));
+		sodium_memzero(bob_next_receive_header_key, sizeof(bob_next_receive_header_key));
 		return -10;
 	}
 	printf("Alice's and Bob's initial chain keys match.\n");
@@ -234,37 +266,75 @@ int main(void) {
 		sodium_memzero(alice_receive_chain_key, sizeof(alice_receive_chain_key));
 		sodium_memzero(alice_send_header_key, sizeof(alice_send_header_key));
 		sodium_memzero(alice_receive_header_key, sizeof(alice_receive_header_key));
+		sodium_memzero(alice_next_send_header_key, sizeof(alice_next_send_header_key));
+		sodium_memzero(alice_next_receive_header_key, sizeof(alice_next_receive_header_key));
 		sodium_memzero(bob_send_chain_key, sizeof(bob_send_chain_key));
 		sodium_memzero(bob_send_header_key, sizeof(bob_send_header_key));
 		sodium_memzero(bob_receive_header_key, sizeof(bob_receive_header_key));
+		sodium_memzero(bob_next_send_header_key, sizeof(bob_next_send_header_key));
+		sodium_memzero(bob_next_receive_header_key, sizeof(bob_next_receive_header_key));
 		return -10;
 	}
 	printf("Alice's and Bob's initial chain keys match.\n");
 
-	//compare Alice's and Bob's initial header keys
+	//compare Alice's and Bob's initial header keys 1/2
 	if (sodium_memcmp(alice_send_header_key, bob_receive_header_key, sizeof(alice_send_header_key)) != 0) {
-		fprintf(stderr, "ERROR: Alice's and Bob's initial header keys don't match.\n");
+		fprintf(stderr, "ERROR: Alice's initial send and Bob's initial receive header keys don't match.\n");
 		sodium_memzero(alice_send_header_key, sizeof(alice_send_header_key));
 		sodium_memzero(alice_receive_header_key, sizeof(alice_receive_header_key));
+		sodium_memzero(alice_next_send_header_key, sizeof(alice_next_send_header_key));
+		sodium_memzero(alice_next_receive_header_key, sizeof(alice_next_receive_header_key));
 		sodium_memzero(bob_send_header_key, sizeof(bob_send_header_key));
 		sodium_memzero(bob_receive_header_key, sizeof(bob_receive_header_key));
+		sodium_memzero(bob_next_send_header_key, sizeof(bob_next_send_header_key));
+		sodium_memzero(bob_next_receive_header_key, sizeof(bob_next_receive_header_key));
 		return -10;
 	}
-	printf("Alice's and Bob's initial header keys match.\n");
+	printf("Alice's initial send and Bob's initial receive header keys match.\n");
 
 	sodium_memzero(alice_send_header_key, sizeof(alice_send_header_key));
 	sodium_memzero(bob_receive_header_key, sizeof(bob_receive_header_key));
 
+	//compare Alice's and Bob's initial header keys 2/2
 	if (sodium_memcmp(alice_receive_header_key, bob_send_header_key, sizeof(alice_receive_header_key)) != 0) {
-		fprintf(stderr, "ERROR: Alice's and Bob's initial header keys don't match.\n");
+		fprintf(stderr, "ERROR: Alice's initial receive and Bob's initial send header keys don't match.\n");
 		sodium_memzero(alice_receive_header_key, sizeof(alice_receive_header_key));
+		sodium_memzero(alice_next_receive_header_key, sizeof(alice_next_receive_header_key));
+		sodium_memzero(alice_next_send_header_key, sizeof(alice_next_send_header_key));
 		sodium_memzero(bob_send_header_key, sizeof(bob_send_header_key));
+		sodium_memzero(bob_next_send_header_key, sizeof(bob_next_send_header_key));
+		sodium_memzero(bob_next_receive_header_key, sizeof(bob_next_receive_header_key));
 		return -10;
 	}
-	printf("Alice's and Bob's initial header keys match.\n");
+	printf("Alice's initial receive and Bob's initial send header keys match.\n");
 
 	sodium_memzero(alice_receive_header_key, sizeof(alice_receive_header_key));
 	sodium_memzero(bob_send_header_key, sizeof(bob_send_header_key));
+
+	//compare Alice's and Bob's initial next header keys 1/2
+	if (sodium_memcmp(alice_next_send_header_key, bob_next_receive_header_key, sizeof(alice_next_send_header_key)) != 0) {
+		fprintf(stderr, "ERROR: Alice's initial next send and Bob's initial next receive header keys don't match.\n");
+		sodium_memzero(alice_next_receive_header_key, sizeof(alice_next_receive_header_key));
+		sodium_memzero(alice_next_send_header_key, sizeof(alice_next_send_header_key));
+		sodium_memzero(bob_next_send_header_key, sizeof(bob_next_send_header_key));
+		sodium_memzero(bob_next_receive_header_key, sizeof(bob_next_receive_header_key));
+		return -10;
+	}
+	printf("Alice's initial next send and Bob's initial next receive header keys match.\n");
+	sodium_memzero(alice_next_send_header_key, sizeof(alice_next_send_header_key));
+	sodium_memzero(bob_next_receive_header_key, sizeof(bob_next_receive_header_key));
+
+	//compare Alice's and Bob's initial next header keys 2/2
+	if (sodium_memcmp(alice_next_receive_header_key, bob_next_send_header_key, sizeof(alice_next_receive_header_key)) != 0) {
+		fprintf(stderr, "ERROR: Alice's initial next receive and Bob's initial next send header keys don't match.\n");
+		sodium_memzero(alice_next_receive_header_key, sizeof(alice_next_receive_header_key));
+		sodium_memzero(bob_next_send_header_key, sizeof(bob_next_send_header_key));
+		return -10;
+	}
+	printf("Alice's initial next receive and Bob's initial next send header keys match.\n");
+
+	sodium_memzero(alice_next_receive_header_key, sizeof(alice_next_receive_header_key));
+	sodium_memzero(bob_next_send_header_key, sizeof(bob_next_send_header_key));
 
 	return EXIT_SUCCESS;
 }
