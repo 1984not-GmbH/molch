@@ -82,7 +82,7 @@ packet (>=362) = {
 To be precise: 362 + n*255 with n = 0, 1, 2, ...
 ```
 
-If the message length exceeds 255 Bytes, you have to add another 255 bytes because of the padding. The length of the padded message is always the following:
+If the message length exceeds 254 Bytes, you have to add another 255 bytes because of the padding. The length of the padded message is always the following:
 
 `ceil(raw_message_length / 255) * 255`
 
