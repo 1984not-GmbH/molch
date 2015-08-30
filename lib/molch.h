@@ -30,10 +30,14 @@
  * IMPORTANT: Don't put random numbers provided by the operating
  * system in there.
  *
+ * This also creates a signed list of prekeys to be uploaded to
+ * the server.
+ *
  * Returns 0 on success.
  */
 int molch_create_user(
 		unsigned char * const public_identity_key, //output, crypto_box_PUBLICKEYBYTES
+		unsigned char * const prekey_list, //output, needs to be 100 * crypto_box_PUBLICKEYBYTES + crypto_onetimeauth_BYTES
 		const unsigned char * const random_data,
 		const size_t random_data_length);
 
@@ -49,16 +53,6 @@ typedef enum molch_message_type { PREKEY_MESSAGE, NORMAL_MESSAGE } molch_message
 molch_message_type molch_get_message_type(
 		const unsigned char * const packet,
 		const size_t packet_length);
-
-/*
- * Generates a set of prekeys and signs them with the identity key.
- *
- * The output of this function can be uploaded to the contact server
- * as is.
- */
-void molch_generate_pre_keys(
-		unsigned char * const prekey_list, //output, needs to be 100 * crypto_box_PUBLICKEYBYTES + crypto_onetimeauth_BYTES
-		const unsigned char * const public_identity_key); //the public identity key is used to identify the user
 
 /*
  * Encrypt a message and create a packet that can be sent to the receiver.
