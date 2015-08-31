@@ -17,6 +17,7 @@
  */
 
 #include <sodium.h>
+#include <string.h>
 
 #include "buffer.h"
 
@@ -48,4 +49,26 @@ buffer_t* buffer_init(
 void buffer_clear(buffer_t *buffer) {
 	sodium_memzero(buffer->content, buffer->buffer_length);
 	buffer->content_length = 0;
+}
+
+/*
+ * Concatenate a buffer to the first.
+ *
+ * Return 0 on success.
+ */
+int buffer_concat(
+		buffer_t * const destination,
+		buffer_t * const source) {
+	if (destination->readonly) {
+		return -5;
+	}
+
+	if (destination->buffer_length < (destination->content_length + source->content_length)) {
+		//buffer isn't long enough
+		return -6;
+	}
+
+	memcpy(destination->content + destination->content_length, source->content, source->content_length);
+	destination->content_length += source->content_length;
+	return 0;
 }

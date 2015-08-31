@@ -52,4 +52,13 @@ buffer_t* buffer_init(
  * resets the content size.
  */
 void buffer_clear(buffer_t *buffer);
+
+/*
+ * Concatenate a buffer to the first.
+ *
+ * Return 0 on success.
+ */
+int buffer_concat(
+		buffer_t * const destination,
+		buffer_t * const source);
 #endif
