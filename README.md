@@ -15,6 +15,7 @@ Currently implemented:
 * Triple Diffie Hellman (Used to derive a shared secret from identity and ephemeral keys)
   - H(ECDH(A,B0)||ECDH(A0,B)||ECDH(A0,B0))
   - Where A and B are the identity keys and A0 and B0 the ephemeral keys of Alice and Bob
+* Datatype and helper functions for handling buffers that know their length.
 
 Axolotl specific:
 * Chain key derivation (derive next chain key from previous one, CK = HMAC-Hash(CK, 0x01))
