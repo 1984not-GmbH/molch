@@ -35,7 +35,7 @@ int header_and_message_keystore_add(
 		header_and_message_keystore *keystore,
 		const unsigned char * const message_key,
 		const unsigned char * const header_key) {
-	header_and_message_keystore_node *new_node = malloc(sizeof(header_and_message_keystore_node));
+	header_and_message_keystore_node *new_node = sodium_malloc(sizeof(header_and_message_keystore_node));
 	if (new_node == NULL) { //couldn't allocate memory
 		return -1;
 	}
@@ -85,7 +85,7 @@ void header_and_message_keystore_remove(header_and_message_keystore *keystore, h
 	sodium_memzero(node->message_key, crypto_secretbox_KEYBYTES);
 	sodium_memzero(node->header_key, crypto_aead_chacha20poly1305_KEYBYTES);
 
-	free(node);
+	sodium_free(node);
 
 	//update length
 	keystore->length--;

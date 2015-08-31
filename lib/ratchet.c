@@ -41,7 +41,7 @@ ratchet_state* ratchet_create(
 		const unsigned char * const our_public_ephemeral,
 		const unsigned char * const their_public_ephemeral,
 		bool am_i_alice) {
-	ratchet_state *state = malloc(sizeof(ratchet_state));
+	ratchet_state *state = sodium_malloc(sizeof(ratchet_state));
 	if (state == NULL) { //failed to allocate memory
 		return NULL;
 	}
@@ -70,7 +70,7 @@ ratchet_state* ratchet_create(
 		sodium_memzero(state->receive_header_key, sizeof(state->receive_header_key));
 		sodium_memzero(state->next_send_header_key, sizeof(state->next_send_header_key));
 		sodium_memzero(state->next_receive_header_key, sizeof(state->receive_header_key));
-		free(state);
+		sodium_free(state);
 		return NULL;
 	}
 
@@ -551,6 +551,6 @@ void ratchet_destroy(ratchet_state *state) {
 	header_and_message_keystore_clear(&(state->skipped_header_and_message_keys));
 	header_and_message_keystore_clear(&(state->purported_header_and_message_keys));
 
-	free(state);
+	sodium_free(state);
 }
 
