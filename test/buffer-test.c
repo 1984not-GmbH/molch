@@ -26,8 +26,7 @@ int main(void) {
 	sodium_init();
 
 	//create a new buffer
-	buffer_t *key = buffer_create(crypto_secretbox_KEYBYTES);
-	key->content_length = key->buffer_length;
+	buffer_t *key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	randombytes_buf(key->content, key->content_length);
 
 	printf("Random buffer (%zi Bytes):\n", key->content_length);

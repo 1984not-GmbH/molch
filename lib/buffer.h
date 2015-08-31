@@ -37,11 +37,12 @@ typedef struct buffer_t {
  */
 buffer_t* buffer_init(
 		buffer_t * const buffer,
-		const size_t buffer_length);
+		const size_t buffer_length,
+		const size_t content_length);
 
 /*
  * Macro to create a new buffer of a given name and length;
  */
-#define buffer_create(length) buffer_init(alloca(sizeof(buffer_t) + length), length)
+#define buffer_create(buffer_length, content_length) buffer_init(alloca(sizeof(buffer_t) + buffer_length), buffer_length, content_length)
 
 #endif
