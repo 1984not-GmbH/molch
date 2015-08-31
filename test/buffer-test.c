@@ -33,5 +33,24 @@ int main(void) {
 	print_hex(key->content, key->content_length, 30);
 	putchar('\n');
 
+	//erase the buffer
+	printf("Erasing buffer.\n");
+	buffer_clear(key);
+
+	//check if the buffer was properly cleared
+	size_t i;
+	for (i = 0; i < key->buffer_length; i++) {
+		if (key->content[i] != '\0') {
+			fprintf(stderr, "ERROR: Byte %zi of the buffer hasn't been erased.\n", i);
+			return EXIT_FAILURE;
+		}
+	}
+
+	if (key->content_length != 0) {
+		fprintf(stderr, "ERROR: The content length of the buffer hasn't been set to zero.\n");
+		return EXIT_FAILURE;
+	}
+	printf("Buffer successfully erased.\n");
+
 	return EXIT_SUCCESS;
 }

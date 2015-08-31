@@ -45,4 +45,11 @@ buffer_t* buffer_init(
  */
 #define buffer_create(buffer_length, content_length) buffer_init(alloca(sizeof(buffer_t) + buffer_length), buffer_length, content_length)
 
+/*
+ * Clear a buffer.
+ *
+ * Overwrites the buffer with zeroes and
+ * resets the content size.
+ */
+void buffer_clear(buffer_t *buffer);
 #endif

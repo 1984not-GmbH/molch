@@ -16,6 +16,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <sodium.h>
+
 #include "buffer.h"
 
 /*
@@ -35,4 +37,15 @@ buffer_t* buffer_init(
 	buffer->readonly = false;
 	buffer->content = (unsigned char*) buffer + sizeof(buffer_t);
 	return buffer;
+}
+
+/*
+ * Clear a buffer.
+ *
+ * Overwrites the buffer with zeroes and
+ * resets the content size.
+ */
+void buffer_clear(buffer_t *buffer) {
+	sodium_memzero(buffer->content, buffer->buffer_length);
+	buffer->content_length = 0;
 }
