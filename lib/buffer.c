@@ -59,18 +59,12 @@ void buffer_clear(buffer_t *buffer) {
 int buffer_concat(
 		buffer_t * const destination,
 		buffer_t * const source) {
-	if (destination->readonly) {
-		return -5;
-	}
-
-	if (destination->buffer_length < (destination->content_length + source->content_length)) {
-		//buffer isn't long enough
-		return -6;
-	}
-
-	memcpy(destination->content + destination->content_length, source->content, source->content_length);
-	destination->content_length += source->content_length;
-	return 0;
+	return buffer_copy(
+			destination,
+			destination->content_length,
+			source,
+			0,
+			source->content_length);
 }
 
 /*
