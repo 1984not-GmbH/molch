@@ -78,6 +78,31 @@ int main(void) {
 
 	//TODO check readonly
 
+	//copy buffer
+	buffer_t *buffer3 = buffer_create(5,0);
+	status = buffer_copy(buffer3, 0, buffer2, 0, buffer2->content_length);
+	if ((status != 0) || (sodium_memcmp(buffer2->content, buffer3->content, buffer2->content_length) != 0)) {
+		fprintf(stderr, "ERROR: Failed to copy buffer. (%i)\n", status);
+		return EXIT_FAILURE;
+	}
+
+	printf("Buffer successfully copied.\n");
+
+	status = buffer_copy(buffer3, buffer2->content_length, buffer2, 0, buffer2->content_length);
+	if (status == 0) {
+		fprintf(stderr, "ERROR: Copied buffer that out of bounds.\n");
+		return EXIT_FAILURE;
+	}
+	printf("Detected out of bounds buffer copying.\n");
+
+	status = buffer_copy(buffer3, 1, buffer2, 0, buffer2->content_length);
+	if ((status != 0) || (buffer3->content[0] != buffer2->content[0]) || (sodium_memcmp(buffer2->content, buffer3->content + 1, buffer2->content_length) != 0)) {
+		fprintf(stderr, "ERROR: Failed to copy buffer. (%i)\n", status);
+		return EXIT_FAILURE;
+	}
+	printf("Successfully copied buffer.\n");
+
+
 	//erase the buffer
 	printf("Erasing buffer.\n");
 	buffer_clear(buffer1);

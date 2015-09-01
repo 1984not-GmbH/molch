@@ -72,3 +72,41 @@ int buffer_concat(
 	destination->content_length += source->content_length;
 	return 0;
 }
+
+/*
+ * Copy parts of a buffer to another buffer.
+ *
+ * Returns 0 on success.
+ */
+int buffer_copy(
+		buffer_t * const destination,
+		const size_t destination_offset,
+		const buffer_t * const source,
+		const size_t source_offset,
+		const size_t copy_length) {
+	if (destination->readonly) {
+		return -5;
+	}
+
+	if ((destination->buffer_length < destination->content_length) || (source->buffer_length < source->content_length)) {
+		//the content length should never be longer than the buffer length
+		return -7;
+	}
+
+	if ((destination_offset > destination->content_length) || (copy_length > (destination->buffer_length - destination_offset))) {
+		//destination buffer isn't long enough
+		return -6;
+	}
+
+	if ((source_offset > source->content_length) || (copy_length > (source->content_length - source_offset))) {
+		//source buffer isn't long enough
+		return -6;
+	}
+
+	memcpy(destination->content + destination_offset, source->content + source_offset, copy_length);
+	destination->content_length = (destination->content_length > destination_offset + copy_length)
+		? destination->content_length
+		: destination_offset + copy_length;
+	destination->content_length = destination_offset + copy_length;
+	return 0;
+}
