@@ -73,4 +73,28 @@ int buffer_copy(
 		const buffer_t * const source,
 		const size_t source_offset,
 		const size_t copy_length);
+
+/*
+ * Copy from a raw array to a buffer.
+ *
+ * Returns 0 on success.
+ */
+int buffer_copy_from_raw(
+		buffer_t * const destination,
+		const size_t destination_offset,
+		const unsigned char * const source,
+		const size_t source_offset,
+		const size_t copy_length);
+
+/*
+ * Copy from a buffer to a raw array.
+ *
+ * Returns 0 on success.
+ */
+int buffer_copy_to_raw(
+		unsigned char * const destination,
+		const size_t destination_offset,
+		const buffer_t * const source,
+		const size_t source_offset,
+		const size_t copy_length);
 #endif

@@ -77,6 +77,7 @@ int main(void) {
 	printf("Detected out of bounds buffer concatenation.\n");
 
 	//TODO check readonly
+	//TODO check content lengths
 
 	//copy buffer
 	buffer_t *buffer3 = buffer_create(5,0);
@@ -85,7 +86,6 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to copy buffer. (%i)\n", status);
 		return EXIT_FAILURE;
 	}
-
 	printf("Buffer successfully copied.\n");
 
 	status = buffer_copy(buffer3, buffer2->content_length, buffer2, 0, buffer2->content_length);
@@ -102,6 +102,57 @@ int main(void) {
 	}
 	printf("Successfully copied buffer.\n");
 
+	//copy to a raw array
+	unsigned char raw_array[4];
+	status = buffer_copy_to_raw(
+			raw_array, //destination
+			0, //destination offset
+			buffer1, //source
+			1, //source offset
+			4); //length
+	if ((status != 0) || (sodium_memcmp(raw_array, buffer1->content + 1, 4) != 0)) {
+		fprintf(stderr, "ERROR: Failed to copy buffer to raw array. (%i)\n", status);
+		return EXIT_FAILURE;
+	}
+	printf("Successfully copied buffer to raw array.\n");
+
+	status = buffer_copy_to_raw(
+			raw_array,
+			0,
+			buffer2,
+			3,
+			4);
+	if (status == 0) {
+		fprintf(stderr, "ERROR: Failed to detect out of bounds read!\n");
+		return EXIT_FAILURE;
+	}
+	printf("Successfully detected out of bounds read.\n");
+
+	//copy from raw array
+	unsigned char heeelo[14] = "Hello World!\n";
+	status = buffer_copy_from_raw(
+			buffer1, //destination
+			0, //offset
+			heeelo, //source
+			0, //offset
+			sizeof(heeelo)); //length
+	if ((status != 0) || (sodium_memcmp(heeelo, buffer1->content, sizeof(heeelo)))) {
+		fprintf(stderr, "ERROR: Failed to copy from raw array to buffer. (%i)\n", status);
+		return EXIT_FAILURE;
+	}
+	printf("Successfully copied raw array to buffer.\n");
+
+	status = buffer_copy_from_raw(
+			buffer1,
+			1,
+			heeelo,
+			0,
+			sizeof(heeelo));
+	if (status == 0) {
+		fprintf(stderr, "ERROR: Failed to detect out of bounds read.\n");
+		return EXIT_FAILURE;
+	}
+	printf("Out of bounds read detected.\n");
 
 	//erase the buffer
 	printf("Erasing buffer.\n");

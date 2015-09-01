@@ -102,5 +102,65 @@ int buffer_copy(
 		? destination->content_length
 		: destination_offset + copy_length;
 	destination->content_length = destination_offset + copy_length;
+
+	return 0;
+}
+
+/*
+ * Copy from a raw array to a buffer.
+ *
+ * Returns 0 on success.
+ */
+int buffer_copy_from_raw(
+		buffer_t * const destination,
+		const size_t destination_offset,
+		const unsigned char * const source,
+		const size_t source_offset,
+		const size_t copy_length) {
+	if (destination->readonly) {
+		return -5;
+	}
+
+	if (destination->buffer_length < destination->content_length) {
+		//the content length should never be longer than the buffer length
+		return -7;
+	}
+
+	if ((destination->content_length < destination_offset) || (copy_length > (destination->buffer_length - destination_offset))) {
+		//destination buffer isn't long enough
+		return -6;
+	}
+
+	memcpy(destination->content + destination_offset, source + source_offset, copy_length);
+	destination->content_length = (destination->content_length > destination_offset + copy_length)
+		? destination->content_length
+		: destination_offset + copy_length;
+
+	return 0;
+}
+
+/*
+ * Copy from a buffer to a raw array.
+ *
+ * Returns 0 on success.
+ */
+int buffer_copy_to_raw(
+		unsigned char * const destination,
+		const size_t destination_offset,
+		const buffer_t * const source,
+		const size_t source_offset,
+		const size_t copy_length) {
+	if ((source_offset > source->content_length) || (copy_length > (source->content_length - source_offset))) {
+		//source buffer isn't long enough
+		return -6;
+	}
+
+	if (source->buffer_length < source->content_length) {
+		//the content length should never be longer than the buffer length
+		return -7;
+	}
+
+	memcpy(destination + destination_offset, source->content + source_offset, copy_length);
+
 	return 0;
 }
