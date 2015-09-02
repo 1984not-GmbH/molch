@@ -26,6 +26,28 @@
 #include "key-derivation.h"
 
 /*
+ * Helper function that checks if a buffer is <none>
+ * (filled with zeroes), and does so without introducing
+ * side channels, especially timing side channels.
+ */
+bool is_none(
+		const unsigned char * const buffer,
+		const size_t length) {
+	//TODO: Find better implementation that
+	//doesn't create an additional array. I don't
+	//do that currently because I haven't enough
+	//confidence that I'm not introducing any side
+	//channels.
+
+	//fill a buffer with zeroes
+	unsigned char none[length];
+	sodium_memzero(none, sizeof(none));
+
+	return 0 == sodium_memcmp(none, buffer, sizeof(none));
+
+}
+
+/*
  * Start a new ratchet chain. This derives an initial root key and returns a new ratchet state.
  *
  * All the keys will be copied so you can free the buffers afterwards. (private identity get's
@@ -221,16 +243,9 @@ int stage_skipped_header_and_message_keys(
 		const unsigned int purported_message_number,
 		const unsigned char * const receive_chain_key,
 		ratchet_state *state) {
-	static const unsigned char none[] = {
-		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
-		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
-		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
-		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'
-	};
-	assert(sizeof(none) == crypto_secretbox_KEYBYTES);
 
 	//if chain key is <none>, don't do anything
-	if (sodium_memcmp(receive_chain_key, none, sizeof(none)) == 0) {
+	if (is_none(receive_chain_key, crypto_secretbox_KEYBYTES)) {
 		sodium_memzero(message_key, crypto_secretbox_KEYBYTES);
 		sodium_memzero(purported_chain_key, crypto_secretbox_KEYBYTES);
 		return 0;
@@ -345,28 +360,14 @@ int ratchet_receive(
 		return -10;
 	}
 
-	//none value to compare to
-	static const unsigned char header_none[] = {
-		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
-		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
-		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
-		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'
-	};
-	assert(sizeof(header_none) == crypto_aead_chacha20poly1305_KEYBYTES);
-
 	//header decryption hasn't been tried yet
 	if (state->header_decryptable == NOT_TRIED) {
 		return -10;
 	}
 
-	//check if the header key is none
 	int status;
-	status = sodium_memcmp(
-			state->receive_header_key,
-			header_none,
-			sizeof(state->receive_header_key));
 
-	if ((status != 0) && (state->header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
+	if ((!is_none(state->receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES)) && (state->header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
 		//copy purported message number
 		state->purported_message_number = purported_message_number;
 
@@ -464,22 +465,10 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
 
 	//TODO make sure this function aborts if it is called at the wrong time
 
-	//none value to compare to
-	static const unsigned char header_none[] = {
-		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
-		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
-		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0',
-		'\0', '\0', '\0', '\0', '\0', '\0', '\0', '\0'
-	};
-	assert(sizeof(header_none) == crypto_aead_chacha20poly1305_KEYBYTES);
+	int status;
 
-	//check if header key is none
-	int status = sodium_memcmp(
-			state->receive_header_key,
-			header_none,
-			sizeof(state->receive_header_key));
 	//TODO I can do those if's better. This only happens to be this way because of the specification
-	if ((status != 0) && (header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
+	if ((!is_none(state->receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES)) && (header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
 		//if HKr != <none> and Dec(HKr, header)
 		if (!valid) { //message couldn't be decrypted
 			//clear purported message and header keys
