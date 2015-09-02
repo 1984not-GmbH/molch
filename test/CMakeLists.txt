@@ -21,7 +21,8 @@ set(tests hkdf-test
           packet-decrypt-test
           header-test
           header-and-message-keystore-test
-          ratchet-test)
+          ratchet-test
+          buffer-test)
 
 foreach(test ${tests})
     add_executable(${test} ${test})
