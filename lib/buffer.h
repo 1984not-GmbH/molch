@@ -75,6 +75,17 @@ int buffer_copy(
 		const size_t copy_length);
 
 /*
+ * Copy the content of a buffer to the beginning of another
+ * buffer and set the destinations content length to the
+ * same length as the source.
+ *
+ * Returns 0 on success.
+ */
+int buffer_clone(
+		buffer_t * const destination,
+		const buffer_t * const source);
+
+/*
  * Copy from a raw array to a buffer.
  *
  * Returns 0 on success.
@@ -87,6 +98,18 @@ int buffer_copy_from_raw(
 		const size_t copy_length);
 
 /*
+ * Copy the content of a raw array to the
+ * beginning of a buffer, setting the buffers
+ * content length to the length that was copied.
+ *
+ * Returns 0 on success.
+ */
+int buffer_clone_from_raw(
+		buffer_t * const destination,
+		const unsigned char * const source,
+		const size_t length);
+
+/*
  * Copy from a buffer to a raw array.
  *
  * Returns 0 on success.
@@ -97,4 +120,15 @@ int buffer_copy_to_raw(
 		const buffer_t * const source,
 		const size_t source_offset,
 		const size_t copy_length);
+
+/*
+ * Copy the entire content of a buffer
+ * to a raw array.
+ *
+ * Returns 0 on success.
+ */
+int buffer_clone_to_raw(
+		unsigned char * const destination,
+		const size_t destination_length,
+		const buffer_t *source);
 #endif

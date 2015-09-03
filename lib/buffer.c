@@ -107,6 +107,30 @@ int buffer_copy(
 }
 
 /*
+ * Copy the content of a buffer to the beginning of another
+ * buffer and set the destinations content length to the
+ * same length as the source.
+ *
+ * Returns 0 on success.
+ */
+int buffer_clone(
+		buffer_t * const destination,
+		const buffer_t * const source) {
+	if (destination->buffer_length < source->content_length) {
+		return -6;
+	}
+
+	destination->content_length = source->content_length;
+
+	return buffer_copy(
+			destination,
+			0,
+			source,
+			0,
+			source->content_length);
+}
+
+/*
  * Copy from a raw array to a buffer.
  *
  * Returns 0 on success.
@@ -140,6 +164,31 @@ int buffer_copy_from_raw(
 }
 
 /*
+ * Copy the content of a raw array to the
+ * beginning of a buffer, setting the buffers
+ * content length to the length that was copied.
+ *
+ * Returns 0 on success.
+ */
+int buffer_clone_from_raw(
+		buffer_t * const destination,
+		const unsigned char * const source,
+		const size_t length) {
+	if (destination->buffer_length < length) {
+		return -6;
+	}
+
+	destination->content_length = length;
+
+	return buffer_copy_from_raw(
+			destination,
+			0,
+			source,
+			0,
+			length);
+}
+
+/*
  * Copy from a buffer to a raw array.
  *
  * Returns 0 on success.
@@ -163,4 +212,26 @@ int buffer_copy_to_raw(
 	memcpy(destination + destination_offset, source->content + source_offset, copy_length);
 
 	return 0;
+}
+
+/*
+ * Copy the entire content of a buffer
+ * to a raw array.
+ *
+ * Returns 0 on success.
+ */
+int buffer_clone_to_raw(
+		unsigned char * const destination,
+		const size_t destination_length,
+		const buffer_t *source) {
+	if (destination_length < source->content_length) {
+		return -6;
+	}
+
+	return buffer_copy_to_raw(
+			destination,
+			0,
+			source,
+			0,
+			source->content_length);
 }
