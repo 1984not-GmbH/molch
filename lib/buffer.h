@@ -23,7 +23,7 @@
 #define LIB_BUFFER_H
 
 typedef struct buffer_t {
-	size_t buffer_length;
+	const size_t buffer_length;
 	size_t content_length;
 	bool readonly; //if set, this buffer shouldn't be written to.
 	unsigned char *content;
