@@ -1,4 +1,4 @@
-/* Molch, an implementation of the axolotl ratchet based on libsodium
+	/* Molch, an implementation of the axolotl ratchet based on libsodium
  *  Copyright (C) 2015  Max Bruckner (FSMaxB)
  *
  *  This library is free software; you can redistribute it and/or
@@ -44,6 +44,25 @@ buffer_t* buffer_init(
  * Macro to create a new buffer of a given name and length;
  */
 #define buffer_create(buffer_length, content_length) buffer_init(alloca(sizeof(buffer_t) + buffer_length), buffer_length, content_length)
+
+/*
+ * Copy a raw array to a buffer and return the
+ * buffer.
+ *
+ * This should not be used directly, it is intended for the use
+ * with the macro buffer_create_from_string.
+ *
+ * Returns NULL on error.
+ */
+buffer_t* buffer_create_from_string_helper(
+		buffer_t * const buffer,
+		const unsigned char * const content,
+		const size_t content_length);
+
+/*
+ * Create a new buffer from a string literal.
+ */
+#define buffer_create_from_string(string) buffer_create_from_string_helper(buffer_create(sizeof(string), sizeof(string)), (unsigned char*) string, sizeof(string))
 
 /*
  * Clear a buffer.

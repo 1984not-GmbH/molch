@@ -41,6 +41,30 @@ buffer_t* buffer_init(
 }
 
 /*
+ * Copy a raw array to a buffer and return the
+ * buffer.
+ *
+ * This should not be used directly, it is intended for the use
+ * with the macro buffer_create_from_string.
+ *
+ * Returns NULL on error.
+ */
+buffer_t* buffer_create_from_string_helper(
+		buffer_t * const buffer,
+		const unsigned char * const content,
+		const size_t content_length) {
+	if (buffer->buffer_length < content_length) {
+		return NULL;
+	}
+
+	if (buffer_clone_from_raw(buffer, content, content_length) != 0) {
+		return NULL;
+	}
+
+	return buffer;
+}
+
+/*
  * Clear a buffer.
  *
  * Overwrites the buffer with zeroes and
