@@ -31,7 +31,12 @@ buffer_t* buffer_init(
 		buffer_t * const buffer,
 		const size_t buffer_length,
 		const size_t content_length) {
-	buffer->buffer_length = buffer_length;
+	//write to constant buffer length value (HACK)
+	//This allows restricting access to the buffer length
+	//while still being able to set it here
+	size_t *writable_buffer_length = (size_t*) &buffer->buffer_length;
+	*writable_buffer_length = buffer_length;
+
 	buffer->content_length = (content_length > buffer_length)
 		? buffer_length
 		: content_length;
