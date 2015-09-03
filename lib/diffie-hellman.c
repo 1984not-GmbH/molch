@@ -63,6 +63,7 @@ int diffie_hellman(
 			crypto_generichash_BYTES);
 	if (status != 0) {
 		sodium_memzero(dh_secret, crypto_scalarmult_BYTES);
+		sodium_memzero(&hash_state, sizeof(hash_state));
 		return status;
 	}
 
@@ -70,6 +71,7 @@ int diffie_hellman(
 	status = crypto_generichash_update(&hash_state, dh_secret, crypto_scalarmult_BYTES);
 	sodium_memzero(dh_secret, crypto_scalarmult_BYTES);
 	if (status != 0) {
+		sodium_memzero(&hash_state, sizeof(hash_state));
 		return status;
 	}
 
@@ -78,24 +80,28 @@ int diffie_hellman(
 		//add our_public_key to the input of the hash
 		status = crypto_generichash_update(&hash_state, our_public_key, crypto_box_PUBLICKEYBYTES);
 		if (status != 0) {
+			sodium_memzero(&hash_state, sizeof(hash_state));
 			return status;
 		}
 
 		//add their_public_key to the input of the hash
 		status = crypto_generichash_update(&hash_state, their_public_key, crypto_box_PUBLICKEYBYTES);
 		if (status != 0) {
+			sodium_memzero(&hash_state, sizeof(hash_state));
 			return status;
 		}
 	} else { //Bob (their_public_key|our_public_key)
 		//add their_public_key to the input of the hash
 		status = crypto_generichash_update(&hash_state, their_public_key, crypto_box_PUBLICKEYBYTES);
 		if (status != 0) {
+			sodium_memzero(&hash_state, sizeof(hash_state));
 			return status;
 		}
 
 		//add our_public_key to the input of the hash
 		status = crypto_generichash_update(&hash_state, our_public_key, crypto_box_PUBLICKEYBYTES);
 		if (status != 0) {
+			sodium_memzero(&hash_state, sizeof(hash_state));
 			return status;
 		}
 	}
@@ -103,6 +109,7 @@ int diffie_hellman(
 	//finally write the hash to derived_key
 	status = crypto_generichash_final(&hash_state, derived_key, crypto_generichash_BYTES);
 	sodium_memzero(dh_secret, crypto_scalarmult_BYTES);
+	sodium_memzero(&hash_state, sizeof(hash_state));
 	return status;
 }
 
