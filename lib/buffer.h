@@ -1,4 +1,4 @@
-	/* Molch, an implementation of the axolotl ratchet based on libsodium
+/* Molch, an implementation of the axolotl ratchet based on libsodium
  *  Copyright (C) 2015  Max Bruckner (FSMaxB)
  *
  *  This library is free software; you can redistribute it and/or
@@ -105,6 +105,17 @@ int buffer_clone(
 		const buffer_t * const source) __attribute__((warn_unused_result));
 
 /*
+ * Copy the content of a buffer to the beginning of another
+ * buffer and set the destinations content length to the
+ * same length as the source.
+ *
+ * Returns 0 on success.
+ */
+int buffer_clone(
+		buffer_t * const destination,
+		const buffer_t * const source) __attribute__((warn_unused_result));
+
+/*
  * Copy from a raw array to a buffer.
  *
  * Returns 0 on success.
@@ -115,6 +126,18 @@ int buffer_copy_from_raw(
 		const unsigned char * const source,
 		const size_t source_offset,
 		const size_t copy_length) __attribute__((warn_unused_result));
+
+/*
+ * Copy the content of a raw array to the
+ * beginning of a buffer, setting the buffers
+ * content length to the length that was copied.
+ *
+ * Returns 0 on success.
+ */
+int buffer_clone_from_raw(
+		buffer_t * const destination,
+		const unsigned char * const source,
+		const size_t length) __attribute__((warn_unused_result));
 
 /*
  * Copy the content of a raw array to the
