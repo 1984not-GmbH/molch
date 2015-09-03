@@ -79,7 +79,7 @@ void buffer_clear(buffer_t *buffer);
  */
 int buffer_concat(
 		buffer_t * const destination,
-		buffer_t * const source);
+		const buffer_t * const source);
 
 /*
  * Copy parts of a buffer to another buffer.
