@@ -155,6 +155,22 @@ int main(void) {
 	}
 	printf("Out of bounds read detected.\n");
 
+	//create a buffer from a string
+	buffer_t *string = buffer_create_from_string("This is a string!");
+	if (string == NULL) {
+		fprintf(stderr, "ERROR: Buffer created from string is NULL!");
+		return EXIT_FAILURE;
+	}
+	if (string->content_length != sizeof("This is a string!")) {
+		fprintf(stderr, "ERROR: Buffer created from string has incorrect length.\n");
+		return EXIT_FAILURE;
+	}
+	if (sodium_memcmp(string->content, "This is a string!", string->content_length) != 0) {
+		fprintf(stderr, "ERROR: Failed to create buffer from string.\n");
+		return EXIT_FAILURE;
+	}
+	printf("Successfully created buffer from string.\n");
+
 	//erase the buffer
 	printf("Erasing buffer.\n");
 	buffer_clear(buffer1);
