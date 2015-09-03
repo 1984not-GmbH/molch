@@ -78,6 +78,7 @@ int main(void) {
 
 	//TODO check readonly
 	//TODO check content lengths
+	//TODO test buffer clone functions
 
 	//copy buffer
 	buffer_t *buffer3 = buffer_create(5,0);
