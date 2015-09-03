@@ -16,6 +16,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "buffer.h"
+
 #ifndef LIB_HKDF_H
 #define LIB_HKDF_H
 /*
@@ -23,11 +25,9 @@
  * as defined in RFC 5869 using the primitives provided by libsodium.
  */
 int hkdf(
-		unsigned char * const output_key,
+		buffer_t * const output_key,
 		const size_t output_key_length, //needs to be less than 255 * crypto_auth_KEYBYTES!!!
-		const unsigned char * const salt, //the salt needs to be crypto_auth_KEYBYTES long
-		const unsigned char * const input_key,
-		const size_t input_key_length,
-		const unsigned char * const info,
-		const size_t info_length) __attribute__((warn_unused_result));
+		const buffer_t * const salt, //the salt needs to be crypto_auth_KEYBYTES long
+		const buffer_t * const input_key,
+		const buffer_t * const info) __attribute__((warn_unused_result));
 #endif
