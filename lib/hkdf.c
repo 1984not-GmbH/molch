@@ -31,6 +31,9 @@ int expand(
 		const buffer_t * const info) {
 	//expand phase of hkdf
 
+	//set content length of output to 0 (can prevent use on failure)
+	output_key->content_length = 0;
+
 	//test size of the buffers
 	if ((output_key->buffer_length < output_key_length) || (pseudo_random_key->content_length != crypto_auth_BYTES)) {
 		return -6;
@@ -130,6 +133,9 @@ int hkdf(
 	const buffer_t * const info) {
 	//ensure that the length-assumption is correct
 	assert(crypto_auth_KEYBYTES == crypto_auth_BYTES);
+
+	//set content length of output to 0 (can prevent use on failure)
+	output_key->content_length = 0;
 
 	//make sure output_key_length doesn't exceed 255 * crypto_auth_KEYBYTES
 	if (output_key_length > 255 * crypto_auth_KEYBYTES) {
