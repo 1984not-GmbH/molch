@@ -1,3 +1,4 @@
 build/
 static-analysis/
 .idea/
+*.orig
