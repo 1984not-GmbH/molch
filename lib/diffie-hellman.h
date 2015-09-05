@@ -39,7 +39,7 @@ int diffie_hellman(
 		const unsigned char * const our_private_key, //needs to be crypto_box_SECRETKEYBYTES long
 		const unsigned char * const our_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
 		const unsigned char * const their_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
-		const bool am_i_alice);
+		const bool am_i_alice) __attribute__((warn_unused_result));
 
 /*
  * Triple Diffie Hellman with two keys.
@@ -65,5 +65,5 @@ int triple_diffie_hellman(
 		const unsigned char * const our_public_ephemeral,
 		const unsigned char * const their_public_identity,
 		const unsigned char * const their_public_ephemeral,
-		const bool am_i_alice);
+		const bool am_i_alice) __attribute__((warn_unused_result));
 #endif

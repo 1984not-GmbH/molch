@@ -86,7 +86,7 @@ ratchet_state* ratchet_create(
 		const unsigned char * const our_private_ephemeral,
 		const unsigned char * const our_public_ephemeral,
 		const unsigned char * const their_public_ephemeral,
-		bool am_i_alice);
+		bool am_i_alice) __attribute__((warn_unused_result));
 
 /*
  * Create message and header keys to encrypt the next send message with.
@@ -95,7 +95,7 @@ int ratchet_next_send_keys(
 		unsigned char * const next_message_key, //crypto_secretbox_KEYBYTES
 		                     //from the ratchet_state struct
 		unsigned char * const next_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		ratchet_state *state);
+		ratchet_state *state) __attribute__((warn_unused_result));
 
 /*
  * Get pointers to the current and next receive header key.
@@ -112,7 +112,7 @@ void ratchet_get_receive_header_keys(
  */
 int ratchet_set_header_decryptability(
 		ratchet_header_decryptability header_decryptable,
-		ratchet_state *state);
+		ratchet_state *state) __attribute__((warn_unused_result));
 
 /*
  * First step after receiving a message: Calculate purported keys.
@@ -129,13 +129,13 @@ int ratchet_receive(
 		const unsigned char * const their_purported_public_ephemeral,
 		const unsigned int purported_message_number,
 		const unsigned int purported_previous_message_number,
-		ratchet_state *state);
+		ratchet_state *state) __attribute__((warn_unused_result));
 
 /*
  * Call this function after trying to decrypt a message and pass it if
  * the decryption was successful or if it wasn't.
  */
-int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid);
+int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) __attribute__((warn_unused_result));
 
 /*
  * End the ratchet chain and free the memory.

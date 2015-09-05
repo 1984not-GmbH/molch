@@ -38,7 +38,7 @@ typedef struct buffer_t {
 buffer_t* buffer_init(
 		buffer_t * const buffer,
 		const size_t buffer_length,
-		const size_t content_length);
+		const size_t content_length) __attribute__((warn_unused_result));
 
 /*
  * Macro to create a new buffer of a given name and length;
@@ -57,7 +57,7 @@ buffer_t* buffer_init(
 buffer_t* buffer_create_from_string_helper(
 		buffer_t * const buffer,
 		const unsigned char * const content,
-		const size_t content_length);
+		const size_t content_length) __attribute__((warn_unused_result));
 
 /*
  * Create a new buffer from a string literal.
@@ -79,7 +79,7 @@ void buffer_clear(buffer_t *buffer);
  */
 int buffer_concat(
 		buffer_t * const destination,
-		const buffer_t * const source);
+		const buffer_t * const source) __attribute__((warn_unused_result));
 
 /*
  * Copy parts of a buffer to another buffer.
@@ -91,7 +91,7 @@ int buffer_copy(
 		const size_t destination_offset,
 		const buffer_t * const source,
 		const size_t source_offset,
-		const size_t copy_length);
+		const size_t copy_length) __attribute__((warn_unused_result));
 
 /*
  * Copy the content of a buffer to the beginning of another
@@ -102,7 +102,7 @@ int buffer_copy(
  */
 int buffer_clone(
 		buffer_t * const destination,
-		const buffer_t * const source);
+		const buffer_t * const source) __attribute__((warn_unused_result));
 
 /*
  * Copy the content of a buffer to the beginning of another
@@ -125,7 +125,7 @@ int buffer_copy_from_raw(
 		const size_t destination_offset,
 		const unsigned char * const source,
 		const size_t source_offset,
-		const size_t copy_length);
+		const size_t copy_length) __attribute__((warn_unused_result));
 
 /*
  * Copy the content of a raw array to the
@@ -137,7 +137,7 @@ int buffer_copy_from_raw(
 int buffer_clone_from_raw(
 		buffer_t * const destination,
 		const unsigned char * const source,
-		const size_t length);
+		const size_t length) __attribute__((warn_unused_result));
 
 /*
  * Copy the content of a raw array to the
@@ -161,7 +161,7 @@ int buffer_copy_to_raw(
 		const size_t destination_offset,
 		const buffer_t * const source,
 		const size_t source_offset,
-		const size_t copy_length);
+		const size_t copy_length) __attribute__((warn_unused_result));
 
 /*
  * Copy the entire content of a buffer
@@ -172,5 +172,5 @@ int buffer_copy_to_raw(
 int buffer_clone_to_raw(
 		unsigned char * const destination,
 		const size_t destination_length,
-		const buffer_t *source);
+		const buffer_t *source) __attribute__((warn_unused_result));
 #endif

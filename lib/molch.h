@@ -39,7 +39,7 @@ int molch_create_user(
 		unsigned char * const public_identity_key, //output, crypto_box_PUBLICKEYBYTES
 		unsigned char * const prekey_list, //output, needs to be 100 * crypto_box_PUBLICKEYBYTES + crypto_onetimeauth_BYTES
 		const unsigned char * const random_data,
-		const size_t random_data_length);
+		const size_t random_data_length) __attribute__((warn_unused_result));
 
 //TODO: Get a list of users
 
@@ -64,7 +64,7 @@ int molch_encrypt_message(
 		size_t *packet_length, //output, length of the packet
 		const unsigned char * const message,
 		const size_t message_length,
-		molch_conversation conversation);
+		molch_conversation conversation) __attribute__((warn_unused_result));
 
 /*
  * Decrypt a message.
@@ -76,7 +76,7 @@ int molch_decrypt_message(
 		size_t *message_length, //output
 		const unsigned char * const packet, //received packet
 		const size_t packet_length,
-		molch_conversation conversation);
+		molch_conversation conversation) __attribute__((warn_unused_result));
 
 
 /*
@@ -91,7 +91,7 @@ molch_conversation molch_create_send_conversation(
 		const size_t message_length
 		const unsigned char * const prekey_list, //prekey list of the receiver
 		const unsigned char * const sender_public_identity, //identity of the sender (user)
-		const unsigned char * const receiver_public_identity); //identity of the receiver
+		const unsigned char * const receiver_public_identity) __attribute__((warn_unused_result)); //identity of the receiver
 
 /*
  * Start a new conversation. (receiving)
@@ -106,6 +106,6 @@ molch_conversation molch_create_receive_conversation(
 		const unsigned char * const packet, //received prekey packet
 		const size_t packet_length,
 		const unsigned char * const prekey_list, //output, needs to be 100 * crypto_box_PUBLICKEYBYTES + crypto_onetimeauth_BYTES
-		const unsigned char * const public_identity); //identity key of the receiver (user)
+		const unsigned char * const public_identity) __attribute__((warn_unused_result)); //identity key of the receiver (user)
 
 #endif
