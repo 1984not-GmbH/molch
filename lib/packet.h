@@ -58,7 +58,7 @@ int packet_encrypt( //TODO don't pass nonces but generate them
 		const unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
 		const unsigned char * const message,
 		const size_t message_length,
-		const unsigned char * const message_key); //crypto_secretbox_KEYBYTES
+		const unsigned char * const message_key) __attribute__((warn_unused_result)); //crypto_secretbox_KEYBYTES
 
 /*
  * Decrypt and authenticate a packet.
@@ -74,7 +74,7 @@ int packet_decrypt(
 		const unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
 		unsigned char * const message, //should be as long as the packet
 		size_t *message_length, //output
-		const unsigned char * const message_key); //crypto_secretbox_KEYBYTES
+		const unsigned char * const message_key) __attribute__((warn_unused_result)); //crypto_secretbox_KEYBYTES
 
 /*
  * Get the metadata of a packet (without verifying it's authenticity).
@@ -85,7 +85,7 @@ int packet_get_metadata_without_verification(
 		unsigned char * const packet_type, //1 Byte, no array
 		unsigned char * const current_protocol_version, //1 Byte, no array
 		unsigned char * const highest_supported_protocol_version, //1 Byte, no array
-		unsigned char * const header_length); //this is the raw header length, without the authenticator
+		unsigned char * const header_length) __attribute__((warn_unused_result)); //this is the raw header length, without the authenticator
 
 /*
  * Decrypt the header of a packet. (This also authenticates the metadata!)
@@ -96,7 +96,7 @@ int packet_decrypt_header(
 		unsigned char * const header, //As long as the packet or at most 255 bytes
 		size_t * const header_length, //output
 		unsigned char * const message_nonce, //output
-		const unsigned char * const header_key); //crypto_aead_chacha20poly1305_KEYBYTES
+		const unsigned char * const header_key) __attribute__((warn_unused_result)); //crypto_aead_chacha20poly1305_KEYBYTES
 
 /*
  * Decrypt the message inside a packet.
@@ -107,6 +107,6 @@ int packet_decrypt_message(
 		unsigned char * const message, //This buffer should be as large as the packet
 		size_t * const message_length, //output
 		const unsigned char * const message_nonce,
-		const unsigned char * const message_key); //crypto_secretbox_KEYBYTES
+		const unsigned char * const message_key) __attribute__((warn_unused_result)); //crypto_secretbox_KEYBYTES
 
 #endif

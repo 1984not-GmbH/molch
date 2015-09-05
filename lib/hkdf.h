@@ -29,5 +29,5 @@ int hkdf(
 		const unsigned char * const input_key,
 		const size_t input_key_length,
 		const unsigned char * const info,
-		const size_t info_length);
+		const size_t info_length) __attribute__((warn_unused_result));
 #endif

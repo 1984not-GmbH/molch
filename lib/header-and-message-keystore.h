@@ -49,7 +49,7 @@ header_and_message_keystore header_and_message_keystore_init();
 int header_and_message_keystore_add(
 		header_and_message_keystore *keystore,
 		const unsigned char * const message_key,
-		const unsigned char * const header_key);
+		const unsigned char * const header_key) __attribute__((warn_unused_result));
 
 //remove a message key from the keystore
 void header_and_message_keystore_remove(header_and_message_keystore *keystore, header_and_message_keystore_node *node);

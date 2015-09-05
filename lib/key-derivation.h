@@ -31,7 +31,7 @@
  */
 int derive_chain_key(
 		unsigned char * const new_chain_key,
-		const unsigned char * const previous_chain_key);
+		const unsigned char * const previous_chain_key) __attribute__((warn_unused_result));
 
 /*
  * Derive a message key from a chain key.
@@ -43,7 +43,7 @@ int derive_chain_key(
  */
 int derive_message_key(
 		unsigned char * const message_key,
-		const unsigned char * const chain_key);
+		const unsigned char * const chain_key) __attribute__((warn_unused_result));
 
 /*
  * Derive a root, header and initial chain key for a new ratchet.
@@ -58,7 +58,7 @@ int derive_root_chain_and_header_keys(
 		const unsigned char * const our_public_ephemeral,
 		const unsigned char * const their_public_ephemeral,
 		const unsigned char * const previous_root_key,
-		bool am_i_alice);
+		bool am_i_alice) __attribute__((warn_unused_result));
 
 /*
  * Derive initial root, chain and header keys.
@@ -79,6 +79,6 @@ int derive_initial_root_chain_and_header_keys(
 		const unsigned char * const our_private_ephemeral,
 		const unsigned char * const our_public_ephemeral,
 		const unsigned char * const their_public_ephemeral,
-		bool am_i_alice);
+		bool am_i_alice) __attribute__((warn_unused_result));
 
 #endif
