@@ -3,7 +3,7 @@ molch
 
 An implementation of the axolotl ratchet (https://github.com/trevp/axolotl/wiki) based on libsodium.
 
-**WARNING:** This software hasn't been reviewed by a cryptographer and it's not in a state yet that I myself recommend using it at that point.
+**WARNING: THIS SOFTWARE ISN'T READY YET. DON'T USE IT!**
 
 status
 ------
