@@ -27,39 +27,38 @@ int main(void) {
 
 	printf("HKDF as described in RFC 5869 based on HMAC-SHA512256!\n\n");
 
-	unsigned char output_key[200];
-	size_t output_key_length = sizeof(output_key);
+	buffer_t *output_key = buffer_create(200, 0);
 
 	//create random salt
-	unsigned char salt[crypto_auth_KEYBYTES];
-	randombytes_buf(salt, crypto_auth_KEYBYTES);
-	printf("Salt (%i Bytes):\n", crypto_auth_KEYBYTES);
-	print_hex(salt, crypto_auth_KEYBYTES, 30);
+	buffer_t *salt = buffer_create(crypto_auth_KEYBYTES, crypto_auth_KEYBYTES);
+	randombytes_buf(salt->content, salt->content_length);
+	printf("Salt (%zi Bytes):\n", salt->content_length);
+	print_hex(salt->content, salt->content_length, 30);
 	putchar('\n');
 
 	//create key to derive from
-	unsigned char input_key[100];
-	size_t input_key_length = sizeof(input_key);
-	randombytes_buf(input_key, input_key_length);
-	printf("Input key (%zu Bytes):\n", input_key_length);
-	print_hex(input_key, input_key_length, 30);
+	buffer_t *input_key = buffer_create(100, 100);
+	randombytes_buf(input_key->content, input_key->content_length);
+	printf("Input key (%zu Bytes):\n", input_key->content_length);
+	print_hex(input_key->content, input_key->content_length, 30);
 	putchar('\n');
 
 	//info
-	unsigned char* info = (unsigned char*) "This is some info!";
-	size_t info_length = sizeof(info);
-	printf("Info (%zu Bytes):\n", info_length); //this could also be binary data
-	printf("%s\n\n", info);
+	const unsigned char info_string[] = "This is some info!";
+	buffer_t *info = buffer_create(sizeof(info_string), sizeof(info_string));
+	buffer_clone_from_raw(info, info_string, sizeof(info_string));
+	printf("Info (%zu Bytes):\n", info->content_length); //this could also be binary data
+	printf("%s\n\n", info->content);
 
 	int status;
-	status = hkdf(output_key, output_key_length, salt, input_key, input_key_length, info, info_length);
+	status = hkdf(output_key, output_key->buffer_length, salt, input_key, info);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to derive key. %i\n", status);
 		return EXIT_FAILURE;
 	}
 
-	printf("Derived key (%zu Bytes):\n", output_key_length);
-	print_hex(output_key, output_key_length, 30);
+	printf("Derived key (%zu Bytes):\n", output_key->content_length);
+	print_hex(output_key->content, output_key->content_length, 30);
 	putchar('\n');
 	return EXIT_SUCCESS;
 }
