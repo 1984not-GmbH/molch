@@ -47,7 +47,7 @@ buffer_t* buffer_init_with_pointer(
 		const size_t buffer_length,
 		const size_t content_length) {
 	//write to constant buffer length value (HACK)
-	//This allows restricting acess to the buffer length
+	//This allows restricting access to the buffer length
 	//while still being able to set it here
 	size_t *writable_buffer_length = (size_t*) &buffer->buffer_length;
 	*writable_buffer_length = buffer_length;
@@ -56,7 +56,12 @@ buffer_t* buffer_init_with_pointer(
 		? buffer_length
 		: content_length;
 	buffer->readonly = false;
-	buffer->content = content;
+
+	//write to constant content pointer (HACK)
+	//This allows restricting access to the pointer
+	//while still being able to set it here
+	unsigned char **writable_content_pointer = (unsigned char**) &buffer->content;
+	*writable_content_pointer = content;
 
 	return buffer;
 }

@@ -26,7 +26,7 @@ typedef struct buffer_t {
 	const size_t buffer_length;
 	size_t content_length;
 	bool readonly; //if set, this buffer shouldn't be written to.
-	unsigned char *content;
+	unsigned char * const content;
 } buffer_t;
 
 /*
