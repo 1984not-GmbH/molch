@@ -112,6 +112,29 @@ int main(void) {
 	}
 	printf("Detected out of bounds buffer concatenation.\n");
 
+	//test empty buffers
+	buffer_t *empty = buffer_create(0, 0);
+	status = buffer_concat(buffer1, empty);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to concatenate empty buffer to buffer.\n");
+		buffer_clear(buffer1);
+		buffer_clear(buffer2);
+		free(buffer2->content);
+		return status;
+	}
+	buffer_t *empty2 = buffer_create(0, 0);
+	status = buffer_clone(empty2, empty);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to clone empty buffer.\n");
+		buffer_clear(buffer1);
+		buffer_clear(buffer2);
+		free(buffer2->content);
+		return status;
+	}
+	buffer_clear(empty);
+	buffer_clear(empty2);
+	//TODO more tests with empty buffers
+
 	//TODO check readonly
 	//TODO check content lengths
 	//TODO test buffer clone functions

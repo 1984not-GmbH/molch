@@ -61,7 +61,11 @@ buffer_t* buffer_init_with_pointer(
 	//This allows restricting access to the pointer
 	//while still being able to set it here
 	unsigned char **writable_content_pointer = (unsigned char**) &buffer->content;
-	*writable_content_pointer = content;
+	if (buffer_length == 0) {
+		*writable_content_pointer = NULL;
+	} else {
+		*writable_content_pointer = content;
+	}
 
 	return buffer;
 }
