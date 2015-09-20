@@ -182,4 +182,13 @@ int buffer_clone_to_raw(
 		unsigned char * const destination,
 		const size_t destination_length,
 		const buffer_t *source) __attribute__((warn_unused_result));
+
+/*
+ * Compare two buffers.
+ *
+ * Returns 0 if both buffers match.
+ */
+int buffer_compare(
+		const buffer_t * const buffer1,
+		const buffer_t * const buffer2) __attribute__((warn_unused_result));
 #endif

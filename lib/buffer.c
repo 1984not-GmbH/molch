@@ -280,3 +280,20 @@ int buffer_clone_to_raw(
 			0,
 			source->content_length);
 }
+
+/*
+ * Compare two buffers.
+ *
+ * Returns 0 if both buffers match.
+ */
+int buffer_compare(
+		const buffer_t * const buffer1,
+		const buffer_t * const buffer2) {
+	if (buffer1->content_length != buffer2->content_length) {
+		//FIXME: Does this introduce a sidechannel? This can leak the information that
+		//the size of two buffers doesn't match.
+		return -1;
+	}
+
+	return sodium_memcmp(buffer1->content, buffer2->content, buffer1->content_length);
+}

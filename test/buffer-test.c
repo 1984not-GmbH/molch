@@ -27,6 +27,28 @@
 int main(void) {
 	sodium_init();
 
+	//test comparison function
+	buffer_t *string1 = buffer_create_from_string("1234");
+	buffer_t *string2 = buffer_create_from_string("1234");
+	buffer_t *string3 = buffer_create_from_string("2234");
+	buffer_t *string4 = buffer_create_from_string("12345");
+
+	if ((buffer_compare(string1, string2) != 0)
+			|| (buffer_compare(string1, string3) != -1)
+			|| (buffer_compare(string1, string4) != -1)) {
+		fprintf(stderr, "ERROR: buffer_compare doesn't work as expected");
+		buffer_clear(string1);
+		buffer_clear(string2);
+		buffer_clear(string3);
+		buffer_clear(string4);
+
+		return EXIT_FAILURE;
+	}
+	buffer_clear(string1);
+	buffer_clear(string2);
+	buffer_clear(string3);
+	buffer_clear(string4);
+
 	//create a new buffer
 	buffer_t *buffer1 = buffer_create(14, 10);
 	unsigned char buffer1_content[10];
@@ -92,7 +114,7 @@ int main(void) {
 	//copy buffer
 	buffer_t *buffer3 = buffer_create(5,0);
 	status = buffer_copy(buffer3, 0, buffer2, 0, buffer2->content_length);
-	if ((status != 0) || (sodium_memcmp(buffer2->content, buffer3->content, buffer2->content_length) != 0)) {
+	if ((status != 0) || (buffer_compare(buffer2, buffer3) != 0)) {
 		fprintf(stderr, "ERROR: Failed to copy buffer. (%i)\n", status);
 		buffer_clear(buffer1);
 		buffer_clear(buffer2);
