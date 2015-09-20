@@ -31,8 +31,23 @@ buffer_t* buffer_init(
 		buffer_t * const buffer,
 		const size_t buffer_length,
 		const size_t content_length) {
+	return buffer_init_with_pointer(
+			buffer,
+			(unsigned char*) buffer + sizeof(buffer_t), //address after buffer_t struct
+			buffer_length,
+			content_length);
+}
+
+/*
+ * initialize a buffer with a pointer to the character array.
+ */
+buffer_t* buffer_init_with_pointer(
+		buffer_t * const buffer,
+		unsigned char * const content,
+		const size_t buffer_length,
+		const size_t content_length) {
 	//write to constant buffer length value (HACK)
-	//This allows restricting access to the buffer length
+	//This allows restricting acess to the buffer length
 	//while still being able to set it here
 	size_t *writable_buffer_length = (size_t*) &buffer->buffer_length;
 	*writable_buffer_length = buffer_length;
@@ -41,7 +56,8 @@ buffer_t* buffer_init(
 		? buffer_length
 		: content_length;
 	buffer->readonly = false;
-	buffer->content = (unsigned char*) buffer + sizeof(buffer_t);
+	buffer->content = content;
+
 	return buffer;
 }
 

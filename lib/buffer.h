@@ -41,6 +41,15 @@ buffer_t* buffer_init(
 		const size_t content_length) __attribute__((warn_unused_result));
 
 /*
+ * initialize a buffer with a pointer to the character array.
+ */
+buffer_t* buffer_init_with_pointer(
+		buffer_t * const buffer,
+		unsigned char * const content,
+		const size_t buffer_length,
+		const size_t content_length) __attribute__((warn_unused_result));
+
+/*
  * Macro to create a new buffer of a given name and length;
  */
 #define buffer_create(buffer_length, content_length) buffer_init(alloca(sizeof(buffer_t) + buffer_length), buffer_length, content_length)

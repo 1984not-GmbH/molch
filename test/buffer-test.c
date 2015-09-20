@@ -38,8 +38,8 @@ int main(void) {
 	print_hex(buffer1->content, buffer1->content_length, 30);
 	putchar('\n');
 
-	//make second buffer
-	buffer_t *buffer2 = buffer_create(5, 4);
+	//make second buffer (from pointer)
+	buffer_t *buffer2 = buffer_init_with_pointer(alloca(sizeof(buffer_t)), malloc(5), 5, 4);
 	buffer2->content[0] = 0xde;
 	buffer2->content[1] = 0xad;
 	buffer2->content[2] = 0xbe;
@@ -54,6 +54,9 @@ int main(void) {
 	int status = buffer_concat(buffer1, buffer2);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to concatenate both buffers. (%i)\n", status);
+		buffer_clear(buffer1);
+		buffer_clear(buffer2);
+		free(buffer2->content);
 		return status;
 	}
 	assert(buffer1->content_length == 14);
@@ -64,6 +67,9 @@ int main(void) {
 	if ((sodium_memcmp(buffer1->content, buffer1_content, sizeof(buffer1_content)) != 0)
 			|| (sodium_memcmp(buffer1->content + sizeof(buffer1_content), buffer2->content, buffer2->content_length) !=0)) {
 		fprintf(stderr, "ERROR: Failed to concatenate buffers.\n");
+		buffer_clear(buffer1);
+		buffer_clear(buffer2);
+		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
 	printf("Buffers successfully concatenated.\n");
@@ -72,6 +78,9 @@ int main(void) {
 	status = buffer_concat(buffer1, buffer2);
 	if (status == 0) {
 		fprintf(stderr, "ERROR: Concatenated buffers that go over the bounds.\n");
+		buffer_clear(buffer1);
+		buffer_clear(buffer2);
+		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
 	printf("Detected out of bounds buffer concatenation.\n");
@@ -85,6 +94,9 @@ int main(void) {
 	status = buffer_copy(buffer3, 0, buffer2, 0, buffer2->content_length);
 	if ((status != 0) || (sodium_memcmp(buffer2->content, buffer3->content, buffer2->content_length) != 0)) {
 		fprintf(stderr, "ERROR: Failed to copy buffer. (%i)\n", status);
+		buffer_clear(buffer1);
+		buffer_clear(buffer2);
+		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
 	printf("Buffer successfully copied.\n");
@@ -92,6 +104,9 @@ int main(void) {
 	status = buffer_copy(buffer3, buffer2->content_length, buffer2, 0, buffer2->content_length);
 	if (status == 0) {
 		fprintf(stderr, "ERROR: Copied buffer that out of bounds.\n");
+		buffer_clear(buffer1);
+		buffer_clear(buffer2);
+		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
 	printf("Detected out of bounds buffer copying.\n");
@@ -99,6 +114,9 @@ int main(void) {
 	status = buffer_copy(buffer3, 1, buffer2, 0, buffer2->content_length);
 	if ((status != 0) || (buffer3->content[0] != buffer2->content[0]) || (sodium_memcmp(buffer2->content, buffer3->content + 1, buffer2->content_length) != 0)) {
 		fprintf(stderr, "ERROR: Failed to copy buffer. (%i)\n", status);
+		buffer_clear(buffer1);
+		buffer_clear(buffer2);
+		free(buffer2);
 		return EXIT_FAILURE;
 	}
 	printf("Successfully copied buffer.\n");
@@ -113,6 +131,9 @@ int main(void) {
 			4); //length
 	if ((status != 0) || (sodium_memcmp(raw_array, buffer1->content + 1, 4) != 0)) {
 		fprintf(stderr, "ERROR: Failed to copy buffer to raw array. (%i)\n", status);
+		buffer_clear(buffer1);
+		buffer_clear(buffer2);
+		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
 	printf("Successfully copied buffer to raw array.\n");
@@ -125,6 +146,9 @@ int main(void) {
 			4);
 	if (status == 0) {
 		fprintf(stderr, "ERROR: Failed to detect out of bounds read!\n");
+		buffer_clear(buffer1);
+		buffer_clear(buffer2);
+		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
 	printf("Successfully detected out of bounds read.\n");
@@ -139,6 +163,9 @@ int main(void) {
 			sizeof(heeelo)); //length
 	if ((status != 0) || (sodium_memcmp(heeelo, buffer1->content, sizeof(heeelo)))) {
 		fprintf(stderr, "ERROR: Failed to copy from raw array to buffer. (%i)\n", status);
+		buffer_clear(buffer1);
+		buffer_clear(buffer2);
+		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
 	printf("Successfully copied raw array to buffer.\n");
@@ -151,6 +178,9 @@ int main(void) {
 			sizeof(heeelo));
 	if (status == 0) {
 		fprintf(stderr, "ERROR: Failed to detect out of bounds read.\n");
+		buffer_clear(buffer1);
+		buffer_clear(buffer2);
+		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
 	printf("Out of bounds read detected.\n");
@@ -159,14 +189,23 @@ int main(void) {
 	buffer_t *string = buffer_create_from_string("This is a string!");
 	if (string == NULL) {
 		fprintf(stderr, "ERROR: Buffer created from string is NULL!");
+		buffer_clear(buffer1);
+		buffer_clear(buffer2);
+		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
 	if (string->content_length != sizeof("This is a string!")) {
 		fprintf(stderr, "ERROR: Buffer created from string has incorrect length.\n");
+		buffer_clear(buffer1);
+		buffer_clear(buffer2);
+		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
 	if (sodium_memcmp(string->content, "This is a string!", string->content_length) != 0) {
 		fprintf(stderr, "ERROR: Failed to create buffer from string.\n");
+		buffer_clear(buffer1);
+		buffer_clear(buffer2);
+		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
 	printf("Successfully created buffer from string.\n");
@@ -180,15 +219,23 @@ int main(void) {
 	for (i = 0; i < buffer1->buffer_length; i++) {
 		if (buffer1->content[i] != '\0') {
 			fprintf(stderr, "ERROR: Byte %zi of the buffer hasn't been erased.\n", i);
+			buffer_clear(buffer1);
+			buffer_clear(buffer2);
+			free(buffer2->content);
 			return EXIT_FAILURE;
 		}
 	}
 
 	if (buffer1->content_length != 0) {
 		fprintf(stderr, "ERROR: The content length of the buffer hasn't been set to zero.\n");
+		buffer_clear(buffer1);
+		buffer_clear(buffer2);
 		return EXIT_FAILURE;
 	}
 	printf("Buffer successfully erased.\n");
+
+	buffer_clear(buffer2);
+	free(buffer2->content);
 
 	return EXIT_SUCCESS;
 }
