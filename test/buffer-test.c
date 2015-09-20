@@ -48,6 +48,11 @@ int main(void) {
 	buffer_clear(string2);
 	buffer_clear(string3);
 	buffer_clear(string4);
+	printf("Successfully tested buffer comparison ...\n");
+
+	//test heap allocated buffers
+	buffer_t *heap_buffer = buffer_create_on_heap(10, 0);
+	buffer_destroy_from_heap(heap_buffer);
 
 	//create a new buffer
 	buffer_t *buffer1 = buffer_create(14, 10);
