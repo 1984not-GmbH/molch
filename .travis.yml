@@ -1,0 +1,14 @@
+sudo: required
+
+arch:
+  packages:
+    - cmake
+    - clang-analyzer
+    - libsodium
+    - valgrind
+  script:
+      - "bash run-build.sh"
+      - "cd build; make test"
+      - "bash run-static-analysis.sh"
+script:
+  - "curl -s https://raw.githubusercontent.com/mikkeloscar/arch-travis/master/arch-travis.sh | bash"
