@@ -1,6 +1,7 @@
 molch
 =====
 
+[![Travis Build Status](https://travis-ci.org/FSMaxB/molch.svg?branch=master)](https://travis-ci.org/FSMaxB/molch)
 [![Join the chat at https://gitter.im/FSMaxB/molch](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/FSMaxB/molch?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 An implementation of the axolotl ratchet (https://github.com/trevp/axolotl/wiki) based on libsodium.
