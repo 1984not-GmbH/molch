@@ -38,11 +38,11 @@ int create_and_print_message(
 		unsigned char * message_key, //output, crypto_secretbox_KEYBYTES
 		const unsigned char * const header,
 		const size_t header_length,
-		unsigned char * header_key) { //output, crypto_secretbox_KEYBYTES
+		unsigned char * header_key) { //output, crypto_aead_chacha20poly1305_KEYBYTES
 	//create header key
-	randombytes_buf(header_key, crypto_secretbox_KEYBYTES);
-	printf("Header key (%i Bytes):\n", crypto_secretbox_KEYBYTES);
-	print_hex(header_key, sizeof(header_key), 30);
+	randombytes_buf(header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+	printf("Header key (%i Bytes):\n", crypto_aead_chacha20poly1305_KEYBYTES);
+	print_hex(header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
 	putchar('\n');
 
 	//create message key
