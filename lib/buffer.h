@@ -47,7 +47,7 @@ buffer_t* buffer_init_with_pointer(
 		buffer_t * const buffer,
 		unsigned char * const content,
 		const size_t buffer_length,
-		const size_t content_length) __attribute__((warn_unused_result));
+		const size_t content_length);
 
 /*
  * Macro to create a new buffer of a given length.
