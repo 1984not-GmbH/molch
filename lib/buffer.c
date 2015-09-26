@@ -306,3 +306,22 @@ int buffer_compare(
 
 	return sodium_memcmp(buffer1->content, buffer2->content, buffer1->content_length);
 }
+
+/*
+ * Compare parts of two buffers.
+ *
+ * Returns 0 if both buffers match.
+ */
+int buffer_compare_partial(
+		const buffer_t * const buffer1,
+		const size_t position1,
+		const buffer_t * const buffer2,
+		const size_t position2,
+		const size_t length) {
+	if (((buffer1->content_length + position1) < length) || ((buffer2->content_length + position2) < length)) {
+		//buffers don't match the length of the comparison
+		return -6;
+	}
+
+	return sodium_memcmp(buffer1->content + position1, buffer2->content + position2, length);
+}

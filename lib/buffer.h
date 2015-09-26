@@ -202,4 +202,16 @@ int buffer_clone_to_raw(
 int buffer_compare(
 		const buffer_t * const buffer1,
 		const buffer_t * const buffer2) __attribute__((warn_unused_result));
+
+/*
+ * Compare parts of two buffers.
+ *
+ * Returns 0 if both buffers match.
+ */
+int buffer_compare_partial(
+		const buffer_t * const buffer1,
+		const size_t position1,
+		const buffer_t * const buffer2,
+		const size_t position2,
+		const size_t length) __attribute__((warn_unused_result));
 #endif
