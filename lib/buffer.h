@@ -125,17 +125,6 @@ int buffer_clone(
 		const buffer_t * const source) __attribute__((warn_unused_result));
 
 /*
- * Copy the content of a buffer to the beginning of another
- * buffer and set the destinations content length to the
- * same length as the source.
- *
- * Returns 0 on success.
- */
-int buffer_clone(
-		buffer_t * const destination,
-		const buffer_t * const source) __attribute__((warn_unused_result));
-
-/*
  * Copy from a raw array to a buffer.
  *
  * Returns 0 on success.
