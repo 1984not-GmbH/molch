@@ -144,6 +144,7 @@ int main(void) {
 	buffer_clear(empty);
 	buffer_clear(empty2);
 	//TODO more tests with empty buffers
+	//FIXME Yeah this needs to be done ASAP!!!!!!!!!!!!!
 
 	//TODO check readonly
 	//TODO check content lengths

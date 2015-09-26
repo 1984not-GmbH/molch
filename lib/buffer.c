@@ -101,6 +101,9 @@ buffer_t* buffer_create_from_string_helper(
  * resets the content size.
  */
 void buffer_clear(buffer_t *buffer) {
+	if (buffer->buffer_length == 0) {
+		return;
+	}
 	sodium_memzero(buffer->content, buffer->buffer_length);
 	buffer->content_length = 0;
 }
@@ -149,6 +152,10 @@ int buffer_copy(
 	if ((source_offset > source->content_length) || (copy_length > (source->content_length - source_offset))) {
 		//source buffer isn't long enough
 		return -6;
+	}
+
+	if (source->buffer_length == 0) {
+		return 0;
 	}
 
 	memcpy(destination->content + destination_offset, source->content + source_offset, copy_length);
@@ -209,6 +216,10 @@ int buffer_copy_from_raw(
 		return -6;
 	}
 
+	if (copy_length == 0) {
+		return 0;
+	}
+
 	memcpy(destination->content + destination_offset, source + source_offset, copy_length);
 	destination->content_length = (destination->content_length > destination_offset + copy_length)
 		? destination->content_length
@@ -263,6 +274,10 @@ int buffer_copy_to_raw(
 		return -7;
 	}
 
+	if (source->buffer_length == 0) {
+		return 0;
+	}
+
 	memcpy(destination + destination_offset, source->content + source_offset, copy_length);
 
 	return 0;
@@ -304,6 +319,10 @@ int buffer_compare(
 		return -1;
 	}
 
+	if (buffer1->buffer_length == 0) {
+		return 0;
+	}
+
 	return sodium_memcmp(buffer1->content, buffer2->content, buffer1->content_length);
 }
 
@@ -323,6 +342,14 @@ int buffer_compare_partial(
 		return -6;
 	}
 
+	if ((buffer1->buffer_length == 0) || (buffer2->buffer_length == 0)) {
+		if (length == 0) {
+			return 0;
+		} else {
+			return -1;
+		}
+	}
+
 	return sodium_memcmp(buffer1->content + position1, buffer2->content + position2, length);
 }
 
@@ -338,6 +365,10 @@ int buffer_fill_random(
 
 	if (buffer->readonly) {
 		return -5;
+	}
+
+	if (buffer->buffer_length == 0) {
+		return 0;
 	}
 
 	buffer->content_length = length;
