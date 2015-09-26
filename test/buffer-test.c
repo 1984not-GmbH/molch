@@ -297,5 +297,34 @@ int main(void) {
 	buffer_clear(buffer2);
 	free(buffer2->content);
 
+	//fill a buffer with random numbers
+	buffer_t *random = buffer_create(10, 0);
+	status = buffer_fill_random(random, 5);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to fill buffer with random numbers. (%i)\n", status);
+		buffer_clear(random);
+		return status;
+	}
+
+	if (random->content_length != 5) {
+		fprintf(stderr, "ERROR: Wrong content length.\n");
+		buffer_clear(random);
+		return EXIT_FAILURE;
+	}
+	printf("Buffer with %zi random bytes:\n", random->content_length);
+	print_hex(random->content, random->content_length, 30);
+
+	if (buffer_fill_random(random, 20) == 0) {
+		fprintf(stderr, "ERROR: Failed to detect too long write to buffer.\n");
+		buffer_clear(random);
+		return EXIT_FAILURE;
+	}
+
+	random->readonly = true;
+	if (buffer_fill_random(random, 4) == 0) {
+		fprintf(stderr, "ERROR: Failed to prevent write to readonly buffer.\n");
+		buffer_clear(random);
+		return EXIT_FAILURE;
+	}
 	return EXIT_SUCCESS;
 }
