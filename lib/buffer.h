@@ -214,4 +214,11 @@ int buffer_compare_partial(
 		const buffer_t * const buffer2,
 		const size_t position2,
 		const size_t length) __attribute__((warn_unused_result));
+
+/*
+ * Fill a buffer with random numbers.
+ */
+int buffer_fill_random(
+		buffer_t * const buffer,
+		const size_t length) __attribute__((warn_unused_result));
 #endif

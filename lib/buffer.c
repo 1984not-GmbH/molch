@@ -325,3 +325,23 @@ int buffer_compare_partial(
 
 	return sodium_memcmp(buffer1->content + position1, buffer2->content + position2, length);
 }
+
+/*
+ * Fill a buffer with random numbers.
+ */
+int buffer_fill_random(
+		buffer_t * const buffer,
+		const size_t length) {
+	if (length > buffer->buffer_length) {
+		return -6;
+	}
+
+	if (buffer->readonly) {
+		return -5;
+	}
+
+	buffer->content_length = length;
+	randombytes_buf(buffer->content, length);
+
+	return 0;
+}
