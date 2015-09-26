@@ -376,3 +376,24 @@ int buffer_fill_random(
 
 	return 0;
 }
+
+/*
+ * Xor a buffer onto another of the same length.
+ */
+//FIXME: Make sure this doesn't introduce any sidechannels
+int buffer_xor(
+		buffer_t * const destination,
+		const buffer_t * const source) {
+	if ((destination->content_length != source->content_length)
+			|| (destination->buffer_length < destination->content_length)
+			|| (source->buffer_length < source->content_length)) {
+		return -6;
+	}
+
+	//xor source onto destination
+	for (size_t i = 0; i < destination->content_length; i++) {
+		destination->content[i] ^= source->content[i];
+	}
+
+	return 0;
+}

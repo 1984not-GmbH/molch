@@ -210,4 +210,12 @@ int buffer_compare_partial(
 int buffer_fill_random(
 		buffer_t * const buffer,
 		const size_t length) __attribute__((warn_unused_result));
+
+/*
+ * Xor a buffer onto another of the same length.
+ */
+int buffer_xor(
+		buffer_t * const destination,
+		const buffer_t * const source) __attribute__((warn_unused_result));
+
 #endif

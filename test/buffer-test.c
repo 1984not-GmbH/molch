@@ -327,5 +327,49 @@ int main(void) {
 		buffer_clear(random);
 		return EXIT_FAILURE;
 	}
+
+	//test xor
+	buffer_t *text = buffer_create_from_string("Hello World!");
+	buffer_t *xor = buffer_create(text->content_length, text->content_length);
+	status = buffer_clone(xor, text);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to clone buffer.\n");
+		return status;
+	}
+
+	buffer_t *random2 = buffer_create(text->content_length, text->content_length);
+	status = buffer_fill_random(random2, random2->buffer_length);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to fill buffer with random data. (%i)\n", status);
+		return status;
+	}
+
+	//xor random data to xor-buffer
+	status = buffer_xor(xor, random2);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to xor buffers. (%i)\n", status);
+		return status;
+	}
+
+	//make sure that xor doesn't contain either 'text' or 'random2'
+	if ((buffer_compare(xor, text) == 0) || (buffer_compare(xor, random2) == 0)) {
+		fprintf(stderr, "ERROR: xor buffer contains 'text' or 'random2'\n");
+		return EXIT_FAILURE;
+	}
+
+	//xor the buffer with text again to get out the random data
+	status = buffer_xor(xor, text);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to xor buffers. (%i)\n", status);
+		return status;
+	}
+
+	//xor should now contain the same as random2
+	if (buffer_compare(xor, random2) != 0) {
+		fprintf(stderr, "ERROR: Failed to xor buffers properly.\n");
+		return EXIT_FAILURE;
+	}
+	printf("Successfully tested xor.\n");
+
 	return EXIT_SUCCESS;
 }
