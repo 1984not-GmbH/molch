@@ -22,7 +22,10 @@ set(tests hkdf-test
           header-test
           header-and-message-keystore-test
           ratchet-test
-          buffer-test)
+          buffer-test
+          user-store-test
+          spiced-random-test
+          molch-test)
 
 foreach(test ${tests})
     add_executable(${test} ${test})

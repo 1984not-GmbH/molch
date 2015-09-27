@@ -16,8 +16,14 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <stdbool.h>
+
 #ifndef LIB_MOLCH_H
 #define LIB_MOLCH_H
+
+/*
+ * THIS HEADER IS ONLY AN EARLY PREVIEW. IT WILL MOST CERTAINLY CHANGE IN THE FUTURE.
+ */
 
 /*
  * Create a new user. The user is identified by the public key.
@@ -41,9 +47,32 @@ int molch_create_user(
 		const unsigned char * const random_data,
 		const size_t random_data_length) __attribute__((warn_unused_result));
 
-//TODO: Get a list of users
+/*
+ * Destroy a user.
+ */
+int molch_destroy_user(
+		const unsigned char * const public_identity_key);
 
-typedef enum molch_message_type { PREKEY_MESSAGE, NORMAL_MESSAGE } molch_message_type;
+/*
+ * Get the number of users.
+ */
+size_t molch_user_count();
+
+/*
+ * List all of the users (list of the public keys),
+ * NULL if there are no users.
+ *
+ * This list is heap allocated, so don't forget to free it.
+ */
+unsigned char* molch_user_list(size_t *count);
+
+/*
+ * Delete all users.
+ */
+void molch_destroy_all_users();
+
+typedef enum molch_message_type { PREKEY_MESSAGE, NORMAL_MESSAGE, INVALID } molch_message_type;
+
 /*
  * Get the type of a message.
  *
@@ -54,13 +83,51 @@ molch_message_type molch_get_message_type(
 		const unsigned char * const packet,
 		const size_t packet_length);
 
+typedef struct molch_conversation {
+	void *conversation;
+	bool valid;
+} molch_conversation;
+
+/*
+ * Start a new conversation. (sending)
+ *
+ * This requires a new set of prekeys from the receiver.
+ */
+molch_conversation molch_create_send_conversation(
+		unsigned char ** const packet, //output, will be malloced by the function, don't forget to free it after use!
+		size_t *packet_length, //output
+		const unsigned char * const message,
+		const size_t message_length,
+		const unsigned char * const prekey_list, //prekey list of the receiver
+		const unsigned char * const sender_public_identity, //identity of the sender (user)
+		const unsigned char * const receiver_public_identity) __attribute__((warn_unused_result)); //identity of the receiver
+
+/*
+ * Start a new conversation. (receiving)
+ *
+ * This also generates a new set of prekeys to be uploaded to the server.
+ *
+ * This function is called after receiving a prekey message.
+ *
+ * conversation->valid is false on failure
+ */
+molch_conversation molch_create_receive_conversation(
+		unsigned char ** const message, //output, will be malloced by the function, don't forget to free it after use!
+		size_t * const message_length, //output
+		const unsigned char * const packet, //received prekey packet
+		const size_t packet_length,
+		const unsigned char * const prekey_list, //output, needs to be 100 * crypto_box_PUBLICKEYBYTES + crypto_onetimeauth_BYTES
+		const unsigned char * const sender_public_identity, //identity of the sender
+		const unsigned char * const receiver_public_identity) __attribute__((warn_unused_result)); //identity key of the receiver (user)
+
 /*
  * Encrypt a message and create a packet that can be sent to the receiver.
  *
  * Returns 0 on success.
  */
+//TODO DO ACTUAL ENCRYPTION IN HERE! (currently unencrypted)
 int molch_encrypt_message(
-		unsigned char * const packet, //output, has to be 362 + message_length Bytes long
+		unsigned char ** const packet, //output, will be malloced by the function, don't forget to free it after use!
 		size_t *packet_length, //output, length of the packet
 		const unsigned char * const message,
 		const size_t message_length,
@@ -72,40 +139,16 @@ int molch_encrypt_message(
  * Returns 0 on success.
  */
 int molch_decrypt_message(
-		unsigned char * const message, //output, buffer should be as long as the received packet
+		unsigned char ** const message, //output, will be malloced by the function, don't forget to free it after use!
 		size_t *message_length, //output
 		const unsigned char * const packet, //received packet
 		const size_t packet_length,
 		molch_conversation conversation) __attribute__((warn_unused_result));
 
-
 /*
- * Start a new conversation. (sending)
+ * Destroy a conversation.
  *
- * This requires a new set of prekeys from the receiver.
+ * This will almost certainly be changed later on!!!!!!
  */
-molch_conversation molch_create_send_conversation(
-		unsigned char * const packet, //output, buffer should be 500 Bytes + message_length (TODO: specify exact size)
-		size_t *packet_length, //output
-		const unsigned char * const message,
-		const size_t message_length
-		const unsigned char * const prekey_list, //prekey list of the receiver
-		const unsigned char * const sender_public_identity, //identity of the sender (user)
-		const unsigned char * const receiver_public_identity) __attribute__((warn_unused_result)); //identity of the receiver
-
-/*
- * Start a new conversation. (receiving)
- *
- * This also generates a new set of prekeys to be uploaded to the server.
- *
- * This function is called after receiving a prekey message.
- */
-molch_conversation molch_create_receive_conversation(
-		unsigned char * const message, //output, buffer should be as long as the received packet
-		size_t * const message_length, //output
-		const unsigned char * const packet, //received prekey packet
-		const size_t packet_length,
-		const unsigned char * const prekey_list, //output, needs to be 100 * crypto_box_PUBLICKEYBYTES + crypto_onetimeauth_BYTES
-		const unsigned char * const public_identity) __attribute__((warn_unused_result)); //identity key of the receiver (user)
-
+void molch_destroy_conversation(molch_conversation conversation);
 #endif
