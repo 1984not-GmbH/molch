@@ -29,78 +29,78 @@ int main(void) {
 	int status;
 
 	//create Alice's keypair
-	unsigned char alice_public_key[crypto_box_PUBLICKEYBYTES];
-	unsigned char alice_private_key[crypto_box_SECRETKEYBYTES];
+	buffer_t *alice_public_key = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *alice_private_key = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	status = generate_and_print_keypair(
-			alice_public_key,
-			alice_private_key,
+			alice_public_key->content,
+			alice_private_key->content,
 			"Alice",
 			"");
 	if (status != 0) {
-		sodium_memzero(alice_private_key, crypto_box_SECRETKEYBYTES);
+		buffer_clear(alice_private_key);
 		return status;
 	}
 
 	//create Bob's keypair
-	unsigned char bob_public_key[crypto_box_PUBLICKEYBYTES];
-	unsigned char bob_private_key[crypto_box_SECRETKEYBYTES];
+	buffer_t *bob_public_key = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *bob_private_key = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	status = generate_and_print_keypair(
-			bob_public_key,
-			bob_private_key,
+			bob_public_key->content,
+			bob_private_key->content,
 			"Bob",
 			"");
 	if (status != 0) {
-		sodium_memzero(alice_private_key, crypto_box_SECRETKEYBYTES);
-		sodium_memzero(bob_private_key, crypto_box_SECRETKEYBYTES);
+		buffer_clear(alice_private_key);
+		buffer_clear(bob_private_key);
 		return status;
 	}
 
 	//Diffie Hellman on Alice's side
-	unsigned char alice_shared_secret[crypto_generichash_BYTES];
+	buffer_t *alice_shared_secret = buffer_create(crypto_generichash_BYTES, crypto_generichash_BYTES);
 	status = diffie_hellman(
 			alice_shared_secret,
 			alice_private_key,
 			alice_public_key,
 			bob_public_key,
 			true);
-	sodium_memzero(alice_private_key, crypto_box_SECRETKEYBYTES);
+	buffer_clear(alice_private_key);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Diffie Hellman with Alice's private key failed. (%i)\n", status);
-		sodium_memzero(bob_private_key, crypto_box_SECRETKEYBYTES);
-		sodium_memzero(alice_shared_secret, crypto_generichash_BYTES);
+		buffer_clear(bob_private_key);
+		buffer_clear(alice_shared_secret);
 		return status;
 	}
 
 	//print Alice's shared secret
-	printf("Alice's shared secret ECDH(A_priv, B_pub) (%i Bytes):\n", crypto_generichash_BYTES);
-	print_hex(alice_shared_secret, crypto_generichash_BYTES, 30);
+	printf("Alice's shared secret ECDH(A_priv, B_pub) (%zi Bytes):\n", alice_shared_secret->content_length);
+	print_hex(alice_shared_secret->content, alice_shared_secret->content_length, 30);
 	putchar('\n');
 
 	//Diffie Hellman on Bob's side
-	unsigned char bob_shared_secret[crypto_generichash_BYTES];
+	buffer_t *bob_shared_secret = buffer_create(crypto_generichash_BYTES, crypto_generichash_BYTES);
 	status = diffie_hellman(
 			bob_shared_secret,
 			bob_private_key,
 			bob_public_key,
 			alice_public_key,
 			false);
-	sodium_memzero(bob_private_key, crypto_box_SECRETKEYBYTES);
+	buffer_clear(bob_private_key);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Diffie Hellman with Bob's private key failed. (%i)\n", status);
-		sodium_memzero(alice_shared_secret, crypto_generichash_BYTES);
-		sodium_memzero(bob_shared_secret, crypto_generichash_BYTES);
+		buffer_clear(alice_shared_secret);
+		buffer_clear(bob_shared_secret);
 		return status;
 	}
 
 	//print Bob's shared secret
-	printf("Bob's shared secret ECDH(B_priv, A_pub) (%i Bytes):\n", crypto_generichash_BYTES);
-	print_hex(bob_shared_secret, crypto_generichash_BYTES, 30);
+	printf("Bob's shared secret ECDH(B_priv, A_pub) (%zi Bytes):\n", bob_shared_secret->content_length);
+	print_hex(bob_shared_secret->content, bob_shared_secret->content_length, 30);
 	putchar('\n');
 
 	//compare both shared secrets
-	status = sodium_memcmp(alice_shared_secret, bob_shared_secret, crypto_generichash_BYTES);
-	sodium_memzero(alice_shared_secret, crypto_generichash_BYTES);
-	sodium_memzero(bob_shared_secret, crypto_generichash_BYTES);
+	status = buffer_compare(alice_shared_secret, bob_shared_secret);
+	buffer_clear(alice_shared_secret);
+	buffer_clear(bob_shared_secret);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Diffie Hellman didn't produce the same shared secret. (%i)\n", status);
 		return status;
