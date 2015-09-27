@@ -371,5 +371,15 @@ int main(void) {
 	}
 	printf("Successfully tested xor.\n");
 
+	//test creating a buffer with an existing array
+	unsigned char array[] = "Hello World!\n";
+	buffer_t *buffer_with_array = buffer_create_with_existing_array(array, sizeof(array));
+	if ((buffer_with_array->content != array)
+			|| (buffer_with_array->content_length != sizeof(array))
+			|| (buffer_with_array->buffer_length != sizeof(array))) {
+		fprintf(stderr, "ERROR: Failed to create buffer with existing array.\n");
+		return EXIT_FAILURE;
+	}
+
 	return EXIT_SUCCESS;
 }
