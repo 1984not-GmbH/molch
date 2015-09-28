@@ -24,7 +24,7 @@
 #include "hkdf.h"
 
 //TODO maybe use another info string?
-#define INFO (unsigned char*) "molch"
+#define INFO "molch"
 
 /*
  * Derive the next chain key in a message chain.
