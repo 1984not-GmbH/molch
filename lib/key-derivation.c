@@ -158,19 +158,28 @@ int derive_initial_root_chain_and_header_keys(
 		const unsigned char * const our_public_ephemeral,
 		const unsigned char * const their_public_ephemeral,
 		bool am_i_alice) {
+	//FIXME: only temporary until everything else is ported to the new buffers:
+	buffer_t *our_private_identity_buffer = buffer_create_with_existing_array((unsigned char*)our_private_identity, crypto_box_SECRETKEYBYTES);
+	buffer_t *our_public_identity_buffer = buffer_create_with_existing_array((unsigned char*)our_public_identity, crypto_box_PUBLICKEYBYTES);
+	buffer_t *our_private_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)our_private_ephemeral, crypto_box_SECRETKEYBYTES);
+	buffer_t *our_public_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)our_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+	buffer_t *their_public_identity_buffer = buffer_create_with_existing_array((unsigned char*)their_public_identity, crypto_box_PUBLICKEYBYTES);
+	buffer_t *their_public_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)their_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+
+	int status;
 	//derive pre_root_key to later derive the initial root key,
 	//header keys and chain keys from
 	//pre_root_key = HASH( DH(A,B0) || DH(A0,B) || DH(A0,B0) )
 	assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES);
 	buffer_t *pre_root_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	int status = triple_diffie_hellman(
+	status = triple_diffie_hellman(
 			pre_root_key->content,
-			our_private_identity,
-			our_public_identity,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_identity,
-			their_public_ephemeral,
+			our_private_identity_buffer->content,
+			our_public_identity_buffer->content,
+			our_private_ephemeral_buffer->content,
+			our_public_ephemeral_buffer->content,
+			their_public_identity_buffer->content,
+			their_public_ephemeral_buffer->content,
 			am_i_alice);
 	if (status != 0) {
 		buffer_clear(pre_root_key);
