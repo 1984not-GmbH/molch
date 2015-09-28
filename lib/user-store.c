@@ -206,6 +206,10 @@ void user_store_remove_by_key(user_store * const store, const buffer_t * const p
 
 //remove a user form the user store
 void user_store_remove(user_store *store, user_store_node *node) {
+	if (node == NULL) {
+		return;
+	}
+
 	sodium_mprotect_readwrite(store);
 	sodium_mprotect_readonly(node);
 

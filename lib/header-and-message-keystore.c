@@ -70,6 +70,10 @@ int header_and_message_keystore_add(
 
 //remove a set of header and message keys from the keystore
 void header_and_message_keystore_remove(header_and_message_keystore *keystore, header_and_message_keystore_node *node) {
+	if (node == NULL) {
+		return;
+	}
+
 	if (node->next != NULL) { //node is not the tail
 		node->next->previous = node->previous;
 	} else { //node ist the tail
