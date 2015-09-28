@@ -292,5 +292,11 @@ int triple_diffie_hellman(
 
 	//write final hash to output (derived_key)
 	status = crypto_generichash_final(&hash_state, derived_key->content, crypto_generichash_BYTES);
+	if (status != 0) {
+		sodium_memzero(&hash_state, sizeof(hash_state));
+		return status;
+	}
+	derived_key->content_length = crypto_generichash_BYTES;
+	sodium_memzero(&hash_state, sizeof(hash_state));
 	return status;
 }
