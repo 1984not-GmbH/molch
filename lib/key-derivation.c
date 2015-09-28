@@ -173,13 +173,13 @@ int derive_initial_root_chain_and_header_keys(
 	assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES);
 	buffer_t *pre_root_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = triple_diffie_hellman(
-			pre_root_key->content,
-			our_private_identity_buffer->content,
-			our_public_identity_buffer->content,
-			our_private_ephemeral_buffer->content,
-			our_public_ephemeral_buffer->content,
-			their_public_identity_buffer->content,
-			their_public_ephemeral_buffer->content,
+			pre_root_key,
+			our_private_identity_buffer,
+			our_public_identity_buffer,
+			our_private_ephemeral_buffer,
+			our_public_ephemeral_buffer,
+			their_public_identity_buffer,
+			their_public_ephemeral_buffer,
 			am_i_alice);
 	if (status != 0) {
 		buffer_clear(pre_root_key);

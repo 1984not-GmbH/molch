@@ -60,12 +60,12 @@ int diffie_hellman(
  * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
  */
 int triple_diffie_hellman(
-		unsigned char * const derived_key,
-		const unsigned char * const our_private_identity,
-		const unsigned char * const our_public_identity,
-		const unsigned char * const our_private_ephemeral,
-		const unsigned char * const our_public_ephemeral,
-		const unsigned char * const their_public_identity,
-		const unsigned char * const their_public_ephemeral,
+		buffer_t * const derived_key,
+		const buffer_t * const our_private_identity,
+		const buffer_t * const our_public_identity,
+		const buffer_t * const our_private_ephemeral,
+		const buffer_t * const our_public_ephemeral,
+		const buffer_t * const their_public_identity,
+		const buffer_t * const their_public_ephemeral,
 		const bool am_i_alice) __attribute__((warn_unused_result));
 #endif
