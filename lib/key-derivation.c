@@ -88,23 +88,25 @@ int derive_message_key(
  * RK, CK, HK = HKDF( RK, DH(DHRr, DHRs) )
  */
 int derive_root_chain_and_header_keys(
-		unsigned char * const root_key, //crypto_secretbox_KEYBYTES
-		unsigned char * const chain_key, //crypto_secretbox_KEYBYTES
-		unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		const unsigned char * const our_private_ephemeral,
-		const unsigned char * const our_public_ephemeral,
-		const unsigned char * const their_public_ephemeral,
-		const unsigned char * const previous_root_key,
+		buffer_t * const root_key, //crypto_secretbox_KEYBYTES
+		buffer_t * const chain_key, //crypto_secretbox_KEYBYTES
+		buffer_t * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		const buffer_t * const our_private_ephemeral,
+		const buffer_t * const our_public_ephemeral,
+		const buffer_t * const their_public_ephemeral,
+		const buffer_t * const previous_root_key,
 		bool am_i_alice) {
 	assert(crypto_secretbox_KEYBYTES == crypto_auth_KEYBYTES);
-
-	//FIXME remove this once the entire library is moved over to buffer_t
-	//Create buffers containing ephemeral keys
-	buffer_t *our_private_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)our_private_ephemeral, crypto_box_SECRETKEYBYTES);
-
-	buffer_t *our_public_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)our_public_ephemeral, crypto_box_PUBLICKEYBYTES);
-
-	buffer_t *their_public_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)their_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+	//check size of the buffers
+	if ((root_key->buffer_length < crypto_secretbox_KEYBYTES)
+			|| (chain_key->buffer_length < crypto_secretbox_KEYBYTES)
+			|| (header_key->buffer_length < crypto_aead_chacha20poly1305_KEYBYTES)
+			|| (our_private_ephemeral->content_length != crypto_box_SECRETKEYBYTES)
+			|| (our_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)
+			|| (their_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)
+			|| (previous_root_key->content_length != crypto_secretbox_KEYBYTES)) {
+		return -6;
+	}
 
 	int status;
 	//input key for HKDF (root key and chain key derivation)
@@ -112,18 +114,14 @@ int derive_root_chain_and_header_keys(
 	buffer_t *input_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = diffie_hellman(
 			input_key,
-			our_private_ephemeral_buffer,
-			our_public_ephemeral_buffer,
-			their_public_ephemeral_buffer,
+			our_private_ephemeral,
+			our_public_ephemeral,
+			their_public_ephemeral,
 			am_i_alice);
 	if (status != 0) {
 		buffer_clear(input_key);
 		return status;
 	}
-
-	//FIXME remove this once the entire library is moved over to buffer_t
-	//Copy previous root key into a new buffer
-	buffer_t *previous_root_key_buffer = buffer_create_with_existing_array((unsigned char*)previous_root_key, crypto_secretbox_KEYBYTES);
 
 	//now create root and chain key in temporary buffer
 	//RK, CK = HKDF(previous_root_key, input_key)
@@ -132,7 +130,7 @@ int derive_root_chain_and_header_keys(
 	status = hkdf(
 			hkdf_buffer,
 			hkdf_buffer->content_length,
-			previous_root_key_buffer, //salt
+			previous_root_key, //salt
 			input_key,
 			info);
 	buffer_clear(input_key);
@@ -142,9 +140,27 @@ int derive_root_chain_and_header_keys(
 	}
 
 	//copy keys from hkdf buffer
-	memcpy(root_key, hkdf_buffer->content, crypto_secretbox_KEYBYTES);
-	memcpy(chain_key, hkdf_buffer->content + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	memcpy(header_key, hkdf_buffer->content + 2 * crypto_secretbox_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	status = buffer_copy(root_key, 0, hkdf_buffer, 0, crypto_secretbox_KEYBYTES);
+	if (status != 0) {
+		buffer_clear(hkdf_buffer);
+		buffer_clear(root_key);
+		return status;
+	}
+	status = buffer_copy(chain_key, 0, hkdf_buffer, crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	if (status != 0) {
+		buffer_clear(hkdf_buffer);
+		buffer_clear(root_key);
+		buffer_clear(chain_key);
+		return status;
+	}
+	status = buffer_copy(header_key, 0, hkdf_buffer, 2 * crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	if (status != 0) {
+		buffer_clear(hkdf_buffer);
+		buffer_clear(root_key);
+		buffer_clear(chain_key);
+		buffer_clear(header_key);
+		return status;
+	}
 
 	buffer_clear(hkdf_buffer);
 	return 0;

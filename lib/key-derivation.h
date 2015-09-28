@@ -53,13 +53,13 @@ int derive_message_key(
  * RK, CK, HK = HKDF( RK, DH(DHRr, DHRs) )
  */
 int derive_root_chain_and_header_keys(
-		unsigned char * const root_key, //crypto_secretbox_KEYBYTES
-		unsigned char * const chain_key, //crypto_secretbox_KEYBYTES
-		unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		const unsigned char * const our_private_ephemeral,
-		const unsigned char * const our_public_ephemeral,
-		const unsigned char * const their_public_ephemeral,
-		const unsigned char * const previous_root_key,
+		buffer_t * const root_key, //crypto_secretbox_KEYBYTES
+		buffer_t * const chain_key, //crypto_secretbox_KEYBYTES
+		buffer_t * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		const buffer_t * const our_private_ephemeral,
+		const buffer_t * const our_public_ephemeral,
+		const buffer_t * const their_public_ephemeral,
+		const buffer_t * const previous_root_key,
 		bool am_i_alice) __attribute__((warn_unused_result));
 
 /*

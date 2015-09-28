@@ -142,20 +142,32 @@ int ratchet_next_send_keys(
 		//HKs = NHKs (shift header keys)
 		memcpy(state->send_header_key, state->next_send_header_key, sizeof(state->send_header_key));
 
+		//create buffers FIXME: remove this once ratchet.c is ported over to buffer_t
+		buffer_t *root_key = buffer_create_with_existing_array((unsigned char*)state->root_key, crypto_secretbox_KEYBYTES);
+		buffer_t *send_chain_key = buffer_create_with_existing_array((unsigned char*)state->send_chain_key, crypto_secretbox_KEYBYTES);
+		buffer_t *next_send_header_key = buffer_create_with_existing_array((unsigned char*)state->next_send_header_key, crypto_secretbox_KEYBYTES);
+		buffer_t *our_private_ephemeral = buffer_create_with_existing_array((unsigned char*)state->our_private_ephemeral, crypto_box_SECRETKEYBYTES);
+		buffer_t *our_public_ephemeral = buffer_create_with_existing_array((unsigned char*)state->our_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+		buffer_t *their_public_ephemeral = buffer_create_with_existing_array((unsigned char*)state->their_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+
 		//derive next root key and send chain key
 		//RK, CKs, NHKs = HKDF(DH(DHs, DHr))
-		unsigned char previous_root_key[crypto_secretbox_KEYBYTES];
-		memcpy(previous_root_key, state->root_key, sizeof(previous_root_key));
+		buffer_t *previous_root_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+		status = buffer_clone_from_raw(previous_root_key, state->root_key, previous_root_key->content_length);
+		if (status != 0) {
+			buffer_clear(previous_root_key);
+			return status;
+		}
 		status = derive_root_chain_and_header_keys(
-				state->root_key,
-				state->send_chain_key,
-				state->next_send_header_key,
-				state->our_private_ephemeral,
-				state->our_public_ephemeral,
-				state->their_public_ephemeral,
+				root_key,
+				send_chain_key,
+				next_send_header_key,
+				our_private_ephemeral,
+				our_public_ephemeral,
+				their_public_ephemeral,
 				previous_root_key,
 				state->am_i_alice);
-		sodium_memzero(previous_root_key, sizeof(previous_root_key));
+		buffer_clear(previous_root_key);
 		if (status != 0) {
 			return status;
 		}
@@ -443,16 +455,25 @@ int ratchet_receive(
 		//HKp = NHKr
 		memcpy(state->purported_receive_header_key, state->next_receive_header_key, sizeof(state->purported_receive_header_key));
 
+		//create buffers FIXME remove this once ratchet.c is ported over to buffer_t
+		buffer_t *purported_root_key = buffer_create_with_existing_array((unsigned char*)state->purported_root_key, crypto_secretbox_KEYBYTES);
+		buffer_t *purported_receive_chain_key = buffer_create_with_existing_array((unsigned char*)state->purported_receive_chain_key, crypto_secretbox_KEYBYTES);
+		buffer_t *purported_next_receive_header_key = buffer_create_with_existing_array((unsigned char*)state->purported_next_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+		buffer_t *our_private_ephemeral = buffer_create_with_existing_array((unsigned char*)state->our_private_ephemeral, crypto_box_SECRETKEYBYTES);
+		buffer_t *our_public_ephemeral = buffer_create_with_existing_array((unsigned char*)state->our_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+		buffer_t *their_purported_public_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)their_purported_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+		buffer_t *root_key = buffer_create_with_existing_array((unsigned char*)state->root_key, crypto_secretbox_KEYBYTES);
+
 		//derive purported root and chain keys
 		//first: input key for hkdf (root and chain key derivation)
 		status = derive_root_chain_and_header_keys(
-				state->purported_root_key,
-				state->purported_receive_chain_key,
-				state->purported_next_receive_header_key,
-				state->our_private_ephemeral,
-				state->our_public_ephemeral,
-				their_purported_public_ephemeral,
-				state->root_key,
+				purported_root_key,
+				purported_receive_chain_key,
+				purported_next_receive_header_key,
+				our_private_ephemeral,
+				our_public_ephemeral,
+				their_purported_public_ephemeral_buffer,
+				root_key,
 				state->am_i_alice);
 		if (status != 0) {
 			return status;
