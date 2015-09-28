@@ -26,19 +26,23 @@
 int main(void) {
 	sodium_init();
 
+	int status;
 	//create random initial chain key
-	unsigned char last_chain_key[crypto_auth_BYTES];
-	randombytes_buf(last_chain_key, crypto_auth_BYTES);
+	buffer_t *last_chain_key = buffer_create(crypto_auth_BYTES, crypto_auth_BYTES);
+	status = buffer_fill_random(last_chain_key, last_chain_key->buffer_length);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to create last chain key. (%i)\n", status);
+		return status;
+	}
 
 	//print first chain key
 	printf("Initial chain key (%i Bytes):\n", crypto_auth_BYTES);
-	print_hex(last_chain_key, crypto_auth_BYTES, 30);
+	print_hex(last_chain_key->content, last_chain_key->content_length, 30);
 	putchar('\n');
 
-	int status;
 
 	//buffer for derived chain keys
-	unsigned char next_chain_key[crypto_auth_BYTES];
+	buffer_t *next_chain_key = buffer_create(crypto_auth_BYTES, crypto_auth_BYTES);
 
 	//derive a chain of chain keys
 	unsigned int counter;
@@ -46,30 +50,35 @@ int main(void) {
 		status = derive_chain_key(next_chain_key, last_chain_key);
 		if (status != 0) {
 			fprintf(stderr, "ERROR: Failed to derive chain key %i. (%i)\n", counter, status);
-			sodium_memzero(last_chain_key, crypto_auth_BYTES);
-			sodium_memzero(next_chain_key, crypto_auth_BYTES);
+			buffer_clear(last_chain_key);
+			buffer_clear(next_chain_key);
 			return status;
 		}
 
 		//print the derived chain key
 		printf("Chain key Nr. %i:\n", counter);
-		print_hex(next_chain_key, crypto_auth_BYTES, 30);
+		print_hex(next_chain_key->content, next_chain_key->content_length, 30);
 		putchar('\n');
 
 		//check that chain keys are different
-		status = sodium_memcmp(last_chain_key, next_chain_key, crypto_auth_BYTES);
+		status = buffer_compare(last_chain_key, next_chain_key);
 		if (status == 0) {
 			fprintf(stderr, "ERROR: Derived chain key is identical. (%i)\n", status);
-			sodium_memzero(last_chain_key, crypto_auth_BYTES);
-			sodium_memzero(next_chain_key, crypto_auth_BYTES);
+			buffer_clear(last_chain_key);
+			buffer_clear(next_chain_key);
 			return -5;
 		}
 
 		//move next_chain_key to last_chain_key
-		memcpy(last_chain_key, next_chain_key, crypto_auth_BYTES);
+		status = buffer_clone(last_chain_key, next_chain_key);
+		if (status != 0) {
+			buffer_clear(last_chain_key);
+			buffer_clear(next_chain_key);
+			return status;
+		}
 	}
 
-	sodium_memzero(last_chain_key, crypto_auth_BYTES);
-	sodium_memzero(next_chain_key, crypto_auth_BYTES);
+	buffer_clear(last_chain_key);
+	buffer_clear(next_chain_key);
 	return EXIT_SUCCESS;
 }

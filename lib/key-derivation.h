@@ -18,6 +18,8 @@
 
 #include <stdbool.h>
 
+#include "buffer.h"
+
 #ifndef LIB_KEY_DERIVATION_H
 #define LIB_KEY_DERIVATION_H
 
@@ -30,8 +32,8 @@
  * (previous chain key as key, 0x01 as message)
  */
 int derive_chain_key(
-		unsigned char * const new_chain_key,
-		const unsigned char * const previous_chain_key) __attribute__((warn_unused_result));
+		buffer_t * const new_chain_key,
+		const buffer_t * const previous_chain_key) __attribute__((warn_unused_result));
 
 /*
  * Derive a message key from a chain key.

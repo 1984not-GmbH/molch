@@ -35,16 +35,22 @@
  * (previous chain key as key, 0x01 as message)
  */
 int derive_chain_key(
-		unsigned char * const new_chain_key,
-		const unsigned char * const previous_chain_key) {
+		buffer_t * const new_chain_key,
+		const buffer_t * const previous_chain_key) {
 	//make sure assumptions about length are correct
 	assert(crypto_auth_BYTES == crypto_auth_KEYBYTES);
+	if ((previous_chain_key->content_length != crypto_auth_BYTES)
+			|| (new_chain_key->buffer_length < crypto_auth_BYTES)) {
+		return -6;
+	}
+
+	new_chain_key->content_length = crypto_auth_BYTES;
 
 	const unsigned char input_message = 0x01;
 
 	//new_chain_key = HMAC-Hash(previous_chain_key, 0x01)
 	//and return status
-	return crypto_auth(new_chain_key, &input_message, 1, previous_chain_key);
+	return crypto_auth(new_chain_key->content, &input_message, 1, previous_chain_key->content);
 }
 
 /*
