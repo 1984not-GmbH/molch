@@ -239,7 +239,7 @@ molch_conversation molch_create_send_conversation(
 		size_t *packet_length, //output
 		const unsigned char * const message,
 		const size_t message_length,
-		const unsigned char * const prekey_list, //prekey list of the receiver
+		const unsigned char * const prekey_list __attribute__((unused)), //prekey list of the receiver
 		const unsigned char * const sender_public_identity, //identity of the sender (user)
 		const unsigned char * const receiver_public_identity) { //identity of the receiver
 	molch_conversation conversation;
@@ -280,9 +280,6 @@ molch_conversation molch_create_send_conversation(
 	static const molch_message_type PREKEY = PREKEY_MESSAGE;
 	memcpy(*packet, &PREKEY, sizeof(molch_message_type));
 
-	//silence "unused parameter" warning
-	if (prekey_list == prekey_list) {}
-
 	conversation.valid = true;
 	return conversation;
 }
@@ -301,7 +298,7 @@ molch_conversation molch_create_receive_conversation(
 		size_t * const message_length, //output
 		const unsigned char * const packet, //received prekey packet
 		const size_t packet_length,
-		const unsigned char * const prekey_list, //output, needs to be 100 * crypto_box_PUBLICKEYBYTES + crypto_onetimeauth_BYTES
+		const unsigned char * const prekey_list __attribute__((unused)), //output, needs to be 100 * crypto_box_PUBLICKEYBYTES + crypto_onetimeauth_BYTES
 		const unsigned char * const sender_public_identity, //identity of the sender
 		const unsigned char * const receiver_public_identity) { //identity key of the receiver (user)
 	molch_conversation conversation;
@@ -337,9 +334,6 @@ molch_conversation molch_create_receive_conversation(
 		return conversation;
 	}
 
-	//silence "unused parameter" warning
-	if (prekey_list == prekey_list) {}
-
 	conversation.valid = true;
 	return conversation;
 }
@@ -355,7 +349,7 @@ int molch_encrypt_message(
 		size_t *packet_length, //output, length of the packet
 		const unsigned char * const message,
 		const size_t message_length,
-		molch_conversation conversation) {
+		molch_conversation conversation __attribute__((unused))) {
 	//create packet
 	*packet_length = sizeof(molch_message_type) + message_length;
 	*packet = malloc(*packet_length);
@@ -364,9 +358,6 @@ int molch_encrypt_message(
 	static const molch_message_type NORMAL = NORMAL_MESSAGE;
 	memcpy(*packet, &NORMAL, sizeof(molch_message_type));
 	memcpy(*packet + sizeof(molch_message_type), message, message_length);
-
-	//silence "unused parameter" warning
-	if (&conversation == &conversation) {}
 
 	return 0;
 }
@@ -381,7 +372,7 @@ int molch_decrypt_message(
 		size_t *message_length, //output
 		const unsigned char * const packet, //received packet
 		const size_t packet_length,
-		molch_conversation conversation) {
+		molch_conversation conversation __attribute__((unused))) {
 	if (packet_length < sizeof(molch_message_type)) {
 		*message_length = 0;
 		*message = NULL;
@@ -389,9 +380,6 @@ int molch_decrypt_message(
 	}
 
 	*message_length = packet_length - sizeof(molch_message_type);
-
-	//silence "unused parameter" warning
-	if (&conversation == &conversation) {}
 
 	*message = malloc(*message_length);
 	memcpy(*message, packet + sizeof(molch_message_type), *message_length);
