@@ -166,9 +166,11 @@ int ratchet_next_send_keys(
 	}
 
 	//MK = HMAC-HASH(CKs, 0x00)
+	buffer_t *next_message_key_buffer = buffer_create_with_existing_array(next_message_key, crypto_secretbox_KEYBYTES); //FIXME remove this once ratchet.c is ported over to buffer_t
+	buffer_t *send_chain_key = buffer_create_with_existing_array(state->send_chain_key, crypto_secretbox_KEYBYTES); //FIXME remove this once ratchet.c is ported over to buffer_t
 	status = derive_message_key(
-			next_message_key,
-			state->send_chain_key);
+			next_message_key_buffer,
+			send_chain_key);
 	if (status != 0) {
 		return status;
 	}
@@ -186,7 +188,6 @@ int ratchet_next_send_keys(
 		buffer_clear(old_chain_key);
 		return status;
 	}
-	buffer_t *send_chain_key = buffer_create_with_existing_array(state->send_chain_key, crypto_secretbox_KEYBYTES); //FIXME remove this as soon as ratchet.c is ported over to buffer_t
 	status = derive_chain_key(
 			send_chain_key,
 			old_chain_key);
@@ -274,16 +275,16 @@ int stage_skipped_header_and_message_keys(
 	}
 
 	//message key buffer
-	unsigned char message_key_buffer[crypto_secretbox_KEYBYTES];
+	buffer_t *message_key_buffer = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 
 	//create all message keys
 	unsigned int pos;
 	for (pos = state->receive_message_number; pos <= purported_message_number; pos++) {
-		status = derive_message_key(message_key_buffer, purported_current_chain_key->content);
+		status = derive_message_key(message_key_buffer, purported_current_chain_key);
 		if (status != 0) {
 			buffer_clear(purported_current_chain_key);
 			buffer_clear(purported_next_chain_key);
-			sodium_memzero(message_key_buffer, sizeof(message_key_buffer));
+			buffer_clear(message_key_buffer);
 			return status;
 		}
 
@@ -291,17 +292,24 @@ int stage_skipped_header_and_message_keys(
 		if (pos < purported_message_number) { //only stage previous message keys
 			status = header_and_message_keystore_add(
 					&(state->purported_header_and_message_keys),
-					message_key_buffer,
+					message_key_buffer->content,
 					state->receive_header_key);
 			if (status != 0) {
 				buffer_clear(purported_current_chain_key);
 				buffer_clear(purported_next_chain_key);
+				buffer_clear(message_key_buffer);
 				return status;
 			}
 		} else { //current message key is not staged, but copied to return it's value
-			memcpy(message_key, message_key_buffer, sizeof(message_key_buffer));
+			status = buffer_clone_to_raw(message_key, message_key_buffer->content_length, message_key_buffer);
+			if (status != 0) {
+				buffer_clear(purported_next_chain_key);
+				buffer_clear(purported_current_chain_key);
+				buffer_clear(message_key_buffer);
+				return status;
+			}
 		}
-		sodium_memzero(message_key_buffer, sizeof(message_key_buffer));
+		buffer_clear(message_key_buffer);
 
 		status = derive_chain_key(purported_next_chain_key, purported_current_chain_key);
 		if (status != 0) {

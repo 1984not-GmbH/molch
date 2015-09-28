@@ -44,8 +44,8 @@ int derive_chain_key(
  * (chain_key as key, 0x00 as message)
  */
 int derive_message_key(
-		unsigned char * const message_key,
-		const unsigned char * const chain_key) __attribute__((warn_unused_result));
+		buffer_t * const message_key,
+		const buffer_t * const chain_key) __attribute__((warn_unused_result));
 
 /*
  * Derive a root, header and initial chain key for a new ratchet.
