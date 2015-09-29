@@ -2,3 +2,4 @@ build/
 static-analysis/
 .idea/
 *.orig
+address-sanitizer
