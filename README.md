@@ -42,7 +42,7 @@ $ cd build    #change into it
 $ cmake ..    #run cmake (only required once)
 $ make        #finally compile the software
 ```
-or run the script `run-build.sh` from the projects root directory.
+or run the script `ci/build.sh`.
 
 Run the tests (you need to have valgrind installed):
 ```
@@ -57,7 +57,7 @@ $ cd static-analysis
 $ scan-build cmake ..
 $ scan-build make
 ```
-or run the script `run-static-analysis.sh` from the projects root directory.
+or run the script `ci/clang-static-analysis.sh`.
 
 size of a packet
 ----------------
