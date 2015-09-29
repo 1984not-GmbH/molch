@@ -172,27 +172,36 @@ int derive_root_chain_and_header_keys(
  * RK, CKs/r, HKs/r, NHKs/r = HKDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
  */
 int derive_initial_root_chain_and_header_keys(
-		unsigned char * const root_key, //crypto_secretbox_KEYBYTES
-		unsigned char * const send_chain_key, //crypto_secretbox_KEYBYTES
-		unsigned char * const receive_chain_key, //crypto_secretbox_KEYBYTES
-		unsigned char * const send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		unsigned char * const receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		unsigned char * const next_send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		unsigned char * const next_receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		const unsigned char * const our_private_identity,
-		const unsigned char * const our_public_identity,
-		const unsigned char * const their_public_identity,
-		const unsigned char * const our_private_ephemeral,
-		const unsigned char * const our_public_ephemeral,
-		const unsigned char * const their_public_ephemeral,
+		buffer_t * const root_key, //crypto_secretbox_KEYBYTES
+		buffer_t * const send_chain_key, //crypto_secretbox_KEYBYTES
+		buffer_t * const receive_chain_key, //crypto_secretbox_KEYBYTES
+		buffer_t * const send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const next_send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const next_receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		const buffer_t * const our_private_identity,
+		const buffer_t * const our_public_identity,
+		const buffer_t * const their_public_identity,
+		const buffer_t * const our_private_ephemeral,
+		const buffer_t * const our_public_ephemeral,
+		const buffer_t * const their_public_ephemeral,
 		bool am_i_alice) {
-	//FIXME: only temporary until everything else is ported to the new buffers:
-	buffer_t *our_private_identity_buffer = buffer_create_with_existing_array((unsigned char*)our_private_identity, crypto_box_SECRETKEYBYTES);
-	buffer_t *our_public_identity_buffer = buffer_create_with_existing_array((unsigned char*)our_public_identity, crypto_box_PUBLICKEYBYTES);
-	buffer_t *our_private_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)our_private_ephemeral, crypto_box_SECRETKEYBYTES);
-	buffer_t *our_public_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)our_public_ephemeral, crypto_box_PUBLICKEYBYTES);
-	buffer_t *their_public_identity_buffer = buffer_create_with_existing_array((unsigned char*)their_public_identity, crypto_box_PUBLICKEYBYTES);
-	buffer_t *their_public_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)their_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+	//check buffer sizes
+	if ((root_key->buffer_length < crypto_secretbox_KEYBYTES)
+			|| (send_chain_key->buffer_length < crypto_secretbox_KEYBYTES)
+			|| (receive_chain_key->buffer_length < crypto_secretbox_KEYBYTES)
+			|| (send_header_key->buffer_length < crypto_aead_chacha20poly1305_KEYBYTES)
+			|| (receive_header_key->buffer_length < crypto_aead_chacha20poly1305_KEYBYTES)
+			|| (next_send_header_key->buffer_length < crypto_aead_chacha20poly1305_KEYBYTES)
+			|| (next_receive_header_key->buffer_length < crypto_aead_chacha20poly1305_KEYBYTES)
+			|| (our_private_identity->content_length != crypto_box_SECRETKEYBYTES)
+			|| (our_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
+			|| (their_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
+			|| (our_private_ephemeral->content_length != crypto_box_SECRETKEYBYTES)
+			|| (our_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)
+			|| (their_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)) {
+		return -6;
+	}
 
 	int status;
 	//derive pre_root_key to later derive the initial root key,
@@ -202,12 +211,12 @@ int derive_initial_root_chain_and_header_keys(
 	buffer_t *pre_root_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = triple_diffie_hellman(
 			pre_root_key,
-			our_private_identity_buffer,
-			our_public_identity_buffer,
-			our_private_ephemeral_buffer,
-			our_public_ephemeral_buffer,
-			their_public_identity_buffer,
-			their_public_ephemeral_buffer,
+			our_private_identity,
+			our_public_identity,
+			our_private_ephemeral,
+			our_public_ephemeral,
+			their_public_identity,
+			their_public_ephemeral,
 			am_i_alice);
 	if (status != 0) {
 		buffer_clear(pre_root_key);
@@ -234,30 +243,103 @@ int derive_initial_root_chain_and_header_keys(
 
 	//now copy the keys
 	//root key:
-	memcpy(root_key, hkdf_buffer->content, crypto_secretbox_KEYBYTES);
+	status = buffer_copy(root_key, 0, hkdf_buffer, 0, crypto_secretbox_KEYBYTES);
+	if (status != 0) {
+		buffer_clear(hkdf_buffer);
+		buffer_clear(root_key);
+		return status;
+	}
 	//chain keys and header keys
 	if (am_i_alice) {
 		//Alice: CKs=<none>, CKr=HKDF
-		memset(send_chain_key, 0, crypto_secretbox_KEYBYTES);
-		memcpy(receive_chain_key, hkdf_buffer->content + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+		//TODO <none> will be an empty buffer in the future
+		send_chain_key->content_length = crypto_secretbox_KEYBYTES;
+		memset(send_chain_key->content, 0, send_chain_key->content_length);
+		status = buffer_copy(receive_chain_key, 0, hkdf_buffer, crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+		if (status != 0) {
+			buffer_clear(hkdf_buffer);
+			buffer_clear(root_key);
+			buffer_clear(receive_chain_key);
+			return status;
+		}
+
 		//HKs=<none>, HKr=HKDF
-		memset(send_header_key, 0, crypto_secretbox_KEYBYTES);
-		memcpy(receive_header_key, hkdf_buffer->content + 2 * crypto_secretbox_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+		//TODO <none> will be an empty buffer in the future
+		send_header_key->content_length = crypto_aead_chacha20poly1305_KEYBYTES;
+		memset(send_header_key->content, 0, send_header_key->content_length);
+		status = buffer_copy(receive_header_key, 0, hkdf_buffer, 2 * crypto_secretbox_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+		if (status != 0) {
+			buffer_clear(hkdf_buffer);
+			buffer_clear(root_key);
+			buffer_clear(receive_chain_key);
+			buffer_clear(receive_header_key);
+			return status;
+		}
 
 		//NHKs, NHKr
-		memcpy(next_send_header_key, hkdf_buffer->content + 2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-		memcpy(next_receive_header_key, hkdf_buffer->content + 2 * crypto_secretbox_KEYBYTES + 2 * crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+		status = buffer_copy(next_send_header_key, 0, hkdf_buffer, 2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+		if (status != 0) {
+			buffer_clear(hkdf_buffer);
+			buffer_clear(root_key);
+			buffer_clear(receive_chain_key);
+			buffer_clear(receive_header_key);
+			buffer_clear(next_send_header_key);
+			return status;
+		}
+		status = buffer_copy(next_receive_header_key, 0, hkdf_buffer, 2 * crypto_secretbox_KEYBYTES + 2 * crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+		if (status != 0) {
+			buffer_clear(hkdf_buffer);
+			buffer_clear(root_key);
+			buffer_clear(receive_chain_key);
+			buffer_clear(receive_header_key);
+			buffer_clear(next_send_header_key);
+			buffer_clear(next_receive_header_key);
+			return status;
+		}
 	} else {
 		//Bob: CKs=HKDF, CKr=<none>
-		memset(receive_chain_key, 0, crypto_secretbox_KEYBYTES);
-		memcpy(send_chain_key, hkdf_buffer->content + crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+		receive_chain_key->content_length = crypto_secretbox_KEYBYTES;
+		memset(receive_chain_key->content, 0, receive_chain_key->content_length);
+		status = buffer_copy(send_chain_key, 0, hkdf_buffer, crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+		if (status != 0) {
+			buffer_clear(hkdf_buffer);
+			buffer_clear(root_key);
+			buffer_clear(send_chain_key);
+			return status;
+		}
+
 		//HKs=HKDF, HKr=<none>
-		memset(receive_header_key, 0, crypto_secretbox_KEYBYTES);
-		memcpy(send_header_key, hkdf_buffer->content + 2 * crypto_secretbox_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+		receive_header_key->content_length = crypto_aead_chacha20poly1305_KEYBYTES;
+		memset(receive_header_key->content, 0, receive_header_key->content_length);
+		status = buffer_copy(send_header_key, 0, hkdf_buffer, 2 * crypto_secretbox_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+		if (status != 0) {
+			buffer_clear(hkdf_buffer);
+			buffer_clear(root_key);
+			buffer_clear(send_chain_key);
+			buffer_clear(send_header_key);
+			return status;
+		}
 
 		//NHKr, NHKs
-		memcpy(next_receive_header_key, hkdf_buffer->content + 2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-		memcpy(next_send_header_key, hkdf_buffer->content + 2 * crypto_secretbox_KEYBYTES + 2 * crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+		status = buffer_copy(next_receive_header_key, 0, hkdf_buffer, 2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+		if (status != 0) {
+			buffer_clear(hkdf_buffer);
+			buffer_clear(root_key);
+			buffer_clear(send_chain_key);
+			buffer_clear(send_header_key);
+			buffer_clear(next_receive_header_key);
+			return status;
+		}
+		status = buffer_copy(next_send_header_key, 0, hkdf_buffer, 2 * crypto_secretbox_KEYBYTES + 2 * crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+		if (status != 0) {
+			buffer_clear(hkdf_buffer);
+			buffer_clear(root_key);
+			buffer_clear(send_chain_key);
+			buffer_clear(send_header_key);
+			buffer_clear(next_receive_header_key);
+			buffer_clear(next_send_header_key);
+			return status;
+		}
 	}
 	buffer_clear(hkdf_buffer);
 

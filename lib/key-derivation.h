@@ -68,19 +68,19 @@ int derive_root_chain_and_header_keys(
  * RK, CKs/r, HKs/r = HKDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
  */
 int derive_initial_root_chain_and_header_keys(
-		unsigned char * const root_key, //crypto_secretbox_KEYBYTES
-		unsigned char * const send_chain_key, //crypto_secretbox_KEYBYTES
-		unsigned char * const receive_chain_key, //crypto_secretbox_KEYBYTES
-		unsigned char * const send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		unsigned char * const receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		unsigned char * const next_send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		unsigned char * const next_receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		const unsigned char * const our_private_identity,
-		const unsigned char * const our_public_identity,
-		const unsigned char * const their_public_identity,
-		const unsigned char * const our_private_ephemeral,
-		const unsigned char * const our_public_ephemeral,
-		const unsigned char * const their_public_ephemeral,
+		buffer_t * const root_key, //crypto_secretbox_KEYBYTES
+		buffer_t * const send_chain_key, //crypto_secretbox_KEYBYTES
+		buffer_t * const receive_chain_key, //crypto_secretbox_KEYBYTES
+		buffer_t * const send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const next_send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const next_receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		const buffer_t * const our_private_identity,
+		const buffer_t * const our_public_identity,
+		const buffer_t * const their_public_identity,
+		const buffer_t * const our_private_ephemeral,
+		const buffer_t * const our_public_ephemeral,
+		const buffer_t * const their_public_ephemeral,
 		bool am_i_alice) __attribute__((warn_unused_result));
 
 #endif

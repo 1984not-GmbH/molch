@@ -68,45 +68,72 @@ ratchet_state* ratchet_create(
 		return NULL;
 	}
 
+	//create buffers FIXME remove this once ratchet.c is ported over to buffer_t
+	buffer_t *root_key = buffer_create_with_existing_array((unsigned char*)state->root_key, crypto_secretbox_KEYBYTES);
+	buffer_t *send_chain_key = buffer_create_with_existing_array((unsigned char*)state->send_chain_key, crypto_secretbox_KEYBYTES);
+	buffer_t *receive_chain_key = buffer_create_with_existing_array((unsigned char*)state->receive_chain_key, crypto_secretbox_KEYBYTES);
+	buffer_t *send_header_key = buffer_create_with_existing_array((unsigned char*)state->send_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *receive_header_key = buffer_create_with_existing_array((unsigned char*)state->receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *next_send_header_key = buffer_create_with_existing_array((unsigned char*)state->next_send_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *next_receive_header_key = buffer_create_with_existing_array((unsigned char*)state->next_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *our_private_identity_buffer = buffer_create_with_existing_array((unsigned char*)our_private_identity, crypto_box_SECRETKEYBYTES);
+	buffer_t *our_public_identity_buffer = buffer_create_with_existing_array((unsigned char*)our_public_identity, crypto_box_PUBLICKEYBYTES);
+	buffer_t *their_public_identity_buffer = buffer_create_with_existing_array((unsigned char*)their_public_identity, crypto_box_PUBLICKEYBYTES);
+	buffer_t *our_private_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)our_private_ephemeral, crypto_box_SECRETKEYBYTES);
+	buffer_t *our_public_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)our_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+	buffer_t *their_public_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)their_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+
 	//derive initial chain, root and header keys
 	int status = derive_initial_root_chain_and_header_keys(
-			state->root_key,
-			state->send_chain_key,
-			state->receive_chain_key,
-			state->send_header_key,
-			state->receive_header_key,
-			state->next_send_header_key,
-			state->next_receive_header_key,
-			our_private_identity,
-			our_public_identity,
-			their_public_identity,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_ephemeral,
+			root_key,
+			send_chain_key,
+			receive_chain_key,
+			send_header_key,
+			receive_header_key,
+			next_send_header_key,
+			next_receive_header_key,
+			our_private_identity_buffer,
+			our_public_identity_buffer,
+			their_public_identity_buffer,
+			our_private_ephemeral_buffer,
+			our_public_ephemeral_buffer,
+			their_public_ephemeral_buffer,
 			am_i_alice);
 	if (status != 0) {
-		sodium_memzero(state->root_key, sizeof(state->root_key));
-		sodium_memzero(state->send_chain_key, sizeof(state->send_chain_key));
-		sodium_memzero(state->receive_chain_key, sizeof(state->receive_chain_key));
-		sodium_memzero(state->send_header_key, sizeof(state->send_header_key));
-		sodium_memzero(state->receive_header_key, sizeof(state->receive_header_key));
-		sodium_memzero(state->next_send_header_key, sizeof(state->next_send_header_key));
-		sodium_memzero(state->next_receive_header_key, sizeof(state->receive_header_key));
 		sodium_free(state);
 		return NULL;
 	}
-
 	//copy keys into state
 	//our public identity
-	memcpy(state->our_public_identity, our_public_identity, sizeof(state->our_public_identity));
+	status = buffer_clone_to_raw(state->our_public_identity, crypto_box_PUBLICKEYBYTES, our_public_identity_buffer);
+	if (status != 0) {
+		sodium_free(state);
+		return NULL;
+	}
 	//their_public_identity
-	memcpy(state->their_public_identity, their_public_identity, sizeof(state->their_public_identity));
+	status = buffer_clone_to_raw(state->their_public_identity, crypto_box_PUBLICKEYBYTES, their_public_identity_buffer);
+	if (status != 0) {
+		sodium_free(state);
+		return NULL;
+	}
 	//our_private_ephemeral
-	memcpy(state->our_private_ephemeral, our_private_ephemeral, sizeof(state->our_private_ephemeral));
+	status = buffer_clone_to_raw(state->our_private_ephemeral, crypto_box_SECRETKEYBYTES, our_private_ephemeral_buffer);
+	if (status != 0) {
+		sodium_free(state);
+		return NULL;
+	}
 	//our_public_ephemeral
-	memcpy(state->our_public_ephemeral, our_public_ephemeral, sizeof(state->our_public_ephemeral));
+	status = buffer_clone_to_raw(state->our_public_ephemeral, crypto_box_SECRETKEYBYTES, our_public_ephemeral_buffer);
+	if (status != 0) {
+		sodium_free(state);
+		return NULL;
+	}
 	//their_public_ephemeral
-	memcpy(state->their_public_ephemeral, their_public_ephemeral, sizeof(state->their_public_ephemeral));
+	status = buffer_clone_to_raw(state->their_public_ephemeral, crypto_box_PUBLICKEYBYTES, their_public_ephemeral_buffer);
+	if (status != 0) {
+		sodium_free(state);
+		return NULL;
+	}
 
 	//initialise message keystore for skipped messages
 	state->skipped_header_and_message_keys = header_and_message_keystore_init();
