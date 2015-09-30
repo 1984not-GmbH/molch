@@ -29,8 +29,8 @@ int main(void) {
 	sodium_init();
 
 	//buffer for message keys
-	unsigned char header_key[crypto_aead_chacha20poly1305_KEYBYTES];
-	unsigned char message_key[crypto_secretbox_KEYBYTES];
+	buffer_t *header_key = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *message_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 
 	//initialise message keystore
 	header_and_message_keystore keystore = header_and_message_keystore_init();
@@ -44,23 +44,37 @@ int main(void) {
 	unsigned int i;
 	for (i = 0; i < 6; i++) {
 		//create new keys
-		randombytes_buf(header_key, sizeof(header_key));
-		randombytes_buf(message_key, sizeof(message_key));
+		status = buffer_fill_random(header_key, header_key->buffer_length);
+		if (status != 0) {
+			fprintf(stderr, "ERROR: Failed to create header key. (%i)\n", status);
+			header_and_message_keystore_clear(&keystore);
+			buffer_clear(header_key);
+			buffer_clear(message_key);
+			return status;
+		}
+		status = buffer_fill_random(message_key, message_key->buffer_length);
+		if (status != 0) {
+			fprintf(stderr, "ERROR: Failed to create header key. (%i)\n", status);
+			header_and_message_keystore_clear(&keystore);
+			buffer_clear(header_key);
+			buffer_clear(message_key);
+			return status;
+		}
 
 		//print the new header key
 		printf("New Header Key No. %u:\n", i);
-		print_hex(header_key, sizeof(header_key), 30);
+		print_hex(header_key->content, header_key->content_length, 30);
 		putchar('\n');
 
 		//print the new message key
 		printf("New message key No. %u:\n", i);
-		print_hex(message_key, sizeof(message_key), 30);
+		print_hex(message_key->content, message_key->content_length, 30);
 		putchar('\n');
 
 		//add keys to the keystore
 		status = header_and_message_keystore_add(&keystore, message_key, header_key);
-		sodium_memzero(message_key, sizeof(message_key));
-		sodium_memzero(header_key, sizeof(header_key));
+		buffer_clear(message_key);
+		buffer_clear(header_key);
 		if (status != 0) {
 			fprintf(stderr, "ERROR: Failed to add key to keystore. (%i)\n", status);
 			header_and_message_keystore_clear(&keystore);

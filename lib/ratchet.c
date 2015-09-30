@@ -316,6 +316,9 @@ int stage_skipped_header_and_message_keys(
 	//message key buffer
 	buffer_t *message_key_buffer = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 
+	//create buffers FIXME: remove this once ratchet.c has been moved over to buffer_t
+	buffer_t *receive_header_key = buffer_create_with_existing_array(state->receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+
 	//create all message keys
 	unsigned int pos;
 	for (pos = state->receive_message_number; pos <= purported_message_number; pos++) {
@@ -331,8 +334,8 @@ int stage_skipped_header_and_message_keys(
 		if (pos < purported_message_number) { //only stage previous message keys
 			status = header_and_message_keystore_add(
 					&(state->purported_header_and_message_keys),
-					message_key_buffer->content,
-					state->receive_header_key);
+					message_key_buffer,
+					receive_header_key);
 			if (status != 0) {
 				buffer_clear(purported_current_chain_key);
 				buffer_clear(purported_next_chain_key);
@@ -394,8 +397,8 @@ int commit_skipped_header_and_message_keys(ratchet_state *state) {
 	while (state->purported_header_and_message_keys.length != 0) {
 		status = header_and_message_keystore_add(
 				&(state->skipped_header_and_message_keys),
-				state->purported_header_and_message_keys.head->message_key,
-				state->purported_header_and_message_keys.head->header_key);
+				&(state->purported_header_and_message_keys.head->message_key),
+				&(state->purported_header_and_message_keys.head->header_key));
 		if (status != 0) {
 			return status;
 		}

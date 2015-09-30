@@ -33,17 +33,35 @@ header_and_message_keystore header_and_message_keystore_init() {
 //NOTE: The entire keys are copied, not only the pointer
 int header_and_message_keystore_add(
 		header_and_message_keystore *keystore,
-		const unsigned char * const message_key,
-		const unsigned char * const header_key) {
+		const buffer_t * const message_key,
+		const buffer_t * const header_key) {
+	//check buffer sizes
+	if ((message_key->content_length != crypto_secretbox_KEYBYTES)
+			|| (header_key->content_length != crypto_aead_chacha20poly1305_KEYBYTES)) {
+		return -6;
+	}
 	header_and_message_keystore_node *new_node = sodium_malloc(sizeof(header_and_message_keystore_node));
 	if (new_node == NULL) { //couldn't allocate memory
 		return -1;
 	}
 
+	//initialise buffers with storage arrays
+	buffer_init_with_pointer(&(new_node->message_key), new_node->message_key_storage, crypto_secretbox_KEYBYTES, 0);
+	buffer_init_with_pointer(&(new_node->header_key), new_node->header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, 0);
+
+	int status;
 	//set keys and timestamp
 	new_node->timestamp = time(NULL);
-	memcpy(new_node->message_key, message_key, crypto_secretbox_KEYBYTES);
-	memcpy(new_node->header_key, header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+	status = buffer_clone(&(new_node->message_key), message_key);
+	if (status != 0) {
+		sodium_free(new_node);
+		return status;
+	}
+	status = buffer_clone(&(new_node->header_key), header_key);
+	if (status != 0) {
+		sodium_free(new_node);
+		return status;
+	}
 
 	if (keystore->length == 0) { //first node in the list
 		new_node->previous = NULL;
@@ -85,10 +103,7 @@ void header_and_message_keystore_remove(header_and_message_keystore *keystore, h
 		keystore->head = node->next;
 	}
 
-	//overwrite keys in memory
-	sodium_memzero(node->message_key, crypto_secretbox_KEYBYTES);
-	sodium_memzero(node->header_key, crypto_aead_chacha20poly1305_KEYBYTES);
-
+	//free node and overwrite with zero
 	sodium_free(node);
 
 	//update length

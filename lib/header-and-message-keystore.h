@@ -19,6 +19,8 @@
 #include <sodium.h>
 #include <time.h>
 
+#include "buffer.h"
+
 #ifndef LIB_HEADER_AND_MESSAGE_KEY_STORE_H
 #define LIB_HEADER_AND_MESSAGE_KEY_STORE_H
 //the message key store is currently a double linked list with all the message keys that haven't been
@@ -29,8 +31,10 @@ typedef struct header_and_message_keystore_node header_and_message_keystore_node
 struct header_and_message_keystore_node {
 	header_and_message_keystore_node *previous;
 	header_and_message_keystore_node *next;
-	unsigned char message_key[crypto_secretbox_KEYBYTES];
-	unsigned char header_key[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t message_key;
+	unsigned char message_key_storage[crypto_secretbox_KEYBYTES];
+	buffer_t header_key;
+	unsigned char header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
 	time_t timestamp;
 };
 
@@ -48,8 +52,8 @@ header_and_message_keystore header_and_message_keystore_init();
 //NOTE: The entire keys are copied, not only the pointer
 int header_and_message_keystore_add(
 		header_and_message_keystore *keystore,
-		const unsigned char * const message_key,
-		const unsigned char * const header_key) __attribute__((warn_unused_result));
+		const buffer_t * const message_key,
+		const buffer_t * const header_key) __attribute__((warn_unused_result));
 
 //remove a message key from the keystore
 void header_and_message_keystore_remove(header_and_message_keystore *keystore, header_and_message_keystore_node *node);

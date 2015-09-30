@@ -37,11 +37,11 @@ void print_header_and_message_keystore(header_and_message_keystore *keystore) {
 	unsigned int i;
 	for (i = 0; i < keystore->length; node = node->next, i++) {
 		printf("Header key %u:\n", i);
-		print_hex(node->header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+		print_hex(node->header_key.content, node->header_key.content_length, 30);
 		putchar('\n');
 
 		printf("Message key %u:\n", i);
-		print_hex(node->message_key, crypto_secretbox_KEYBYTES, 30);
+		print_hex(node->message_key.content, node->message_key.content_length, 30);
 		if (i != keystore->length - 1) { //omit last one
 			putchar('\n');
 		}
