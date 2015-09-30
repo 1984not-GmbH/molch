@@ -409,5 +409,19 @@ int main(void) {
 		fprintf(stderr, "ERROR: Setting characters manually failed!\n");
 		return EXIT_FAILURE;
 	}
+
+	//test memset functions
+	buffer_t *set_buffer = buffer_create(10, 10);
+	buffer_memset(set_buffer, 0x01);
+	if (set_buffer->content[3] != 0x01) {
+		fprintf(stderr, "ERROR: Failed to memset buffer.\n");
+		return EXIT_FAILURE;
+	}
+	status = buffer_memset_partial(set_buffer, 0x02, 5);
+	if ((status != 0) || (set_buffer->content[3] != 0x02) || (set_buffer->content[4] != 0x02) || (set_buffer->content[5] != 0x01) || (set_buffer->content_length != 5)) {
+		fprintf(stderr, "ERROR: Failed to partially memset buffer.\n");
+		return EXIT_FAILURE;
+	}
+
 	return EXIT_SUCCESS;
 }

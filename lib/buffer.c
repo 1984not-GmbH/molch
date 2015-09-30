@@ -432,3 +432,46 @@ int buffer_set_char_at(
 
 	return 0;
 }
+
+/*
+ * Set parts of a buffer to a given character.
+ */
+int buffer_memset_partial(
+		buffer_t * const buffer,
+		const unsigned char character,
+		const size_t length) {
+	if (buffer->readonly) {
+		return -5;
+	}
+
+	if ((length == 0) || (buffer->buffer_length == 0)) {
+		return 0;
+	}
+
+	if (length > buffer->buffer_length) {
+		return -6;
+	}
+
+	if (character == 0x00) {
+		sodium_memzero(buffer->content, length);
+		buffer->content_length = length;
+		return 0;
+	}
+
+	buffer->content_length = length;
+	memset(buffer->content, character, buffer->content_length);
+
+	return 0;
+}
+
+/*
+ * Set the entire buffer to a given character.
+ * (content_length is used as the length, not buffer_length)
+ */
+void buffer_memset(
+		buffer_t * const buffer,
+		const unsigned char character) {
+	int status __attribute__((unused));
+	status = buffer_memset_partial(buffer, character, buffer->content_length);
+}
+

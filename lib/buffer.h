@@ -230,4 +230,21 @@ int buffer_set_char_at(
 		const buffer_t * const buffer,
 		const size_t pos,
 		const unsigned char character) __attribute__((warn_unused_result));
+
+/*
+ * Set parts of a buffer to a given character.
+ * ( sets the content length to the given length! )
+ */
+int buffer_memset_partial(
+		buffer_t * const buffer,
+		const unsigned char character,
+		const size_t length) __attribute__((warn_unused_result));
+
+/*
+ * Set the entire buffer to a given character.
+ * (content_length is used as the length, not buffer_length)
+ */
+void buffer_memset(
+		buffer_t * const buffer,
+		const unsigned char character);
 #endif
