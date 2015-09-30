@@ -92,12 +92,10 @@ int packet_get_metadata_without_verification(
  * Decrypt the header of a packet. (This also authenticates the metadata!)
  */
 int packet_decrypt_header(
-		const unsigned char * const packet,
-		const size_t packet_length,
-		unsigned char * const header, //As long as the packet or at most 255 bytes
-		size_t * const header_length, //output
-		unsigned char * const message_nonce, //output
-		const unsigned char * const header_key) __attribute__((warn_unused_result)); //crypto_aead_chacha20poly1305_KEYBYTES
+		const buffer_t * const packet,
+		buffer_t * const header, //As long as the packet or at most 255 bytes
+		buffer_t * const message_nonce, //output
+		const buffer_t * const header_key) __attribute__((warn_unused_result)); //crypto_aead_chacha20poly1305_KEYBYTES
 
 /*
  * Decrypt the message inside a packet.
