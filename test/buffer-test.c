@@ -381,5 +381,33 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
+	//test character access
+	buffer_t *character_buffer = buffer_create(4,3);
+	buffer_t *test_buffer = buffer_create_from_string("Hi");
+	status = buffer_set_char_at(character_buffer, 0, 'H');
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to set character at given position. (%i)\n", status);
+		return status;
+	}
+	status = buffer_set_char_at(character_buffer, 1, 'i');
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to set character at given position. (%i)\n", status);
+		return status;
+	}
+	status = buffer_set_char_at(character_buffer, 2, '\0');
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to set character at given position. (%i)\n", status);
+		return status;
+	}
+	status = buffer_set_char_at(character_buffer, 3, '!');
+	if (status == 0) {
+		fprintf(stderr, "ERROR: Failed to detect out of bound write to buffer.\n");
+		return EXIT_FAILURE;
+	}
+	//compare the bufers
+	if (buffer_compare(character_buffer, test_buffer) != 0) {
+		fprintf(stderr, "ERROR: Setting characters manually failed!\n");
+		return EXIT_FAILURE;
+	}
 	return EXIT_SUCCESS;
 }

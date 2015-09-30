@@ -223,4 +223,11 @@ int buffer_xor(
 		buffer_t * const destination,
 		const buffer_t * const source) __attribute__((warn_unused_result));
 
+/*
+ * Set a single character in a buffer.
+ */
+int buffer_set_char_at(
+		const buffer_t * const buffer,
+		const size_t pos,
+		const unsigned char character) __attribute__((warn_unused_result));
 #endif

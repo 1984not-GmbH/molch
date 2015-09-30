@@ -413,3 +413,22 @@ int buffer_xor(
 
 	return 0;
 }
+
+/*
+ * Set a single character in a buffer.
+ */
+int buffer_set_char_at(
+		const buffer_t * const buffer,
+		const size_t pos,
+		const unsigned char character) {
+	if (buffer->readonly) {
+		return -5;
+	}
+	if (pos >= buffer->content_length) {
+		return -6;
+	}
+
+	buffer->content[pos] = character;
+
+	return 0;
+}
