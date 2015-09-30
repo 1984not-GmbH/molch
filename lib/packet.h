@@ -16,6 +16,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "buffer.h"
+
 #ifndef LIB_MESSAGE_H
 #define LIB_MESSAGE_H
 
@@ -80,8 +82,7 @@ int packet_decrypt(
  * Get the metadata of a packet (without verifying it's authenticity).
  */
 int packet_get_metadata_without_verification(
-		const unsigned char * const packet,
-		const size_t packet_length,
+		const buffer_t * const packet,
 		unsigned char * const packet_type, //1 Byte, no array
 		unsigned char * const current_protocol_version, //1 Byte, no array
 		unsigned char * const highest_supported_protocol_version, //1 Byte, no array

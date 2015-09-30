@@ -159,11 +159,12 @@ int packet_decrypt(
 		unsigned char * const message, //should be as long as the packet
 		size_t *message_length, //output
 		const unsigned char * const message_key) { //crypto_secretbox_KEYBYTES
+	//FIXME remove this once packet.c is moved over to buffer_t
+	buffer_t *packet_buffer = buffer_create_with_existing_array((unsigned char*)packet, packet_length);
 	//get the packet metadata
 	unsigned char purported_header_length;
 	int status = packet_get_metadata_without_verification(
-			packet,
-			packet_length,
+			packet_buffer,
 			packet_type,
 			current_protocol_version,
 			highest_supported_protocol_version,
@@ -206,25 +207,24 @@ int packet_decrypt(
  * Get the metadata of a packet (without verifying it's authenticity).
  */
 int packet_get_metadata_without_verification(
-		const unsigned char * const packet,
-		const size_t packet_length,
+		const buffer_t * const packet,
 		unsigned char * const packet_type,
 		unsigned char * const current_protocol_version,
 		unsigned char * const highest_supported_protocol_version,
 		unsigned char * const header_length) { //this is the raw header length, without the authenticator
 	//check if packet_length is long enough to get the header length
-	if (packet_length < 3) {
+	if (packet->content_length < 3) {
 		return -10;
 	}
-	//check if packet is long enough
-	if (packet_length < (3 + packet[2] +  crypto_aead_chacha20poly1305_NPUBBYTES)) {
+	//check if packet is long enough to get the rest of the metadata
+	if (packet->content_length < (3 + packet->content[2] +  crypto_aead_chacha20poly1305_NPUBBYTES)) {
 		return -10;
 	}
 
-	*packet_type = packet[0];
-	*current_protocol_version = (0xf0 & packet[1]) >> 4;
-	*highest_supported_protocol_version = 0x0f & packet[1];
-	*header_length = packet[2] - crypto_aead_chacha20poly1305_ABYTES - crypto_secretbox_NONCEBYTES;
+	*packet_type = packet->content[0];
+	*current_protocol_version = (0xf0 & packet->content[1]) >> 4;
+	*highest_supported_protocol_version = 0x0f & packet->content[1];
+	*header_length = packet->content[2] - crypto_aead_chacha20poly1305_ABYTES - crypto_secretbox_NONCEBYTES;
 	return 0;
 }
 
@@ -238,12 +238,13 @@ int packet_decrypt_header(
 		size_t * const header_length,
 		unsigned char * const message_nonce,
 		const unsigned char * const header_key) {
+	//FIXME remove this once packet.c is ported over to buffer_t
+	buffer_t *packet_buffer = buffer_create_with_existing_array((unsigned char*)packet, packet_length);
 	//extract the purported header length from the packet
 	unsigned char irrelevant_metadata;
 	unsigned char purported_header_length;
 	int status = packet_get_metadata_without_verification(
-			packet,
-			packet_length,
+			packet_buffer,
 			&irrelevant_metadata,
 			&irrelevant_metadata,
 			&irrelevant_metadata,
@@ -293,12 +294,13 @@ int packet_decrypt_message(
 		size_t * const message_length, //output
 		const unsigned char * const message_nonce,
 		const unsigned char * const message_key) { //crypto_secretbox_KEYBYTES
+	//FIXME: remove this once packet.c is ported over to buffer_t
+	buffer_t *packet_buffer = buffer_create_with_existing_array((unsigned char*)packet, packet_length);
 	//get the header length
 	unsigned char irrelevant_metadata;
 	unsigned char purported_header_length;
 	int status = packet_get_metadata_without_verification(
-			packet,
-			packet_length,
+			packet_buffer,
 			&irrelevant_metadata,
 			&irrelevant_metadata,
 			&irrelevant_metadata,
