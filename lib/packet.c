@@ -163,6 +163,8 @@ int packet_decrypt(
 	buffer_t *packet_buffer = buffer_create_with_existing_array((unsigned char*)packet, packet_length);
 	buffer_t *header_buffer = buffer_create_with_existing_array((unsigned char*)header, 255); //FIXME: This is REALLY bad! But I don't know the length of the buffer at this point!
 	buffer_t *header_key_buffer = buffer_create_with_existing_array((unsigned char*)header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *message_key_buffer = buffer_create_with_existing_array((unsigned char*)message_key, crypto_secretbox_KEYBYTES);
+	buffer_t *message_buffer = buffer_create_with_existing_array((unsigned char*)message, packet_length); //FIXME: This is REALLY bad! But I don't know the length of the buffer at this point!
 
 	//get the packet metadata
 	unsigned char purported_header_length;
@@ -190,17 +192,16 @@ int packet_decrypt(
 
 	//decrypt the message
 	status = packet_decrypt_message(
-			packet,
-			packet_length,
-			message,
-			message_length,
-			message_nonce->content,
-			message_key);
+			packet_buffer,
+			message_buffer,
+			message_nonce,
+			message_key_buffer);
 	buffer_clear(message_nonce);
 	if (status != 0) {
 		return status;
 	}
 
+	*message_length = message_buffer->content_length;
 	*header_length = header_buffer->content_length;
 
 	return 0;
@@ -304,21 +305,27 @@ int packet_decrypt_header(
 
 /*
  * Decrypt the message inside a packet.
+ * (only do this if the packet metadata is already
+ * verified)
  */
 int packet_decrypt_message(
-		const unsigned char * const packet,
-		const size_t packet_length,
-		unsigned char * const message, //This buffer should be as large as the packet
-		size_t * const message_length, //output
-		const unsigned char * const message_nonce,
-		const unsigned char * const message_key) { //crypto_secretbox_KEYBYTES
-	//FIXME: remove this once packet.c is ported over to buffer_t
-	buffer_t *packet_buffer = buffer_create_with_existing_array((unsigned char*)packet, packet_length);
+		const buffer_t * const packet,
+		buffer_t * const message, //This buffer should be as large as the packet
+		const buffer_t * const message_nonce,
+		const buffer_t * const message_key) { //crypto_secretbox_KEYBYTES
+	//check buffer sizes
+	if ((message_nonce->content_length != crypto_secretbox_NONCEBYTES)
+			|| (message_key->content_length != crypto_secretbox_KEYBYTES)) {
+		return -6;
+	}
+	//set message length to 0
+	message->content_length = 0;
+
 	//get the header length
 	unsigned char irrelevant_metadata;
 	unsigned char purported_header_length;
 	int status = packet_get_metadata_without_verification(
-			packet_buffer,
+			packet,
 			&irrelevant_metadata,
 			&irrelevant_metadata,
 			&irrelevant_metadata,
@@ -328,37 +335,45 @@ int packet_decrypt_message(
 	}
 
 	//length of message and padding
-	const size_t purported_plaintext_length = packet_length - 3 - purported_header_length - crypto_aead_chacha20poly1305_NPUBBYTES - crypto_secretbox_NONCEBYTES - crypto_secretbox_MACBYTES - crypto_aead_chacha20poly1305_ABYTES;
-	if (purported_plaintext_length >= packet_length) {
+	const size_t purported_plaintext_length = packet->content_length - 3 - purported_header_length - crypto_aead_chacha20poly1305_NPUBBYTES - crypto_secretbox_NONCEBYTES - crypto_secretbox_MACBYTES - crypto_aead_chacha20poly1305_ABYTES;
+	if (purported_plaintext_length >= packet->content_length) {
 		return -10;
 	}
 
+	if (purported_plaintext_length > message->buffer_length) {
+		return -6;
+	}
+
+	//buffer pointing to the message ciphertext
+	buffer_t *message_ciphertext = buffer_create_with_existing_array(packet->content + (packet->content_length - purported_plaintext_length) - crypto_secretbox_MACBYTES, purported_plaintext_length + crypto_secretbox_MACBYTES);
+
 	//decrypt the message (padding included)
-	unsigned char plaintext[purported_plaintext_length];
+	buffer_t *plaintext = buffer_create(purported_plaintext_length, purported_plaintext_length);
 	status = crypto_secretbox_open_easy(
-			plaintext,
-			packet + (packet_length - purported_plaintext_length) - crypto_secretbox_MACBYTES,
-			purported_plaintext_length + crypto_secretbox_MACBYTES,
-			message_nonce,
-			message_key);
+			plaintext->content,
+			message_ciphertext->content,
+			message_ciphertext->content_length,
+			message_nonce->content,
+			message_key->content);
 	if (status != 0) {
-		sodium_memzero(plaintext, sizeof(plaintext));
+		buffer_clear(plaintext);
 		return status;
 	}
 
 	//get amount of padding from last byte (pkcs7)
-	const unsigned char padding = plaintext[purported_plaintext_length - 1];
+	const unsigned char padding = plaintext->content[purported_plaintext_length - 1];
 	if (padding > purported_plaintext_length) { //check if pdding is valid
-		sodium_memzero(plaintext, sizeof(plaintext));
+		buffer_clear(plaintext);
 		return -10;
 	}
 
 	//copy the message from the plaintext
-	memcpy(message, plaintext, purported_plaintext_length - padding);
+	status = buffer_copy(message, 0, plaintext, 0, purported_plaintext_length - padding);
+	buffer_clear(plaintext);
+	if (status != 0) {
+		buffer_clear(message);
+		return status;
+	}
 
-	//set the message length
-	*message_length = purported_plaintext_length - padding;
-
-	sodium_memzero(plaintext, sizeof(plaintext));
 	return 0;
 }

@@ -99,13 +99,13 @@ int packet_decrypt_header(
 
 /*
  * Decrypt the message inside a packet.
+ * (only do this if the packet metadata is already
+ * verified)
  */
 int packet_decrypt_message(
-		const unsigned char * const packet,
-		const size_t packet_length,
-		unsigned char * const message, //This buffer should be as large as the packet
-		size_t * const message_length, //output
-		const unsigned char * const message_nonce,
-		const unsigned char * const message_key) __attribute__((warn_unused_result)); //crypto_secretbox_KEYBYTES
+		const buffer_t * const packet,
+		buffer_t * const message, //This buffer should be as large as the packet
+		const buffer_t * const message_nonce,
+		const buffer_t * const message_key) __attribute__((warn_unused_result)); //crypto_secretbox_KEYBYTES
 
 #endif
