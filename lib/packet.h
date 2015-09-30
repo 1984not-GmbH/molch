@@ -66,17 +66,14 @@ int packet_encrypt( //TODO don't pass nonces but generate them
  * Decrypt and authenticate a packet.
  */
 int packet_decrypt(
-		const unsigned char * const packet,
-		const size_t packet_length,
+		const buffer_t * const packet,
 		unsigned char * const packet_type, //1 Byte, no array
 		unsigned char * const current_protocol_version, //1 Byte, no array
 		unsigned char * const highest_supported_protocol_version, //1 Byte, no array
-		unsigned char * const header, //As long as the packet or at most 255 bytes
-		size_t *header_length, //output
-		const unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		unsigned char * const message, //should be as long as the packet
-		size_t *message_length, //output
-		const unsigned char * const message_key) __attribute__((warn_unused_result)); //crypto_secretbox_KEYBYTES
+		buffer_t * const header, //output, As long as the packet or at most 255 bytes
+		const buffer_t * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const message, //output, should be as long as the packet
+		const buffer_t * const message_key) __attribute__((warn_unused_result)); //crypto_secretbox_KEYBYTES
 
 /*
  * Get the metadata of a packet (without verifying it's authenticity).

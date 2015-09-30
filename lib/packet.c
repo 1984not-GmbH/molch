@@ -148,28 +148,24 @@ int packet_encrypt(
  * Decrypt and authenticate a packet.
  */
 int packet_decrypt(
-		const unsigned char * const packet,
-		const size_t packet_length,
+		const buffer_t * const packet,
 		unsigned char * const packet_type, //1 Byte, no array
 		unsigned char * const current_protocol_version, //1 Byte, no array
 		unsigned char * const highest_supported_protocol_version, //1 Byte, no array
-		unsigned char * const header, //As long as the packet or at most 255 bytes
-		size_t *header_length, //output
-		const unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		unsigned char * const message, //should be as long as the packet
-		size_t *message_length, //output
-		const unsigned char * const message_key) { //crypto_secretbox_KEYBYTES
-	//FIXME remove this once packet.c is moved over to buffer_t
-	buffer_t *packet_buffer = buffer_create_with_existing_array((unsigned char*)packet, packet_length);
-	buffer_t *header_buffer = buffer_create_with_existing_array((unsigned char*)header, 255); //FIXME: This is REALLY bad! But I don't know the length of the buffer at this point!
-	buffer_t *header_key_buffer = buffer_create_with_existing_array((unsigned char*)header_key, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_t *message_key_buffer = buffer_create_with_existing_array((unsigned char*)message_key, crypto_secretbox_KEYBYTES);
-	buffer_t *message_buffer = buffer_create_with_existing_array((unsigned char*)message, packet_length); //FIXME: This is REALLY bad! But I don't know the length of the buffer at this point!
+		buffer_t * const header, //output, As long as the packet or at most 255 bytes
+		const buffer_t * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const message, //output, should be as long as the packet
+		const buffer_t * const message_key) { //crypto_secretbox_KEYBYTES
+	//check the buffer sizes
+	if ((header_key->content_length != crypto_aead_chacha20poly1305_KEYBYTES)
+			|| (message_key->content_length != crypto_secretbox_KEYBYTES)) {
+		return -6;
+	}
 
 	//get the packet metadata
 	unsigned char purported_header_length;
 	int status = packet_get_metadata_without_verification(
-			packet_buffer,
+			packet,
 			packet_type,
 			current_protocol_version,
 			highest_supported_protocol_version,
@@ -181,10 +177,10 @@ int packet_decrypt(
 	//decrypt the header
 	buffer_t *message_nonce = buffer_create(crypto_secretbox_NONCEBYTES, crypto_secretbox_NONCEBYTES);
 	status = packet_decrypt_header(
-			packet_buffer,
-			header_buffer,
+			packet,
+			header,
 			message_nonce,
-			header_key_buffer);
+			header_key);
 	if (status != 0) {
 		buffer_clear(message_nonce);
 		return status;
@@ -192,17 +188,14 @@ int packet_decrypt(
 
 	//decrypt the message
 	status = packet_decrypt_message(
-			packet_buffer,
-			message_buffer,
+			packet,
+			message,
 			message_nonce,
-			message_key_buffer);
+			message_key);
 	buffer_clear(message_nonce);
 	if (status != 0) {
 		return status;
 	}
-
-	*message_length = message_buffer->content_length;
-	*header_length = header_buffer->content_length;
 
 	return 0;
 }
