@@ -107,10 +107,10 @@ int main(void) {
 	}
 	putchar('\n');
 	//print Alice's initial root and chain keys
-	printf("Alice's initial root key (%zi Bytes):\n", sizeof(alice_state->root_key));
-	print_hex(alice_state->root_key, sizeof(alice_state->root_key), 30);
-	printf("Alice's initial chain key (%zi Bytes):\n", sizeof(alice_state->send_chain_key));
-	print_hex(alice_state->receive_chain_key, sizeof(alice_state->send_chain_key), 30);
+	printf("Alice's initial root key (%zi Bytes):\n", alice_state->root_key.content_length);
+	print_hex(alice_state->root_key.content, alice_state->root_key.content_length, 30);
+	printf("Alice's initial chain key (%zi Bytes):\n", alice_state->send_chain_key.content_length);
+	print_hex(alice_state->receive_chain_key.content, alice_state->send_chain_key.content_length, 30);
 	putchar('\n');
 
 	//start new ratchet for bob
@@ -131,17 +131,14 @@ int main(void) {
 	}
 	putchar('\n');
 	//print Bob's initial root and chain keys
-	printf("Bob's initial root key (%zi Bytes):\n", sizeof(bob_state->root_key));
-	print_hex(bob_state->root_key, sizeof(bob_state->root_key), 30);
-	printf("Bob's initial chain key (%zi Bytes):\n", sizeof(bob_state->send_chain_key));
-	print_hex(bob_state->send_chain_key, sizeof(bob_state->send_chain_key), 30);
+	printf("Bob's initial root key (%zi Bytes):\n", bob_state->root_key.content_length);
+	print_hex(bob_state->root_key.content, bob_state->root_key.content_length, 30);
+	printf("Bob's initial chain key (%zi Bytes):\n", bob_state->send_chain_key.content_length);
+	print_hex(bob_state->send_chain_key.content, bob_state->send_chain_key.content_length, 30);
 	putchar('\n');
 
 	//compare Alice's and Bob's initial root and chain keys
-	status = sodium_memcmp(
-			alice_state->root_key,
-			bob_state->root_key,
-			sizeof(alice_state->root_key));
+	status = buffer_compare(&(alice_state->root_key), &(bob_state->root_key));
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Alice's and Bob's initial root keys aren't the same.\n");
 		ratchet_destroy(alice_state);
@@ -151,10 +148,7 @@ int main(void) {
 	printf("Alice's and Bob's initial root keys match!\n");
 
 	//initial chain key
-	status = sodium_memcmp(
-			alice_state->receive_chain_key,
-			bob_state->send_chain_key,
-			sizeof(alice_state->send_chain_key));
+	status = buffer_compare(&(alice_state->receive_chain_key), &(bob_state->send_chain_key));
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Alice's and Bob's initial chain keys aren't the same.\n");
 		ratchet_destroy(alice_state);
@@ -288,7 +282,7 @@ int main(void) {
 	unsigned char bob_receive_key1[crypto_secretbox_KEYBYTES];
 	status = ratchet_receive(
 			bob_receive_key1,
-			alice_state->our_public_ephemeral,
+			alice_state->our_public_ephemeral.content,
 			0, //purported message number
 			0, //purported previous message number
 			bob_state);
@@ -364,7 +358,7 @@ int main(void) {
 	unsigned char bob_receive_key2[crypto_secretbox_KEYBYTES];
 	status = ratchet_receive(
 			bob_receive_key2,
-			alice_state->our_public_ephemeral,
+			alice_state->our_public_ephemeral.content,
 			1, //purported message number
 			0, //purported previous message number
 			bob_state);
@@ -440,7 +434,7 @@ int main(void) {
 	unsigned char bob_receive_key3[crypto_secretbox_KEYBYTES];
 	status = ratchet_receive(
 			bob_receive_key3,
-			alice_state->our_public_ephemeral,
+			alice_state->our_public_ephemeral.content,
 			2, //purported message number
 			0, //purported previous message number
 			bob_state);
@@ -645,7 +639,7 @@ int main(void) {
 	unsigned char alice_receive_message_key1[crypto_secretbox_KEYBYTES];
 	status = ratchet_receive(
 			alice_receive_message_key1,
-			bob_state->our_public_ephemeral,
+			bob_state->our_public_ephemeral.content,
 			0, //purported message number
 			0, //purported previous message number
 			alice_state);
@@ -720,7 +714,7 @@ int main(void) {
 	unsigned char alice_receive_message_key3[crypto_secretbox_KEYBYTES];
 	status = ratchet_receive(
 			alice_receive_message_key3,
-			bob_state->our_public_ephemeral,
+			bob_state->our_public_ephemeral.content,
 			2,
 			0,
 			alice_state);

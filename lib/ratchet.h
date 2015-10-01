@@ -32,27 +32,44 @@ typedef enum ratchet_header_decryptability {
 
 //struct that represents the state of a conversation
 typedef struct ratchet_state {
-	unsigned char root_key[crypto_secretbox_KEYBYTES]; //RK
-	unsigned char purported_root_key[crypto_secretbox_KEYBYTES]; //RKp
+	buffer_t root_key; //RK
+	const unsigned char root_key_storage[crypto_secretbox_KEYBYTES];
+	buffer_t purported_root_key; //RKp
+	const unsigned char purported_root_key_storage[crypto_secretbox_KEYBYTES];
 	//header keys
-	unsigned char send_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
-	unsigned char receive_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
-	unsigned char next_send_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
-	unsigned char next_receive_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
-	unsigned char purported_receive_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
-	unsigned char purported_next_receive_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t send_header_key;
+	const unsigned char send_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t receive_header_key;
+	const unsigned char receive_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t next_send_header_key;
+	const unsigned char next_send_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t next_receive_header_key;
+	const unsigned char next_receive_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t purported_receive_header_key;
+	const unsigned char purported_receive_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t purported_next_receive_header_key;
+	const unsigned char purported_next_receive_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
 	//chain keys
-	unsigned char send_chain_key[crypto_secretbox_KEYBYTES]; //CKs
-	unsigned char receive_chain_key[crypto_secretbox_KEYBYTES]; //CKr
-	unsigned char purported_receive_chain_key[crypto_secretbox_KEYBYTES]; //CKp
+	buffer_t send_chain_key; //CKs
+	const unsigned char send_chain_key_storage[crypto_secretbox_KEYBYTES];
+	buffer_t receive_chain_key; //CKr
+	const unsigned char receive_chain_key_storage[crypto_secretbox_KEYBYTES];
+	buffer_t purported_receive_chain_key; //CKp
+	const unsigned char purported_receive_chain_key_storage[crypto_secretbox_KEYBYTES];
 	//identity keys
-	unsigned char our_public_identity[crypto_box_PUBLICKEYBYTES]; //DHIs
-	unsigned char their_public_identity[crypto_box_PUBLICKEYBYTES]; //DHIr
+	buffer_t our_public_identity; //DHIs
+	const unsigned char our_public_identity_storage[crypto_box_PUBLICKEYBYTES];
+	buffer_t their_public_identity; //DHIr
+	const unsigned char their_public_identity_storage[crypto_box_PUBLICKEYBYTES];
 	//ephemeral keys (ratchet keys)
-	unsigned char our_private_ephemeral[crypto_box_SECRETKEYBYTES]; //DHRs
-	unsigned char our_public_ephemeral[crypto_box_PUBLICKEYBYTES]; //DHRs
-	unsigned char their_public_ephemeral[crypto_box_PUBLICKEYBYTES]; //DHRr
-	unsigned char their_purported_public_ephemeral[crypto_box_PUBLICKEYBYTES]; //DHp
+	buffer_t our_private_ephemeral; //DHRs
+	const unsigned char our_private_ephemeral_storage[crypto_box_SECRETKEYBYTES];
+	buffer_t our_public_ephemeral; //DHRs
+	const unsigned char our_public_ephemeral_storage[crypto_box_PUBLICKEYBYTES];
+	buffer_t their_public_ephemeral; //DHRr
+	const unsigned char their_public_ephemeral_storage[crypto_box_PUBLICKEYBYTES];
+	buffer_t their_purported_public_ephemeral; //DHp
+	const unsigned char their_purported_public_ephemeral_storage[crypto_box_PUBLICKEYBYTES];
 	//message numbers
 	unsigned int send_message_number; //Ns
 	unsigned int receive_message_number; //Nr

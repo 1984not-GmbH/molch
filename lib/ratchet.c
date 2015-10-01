@@ -68,14 +68,30 @@ ratchet_state* ratchet_create(
 		return NULL;
 	}
 
+	//initialize the buffers with the storage arrays
+	buffer_init_with_pointer(&(state->root_key), (unsigned char*)state->root_key_storage, crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_init_with_pointer(&(state->purported_root_key), (unsigned char*)state->purported_root_key_storage, crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	//header keys
+	buffer_init_with_pointer(&(state->send_header_key), (unsigned char*)state->send_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(&(state->receive_header_key), (unsigned char*)state->receive_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(&(state->next_send_header_key), (unsigned char*)state->next_send_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(&(state->next_receive_header_key), (unsigned char*)state->next_receive_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(&(state->purported_receive_header_key), (unsigned char*)state->purported_receive_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(&(state->purported_next_receive_header_key), (unsigned char*)state->purported_next_receive_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	//chain keys
+	buffer_init_with_pointer(&(state->send_chain_key), (unsigned char*)state->send_chain_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(&(state->receive_chain_key), (unsigned char*)state->receive_chain_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(&(state->purported_receive_chain_key), (unsigned char*)state->purported_receive_chain_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	//identity keys
+	buffer_init_with_pointer(&(state->our_public_identity), (unsigned char*)state->our_public_identity_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(&(state->their_public_identity), (unsigned char*)state->their_public_identity_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	//ephemeral keys (ratchet keys)
+	buffer_init_with_pointer(&(state->our_private_ephemeral), (unsigned char*)state->our_private_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(&(state->our_public_ephemeral), (unsigned char*)state->our_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(&(state->their_public_ephemeral), (unsigned char*)state->their_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(&(state->their_purported_public_ephemeral), (unsigned char*)state->their_purported_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+
 	//create buffers FIXME remove this once ratchet.c is ported over to buffer_t
-	buffer_t *root_key = buffer_create_with_existing_array((unsigned char*)state->root_key, crypto_secretbox_KEYBYTES);
-	buffer_t *send_chain_key = buffer_create_with_existing_array((unsigned char*)state->send_chain_key, crypto_secretbox_KEYBYTES);
-	buffer_t *receive_chain_key = buffer_create_with_existing_array((unsigned char*)state->receive_chain_key, crypto_secretbox_KEYBYTES);
-	buffer_t *send_header_key = buffer_create_with_existing_array((unsigned char*)state->send_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_t *receive_header_key = buffer_create_with_existing_array((unsigned char*)state->receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_t *next_send_header_key = buffer_create_with_existing_array((unsigned char*)state->next_send_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_t *next_receive_header_key = buffer_create_with_existing_array((unsigned char*)state->next_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
 	buffer_t *our_private_identity_buffer = buffer_create_with_existing_array((unsigned char*)our_private_identity, crypto_box_SECRETKEYBYTES);
 	buffer_t *our_public_identity_buffer = buffer_create_with_existing_array((unsigned char*)our_public_identity, crypto_box_PUBLICKEYBYTES);
 	buffer_t *their_public_identity_buffer = buffer_create_with_existing_array((unsigned char*)their_public_identity, crypto_box_PUBLICKEYBYTES);
@@ -85,13 +101,13 @@ ratchet_state* ratchet_create(
 
 	//derive initial chain, root and header keys
 	int status = derive_initial_root_chain_and_header_keys(
-			root_key,
-			send_chain_key,
-			receive_chain_key,
-			send_header_key,
-			receive_header_key,
-			next_send_header_key,
-			next_receive_header_key,
+			&(state->root_key),
+			&(state->send_chain_key),
+			&(state->receive_chain_key),
+			&(state->send_header_key),
+			&(state->receive_header_key),
+			&(state->next_send_header_key),
+			&(state->next_receive_header_key),
 			our_private_identity_buffer,
 			our_public_identity_buffer,
 			their_public_identity_buffer,
@@ -105,31 +121,31 @@ ratchet_state* ratchet_create(
 	}
 	//copy keys into state
 	//our public identity
-	status = buffer_clone_to_raw(state->our_public_identity, crypto_box_PUBLICKEYBYTES, our_public_identity_buffer);
+	status = buffer_clone(&(state->our_public_identity), our_public_identity_buffer);
 	if (status != 0) {
 		sodium_free(state);
 		return NULL;
 	}
 	//their_public_identity
-	status = buffer_clone_to_raw(state->their_public_identity, crypto_box_PUBLICKEYBYTES, their_public_identity_buffer);
+	status = buffer_clone(&(state->their_public_identity), their_public_identity_buffer);
 	if (status != 0) {
 		sodium_free(state);
 		return NULL;
 	}
 	//our_private_ephemeral
-	status = buffer_clone_to_raw(state->our_private_ephemeral, crypto_box_SECRETKEYBYTES, our_private_ephemeral_buffer);
+	status = buffer_clone(&(state->our_private_ephemeral), our_private_ephemeral_buffer);
 	if (status != 0) {
 		sodium_free(state);
 		return NULL;
 	}
 	//our_public_ephemeral
-	status = buffer_clone_to_raw(state->our_public_ephemeral, crypto_box_SECRETKEYBYTES, our_public_ephemeral_buffer);
+	status = buffer_clone(&(state->our_public_ephemeral), our_public_ephemeral_buffer);
 	if (status != 0) {
 		sodium_free(state);
 		return NULL;
 	}
 	//their_public_ephemeral
-	status = buffer_clone_to_raw(state->their_public_ephemeral, crypto_box_PUBLICKEYBYTES, their_public_ephemeral_buffer);
+	status = buffer_clone(&(state->their_public_ephemeral), their_public_ephemeral_buffer);
 	if (status != 0) {
 		sodium_free(state);
 		return NULL;
@@ -161,37 +177,32 @@ int ratchet_next_send_keys(
 	int status;
 	if (state->ratchet_flag) {
 		//generate new ephemeral key
-		status = crypto_box_keypair(state->our_public_ephemeral, state->our_private_ephemeral);
+		status = crypto_box_keypair(state->our_public_ephemeral.content, state->our_private_ephemeral.content);
 		if (status != 0) {
 			return status;
 		}
 
 		//HKs = NHKs (shift header keys)
-		memcpy(state->send_header_key, state->next_send_header_key, sizeof(state->send_header_key));
-
-		//create buffers FIXME: remove this once ratchet.c is ported over to buffer_t
-		buffer_t *root_key = buffer_create_with_existing_array((unsigned char*)state->root_key, crypto_secretbox_KEYBYTES);
-		buffer_t *send_chain_key = buffer_create_with_existing_array((unsigned char*)state->send_chain_key, crypto_secretbox_KEYBYTES);
-		buffer_t *next_send_header_key = buffer_create_with_existing_array((unsigned char*)state->next_send_header_key, crypto_secretbox_KEYBYTES);
-		buffer_t *our_private_ephemeral = buffer_create_with_existing_array((unsigned char*)state->our_private_ephemeral, crypto_box_SECRETKEYBYTES);
-		buffer_t *our_public_ephemeral = buffer_create_with_existing_array((unsigned char*)state->our_public_ephemeral, crypto_box_PUBLICKEYBYTES);
-		buffer_t *their_public_ephemeral = buffer_create_with_existing_array((unsigned char*)state->their_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+		status = buffer_clone(&(state->send_header_key), &(state->next_send_header_key));
+		if (status != 0) {
+			return status;
+		}
 
 		//derive next root key and send chain key
 		//RK, CKs, NHKs = HKDF(DH(DHs, DHr))
 		buffer_t *previous_root_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-		status = buffer_clone_from_raw(previous_root_key, state->root_key, previous_root_key->content_length);
+		status = buffer_clone(previous_root_key, &(state->root_key));
 		if (status != 0) {
 			buffer_clear(previous_root_key);
 			return status;
 		}
 		status = derive_root_chain_and_header_keys(
-				root_key,
-				send_chain_key,
-				next_send_header_key,
-				our_private_ephemeral,
-				our_public_ephemeral,
-				their_public_ephemeral,
+				&(state->root_key),
+				&(state->send_chain_key),
+				&(state->next_send_header_key),
+				&(state->our_private_ephemeral),
+				&(state->our_public_ephemeral),
+				&(state->their_public_ephemeral),
 				previous_root_key,
 				state->am_i_alice);
 		buffer_clear(previous_root_key);
@@ -206,29 +217,28 @@ int ratchet_next_send_keys(
 
 	//MK = HMAC-HASH(CKs, 0x00)
 	buffer_t *next_message_key_buffer = buffer_create_with_existing_array(next_message_key, crypto_secretbox_KEYBYTES); //FIXME remove this once ratchet.c is ported over to buffer_t
-	buffer_t *send_chain_key = buffer_create_with_existing_array(state->send_chain_key, crypto_secretbox_KEYBYTES); //FIXME remove this once ratchet.c is ported over to buffer_t
 	status = derive_message_key(
 			next_message_key_buffer,
-			send_chain_key);
+			&(state->send_chain_key));
 	if (status != 0) {
 		return status;
 	}
 
 	//copy the header key
-	memcpy(next_header_key, state->send_header_key, sizeof(state->send_header_key));
+	memcpy(next_header_key, state->send_header_key.content, state->send_header_key.content_length);
 
 	state->send_message_number++;
 
 	//derive next chain key
 	//CKs = HMAC-HASH(CKs, 0x01)
 	buffer_t *old_chain_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	status = buffer_clone_from_raw(old_chain_key, state->send_chain_key, old_chain_key->content_length);
+	status = buffer_clone(old_chain_key, &(state->send_chain_key));
 	if (status != 0) {
 		buffer_clear(old_chain_key);
 		return status;
 	}
 	status = derive_chain_key(
-			send_chain_key,
+			&(state->send_chain_key),
 			old_chain_key);
 	buffer_clear(old_chain_key);
 
@@ -243,8 +253,8 @@ void ratchet_get_receive_header_keys(
 		const unsigned char* *current_receive_header_key,
 		const unsigned char* *next_receive_header_key,
 		ratchet_state *state) {
-	*current_receive_header_key = state->receive_header_key;
-	*next_receive_header_key = state->next_receive_header_key;
+	*current_receive_header_key = state->receive_header_key.content;
+	*next_receive_header_key = state->next_receive_header_key.content;
 }
 
 /*
@@ -316,9 +326,6 @@ int stage_skipped_header_and_message_keys(
 	//message key buffer
 	buffer_t *message_key_buffer = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 
-	//create buffers FIXME: remove this once ratchet.c has been moved over to buffer_t
-	buffer_t *receive_header_key = buffer_create_with_existing_array(state->receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
-
 	//create all message keys
 	unsigned int pos;
 	for (pos = state->receive_message_number; pos <= purported_message_number; pos++) {
@@ -335,7 +342,7 @@ int stage_skipped_header_and_message_keys(
 			status = header_and_message_keystore_add(
 					&(state->purported_header_and_message_keys),
 					message_key_buffer,
-					receive_header_key);
+					&(state->receive_header_key));
 			if (status != 0) {
 				buffer_clear(purported_current_chain_key);
 				buffer_clear(purported_next_chain_key);
@@ -437,23 +444,23 @@ int ratchet_receive(
 
 	int status;
 
-	if ((!is_none(state->receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES)) && (state->header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
+	if ((!is_none(state->receive_header_key.content, crypto_aead_chacha20poly1305_KEYBYTES)) && (state->header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
 		//copy purported message number
 		state->purported_message_number = purported_message_number;
 
 		//create skipped message keys and store current one
 		status = stage_skipped_header_and_message_keys(
-				state->purported_receive_chain_key,
+				state->purported_receive_chain_key.content,
 				message_key,
 				purported_message_number,
-				state->receive_chain_key,
+				state->receive_chain_key.content,
 				state);
 		if (status != 0) {
 			return status;
 		}
 
 		//copy their purported public ephemeral (this is necessary to detect if a new chain was started later on when validating the authenticity)
-		memcpy(state->their_purported_public_ephemeral, their_purported_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+		memcpy(state->their_purported_public_ephemeral.content, their_purported_public_ephemeral, crypto_box_PUBLICKEYBYTES);
 
 		state->received_valid = false; //waiting for validation
 		return 0;
@@ -465,7 +472,7 @@ int ratchet_receive(
 		//copy purported message numbers and ephemerals
 		state->purported_message_number = purported_message_number; //Np
 		state->purported_previous_message_number = purported_previous_message_number; //PNp
-		memcpy(state->their_purported_public_ephemeral, their_purported_public_ephemeral, crypto_box_PUBLICKEYBYTES); //DHRp
+		memcpy(state->their_purported_public_ephemeral.content, their_purported_public_ephemeral, crypto_box_PUBLICKEYBYTES); //DHRp
 
 		//temporary storage for the purported chain key (CKp)
 		unsigned char temp_purported_chain_key[crypto_secretbox_KEYBYTES];
@@ -475,7 +482,7 @@ int ratchet_receive(
 				temp_purported_chain_key,
 				message_key,
 				purported_previous_message_number,
-				state->receive_chain_key,
+				state->receive_chain_key.content,
 				state);
 		if (status != 0) {
 			sodium_memzero(temp_purported_chain_key, sizeof(temp_purported_chain_key));
@@ -483,27 +490,25 @@ int ratchet_receive(
 		}
 
 		//HKp = NHKr
-		memcpy(state->purported_receive_header_key, state->next_receive_header_key, sizeof(state->purported_receive_header_key));
+		status = buffer_clone(&(state->purported_receive_header_key), &(state->next_receive_header_key));
+		if (status != 0) {
+			sodium_memzero(temp_purported_chain_key, sizeof(temp_purported_chain_key));
+			return status;
+		}
 
 		//create buffers FIXME remove this once ratchet.c is ported over to buffer_t
-		buffer_t *purported_root_key = buffer_create_with_existing_array((unsigned char*)state->purported_root_key, crypto_secretbox_KEYBYTES);
-		buffer_t *purported_receive_chain_key = buffer_create_with_existing_array((unsigned char*)state->purported_receive_chain_key, crypto_secretbox_KEYBYTES);
-		buffer_t *purported_next_receive_header_key = buffer_create_with_existing_array((unsigned char*)state->purported_next_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES);
-		buffer_t *our_private_ephemeral = buffer_create_with_existing_array((unsigned char*)state->our_private_ephemeral, crypto_box_SECRETKEYBYTES);
-		buffer_t *our_public_ephemeral = buffer_create_with_existing_array((unsigned char*)state->our_public_ephemeral, crypto_box_PUBLICKEYBYTES);
 		buffer_t *their_purported_public_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)their_purported_public_ephemeral, crypto_box_PUBLICKEYBYTES);
-		buffer_t *root_key = buffer_create_with_existing_array((unsigned char*)state->root_key, crypto_secretbox_KEYBYTES);
 
 		//derive purported root and chain keys
 		//first: input key for hkdf (root and chain key derivation)
 		status = derive_root_chain_and_header_keys(
-				purported_root_key,
-				purported_receive_chain_key,
-				purported_next_receive_header_key,
-				our_private_ephemeral,
-				our_public_ephemeral,
+				&(state->purported_root_key),
+				&(state->purported_receive_chain_key),
+				&(state->purported_next_receive_header_key),
+				&(state->our_private_ephemeral),
+				&(state->our_public_ephemeral),
 				their_purported_public_ephemeral_buffer,
-				root_key,
+				&(state->root_key),
 				state->am_i_alice);
 		if (status != 0) {
 			return status;
@@ -514,7 +519,7 @@ int ratchet_receive(
 				temp_purported_chain_key,
 				message_key,
 				purported_message_number,
-				state->purported_receive_chain_key,
+				state->purported_receive_chain_key.content,
 				state);
 		if (status != 0) {
 			sodium_memzero(temp_purported_chain_key, sizeof(temp_purported_chain_key));
@@ -522,7 +527,7 @@ int ratchet_receive(
 		}
 
 		//copy the temporary purported chain key to the state
-		memcpy(state->purported_receive_chain_key, temp_purported_chain_key, sizeof(state->purported_receive_chain_key));
+		memcpy(state->purported_receive_chain_key.content, temp_purported_chain_key, state->purported_receive_chain_key.content_length);
 
 		state->received_valid = false; //waiting for validation
 	}
@@ -547,7 +552,7 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
 	int status;
 
 	//TODO I can do those if's better. This only happens to be this way because of the specification
-	if ((!is_none(state->receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES)) && (header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
+	if ((!is_none(state->receive_header_key.content, crypto_aead_chacha20poly1305_KEYBYTES)) && (header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
 		//if HKr != <none> and Dec(HKr, header)
 		if (!valid) { //message couldn't be decrypted
 			//clear purported message and header keys
@@ -565,15 +570,32 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
 		//otherwise, received message was valid
 		//accept purported values
 		//RK = RKp
-		memcpy(state->root_key, state->purported_root_key, crypto_secretbox_KEYBYTES);
+		status = buffer_clone(&(state->root_key), &(state->purported_root_key));
+		if (status != 0) {
+			//TODO what to clear here?
+			return status;
+		}
 		//HKr = HKp
-		memcpy(state->receive_header_key, state->purported_receive_header_key, sizeof(state->receive_header_key));
+		status = buffer_clone(&(state->receive_header_key), &(state->purported_receive_header_key));
+		if (status != 0) {
+			//TODO what to clear here?
+			return status;
+		}
 		//NHKr = NHKp
-		memcpy(state->next_receive_header_key, state->purported_next_receive_header_key, sizeof(state->next_receive_header_key));
+		status = buffer_clone(&(state->next_receive_header_key), &(state->purported_next_receive_header_key));
+		if (status != 0) {
+			//TODO what to clear here?
+			return status;
+		}
 		//DHRr = DHRp
-		memcpy(state->their_public_ephemeral, state->their_purported_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+		status = buffer_clone(&(state->their_public_ephemeral), &(state->their_purported_public_ephemeral));
+		if (status != 0) {
+			//TODO what to clear here?
+			return status;
+		}
 		//erase(DHRs)
-		sodium_memzero(state->our_private_ephemeral, crypto_box_SECRETKEYBYTES);
+		buffer_clear(&(state->our_private_ephemeral));
+		state->our_private_ephemeral.content_length = crypto_box_SECRETKEYBYTES; //TODO is this necessary?
 		//ratchet_flag = True
 		state->ratchet_flag = true;
 	}
@@ -585,7 +607,11 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
 	//Nr = Np + 1
 	state->receive_message_number = state->purported_message_number + 1;
 	//CKr = CKp
-	memcpy(state->receive_chain_key, state->purported_receive_chain_key, crypto_secretbox_KEYBYTES);
+	status = buffer_clone(&(state->receive_chain_key), &(state->purported_receive_chain_key));
+	if (status != 0) {
+		//TODO what to clear here?
+		return status;
+	}
 
 	return 0;
 }
@@ -594,31 +620,10 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
  * End the ratchet chain and free the memory.
  */
 void ratchet_destroy(ratchet_state *state) {
-	//delete keys
-	//root key
-	sodium_memzero(state->root_key, sizeof(state->root_key));
-	sodium_memzero(state->purported_root_key, sizeof(state->purported_root_key));
-
-	//our private ephemeral
-	sodium_memzero(state->our_private_ephemeral, sizeof(state->our_private_ephemeral));
-
-	//header keys
-	sodium_memzero(state->send_header_key, sizeof(state->send_header_key));
-	sodium_memzero(state->receive_header_key, sizeof(state->receive_header_key));
-	sodium_memzero(state->next_send_header_key, sizeof(state->next_send_header_key));
-	sodium_memzero(state->next_receive_header_key, sizeof(state->next_receive_header_key));
-	sodium_memzero(state->purported_receive_header_key, sizeof(state->purported_receive_header_key));
-	sodium_memzero(state->purported_next_receive_header_key, sizeof(state->purported_next_receive_header_key));
-
-	//chain keys
-	sodium_memzero(state->send_chain_key, sizeof(state->send_chain_key));
-	sodium_memzero(state->receive_chain_key, sizeof(state->send_chain_key));
-	sodium_memzero(state->purported_receive_chain_key, sizeof(state->purported_receive_chain_key));
-
 	//empty message keystores
 	header_and_message_keystore_clear(&(state->skipped_header_and_message_keys));
 	header_and_message_keystore_clear(&(state->purported_header_and_message_keys));
 
-	sodium_free(state);
+	sodium_free(state); //this also overwrites all the keys with zeroes
 }
 
