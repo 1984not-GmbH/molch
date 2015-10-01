@@ -59,23 +59,28 @@ int create_and_print_message(
 	//print the message (as string):
 	printf("Message (%zi Bytes):\n%.*s\n\n", message_length, (int)message_length, message);
 
+	//create buffers TODO remove once packet-test-lib.c has been moved over to buffer_t
+	buffer_t *packet_buffer = buffer_create_with_existing_array(packet, 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message_length + header_length + crypto_secretbox_MACBYTES + 255);
+	buffer_t *header_buffer = buffer_create_with_existing_array((unsigned char*)header, header_length);
+	buffer_t *header_key_buffer = buffer_create_with_existing_array((unsigned char*)header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *message_key_buffer = buffer_create_with_existing_array((unsigned char*)message_key, crypto_secretbox_KEYBYTES);
+	buffer_t *message_buffer = buffer_create_with_existing_array((unsigned char*)message, message_length);
+
 	//now encrypt the message
 	int status = packet_encrypt(
-			packet,
-			packet_length,
+			packet_buffer,
 			packet_type,
 			current_protocol_version,
 			highest_supported_protocol_version,
-			header,
-			header_length,
-			header_key,
-			message,
-			message_length,
-			message_key);
+			header_buffer,
+			header_key_buffer,
+			message_buffer,
+			message_key_buffer);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to encrypt message and header. (%i)\n", status);
 		return status;
 	}
+	*packet_length = packet_buffer->content_length;
 
 	//print header nonce
 	printf("Header Nonce (%i Bytes):\n", crypto_aead_chacha20poly1305_NPUBBYTES);

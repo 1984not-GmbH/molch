@@ -49,18 +49,15 @@
  *   }
  * }
  */
-int packet_encrypt( //TODO don't pass nonces but generate them
-		unsigned char * const packet, //output, has to be long enough, see format above
-		size_t * const packet_length, //length of the output
+int packet_encrypt(
+		buffer_t * const packet, //output, has to be long enough, see format above
 		const unsigned char packet_type,
 		const unsigned char current_protocol_version, //this can't be larger than 0xF = 15
 		const unsigned char highest_supported_protocol_version, //this can't be larger than 0xF = 15
-		const unsigned char * const header,
-		const size_t header_length,
-		const unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		const unsigned char * const message,
-		const size_t message_length,
-		const unsigned char * const message_key) __attribute__((warn_unused_result)); //crypto_secretbox_KEYBYTES
+		const buffer_t * const header,
+		const buffer_t * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		const buffer_t * const message,
+		const buffer_t * const message_key) __attribute__((warn_unused_result)); //crypto_secretbox_KEYBYTES
 
 /*
  * Decrypt and authenticate a packet.
