@@ -10,7 +10,7 @@ enable_testing()
 
 #Set the linker flag for sodium
 if(APPLE)
-    set(SECURITY_C_FLAGS "-fstack-protector-strong -O1 -Wformat -Wformat-security -fPIE")
+    set(SECURITY_C_FLAGS "-O1 -Wformat -Wformat-security -fPIE")
     #TODO: Find secure Linker flags that work on Mac OS X
 else(APPLE)
     set(SECURITY_C_FLAGS "-fstack-protector-strong -D_FORTIFY_SOURCE=2 -O1 -Wformat -Wformat-security -fPIE")
