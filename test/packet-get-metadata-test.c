@@ -43,19 +43,15 @@ int main(void) {
 	const unsigned char highest_supported_protocol_version = 3;
 	printf("Highest supported protocol version: %02x\n", highest_supported_protocol_version);
 	putchar('\n');
-	size_t packet_length;
 	int status = create_and_print_message(
-			packet->content,
-			&packet_length,
+			packet,
 			packet_type,
 			current_protocol_version,
 			highest_supported_protocol_version,
-			message->content,
-			message->content_length,
-			message_key->content,
-			header->content,
-			header->content_length,
-			header_key->content);
+			message,
+			message_key,
+			header,
+			header_key);
 	buffer_clear(header_key);
 	buffer_clear(message_key);
 	buffer_clear(message);

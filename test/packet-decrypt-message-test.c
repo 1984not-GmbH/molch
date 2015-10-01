@@ -43,20 +43,15 @@ int main(void) {
 	const unsigned char highest_supported_protocol_version = 3;
 	printf("Highest supported protocol version: %02x\n", highest_supported_protocol_version);
 	putchar('\n');
-	size_t packet_length;
 	int status = create_and_print_message(
-			packet->content,
-			&packet_length,
+			packet,
 			packet_type,
 			current_protocol_version,
 			highest_supported_protocol_version,
-			message->content,
-			message->content_length,
-			message_key->content,
-			header->content,
-			header->content_length,
-			header_key->content);
-	packet->content_length = packet_length;
+			message,
+			message_key,
+			header,
+			header_key);
 	buffer_clear(header);
 	if (status != 0) {
 		buffer_clear(message_key);
@@ -88,7 +83,7 @@ int main(void) {
 	putchar('\n');
 
 	//now decrypt the message
-	buffer_t *decrypted_message = buffer_create(packet_length, packet_length);
+	buffer_t *decrypted_message = buffer_create(packet->content_length, packet->content_length);
 	status = packet_decrypt_message(
 			packet,
 			decrypted_message,
@@ -128,7 +123,7 @@ int main(void) {
 	printf("Decrypted message is the same.\n\n");
 
 	//manipulate the message
-	packet->content[packet_length - crypto_secretbox_MACBYTES - 1] ^= 0xf0;
+	packet->content[packet->content_length - crypto_secretbox_MACBYTES - 1] ^= 0xf0;
 	printf("Manipulating message.\n");
 
 	//try to decrypt
