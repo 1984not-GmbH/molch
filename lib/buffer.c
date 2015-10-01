@@ -166,7 +166,6 @@ int buffer_copy(
 	destination->content_length = (destination->content_length > destination_offset + copy_length)
 		? destination->content_length
 		: destination_offset + copy_length;
-	destination->content_length = destination_offset + copy_length;
 
 	return 0;
 }
