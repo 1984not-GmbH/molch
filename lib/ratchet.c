@@ -56,13 +56,22 @@ bool is_none(
  * The return value is a valid ratchet state or NULL if an error occured.
  */
 ratchet_state* ratchet_create(
-		const unsigned char * const our_private_identity,
-		const unsigned char * const our_public_identity,
-		const unsigned char * const their_public_identity,
-		const unsigned char * const our_private_ephemeral,
-		const unsigned char * const our_public_ephemeral,
-		const unsigned char * const their_public_ephemeral,
+		const buffer_t * const our_private_identity,
+		const buffer_t * const our_public_identity,
+		const buffer_t * const their_public_identity,
+		const buffer_t * const our_private_ephemeral,
+		const buffer_t * const our_public_ephemeral,
+		const buffer_t * const their_public_ephemeral,
 		bool am_i_alice) {
+	//check buffer sizes
+	if ((our_private_identity->content_length != crypto_box_SECRETKEYBYTES)
+			|| (our_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
+			|| (their_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
+			|| (our_private_ephemeral->content_length != crypto_box_SECRETKEYBYTES)
+			|| (our_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)
+			|| (their_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)) {
+		return NULL;
+	}
 	ratchet_state *state = sodium_malloc(sizeof(ratchet_state));
 	if (state == NULL) { //failed to allocate memory
 		return NULL;
@@ -91,14 +100,6 @@ ratchet_state* ratchet_create(
 	buffer_init_with_pointer(&(state->their_public_ephemeral), (unsigned char*)state->their_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	buffer_init_with_pointer(&(state->their_purported_public_ephemeral), (unsigned char*)state->their_purported_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 
-	//create buffers FIXME remove this once ratchet.c is ported over to buffer_t
-	buffer_t *our_private_identity_buffer = buffer_create_with_existing_array((unsigned char*)our_private_identity, crypto_box_SECRETKEYBYTES);
-	buffer_t *our_public_identity_buffer = buffer_create_with_existing_array((unsigned char*)our_public_identity, crypto_box_PUBLICKEYBYTES);
-	buffer_t *their_public_identity_buffer = buffer_create_with_existing_array((unsigned char*)their_public_identity, crypto_box_PUBLICKEYBYTES);
-	buffer_t *our_private_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)our_private_ephemeral, crypto_box_SECRETKEYBYTES);
-	buffer_t *our_public_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)our_public_ephemeral, crypto_box_PUBLICKEYBYTES);
-	buffer_t *their_public_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)their_public_ephemeral, crypto_box_PUBLICKEYBYTES);
-
 	//derive initial chain, root and header keys
 	int status = derive_initial_root_chain_and_header_keys(
 			&(state->root_key),
@@ -108,12 +109,12 @@ ratchet_state* ratchet_create(
 			&(state->receive_header_key),
 			&(state->next_send_header_key),
 			&(state->next_receive_header_key),
-			our_private_identity_buffer,
-			our_public_identity_buffer,
-			their_public_identity_buffer,
-			our_private_ephemeral_buffer,
-			our_public_ephemeral_buffer,
-			their_public_ephemeral_buffer,
+			our_private_identity,
+			our_public_identity,
+			their_public_identity,
+			our_private_ephemeral,
+			our_public_ephemeral,
+			their_public_ephemeral,
 			am_i_alice);
 	if (status != 0) {
 		sodium_free(state);
@@ -121,31 +122,31 @@ ratchet_state* ratchet_create(
 	}
 	//copy keys into state
 	//our public identity
-	status = buffer_clone(&(state->our_public_identity), our_public_identity_buffer);
+	status = buffer_clone(&(state->our_public_identity), our_public_identity);
 	if (status != 0) {
 		sodium_free(state);
 		return NULL;
 	}
 	//their_public_identity
-	status = buffer_clone(&(state->their_public_identity), their_public_identity_buffer);
+	status = buffer_clone(&(state->their_public_identity), their_public_identity);
 	if (status != 0) {
 		sodium_free(state);
 		return NULL;
 	}
 	//our_private_ephemeral
-	status = buffer_clone(&(state->our_private_ephemeral), our_private_ephemeral_buffer);
+	status = buffer_clone(&(state->our_private_ephemeral), our_private_ephemeral);
 	if (status != 0) {
 		sodium_free(state);
 		return NULL;
 	}
 	//our_public_ephemeral
-	status = buffer_clone(&(state->our_public_ephemeral), our_public_ephemeral_buffer);
+	status = buffer_clone(&(state->our_public_ephemeral), our_public_ephemeral);
 	if (status != 0) {
 		sodium_free(state);
 		return NULL;
 	}
 	//their_public_ephemeral
-	status = buffer_clone(&(state->their_public_ephemeral), their_public_ephemeral_buffer);
+	status = buffer_clone(&(state->their_public_ephemeral), their_public_ephemeral);
 	if (status != 0) {
 		sodium_free(state);
 		return NULL;
