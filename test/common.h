@@ -29,8 +29,8 @@ void print_header_and_message_keystore(header_and_message_keystore *keystore);
  * Generates and prints a crypto_box keypair.
  */
 int generate_and_print_keypair(
-		unsigned char * const public_key, //crypto_box_PUBLICKEYBYTES
-		unsigned char * const private_key, //crypto_box_SECRETKEYBYTES
-		const char * name, //Name of the key owner (e.g. "Alice")
-		const char * type); //type of the key (e.g. "ephemeral")
+		buffer_t * const public_key, //crypto_box_PUBLICKEYBYTES
+		buffer_t * const private_key, //crypto_box_SECRETKEYBYTES
+		const buffer_t * name, //Name of the key owner (e.g. "Alice")
+		const buffer_t * type); //type of the key (e.g. "ephemeral")
 #endif

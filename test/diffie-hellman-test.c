@@ -32,10 +32,10 @@ int main(void) {
 	buffer_t *alice_public_key = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_t *alice_private_key = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	status = generate_and_print_keypair(
-			alice_public_key->content,
-			alice_private_key->content,
-			"Alice",
-			"");
+			alice_public_key,
+			alice_private_key,
+			buffer_create_from_string("Alice"),
+			buffer_create_from_string(""));
 	if (status != 0) {
 		buffer_clear(alice_private_key);
 		return status;
@@ -45,10 +45,10 @@ int main(void) {
 	buffer_t *bob_public_key = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_t *bob_private_key = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	status = generate_and_print_keypair(
-			bob_public_key->content,
-			bob_private_key->content,
-			"Bob",
-			"");
+			bob_public_key,
+			bob_private_key,
+			buffer_create_from_string("Bob"),
+			buffer_create_from_string(""));
 	if (status != 0) {
 		buffer_clear(alice_private_key);
 		buffer_clear(bob_private_key);

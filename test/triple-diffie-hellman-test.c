@@ -34,10 +34,10 @@ int main(void) {
 	buffer_t * const alice_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_t * const alice_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	status = generate_and_print_keypair(
-			alice_public_identity->content,
-			alice_private_identity->content,
-			"Alice",
-			"identity");
+			alice_public_identity,
+			alice_private_identity,
+			buffer_create_from_string("Alice"),
+			buffer_create_from_string("identity"));
 	if (status != 0) {
 		buffer_clear(alice_private_identity);
 		return status;
@@ -47,10 +47,10 @@ int main(void) {
 	buffer_t * const alice_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_t * const alice_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	status = generate_and_print_keypair(
-			alice_public_ephemeral->content,
-			alice_private_ephemeral->content,
-			"Alice",
-			"ephemeral");
+			alice_public_ephemeral,
+			alice_private_ephemeral,
+			buffer_create_from_string("Alice"),
+			buffer_create_from_string("ephemeral"));
 	if (status != 0) {
 		buffer_clear(alice_private_ephemeral);
 		buffer_clear(alice_private_identity);
@@ -63,10 +63,10 @@ int main(void) {
 	buffer_t * const  bob_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_t * const  bob_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	status = generate_and_print_keypair(
-			bob_public_identity->content,
-			bob_private_identity->content,
-			"Bob",
-			"identity");
+			bob_public_identity,
+			bob_private_identity,
+			buffer_create_from_string("Bob"),
+			buffer_create_from_string("identity"));
 	if (status != 0) {
 		buffer_clear(alice_private_identity);
 		buffer_clear(alice_private_ephemeral);
@@ -78,10 +78,10 @@ int main(void) {
 	buffer_t * const bob_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_t * const bob_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	status = generate_and_print_keypair(
-			bob_public_ephemeral->content,
-			bob_private_ephemeral->content,
-			"Bob",
-			"ephemeral");
+			bob_public_ephemeral,
+			bob_private_ephemeral,
+			buffer_create_from_string("Bob"),
+			buffer_create_from_string("ephemeral"));
 	if (status != 0) {
 		buffer_clear(alice_private_identity);
 		buffer_clear(alice_private_ephemeral);
