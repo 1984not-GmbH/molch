@@ -21,40 +21,6 @@
 
 #include "utils.h"
 
-char* get_file_as_string(FILE *file, size_t * const length) {
-	char* line = malloc(100);
-	if (line == NULL) {
-		return NULL;
-	}
-	char* line_pointer = line;
-	size_t lenmax = 100;
-	size_t len = lenmax;
-	int c;
-
-	while(1) {
-		c = fgetc(file);
-		if(c == EOF)
-			break;
-
-		if(--len == 0) {
-			len = lenmax;
-			char* line_new = realloc(line_pointer, lenmax *= 2);
-			if (line_new == NULL) {
-				return NULL;
-			}
-
-			line = line_new + (line - line_pointer);
-			line_pointer = line_new;
-		}
-
-		*line++ = c;
-	}
-	*line = '\0';
-	*length = line - line_pointer; //excluding the closing '\0'
-
-	return line_pointer;
-}
-
 void print_hex(const buffer_t * const data) {
 	static const int WIDTH = 30;
 	//buffer for hex string

@@ -20,7 +20,5 @@
 
 #ifndef TEST_UTILS_H
 #define TEST_UTILS_H
-char* get_file_as_string(FILE *file, size_t * const length);
-
 void print_hex(const buffer_t * const data);
 #endif
