@@ -34,7 +34,7 @@ int main(void) {
 		return status;
 	}
 	printf("Our public ephemeral key (%zi Bytes):\n", our_public_ephemeral_key->content_length);
-	print_hex(our_public_ephemeral_key->content, our_public_ephemeral_key->content_length, 30);
+	print_hex(our_public_ephemeral_key);
 
 	//message numbers
 	uint32_t message_number = 2;
@@ -57,7 +57,7 @@ int main(void) {
 
 	//print the header
 	printf("Header (%zi Bytes):\n", header->content_length);
-	print_hex(header->content, header->content_length, 30);
+	print_hex(header);
 	putchar('\n');
 
 	//get data back out of the header again
@@ -75,7 +75,7 @@ int main(void) {
 	}
 
 	printf("Extracted public ephemeral key (%zi Bytes):\n", extracted_public_ephemeral_key->content_length);
-	print_hex(extracted_public_ephemeral_key->content, extracted_public_ephemeral_key->content_length, 30);
+	print_hex(extracted_public_ephemeral_key);
 	printf("Extracted message number: %u\n", extracted_message_number);
 	printf("Extracted previous message number: %u\n", extracted_previous_message_number);
 	putchar('\n');

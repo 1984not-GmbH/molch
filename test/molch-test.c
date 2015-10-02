@@ -51,7 +51,7 @@ int main(void) {
 		return status;
 	}
 	printf("Alice public identity (%zi Bytes):\n", alice_public_identity->content_length);
-	print_hex(alice_public_identity->content, alice_public_identity->content_length, 30);
+	print_hex(alice_public_identity);
 	putchar('\n');
 
 	//check user count
@@ -76,7 +76,7 @@ int main(void) {
 		return status;
 	}
 	printf("Bob public identity (%zi Bytes):\n", bob_public_identity->content_length);
-	print_hex(bob_public_identity->content, bob_public_identity->content_length, 30);
+	print_hex(bob_public_identity);
 	putchar('\n');
 
 	//check user count

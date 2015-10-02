@@ -38,7 +38,7 @@ int main(void) {
 
 	//print first chain key
 	printf("Chain key (%zi Bytes):\n", chain_key->content_length);
-	print_hex(chain_key->content, chain_key->content_length, 30);
+	print_hex(chain_key);
 	putchar('\n');
 
 	//derive message key from chain key
@@ -53,7 +53,7 @@ int main(void) {
 
 	//print message key
 	printf("Message key (%zi Bytes):\n", message_key->content_length);
-	print_hex(message_key->content, message_key->content_length, 30);
+	print_hex(message_key);
 	putchar('\n');
 
 	buffer_clear(message_key);

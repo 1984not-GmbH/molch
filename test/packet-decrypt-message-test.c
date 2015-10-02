@@ -79,7 +79,7 @@ int main(void) {
 	}
 
 	printf("Decrypted message nonce (%zi Bytes):\n", decrypted_message_nonce->content_length);
-	print_hex(decrypted_message_nonce->content, decrypted_message_nonce->content_length, 30);
+	print_hex(decrypted_message_nonce);
 	putchar('\n');
 
 	//now decrypt the message

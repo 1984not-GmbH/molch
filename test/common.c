@@ -37,11 +37,11 @@ void print_header_and_message_keystore(header_and_message_keystore *keystore) {
 	unsigned int i;
 	for (i = 0; i < keystore->length; node = node->next, i++) {
 		printf("Header key %u:\n", i);
-		print_hex(node->header_key.content, node->header_key.content_length, 30);
+		print_hex(&(node->header_key));
 		putchar('\n');
 
 		printf("Message key %u:\n", i);
-		print_hex(node->message_key.content, node->message_key.content_length, 30);
+		print_hex(&(node->message_key));
 		if (i != keystore->length - 1) { //omit last one
 			putchar('\n');
 		}
@@ -73,10 +73,10 @@ int generate_and_print_keypair(
 
 	//print keypair
 	printf("%.zi%s's public %.zi%s key (%zi Bytes):\n", name->content_length, name->content, type->content_length, type->content, public_key->content_length);
-	print_hex(public_key->content, public_key->content_length, 30);
+	print_hex(public_key);
 	putchar('\n');
 	printf("%.zi%s's private %.zi%s key (%zi Bytes):\n", name->content_length, name->content, type->content_length, type->content, private_key->content_length);
-	print_hex(private_key->content, private_key->content_length, 30);
+	print_hex(private_key);
 	putchar('\n');
 
 	return 0;

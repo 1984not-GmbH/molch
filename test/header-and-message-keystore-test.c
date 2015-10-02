@@ -63,12 +63,12 @@ int main(void) {
 
 		//print the new header key
 		printf("New Header Key No. %u:\n", i);
-		print_hex(header_key->content, header_key->content_length, 30);
+		print_hex(header_key);
 		putchar('\n');
 
 		//print the new message key
 		printf("New message key No. %u:\n", i);
-		print_hex(message_key->content, message_key->content_length, 30);
+		print_hex(message_key);
 		putchar('\n');
 
 		//add keys to the keystore

@@ -37,7 +37,7 @@ int main(void) {
 
 	//print first chain key
 	printf("Initial chain key (%i Bytes):\n", crypto_auth_BYTES);
-	print_hex(last_chain_key->content, last_chain_key->content_length, 30);
+	print_hex(last_chain_key);
 	putchar('\n');
 
 
@@ -57,7 +57,7 @@ int main(void) {
 
 		//print the derived chain key
 		printf("Chain key Nr. %i:\n", counter);
-		print_hex(next_chain_key->content, next_chain_key->content_length, 30);
+		print_hex(next_chain_key);
 		putchar('\n');
 
 		//check that chain keys are different

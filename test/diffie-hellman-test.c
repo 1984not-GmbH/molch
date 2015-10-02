@@ -73,7 +73,7 @@ int main(void) {
 
 	//print Alice's shared secret
 	printf("Alice's shared secret ECDH(A_priv, B_pub) (%zi Bytes):\n", alice_shared_secret->content_length);
-	print_hex(alice_shared_secret->content, alice_shared_secret->content_length, 30);
+	print_hex(alice_shared_secret);
 	putchar('\n');
 
 	//Diffie Hellman on Bob's side
@@ -94,7 +94,7 @@ int main(void) {
 
 	//print Bob's shared secret
 	printf("Bob's shared secret ECDH(B_priv, A_pub) (%zi Bytes):\n", bob_shared_secret->content_length);
-	print_hex(bob_shared_secret->content, bob_shared_secret->content_length, 30);
+	print_hex(bob_shared_secret);
 	putchar('\n');
 
 	//compare both shared secrets

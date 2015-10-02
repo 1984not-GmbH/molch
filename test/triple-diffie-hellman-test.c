@@ -114,7 +114,7 @@ int main(void) {
 	}
 	//print Alice's shared secret
 	printf("Alice's shared secret H(DH(A_priv,B0_pub)||DH(A0_priv,B_pub)||DH(A0_priv,B0_pub)):\n");
-	print_hex(alice_shared_secret->content, alice_shared_secret->content_length, 30);
+	print_hex(alice_shared_secret);
 	putchar('\n');
 
 	//Triple Diffie Hellman on Bob's side
@@ -136,7 +136,7 @@ int main(void) {
 	}
 	//print Bob's shared secret
 	printf("Bob's shared secret H(DH(B0_priv, A_pub)||DH(B_priv, A0_pub)||DH(B0_priv, A0_pub)):\n");
-	print_hex(bob_shared_secret->content, bob_shared_secret->content_length, 30);
+	print_hex(bob_shared_secret);
 	putchar('\n');
 
 	//compare both shared secrets

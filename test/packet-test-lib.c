@@ -44,7 +44,7 @@ int create_and_print_message(
 		return status;
 	}
 	printf("Header key (%zi Bytes):\n", header_key->content_length);
-	print_hex(header_key->content, header_key->content_length, 30);
+	print_hex(header_key);
 	putchar('\n');
 
 	//create message key
@@ -55,12 +55,12 @@ int create_and_print_message(
 		return status;
 	}
 	printf("Message key (%zi Bytes):\n", message_key->content_length);
-	print_hex(message_key->content, message_key->content_length, 30);
+	print_hex(message_key);
 	putchar('\n');
 
 	//print the header (as hex):
 	printf("Header (%zi Bytes):\n", header->content_length);
-	print_hex(header->content, header->content_length, 30);
+	print_hex(header);
 	putchar('\n');
 
 	//print the message (as string):
@@ -84,12 +84,12 @@ int create_and_print_message(
 	//print header nonce
 	buffer_t *header_nonce = buffer_create_with_existing_array(packet->content + 3, crypto_aead_chacha20poly1305_NPUBBYTES);
 	printf("Header Nonce (%zi Bytes):\n", header_nonce->content_length);
-	print_hex(header_nonce->content, header_nonce->content_length, 30);
+	print_hex(header_nonce);
 	putchar('\n');
 
 	//print encrypted packet
 	printf("Encrypted Packet (%zi Bytes):\n", packet->content_length);
-	print_hex(packet->content, packet->content_length, 30);
+	print_hex(packet);
 	putchar('\n');
 
 	return 0;

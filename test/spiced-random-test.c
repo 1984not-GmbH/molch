@@ -30,7 +30,7 @@ int main(void) {
 	printf("\"Random\" input from the user (%zi Bytes):\n", spice->content_length);
 	printf("String: %s\n", spice->content);
 	printf("Hex:\n");
-	print_hex(spice->content, spice->content_length, 30);
+	print_hex(spice);
 	putchar('\n');
 
 	//output buffer 1/2
@@ -47,7 +47,7 @@ int main(void) {
 	}
 
 	printf("Spiced random data 1 (%zi Bytes):\n", output1->content_length);
-	print_hex(output1->content, output1->content_length, 30);
+	print_hex(output1);
 	putchar('\n');
 
 	//output buffer 2/2
@@ -63,7 +63,7 @@ int main(void) {
 	}
 
 	printf("Spiced random data 2 (%zi Bytes):\n", output2->content_length);
-	print_hex(output2->content, output2->content_length, 30);
+	print_hex(output2);
 	putchar('\n');
 
 	//compare the two (mustn't be identical!)
