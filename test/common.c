@@ -65,17 +65,17 @@ int generate_and_print_keypair(
 	//generate keypair
 	int status = crypto_box_keypair(public_key->content, private_key->content);
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate %.zi%s's %.zi%s keypair. (%i)\n", name->content_length, name->content, type->content_length, type->content, status);
+		fprintf(stderr, "ERROR: Failed to generate %.*s's %.*s keypair. (%i)\n", (int)name->content_length, name->content, (int)type->content_length, type->content, status);
 		return status;
 	}
 	public_key->content_length = crypto_box_PUBLICKEYBYTES;
 	private_key->content_length = crypto_box_SECRETKEYBYTES;
 
 	//print keypair
-	printf("%.zi%s's public %.zi%s key (%zi Bytes):\n", name->content_length, name->content, type->content_length, type->content, public_key->content_length);
+	printf("%.*s's public %.*s key (%zi Bytes):\n", (int)name->content_length, name->content, (int)type->content_length, type->content, public_key->content_length);
 	print_hex(public_key);
 	putchar('\n');
-	printf("%.zi%s's private %.zi%s key (%zi Bytes):\n", name->content_length, name->content, type->content_length, type->content, private_key->content_length);
+	printf("%.*s's private %.*s key (%zi Bytes):\n", (int)name->content_length, name->content, (int)type->content_length, type->content, private_key->content_length);
 	print_hex(private_key);
 	putchar('\n');
 
