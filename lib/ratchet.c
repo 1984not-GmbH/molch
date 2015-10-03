@@ -172,8 +172,8 @@ ratchet_state* ratchet_create(
  * Create message and header keys to encrypt the next sent message with.
  */
 int ratchet_next_send_keys(
-		unsigned char * const next_message_key,
-		unsigned char * const next_header_key,
+		buffer_t * const next_message_key,
+		buffer_t * const next_header_key,
 		ratchet_state *state) {
 	int status;
 	if (state->ratchet_flag) {
@@ -217,16 +217,21 @@ int ratchet_next_send_keys(
 	}
 
 	//MK = HMAC-HASH(CKs, 0x00)
-	buffer_t *next_message_key_buffer = buffer_create_with_existing_array(next_message_key, crypto_secretbox_KEYBYTES); //FIXME remove this once ratchet.c is ported over to buffer_t
 	status = derive_message_key(
-			next_message_key_buffer,
+			next_message_key,
 			&(state->send_chain_key));
 	if (status != 0) {
+		buffer_clear(next_message_key);
 		return status;
 	}
 
 	//copy the header key
-	memcpy(next_header_key, state->send_header_key.content, state->send_header_key.content_length);
+	status = buffer_clone(next_header_key, &(state->send_header_key));
+	if (status != 0) {
+		buffer_clear(next_message_key);
+		buffer_clear(next_header_key);
+		return status;
+	}
 
 	state->send_message_number++;
 
@@ -236,14 +241,22 @@ int ratchet_next_send_keys(
 	status = buffer_clone(old_chain_key, &(state->send_chain_key));
 	if (status != 0) {
 		buffer_clear(old_chain_key);
+		buffer_clear(next_header_key);
+		buffer_clear(next_message_key);
 		return status;
 	}
 	status = derive_chain_key(
 			&(state->send_chain_key),
 			old_chain_key);
+	if (status != 0) {
+		buffer_clear(old_chain_key);
+		buffer_clear(next_message_key);
+		buffer_clear(next_header_key);
+		return status;
+	}
 	buffer_clear(old_chain_key);
 
-	return status;
+	return 0;
 }
 
 /*

@@ -163,8 +163,8 @@ int main(void) {
 	buffer_t *alice_send_message_key1 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *alice_send_header_key1 = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	status = ratchet_next_send_keys(
-			alice_send_message_key1->content,
-			alice_send_header_key1->content,
+			alice_send_message_key1,
+			alice_send_header_key1,
 			alice_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Alice's first send message key. (%i)\n", status);
@@ -185,8 +185,8 @@ int main(void) {
 	buffer_t *alice_send_message_key2 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *alice_send_header_key2 = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	status = ratchet_next_send_keys(
-			alice_send_message_key2->content,
-			alice_send_header_key2->content,
+			alice_send_message_key2,
+			alice_send_header_key2,
 			alice_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Alice's second send message key. (%i)\n", status);
@@ -209,8 +209,8 @@ int main(void) {
 	buffer_t *alice_send_message_key3 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *alice_send_header_key3 = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	status = ratchet_next_send_keys(
-			alice_send_message_key3->content,
-			alice_send_header_key3->content,
+			alice_send_message_key3,
+			alice_send_header_key3,
 			alice_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Alice's third send message key. (%i)\n", status);
@@ -579,8 +579,8 @@ int main(void) {
 	buffer_t *bob_send_message_key1 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *bob_send_header_key1 = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	status = ratchet_next_send_keys(
-			bob_send_message_key1->content,
-			bob_send_header_key1->content,
+			bob_send_message_key1,
+			bob_send_header_key1,
 			bob_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Bob's first send message key. (%i)\n", status);
@@ -601,8 +601,8 @@ int main(void) {
 	buffer_t *bob_send_message_key2 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *bob_send_header_key2 = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	status = ratchet_next_send_keys(
-			bob_send_message_key2->content,
-			bob_send_header_key2->content,
+			bob_send_message_key2,
+			bob_send_header_key2,
 			bob_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Bob's second send message key. (%i)\n", status);
@@ -625,8 +625,8 @@ int main(void) {
 	buffer_t *bob_send_message_key3 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *bob_send_header_key3 = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	status = ratchet_next_send_keys(
-			bob_send_message_key3->content,
-			bob_send_header_key3->content,
+			bob_send_message_key3,
+			bob_send_header_key3,
 			bob_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Bob's third send message key. (%i)\n", status);
