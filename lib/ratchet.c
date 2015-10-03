@@ -247,15 +247,33 @@ int ratchet_next_send_keys(
 }
 
 /*
- * Get pointers to the current and next receive header key.
- * TODO: Copy them instead?
+ * Get a copy of the current and the next receive header key.
  */
-void ratchet_get_receive_header_keys(
-		const unsigned char* *current_receive_header_key,
-		const unsigned char* *next_receive_header_key,
+int ratchet_get_receive_header_keys(
+		buffer_t * const current_receive_header_key,
+		buffer_t * const next_receive_header_key,
 		ratchet_state *state) {
-	*current_receive_header_key = state->receive_header_key.content;
-	*next_receive_header_key = state->next_receive_header_key.content;
+	//check buffer sizes
+	if ((current_receive_header_key->buffer_length < crypto_aead_chacha20poly1305_KEYBYTES)
+			|| (next_receive_header_key->buffer_length < crypto_secretbox_KEYBYTES)) {
+		return -6;
+	}
+
+	int status;
+	//clone the header keys
+	status = buffer_clone(current_receive_header_key, &(state->receive_header_key));
+	if (status != 0) {
+		buffer_clear(current_receive_header_key);
+		return status;
+	}
+	status = buffer_clone(next_receive_header_key, &(state->next_receive_header_key));
+	if (status != 0) {
+		buffer_clear(current_receive_header_key);
+		buffer_clear(next_receive_header_key);
+		return status;
+	}
+
+	return 0;
 }
 
 /*

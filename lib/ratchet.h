@@ -115,13 +115,12 @@ int ratchet_next_send_keys(
 		ratchet_state *state) __attribute__((warn_unused_result));
 
 /*
- * Get pointers to the current and next receive header key.
- * TODO: Copy them instead?
+ * Get a copy of the current and the next receive header key.
  */
-void ratchet_get_receive_header_keys(
-		const unsigned char* *current_receive_header_key,
-		const unsigned char* *next_receive_header_key,
-		ratchet_state *state);
+int ratchet_get_receive_header_keys(
+		buffer_t * const current_receive_header_key,
+		buffer_t * const next_receive_header_key,
+		ratchet_state *state) __attribute__((warn_unused_result));
 
 /*
  * Set if the header is decryptable with the current (state->receive_header_key)

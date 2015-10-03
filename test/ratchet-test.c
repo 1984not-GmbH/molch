@@ -234,28 +234,39 @@ int main(void) {
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
 	//get pointers to bob's receive header keys
-	const unsigned char *bob_current_receive_header_key;
-	const unsigned char *bob_next_receive_header_key;
-	ratchet_get_receive_header_keys(
-			&bob_current_receive_header_key,
-			&bob_next_receive_header_key,
+	buffer_t *bob_current_receive_header_key = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *bob_next_receive_header_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	status = ratchet_get_receive_header_keys(
+			bob_current_receive_header_key,
+			bob_next_receive_header_key,
 			bob_state);
-	//FIXME: remove this once ported over to buffer_t
-	buffer_t *bob_current_receive_header_key_buffer = buffer_create_with_existing_array((unsigned char*)bob_current_receive_header_key, crypto_secretbox_KEYBYTES);
-	buffer_t *bob_next_receive_header_key_buffer = buffer_create_with_existing_array((unsigned char*)bob_next_receive_header_key, crypto_secretbox_KEYBYTES);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to get Bob's receive header keys. (%i)\n", status);
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(alice_send_header_key1);
+		buffer_clear(alice_send_header_key2);
+		buffer_clear(alice_send_header_key3);
+		buffer_clear(bob_current_receive_header_key);
+		buffer_clear(bob_next_receive_header_key);
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
 
 	printf("Bob's first current receive header key:\n");
-	print_hex(bob_current_receive_header_key_buffer);
+	print_hex(bob_current_receive_header_key);
 	printf("Bob's first next receive_header_key:\n");
-	print_hex(bob_next_receive_header_key_buffer);
+	print_hex(bob_next_receive_header_key);
 	putchar('\n');
 
 	//check header decryptability
 	ratchet_header_decryptability decryptable = NOT_TRIED;
-	if (buffer_compare(bob_current_receive_header_key_buffer, alice_send_header_key1) == 0) {
+	if (buffer_compare(bob_current_receive_header_key, alice_send_header_key1) == 0) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (buffer_compare(bob_next_receive_header_key_buffer, alice_send_header_key1) == 0) {
+	} else if (buffer_compare(bob_next_receive_header_key, alice_send_header_key1) == 0) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
@@ -263,6 +274,8 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to decrypt header.\n");
 	}
 	buffer_clear(alice_send_header_key1);
+	buffer_clear(bob_current_receive_header_key);
+	buffer_clear(bob_next_receive_header_key);
 
 	//now the receive end, Bob recreates the message keys
 
@@ -322,17 +335,36 @@ int main(void) {
 		return status;
 	}
 
+	status = ratchet_get_receive_header_keys(
+			bob_current_receive_header_key,
+			bob_next_receive_header_key,
+			bob_state);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to get Bob's header keys. (%i)\n", status);
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(alice_send_header_key2);
+		buffer_clear(alice_send_header_key3);
+		buffer_clear(bob_receive_key1);
+		buffer_clear(bob_current_receive_header_key);
+		buffer_clear(bob_next_receive_header_key);
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
+
 	printf("Bob's second current receive header key:\n");
-	print_hex(bob_current_receive_header_key_buffer);
+	print_hex(bob_current_receive_header_key);
 	printf("Bob's second next receive_header_key:\n");
-	print_hex(bob_next_receive_header_key_buffer);
+	print_hex(bob_next_receive_header_key);
 	putchar('\n');
 
 	//check header decryptability
-	if (buffer_compare(bob_current_receive_header_key_buffer, alice_send_header_key2) == 0) {
+	if (buffer_compare(bob_current_receive_header_key, alice_send_header_key2) == 0) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (buffer_compare(bob_next_receive_header_key_buffer, alice_send_header_key2) == 0) {
+	} else if (buffer_compare(bob_next_receive_header_key, alice_send_header_key2) == 0) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
@@ -340,6 +372,8 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to decrypt header.\n");
 	}
 	buffer_clear(alice_send_header_key2);
+	buffer_clear(bob_current_receive_header_key);
+	buffer_clear(bob_next_receive_header_key);
 
 	//set the header decryptability
 	status = ratchet_set_header_decryptability(
@@ -398,17 +432,36 @@ int main(void) {
 		return status;
 	}
 
+	status = ratchet_get_receive_header_keys(
+			bob_current_receive_header_key,
+			bob_next_receive_header_key,
+			bob_state);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to get receive header key buffers. (%i)\n", status);
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(alice_send_header_key3);
+		buffer_clear(bob_receive_key1);
+		buffer_clear(bob_receive_key2);
+		buffer_clear(bob_current_receive_header_key);
+		buffer_clear(bob_next_receive_header_key);
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
+
 	printf("Bob's third current receive header key:\n");
-	print_hex(bob_current_receive_header_key_buffer);
+	print_hex(bob_current_receive_header_key);
 	printf("Bob's third next receive_header_key:\n");
-	print_hex(bob_next_receive_header_key_buffer);
+	print_hex(bob_next_receive_header_key);
 	putchar('\n');
 
 	//check header decryptability
-	if (buffer_compare(bob_current_receive_header_key_buffer, alice_send_header_key3) == 0) {
+	if (buffer_compare(bob_current_receive_header_key, alice_send_header_key3) == 0) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (buffer_compare(bob_next_receive_header_key_buffer, alice_send_header_key3) == 0) {
+	} else if (buffer_compare(bob_next_receive_header_key, alice_send_header_key3) == 0) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
@@ -416,6 +469,8 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to decrypt header.\n");
 	}
 	buffer_clear(alice_send_header_key3);
+	buffer_clear(bob_current_receive_header_key);
+	buffer_clear(bob_next_receive_header_key);
 
 	//set the header decryptability
 	status = ratchet_set_header_decryptability(
@@ -595,27 +650,38 @@ int main(void) {
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
 	//get pointers to alice's receive header keys
-	const unsigned char *alice_current_receive_header_key;
-	const unsigned char *alice_next_receive_header_key;
-	ratchet_get_receive_header_keys(
-			&alice_current_receive_header_key,
-			&alice_next_receive_header_key,
+	buffer_t *alice_current_receive_header_key = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *alice_next_receive_header_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	status = ratchet_get_receive_header_keys(
+			alice_current_receive_header_key,
+			alice_next_receive_header_key,
 			alice_state);
-	//FIXME remove this once this is ported over to buffer_t
-	buffer_t *alice_current_receive_header_key_buffer = buffer_create_with_existing_array((unsigned char*)alice_current_receive_header_key, crypto_secretbox_KEYBYTES);
-	buffer_t *alice_next_receive_header_key_buffer = buffer_create_with_existing_array((unsigned char*)alice_next_receive_header_key, crypto_secretbox_KEYBYTES);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to get Alice' receive keys. (%i)\n", status);
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(bob_send_header_key1);
+		buffer_clear(bob_send_header_key2);
+		buffer_clear(bob_send_header_key3);
+		buffer_clear(alice_current_receive_header_key);
+		buffer_clear(alice_next_receive_header_key);
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
 
 	printf("Alice's first current receive header key:\n");
-	print_hex(alice_current_receive_header_key_buffer);
+	print_hex(alice_current_receive_header_key);
 	printf("Alice's first next receive_header_key:\n");
-	print_hex(alice_next_receive_header_key_buffer);
+	print_hex(alice_next_receive_header_key);
 	putchar('\n');
 
 	//check header decryptability
-	if (buffer_compare(alice_current_receive_header_key_buffer, bob_send_header_key1) == 0) {
+	if (buffer_compare(alice_current_receive_header_key, bob_send_header_key1) == 0) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (buffer_compare(alice_next_receive_header_key_buffer, bob_send_header_key1) == 0) {
+	} else if (buffer_compare(alice_next_receive_header_key, bob_send_header_key1) == 0) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
@@ -623,6 +689,8 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to decrypt header.\n");
 	}
 	buffer_clear(bob_send_header_key1);
+	buffer_clear(alice_current_receive_header_key);
+	buffer_clear(alice_next_receive_header_key);
 
 	//now alice receives the first, then the third message (second message skipped)
 
@@ -681,17 +749,36 @@ int main(void) {
 		return status;
 	}
 
+	status = ratchet_get_receive_header_keys(
+			alice_current_receive_header_key,
+			alice_next_receive_header_key,
+			alice_state);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to get Alice' receive header keys. (%i)\n", status);
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(bob_send_header_key2);
+		buffer_clear(bob_send_header_key3);
+		buffer_clear(alice_receive_message_key1);
+		buffer_clear(alice_current_receive_header_key);
+		buffer_clear(alice_next_receive_header_key);
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
+
 	printf("Alice's current receive header key:\n");
-	print_hex(alice_current_receive_header_key_buffer);
+	print_hex(alice_current_receive_header_key);
 	printf("Alice's next receive_header_key:\n");
-	print_hex(alice_next_receive_header_key_buffer);
+	print_hex(alice_next_receive_header_key);
 	putchar('\n');
 
 	//check header decryptability
-	if (buffer_compare(alice_current_receive_header_key_buffer, bob_send_header_key3) == 0) {
+	if (buffer_compare(alice_current_receive_header_key, bob_send_header_key3) == 0) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (buffer_compare(alice_next_receive_header_key_buffer, bob_send_header_key3) == 0) {
+	} else if (buffer_compare(alice_next_receive_header_key, bob_send_header_key3) == 0) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
@@ -699,6 +786,8 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to decrypt header.\n");
 	}
 	buffer_clear(bob_send_header_key3);
+	buffer_clear(alice_current_receive_header_key);
+	buffer_clear(alice_next_receive_header_key);
 
 	//set the header decryptability
 	status = ratchet_set_header_decryptability(
