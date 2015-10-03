@@ -25,7 +25,7 @@ include_directories(${SODIUM_INCLUDE_DIR})
 SET(libs ${libs} ${SODIUM_LIBRARY})
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -pedantic -Wall -Wextra -Werror ${SECURITY_C_FLAGS}")
-set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINKER_FLAGS} ${SECURITY_LINK_FLAGS}")
+set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${SECURITY_LINK_FLAGS}")
 
 find_program(MEMORYCHECK_COMMAND valgrind)
 set(MEMORYCHECK_COMMAND_OPTIONS --trace-children=yes --leak-check=full --error-exitcode=10)
