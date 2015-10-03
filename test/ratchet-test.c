@@ -297,8 +297,8 @@ int main(void) {
 
 	buffer_t *bob_receive_key1 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = ratchet_receive(
-			bob_receive_key1->content,
-			alice_state->our_public_ephemeral.content,
+			bob_receive_key1,
+			&(alice_state->our_public_ephemeral),
 			0, //purported message number
 			0, //purported previous message number
 			bob_state);
@@ -394,8 +394,8 @@ int main(void) {
 	//second receive message key
 	buffer_t *bob_receive_key2 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = ratchet_receive(
-			bob_receive_key2->content,
-			alice_state->our_public_ephemeral.content,
+			bob_receive_key2,
+			&(alice_state->our_public_ephemeral),
 			1, //purported message number
 			0, //purported previous message number
 			bob_state);
@@ -491,8 +491,8 @@ int main(void) {
 	//third receive message key
 	buffer_t *bob_receive_key3 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = ratchet_receive(
-			bob_receive_key3->content,
-			alice_state->our_public_ephemeral.content,
+			bob_receive_key3,
+			&(alice_state->our_public_ephemeral),
 			2, //purported message number
 			0, //purported previous message number
 			bob_state);
@@ -712,8 +712,8 @@ int main(void) {
 
 	buffer_t *alice_receive_message_key1 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = ratchet_receive(
-			alice_receive_message_key1->content,
-			bob_state->our_public_ephemeral.content,
+			alice_receive_message_key1,
+			&(bob_state->our_public_ephemeral),
 			0, //purported message number
 			0, //purported previous message number
 			alice_state);
@@ -808,8 +808,8 @@ int main(void) {
 	//third received message key (second message skipped)
 	buffer_t *alice_receive_message_key3 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = ratchet_receive(
-			alice_receive_message_key3->content,
-			bob_state->our_public_ephemeral.content,
+			alice_receive_message_key3,
+			&(bob_state->our_public_ephemeral),
 			2,
 			0,
 			alice_state);

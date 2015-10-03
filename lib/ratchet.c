@@ -459,11 +459,17 @@ int commit_skipped_header_and_message_keys(ratchet_state *state) {
  * after having verified the message.
  */
 int ratchet_receive(
-		unsigned char * const message_key,
-		const unsigned char * const their_purported_public_ephemeral,
+		buffer_t * const message_key,
+		const buffer_t * const their_purported_public_ephemeral,
 		const unsigned int purported_message_number,
 		const unsigned int purported_previous_message_number,
 		ratchet_state * const state) {
+	//check buffer sizes
+	if ((message_key->buffer_length < crypto_secretbox_KEYBYTES)
+			|| (their_purported_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)) {
+		return -6;
+	}
+
 	if (!state->received_valid) {
 		//abort because the previously received message hasn't been verified yet.
 		return -10;
@@ -483,7 +489,7 @@ int ratchet_receive(
 		//create skipped message keys and store current one
 		status = stage_skipped_header_and_message_keys(
 				state->purported_receive_chain_key.content,
-				message_key,
+				message_key->content,
 				purported_message_number,
 				state->receive_chain_key.content,
 				state);
@@ -492,7 +498,10 @@ int ratchet_receive(
 		}
 
 		//copy their purported public ephemeral (this is necessary to detect if a new chain was started later on when validating the authenticity)
-		memcpy(state->their_purported_public_ephemeral.content, their_purported_public_ephemeral, crypto_box_PUBLICKEYBYTES);
+		status = buffer_clone(&(state->their_purported_public_ephemeral), their_purported_public_ephemeral);
+		if (status != 0) {
+			return status;
+		}
 
 		state->received_valid = false; //waiting for validation
 		return 0;
@@ -504,32 +513,32 @@ int ratchet_receive(
 		//copy purported message numbers and ephemerals
 		state->purported_message_number = purported_message_number; //Np
 		state->purported_previous_message_number = purported_previous_message_number; //PNp
-		memcpy(state->their_purported_public_ephemeral.content, their_purported_public_ephemeral, crypto_box_PUBLICKEYBYTES); //DHRp
+		status = buffer_clone(&(state->their_purported_public_ephemeral), their_purported_public_ephemeral);
+		if (status != 0) {
+			return status;
+		}
 
 		//temporary storage for the purported chain key (CKp)
-		unsigned char temp_purported_chain_key[crypto_secretbox_KEYBYTES];
+		buffer_t *temp_purported_chain_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 
 		//stage message keys for previous message chain
 		status = stage_skipped_header_and_message_keys(
-				temp_purported_chain_key,
-				message_key,
+				temp_purported_chain_key->content,
+				message_key->content,
 				purported_previous_message_number,
 				state->receive_chain_key.content,
 				state);
 		if (status != 0) {
-			sodium_memzero(temp_purported_chain_key, sizeof(temp_purported_chain_key));
+			buffer_clear(temp_purported_chain_key);
 			return status;
 		}
 
 		//HKp = NHKr
 		status = buffer_clone(&(state->purported_receive_header_key), &(state->next_receive_header_key));
 		if (status != 0) {
-			sodium_memzero(temp_purported_chain_key, sizeof(temp_purported_chain_key));
+			buffer_clear(temp_purported_chain_key);
 			return status;
 		}
-
-		//create buffers FIXME remove this once ratchet.c is ported over to buffer_t
-		buffer_t *their_purported_public_ephemeral_buffer = buffer_create_with_existing_array((unsigned char*)their_purported_public_ephemeral, crypto_box_PUBLICKEYBYTES);
 
 		//derive purported root and chain keys
 		//first: input key for hkdf (root and chain key derivation)
@@ -539,7 +548,7 @@ int ratchet_receive(
 				&(state->purported_next_receive_header_key),
 				&(state->our_private_ephemeral),
 				&(state->our_public_ephemeral),
-				their_purported_public_ephemeral_buffer,
+				their_purported_public_ephemeral,
 				&(state->root_key),
 				state->am_i_alice);
 		if (status != 0) {
@@ -548,18 +557,22 @@ int ratchet_receive(
 
 		//stage message keys for current message chain
 		status = stage_skipped_header_and_message_keys(
-				temp_purported_chain_key,
-				message_key,
+				temp_purported_chain_key->content,
+				message_key->content,
 				purported_message_number,
 				state->purported_receive_chain_key.content,
 				state);
 		if (status != 0) {
-			sodium_memzero(temp_purported_chain_key, sizeof(temp_purported_chain_key));
+			buffer_clear(temp_purported_chain_key);
 			return status;
 		}
 
 		//copy the temporary purported chain key to the state
-		memcpy(state->purported_receive_chain_key.content, temp_purported_chain_key, state->purported_receive_chain_key.content_length);
+		status = buffer_clone(&(state->purported_receive_chain_key), temp_purported_chain_key);
+		if (status != 0) {
+			buffer_clear(temp_purported_chain_key);
+			return status;
+		}
 
 		state->received_valid = false; //waiting for validation
 	}

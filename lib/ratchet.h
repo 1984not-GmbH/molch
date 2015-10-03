@@ -141,8 +141,8 @@ int ratchet_set_header_decryptability(
  * after having verified the message.
  */
 int ratchet_receive(
-		unsigned char * const message_key, //used to get the message key back
-		const unsigned char * const their_purported_public_ephemeral,
+		buffer_t * const message_key, //used to get the message key back
+		const buffer_t * const their_purported_public_ephemeral,
 		const unsigned int purported_message_number,
 		const unsigned int purported_previous_message_number,
 		ratchet_state *state) __attribute__((warn_unused_result));
