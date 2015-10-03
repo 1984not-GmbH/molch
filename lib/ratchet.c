@@ -325,16 +325,23 @@ int ratchet_set_header_decryptability(
  * of message keys that get precalculated.
  */
 int stage_skipped_header_and_message_keys(
-		unsigned char * const purported_chain_key, //CKp
-		unsigned char * const message_key, //MK
+		buffer_t * const purported_chain_key, //CKp
+		buffer_t * const message_key, //MK
 		const unsigned int purported_message_number,
-		const unsigned char * const receive_chain_key,
+		const buffer_t * const receive_chain_key,
 		ratchet_state *state) {
+	if ((purported_chain_key->buffer_length < crypto_secretbox_KEYBYTES)
+			|| (message_key->buffer_length < crypto_secretbox_KEYBYTES)
+			|| (receive_chain_key->content_length != crypto_secretbox_KEYBYTES)) {
+		buffer_clear(message_key);
+		buffer_clear(purported_chain_key);
+		return -6;
+	}
 
 	//if chain key is <none>, don't do anything
-	if (is_none(receive_chain_key, crypto_secretbox_KEYBYTES)) {
-		sodium_memzero(message_key, crypto_secretbox_KEYBYTES);
-		sodium_memzero(purported_chain_key, crypto_secretbox_KEYBYTES);
+	if (is_none(receive_chain_key->content, receive_chain_key->content_length)) {
+		buffer_clear(message_key);
+		buffer_clear(purported_chain_key);
 		return 0;
 	}
 
@@ -348,7 +355,7 @@ int stage_skipped_header_and_message_keys(
 	//copy current chain key to purported chain key
 	buffer_t *purported_current_chain_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *purported_next_chain_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	status = buffer_clone_from_raw(purported_current_chain_key, receive_chain_key, purported_current_chain_key->content_length);
+	status = buffer_clone(purported_current_chain_key, receive_chain_key);
 	if (status != 0) {
 		buffer_clear(purported_current_chain_key);
 		buffer_clear(purported_next_chain_key);
@@ -382,7 +389,7 @@ int stage_skipped_header_and_message_keys(
 				return status;
 			}
 		} else { //current message key is not staged, but copied to return it's value
-			status = buffer_clone_to_raw(message_key, message_key_buffer->content_length, message_key_buffer);
+			status = buffer_clone(message_key, message_key_buffer);
 			if (status != 0) {
 				buffer_clear(purported_next_chain_key);
 				buffer_clear(purported_current_chain_key);
@@ -409,7 +416,7 @@ int stage_skipped_header_and_message_keys(
 	}
 
 	//copy chain key to purported_receive_chain_key (this will be used in commit_skipped_header_and_message_keys)
-	status = buffer_clone_to_raw(purported_chain_key, purported_next_chain_key->content_length, purported_next_chain_key);
+	status = buffer_clone(purported_chain_key, purported_next_chain_key);
 	if (status != 0) {
 		buffer_clear(purported_current_chain_key);
 		buffer_clear(purported_next_chain_key);
@@ -488,10 +495,10 @@ int ratchet_receive(
 
 		//create skipped message keys and store current one
 		status = stage_skipped_header_and_message_keys(
-				state->purported_receive_chain_key.content,
-				message_key->content,
+				&(state->purported_receive_chain_key),
+				message_key,
 				purported_message_number,
-				state->receive_chain_key.content,
+				&(state->receive_chain_key),
 				state);
 		if (status != 0) {
 			return status;
@@ -523,10 +530,10 @@ int ratchet_receive(
 
 		//stage message keys for previous message chain
 		status = stage_skipped_header_and_message_keys(
-				temp_purported_chain_key->content,
-				message_key->content,
+				temp_purported_chain_key,
+				message_key,
 				purported_previous_message_number,
-				state->receive_chain_key.content,
+				&(state->receive_chain_key),
 				state);
 		if (status != 0) {
 			buffer_clear(temp_purported_chain_key);
@@ -557,10 +564,10 @@ int ratchet_receive(
 
 		//stage message keys for current message chain
 		status = stage_skipped_header_and_message_keys(
-				temp_purported_chain_key->content,
-				message_key->content,
+				temp_purported_chain_key,
+				message_key,
 				purported_message_number,
-				state->purported_receive_chain_key.content,
+				&(state->purported_receive_chain_key),
 				state);
 		if (status != 0) {
 			buffer_clear(temp_purported_chain_key);
