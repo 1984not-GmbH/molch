@@ -27,11 +27,15 @@ int main(void) {
 	sodium_init();
 
 	//generate keys and message
-	unsigned char header_key[crypto_aead_chacha20poly1305_KEYBYTES];
-	unsigned char message_key[crypto_secretbox_KEYBYTES];
-	unsigned char message[] = "Hello world!\n";
-	unsigned char header[] = {0x01, 0x02, 0x03, 0x04};
-	unsigned char packet[3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + sizeof(message) + sizeof(header) + crypto_secretbox_MACBYTES + 255];
+	buffer_t *header_key = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *message_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *message = buffer_create_from_string("Hello world!\n");
+	buffer_t *header = buffer_create(4, 4);
+	header->content[0] = 0x01;
+	header->content[1] = 0x02;
+	header->content[2] = 0x03;
+	header->content[3] = 0x04;
+	buffer_t *packet = buffer_create(3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255, 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255);
 	const unsigned char packet_type = 1;
 	printf("Packet type: %02x\n", packet_type);
 	const unsigned char current_protocol_version = 2;
@@ -39,119 +43,107 @@ int main(void) {
 	const unsigned char highest_supported_protocol_version = 3;
 	printf("Highest supported protocol version: %02x\n", highest_supported_protocol_version);
 	putchar('\n');
-	size_t packet_length;
 	int status = create_and_print_message(
 			packet,
-			&packet_length,
 			packet_type,
 			current_protocol_version,
 			highest_supported_protocol_version,
 			message,
-			sizeof(message),
 			message_key,
 			header,
-			sizeof(header),
 			header_key);
-	sodium_memzero(header, sizeof(header));
+	buffer_clear(header);
 	if (status != 0) {
-		sodium_memzero(message_key, sizeof(message_key));
-		sodium_memzero(message, sizeof(message));
-		sodium_memzero(header_key, sizeof(header_key));
+		buffer_clear(message_key);
+		buffer_clear(message);
+		buffer_clear(header_key);
 		return status;
 	}
 
 	//now decrypt the header
-	unsigned char decrypted_header[255];
-	unsigned char decrypted_message_nonce[crypto_secretbox_NONCEBYTES];
-	size_t decrypted_header_length;
+	buffer_t *decrypted_header = buffer_create(255, 255);
+	buffer_t *decrypted_message_nonce = buffer_create(crypto_secretbox_NONCEBYTES, crypto_secretbox_NONCEBYTES);
 	status = packet_decrypt_header(
 			packet,
-			packet_length,
 			decrypted_header,
-			&decrypted_header_length,
 			decrypted_message_nonce,
 			header_key);
-	sodium_memzero(decrypted_header, sizeof(decrypted_header));
-	sodium_memzero(header_key, sizeof(header_key));
+	buffer_clear(decrypted_header);
+	buffer_clear(header_key);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to decrypt header. (%i)\n", status);
-		sodium_memzero(message_key, sizeof(message_key));
-		sodium_memzero(message, sizeof(message));
-		sodium_memzero(decrypted_message_nonce, sizeof(decrypted_message_nonce));
+		buffer_clear(message_key);
+		buffer_clear(message);
+		buffer_clear(decrypted_message_nonce);
 		return status;
 	}
 
-	printf("Decrypted message nonce (%i Bytes):\n", crypto_secretbox_NONCEBYTES);
-	print_hex(decrypted_message_nonce, crypto_secretbox_NONCEBYTES, 30);
+	printf("Decrypted message nonce (%zi Bytes):\n", decrypted_message_nonce->content_length);
+	print_hex(decrypted_message_nonce);
 	putchar('\n');
 
 	//now decrypt the message
-	unsigned char decrypted_message[packet_length];
-	size_t decrypted_message_length;
+	buffer_t *decrypted_message = buffer_create(packet->content_length, packet->content_length);
 	status = packet_decrypt_message(
 			packet,
-			packet_length,
 			decrypted_message,
-			&decrypted_message_length,
 			decrypted_message_nonce,
 			message_key);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to decrypt message. (%i)\n", status);
-		sodium_memzero(message, sizeof(message));
-		sodium_memzero(message_key, sizeof(message_key));
-		sodium_memzero(decrypted_message_nonce, sizeof(decrypted_message_nonce));
-		sodium_memzero(decrypted_message, sizeof(decrypted_message));
+		buffer_clear(message);
+		buffer_clear(message_key);
+		buffer_clear(decrypted_message_nonce);
+		buffer_clear(decrypted_message);
 		return status;
 	}
 
 	//check the message size
-	if (decrypted_message_length != sizeof(message)) {
+	if (decrypted_message->content_length != message->content_length) {
 		fprintf(stderr, "ERROR: Decrypted message length isn't the same.\n");
-		sodium_memzero(message, sizeof(message));
-		sodium_memzero(message_key, sizeof(message_key));
-		sodium_memzero(decrypted_message_nonce, sizeof(decrypted_message_nonce));
-		sodium_memzero(decrypted_message, sizeof(decrypted_message));
+		buffer_clear(message);
+		buffer_clear(message_key);
+		buffer_clear(decrypted_message_nonce);
+		buffer_clear(decrypted_message);
 		return EXIT_FAILURE;
 	}
 	printf("Decrypted message length is the same.\n");
 
 	//compare the message
-	if (sodium_memcmp(message, decrypted_message, decrypted_message_length) != 0) {
+	if (buffer_compare(message, decrypted_message) != 0) {
 		fprintf(stderr, "ERROR: Decrypted message doesn't match!\n");
-		sodium_memzero(message, sizeof(message));
-		sodium_memzero(message_key, sizeof(message_key));
-		sodium_memzero(decrypted_message_nonce, sizeof(decrypted_message_nonce));
-		sodium_memzero(decrypted_message, sizeof(decrypted_message));
+		buffer_clear(message);
+		buffer_clear(message_key);
+		buffer_clear(decrypted_message_nonce);
+		buffer_clear(decrypted_message);
 		return EXIT_FAILURE;
 	}
-	sodium_memzero(message, sizeof(message));
-	sodium_memzero(decrypted_message, sizeof(decrypted_message));
+	buffer_clear(message);
+	buffer_clear(decrypted_message);
 	printf("Decrypted message is the same.\n\n");
 
 	//manipulate the message
-	packet[packet_length - crypto_secretbox_MACBYTES - 1] ^= 0xf0;
+	packet->content[packet->content_length - crypto_secretbox_MACBYTES - 1] ^= 0xf0;
 	printf("Manipulating message.\n");
 
 	//try to decrypt
 	status = packet_decrypt_message(
 			packet,
-			packet_length,
 			decrypted_message,
-			&decrypted_message_length,
 			decrypted_message_nonce,
 			message_key);
 	if (status == 0) { //message was decrypted although it shouldn't
 		fprintf(stderr, "ERROR: Decrypted manipulated message.\n");
-		sodium_memzero(decrypted_message, sizeof(decrypted_message));
-		sodium_memzero(message_key, sizeof(message_key));
-		sodium_memzero(decrypted_message_nonce, sizeof(decrypted_message_nonce));
+		buffer_clear(decrypted_message);
+		buffer_clear(message_key);
+		buffer_clear(decrypted_message_nonce);
 		return EXIT_FAILURE;
 	}
 	printf("Manipulation detected.\n");
-	sodium_memzero(decrypted_message, sizeof(decrypted_message));
+	buffer_clear(decrypted_message);
 
-	sodium_memzero(message_key, sizeof(message_key));
-	sodium_memzero(decrypted_message_nonce, sizeof(decrypted_message_nonce));
+	buffer_clear(message_key);
+	buffer_clear(decrypted_message_nonce);
 
 	return EXIT_SUCCESS;
 }

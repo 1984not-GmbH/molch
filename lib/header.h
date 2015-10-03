@@ -16,6 +16,8 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "buffer.h"
+
 #ifndef LIB_HEADER_H
 #define LIB_HEADER_H
 
@@ -29,18 +31,18 @@
  *   previous_message_counter(4)
  * }
  */
-void header_construct(
-		unsigned char * const header, //crypto_box_PUBLICKEYBYTES + 8, output
-		const unsigned char * const our_public_ephemeral, //crypto_box_PUBLICKEYBYTES
+int header_construct(
+		buffer_t * const header, //crypto_box_PUBLICKEYBYTES + 8, output
+		const buffer_t * const our_public_ephemeral, //crypto_box_PUBLICKEYBYTES
 		const uint32_t message_counter,
-		const uint32_t previous_message_counter);
+		const uint32_t previous_message_counter) __attribute__((warn_unused_result));
 
 /*
  * Get the content of the header.
  */
-void header_extract(
-		const unsigned char * const header, //crypto_box_PUBLICKEYBYTES + 8, input
-		unsigned char * const their_public_ephemeral, //crypto_box_PUBLICKEYBYTES
+int header_extract(
+		const buffer_t * const header, //crypto_box_PUBLICKEYBYTES + 8, input
+		buffer_t * const their_public_ephemeral, //crypto_box_PUBLICKEYBYTES, output
 		uint32_t * const message_counter,
-		uint32_t * const previous_message_counter);
+		uint32_t * const previous_message_counter) __attribute__((warn_unused_result));
 #endif

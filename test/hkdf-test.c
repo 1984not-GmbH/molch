@@ -33,14 +33,14 @@ int main(void) {
 	buffer_t *salt = buffer_create(crypto_auth_KEYBYTES, crypto_auth_KEYBYTES);
 	randombytes_buf(salt->content, salt->content_length);
 	printf("Salt (%zi Bytes):\n", salt->content_length);
-	print_hex(salt->content, salt->content_length, 30);
+	print_hex(salt);
 	putchar('\n');
 
 	//create key to derive from
 	buffer_t *input_key = buffer_create(100, 100);
 	randombytes_buf(input_key->content, input_key->content_length);
 	printf("Input key (%zu Bytes):\n", input_key->content_length);
-	print_hex(input_key->content, input_key->content_length, 30);
+	print_hex(input_key);
 	putchar('\n');
 
 	//info
@@ -56,7 +56,7 @@ int main(void) {
 	}
 
 	printf("Derived key (%zu Bytes):\n", output_key->content_length);
-	print_hex(output_key->content, output_key->content_length, 30);
+	print_hex(output_key);
 	putchar('\n');
 
 	//check for crash with 0 length output

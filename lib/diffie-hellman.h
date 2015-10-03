@@ -18,6 +18,8 @@
 
 #include <stdbool.h>
 
+#include "buffer.h"
+
 #ifndef LIB_DIFFIE_HELLMAN_H
 #define LIB_DIFFIE_HELLMAN_H
 
@@ -35,10 +37,10 @@
  * Bob:   H(ECDH(our_private_key,their_public_key)|their_public_key|our_public_key)
  */
 int diffie_hellman(
-		unsigned char * const derived_key, //needs to be crypto_generichash_BYTES long
-		const unsigned char * const our_private_key, //needs to be crypto_box_SECRETKEYBYTES long
-		const unsigned char * const our_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
-		const unsigned char * const their_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
+		buffer_t * const derived_key, //needs to be crypto_generichash_BYTES long
+		const buffer_t * const our_private_key, //needs to be crypto_box_SECRETKEYBYTES long
+		const buffer_t * const our_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
+		const buffer_t * const their_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
 		const bool am_i_alice) __attribute__((warn_unused_result));
 
 /*
@@ -58,12 +60,12 @@ int diffie_hellman(
  * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
  */
 int triple_diffie_hellman(
-		unsigned char * const derived_key,
-		const unsigned char * const our_private_identity,
-		const unsigned char * const our_public_identity,
-		const unsigned char * const our_private_ephemeral,
-		const unsigned char * const our_public_ephemeral,
-		const unsigned char * const their_public_identity,
-		const unsigned char * const their_public_ephemeral,
+		buffer_t * const derived_key,
+		const buffer_t * const our_private_identity,
+		const buffer_t * const our_public_identity,
+		const buffer_t * const our_private_ephemeral,
+		const buffer_t * const our_public_ephemeral,
+		const buffer_t * const their_public_identity,
+		const buffer_t * const their_public_ephemeral,
 		const bool am_i_alice) __attribute__((warn_unused_result));
 #endif

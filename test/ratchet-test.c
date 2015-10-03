@@ -31,60 +31,60 @@ int main(void) {
 	int status;
 
 	//creating Alice's identity keypair
-	unsigned char alice_private_identity[crypto_box_SECRETKEYBYTES];
-	unsigned char alice_public_identity[crypto_box_PUBLICKEYBYTES];
+	buffer_t *alice_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *alice_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	status = generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
-			"Alice",
-			"identity");
+			buffer_create_from_string("Alice"),
+			buffer_create_from_string("identity"));
 	if (status != 0) {
-		sodium_memzero(alice_private_identity, sizeof(alice_private_identity));
+		buffer_clear(alice_private_identity);
 		return status;
 	}
 
 	//creating Alice's ephemeral keypair
-	unsigned char alice_private_ephemeral[crypto_box_SECRETKEYBYTES];
-	unsigned char alice_public_ephemeral[crypto_box_PUBLICKEYBYTES];
+	buffer_t *alice_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *alice_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	status = generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
-			"Alice",
-			"ephemeral");
+			buffer_create_from_string("Alice"),
+			buffer_create_from_string("ephemeral"));
 	if (status != 0) {
-		sodium_memzero(alice_private_identity, sizeof(alice_private_identity));
-		sodium_memzero(alice_private_ephemeral, sizeof(alice_private_ephemeral));
+		buffer_clear(alice_private_identity);
+		buffer_clear(alice_private_ephemeral);
 		return status;
 	}
 
 	//creating Bob's identity keypair
-	unsigned char bob_private_identity[crypto_box_SECRETKEYBYTES];
-	unsigned char bob_public_identity[crypto_box_PUBLICKEYBYTES];
+	buffer_t *bob_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *bob_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	status = generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
-			"Bob",
-			"identity");
+			buffer_create_from_string("Bob"),
+			buffer_create_from_string("identity"));
 	if (status != 0) {
-		sodium_memzero(alice_private_identity, sizeof(alice_private_identity));
-		sodium_memzero(alice_private_ephemeral, sizeof(alice_private_ephemeral));
-		sodium_memzero(bob_private_identity, sizeof(bob_private_identity));
+		buffer_clear(alice_private_identity);
+		buffer_clear(alice_private_ephemeral);
+		buffer_clear(bob_private_identity);
 		return status;
 	}
 
 	//creating Bob's ephemeral keypair
-	unsigned char bob_private_ephemeral[crypto_box_SECRETKEYBYTES];
-	unsigned char bob_public_ephemeral[crypto_box_PUBLICKEYBYTES];
+	buffer_t *bob_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *bob_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	status = generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
-			"Bob",
-			"ephemeral");
+			buffer_create_from_string("Bob"),
+			buffer_create_from_string("ephemeral"));
 	if (status != 0) {
-		sodium_memzero(alice_private_identity, sizeof(alice_private_identity));
-		sodium_memzero(alice_private_ephemeral, sizeof(alice_private_ephemeral));
-		sodium_memzero(bob_private_identity, sizeof(bob_private_identity));
-		sodium_memzero(bob_private_ephemeral, sizeof(bob_private_ephemeral));
+		buffer_clear(alice_private_identity);
+		buffer_clear(alice_private_ephemeral);
+		buffer_clear(bob_private_identity);
+		buffer_clear(bob_private_ephemeral);
 		return status;
 	}
 
@@ -98,19 +98,19 @@ int main(void) {
 			alice_public_ephemeral,
 			bob_public_ephemeral,
 			true);
-	sodium_memzero(alice_private_ephemeral, sizeof(alice_private_ephemeral));
-	sodium_memzero(alice_private_identity, sizeof(alice_private_identity));
+	buffer_clear(alice_private_ephemeral);
+	buffer_clear(alice_private_identity);
 	if (alice_state == NULL) {
-		sodium_memzero(bob_private_identity, sizeof(bob_private_identity));
-		sodium_memzero(bob_private_ephemeral, sizeof(bob_private_ephemeral));
+		buffer_clear(bob_private_identity);
+		buffer_clear(bob_private_ephemeral);
 		return EXIT_FAILURE;
 	}
 	putchar('\n');
 	//print Alice's initial root and chain keys
-	printf("Alice's initial root key (%zi Bytes):\n", sizeof(alice_state->root_key));
-	print_hex(alice_state->root_key, sizeof(alice_state->root_key), 30);
-	printf("Alice's initial chain key (%zi Bytes):\n", sizeof(alice_state->send_chain_key));
-	print_hex(alice_state->receive_chain_key, sizeof(alice_state->send_chain_key), 30);
+	printf("Alice's initial root key (%zi Bytes):\n", alice_state->root_key.content_length);
+	print_hex(&(alice_state->root_key));
+	printf("Alice's initial chain key (%zi Bytes):\n", alice_state->send_chain_key.content_length);
+	print_hex(&(alice_state->send_chain_key));
 	putchar('\n');
 
 	//start new ratchet for bob
@@ -123,25 +123,22 @@ int main(void) {
 			bob_public_ephemeral,
 			alice_public_ephemeral,
 			false);
-	sodium_memzero(bob_private_identity, sizeof(bob_private_identity));
-	sodium_memzero(bob_private_ephemeral, sizeof(bob_private_ephemeral));
+	buffer_clear(bob_private_identity);
+	buffer_clear(bob_private_ephemeral);
 	if (bob_state == NULL) {
 		ratchet_destroy(alice_state);
 		return EXIT_FAILURE;
 	}
 	putchar('\n');
 	//print Bob's initial root and chain keys
-	printf("Bob's initial root key (%zi Bytes):\n", sizeof(bob_state->root_key));
-	print_hex(bob_state->root_key, sizeof(bob_state->root_key), 30);
-	printf("Bob's initial chain key (%zi Bytes):\n", sizeof(bob_state->send_chain_key));
-	print_hex(bob_state->send_chain_key, sizeof(bob_state->send_chain_key), 30);
+	printf("Bob's initial root key (%zi Bytes):\n", bob_state->root_key.content_length);
+	print_hex(&(bob_state->root_key));
+	printf("Bob's initial chain key (%zi Bytes):\n", bob_state->send_chain_key.content_length);
+	print_hex(&(bob_state->send_chain_key));
 	putchar('\n');
 
 	//compare Alice's and Bob's initial root and chain keys
-	status = sodium_memcmp(
-			alice_state->root_key,
-			bob_state->root_key,
-			sizeof(alice_state->root_key));
+	status = buffer_compare(&(alice_state->root_key), &(bob_state->root_key));
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Alice's and Bob's initial root keys aren't the same.\n");
 		ratchet_destroy(alice_state);
@@ -151,10 +148,7 @@ int main(void) {
 	printf("Alice's and Bob's initial root keys match!\n");
 
 	//initial chain key
-	status = sodium_memcmp(
-			alice_state->receive_chain_key,
-			bob_state->send_chain_key,
-			sizeof(alice_state->send_chain_key));
+	status = buffer_compare(&(alice_state->receive_chain_key), &(bob_state->send_chain_key));
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Alice's and Bob's initial chain keys aren't the same.\n");
 		ratchet_destroy(alice_state);
@@ -166,106 +160,122 @@ int main(void) {
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
 	//first, alice sends two messages
-	unsigned char alice_send_message_key1[crypto_secretbox_KEYBYTES];
-	unsigned char alice_send_header_key1[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t *alice_send_message_key1 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *alice_send_header_key1 = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	status = ratchet_next_send_keys(
 			alice_send_message_key1,
 			alice_send_header_key1,
 			alice_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Alice's first send message key. (%i)\n", status);
-		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
-		sodium_memzero(alice_send_header_key1, sizeof(alice_send_header_key1));
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_header_key1);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 	//print the send message key
 	printf("Alice Ratchet 1 send message key 1:\n");
-	print_hex(alice_send_message_key1, sizeof(alice_send_message_key1), 30);
+	print_hex(alice_send_message_key1);
 	printf("Alice Ratchet 1 send header key 1:\n");
-	print_hex(alice_send_header_key1, sizeof(alice_send_header_key1), 30);
+	print_hex(alice_send_header_key1);
 	putchar('\n');
 
 	//second message key
-	unsigned char alice_send_message_key2[crypto_secretbox_KEYBYTES];
-	unsigned char alice_send_header_key2[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t *alice_send_message_key2 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *alice_send_header_key2 = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	status = ratchet_next_send_keys(
 			alice_send_message_key2,
 			alice_send_header_key2,
 			alice_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Alice's second send message key. (%i)\n", status);
-		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
-		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
-		sodium_memzero(alice_send_header_key1, sizeof(alice_send_header_key1));
-		sodium_memzero(alice_send_header_key2, sizeof(alice_send_header_key2));
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_header_key1);
+		buffer_clear(alice_send_header_key2);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 	//print the send message key
 	printf("Alice Ratchet 1 send message key 2:\n");
-	print_hex(alice_send_message_key2, sizeof(alice_send_message_key2), 30);
+	print_hex(alice_send_message_key2);
 	printf("Alice Ratchet 1 send header key 2:\n");
-	print_hex(alice_send_header_key2, sizeof(alice_send_header_key2), 30);
+	print_hex(alice_send_header_key2);
 	putchar('\n');
 
 	//third message_key
-	unsigned char alice_send_message_key3[crypto_secretbox_KEYBYTES];
-	unsigned char alice_send_header_key3[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t *alice_send_message_key3 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *alice_send_header_key3 = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	status = ratchet_next_send_keys(
 			alice_send_message_key3,
 			alice_send_header_key3,
 			alice_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Alice's third send message key. (%i)\n", status);
-		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
-		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
-		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
-		sodium_memzero(alice_send_header_key1, sizeof(alice_send_header_key1));
-		sodium_memzero(alice_send_header_key2, sizeof(alice_send_header_key2));
-		sodium_memzero(alice_send_header_key3, sizeof(alice_send_header_key3));
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(alice_send_header_key1);
+		buffer_clear(alice_send_header_key2);
+		buffer_clear(alice_send_header_key3);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 	//print the send message key
 	printf("Alice Ratchet 1 send message key 3:\n");
-	print_hex(alice_send_message_key3, sizeof(alice_send_message_key3), 30);
+	print_hex(alice_send_message_key3);
 	printf("Alice Ratchet 1 send header key 3:\n");
-	print_hex(alice_send_header_key3, sizeof(alice_send_header_key3), 30);
+	print_hex(alice_send_header_key3);
 	putchar('\n');
 
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
 	//get pointers to bob's receive header keys
-	const unsigned char *bob_current_receive_header_key;
-	const unsigned char *bob_next_receive_header_key;
-	ratchet_get_receive_header_keys(
-			&bob_current_receive_header_key,
-			&bob_next_receive_header_key,
+	buffer_t *bob_current_receive_header_key = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *bob_next_receive_header_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	status = ratchet_get_receive_header_keys(
+			bob_current_receive_header_key,
+			bob_next_receive_header_key,
 			bob_state);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to get Bob's receive header keys. (%i)\n", status);
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(alice_send_header_key1);
+		buffer_clear(alice_send_header_key2);
+		buffer_clear(alice_send_header_key3);
+		buffer_clear(bob_current_receive_header_key);
+		buffer_clear(bob_next_receive_header_key);
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
 
 	printf("Bob's first current receive header key:\n");
-	print_hex(bob_current_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	print_hex(bob_current_receive_header_key);
 	printf("Bob's first next receive_header_key:\n");
-	print_hex(bob_next_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	print_hex(bob_next_receive_header_key);
 	putchar('\n');
 
 	//check header decryptability
 	ratchet_header_decryptability decryptable = NOT_TRIED;
-	if (sodium_memcmp(bob_current_receive_header_key, alice_send_header_key1, sizeof(alice_send_header_key1)) == 0) {
+	if (buffer_compare(bob_current_receive_header_key, alice_send_header_key1) == 0) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (sodium_memcmp(bob_next_receive_header_key, alice_send_header_key1, sizeof(alice_send_header_key1)) == 0) {
+	} else if (buffer_compare(bob_next_receive_header_key, alice_send_header_key1) == 0) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
 		decryptable = UNDECRYPTABLE;
 		fprintf(stderr, "ERROR: Failed to decrypt header.\n");
 	}
-	sodium_memzero(alice_send_header_key1, sizeof(alice_send_header_key1));
+	buffer_clear(alice_send_header_key1);
+	buffer_clear(bob_current_receive_header_key);
+	buffer_clear(bob_next_receive_header_key);
 
 	//now the receive end, Bob recreates the message keys
 
@@ -275,38 +285,38 @@ int main(void) {
 			bob_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set Bob's header decryptability. (%i)\n", status);
-		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
-		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
-		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
-		sodium_memzero(alice_send_header_key2, sizeof(alice_send_header_key2));
-		sodium_memzero(alice_send_header_key3, sizeof(alice_send_header_key3));
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(alice_send_header_key2);
+		buffer_clear(alice_send_header_key3);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 
-	unsigned char bob_receive_key1[crypto_secretbox_KEYBYTES];
+	buffer_t *bob_receive_key1 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = ratchet_receive(
 			bob_receive_key1,
-			alice_state->our_public_ephemeral,
+			&(alice_state->our_public_ephemeral),
 			0, //purported message number
 			0, //purported previous message number
 			bob_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Bob's first receive key. (%i)\n", status);
-		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
-		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
-		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
-		sodium_memzero(alice_send_header_key2, sizeof(alice_send_header_key2));
-		sodium_memzero(alice_send_header_key3, sizeof(alice_send_header_key3));
-		sodium_memzero(bob_receive_key1, sizeof(bob_receive_key1));
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(alice_send_header_key2);
+		buffer_clear(alice_send_header_key3);
+		buffer_clear(bob_receive_key1);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 	//print it out!
 	printf("Bob Ratchet 1 receive message key 1:\n");
-	print_hex(bob_receive_key1, sizeof(bob_receive_key1), 30);
+	print_hex(bob_receive_key1);
 	putchar('\n');
 
 	//confirm validity of the message key (this is normally done after successfully decrypting
@@ -314,35 +324,56 @@ int main(void) {
 	status = ratchet_set_last_message_authenticity(bob_state, true);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set authenticity state. (%i)\n", status);
-		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
-		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
-		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
-		sodium_memzero(alice_send_header_key2, sizeof(alice_send_header_key2));
-		sodium_memzero(alice_send_header_key3, sizeof(alice_send_header_key3));
-		sodium_memzero(bob_receive_key1, sizeof(bob_receive_key1));
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(alice_send_header_key2);
+		buffer_clear(alice_send_header_key3);
+		buffer_clear(bob_receive_key1);
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
+
+	status = ratchet_get_receive_header_keys(
+			bob_current_receive_header_key,
+			bob_next_receive_header_key,
+			bob_state);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to get Bob's header keys. (%i)\n", status);
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(alice_send_header_key2);
+		buffer_clear(alice_send_header_key3);
+		buffer_clear(bob_receive_key1);
+		buffer_clear(bob_current_receive_header_key);
+		buffer_clear(bob_next_receive_header_key);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 
 	printf("Bob's second current receive header key:\n");
-	print_hex(bob_current_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	print_hex(bob_current_receive_header_key);
 	printf("Bob's second next receive_header_key:\n");
-	print_hex(bob_next_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	print_hex(bob_next_receive_header_key);
 	putchar('\n');
 
 	//check header decryptability
-	if (sodium_memcmp(bob_current_receive_header_key, alice_send_header_key2, sizeof(alice_send_header_key2)) == 0) {
+	if (buffer_compare(bob_current_receive_header_key, alice_send_header_key2) == 0) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (sodium_memcmp(bob_next_receive_header_key, alice_send_header_key2, sizeof(alice_send_header_key2)) == 0) {
+	} else if (buffer_compare(bob_next_receive_header_key, alice_send_header_key2) == 0) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
 		decryptable = UNDECRYPTABLE;
 		fprintf(stderr, "ERROR: Failed to decrypt header.\n");
 	}
-	sodium_memzero(alice_send_header_key2, sizeof(alice_send_header_key2));
+	buffer_clear(alice_send_header_key2);
+	buffer_clear(bob_current_receive_header_key);
+	buffer_clear(bob_next_receive_header_key);
 
 	//set the header decryptability
 	status = ratchet_set_header_decryptability(
@@ -350,39 +381,39 @@ int main(void) {
 			bob_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set header decryptability. (%i)\n", status);
-		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
-		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
-		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
-		sodium_memzero(alice_send_header_key3, sizeof(alice_send_header_key3));
-		sodium_memzero(bob_receive_key1, sizeof(bob_receive_key1));
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(alice_send_header_key3);
+		buffer_clear(bob_receive_key1);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 
 	//second receive message key
-	unsigned char bob_receive_key2[crypto_secretbox_KEYBYTES];
+	buffer_t *bob_receive_key2 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = ratchet_receive(
 			bob_receive_key2,
-			alice_state->our_public_ephemeral,
+			&(alice_state->our_public_ephemeral),
 			1, //purported message number
 			0, //purported previous message number
 			bob_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Bob's second receive key. (%i)\n", status);
-		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
-		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
-		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
-		sodium_memzero(alice_send_header_key3, sizeof(alice_send_header_key3));
-		sodium_memzero(bob_receive_key1, sizeof(bob_receive_key1));
-		sodium_memzero(bob_receive_key2, sizeof(bob_receive_key2));
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(alice_send_header_key3);
+		buffer_clear(bob_receive_key1);
+		buffer_clear(bob_receive_key2);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 	//print it out!
 	printf("Bob Ratchet 1 receive message key 2:\n");
-	print_hex(bob_receive_key2, sizeof(bob_receive_key2), 30);
+	print_hex(bob_receive_key2);
 	putchar('\n');
 
 	//confirm validity of the message key (this is normally done after successfully decrypting
@@ -390,35 +421,56 @@ int main(void) {
 	status = ratchet_set_last_message_authenticity(bob_state, true);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set authenticity state. (%i)\n", status);
-		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
-		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
-		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
-		sodium_memzero(alice_send_header_key3, sizeof(alice_send_header_key3));
-		sodium_memzero(bob_receive_key1, sizeof(bob_receive_key1));
-		sodium_memzero(bob_receive_key2, sizeof(bob_receive_key2));
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(alice_send_header_key3);
+		buffer_clear(bob_receive_key1);
+		buffer_clear(bob_receive_key2);
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
+
+	status = ratchet_get_receive_header_keys(
+			bob_current_receive_header_key,
+			bob_next_receive_header_key,
+			bob_state);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to get receive header key buffers. (%i)\n", status);
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(alice_send_header_key3);
+		buffer_clear(bob_receive_key1);
+		buffer_clear(bob_receive_key2);
+		buffer_clear(bob_current_receive_header_key);
+		buffer_clear(bob_next_receive_header_key);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 
 	printf("Bob's third current receive header key:\n");
-	print_hex(bob_current_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	print_hex(bob_current_receive_header_key);
 	printf("Bob's third next receive_header_key:\n");
-	print_hex(bob_next_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	print_hex(bob_next_receive_header_key);
 	putchar('\n');
 
 	//check header decryptability
-	if (sodium_memcmp(bob_current_receive_header_key, alice_send_header_key3, sizeof(alice_send_header_key3)) == 0) {
+	if (buffer_compare(bob_current_receive_header_key, alice_send_header_key3) == 0) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (sodium_memcmp(bob_next_receive_header_key, alice_send_header_key3, sizeof(alice_send_header_key3)) == 0) {
+	} else if (buffer_compare(bob_next_receive_header_key, alice_send_header_key3) == 0) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
 		decryptable = UNDECRYPTABLE;
 		fprintf(stderr, "ERROR: Failed to decrypt header.\n");
 	}
-	sodium_memzero(alice_send_header_key3, sizeof(alice_send_header_key3));
+	buffer_clear(alice_send_header_key3);
+	buffer_clear(bob_current_receive_header_key);
+	buffer_clear(bob_next_receive_header_key);
 
 	//set the header decryptability
 	status = ratchet_set_header_decryptability(
@@ -426,39 +478,39 @@ int main(void) {
 			bob_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set header decryptability. (%i)\n", status);
-		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
-		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
-		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
-		sodium_memzero(bob_receive_key1, sizeof(bob_receive_key1));
-		sodium_memzero(bob_receive_key2, sizeof(bob_receive_key2));
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(bob_receive_key1);
+		buffer_clear(bob_receive_key2);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 
 	//third receive message key
-	unsigned char bob_receive_key3[crypto_secretbox_KEYBYTES];
+	buffer_t *bob_receive_key3 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = ratchet_receive(
 			bob_receive_key3,
-			alice_state->our_public_ephemeral,
+			&(alice_state->our_public_ephemeral),
 			2, //purported message number
 			0, //purported previous message number
 			bob_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Bob's third receive key. (%i)\n", status);
-		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
-		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
-		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
-		sodium_memzero(bob_receive_key1, sizeof(bob_receive_key1));
-		sodium_memzero(bob_receive_key2, sizeof(bob_receive_key2));
-		sodium_memzero(bob_receive_key3, sizeof(bob_receive_key3));
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(bob_receive_key1);
+		buffer_clear(bob_receive_key2);
+		buffer_clear(bob_receive_key3);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 	//print it out!
 	printf("Bob Ratchet 1 receive message key 3:\n");
-	print_hex(bob_receive_key3, sizeof(bob_receive_key3), 30);
+	print_hex(bob_receive_key3);
 	putchar('\n');
 
 	//confirm validity of the message key (this is normally done after successfully decrypting
@@ -466,163 +518,179 @@ int main(void) {
 	status = ratchet_set_last_message_authenticity(bob_state, true);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set authenticity state. (%i)\n", status);
-		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
-		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
-		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
-		sodium_memzero(bob_receive_key1, sizeof(bob_receive_key1));
-		sodium_memzero(bob_receive_key2, sizeof(bob_receive_key2));
-		sodium_memzero(bob_receive_key3, sizeof(bob_receive_key3));
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(bob_receive_key1);
+		buffer_clear(bob_receive_key2);
+		buffer_clear(bob_receive_key3);
 		return status;
 	}
 
 	//compare the message keys
-	if (sodium_memcmp(alice_send_message_key1, bob_receive_key1, sizeof(alice_send_message_key1)) != 0) {
+	if (buffer_compare(alice_send_message_key1, bob_receive_key1) != 0) {
 		fprintf(stderr, "ERROR: Alice's first send key and Bob's first receive key aren't the same.\n");
-		sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
-		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
-		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
-		sodium_memzero(bob_receive_key1, sizeof(bob_receive_key1));
-		sodium_memzero(bob_receive_key2, sizeof(bob_receive_key2));
-		sodium_memzero(bob_receive_key3, sizeof(bob_receive_key2));
+		buffer_clear(alice_send_message_key1);
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(bob_receive_key1);
+		buffer_clear(bob_receive_key2);
+		buffer_clear(bob_receive_key2);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return EXIT_FAILURE;
 	}
-	sodium_memzero(alice_send_message_key1, sizeof(alice_send_message_key1));
-	sodium_memzero(bob_receive_key1, sizeof(bob_receive_key1));
+	buffer_clear(alice_send_message_key1);
+	buffer_clear(bob_receive_key1);
 	printf("Alice's first send key and Bob's first receive key match.\n");
 
 	//second key
-	if (sodium_memcmp(alice_send_message_key2, bob_receive_key2, sizeof(alice_send_message_key2)) != 0) {
+	if (buffer_compare(alice_send_message_key2, bob_receive_key2) != 0) {
 		fprintf(stderr, "ERROR: Alice's second send key and Bob's second receive key aren't the same.\n");
-		sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
-		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
-		sodium_memzero(bob_receive_key2, sizeof(bob_receive_key2));
-		sodium_memzero(bob_receive_key3, sizeof(bob_receive_key2));
+		buffer_clear(alice_send_message_key2);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(alice_send_message_key3);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return EXIT_FAILURE;
 	}
-	sodium_memzero(alice_send_message_key2, sizeof(alice_send_message_key2));
-	sodium_memzero(bob_receive_key2, sizeof(bob_receive_key2));
+	buffer_clear(alice_send_message_key2);
+	buffer_clear(bob_receive_key2);
 	printf("Alice's second send key and Bob's second receive key match.\n");
 
 	//third key
-	if (sodium_memcmp(alice_send_message_key3, bob_receive_key3, sizeof(alice_send_message_key3)) != 0) {
+	if (buffer_compare(alice_send_message_key3, bob_receive_key3) != 0) {
 		fprintf(stderr, "ERROR: Alice's third send key and Bob's third receive key aren't the same.\n");
-		sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
-		sodium_memzero(bob_receive_key3, sizeof(bob_receive_key3));
+		buffer_clear(alice_send_message_key3);
+		buffer_clear(bob_receive_key3);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return EXIT_FAILURE;
 	}
-	sodium_memzero(alice_send_message_key3, sizeof(alice_send_message_key3));
-	sodium_memzero(bob_receive_key3, sizeof(bob_receive_key3));
+	buffer_clear(alice_send_message_key3);
+	buffer_clear(bob_receive_key3);
 	printf("Alice's third send key and Bob's third receive key match.\n");
 	putchar('\n');
 
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
 	//Now Bob replies with three messages
-	unsigned char bob_send_message_key1[crypto_secretbox_KEYBYTES];
-	unsigned char bob_send_header_key1[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t *bob_send_message_key1 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *bob_send_header_key1 = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	status = ratchet_next_send_keys(
 			bob_send_message_key1,
 			bob_send_header_key1,
 			bob_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Bob's first send message key. (%i)\n", status);
-		sodium_memzero(bob_send_message_key1, sizeof(bob_send_message_key1));
-		sodium_memzero(bob_send_header_key1, sizeof(bob_send_header_key1));
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_header_key1);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 	//print the send message key
 	printf("Bob Ratchet 2 send message key 1:\n");
-	print_hex(bob_send_message_key1, sizeof(bob_send_message_key1), 30);
+	print_hex(bob_send_message_key1);
 	printf("Bob Ratchet 2 send header key 1:\n");
-	print_hex(bob_send_header_key1, sizeof(bob_send_header_key1), 30);
+	print_hex(bob_send_header_key1);
 	putchar('\n');
 
 	//second message key
-	unsigned char bob_send_message_key2[crypto_secretbox_KEYBYTES];
-	unsigned char bob_send_header_key2[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t *bob_send_message_key2 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *bob_send_header_key2 = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	status = ratchet_next_send_keys(
 			bob_send_message_key2,
 			bob_send_header_key2,
 			bob_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Bob's second send message key. (%i)\n", status);
-		sodium_memzero(bob_send_message_key1, sizeof(bob_send_message_key1));
-		sodium_memzero(bob_send_message_key2, sizeof(bob_send_message_key2));
-		sodium_memzero(bob_send_header_key1, sizeof(bob_send_header_key1));
-		sodium_memzero(bob_send_header_key2, sizeof(bob_send_header_key2));
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_header_key1);
+		buffer_clear(bob_send_header_key2);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 	//print the send message key
 	printf("Bob Ratchet 2 send message key 1:\n");
-	print_hex(bob_send_message_key2, sizeof(bob_send_message_key2), 30);
+	print_hex(bob_send_message_key2);
 	printf("Bob Ratchet 2 send header key 1:\n");
-	print_hex(bob_send_header_key2, sizeof(bob_send_header_key2), 30);
+	print_hex(bob_send_header_key2);
 	putchar('\n');
 
 	//third message key
-	unsigned char bob_send_message_key3[crypto_secretbox_KEYBYTES];
-	unsigned char bob_send_header_key3[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t *bob_send_message_key3 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *bob_send_header_key3 = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	status = ratchet_next_send_keys(
 			bob_send_message_key3,
 			bob_send_header_key3,
 			bob_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Bob's third send message key. (%i)\n", status);
-		sodium_memzero(bob_send_message_key1, sizeof(bob_send_message_key1));
-		sodium_memzero(bob_send_message_key2, sizeof(bob_send_message_key2));
-		sodium_memzero(bob_send_message_key3, sizeof(bob_send_message_key3));
-		sodium_memzero(bob_send_header_key1, sizeof(bob_send_header_key1));
-		sodium_memzero(bob_send_header_key2, sizeof(bob_send_header_key2));
-		sodium_memzero(bob_send_header_key3, sizeof(bob_send_header_key3));
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(bob_send_header_key1);
+		buffer_clear(bob_send_header_key2);
+		buffer_clear(bob_send_header_key3);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 	//print the send message key
 	printf("Bob Ratchet 2 send message key 3:\n");
-	print_hex(bob_send_message_key3, sizeof(bob_send_message_key3), 30);
+	print_hex(bob_send_message_key3);
 	printf("Bob Ratchet 2 send header key 3:\n");
-	print_hex(bob_send_header_key3, sizeof(bob_send_header_key3), 30);
+	print_hex(bob_send_header_key3);
 	putchar('\n');
 
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
 	//get pointers to alice's receive header keys
-	const unsigned char *alice_current_receive_header_key;
-	const unsigned char *alice_next_receive_header_key;
-	ratchet_get_receive_header_keys(
-			&alice_current_receive_header_key,
-			&alice_next_receive_header_key,
+	buffer_t *alice_current_receive_header_key = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *alice_next_receive_header_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	status = ratchet_get_receive_header_keys(
+			alice_current_receive_header_key,
+			alice_next_receive_header_key,
 			alice_state);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to get Alice' receive keys. (%i)\n", status);
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(bob_send_header_key1);
+		buffer_clear(bob_send_header_key2);
+		buffer_clear(bob_send_header_key3);
+		buffer_clear(alice_current_receive_header_key);
+		buffer_clear(alice_next_receive_header_key);
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
 
 	printf("Alice's first current receive header key:\n");
-	print_hex(alice_current_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	print_hex(alice_current_receive_header_key);
 	printf("Alice's first next receive_header_key:\n");
-	print_hex(alice_next_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	print_hex(alice_next_receive_header_key);
 	putchar('\n');
 
 	//check header decryptability
-	if (sodium_memcmp(alice_current_receive_header_key, bob_send_header_key1, sizeof(bob_send_header_key1)) == 0) {
+	if (buffer_compare(alice_current_receive_header_key, bob_send_header_key1) == 0) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (sodium_memcmp(alice_next_receive_header_key, bob_send_header_key1, sizeof(bob_send_header_key1)) == 0) {
+	} else if (buffer_compare(alice_next_receive_header_key, bob_send_header_key1) == 0) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
 		decryptable = UNDECRYPTABLE;
 		fprintf(stderr, "ERROR: Failed to decrypt header.\n");
 	}
-	sodium_memzero(bob_send_header_key1, sizeof(bob_send_header_key1));
+	buffer_clear(bob_send_header_key1);
+	buffer_clear(alice_current_receive_header_key);
+	buffer_clear(alice_next_receive_header_key);
 
 	//now alice receives the first, then the third message (second message skipped)
 
@@ -632,73 +700,94 @@ int main(void) {
 			alice_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set header decryptability. (%i)\n", status);
-		sodium_memzero(bob_send_message_key1, sizeof(bob_send_message_key1));
-		sodium_memzero(bob_send_message_key2, sizeof(bob_send_message_key2));
-		sodium_memzero(bob_send_message_key3, sizeof(bob_send_message_key3));
-		sodium_memzero(bob_send_header_key2, sizeof(bob_send_header_key2));
-		sodium_memzero(bob_send_header_key3, sizeof(bob_send_header_key3));
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(bob_send_header_key2);
+		buffer_clear(bob_send_header_key3);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 
-	unsigned char alice_receive_message_key1[crypto_secretbox_KEYBYTES];
+	buffer_t *alice_receive_message_key1 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = ratchet_receive(
 			alice_receive_message_key1,
-			bob_state->our_public_ephemeral,
+			&(bob_state->our_public_ephemeral),
 			0, //purported message number
 			0, //purported previous message number
 			alice_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Alice's first receive key. (%i)\n", status);
-		sodium_memzero(bob_send_message_key1, sizeof(bob_send_message_key1));
-		sodium_memzero(bob_send_message_key2, sizeof(bob_send_message_key2));
-		sodium_memzero(bob_send_message_key3, sizeof(bob_send_message_key3));
-		sodium_memzero(bob_send_header_key2, sizeof(bob_send_header_key2));
-		sodium_memzero(bob_send_header_key3, sizeof(bob_send_header_key3));
-		sodium_memzero(alice_receive_message_key1, sizeof(alice_receive_message_key1));
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(bob_send_header_key2);
+		buffer_clear(bob_send_header_key3);
+		buffer_clear(alice_receive_message_key1);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 	//print it out
 	printf("Alice Ratchet 2 receive message key 1:\n");
-	print_hex(alice_receive_message_key1, sizeof(alice_receive_message_key1), 30);
+	print_hex(alice_receive_message_key1);
 	putchar('\n');
 
 	//confirm validity of the message key
 	status = ratchet_set_last_message_authenticity(alice_state, true);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set authenticity state. (%i)\n", status);
-		sodium_memzero(bob_send_message_key1, sizeof(bob_send_message_key1));
-		sodium_memzero(bob_send_message_key2, sizeof(bob_send_message_key2));
-		sodium_memzero(bob_send_message_key3, sizeof(bob_send_message_key3));
-		sodium_memzero(bob_send_header_key2, sizeof(bob_send_header_key2));
-		sodium_memzero(bob_send_header_key3, sizeof(bob_send_header_key3));
-		sodium_memzero(alice_receive_message_key1, sizeof(alice_receive_message_key1));
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(bob_send_header_key2);
+		buffer_clear(bob_send_header_key3);
+		buffer_clear(alice_receive_message_key1);
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
+
+	status = ratchet_get_receive_header_keys(
+			alice_current_receive_header_key,
+			alice_next_receive_header_key,
+			alice_state);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to get Alice' receive header keys. (%i)\n", status);
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(bob_send_header_key2);
+		buffer_clear(bob_send_header_key3);
+		buffer_clear(alice_receive_message_key1);
+		buffer_clear(alice_current_receive_header_key);
+		buffer_clear(alice_next_receive_header_key);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 
 	printf("Alice's current receive header key:\n");
-	print_hex(alice_current_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	print_hex(alice_current_receive_header_key);
 	printf("Alice's next receive_header_key:\n");
-	print_hex(alice_next_receive_header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	print_hex(alice_next_receive_header_key);
 	putchar('\n');
 
 	//check header decryptability
-	if (sodium_memcmp(alice_current_receive_header_key, bob_send_header_key3, sizeof(bob_send_header_key3)) == 0) {
+	if (buffer_compare(alice_current_receive_header_key, bob_send_header_key3) == 0) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (sodium_memcmp(alice_next_receive_header_key, bob_send_header_key3, sizeof(bob_send_header_key3)) == 0) {
+	} else if (buffer_compare(alice_next_receive_header_key, bob_send_header_key3) == 0) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
 		decryptable = UNDECRYPTABLE;
 		fprintf(stderr, "ERROR: Failed to decrypt header.\n");
 	}
-	sodium_memzero(bob_send_header_key3, sizeof(bob_send_header_key3));
+	buffer_clear(bob_send_header_key3);
+	buffer_clear(alice_current_receive_header_key);
+	buffer_clear(alice_next_receive_header_key);
 
 	//set the header decryptability
 	status = ratchet_set_header_decryptability(
@@ -706,39 +795,39 @@ int main(void) {
 			alice_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set header decryptability. (%i)\n", status);
-		sodium_memzero(bob_send_message_key1, sizeof(bob_send_message_key1));
-		sodium_memzero(bob_send_message_key2, sizeof(bob_send_message_key2));
-		sodium_memzero(bob_send_message_key3, sizeof(bob_send_message_key3));
-		sodium_memzero(bob_send_header_key2, sizeof(bob_send_header_key2));
-		sodium_memzero(alice_receive_message_key1, sizeof(alice_receive_message_key1));
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(bob_send_header_key2);
+		buffer_clear(alice_receive_message_key1);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 
 	//third received message key (second message skipped)
-	unsigned char alice_receive_message_key3[crypto_secretbox_KEYBYTES];
+	buffer_t *alice_receive_message_key3 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = ratchet_receive(
 			alice_receive_message_key3,
-			bob_state->our_public_ephemeral,
+			&(bob_state->our_public_ephemeral),
 			2,
 			0,
 			alice_state);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Alice's third receive key. (%i)\n", status);
-		sodium_memzero(bob_send_message_key1, sizeof(bob_send_message_key1));
-		sodium_memzero(bob_send_message_key2, sizeof(bob_send_message_key2));
-		sodium_memzero(bob_send_message_key3, sizeof(bob_send_message_key3));
-		sodium_memzero(bob_send_header_key2, sizeof(bob_send_header_key2));
-		sodium_memzero(alice_receive_message_key1, sizeof(alice_receive_message_key1));
-		sodium_memzero(alice_receive_message_key3, sizeof(alice_receive_message_key3));
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(bob_send_header_key2);
+		buffer_clear(alice_receive_message_key1);
+		buffer_clear(alice_receive_message_key3);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
 	}
 	//print it out
 	printf("Alice Ratchet 2 receive message key 3:\n");
-	print_hex(alice_receive_message_key3, sizeof(alice_receive_message_key3), 30);
+	print_hex(alice_receive_message_key3);
 	putchar('\n');
 
 	assert(alice_state->purported_header_and_message_keys.length == 1);
@@ -747,12 +836,12 @@ int main(void) {
 	status = ratchet_set_last_message_authenticity(alice_state, true);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set authenticity state. (%i)\n", status);
-		sodium_memzero(bob_send_message_key1, sizeof(bob_send_message_key1));
-		sodium_memzero(bob_send_message_key2, sizeof(bob_send_message_key2));
-		sodium_memzero(bob_send_message_key3, sizeof(bob_send_message_key3));
-		sodium_memzero(bob_send_header_key2, sizeof(bob_send_header_key2));
-		sodium_memzero(alice_receive_message_key1, sizeof(alice_receive_message_key1));
-		sodium_memzero(alice_receive_message_key3, sizeof(alice_receive_message_key3));
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(bob_send_header_key2);
+		buffer_clear(alice_receive_message_key1);
+		buffer_clear(alice_receive_message_key3);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return status;
@@ -762,81 +851,109 @@ int main(void) {
 	assert(alice_state->skipped_header_and_message_keys.length == 1);
 
 	//get the second receive message key from the message and header keystore
-	unsigned char alice_receive_message_key2[crypto_secretbox_KEYBYTES];
-	memcpy(alice_receive_message_key2, alice_state->skipped_header_and_message_keys.tail->message_key, sizeof(alice_receive_message_key2));
+	buffer_t *alice_receive_message_key2 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	status = buffer_clone(alice_receive_message_key2, &(alice_state->skipped_header_and_message_keys.tail->message_key));
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to get Alice's second receive message key. (%i)\n", status);
+		buffer_clear(alice_receive_message_key2);
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(bob_send_header_key2);
+		buffer_clear(alice_receive_message_key1);
+		buffer_clear(alice_receive_message_key3);
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
 	printf("Alice Ratchet 2 receive message key 2:\n");
-	print_hex(alice_receive_message_key2, sizeof(alice_receive_message_key2), 30);
+	print_hex(alice_receive_message_key2);
 	putchar('\n');
 
 	//get the second receive header key from the message and header keystore
-	unsigned char alice_receive_header_key2[crypto_aead_chacha20poly1305_KEYBYTES];
-	memcpy(alice_receive_header_key2, alice_state->skipped_header_and_message_keys.tail->header_key, sizeof(alice_receive_header_key2));
+	buffer_t *alice_receive_header_key2 = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	status = buffer_clone(alice_receive_header_key2, &(alice_state->skipped_header_and_message_keys.tail->header_key));
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to get Alice's second receive header key. (%i)\n", status);
+		buffer_clear(alice_receive_message_key2);
+		buffer_clear(alice_receive_header_key2);
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(bob_send_header_key2);
+		buffer_clear(alice_receive_message_key1);
+		buffer_clear(alice_receive_message_key3);
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		return status;
+	}
 	printf("Alice Ratchet 2 receive header key 2:\n");
-	print_hex(alice_receive_header_key2, sizeof(alice_receive_header_key2), 30);
+	print_hex(alice_receive_header_key2);
 	putchar('\n');
 
 	//compare header keys
-	if (sodium_memcmp(alice_receive_header_key2, bob_send_header_key2, 30) != 0) {
+	if (buffer_compare(alice_receive_header_key2, bob_send_header_key2) != 0) {
 		fprintf(stderr, "ERROR: Bob's second send header key and Alice's receive header key aren't the same.\n");
-		sodium_memzero(bob_send_message_key1, sizeof(bob_send_message_key1));
-		sodium_memzero(bob_send_message_key2, sizeof(bob_send_message_key2));
-		sodium_memzero(bob_send_message_key3, sizeof(bob_send_message_key3));
-		sodium_memzero(alice_receive_message_key1, sizeof(alice_receive_message_key1));
-		sodium_memzero(alice_receive_message_key2, sizeof(alice_receive_message_key2));
-		sodium_memzero(alice_receive_message_key3, sizeof(alice_receive_message_key3));
-		sodium_memzero(alice_receive_header_key2, sizeof(alice_receive_header_key2));
-		sodium_memzero(bob_send_header_key2, sizeof(bob_send_header_key2));
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(alice_receive_message_key1);
+		buffer_clear(alice_receive_message_key2);
+		buffer_clear(alice_receive_message_key3);
+		buffer_clear(alice_receive_header_key2);
+		buffer_clear(bob_send_header_key2);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return EXIT_FAILURE;
 	}
 	printf("Bob's second send header key and Alice's receive header keys match.\n");
-	sodium_memzero(alice_receive_header_key2, sizeof(alice_receive_header_key2));
-	sodium_memzero(bob_send_header_key2, sizeof(bob_send_header_key2));
+	buffer_clear(alice_receive_header_key2);
+	buffer_clear(bob_send_header_key2);
 
 	//compare the keys
-	if (sodium_memcmp(bob_send_message_key1, alice_receive_message_key1, sizeof(bob_send_message_key1)) != 0) {
+	if (buffer_compare(bob_send_message_key1, alice_receive_message_key1) != 0) {
 		fprintf(stderr, "ERROR: Bob's first send key and Alice's first receive key aren't the same.\n");
-		sodium_memzero(bob_send_message_key1, sizeof(bob_send_message_key1));
-		sodium_memzero(bob_send_message_key2, sizeof(bob_send_message_key2));
-		sodium_memzero(bob_send_message_key3, sizeof(bob_send_message_key3));
-		sodium_memzero(alice_receive_message_key1, sizeof(alice_receive_message_key1));
-		sodium_memzero(alice_receive_message_key2, sizeof(alice_receive_message_key2));
-		sodium_memzero(alice_receive_message_key3, sizeof(alice_receive_message_key3));
+		buffer_clear(bob_send_message_key1);
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(alice_receive_message_key1);
+		buffer_clear(alice_receive_message_key2);
+		buffer_clear(alice_receive_message_key3);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return EXIT_FAILURE;
 	}
-	sodium_memzero(bob_send_message_key1, sizeof(bob_send_message_key1));
-	sodium_memzero(alice_receive_message_key1, sizeof(alice_receive_message_key1));
+	buffer_clear(bob_send_message_key1);
+	buffer_clear(bob_send_message_key1);
 	printf("Bob's first send key and Alice's first receive key match.\n");
 
 	//second key
-	if (sodium_memcmp(bob_send_message_key2, alice_receive_message_key2, sizeof(bob_send_message_key2)) != 0) {
+	if (buffer_compare(bob_send_message_key2, alice_receive_message_key2) != 0) {
 		fprintf(stderr, "ERROR: Bob's second send key and Alice's second receive key aren't the same.\n");
-		sodium_memzero(bob_send_message_key2, sizeof(bob_send_message_key2));
-		sodium_memzero(bob_send_message_key3, sizeof(bob_send_message_key3));
-		sodium_memzero(alice_receive_message_key2, sizeof(alice_receive_message_key2));
-		sodium_memzero(alice_receive_message_key3, sizeof(alice_receive_message_key3));
+		buffer_clear(bob_send_message_key2);
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(alice_receive_message_key2);
+		buffer_clear(alice_receive_message_key3);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return EXIT_FAILURE;
 	}
-	sodium_memzero(bob_send_message_key2, sizeof(bob_send_message_key2));
-	sodium_memzero(alice_receive_message_key2, sizeof(alice_receive_message_key2));
+	buffer_clear(bob_send_message_key2);
+	buffer_clear(alice_receive_message_key2);
 	printf("Bob's second send key and Alice's second receive key match.\n");
 
 	//third key
-	if (sodium_memcmp(bob_send_message_key3, alice_receive_message_key3, sizeof(bob_send_message_key3)) != 0) {
+	if (buffer_compare(bob_send_message_key3, alice_receive_message_key3) != 0) {
 		fprintf(stderr, "ERROR: Bob's third send key and Alice's third receive key aren't the same.\n");
-		sodium_memzero(bob_send_message_key3, sizeof(bob_send_message_key3));
-		sodium_memzero(alice_receive_message_key3, sizeof(alice_receive_message_key3));
+		buffer_clear(bob_send_message_key3);
+		buffer_clear(alice_receive_message_key3);
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		return EXIT_FAILURE;
 	}
-	sodium_memzero(bob_send_message_key3, sizeof(bob_send_message_key3));
-	sodium_memzero(alice_receive_message_key3, sizeof(alice_receive_message_key3));
+	buffer_clear(bob_send_message_key3);
+	buffer_clear(alice_receive_message_key3);
 	printf("Bob's third send key and Alice's third receive key match.\n\n");
 
 

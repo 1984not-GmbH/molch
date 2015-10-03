@@ -72,7 +72,7 @@ int main(void) {
 	printf("Here\n");
 
 	printf("Random buffer (%zi Bytes):\n", buffer1->content_length);
-	print_hex(buffer1->content, buffer1->content_length, 30);
+	print_hex(buffer1);
 	putchar('\n');
 
 	//make second buffer (from pointer)
@@ -83,7 +83,7 @@ int main(void) {
 	buffer2->content[3] = 0xef;
 
 	printf("Second buffer (%zi Bytes):\n", buffer2->content_length);
-	print_hex(buffer2->content, buffer2->content_length, 30);
+	print_hex(buffer2);
 	putchar('\n');
 
 	//concatenate buffers
@@ -97,7 +97,7 @@ int main(void) {
 		return status;
 	}
 	assert(buffer1->content_length == 14);
-	print_hex(buffer1->content, buffer1->content_length, 30);
+	print_hex(buffer1);
 	putchar('\n');
 
 	//check if the buffers were successfully concatenated
@@ -313,7 +313,7 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 	printf("Buffer with %zi random bytes:\n", random->content_length);
-	print_hex(random->content, random->content_length, 30);
+	print_hex(random);
 
 	if (buffer_fill_random(random, 20) == 0) {
 		fprintf(stderr, "ERROR: Failed to detect too long write to buffer.\n");

@@ -16,9 +16,9 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "../lib/buffer.h"
+
 #ifndef TEST_UTILS_H
 #define TEST_UTILS_H
-char* get_file_as_string(FILE *file, size_t * const length);
-
-void print_hex(const unsigned char * const data, const size_t length, const unsigned short width);
+void print_hex(const buffer_t * const data);
 #endif

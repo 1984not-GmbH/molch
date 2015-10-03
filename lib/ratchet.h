@@ -32,27 +32,44 @@ typedef enum ratchet_header_decryptability {
 
 //struct that represents the state of a conversation
 typedef struct ratchet_state {
-	unsigned char root_key[crypto_secretbox_KEYBYTES]; //RK
-	unsigned char purported_root_key[crypto_secretbox_KEYBYTES]; //RKp
+	buffer_t root_key; //RK
+	const unsigned char root_key_storage[crypto_secretbox_KEYBYTES];
+	buffer_t purported_root_key; //RKp
+	const unsigned char purported_root_key_storage[crypto_secretbox_KEYBYTES];
 	//header keys
-	unsigned char send_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
-	unsigned char receive_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
-	unsigned char next_send_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
-	unsigned char next_receive_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
-	unsigned char purported_receive_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
-	unsigned char purported_next_receive_header_key[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t send_header_key;
+	const unsigned char send_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t receive_header_key;
+	const unsigned char receive_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t next_send_header_key;
+	const unsigned char next_send_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t next_receive_header_key;
+	const unsigned char next_receive_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t purported_receive_header_key;
+	const unsigned char purported_receive_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
+	buffer_t purported_next_receive_header_key;
+	const unsigned char purported_next_receive_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
 	//chain keys
-	unsigned char send_chain_key[crypto_secretbox_KEYBYTES]; //CKs
-	unsigned char receive_chain_key[crypto_secretbox_KEYBYTES]; //CKr
-	unsigned char purported_receive_chain_key[crypto_secretbox_KEYBYTES]; //CKp
+	buffer_t send_chain_key; //CKs
+	const unsigned char send_chain_key_storage[crypto_secretbox_KEYBYTES];
+	buffer_t receive_chain_key; //CKr
+	const unsigned char receive_chain_key_storage[crypto_secretbox_KEYBYTES];
+	buffer_t purported_receive_chain_key; //CKp
+	const unsigned char purported_receive_chain_key_storage[crypto_secretbox_KEYBYTES];
 	//identity keys
-	unsigned char our_public_identity[crypto_box_PUBLICKEYBYTES]; //DHIs
-	unsigned char their_public_identity[crypto_box_PUBLICKEYBYTES]; //DHIr
+	buffer_t our_public_identity; //DHIs
+	const unsigned char our_public_identity_storage[crypto_box_PUBLICKEYBYTES];
+	buffer_t their_public_identity; //DHIr
+	const unsigned char their_public_identity_storage[crypto_box_PUBLICKEYBYTES];
 	//ephemeral keys (ratchet keys)
-	unsigned char our_private_ephemeral[crypto_box_SECRETKEYBYTES]; //DHRs
-	unsigned char our_public_ephemeral[crypto_box_PUBLICKEYBYTES]; //DHRs
-	unsigned char their_public_ephemeral[crypto_box_PUBLICKEYBYTES]; //DHRr
-	unsigned char their_purported_public_ephemeral[crypto_box_PUBLICKEYBYTES]; //DHp
+	buffer_t our_private_ephemeral; //DHRs
+	const unsigned char our_private_ephemeral_storage[crypto_box_SECRETKEYBYTES];
+	buffer_t our_public_ephemeral; //DHRs
+	const unsigned char our_public_ephemeral_storage[crypto_box_PUBLICKEYBYTES];
+	buffer_t their_public_ephemeral; //DHRr
+	const unsigned char their_public_ephemeral_storage[crypto_box_PUBLICKEYBYTES];
+	buffer_t their_purported_public_ephemeral; //DHp
+	const unsigned char their_purported_public_ephemeral_storage[crypto_box_PUBLICKEYBYTES];
 	//message numbers
 	unsigned int send_message_number; //Ns
 	unsigned int receive_message_number; //Nr
@@ -80,31 +97,30 @@ typedef struct ratchet_state {
  * The return value is a valid ratchet state or NULL if an error occured.
  */
 ratchet_state* ratchet_create(
-		const unsigned char * const our_private_identity,
-		const unsigned char * const our_public_identity,
-		const unsigned char * const their_public_identity,
-		const unsigned char * const our_private_ephemeral,
-		const unsigned char * const our_public_ephemeral,
-		const unsigned char * const their_public_ephemeral,
+		const buffer_t * const our_private_identity,
+		const buffer_t * const our_public_identity,
+		const buffer_t * const their_public_identity,
+		const buffer_t * const our_private_ephemeral,
+		const buffer_t * const our_public_ephemeral,
+		const buffer_t * const their_public_ephemeral,
 		bool am_i_alice) __attribute__((warn_unused_result));
 
 /*
  * Create message and header keys to encrypt the next send message with.
  */
 int ratchet_next_send_keys(
-		unsigned char * const next_message_key, //crypto_secretbox_KEYBYTES
+		buffer_t * const next_message_key, //crypto_secretbox_KEYBYTES
 		                     //from the ratchet_state struct
-		unsigned char * const next_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const next_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
 		ratchet_state *state) __attribute__((warn_unused_result));
 
 /*
- * Get pointers to the current and next receive header key.
- * TODO: Copy them instead?
+ * Get a copy of the current and the next receive header key.
  */
-void ratchet_get_receive_header_keys(
-		const unsigned char* *current_receive_header_key,
-		const unsigned char* *next_receive_header_key,
-		ratchet_state *state);
+int ratchet_get_receive_header_keys(
+		buffer_t * const current_receive_header_key,
+		buffer_t * const next_receive_header_key,
+		ratchet_state *state) __attribute__((warn_unused_result));
 
 /*
  * Set if the header is decryptable with the current (state->receive_header_key)
@@ -125,8 +141,8 @@ int ratchet_set_header_decryptability(
  * after having verified the message.
  */
 int ratchet_receive(
-		unsigned char * const message_key, //used to get the message key back
-		const unsigned char * const their_purported_public_ephemeral,
+		buffer_t * const message_key, //used to get the message key back
+		const buffer_t * const their_purported_public_ephemeral,
 		const unsigned int purported_message_number,
 		const unsigned int purported_previous_message_number,
 		ratchet_state *state) __attribute__((warn_unused_result));

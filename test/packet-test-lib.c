@@ -28,49 +28,53 @@
  * and print them.
  */
 int create_and_print_message(
-		unsigned char * const packet, //needs to be 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message_length + header_length + crypto_secretbox_MACBYTES + 255
-		size_t * const packet_length, //output
+		buffer_t * const packet, //needs to be 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message_length + header_length + crypto_secretbox_MACBYTES + 255
 		const unsigned char packet_type,
 		const unsigned char current_protocol_version,
 		const unsigned char highest_supported_protocol_version,
-		const unsigned char * const message,
-		const size_t message_length,
-		unsigned char * message_key, //output, crypto_secretbox_KEYBYTES
-		const unsigned char * const header,
-		const size_t header_length,
-		unsigned char * header_key) { //output, crypto_aead_chacha20poly1305_KEYBYTES
+		const buffer_t * const message,
+		buffer_t * const message_key, //output, crypto_secretbox_KEYBYTES
+		const buffer_t * const header,
+		buffer_t * const header_key) { //output, crypto_aead_chacha20poly1305_KEYBYTES
+	int status;
 	//create header key
-	randombytes_buf(header_key, crypto_aead_chacha20poly1305_KEYBYTES);
-	printf("Header key (%i Bytes):\n", crypto_aead_chacha20poly1305_KEYBYTES);
-	print_hex(header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+	status = buffer_fill_random(header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+	if (status != 0) {
+		buffer_clear(header_key);
+		return status;
+	}
+	printf("Header key (%zi Bytes):\n", header_key->content_length);
+	print_hex(header_key);
 	putchar('\n');
 
 	//create message key
-	randombytes_buf(message_key, crypto_secretbox_KEYBYTES);
-	printf("Message key (%i Bytes):\n", crypto_secretbox_KEYBYTES);
-	print_hex(message_key, crypto_secretbox_KEYBYTES, 30);
+	status = buffer_fill_random(message_key, crypto_secretbox_KEYBYTES);
+	if (status != 0) {
+		buffer_clear(header_key);
+		buffer_clear(message_key);
+		return status;
+	}
+	printf("Message key (%zi Bytes):\n", message_key->content_length);
+	print_hex(message_key);
 	putchar('\n');
 
 	//print the header (as hex):
-	printf("Header (%zi Bytes):\n", header_length);
-	print_hex(header, header_length, 30);
+	printf("Header (%zi Bytes):\n", header->content_length);
+	print_hex(header);
 	putchar('\n');
 
 	//print the message (as string):
-	printf("Message (%zi Bytes):\n%.*s\n\n", message_length, (int)message_length, message);
+	printf("Message (%zi Bytes):\n%.*s\n\n", message->content_length, (int)message->content_length, message->content);
 
 	//now encrypt the message
-	int status = packet_encrypt(
+	status = packet_encrypt(
 			packet,
-			packet_length,
 			packet_type,
 			current_protocol_version,
 			highest_supported_protocol_version,
 			header,
-			header_length,
 			header_key,
 			message,
-			message_length,
 			message_key);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to encrypt message and header. (%i)\n", status);
@@ -78,13 +82,14 @@ int create_and_print_message(
 	}
 
 	//print header nonce
-	printf("Header Nonce (%i Bytes):\n", crypto_aead_chacha20poly1305_NPUBBYTES);
-	print_hex(packet + 3, crypto_aead_chacha20poly1305_NPUBBYTES, 30);
+	buffer_t *header_nonce = buffer_create_with_existing_array(packet->content + 3, crypto_aead_chacha20poly1305_NPUBBYTES);
+	printf("Header Nonce (%zi Bytes):\n", header_nonce->content_length);
+	print_hex(header_nonce);
 	putchar('\n');
 
 	//print encrypted packet
-	printf("Encrypted Packet (%zi Bytes):\n", *packet_length);
-	print_hex(packet, *packet_length, 30);
+	printf("Encrypted Packet (%zi Bytes):\n", packet->content_length);
+	print_hex(packet);
 	putchar('\n');
 
 	return 0;

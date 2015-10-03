@@ -1,5 +1,5 @@
 #!/bin/sh
-TESTS=("ci/test.sh" "ci/clang-static-analysis.sh")
+TESTS=("ci/test.sh" "ci/clang-static-analysis.sh" "ci/address-sanitizer.sh")
 STATUS="OK"
 
 for TEST in ${TESTS[@]}; do

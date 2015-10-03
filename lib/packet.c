@@ -49,98 +49,136 @@
  * }
  */
 int packet_encrypt(
-		unsigned char * const packet, //output, has to be long enough, see format above TODO: Be more specific
-		size_t * const packet_length, //length of the output
+		buffer_t * const packet, //output, has to be long enough, see format above TODO: Be more specific
 		const unsigned char packet_type,
 		const unsigned char current_protocol_version, //this can't be larger than 0xF = 15
 		const unsigned char highest_supported_protocol_version, //this can't be larger than 0xF = 15
-		const unsigned char * const header,
-		const size_t header_length,
-		const unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		const unsigned char * const message,
-		const size_t message_length,
-		const unsigned char * const message_key) { //crypto_secretbox_KEYBYTES
+		const buffer_t * const header,
+		const buffer_t * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		const buffer_t * const message,
+		const buffer_t * const message_key) { //crypto_secretbox_KEYBYTES
+	//check buffer sizes
+	if ((header_key->content_length != crypto_aead_chacha20poly1305_KEYBYTES)
+			|| (message_key->content_length != crypto_secretbox_KEYBYTES)) {
+		return -6;
+	}
+
 	//make sure that the length assumptions are correct
 	assert(crypto_onetimeauth_KEYBYTES == crypto_secretbox_KEYBYTES);
 
 	//protocol version has to be equal or less than 0xF
-	assert(current_protocol_version <= 0x0f);
-	assert(highest_supported_protocol_version <= 0x0f);
+	if ((current_protocol_version > 0x0f)
+			|| (highest_supported_protocol_version > 0x0f)) {
+		return -8;
+	}
 
 	//make sure the header length fits into one byte
-	assert(header_length <= (0xff - crypto_aead_chacha20poly1305_ABYTES - crypto_secretbox_NONCEBYTES));
+	if (header->content_length > (0xff - crypto_aead_chacha20poly1305_ABYTES - crypto_secretbox_NONCEBYTES)) {
+		return -9;
+	}
+
+	//check if the packet buffer is long enough (only roughly) FIXME correct numbers here!
+	if (packet->buffer_length < (3 + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + crypto_aead_chacha20poly1305_NPUBBYTES + message->content_length + crypto_secretbox_MACBYTES)) {
+		return -6;
+	}
 
 	//put packet type and protocol version into the packet
-	packet[0] = packet_type;
-	packet[1] = 0xf0 & (current_protocol_version << 4); //put current version into 4MSB
-	packet[1] |= (0x0f & highest_supported_protocol_version); //put highest version into 4LSB
-	packet[2] = header_length + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES; //header length with authenticator and message nonce
+	packet->content[0] = packet_type;
+	packet->content[1] = 0xf0 & (current_protocol_version << 4); //put current version into 4MSB
+	packet->content[1] |= (0x0f & highest_supported_protocol_version); //put highest version into 4LSB
+	packet->content[2] = header->content_length + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES; //header length with authenticator and message nonce
 
+	int status;
 	//create the header nonce
-	unsigned char * const header_nonce = packet + 3;
-	randombytes_buf(header_nonce, crypto_aead_chacha20poly1305_NPUBBYTES);
+	buffer_t *header_nonce = buffer_create_with_existing_array(packet->content + 3, crypto_aead_chacha20poly1305_NPUBBYTES);
+	status = buffer_fill_random(header_nonce, header_nonce->buffer_length);
+	if (status != 0) {
+		return status;
+	}
 
 	//create buffer for the encrypted part of the header
-	unsigned char header_buffer[header_length + crypto_secretbox_NONCEBYTES];
+	buffer_t *header_buffer = buffer_create(header->content_length + crypto_secretbox_NONCEBYTES, header->content_length + crypto_secretbox_NONCEBYTES);
 	//copy header
-	memcpy(header_buffer, header, header_length);
+	status = buffer_copy(header_buffer, 0, header, 0, header->content_length);
+	if (status != 0) {
+		buffer_clear(header_buffer);
+		return status;
+	}
 	//create message nonce
-	unsigned char * const message_nonce = header_buffer + header_length;
-	randombytes_buf(message_nonce, crypto_secretbox_NONCEBYTES);
+	buffer_t *message_nonce = buffer_create_with_existing_array(header_buffer->content + header->content_length, crypto_secretbox_NONCEBYTES);
+	status = buffer_fill_random(message_nonce, message_nonce->buffer_length);
+	if (status != 0) {
+		buffer_clear(header_buffer);
+		return status;
+	}
+
+	//buffer that points to the part of the packet where the header ciphertext will be stored
+	buffer_t *header_ciphertext = buffer_create_with_existing_array(packet->content + 3 + header_nonce->content_length, header_buffer->content_length + crypto_aead_chacha20poly1305_ABYTES);
+	//same for the additional data
+	buffer_t *additional_data = buffer_create_with_existing_array(packet->content, 3 + header_nonce->content_length);
 
 	//encrypt the header and authenticate the additional data (1st 3 Bytes)
-	int status;
 	unsigned long long header_ciphertext_length;
 	status = crypto_aead_chacha20poly1305_encrypt(
-			packet + 3 + crypto_aead_chacha20poly1305_NPUBBYTES, //ciphertext
+			header_ciphertext->content, //ciphertext
 			&header_ciphertext_length, //ciphertext length
-			header_buffer, //plaintext
-			sizeof(header_buffer), //message length
-			packet,
-			3 + crypto_aead_chacha20poly1305_NPUBBYTES,
+			header_buffer->content, //plaintext
+			header_buffer->content_length, //message length
+			additional_data->content,
+			additional_data->content_length,
 			NULL,
-			header_nonce,
-			header_key);
+			header_nonce->content,
+			header_key->content);
+	assert(header_ciphertext->content_length == header_ciphertext_length);
 	if (status != 0) {
-		sodium_memzero(header_buffer, sizeof(header_buffer));
+		buffer_clear(header_buffer);
 		return status;
 	}
 
 	//make sure the header_length property in the packet is correct
-	assert((header_length + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES) == header_ciphertext_length);
+	assert((header->content_length + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES) == header_ciphertext_length);
 
 	//now encrypt the message
 
 	//calculate amount of padding (PKCS7 padding to 255 byte blocks, see RFC5652 section 6.3)
-	unsigned char padding = 255 - (message_length % 255);
+	unsigned char padding = 255 - (message->content_length % 255);
 
 	//allocate buffer for the message + padding
-	unsigned char plaintext_buffer[message_length + padding];
+	buffer_t *plaintext_buffer = buffer_create(message->content_length + padding, message->content_length + padding);
 
 	//copy message to plaintext buffer
-	memcpy(plaintext_buffer, message, message_length);
+	status = buffer_copy(plaintext_buffer, 0, message, 0, message->content_length);
+	if (status != 0) {
+		buffer_clear(plaintext_buffer);
+		buffer_clear(header_buffer);
+		return status;
+	}
+	assert(plaintext_buffer->content_length == (message->content_length + padding));
 
 	//add padding to the end of the buffer
-	memset(plaintext_buffer + message_length, padding, padding);
+	memset(plaintext_buffer->content + message->content_length, padding, padding);
 
 	//length of everything in front of the ciphertext
-	const size_t PRE_CIPHERTEXT_LENGTH = 3 + crypto_aead_chacha20poly1305_NPUBBYTES + header_ciphertext_length;
+	const size_t PRE_CIPHERTEXT_LENGTH = additional_data->content_length + header_ciphertext_length;
 
+	//buffer that points to the message ciphertext position in the packet
+	buffer_t *message_ciphertext = buffer_create_with_existing_array(packet->content + PRE_CIPHERTEXT_LENGTH, message->content_length + padding + crypto_secretbox_MACBYTES);
 	//encrypt the message
 	status = crypto_secretbox_easy(
-			packet + PRE_CIPHERTEXT_LENGTH, //ciphertext
-			plaintext_buffer, //message
-			message_length + padding, //message length
-			message_nonce,
-			message_key);
-	sodium_memzero(plaintext_buffer, sizeof(plaintext_buffer));
-	sodium_memzero(header_buffer, sizeof(header_buffer));
+			message_ciphertext->content, //ciphertext
+			plaintext_buffer->content, //message
+			plaintext_buffer->content_length, //message length
+			message_nonce->content,
+			message_key->content);
+	buffer_clear(plaintext_buffer);
+	buffer_clear(header_buffer);
 	if (status != 0) {
+		buffer_clear(packet);
 		return status;
 	}
 
 	//set length of entire encrypted message
-	*packet_length = PRE_CIPHERTEXT_LENGTH + message_length + padding + crypto_secretbox_MACBYTES;
+	packet->content_length = PRE_CIPHERTEXT_LENGTH + message->content_length + padding + crypto_secretbox_MACBYTES;
 	return 0;
 }
 
@@ -148,22 +186,24 @@ int packet_encrypt(
  * Decrypt and authenticate a packet.
  */
 int packet_decrypt(
-		const unsigned char * const packet,
-		const size_t packet_length,
+		const buffer_t * const packet,
 		unsigned char * const packet_type, //1 Byte, no array
 		unsigned char * const current_protocol_version, //1 Byte, no array
 		unsigned char * const highest_supported_protocol_version, //1 Byte, no array
-		unsigned char * const header, //As long as the packet or at most 255 bytes
-		size_t *header_length, //output
-		const unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		unsigned char * const message, //should be as long as the packet
-		size_t *message_length, //output
-		const unsigned char * const message_key) { //crypto_secretbox_KEYBYTES
+		buffer_t * const header, //output, As long as the packet or at most 255 bytes
+		const buffer_t * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const message, //output, should be as long as the packet
+		const buffer_t * const message_key) { //crypto_secretbox_KEYBYTES
+	//check the buffer sizes
+	if ((header_key->content_length != crypto_aead_chacha20poly1305_KEYBYTES)
+			|| (message_key->content_length != crypto_secretbox_KEYBYTES)) {
+		return -6;
+	}
+
 	//get the packet metadata
 	unsigned char purported_header_length;
 	int status = packet_get_metadata_without_verification(
 			packet,
-			packet_length,
 			packet_type,
 			current_protocol_version,
 			highest_supported_protocol_version,
@@ -173,28 +213,24 @@ int packet_decrypt(
 	}
 
 	//decrypt the header
-	unsigned char message_nonce[crypto_secretbox_NONCEBYTES];
+	buffer_t *message_nonce = buffer_create(crypto_secretbox_NONCEBYTES, crypto_secretbox_NONCEBYTES);
 	status = packet_decrypt_header(
 			packet,
-			packet_length,
 			header,
-			header_length,
 			message_nonce,
 			header_key);
 	if (status != 0) {
-		sodium_memzero(message_nonce, sizeof(message_nonce));
+		buffer_clear(message_nonce);
 		return status;
 	}
 
 	//decrypt the message
 	status = packet_decrypt_message(
 			packet,
-			packet_length,
 			message,
-			message_length,
 			message_nonce,
 			message_key);
-	sodium_memzero(message_nonce, sizeof(message_nonce));
+	buffer_clear(message_nonce);
 	if (status != 0) {
 		return status;
 	}
@@ -206,25 +242,24 @@ int packet_decrypt(
  * Get the metadata of a packet (without verifying it's authenticity).
  */
 int packet_get_metadata_without_verification(
-		const unsigned char * const packet,
-		const size_t packet_length,
+		const buffer_t * const packet,
 		unsigned char * const packet_type,
 		unsigned char * const current_protocol_version,
 		unsigned char * const highest_supported_protocol_version,
 		unsigned char * const header_length) { //this is the raw header length, without the authenticator
 	//check if packet_length is long enough to get the header length
-	if (packet_length < 3) {
+	if (packet->content_length < 3) {
 		return -10;
 	}
-	//check if packet is long enough
-	if (packet_length < (3 + packet[2] +  crypto_aead_chacha20poly1305_NPUBBYTES)) {
+	//check if packet is long enough to get the rest of the metadata
+	if (packet->content_length < (3 + packet->content[2] +  crypto_aead_chacha20poly1305_NPUBBYTES)) {
 		return -10;
 	}
 
-	*packet_type = packet[0];
-	*current_protocol_version = (0xf0 & packet[1]) >> 4;
-	*highest_supported_protocol_version = 0x0f & packet[1];
-	*header_length = packet[2] - crypto_aead_chacha20poly1305_ABYTES - crypto_secretbox_NONCEBYTES;
+	*packet_type = packet->content[0];
+	*current_protocol_version = (0xf0 & packet->content[1]) >> 4;
+	*highest_supported_protocol_version = 0x0f & packet->content[1];
+	*header_length = packet->content[2] - crypto_aead_chacha20poly1305_ABYTES - crypto_secretbox_NONCEBYTES;
 	return 0;
 }
 
@@ -232,18 +267,21 @@ int packet_get_metadata_without_verification(
  * Decrypt the header of a packet. (This also authenticates the metadata)
  */
 int packet_decrypt_header(
-		const unsigned char * const packet,
-		const size_t packet_length,
-		unsigned char * const header, //As long as the packet or at most 255 bytes
-		size_t * const header_length,
-		unsigned char * const message_nonce,
-		const unsigned char * const header_key) {
+		const buffer_t * const packet,
+		buffer_t * const header, //As long as the packet or at most 255 bytes
+		buffer_t * const message_nonce,
+		const buffer_t * const header_key) {
+	//check sizes of the buffers
+	if ((message_nonce->buffer_length < crypto_secretbox_NONCEBYTES)
+			|| (header_key->content_length != crypto_aead_chacha20poly1305_KEYBYTES)) {
+		return -6;
+	}
+
 	//extract the purported header length from the packet
 	unsigned char irrelevant_metadata;
 	unsigned char purported_header_length;
 	int status = packet_get_metadata_without_verification(
 			packet,
-			packet_length,
 			&irrelevant_metadata,
 			&irrelevant_metadata,
 			&irrelevant_metadata,
@@ -252,53 +290,73 @@ int packet_decrypt_header(
 		return status;
 	}
 
+	//buffer that points to different parts of the header
+	buffer_t *header_nonce = buffer_create_with_existing_array(packet->content + 3, crypto_aead_chacha20poly1305_NPUBBYTES);
+	buffer_t *additional_data = buffer_create_with_existing_array(packet->content, 3 + header_nonce->content_length);
+	buffer_t *header_ciphertext = buffer_create_with_existing_array(packet->content + additional_data->content_length, purported_header_length + crypto_secretbox_NONCEBYTES + crypto_aead_chacha20poly1305_ABYTES);
 	//encrypt the header
-	unsigned char header_buffer[purported_header_length + crypto_secretbox_NONCEBYTES];
+	buffer_t *header_buffer = buffer_create(purported_header_length + crypto_secretbox_NONCEBYTES, purported_header_length + crypto_secretbox_NONCEBYTES);
 	unsigned long long decrypted_length;
 	status = crypto_aead_chacha20poly1305_decrypt(
-			header_buffer,
+			header_buffer->content,
 			&decrypted_length,
 			NULL,
-			packet + 3 + crypto_aead_chacha20poly1305_NPUBBYTES, //ciphertext of header
-			purported_header_length + crypto_secretbox_NONCEBYTES + crypto_aead_chacha20poly1305_ABYTES, //ciphertext length
-			packet, //additional data
-			3 + crypto_aead_chacha20poly1305_NPUBBYTES, //additional data length
-			packet + 3, //nonce
-			header_key);
+			header_ciphertext->content, //ciphertext of header
+			header_ciphertext->content_length, //ciphertext length
+			additional_data->content,
+			additional_data->content_length,
+			header_nonce->content, //nonce
+			header_key->content);
 	if (status != 0) {
-		sodium_memzero(header_buffer, sizeof(header_buffer));
+		buffer_clear(header_buffer);
 		return status;
 	}
 
 	assert(purported_header_length == decrypted_length - crypto_secretbox_NONCEBYTES);
 
 	//copy the header
-	memcpy(header, header_buffer, purported_header_length);
+	status = buffer_copy(header, 0, header_buffer, 0, purported_header_length);
+	if (status != 0) {
+		buffer_clear(header_buffer);
+		buffer_clear(header);
+		return status;
+	}
 	//copy the message nonce
-	memcpy(message_nonce, header_buffer + purported_header_length, crypto_secretbox_NONCEBYTES);
+	status = buffer_copy(message_nonce, 0, header_buffer, purported_header_length, crypto_secretbox_NONCEBYTES);
+	if (status != 0) {
+		buffer_clear(header_buffer);
+		buffer_clear(header);
+		buffer_clear(message_nonce);
+	}
+	header->content_length = purported_header_length;
 
-	*header_length = purported_header_length;
-
-	sodium_memzero(header_buffer, sizeof(header_buffer));
+	buffer_clear(header_buffer);
 	return 0;
 }
 
 /*
  * Decrypt the message inside a packet.
+ * (only do this if the packet metadata is already
+ * verified)
  */
 int packet_decrypt_message(
-		const unsigned char * const packet,
-		const size_t packet_length,
-		unsigned char * const message, //This buffer should be as large as the packet
-		size_t * const message_length, //output
-		const unsigned char * const message_nonce,
-		const unsigned char * const message_key) { //crypto_secretbox_KEYBYTES
+		const buffer_t * const packet,
+		buffer_t * const message, //This buffer should be as large as the packet
+		const buffer_t * const message_nonce,
+		const buffer_t * const message_key) { //crypto_secretbox_KEYBYTES
+	//check buffer sizes
+	if ((message_nonce->content_length != crypto_secretbox_NONCEBYTES)
+			|| (message_key->content_length != crypto_secretbox_KEYBYTES)) {
+		return -6;
+	}
+	//set message length to 0
+	message->content_length = 0;
+
 	//get the header length
 	unsigned char irrelevant_metadata;
 	unsigned char purported_header_length;
 	int status = packet_get_metadata_without_verification(
 			packet,
-			packet_length,
 			&irrelevant_metadata,
 			&irrelevant_metadata,
 			&irrelevant_metadata,
@@ -308,37 +366,45 @@ int packet_decrypt_message(
 	}
 
 	//length of message and padding
-	const size_t purported_plaintext_length = packet_length - 3 - purported_header_length - crypto_aead_chacha20poly1305_NPUBBYTES - crypto_secretbox_NONCEBYTES - crypto_secretbox_MACBYTES - crypto_aead_chacha20poly1305_ABYTES;
-	if (purported_plaintext_length >= packet_length) {
+	const size_t purported_plaintext_length = packet->content_length - 3 - purported_header_length - crypto_aead_chacha20poly1305_NPUBBYTES - crypto_secretbox_NONCEBYTES - crypto_secretbox_MACBYTES - crypto_aead_chacha20poly1305_ABYTES;
+	if (purported_plaintext_length >= packet->content_length) {
 		return -10;
 	}
 
+	if (purported_plaintext_length > message->buffer_length) {
+		return -6;
+	}
+
+	//buffer pointing to the message ciphertext
+	buffer_t *message_ciphertext = buffer_create_with_existing_array(packet->content + (packet->content_length - purported_plaintext_length) - crypto_secretbox_MACBYTES, purported_plaintext_length + crypto_secretbox_MACBYTES);
+
 	//decrypt the message (padding included)
-	unsigned char plaintext[purported_plaintext_length];
+	buffer_t *plaintext = buffer_create(purported_plaintext_length, purported_plaintext_length);
 	status = crypto_secretbox_open_easy(
-			plaintext,
-			packet + (packet_length - purported_plaintext_length) - crypto_secretbox_MACBYTES,
-			purported_plaintext_length + crypto_secretbox_MACBYTES,
-			message_nonce,
-			message_key);
+			plaintext->content,
+			message_ciphertext->content,
+			message_ciphertext->content_length,
+			message_nonce->content,
+			message_key->content);
 	if (status != 0) {
-		sodium_memzero(plaintext, sizeof(plaintext));
+		buffer_clear(plaintext);
 		return status;
 	}
 
 	//get amount of padding from last byte (pkcs7)
-	const unsigned char padding = plaintext[purported_plaintext_length - 1];
+	const unsigned char padding = plaintext->content[purported_plaintext_length - 1];
 	if (padding > purported_plaintext_length) { //check if pdding is valid
-		sodium_memzero(plaintext, sizeof(plaintext));
+		buffer_clear(plaintext);
 		return -10;
 	}
 
 	//copy the message from the plaintext
-	memcpy(message, plaintext, purported_plaintext_length - padding);
+	status = buffer_copy(message, 0, plaintext, 0, purported_plaintext_length - padding);
+	buffer_clear(plaintext);
+	if (status != 0) {
+		buffer_clear(message);
+		return status;
+	}
 
-	//set the message length
-	*message_length = purported_plaintext_length - padding;
-
-	sodium_memzero(plaintext, sizeof(plaintext));
 	return 0;
 }

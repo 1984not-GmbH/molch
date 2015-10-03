@@ -23,14 +23,11 @@
  * and print them.
  */
 int create_and_print_message(
-		unsigned char * const packet, //needs to be 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_secretbox_NONCEBYTES + message_length + header_length + crypto_secretbox_MACBYTES
-		size_t * const packet_length, //output
+		buffer_t * const packet, //needs to be 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_secretbox_NONCEBYTES + message_length + header_length + crypto_secretbox_MACBYTES
 		const unsigned char packet_type,
 		const unsigned char current_protocol_version,
 		const unsigned char highest_supported_protocol_version,
-		const unsigned char * const message,
-		const size_t message_length,
-		unsigned char * message_key, //output, crypto_secretbox_KEYBYTES
-		const unsigned char * const header,
-		const size_t header_length,
-		unsigned char * header_key); //output, crypto_secretbox_KEYBYTES
+		const buffer_t * const message,
+		buffer_t * const message_key, //output, crypto_secretbox_KEYBYTES
+		const buffer_t * const header,
+		buffer_t * const header_key); //output, crypto_secretbox_KEYBYTES

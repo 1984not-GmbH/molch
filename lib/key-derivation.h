@@ -18,6 +18,8 @@
 
 #include <stdbool.h>
 
+#include "buffer.h"
+
 #ifndef LIB_KEY_DERIVATION_H
 #define LIB_KEY_DERIVATION_H
 
@@ -30,8 +32,8 @@
  * (previous chain key as key, 0x01 as message)
  */
 int derive_chain_key(
-		unsigned char * const new_chain_key,
-		const unsigned char * const previous_chain_key) __attribute__((warn_unused_result));
+		buffer_t * const new_chain_key,
+		const buffer_t * const previous_chain_key) __attribute__((warn_unused_result));
 
 /*
  * Derive a message key from a chain key.
@@ -42,8 +44,8 @@ int derive_chain_key(
  * (chain_key as key, 0x00 as message)
  */
 int derive_message_key(
-		unsigned char * const message_key,
-		const unsigned char * const chain_key) __attribute__((warn_unused_result));
+		buffer_t * const message_key,
+		const buffer_t * const chain_key) __attribute__((warn_unused_result));
 
 /*
  * Derive a root, header and initial chain key for a new ratchet.
@@ -51,13 +53,13 @@ int derive_message_key(
  * RK, CK, HK = HKDF( RK, DH(DHRr, DHRs) )
  */
 int derive_root_chain_and_header_keys(
-		unsigned char * const root_key, //crypto_secretbox_KEYBYTES
-		unsigned char * const chain_key, //crypto_secretbox_KEYBYTES
-		unsigned char * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		const unsigned char * const our_private_ephemeral,
-		const unsigned char * const our_public_ephemeral,
-		const unsigned char * const their_public_ephemeral,
-		const unsigned char * const previous_root_key,
+		buffer_t * const root_key, //crypto_secretbox_KEYBYTES
+		buffer_t * const chain_key, //crypto_secretbox_KEYBYTES
+		buffer_t * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		const buffer_t * const our_private_ephemeral,
+		const buffer_t * const our_public_ephemeral,
+		const buffer_t * const their_public_ephemeral,
+		const buffer_t * const previous_root_key,
 		bool am_i_alice) __attribute__((warn_unused_result));
 
 /*
@@ -66,19 +68,19 @@ int derive_root_chain_and_header_keys(
  * RK, CKs/r, HKs/r = HKDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
  */
 int derive_initial_root_chain_and_header_keys(
-		unsigned char * const root_key, //crypto_secretbox_KEYBYTES
-		unsigned char * const send_chain_key, //crypto_secretbox_KEYBYTES
-		unsigned char * const receive_chain_key, //crypto_secretbox_KEYBYTES
-		unsigned char * const send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		unsigned char * const receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		unsigned char * const next_send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		unsigned char * const next_receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		const unsigned char * const our_private_identity,
-		const unsigned char * const our_public_identity,
-		const unsigned char * const their_public_identity,
-		const unsigned char * const our_private_ephemeral,
-		const unsigned char * const our_public_ephemeral,
-		const unsigned char * const their_public_ephemeral,
+		buffer_t * const root_key, //crypto_secretbox_KEYBYTES
+		buffer_t * const send_chain_key, //crypto_secretbox_KEYBYTES
+		buffer_t * const receive_chain_key, //crypto_secretbox_KEYBYTES
+		buffer_t * const send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const next_send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const next_receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		const buffer_t * const our_private_identity,
+		const buffer_t * const our_public_identity,
+		const buffer_t * const their_public_identity,
+		const buffer_t * const our_private_ephemeral,
+		const buffer_t * const our_public_ephemeral,
+		const buffer_t * const their_public_ephemeral,
 		bool am_i_alice) __attribute__((warn_unused_result));
 
 #endif

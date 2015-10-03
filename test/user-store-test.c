@@ -73,10 +73,10 @@ int main(void) {
 	buffer_t *alice_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	buffer_t *alice_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	status = generate_and_print_keypair(
-			alice_public_identity->content,
-			alice_private_identity->content,
-			"Alice",
-			"identity");
+			alice_public_identity,
+			alice_private_identity,
+			buffer_create_from_string("Alice"),
+			buffer_create_from_string("identity"));
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Alice's identity keypair.\n");
 		buffer_clear(alice_private_identity);
@@ -99,10 +99,10 @@ int main(void) {
 	buffer_t *bob_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	buffer_t *bob_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	status = generate_and_print_keypair(
-			bob_public_identity->content,
-			bob_private_identity->content,
-			"Bob",
-			"identity");
+			bob_public_identity,
+			bob_private_identity,
+			buffer_create_from_string("Bob"),
+			buffer_create_from_string("identity"));
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Bob's identity keypair.\n");
 		buffer_clear(alice_private_identity);
@@ -129,10 +129,10 @@ int main(void) {
 	buffer_t *charlie_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	buffer_t *charlie_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	status = generate_and_print_keypair(
-			charlie_public_identity->content,
-			charlie_private_identity->content,
-			"Charlie",
-			"identity");
+			charlie_public_identity,
+			charlie_private_identity,
+			buffer_create_from_string("Charlie"),
+			buffer_create_from_string("identity"));
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Charlie's identity keypair.\n");
 		buffer_clear(alice_private_identity);

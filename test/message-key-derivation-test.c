@@ -26,33 +26,36 @@
 int main(void) {
 	sodium_init();
 
+	int status;
 	//create random chain key
-	unsigned char chain_key[crypto_auth_BYTES];
-	randombytes_buf(chain_key, crypto_auth_BYTES);
+	buffer_t *chain_key = buffer_create(crypto_auth_BYTES, crypto_auth_BYTES);
+	status = buffer_fill_random(chain_key, chain_key->buffer_length);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to create chain key. (%i)\n", status);
+		buffer_clear(chain_key);
+		return status;
+	}
 
 	//print first chain key
-	printf("Chain key (%i Bytes):\n", crypto_auth_BYTES);
-	print_hex(chain_key, crypto_auth_BYTES, 30);
+	printf("Chain key (%zi Bytes):\n", chain_key->content_length);
+	print_hex(chain_key);
 	putchar('\n');
 
-	int status;
-
-
 	//derive message key from chain key
-	unsigned char message_key[crypto_auth_BYTES];
+	buffer_t *message_key = buffer_create(crypto_auth_BYTES, crypto_auth_BYTES);
 	status = derive_message_key(message_key, chain_key);
-	sodium_memzero(chain_key, crypto_auth_BYTES);
+	buffer_clear(chain_key);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to derive message key. (%i)\n", status);
-		sodium_memzero(message_key, crypto_auth_BYTES);
+		buffer_clear(message_key);
 		return status;
 	}
 
 	//print message key
-	printf("Message key (%i Bytes):\n", crypto_auth_BYTES);
-	print_hex(message_key, crypto_auth_BYTES, 30);
+	printf("Message key (%zi Bytes):\n", message_key->content_length);
+	print_hex(message_key);
 	putchar('\n');
 
-	sodium_memzero(message_key, crypto_auth_BYTES);
+	buffer_clear(message_key);
 	return EXIT_SUCCESS;
 }

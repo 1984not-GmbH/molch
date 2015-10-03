@@ -21,63 +21,28 @@
 
 #include "utils.h"
 
-char* get_file_as_string(FILE *file, size_t * const length) {
-	char* line = malloc(100);
-	if (line == NULL) {
-		return NULL;
-	}
-	char* line_pointer = line;
-	size_t lenmax = 100;
-	size_t len = lenmax;
-	int c;
-
-	while(1) {
-		c = fgetc(file);
-		if(c == EOF)
-			break;
-
-		if(--len == 0) {
-			len = lenmax;
-			char* line_new = realloc(line_pointer, lenmax *= 2);
-			if (line_new == NULL) {
-				return NULL;
-			}
-
-			line = line_new + (line - line_pointer);
-			line_pointer = line_new;
-		}
-
-		*line++ = c;
-	}
-	*line = '\0';
-	*length = line - line_pointer; //excluding the closing '\0'
-
-	return line_pointer;
-}
-
-void print_hex(const unsigned char * const data, const size_t length, unsigned short width) {
+void print_hex(const buffer_t * const data) {
+	static const int WIDTH = 30;
 	//buffer for hex string
-	unsigned char hex[2 * length + 1];
+	buffer_t *hex = buffer_create(2 * data->content_length + 1, 2 * data->content_length + 1);
 
-	if (sodium_bin2hex((char *) hex, 2 * length + 1, data, length) == NULL) {
+	if (sodium_bin2hex((char *)hex->content, 2 * data->content_length + 1, data->content, data->content_length) == NULL) {
 		fprintf(stderr, "ERROR: Failed printing hex.\n");
-		sodium_memzero(hex, sizeof(hex));
+		buffer_clear(hex);
 		return;
 	}
 
-	width += width % 2; //only allow widths that are multiples of three
-	size_t i;
-	for (i = 0; i < 2 * length; i++) {
-		if ((width != 0) && (i % width == 0) && (i != 0)) {
+	for (size_t i = 0; i < 2 * data->content_length; i++) {
+		if ((WIDTH != 0) && (i % WIDTH == 0) && (i != 0)) {
 			putchar('\n');
 		} else if ((i % 2 == 0) && (i != 0)) {
 			putchar(' ');
 		}
-		putchar(hex[i]);
+		putchar(hex->content[i]);
 	}
 
 	putchar('\n');
 
 	//cleanup
-	sodium_memzero(hex, sizeof(hex));
+	buffer_clear(hex);
 }

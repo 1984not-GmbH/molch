@@ -37,11 +37,11 @@ void print_header_and_message_keystore(header_and_message_keystore *keystore) {
 	unsigned int i;
 	for (i = 0; i < keystore->length; node = node->next, i++) {
 		printf("Header key %u:\n", i);
-		print_hex(node->header_key, crypto_aead_chacha20poly1305_KEYBYTES, 30);
+		print_hex(&(node->header_key));
 		putchar('\n');
 
 		printf("Message key %u:\n", i);
-		print_hex(node->message_key, crypto_secretbox_KEYBYTES, 30);
+		print_hex(&(node->message_key));
 		if (i != keystore->length - 1) { //omit last one
 			putchar('\n');
 		}
@@ -53,22 +53,30 @@ void print_header_and_message_keystore(header_and_message_keystore *keystore) {
  * Generates and prints a crypto_box keypair.
  */
 int generate_and_print_keypair(
-		unsigned char * const public_key, //crypto_box_PUBLICKEYBYTES
-		unsigned char * const private_key, //crypto_box_SECRETKEYBYTES
-		const char * name, //Name of the key owner (e.g. "Alice")
-		const char * type) { //type of the key (e.g. "ephemeral")
+		buffer_t * const public_key, //crypto_box_PUBLICKEYBYTES
+		buffer_t * const private_key, //crypto_box_SECRETKEYBYTES
+		const buffer_t * name, //Name of the key owner (e.g. "Alice")
+		const buffer_t * type) { //type of the key (e.g. "ephemeral")
+	//check buffer sizes
+	if ((public_key->buffer_length < crypto_box_PUBLICKEYBYTES)
+			|| (private_key->buffer_length < crypto_box_SECRETKEYBYTES)) {
+		return -6;
+	}
 	//generate keypair
-	int status = crypto_box_keypair(public_key, private_key);
+	int status = crypto_box_keypair(public_key->content, private_key->content);
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate %s's %s keypair. (%i)\n", name, type, status);
+		fprintf(stderr, "ERROR: Failed to generate %.zi%s's %.zi%s keypair. (%i)\n", name->content_length, name->content, type->content_length, type->content, status);
 		return status;
 	}
+	public_key->content_length = crypto_box_PUBLICKEYBYTES;
+	private_key->content_length = crypto_box_SECRETKEYBYTES;
+
 	//print keypair
-	printf("%s's public %s key (%i Bytes):\n", name, type, crypto_box_PUBLICKEYBYTES);
-	print_hex(public_key, crypto_box_PUBLICKEYBYTES, 30);
+	printf("%.zi%s's public %.zi%s key (%zi Bytes):\n", name->content_length, name->content, type->content_length, type->content, public_key->content_length);
+	print_hex(public_key);
 	putchar('\n');
-	printf("%s's private %s key (%i Bytes):\n", name, type, crypto_box_SECRETKEYBYTES);
-	print_hex(private_key, crypto_box_SECRETKEYBYTES, 30);
+	printf("%.zi%s's private %.zi%s key (%zi Bytes):\n", name->content_length, name->content, type->content_length, type->content, private_key->content_length);
+	print_hex(private_key);
 	putchar('\n');
 
 	return 0;
