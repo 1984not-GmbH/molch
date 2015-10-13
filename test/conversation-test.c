@@ -143,6 +143,7 @@ int main(void) {
 	print_hex(charlie_send_ciphertext1);
 	putchar('\n');
 
+	/*
 	//message 2
 	buffer_t *charlie_send_message2 = buffer_create_from_string("How are you doing?");
 	buffer_t *charlie_send_ciphertext2 = buffer_create(362 + charlie_send_message2->content_length, 0);
@@ -161,6 +162,7 @@ int main(void) {
 	printf("Ciphertext of Charlie's first message (%zi):\n", charlie_send_ciphertext2->content_length);
 	print_hex(charlie_send_ciphertext2);
 	putchar('\n');
+	*/
 
 	//--------------------------------------------------------------------------
 	//dora receives the two messages
@@ -174,7 +176,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to decrypt Charlie's first message. (%i)\n", status);
 		buffer_clear(dora_receive_message1);
 		buffer_clear(charlie_send_message1);
-		buffer_clear(charlie_send_message2);
+		//buffer_clear(charlie_send_message2);
 		return status;
 	}
 	printf("First decrypted message (%zi):\n%.*s\n", dora_receive_message1->content_length, (int)dora_receive_message1->content_length, dora_receive_message1->content);
@@ -184,13 +186,14 @@ int main(void) {
 		fprintf(stderr, "ERROR: First message didn't match.\n");
 		buffer_clear(dora_receive_message1);
 		buffer_clear(charlie_send_message1);
-		buffer_clear(charlie_send_message2);
+		//buffer_clear(charlie_send_message2);
 		return EXIT_FAILURE;
 	}
 	printf("First message matches.\n");
 	buffer_clear(dora_receive_message1);
 	buffer_clear(charlie_send_message1);
 
+	/*
 	//message 2
 	buffer_t *dora_receive_message2 = buffer_create(charlie_send_ciphertext2->content_length - 100, 0);
 	status = conversation_receive_message(
@@ -204,7 +207,7 @@ int main(void) {
 		return status;
 	}
 
-	//compare message 1
+	//compare message 2
 	if (buffer_compare(charlie_send_message2, dora_receive_message2) != 0) {
 		fprintf(stderr, "ERROR: First message didn't match.\n");
 		buffer_clear(dora_receive_message2);
@@ -214,6 +217,7 @@ int main(void) {
 	printf("First message matches.\n");
 	buffer_clear(dora_receive_message2);
 	buffer_clear(charlie_send_message2);
+	*/
 
 	return EXIT_SUCCESS;
 }
