@@ -24,7 +24,7 @@
 #include <assert.h>
 
 #include "molch.h"
-#include "buffer.h"
+#include "../buffer/buffer.h"
 #include "user-store.h"
 #include "spiced-random.h"
 

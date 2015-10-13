@@ -19,7 +19,7 @@
 #include <sodium.h>
 #include <time.h>
 
-#include "buffer.h"
+#include "../buffer/buffer.h"
 
 #ifndef LIB_HEADER_AND_MESSAGE_KEY_STORE_H
 #define LIB_HEADER_AND_MESSAGE_KEY_STORE_H

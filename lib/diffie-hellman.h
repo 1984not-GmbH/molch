@@ -18,7 +18,7 @@
 
 #include <stdbool.h>
 
-#include "buffer.h"
+#include "../buffer/buffer.h"
 
 #ifndef LIB_DIFFIE_HELLMAN_H
 #define LIB_DIFFIE_HELLMAN_H

@@ -18,7 +18,7 @@
 
 #include <stdbool.h>
 
-#include "buffer.h"
+#include "../buffer/buffer.h"
 
 #ifndef LIB_KEY_DERIVATION_H
 #define LIB_KEY_DERIVATION_H

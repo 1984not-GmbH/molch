@@ -16,7 +16,7 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "buffer.h"
+#include "../buffer/buffer.h"
 
 #ifndef LIB_HKDF_H
 #define LIB_HKDF_H

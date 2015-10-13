@@ -17,7 +17,6 @@
  */
 
 #include "spiced-random.h"
-#include "buffer.h"
 #include "hkdf.h"
 
 /*

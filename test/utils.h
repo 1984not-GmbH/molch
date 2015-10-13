@@ -16,7 +16,7 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "../lib/buffer.h"
+#include "../buffer/buffer.h"
 
 #ifndef TEST_UTILS_H
 #define TEST_UTILS_H
