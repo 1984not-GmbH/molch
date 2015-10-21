@@ -84,7 +84,7 @@ int main(void) {
 		buffer_clear(decrypted_header);
 		buffer_clear(decrypted_message_nonce);
 		buffer_clear(header_key);
-		return EXIT_SUCCESS;
+		return EXIT_FAILURE;
 	}
 	printf("Decrypted header has the same length.\n\n");
 
