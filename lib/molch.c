@@ -392,5 +392,5 @@ int molch_decrypt_message(
  * This will almost certainly be changed later on!!!!!!
  */
 void molch_destroy_conversation(molch_conversation conversation) {
-	buffer_destroy_from_heap((buffer_t*) conversation.conversation);
+	buffer_destroy_from_heap(((buffer_t*) conversation.conversation));
 }
