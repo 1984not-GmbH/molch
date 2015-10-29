@@ -29,6 +29,17 @@ Axolotl specific:
 * double linked list for storing message keys that haven't been used yet
 * Ratchet (deriving root, chain and message keys, no message decryption and authentication yet)
 
+how to get the code
+-------------------
+After cloning the repository, the git submodules have to be initialised and updated:
+```
+$ git clone https://github.com/FSMaxB/molch
+$ git submodule init
+$ git submodule update
+```
+
+You might also have to run `git submodule update` when changing branches or after pulling in new changes.
+
 how to build
 ------------
 This has been tested on GNU/Linux and Mac OS X.
