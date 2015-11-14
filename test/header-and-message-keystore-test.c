@@ -26,7 +26,9 @@
 
 
 int main(void) {
-	sodium_init();
+	if (sodium_init() == -1) {
+		return -1;
+	}
 
 	//buffer for message keys
 	buffer_t *header_key = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);

@@ -50,7 +50,9 @@ int generate_prekeys(buffer_t * const private_prekeys, buffer_t * const public_p
 
 
 int main(void) {
-	sodium_init();
+	if (sodium_init() == -1) {
+		return -1;
+	}
 
 	//create a user_store
 	user_store *store = user_store_create();

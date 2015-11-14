@@ -23,7 +23,9 @@
 #include "utils.h"
 
 int main(void) {
-	sodium_init();
+	if (sodium_init() == -1) {
+		return -1;
+	}
 
 	printf("HKDF as described in RFC 5869 based on HMAC-SHA512256!\n\n");
 

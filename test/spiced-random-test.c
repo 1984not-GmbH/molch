@@ -23,7 +23,9 @@
 #include "utils.h"
 
 int main(void) {
-	sodium_init();
+	if (sodium_init() == -1) {
+		return -1;
+	}
 
 	//some random user input (idiot bashing his head on the keyboard)
 	buffer_t *spice = buffer_create_from_string("aäipoewur+ü 093+2ß3+2ü+ ß09234rt #2ß 0iw4eräp9ui23+ 03943");

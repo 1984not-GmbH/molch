@@ -26,7 +26,9 @@
 #include "common.h"
 
 int main(void) {
-	sodium_init();
+	if (sodium_init() == -1) {
+		return -1;
+	}
 
 	int status;
 

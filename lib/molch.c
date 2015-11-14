@@ -54,7 +54,9 @@ int molch_create_user(
 		const size_t random_data_length) {
 	//create user store if it doesn't exist already
 	if (users == NULL) {
-		sodium_init();
+		if (sodium_init() == -1) {
+			return -1;
+		}
 		users = user_store_create();
 		if (users == NULL) { //failed to create user store
 			return -10;

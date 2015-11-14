@@ -24,7 +24,9 @@
 #include "../lib/user-store.h" //for PREKEY_AMOUNT
 
 int main(void) {
-	sodium_init();
+	if (sodium_init() == -1) {
+		return -1;
+	}
 
 	//mustn't crash here!
 	molch_destroy_all_users();
