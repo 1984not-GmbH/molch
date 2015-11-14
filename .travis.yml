@@ -17,6 +17,7 @@ before_install:
   - "if [ $TRAVIS_OS_NAME == 'osx' ]; then brew update; else true; fi"
   - "if [ $TRAVIS_OS_NAME == 'osx' ]; then brew install libsodium valgrind; else true; fi"
 script:
+  - "git submodule update --init --recursive"
   - "if [ $TRAVIS_OS_NAME == 'linux' ]; then curl -s https://raw.githubusercontent.com/mikkeloscar/arch-travis/master/arch-travis.sh | bash; else true; fi"
   - "if [ $TRAVIS_OS_NAME == 'osx' ]; then bash run-ci.sh; else true; fi"
 arch:
