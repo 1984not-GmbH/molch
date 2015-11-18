@@ -34,9 +34,9 @@ typedef struct user_store_node user_store_node;
 struct user_store_node {
 	user_store_node *previous;
 	user_store_node *next;
-	buffer_t public_identity_key;
+	buffer_t public_identity_key[1];
 	unsigned char public_identity_key_storage[crypto_box_PUBLICKEYBYTES];
-	buffer_t private_identity_key;
+	buffer_t private_identity_key[1];
 	unsigned char private_identity_key_storage[crypto_box_SECRETKEYBYTES];
 	//FIXME those prekey should be replaced by it's own prekey store in the future
 	//(this allows still having old prekeys around)

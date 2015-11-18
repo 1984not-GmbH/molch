@@ -63,14 +63,14 @@ int user_store_add(
 
 	int status;
 	//fill the content (copy keys)
-	buffer_init_with_pointer(&(new_node->public_identity_key), new_node->public_identity_key_storage, crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	status = buffer_clone(&(new_node->public_identity_key), public_identity);
+	buffer_init_with_pointer(new_node->public_identity_key, new_node->public_identity_key_storage, crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	status = buffer_clone(new_node->public_identity_key, public_identity);
 	if (status != 0) {
 		sodium_free(new_node);
 		return status;
 	}
-	buffer_init_with_pointer(&(new_node->private_identity_key), new_node->private_identity_key_storage, crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	status = buffer_clone(&(new_node->private_identity_key), private_identity);
+	buffer_init_with_pointer(new_node->private_identity_key, new_node->private_identity_key_storage, crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	status = buffer_clone(new_node->private_identity_key, private_identity);
 	if (status != 0) {
 		sodium_free(new_node);
 		return status;
@@ -140,7 +140,7 @@ user_store_node* user_store_find_node(user_store * const store, const buffer_t *
 	//search for the matching public identity key
 	while (current_node != NULL) {
 		sodium_mprotect_readonly(current_node);
-		if (buffer_compare(&(current_node->public_identity_key), public_identity) == 0) {
+		if (buffer_compare(current_node->public_identity_key, public_identity) == 0) {
 			//match found
 			sodium_mprotect_noaccess(current_node);
 			break;
@@ -170,9 +170,9 @@ buffer_t* user_store_list(user_store * const store) {
 		int status = buffer_copy(
 				list,
 				i * crypto_box_PUBLICKEYBYTES,
-				&(current_node->public_identity_key),
+				current_node->public_identity_key,
 				0,
-				current_node->public_identity_key.content_length);
+				current_node->public_identity_key->content_length);
 		if (status != 0) { //copying went wrong
 			sodium_mprotect_noaccess(current_node);
 			sodium_mprotect_noaccess(store);

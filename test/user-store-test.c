@@ -338,8 +338,8 @@ int main(void) {
 	printf("Node found.\n");
 
 	sodium_mprotect_readonly(bob_node);
-	if ((buffer_compare(&(bob_node->public_identity_key), bob_public_identity) != 0)
-			|| (buffer_compare(&(bob_node->private_identity_key), bob_private_identity) != 0)
+	if ((buffer_compare(bob_node->public_identity_key, bob_public_identity) != 0)
+			|| (buffer_compare(bob_node->private_identity_key, bob_private_identity) != 0)
 			|| (buffer_compare(&(bob_node->public_prekeys), bob_public_prekeys) != 0)
 			|| (buffer_compare(&(bob_node->private_prekeys), bob_private_prekeys) != 0)) {
 		fprintf(stderr, "ERROR: Bob's data from the user store doesn't match.\n");
