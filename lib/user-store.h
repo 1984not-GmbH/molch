@@ -20,6 +20,7 @@
 #include <time.h>
 
 #include "../buffer/buffer.h"
+#include "../mcJSON/mcJSON.h"
 
 #ifndef LIB_USER_STORE_H
 #define LIB_USER_STORE_H
@@ -97,4 +98,12 @@ void user_store_remove(user_store * const store, user_store_node *node);
 
 //clear the entire user store
 void user_store_clear(user_store *keystore);
+
+/*
+ * Serialise a user store into JSON. It get's a mempool_t buffer and stores a tree of
+ * mcJSON objects into the buffer starting at pool->position.
+ *
+ * Returns NULL in case of Failure.
+ */
+mcJSON *user_store_json_export(user_store * const store, mempool_t * const pool) __attribute__((warn_unused_result));
 #endif

@@ -17,6 +17,7 @@
  */
 
 #include <string.h>
+#include <assert.h>
 
 #include "user-store.h"
 
@@ -170,7 +171,7 @@ buffer_t* user_store_list(user_store * const store) {
 	buffer_t *list = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES * store->length, crypto_box_PUBLICKEYBYTES * store->length);
 
 	user_store_node *current_node = store->head;
-	for (unsigned int i = 0; (i < store->length) && (current_node != NULL); i++) {
+	for (size_t i = 0; (i < store->length) && (current_node != NULL); i++) {
 		sodium_mprotect_readonly(current_node);
 		int status = buffer_copy(
 				list,
@@ -249,4 +250,64 @@ void user_store_clear(user_store *store){
 	}
 
 	sodium_mprotect_noaccess(store);
+}
+
+mcJSON *user_store_node_json_export(user_store_node * const node, mempool_t * const pool) {
+	mcJSON *json = mcJSON_CreateObject(pool);
+
+	//add identity keys
+	mcJSON_AddItemToObject(json, buffer_create_from_string("public_identity"), mcJSON_CreateHexString(node->public_identity_key, pool), pool);
+	mcJSON_AddItemToObject(json, buffer_create_from_string("private_identity"), mcJSON_CreateHexString(node->private_identity_key, pool), pool);
+
+	/* create arrays for prekeys */
+	mcJSON *public_prekey_array = mcJSON_CreateArray(pool);
+	mcJSON_AddItemToObject(json, buffer_create_from_string("public_prekeys"), public_prekey_array, pool);
+	mcJSON *private_prekey_array = mcJSON_CreateArray(pool);
+	mcJSON_AddItemToObject(json, buffer_create_from_string("private_prekeys"), private_prekey_array, pool);
+
+	/* fill prekey arrays */
+	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
+		assert(crypto_box_PUBLICKEYBYTES == crypto_box_SECRETKEYBYTES);
+
+		//public prekey
+		mcJSON_AddItemToArray(public_prekey_array, mcJSON_CreateHexString(&(node->public_prekeys[i]), pool), pool);
+
+		//private_prekey
+		mcJSON_AddItemToArray(private_prekey_array, mcJSON_CreateHexString(&(node->private_prekeys[i]), pool), pool);
+	}
+
+	return json;
+}
+
+/*
+ * Serialise a user store into JSON. It get's a mempool_t buffer and stores a tree of
+ * mcJSON objects into the buffer starting at pool->position.
+ *
+ * Returns NULL in case of Failure.
+ */
+mcJSON *user_store_json_export(user_store * const store, mempool_t * const pool) {
+	if ((store == NULL) || (pool == NULL)) {
+		return NULL;
+	}
+
+	mcJSON *json = mcJSON_CreateArray(pool);
+	if (json == NULL) {
+		return NULL;
+	}
+
+	//go through all the user_store_nodes
+	sodium_mprotect_readonly(store);
+	user_store_node *node = store->head;
+	for (size_t i = 0; (i < store->length) && (node != NULL); i++) {
+		sodium_mprotect_readonly(node);
+		mcJSON_AddItemToArray(json, user_store_node_json_export(node, pool), pool);
+
+		// has to be done here because of the access permissions
+		user_store_node *next_node = node->next;
+		sodium_mprotect_noaccess(node);
+		node = next_node;
+	}
+	sodium_mprotect_noaccess(store);
+
+	return json;
 }

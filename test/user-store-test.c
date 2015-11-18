@@ -442,6 +442,30 @@ int main(void) {
 	}
 	sodium_mprotect_noaccess(store);
 	printf("Length of the user store matches.");
+
+	//test JSON export
+	printf("Test JSON export!\n");
+	mempool_t *pool = buffer_create(100000, 0);
+	mcJSON *json = user_store_json_export(store, pool);
+	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
+	printf("%.*s\n", (int) output->content_length, (char*)output->content);
+	if (json->length != 2) {
+		fprintf(stderr, "ERROR: Exported JSON doesn't contain all users.\n");
+		buffer_destroy_from_heap(output);
+		buffer_clear(pool);
+		buffer_clear(alice_private_identity);
+		buffer_clear(alice_private_prekeys);
+		buffer_clear(bob_private_identity);
+		buffer_clear(bob_private_prekeys);
+		buffer_clear(charlie_private_identity);
+		buffer_clear(charlie_private_prekeys);
+		user_store_destroy(store);
+		return EXIT_FAILURE;
+	}
+	//TODO More tests (name of elements, number of subelements.) maybe just import again and compare
+	buffer_destroy_from_heap(output);
+	buffer_clear(pool);
+
 	//check the user list
 	list = user_store_list(store);
 	if ((buffer_compare_partial(list, 0, alice_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)
