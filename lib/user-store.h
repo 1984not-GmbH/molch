@@ -40,9 +40,9 @@ struct user_store_node {
 	unsigned char private_identity_key_storage[crypto_box_SECRETKEYBYTES];
 	//FIXME those prekey should be replaced by it's own prekey store in the future
 	//(this allows still having old prekeys around)
-	buffer_t public_prekeys;
+	buffer_t public_prekeys[PREKEY_AMOUNT];
 	unsigned char public_prekey_storage[PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES];
-	buffer_t private_prekeys;
+	buffer_t private_prekeys[PREKEY_AMOUNT];
 	unsigned char private_prekey_storage[PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES];
 };
 

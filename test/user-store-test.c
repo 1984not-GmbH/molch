@@ -340,8 +340,8 @@ int main(void) {
 	sodium_mprotect_readonly(bob_node);
 	if ((buffer_compare(bob_node->public_identity_key, bob_public_identity) != 0)
 			|| (buffer_compare(bob_node->private_identity_key, bob_private_identity) != 0)
-			|| (buffer_compare(&(bob_node->public_prekeys), bob_public_prekeys) != 0)
-			|| (buffer_compare(&(bob_node->private_prekeys), bob_private_prekeys) != 0)) {
+			|| (buffer_compare_to_raw(bob_public_prekeys, bob_node->public_prekey_storage, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES) != 0)
+			|| (buffer_compare_to_raw(bob_private_prekeys, bob_node->private_prekey_storage, PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES) != 0)) {
 		fprintf(stderr, "ERROR: Bob's data from the user store doesn't match.\n");
 		buffer_clear(alice_private_identity);
 		buffer_clear(alice_private_prekeys);

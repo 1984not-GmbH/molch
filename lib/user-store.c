@@ -75,19 +75,24 @@ int user_store_add(
 		sodium_free(new_node);
 		return status;
 	}
-	buffer_init_with_pointer(&(new_node->public_prekeys), new_node->public_prekey_storage, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
-	status = buffer_clone(&(new_node->public_prekeys), public_prekeys);
-	if (status != 0) {
-		sodium_free(new_node);
-		return status;
-	}
-	buffer_init_with_pointer(&(new_node->private_prekeys), new_node->private_prekey_storage, PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES, PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES);
-	status = buffer_clone(&(new_node->private_prekeys), private_prekeys);
-	if (status != 0) {
-		sodium_free(new_node);
-		return status;
-	}
 
+	//prekeys
+	//copy them
+	status = buffer_clone_to_raw(new_node->public_prekey_storage, sizeof(new_node->private_prekey_storage), public_prekeys);
+	if (status != 0) {
+		sodium_free(new_node);
+		return status;
+	}
+	status = buffer_clone_to_raw(new_node->private_prekey_storage, sizeof(new_node->private_prekey_storage), private_prekeys);
+	if (status != 0) {
+		sodium_free(new_node);
+		return status;
+	}
+	//initialize the buffers that point to it
+	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
+		buffer_init_with_pointer(&(new_node->public_prekeys[i]), &(new_node->public_prekey_storage[i * crypto_box_PUBLICKEYBYTES]), crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+		buffer_init_with_pointer(&(new_node->private_prekeys[i]), &(new_node->private_prekey_storage[i * crypto_box_SECRETKEYBYTES]), crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	}
 
 	sodium_mprotect_readwrite(store); //unlock memory
 	if (store->length == 0) { //first node in the list
