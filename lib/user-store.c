@@ -41,6 +41,42 @@ void user_store_destroy(user_store* store) {
 	sodium_free(store);
 }
 
+/*
+ * add a new user node to a user store.
+ */
+void add_node(user_store * const store, user_store_node * const node) {
+	sodium_mprotect_readwrite(store); //unlock memory
+	if (store->length == 0) { //first node in the list
+		node->previous = NULL;
+		node->next = NULL;
+		store->head = node;
+		store->tail = node;
+
+		//update length
+		store->length++;
+
+		sodium_mprotect_noaccess(store);
+
+		return;
+	}
+
+	//add the new node to the tail of the list
+	sodium_mprotect_readwrite(store->tail);
+	store->tail->next = node;
+	sodium_mprotect_noaccess(store->tail);
+	node->previous = store->tail;
+	node->next = NULL;
+	store->tail = node;
+
+
+	//update length
+	store->length++;
+
+	//lock memory after usage
+	sodium_mprotect_noaccess(node);
+	sodium_mprotect_noaccess(store);
+}
+
 //add a new user to the user store
 //NOTE: The entire buffers are copied, not only the pointer
 int user_store_add(
@@ -95,36 +131,7 @@ int user_store_add(
 		buffer_init_with_pointer(&(new_node->private_prekeys[i]), &(new_node->private_prekey_storage[i * crypto_box_SECRETKEYBYTES]), crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	}
 
-	sodium_mprotect_readwrite(store); //unlock memory
-	if (store->length == 0) { //first node in the list
-		new_node->previous = NULL;
-		new_node->next = NULL;
-		store->head = new_node;
-		store->tail = new_node;
-
-		//update length
-		store->length++;
-
-		sodium_mprotect_noaccess(store);
-
-		return 0;
-	}
-
-	//add the new node to the tail of the list
-	sodium_mprotect_readwrite(store->tail);
-	store->tail->next = new_node;
-	sodium_mprotect_noaccess(store->tail);
-	new_node->previous = store->tail;
-	new_node->next = NULL;
-	store->tail = new_node;
-
-
-	//update length
-	store->length++;
-
-	//lock memory after usage
-	sodium_mprotect_noaccess(new_node);
-	sodium_mprotect_noaccess(store);
+	add_node(store, new_node);
 
 	return 0;
 }
