@@ -46,18 +46,18 @@ int header_and_message_keystore_add(
 	}
 
 	//initialise buffers with storage arrays
-	buffer_init_with_pointer(&(new_node->message_key), new_node->message_key_storage, crypto_secretbox_KEYBYTES, 0);
-	buffer_init_with_pointer(&(new_node->header_key), new_node->header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, 0);
+	buffer_init_with_pointer(new_node->message_key, new_node->message_key_storage, crypto_secretbox_KEYBYTES, 0);
+	buffer_init_with_pointer(new_node->header_key, new_node->header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, 0);
 
 	int status;
 	//set keys and timestamp
 	new_node->timestamp = time(NULL);
-	status = buffer_clone(&(new_node->message_key), message_key);
+	status = buffer_clone(new_node->message_key, message_key);
 	if (status != 0) {
 		sodium_free(new_node);
 		return status;
 	}
-	status = buffer_clone(&(new_node->header_key), header_key);
+	status = buffer_clone(new_node->header_key, header_key);
 	if (status != 0) {
 		sodium_free(new_node);
 		return status;

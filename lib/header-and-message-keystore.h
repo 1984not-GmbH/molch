@@ -31,9 +31,9 @@ typedef struct header_and_message_keystore_node header_and_message_keystore_node
 struct header_and_message_keystore_node {
 	header_and_message_keystore_node *previous;
 	header_and_message_keystore_node *next;
-	buffer_t message_key;
+	buffer_t message_key[1];
 	unsigned char message_key_storage[crypto_secretbox_KEYBYTES];
-	buffer_t header_key;
+	buffer_t header_key[1];
 	unsigned char header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
 	time_t timestamp;
 };

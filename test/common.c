@@ -37,11 +37,11 @@ void print_header_and_message_keystore(header_and_message_keystore *keystore) {
 	unsigned int i;
 	for (i = 0; i < keystore->length; node = node->next, i++) {
 		printf("Header key %u:\n", i);
-		print_hex(&(node->header_key));
+		print_hex(node->header_key);
 		putchar('\n');
 
 		printf("Message key %u:\n", i);
-		print_hex(&(node->message_key));
+		print_hex(node->message_key);
 		if (i != keystore->length - 1) { //omit last one
 			putchar('\n');
 		}

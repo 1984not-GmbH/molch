@@ -445,8 +445,8 @@ int commit_skipped_header_and_message_keys(ratchet_state *state) {
 	while (state->purported_header_and_message_keys.length != 0) {
 		status = header_and_message_keystore_add(
 				&(state->skipped_header_and_message_keys),
-				&(state->purported_header_and_message_keys.head->message_key),
-				&(state->purported_header_and_message_keys.head->header_key));
+				state->purported_header_and_message_keys.head->message_key,
+				state->purported_header_and_message_keys.head->header_key);
 		if (status != 0) {
 			return status;
 		}

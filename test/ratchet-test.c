@@ -854,7 +854,7 @@ int main(void) {
 
 	//get the second receive message key from the message and header keystore
 	buffer_t *alice_receive_message_key2 = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	status = buffer_clone(alice_receive_message_key2, &(alice_state->skipped_header_and_message_keys.tail->message_key));
+	status = buffer_clone(alice_receive_message_key2, alice_state->skipped_header_and_message_keys.tail->message_key);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Alice's second receive message key. (%i)\n", status);
 		buffer_clear(alice_receive_message_key2);
@@ -875,7 +875,7 @@ int main(void) {
 
 	//get the second receive header key from the message and header keystore
 	buffer_t *alice_receive_header_key2 = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	status = buffer_clone(alice_receive_header_key2, &(alice_state->skipped_header_and_message_keys.tail->header_key));
+	status = buffer_clone(alice_receive_header_key2, alice_state->skipped_header_and_message_keys.tail->header_key);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Alice's second receive header key. (%i)\n", status);
 		buffer_clear(alice_receive_message_key2);
