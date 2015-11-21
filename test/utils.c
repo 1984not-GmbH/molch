@@ -26,7 +26,7 @@ void print_hex(const buffer_t * const data) {
 	//buffer for hex string
 	buffer_t *hex = buffer_create(2 * data->content_length + 1, 2 * data->content_length + 1);
 
-	if (sodium_bin2hex((char *)hex->content, 2 * data->content_length + 1, data->content, data->content_length) == NULL) {
+	if (buffer_clone_as_hex(hex, data) != 0) {
 		fprintf(stderr, "ERROR: Failed printing hex.\n");
 		buffer_clear(hex);
 		return;
