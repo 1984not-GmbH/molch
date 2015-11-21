@@ -366,3 +366,119 @@ mcJSON *user_store_json_export(user_store * const store, mempool_t * const pool)
 
 	return json;
 }
+
+/*
+ * Import a list of prekeys from JSON.
+ */
+int prekey_import(user_store_node * const node, const mcJSON * const public_prekey_array, const mcJSON * const private_prekey_array) {
+	if ((public_prekey_array == NULL) || (public_prekey_array->type != mcJSON_Array) || (public_prekey_array->length != PREKEY_AMOUNT)
+			|| (private_prekey_array == NULL) || (private_prekey_array->type != mcJSON_Array) || (private_prekey_array->length != PREKEY_AMOUNT)) {
+		return -1;
+	}
+
+	mcJSON *current_private_prekey = private_prekey_array->child;
+	mcJSON *current_public_prekey = public_prekey_array->child;
+	//copy the prekeys
+	size_t i;
+	for (i = 0;
+			(i < PREKEY_AMOUNT)
+				&& (current_private_prekey != NULL)
+				&& (current_private_prekey->type == mcJSON_String)
+				&& (current_private_prekey->valuestring->content_length == (2 * crypto_box_SECRETKEYBYTES + 1))
+				&& (current_public_prekey != NULL)
+				&& (current_public_prekey->type == mcJSON_String)
+				&& (current_public_prekey->valuestring->content_length == (2 * crypto_box_PUBLICKEYBYTES + 1));
+			i++,
+				current_private_prekey = current_private_prekey->next,
+				current_public_prekey = current_public_prekey->next) {
+		//copy private prekey
+		int status = buffer_clone_from_hex(&(node->private_prekeys[i]), current_private_prekey->valuestring);
+		if (status != 0) {
+			return status;
+		}
+		//copy public prekey
+		status = buffer_clone_from_hex(&(node->public_prekeys[i]), current_public_prekey->valuestring);
+		if (status != 0) {
+			return status;
+		}
+	}
+
+	if (i != PREKEY_AMOUNT) {
+		return -5;
+	}
+
+	return 0;
+}
+
+/*
+ * Deserialise a user store (import from JSON).
+ */
+user_store *user_store_json_import(const mcJSON * const json) {
+	if (json == NULL) {
+		return NULL;
+	}
+
+	user_store *store = user_store_create();
+	if (store == NULL) {
+		return NULL;
+	}
+
+	if (json->type != mcJSON_Array) {
+		user_store_destroy(store);
+		return NULL;
+	}
+
+	//add all the users
+	mcJSON *user = json->child;
+	for (size_t i = 0; (i < json->length) && (user != NULL); i++, user = user->next) {
+		//get reference to the relevant mcJSON objects
+		mcJSON *private_identity = mcJSON_GetObjectItem(user, buffer_create_from_string("private_identity"));
+		mcJSON *public_identity = mcJSON_GetObjectItem(user, buffer_create_from_string("public_identity"));
+		mcJSON *private_prekeys = mcJSON_GetObjectItem(user, buffer_create_from_string("private_prekeys"));
+		mcJSON *public_prekeys = mcJSON_GetObjectItem(user, buffer_create_from_string("public_prekeys"));
+
+		//check if they are valid
+		if ((private_identity == NULL) || (private_identity->type != mcJSON_String) || (private_identity->valuestring->content_length != (2 * crypto_box_SECRETKEYBYTES + 1))
+				|| (public_identity == NULL) || (public_identity->type != mcJSON_String) || (public_identity->valuestring->content_length != (2 * crypto_box_PUBLICKEYBYTES + 1))) {
+			user_store_destroy(store);
+			return NULL;
+		}
+
+		//create new user_store_node
+		user_store_node *node = create_node();
+		if (node == NULL) {
+			user_store_destroy(store);
+			return NULL;
+		}
+
+		//copy private_identity
+		node->private_identity_key->readonly = false;
+		if (buffer_clone_from_hex(node->private_identity_key, private_identity->valuestring) != 0) {
+			sodium_free(node);
+			user_store_destroy(store);
+			return NULL;
+		}
+		node->private_identity_key->readonly = true;
+
+		//copy public_identity
+		node->public_identity_key->readonly = false;
+		if (buffer_clone_from_hex(node->public_identity_key, public_identity->valuestring) != 0) {
+			sodium_free(node);
+			user_store_destroy(store);
+			return NULL;
+		}
+		node->public_identity_key->readonly = true;
+
+		//copy the prekeys
+		if (prekey_import(node, public_prekeys, private_prekeys) != 0) {
+			sodium_free(node);
+			user_store_destroy(store);
+			return NULL;
+		}
+
+		//now add the imported node to the user store, this also does all the sodium_mprotect work
+		add_node(store, node);
+	}
+
+	return store;
+}

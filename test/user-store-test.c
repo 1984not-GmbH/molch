@@ -462,8 +462,44 @@ int main(void) {
 		user_store_destroy(store);
 		return EXIT_FAILURE;
 	}
-	//TODO More tests (name of elements, number of subelements.) maybe just import again and compare
+
+	//test JSON import
+	user_store *imported_store = user_store_json_import(json);
+	if (imported_store == NULL) {
+		fprintf(stderr, "ERROR: Failed to import user store from JSON.\n");
+		buffer_clear(pool);
+		buffer_clear(alice_private_identity);
+		buffer_clear(alice_private_prekeys);
+		buffer_clear(bob_private_identity);
+		buffer_clear(bob_private_prekeys);
+		buffer_clear(charlie_private_identity);
+		buffer_clear(charlie_private_prekeys);
+		buffer_destroy_from_heap(output);
+		user_store_destroy(store);
+		return EXIT_FAILURE;
+	}
+	//export the imported to JSON again
+	pool->position = 0; //reset the mempool
+	mcJSON *imported_json = user_store_json_export(imported_store, pool);
+	buffer_t *imported_output = mcJSON_PrintBuffered(imported_json, 4000, true);
+	//compare with original JSON
+	if (buffer_compare(imported_output, output) != 0) {
+		fprintf(stderr, "ERROR: Imported user store is incorrect.\n");
+		buffer_clear(pool);
+		buffer_clear(alice_private_identity);
+		buffer_clear(alice_private_prekeys);
+		buffer_clear(bob_private_identity);
+		buffer_clear(bob_private_prekeys);
+		buffer_clear(charlie_private_identity);
+		buffer_clear(charlie_private_prekeys);
+		buffer_destroy_from_heap(output);
+		user_store_destroy(store);
+		buffer_destroy_from_heap(imported_output);
+		return EXIT_FAILURE;
+	}
 	buffer_destroy_from_heap(output);
+	buffer_destroy_from_heap(imported_output);
+	user_store_destroy(imported_store);
 	buffer_clear(pool);
 
 	//check the user list

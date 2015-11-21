@@ -106,4 +106,9 @@ void user_store_clear(user_store *keystore);
  * Returns NULL in case of Failure.
  */
 mcJSON *user_store_json_export(user_store * const store, mempool_t * const pool) __attribute__((warn_unused_result));
+
+/*
+ * Deserialise a user store (import from JSON).
+ */
+user_store *user_store_json_import(const mcJSON * const json) __attribute__((warn_unused_result));
 #endif
