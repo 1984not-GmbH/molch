@@ -77,6 +77,32 @@ void add_node(user_store * const store, user_store_node * const node) {
 	sodium_mprotect_noaccess(store);
 }
 
+/*
+ * create an empty user_store_node and set up all the pointers.
+ */
+user_store_node *create_node() {
+	user_store_node *node = sodium_malloc(sizeof(user_store_node));
+	if (node == NULL) {
+		return NULL;
+	}
+
+	//initialise pointers
+	node->previous = NULL;
+	node->next = NULL;
+
+	//initialise all the buffers
+	buffer_init_with_pointer(node->public_identity_key, node->public_identity_key_storage, crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_init_with_pointer(node->private_identity_key, node->private_identity_key_storage, crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+
+	//initialise prekey buffers
+	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
+		buffer_init_with_pointer(&(node->public_prekeys[i]), &(node->private_prekey_storage[i * crypto_box_PUBLICKEYBYTES]), crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+		buffer_init_with_pointer(&(node->private_prekeys[i]), &(node->private_prekey_storage[i * crypto_box_SECRETKEYBYTES]), crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	}
+
+	return node;
+}
+
 //add a new user to the user store
 //NOTE: The entire buffers are copied, not only the pointer
 int user_store_add(
@@ -93,20 +119,18 @@ int user_store_add(
 		return -6;
 	}
 
-	user_store_node *new_node = sodium_malloc(sizeof(user_store_node));
+	user_store_node *new_node = create_node();
 	if (new_node == NULL) { //couldn't allocate memory
 		return -1;
 	}
 
 	int status;
 	//fill the content (copy keys)
-	buffer_init_with_pointer(new_node->public_identity_key, new_node->public_identity_key_storage, crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	status = buffer_clone(new_node->public_identity_key, public_identity);
 	if (status != 0) {
 		sodium_free(new_node);
 		return status;
 	}
-	buffer_init_with_pointer(new_node->private_identity_key, new_node->private_identity_key_storage, crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	status = buffer_clone(new_node->private_identity_key, private_identity);
 	if (status != 0) {
 		sodium_free(new_node);
@@ -124,11 +148,6 @@ int user_store_add(
 	if (status != 0) {
 		sodium_free(new_node);
 		return status;
-	}
-	//initialize the buffers that point to it
-	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		buffer_init_with_pointer(&(new_node->public_prekeys[i]), &(new_node->public_prekey_storage[i * crypto_box_PUBLICKEYBYTES]), crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-		buffer_init_with_pointer(&(new_node->private_prekeys[i]), &(new_node->private_prekey_storage[i * crypto_box_SECRETKEYBYTES]), crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	}
 
 	add_node(store, new_node);
