@@ -254,15 +254,32 @@ void user_store_clear(user_store *store){
 
 mcJSON *user_store_node_json_export(user_store_node * const node, mempool_t * const pool) {
 	mcJSON *json = mcJSON_CreateObject(pool);
+	if (json == NULL) {
+		return NULL;
+	}
 
 	//add identity keys
-	mcJSON_AddItemToObject(json, buffer_create_from_string("public_identity"), mcJSON_CreateHexString(node->public_identity_key, pool), pool);
-	mcJSON_AddItemToObject(json, buffer_create_from_string("private_identity"), mcJSON_CreateHexString(node->private_identity_key, pool), pool);
+	mcJSON *public_identity = mcJSON_CreateHexString(node->public_identity_key, pool);
+	if (public_identity == NULL) {
+		return NULL;
+	}
+	mcJSON_AddItemToObject(json, buffer_create_from_string("public_identity"), public_identity, pool);
+	mcJSON *private_identity = mcJSON_CreateHexString(node->private_identity_key, pool);
+	if (private_identity == NULL) {
+		return NULL;
+	}
+	mcJSON_AddItemToObject(json, buffer_create_from_string("private_identity"), private_identity, pool);
 
 	/* create arrays for prekeys */
 	mcJSON *public_prekey_array = mcJSON_CreateArray(pool);
+	if (public_prekey_array == NULL) {
+		return NULL;
+	}
 	mcJSON_AddItemToObject(json, buffer_create_from_string("public_prekeys"), public_prekey_array, pool);
 	mcJSON *private_prekey_array = mcJSON_CreateArray(pool);
+	if (private_prekey_array == NULL) {
+		return NULL;
+	}
 	mcJSON_AddItemToObject(json, buffer_create_from_string("private_prekeys"), private_prekey_array, pool);
 
 	/* fill prekey arrays */
@@ -270,10 +287,18 @@ mcJSON *user_store_node_json_export(user_store_node * const node, mempool_t * co
 		assert(crypto_box_PUBLICKEYBYTES == crypto_box_SECRETKEYBYTES);
 
 		//public prekey
-		mcJSON_AddItemToArray(public_prekey_array, mcJSON_CreateHexString(&(node->public_prekeys[i]), pool), pool);
+		mcJSON *public_prekey = mcJSON_CreateHexString(&(node->public_prekeys[i]), pool);
+		if (public_prekey == NULL) {
+			return NULL;
+		}
+		mcJSON_AddItemToArray(public_prekey_array, public_prekey, pool);
 
 		//private_prekey
-		mcJSON_AddItemToArray(private_prekey_array, mcJSON_CreateHexString(&(node->private_prekeys[i]), pool), pool);
+		mcJSON *private_prekey = mcJSON_CreateHexString(&(node->private_prekeys[i]), pool);
+		if (private_prekey == NULL) {
+			return NULL;
+		}
+		mcJSON_AddItemToArray(private_prekey_array, private_prekey, pool);
 	}
 
 	return json;
@@ -300,7 +325,11 @@ mcJSON *user_store_json_export(user_store * const store, mempool_t * const pool)
 	user_store_node *node = store->head;
 	for (size_t i = 0; (i < store->length) && (node != NULL); i++) {
 		sodium_mprotect_readonly(node);
-		mcJSON_AddItemToArray(json, user_store_node_json_export(node, pool), pool);
+		mcJSON *json_node = user_store_node_json_export(node, pool);
+		if (json_node == NULL) {
+			return NULL;
+		}
+		mcJSON_AddItemToArray(json, json_node, pool);
 
 		// has to be done here because of the access permissions
 		user_store_node *next_node = node->next;
