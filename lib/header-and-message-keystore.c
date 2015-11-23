@@ -27,6 +27,22 @@ void header_and_message_keystore_init(header_and_message_keystore * const keysto
 	keystore->tail = NULL;
 }
 
+/*
+ * create an empty header_and_message_keystore_node and set up all the pointers.
+ */
+header_and_message_keystore_node *create_node() {
+	header_and_message_keystore_node *node = sodium_malloc(sizeof(header_and_message_keystore_node));
+	if (node == NULL) {
+		return NULL;
+	}
+
+	//initialise buffers with storage arrays
+	buffer_init_with_pointer(node->message_key, node->message_key_storage, crypto_secretbox_KEYBYTES, 0);
+	buffer_init_with_pointer(node->header_key, node->header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, 0);
+
+	return node;
+}
+
 //add a message key to the keystore
 //NOTE: The entire keys are copied, not only the pointer
 int header_and_message_keystore_add(
@@ -38,14 +54,11 @@ int header_and_message_keystore_add(
 			|| (header_key->content_length != crypto_aead_chacha20poly1305_KEYBYTES)) {
 		return -6;
 	}
-	header_and_message_keystore_node *new_node = sodium_malloc(sizeof(header_and_message_keystore_node));
-	if (new_node == NULL) { //couldn't allocate memory
+
+	header_and_message_keystore_node *new_node = create_node();
+	if (new_node == NULL) {
 		return -1;
 	}
-
-	//initialise buffers with storage arrays
-	buffer_init_with_pointer(new_node->message_key, new_node->message_key_storage, crypto_secretbox_KEYBYTES, 0);
-	buffer_init_with_pointer(new_node->header_key, new_node->header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, 0);
 
 	int status;
 	//set keys and timestamp
