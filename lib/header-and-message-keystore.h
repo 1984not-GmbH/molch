@@ -69,4 +69,11 @@ void header_and_message_keystore_clear(header_and_message_keystore *keystore);
 mcJSON *header_and_message_keystore_json_export(
 		header_and_message_keystore * const keystore,
 		mempool_t * const pool) __attribute__((warn_unused_result));
+
+/*
+ * Deserialise a heade_and_message_keystore (import from JSON).
+ */
+int header_and_message_keystore_json_import(
+		const mcJSON * const json,
+		header_and_message_keystore * const keystore) __attribute__((warn_unused_result));
 #endif

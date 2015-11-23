@@ -193,3 +193,65 @@ mcJSON *header_and_message_keystore_json_export(
 
 	return json;
 }
+
+/*
+ * Deserialise a heade_and_message_keystore (import from JSON).
+ */
+int header_and_message_keystore_json_import(
+		const mcJSON * const json,
+		header_and_message_keystore * const keystore) {
+	if ((json == NULL) || (keystore == NULL)) {
+		return -1;
+	}
+
+	if (json->type != mcJSON_Array) {
+		return -2;
+	}
+
+	//initialize the keystore
+	header_and_message_keystore_init(keystore);
+
+	//add all the keys
+	mcJSON *key = json->child;
+	for (size_t i = 0; (i < json->length) && (key != NULL); i++, key = key->next) {
+		//get references to the relevant mcJSON objects
+		mcJSON *message_key = mcJSON_GetObjectItem(key, buffer_create_from_string("message_key"));
+		mcJSON *header_key = mcJSON_GetObjectItem(key, buffer_create_from_string("header_key"));
+		mcJSON *timestamp = mcJSON_GetObjectItem(key, buffer_create_from_string("timestamp"));
+
+		//check if they are valid
+		if ((message_key == NULL) || (message_key->type != mcJSON_String) || (message_key->valuestring->content_length != (2 * crypto_secretbox_KEYBYTES + 1))
+				|| (header_key == NULL) || (header_key->type != mcJSON_String) || (header_key->valuestring->content_length != (2 * crypto_secretbox_KEYBYTES + 1))
+				|| (timestamp == NULL) || (timestamp->type != mcJSON_Number)) {
+			header_and_message_keystore_clear(keystore);
+			return -3;
+		}
+
+		header_and_message_keystore_node *node = create_node();
+		if (node == NULL) {
+			header_and_message_keystore_clear(keystore);
+			return -4;
+		}
+
+		//copy the mesage key
+		int status = buffer_clone_from_hex(node->message_key, message_key->valuestring);
+		if (status != 0) {
+			sodium_free(node);
+			header_and_message_keystore_clear(keystore);
+			return status;
+		}
+
+		//copy the header key
+		status = buffer_clone_from_hex(node->header_key, header_key->valuestring);
+		if (status != 0) {
+			sodium_free(node);
+			header_and_message_keystore_clear(keystore);
+			return status;
+		}
+
+		node->timestamp = timestamp->valuedouble; //double should be large enough
+
+		add_node(keystore, node);
+	}
+	return 0;
+}
