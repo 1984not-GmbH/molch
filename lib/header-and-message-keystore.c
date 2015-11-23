@@ -114,3 +114,62 @@ void header_and_message_keystore_clear(header_and_message_keystore *keystore){
 		header_and_message_keystore_remove(keystore, keystore->head);
 	}
 }
+
+mcJSON *header_and_message_keystore_node_json_export(header_and_message_keystore_node * const node, mempool_t * const pool) {
+	mcJSON *json = mcJSON_CreateObject(pool);
+	if (json == NULL) {
+		return NULL;
+	}
+
+	//add timestamp
+	mcJSON *timestamp = mcJSON_CreateNumber((double)node->timestamp, pool);
+	if (timestamp == NULL) {
+		return NULL;
+	}
+	mcJSON_AddItemToObject(json, buffer_create_from_string("timestamp"), timestamp, pool);
+
+	//add message key
+	mcJSON *message_key_hex = mcJSON_CreateHexString(node->message_key, pool);
+	if (message_key_hex == NULL) {
+		return NULL;
+	}
+	mcJSON_AddItemToObject(json, buffer_create_from_string("message_key"), message_key_hex, pool);
+
+	//add header key
+	mcJSON *header_key_hex = mcJSON_CreateHexString(node->header_key, pool);
+	if (header_key_hex == NULL) {
+		return NULL;
+	}
+	mcJSON_AddItemToObject(json, buffer_create_from_string("header_key"), header_key_hex, pool);
+
+	return json;
+}
+
+/*
+ * Serialise a header_and_message_keystore into JSON. It get's a mempool_t buffer and stores a
+ * tree of mcJSON objects into the buffer starting at pool->position
+ */
+mcJSON *header_and_message_keystore_json_export(
+		header_and_message_keystore * const keystore,
+		mempool_t * const pool) {
+	if ((keystore == NULL) || (pool == NULL)) {
+		return NULL;
+	}
+
+	mcJSON *json = mcJSON_CreateArray(pool);
+	if (json == NULL) {
+		return NULL;
+	}
+
+	//go through all the header_and_message_keystore_nodes
+	header_and_message_keystore_node *node = keystore->head;
+	for (size_t i = 0; (i < keystore->length) && (node != NULL); i++, node = node->next) {
+		mcJSON *json_node = header_and_message_keystore_node_json_export(node, pool);
+		if (json_node == NULL) {
+			return NULL;
+		}
+		mcJSON_AddItemToArray(json, json_node, pool);
+	}
+
+	return json;
+}

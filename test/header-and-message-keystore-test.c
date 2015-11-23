@@ -89,6 +89,24 @@ int main(void) {
 		assert(keystore.length == (i + 1));
 	}
 
+	//JSON export
+	printf("Test JSON export!\n");
+	mempool_t *pool = buffer_create(10000, 0);
+	mcJSON *json = header_and_message_keystore_json_export(&keystore, pool);
+	buffer_t *output = mcJSON_PrintBuffered(json, 500, true);
+	if ((json == NULL) || (output == NULL)) {
+		fprintf(stderr, "ERROR: Failed to export to JSON.\n");
+		header_and_message_keystore_clear(&keystore);
+		if (output != NULL) {
+			buffer_destroy_from_heap(output);
+		}
+		buffer_clear(pool);
+		return EXIT_FAILURE;
+	}
+	printf("%.*s\n", (int)output->content_length, (char*)output->content);
+	buffer_destroy_from_heap(output);
+	buffer_clear(pool);
+
 	//remove key from the head
 	printf("Remove head!\n");
 	header_and_message_keystore_remove(&keystore, keystore.head);
