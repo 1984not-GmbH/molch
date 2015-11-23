@@ -155,8 +155,8 @@ ratchet_state* ratchet_create(
 	}
 
 	//initialise message keystore for skipped messages
-	state->skipped_header_and_message_keys[0] = header_and_message_keystore_init();
-	state->purported_header_and_message_keys[0] = header_and_message_keystore_init();
+	header_and_message_keystore_init(state->skipped_header_and_message_keys);
+	header_and_message_keystore_init(state->purported_header_and_message_keys);
 
 	//set other state
 	state->am_i_alice = am_i_alice;

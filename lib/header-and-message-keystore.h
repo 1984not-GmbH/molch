@@ -46,7 +46,7 @@ typedef struct header_and_message_keystore {
 } header_and_message_keystore;
 
 //initialise a new keystore
-header_and_message_keystore header_and_message_keystore_init();
+void header_and_message_keystore_init(header_and_message_keystore * const keystore);
 
 //add a hader and message key to the keystore
 //NOTE: The entire keys are copied, not only the pointer

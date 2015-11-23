@@ -21,12 +21,10 @@
 #include "header-and-message-keystore.h"
 
 //create new keystore
-header_and_message_keystore header_and_message_keystore_init() {
-	header_and_message_keystore keystore;
-	keystore.length = 0;
-	keystore.head = NULL;
-	keystore.tail = NULL;
-	return keystore;
+void header_and_message_keystore_init(header_and_message_keystore * const keystore) {
+	keystore->length = 0;
+	keystore->head = NULL;
+	keystore->tail = NULL;
 }
 
 //add a message key to the keystore

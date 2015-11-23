@@ -35,7 +35,8 @@ int main(void) {
 	buffer_t *message_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 
 	//initialise message keystore
-	header_and_message_keystore keystore = header_and_message_keystore_init();
+	header_and_message_keystore keystore;
+	header_and_message_keystore_init(&keystore);
 	assert(keystore.length == 0);
 	assert(keystore.head == NULL);
 	assert(keystore.tail == NULL);
