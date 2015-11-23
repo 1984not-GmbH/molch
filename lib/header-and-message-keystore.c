@@ -43,6 +43,31 @@ header_and_message_keystore_node *create_node() {
 	return node;
 }
 
+/*
+ * add a new header_and_message_key_node to a keystore
+ */
+void add_node(header_and_message_keystore * const keystore, header_and_message_keystore_node * const node) {
+	if (keystore->length == 0) { //first node in the list
+		node->previous = NULL;
+		node->next = NULL;
+		keystore->head = node;
+		keystore->tail = node;
+
+		//update length
+		keystore->length++;
+		return;
+	}
+
+	//add the new node to the tail of the list
+	keystore->tail->next = node;
+	node->previous = keystore->tail;
+	node->next = NULL;
+	keystore->tail = node;
+
+	//update length
+	keystore->length++;
+}
+
 //add a message key to the keystore
 //NOTE: The entire keys are copied, not only the pointer
 int header_and_message_keystore_add(
@@ -74,25 +99,7 @@ int header_and_message_keystore_add(
 		return status;
 	}
 
-	if (keystore->length == 0) { //first node in the list
-		new_node->previous = NULL;
-		new_node->next = NULL;
-		keystore->head = new_node;
-		keystore->tail = new_node;
-
-		//update length
-		keystore->length++;
-		return 0;
-	}
-
-	//add the new node to the tail of the list
-	keystore->tail->next = new_node;
-	new_node->previous = keystore->tail;
-	new_node->next = NULL;
-	keystore->tail = new_node;
-
-	//update length
-	keystore->length++;
+	add_node(keystore, new_node);
 
 	return 0;
 }
