@@ -47,7 +47,7 @@ int header_construct(
  * Get the content of the header.
  */
 int header_extract(
-		const buffer_t * const header, //crypto_box_PUBLICKEYBYTES + 8, input
+		const buffer_t * const header_buffer, //crypto_box_PUBLICKEYBYTES + 8, input
 		buffer_t * const their_public_ephemeral, //crypto_box_PUBLICKEYBYTES, output
 		uint32_t * const message_counter,
 		uint32_t * const previous_message_counter) __attribute__((warn_unused_result));
