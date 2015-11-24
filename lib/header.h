@@ -38,7 +38,7 @@ typedef struct header_t {
  * }
  */
 int header_construct(
-		buffer_t * const header, //crypto_box_PUBLICKEYBYTES + 8, output
+		buffer_t * const header_buffer, //crypto_box_PUBLICKEYBYTES + 8, output
 		const buffer_t * const our_public_ephemeral, //crypto_box_PUBLICKEYBYTES
 		const uint32_t message_counter,
 		const uint32_t previous_message_counter) __attribute__((warn_unused_result));
