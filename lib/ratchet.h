@@ -32,43 +32,43 @@ typedef enum ratchet_header_decryptability {
 
 //struct that represents the state of a conversation
 typedef struct ratchet_state {
-	buffer_t root_key; //RK
+	buffer_t root_key[1]; //RK
 	const unsigned char root_key_storage[crypto_secretbox_KEYBYTES];
-	buffer_t purported_root_key; //RKp
+	buffer_t purported_root_key[1]; //RKp
 	const unsigned char purported_root_key_storage[crypto_secretbox_KEYBYTES];
 	//header keys
-	buffer_t send_header_key;
+	buffer_t send_header_key[1];
 	const unsigned char send_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
-	buffer_t receive_header_key;
+	buffer_t receive_header_key[1];
 	const unsigned char receive_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
-	buffer_t next_send_header_key;
+	buffer_t next_send_header_key[1];
 	const unsigned char next_send_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
-	buffer_t next_receive_header_key;
+	buffer_t next_receive_header_key[1];
 	const unsigned char next_receive_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
-	buffer_t purported_receive_header_key;
+	buffer_t purported_receive_header_key[1];
 	const unsigned char purported_receive_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
-	buffer_t purported_next_receive_header_key;
+	buffer_t purported_next_receive_header_key[1];
 	const unsigned char purported_next_receive_header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
 	//chain keys
-	buffer_t send_chain_key; //CKs
+	buffer_t send_chain_key[1]; //CKs
 	const unsigned char send_chain_key_storage[crypto_secretbox_KEYBYTES];
-	buffer_t receive_chain_key; //CKr
+	buffer_t receive_chain_key[1]; //CKr
 	const unsigned char receive_chain_key_storage[crypto_secretbox_KEYBYTES];
-	buffer_t purported_receive_chain_key; //CKp
+	buffer_t purported_receive_chain_key[1]; //CKp
 	const unsigned char purported_receive_chain_key_storage[crypto_secretbox_KEYBYTES];
 	//identity keys
-	buffer_t our_public_identity; //DHIs
+	buffer_t our_public_identity[1]; //DHIs
 	const unsigned char our_public_identity_storage[crypto_box_PUBLICKEYBYTES];
-	buffer_t their_public_identity; //DHIr
+	buffer_t their_public_identity[1]; //DHIr
 	const unsigned char their_public_identity_storage[crypto_box_PUBLICKEYBYTES];
 	//ephemeral keys (ratchet keys)
-	buffer_t our_private_ephemeral; //DHRs
+	buffer_t our_private_ephemeral[1]; //DHRs
 	const unsigned char our_private_ephemeral_storage[crypto_box_SECRETKEYBYTES];
-	buffer_t our_public_ephemeral; //DHRs
+	buffer_t our_public_ephemeral[1]; //DHRs
 	const unsigned char our_public_ephemeral_storage[crypto_box_PUBLICKEYBYTES];
-	buffer_t their_public_ephemeral; //DHRr
+	buffer_t their_public_ephemeral[1]; //DHRr
 	const unsigned char their_public_ephemeral_storage[crypto_box_PUBLICKEYBYTES];
-	buffer_t their_purported_public_ephemeral; //DHp
+	buffer_t their_purported_public_ephemeral[1]; //DHp
 	const unsigned char their_purported_public_ephemeral_storage[crypto_box_PUBLICKEYBYTES];
 	//message numbers
 	unsigned int send_message_number; //Ns
@@ -84,8 +84,8 @@ typedef struct ratchet_state {
 	                     //decryption
 	ratchet_header_decryptability header_decryptable; //could the last received header be decrypted?
 	//list of previous message and header keys
-	header_and_message_keystore skipped_header_and_message_keys; //skipped_HK_MK (list containing message keys for messages that weren't received)
-	header_and_message_keystore purported_header_and_message_keys; //this represents the staging area specified in the axolotl ratchet
+	header_and_message_keystore skipped_header_and_message_keys[1]; //skipped_HK_MK (list containing message keys for messages that weren't received)
+	header_and_message_keystore purported_header_and_message_keys[1]; //this represents the staging area specified in the axolotl ratchet
 } ratchet_state;
 
 /*

@@ -80,37 +80,37 @@ ratchet_state* ratchet_create(
 	}
 
 	//initialize the buffers with the storage arrays
-	buffer_init_with_pointer(&(state->root_key), (unsigned char*)state->root_key_storage, crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	buffer_init_with_pointer(&(state->purported_root_key), (unsigned char*)state->purported_root_key_storage, crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_init_with_pointer(state->root_key, (unsigned char*)state->root_key_storage, crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_init_with_pointer(state->purported_root_key, (unsigned char*)state->purported_root_key_storage, crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	//header keys
-	buffer_init_with_pointer(&(state->send_header_key), (unsigned char*)state->send_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(&(state->receive_header_key), (unsigned char*)state->receive_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(&(state->next_send_header_key), (unsigned char*)state->next_send_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(&(state->next_receive_header_key), (unsigned char*)state->next_receive_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(&(state->purported_receive_header_key), (unsigned char*)state->purported_receive_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(&(state->purported_next_receive_header_key), (unsigned char*)state->purported_next_receive_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->send_header_key, (unsigned char*)state->send_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->receive_header_key, (unsigned char*)state->receive_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->next_send_header_key, (unsigned char*)state->next_send_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->next_receive_header_key, (unsigned char*)state->next_receive_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->purported_receive_header_key, (unsigned char*)state->purported_receive_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->purported_next_receive_header_key, (unsigned char*)state->purported_next_receive_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	//chain keys
-	buffer_init_with_pointer(&(state->send_chain_key), (unsigned char*)state->send_chain_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(&(state->receive_chain_key), (unsigned char*)state->receive_chain_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(&(state->purported_receive_chain_key), (unsigned char*)state->purported_receive_chain_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->send_chain_key, (unsigned char*)state->send_chain_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->receive_chain_key, (unsigned char*)state->receive_chain_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->purported_receive_chain_key, (unsigned char*)state->purported_receive_chain_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	//identity keys
-	buffer_init_with_pointer(&(state->our_public_identity), (unsigned char*)state->our_public_identity_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(&(state->their_public_identity), (unsigned char*)state->their_public_identity_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->our_public_identity, (unsigned char*)state->our_public_identity_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->their_public_identity, (unsigned char*)state->their_public_identity_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	//ephemeral keys (ratchet keys)
-	buffer_init_with_pointer(&(state->our_private_ephemeral), (unsigned char*)state->our_private_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(&(state->our_public_ephemeral), (unsigned char*)state->our_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(&(state->their_public_ephemeral), (unsigned char*)state->their_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(&(state->their_purported_public_ephemeral), (unsigned char*)state->their_purported_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->our_private_ephemeral, (unsigned char*)state->our_private_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->our_public_ephemeral, (unsigned char*)state->our_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->their_public_ephemeral, (unsigned char*)state->their_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->their_purported_public_ephemeral, (unsigned char*)state->their_purported_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 
 	//derive initial chain, root and header keys
 	int status = derive_initial_root_chain_and_header_keys(
-			&(state->root_key),
-			&(state->send_chain_key),
-			&(state->receive_chain_key),
-			&(state->send_header_key),
-			&(state->receive_header_key),
-			&(state->next_send_header_key),
-			&(state->next_receive_header_key),
+			state->root_key,
+			state->send_chain_key,
+			state->receive_chain_key,
+			state->send_header_key,
+			state->receive_header_key,
+			state->next_send_header_key,
+			state->next_receive_header_key,
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,
@@ -124,39 +124,39 @@ ratchet_state* ratchet_create(
 	}
 	//copy keys into state
 	//our public identity
-	status = buffer_clone(&(state->our_public_identity), our_public_identity);
+	status = buffer_clone(state->our_public_identity, our_public_identity);
 	if (status != 0) {
 		sodium_free(state);
 		return NULL;
 	}
 	//their_public_identity
-	status = buffer_clone(&(state->their_public_identity), their_public_identity);
+	status = buffer_clone(state->their_public_identity, their_public_identity);
 	if (status != 0) {
 		sodium_free(state);
 		return NULL;
 	}
 	//our_private_ephemeral
-	status = buffer_clone(&(state->our_private_ephemeral), our_private_ephemeral);
+	status = buffer_clone(state->our_private_ephemeral, our_private_ephemeral);
 	if (status != 0) {
 		sodium_free(state);
 		return NULL;
 	}
 	//our_public_ephemeral
-	status = buffer_clone(&(state->our_public_ephemeral), our_public_ephemeral);
+	status = buffer_clone(state->our_public_ephemeral, our_public_ephemeral);
 	if (status != 0) {
 		sodium_free(state);
 		return NULL;
 	}
 	//their_public_ephemeral
-	status = buffer_clone(&(state->their_public_ephemeral), their_public_ephemeral);
+	status = buffer_clone(state->their_public_ephemeral, their_public_ephemeral);
 	if (status != 0) {
 		sodium_free(state);
 		return NULL;
 	}
 
 	//initialise message keystore for skipped messages
-	state->skipped_header_and_message_keys = header_and_message_keystore_init();
-	state->purported_header_and_message_keys = header_and_message_keystore_init();
+	state->skipped_header_and_message_keys[0] = header_and_message_keystore_init();
+	state->purported_header_and_message_keys[0] = header_and_message_keystore_init();
 
 	//set other state
 	state->am_i_alice = am_i_alice;
@@ -180,13 +180,13 @@ int ratchet_next_send_keys(
 	int status;
 	if (state->ratchet_flag) {
 		//generate new ephemeral key
-		status = crypto_box_keypair(state->our_public_ephemeral.content, state->our_private_ephemeral.content);
+		status = crypto_box_keypair(state->our_public_ephemeral->content, state->our_private_ephemeral->content);
 		if (status != 0) {
 			return status;
 		}
 
 		//HKs = NHKs (shift header keys)
-		status = buffer_clone(&(state->send_header_key), &(state->next_send_header_key));
+		status = buffer_clone(state->send_header_key, state->next_send_header_key);
 		if (status != 0) {
 			return status;
 		}
@@ -194,18 +194,18 @@ int ratchet_next_send_keys(
 		//derive next root key and send chain key
 		//RK, CKs, NHKs = HKDF(DH(DHs, DHr))
 		buffer_t *previous_root_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-		status = buffer_clone(previous_root_key, &(state->root_key));
+		status = buffer_clone(previous_root_key, state->root_key);
 		if (status != 0) {
 			buffer_clear(previous_root_key);
 			return status;
 		}
 		status = derive_root_chain_and_header_keys(
-				&(state->root_key),
-				&(state->send_chain_key),
-				&(state->next_send_header_key),
-				&(state->our_private_ephemeral),
-				&(state->our_public_ephemeral),
-				&(state->their_public_ephemeral),
+				state->root_key,
+				state->send_chain_key,
+				state->next_send_header_key,
+				state->our_private_ephemeral,
+				state->our_public_ephemeral,
+				state->their_public_ephemeral,
 				previous_root_key,
 				state->am_i_alice);
 		buffer_clear(previous_root_key);
@@ -221,14 +221,14 @@ int ratchet_next_send_keys(
 	//MK = HMAC-HASH(CKs, 0x00)
 	status = derive_message_key(
 			next_message_key,
-			&(state->send_chain_key));
+			state->send_chain_key);
 	if (status != 0) {
 		buffer_clear(next_message_key);
 		return status;
 	}
 
 	//copy the header key
-	status = buffer_clone(next_header_key, &(state->send_header_key));
+	status = buffer_clone(next_header_key, state->send_header_key);
 	if (status != 0) {
 		buffer_clear(next_message_key);
 		buffer_clear(next_header_key);
@@ -240,7 +240,7 @@ int ratchet_next_send_keys(
 	//derive next chain key
 	//CKs = HMAC-HASH(CKs, 0x01)
 	buffer_t *old_chain_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	status = buffer_clone(old_chain_key, &(state->send_chain_key));
+	status = buffer_clone(old_chain_key, state->send_chain_key);
 	if (status != 0) {
 		buffer_clear(old_chain_key);
 		buffer_clear(next_header_key);
@@ -248,7 +248,7 @@ int ratchet_next_send_keys(
 		return status;
 	}
 	status = derive_chain_key(
-			&(state->send_chain_key),
+			state->send_chain_key,
 			old_chain_key);
 	if (status != 0) {
 		buffer_clear(old_chain_key);
@@ -276,12 +276,12 @@ int ratchet_get_receive_header_keys(
 
 	int status;
 	//clone the header keys
-	status = buffer_clone(current_receive_header_key, &(state->receive_header_key));
+	status = buffer_clone(current_receive_header_key, state->receive_header_key);
 	if (status != 0) {
 		buffer_clear(current_receive_header_key);
 		return status;
 	}
-	status = buffer_clone(next_receive_header_key, &(state->next_receive_header_key));
+	status = buffer_clone(next_receive_header_key, state->next_receive_header_key);
 	if (status != 0) {
 		buffer_clear(current_receive_header_key);
 		buffer_clear(next_receive_header_key);
@@ -381,9 +381,9 @@ int stage_skipped_header_and_message_keys(
 		//add message key to list of purported message keys
 		if (pos < purported_message_number) { //only stage previous message keys
 			status = header_and_message_keystore_add(
-					&(state->purported_header_and_message_keys),
+					state->purported_header_and_message_keys,
 					message_key_buffer,
-					&(state->receive_header_key));
+					state->receive_header_key);
 			if (status != 0) {
 				buffer_clear(purported_current_chain_key);
 				buffer_clear(purported_next_chain_key);
@@ -442,17 +442,17 @@ int commit_skipped_header_and_message_keys(ratchet_state *state) {
 	int status;
 	//as long as the list of purported message keys isn't empty,
 	//add them to the list of skipped message keys
-	while (state->purported_header_and_message_keys.length != 0) {
+	while (state->purported_header_and_message_keys->length != 0) {
 		status = header_and_message_keystore_add(
-				&(state->skipped_header_and_message_keys),
-				state->purported_header_and_message_keys.head->message_key,
-				state->purported_header_and_message_keys.head->header_key);
+				state->skipped_header_and_message_keys,
+				state->purported_header_and_message_keys->head->message_key,
+				state->purported_header_and_message_keys->head->header_key);
 		if (status != 0) {
 			return status;
 		}
 		header_and_message_keystore_remove(
-				&(state->purported_header_and_message_keys),
-				state->purported_header_and_message_keys.head);
+				state->purported_header_and_message_keys,
+				state->purported_header_and_message_keys->head);
 	}
 	return 0;
 }
@@ -491,23 +491,23 @@ int ratchet_receive(
 
 	int status;
 
-	if ((!is_none(&(state->receive_header_key))) && (state->header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
+	if ((!is_none(state->receive_header_key)) && (state->header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
 		//copy purported message number
 		state->purported_message_number = purported_message_number;
 
 		//create skipped message keys and store current one
 		status = stage_skipped_header_and_message_keys(
-				&(state->purported_receive_chain_key),
+				state->purported_receive_chain_key,
 				message_key,
 				purported_message_number,
-				&(state->receive_chain_key),
+				state->receive_chain_key,
 				state);
 		if (status != 0) {
 			return status;
 		}
 
 		//copy their purported public ephemeral (this is necessary to detect if a new chain was started later on when validating the authenticity)
-		status = buffer_clone(&(state->their_purported_public_ephemeral), their_purported_public_ephemeral);
+		status = buffer_clone(state->their_purported_public_ephemeral, their_purported_public_ephemeral);
 		if (status != 0) {
 			return status;
 		}
@@ -522,7 +522,7 @@ int ratchet_receive(
 		//copy purported message numbers and ephemerals
 		state->purported_message_number = purported_message_number; //Np
 		state->purported_previous_message_number = purported_previous_message_number; //PNp
-		status = buffer_clone(&(state->their_purported_public_ephemeral), their_purported_public_ephemeral);
+		status = buffer_clone(state->their_purported_public_ephemeral, their_purported_public_ephemeral);
 		if (status != 0) {
 			return status;
 		}
@@ -535,7 +535,7 @@ int ratchet_receive(
 				temp_purported_chain_key,
 				message_key,
 				purported_previous_message_number,
-				&(state->receive_chain_key),
+				state->receive_chain_key,
 				state);
 		if (status != 0) {
 			buffer_clear(temp_purported_chain_key);
@@ -543,7 +543,7 @@ int ratchet_receive(
 		}
 
 		//HKp = NHKr
-		status = buffer_clone(&(state->purported_receive_header_key), &(state->next_receive_header_key));
+		status = buffer_clone(state->purported_receive_header_key, state->next_receive_header_key);
 		if (status != 0) {
 			buffer_clear(temp_purported_chain_key);
 			return status;
@@ -552,13 +552,13 @@ int ratchet_receive(
 		//derive purported root and chain keys
 		//first: input key for hkdf (root and chain key derivation)
 		status = derive_root_chain_and_header_keys(
-				&(state->purported_root_key),
-				&(state->purported_receive_chain_key),
-				&(state->purported_next_receive_header_key),
-				&(state->our_private_ephemeral),
-				&(state->our_public_ephemeral),
+				state->purported_root_key,
+				state->purported_receive_chain_key,
+				state->purported_next_receive_header_key,
+				state->our_private_ephemeral,
+				state->our_public_ephemeral,
 				their_purported_public_ephemeral,
-				&(state->root_key),
+				state->root_key,
 				state->am_i_alice);
 		if (status != 0) {
 			return status;
@@ -569,7 +569,7 @@ int ratchet_receive(
 				temp_purported_chain_key,
 				message_key,
 				purported_message_number,
-				&(state->purported_receive_chain_key),
+				state->purported_receive_chain_key,
 				state);
 		if (status != 0) {
 			buffer_clear(temp_purported_chain_key);
@@ -577,7 +577,7 @@ int ratchet_receive(
 		}
 
 		//copy the temporary purported chain key to the state
-		status = buffer_clone(&(state->purported_receive_chain_key), temp_purported_chain_key);
+		status = buffer_clone(state->purported_receive_chain_key, temp_purported_chain_key);
 		if (status != 0) {
 			buffer_clear(temp_purported_chain_key);
 			return status;
@@ -606,50 +606,50 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
 	int status;
 
 	//TODO I can do those if's better. This only happens to be this way because of the specification
-	if ((!is_none(&(state->receive_header_key))) && (header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
+	if ((!is_none(state->receive_header_key)) && (header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
 		//if HKr != <none> and Dec(HKr, header)
 		if (!valid) { //message couldn't be decrypted
 			//clear purported message and header keys
-			header_and_message_keystore_clear(&(state->purported_header_and_message_keys));
+			header_and_message_keystore_clear(state->purported_header_and_message_keys);
 			return 0; //TODO: Should this really be 0?
 		}
 	} else { //new message chain
 		if (state->ratchet_flag || (header_decryptable != NEXT_DECRYPTABLE) || !valid) {
 			//if ratchet_flag or not Dec(NHKr, header)
 			//clear purported message and header keys
-			header_and_message_keystore_clear(&(state->purported_header_and_message_keys));
+			header_and_message_keystore_clear(state->purported_header_and_message_keys);
 			return 0; //TODO: Should this really be 0?
 		}
 
 		//otherwise, received message was valid
 		//accept purported values
 		//RK = RKp
-		status = buffer_clone(&(state->root_key), &(state->purported_root_key));
+		status = buffer_clone(state->root_key, state->purported_root_key);
 		if (status != 0) {
 			//TODO what to clear here?
 			return status;
 		}
 		//HKr = HKp
-		status = buffer_clone(&(state->receive_header_key), &(state->purported_receive_header_key));
+		status = buffer_clone(state->receive_header_key, state->purported_receive_header_key);
 		if (status != 0) {
 			//TODO what to clear here?
 			return status;
 		}
 		//NHKr = NHKp
-		status = buffer_clone(&(state->next_receive_header_key), &(state->purported_next_receive_header_key));
+		status = buffer_clone(state->next_receive_header_key, state->purported_next_receive_header_key);
 		if (status != 0) {
 			//TODO what to clear here?
 			return status;
 		}
 		//DHRr = DHRp
-		status = buffer_clone(&(state->their_public_ephemeral), &(state->their_purported_public_ephemeral));
+		status = buffer_clone(state->their_public_ephemeral, state->their_purported_public_ephemeral);
 		if (status != 0) {
 			//TODO what to clear here?
 			return status;
 		}
 		//erase(DHRs)
-		buffer_clear(&(state->our_private_ephemeral));
-		state->our_private_ephemeral.content_length = crypto_box_SECRETKEYBYTES; //TODO is this necessary?
+		buffer_clear(state->our_private_ephemeral);
+		state->our_private_ephemeral->content_length = crypto_box_SECRETKEYBYTES; //TODO is this necessary?
 		//ratchet_flag = True
 		state->ratchet_flag = true;
 	}
@@ -661,7 +661,7 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
 	//Nr = Np + 1
 	state->receive_message_number = state->purported_message_number + 1;
 	//CKr = CKp
-	status = buffer_clone(&(state->receive_chain_key), &(state->purported_receive_chain_key));
+	status = buffer_clone(state->receive_chain_key, state->purported_receive_chain_key);
 	if (status != 0) {
 		//TODO what to clear here?
 		return status;
@@ -675,9 +675,8 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
  */
 void ratchet_destroy(ratchet_state *state) {
 	//empty message keystores
-	header_and_message_keystore_clear(&(state->skipped_header_and_message_keys));
-	header_and_message_keystore_clear(&(state->purported_header_and_message_keys));
+	header_and_message_keystore_clear(state->skipped_header_and_message_keys);
+	header_and_message_keystore_clear(state->purported_header_and_message_keys);
 
 	sodium_free(state); //this also overwrites all the keys with zeroes
 }
-
