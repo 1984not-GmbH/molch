@@ -21,6 +21,12 @@
 #ifndef LIB_HEADER_H
 #define LIB_HEADER_H
 
+typedef struct header_t {
+	unsigned char public_ephemeral[crypto_box_PUBLICKEYBYTES];
+	uint32_t message_counter;
+	uint32_t previous_message_counter;
+} header_t;
+
 /*
  * Create a new header.
  *
