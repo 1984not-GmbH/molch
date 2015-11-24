@@ -50,30 +50,9 @@ bool is_none(const buffer_t * const buffer) {
 }
 
 /*
- * Start a new ratchet chain. This derives an initial root key and returns a new ratchet state.
- *
- * All the keys will be copied so you can free the buffers afterwards. (private identity get's
- * immediately deleted after deriving the initial root key though!)
- *
- * The return value is a valid ratchet state or NULL if an error occured.
+ * Create a new ratchet_state and initialise the pointers.
  */
-ratchet_state* ratchet_create(
-		const buffer_t * const our_private_identity,
-		const buffer_t * const our_public_identity,
-		const buffer_t * const their_public_identity,
-		const buffer_t * const our_private_ephemeral,
-		const buffer_t * const our_public_ephemeral,
-		const buffer_t * const their_public_ephemeral,
-		bool am_i_alice) {
-	//check buffer sizes
-	if ((our_private_identity->content_length != crypto_box_SECRETKEYBYTES)
-			|| (our_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (their_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (our_private_ephemeral->content_length != crypto_box_SECRETKEYBYTES)
-			|| (our_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (their_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)) {
-		return NULL;
-	}
+ratchet_state *create_ratchet_state() {
 	ratchet_state *state = sodium_malloc(sizeof(ratchet_state));
 	if (state == NULL) { //failed to allocate memory
 		return NULL;
@@ -101,6 +80,44 @@ ratchet_state* ratchet_create(
 	buffer_init_with_pointer(state->our_public_ephemeral, (unsigned char*)state->our_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	buffer_init_with_pointer(state->their_public_ephemeral, (unsigned char*)state->their_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	buffer_init_with_pointer(state->their_purported_public_ephemeral, (unsigned char*)state->their_purported_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+
+	//initialise message keystore for skipped messages
+	header_and_message_keystore_init(state->skipped_header_and_message_keys);
+	header_and_message_keystore_init(state->purported_header_and_message_keys);
+
+	return state;
+}
+
+/*
+ * Start a new ratchet chain. This derives an initial root key and returns a new ratchet state.
+ *
+ * All the keys will be copied so you can free the buffers afterwards. (private identity get's
+ * immediately deleted after deriving the initial root key though!)
+ *
+ * The return value is a valid ratchet state or NULL if an error occured.
+ */
+ratchet_state* ratchet_create(
+		const buffer_t * const our_private_identity,
+		const buffer_t * const our_public_identity,
+		const buffer_t * const their_public_identity,
+		const buffer_t * const our_private_ephemeral,
+		const buffer_t * const our_public_ephemeral,
+		const buffer_t * const their_public_ephemeral,
+		bool am_i_alice) {
+	//check buffer sizes
+	if ((our_private_identity->content_length != crypto_box_SECRETKEYBYTES)
+			|| (our_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
+			|| (their_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
+			|| (our_private_ephemeral->content_length != crypto_box_SECRETKEYBYTES)
+			|| (our_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)
+			|| (their_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)) {
+		return NULL;
+	}
+
+	ratchet_state *state = create_ratchet_state();
+	if (state == NULL) {
+		return NULL;
+	}
 
 	//derive initial chain, root and header keys
 	int status = derive_initial_root_chain_and_header_keys(
@@ -153,10 +170,6 @@ ratchet_state* ratchet_create(
 		sodium_free(state);
 		return NULL;
 	}
-
-	//initialise message keystore for skipped messages
-	header_and_message_keystore_init(state->skipped_header_and_message_keys);
-	header_and_message_keystore_init(state->purported_header_and_message_keys);
 
 	//set other state
 	state->am_i_alice = am_i_alice;
