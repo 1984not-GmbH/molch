@@ -962,10 +962,58 @@ int main(void) {
 	printf("Test JSON export!\n");
 	mempool_t *pool = buffer_create(100000, 0);
 	mcJSON *json = ratchet_json_export(alice_state, pool);
+	if (json == NULL) {
+		fprintf(stderr, "ERROR: Failed to export to JSON.\n");
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		buffer_clear(pool);
+		return EXIT_FAILURE;
+	}
 	buffer_t *output = mcJSON_PrintBuffered(json, 1000, true);
+	if (output == NULL) {
+		fprintf(stderr, "ERROR: Failed to print JSON.\n");
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		buffer_clear(pool);
+		return EXIT_FAILURE;
+	}
 	printf("%.*s\n", (int)output->content_length, (char*)output->content);
+
+	//test json import
+	ratchet_state *imported_alice_state = ratchet_json_import(json);
+	if (imported_alice_state == NULL) {
+		fprintf(stderr, "ERROR: Failed to import from JSON.\n");
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		buffer_clear(pool);
+		buffer_destroy_from_heap(output);
+		return EXIT_FAILURE;
+	}
+	//exporte the imported to JSON again
+	pool->position = 0;
+	mcJSON *imported_json = ratchet_json_export(imported_alice_state, pool);
+	buffer_t *imported_output = mcJSON_PrintBuffered(imported_json, 1000, true);
+	if (imported_output == NULL) {
+		fprintf(stderr, "ERROR: Failed to print imported JSON.\n");
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		buffer_clear(pool);
+		buffer_destroy_from_heap(output);
+		return EXIT_FAILURE;
+	}
+	//compare with original JSON
+	if (buffer_compare(imported_output, output) != 0) {
+		fprintf(stderr, "ERROR: Imported user store is incorrect.\n");
+		ratchet_destroy(alice_state);
+		ratchet_destroy(bob_state);
+		buffer_clear(pool);
+		buffer_destroy_from_heap(output);
+		buffer_destroy_from_heap(imported_output);
+		return EXIT_FAILURE;
+	}
+	buffer_destroy_from_heap(imported_output);
+	buffer_clear(pool);
 	buffer_destroy_from_heap(output);
-	//TODO: more tests
 
 
 	//destroy the ratchets again

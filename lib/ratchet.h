@@ -165,4 +165,9 @@ void ratchet_destroy(ratchet_state *state);
  * Returns NULL in case of Failure.
  */
 mcJSON *ratchet_json_export(const ratchet_state * const state, mempool_t * const pool) __attribute__((warn_unused_result));
+
+/*
+ * Deserialise a ratchet (import from JSON).
+ */
+ratchet_state *ratchet_json_import(const mcJSON * const json) __attribute__((warn_unused_result));
 #endif
