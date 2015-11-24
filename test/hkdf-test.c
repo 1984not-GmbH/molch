@@ -34,7 +34,7 @@ int main(void) {
 	//create random salt
 	buffer_t *salt = buffer_create(crypto_auth_KEYBYTES, crypto_auth_KEYBYTES);
 	randombytes_buf(salt->content, salt->content_length);
-	printf("Salt (%zi Bytes):\n", salt->content_length);
+	printf("Salt (%zu Bytes):\n", salt->content_length);
 	print_hex(salt);
 	putchar('\n');
 

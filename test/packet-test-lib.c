@@ -43,7 +43,7 @@ int create_and_print_message(
 		buffer_clear(header_key);
 		return status;
 	}
-	printf("Header key (%zi Bytes):\n", header_key->content_length);
+	printf("Header key (%zu Bytes):\n", header_key->content_length);
 	print_hex(header_key);
 	putchar('\n');
 
@@ -54,17 +54,17 @@ int create_and_print_message(
 		buffer_clear(message_key);
 		return status;
 	}
-	printf("Message key (%zi Bytes):\n", message_key->content_length);
+	printf("Message key (%zu Bytes):\n", message_key->content_length);
 	print_hex(message_key);
 	putchar('\n');
 
 	//print the header (as hex):
-	printf("Header (%zi Bytes):\n", header->content_length);
+	printf("Header (%zu Bytes):\n", header->content_length);
 	print_hex(header);
 	putchar('\n');
 
 	//print the message (as string):
-	printf("Message (%zi Bytes):\n%.*s\n\n", message->content_length, (int)message->content_length, message->content);
+	printf("Message (%zu Bytes):\n%.*s\n\n", message->content_length, (int)message->content_length, message->content);
 
 	//now encrypt the message
 	status = packet_encrypt(
@@ -83,12 +83,12 @@ int create_and_print_message(
 
 	//print header nonce
 	buffer_t *header_nonce = buffer_create_with_existing_array(packet->content + 3, crypto_aead_chacha20poly1305_NPUBBYTES);
-	printf("Header Nonce (%zi Bytes):\n", header_nonce->content_length);
+	printf("Header Nonce (%zu Bytes):\n", header_nonce->content_length);
 	print_hex(header_nonce);
 	putchar('\n');
 
 	//print encrypted packet
-	printf("Encrypted Packet (%zi Bytes):\n", packet->content_length);
+	printf("Encrypted Packet (%zu Bytes):\n", packet->content_length);
 	print_hex(packet);
 	putchar('\n');
 

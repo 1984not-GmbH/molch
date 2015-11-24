@@ -68,7 +68,7 @@ int main(void) {
 	}
 
 	//print previous root key
-	printf("Previous root key (%zi Bytes):\n", previous_root_key->content_length);
+	printf("Previous root key (%zu Bytes):\n", previous_root_key->content_length);
 	print_hex(previous_root_key);
 	putchar('\n');
 
@@ -97,11 +97,11 @@ int main(void) {
 	}
 
 	//print Alice's root and chain key
-	printf("Alice's root key (%zi Bytes):\n", alice_root_key->content_length);
+	printf("Alice's root key (%zu Bytes):\n", alice_root_key->content_length);
 	print_hex(alice_root_key);
-	printf("Alice's chain key (%zi Bytes):\n", alice_chain_key->content_length);
+	printf("Alice's chain key (%zu Bytes):\n", alice_chain_key->content_length);
 	print_hex(alice_chain_key);
-	printf("Alice's header key (%zi Bytes):\n", alice_header_key->content_length);
+	printf("Alice's header key (%zu Bytes):\n", alice_header_key->content_length);
 	print_hex(alice_header_key);
 	putchar('\n');
 
@@ -132,11 +132,11 @@ int main(void) {
 	}
 
 	//print Bob's root and chain key
-	printf("Bob's root key (%zi Bytes):\n", bob_root_key->content_length);
+	printf("Bob's root key (%zu Bytes):\n", bob_root_key->content_length);
 	print_hex(bob_root_key);
-	printf("Bob's chain key (%zi Bytes):\n", bob_chain_key->content_length);
+	printf("Bob's chain key (%zu Bytes):\n", bob_chain_key->content_length);
 	print_hex(bob_chain_key);
-	printf("Bob's header key (%zi Bytes):\n", bob_header_key->content_length);
+	printf("Bob's header key (%zu Bytes):\n", bob_header_key->content_length);
 	print_hex(bob_header_key);
 	putchar('\n');
 

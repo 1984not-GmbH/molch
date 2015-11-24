@@ -90,7 +90,7 @@ int main(void) {
 	}
 	printf("Decrypted header has the same length.\n\n");
 
-	printf("Decrypted message nonce (%zi Bytes):\n", decrypted_message_nonce->content_length);
+	printf("Decrypted message nonce (%zu Bytes):\n", decrypted_message_nonce->content_length);
 	print_hex(decrypted_message_nonce);
 	putchar('\n');
 	buffer_clear(decrypted_message_nonce);

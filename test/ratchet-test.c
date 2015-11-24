@@ -109,9 +109,9 @@ int main(void) {
 	}
 	putchar('\n');
 	//print Alice's initial root and chain keys
-	printf("Alice's initial root key (%zi Bytes):\n", alice_state->root_key->content_length);
+	printf("Alice's initial root key (%zu Bytes):\n", alice_state->root_key->content_length);
 	print_hex(alice_state->root_key);
-	printf("Alice's initial chain key (%zi Bytes):\n", alice_state->send_chain_key->content_length);
+	printf("Alice's initial chain key (%zu Bytes):\n", alice_state->send_chain_key->content_length);
 	print_hex(alice_state->send_chain_key);
 	putchar('\n');
 
@@ -133,9 +133,9 @@ int main(void) {
 	}
 	putchar('\n');
 	//print Bob's initial root and chain keys
-	printf("Bob's initial root key (%zi Bytes):\n", bob_state->root_key->content_length);
+	printf("Bob's initial root key (%zu Bytes):\n", bob_state->root_key->content_length);
 	print_hex(bob_state->root_key);
-	printf("Bob's initial chain key (%zi Bytes):\n", bob_state->send_chain_key->content_length);
+	printf("Bob's initial chain key (%zu Bytes):\n", bob_state->send_chain_key->content_length);
 	print_hex(bob_state->send_chain_key);
 	putchar('\n');
 

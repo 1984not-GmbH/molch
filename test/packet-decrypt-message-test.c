@@ -80,7 +80,7 @@ int main(void) {
 		return status;
 	}
 
-	printf("Decrypted message nonce (%zi Bytes):\n", decrypted_message_nonce->content_length);
+	printf("Decrypted message nonce (%zu Bytes):\n", decrypted_message_nonce->content_length);
 	print_hex(decrypted_message_nonce);
 	putchar('\n');
 

@@ -97,7 +97,7 @@ int main(void) {
 	}
 
 	//make illegal access to the user store
-	printf("User store length: %zi\n", store->length); //The program should crash here!
+	printf("User store length: %zu\n", store->length); //The program should crash here!
 
 	user_store_destroy(store);
 	return EXIT_SUCCESS;

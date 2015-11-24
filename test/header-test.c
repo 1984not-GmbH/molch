@@ -35,7 +35,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to create our public ephemeral. (%i)\n", status);
 		return status;
 	}
-	printf("Our public ephemeral key (%zi Bytes):\n", our_public_ephemeral_key->content_length);
+	printf("Our public ephemeral key (%zu Bytes):\n", our_public_ephemeral_key->content_length);
 	print_hex(our_public_ephemeral_key);
 
 	//message numbers
@@ -58,7 +58,7 @@ int main(void) {
 	}
 
 	//print the header
-	printf("Header (%zi Bytes):\n", header->content_length);
+	printf("Header (%zu Bytes):\n", header->content_length);
 	print_hex(header);
 	putchar('\n');
 
@@ -76,7 +76,7 @@ int main(void) {
 		return status;
 	}
 
-	printf("Extracted public ephemeral key (%zi Bytes):\n", extracted_public_ephemeral_key->content_length);
+	printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key->content_length);
 	print_hex(extracted_public_ephemeral_key);
 	printf("Extracted message number: %u\n", extracted_message_number);
 	printf("Extracted previous message number: %u\n", extracted_previous_message_number);

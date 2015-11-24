@@ -72,10 +72,10 @@ int generate_and_print_keypair(
 	private_key->content_length = crypto_box_SECRETKEYBYTES;
 
 	//print keypair
-	printf("%.*s's public %.*s key (%zi Bytes):\n", (int)name->content_length, name->content, (int)type->content_length, type->content, public_key->content_length);
+	printf("%.*s's public %.*s key (%zu Bytes):\n", (int)name->content_length, name->content, (int)type->content_length, type->content, public_key->content_length);
 	print_hex(public_key);
 	putchar('\n');
-	printf("%.*s's private %.*s key (%zi Bytes):\n", (int)name->content_length, name->content, (int)type->content_length, type->content, private_key->content_length);
+	printf("%.*s's private %.*s key (%zu Bytes):\n", (int)name->content_length, name->content, (int)type->content_length, type->content, private_key->content_length);
 	print_hex(private_key);
 	putchar('\n');
 

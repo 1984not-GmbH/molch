@@ -52,7 +52,7 @@ int main(void) {
 		molch_destroy_all_users();
 		return status;
 	}
-	printf("Alice public identity (%zi Bytes):\n", alice_public_identity->content_length);
+	printf("Alice public identity (%zu Bytes):\n", alice_public_identity->content_length);
 	print_hex(alice_public_identity);
 	putchar('\n');
 
@@ -77,7 +77,7 @@ int main(void) {
 		molch_destroy_all_users();
 		return status;
 	}
-	printf("Bob public identity (%zi Bytes):\n", bob_public_identity->content_length);
+	printf("Bob public identity (%zu Bytes):\n", bob_public_identity->content_length);
 	print_hex(bob_public_identity);
 	putchar('\n');
 
