@@ -157,4 +157,12 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) __at
  * End the ratchet chain and free the memory.
  */
 void ratchet_destroy(ratchet_state *state);
+
+/*
+ * Serialise a ratchet into JSON. It get's a mempool_t buffer and stores a tree of
+ * mcJSON objects into the buffer starting at pool->position.
+ *
+ * Returns NULL in case of Failure.
+ */
+mcJSON *ratchet_json_export(const ratchet_state * const state, mempool_t * const pool) __attribute__((warn_unused_result));
 #endif

@@ -958,6 +958,15 @@ int main(void) {
 	buffer_clear(alice_receive_message_key3);
 	printf("Bob's third send key and Alice's third receive key match.\n\n");
 
+	//export Alice's ratchet to json
+	printf("Test JSON export!\n");
+	mempool_t *pool = buffer_create(100000, 0);
+	mcJSON *json = ratchet_json_export(alice_state, pool);
+	buffer_t *output = mcJSON_PrintBuffered(json, 1000, true);
+	printf("%.*s\n", (int)output->content_length, (char*)output->content);
+	buffer_destroy_from_heap(output);
+	//TODO: more tests
+
 
 	//destroy the ratchets again
 	printf("Destroying Alice's ratchet ...\n");
