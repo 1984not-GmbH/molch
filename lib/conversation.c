@@ -28,6 +28,7 @@ conversation *create_struct() {
 	}
 
 	buffer_init_with_pointer(conv->id, conv->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	conv->ratchet = NULL;
 
 	return conv;
 }
@@ -73,7 +74,9 @@ conversation *conversation_create(
  * Destroy a conversation.
  */
 void conversation_destroy(conversation * const conv) {
-	ratchet_destroy(conv->ratchet);
+	if (conv->ratchet != NULL) {
+		ratchet_destroy(conv->ratchet);
+	}
 	sodium_free(conv);
 }
 
