@@ -414,17 +414,12 @@ int prekey_import(user_store_node * const node, const mcJSON * const public_prek
  * Deserialise a user store (import from JSON).
  */
 user_store *user_store_json_import(const mcJSON * const json) {
-	if (json == NULL) {
+	if ((json == NULL) || (json->type != mcJSON_Array)) {
 		return NULL;
 	}
 
 	user_store *store = user_store_create();
 	if (store == NULL) {
-		return NULL;
-	}
-
-	if (json->type != mcJSON_Array) {
-		user_store_destroy(store);
 		return NULL;
 	}
 
