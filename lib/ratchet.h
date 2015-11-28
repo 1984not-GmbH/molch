@@ -102,8 +102,7 @@ ratchet_state* ratchet_create(
 		const buffer_t * const their_public_identity,
 		const buffer_t * const our_private_ephemeral,
 		const buffer_t * const our_public_ephemeral,
-		const buffer_t * const their_public_ephemeral,
-		bool am_i_alice) __attribute__((warn_unused_result));
+		const buffer_t * const their_public_ephemeral) __attribute__((warn_unused_result));
 
 /*
  * Create message and header keys to encrypt the next send message with.

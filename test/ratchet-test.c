@@ -98,8 +98,7 @@ int main(void) {
 			bob_public_identity,
 			alice_private_ephemeral,
 			alice_public_ephemeral,
-			bob_public_ephemeral,
-			true);
+			bob_public_ephemeral);
 	buffer_clear(alice_private_ephemeral);
 	buffer_clear(alice_private_identity);
 	if (alice_state == NULL) {
@@ -123,8 +122,7 @@ int main(void) {
 			alice_public_identity,
 			bob_private_ephemeral,
 			bob_public_ephemeral,
-			alice_public_ephemeral,
-			false);
+			alice_public_ephemeral);
 	buffer_clear(bob_private_identity);
 	buffer_clear(bob_private_ephemeral);
 	if (bob_state == NULL) {

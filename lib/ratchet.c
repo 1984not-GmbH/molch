@@ -102,8 +102,7 @@ ratchet_state* ratchet_create(
 		const buffer_t * const their_public_identity,
 		const buffer_t * const our_private_ephemeral,
 		const buffer_t * const our_public_ephemeral,
-		const buffer_t * const their_public_ephemeral,
-		bool am_i_alice) {
+		const buffer_t * const their_public_ephemeral) {
 	//check buffer sizes
 	if ((our_private_identity->content_length != crypto_box_SECRETKEYBYTES)
 			|| (our_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
@@ -117,6 +116,17 @@ ratchet_state* ratchet_create(
 	ratchet_state *state = create_ratchet_state();
 	if (state == NULL) {
 		return NULL;
+	}
+
+	//find out if we are alice by comparing both public keys
+	//the one with the bigger public key is alice
+	int comparison = memcmp(our_public_identity->content, their_public_identity->content, our_public_identity->content_length);
+	if (comparison > 0) {
+		state->am_i_alice = true;
+	} else if (comparison < 0) {
+		state->am_i_alice = false;
+	} else {
+		assert(false && "This mustn't happen, both conversation partners have the same public key!");
 	}
 
 	//derive initial chain, root and header keys
@@ -134,7 +144,7 @@ ratchet_state* ratchet_create(
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral,
-			am_i_alice);
+			state->am_i_alice);
 	if (status != 0) {
 		sodium_free(state);
 		return NULL;
@@ -172,8 +182,7 @@ ratchet_state* ratchet_create(
 	}
 
 	//set other state
-	state->am_i_alice = am_i_alice;
-	state->ratchet_flag = am_i_alice;
+	state->ratchet_flag = state->am_i_alice;
 	state->received_valid = true; //allowing the receival of new messages
 	state->header_decryptable = NOT_TRIED;
 	state->send_message_number = 0;
