@@ -52,4 +52,9 @@ void conversation_destroy(conversation * const conv);
  * Returns NULL in case of failure.
  */
 mcJSON *conversation_json_export(const conversation * const conv, mempool_t * const pool) __attribute__((warn_unused_result));
+
+/*
+ * Deserialize a conversation (import from JSON)
+ */
+conversation *conversation_json_import(const mcJSON * const json) __attribute__((warn_unused_result));
 #endif

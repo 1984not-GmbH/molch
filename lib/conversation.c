@@ -110,3 +110,41 @@ mcJSON *conversation_json_export(const conversation * const conv, mempool_t * co
 
 	return json;
 }
+
+/*
+ * Deserialize a conversation (import from JSON)
+ */
+conversation *conversation_json_import(const mcJSON * const json) {
+	if ((json == NULL) || (json->type != mcJSON_Object)) {
+		return NULL;
+	}
+
+	conversation *conv = create_struct();
+	if (conv == NULL) {
+		return NULL;
+	}
+
+	//import the json
+	mcJSON *id = mcJSON_GetObjectItem(json, buffer_create_from_string("id"));
+	mcJSON *ratchet = mcJSON_GetObjectItem(json, buffer_create_from_string("ratchet"));
+	if ((id == NULL) || (id->type != mcJSON_String) || (id->valuestring->content_length != (2 * CONVERSATION_ID_SIZE + 1))
+			|| (ratchet == NULL) || (ratchet->type != mcJSON_Object)) {
+		goto fail;
+	}
+
+	//copy the id
+	if (buffer_clone_from_hex(conv->id, id->valuestring) != 0) {
+		goto fail;
+	}
+
+	//import the ratchet state
+	conv->ratchet = ratchet_json_import(ratchet);
+	if (conv->ratchet == NULL) {
+		goto fail;
+	}
+
+	return conv;
+fail:
+	conversation_destroy(conv);
+	return NULL;
+}

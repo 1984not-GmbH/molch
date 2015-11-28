@@ -163,8 +163,36 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 	printf("%.*s\n", (int)output->content_length, (char*)output->content);
+
+	//test JSON import
+	conversation *imported_charlies_conversation = conversation_json_import(json);
+	if (imported_charlies_conversation == NULL) {
+		fprintf(stderr, "ERROR: Failed to import Charlie's conversation form JSON.\n");
+		buffer_destroy_from_heap(pool);
+		buffer_destroy_from_heap(output);
+		conversation_destroy(charlie_conversation);
+		conversation_destroy(dora_conversation);
+		return EXIT_FAILURE;
+	}
+	//export the imported to JSON again
+	pool->position = 0; //reset the mempool
+	mcJSON *imported_json = conversation_json_export(imported_charlies_conversation, pool);
+	buffer_t *imported_output = mcJSON_PrintBuffered(imported_json, 4000, true);
+	//compare with original JSON
+	if (buffer_compare(imported_output, output) != 0) {
+		fprintf(stderr, "ERROR: Imported conversation is incorrect.\n");
+		buffer_destroy_from_heap(pool);
+		buffer_destroy_from_heap(imported_output);
+		buffer_destroy_from_heap(output);
+		conversation_destroy(charlie_conversation);
+		conversation_destroy(dora_conversation);
+		conversation_destroy(imported_charlies_conversation);
+		return EXIT_FAILURE;
+	}
+	buffer_destroy_from_heap(imported_output);
 	buffer_destroy_from_heap(output);
 	buffer_destroy_from_heap(pool);
+	conversation_destroy(imported_charlies_conversation);
 
 	//now destroy the conversations again
 	conversation_destroy(charlie_conversation);
