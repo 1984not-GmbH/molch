@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 
 project (molch)
 
-subdirs(test lib buffer)
+subdirs(test lib buffer mcJSON)
 
 set(CMAKE_BUILD_TYPE Debug)
 

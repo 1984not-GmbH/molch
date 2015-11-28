@@ -442,6 +442,66 @@ int main(void) {
 	}
 	sodium_mprotect_noaccess(store);
 	printf("Length of the user store matches.");
+
+	//test JSON export
+	printf("Test JSON export!\n");
+	mempool_t *pool = buffer_create(100000, 0);
+	mcJSON *json = user_store_json_export(store, pool);
+	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
+	printf("%.*s\n", (int) output->content_length, (char*)output->content);
+	if (json->length != 2) {
+		fprintf(stderr, "ERROR: Exported JSON doesn't contain all users.\n");
+		buffer_destroy_from_heap(output);
+		buffer_clear(pool);
+		buffer_clear(alice_private_identity);
+		buffer_clear(alice_private_prekeys);
+		buffer_clear(bob_private_identity);
+		buffer_clear(bob_private_prekeys);
+		buffer_clear(charlie_private_identity);
+		buffer_clear(charlie_private_prekeys);
+		user_store_destroy(store);
+		return EXIT_FAILURE;
+	}
+
+	//test JSON import
+	user_store *imported_store = user_store_json_import(json);
+	if (imported_store == NULL) {
+		fprintf(stderr, "ERROR: Failed to import user store from JSON.\n");
+		buffer_clear(pool);
+		buffer_clear(alice_private_identity);
+		buffer_clear(alice_private_prekeys);
+		buffer_clear(bob_private_identity);
+		buffer_clear(bob_private_prekeys);
+		buffer_clear(charlie_private_identity);
+		buffer_clear(charlie_private_prekeys);
+		buffer_destroy_from_heap(output);
+		user_store_destroy(store);
+		return EXIT_FAILURE;
+	}
+	//export the imported to JSON again
+	pool->position = 0; //reset the mempool
+	mcJSON *imported_json = user_store_json_export(imported_store, pool);
+	buffer_t *imported_output = mcJSON_PrintBuffered(imported_json, 4000, true);
+	//compare with original JSON
+	if (buffer_compare(imported_output, output) != 0) {
+		fprintf(stderr, "ERROR: Imported user store is incorrect.\n");
+		buffer_clear(pool);
+		buffer_clear(alice_private_identity);
+		buffer_clear(alice_private_prekeys);
+		buffer_clear(bob_private_identity);
+		buffer_clear(bob_private_prekeys);
+		buffer_clear(charlie_private_identity);
+		buffer_clear(charlie_private_prekeys);
+		buffer_destroy_from_heap(output);
+		user_store_destroy(store);
+		buffer_destroy_from_heap(imported_output);
+		return EXIT_FAILURE;
+	}
+	buffer_destroy_from_heap(output);
+	buffer_destroy_from_heap(imported_output);
+	user_store_destroy(imported_store);
+	buffer_clear(pool);
+
 	//check the user list
 	list = user_store_list(store);
 	if ((buffer_compare_partial(list, 0, alice_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)

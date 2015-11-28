@@ -50,30 +50,9 @@ bool is_none(const buffer_t * const buffer) {
 }
 
 /*
- * Start a new ratchet chain. This derives an initial root key and returns a new ratchet state.
- *
- * All the keys will be copied so you can free the buffers afterwards. (private identity get's
- * immediately deleted after deriving the initial root key though!)
- *
- * The return value is a valid ratchet state or NULL if an error occured.
+ * Create a new ratchet_state and initialise the pointers.
  */
-ratchet_state* ratchet_create(
-		const buffer_t * const our_private_identity,
-		const buffer_t * const our_public_identity,
-		const buffer_t * const their_public_identity,
-		const buffer_t * const our_private_ephemeral,
-		const buffer_t * const our_public_ephemeral,
-		const buffer_t * const their_public_ephemeral,
-		bool am_i_alice) {
-	//check buffer sizes
-	if ((our_private_identity->content_length != crypto_box_SECRETKEYBYTES)
-			|| (our_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (their_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (our_private_ephemeral->content_length != crypto_box_SECRETKEYBYTES)
-			|| (our_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (their_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)) {
-		return NULL;
-	}
+ratchet_state *create_ratchet_state() {
 	ratchet_state *state = sodium_malloc(sizeof(ratchet_state));
 	if (state == NULL) { //failed to allocate memory
 		return NULL;
@@ -101,6 +80,44 @@ ratchet_state* ratchet_create(
 	buffer_init_with_pointer(state->our_public_ephemeral, (unsigned char*)state->our_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	buffer_init_with_pointer(state->their_public_ephemeral, (unsigned char*)state->their_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	buffer_init_with_pointer(state->their_purported_public_ephemeral, (unsigned char*)state->their_purported_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+
+	//initialise message keystore for skipped messages
+	header_and_message_keystore_init(state->skipped_header_and_message_keys);
+	header_and_message_keystore_init(state->purported_header_and_message_keys);
+
+	return state;
+}
+
+/*
+ * Start a new ratchet chain. This derives an initial root key and returns a new ratchet state.
+ *
+ * All the keys will be copied so you can free the buffers afterwards. (private identity get's
+ * immediately deleted after deriving the initial root key though!)
+ *
+ * The return value is a valid ratchet state or NULL if an error occured.
+ */
+ratchet_state* ratchet_create(
+		const buffer_t * const our_private_identity,
+		const buffer_t * const our_public_identity,
+		const buffer_t * const their_public_identity,
+		const buffer_t * const our_private_ephemeral,
+		const buffer_t * const our_public_ephemeral,
+		const buffer_t * const their_public_ephemeral,
+		bool am_i_alice) {
+	//check buffer sizes
+	if ((our_private_identity->content_length != crypto_box_SECRETKEYBYTES)
+			|| (our_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
+			|| (their_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
+			|| (our_private_ephemeral->content_length != crypto_box_SECRETKEYBYTES)
+			|| (our_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)
+			|| (their_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)) {
+		return NULL;
+	}
+
+	ratchet_state *state = create_ratchet_state();
+	if (state == NULL) {
+		return NULL;
+	}
 
 	//derive initial chain, root and header keys
 	int status = derive_initial_root_chain_and_header_keys(
@@ -153,10 +170,6 @@ ratchet_state* ratchet_create(
 		sodium_free(state);
 		return NULL;
 	}
-
-	//initialise message keystore for skipped messages
-	header_and_message_keystore_init(state->skipped_header_and_message_keys);
-	header_and_message_keystore_init(state->purported_header_and_message_keys);
 
 	//set other state
 	state->am_i_alice = am_i_alice;
@@ -679,4 +692,369 @@ void ratchet_destroy(ratchet_state *state) {
 	header_and_message_keystore_clear(state->purported_header_and_message_keys);
 
 	sodium_free(state); //this also overwrites all the keys with zeroes
+}
+
+/*
+ * Serialise a ratchet into JSON. It get's a mempool_t buffer and stores a tree of
+ * mcJSON objects into the buffer starting at pool->position.
+ *
+ * Returns NULL in case of Failure.
+ */
+mcJSON *ratchet_json_export(const ratchet_state * const state, mempool_t * const pool) {
+	if ((state == NULL) || (pool == NULL)) {
+		return NULL;
+	}
+
+	mcJSON *json = mcJSON_CreateObject(pool);
+	if (json == NULL) {
+		return NULL;
+	}
+
+	//export the root keys
+	mcJSON *root_key = mcJSON_CreateHexString(state->root_key, pool);
+	mcJSON *purported_root_key = mcJSON_CreateHexString(state->purported_root_key, pool);
+	mcJSON *root_keys = mcJSON_CreateObject(pool);
+	if ((root_key == NULL) || (purported_root_key == NULL) || (root_keys == NULL)) {
+		return NULL;
+	}
+	mcJSON_AddItemToObject(root_keys, buffer_create_from_string("root_key"), root_key, pool);
+	mcJSON_AddItemToObject(root_keys, buffer_create_from_string("purported_root_key"), purported_root_key, pool);
+	mcJSON_AddItemToObject(json, buffer_create_from_string("root_keys"), root_keys, pool);
+
+	//export header keys
+	mcJSON *send_header_key = mcJSON_CreateHexString(state->send_header_key, pool);
+	mcJSON *receive_header_key = mcJSON_CreateHexString(state->receive_header_key, pool);
+	mcJSON *next_send_header_key = mcJSON_CreateHexString(state->next_send_header_key, pool);
+	mcJSON *next_receive_header_key = mcJSON_CreateHexString(state->next_receive_header_key, pool);
+	mcJSON *purported_receive_header_key = mcJSON_CreateHexString(state->purported_receive_header_key, pool);
+	mcJSON *purported_next_receive_header_key = mcJSON_CreateHexString(state->purported_next_receive_header_key, pool);
+	mcJSON *header_keys = mcJSON_CreateObject(pool);
+	if ((send_header_key == NULL) || (receive_header_key == NULL) || (next_send_header_key == NULL) || (next_receive_header_key == NULL) || (purported_receive_header_key == NULL) || (purported_next_receive_header_key == NULL) || (header_keys == NULL)) {
+		return NULL;
+	}
+	mcJSON_AddItemToObject(header_keys, buffer_create_from_string("send_header_key"), send_header_key, pool);
+	mcJSON_AddItemToObject(header_keys, buffer_create_from_string("receive_header_key"), receive_header_key, pool);
+	mcJSON_AddItemToObject(header_keys, buffer_create_from_string("next_send_header_key"), next_send_header_key, pool);
+	mcJSON_AddItemToObject(header_keys, buffer_create_from_string("next_receive_header_key"), next_receive_header_key, pool);
+	mcJSON_AddItemToObject(header_keys, buffer_create_from_string("purported_receive_header_key"), purported_receive_header_key, pool);
+	mcJSON_AddItemToObject(header_keys, buffer_create_from_string("purported_next_receive_header_key"), purported_next_receive_header_key, pool);
+	mcJSON_AddItemToObject(json, buffer_create_from_string("header_keys"), header_keys, pool);
+
+	//export chain keys
+	mcJSON *send_chain_key = mcJSON_CreateHexString(state->send_chain_key, pool);
+	mcJSON *receive_chain_key = mcJSON_CreateHexString(state->receive_chain_key, pool);
+	mcJSON *purported_receive_chain_key = mcJSON_CreateHexString(state->receive_chain_key, pool);
+	mcJSON *chain_keys = mcJSON_CreateObject(pool);
+	if ((send_chain_key == NULL) || (receive_chain_key == NULL) || (purported_receive_chain_key == NULL) || (chain_keys == NULL)) {
+		return NULL;
+	}
+	mcJSON_AddItemToObject(chain_keys, buffer_create_from_string("send_chain_key"), send_chain_key, pool);
+	mcJSON_AddItemToObject(chain_keys, buffer_create_from_string("receive_chain_key"), receive_chain_key, pool);
+	mcJSON_AddItemToObject(chain_keys, buffer_create_from_string("purported_receive_chain_key"), purported_receive_chain_key, pool);
+	mcJSON_AddItemToObject(json, buffer_create_from_string("chain_keys"), chain_keys, pool);
+
+	//export our keys
+	mcJSON *our_public_identity = mcJSON_CreateHexString(state->our_public_identity, pool);
+	mcJSON *our_public_ephemeral = mcJSON_CreateHexString(state->our_public_ephemeral, pool);
+	mcJSON *our_private_ephemeral = mcJSON_CreateHexString(state->our_private_ephemeral, pool);
+	mcJSON *our_keys = mcJSON_CreateObject(pool);
+	if ((our_public_identity == NULL) || (our_public_ephemeral == NULL) || (our_private_ephemeral == NULL) || (our_keys == NULL)) {
+		return NULL;
+	}
+	mcJSON_AddItemToObject(our_keys, buffer_create_from_string("public_identity"), our_public_identity, pool);
+	mcJSON_AddItemToObject(our_keys, buffer_create_from_string("public_ephemeral"), our_public_ephemeral, pool);
+	mcJSON_AddItemToObject(our_keys, buffer_create_from_string("private_ephemeral"), our_private_ephemeral, pool);
+	mcJSON_AddItemToObject(json, buffer_create_from_string("our_keys"), our_keys, pool);
+
+	//export their keys
+	mcJSON *their_public_identity = mcJSON_CreateHexString(state->their_public_identity, pool);
+	mcJSON *their_public_ephemeral = mcJSON_CreateHexString(state->their_public_ephemeral, pool);
+	mcJSON *their_purported_public_ephemeral = mcJSON_CreateHexString(state->their_purported_public_ephemeral, pool);
+	mcJSON *their_keys = mcJSON_CreateObject(pool);
+	if ((their_public_identity == NULL) || (their_public_ephemeral == NULL) || (their_purported_public_ephemeral == NULL) || (their_keys == NULL)) {
+		return NULL;
+	}
+	mcJSON_AddItemToObject(their_keys, buffer_create_from_string("public_identity"), their_public_identity, pool);
+	mcJSON_AddItemToObject(their_keys, buffer_create_from_string("public_ephemeral"), their_public_ephemeral, pool);
+	mcJSON_AddItemToObject(their_keys, buffer_create_from_string("purported_public_ephemeral"), their_purported_public_ephemeral, pool);
+	mcJSON_AddItemToObject(json, buffer_create_from_string("their_keys"), their_keys, pool);
+
+	//export message numbers
+	mcJSON *send_message_number = mcJSON_CreateNumber(state->send_message_number, pool);
+	mcJSON *receive_message_number = mcJSON_CreateNumber(state->receive_message_number, pool);
+	mcJSON *purported_message_number = mcJSON_CreateNumber(state->purported_message_number, pool);
+	mcJSON *previous_message_number = mcJSON_CreateNumber(state->previous_message_number, pool);
+	mcJSON *purported_previous_message_number = mcJSON_CreateNumber(state->purported_previous_message_number, pool);
+	mcJSON *message_numbers = mcJSON_CreateObject(pool);
+	if ((send_message_number == NULL) || (receive_message_number == NULL) || (purported_message_number == NULL) || (previous_message_number == NULL) || (purported_previous_message_number == NULL) || (message_numbers == NULL)) {
+		return NULL;
+	}
+	mcJSON_AddItemToObject(message_numbers, buffer_create_from_string("send_message_number"), send_message_number, pool);
+	mcJSON_AddItemToObject(message_numbers, buffer_create_from_string("receive_message_number"), receive_message_number, pool);
+	mcJSON_AddItemToObject(message_numbers, buffer_create_from_string("previous_message_number"), previous_message_number, pool);
+	mcJSON_AddItemToObject(message_numbers, buffer_create_from_string("purported_message_number"), purported_message_number, pool);
+	mcJSON_AddItemToObject(message_numbers, buffer_create_from_string("purported_previous_message_number"), purported_previous_message_number, pool);
+	mcJSON_AddItemToObject(json, buffer_create_from_string("message_numbers"), message_numbers, pool);
+
+	//export other data
+	mcJSON *ratchet_flag = mcJSON_CreateBool(state->ratchet_flag, pool);
+	mcJSON *am_i_alice = mcJSON_CreateBool(state->am_i_alice, pool);
+	mcJSON *received_valid = mcJSON_CreateBool(state->received_valid, pool);
+	mcJSON *header_decryptable = mcJSON_CreateNumber(state->header_decryptable, pool);
+	if ((ratchet_flag == NULL) || (am_i_alice == NULL) || (received_valid == NULL) || (header_decryptable == NULL)) {
+		return NULL;
+	}
+	mcJSON_AddItemToObject(json, buffer_create_from_string("ratchet_flag"), ratchet_flag, pool);
+	mcJSON_AddItemToObject(json, buffer_create_from_string("am_i_alice"), am_i_alice, pool);
+	mcJSON_AddItemToObject(json, buffer_create_from_string("received_valid"), received_valid, pool);
+	mcJSON_AddItemToObject(json, buffer_create_from_string("header_decryptable"), header_decryptable, pool);
+
+	//export header and message keystores
+	mcJSON *skipped_header_and_message_keys = header_and_message_keystore_json_export((header_and_message_keystore * const) &(state->skipped_header_and_message_keys), pool);
+	mcJSON *purported_header_and_message_keys = header_and_message_keystore_json_export((header_and_message_keystore * const ) &(state->purported_header_and_message_keys), pool);
+	mcJSON *keystores = mcJSON_CreateObject(pool);
+	if ((skipped_header_and_message_keys == NULL) || (purported_header_and_message_keys == NULL) || (keystores == NULL)) {
+		return NULL;
+	}
+	mcJSON_AddItemToObject(keystores, buffer_create_from_string("skipped_header_and_message_keys"), skipped_header_and_message_keys, pool);
+	mcJSON_AddItemToObject(keystores, buffer_create_from_string("purported_header_and_message_keys"), purported_header_and_message_keys, pool);
+	mcJSON_AddItemToObject(json, buffer_create_from_string("header_and_message_keystores"), keystores, pool);
+
+	return json;
+}
+
+/*
+ * Deserialise a ratchet (import from JSON).
+ */
+ratchet_state *ratchet_json_import(const mcJSON * const json) {
+	if (json == NULL) {
+		return NULL;
+	}
+
+	ratchet_state *state = create_ratchet_state();
+	if (state == NULL) {
+		return NULL;
+	}
+
+	if (json->type != mcJSON_Object) {
+		goto fail;
+	}
+
+	//import root keys
+	//get from json
+	mcJSON *root_keys = mcJSON_GetObjectItem(json, buffer_create_from_string("root_keys"));
+	if ((root_keys == NULL) || (root_keys->type != mcJSON_Object)) {
+		goto fail;
+	}
+
+	mcJSON *root_key = mcJSON_GetObjectItem(root_keys, buffer_create_from_string("root_key"));
+	mcJSON *purported_root_key = mcJSON_GetObjectItem(root_keys, buffer_create_from_string("purported_root_key"));
+	if ((root_key == NULL) || (root_key->type != mcJSON_String) || (root_key->valuestring->content_length != (2 * crypto_secretbox_KEYBYTES + 1))
+			|| (purported_root_key == NULL) || (purported_root_key->type != mcJSON_String) || (purported_root_key->valuestring->content_length != (2 * crypto_secretbox_KEYBYTES + 1))) {
+		goto fail;
+	}
+
+	//copy to state
+	if (buffer_clone_from_hex(state->root_key, root_key->valuestring) != 0) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(state->purported_root_key, purported_root_key->valuestring) != 0) {
+		goto fail;
+	}
+
+	//import header keys
+	//get from json
+	mcJSON *header_keys = mcJSON_GetObjectItem(json, buffer_create_from_string("header_keys"));
+	if ((header_keys == NULL) || (header_keys->type != mcJSON_Object)) {
+		goto fail;
+	}
+
+	mcJSON *send_header_key = mcJSON_GetObjectItem(header_keys, buffer_create_from_string("send_header_key"));
+	mcJSON *receive_header_key = mcJSON_GetObjectItem(header_keys, buffer_create_from_string("receive_header_key"));
+	mcJSON *next_send_header_key = mcJSON_GetObjectItem(header_keys, buffer_create_from_string("next_send_header_key"));
+	mcJSON *next_receive_header_key = mcJSON_GetObjectItem(header_keys, buffer_create_from_string("next_receive_header_key"));
+	mcJSON *purported_receive_header_key = mcJSON_GetObjectItem(header_keys, buffer_create_from_string("purported_receive_header_key"));
+	mcJSON *purported_next_receive_header_key = mcJSON_GetObjectItem(header_keys, buffer_create_from_string("purported_next_receive_header_key"));
+	if ((send_header_key == NULL) || (send_header_key->type != mcJSON_String) || (send_header_key->valuestring->content_length != (2 * crypto_aead_chacha20poly1305_KEYBYTES + 1))
+			|| (receive_header_key == NULL) || (receive_header_key->type != mcJSON_String) || (receive_header_key->valuestring->content_length != (2 * crypto_aead_chacha20poly1305_KEYBYTES + 1))
+			|| (next_send_header_key == NULL) || (next_send_header_key->type != mcJSON_String) || (next_send_header_key->valuestring->content_length != (2 * crypto_aead_chacha20poly1305_KEYBYTES + 1))
+			|| (next_receive_header_key == NULL) || (next_receive_header_key->type != mcJSON_String) || (next_receive_header_key->valuestring->content_length != (2 * crypto_aead_chacha20poly1305_KEYBYTES + 1))
+			|| (purported_receive_header_key == NULL) || (purported_receive_header_key->type != mcJSON_String) || (purported_receive_header_key->valuestring->content_length != (2 * crypto_aead_chacha20poly1305_KEYBYTES + 1))
+			|| (purported_next_receive_header_key == NULL) || (purported_next_receive_header_key->type != mcJSON_String) || (purported_next_receive_header_key->valuestring->content_length != (2 * crypto_aead_chacha20poly1305_KEYBYTES + 1))) {
+		goto fail;
+	}
+
+	//copy to state
+	if (buffer_clone_from_hex(state->send_header_key, send_header_key->valuestring) != 0) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(state->receive_header_key, receive_header_key->valuestring) != 0) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(state->next_send_header_key, next_send_header_key->valuestring) != 0) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(state->next_receive_header_key, next_receive_header_key->valuestring) != 0) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(state->purported_receive_header_key, purported_receive_header_key->valuestring) != 0) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(state->purported_next_receive_header_key, purported_next_receive_header_key->valuestring) != 0) {
+		goto fail;
+	}
+
+	//import chain keys
+	//get from json
+	mcJSON *chain_keys = mcJSON_GetObjectItem(json, buffer_create_from_string("chain_keys"));
+	if ((chain_keys == NULL) || (chain_keys->type != mcJSON_Object)) {
+		goto fail;
+	}
+	mcJSON *send_chain_key = mcJSON_GetObjectItem(chain_keys, buffer_create_from_string("send_chain_key"));
+	mcJSON *receive_chain_key = mcJSON_GetObjectItem(chain_keys, buffer_create_from_string("receive_chain_key"));
+	mcJSON *purported_receive_chain_key = mcJSON_GetObjectItem(chain_keys, buffer_create_from_string("purported_receive_chain_key"));
+	if ((send_chain_key == NULL) || (send_chain_key->type != mcJSON_String) || (send_chain_key->valuestring->content_length != (2 * crypto_secretbox_KEYBYTES + 1))
+			|| (receive_chain_key == NULL) || (receive_chain_key->type != mcJSON_String) || (receive_chain_key->valuestring->content_length != (2 * crypto_secretbox_KEYBYTES + 1))
+			|| (purported_receive_chain_key == NULL) || (purported_receive_chain_key->type != mcJSON_String) || (purported_receive_chain_key->valuestring->content_length != (2 * crypto_secretbox_KEYBYTES + 1))) {
+			goto fail;
+	}
+
+	//copy to state
+	if (buffer_clone_from_hex(state->send_chain_key, send_chain_key->valuestring) != 0) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(state->receive_chain_key, receive_chain_key->valuestring) != 0) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(state->purported_receive_chain_key, purported_receive_chain_key->valuestring) != 0) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(state->purported_next_receive_header_key, purported_next_receive_header_key->valuestring) != 0) {
+		goto fail;
+	}
+
+	//import our keys
+	//get from json
+	mcJSON *our_keys = mcJSON_GetObjectItem(json, buffer_create_from_string("our_keys"));
+	if ((our_keys == NULL) || (our_keys->type != mcJSON_Object)) {
+		goto fail;
+	}
+	mcJSON *our_public_identity = mcJSON_GetObjectItem(our_keys, buffer_create_from_string("public_identity"));
+	mcJSON *our_public_ephemeral = mcJSON_GetObjectItem(our_keys, buffer_create_from_string("public_ephemeral"));
+	mcJSON *our_private_ephemeral = mcJSON_GetObjectItem(our_keys, buffer_create_from_string("private_ephemeral"));
+	if ((our_public_identity == NULL) || (our_public_identity->type != mcJSON_String) || (our_public_identity->valuestring->content_length != (2 * crypto_box_PUBLICKEYBYTES + 1))
+			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->type != mcJSON_String) || (our_public_ephemeral->valuestring->content_length != (2 * crypto_box_PUBLICKEYBYTES + 1))
+			|| (our_private_ephemeral == NULL) || (our_private_ephemeral->type != mcJSON_String) || (our_private_ephemeral->valuestring->content_length != (2 * crypto_box_SECRETKEYBYTES + 1))) {
+		goto fail;
+	}
+
+	//copy to state
+	if (buffer_clone_from_hex(state->our_public_identity, our_public_identity->valuestring) != 0) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(state->our_public_ephemeral, our_public_ephemeral->valuestring) != 0) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(state->our_private_ephemeral, our_private_ephemeral->valuestring) != 0) {
+		goto fail;
+	}
+
+	//import their keys
+	//get from json
+	mcJSON *their_keys = mcJSON_GetObjectItem(json, buffer_create_from_string("their_keys"));
+	if ((their_keys == NULL) || (their_keys->type != mcJSON_Object)) {
+		goto fail;
+	}
+	mcJSON *their_public_identity = mcJSON_GetObjectItem(their_keys, buffer_create_from_string("public_identity"));
+	mcJSON *their_public_ephemeral = mcJSON_GetObjectItem(their_keys, buffer_create_from_string("public_ephemeral"));
+	mcJSON *their_purported_public_ephemeral = mcJSON_GetObjectItem(their_keys, buffer_create_from_string("purported_public_ephemeral"));
+	if ((their_public_identity == NULL) || (their_public_identity->type != mcJSON_String) || (their_public_identity->valuestring->content_length != (2 * crypto_box_PUBLICKEYBYTES + 1))
+			|| (their_public_ephemeral == NULL) || (their_public_ephemeral->type != mcJSON_String) || (their_public_ephemeral->valuestring->content_length != (2 * crypto_box_PUBLICKEYBYTES + 1))
+			|| (their_purported_public_ephemeral == NULL) || (their_purported_public_ephemeral->type != mcJSON_String) || (their_purported_public_ephemeral->valuestring->content_length != (2 * crypto_box_PUBLICKEYBYTES + 1))) {
+		goto fail;
+	}
+
+	//copy to state
+	if (buffer_clone_from_hex(state->their_public_identity, their_public_identity->valuestring) != 0) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(state->their_public_ephemeral, their_public_ephemeral->valuestring) != 0) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(state->their_purported_public_ephemeral, their_purported_public_ephemeral->valuestring) != 0) {
+		goto fail;
+	}
+
+	//import message numbers
+	//get from json
+	mcJSON *message_numbers = mcJSON_GetObjectItem(json, buffer_create_from_string("message_numbers"));
+	if ((message_numbers == NULL) || (message_numbers->type != mcJSON_Object)) {
+		goto fail;
+	}
+	mcJSON *send_message_number = mcJSON_GetObjectItem(message_numbers, buffer_create_from_string("send_message_number"));
+	mcJSON *receive_message_number = mcJSON_GetObjectItem(message_numbers, buffer_create_from_string("receive_message_number"));
+	mcJSON *purported_message_number = mcJSON_GetObjectItem(message_numbers, buffer_create_from_string("purported_message_number"));
+	mcJSON *previous_message_number = mcJSON_GetObjectItem(message_numbers, buffer_create_from_string("previous_message_number"));
+	mcJSON *purported_previous_message_number = mcJSON_GetObjectItem(message_numbers, buffer_create_from_string("purported_previous_message_number"));
+
+	if ((send_message_number == NULL) || (!mcJSON_IsInteger(send_message_number))
+			|| (receive_message_number == NULL) || (!mcJSON_IsInteger(receive_message_number))
+			|| (purported_message_number == NULL) || (!mcJSON_IsInteger(purported_message_number))
+			|| (previous_message_number == NULL) || (!mcJSON_IsInteger(previous_message_number))
+			|| (purported_previous_message_number == NULL) || (!mcJSON_IsInteger(purported_previous_message_number))) {
+		goto fail;
+	}
+
+	//copy to state
+	state->send_message_number = send_message_number->valueint;
+	state->receive_message_number = receive_message_number->valueint;
+	state->previous_message_number = previous_message_number->valueint;
+	state->purported_message_number = purported_message_number->valueint;
+	state->purported_previous_message_number = purported_previous_message_number->valueint;
+
+	//import other data
+	//get from json
+	mcJSON *ratchet_flag = mcJSON_GetObjectItem(json, buffer_create_from_string("ratchet_flag"));
+	mcJSON *am_i_alice = mcJSON_GetObjectItem(json, buffer_create_from_string("am_i_alice"));
+	mcJSON *received_valid = mcJSON_GetObjectItem(json, buffer_create_from_string("received_valid"));
+	mcJSON *header_decryptable = mcJSON_GetObjectItem(json, buffer_create_from_string("header_decryptable"));
+	if ((ratchet_flag == NULL) || (!mcJSON_IsBoolean(ratchet_flag))
+			|| (am_i_alice == NULL) || (!mcJSON_IsBoolean(am_i_alice))
+			|| (received_valid == NULL) || (!mcJSON_IsBoolean(received_valid))
+			|| (header_decryptable == NULL) || (!mcJSON_IsInteger(header_decryptable))
+			|| ((header_decryptable->valueint != CURRENT_DECRYPTABLE) && (header_decryptable->valueint != NEXT_DECRYPTABLE)
+				&& (header_decryptable->valueint != UNDECRYPTABLE) && (header_decryptable->valueint != NOT_TRIED))) {
+		goto fail;
+	}
+
+	//copy to state
+	state->ratchet_flag = (ratchet_flag->type == mcJSON_True);
+	state->am_i_alice = (am_i_alice->type == mcJSON_True);
+	state->received_valid = (received_valid->type == mcJSON_True);
+	state->header_decryptable = header_decryptable->valueint;
+
+	//import header and message keystores
+	//get from json
+	mcJSON *keystores = mcJSON_GetObjectItem(json, buffer_create_from_string("header_and_message_keystores"));
+	if ((keystores == NULL) || (keystores->type != mcJSON_Object)) {
+		goto fail;
+	}
+	mcJSON *skipped_header_and_message_keys = mcJSON_GetObjectItem(keystores, buffer_create_from_string("skipped_header_and_message_keys"));
+	mcJSON *purported_header_and_message_keys = mcJSON_GetObjectItem(keystores, buffer_create_from_string("purported_header_and_message_keys"));
+	if ((skipped_header_and_message_keys == NULL) || (purported_header_and_message_keys == NULL)) {
+		goto fail;
+	}
+
+	//copy to state
+	if (header_and_message_keystore_json_import(skipped_header_and_message_keys, state->skipped_header_and_message_keys) != 0) {
+		goto fail;
+	}
+	if (header_and_message_keystore_json_import(purported_header_and_message_keys, state->purported_header_and_message_keys) != 0) {
+		goto fail;
+	}
+
+	return state;
+fail:
+	ratchet_destroy(state);
+	return NULL;
 }
