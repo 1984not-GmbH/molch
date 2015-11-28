@@ -76,3 +76,34 @@ void conversation_destroy(conversation * const conv) {
 	ratchet_destroy(conv->ratchet);
 	sodium_free(conv);
 }
+
+/*
+ * Serialise a conversation into JSON. It get#s a mempool_t buffer and stores a tree of
+ * mcJSON objects into the buffer starting at pool->position.
+ *
+ * Returns NULL in case of failure.
+ */
+mcJSON *conversation_json_export(const conversation * const conv, mempool_t * const pool) {
+	if ((conv == NULL) || (pool == NULL)) {
+		return NULL;
+	}
+
+	mcJSON *json = mcJSON_CreateObject(pool);
+	if (json == NULL) {
+		return NULL;
+	}
+
+	mcJSON *id = mcJSON_CreateHexString(conv->id, pool);
+	if (id == NULL) {
+		return NULL;
+	}
+	mcJSON *ratchet = ratchet_json_export(conv->ratchet, pool);
+	if (ratchet == NULL) {
+		return NULL;
+	}
+
+	mcJSON_AddItemToObject(json, buffer_create_from_string("id"), id, pool);
+	mcJSON_AddItemToObject(json, buffer_create_from_string("ratchet"), ratchet, pool);
+
+	return json;
+}

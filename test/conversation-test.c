@@ -136,7 +136,39 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
+	//test JSON export
+	printf("Test JSON export!\n");
+	mempool_t *pool = buffer_create_on_heap(10000, 0);
+	mcJSON *json = conversation_json_export(charlie_conversation, pool);
+	if (json == NULL) {
+		fprintf(stderr, "ERROR: Failed to export into JSON!\n");
+		buffer_destroy_from_heap(pool);
+		conversation_destroy(charlie_conversation);
+		conversation_destroy(dora_conversation);
+		return EXIT_FAILURE;
+	}
+	if (json->length != 2) {
+		fprintf(stderr, "ERROR: JSON for Charlie's conversation is invalid!");
+		buffer_destroy_from_heap(pool);
+		conversation_destroy(charlie_conversation);
+		conversation_destroy(dora_conversation);
+		return EXIT_FAILURE;
+	}
+	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
+	if (output == NULL) {
+		fprintf(stderr, "ERROR: Failed to print JSON.\n");
+		buffer_destroy_from_heap(pool);
+		conversation_destroy(charlie_conversation);
+		conversation_destroy(dora_conversation);
+		return EXIT_FAILURE;
+	}
+	printf("%.*s\n", (int)output->content_length, (char*)output->content);
+	buffer_destroy_from_heap(output);
+	buffer_destroy_from_heap(pool);
+
 	//now destroy the conversations again
 	conversation_destroy(charlie_conversation);
 	conversation_destroy(dora_conversation);
+
+	return EXIT_SUCCESS;
 }

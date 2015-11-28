@@ -44,4 +44,12 @@ conversation *conversation_create(
  * Destroy a conversation.
  */
 void conversation_destroy(conversation * const conv);
+
+/*
+ * Serialise a conversation into JSON. It get#s a mempool_t buffer and stores a tree of
+ * mcJSON objects into the buffer starting at pool->position.
+ *
+ * Returns NULL in case of failure.
+ */
+mcJSON *conversation_json_export(const conversation * const conv, mempool_t * const pool) __attribute__((warn_unused_result));
 #endif
