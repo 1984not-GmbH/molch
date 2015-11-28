@@ -1006,20 +1006,24 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	mcJSON *previous_message_number = mcJSON_GetObjectItem(message_numbers, buffer_create_from_string("previous_message_number"));
 	mcJSON *purported_previous_message_number = mcJSON_GetObjectItem(message_numbers, buffer_create_from_string("purported_previous_message_number"));
 
-	if ((send_message_number == NULL) || (!mcJSON_IsInteger(send_message_number))
-			|| (receive_message_number == NULL) || (!mcJSON_IsInteger(receive_message_number))
-			|| (purported_message_number == NULL) || (!mcJSON_IsInteger(purported_message_number))
-			|| (previous_message_number == NULL) || (!mcJSON_IsInteger(previous_message_number))
-			|| (purported_previous_message_number == NULL) || (!mcJSON_IsInteger(purported_previous_message_number))) {
+	if ((send_message_number == NULL) || (send_message_number->valuedouble > SIZE_MAX) || (send_message_number->valuedouble < 0)
+			|| (receive_message_number == NULL) || (receive_message_number->valuedouble > SIZE_MAX) || (receive_message_number->valuedouble < 0)
+
+			|| (purported_message_number == NULL) || (purported_message_number->valuedouble > SIZE_MAX) || (purported_message_number->valuedouble < 0)
+
+			|| (previous_message_number == NULL) || (previous_message_number->valuedouble > SIZE_MAX) || (previous_message_number->valuedouble < 0)
+
+			|| (purported_previous_message_number == NULL) || (purported_previous_message_number->valuedouble > SIZE_MAX) || (purported_previous_message_number->valuedouble < 0)
+) {
 		goto fail;
 	}
 
 	//copy to state
-	state->send_message_number = send_message_number->valueint;
-	state->receive_message_number = receive_message_number->valueint;
-	state->previous_message_number = previous_message_number->valueint;
-	state->purported_message_number = purported_message_number->valueint;
-	state->purported_previous_message_number = purported_previous_message_number->valueint;
+	state->send_message_number = (size_t)send_message_number->valuedouble;
+	state->receive_message_number = (size_t)receive_message_number->valuedouble;
+	state->previous_message_number = (size_t)previous_message_number->valuedouble;
+	state->purported_message_number = (size_t)purported_message_number->valuedouble;
+	state->purported_previous_message_number = (size_t)purported_previous_message_number->valuedouble;
 
 	//import other data
 	//get from json
