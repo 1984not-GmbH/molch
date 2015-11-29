@@ -9,6 +9,9 @@ target_link_libraries(common utils)
 add_library(packet-test-lib packet-test-lib)
 target_link_libraries(packet-test-lib molch molch-buffer utils)
 
+add_library(ratchet-test-lib ratchet-test-lib)
+target_link_libraries(ratchet-test-lib molch utils)
+
 set(tests hkdf-test
           diffie-hellman-test
           triple-diffie-hellman-test
@@ -25,7 +28,8 @@ set(tests hkdf-test
           ratchet-test
           user-store-test
           spiced-random-test
-          molch-test)
+          molch-test
+          conversation-test)
 
 foreach(test ${tests})
     add_executable(${test} ${test})
