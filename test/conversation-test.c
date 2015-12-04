@@ -91,7 +91,17 @@ int main(void) {
 	}
 
 	//create charlie's conversation
-	conversation *charlie_conversation = conversation_create(
+	conversation_t *charlie_conversation = malloc(sizeof(conversation_t));
+	if (charlie_conversation == NULL) {
+		fprintf(stderr, "ERROR: Failed to allocate memory.\n");
+		buffer_clear(charlie_private_identity);
+		buffer_clear(charlie_private_ephemeral);
+		buffer_clear(dora_private_identity);
+		buffer_clear(dora_private_ephemeral);
+		return EXIT_FAILURE;
+	}
+	status = conversation_init(
+			charlie_conversation,
 			charlie_private_identity,
 			charlie_public_identity,
 			dora_public_identity,
@@ -100,22 +110,35 @@ int main(void) {
 			dora_public_ephemeral);
 	buffer_clear(charlie_private_identity);
 	buffer_clear(charlie_private_ephemeral);
-	if (charlie_conversation == NULL) {
-		fprintf(stderr, "ERROR: Failed to create Charlie's conversation.\n");
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to init Charlie's conversation.\n");
 		buffer_clear(dora_private_identity);
 		buffer_clear(dora_private_ephemeral);
+		free(charlie_conversation);
 		return EXIT_FAILURE;
 	}
 	if (charlie_conversation->id->content_length != CONVERSATION_ID_SIZE) {
 		fprintf(stderr, "ERROR: Charlie's conversation has an incorrect ID length.\n");
 		buffer_clear(dora_private_identity);
 		buffer_clear(dora_private_ephemeral);
-		conversation_destroy(charlie_conversation);
+		conversation_deinit(charlie_conversation);
+		free(charlie_conversation);
 		return EXIT_FAILURE;
 	}
 
 	//create Dora's conversation
-	conversation *dora_conversation = conversation_create(
+	conversation_t *dora_conversation = malloc(sizeof(conversation_t));
+	if (dora_conversation == NULL) {
+		fprintf(stderr, "ERROR: Failed to allocate memory!\n");
+		buffer_clear(dora_private_identity);
+		buffer_clear(dora_private_ephemeral);
+		conversation_deinit(charlie_conversation);
+		free(charlie_conversation);
+
+		return EXIT_FAILURE;
+	}
+	status = conversation_init(
+			dora_conversation,
 			dora_private_identity,
 			dora_public_identity,
 			charlie_public_identity,
@@ -124,15 +147,19 @@ int main(void) {
 			charlie_public_ephemeral);
 	buffer_clear(dora_private_identity);
 	buffer_clear(dora_private_ephemeral);
-	if (dora_conversation == NULL) {
-		fprintf(stderr, "ERROR: Failed to create Dora's conversation.\n");
-		conversation_destroy(charlie_conversation);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to init Dora's conversation.\n");
+		conversation_deinit(charlie_conversation);
+		free(charlie_conversation);
+		free(dora_conversation);
 		return EXIT_FAILURE;
 	}
 	if (dora_conversation->id->content_length != CONVERSATION_ID_SIZE) {
 		fprintf(stderr, "ERROR: Dora's conversation has an incorrect ID length.\n");
-		conversation_destroy(charlie_conversation);
-		conversation_destroy(dora_conversation);
+		conversation_deinit(charlie_conversation);
+		free(charlie_conversation);
+		conversation_deinit(dora_conversation);
+		free(dora_conversation);
 		return EXIT_FAILURE;
 	}
 
@@ -143,35 +170,55 @@ int main(void) {
 	if (json == NULL) {
 		fprintf(stderr, "ERROR: Failed to export into JSON!\n");
 		buffer_destroy_from_heap(pool);
-		conversation_destroy(charlie_conversation);
-		conversation_destroy(dora_conversation);
+		conversation_deinit(charlie_conversation);
+		free(charlie_conversation);
+		conversation_deinit(dora_conversation);
+		free(dora_conversation);
 		return EXIT_FAILURE;
 	}
 	if (json->length != 2) {
 		fprintf(stderr, "ERROR: JSON for Charlie's conversation is invalid!");
 		buffer_destroy_from_heap(pool);
-		conversation_destroy(charlie_conversation);
-		conversation_destroy(dora_conversation);
+		conversation_deinit(charlie_conversation);
+		free(charlie_conversation);
+		conversation_deinit(dora_conversation);
+		free(dora_conversation);
 		return EXIT_FAILURE;
 	}
 	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
 	if (output == NULL) {
 		fprintf(stderr, "ERROR: Failed to print JSON.\n");
 		buffer_destroy_from_heap(pool);
-		conversation_destroy(charlie_conversation);
-		conversation_destroy(dora_conversation);
+		conversation_deinit(charlie_conversation);
+		free(charlie_conversation);
+		conversation_deinit(dora_conversation);
+		free(dora_conversation);
 		return EXIT_FAILURE;
 	}
 	printf("%.*s\n", (int)output->content_length, (char*)output->content);
 
 	//test JSON import
-	conversation *imported_charlies_conversation = conversation_json_import(json);
+	conversation_t *imported_charlies_conversation = malloc(sizeof(conversation_t));
 	if (imported_charlies_conversation == NULL) {
+		fprintf(stderr, "ERROR: Memory allocation failed.\n");
+		buffer_destroy_from_heap(pool);
+		buffer_destroy_from_heap(output);
+		conversation_deinit(charlie_conversation);
+		free(charlie_conversation);
+		conversation_deinit(dora_conversation);
+		free(dora_conversation);
+		return EXIT_FAILURE;
+	}
+	status = conversation_json_import(imported_charlies_conversation, json);
+	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to import Charlie's conversation form JSON.\n");
 		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(output);
-		conversation_destroy(charlie_conversation);
-		conversation_destroy(dora_conversation);
+		conversation_deinit(charlie_conversation);
+		free(charlie_conversation);
+		conversation_deinit(dora_conversation);
+		free(dora_conversation);
+		free(imported_charlies_conversation);
 		return EXIT_FAILURE;
 	}
 	//export the imported to JSON again
@@ -184,19 +231,25 @@ int main(void) {
 		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(imported_output);
 		buffer_destroy_from_heap(output);
-		conversation_destroy(charlie_conversation);
-		conversation_destroy(dora_conversation);
-		conversation_destroy(imported_charlies_conversation);
+		conversation_deinit(charlie_conversation);
+		free(charlie_conversation);
+		conversation_deinit(dora_conversation);
+		free(dora_conversation);
+		conversation_deinit(imported_charlies_conversation);
+		free(imported_charlies_conversation);
 		return EXIT_FAILURE;
 	}
 	buffer_destroy_from_heap(imported_output);
 	buffer_destroy_from_heap(output);
 	buffer_destroy_from_heap(pool);
-	conversation_destroy(imported_charlies_conversation);
+	conversation_deinit(imported_charlies_conversation);
+	free(imported_charlies_conversation);
 
 	//now destroy the conversations again
-	conversation_destroy(charlie_conversation);
-	conversation_destroy(dora_conversation);
+	conversation_deinit(charlie_conversation);
+	free(charlie_conversation);
+	conversation_deinit(dora_conversation);
+	free(dora_conversation);
 
 	return EXIT_SUCCESS;
 }

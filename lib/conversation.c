@@ -21,37 +21,28 @@
 /*
  * Create a new conversation struct and initialise the buffer pointer.
  */
-conversation *create_struct() {
-	conversation *conv= sodium_malloc(sizeof(conversation));
-	if (conv == NULL) {
-		return NULL;
-	}
-
-	buffer_init_with_pointer(conv->id, conv->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
-	conv->ratchet = NULL;
-
-	return conv;
+void init_struct(conversation_t *conversation) {
+	buffer_init_with_pointer(conversation->id, conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	conversation->ratchet = NULL;
 }
 
 /*
  * Create a new conversation
  */
-conversation *conversation_create(
+int conversation_init(
+		conversation_t * const conversation,
 		const buffer_t * const our_private_identity,
 		const buffer_t * const our_public_identity,
 		const buffer_t * const their_public_identity,
 		const buffer_t * const our_private_ephemeral,
 		const buffer_t * const our_public_ephemeral,
 		const buffer_t * const their_public_ephemeral) {
-	conversation *conv = create_struct();
-	if (conv == NULL) {
-		return NULL;
-	}
+	init_struct(conversation);
 
 	//create random id
-	if (buffer_fill_random(conv->id, CONVERSATION_ID_SIZE) != 0) {
-		sodium_free(conv);
-		return NULL;
+	if (buffer_fill_random(conversation->id, CONVERSATION_ID_SIZE) != 0) {
+		sodium_memzero(conversation, sizeof(conversation_t));
+		return -1;
 	}
 
 	ratchet_state *ratchet = ratchet_create(
@@ -62,22 +53,23 @@ conversation *conversation_create(
 			our_public_ephemeral,
 			their_public_ephemeral);
 	if (ratchet == NULL) {
-		sodium_free(conv);
+		sodium_memzero(conversation, sizeof(conversation_t));
+		return -2;
 	}
 
-	conv->ratchet = ratchet;
+	conversation->ratchet = ratchet;
 
-	return conv;
+	return 0;
 }
 
 /*
  * Destroy a conversation.
  */
-void conversation_destroy(conversation * const conv) {
-	if (conv->ratchet != NULL) {
-		ratchet_destroy(conv->ratchet);
+void conversation_deinit(conversation_t * const conversation) {
+	if (conversation->ratchet != NULL) {
+		ratchet_destroy(conversation->ratchet);
 	}
-	sodium_free(conv);
+	sodium_memzero(conversation, sizeof(conversation_t));
 }
 
 /*
@@ -86,8 +78,8 @@ void conversation_destroy(conversation * const conv) {
  *
  * Returns NULL in case of failure.
  */
-mcJSON *conversation_json_export(const conversation * const conv, mempool_t * const pool) {
-	if ((conv == NULL) || (pool == NULL)) {
+mcJSON *conversation_json_export(const conversation_t * const conversation, mempool_t * const pool) {
+	if ((conversation == NULL) || (pool == NULL)) {
 		return NULL;
 	}
 
@@ -96,11 +88,11 @@ mcJSON *conversation_json_export(const conversation * const conv, mempool_t * co
 		return NULL;
 	}
 
-	mcJSON *id = mcJSON_CreateHexString(conv->id, pool);
+	mcJSON *id = mcJSON_CreateHexString(conversation->id, pool);
 	if (id == NULL) {
 		return NULL;
 	}
-	mcJSON *ratchet = ratchet_json_export(conv->ratchet, pool);
+	mcJSON *ratchet = ratchet_json_export(conversation->ratchet, pool);
 	if (ratchet == NULL) {
 		return NULL;
 	}
@@ -114,15 +106,14 @@ mcJSON *conversation_json_export(const conversation * const conv, mempool_t * co
 /*
  * Deserialize a conversation (import from JSON)
  */
-conversation *conversation_json_import(const mcJSON * const json) {
+int conversation_json_import(
+		conversation_t * const conversation,
+		const mcJSON * const json) {
 	if ((json == NULL) || (json->type != mcJSON_Object)) {
-		return NULL;
+		return -2;
 	}
 
-	conversation *conv = create_struct();
-	if (conv == NULL) {
-		return NULL;
-	}
+	init_struct(conversation);
 
 	//import the json
 	mcJSON *id = mcJSON_GetObjectItem(json, buffer_create_from_string("id"));
@@ -133,18 +124,18 @@ conversation *conversation_json_import(const mcJSON * const json) {
 	}
 
 	//copy the id
-	if (buffer_clone_from_hex(conv->id, id->valuestring) != 0) {
+	if (buffer_clone_from_hex(conversation->id, id->valuestring) != 0) {
 		goto fail;
 	}
 
 	//import the ratchet state
-	conv->ratchet = ratchet_json_import(ratchet);
-	if (conv->ratchet == NULL) {
+	conversation->ratchet = ratchet_json_import(ratchet);
+	if (conversation->ratchet == NULL) {
 		goto fail;
 	}
 
-	return conv;
+	return 0;
 fail:
-	conversation_destroy(conv);
-	return NULL;
+	conversation_deinit(conversation);
+	return -1;
 }

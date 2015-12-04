@@ -23,16 +23,17 @@
 
 #define CONVERSATION_ID_SIZE 32
 
-typedef struct conversation {
+typedef struct conversation_t {
 	buffer_t id[1]; //unique id of a conversation, generated randomly
 	unsigned char id_storage[CONVERSATION_ID_SIZE];
 	ratchet_state *ratchet;
-} conversation;
+} conversation_t;
 
 /*
  * Create a new conversation
  */
-conversation *conversation_create(
+int conversation_init(
+		conversation_t * const conversation,
 		const buffer_t * const our_private_identity,
 		const buffer_t * const our_public_identity,
 		const buffer_t * const their_public_identity,
@@ -43,7 +44,7 @@ conversation *conversation_create(
 /*
  * Destroy a conversation.
  */
-void conversation_destroy(conversation * const conv);
+void conversation_deinit(conversation_t * const conversation);
 
 /*
  * Serialise a conversation into JSON. It get#s a mempool_t buffer and stores a tree of
@@ -51,10 +52,12 @@ void conversation_destroy(conversation * const conv);
  *
  * Returns NULL in case of failure.
  */
-mcJSON *conversation_json_export(const conversation * const conv, mempool_t * const pool) __attribute__((warn_unused_result));
+mcJSON *conversation_json_export(const conversation_t * const conversation, mempool_t * const pool) __attribute__((warn_unused_result));
 
 /*
  * Deserialize a conversation (import from JSON)
  */
-conversation *conversation_json_import(const mcJSON * const json) __attribute__((warn_unused_result));
+int conversation_json_import(
+		conversation_t * const conversation,
+		const mcJSON * const json) __attribute__((warn_unused_result));
 #endif
