@@ -100,6 +100,8 @@ user_store_node *create_user_store_node() {
 		buffer_init_with_pointer(&(node->private_prekeys[i]), &(node->private_prekey_storage[i * crypto_box_SECRETKEYBYTES]), crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	}
 
+	conversation_store_init(node->conversations);
+
 	return node;
 }
 
@@ -243,7 +245,10 @@ void user_store_remove(user_store *store, user_store_node *node) {
 	}
 
 	sodium_mprotect_readwrite(store);
-	sodium_mprotect_readonly(node);
+	sodium_mprotect_readwrite(node);
+
+	//clear the conversation store
+	conversation_store_clear(node->conversations);
 
 	if (node->next != NULL) { //node is not the tail
 		sodium_mprotect_readwrite(node->next);
@@ -326,6 +331,14 @@ mcJSON *user_store_node_json_export(user_store_node * const node, mempool_t * co
 		}
 		mcJSON_AddItemToArray(private_prekey_array, private_prekey, pool);
 	}
+
+	//add conversation store
+	mcJSON *conversations = conversation_store_json_export(node->conversations, pool);
+	if (conversations == NULL) {
+		return NULL;
+	}
+
+	mcJSON_AddItemToObject(json, buffer_create_from_string("conversations"), conversations, pool);
 
 	return json;
 }
@@ -431,10 +444,12 @@ user_store *user_store_json_import(const mcJSON * const json) {
 		mcJSON *public_identity = mcJSON_GetObjectItem(user, buffer_create_from_string("public_identity"));
 		mcJSON *private_prekeys = mcJSON_GetObjectItem(user, buffer_create_from_string("private_prekeys"));
 		mcJSON *public_prekeys = mcJSON_GetObjectItem(user, buffer_create_from_string("public_prekeys"));
+		mcJSON *conversations = mcJSON_GetObjectItem(user, buffer_create_from_string("conversations"));
 
 		//check if they are valid
 		if ((private_identity == NULL) || (private_identity->type != mcJSON_String) || (private_identity->valuestring->content_length != (2 * crypto_box_SECRETKEYBYTES + 1))
-				|| (public_identity == NULL) || (public_identity->type != mcJSON_String) || (public_identity->valuestring->content_length != (2 * crypto_box_PUBLICKEYBYTES + 1))) {
+				|| (public_identity == NULL) || (public_identity->type != mcJSON_String) || (public_identity->valuestring->content_length != (2 * crypto_box_PUBLICKEYBYTES + 1))
+				|| (conversations->type != mcJSON_Array)) {
 			user_store_destroy(store);
 			return NULL;
 		}
@@ -466,6 +481,13 @@ user_store *user_store_json_import(const mcJSON * const json) {
 
 		//copy the prekeys
 		if (prekey_import(node, public_prekeys, private_prekeys) != 0) {
+			sodium_free(node);
+			user_store_destroy(store);
+			return NULL;
+		}
+
+		//import the conversation store
+		if (conversation_store_json_import(node->conversations, conversations) != 0) {
 			sodium_free(node);
 			user_store_destroy(store);
 			return NULL;

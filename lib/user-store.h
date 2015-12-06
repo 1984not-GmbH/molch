@@ -21,6 +21,7 @@
 
 #include "../buffer/buffer.h"
 #include "../mcJSON/mcJSON.h"
+#include "conversation-store.h"
 
 #ifndef LIB_USER_STORE_H
 #define LIB_USER_STORE_H
@@ -45,6 +46,7 @@ struct user_store_node {
 	unsigned char public_prekey_storage[PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES];
 	buffer_t private_prekeys[PREKEY_AMOUNT];
 	unsigned char private_prekey_storage[PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES];
+	conversation_store conversations[1];
 };
 
 //header of the user store
