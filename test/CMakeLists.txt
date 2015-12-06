@@ -27,7 +27,8 @@ set(tests hkdf-test
           spiced-random-test
           molch-test
           conversation-test
-          list-test)
+          list-test
+          conversation-store-test)
 
 foreach(test ${tests})
     add_executable(${test} ${test})
