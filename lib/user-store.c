@@ -44,7 +44,7 @@ void user_store_destroy(user_store* store) {
 /*
  * add a new user node to a user store.
  */
-void add_node(user_store * const store, user_store_node * const node) {
+void add_user_store_node(user_store * const store, user_store_node * const node) {
 	sodium_mprotect_readwrite(store); //unlock memory
 	if (store->length == 0) { //first node in the list
 		node->previous = NULL;
@@ -80,7 +80,7 @@ void add_node(user_store * const store, user_store_node * const node) {
 /*
  * create an empty user_store_node and set up all the pointers.
  */
-user_store_node *create_node() {
+user_store_node *create_user_store_node() {
 	user_store_node *node = sodium_malloc(sizeof(user_store_node));
 	if (node == NULL) {
 		return NULL;
@@ -119,7 +119,7 @@ int user_store_add(
 		return -6;
 	}
 
-	user_store_node *new_node = create_node();
+	user_store_node *new_node = create_user_store_node();
 	if (new_node == NULL) { //couldn't allocate memory
 		return -1;
 	}
@@ -150,7 +150,7 @@ int user_store_add(
 		return status;
 	}
 
-	add_node(store, new_node);
+	add_user_store_node(store, new_node);
 
 	return 0;
 }
@@ -440,7 +440,7 @@ user_store *user_store_json_import(const mcJSON * const json) {
 		}
 
 		//create new user_store_node
-		user_store_node *node = create_node();
+		user_store_node *node = create_user_store_node();
 		if (node == NULL) {
 			user_store_destroy(store);
 			return NULL;
@@ -472,7 +472,7 @@ user_store *user_store_json_import(const mcJSON * const json) {
 		}
 
 		//now add the imported node to the user store, this also does all the sodium_mprotect work
-		add_node(store, node);
+		add_user_store_node(store, node);
 	}
 
 	return store;
