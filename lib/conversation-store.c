@@ -25,6 +25,10 @@ void conversation_store_init(conversation_store * const store) {
 	list_init((list_t*)store);
 }
 
+int add_conversation_store_node(conversation_store * const store, conversation_store_node *node) {
+	return list_add((list_t*)store, node->conversation, (list_node*)node);
+}
+
 /*
  * add a conversation to the conversation store.
  */
@@ -55,7 +59,7 @@ int conversation_store_add(
 	}
 
 	//add to the conversation store
-	status = list_add((list_t*)store, node->conversation, (list_node*)node);
+	status = add_conversation_store_node(store, node);
 	if (status != 0) {
 		conversation_deinit(node->conversation);
 		free(node);
