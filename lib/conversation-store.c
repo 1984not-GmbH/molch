@@ -148,3 +148,47 @@ mcJSON *conversation_store_json_export(const conversation_store * const store, m
 
 	return json;
 }
+
+/*
+ * Deserialise a conversation store (import from JSON).
+ */
+int conversation_store_json_import(
+		conversation_store * const store,
+		const mcJSON * const json) {
+	if ((json == NULL) || (json->type != mcJSON_Array) || (store == NULL)) {
+		return -1;
+	}
+
+	//initialise the conversation store
+	conversation_store_init(store);
+
+	//iterate through array
+	mcJSON *child = json->child;
+	for (size_t i = 0; (i < json->length) && (child != NULL); i++, child = child->next) {
+		//create the node
+		conversation_store_node *node = malloc(sizeof(conversation_store_node));
+		if (node == NULL) {
+			free(node);
+			conversation_store_clear(store);
+			return -2;
+		}
+
+		//import the conversation
+		int status = conversation_json_import(node->conversation, child);
+		if (status != 0) {
+			free(node);
+			conversation_store_clear(store);
+			return status;
+		}
+
+		//add it to the conversation store
+		status = add_conversation_store_node(store, node);
+		if (status != 0) {
+			free(node);
+			conversation_store_clear(store);
+			return status;
+		}
+	}
+
+	return 0;
+}

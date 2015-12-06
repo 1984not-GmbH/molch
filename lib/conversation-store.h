@@ -104,4 +104,11 @@ void conversation_store_clear(conversation_store * const store);
  * Returns NULL in case of failure.
  */
 mcJSON *conversation_store_json_export(const conversation_store * const store, mempool_t * const pool) __attribute__((warn_unused_result));
+
+/*
+ * Deserialise a conversation store (import from JSON).
+ */
+int conversation_store_json_import(
+		conversation_store * const store,
+		const mcJSON * const json) __attribute__((warn_unused_result));
 #endif

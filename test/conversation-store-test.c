@@ -153,8 +153,49 @@ int main(void) {
 		goto cleanup;
 	}
 
+	//test JSON import
+	conversation_store *imported_store = malloc(sizeof(conversation_store));
+	status = conversation_store_json_import(imported_store, json);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to import from JSON.\n");
+		sodium_memzero(imported_store, sizeof(conversation_store));
+		free(imported_store);
+		buffer_clear(pool);
+		buffer_destroy_from_heap(output);
+		goto cleanup;
+	}
+	//export the imported to json again
+	pool->position = 0; //reset the mempool
+	mcJSON *imported_json = conversation_store_json_export(imported_store, pool);
+	if (imported_json == NULL) {
+		fprintf(stderr, "ERROR: Failed to export imported to JSON.\n");
+		conversation_store_clear(imported_store);
+		free(imported_store);
+		buffer_clear(pool);
+		buffer_destroy_from_heap(output);
+		goto cleanup;
+	}
+	buffer_t *imported_output = mcJSON_PrintBuffered(imported_json, 4000, true);
+	if (imported_output == NULL) {
+		fprintf(stderr, "ERROR: Failed to print imported output.\n");
+		conversation_store_clear(imported_store);
+		free(imported_store);
+		buffer_clear(pool);
+		buffer_destroy_from_heap(output);
+		goto cleanup;
+	}
+	conversation_store_clear(imported_store);
+	free(imported_store);
 	buffer_clear(pool);
+	//compare both JSON strings
+	if (buffer_compare(imported_output, output) != 0) {
+		fprintf(stderr, "ERROR: Imported conversation store is incorrect.\n");
+		buffer_destroy_from_heap(output);
+		buffer_destroy_from_heap(imported_output);
+		goto cleanup;
+	}
 	buffer_destroy_from_heap(output);
+	buffer_destroy_from_heap(imported_output);
 
 	//remove nodes
 	conversation_store_remove(store, store->head);
