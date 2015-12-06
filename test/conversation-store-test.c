@@ -126,6 +126,36 @@ int main(void) {
 	}
 	printf("Found node by ID.\n");
 
+	//test JSON export
+	printf("Test JSON export!\n");
+	mempool_t *pool = buffer_create(100000, 0);
+	mcJSON *json = conversation_store_json_export(store, pool);
+	if (json == NULL) {
+		fprintf(stderr, "ERROR: Failed to export JSON.\n");
+		buffer_clear(pool);
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
+	if (output == NULL) {
+		fprintf(stderr, "ERROR: Failed to print json.\n");
+		buffer_clear(pool);
+		buffer_destroy_from_heap(output);
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+	printf("%.*s\n", (int)output->content_length, output->content);
+	if (json->length != 5) {
+		fprintf(stderr, "ERROR: Exported JSON doesn't contain all conversations.\n");
+		buffer_clear(pool);
+		buffer_destroy_from_heap(output);
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+
+	buffer_clear(pool);
+	buffer_destroy_from_heap(output);
+
 	//remove nodes
 	conversation_store_remove(store, store->head);
 	printf("Removed head.\n");

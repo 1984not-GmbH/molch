@@ -96,4 +96,12 @@ void conversation_store_clear(conversation_store * const store);
 		}\
 	}\
 }
+
+/*
+ * Serialise a conversation store into JSON. It gets a mempool_t buffer and stre a tree of
+ * mcJSON objects into the buffer starting at pool->position.
+ *
+ * Returns NULL in case of failure.
+ */
+mcJSON *conversation_store_json_export(const conversation_store * const store, mempool_t * const pool) __attribute__((warn_unused_result));
 #endif

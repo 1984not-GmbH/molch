@@ -116,3 +116,31 @@ void conversation_store_clear(conversation_store * const store) {
 		conversation_store_remove(store, store->tail);
 	}
 }
+
+/*
+ * Serialise a conversation store into JSON. It gets a mempool_t buffer and stre a tree of
+ * mcJSON objects into the buffer starting at pool->position.
+ *
+ * Returns NULL in case of failure.
+ */
+mcJSON *conversation_store_json_export(const conversation_store * const store, mempool_t * const pool) {
+	if ((store == NULL) || (pool == NULL)) {
+		return NULL;
+	}
+
+	mcJSON *json = mcJSON_CreateArray(pool);
+	if (json == NULL) {
+		return NULL;
+	}
+
+	//add all the conversations to the array
+	conversation_store_foreach(store,
+		mcJSON * conversation = conversation_json_export(node->conversation, pool);
+		if (conversation == NULL) {
+			return NULL;
+		}
+		mcJSON_AddItemToArray(json, conversation, pool);
+	);
+
+	return json;
+}
