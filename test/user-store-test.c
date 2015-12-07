@@ -600,6 +600,12 @@ int main(void) {
 		user_store_destroy(store);
 		return EXIT_FAILURE;
 	}
+	//check head and tail pointers
+	if ((store->head != NULL) || (store->tail != NULL)) {
+		fprintf(stderr, "ERROR: Clearing the user store didn't reset head and tail pointers.\n");
+		user_store_destroy(store);
+		return EXIT_FAILURE;
+	}
 	printf("Successfully cleared user store.\n");
 
 	sodium_mprotect_noaccess(store);
