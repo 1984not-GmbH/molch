@@ -139,7 +139,6 @@ int molch_create_user(
 /*
  * Destroy a user.
  */
-//TODO this might also have to clear up conversations etc.
 //(although they are selfcontained, so maybe not)
 int molch_destroy_user(const unsigned char * const public_identity_key) {
 	if (users == NULL) {
@@ -174,12 +173,8 @@ size_t molch_user_count() {
  * Delete all users.
  */
 void molch_destroy_all_users() {
-	while (molch_user_count() > 0) {
-		size_t user_count;
-		unsigned char *user_list = molch_user_list(&user_count);
-		assert(user_count != 0);
-		molch_destroy_user(user_list);
-		free(user_list);
+	if (users != NULL) {
+		user_store_clear(users);
 	}
 }
 
