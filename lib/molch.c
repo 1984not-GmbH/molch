@@ -189,15 +189,16 @@ unsigned char *molch_user_list(size_t *count) {
 
 	//get the list of users and copy it
 	buffer_t *user_list_buffer = user_store_list(users);
-	unsigned char *user_list = malloc(user_list_buffer->content_length);
-	*count = user_list_buffer->content_length / crypto_box_PUBLICKEYBYTES;
-	int status = buffer_clone_to_raw(user_list, user_list_buffer->content_length, user_list_buffer);
-	buffer_destroy_from_heap(user_list_buffer);
-	if (status != 0) {
-		*count = 0;
-		free(user_list);
+	if (user_list_buffer == NULL) {
 		return NULL;
 	}
+
+	sodium_mprotect_readonly(users);
+	*count = users->length;
+	sodium_mprotect_noaccess(users);
+
+	unsigned char *user_list = user_list_buffer->content;
+	free(user_list_buffer); //free the buffer_t struct while leaving content intact
 
 	return user_list;
 }
