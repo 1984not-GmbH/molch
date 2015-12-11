@@ -322,6 +322,70 @@ int main(void) {
 	buffer_destroy_from_heap(list);
 	printf("Successfully listed users.\n");
 
+	//check alice's prekeys
+	sodium_mprotect_readonly(store);
+	sodium_mprotect_readonly(store->head);
+	//check the storage
+	//private
+	if (sodium_memcmp(store->head->private_prekey_storage, alice_private_prekeys->content, alice_private_prekeys->content_length) != 0) {
+		fprintf(stderr, "ERROR: Alice's private prekeys are incorrect.\n");
+		buffer_clear(alice_private_identity);
+		buffer_clear(alice_private_prekeys);
+		buffer_clear(bob_private_identity);
+		buffer_clear(bob_private_prekeys);
+		buffer_clear(charlie_private_identity);
+		buffer_clear(charlie_private_prekeys);
+		user_store_destroy(store);
+		return EXIT_FAILURE;
+	}
+	//public
+	if (sodium_memcmp(store->head->public_prekey_storage, alice_public_prekeys->content, alice_public_prekeys->content_length) != 0) {
+		fprintf(stderr, "ERROR: Alice's public prekeys are incorrect.\n");
+		buffer_clear(alice_private_identity);
+		buffer_clear(alice_private_prekeys);
+		buffer_clear(bob_private_identity);
+		buffer_clear(bob_private_prekeys);
+		buffer_clear(charlie_private_identity);
+		buffer_clear(charlie_private_prekeys);
+		user_store_destroy(store);
+		return EXIT_FAILURE;
+	}
+
+	//check the buffers
+	//private
+	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
+		status = buffer_compare_to_raw(&store->head->private_prekeys[i], alice_private_prekeys->content + i * crypto_box_PUBLICKEYBYTES, crypto_box_SECRETKEYBYTES);
+		if (status != 0) {
+			fprintf(stderr, "ERROR: Alice's private prekeys are incorrect (buffer_t).\n");
+			buffer_clear(alice_private_identity);
+			buffer_clear(alice_private_prekeys);
+			buffer_clear(bob_private_identity);
+			buffer_clear(bob_private_prekeys);
+			buffer_clear(charlie_private_identity);
+			buffer_clear(charlie_private_prekeys);
+			user_store_destroy(store);
+			return EXIT_FAILURE;
+		}
+	}
+	//public
+	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
+		status = buffer_compare_to_raw(&store->head->public_prekeys[i], alice_public_prekeys->content + i * crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+		if (status != 0) {
+			fprintf(stderr, "ERROR: Alice's public prekeys are incorrect (buffer_t).\n");
+			buffer_clear(alice_private_identity);
+			buffer_clear(alice_private_prekeys);
+			buffer_clear(bob_private_identity);
+			buffer_clear(bob_private_prekeys);
+			buffer_clear(charlie_private_identity);
+			buffer_clear(charlie_private_prekeys);
+			user_store_destroy(store);
+			return EXIT_FAILURE;
+		}
+	}
+	sodium_mprotect_noaccess(store->head);
+	sodium_mprotect_noaccess(store);
+	printf("Alice's Prekeys have been correctly store!\n");
+
 	//find node
 	user_store_node *bob_node = user_store_find_node(store, bob_public_identity);
 	if (bob_node == NULL) {

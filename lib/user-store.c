@@ -96,7 +96,7 @@ user_store_node *create_node() {
 
 	//initialise prekey buffers
 	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		buffer_init_with_pointer(&(node->public_prekeys[i]), &(node->private_prekey_storage[i * crypto_box_PUBLICKEYBYTES]), crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+		buffer_init_with_pointer(&(node->public_prekeys[i]), &(node->public_prekey_storage[i * crypto_box_PUBLICKEYBYTES]), crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 		buffer_init_with_pointer(&(node->private_prekeys[i]), &(node->private_prekey_storage[i * crypto_box_SECRETKEYBYTES]), crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	}
 
