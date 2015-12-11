@@ -157,4 +157,16 @@ int molch_decrypt_message(
  * This will almost certainly be changed later on!!!!!!
  */
 void molch_end_conversation(const unsigned char * const conversation_id);
+
+/*
+ * List the conversations of a user.
+ *
+ * Returns the number of conversations and a list of conversations for a given user.
+ * (all the conversation ids in one big list).
+ *
+ * Don't forget to free it after use.
+ *
+ * Returns NULL if the user doesn't exist or if there is no conversation.
+ */
+unsigned char *molch_list_conversations(const unsigned char * const user_public_identity, size_t *number) __attribute__((warn_unused_result));
 #endif

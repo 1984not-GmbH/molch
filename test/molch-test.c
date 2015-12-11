@@ -127,6 +127,24 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
+	//check conversation export
+	size_t number_of_conversations;
+	unsigned char *conversation_list = molch_list_conversations(alice_public_identity->content, &number_of_conversations);
+	if (conversation_list == NULL) {
+		fprintf(stderr, "ERROR: Failed to list conversations.\n");
+		molch_destroy_all_users();
+		free(alice_send_packet);
+		return EXIT_FAILURE;
+	}
+	if ((number_of_conversations != 1) || (buffer_compare_to_raw(alice_conversation, conversation_list, alice_conversation->content_length) != 0)) {
+		fprintf(stderr, "ERROR: Failed to list conversations.\n");
+		free(conversation_list);
+		molch_destroy_all_users();
+		free(alice_send_packet);
+		return EXIT_FAILURE;
+	}
+	free(conversation_list);
+
 	//check the message type
 	if (molch_get_message_type(alice_send_packet, alice_send_packet_length) != PREKEY_MESSAGE) {
 		fprintf(stderr, "ERROR: Wrong message type.\n");

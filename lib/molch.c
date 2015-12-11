@@ -514,3 +514,46 @@ void molch_end_conversation(const unsigned char * const conversation_id) {
 	conversation_store_remove_by_id(user->conversations, conversation->id);
 	sodium_mprotect_noaccess(user);
 }
+
+/*
+ * List the conversations of a user.
+ *
+ * Returns the number of conversations and a list of conversations for a given user.
+ * (all the conversation ids in one big list).
+ *
+ * Don't forget to free it after use.
+ *
+ * number is set to the number of conversations or SIZE_MAX if there is any error
+ * (e.g. the user doesn't exist)
+ *
+ * Returns NULL if the user doesn't exist or if there is no conversation.
+ */
+unsigned char *molch_list_conversations(const unsigned char * const user_public_identity, size_t *number) {
+	buffer_t *user_public_identity_buffer = buffer_create_with_existing_array((unsigned char*)user_public_identity, crypto_box_PUBLICKEYBYTES);
+	user_store_node *user = user_store_find_node(users, user_public_identity_buffer);
+	if (user == NULL) {
+		*number = SIZE_MAX;
+		return NULL;
+	}
+
+	sodium_mprotect_readonly(user);
+	buffer_t *conversation_id_buffer = conversation_store_list(user->conversations);
+	sodium_mprotect_noaccess(user);
+
+	if (conversation_id_buffer == NULL) {
+		*number = 0;
+		return NULL;
+	}
+
+	if ((conversation_id_buffer->content_length % CONVERSATION_ID_SIZE) != 0) {
+		*number = SIZE_MAX;
+		buffer_destroy_from_heap(conversation_id_buffer);
+		return NULL;
+	}
+	*number = conversation_id_buffer->content_length / CONVERSATION_ID_SIZE;
+
+	unsigned char *conversation_ids = conversation_id_buffer->content;
+	free(conversation_id_buffer); //free buffer_t struct
+
+	return conversation_ids;
+}
