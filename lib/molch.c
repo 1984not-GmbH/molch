@@ -230,56 +230,92 @@ molch_message_type molch_get_message_type(
 /*
  * Start a new conversation. (sending)
  *
+ * The conversation can be identified by it's ID
+ *
  * This requires a new set of prekeys from the receiver.
+ *
+ * Returns 0 on success.
  */
-molch_conversation molch_create_send_conversation(
+int molch_create_send_conversation(
+		unsigned char * const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
 		unsigned char ** const packet, //output, will be malloced by the function, don't forget to free it after use!
 		size_t *packet_length, //output
 		const unsigned char * const message,
 		const size_t message_length,
-		const unsigned char * const prekey_list __attribute__((unused)), //prekey list of the receiver
+		const unsigned char * const prekey_list, //prekey list of the receiver (PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES)
 		const unsigned char * const sender_public_identity, //identity of the sender (user)
 		const unsigned char * const receiver_public_identity) { //identity of the receiver
-	molch_conversation conversation;
-	buffer_t *conversation_buffer = buffer_create_on_heap(2 * crypto_box_PUBLICKEYBYTES, 2 * crypto_box_PUBLICKEYBYTES);
-	conversation.conversation = (void*) conversation_buffer;
+	//randomly chose the PREKEY to use for sending
+	uint32_t prekey_number = randombytes_uniform(PREKEY_AMOUNT);
+	buffer_t *receiver_public_ephemeral = buffer_create_with_existing_array((unsigned char*)&prekey_list[crypto_box_PUBLICKEYBYTES * prekey_number], crypto_box_PUBLICKEYBYTES);
 
-	//copy public keys to conversation_buffer
-	int status;
-	status = buffer_copy_from_raw(conversation_buffer,
-			0, //destination offset
-			sender_public_identity,
-			0, //source offset
-			crypto_box_PUBLICKEYBYTES); //length
-	if (status != 0) {
-		conversation.valid = false;
-		return conversation;
+	buffer_t *sender_public_identity_buffer = buffer_create_with_existing_array((unsigned char*)sender_public_identity, crypto_box_PUBLICKEYBYTES);
+	//get the user that matches the public identity key of the sender
+	user_store_node *user = user_store_find_node(users, sender_public_identity_buffer);
+	if (user == NULL) {
+		return -1;
 	}
-	status = buffer_copy_from_raw(conversation_buffer,
-			crypto_box_PUBLICKEYBYTES, //destination offset
-			receiver_public_identity,
-			0, //source offset
-			crypto_box_PUBLICKEYBYTES); //length
+
+	buffer_t *receiver_public_identity_buffer = buffer_create_with_existing_array((unsigned char*)receiver_public_identity, crypto_box_PUBLICKEYBYTES);
+
+	//create ephemeral keys
+	buffer_t *our_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *our_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	crypto_box_keypair(our_public_ephemeral->content, our_private_ephemeral->content);
+
+	sodium_mprotect_readwrite(user);
+	//start a conversation
+	int status = conversation_store_add(
+			user->conversations,
+			user->private_identity_key,
+			user->public_identity_key,
+			receiver_public_identity_buffer,
+			our_private_ephemeral,
+			our_public_ephemeral,
+			receiver_public_ephemeral);
+
+	//copy the conversation id
+	if (status == 0) {
+		status = buffer_clone_to_raw(conversation_id, CONVERSATION_ID_SIZE, user->conversations->tail->conversation->id);
+		if (status != 0) {
+			conversation_store_remove(user->conversations, user->conversations->tail);
+		}
+	}
+	sodium_mprotect_noaccess(user);
+	buffer_clear(our_private_ephemeral);
 	if (status != 0) {
-		conversation.valid = false;
-		return conversation;
+		return status;
 	}
 
 	//create the packet
-	status = molch_encrypt_message(packet, packet_length, message, message_length, conversation);
+	status = molch_encrypt_message(packet, packet_length, message, message_length, conversation_id);
 	if (status != 0) {
 		free(*packet);
 		*packet_length = 0;
-		conversation.valid = false;
-		return conversation;
+		return status;
 	}
 
 	//make message type PREKEY_MESSAGE
 	static const molch_message_type PREKEY = PREKEY_MESSAGE;
 	memcpy(*packet, &PREKEY, sizeof(molch_message_type));
 
-	conversation.valid = true;
-	return conversation;
+	return 0;
+}
+
+/*
+ * Find out the position a prekey is in.
+ *
+ * Returns SIZE_MAX if it wasn't found.
+ */
+size_t get_prekey_number(const buffer_t * const prekeys, const buffer_t * const prekey) {
+	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
+		if (buffer_compare(prekey, &prekeys[i]) == 0) {
+			//prekey found
+			return i;
+		}
+	}
+
+	return SIZE_MAX; //prekey not found
 }
 
 /*
@@ -291,49 +327,110 @@ molch_conversation molch_create_send_conversation(
  *
  * conversation->valid is false on failure
  */
-molch_conversation molch_create_receive_conversation(
+int molch_create_receive_conversation(
+		unsigned char * const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
 		unsigned char ** const message, //output, will be malloced by the function, don't forget to free it after use!
 		size_t * const message_length, //output
 		const unsigned char * const packet, //received prekey packet
 		const size_t packet_length,
-		const unsigned char * const prekey_list __attribute__((unused)), //output, needs to be 100 * crypto_box_PUBLICKEYBYTES + crypto_onetimeauth_BYTES
+		unsigned char * const prekey_list __attribute__((unused)), //TODO: use thisoutput, needs to be PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES + crypto_onetimeauth_BYTES, This is the new prekey list for the receiving user
 		const unsigned char * const sender_public_identity, //identity of the sender
 		const unsigned char * const receiver_public_identity) { //identity key of the receiver (user)
-	molch_conversation conversation;
-	buffer_t *conversation_buffer = buffer_create_on_heap(2 * crypto_box_PUBLICKEYBYTES, 2 * crypto_box_PUBLICKEYBYTES);
-	conversation.conversation = (void*) conversation_buffer;
-
-	//copy public keys to conversation_buffer
-	int status;
-	status = buffer_copy_from_raw(conversation_buffer,
-			0, //destination offset
-			sender_public_identity,
-			0, //source offset
-			crypto_box_PUBLICKEYBYTES); //length
-	if (status != 0) {
-		conversation.valid = false;
-		return conversation;
-	}
-	status = buffer_copy_from_raw(conversation_buffer,
-			crypto_box_PUBLICKEYBYTES, //destination offset
-			receiver_public_identity,
-			0, //source offset
-			crypto_box_PUBLICKEYBYTES); //length
-	if (status != 0) {
-		conversation.valid = false;
-		return conversation;
+	//check packet size
+	if (packet_length < (sizeof(molch_message_type) + crypto_box_PUBLICKEYBYTES)) {
+		return -1;
 	}
 
-	status = molch_decrypt_message(message, message_length, packet, packet_length, conversation);
+	//check packet type
+	if (molch_get_message_type(packet, packet_length) != PREKEY_MESSAGE) {
+		return -2;
+	}
+
+	//get the user
+	buffer_t *receiver_public_identity_buffer = buffer_create_with_existing_array((unsigned char*)receiver_public_identity, crypto_box_PUBLICKEYBYTES);
+	user_store_node *user = user_store_find_node(users, receiver_public_identity_buffer);
+
+	//get the public prekey from the message
+	buffer_t *public_prekey = buffer_create_with_existing_array((unsigned char*)(packet + sizeof(molch_message_type)), crypto_box_PUBLICKEYBYTES);
+	sodium_mprotect_readwrite(user);
+	size_t prekey_number = get_prekey_number(user->public_prekeys, public_prekey);
+	if (prekey_number == SIZE_MAX) { //prekey not found
+		sodium_mprotect_noaccess(user);
+		return -3;
+	}
+
+	//get the corresponding private prekey
+	buffer_t *private_prekey = buffer_create(crypto_box_SECRETKEYBYTES, 0);
+	int status = buffer_clone(private_prekey, &user->private_prekeys[prekey_number]);
+	if (status != 0) {
+		sodium_mprotect_noaccess(user);
+		return status;
+	}
+
+	buffer_t *sender_public_identity_buffer = buffer_create_with_existing_array((unsigned char*)sender_public_identity, crypto_box_PUBLICKEYBYTES);
+	buffer_t *sender_public_ephemeral_buffer = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	memset(sender_public_ephemeral_buffer->content, 1, sender_public_ephemeral_buffer->content_length); //filled with 1s for now TODO: this has to be changed later on
+
+	//create a new conversation
+	status = conversation_store_add(
+			user->conversations,
+			user->private_identity_key,
+			user->public_identity_key,
+			sender_public_identity_buffer,
+			private_prekey,
+			public_prekey,
+			sender_public_ephemeral_buffer);
+	buffer_clear(private_prekey);
+	if (status != 0) {
+		sodium_mprotect_noaccess(user);
+		return status;
+	}
+
+	//copy the conversation id
+	status = buffer_clone_to_raw(conversation_id, CONVERSATION_ID_SIZE, user->conversations->tail->conversation->id);
+	if (status != 0) {
+		conversation_store_remove(user->conversations, user->conversations->tail);
+		sodium_mprotect_noaccess(user);
+		return status;
+	}
+
+	status = molch_decrypt_message(message, message_length, packet, packet_length, conversation_id);
 	if (status != 0) {
 		free(*message);
-		*message_length = 0;
-		conversation.valid = false;
-		return conversation;
+		conversation_store_remove(user->conversations, user->conversations->tail);
+		sodium_mprotect_noaccess(user);
+		return status;
 	}
+	sodium_mprotect_noaccess(user);
 
-	conversation.valid = true;
-	return conversation;
+	return 0;
+}
+
+/*
+ * Find a conversation based on it's conversation id.
+ */
+conversation_t *find_conversation(const unsigned char * const conversation_id) {
+	buffer_t *conversation_id_buffer = buffer_create_with_existing_array((unsigned char*)conversation_id, CONVERSATION_ID_SIZE);
+
+	//go through all the users
+	sodium_mprotect_readonly(users);
+	user_store_node *node = users->head;
+	conversation_store_node *conversation_node = NULL;
+	while (node != NULL) {
+		sodium_mprotect_readonly(node);
+		conversation_node = conversation_store_find_node(node->conversations, conversation_id_buffer);
+		if (conversation_node != NULL) {
+			//found the conversation where searching for
+			sodium_mprotect_noaccess(node);
+			break;
+		}
+		user_store_node *next = node->next;
+		sodium_mprotect_noaccess(node);
+		node = next;
+	}
+	sodium_mprotect_noaccess(users);
+
+	return conversation_node->conversation;
 }
 
 /*
@@ -347,15 +444,28 @@ int molch_encrypt_message(
 		size_t *packet_length, //output, length of the packet
 		const unsigned char * const message,
 		const size_t message_length,
-		molch_conversation conversation __attribute__((unused))) {
+		const unsigned char * const conversation_id) {
+	//find the conversation
+	conversation_t *conversation = find_conversation(conversation_id);
+
 	//create packet
-	*packet_length = sizeof(molch_message_type) + message_length;
+	*packet_length = sizeof(molch_message_type) + conversation->ratchet->their_public_ephemeral->content_length + message_length;
 	*packet = malloc(*packet_length);
+	if (packet == NULL) {
+		return -1;
+	}
+
 
 	//fill it
+	//(message type || ephemeral key || message)
 	static const molch_message_type NORMAL = NORMAL_MESSAGE;
-	memcpy(*packet, &NORMAL, sizeof(molch_message_type));
-	memcpy(*packet + sizeof(molch_message_type), message, message_length);
+	memcpy(*packet, &NORMAL, sizeof(molch_message_type)); //message type
+	memcpy( *packet + sizeof(molch_message_type), //receivers ephemeral key
+			conversation->ratchet->their_public_ephemeral->content,
+			conversation->ratchet->their_public_ephemeral->content_length);
+	memcpy( *packet + sizeof(molch_message_type) + conversation->ratchet->their_public_ephemeral->content_length, //message itself
+			message,
+			message_length);
 
 	return 0;
 }
@@ -370,17 +480,17 @@ int molch_decrypt_message(
 		size_t *message_length, //output
 		const unsigned char * const packet, //received packet
 		const size_t packet_length,
-		molch_conversation conversation __attribute__((unused))) {
+		const unsigned char * const conversation_id __attribute__((unused))) {
 	if (packet_length < sizeof(molch_message_type)) {
 		*message_length = 0;
 		*message = NULL;
 		return -10;
 	}
 
-	*message_length = packet_length - sizeof(molch_message_type);
+	*message_length = packet_length - sizeof(molch_message_type) - crypto_box_PUBLICKEYBYTES;
 
 	*message = malloc(*message_length);
-	memcpy(*message, packet + sizeof(molch_message_type), *message_length);
+	memcpy(*message, packet + sizeof(molch_message_type) + crypto_box_PUBLICKEYBYTES, *message_length);
 	return 0;
 }
 
@@ -389,6 +499,18 @@ int molch_decrypt_message(
  *
  * This will almost certainly be changed later on!!!!!!
  */
-void molch_destroy_conversation(molch_conversation conversation) {
-	buffer_destroy_from_heap(((buffer_t*) conversation.conversation));
+void molch_end_conversation(const unsigned char * const conversation_id) {
+	//find the conversation
+	conversation_t *conversation = find_conversation(conversation_id);
+	if (conversation == NULL) {
+		return;
+	}
+	//find the corresponding user
+	user_store_node *user = user_store_find_node(users, conversation->ratchet->our_public_identity);
+	if (user == NULL) {
+		return;
+	}
+	sodium_mprotect_readwrite(user);
+	conversation_store_remove_by_id(user->conversations, conversation->id);
+	sodium_mprotect_noaccess(user);
 }
