@@ -126,6 +126,26 @@ int main(void) {
 	}
 	printf("Found node by ID.\n");
 
+	//test list export feature
+	buffer_t *conversation_list = conversation_store_list(store);
+	if ((conversation_list == NULL) || (conversation_list->content_length != (CONVERSATION_ID_SIZE * store->length))) {
+		fprintf(stderr, "ERROR: Failed to get list of conversations.\n");
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+
+	//check for all conversations that they exist
+	for (size_t i = 0; i < (conversation_list->content_length / CONVERSATION_ID_SIZE); i++) {
+		buffer_t *current_id = buffer_create_with_existing_array(conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
+		if (conversation_store_find_node(store, current_id) == NULL) {
+			fprintf(stderr, "ERROR: Exported list of conversations was incorrect.\n");
+			buffer_destroy_from_heap(conversation_list);
+			status = EXIT_FAILURE;
+			goto cleanup;
+		}
+	}
+	buffer_destroy_from_heap(conversation_list);
+
 	//test JSON export
 	printf("Test JSON export!\n");
 	mempool_t *pool = buffer_create(100000, 0);

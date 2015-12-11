@@ -122,6 +122,35 @@ void conversation_store_clear(conversation_store * const store) {
 }
 
 /*
+ * Create a list of conversations (one buffer filled with the conversation ids.
+ *
+ * Returns NULL if empty.
+ */
+buffer_t *conversation_store_list(conversation_store * const store) {
+	if (store->length == 0) {
+		return NULL;
+	}
+
+	buffer_t *list = buffer_create_on_heap(store->length * CONVERSATION_ID_SIZE, 0);
+	//copy all the id's
+	conversation_store_foreach(
+			store,
+			int status = buffer_copy(
+				list,
+				CONVERSATION_ID_SIZE * index,
+				value->id,
+				0,
+				value->id->content_length);
+			if (status != 0) {
+				buffer_destroy_from_heap(list);
+				return NULL;
+			}
+	);
+
+	return list;
+}
+
+/*
  * Serialise a conversation store into JSON. It gets a mempool_t buffer and stre a tree of
  * mcJSON objects into the buffer starting at pool->position.
  *

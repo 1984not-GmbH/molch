@@ -98,6 +98,13 @@ void conversation_store_clear(conversation_store * const store);
 }
 
 /*
+ * Create a list of conversations (one buffer filled with the conversation ids.
+ *
+ * Returns NULL if empty.
+ */
+buffer_t *conversation_store_list(conversation_store * const store) __attribute__((warn_unused_result));
+
+/*
  * Serialise a conversation store into JSON. It gets a mempool_t buffer and stre a tree of
  * mcJSON objects into the buffer starting at pool->position.
  *
