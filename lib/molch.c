@@ -353,6 +353,9 @@ int molch_create_receive_conversation(
 	//get the user
 	buffer_t *receiver_public_identity_buffer = buffer_create_with_existing_array((unsigned char*)receiver_public_identity, crypto_box_PUBLICKEYBYTES);
 	user_store_node *user = user_store_find_node(users, receiver_public_identity_buffer);
+	if (user == NULL) {
+		return -5;
+	}
 
 	//get the public prekey from the message
 	buffer_t *public_prekey = buffer_create_with_existing_array((unsigned char*)(packet + sizeof(molch_message_type)), crypto_box_PUBLICKEYBYTES);
