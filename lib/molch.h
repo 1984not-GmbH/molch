@@ -176,4 +176,11 @@ unsigned char *molch_list_conversations(const unsigned char * const user_public_
  * Returns NULL on failure.
  */
 unsigned char *molch_json_export(size_t *length) __attribute__((warn_unused_result));
+
+/*
+ * Import the molch's state from JSON (overwrites the current state!)
+ *
+ * Returns 0 on success.
+ */
+int molch_json_import(const unsigned char* const json, const size_t length) __attribute__((warn_unused_result));
 #endif

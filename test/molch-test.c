@@ -249,7 +249,35 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 	printf("%.*s\n", (int)json_length, json);
+
+	//test JSON import
+	printf("Test JSON import:\n");
+	status = molch_json_import(json, json_length);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to import JSON. (%i)\n", status);
+		molch_destroy_all_users();
+		sodium_free(json);
+		return EXIT_FAILURE;
+	}
+	//now export again
+	size_t imported_json_length;
+	unsigned char *imported_json = molch_json_export(&imported_json_length);
+	if (imported_json == NULL) {
+		fprintf(stderr, "ERROR: Failed to export imported JSON.\n");
+		molch_destroy_all_users();
+		sodium_free(json);
+		return EXIT_FAILURE;
+	}
+	//compare
+	if ((json_length != imported_json_length) || (sodium_memcmp(json, imported_json, json_length) != 0)) {
+		fprintf(stderr, "ERROR: Imported JSON is incorrect.\n");
+		sodium_free(json);
+		sodium_free(imported_json);
+		molch_destroy_all_users();
+		return EXIT_FAILURE;
+	}
 	sodium_free(json);
+	sodium_free(imported_json);
 
 	//destroy the conversations
 	molch_end_conversation(alice_conversation->content);

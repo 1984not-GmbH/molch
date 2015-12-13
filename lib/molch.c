@@ -607,3 +607,41 @@ unsigned char *molch_json_export(size_t *length) {
 
 	return printed_json_content;
 }
+
+/*
+ * Import the molch's state from JSON (overwrites the current state!)
+ *
+ * Returns 0 on success.
+ */
+int molch_json_import(const unsigned char *const json, const size_t length){
+	//set allocation functions of mcJSON to the libsodium allocation functions
+	mcJSON_Hooks allocation_functions = {
+		sodium_malloc,
+		sodium_free
+	};
+	mcJSON_InitHooks(&allocation_functions);
+
+	//create buffer for the json string
+	buffer_t *json_buffer = buffer_create_with_existing_array((unsigned char*)json, length);
+
+	//parse the json
+	//FIXME: Don't allocate fixed amount
+	mcJSON *json_tree = mcJSON_ParseBuffered(json_buffer, 100000);
+	if (json_tree == NULL) {
+		return -1;
+	}
+
+	//backup the old user_store
+	user_store *users_backup = users;
+
+	//import the user store from json
+	users = user_store_json_import(json_tree);
+	if (users == NULL) {
+		users = users_backup; //roll back backup
+		return -2;
+	}
+
+	user_store_destroy(users_backup);
+
+	return 0;
+}
