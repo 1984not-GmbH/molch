@@ -66,11 +66,7 @@ int main(void) {
 	//create another user
 	buffer_t *bob_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_t *bob_public_prekeys = buffer_create(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to fill buffer with random data. (%i)\n", status);
-		molch_destroy_all_users();
-		return status;
-	}
+
 	buffer_t *bob_head_on_keyboard = buffer_create_from_string("jnu8h77z6ht56ftgnujh");
 	status = molch_create_user(
 			bob_public_identity->content,
