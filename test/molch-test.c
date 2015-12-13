@@ -239,6 +239,18 @@ int main(void) {
 	}
 	free(alice_receive_message);
 
+	//test JSON export
+	printf("Test JSON export:\n");
+	size_t json_length;
+	unsigned char *json = molch_json_export(&json_length);
+	if (json == NULL) {
+		fprintf(stderr, "ERROR: Failed to export to JSON.\n");
+		molch_destroy_all_users();
+		return EXIT_FAILURE;
+	}
+	printf("%.*s\n", (int)json_length, json);
+	sodium_free(json);
+
 	//destroy the conversations
 	molch_end_conversation(alice_conversation->content);
 	molch_end_conversation(bob_conversation->content);

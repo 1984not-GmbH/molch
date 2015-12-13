@@ -169,4 +169,11 @@ void molch_end_conversation(const unsigned char * const conversation_id);
  * Returns NULL if the user doesn't exist or if there is no conversation.
  */
 unsigned char *molch_list_conversations(const unsigned char * const user_public_identity, size_t *number) __attribute__((warn_unused_result));
+
+/*
+ * Serialise molch's state into JSON.
+ *
+ * Returns NULL on failure.
+ */
+unsigned char *molch_json_export(size_t *length) __attribute__((warn_unused_result));
 #endif

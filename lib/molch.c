@@ -22,6 +22,7 @@
 
 #include <string.h>
 #include <assert.h>
+#include <alloca.h>
 
 #include "molch.h"
 #include "../buffer/buffer.h"
@@ -556,4 +557,53 @@ unsigned char *molch_list_conversations(const unsigned char * const user_public_
 	free(conversation_id_buffer); //free buffer_t struct
 
 	return conversation_ids;
+}
+
+/*
+ * Serialise molch's state into JSON.
+ *
+ * Use sodium_free to free it after use!
+ *
+ * Returns NULL on failure.
+ */
+unsigned char *molch_json_export(size_t *length) {
+	//set allocation functions of mcJSON to the libsodium allocation functions
+	mcJSON_Hooks allocation_functions = {
+		sodium_malloc,
+		sodium_free
+	};
+	mcJSON_InitHooks(&allocation_functions);
+
+	//allocate a memory pool
+	//FIXME: Don't allocate a fixed amount
+	unsigned char *pool_content = sodium_malloc(100000);
+	mempool_t *pool = alloca(sizeof(mempool_t));
+	buffer_init_with_pointer(
+			pool,
+			pool_content,
+			100000,
+			0);
+
+	//serialize state into tree of mcJSON objects
+	mcJSON *json = user_store_json_export(users, pool);
+	if (json == NULL) {
+		sodium_free(pool_content);
+		*length = 0;
+		return NULL;
+	}
+
+	//print to string
+	//FIXME: Don't allocate a fixed amount (that's the only way to do it right now unfortunately)
+	buffer_t *printed_json = mcJSON_PrintBuffered(json, 100000, false);
+	sodium_free(pool_content);
+	if (printed_json == NULL) {
+		*length = 0;
+		return NULL;
+	}
+
+	*length = printed_json->content_length;
+	unsigned char *printed_json_content = printed_json->content;
+	sodium_free(printed_json); //free the buffer_t struct (leaving content intact)
+
+	return printed_json_content;
 }
