@@ -66,6 +66,11 @@ int main(void) {
 	//create another user
 	buffer_t *bob_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_t *bob_public_prekeys = buffer_create(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to fill buffer with random data. (%i)\n", status);
+		molch_destroy_all_users();
+		return status;
+	}
 	buffer_t *bob_head_on_keyboard = buffer_create_from_string("jnu8h77z6ht56ftgnujh");
 	status = molch_create_user(
 			bob_public_identity->content,
@@ -105,7 +110,9 @@ int main(void) {
 	buffer_t *alice_send_message = buffer_create_from_string("Hi Bob. Alice here!");
 	unsigned char *alice_send_packet;
 	size_t alice_send_packet_length;
-	molch_conversation alice_conversation = molch_create_send_conversation(
+	buffer_t *alice_conversation = buffer_create(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	status = molch_create_send_conversation(
+			alice_conversation->content,
 			&alice_send_packet,
 			&alice_send_packet_length,
 			alice_send_message->content,
@@ -113,19 +120,35 @@ int main(void) {
 			bob_public_prekeys->content,
 			alice_public_identity->content,
 			bob_public_identity->content);
-	if (!alice_conversation.valid) {
+	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to start send conversation.\n");
 		molch_destroy_all_users();
-		molch_destroy_conversation(alice_conversation);
 		free(alice_send_packet);
 		return EXIT_FAILURE;
 	}
+
+	//check conversation export
+	size_t number_of_conversations;
+	unsigned char *conversation_list = molch_list_conversations(alice_public_identity->content, &number_of_conversations);
+	if (conversation_list == NULL) {
+		fprintf(stderr, "ERROR: Failed to list conversations.\n");
+		molch_destroy_all_users();
+		free(alice_send_packet);
+		return EXIT_FAILURE;
+	}
+	if ((number_of_conversations != 1) || (buffer_compare_to_raw(alice_conversation, conversation_list, alice_conversation->content_length) != 0)) {
+		fprintf(stderr, "ERROR: Failed to list conversations.\n");
+		free(conversation_list);
+		molch_destroy_all_users();
+		free(alice_send_packet);
+		return EXIT_FAILURE;
+	}
+	free(conversation_list);
 
 	//check the message type
 	if (molch_get_message_type(alice_send_packet, alice_send_packet_length) != PREKEY_MESSAGE) {
 		fprintf(stderr, "ERROR: Wrong message type.\n");
 		molch_destroy_all_users();
-		molch_destroy_conversation(alice_conversation);
 		free(alice_send_packet);
 		return EXIT_FAILURE;
 	}
@@ -133,7 +156,9 @@ int main(void) {
 	//create a new receive conversation (bob receives from alice)
 	unsigned char *bob_receive_message;
 	size_t bob_receive_message_length;
-	molch_conversation bob_conversation = molch_create_receive_conversation(
+	buffer_t *bob_conversation = buffer_create(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	status = molch_create_receive_conversation(
+			bob_conversation->content,
 			&bob_receive_message,
 			&bob_receive_message_length,
 			alice_send_packet,
@@ -142,12 +167,9 @@ int main(void) {
 			alice_public_identity->content,
 			bob_public_identity->content);
 	free(alice_send_packet);
-	if (!bob_conversation.valid) {
-		fprintf(stderr, "ERROR: Failed to start receive conversation.\n");
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to start receive conversation. (%i)\n", status);
 		molch_destroy_all_users();
-		molch_destroy_conversation(alice_conversation);
-		molch_destroy_conversation(bob_conversation);
-		free(bob_receive_message);
 		return EXIT_FAILURE;
 	}
 
@@ -158,8 +180,6 @@ int main(void) {
 			|| (sodium_memcmp(alice_send_message->content, bob_receive_message, bob_receive_message_length) != 0)) {
 		fprintf(stderr, "ERROR: Incorrect message received.\n");
 		molch_destroy_all_users();
-		molch_destroy_conversation(alice_conversation);
-		molch_destroy_conversation(bob_conversation);
 		free(bob_receive_message);
 		return EXIT_FAILURE;
 	}
@@ -174,12 +194,10 @@ int main(void) {
 			&bob_send_packet_length,
 			bob_send_message->content,
 			bob_send_message->content_length,
-			bob_conversation);
+			bob_conversation->content);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Couldn't send bobs message.\n");
 		molch_destroy_all_users();
-		molch_destroy_conversation(alice_conversation);
-		molch_destroy_conversation(bob_conversation);
 		free(bob_send_packet);
 		return EXIT_FAILURE;
 	}
@@ -188,8 +206,6 @@ int main(void) {
 	if (molch_get_message_type(bob_send_packet, bob_send_packet_length) != NORMAL_MESSAGE) {
 		fprintf(stderr, "ERROR: Wrong message type.\n");
 		molch_destroy_all_users();
-		molch_destroy_conversation(alice_conversation);
-		molch_destroy_conversation(bob_conversation);
 		free(bob_send_packet);
 		return EXIT_FAILURE;
 	}
@@ -202,13 +218,11 @@ int main(void) {
 			&alice_receive_message_length,
 			bob_send_packet,
 			bob_send_packet_length,
-			alice_conversation);
+			alice_conversation->content);
 	free(bob_send_packet);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Incorrect message received.\n");
 		molch_destroy_all_users();
-		molch_destroy_conversation(alice_conversation);
-		molch_destroy_conversation(bob_conversation);
 		free(alice_receive_message);
 		return EXIT_FAILURE;
 	}
@@ -220,16 +234,54 @@ int main(void) {
 			|| (sodium_memcmp(bob_send_message->content, alice_receive_message, alice_receive_message_length) != 0)) {
 		fprintf(stderr, "ERROR: Incorrect message received.\n");
 		molch_destroy_all_users();
-		molch_destroy_conversation(alice_conversation);
-		molch_destroy_conversation(bob_conversation);
 		free(alice_receive_message);
 		return EXIT_FAILURE;
 	}
 	free(alice_receive_message);
 
+	//test JSON export
+	printf("Test JSON export:\n");
+	size_t json_length;
+	unsigned char *json = molch_json_export(&json_length);
+	if (json == NULL) {
+		fprintf(stderr, "ERROR: Failed to export to JSON.\n");
+		molch_destroy_all_users();
+		return EXIT_FAILURE;
+	}
+	printf("%.*s\n", (int)json_length, json);
+
+	//test JSON import
+	printf("Test JSON import:\n");
+	status = molch_json_import(json, json_length);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to import JSON. (%i)\n", status);
+		molch_destroy_all_users();
+		sodium_free(json);
+		return EXIT_FAILURE;
+	}
+	//now export again
+	size_t imported_json_length;
+	unsigned char *imported_json = molch_json_export(&imported_json_length);
+	if (imported_json == NULL) {
+		fprintf(stderr, "ERROR: Failed to export imported JSON.\n");
+		molch_destroy_all_users();
+		sodium_free(json);
+		return EXIT_FAILURE;
+	}
+	//compare
+	if ((json_length != imported_json_length) || (sodium_memcmp(json, imported_json, json_length) != 0)) {
+		fprintf(stderr, "ERROR: Imported JSON is incorrect.\n");
+		sodium_free(json);
+		sodium_free(imported_json);
+		molch_destroy_all_users();
+		return EXIT_FAILURE;
+	}
+	sodium_free(json);
+	sodium_free(imported_json);
+
 	//destroy the conversations
-	molch_destroy_conversation(alice_conversation);
-	molch_destroy_conversation(bob_conversation);
+	molch_end_conversation(alice_conversation->content);
+	molch_end_conversation(bob_conversation->content);
 
 	//destroy the users again
 	molch_destroy_all_users();

@@ -83,24 +83,25 @@ molch_message_type molch_get_message_type(
 		const unsigned char * const packet,
 		const size_t packet_length);
 
-typedef struct molch_conversation {
-	void *conversation;
-	bool valid;
-} molch_conversation;
-
 /*
  * Start a new conversation. (sending)
  *
+ * The conversation can be identified by it's ID
+ *
  * This requires a new set of prekeys from the receiver.
+ *
+ * Returns 0 on success.
  */
-molch_conversation molch_create_send_conversation(
+int molch_create_send_conversation(
+		unsigned char * const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
 		unsigned char ** const packet, //output, will be malloced by the function, don't forget to free it after use!
 		size_t *packet_length, //output
 		const unsigned char * const message,
 		const size_t message_length,
-		const unsigned char * const prekey_list, //prekey list of the receiver
+		const unsigned char * const prekey_list, //prekey list of the receiver (PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES)
 		const unsigned char * const sender_public_identity, //identity of the sender (user)
-		const unsigned char * const receiver_public_identity) __attribute__((warn_unused_result)); //identity of the receiver
+		const unsigned char * const receiver_public_identity) __attribute__((warn_unused_result));  //identity of the receiver
+//prekeys of the receiver (PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES)
 
 /*
  * Start a new conversation. (receiving)
@@ -109,14 +110,19 @@ molch_conversation molch_create_send_conversation(
  *
  * This function is called after receiving a prekey message.
  *
+ * The conversation can be identified by it's ID
+ *
  * conversation->valid is false on failure
+ *
+ * Returns 0 on success.
  */
-molch_conversation molch_create_receive_conversation(
+int molch_create_receive_conversation(
+		unsigned char * const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
 		unsigned char ** const message, //output, will be malloced by the function, don't forget to free it after use!
 		size_t * const message_length, //output
 		const unsigned char * const packet, //received prekey packet
 		const size_t packet_length,
-		const unsigned char * const prekey_list, //output, needs to be 100 * crypto_box_PUBLICKEYBYTES + crypto_onetimeauth_BYTES
+		unsigned char * const prekey_list, //output, needs to be PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES + crypto_onetimeauth_BYTES, This is the new prekey list for the receiving user
 		const unsigned char * const sender_public_identity, //identity of the sender
 		const unsigned char * const receiver_public_identity) __attribute__((warn_unused_result)); //identity key of the receiver (user)
 
@@ -131,7 +137,7 @@ int molch_encrypt_message(
 		size_t *packet_length, //output, length of the packet
 		const unsigned char * const message,
 		const size_t message_length,
-		molch_conversation conversation) __attribute__((warn_unused_result));
+		const unsigned char * const conversation_id) __attribute__((warn_unused_result));
 
 /*
  * Decrypt a message.
@@ -143,12 +149,38 @@ int molch_decrypt_message(
 		size_t *message_length, //output
 		const unsigned char * const packet, //received packet
 		const size_t packet_length,
-		molch_conversation conversation) __attribute__((warn_unused_result));
+		const unsigned char * const conversation_id) __attribute__((warn_unused_result));
 
 /*
- * Destroy a conversation.
+ * End a conversation.
  *
  * This will almost certainly be changed later on!!!!!!
  */
-void molch_destroy_conversation(molch_conversation conversation);
+void molch_end_conversation(const unsigned char * const conversation_id);
+
+/*
+ * List the conversations of a user.
+ *
+ * Returns the number of conversations and a list of conversations for a given user.
+ * (all the conversation ids in one big list).
+ *
+ * Don't forget to free it after use.
+ *
+ * Returns NULL if the user doesn't exist or if there is no conversation.
+ */
+unsigned char *molch_list_conversations(const unsigned char * const user_public_identity, size_t *number) __attribute__((warn_unused_result));
+
+/*
+ * Serialise molch's state into JSON.
+ *
+ * Returns NULL on failure.
+ */
+unsigned char *molch_json_export(size_t *length) __attribute__((warn_unused_result));
+
+/*
+ * Import the molch's state from JSON (overwrites the current state!)
+ *
+ * Returns 0 on success.
+ */
+int molch_json_import(const unsigned char* const json, const size_t length) __attribute__((warn_unused_result));
 #endif

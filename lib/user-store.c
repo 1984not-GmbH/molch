@@ -44,7 +44,7 @@ void user_store_destroy(user_store* store) {
 /*
  * add a new user node to a user store.
  */
-void add_node(user_store * const store, user_store_node * const node) {
+void add_user_store_node(user_store * const store, user_store_node * const node) {
 	sodium_mprotect_readwrite(store); //unlock memory
 	if (store->length == 0) { //first node in the list
 		node->previous = NULL;
@@ -80,7 +80,7 @@ void add_node(user_store * const store, user_store_node * const node) {
 /*
  * create an empty user_store_node and set up all the pointers.
  */
-user_store_node *create_node() {
+user_store_node *create_user_store_node() {
 	user_store_node *node = sodium_malloc(sizeof(user_store_node));
 	if (node == NULL) {
 		return NULL;
@@ -99,6 +99,8 @@ user_store_node *create_node() {
 		buffer_init_with_pointer(&(node->public_prekeys[i]), &(node->public_prekey_storage[i * crypto_box_PUBLICKEYBYTES]), crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 		buffer_init_with_pointer(&(node->private_prekeys[i]), &(node->private_prekey_storage[i * crypto_box_SECRETKEYBYTES]), crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	}
+
+	conversation_store_init(node->conversations);
 
 	return node;
 }
@@ -119,7 +121,7 @@ int user_store_add(
 		return -6;
 	}
 
-	user_store_node *new_node = create_node();
+	user_store_node *new_node = create_user_store_node();
 	if (new_node == NULL) { //couldn't allocate memory
 		return -1;
 	}
@@ -150,7 +152,7 @@ int user_store_add(
 		return status;
 	}
 
-	add_node(store, new_node);
+	add_user_store_node(store, new_node);
 
 	return 0;
 }
@@ -243,7 +245,10 @@ void user_store_remove(user_store *store, user_store_node *node) {
 	}
 
 	sodium_mprotect_readwrite(store);
-	sodium_mprotect_readonly(node);
+	sodium_mprotect_readwrite(node);
+
+	//clear the conversation store
+	conversation_store_clear(node->conversations);
 
 	if (node->next != NULL) { //node is not the tail
 		sodium_mprotect_readwrite(node->next);
@@ -326,6 +331,14 @@ mcJSON *user_store_node_json_export(user_store_node * const node, mempool_t * co
 		}
 		mcJSON_AddItemToArray(private_prekey_array, private_prekey, pool);
 	}
+
+	//add conversation store
+	mcJSON *conversations = conversation_store_json_export(node->conversations, pool);
+	if (conversations == NULL) {
+		return NULL;
+	}
+
+	mcJSON_AddItemToObject(json, buffer_create_from_string("conversations"), conversations, pool);
 
 	return json;
 }
@@ -431,16 +444,18 @@ user_store *user_store_json_import(const mcJSON * const json) {
 		mcJSON *public_identity = mcJSON_GetObjectItem(user, buffer_create_from_string("public_identity"));
 		mcJSON *private_prekeys = mcJSON_GetObjectItem(user, buffer_create_from_string("private_prekeys"));
 		mcJSON *public_prekeys = mcJSON_GetObjectItem(user, buffer_create_from_string("public_prekeys"));
+		mcJSON *conversations = mcJSON_GetObjectItem(user, buffer_create_from_string("conversations"));
 
 		//check if they are valid
 		if ((private_identity == NULL) || (private_identity->type != mcJSON_String) || (private_identity->valuestring->content_length != (2 * crypto_box_SECRETKEYBYTES + 1))
-				|| (public_identity == NULL) || (public_identity->type != mcJSON_String) || (public_identity->valuestring->content_length != (2 * crypto_box_PUBLICKEYBYTES + 1))) {
+				|| (public_identity == NULL) || (public_identity->type != mcJSON_String) || (public_identity->valuestring->content_length != (2 * crypto_box_PUBLICKEYBYTES + 1))
+				|| (conversations->type != mcJSON_Array)) {
 			user_store_destroy(store);
 			return NULL;
 		}
 
 		//create new user_store_node
-		user_store_node *node = create_node();
+		user_store_node *node = create_user_store_node();
 		if (node == NULL) {
 			user_store_destroy(store);
 			return NULL;
@@ -471,8 +486,15 @@ user_store *user_store_json_import(const mcJSON * const json) {
 			return NULL;
 		}
 
+		//import the conversation store
+		if (conversation_store_json_import(node->conversations, conversations) != 0) {
+			sodium_free(node);
+			user_store_destroy(store);
+			return NULL;
+		}
+
 		//now add the imported node to the user store, this also does all the sodium_mprotect work
-		add_node(store, node);
+		add_user_store_node(store, node);
 	}
 
 	return store;
