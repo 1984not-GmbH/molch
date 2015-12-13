@@ -262,11 +262,14 @@ int molch_create_send_conversation(
 	//create ephemeral keys
 	buffer_t *our_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	buffer_t *our_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	crypto_box_keypair(our_public_ephemeral->content, our_private_ephemeral->content);
+	int status = crypto_box_keypair(our_public_ephemeral->content, our_private_ephemeral->content);
+	if (status != 0) {
+		return -2;
+	}
 
 	sodium_mprotect_readwrite(user);
 	//start a conversation
-	int status = conversation_store_add(
+	status = conversation_store_add(
 			user->conversations,
 			user->private_identity_key,
 			user->public_identity_key,
