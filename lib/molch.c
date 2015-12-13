@@ -458,7 +458,7 @@ int molch_encrypt_message(
 	//create packet
 	*packet_length = sizeof(molch_message_type) + conversation->ratchet->their_public_ephemeral->content_length + message_length;
 	*packet = malloc(*packet_length);
-	if (packet == NULL) {
+	if (*packet == NULL) {
 		return -1;
 	}
 
