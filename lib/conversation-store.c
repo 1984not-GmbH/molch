@@ -55,6 +55,7 @@ int conversation_store_add(
 			our_public_ephemeral,
 			their_public_ephemeral);
 	if (status != 0) {
+		free(node);
 		return status;
 	}
 
