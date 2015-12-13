@@ -67,40 +67,43 @@ int molch_create_user(
 	int status;
 	//buffer to put all the private keys into (random numbers created using the random input
 	//in combination with system provided random data)
-	buffer_t *private_keys = buffer_create((PREKEY_AMOUNT + 1) * crypto_box_PUBLICKEYBYTES, 0);
+	buffer_t *random_seeds = buffer_create_with_custom_allocator((PREKEY_AMOUNT + 1) * crypto_box_SEEDBYTES, 0, sodium_malloc, sodium_free);
 	//buffer for the random input
 	buffer_t *random_data_buffer = buffer_create_with_existing_array((unsigned char*) random_data, random_data_length);
 	random_data_buffer->readonly = true;
 
 	//create private keys
-	status = spiced_random(private_keys, random_data_buffer, private_keys->buffer_length);
+	status = spiced_random(random_seeds, random_data_buffer, random_seeds->buffer_length);
 	if (status != 0) {
-		buffer_clear(private_keys);
+		buffer_destroy_with_custom_deallocator(random_seeds, sodium_free);
 		return status;
 	}
 
-	//create key buffers with pointers to the respective parts of the 'private_keys' buffer's content
-	buffer_t *private_identity = buffer_create_with_existing_array(private_keys->content, crypto_box_SECRETKEYBYTES);
-	buffer_t *private_prekeys = buffer_create_with_existing_array(private_keys->content + crypto_box_SECRETKEYBYTES, PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES);
+	//create private key
+	buffer_t *private_identity = buffer_create_with_custom_allocator(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES, sodium_malloc, sodium_free);
+	buffer_t *private_prekeys = buffer_create_with_custom_allocator(crypto_box_SECRETKEYBYTES * PREKEY_AMOUNT, crypto_box_SECRETKEYBYTES * PREKEY_AMOUNT, sodium_malloc, sodium_free);
 
-	//now calculate the public identity key from the private identity key
+	//now calculate the identity keys from the seed
 	buffer_t *public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	status = crypto_scalarmult_base(public_identity->content, private_identity->content);
+	status = crypto_box_seed_keypair(public_identity->content, private_identity->content, random_seeds->content);
 	if (status != 0) {
-		//only clearing 'private_keys' because all of the other buffers
-		//only contain pointers to other buffers
-		buffer_clear(private_keys);
+		buffer_destroy_with_custom_deallocator(random_seeds, sodium_free);
+		buffer_destroy_with_custom_deallocator(private_identity, sodium_free);
+		buffer_destroy_with_custom_deallocator(private_prekeys, sodium_free);
 		return status;
 	}
 
-	//calculate all the public prekeys
+	//calculate all the prekeys
 	buffer_t *public_prekeys = buffer_create(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
 	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		status = crypto_scalarmult_base(public_prekeys->content + i * crypto_box_PUBLICKEYBYTES, private_prekeys->content + i * crypto_box_SECRETKEYBYTES);
+		status = crypto_box_seed_keypair(
+				public_prekeys->content + i * crypto_box_PUBLICKEYBYTES,
+				private_prekeys->content + i * crypto_box_SECRETKEYBYTES,
+				random_seeds->content + i * crypto_box_SEEDBYTES);
 		if (status != 0) {
-			//only clearing 'private_keys' because all of the other buffers
-			//only contain pointers to other buffers
-			buffer_clear(private_keys);
+			buffer_destroy_with_custom_deallocator(random_seeds, sodium_free);
+			buffer_destroy_with_custom_deallocator(private_identity, sodium_free);
+			buffer_destroy_with_custom_deallocator(private_prekeys, sodium_free);
 			return status;
 		}
 	}
@@ -113,15 +116,16 @@ int molch_create_user(
 			public_prekeys,
 			private_prekeys);
 	if (status != 0) {
-		//only clearing 'private_keys' because all of the other buffers
-		//only contain pointers to other buffers
-		buffer_clear(private_keys);
+		buffer_destroy_with_custom_deallocator(random_seeds, sodium_free);
+		buffer_destroy_with_custom_deallocator(private_identity, sodium_free);
+		buffer_destroy_with_custom_deallocator(private_prekeys, sodium_free);
 		return status;
 	}
 
-	//only clearing 'private_keys' because all of the other buffers
-	//only contain pointers to other buffers
-	buffer_clear(private_keys);
+	//destroy the private keys
+	buffer_destroy_with_custom_deallocator(random_seeds, sodium_free);
+	buffer_destroy_with_custom_deallocator(private_identity, sodium_free);
+	buffer_destroy_with_custom_deallocator(private_prekeys, sodium_free);
 
 	//copy the keys to the output
 	status = buffer_copy_to_raw(public_identity_key, 0, public_identity, 0, public_identity->content_length);
