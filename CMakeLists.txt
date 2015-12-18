@@ -4,20 +4,26 @@ project (molch)
 
 subdirs(test lib buffer mcJSON)
 
-set(CMAKE_BUILD_TYPE Debug)
-
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
 enable_testing()
 
-#Set the linker flag for sodium
-if(APPLE)
-    set(SECURITY_C_FLAGS "-O1 -Wformat -Wformat-security -fPIE")
-    #TODO: Find secure Linker flags that work on Mac OS X
-else(APPLE)
-    set(SECURITY_C_FLAGS "-fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -O1 -Wformat -Wformat-security -fPIE")
-    set(SECURITY_LINK_FLAGS "-z relro -z now -pie -z noexecstack -z noexecheap")
-endif(APPLE)
+#check if running debug build
+if ("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
+    if ("${CMAKE_C_COMPILER}" MATCHES "clang")
+        set(SECURITY_C_FLAGS "-O0")
+    else()
+        set(SECURITY_C_FLAGS "-Og")
+    endif()
+else()
+    if(APPLE)
+        set(SECURITY_C_FLAGS "-O1 -Wformat -Wformat-security -fPIE")
+        #TODO: Find secure Linker flags that work on Mac OS X
+    else()
+        set(SECURITY_C_FLAGS "-fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -O1 -Wformat -Wformat-security -fPIE")
+        set(SECURITY_LINK_FLAGS "-z relro -z now -pie -z noexecstack -z noexecheap")
+    endif()
+endif()
 
 find_package(Sodium REQUIRED)
 
