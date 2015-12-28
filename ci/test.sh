@@ -2,16 +2,11 @@
 [ ! -e build ] && mkdir build
 RETURN_VALUE=0
 cd build
-cmake ..
+if ! cmake ..; then
+    exit $? #abort on failure
+fi
 make clean
-make
-if [ ! $? -eq 0 ]; then
-    echo Build failed
-    RETURN_VALUE=1
+if ! make; then
+    exit $? #abort on failure
 fi
 make test
-if [ ! $? -eq 0 ]; then
-    echo Tests failed
-    RETURN_VALUE=1
-fi
-exit $RETURN_VALUE
