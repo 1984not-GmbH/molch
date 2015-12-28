@@ -102,6 +102,10 @@ If the message length exceeds 254 Bytes, you have to add another 255 bytes becau
 
 `ceil(raw_message_length / 255) * 255`
 
+Want to help?
+-------------------
+Take a look at the file `CONTRIBUTING`. And look for GitHub Issues with the `help wanted` label.
+
 license
 -------
 This library is licensed under the LGPLv2.1.
