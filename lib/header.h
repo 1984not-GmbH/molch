@@ -21,6 +21,12 @@
 #ifndef LIB_HEADER_H
 #define LIB_HEADER_H
 
+typedef struct header_t {
+	unsigned char public_ephemeral[crypto_box_PUBLICKEYBYTES];
+	uint32_t message_counter;
+	uint32_t previous_message_counter;
+} header_t;
+
 /*
  * Create a new header.
  *
@@ -32,7 +38,7 @@
  * }
  */
 int header_construct(
-		buffer_t * const header, //crypto_box_PUBLICKEYBYTES + 8, output
+		buffer_t * const header_buffer, //crypto_box_PUBLICKEYBYTES + 8, output
 		const buffer_t * const our_public_ephemeral, //crypto_box_PUBLICKEYBYTES
 		const uint32_t message_counter,
 		const uint32_t previous_message_counter) __attribute__((warn_unused_result));
@@ -41,7 +47,7 @@ int header_construct(
  * Get the content of the header.
  */
 int header_extract(
-		const buffer_t * const header, //crypto_box_PUBLICKEYBYTES + 8, input
+		const buffer_t * const header_buffer, //crypto_box_PUBLICKEYBYTES + 8, input
 		buffer_t * const their_public_ephemeral, //crypto_box_PUBLICKEYBYTES, output
 		uint32_t * const message_counter,
 		uint32_t * const previous_message_counter) __attribute__((warn_unused_result));

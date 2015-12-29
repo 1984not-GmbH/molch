@@ -32,32 +32,31 @@
  * }
  */
 int header_construct(
-		buffer_t * const header, //crypto_box_PUBLICKEYBYTES + 8
+		buffer_t * const header_buffer, //crypto_box_PUBLICKEYBYTES + 8
 		const buffer_t * const our_public_ephemeral, //crypto_box_PUBLICKEYBYTES
 		const uint32_t message_counter,
 		const uint32_t previous_message_counter) { //FIXME: Endianness
 	//check buffer sizes
-	if ((header->buffer_length < crypto_box_PUBLICKEYBYTES + 8)
+	if ((header_buffer->buffer_length < crypto_box_PUBLICKEYBYTES + 8)
 			|| (our_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)) {
-		header->content_length = 0;
+		header_buffer->content_length = 0;
 		return -6;
 	}
+
+	//directly access the content of the header buffer via the header_t struct
+	header_t * const header = (header_t*)header_buffer->content;
+
 	int status;
-	status = buffer_clone(header, our_public_ephemeral);
+	status = buffer_clone_to_raw(header->public_ephemeral, sizeof(header->public_ephemeral), our_public_ephemeral);
 	if (status != 0) {
-		buffer_clear(header);
+		buffer_clear(header_buffer);
 		return status;
 	}
-	status = buffer_copy_from_raw(header, crypto_box_PUBLICKEYBYTES, (unsigned char*) &message_counter, 0, sizeof(message_counter));
-	if (status != 0) {
-		buffer_clear(header);
-		return status;
-	}
-	status = buffer_copy_from_raw(header, crypto_box_PUBLICKEYBYTES + sizeof(message_counter), (unsigned char*) &previous_message_counter, 0, sizeof(previous_message_counter));
-	if (status != 0) {
-		buffer_clear(header);
-		return status;
-	}
+
+	header_buffer->content_length = sizeof(*header);
+
+	header->message_counter = message_counter;
+	header->previous_message_counter = previous_message_counter;
 
 	return 0;
 }
@@ -66,25 +65,28 @@ int header_construct(
  * Get the content of the header.
  */
 int header_extract(
-		const buffer_t * const header, //crypto_box_PUBLICKEYBYTES + 8, input
+		const buffer_t * const header_buffer, //crypto_box_PUBLICKEYBYTES + 8, input
 		buffer_t * const their_public_ephemeral, //crypto_box_PUBLICKEYBYTES, output
 		uint32_t * const message_counter,
 		uint32_t * const previous_message_counter) { //FIXME Endianness
 	//check buffer sizes
-	if ((header->content_length != crypto_box_PUBLICKEYBYTES + 8)
+	if ((header_buffer->content_length != sizeof(header_t))
 			|| (their_public_ephemeral->buffer_length < crypto_box_PUBLICKEYBYTES)) {
 		their_public_ephemeral->content_length = 0;
 		return -6;
 	}
 
+	//directly access the content of the header buffer via the header_t struct
+	const header_t * const header = (header_t*) header_buffer->content;
+
 	int status;
-	status = buffer_copy(their_public_ephemeral, 0, header, 0, crypto_box_PUBLICKEYBYTES);
+	status = buffer_clone_from_raw(their_public_ephemeral, header->public_ephemeral, sizeof(header->public_ephemeral));
 	if (status != 0) {
 		buffer_clear(their_public_ephemeral);
 		return status;
 	}
-	*message_counter = *(uint32_t*) (header->content + crypto_box_PUBLICKEYBYTES);
-	*previous_message_counter = *(uint32_t*) (header->content + crypto_box_PUBLICKEYBYTES + sizeof(uint32_t));
+	*message_counter = header->message_counter;
+	*previous_message_counter = header->previous_message_counter;
 
 	return 0;
 }
