@@ -42,11 +42,13 @@ bool is_none(const buffer_t * const buffer) {
 	}
 
 	//fill a buffer with zeroes
-	buffer_t *none = buffer_create(buffer->content_length, buffer->content_length);
+	buffer_t *none = buffer_create_on_heap(buffer->content_length, buffer->content_length);
 	buffer_clear(none);
 	none->content_length = none->buffer_length;
 
-	return 0 == buffer_compare(none, buffer);
+	int status = buffer_compare(none, buffer);
+	buffer_destroy_from_heap(none);
+	return status == 0;
 }
 
 /*
@@ -215,10 +217,10 @@ int ratchet_next_send_keys(
 
 		//derive next root key and send chain key
 		//RK, CKs, NHKs = HKDF(DH(DHs, DHr))
-		buffer_t *previous_root_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+		buffer_t *previous_root_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 		status = buffer_clone(previous_root_key, state->root_key);
 		if (status != 0) {
-			buffer_clear(previous_root_key);
+			buffer_destroy_from_heap(previous_root_key);
 			return status;
 		}
 		status = derive_root_chain_and_header_keys(
@@ -230,7 +232,7 @@ int ratchet_next_send_keys(
 				state->their_public_ephemeral,
 				previous_root_key,
 				state->am_i_alice);
-		buffer_clear(previous_root_key);
+		buffer_destroy_from_heap(previous_root_key);
 		if (status != 0) {
 			return status;
 		}
@@ -261,10 +263,10 @@ int ratchet_next_send_keys(
 
 	//derive next chain key
 	//CKs = HMAC-HASH(CKs, 0x01)
-	buffer_t *old_chain_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *old_chain_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = buffer_clone(old_chain_key, state->send_chain_key);
 	if (status != 0) {
-		buffer_clear(old_chain_key);
+		buffer_destroy_from_heap(old_chain_key);
 		buffer_clear(next_header_key);
 		buffer_clear(next_message_key);
 		return status;
@@ -273,12 +275,12 @@ int ratchet_next_send_keys(
 			state->send_chain_key,
 			old_chain_key);
 	if (status != 0) {
-		buffer_clear(old_chain_key);
+		buffer_destroy_from_heap(old_chain_key);
 		buffer_clear(next_message_key);
 		buffer_clear(next_header_key);
 		return status;
 	}
-	buffer_clear(old_chain_key);
+	buffer_destroy_from_heap(old_chain_key);
 
 	return 0;
 }
@@ -376,28 +378,23 @@ int stage_skipped_header_and_message_keys(
 	}
 
 	int status;
+	//message key buffer
+	buffer_t *message_key_buffer = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	//copy current chain key to purported chain key
-	buffer_t *purported_current_chain_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	buffer_t *purported_next_chain_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *purported_current_chain_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *purported_next_chain_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = buffer_clone(purported_current_chain_key, receive_chain_key);
 	if (status != 0) {
-		buffer_clear(purported_current_chain_key);
-		buffer_clear(purported_next_chain_key);
-		return status;
+		goto cleanup;
 	}
 
-	//message key buffer
-	buffer_t *message_key_buffer = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 
 	//create all message keys
 	unsigned int pos;
 	for (pos = state->receive_message_number; pos <= purported_message_number; pos++) {
 		status = derive_message_key(message_key_buffer, purported_current_chain_key);
 		if (status != 0) {
-			buffer_clear(purported_current_chain_key);
-			buffer_clear(purported_next_chain_key);
-			buffer_clear(message_key_buffer);
-			return status;
+			goto cleanup;
 		}
 
 		//add message key to list of purported message keys
@@ -407,50 +404,39 @@ int stage_skipped_header_and_message_keys(
 					message_key_buffer,
 					state->receive_header_key);
 			if (status != 0) {
-				buffer_clear(purported_current_chain_key);
-				buffer_clear(purported_next_chain_key);
-				buffer_clear(message_key_buffer);
-				return status;
+				goto cleanup;
 			}
 		} else { //current message key is not staged, but copied to return it's value
 			status = buffer_clone(message_key, message_key_buffer);
 			if (status != 0) {
-				buffer_clear(purported_next_chain_key);
-				buffer_clear(purported_current_chain_key);
-				buffer_clear(message_key_buffer);
-				return status;
+				goto cleanup;
 			}
 		}
-		buffer_clear(message_key_buffer);
 
 		status = derive_chain_key(purported_next_chain_key, purported_current_chain_key);
 		if (status != 0) {
-			buffer_clear(purported_current_chain_key);
-			buffer_clear(purported_next_chain_key);
-			return status;
+			goto cleanup;
 		}
 
 		//shift chain keys
 		status = buffer_clone(purported_current_chain_key, purported_next_chain_key);
 		if (status != 0) {
-			buffer_clear(purported_current_chain_key);
-			buffer_clear(purported_next_chain_key);
-			return status;
+			goto cleanup;
 		}
 	}
 
 	//copy chain key to purported_receive_chain_key (this will be used in commit_skipped_header_and_message_keys)
 	status = buffer_clone(purported_chain_key, purported_next_chain_key);
 	if (status != 0) {
-		buffer_clear(purported_current_chain_key);
-		buffer_clear(purported_next_chain_key);
-		return status;
+		goto cleanup;
 	}
 
-	buffer_clear(purported_current_chain_key);
-	buffer_clear(purported_next_chain_key);
+cleanup:
+	buffer_destroy_from_heap(purported_current_chain_key);
+	buffer_destroy_from_heap(purported_next_chain_key);
+	buffer_destroy_from_heap(message_key_buffer);
 
-	return 0;
+	return status;
 }
 
 /*
@@ -550,7 +536,7 @@ int ratchet_receive(
 		}
 
 		//temporary storage for the purported chain key (CKp)
-		buffer_t *temp_purported_chain_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+		buffer_t *temp_purported_chain_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 
 		//stage message keys for previous message chain
 		status = stage_skipped_header_and_message_keys(
@@ -560,14 +546,14 @@ int ratchet_receive(
 				state->receive_chain_key,
 				state);
 		if (status != 0) {
-			buffer_clear(temp_purported_chain_key);
+			buffer_destroy_from_heap(temp_purported_chain_key);
 			return status;
 		}
 
 		//HKp = NHKr
 		status = buffer_clone(state->purported_receive_header_key, state->next_receive_header_key);
 		if (status != 0) {
-			buffer_clear(temp_purported_chain_key);
+			buffer_destroy_from_heap(temp_purported_chain_key);
 			return status;
 		}
 
@@ -594,14 +580,14 @@ int ratchet_receive(
 				state->purported_receive_chain_key,
 				state);
 		if (status != 0) {
-			buffer_clear(temp_purported_chain_key);
+			buffer_destroy_from_heap(temp_purported_chain_key);
 			return status;
 		}
 
 		//copy the temporary purported chain key to the state
 		status = buffer_clone(state->purported_receive_chain_key, temp_purported_chain_key);
+		buffer_destroy_from_heap(temp_purported_chain_key);
 		if (status != 0) {
-			buffer_clear(temp_purported_chain_key);
 			return status;
 		}
 
