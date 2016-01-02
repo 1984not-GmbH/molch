@@ -90,7 +90,7 @@ int packet_encrypt(
 
 	int status;
 	//create the header nonce
-	buffer_t *header_nonce = buffer_create_with_existing_array(packet->content + 3, crypto_aead_chacha20poly1305_NPUBBYTES);
+	buffer_create_with_existing_array(header_nonce, packet->content + 3, crypto_aead_chacha20poly1305_NPUBBYTES);
 	status = buffer_fill_random(header_nonce, header_nonce->buffer_length);
 	if (status != 0) {
 		return status;
@@ -105,7 +105,7 @@ int packet_encrypt(
 		return status;
 	}
 	//create message nonce
-	buffer_t *message_nonce = buffer_create_with_existing_array(header_buffer->content + header->content_length, crypto_secretbox_NONCEBYTES);
+	buffer_create_with_existing_array(message_nonce, header_buffer->content + header->content_length, crypto_secretbox_NONCEBYTES);
 	status = buffer_fill_random(message_nonce, message_nonce->buffer_length);
 	if (status != 0) {
 		buffer_clear(header_buffer);
@@ -113,9 +113,9 @@ int packet_encrypt(
 	}
 
 	//buffer that points to the part of the packet where the header ciphertext will be stored
-	buffer_t *header_ciphertext = buffer_create_with_existing_array(packet->content + 3 + header_nonce->content_length, header_buffer->content_length + crypto_aead_chacha20poly1305_ABYTES);
+	buffer_create_with_existing_array(header_ciphertext, packet->content + 3 + header_nonce->content_length, header_buffer->content_length + crypto_aead_chacha20poly1305_ABYTES);
 	//same for the additional data
-	buffer_t *additional_data = buffer_create_with_existing_array(packet->content, 3 + header_nonce->content_length);
+	buffer_create_with_existing_array(additional_data, packet->content, 3 + header_nonce->content_length);
 
 	//encrypt the header and authenticate the additional data (1st 3 Bytes)
 	unsigned long long header_ciphertext_length;
@@ -162,7 +162,7 @@ int packet_encrypt(
 	const size_t PRE_CIPHERTEXT_LENGTH = additional_data->content_length + header_ciphertext_length;
 
 	//buffer that points to the message ciphertext position in the packet
-	buffer_t *message_ciphertext = buffer_create_with_existing_array(packet->content + PRE_CIPHERTEXT_LENGTH, message->content_length + padding + crypto_secretbox_MACBYTES);
+	buffer_create_with_existing_array(message_ciphertext, packet->content + PRE_CIPHERTEXT_LENGTH, message->content_length + padding + crypto_secretbox_MACBYTES);
 	//encrypt the message
 	status = crypto_secretbox_easy(
 			message_ciphertext->content, //ciphertext
@@ -291,9 +291,9 @@ int packet_decrypt_header(
 	}
 
 	//buffer that points to different parts of the header
-	buffer_t *header_nonce = buffer_create_with_existing_array(packet->content + 3, crypto_aead_chacha20poly1305_NPUBBYTES);
-	buffer_t *additional_data = buffer_create_with_existing_array(packet->content, 3 + header_nonce->content_length);
-	buffer_t *header_ciphertext = buffer_create_with_existing_array(packet->content + additional_data->content_length, purported_header_length + crypto_secretbox_NONCEBYTES + crypto_aead_chacha20poly1305_ABYTES);
+	buffer_create_with_existing_array(header_nonce, packet->content + 3, crypto_aead_chacha20poly1305_NPUBBYTES);
+	buffer_create_with_existing_array(additional_data, packet->content, 3 + header_nonce->content_length);
+	buffer_create_with_existing_array(header_ciphertext, packet->content + additional_data->content_length, purported_header_length + crypto_secretbox_NONCEBYTES + crypto_aead_chacha20poly1305_ABYTES);
 	//encrypt the header
 	buffer_t *header_buffer = buffer_create(purported_header_length + crypto_secretbox_NONCEBYTES, purported_header_length + crypto_secretbox_NONCEBYTES);
 	unsigned long long decrypted_length;
@@ -376,7 +376,7 @@ int packet_decrypt_message(
 	}
 
 	//buffer pointing to the message ciphertext
-	buffer_t *message_ciphertext = buffer_create_with_existing_array(packet->content + (packet->content_length - purported_plaintext_length) - crypto_secretbox_MACBYTES, purported_plaintext_length + crypto_secretbox_MACBYTES);
+	buffer_create_with_existing_array(message_ciphertext, packet->content + (packet->content_length - purported_plaintext_length) - crypto_secretbox_MACBYTES, purported_plaintext_length + crypto_secretbox_MACBYTES);
 
 	//decrypt the message (padding included)
 	buffer_t *plaintext = buffer_create(purported_plaintext_length, purported_plaintext_length);

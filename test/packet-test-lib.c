@@ -82,7 +82,7 @@ int create_and_print_message(
 	}
 
 	//print header nonce
-	buffer_t *header_nonce = buffer_create_with_existing_array(packet->content + 3, crypto_aead_chacha20poly1305_NPUBBYTES);
+	buffer_create_with_existing_array(header_nonce, packet->content + 3, crypto_aead_chacha20poly1305_NPUBBYTES);
 	printf("Header Nonce (%zu Bytes):\n", header_nonce->content_length);
 	print_hex(header_nonce);
 	putchar('\n');

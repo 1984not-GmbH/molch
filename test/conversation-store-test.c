@@ -136,7 +136,7 @@ int main(void) {
 
 	//check for all conversations that they exist
 	for (size_t i = 0; i < (conversation_list->content_length / CONVERSATION_ID_SIZE); i++) {
-		buffer_t *current_id = buffer_create_with_existing_array(conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
+		buffer_create_with_existing_array(current_id, conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
 		if (conversation_store_find_node(store, current_id) == NULL) {
 			fprintf(stderr, "ERROR: Exported list of conversations was incorrect.\n");
 			buffer_destroy_from_heap(conversation_list);
