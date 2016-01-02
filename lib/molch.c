@@ -72,39 +72,36 @@ int molch_create_user(
 	buffer_create_with_existing_array(random_data_buffer, (unsigned char*) random_data, random_data_length);
 	random_data_buffer->readonly = true;
 
-	//create private keys
-	status = spiced_random(random_seeds, random_data_buffer, random_seeds->buffer_length);
-	if (status != 0) {
-		buffer_destroy_with_custom_deallocator(random_seeds, sodium_free);
-		return status;
-	}
-
 	//create private key
 	buffer_t *private_identity = buffer_create_with_custom_allocator(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES, sodium_malloc, sodium_free);
 	buffer_t *private_prekeys = buffer_create_with_custom_allocator(crypto_box_SECRETKEYBYTES * PREKEY_AMOUNT, crypto_box_SECRETKEYBYTES * PREKEY_AMOUNT, sodium_malloc, sodium_free);
 
+	//public identity
+	buffer_t *public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	//public prekeys
+	buffer_t *public_prekeys = buffer_create_on_heap(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
+
+
+	//create private keys
+	status = spiced_random(random_seeds, random_data_buffer, random_seeds->buffer_length);
+	if (status != 0) {
+		goto cleanup;
+	}
+
 	//now calculate the identity keys from the seed
-	buffer_t *public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	status = crypto_box_seed_keypair(public_identity->content, private_identity->content, random_seeds->content);
 	if (status != 0) {
-		buffer_destroy_with_custom_deallocator(random_seeds, sodium_free);
-		buffer_destroy_with_custom_deallocator(private_identity, sodium_free);
-		buffer_destroy_with_custom_deallocator(private_prekeys, sodium_free);
-		return status;
+		goto cleanup;
 	}
 
 	//calculate all the prekeys
-	buffer_t *public_prekeys = buffer_create(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
 	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
 		status = crypto_box_seed_keypair(
 				public_prekeys->content + i * crypto_box_PUBLICKEYBYTES,
 				private_prekeys->content + i * crypto_box_SECRETKEYBYTES,
 				random_seeds->content + i * crypto_box_SEEDBYTES);
 		if (status != 0) {
-			buffer_destroy_with_custom_deallocator(random_seeds, sodium_free);
-			buffer_destroy_with_custom_deallocator(private_identity, sodium_free);
-			buffer_destroy_with_custom_deallocator(private_prekeys, sodium_free);
-			return status;
+			goto cleanup;
 		}
 	}
 
@@ -116,29 +113,32 @@ int molch_create_user(
 			public_prekeys,
 			private_prekeys);
 	if (status != 0) {
-		buffer_destroy_with_custom_deallocator(random_seeds, sodium_free);
-		buffer_destroy_with_custom_deallocator(private_identity, sodium_free);
-		buffer_destroy_with_custom_deallocator(private_prekeys, sodium_free);
-		return status;
+		goto cleanup;
 	}
 
+	//copy the keys to the output
+	status = buffer_copy_to_raw(public_identity_key, 0, public_identity, 0, public_identity->content_length);
+	if (status != 0) {
+		status = -10;
+		goto cleanup;
+	}
+
+	status = buffer_copy_to_raw(prekey_list, 0, public_prekeys, 0, public_prekeys->content_length);
+	if (status != 0) {
+		status = -10;
+		goto cleanup;
+	}
+
+cleanup:
 	//destroy the private keys
 	buffer_destroy_with_custom_deallocator(random_seeds, sodium_free);
 	buffer_destroy_with_custom_deallocator(private_identity, sodium_free);
 	buffer_destroy_with_custom_deallocator(private_prekeys, sodium_free);
 
-	//copy the keys to the output
-	status = buffer_copy_to_raw(public_identity_key, 0, public_identity, 0, public_identity->content_length);
-	if (status != 0) {
-		return -10;
-	}
+	buffer_destroy_from_heap(public_identity);
+	buffer_destroy_from_heap(public_prekeys);
 
-	status = buffer_copy_to_raw(prekey_list, 0, public_prekeys, 0, public_prekeys->content_length);
-	if (status != 0) {
-		return -10;
-	}
-
-	return 0;
+	return status;
 }
 
 /*
@@ -264,10 +264,12 @@ int molch_create_send_conversation(
 	buffer_create_with_existing_array(receiver_public_identity_buffer, (unsigned char*)receiver_public_identity, crypto_box_PUBLICKEYBYTES);
 
 	//create ephemeral keys
-	buffer_t *our_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *our_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *our_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *our_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	int status = crypto_box_keypair(our_public_ephemeral->content, our_private_ephemeral->content);
 	if (status != 0) {
+		buffer_destroy_from_heap(our_private_ephemeral);
+		buffer_destroy_from_heap(our_public_ephemeral);
 		return -2;
 	}
 
@@ -281,6 +283,7 @@ int molch_create_send_conversation(
 			our_private_ephemeral,
 			our_public_ephemeral,
 			receiver_public_ephemeral);
+	buffer_destroy_from_heap(our_public_ephemeral);
 
 	//copy the conversation id
 	if (status == 0) {
@@ -290,7 +293,7 @@ int molch_create_send_conversation(
 		}
 	}
 	sodium_mprotect_noaccess(user);
-	buffer_clear(our_private_ephemeral);
+	buffer_destroy_from_heap(our_private_ephemeral);
 	if (status != 0) {
 		return status;
 	}
@@ -371,15 +374,16 @@ int molch_create_receive_conversation(
 	}
 
 	//get the corresponding private prekey
-	buffer_t *private_prekey = buffer_create(crypto_box_SECRETKEYBYTES, 0);
+	buffer_t *private_prekey = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, 0);
 	int status = buffer_clone(private_prekey, &user->private_prekeys[prekey_number]);
 	if (status != 0) {
 		sodium_mprotect_noaccess(user);
+		buffer_destroy_from_heap(private_prekey);
 		return status;
 	}
 
 	buffer_create_with_existing_array(sender_public_identity_buffer, (unsigned char*)sender_public_identity, crypto_box_PUBLICKEYBYTES);
-	buffer_t *sender_public_ephemeral_buffer = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *sender_public_ephemeral_buffer = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	memset(sender_public_ephemeral_buffer->content, 1, sender_public_ephemeral_buffer->content_length); //filled with 1s for now TODO: this has to be changed later on
 
 	//create a new conversation
@@ -391,7 +395,8 @@ int molch_create_receive_conversation(
 			private_prekey,
 			public_prekey,
 			sender_public_ephemeral_buffer);
-	buffer_clear(private_prekey);
+	buffer_destroy_from_heap(private_prekey);
+	buffer_destroy_from_heap(sender_public_ephemeral_buffer);
 	if (status != 0) {
 		sodium_mprotect_noaccess(user);
 		return status;
