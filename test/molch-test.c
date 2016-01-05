@@ -41,7 +41,7 @@ int main(void) {
 	//create a new user
 	buffer_t *alice_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_t *alice_public_prekeys = buffer_create(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
-	buffer_t *alice_head_on_keyboard = buffer_create_from_string("mn ujkhuzn7b7bzh6ujg7j8hn");
+	buffer_create_from_string(alice_head_on_keyboard, "mn ujkhuzn7b7bzh6ujg7j8hn");
 	status = molch_create_user(
 			alice_public_identity->content,
 			alice_public_prekeys->content,
@@ -67,7 +67,7 @@ int main(void) {
 	buffer_t *bob_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_t *bob_public_prekeys = buffer_create(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
 
-	buffer_t *bob_head_on_keyboard = buffer_create_from_string("jnu8h77z6ht56ftgnujh");
+	buffer_create_from_string(bob_head_on_keyboard, "jnu8h77z6ht56ftgnujh");
 	status = molch_create_user(
 			bob_public_identity->content,
 			bob_public_prekeys->content,
@@ -103,7 +103,7 @@ int main(void) {
 	free(user_list);
 
 	//create a new send conversation (alice sends to bob)
-	buffer_t *alice_send_message = buffer_create_from_string("Hi Bob. Alice here!");
+	buffer_create_from_string(alice_send_message, "Hi Bob. Alice here!");
 	unsigned char *alice_send_packet;
 	size_t alice_send_packet_length;
 	buffer_t *alice_conversation = buffer_create(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
@@ -182,7 +182,7 @@ int main(void) {
 	free(bob_receive_message);
 
 	//bob replies
-	buffer_t *bob_send_message = buffer_create_from_string("Welcome Alice!");
+	buffer_create_from_string(bob_send_message, "Welcome Alice!");
 	unsigned char *bob_send_packet;
 	size_t bob_send_packet_length;
 	status = molch_encrypt_message(

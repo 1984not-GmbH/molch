@@ -97,8 +97,10 @@ mcJSON *conversation_json_export(const conversation_t * const conversation, memp
 		return NULL;
 	}
 
-	mcJSON_AddItemToObject(json, buffer_create_from_string("id"), id, pool);
-	mcJSON_AddItemToObject(json, buffer_create_from_string("ratchet"), ratchet, pool);
+	buffer_create_from_string(id_string, "id");
+	mcJSON_AddItemToObject(json, id_string, id, pool);
+	buffer_create_from_string(ratchet_string, "ratchet");
+	mcJSON_AddItemToObject(json, ratchet_string, ratchet, pool);
 
 	return json;
 }
@@ -116,8 +118,10 @@ int conversation_json_import(
 	init_struct(conversation);
 
 	//import the json
-	mcJSON *id = mcJSON_GetObjectItem(json, buffer_create_from_string("id"));
-	mcJSON *ratchet = mcJSON_GetObjectItem(json, buffer_create_from_string("ratchet"));
+	buffer_create_from_string(id_string, "id");
+	mcJSON *id = mcJSON_GetObjectItem(json, id_string);
+	buffer_create_from_string(ratchet_string, "ratchet");
+	mcJSON *ratchet = mcJSON_GetObjectItem(json, ratchet_string);
 	if ((id == NULL) || (id->type != mcJSON_String) || (id->valuestring->content_length != (2 * CONVERSATION_ID_SIZE + 1))
 			|| (ratchet == NULL) || (ratchet->type != mcJSON_Object)) {
 		goto fail;

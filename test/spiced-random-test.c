@@ -28,7 +28,7 @@ int main(void) {
 	}
 
 	//some random user input (idiot bashing his head on the keyboard)
-	buffer_t *spice = buffer_create_from_string("aäipoewur+ü 093+2ß3+2ü+ ß09234rt #2ß 0iw4eräp9ui23+ 03943");
+	buffer_create_from_string(spice, "aäipoewur+ü 093+2ß3+2ü+ ß09234rt #2ß 0iw4eräp9ui23+ 03943");
 	printf("\"Random\" input from the user (%zu Bytes):\n", spice->content_length);
 	printf("String: %s\n", spice->content);
 	printf("Hex:\n");

@@ -33,11 +33,13 @@ int main(void) {
 	//create Alice's keypair
 	buffer_t *alice_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_t *alice_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_create_from_string(alice_string, "Alice");
+	buffer_create_from_string(ephemeral_string, "ephemeral");
 	status = generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
-			buffer_create_from_string("Alice"),
-			buffer_create_from_string("ephemeral"));
+			alice_string,
+			ephemeral_string);
 	if (status != 0) {
 		buffer_clear(alice_private_ephemeral);
 		return status;
@@ -46,11 +48,12 @@ int main(void) {
 	//create Bob's keypair
 	buffer_t *bob_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_t *bob_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_create_from_string(bob_string, "Bob");
 	status = generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
-			buffer_create_from_string("Bob"),
-			buffer_create_from_string("ephemeral"));
+			bob_string,
+			ephemeral_string);
 	if (status != 0) {
 		buffer_clear(alice_private_ephemeral);
 		buffer_clear(bob_private_ephemeral);

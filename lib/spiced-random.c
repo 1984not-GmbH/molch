@@ -52,10 +52,11 @@ int spiced_random(
 	//create uniformly distributed random numbers from random input
 	//using hkdf
 	buffer_t *empty_buffer = buffer_create_on_heap(0, 0);
+	buffer_create_from_string(salt_string, "some random string as salt     "); //TODO something better?
 	status = hkdf(
 			spice,
 			output_length,
-			buffer_create_from_string("some random string as salt     "), //TODO something better?
+			salt_string,
 			random_spice,
 			empty_buffer);
 	buffer_destroy_from_heap(empty_buffer);

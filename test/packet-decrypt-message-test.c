@@ -31,7 +31,7 @@ int main(void) {
 	//generate keys and message
 	buffer_t *header_key = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	buffer_t *message_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	buffer_t *message = buffer_create_from_string("Hello world!\n");
+	buffer_create_from_string(message, "Hello world!\n");
 	buffer_t *header = buffer_create(4, 4);
 	header->content[0] = 0x01;
 	header->content[1] = 0x02;
@@ -57,7 +57,6 @@ int main(void) {
 	buffer_clear(header);
 	if (status != 0) {
 		buffer_clear(message_key);
-		buffer_clear(message);
 		buffer_clear(header_key);
 		return status;
 	}
@@ -75,7 +74,6 @@ int main(void) {
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to decrypt header. (%i)\n", status);
 		buffer_clear(message_key);
-		buffer_clear(message);
 		buffer_clear(decrypted_message_nonce);
 		return status;
 	}
@@ -93,7 +91,6 @@ int main(void) {
 			message_key);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to decrypt message. (%i)\n", status);
-		buffer_clear(message);
 		buffer_clear(message_key);
 		buffer_clear(decrypted_message_nonce);
 		buffer_clear(decrypted_message);
@@ -103,7 +100,6 @@ int main(void) {
 	//check the message size
 	if (decrypted_message->content_length != message->content_length) {
 		fprintf(stderr, "ERROR: Decrypted message length isn't the same.\n");
-		buffer_clear(message);
 		buffer_clear(message_key);
 		buffer_clear(decrypted_message_nonce);
 		buffer_clear(decrypted_message);
@@ -114,13 +110,11 @@ int main(void) {
 	//compare the message
 	if (buffer_compare(message, decrypted_message) != 0) {
 		fprintf(stderr, "ERROR: Decrypted message doesn't match!\n");
-		buffer_clear(message);
 		buffer_clear(message_key);
 		buffer_clear(decrypted_message_nonce);
 		buffer_clear(decrypted_message);
 		return EXIT_FAILURE;
 	}
-	buffer_clear(message);
 	buffer_clear(decrypted_message);
 	printf("Decrypted message is the same.\n\n");
 

@@ -294,24 +294,28 @@ mcJSON *user_store_node_json_export(user_store_node * const node, mempool_t * co
 	if (public_identity == NULL) {
 		return NULL;
 	}
-	mcJSON_AddItemToObject(json, buffer_create_from_string("public_identity"), public_identity, pool);
+	buffer_create_from_string(public_identity_string, "public_identity");
+	mcJSON_AddItemToObject(json, public_identity_string, public_identity, pool);
 	mcJSON *private_identity = mcJSON_CreateHexString(node->private_identity_key, pool);
 	if (private_identity == NULL) {
 		return NULL;
 	}
-	mcJSON_AddItemToObject(json, buffer_create_from_string("private_identity"), private_identity, pool);
+	buffer_create_from_string(private_identity_string, "private_identity");
+	mcJSON_AddItemToObject(json, private_identity_string, private_identity, pool);
 
 	/* create arrays for prekeys */
 	mcJSON *public_prekey_array = mcJSON_CreateArray(pool);
 	if (public_prekey_array == NULL) {
 		return NULL;
 	}
-	mcJSON_AddItemToObject(json, buffer_create_from_string("public_prekeys"), public_prekey_array, pool);
+	buffer_create_from_string(public_prekeys_string, "public_prekeys");
+	mcJSON_AddItemToObject(json, public_prekeys_string, public_prekey_array, pool);
 	mcJSON *private_prekey_array = mcJSON_CreateArray(pool);
 	if (private_prekey_array == NULL) {
 		return NULL;
 	}
-	mcJSON_AddItemToObject(json, buffer_create_from_string("private_prekeys"), private_prekey_array, pool);
+	buffer_create_from_string(private_prekeys_string, "private_prekeys");
+	mcJSON_AddItemToObject(json, private_prekeys_string, private_prekey_array, pool);
 
 	/* fill prekey arrays */
 	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
@@ -338,7 +342,8 @@ mcJSON *user_store_node_json_export(user_store_node * const node, mempool_t * co
 		return NULL;
 	}
 
-	mcJSON_AddItemToObject(json, buffer_create_from_string("conversations"), conversations, pool);
+	buffer_create_from_string(conversations_string, "conversations");
+	mcJSON_AddItemToObject(json, conversations_string, conversations, pool);
 
 	return json;
 }
@@ -440,11 +445,16 @@ user_store *user_store_json_import(const mcJSON * const json) {
 	mcJSON *user = json->child;
 	for (size_t i = 0; (i < json->length) && (user != NULL); i++, user = user->next) {
 		//get reference to the relevant mcJSON objects
-		mcJSON *private_identity = mcJSON_GetObjectItem(user, buffer_create_from_string("private_identity"));
-		mcJSON *public_identity = mcJSON_GetObjectItem(user, buffer_create_from_string("public_identity"));
-		mcJSON *private_prekeys = mcJSON_GetObjectItem(user, buffer_create_from_string("private_prekeys"));
-		mcJSON *public_prekeys = mcJSON_GetObjectItem(user, buffer_create_from_string("public_prekeys"));
-		mcJSON *conversations = mcJSON_GetObjectItem(user, buffer_create_from_string("conversations"));
+		buffer_create_from_string(private_identity_string, "private_identity");
+		mcJSON *private_identity = mcJSON_GetObjectItem(user, private_identity_string);
+		buffer_create_from_string(public_identity_string, "public_identity");
+		mcJSON *public_identity = mcJSON_GetObjectItem(user, public_identity_string);
+		buffer_create_from_string(private_prekeys_string, "private_prekeys");
+		mcJSON *private_prekeys = mcJSON_GetObjectItem(user, private_prekeys_string);
+		buffer_create_from_string(public_prekeys_string, "public_prekeys");
+		mcJSON *public_prekeys = mcJSON_GetObjectItem(user, public_prekeys_string);
+		buffer_create_from_string(conversations_string, "conversations");
+		mcJSON *conversations = mcJSON_GetObjectItem(user, conversations_string);
 
 		//check if they are valid
 		if ((private_identity == NULL) || (private_identity->type != mcJSON_String) || (private_identity->valuestring->content_length != (2 * crypto_box_SECRETKEYBYTES + 1))

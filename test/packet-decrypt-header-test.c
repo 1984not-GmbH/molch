@@ -31,7 +31,7 @@ int main(void) {
 	//generate keys and message
 	buffer_t *header_key = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	buffer_t *message_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	buffer_t *message = buffer_create_from_string("Hello world!\n");
+	buffer_create_from_string(message, "Hello world!\n");
 	buffer_t *header = buffer_create(4, 4);
 	header->content[0] = 0x01;
 	header->content[1] = 0x02;
@@ -55,7 +55,6 @@ int main(void) {
 			header,
 			header_key);
 	buffer_clear(message_key);
-	buffer_clear(message);
 	if (status != 0) {
 		buffer_clear(header_key);
 		buffer_clear(header);

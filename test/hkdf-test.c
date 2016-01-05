@@ -47,7 +47,7 @@ int main(void) {
 
 	//info
 	int status;
-	buffer_t *info = buffer_create_from_string("This is some info!");
+	buffer_create_from_string(info, "This is some info!");
 	printf("Info (%zu Bytes):\n", info->content_length); //this could also be binary data
 	printf("%s\n\n", info->content);
 

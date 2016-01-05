@@ -125,7 +125,7 @@ int derive_root_chain_and_header_keys(
 
 	//now create root and chain key in temporary buffer
 	//RK, CK = HKDF(previous_root_key, input_key)
-	buffer_t *info = buffer_create_from_string(INFO);
+	buffer_create_from_string(info, INFO);
 	buffer_t *hkdf_buffer = buffer_create_on_heap(2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES, 2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES);
 	status = hkdf(
 			hkdf_buffer,
@@ -226,9 +226,9 @@ int derive_initial_root_chain_and_header_keys(
 	//derive chain, root and header keys from pre_root_key via HKDF
 	//RK, CK, HK, NHK1, NHK2 = HKDF(salt, pre_root_key)
 	buffer_t *hkdf_buffer = buffer_create_on_heap(2 * crypto_secretbox_KEYBYTES + 3 * crypto_aead_chacha20poly1305_KEYBYTES, 2 * crypto_secretbox_KEYBYTES + 3 * crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_t *salt = buffer_create_from_string("molch--libsodium-crypto-library");
+	buffer_create_from_string(salt, "molch--libsodium-crypto-library");
 	assert(salt->content_length == crypto_auth_KEYBYTES);
-	buffer_t *info = buffer_create_from_string(INFO);
+	buffer_create_from_string(info, INFO);
 	status = hkdf(
 			hkdf_buffer,
 			hkdf_buffer->content_length,

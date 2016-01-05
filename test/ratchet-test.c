@@ -35,11 +35,13 @@ int main(void) {
 	//creating Alice's identity keypair
 	buffer_t *alice_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	buffer_t *alice_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_create_from_string(alice_string, "Alice");
+	buffer_create_from_string(identity_string, "identity");
 	status = generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
-			buffer_create_from_string("Alice"),
-			buffer_create_from_string("identity"));
+			alice_string,
+			identity_string);
 	if (status != 0) {
 		buffer_clear(alice_private_identity);
 		return status;
@@ -48,11 +50,12 @@ int main(void) {
 	//creating Alice's ephemeral keypair
 	buffer_t *alice_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	buffer_t *alice_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_create_from_string(ephemeral_string, "ephemeral");
 	status = generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
-			buffer_create_from_string("Alice"),
-			buffer_create_from_string("ephemeral"));
+			alice_string,
+			ephemeral_string);
 	if (status != 0) {
 		buffer_clear(alice_private_identity);
 		buffer_clear(alice_private_ephemeral);
@@ -62,11 +65,12 @@ int main(void) {
 	//creating Bob's identity keypair
 	buffer_t *bob_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	buffer_t *bob_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_create_from_string(bob_string, "Bob");
 	status = generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
-			buffer_create_from_string("Bob"),
-			buffer_create_from_string("identity"));
+			bob_string,
+			identity_string);
 	if (status != 0) {
 		buffer_clear(alice_private_identity);
 		buffer_clear(alice_private_ephemeral);
@@ -80,8 +84,8 @@ int main(void) {
 	status = generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
-			buffer_create_from_string("Bob"),
-			buffer_create_from_string("ephemeral"));
+			bob_string,
+			ephemeral_string);
 	if (status != 0) {
 		buffer_clear(alice_private_identity);
 		buffer_clear(alice_private_ephemeral);
