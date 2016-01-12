@@ -29,15 +29,15 @@ int main(void) {
 	}
 
 	//generate keys and message
-	buffer_t *header_key = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_t *message_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *header_key = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *message_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_create_from_string(message, "Hello world!\n");
-	buffer_t *header = buffer_create(4, 4);
+	buffer_t *header = buffer_create_on_heap(4, 4);
 	header->content[0] = 0x01;
 	header->content[1] = 0x02;
 	header->content[2] = 0x03;
 	header->content[3] = 0x04;
-	buffer_t *packet = buffer_create(3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255, 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255);
+	buffer_t *packet = buffer_create_on_heap(3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255, 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255);
 	const unsigned char packet_type = 1;
 	printf("Packet type: %02x\n", packet_type);
 	const unsigned char current_protocol_version = 2;
@@ -57,8 +57,7 @@ int main(void) {
 	buffer_clear(header_key);
 	buffer_clear(message_key);
 	if (status != 0) {
-		buffer_clear(header);
-		return status;
+		goto cleanup;
 	}
 
 	//now extract the metadata
@@ -74,38 +73,43 @@ int main(void) {
 			&extracted_header_length);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Couldn't extract metadata from the packet. (%i)\n", status);
-		buffer_clear(header);
-		return status;
+		goto cleanup;
 	}
 
 	if (packet_type != extracted_packet_type) {
 		fprintf(stderr, "ERROR: Extracted packet type doesn't match (%i)!\n", extracted_packet_type);
-		buffer_clear(header);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	printf("Packet type matches!\n");
 
 	if (current_protocol_version != extracted_current_protocol_version) {
 		fprintf(stderr, "ERROR: Extracted current protocol version doesn't match (%i)!\n", extracted_current_protocol_version);
-		buffer_clear(header);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	printf("Current protocol version matches!\n");
 
 	if (highest_supported_protocol_version != extracted_highest_supported_protocol_version) {
 		fprintf(stderr, "ERROR: Extracted highest supported protocol version doesn't match (%i)!\n", extracted_highest_supported_protocol_version);
-		buffer_clear(header);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	printf("Highest supoorted protocol version matches (%i)!\n", extracted_highest_supported_protocol_version);
 
 	if (header->content_length != extracted_header_length) {
 		fprintf(stderr, "ERROR: Extracted header length doesn't match (%i)!\n", extracted_header_length);
-		buffer_clear(header);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	buffer_clear(header);
 	printf("Header length matches!\n");
 
-	return EXIT_SUCCESS;
+cleanup:
+	buffer_destroy_from_heap(header_key);
+	buffer_destroy_from_heap(message_key);
+	buffer_destroy_from_heap(header);
+	buffer_destroy_from_heap(packet);
+
+	return status;
 }
