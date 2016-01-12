@@ -31,8 +31,8 @@ int main(void) {
 	}
 
 	//buffer for message keys
-	buffer_t *header_key = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_t *message_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *header_key = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *message_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 
 	//initialise message keystore
 	header_and_message_keystore keystore;
@@ -50,18 +50,12 @@ int main(void) {
 		status = buffer_fill_random(header_key, header_key->buffer_length);
 		if (status != 0) {
 			fprintf(stderr, "ERROR: Failed to create header key. (%i)\n", status);
-			header_and_message_keystore_clear(&keystore);
-			buffer_clear(header_key);
-			buffer_clear(message_key);
-			return status;
+			goto cleanup;
 		}
 		status = buffer_fill_random(message_key, message_key->buffer_length);
 		if (status != 0) {
 			fprintf(stderr, "ERROR: Failed to create header key. (%i)\n", status);
-			header_and_message_keystore_clear(&keystore);
-			buffer_clear(header_key);
-			buffer_clear(message_key);
-			return status;
+			goto cleanup;
 		}
 
 		//print the new header key
@@ -80,8 +74,7 @@ int main(void) {
 		buffer_clear(header_key);
 		if (status != 0) {
 			fprintf(stderr, "ERROR: Failed to add key to keystore. (%i)\n", status);
-			header_and_message_keystore_clear(&keystore);
-			return EXIT_FAILURE;
+			goto cleanup;
 		}
 
 		print_header_and_message_keystore(&keystore);
@@ -91,7 +84,7 @@ int main(void) {
 
 	//JSON export
 	printf("Test JSON export!\n");
-	mempool_t *pool = buffer_create(10000, 0);
+	mempool_t *pool = buffer_create_on_heap(10000, 0);
 	mcJSON *json = header_and_message_keystore_json_export(&keystore, pool);
 	buffer_t *output = mcJSON_PrintBuffered(json, 500, true);
 	if ((json == NULL) || (output == NULL)) {
@@ -101,8 +94,9 @@ int main(void) {
 			buffer_destroy_from_heap(output);
 			header_and_message_keystore_clear(&keystore);
 		}
-		buffer_clear(pool);
-		return EXIT_FAILURE;
+		buffer_destroy_from_heap(pool);
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	printf("%.*s\n", (int)output->content_length, (char*)output->content);
 
@@ -112,10 +106,9 @@ int main(void) {
 	status = header_and_message_keystore_json_import(json, &imported_keystore);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to import keystore from JSON. (%i)\n", status);
-		buffer_clear(pool);
-		header_and_message_keystore_clear(&keystore);
+		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(output);
-		return status;
+		goto cleanup;
 	}
 	//export the imported JSON to JSON again
 	pool->position = 0; //reset the mempool
@@ -124,17 +117,16 @@ int main(void) {
 	//compare with original JSON
 	if (buffer_compare(imported_output, output) != 0) {
 		fprintf(stderr, "ERROR: Imported user store is incorrect.\n");
-		buffer_clear(pool);
-		header_and_message_keystore_clear(&keystore);
+		buffer_destroy_from_heap(pool);
 		header_and_message_keystore_clear(&imported_keystore);
 		buffer_destroy_from_heap(output);
 		buffer_destroy_from_heap(imported_output);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 	printf("Successfully imported header and message keystore from JSON.\n");
 	buffer_destroy_from_heap(imported_output);
 	buffer_destroy_from_heap(output);
-	buffer_clear(pool);
+	buffer_destroy_from_heap(pool);
 
 	//remove key from the head
 	printf("Remove head!\n");
@@ -154,6 +146,12 @@ int main(void) {
 	assert(keystore.length == (i - 3));
 	print_header_and_message_keystore(&keystore);
 
+cleanup:
+	buffer_destroy_from_heap(header_key);
+	buffer_destroy_from_heap(message_key);
+
+	header_and_message_keystore_clear(&keystore);
+
 	//clear the keystore
 	printf("Clear the keystore:\n");
 	header_and_message_keystore_clear(&keystore);
@@ -161,5 +159,6 @@ int main(void) {
 	assert(keystore.head == NULL);
 	assert(keystore.tail == NULL);
 	print_header_and_message_keystore(&keystore);
-	return EXIT_SUCCESS;
+
+	return status;
 }
