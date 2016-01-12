@@ -28,16 +28,20 @@ int main(void) {
 		return -1;
 	}
 
+	//decrypted header buffers
+	buffer_t *decrypted_header = buffer_create_on_heap(255, 255);
+	buffer_t *decrypted_message_nonce = buffer_create_on_heap(crypto_secretbox_NONCEBYTES, crypto_secretbox_NONCEBYTES);
+
 	//generate keys and message
-	buffer_t *header_key = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_t *message_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *header_key = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *message_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_create_from_string(message, "Hello world!\n");
-	buffer_t *header = buffer_create(4, 4);
+	buffer_t *header = buffer_create_on_heap(4, 4);
 	header->content[0] = 0x01;
 	header->content[1] = 0x02;
 	header->content[2] = 0x03;
 	header->content[3] = 0x04;
-	buffer_t *packet = buffer_create(3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255, 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255);
+	buffer_t *packet = buffer_create_on_heap(3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255, 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255);
 	const unsigned char packet_type = 1;
 	printf("Packet type: %02x\n", packet_type);
 	const unsigned char current_protocol_version = 2;
@@ -56,14 +60,10 @@ int main(void) {
 			header_key);
 	buffer_clear(message_key);
 	if (status != 0) {
-		buffer_clear(header_key);
-		buffer_clear(header);
-		return status;
+		goto cleanup;
 	}
 
 	//now decrypt the header
-	buffer_t *decrypted_header = buffer_create(255, 255);
-	buffer_t *decrypted_message_nonce = buffer_create(crypto_secretbox_NONCEBYTES, crypto_secretbox_NONCEBYTES);
 	status = packet_decrypt_header(
 			packet,
 			decrypted_header,
@@ -71,21 +71,13 @@ int main(void) {
 			header_key);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to decrypt the header. (%i)\n", status);
-		buffer_clear(header);
-		buffer_clear(decrypted_header);
-		buffer_clear(decrypted_message_nonce);
-		buffer_clear(header_key);
-		return status;
+		goto cleanup;
 	}
 
 
 	if (decrypted_header->content_length != header->content_length) {
 		fprintf(stderr, "ERROR: Decrypted header isn't of the same length!\n");
-		buffer_clear(header);
-		buffer_clear(decrypted_header);
-		buffer_clear(decrypted_message_nonce);
-		buffer_clear(header_key);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 	printf("Decrypted header has the same length.\n\n");
 
@@ -97,10 +89,8 @@ int main(void) {
 	//compare headers
 	if (buffer_compare(header, decrypted_header) != 0) {
 		fprintf(stderr, "ERROR: Decrypted header doesn't match!\n");
-		buffer_clear(header);
-		buffer_clear(decrypted_header);
-		buffer_clear(header_key);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	printf("Decrypted header matches.\n\n");
 
@@ -112,13 +102,9 @@ int main(void) {
 			decrypted_header,
 			decrypted_message_nonce,
 			header_key);
-	buffer_clear(decrypted_message_nonce);
-	buffer_clear(decrypted_header);
 	if (status == 0) { //header was decrypted despite manipulation
 		fprintf(stderr, "ERROR: Manipulated packet was accepted!\n");
-		buffer_clear(header);
-		buffer_clear(header_key);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 	printf("Header manipulation detected.\n\n");
 
@@ -132,21 +118,23 @@ int main(void) {
 			decrypted_header,
 			decrypted_message_nonce,
 			header_key);
-	buffer_clear(decrypted_message_nonce);
-	buffer_clear(decrypted_header);
 	if (status == 0) { //header was decrypted desp
 		fprintf(stderr, "ERROR: Manipulated packet was accepted!\n");
-		buffer_clear(header);
-		buffer_clear(header_key);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
+	status = EXIT_SUCCESS;
 	printf("Header manipulation detected!\n");
 
 	//undo header manipulation
 	packet->content[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= 0x12;
 
-	buffer_clear(header);
-	buffer_clear(header_key);
-
-	return EXIT_SUCCESS;
+cleanup:
+	buffer_destroy_from_heap(decrypted_header);
+	buffer_destroy_from_heap(decrypted_message_nonce);
+	buffer_destroy_from_heap(header_key);
+	buffer_destroy_from_heap(message_key);
+	buffer_destroy_from_heap(header);
+	buffer_destroy_from_heap(packet);
+	return status;
 }
