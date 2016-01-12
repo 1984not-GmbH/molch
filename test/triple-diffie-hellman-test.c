@@ -30,11 +30,23 @@ int main(void) {
 
 	int status;
 
+	//create buffers
+	//alice keys
+	buffer_t * const alice_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t * const alice_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t * const alice_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t * const alice_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t * const alice_shared_secret = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	//bobs keys
+	buffer_t * const bob_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t * const bob_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t * const bob_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t * const bob_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t * const bob_shared_secret = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
+
 	printf("Generate Alice's keys -------------------------------------------------------\n\n");
 
 	//create Alice's identity keypair
-	buffer_t * const alice_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t * const alice_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	buffer_create_from_string(alice_string, "Alice");
 	buffer_create_from_string(identity_string, "identity");
 	status = generate_and_print_keypair(
@@ -43,13 +55,10 @@ int main(void) {
 			alice_string,
 			identity_string);
 	if (status != 0) {
-		buffer_clear(alice_private_identity);
-		return status;
+		goto cleanup;
 	}
 
 	//create Alice's ephemeral keypair
-	buffer_t * const alice_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t * const alice_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	buffer_create_from_string(ephemeral_string, "ephemeral");
 	status = generate_and_print_keypair(
 			alice_public_ephemeral,
@@ -57,16 +66,12 @@ int main(void) {
 			alice_string,
 			ephemeral_string);
 	if (status != 0) {
-		buffer_clear(alice_private_ephemeral);
-		buffer_clear(alice_private_identity);
-		return status;
+		goto cleanup;
 	}
 
 	printf("Generate Bob's keys ---------------------------------------------------------\n\n");
 
 	//create Bob's identity keypair
-	buffer_t * const  bob_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t * const  bob_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	buffer_create_from_string(bob_string, "Bob");
 	status = generate_and_print_keypair(
 			bob_public_identity,
@@ -74,32 +79,22 @@ int main(void) {
 			bob_string,
 			identity_string);
 	if (status != 0) {
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_ephemeral);
-		buffer_clear(bob_private_identity);
-		return status;
+		goto cleanup;
 	}
 
 	//create Bob's ephemeral keypair
-	buffer_t * const bob_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t * const bob_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	status = generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
 			bob_string,
 			ephemeral_string);
 	if (status != 0) {
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_ephemeral);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_ephemeral);
-		return status;
+		goto cleanup;
 	}
 
 	printf("Calculate shared secret via Triple Diffie Hellman ---------------------------\n\n");
 
 	//Triple Diffie Hellman on Alice's side
-	buffer_t * const alice_shared_secret = buffer_create(crypto_generichash_BYTES, crypto_generichash_BYTES);
 	status = triple_diffie_hellman(
 			alice_shared_secret,
 			alice_private_identity,
@@ -113,10 +108,7 @@ int main(void) {
 	buffer_clear(alice_private_ephemeral);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Triple Diffie Hellman for Alice failed. (%i)\n", status);
-		buffer_clear(alice_shared_secret);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_ephemeral);
-		return status;
+		goto cleanup;
 	}
 	//print Alice's shared secret
 	printf("Alice's shared secret H(DH(A_priv,B0_pub)||DH(A0_priv,B_pub)||DH(A0_priv,B0_pub)):\n");
@@ -124,7 +116,6 @@ int main(void) {
 	putchar('\n');
 
 	//Triple Diffie Hellman on Bob's side
-	buffer_t * const bob_shared_secret = buffer_create(crypto_generichash_BYTES, crypto_generichash_BYTES);
 	status = triple_diffie_hellman(
 			bob_shared_secret,
 			bob_private_identity,
@@ -156,5 +147,19 @@ int main(void) {
 
 	printf("Both shared secrets match!\n");
 
-	return EXIT_SUCCESS;
+cleanup:
+	//alice keys
+	buffer_destroy_from_heap(alice_public_identity);
+	buffer_destroy_from_heap(alice_private_identity);
+	buffer_destroy_from_heap(alice_public_ephemeral);
+	buffer_destroy_from_heap(alice_private_ephemeral);
+	buffer_destroy_from_heap(alice_shared_secret);
+	//bobs keys
+	buffer_destroy_from_heap(bob_public_identity);
+	buffer_destroy_from_heap(bob_private_identity);
+	buffer_destroy_from_heap(bob_public_ephemeral);
+	buffer_destroy_from_heap(bob_private_ephemeral);
+	buffer_destroy_from_heap(bob_shared_secret);
+
+	return status;
 }
