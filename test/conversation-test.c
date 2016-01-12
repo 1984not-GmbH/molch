@@ -32,9 +32,17 @@ int main(void) {
 		return status;
 	}
 
+	//create buffers
+	buffer_t *charlie_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *charlie_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *charlie_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *charlie_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *dora_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *dora_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *dora_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *dora_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+
 	//creating charlie's identity keypair
-	buffer_t *charlie_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *charlie_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_create_from_string(charlie_string, "charlie");
 	buffer_create_from_string(identity_string, "identity");
 
@@ -44,13 +52,10 @@ int main(void) {
 			charlie_string,
 			identity_string);
 	if (status != 0) {
-		buffer_clear(charlie_private_identity);
-		return status;
+		goto cleanup;
 	}
 
 	//creating charlie's ephemeral keypair
-	buffer_t *charlie_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *charlie_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_create_from_string(ephemeral_string, "ephemeral");
 	status = generate_and_print_keypair(
 			charlie_public_ephemeral,
@@ -58,14 +63,10 @@ int main(void) {
 			charlie_string,
 			ephemeral_string);
 	if (status != 0) {
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_ephemeral);
-		return status;
+		goto cleanup;
 	}
 
 	//creating dora's identity keypair
-	buffer_t *dora_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *dora_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_create_from_string(dora_string, "dora");
 	status = generate_and_print_keypair(
 			dora_public_identity,
@@ -73,37 +74,24 @@ int main(void) {
 			dora_string,
 			identity_string);
 	if (status != 0) {
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_ephemeral);
-		buffer_clear(dora_private_identity);
-		return status;
+		goto cleanup;
 	}
 
 	//creating dora's ephemeral keypair
-	buffer_t *dora_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *dora_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	status = generate_and_print_keypair(
 			dora_public_ephemeral,
 			dora_private_ephemeral,
 			dora_string,
 			ephemeral_string);
 	if (status != 0) {
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_ephemeral);
-		buffer_clear(dora_private_identity);
-		buffer_clear(dora_private_ephemeral);
-		return status;
+		goto cleanup;
 	}
 
 	//create charlie's conversation
 	conversation_t *charlie_conversation = malloc(sizeof(conversation_t));
 	if (charlie_conversation == NULL) {
 		fprintf(stderr, "ERROR: Failed to allocate memory.\n");
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_ephemeral);
-		buffer_clear(dora_private_identity);
-		buffer_clear(dora_private_ephemeral);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 	status = conversation_init(
 			charlie_conversation,
@@ -117,30 +105,23 @@ int main(void) {
 	buffer_clear(charlie_private_ephemeral);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to init Charlie's conversation.\n");
-		buffer_clear(dora_private_identity);
-		buffer_clear(dora_private_ephemeral);
 		free(charlie_conversation);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 	if (charlie_conversation->id->content_length != CONVERSATION_ID_SIZE) {
 		fprintf(stderr, "ERROR: Charlie's conversation has an incorrect ID length.\n");
-		buffer_clear(dora_private_identity);
-		buffer_clear(dora_private_ephemeral);
-		conversation_deinit(charlie_conversation);
 		free(charlie_conversation);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 
 	//create Dora's conversation
 	conversation_t *dora_conversation = malloc(sizeof(conversation_t));
 	if (dora_conversation == NULL) {
 		fprintf(stderr, "ERROR: Failed to allocate memory!\n");
-		buffer_clear(dora_private_identity);
-		buffer_clear(dora_private_ephemeral);
 		conversation_deinit(charlie_conversation);
 		free(charlie_conversation);
 
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 	status = conversation_init(
 			dora_conversation,
@@ -157,7 +138,7 @@ int main(void) {
 		conversation_deinit(charlie_conversation);
 		free(charlie_conversation);
 		free(dora_conversation);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 	if (dora_conversation->id->content_length != CONVERSATION_ID_SIZE) {
 		fprintf(stderr, "ERROR: Dora's conversation has an incorrect ID length.\n");
@@ -165,7 +146,7 @@ int main(void) {
 		free(charlie_conversation);
 		conversation_deinit(dora_conversation);
 		free(dora_conversation);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 
 	//test JSON export
@@ -179,7 +160,7 @@ int main(void) {
 		free(charlie_conversation);
 		conversation_deinit(dora_conversation);
 		free(dora_conversation);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 	if (json->length != 2) {
 		fprintf(stderr, "ERROR: JSON for Charlie's conversation is invalid!");
@@ -188,7 +169,7 @@ int main(void) {
 		free(charlie_conversation);
 		conversation_deinit(dora_conversation);
 		free(dora_conversation);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
 	if (output == NULL) {
@@ -198,7 +179,7 @@ int main(void) {
 		free(charlie_conversation);
 		conversation_deinit(dora_conversation);
 		free(dora_conversation);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 	printf("%.*s\n", (int)output->content_length, (char*)output->content);
 
@@ -212,7 +193,7 @@ int main(void) {
 		free(charlie_conversation);
 		conversation_deinit(dora_conversation);
 		free(dora_conversation);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 	status = conversation_json_import(imported_charlies_conversation, json);
 	if (status != 0) {
@@ -224,7 +205,7 @@ int main(void) {
 		conversation_deinit(dora_conversation);
 		free(dora_conversation);
 		free(imported_charlies_conversation);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 	//export the imported to JSON again
 	pool->position = 0; //reset the mempool
@@ -242,7 +223,7 @@ int main(void) {
 		free(dora_conversation);
 		conversation_deinit(imported_charlies_conversation);
 		free(imported_charlies_conversation);
-		return EXIT_FAILURE;
+		goto cleanup;
 	}
 	buffer_destroy_from_heap(imported_output);
 	buffer_destroy_from_heap(output);
@@ -256,5 +237,15 @@ int main(void) {
 	conversation_deinit(dora_conversation);
 	free(dora_conversation);
 
-	return EXIT_SUCCESS;
+cleanup:
+	buffer_destroy_from_heap(charlie_private_identity);
+	buffer_destroy_from_heap(charlie_public_identity);
+	buffer_destroy_from_heap(charlie_private_ephemeral);
+	buffer_destroy_from_heap(charlie_public_ephemeral);
+	buffer_destroy_from_heap(dora_private_identity);
+	buffer_destroy_from_heap(dora_public_identity);
+	buffer_destroy_from_heap(dora_private_ephemeral);
+	buffer_destroy_from_heap(dora_public_ephemeral);
+
+	return status;
 }
