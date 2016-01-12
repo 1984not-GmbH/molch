@@ -30,9 +30,15 @@ int main(void) {
 
 	int status;
 
+	//create buffers
+	buffer_t *alice_public_key = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *alice_private_key = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *alice_shared_secret = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	buffer_t *bob_public_key = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *bob_private_key = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *bob_shared_secret = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
+
 	//create Alice's keypair
-	buffer_t *alice_public_key = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *alice_private_key = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	buffer_create_from_string(alice_string, "Alice");
 	buffer_create_from_string(empty_string, "");
 	status = generate_and_print_keypair(
@@ -41,13 +47,10 @@ int main(void) {
 			alice_string,
 			empty_string);
 	if (status != 0) {
-		buffer_clear(alice_private_key);
-		return status;
+		goto cleanup;
 	}
 
 	//create Bob's keypair
-	buffer_t *bob_public_key = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *bob_private_key = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	buffer_create_from_string(bob_string, "Bob");
 	status = generate_and_print_keypair(
 			bob_public_key,
@@ -55,13 +58,10 @@ int main(void) {
 			bob_string,
 			empty_string);
 	if (status != 0) {
-		buffer_clear(alice_private_key);
-		buffer_clear(bob_private_key);
-		return status;
+		goto cleanup;
 	}
 
 	//Diffie Hellman on Alice's side
-	buffer_t *alice_shared_secret = buffer_create(crypto_generichash_BYTES, crypto_generichash_BYTES);
 	status = diffie_hellman(
 			alice_shared_secret,
 			alice_private_key,
@@ -71,9 +71,7 @@ int main(void) {
 	buffer_clear(alice_private_key);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Diffie Hellman with Alice's private key failed. (%i)\n", status);
-		buffer_clear(bob_private_key);
-		buffer_clear(alice_shared_secret);
-		return status;
+		goto cleanup;
 	}
 
 	//print Alice's shared secret
@@ -82,7 +80,6 @@ int main(void) {
 	putchar('\n');
 
 	//Diffie Hellman on Bob's side
-	buffer_t *bob_shared_secret = buffer_create(crypto_generichash_BYTES, crypto_generichash_BYTES);
 	status = diffie_hellman(
 			bob_shared_secret,
 			bob_private_key,
@@ -92,9 +89,7 @@ int main(void) {
 	buffer_clear(bob_private_key);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Diffie Hellman with Bob's private key failed. (%i)\n", status);
-		buffer_clear(alice_shared_secret);
-		buffer_clear(bob_shared_secret);
-		return status;
+		goto cleanup;
 	}
 
 	//print Bob's shared secret
@@ -108,9 +103,18 @@ int main(void) {
 	buffer_clear(bob_shared_secret);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Diffie Hellman didn't produce the same shared secret. (%i)\n", status);
-		return status;
+		goto cleanup;
 	}
 
 	printf("Both shared secrets match!\n");
-	return EXIT_SUCCESS;
+
+cleanup:
+	buffer_destroy_from_heap(alice_public_key);
+	buffer_destroy_from_heap(alice_private_key);
+	buffer_destroy_from_heap(alice_shared_secret);
+	buffer_destroy_from_heap(bob_public_key);
+	buffer_destroy_from_heap(bob_private_key);
+	buffer_destroy_from_heap(bob_shared_secret);
+
+	return status;
 }
