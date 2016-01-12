@@ -30,41 +30,47 @@ int main(void) {
 
 	int status;
 
+	//create key buffers
+	buffer_t *alice_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *alice_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *bob_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *bob_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *previous_root_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *alice_root_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *alice_chain_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *alice_header_key = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *bob_root_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *bob_chain_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *bob_header_key = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+
 	//create Alice's keypair
-	buffer_t *alice_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *alice_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_create_from_string(alice_string, "Alice");
+	buffer_create_from_string(ephemeral_string, "ephemeral");
 	status = generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
-			buffer_create_from_string("Alice"),
-			buffer_create_from_string("ephemeral"));
+			alice_string,
+			ephemeral_string);
 	if (status != 0) {
-		buffer_clear(alice_private_ephemeral);
-		return status;
+		goto cleanup;
 	}
 
 	//create Bob's keypair
-	buffer_t *bob_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *bob_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_create_from_string(bob_string, "Bob");
 	status = generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
-			buffer_create_from_string("Bob"),
-			buffer_create_from_string("ephemeral"));
+			bob_string,
+			ephemeral_string);
 	if (status != 0) {
-		buffer_clear(alice_private_ephemeral);
-		buffer_clear(bob_private_ephemeral);
-		return status;
+		goto cleanup;
 	}
 
 	//create previous root key
-	buffer_t *previous_root_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = buffer_fill_random(previous_root_key, crypto_secretbox_KEYBYTES);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate previous root key. (%i)\n", status);
-		buffer_clear(alice_private_ephemeral);
-		buffer_clear(bob_private_ephemeral);
-		return status;
+		goto cleanup;
 	}
 
 	//print previous root key
@@ -73,9 +79,6 @@ int main(void) {
 	putchar('\n');
 
 	//derive root and chain key for Alice
-	buffer_t *alice_root_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	buffer_t *alice_chain_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	buffer_t *alice_header_key = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	status = derive_root_chain_and_header_keys(
 			alice_root_key,
 			alice_chain_key,
@@ -85,15 +88,9 @@ int main(void) {
 			bob_public_ephemeral,
 			previous_root_key,
 			true);
-	buffer_clear(alice_private_ephemeral);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to derive root and chain key for Alice. (%i)\n", status);
-		buffer_clear(alice_root_key);
-		buffer_clear(alice_chain_key);
-		buffer_clear(alice_header_key);
-		buffer_clear(bob_private_ephemeral);
-		buffer_clear(previous_root_key);
-		return status;
+		goto cleanup;
 	}
 
 	//print Alice's root and chain key
@@ -106,9 +103,6 @@ int main(void) {
 	putchar('\n');
 
 	//derive root and chain key for Bob
-	buffer_t *bob_root_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	buffer_t *bob_chain_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	buffer_t *bob_header_key = buffer_create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	status = derive_root_chain_and_header_keys(
 			bob_root_key,
 			bob_chain_key,
@@ -118,17 +112,9 @@ int main(void) {
 			alice_public_ephemeral,
 			previous_root_key,
 			false);
-	buffer_clear(bob_private_ephemeral);
-	buffer_clear(previous_root_key);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to derive root and chain key for Bob. (%i)\n", status);
-		buffer_clear(alice_root_key);
-		buffer_clear(alice_chain_key);
-		buffer_clear(alice_header_key);
-		buffer_clear(bob_root_key);
-		buffer_clear(bob_chain_key);
-		buffer_clear(bob_header_key);
-		return status;
+		goto cleanup;
 	}
 
 	//print Bob's root and chain key
@@ -145,13 +131,8 @@ int main(void) {
 		printf("Alice's and Bob's root keys match.\n");
 	} else {
 		fprintf(stderr, "ERROR: Alice's and Bob's root keys don't match.\n");
-		buffer_clear(alice_root_key);
-		buffer_clear(bob_root_key);
-		buffer_clear(alice_chain_key);
-		buffer_clear(alice_header_key);
-		buffer_clear(bob_chain_key);
-		buffer_clear(bob_header_key);
-		return -1;
+		status = -1;
+		goto cleanup;
 	}
 	buffer_clear(alice_root_key);
 	buffer_clear(bob_root_key);
@@ -161,28 +142,31 @@ int main(void) {
 		printf("Alice's and Bob's chain keys match.\n");
 	} else {
 		fprintf(stderr, "ERROR: Alice's and Bob's chain keys don't match.\n");
-		buffer_clear(alice_chain_key);
-		buffer_clear(alice_header_key);
-		buffer_clear(bob_chain_key);
-		buffer_clear(bob_header_key);
-		return -1;
+		status = -1;
+		goto cleanup;
 	}
-
-	buffer_clear(alice_chain_key);
-	buffer_clear(bob_chain_key);
 
 	//compare Alice's and Bob's header keys
 	if (buffer_compare(alice_header_key, bob_header_key) == 0) {
 		printf("Alice's and Bob's header keys match.\n");
 	} else {
 		fprintf(stderr, "ERROR: Alice's and Bob's header keys don't match.\n");
-		buffer_clear(alice_header_key);
-		buffer_clear(bob_header_key);
-		return -1;
+		status = -1;
+		goto cleanup;
 	}
 
-	buffer_clear(alice_header_key);
-	buffer_clear(bob_header_key);
+cleanup:
+	buffer_destroy_from_heap(alice_public_ephemeral);
+	buffer_destroy_from_heap(alice_private_ephemeral);
+	buffer_destroy_from_heap(bob_public_ephemeral);
+	buffer_destroy_from_heap(bob_private_ephemeral);
+	buffer_destroy_from_heap(previous_root_key);
+	buffer_destroy_from_heap(alice_root_key);
+	buffer_destroy_from_heap(alice_chain_key);
+	buffer_destroy_from_heap(alice_header_key);
+	buffer_destroy_from_heap(bob_root_key);
+	buffer_destroy_from_heap(bob_chain_key);
+	buffer_destroy_from_heap(bob_header_key);
 
-	return EXIT_SUCCESS;
+	return status;
 }

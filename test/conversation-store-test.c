@@ -28,13 +28,13 @@
 int test_add_conversation(conversation_store * const store) {
 	//define key buffers
 	//identity keys
-	buffer_t *our_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *our_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *their_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *our_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *our_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *their_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	//ephemeral keys
-	buffer_t *our_private_ephemeral = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *our_public_ephemeral= buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *their_public_ephemeral = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *our_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *our_public_ephemeral= buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *their_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 
 	//generate the keys
 	int status;
@@ -65,17 +65,21 @@ int test_add_conversation(conversation_store * const store) {
 			their_public_ephemeral);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to add conversation to store. (%i)\n", status);
-		goto fail;
+		goto cleanup;
 	}
 
-	return status;
+	goto cleanup;
 
 keygen_fail:
 	fprintf(stderr, "ERROR: Failed to generate keys. (%i)\n", status);
-fail:
-	//clear all the buffers
-	buffer_clear(our_private_identity);
-	buffer_clear(our_private_ephemeral);
+cleanup:
+	//destroy all the buffers
+	buffer_destroy_from_heap(our_private_identity);
+	buffer_destroy_from_heap(our_public_identity);
+	buffer_destroy_from_heap(their_public_identity);
+	buffer_destroy_from_heap(our_private_ephemeral);
+	buffer_destroy_from_heap(our_public_ephemeral);
+	buffer_destroy_from_heap(their_public_ephemeral);
 	return status;
 }
 
@@ -136,7 +140,7 @@ int main(void) {
 
 	//check for all conversations that they exist
 	for (size_t i = 0; i < (conversation_list->content_length / CONVERSATION_ID_SIZE); i++) {
-		buffer_t *current_id = buffer_create_with_existing_array(conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
+		buffer_create_with_existing_array(current_id, conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
 		if (conversation_store_find_node(store, current_id) == NULL) {
 			fprintf(stderr, "ERROR: Exported list of conversations was incorrect.\n");
 			buffer_destroy_from_heap(conversation_list);
@@ -148,18 +152,18 @@ int main(void) {
 
 	//test JSON export
 	printf("Test JSON export!\n");
-	mempool_t *pool = buffer_create(100000, 0);
+	mempool_t *pool = buffer_create_on_heap(100000, 0);
 	mcJSON *json = conversation_store_json_export(store, pool);
 	if (json == NULL) {
 		fprintf(stderr, "ERROR: Failed to export JSON.\n");
-		buffer_clear(pool);
+		buffer_destroy_from_heap(pool);
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
 	if (output == NULL) {
 		fprintf(stderr, "ERROR: Failed to print json.\n");
-		buffer_clear(pool);
+		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(output);
 		status = EXIT_FAILURE;
 		goto cleanup;
@@ -167,7 +171,7 @@ int main(void) {
 	printf("%.*s\n", (int)output->content_length, output->content);
 	if (json->length != 5) {
 		fprintf(stderr, "ERROR: Exported JSON doesn't contain all conversations.\n");
-		buffer_clear(pool);
+		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(output);
 		status = EXIT_FAILURE;
 		goto cleanup;
@@ -180,7 +184,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to import from JSON.\n");
 		sodium_memzero(imported_store, sizeof(conversation_store));
 		free(imported_store);
-		buffer_clear(pool);
+		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(output);
 		goto cleanup;
 	}
@@ -191,7 +195,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to export imported to JSON.\n");
 		conversation_store_clear(imported_store);
 		free(imported_store);
-		buffer_clear(pool);
+		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(output);
 		goto cleanup;
 	}
@@ -200,13 +204,13 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to print imported output.\n");
 		conversation_store_clear(imported_store);
 		free(imported_store);
-		buffer_clear(pool);
+		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(output);
 		goto cleanup;
 	}
 	conversation_store_clear(imported_store);
 	free(imported_store);
-	buffer_clear(pool);
+	buffer_destroy_from_heap(pool);
 	//compare both JSON strings
 	if (buffer_compare(imported_output, output) != 0) {
 		fprintf(stderr, "ERROR: Imported conversation store is incorrect.\n");

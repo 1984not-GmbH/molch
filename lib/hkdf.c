@@ -43,13 +43,13 @@ int expand(
 	}
 
 	//buffer to store T(x)|info|0x?? (HMAC input)
-	buffer_t *round_buffer = buffer_create(crypto_auth_BYTES + info->content_length + 1, crypto_auth_BYTES + info->content_length + 1);
+	buffer_t *round_buffer = buffer_create_on_heap(crypto_auth_BYTES + info->content_length + 1, crypto_auth_BYTES + info->content_length + 1);
 
 	//round_buffer = <empty>|info|0x01
 	int status;
 	status = buffer_clone(round_buffer, info);
 	if (status != 0) {
-		return status;
+		goto cleanup;
 	}
 	round_buffer->content[round_buffer->content_length] = 0x01;
 	round_buffer->content_length++;
@@ -61,16 +61,15 @@ int expand(
 			round_buffer->content_length, //length of round_buffer in first step
 			pseudo_random_key->content);
 	if (status != 0) {
-		buffer_clear(round_buffer);
-		return status;
+		goto cleanup;
 	}
 	output_key->content_length = output_key_length;
 
 	//N (number of T(x) needed to fill the output_key_length
 	unsigned int n = 1 + ((output_key_length - 1) / crypto_auth_BYTES); //N = ceil(L/HashLen)
 	if (n > 0xff) { //n has to fit into one byte
-		buffer_clear(round_buffer);
-		return -10;
+		status = -10;
+		goto cleanup;
 	}
 
 	//T(2) ... T(N-1)
@@ -80,13 +79,11 @@ int expand(
 		round_buffer->content_length = 0;
 		status = buffer_copy(round_buffer, 0, output_key, (pos - 1) * crypto_auth_BYTES, crypto_auth_BYTES);
 		if (status != 0) {
-			buffer_clear(round_buffer);
-			return status;
+			goto cleanup;
 		}
 		status = buffer_concat(round_buffer, info);
 		if (status != 0) {
-			buffer_clear(round_buffer);
-			return status;
+			goto cleanup;
 		}
 		round_buffer->content[round_buffer->content_length] = (unsigned char) (pos + 1);
 		round_buffer->content_length++;
@@ -98,8 +95,7 @@ int expand(
 				round_buffer->content_length, //length of round_buffer
 				pseudo_random_key->content);
 		if (status != 0) {
-			buffer_clear(round_buffer);
-			return status;
+			goto cleanup;
 		}
 	}
 
@@ -107,28 +103,25 @@ int expand(
 	round_buffer->content_length = 0;
 	status = buffer_copy(round_buffer, 0, output_key, (n - 2) * crypto_auth_BYTES, crypto_auth_BYTES);
 	if (status != 0) {
-		buffer_clear(round_buffer);
-		return status;
+		goto cleanup;
 	}
 	status = buffer_concat(round_buffer, info);
 	if (status != 0) {
-		buffer_clear(round_buffer);
-		return status;
+		goto cleanup;
 	}
 	round_buffer->content[round_buffer->content_length] = (unsigned char) n;
 	round_buffer->content_length++;
 
 	//T(N) = HMAC-Hash(PRK, T(N-1)|info|N)
-	buffer_t *t_n_buffer = buffer_create(crypto_auth_BYTES, crypto_auth_BYTES);
+	buffer_t *t_n_buffer = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
 	status = crypto_auth(
 			t_n_buffer->content, //T(N)
 			round_buffer->content,
 			round_buffer->content_length, //length of round buffer
 			pseudo_random_key->content);
 	if (status != 0) {
-		buffer_clear(t_n_buffer);
-		buffer_clear(round_buffer);
-		return status;
+		buffer_destroy_from_heap(t_n_buffer);
+		goto cleanup;
 	}
 
 	//copy as many bytes of T(N) as fit into output_key
@@ -137,12 +130,14 @@ int expand(
 			t_n_buffer,
 			0,
 			crypto_auth_BYTES - ((n * crypto_auth_BYTES) - output_key_length));
-	buffer_clear(t_n_buffer);
-	buffer_clear(round_buffer);
+	buffer_destroy_from_heap(t_n_buffer);
 	if (status != 0) {
-		return status;
+		goto cleanup;
 	}
-	return 0;
+
+cleanup:
+	buffer_destroy_from_heap(round_buffer);
+	return status;
 }
 
 /*
@@ -172,21 +167,21 @@ int hkdf(
 	}
 
 	//extract phase of hkdf
-	buffer_t * const pseudo_random_key = buffer_create(crypto_auth_BYTES, crypto_auth_BYTES);
+	buffer_t * const pseudo_random_key = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
 	int status;
 	//generate pseudo random key by calculating
 	//HMAC from input_key using salt as key
 	//PRK = HMAC-Hash(salt, IKM)
 	status = crypto_auth(pseudo_random_key->content, input_key->content, input_key->content_length, salt->content);
 	if (status != 0) {
-		buffer_clear(pseudo_random_key);
+		buffer_destroy_from_heap(pseudo_random_key);
 		return status;
 	}
 
 	//expand phase of hkdf
 	output_key->content_length = output_key_length;
 	status = expand(output_key, output_key->content_length, pseudo_random_key, info);
-	buffer_clear(pseudo_random_key);
+	buffer_destroy_from_heap(pseudo_random_key);
 	if (status != 0) {
 		return status;
 	}

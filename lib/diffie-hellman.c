@@ -58,13 +58,13 @@ int diffie_hellman(
 	}
 
 	//buffer for diffie hellman shared secret
-	buffer_t *dh_secret = buffer_create(crypto_scalarmult_SCALARBYTES, crypto_scalarmult_SCALARBYTES);
+	buffer_t *dh_secret = buffer_create_on_heap(crypto_scalarmult_SCALARBYTES, crypto_scalarmult_SCALARBYTES);
 
 	//do the diffie hellman key exchange
 	int status;
 	status = crypto_scalarmult(dh_secret->content, our_private_key->content, their_public_key->content);
 	if (status != 0) {
-		buffer_clear(dh_secret);
+		buffer_destroy_from_heap(dh_secret);
 		return status;
 	}
 
@@ -76,14 +76,14 @@ int diffie_hellman(
 			0, //key_length
 			crypto_generichash_BYTES); //output length
 	if (status != 0) {
-		buffer_clear(dh_secret);
+		buffer_destroy_from_heap(dh_secret);
 		sodium_memzero(&hash_state, sizeof(hash_state));
 		return status;
 	}
 
 	//start input to hash with diffie hellman secret
 	status = crypto_generichash_update(&hash_state, dh_secret->content, dh_secret->content_length);
-	buffer_clear(dh_secret);
+	buffer_destroy_from_heap(dh_secret);
 	if (status != 0) {
 		sodium_memzero(&hash_state, sizeof(hash_state));
 		return status;
@@ -178,9 +178,9 @@ int triple_diffie_hellman(
 
 	int status;
 	//buffers for all 3 Diffie Hellman exchanges
-	buffer_t *dh1 = buffer_create(crypto_generichash_BYTES, crypto_generichash_BYTES);
-	buffer_t *dh2 = buffer_create(crypto_generichash_BYTES, crypto_generichash_BYTES);
-	buffer_t *dh3 = buffer_create(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	buffer_t *dh1 = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	buffer_t *dh2 = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	buffer_t *dh3 = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
 
 	if (am_i_alice) {
 		//DH(our_identity, their_ephemeral)
@@ -191,8 +191,7 @@ int triple_diffie_hellman(
 				their_public_ephemeral,
 				am_i_alice);
 		if (status != 0) {
-			buffer_clear(dh1);
-			return status;
+			goto cleanup;
 		}
 
 		//DH(our_ephemeral, their_identity)
@@ -203,9 +202,7 @@ int triple_diffie_hellman(
 				their_public_identity,
 				am_i_alice);
 		if (status != 0) {
-			buffer_clear(dh1);
-			buffer_clear(dh2);
-			return status;
+			goto cleanup;
 		}
 	} else {
 		//DH(our_ephemeral, their_identity)
@@ -216,8 +213,7 @@ int triple_diffie_hellman(
 				their_public_identity,
 				am_i_alice);
 		if (status != 0) {
-			buffer_clear(dh1);
-			return status;
+			goto cleanup;
 		}
 
 		//DH(our_identity, their_ephemeral)
@@ -228,9 +224,7 @@ int triple_diffie_hellman(
 				their_public_ephemeral,
 				am_i_alice);
 		if (status != 0) {
-			buffer_clear(dh1);
-			buffer_clear(dh2);
-			return status;
+			goto cleanup;
 		}
 	}
 
@@ -243,10 +237,7 @@ int triple_diffie_hellman(
 			their_public_ephemeral,
 			am_i_alice);
 	if (status != 0) {
-		buffer_clear(dh1);
-		buffer_clear(dh2);
-		buffer_clear(dh3);
-		return status;
+		goto cleanup;
 	}
 
 	//now calculate HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0))
@@ -260,43 +251,39 @@ int triple_diffie_hellman(
 			0, //key_length
 			crypto_generichash_BYTES); //output_length
 	if (status != 0) {
-		buffer_clear(dh1);
-		buffer_clear(dh2);
-		buffer_clear(dh3);
-		return status;
+		goto cleanup;
 	}
 
 	//add dh1 to hash input
 	status = crypto_generichash_update(&hash_state, dh1->content, crypto_generichash_BYTES);
-	buffer_clear(dh1);
 	if (status != 0) {
-		buffer_clear(dh2);
-		buffer_clear(dh3);
-		return status;
+		goto cleanup;
 	}
 
 	//add dh2 to hash input
 	status = crypto_generichash_update(&hash_state, dh2->content, crypto_generichash_BYTES);
-	buffer_clear(dh2);
 	if (status != 0) {
-		buffer_clear(dh3);
-		return status;
+		goto cleanup;
 	}
 
 	//add dh3 to hash input
 	status = crypto_generichash_update(&hash_state, dh3->content, crypto_generichash_BYTES);
-	buffer_clear(dh3);
 	if (status != 0) {
-		return status;
+		goto cleanup;
 	}
 
 	//write final hash to output (derived_key)
 	status = crypto_generichash_final(&hash_state, derived_key->content, crypto_generichash_BYTES);
 	if (status != 0) {
 		sodium_memzero(&hash_state, sizeof(hash_state));
-		return status;
+		goto cleanup;
 	}
 	derived_key->content_length = crypto_generichash_BYTES;
 	sodium_memzero(&hash_state, sizeof(hash_state));
+
+cleanup:
+	buffer_destroy_from_heap(dh1);
+	buffer_destroy_from_heap(dh2);
+	buffer_destroy_from_heap(dh3);
 	return status;
 }

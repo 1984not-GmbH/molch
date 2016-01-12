@@ -24,11 +24,11 @@
 void print_hex(const buffer_t * const data) {
 	static const int WIDTH = 30;
 	//buffer for hex string
-	buffer_t *hex = buffer_create(2 * data->content_length + 1, 2 * data->content_length + 1);
+	buffer_t *hex = buffer_create_on_heap(2 * data->content_length + 1, 2 * data->content_length + 1);
 
 	if (buffer_clone_as_hex(hex, data) != 0) {
 		fprintf(stderr, "ERROR: Failed printing hex.\n");
-		buffer_clear(hex);
+		buffer_destroy_from_heap(hex);
 		return;
 	}
 
@@ -44,5 +44,5 @@ void print_hex(const buffer_t * const data) {
 	putchar('\n');
 
 	//cleanup
-	buffer_clear(hex);
+	buffer_destroy_from_heap(hex);
 }

@@ -111,7 +111,7 @@ int derive_root_chain_and_header_keys(
 	int status;
 	//input key for HKDF (root key and chain key derivation)
 	//input_key = DH(our_private_ephemeral, their_public_ephemeral)
-	buffer_t *input_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *input_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = diffie_hellman(
 			input_key,
 			our_private_ephemeral,
@@ -119,50 +119,50 @@ int derive_root_chain_and_header_keys(
 			their_public_ephemeral,
 			am_i_alice);
 	if (status != 0) {
-		buffer_clear(input_key);
+		buffer_destroy_from_heap(input_key);
 		return status;
 	}
 
 	//now create root and chain key in temporary buffer
 	//RK, CK = HKDF(previous_root_key, input_key)
-	buffer_t *info = buffer_create_from_string(INFO);
-	buffer_t *hkdf_buffer = buffer_create(2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES, 2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_create_from_string(info, INFO);
+	buffer_t *hkdf_buffer = buffer_create_on_heap(2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES, 2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES);
 	status = hkdf(
 			hkdf_buffer,
 			hkdf_buffer->content_length,
 			previous_root_key, //salt
 			input_key,
 			info);
-	buffer_clear(input_key);
+	buffer_destroy_from_heap(input_key);
 	if (status != 0) {
-		buffer_clear(hkdf_buffer);
+		buffer_destroy_from_heap(hkdf_buffer);
 		return status;
 	}
 
 	//copy keys from hkdf buffer
 	status = buffer_copy(root_key, 0, hkdf_buffer, 0, crypto_secretbox_KEYBYTES);
 	if (status != 0) {
-		buffer_clear(hkdf_buffer);
+		buffer_destroy_from_heap(hkdf_buffer);
 		buffer_clear(root_key);
 		return status;
 	}
 	status = buffer_copy(chain_key, 0, hkdf_buffer, crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	if (status != 0) {
-		buffer_clear(hkdf_buffer);
+		buffer_destroy_from_heap(hkdf_buffer);
 		buffer_clear(root_key);
 		buffer_clear(chain_key);
 		return status;
 	}
 	status = buffer_copy(header_key, 0, hkdf_buffer, 2 * crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	if (status != 0) {
-		buffer_clear(hkdf_buffer);
+		buffer_destroy_from_heap(hkdf_buffer);
 		buffer_clear(root_key);
 		buffer_clear(chain_key);
 		buffer_clear(header_key);
 		return status;
 	}
 
-	buffer_clear(hkdf_buffer);
+	buffer_destroy_from_heap(hkdf_buffer);
 	return 0;
 }
 
@@ -208,7 +208,7 @@ int derive_initial_root_chain_and_header_keys(
 	//header keys and chain keys from
 	//pre_root_key = HASH( DH(A,B0) || DH(A0,B) || DH(A0,B0) )
 	assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES);
-	buffer_t *pre_root_key = buffer_create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *pre_root_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = triple_diffie_hellman(
 			pre_root_key,
 			our_private_identity,
@@ -219,25 +219,25 @@ int derive_initial_root_chain_and_header_keys(
 			their_public_ephemeral,
 			am_i_alice);
 	if (status != 0) {
-		buffer_clear(pre_root_key);
+		buffer_destroy_from_heap(pre_root_key);
 		return status;
 	}
 
 	//derive chain, root and header keys from pre_root_key via HKDF
 	//RK, CK, HK, NHK1, NHK2 = HKDF(salt, pre_root_key)
-	buffer_t *hkdf_buffer = buffer_create(2 * crypto_secretbox_KEYBYTES + 3 * crypto_aead_chacha20poly1305_KEYBYTES, 2 * crypto_secretbox_KEYBYTES + 3 * crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_t *salt = buffer_create_from_string("molch--libsodium-crypto-library");
+	buffer_t *hkdf_buffer = buffer_create_on_heap(2 * crypto_secretbox_KEYBYTES + 3 * crypto_aead_chacha20poly1305_KEYBYTES, 2 * crypto_secretbox_KEYBYTES + 3 * crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_create_from_string(salt, "molch--libsodium-crypto-library");
 	assert(salt->content_length == crypto_auth_KEYBYTES);
-	buffer_t *info = buffer_create_from_string(INFO);
+	buffer_create_from_string(info, INFO);
 	status = hkdf(
 			hkdf_buffer,
 			hkdf_buffer->content_length,
 			salt,
 			pre_root_key,
 			info);
-	buffer_clear(pre_root_key);
+	buffer_destroy_from_heap(pre_root_key);
 	if (status != 0) {
-		buffer_clear(hkdf_buffer);
+		buffer_destroy_from_heap(hkdf_buffer);
 		return status;
 	}
 
@@ -245,7 +245,7 @@ int derive_initial_root_chain_and_header_keys(
 	//root key:
 	status = buffer_copy(root_key, 0, hkdf_buffer, 0, crypto_secretbox_KEYBYTES);
 	if (status != 0) {
-		buffer_clear(hkdf_buffer);
+		buffer_destroy_from_heap(hkdf_buffer);
 		buffer_clear(root_key);
 		return status;
 	}
@@ -257,7 +257,7 @@ int derive_initial_root_chain_and_header_keys(
 		memset(send_chain_key->content, 0, send_chain_key->content_length);
 		status = buffer_copy(receive_chain_key, 0, hkdf_buffer, crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 		if (status != 0) {
-			buffer_clear(hkdf_buffer);
+			buffer_destroy_from_heap(hkdf_buffer);
 			buffer_clear(root_key);
 			buffer_clear(receive_chain_key);
 			return status;
@@ -269,7 +269,7 @@ int derive_initial_root_chain_and_header_keys(
 		memset(send_header_key->content, 0, send_header_key->content_length);
 		status = buffer_copy(receive_header_key, 0, hkdf_buffer, 2 * crypto_secretbox_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 		if (status != 0) {
-			buffer_clear(hkdf_buffer);
+			buffer_destroy_from_heap(hkdf_buffer);
 			buffer_clear(root_key);
 			buffer_clear(receive_chain_key);
 			buffer_clear(receive_header_key);
@@ -279,7 +279,7 @@ int derive_initial_root_chain_and_header_keys(
 		//NHKs, NHKr
 		status = buffer_copy(next_send_header_key, 0, hkdf_buffer, 2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 		if (status != 0) {
-			buffer_clear(hkdf_buffer);
+			buffer_destroy_from_heap(hkdf_buffer);
 			buffer_clear(root_key);
 			buffer_clear(receive_chain_key);
 			buffer_clear(receive_header_key);
@@ -288,7 +288,7 @@ int derive_initial_root_chain_and_header_keys(
 		}
 		status = buffer_copy(next_receive_header_key, 0, hkdf_buffer, 2 * crypto_secretbox_KEYBYTES + 2 * crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 		if (status != 0) {
-			buffer_clear(hkdf_buffer);
+			buffer_destroy_from_heap(hkdf_buffer);
 			buffer_clear(root_key);
 			buffer_clear(receive_chain_key);
 			buffer_clear(receive_header_key);
@@ -302,7 +302,7 @@ int derive_initial_root_chain_and_header_keys(
 		memset(receive_chain_key->content, 0, receive_chain_key->content_length);
 		status = buffer_copy(send_chain_key, 0, hkdf_buffer, crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 		if (status != 0) {
-			buffer_clear(hkdf_buffer);
+			buffer_destroy_from_heap(hkdf_buffer);
 			buffer_clear(root_key);
 			buffer_clear(send_chain_key);
 			return status;
@@ -313,7 +313,7 @@ int derive_initial_root_chain_and_header_keys(
 		memset(receive_header_key->content, 0, receive_header_key->content_length);
 		status = buffer_copy(send_header_key, 0, hkdf_buffer, 2 * crypto_secretbox_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 		if (status != 0) {
-			buffer_clear(hkdf_buffer);
+			buffer_destroy_from_heap(hkdf_buffer);
 			buffer_clear(root_key);
 			buffer_clear(send_chain_key);
 			buffer_clear(send_header_key);
@@ -323,7 +323,7 @@ int derive_initial_root_chain_and_header_keys(
 		//NHKr, NHKs
 		status = buffer_copy(next_receive_header_key, 0, hkdf_buffer, 2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 		if (status != 0) {
-			buffer_clear(hkdf_buffer);
+			buffer_destroy_from_heap(hkdf_buffer);
 			buffer_clear(root_key);
 			buffer_clear(send_chain_key);
 			buffer_clear(send_header_key);
@@ -332,7 +332,7 @@ int derive_initial_root_chain_and_header_keys(
 		}
 		status = buffer_copy(next_send_header_key, 0, hkdf_buffer, 2 * crypto_secretbox_KEYBYTES + 2 * crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 		if (status != 0) {
-			buffer_clear(hkdf_buffer);
+			buffer_destroy_from_heap(hkdf_buffer);
 			buffer_clear(root_key);
 			buffer_clear(send_chain_key);
 			buffer_clear(send_header_key);
@@ -341,7 +341,7 @@ int derive_initial_root_chain_and_header_keys(
 			return status;
 		}
 	}
-	buffer_clear(hkdf_buffer);
+	buffer_destroy_from_heap(hkdf_buffer);
 
 	return 0;
 }

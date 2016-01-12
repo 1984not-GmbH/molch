@@ -146,21 +146,24 @@ mcJSON *header_and_message_keystore_node_json_export(header_and_message_keystore
 	if (timestamp == NULL) {
 		return NULL;
 	}
-	mcJSON_AddItemToObject(json, buffer_create_from_string("timestamp"), timestamp, pool);
+	buffer_create_from_string(timestamp_string, "timestamp");
+	mcJSON_AddItemToObject(json, timestamp_string, timestamp, pool);
 
 	//add message key
 	mcJSON *message_key_hex = mcJSON_CreateHexString(node->message_key, pool);
 	if (message_key_hex == NULL) {
 		return NULL;
 	}
-	mcJSON_AddItemToObject(json, buffer_create_from_string("message_key"), message_key_hex, pool);
+	buffer_create_from_string(message_key_string, "message_key");
+	mcJSON_AddItemToObject(json, message_key_string, message_key_hex, pool);
 
 	//add header key
 	mcJSON *header_key_hex = mcJSON_CreateHexString(node->header_key, pool);
 	if (header_key_hex == NULL) {
 		return NULL;
 	}
-	mcJSON_AddItemToObject(json, buffer_create_from_string("header_key"), header_key_hex, pool);
+	buffer_create_from_string(header_key_string, "header_key");
+	mcJSON_AddItemToObject(json, header_key_string, header_key_hex, pool);
 
 	return json;
 }
@@ -215,9 +218,12 @@ int header_and_message_keystore_json_import(
 	mcJSON *key = json->child;
 	for (size_t i = 0; (i < json->length) && (key != NULL); i++, key = key->next) {
 		//get references to the relevant mcJSON objects
-		mcJSON *message_key = mcJSON_GetObjectItem(key, buffer_create_from_string("message_key"));
-		mcJSON *header_key = mcJSON_GetObjectItem(key, buffer_create_from_string("header_key"));
-		mcJSON *timestamp = mcJSON_GetObjectItem(key, buffer_create_from_string("timestamp"));
+		buffer_create_from_string(message_key_string, "message_key");
+		mcJSON *message_key = mcJSON_GetObjectItem(key, message_key_string);
+		buffer_create_from_string(header_key_string, "header_key");
+		mcJSON *header_key = mcJSON_GetObjectItem(key, header_key_string);
+		buffer_create_from_string(timestamp_string, "timestamp");
+		mcJSON *timestamp = mcJSON_GetObjectItem(key, timestamp_string);
 
 		//check if they are valid
 		if ((message_key == NULL) || (message_key->type != mcJSON_String) || (message_key->valuestring->content_length != (2 * crypto_secretbox_KEYBYTES + 1))

@@ -29,12 +29,15 @@ int main(void) {
 	}
 
 	int status;
+
+	//buffer for derived chain keys
+	buffer_t *next_chain_key = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
 	//create random initial chain key
-	buffer_t *last_chain_key = buffer_create(crypto_auth_BYTES, crypto_auth_BYTES);
+	buffer_t *last_chain_key = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
 	status = buffer_fill_random(last_chain_key, last_chain_key->buffer_length);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to create last chain key. (%i)\n", status);
-		return status;
+		goto cleanup;
 	}
 
 	//print first chain key
@@ -43,18 +46,13 @@ int main(void) {
 	putchar('\n');
 
 
-	//buffer for derived chain keys
-	buffer_t *next_chain_key = buffer_create(crypto_auth_BYTES, crypto_auth_BYTES);
-
 	//derive a chain of chain keys
 	unsigned int counter;
 	for (counter = 1; counter <= 5; counter++) {
 		status = derive_chain_key(next_chain_key, last_chain_key);
 		if (status != 0) {
 			fprintf(stderr, "ERROR: Failed to derive chain key %i. (%i)\n", counter, status);
-			buffer_clear(last_chain_key);
-			buffer_clear(next_chain_key);
-			return status;
+			goto cleanup;
 		}
 
 		//print the derived chain key
@@ -66,21 +64,19 @@ int main(void) {
 		status = buffer_compare(last_chain_key, next_chain_key);
 		if (status == 0) {
 			fprintf(stderr, "ERROR: Derived chain key is identical. (%i)\n", status);
-			buffer_clear(last_chain_key);
-			buffer_clear(next_chain_key);
-			return -5;
+			status = -5;
+			goto cleanup;
 		}
 
 		//move next_chain_key to last_chain_key
 		status = buffer_clone(last_chain_key, next_chain_key);
 		if (status != 0) {
-			buffer_clear(last_chain_key);
-			buffer_clear(next_chain_key);
-			return status;
+			goto cleanup;
 		}
 	}
 
-	buffer_clear(last_chain_key);
-	buffer_clear(next_chain_key);
-	return EXIT_SUCCESS;
+cleanup:
+	buffer_destroy_from_heap(last_chain_key);
+	buffer_destroy_from_heap(next_chain_key);
+	return status;
 }

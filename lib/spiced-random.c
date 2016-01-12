@@ -40,43 +40,46 @@ int spiced_random(
 	}
 
 	int status;
+	buffer_t *os_random = buffer_create_on_heap(output_length, output_length);
+	buffer_t *spice = buffer_create_on_heap(output_length, output_length);
+
 	//buffer that contains the random data from the OS
-	buffer_t *os_random = buffer_create(output_length, output_length);
 	status = buffer_fill_random(os_random, output_length);
 	if (status != 0) {
-		buffer_clear(os_random);
-		return status;
+		goto cleanup;
 	}
 
 	//create uniformly distributed random numbers from random input
 	//using hkdf
-	buffer_t *spice = buffer_create(output_length, output_length);
+	buffer_t *empty_buffer = buffer_create_on_heap(0, 0);
+	buffer_create_from_string(salt_string, "some random string as salt     "); //TODO something better?
 	status = hkdf(
 			spice,
 			output_length,
-			buffer_create_from_string("some random string as salt     "), //TODO something better?
+			salt_string,
 			random_spice,
-			buffer_create(0, 0));
+			empty_buffer);
+	buffer_destroy_from_heap(empty_buffer);
 	if (status != 0) {
 		buffer_clear(spice);
-		buffer_clear(os_random);
-		return status;
+		goto cleanup;
 	}
 
 	//now combine the spice with the OS provided random data.
 	status = buffer_xor(os_random, spice);
 	buffer_clear(spice);
 	if (status != 0) {
-		buffer_clear(os_random);
-		return status;
+		goto cleanup;
 	}
 
 	//copy the random data to the output
 	status = buffer_clone(random_output, os_random);
-	buffer_clear(os_random);
 	if (status != 0) {
-		return status;
+		goto cleanup;
 	}
 
-	return 0;
+cleanup:
+	buffer_destroy_from_heap(os_random);
+	buffer_destroy_from_heap(spice);
+	return status;
 }

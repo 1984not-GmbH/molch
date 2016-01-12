@@ -27,13 +27,17 @@ int main(void) {
 		return -1;
 	}
 
+	//create buffers
+	buffer_t *our_public_ephemeral_key = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *header = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES + 8, crypto_box_PUBLICKEYBYTES + 8);
+	buffer_t *extracted_public_ephemeral_key = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+
 	int status;
 	//create ephemeral key
-	buffer_t *our_public_ephemeral_key = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	status = buffer_fill_random(our_public_ephemeral_key, our_public_ephemeral_key->content_length);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to create our public ephemeral. (%i)\n", status);
-		return status;
+		goto cleanup;
 	}
 	printf("Our public ephemeral key (%zu Bytes):\n", our_public_ephemeral_key->content_length);
 	print_hex(our_public_ephemeral_key);
@@ -46,7 +50,6 @@ int main(void) {
 	putchar('\n');
 
 	//create the header
-	buffer_t *header = buffer_create(crypto_box_PUBLICKEYBYTES + 8, crypto_box_PUBLICKEYBYTES + 8);
 	status = header_construct(
 			header,
 			our_public_ephemeral_key,
@@ -54,7 +57,7 @@ int main(void) {
 			previous_message_number);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to create header. (%i)\n", status);
-		return status;
+		goto cleanup;
 	}
 
 	//print the header
@@ -63,7 +66,6 @@ int main(void) {
 	putchar('\n');
 
 	//get data back out of the header again
-	buffer_t *extracted_public_ephemeral_key = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	uint32_t extracted_message_number;
 	uint32_t extracted_previous_message_number;
 	status = header_extract(
@@ -73,7 +75,7 @@ int main(void) {
 			&extracted_previous_message_number);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to extract data from header. (%i)\n", status);
-		return status;
+		goto cleanup;
 	}
 
 	printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key->content_length);
@@ -85,21 +87,29 @@ int main(void) {
 	//compare them
 	if (buffer_compare(our_public_ephemeral_key, extracted_public_ephemeral_key) != 0) {
 		fprintf(stderr, "ERROR: Public ephemeral keys don't match.\n");
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	printf("Public ephemeral keys match.\n");
 
 	if (message_number != extracted_message_number) {
 		fprintf(stderr, "ERROR: Message numbers don't match.\n");
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	printf("Message numbers match.\n");
 
 	if (previous_message_number != extracted_previous_message_number) {
 		fprintf(stderr, "ERROR: Message numbers don't match.\n");
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	printf("Previous message numbers match.\n");
 
-	return EXIT_SUCCESS;
+cleanup:
+	buffer_destroy_from_heap(our_public_ephemeral_key);
+	buffer_destroy_from_heap(header);
+	buffer_destroy_from_heap(extracted_public_ephemeral_key);
+
+	return status;
 }
