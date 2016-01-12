@@ -69,11 +69,26 @@ int main(void) {
 	buffer_destroy_from_heap(list);
 
 	int status;
+	//create buffers
+	//alice keys
+	buffer_t *alice_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *alice_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *alice_private_prekeys = buffer_create_on_heap(PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES, PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES);
+	buffer_t *alice_public_prekeys = buffer_create_on_heap(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
+	//bobs keys
+	buffer_t *bob_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *bob_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *bob_private_prekeys = buffer_create_on_heap(PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES, PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES);
+	buffer_t *bob_public_prekeys = buffer_create_on_heap(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
+	//charlies keys
+	buffer_t *charlie_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_t *charlie_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	buffer_t *charlie_private_prekeys = buffer_create_on_heap(PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES, PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES);
+	buffer_t *charlie_public_prekeys = buffer_create_on_heap(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
+
 	//create three users with prekeys and identity keys
 	//first alice
 	//alice identity key
-	buffer_t *alice_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *alice_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_create_from_string(alice_string, "Alice");
 	buffer_create_from_string(identity_string, "identity");
 	status = generate_and_print_keypair(
@@ -83,25 +98,18 @@ int main(void) {
 			identity_string);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Alice's identity keypair.\n");
-		buffer_clear(alice_private_identity);
-		return status;
+		goto cleanup;
 	}
 
 	//alice prekeys
-	buffer_t *alice_private_prekeys = buffer_create(PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES, PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES);
-	buffer_t *alice_public_prekeys = buffer_create(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
 	status = generate_prekeys(alice_private_prekeys, alice_public_prekeys);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Alice's prekeys.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		return status;
+		goto cleanup;
 	}
 
 	//then bob
 	//bob's identity key
-	buffer_t *bob_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *bob_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_create_from_string(bob_string, "Bob");
 	status = generate_and_print_keypair(
 			bob_public_identity,
@@ -110,29 +118,18 @@ int main(void) {
 			identity_string);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Bob's identity keypair.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		return status;
+		goto cleanup;
 	}
 
 	//bob's prekeys
-	buffer_t *bob_private_prekeys = buffer_create(PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES, PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES);
-	buffer_t *bob_public_prekeys = buffer_create(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
 	status = generate_prekeys(bob_private_prekeys, bob_public_prekeys);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Bob's prekeys.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		return status;
+		goto cleanup;
 	}
 
 	//then charlie
 	//charlie's identity key
-	buffer_t *charlie_private_identity = buffer_create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *charlie_public_identity = buffer_create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_create_from_string(charlie_string, "Charlie");
 	status = generate_and_print_keypair(
 			charlie_public_identity,
@@ -141,27 +138,14 @@ int main(void) {
 			identity_string);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Charlie's identity keypair.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		return status;
+		goto cleanup;
 	}
 
 	//charlie's prekeys
-	buffer_t *charlie_private_prekeys = buffer_create(PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES, PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES);
-	buffer_t *charlie_public_prekeys = buffer_create(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
 	status = generate_prekeys(charlie_private_prekeys, charlie_public_prekeys);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Charlie's prekeys.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		return status;
+		goto cleanup;
 	}
 
 	//add alice to the user store
@@ -173,14 +157,7 @@ int main(void) {
 			alice_private_prekeys);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to add Alice to the user store.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
-		return status;
+		goto cleanup;
 	}
 	printf("Successfully added Alice to the user store.\n");
 
@@ -188,14 +165,8 @@ int main(void) {
 	sodium_mprotect_readonly(store);
 	if (store->length != 1) {
 		fprintf(stderr, "ERROR: User store has incorrect length.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	sodium_mprotect_noaccess(store);
 	printf("Length of the user store matches.");
@@ -204,15 +175,9 @@ int main(void) {
 	list = user_store_list(store);
 	if (buffer_compare(list, alice_public_identity) != 0) {
 		fprintf(stderr, "ERROR: Failed to list users.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
 		buffer_destroy_from_heap(list);
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	buffer_destroy_from_heap(list);
 	printf("Successfully listed users.\n");
@@ -226,14 +191,7 @@ int main(void) {
 			bob_private_prekeys);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to add Bob to the user store.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
-		return status;
+		goto cleanup;
 	}
 	printf("Successfully added Bob to the user store.\n");
 
@@ -241,14 +199,8 @@ int main(void) {
 	sodium_mprotect_readonly(store);
 	if (store->length != 2) {
 		fprintf(stderr, "ERROR: User store has incorrect length.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	sodium_mprotect_noaccess(store);
 	printf("Length of the user store matches.");
@@ -258,15 +210,9 @@ int main(void) {
 	if ((buffer_compare_partial(list, 0, alice_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)
 			|| (buffer_compare_partial(list, crypto_box_PUBLICKEYBYTES, bob_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)) {
 		fprintf(stderr, "ERROR: Failed to list users.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
 		buffer_destroy_from_heap(list);
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	buffer_destroy_from_heap(list);
 	printf("Successfully listed users.\n");
@@ -280,14 +226,7 @@ int main(void) {
 			charlie_private_prekeys);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to add Charlie to the user store.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
-		return status;
+		goto cleanup;
 	}
 	printf("Successfully added Charlie to the user store.\n");
 
@@ -295,14 +234,8 @@ int main(void) {
 	sodium_mprotect_readonly(store);
 	if (store->length != 3) {
 		fprintf(stderr, "ERROR: User store has incorrect length.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	sodium_mprotect_noaccess(store);
 	printf("Length of the user store matches.");
@@ -313,15 +246,9 @@ int main(void) {
 			|| (buffer_compare_partial(list, crypto_box_PUBLICKEYBYTES, bob_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)
 			|| (buffer_compare_partial(list, 2 * crypto_box_PUBLICKEYBYTES, charlie_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)) {
 		fprintf(stderr, "ERROR: Failed to list users.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
 		buffer_destroy_from_heap(list);
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	buffer_destroy_from_heap(list);
 	printf("Successfully listed users.\n");
@@ -333,26 +260,14 @@ int main(void) {
 	//private
 	if (sodium_memcmp(store->head->private_prekey_storage, alice_private_prekeys->content, alice_private_prekeys->content_length) != 0) {
 		fprintf(stderr, "ERROR: Alice's private prekeys are incorrect.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	//public
 	if (sodium_memcmp(store->head->public_prekey_storage, alice_public_prekeys->content, alice_public_prekeys->content_length) != 0) {
 		fprintf(stderr, "ERROR: Alice's public prekeys are incorrect.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 
 	//check the buffers
@@ -361,14 +276,7 @@ int main(void) {
 		status = buffer_compare_to_raw(&store->head->private_prekeys[i], alice_private_prekeys->content + i * crypto_box_PUBLICKEYBYTES, crypto_box_SECRETKEYBYTES);
 		if (status != 0) {
 			fprintf(stderr, "ERROR: Alice's private prekeys are incorrect (buffer_t).\n");
-			buffer_clear(alice_private_identity);
-			buffer_clear(alice_private_prekeys);
-			buffer_clear(bob_private_identity);
-			buffer_clear(bob_private_prekeys);
-			buffer_clear(charlie_private_identity);
-			buffer_clear(charlie_private_prekeys);
-			user_store_destroy(store);
-			return EXIT_FAILURE;
+			goto cleanup;
 		}
 	}
 	//public
@@ -376,14 +284,7 @@ int main(void) {
 		status = buffer_compare_to_raw(&store->head->public_prekeys[i], alice_public_prekeys->content + i * crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 		if (status != 0) {
 			fprintf(stderr, "ERROR: Alice's public prekeys are incorrect (buffer_t).\n");
-			buffer_clear(alice_private_identity);
-			buffer_clear(alice_private_prekeys);
-			buffer_clear(bob_private_identity);
-			buffer_clear(bob_private_prekeys);
-			buffer_clear(charlie_private_identity);
-			buffer_clear(charlie_private_prekeys);
-			user_store_destroy(store);
-			return EXIT_FAILURE;
+			goto cleanup;
 		}
 	}
 	sodium_mprotect_noaccess(store->head);
@@ -394,14 +295,8 @@ int main(void) {
 	user_store_node *bob_node = user_store_find_node(store, bob_public_identity);
 	if (bob_node == NULL) {
 		fprintf(stderr, "ERROR: Failed to find Bob's node.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	printf("Node found.\n");
 
@@ -411,14 +306,8 @@ int main(void) {
 			|| (buffer_compare_to_raw(bob_public_prekeys, bob_node->public_prekey_storage, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES) != 0)
 			|| (buffer_compare_to_raw(bob_private_prekeys, bob_node->private_prekey_storage, PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES) != 0)) {
 		fprintf(stderr, "ERROR: Bob's data from the user store doesn't match.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	sodium_mprotect_noaccess(bob_node);
 	printf("Data from the node matches.\n");
@@ -429,14 +318,8 @@ int main(void) {
 	sodium_mprotect_readonly(store);
 	if (store->length != 2) {
 		fprintf(stderr, "ERROR: User store has incorrect length.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	sodium_mprotect_noaccess(store);
 	printf("Length of the user store matches.");
@@ -445,15 +328,9 @@ int main(void) {
 	if ((buffer_compare_partial(list, 0, alice_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)
 			|| (buffer_compare_partial(list, crypto_box_PUBLICKEYBYTES, charlie_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)) {
 		fprintf(stderr, "ERROR: Removing user failed.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
 		buffer_destroy_from_heap(list);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	buffer_destroy_from_heap(list);
 	printf("Successfully removed user.\n");
@@ -467,14 +344,7 @@ int main(void) {
 			bob_private_prekeys);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to readd Bob to the user store.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
-		return status;
+		goto cleanup;
 	}
 	printf("Successfully readded Bob to the user store.\n");
 
@@ -482,14 +352,8 @@ int main(void) {
 	bob_node = user_store_find_node(store, bob_public_identity);
 	if (bob_node == NULL) {
 		fprintf(stderr, "ERROR: Failed to find Bob's node.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	printf("Bob's node found again.\n");
 
@@ -499,52 +363,34 @@ int main(void) {
 	sodium_mprotect_readonly(store);
 	if (store->length != 2) {
 		fprintf(stderr, "ERROR: User store has incorrect length.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	sodium_mprotect_noaccess(store);
 	printf("Length of the user store matches.");
 
 	//test JSON export
 	printf("Test JSON export!\n");
-	mempool_t *pool = buffer_create(100000, 0);
+	mempool_t *pool = buffer_create_on_heap(100000, 0);
 	mcJSON *json = user_store_json_export(store, pool);
 	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
 	printf("%.*s\n", (int) output->content_length, (char*)output->content);
 	if (json->length != 2) {
 		fprintf(stderr, "ERROR: Exported JSON doesn't contain all users.\n");
 		buffer_destroy_from_heap(output);
-		buffer_clear(pool);
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		buffer_destroy_from_heap(pool);
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 
 	//test JSON import
 	user_store *imported_store = user_store_json_import(json);
 	if (imported_store == NULL) {
 		fprintf(stderr, "ERROR: Failed to import user store from JSON.\n");
-		buffer_clear(pool);
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
+		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(output);
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	//export the imported to JSON again
 	pool->position = 0; //reset the mempool
@@ -553,37 +399,26 @@ int main(void) {
 	//compare with original JSON
 	if (buffer_compare(imported_output, output) != 0) {
 		fprintf(stderr, "ERROR: Imported user store is incorrect.\n");
-		buffer_clear(pool);
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
+		status = EXIT_FAILURE;
 		buffer_destroy_from_heap(output);
-		user_store_destroy(store);
 		buffer_destroy_from_heap(imported_output);
-		return EXIT_FAILURE;
+		user_store_destroy(imported_store);
+		buffer_destroy_from_heap(pool);
+		goto cleanup;
 	}
 	buffer_destroy_from_heap(output);
 	buffer_destroy_from_heap(imported_output);
 	user_store_destroy(imported_store);
-	buffer_clear(pool);
+	buffer_destroy_from_heap(pool);
 
 	//check the user list
 	list = user_store_list(store);
 	if ((buffer_compare_partial(list, 0, alice_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)
 			|| (buffer_compare_partial(list, crypto_box_PUBLICKEYBYTES, charlie_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)) {
 		fprintf(stderr, "ERROR: Removing user failed.\n");
-		buffer_clear(alice_private_identity);
-		buffer_clear(alice_private_prekeys);
-		buffer_clear(bob_private_identity);
-		buffer_clear(bob_private_prekeys);
-		buffer_clear(charlie_private_identity);
-		buffer_clear(charlie_private_prekeys);
-		user_store_destroy(store);
 		buffer_destroy_from_heap(list);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	buffer_destroy_from_heap(list);
 	printf("Successfully removed user.\n");
@@ -601,19 +436,37 @@ int main(void) {
 	sodium_mprotect_readonly(store);
 	if (store->length != 0) {
 		fprintf(stderr, "ERROR: User store has incorrect length.\n");
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	//check head and tail pointers
 	if ((store->head != NULL) || (store->tail != NULL)) {
 		fprintf(stderr, "ERROR: Clearing the user store didn't reset head and tail pointers.\n");
-		user_store_destroy(store);
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	printf("Successfully cleared user store.\n");
 
 	sodium_mprotect_noaccess(store);
 
+cleanup:
+	//alice keys
+	buffer_destroy_from_heap(alice_private_identity);
+	buffer_destroy_from_heap(alice_public_identity);
+	buffer_destroy_from_heap(alice_private_prekeys);
+	buffer_destroy_from_heap(alice_public_prekeys);
+	//bobs keys
+	buffer_destroy_from_heap(bob_private_identity);
+	buffer_destroy_from_heap(bob_public_identity);
+	buffer_destroy_from_heap(bob_private_prekeys);
+	buffer_destroy_from_heap(bob_public_prekeys);
+	//charlies keys
+	buffer_destroy_from_heap(charlie_private_identity);
+	buffer_destroy_from_heap(charlie_public_identity);
+	buffer_destroy_from_heap(charlie_private_prekeys);
+	buffer_destroy_from_heap(charlie_public_prekeys);
+
 	user_store_destroy(store);
-	return EXIT_SUCCESS;
+
+	return status;
 }
