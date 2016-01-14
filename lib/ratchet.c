@@ -31,24 +31,7 @@
  * side channels, especially timing side channels.
  */
 bool is_none(const buffer_t * const buffer) {
-	//TODO: Find better implementation that
-	//doesn't create an additional array. I don't
-	//do that currently because I haven't enough
-	//confidence that I'm not introducing any side
-	//channels.
-
-	if (buffer->content_length == 0) {
-		return true;
-	}
-
-	//fill a buffer with zeroes
-	buffer_t *none = buffer_create_on_heap(buffer->content_length, buffer->content_length);
-	buffer_clear(none);
-	none->content_length = none->buffer_length;
-
-	int status = buffer_compare(none, buffer);
-	buffer_destroy_from_heap(none);
-	return status == 0;
+	return sodium_is_zero(buffer->content, buffer->content_length);
 }
 
 /*
