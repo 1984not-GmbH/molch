@@ -63,7 +63,7 @@ int derive_message_key(
 /*
  * Derive a root, header and initial chain key for a new ratchet.
  *
- * RK, CK, HK = HKDF( RK, DH(DHRr, DHRs) )
+ * RK, CK, HK = KDF( RK, DH(DHRr, DHRs) )
  */
 int derive_root_chain_and_header_keys(
 		buffer_t * const root_key, //crypto_secretbox_KEYBYTES

@@ -123,7 +123,7 @@ int derive_message_key(
  *
  * The chain and root key have to be crypto_secretbox_KEYBYTES long.
  *
- * RK, CK, HK = HKDF( RK, DH(DHRr, DHRs) )
+ * RK, CK, HK = KDF( RK, DH(DHRr, DHRs) )
  */
 int derive_root_chain_and_header_keys(
 		buffer_t * const root_key, //crypto_secretbox_KEYBYTES
@@ -147,7 +147,7 @@ int derive_root_chain_and_header_keys(
 	}
 
 	int status;
-	//input key for HKDF (root key and chain key derivation)
+	//input key for KDF (root key and chain key derivation)
 	//input_key = DH(our_private_ephemeral, their_public_ephemeral)
 	buffer_t *input_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	status = diffie_hellman(
@@ -157,51 +157,53 @@ int derive_root_chain_and_header_keys(
 			their_public_ephemeral,
 			am_i_alice);
 	if (status != 0) {
-		buffer_destroy_from_heap(input_key);
-		return status;
+		goto fail;
 	}
 
-	//now create root and chain key in temporary buffer
-	//RK, CK = HKDF(previous_root_key, input_key)
-	buffer_create_from_string(info, INFO);
-	buffer_t *hkdf_buffer = buffer_create_on_heap(2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES, 2 * crypto_secretbox_KEYBYTES + crypto_aead_chacha20poly1305_KEYBYTES);
-	status = hkdf(
-			hkdf_buffer,
-			hkdf_buffer->content_length,
-			previous_root_key, //salt
+	//derive root key
+	status = derive_key(
+			root_key,
+			crypto_secretbox_KEYBYTES,
 			input_key,
-			info);
+			0);
+	if (status != 0) {
+		goto fail;
+	}
+
+	//derive chain key
+	status = derive_key(
+			chain_key,
+			crypto_secretbox_KEYBYTES,
+			input_key,
+			1);
+	if (status != 0) {
+		goto fail;
+	}
+
+	//derive header key
+	status = derive_key(
+			header_key,
+			crypto_aead_chacha20poly1305_KEYBYTES,
+			input_key,
+			2);
+	if (status != 0) {
+		goto fail;
+	}
+
+	goto cleanup;
+
+fail:
+	buffer_clear(root_key);
+	root_key->content_length = 0;
+	buffer_clear(chain_key);
+	chain_key->content_length = 0;
+	buffer_clear(header_key);
+	header_key->content_length = 0;
+
+cleanup:
 	buffer_destroy_from_heap(input_key);
-	if (status != 0) {
-		buffer_destroy_from_heap(hkdf_buffer);
-		return status;
-	}
 
-	//copy keys from hkdf buffer
-	status = buffer_copy(root_key, 0, hkdf_buffer, 0, crypto_secretbox_KEYBYTES);
-	if (status != 0) {
-		buffer_destroy_from_heap(hkdf_buffer);
-		buffer_clear(root_key);
-		return status;
-	}
-	status = buffer_copy(chain_key, 0, hkdf_buffer, crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	if (status != 0) {
-		buffer_destroy_from_heap(hkdf_buffer);
-		buffer_clear(root_key);
-		buffer_clear(chain_key);
-		return status;
-	}
-	status = buffer_copy(header_key, 0, hkdf_buffer, 2 * crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	if (status != 0) {
-		buffer_destroy_from_heap(hkdf_buffer);
-		buffer_clear(root_key);
-		buffer_clear(chain_key);
-		buffer_clear(header_key);
-		return status;
-	}
-
-	buffer_destroy_from_heap(hkdf_buffer);
-	return 0;
+	return status;
 }
 
 /*
