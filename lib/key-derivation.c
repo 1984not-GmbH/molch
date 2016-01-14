@@ -21,10 +21,6 @@
 
 #include "key-derivation.h"
 #include "diffie-hellman.h"
-#include "hkdf.h"
-
-//TODO maybe use another info string?
-#define INFO "molch"
 
 /*
  * Derive a key of length between crypto_generichash_blake2b_BYTES_MIN (16 Bytes)
