@@ -78,7 +78,7 @@ int derive_root_chain_and_header_keys(
 /*
  * Derive initial root, chain and header keys.
  *
- * RK, CKs/r, HKs/r = HKDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
+ * RK, CKs/r, HKs/r = KDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
  */
 int derive_initial_root_chain_and_header_keys(
 		buffer_t * const root_key, //crypto_secretbox_KEYBYTES
