@@ -69,65 +69,65 @@ int diffie_hellman(
 	}
 
 	//initialize hashing
-	crypto_generichash_state hash_state;
+	crypto_generichash_state hash_state[1];
 	status = crypto_generichash_init(
-			&hash_state,
+			hash_state,
 			NULL, //key
 			0, //key_length
 			crypto_generichash_BYTES); //output length
 	if (status != 0) {
 		buffer_destroy_from_heap(dh_secret);
-		sodium_memzero(&hash_state, sizeof(hash_state));
+		sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 		return status;
 	}
 
 	//start input to hash with diffie hellman secret
-	status = crypto_generichash_update(&hash_state, dh_secret->content, dh_secret->content_length);
+	status = crypto_generichash_update(hash_state, dh_secret->content, dh_secret->content_length);
 	buffer_destroy_from_heap(dh_secret);
 	if (status != 0) {
-		sodium_memzero(&hash_state, sizeof(hash_state));
+		sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 		return status;
 	}
 
 	//add public keys to the input of the hash
 	if (am_i_alice) { //Alice (our_public_key|their_public_key)
 		//add our_public_key to the input of the hash
-		status = crypto_generichash_update(&hash_state, our_public_key->content, our_public_key->content_length);
+		status = crypto_generichash_update(hash_state, our_public_key->content, our_public_key->content_length);
 		if (status != 0) {
-			sodium_memzero(&hash_state, sizeof(hash_state));
+			sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 			return status;
 		}
 
 		//add their_public_key to the input of the hash
-		status = crypto_generichash_update(&hash_state, their_public_key->content, their_public_key->content_length);
+		status = crypto_generichash_update(hash_state, their_public_key->content, their_public_key->content_length);
 		if (status != 0) {
-			sodium_memzero(&hash_state, sizeof(hash_state));
+			sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 			return status;
 		}
 	} else { //Bob (their_public_key|our_public_key)
 		//add their_public_key to the input of the hash
-		status = crypto_generichash_update(&hash_state, their_public_key->content, their_public_key->content_length);
+		status = crypto_generichash_update(hash_state, their_public_key->content, their_public_key->content_length);
 		if (status != 0) {
-			sodium_memzero(&hash_state, sizeof(hash_state));
+			sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 			return status;
 		}
 
 		//add our_public_key to the input of the hash
-		status = crypto_generichash_update(&hash_state, our_public_key->content, our_public_key->content_length);
+		status = crypto_generichash_update(hash_state, our_public_key->content, our_public_key->content_length);
 		if (status != 0) {
-			sodium_memzero(&hash_state, sizeof(hash_state));
+			sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 			return status;
 		}
 	}
 
 	//finally write the hash to derived_key
-	status = crypto_generichash_final(&hash_state, derived_key->content, crypto_generichash_BYTES);
+	status = crypto_generichash_final(hash_state, derived_key->content, crypto_generichash_BYTES);
 	if (status != 0) {
-		sodium_memzero(&hash_state, sizeof(hash_state));
+		sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 		return status;
 	}
 	derived_key->content_length = crypto_generichash_BYTES;
-	sodium_memzero(&hash_state, sizeof(hash_state));
+	sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 	return status;
 }
 
@@ -244,9 +244,9 @@ int triple_diffie_hellman(
 	//( HASH(dh1|| dh2 || dh3) )
 
 	//initialize hashing
-	crypto_generichash_state hash_state;
+	crypto_generichash_state hash_state[1];
 	status = crypto_generichash_init(
-			&hash_state,
+			hash_state,
 			NULL, //key
 			0, //key_length
 			crypto_generichash_BYTES); //output_length
@@ -255,31 +255,31 @@ int triple_diffie_hellman(
 	}
 
 	//add dh1 to hash input
-	status = crypto_generichash_update(&hash_state, dh1->content, crypto_generichash_BYTES);
+	status = crypto_generichash_update(hash_state, dh1->content, crypto_generichash_BYTES);
 	if (status != 0) {
 		goto cleanup;
 	}
 
 	//add dh2 to hash input
-	status = crypto_generichash_update(&hash_state, dh2->content, crypto_generichash_BYTES);
+	status = crypto_generichash_update(hash_state, dh2->content, crypto_generichash_BYTES);
 	if (status != 0) {
 		goto cleanup;
 	}
 
 	//add dh3 to hash input
-	status = crypto_generichash_update(&hash_state, dh3->content, crypto_generichash_BYTES);
+	status = crypto_generichash_update(hash_state, dh3->content, crypto_generichash_BYTES);
 	if (status != 0) {
 		goto cleanup;
 	}
 
 	//write final hash to output (derived_key)
-	status = crypto_generichash_final(&hash_state, derived_key->content, crypto_generichash_BYTES);
+	status = crypto_generichash_final(hash_state, derived_key->content, crypto_generichash_BYTES);
 	if (status != 0) {
-		sodium_memzero(&hash_state, sizeof(hash_state));
+		sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 		goto cleanup;
 	}
 	derived_key->content_length = crypto_generichash_BYTES;
-	sodium_memzero(&hash_state, sizeof(hash_state));
+	sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 
 cleanup:
 	buffer_destroy_from_heap(dh1);
