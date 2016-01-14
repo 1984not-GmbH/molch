@@ -27,6 +27,62 @@
 #define INFO "molch"
 
 /*
+ * Derive a key of length between crypto_generichash_blake2b_BYTES_MIN (16 Bytes)
+ * and crypto_generichash_blake2b_BYTES_MAX (64 Bytes).
+ *
+ * The input key needs to be between crypto_generichash_blake2b_KEYBYTES_MIN (16 Bytes)
+ * and crypto_generichash_blake2b_KEYBYTES_MAX (64 Bytes).
+ */
+int derive_key(
+		buffer_t * const derived_key,
+		size_t derived_size,
+		const buffer_t * const input_key,
+		unsigned int subkey_counter) { //number of the current subkey, used to derive multiple keys from the same input key
+	//check if inputs are valid
+	if ((derived_size > crypto_generichash_blake2b_BYTES_MAX)
+			|| (derived_size < crypto_generichash_blake2b_BYTES_MIN)
+			|| (derived_key == NULL) || (derived_key->buffer_length < derived_size)
+			|| (input_key == NULL)
+			|| (input_key->content_length > crypto_generichash_blake2b_KEYBYTES_MAX)
+			|| (input_key->content_length < crypto_generichash_blake2b_KEYBYTES_MIN)) {
+		return -10;
+	}
+
+	//set length of output
+	derived_key->content_length = derived_size;
+
+	buffer_create_from_string(personal, "molch cryptolib"); //string that's unique to molch
+	assert(personal->content_length == crypto_generichash_blake2b_PERSONALBYTES);
+
+	//create a salt that contains the number of the subkey
+	buffer_t * salt = buffer_create_on_heap(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
+	buffer_clear(salt); //fill with zeroes
+	//FIXME: This is a really unefficient solution
+	for (; subkey_counter > 0; subkey_counter--) {
+		sodium_increment(salt->content, salt->content_length);
+	}
+
+	int status = crypto_generichash_blake2b_salt_personal(
+			derived_key->content,
+			derived_key->content_length,
+			NULL, //input
+			0, //input length
+			input_key->content,
+			input_key->content_length,
+			salt->content,
+			personal->content);
+	if (status != 0) {
+		derived_key->content_length = 0;
+		goto cleanup;
+	}
+
+cleanup:
+	buffer_destroy_from_heap(salt);
+
+	return status;
+}
+
+/*
  * Derive the next chain key in a message chain.
  *
  * The chain keys have to be crypto_auth_BYTES long.

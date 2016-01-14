@@ -24,6 +24,19 @@
 #define LIB_KEY_DERIVATION_H
 
 /*
+ * Derive a key of length between crypto_generichash_blake2b_BYTES_MIN (16 Bytes)
+ * and crypto_generichash_blake2b_BYTES_MAX (64 Bytes).
+ *
+ * The input key needs to be between crypto_generichash_blake2b_KEYBYTES_MIN (16 Bytes)
+ * and crypto_generichash_blake2b_KEYBYTES_MAX (64 Bytes).
+ */
+int derive_key(
+		buffer_t * const derived_key,
+		size_t derived_size,
+		const buffer_t * const input_key,
+		unsigned int subkey_counter) __attribute__((warn_unused_result)); //number of the current subkey, used to derive multiple keys from the same input key
+
+/*
  * Derive the next chain key in a message chain.
  *
  * The chain keys have to be crypto_auth_BYTES long.
