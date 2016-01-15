@@ -38,9 +38,9 @@
  */
 int diffie_hellman(
 		buffer_t * const derived_key, //needs to be crypto_generichash_BYTES long
-		const buffer_t * const our_private_key, //needs to be crypto_box_SECRETKEYBYTES long
-		const buffer_t * const our_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
-		const buffer_t * const their_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
+		const buffer_t * const our_private_key, //needs to be PRIVATE_KEY_SIZE long
+		const buffer_t * const our_public_key, //needs to be PUBLIC_KEY_SIZE long
+		const buffer_t * const their_public_key, //needs to be PUBLIC_KEY_SIZE long
 		const bool am_i_alice) __attribute__((warn_unused_result));
 
 /*
