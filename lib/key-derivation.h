@@ -66,9 +66,9 @@ int derive_message_key(
  * RK, CK, HK = KDF( RK, DH(DHRr, DHRs) )
  */
 int derive_root_chain_and_header_keys(
-		buffer_t * const root_key, //crypto_secretbox_KEYBYTES
-		buffer_t * const chain_key, //crypto_secretbox_KEYBYTES
-		buffer_t * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const root_key, //ROOT_KEY_SIZE
+		buffer_t * const chain_key, //CHAIN_KEY_SIZE
+		buffer_t * const header_key, //HEADER_KEY_SIZE
 		const buffer_t * const our_private_ephemeral,
 		const buffer_t * const our_public_ephemeral,
 		const buffer_t * const their_public_ephemeral,
@@ -81,13 +81,13 @@ int derive_root_chain_and_header_keys(
  * RK, CKs/r, HKs/r = KDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
  */
 int derive_initial_root_chain_and_header_keys(
-		buffer_t * const root_key, //crypto_secretbox_KEYBYTES
-		buffer_t * const send_chain_key, //crypto_secretbox_KEYBYTES
-		buffer_t * const receive_chain_key, //crypto_secretbox_KEYBYTES
-		buffer_t * const send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		buffer_t * const receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		buffer_t * const next_send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		buffer_t * const next_receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const root_key, //ROOT_KEY_SIZE
+		buffer_t * const send_chain_key, //CHAIN_KEY_SIZE
+		buffer_t * const receive_chain_key, //CHAIN_KEY_SIZE
+		buffer_t * const send_header_key, //HEADER_KEY_SIZE
+		buffer_t * const receive_header_key, //HEADER_KEY_SIZE
+		buffer_t * const next_send_header_key, //HEADER_KEY_SIZE
+		buffer_t * const next_receive_header_key, //HEADER_KEY_SIZE
 		const buffer_t * const our_private_identity,
 		const buffer_t * const our_public_identity,
 		const buffer_t * const their_public_identity,
