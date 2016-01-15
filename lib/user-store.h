@@ -36,15 +36,15 @@ struct user_store_node {
 	user_store_node *previous;
 	user_store_node *next;
 	buffer_t public_identity_key[1];
-	unsigned char public_identity_key_storage[crypto_box_PUBLICKEYBYTES];
+	unsigned char public_identity_key_storage[PUBLIC_KEY_SIZE];
 	buffer_t private_identity_key[1];
-	unsigned char private_identity_key_storage[crypto_box_SECRETKEYBYTES];
+	unsigned char private_identity_key_storage[PRIVATE_KEY_SIZE];
 	//FIXME those prekey should be replaced by it's own prekey store in the future
 	//(this allows still having old prekeys around)
 	buffer_t public_prekeys[PREKEY_AMOUNT];
-	unsigned char public_prekey_storage[PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES];
+	unsigned char public_prekey_storage[PREKEY_AMOUNT * PUBLIC_KEY_SIZE];
 	buffer_t private_prekeys[PREKEY_AMOUNT];
-	unsigned char private_prekey_storage[PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES];
+	unsigned char private_prekey_storage[PREKEY_AMOUNT * PRIVATE_KEY_SIZE];
 	conversation_store conversations[1];
 };
 
