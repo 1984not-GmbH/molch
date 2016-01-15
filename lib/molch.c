@@ -23,6 +23,7 @@
 #include <string.h>
 #include <assert.h>
 #include <alloca.h>
+#include <stdint.h>
 
 #include "molch.h"
 #include "../buffer/buffer.h"

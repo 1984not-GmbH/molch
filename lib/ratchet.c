@@ -19,6 +19,7 @@
 #include <sodium.h>
 #include <string.h>
 #include <assert.h>
+#include <stdint.h>
 
 #include "ratchet.h"
 #include "diffie-hellman.h"
