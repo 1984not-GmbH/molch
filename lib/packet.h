@@ -37,10 +37,10 @@
  *   protocol_version(1), //4MSB: current version; 4LSB: highest supported version
  *   packet_type(1),
  *   header_length(1),
- *   header_nonce(crypto_aead_chacha20poly1305_NPUBBYTES),
+ *   header_nonce(HEADER_NONCE_SIZE),
  *   header {
  *       axolotl_header(?),
- *       message_nonce(crypto_secretbox_NONCEBYTES)
+ *       message_nonce(MESSAGE_NONCE_SIZE)
  *   },
  *   header_and_additional_data_MAC(crypto_aead_chacha20poly1305_ABYTES),
  *   authenticated_encrypted_message {
@@ -55,9 +55,9 @@ int packet_encrypt(
 		const unsigned char current_protocol_version, //this can't be larger than 0xF = 15
 		const unsigned char highest_supported_protocol_version, //this can't be larger than 0xF = 15
 		const buffer_t * const header,
-		const buffer_t * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		const buffer_t * const header_key, //HEADER_KEY_SIZE
 		const buffer_t * const message,
-		const buffer_t * const message_key) __attribute__((warn_unused_result)); //crypto_secretbox_KEYBYTES
+		const buffer_t * const message_key) __attribute__((warn_unused_result)); //MESSAGE_KEY_SIZE
 
 /*
  * Decrypt and authenticate a packet.
@@ -68,9 +68,9 @@ int packet_decrypt(
 		unsigned char * const current_protocol_version, //1 Byte, no array
 		unsigned char * const highest_supported_protocol_version, //1 Byte, no array
 		buffer_t * const header, //output, As long as the packet or at most 255 bytes
-		const buffer_t * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		const buffer_t * const header_key, //HEADER_KEY_SIZE
 		buffer_t * const message, //output, should be as long as the packet
-		const buffer_t * const message_key) __attribute__((warn_unused_result)); //crypto_secretbox_KEYBYTES
+		const buffer_t * const message_key) __attribute__((warn_unused_result)); //MESSAGE_KEY_SIZE
 
 /*
  * Get the metadata of a packet (without verifying it's authenticity).
@@ -89,7 +89,7 @@ int packet_decrypt_header(
 		const buffer_t * const packet,
 		buffer_t * const header, //As long as the packet or at most 255 bytes
 		buffer_t * const message_nonce, //output
-		const buffer_t * const header_key) __attribute__((warn_unused_result)); //crypto_aead_chacha20poly1305_KEYBYTES
+		const buffer_t * const header_key) __attribute__((warn_unused_result)); //HEADER_KEY_SIZE
 
 /*
  * Decrypt the message inside a packet.
@@ -100,6 +100,6 @@ int packet_decrypt_message(
 		const buffer_t * const packet,
 		buffer_t * const message, //This buffer should be as large as the packet
 		const buffer_t * const message_nonce,
-		const buffer_t * const message_key) __attribute__((warn_unused_result)); //crypto_secretbox_KEYBYTES
+		const buffer_t * const message_key) __attribute__((warn_unused_result)); //MESSAGE_KEY_SIZE
 
 #endif
