@@ -22,7 +22,6 @@
 
 #include "ratchet.h"
 #include "diffie-hellman.h"
-#include "hkdf.h"
 #include "key-derivation.h"
 
 /*
@@ -199,7 +198,7 @@ int ratchet_next_send_keys(
 		}
 
 		//derive next root key and send chain key
-		//RK, CKs, NHKs = HKDF(DH(DHs, DHr))
+		//RK, CKs, NHKs = KDF(DH(DHs, DHr))
 		buffer_t *previous_root_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 		status = buffer_clone(previous_root_key, state->root_key);
 		if (status != 0) {
@@ -541,7 +540,7 @@ int ratchet_receive(
 		}
 
 		//derive purported root and chain keys
-		//first: input key for hkdf (root and chain key derivation)
+		//first: input key for kdf (root and chain key derivation)
 		status = derive_root_chain_and_header_keys(
 				state->purported_root_key,
 				state->purported_receive_chain_key,
