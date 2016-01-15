@@ -19,6 +19,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "constants.h"
 #include "key-derivation.h"
 #include "diffie-hellman.h"
 
@@ -91,7 +92,7 @@ int derive_chain_key(
 		const buffer_t * const previous_chain_key) {
 	return derive_key(
 			new_chain_key,
-			crypto_secretbox_KEYBYTES,
+			CHAIN_KEY_SIZE,
 			previous_chain_key,
 			1);
 }
@@ -109,7 +110,7 @@ int derive_message_key(
 		const buffer_t * const chain_key) {
 	return derive_key(
 			message_key,
-			crypto_secretbox_KEYBYTES,
+			MESSAGE_KEY_SIZE,
 			chain_key,
 			0);
 }
@@ -117,14 +118,14 @@ int derive_message_key(
 /*
  * Derive a root and initial chain key for a new ratchet.
  *
- * The chain and root key have to be crypto_secretbox_KEYBYTES long.
+ * The chain and root key have to be CHAIN_KEY_SIZE and ROOT_KEY_SIZE long.
  *
  * RK, CK, HK = KDF( RK, DH(DHRr, DHRs) )
  */
 int derive_root_chain_and_header_keys(
-		buffer_t * const root_key, //crypto_secretbox_KEYBYTES
-		buffer_t * const chain_key, //crypto_secretbox_KEYBYTES
-		buffer_t * const header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const root_key, //ROOT_KEY_SIZE
+		buffer_t * const chain_key, //CHAIN_KEY_SIZE
+		buffer_t * const header_key, //HEADER_KEY_SIZE
 		const buffer_t * const our_private_ephemeral,
 		const buffer_t * const our_public_ephemeral,
 		const buffer_t * const their_public_ephemeral,
@@ -132,13 +133,13 @@ int derive_root_chain_and_header_keys(
 		bool am_i_alice) {
 	assert(crypto_secretbox_KEYBYTES == crypto_auth_KEYBYTES);
 	//check size of the buffers
-	if ((root_key->buffer_length < crypto_secretbox_KEYBYTES)
-			|| (chain_key->buffer_length < crypto_secretbox_KEYBYTES)
-			|| (header_key->buffer_length < crypto_aead_chacha20poly1305_KEYBYTES)
-			|| (our_private_ephemeral->content_length != crypto_box_SECRETKEYBYTES)
-			|| (our_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (their_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (previous_root_key->content_length != crypto_secretbox_KEYBYTES)) {
+	if ((root_key->buffer_length < ROOT_KEY_SIZE)
+			|| (chain_key->buffer_length < CHAIN_KEY_SIZE)
+			|| (header_key->buffer_length < HEADER_KEY_SIZE)
+			|| (our_private_ephemeral->content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
+			|| (previous_root_key->content_length != ROOT_KEY_SIZE)) {
 		return -6;
 	}
 
@@ -159,7 +160,7 @@ int derive_root_chain_and_header_keys(
 	//derive root key
 	status = derive_key(
 			root_key,
-			crypto_secretbox_KEYBYTES,
+			ROOT_KEY_SIZE,
 			input_key,
 			0);
 	if (status != 0) {
@@ -169,7 +170,7 @@ int derive_root_chain_and_header_keys(
 	//derive chain key
 	status = derive_key(
 			chain_key,
-			crypto_secretbox_KEYBYTES,
+			CHAIN_KEY_SIZE,
 			input_key,
 			1);
 	if (status != 0) {
@@ -179,7 +180,7 @@ int derive_root_chain_and_header_keys(
 	//derive header key
 	status = derive_key(
 			header_key,
-			crypto_aead_chacha20poly1305_KEYBYTES,
+			HEADER_KEY_SIZE,
 			input_key,
 			2);
 	if (status != 0) {
@@ -208,13 +209,13 @@ cleanup:
  * RK, CKs/r, HKs/r, NHKs/r = KDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
  */
 int derive_initial_root_chain_and_header_keys(
-		buffer_t * const root_key, //crypto_secretbox_KEYBYTES
-		buffer_t * const send_chain_key, //crypto_secretbox_KEYBYTES
-		buffer_t * const receive_chain_key, //crypto_secretbox_KEYBYTES
-		buffer_t * const send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		buffer_t * const receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		buffer_t * const next_send_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
-		buffer_t * const next_receive_header_key, //crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const root_key, //ROOT_KEY_SIZE
+		buffer_t * const send_chain_key, //CHAIN_KEY_SIZE
+		buffer_t * const receive_chain_key, //CHAIN_KEY_SIZE
+		buffer_t * const send_header_key, //HEADER_KEY_SIZE
+		buffer_t * const receive_header_key, //HEADER_KEY_SIZE
+		buffer_t * const next_send_header_key, //HEADER_KEY_SIZE
+		buffer_t * const next_receive_header_key, //HEADER_KEY_SIZE
 		const buffer_t * const our_private_identity,
 		const buffer_t * const our_public_identity,
 		const buffer_t * const their_public_identity,
@@ -223,19 +224,19 @@ int derive_initial_root_chain_and_header_keys(
 		const buffer_t * const their_public_ephemeral,
 		bool am_i_alice) {
 	//check buffer sizes
-	if ((root_key->buffer_length < crypto_secretbox_KEYBYTES)
-			|| (send_chain_key->buffer_length < crypto_secretbox_KEYBYTES)
-			|| (receive_chain_key->buffer_length < crypto_secretbox_KEYBYTES)
-			|| (send_header_key->buffer_length < crypto_aead_chacha20poly1305_KEYBYTES)
-			|| (receive_header_key->buffer_length < crypto_aead_chacha20poly1305_KEYBYTES)
-			|| (next_send_header_key->buffer_length < crypto_aead_chacha20poly1305_KEYBYTES)
-			|| (next_receive_header_key->buffer_length < crypto_aead_chacha20poly1305_KEYBYTES)
-			|| (our_private_identity->content_length != crypto_box_SECRETKEYBYTES)
-			|| (our_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (their_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (our_private_ephemeral->content_length != crypto_box_SECRETKEYBYTES)
-			|| (our_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (their_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)) {
+	if ((root_key->buffer_length < ROOT_KEY_SIZE)
+			|| (send_chain_key->buffer_length < CHAIN_KEY_SIZE)
+			|| (receive_chain_key->buffer_length < CHAIN_KEY_SIZE)
+			|| (send_header_key->buffer_length < HEADER_KEY_SIZE)
+			|| (receive_header_key->buffer_length < HEADER_KEY_SIZE)
+			|| (next_send_header_key->buffer_length < HEADER_KEY_SIZE)
+			|| (next_receive_header_key->buffer_length < HEADER_KEY_SIZE)
+			|| (our_private_identity->content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (our_private_ephemeral->content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
 		return -6;
 	}
 
@@ -274,11 +275,11 @@ int derive_initial_root_chain_and_header_keys(
 		//Alice: CKs=<none>, CKr=KDF
 		//CKs=<none>
 		buffer_clear(send_chain_key);
-		send_chain_key->content_length = crypto_secretbox_KEYBYTES;
+		send_chain_key->content_length = CHAIN_KEY_SIZE;
 		//CKr = KDF(master_key, 0x01)
 		status = derive_key(
 				receive_chain_key,
-				crypto_secretbox_KEYBYTES,
+				CHAIN_KEY_SIZE,
 				master_key,
 				1);
 		if (status != 0) {
@@ -288,11 +289,11 @@ int derive_initial_root_chain_and_header_keys(
 		//HKs=<none>, HKr=KDF
 		//HKs=<none>
 		buffer_clear(send_header_key);
-		send_header_key->content_length = crypto_aead_chacha20poly1305_KEYBYTES;
+		send_header_key->content_length = HEADER_KEY_SIZE;
 		//HKr = KDF(master_key, 0x02)
 		status = derive_key(
 				receive_header_key,
-				crypto_aead_chacha20poly1305_KEYBYTES,
+				HEADER_KEY_SIZE,
 				master_key,
 				2);
 		if (status != 0) {
@@ -303,7 +304,7 @@ int derive_initial_root_chain_and_header_keys(
 		//NHKs = KDF(master_key, 0x03)
 		status = derive_key(
 				next_send_header_key,
-				crypto_aead_chacha20poly1305_KEYBYTES,
+				HEADER_KEY_SIZE,
 				master_key,
 				3);
 		if (status != 0) {
@@ -312,7 +313,7 @@ int derive_initial_root_chain_and_header_keys(
 		//NHKr = KDF(master_key, 0x04)
 		status = derive_key(
 				next_receive_header_key,
-				crypto_aead_chacha20poly1305_KEYBYTES,
+				HEADER_KEY_SIZE,
 				master_key,
 				4);
 		if (status != 0) {
@@ -322,11 +323,11 @@ int derive_initial_root_chain_and_header_keys(
 		//Bob: CKs=KDF, CKr=<none>
 		//CKr = <none>
 		buffer_clear(receive_chain_key);
-		receive_chain_key->content_length = crypto_secretbox_KEYBYTES;
+		receive_chain_key->content_length = CHAIN_KEY_SIZE;
 		//CKs = KDF(master_key, 0x01)
 		status = derive_key(
 				send_chain_key,
-				crypto_secretbox_KEYBYTES,
+				CHAIN_KEY_SIZE,
 				master_key,
 				1);
 		if (status != 0) {
@@ -336,11 +337,11 @@ int derive_initial_root_chain_and_header_keys(
 		//HKs=HKDF, HKr=<none>
 		//HKr = <none>
 		buffer_clear(receive_header_key);
-		receive_header_key->content_length = crypto_aead_chacha20poly1305_KEYBYTES;
+		receive_header_key->content_length = HEADER_KEY_SIZE;
 		//HKs = KDF(master_key, 0x02)
 		status = derive_key(
 				send_header_key,
-				crypto_aead_chacha20poly1305_KEYBYTES,
+				HEADER_KEY_SIZE,
 				master_key,
 				2);
 		if (status != 0) {
@@ -351,7 +352,7 @@ int derive_initial_root_chain_and_header_keys(
 		//NHKr = KDF(master_key, 0x03)
 		status = derive_key(
 				next_receive_header_key,
-				crypto_aead_chacha20poly1305_KEYBYTES,
+				HEADER_KEY_SIZE,
 				master_key,
 				3);
 		if (status != 0) {
@@ -360,7 +361,7 @@ int derive_initial_root_chain_and_header_keys(
 		//NHKs = KDF(master_key, 0x04)
 		status = derive_key(
 				next_send_header_key,
-				crypto_aead_chacha20poly1305_KEYBYTES,
+				HEADER_KEY_SIZE,
 				master_key,
 				4);
 		if (status != 0) {

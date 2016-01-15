@@ -19,6 +19,7 @@
 #include <string.h>
 #include <assert.h>
 
+#include "constants.h"
 #include "user-store.h"
 
 //create a new user_store
@@ -91,13 +92,13 @@ user_store_node *create_user_store_node() {
 	node->next = NULL;
 
 	//initialise all the buffers
-	buffer_init_with_pointer(node->public_identity_key, node->public_identity_key_storage, crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_init_with_pointer(node->private_identity_key, node->private_identity_key_storage, crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	buffer_init_with_pointer(node->public_identity_key, node->public_identity_key_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_init_with_pointer(node->private_identity_key, node->private_identity_key_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 
 	//initialise prekey buffers
 	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		buffer_init_with_pointer(&(node->public_prekeys[i]), &(node->public_prekey_storage[i * crypto_box_PUBLICKEYBYTES]), crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-		buffer_init_with_pointer(&(node->private_prekeys[i]), &(node->private_prekey_storage[i * crypto_box_SECRETKEYBYTES]), crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+		buffer_init_with_pointer(&(node->public_prekeys[i]), &(node->public_prekey_storage[i * PUBLIC_KEY_SIZE]), PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		buffer_init_with_pointer(&(node->private_prekeys[i]), &(node->private_prekey_storage[i * PRIVATE_KEY_SIZE]), PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	}
 
 	conversation_store_init(node->conversations);
@@ -114,10 +115,10 @@ int user_store_add(
 		const buffer_t * const public_prekeys,
 		const buffer_t * const private_prekeys) {
 	//check size of the input buffers
-	if ((public_identity->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (private_identity->content_length != crypto_box_SECRETKEYBYTES)
-			|| (public_prekeys->content_length != PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES)
-			|| (private_prekeys->content_length != PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES)) {
+	if ((public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (private_identity->content_length != PRIVATE_KEY_SIZE)
+			|| (public_prekeys->content_length != PREKEY_AMOUNT * PUBLIC_KEY_SIZE)
+			|| (private_prekeys->content_length != PREKEY_AMOUNT * PRIVATE_KEY_SIZE)) {
 		return -6;
 	}
 
@@ -163,7 +164,7 @@ int user_store_add(
  * Returns NULL if no user was found.
  */
 user_store_node* user_store_find_node(user_store * const store, const buffer_t * const public_identity) {
-	if (public_identity->content_length != crypto_box_PUBLICKEYBYTES) {
+	if (public_identity->content_length != PUBLIC_KEY_SIZE) {
 		return NULL;
 	}
 
@@ -196,14 +197,14 @@ user_store_node* user_store_find_node(user_store * const store, const buffer_t *
  */
 buffer_t* user_store_list(user_store * const store) {
 	sodium_mprotect_readonly(store);
-	buffer_t *list = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES * store->length, crypto_box_PUBLICKEYBYTES * store->length);
+	buffer_t *list = buffer_create_on_heap(PUBLIC_KEY_SIZE * store->length, PUBLIC_KEY_SIZE * store->length);
 
 	user_store_node *current_node = store->head;
 	for (size_t i = 0; (i < store->length) && (current_node != NULL); i++) {
 		sodium_mprotect_readonly(current_node);
 		int status = buffer_copy(
 				list,
-				i * crypto_box_PUBLICKEYBYTES,
+				i * PUBLIC_KEY_SIZE,
 				current_node->public_identity_key,
 				0,
 				current_node->public_identity_key->content_length);
@@ -319,7 +320,7 @@ mcJSON *user_store_node_json_export(user_store_node * const node, mempool_t * co
 
 	/* fill prekey arrays */
 	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		assert(crypto_box_PUBLICKEYBYTES == crypto_box_SECRETKEYBYTES);
+		assert(PUBLIC_KEY_SIZE == PRIVATE_KEY_SIZE);
 
 		//public prekey
 		mcJSON *public_prekey = mcJSON_CreateHexString(&(node->public_prekeys[i]), pool);
@@ -402,10 +403,10 @@ int prekey_import(user_store_node * const node, const mcJSON * const public_prek
 			(i < PREKEY_AMOUNT)
 				&& (current_private_prekey != NULL)
 				&& (current_private_prekey->type == mcJSON_String)
-				&& (current_private_prekey->valuestring->content_length == (2 * crypto_box_SECRETKEYBYTES + 1))
+				&& (current_private_prekey->valuestring->content_length == (2 * PRIVATE_KEY_SIZE + 1))
 				&& (current_public_prekey != NULL)
 				&& (current_public_prekey->type == mcJSON_String)
-				&& (current_public_prekey->valuestring->content_length == (2 * crypto_box_PUBLICKEYBYTES + 1));
+				&& (current_public_prekey->valuestring->content_length == (2 * PUBLIC_KEY_SIZE + 1));
 			i++,
 				current_private_prekey = current_private_prekey->next,
 				current_public_prekey = current_public_prekey->next) {
@@ -457,8 +458,8 @@ user_store *user_store_json_import(const mcJSON * const json) {
 		mcJSON *conversations = mcJSON_GetObjectItem(user, conversations_string);
 
 		//check if they are valid
-		if ((private_identity == NULL) || (private_identity->type != mcJSON_String) || (private_identity->valuestring->content_length != (2 * crypto_box_SECRETKEYBYTES + 1))
-				|| (public_identity == NULL) || (public_identity->type != mcJSON_String) || (public_identity->valuestring->content_length != (2 * crypto_box_PUBLICKEYBYTES + 1))
+		if ((private_identity == NULL) || (private_identity->type != mcJSON_String) || (private_identity->valuestring->content_length != (2 * PRIVATE_KEY_SIZE + 1))
+				|| (public_identity == NULL) || (public_identity->type != mcJSON_String) || (public_identity->valuestring->content_length != (2 * PUBLIC_KEY_SIZE + 1))
 				|| (conversations->type != mcJSON_Array)) {
 			user_store_destroy(store);
 			return NULL;

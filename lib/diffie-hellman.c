@@ -18,6 +18,7 @@
 #include <sodium.h>
 #include <assert.h>
 
+#include "constants.h"
 #include "diffie-hellman.h"
 
 /*
@@ -35,25 +36,25 @@
  */
 int diffie_hellman(
 		buffer_t * const derived_key, //needs to be crypto_generichash_BYTES long
-		const buffer_t * const our_private_key, //needs to be crypto_box_SECRETKEYBYTES long
-		const buffer_t * const our_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
-		const buffer_t * const their_public_key, //needs to be crypto_box_PUBLICKEYBYTES long
+		const buffer_t * const our_private_key, //needs to be PRIVATE_KEY_SIZE long
+		const buffer_t * const our_public_key, //needs to be PUBLIC_KEY_SIZE long
+		const buffer_t * const their_public_key, //needs to be PUBLIC_KEY_SIZE long
 		const bool am_i_alice) {
 	//make sure that the assumptions are correct
-	assert(crypto_box_PUBLICKEYBYTES == crypto_scalarmult_SCALARBYTES);
-	assert(crypto_box_SECRETKEYBYTES == crypto_scalarmult_SCALARBYTES);
+	assert(PUBLIC_KEY_SIZE == crypto_scalarmult_SCALARBYTES);
+	assert(PRIVATE_KEY_SIZE == crypto_scalarmult_SCALARBYTES);
 
 	//set content length of output to 0 (can prevent use on failure)
 	derived_key->content_length = 0;
 
 	//check buffer sizes
 	if ((derived_key->buffer_length < crypto_generichash_BYTES)
-			|| (our_private_key->content_length != crypto_box_SECRETKEYBYTES)
-			|| (our_public_key->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (their_public_key->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (our_private_key->buffer_length < crypto_box_SECRETKEYBYTES)
-			|| (our_public_key->buffer_length < crypto_box_PUBLICKEYBYTES)
-			|| (their_public_key->buffer_length < crypto_box_PUBLICKEYBYTES)) {
+			|| (our_private_key->content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_key->content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_key->content_length != PUBLIC_KEY_SIZE)
+			|| (our_private_key->buffer_length < PRIVATE_KEY_SIZE)
+			|| (our_public_key->buffer_length < PUBLIC_KEY_SIZE)
+			|| (their_public_key->buffer_length < PUBLIC_KEY_SIZE)) {
 		return -6;
 	}
 
@@ -161,18 +162,18 @@ int triple_diffie_hellman(
 
 	//check buffer sizes
 	if ((derived_key->buffer_length < crypto_generichash_BYTES)
-			|| (our_private_identity->content_length != crypto_box_SECRETKEYBYTES)
-			|| (our_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (their_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (our_private_ephemeral->content_length != crypto_box_SECRETKEYBYTES)
-			|| (our_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (their_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (our_private_identity->buffer_length < crypto_box_SECRETKEYBYTES)
-			|| (our_public_identity->buffer_length < crypto_box_PUBLICKEYBYTES)
-			|| (their_public_identity->buffer_length < crypto_box_PUBLICKEYBYTES)
-			|| (our_private_ephemeral->buffer_length < crypto_box_SECRETKEYBYTES)
-			|| (our_public_ephemeral->buffer_length < crypto_box_PUBLICKEYBYTES)
-			|| (their_public_ephemeral->buffer_length < crypto_box_PUBLICKEYBYTES)) {
+			|| (our_private_identity->content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (our_private_ephemeral->content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
+			|| (our_private_identity->buffer_length < PRIVATE_KEY_SIZE)
+			|| (our_public_identity->buffer_length < PUBLIC_KEY_SIZE)
+			|| (their_public_identity->buffer_length < PUBLIC_KEY_SIZE)
+			|| (our_private_ephemeral->buffer_length < PRIVATE_KEY_SIZE)
+			|| (our_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)
+			|| (their_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)) {
 		return -6;
 	}
 

@@ -26,14 +26,14 @@
  *
  * The header looks like follows:
  * header (40) = {
- *   public_ephemeral_key (crypto_box_PUBLICKEYBYTES = 32),
+ *   public_ephemeral_key (PUBLIC_KEY_SIZE = 32),
  *   message_counter (4)
  *   previous_message_counter(4)
  * }
  */
 int header_construct(
-		buffer_t * const header, //crypto_box_PUBLICKEYBYTES + 8, output
-		const buffer_t * const our_public_ephemeral, //crypto_box_PUBLICKEYBYTES
+		buffer_t * const header, //PUBLIC_KEY_SIZE + 8, output
+		const buffer_t * const our_public_ephemeral, //PUBLIC_KEY_SIZE
 		const uint32_t message_counter,
 		const uint32_t previous_message_counter) __attribute__((warn_unused_result));
 
@@ -41,8 +41,8 @@ int header_construct(
  * Get the content of the header.
  */
 int header_extract(
-		const buffer_t * const header, //crypto_box_PUBLICKEYBYTES + 8, input
-		buffer_t * const their_public_ephemeral, //crypto_box_PUBLICKEYBYTES, output
+		const buffer_t * const header, //PUBLIC_KEY_SIZE+ 8, input
+		buffer_t * const their_public_ephemeral, //PUBLIC_KEY_SIZE, output
 		uint32_t * const message_counter,
 		uint32_t * const previous_message_counter) __attribute__((warn_unused_result));
 #endif
