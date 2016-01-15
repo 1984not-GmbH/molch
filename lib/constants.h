@@ -17,6 +17,7 @@
  */
 
 //This header defines all the constants that are globally available in the library.
+#include <sodium.h>
 
 #ifndef LIB_CONSTANTS_H
 #define LIB_CONSTANTS_H
@@ -24,4 +25,15 @@
 #define CONVERSATION_ID_SIZE 32U //length of a conversation id in bytes
 #define PREKEY_AMOUNT 100U //number of prekeys that are used
 
+//key sizes
+#define CHAIN_KEY_SIZE crypto_secretbox_KEYBYTES
+#define MESSAGE_KEY_SIZE crypto_secretbox_KEYBYTES
+#define HEADER_KEY_SIZE crypto_aead_chacha20poly1305_KEYBYTES
+#define ROOT_KEY_SIZE crypto_secretbox_KEYBYTES
+#define PRIVATE_KEY_SIZE crypto_box_SECRETKEYBYTES
+#define PUBLIC_KEY_SIZE crypto_box_PUBLICKEYBYTES
+
+//nonce sizes
+#define MESSAGE_NONCE_SIZE crypto_secretbox_NONCEBYTES
+#define HEADER_NONCE_SIZE crypto_aead_chacha20poly1305_NPUBBYTES
 #endif
