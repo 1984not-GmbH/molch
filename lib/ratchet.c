@@ -551,6 +551,7 @@ int ratchet_receive(
 				state->root_key,
 				state->am_i_alice);
 		if (status != 0) {
+			buffer_destroy_from_heap(temp_purported_chain_key);
 			return status;
 		}
 
