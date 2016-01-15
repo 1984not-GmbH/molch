@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <stdint.h>
 
+#include "constants.h"
 #include "ratchet.h"
 #include "diffie-hellman.h"
 #include "key-derivation.h"
@@ -44,27 +45,27 @@ ratchet_state *create_ratchet_state() {
 	}
 
 	//initialize the buffers with the storage arrays
-	buffer_init_with_pointer(state->root_key, (unsigned char*)state->root_key_storage, crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	buffer_init_with_pointer(state->purported_root_key, (unsigned char*)state->purported_root_key_storage, crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_init_with_pointer(state->root_key, (unsigned char*)state->root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
+	buffer_init_with_pointer(state->purported_root_key, (unsigned char*)state->purported_root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
 	//header keys
-	buffer_init_with_pointer(state->send_header_key, (unsigned char*)state->send_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(state->receive_header_key, (unsigned char*)state->receive_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(state->next_send_header_key, (unsigned char*)state->next_send_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(state->next_receive_header_key, (unsigned char*)state->next_receive_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(state->purported_receive_header_key, (unsigned char*)state->purported_receive_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(state->purported_next_receive_header_key, (unsigned char*)state->purported_next_receive_header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->send_header_key, (unsigned char*)state->send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer(state->receive_header_key, (unsigned char*)state->receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer(state->next_send_header_key, (unsigned char*)state->next_send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer(state->next_receive_header_key, (unsigned char*)state->next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer(state->purported_receive_header_key, (unsigned char*)state->purported_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer(state->purported_next_receive_header_key, (unsigned char*)state->purported_next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	//chain keys
-	buffer_init_with_pointer(state->send_chain_key, (unsigned char*)state->send_chain_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(state->receive_chain_key, (unsigned char*)state->receive_chain_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(state->purported_receive_chain_key, (unsigned char*)state->purported_receive_chain_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->send_chain_key, (unsigned char*)state->send_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	buffer_init_with_pointer(state->receive_chain_key, (unsigned char*)state->receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	buffer_init_with_pointer(state->purported_receive_chain_key, (unsigned char*)state->purported_receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
 	//identity keys
-	buffer_init_with_pointer(state->our_public_identity, (unsigned char*)state->our_public_identity_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(state->their_public_identity, (unsigned char*)state->their_public_identity_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->our_public_identity, (unsigned char*)state->our_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_init_with_pointer(state->their_public_identity, (unsigned char*)state->their_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	//ephemeral keys (ratchet keys)
-	buffer_init_with_pointer(state->our_private_ephemeral, (unsigned char*)state->our_private_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(state->our_public_ephemeral, (unsigned char*)state->our_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(state->their_public_ephemeral, (unsigned char*)state->their_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	buffer_init_with_pointer(state->their_purported_public_ephemeral, (unsigned char*)state->their_purported_public_ephemeral_storage, crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_init_with_pointer(state->our_private_ephemeral, (unsigned char*)state->our_private_ephemeral_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	buffer_init_with_pointer(state->our_public_ephemeral, (unsigned char*)state->our_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_init_with_pointer(state->their_public_ephemeral, (unsigned char*)state->their_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_init_with_pointer(state->their_purported_public_ephemeral, (unsigned char*)state->their_purported_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
 	//initialise message keystore for skipped messages
 	header_and_message_keystore_init(state->skipped_header_and_message_keys);
@@ -89,12 +90,12 @@ ratchet_state* ratchet_create(
 		const buffer_t * const our_public_ephemeral,
 		const buffer_t * const their_public_ephemeral) {
 	//check buffer sizes
-	if ((our_private_identity->content_length != crypto_box_SECRETKEYBYTES)
-			|| (our_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (their_public_identity->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (our_private_ephemeral->content_length != crypto_box_SECRETKEYBYTES)
-			|| (our_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)
-			|| (their_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)) {
+	if ((our_private_identity->content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (our_private_ephemeral->content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
 		return NULL;
 	}
 
@@ -200,7 +201,7 @@ int ratchet_next_send_keys(
 
 		//derive next root key and send chain key
 		//RK, CKs, NHKs = KDF(DH(DHs, DHr))
-		buffer_t *previous_root_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+		buffer_t *previous_root_key = buffer_create_on_heap(ROOT_KEY_SIZE, ROOT_KEY_SIZE);
 		status = buffer_clone(previous_root_key, state->root_key);
 		if (status != 0) {
 			buffer_destroy_from_heap(previous_root_key);
@@ -246,7 +247,7 @@ int ratchet_next_send_keys(
 
 	//derive next chain key
 	//CKs = HMAC-HASH(CKs, 0x01)
-	buffer_t *old_chain_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *old_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
 	status = buffer_clone(old_chain_key, state->send_chain_key);
 	if (status != 0) {
 		buffer_destroy_from_heap(old_chain_key);
@@ -276,8 +277,8 @@ int ratchet_get_receive_header_keys(
 		buffer_t * const next_receive_header_key,
 		ratchet_state *state) {
 	//check buffer sizes
-	if ((current_receive_header_key->buffer_length < crypto_aead_chacha20poly1305_KEYBYTES)
-			|| (next_receive_header_key->buffer_length < crypto_secretbox_KEYBYTES)) {
+	if ((current_receive_header_key->buffer_length < HEADER_KEY_SIZE)
+			|| (next_receive_header_key->buffer_length < HEADER_KEY_SIZE)) {
 		return -6;
 	}
 
@@ -339,9 +340,9 @@ int stage_skipped_header_and_message_keys(
 		const unsigned int purported_message_number,
 		const buffer_t * const receive_chain_key,
 		ratchet_state *state) {
-	if ((purported_chain_key->buffer_length < crypto_secretbox_KEYBYTES)
-			|| (message_key->buffer_length < crypto_secretbox_KEYBYTES)
-			|| (receive_chain_key->content_length != crypto_secretbox_KEYBYTES)) {
+	if ((purported_chain_key->buffer_length < CHAIN_KEY_SIZE)
+			|| (message_key->buffer_length < MESSAGE_KEY_SIZE)
+			|| (receive_chain_key->content_length != CHAIN_KEY_SIZE)) {
 		buffer_clear(message_key);
 		buffer_clear(purported_chain_key);
 		return -6;
@@ -362,10 +363,10 @@ int stage_skipped_header_and_message_keys(
 
 	int status;
 	//message key buffer
-	buffer_t *message_key_buffer = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *message_key_buffer = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 	//copy current chain key to purported chain key
-	buffer_t *purported_current_chain_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	buffer_t *purported_next_chain_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	buffer_t *purported_current_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	buffer_t *purported_next_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
 	status = buffer_clone(purported_current_chain_key, receive_chain_key);
 	if (status != 0) {
 		goto cleanup;
@@ -465,8 +466,8 @@ int ratchet_receive(
 		const unsigned int purported_previous_message_number,
 		ratchet_state * const state) {
 	//check buffer sizes
-	if ((message_key->buffer_length < crypto_secretbox_KEYBYTES)
-			|| (their_purported_public_ephemeral->content_length != crypto_box_PUBLICKEYBYTES)) {
+	if ((message_key->buffer_length < MESSAGE_KEY_SIZE)
+			|| (their_purported_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
 		return -6;
 	}
 
@@ -519,7 +520,7 @@ int ratchet_receive(
 		}
 
 		//temporary storage for the purported chain key (CKp)
-		buffer_t *temp_purported_chain_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+		buffer_t *temp_purported_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
 
 		//stage message keys for previous message chain
 		status = stage_skipped_header_and_message_keys(
@@ -641,7 +642,7 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
 		}
 		//erase(DHRs)
 		buffer_clear(state->our_private_ephemeral);
-		state->our_private_ephemeral->content_length = crypto_box_SECRETKEYBYTES; //TODO is this necessary?
+		state->our_private_ephemeral->content_length = PRIVATE_KEY_SIZE; //TODO is this necessary?
 		//ratchet_flag = True
 		state->ratchet_flag = true;
 	}
@@ -864,8 +865,8 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	mcJSON *root_key = mcJSON_GetObjectItem(root_keys, root_key_string);
 	buffer_create_from_string(purported_root_key_string, "purported_root_key");
 	mcJSON *purported_root_key = mcJSON_GetObjectItem(root_keys, purported_root_key_string);
-	if ((root_key == NULL) || (root_key->type != mcJSON_String) || (root_key->valuestring->content_length != (2 * crypto_secretbox_KEYBYTES + 1))
-			|| (purported_root_key == NULL) || (purported_root_key->type != mcJSON_String) || (purported_root_key->valuestring->content_length != (2 * crypto_secretbox_KEYBYTES + 1))) {
+	if ((root_key == NULL) || (root_key->type != mcJSON_String) || (root_key->valuestring->content_length != (2 * ROOT_KEY_SIZE + 1))
+			|| (purported_root_key == NULL) || (purported_root_key->type != mcJSON_String) || (purported_root_key->valuestring->content_length != (2 * ROOT_KEY_SIZE + 1))) {
 		goto fail;
 	}
 
@@ -897,12 +898,12 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	mcJSON *purported_receive_header_key = mcJSON_GetObjectItem(header_keys, purported_receive_header_key_string);
 	buffer_create_from_string(purported_next_receive_header_key_string, "purported_next_receive_header_key");
 	mcJSON *purported_next_receive_header_key = mcJSON_GetObjectItem(header_keys, purported_next_receive_header_key_string);
-	if ((send_header_key == NULL) || (send_header_key->type != mcJSON_String) || (send_header_key->valuestring->content_length != (2 * crypto_aead_chacha20poly1305_KEYBYTES + 1))
-			|| (receive_header_key == NULL) || (receive_header_key->type != mcJSON_String) || (receive_header_key->valuestring->content_length != (2 * crypto_aead_chacha20poly1305_KEYBYTES + 1))
-			|| (next_send_header_key == NULL) || (next_send_header_key->type != mcJSON_String) || (next_send_header_key->valuestring->content_length != (2 * crypto_aead_chacha20poly1305_KEYBYTES + 1))
-			|| (next_receive_header_key == NULL) || (next_receive_header_key->type != mcJSON_String) || (next_receive_header_key->valuestring->content_length != (2 * crypto_aead_chacha20poly1305_KEYBYTES + 1))
-			|| (purported_receive_header_key == NULL) || (purported_receive_header_key->type != mcJSON_String) || (purported_receive_header_key->valuestring->content_length != (2 * crypto_aead_chacha20poly1305_KEYBYTES + 1))
-			|| (purported_next_receive_header_key == NULL) || (purported_next_receive_header_key->type != mcJSON_String) || (purported_next_receive_header_key->valuestring->content_length != (2 * crypto_aead_chacha20poly1305_KEYBYTES + 1))) {
+	if ((send_header_key == NULL) || (send_header_key->type != mcJSON_String) || (send_header_key->valuestring->content_length != (2 * HEADER_KEY_SIZE + 1))
+			|| (receive_header_key == NULL) || (receive_header_key->type != mcJSON_String) || (receive_header_key->valuestring->content_length != (2 * HEADER_KEY_SIZE + 1))
+			|| (next_send_header_key == NULL) || (next_send_header_key->type != mcJSON_String) || (next_send_header_key->valuestring->content_length != (2 * HEADER_KEY_SIZE + 1))
+			|| (next_receive_header_key == NULL) || (next_receive_header_key->type != mcJSON_String) || (next_receive_header_key->valuestring->content_length != (2 * HEADER_KEY_SIZE + 1))
+			|| (purported_receive_header_key == NULL) || (purported_receive_header_key->type != mcJSON_String) || (purported_receive_header_key->valuestring->content_length != (2 * HEADER_KEY_SIZE + 1))
+			|| (purported_next_receive_header_key == NULL) || (purported_next_receive_header_key->type != mcJSON_String) || (purported_next_receive_header_key->valuestring->content_length != (2 * HEADER_KEY_SIZE + 1))) {
 		goto fail;
 	}
 
@@ -939,9 +940,9 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	mcJSON *receive_chain_key = mcJSON_GetObjectItem(chain_keys, receive_chain_key_string);
 	buffer_create_from_string(purported_receive_chain_key_string, "purported_receive_chain_key");
 	mcJSON *purported_receive_chain_key = mcJSON_GetObjectItem(chain_keys, purported_receive_chain_key_string);
-	if ((send_chain_key == NULL) || (send_chain_key->type != mcJSON_String) || (send_chain_key->valuestring->content_length != (2 * crypto_secretbox_KEYBYTES + 1))
-			|| (receive_chain_key == NULL) || (receive_chain_key->type != mcJSON_String) || (receive_chain_key->valuestring->content_length != (2 * crypto_secretbox_KEYBYTES + 1))
-			|| (purported_receive_chain_key == NULL) || (purported_receive_chain_key->type != mcJSON_String) || (purported_receive_chain_key->valuestring->content_length != (2 * crypto_secretbox_KEYBYTES + 1))) {
+	if ((send_chain_key == NULL) || (send_chain_key->type != mcJSON_String) || (send_chain_key->valuestring->content_length != (2 * CHAIN_KEY_SIZE + 1))
+			|| (receive_chain_key == NULL) || (receive_chain_key->type != mcJSON_String) || (receive_chain_key->valuestring->content_length != (2 * CHAIN_KEY_SIZE + 1))
+			|| (purported_receive_chain_key == NULL) || (purported_receive_chain_key->type != mcJSON_String) || (purported_receive_chain_key->valuestring->content_length != (2 * CHAIN_KEY_SIZE + 1))) {
 			goto fail;
 	}
 
@@ -972,9 +973,9 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	mcJSON *our_public_ephemeral = mcJSON_GetObjectItem(our_keys, public_ephemeral_string);
 	buffer_create_from_string(private_ephemeral_string, "private_ephemeral");
 	mcJSON *our_private_ephemeral = mcJSON_GetObjectItem(our_keys, private_ephemeral_string);
-	if ((our_public_identity == NULL) || (our_public_identity->type != mcJSON_String) || (our_public_identity->valuestring->content_length != (2 * crypto_box_PUBLICKEYBYTES + 1))
-			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->type != mcJSON_String) || (our_public_ephemeral->valuestring->content_length != (2 * crypto_box_PUBLICKEYBYTES + 1))
-			|| (our_private_ephemeral == NULL) || (our_private_ephemeral->type != mcJSON_String) || (our_private_ephemeral->valuestring->content_length != (2 * crypto_box_SECRETKEYBYTES + 1))) {
+	if ((our_public_identity == NULL) || (our_public_identity->type != mcJSON_String) || (our_public_identity->valuestring->content_length != (2 * PUBLIC_KEY_SIZE + 1))
+			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->type != mcJSON_String) || (our_public_ephemeral->valuestring->content_length != (2 * PUBLIC_KEY_SIZE + 1))
+			|| (our_private_ephemeral == NULL) || (our_private_ephemeral->type != mcJSON_String) || (our_private_ephemeral->valuestring->content_length != (2 * PRIVATE_KEY_SIZE + 1))) {
 		goto fail;
 	}
 
@@ -1000,9 +1001,9 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	mcJSON *their_public_ephemeral = mcJSON_GetObjectItem(their_keys, public_ephemeral_string);
 	buffer_create_from_string(purported_public_ephemeral_string, "purported_public_ephemeral");
 	mcJSON *their_purported_public_ephemeral = mcJSON_GetObjectItem(their_keys, purported_public_ephemeral_string);
-	if ((their_public_identity == NULL) || (their_public_identity->type != mcJSON_String) || (their_public_identity->valuestring->content_length != (2 * crypto_box_PUBLICKEYBYTES + 1))
-			|| (their_public_ephemeral == NULL) || (their_public_ephemeral->type != mcJSON_String) || (their_public_ephemeral->valuestring->content_length != (2 * crypto_box_PUBLICKEYBYTES + 1))
-			|| (their_purported_public_ephemeral == NULL) || (their_purported_public_ephemeral->type != mcJSON_String) || (their_purported_public_ephemeral->valuestring->content_length != (2 * crypto_box_PUBLICKEYBYTES + 1))) {
+	if ((their_public_identity == NULL) || (their_public_identity->type != mcJSON_String) || (their_public_identity->valuestring->content_length != (2 * PUBLIC_KEY_SIZE + 1))
+			|| (their_public_ephemeral == NULL) || (their_public_ephemeral->type != mcJSON_String) || (their_public_ephemeral->valuestring->content_length != (2 * PUBLIC_KEY_SIZE + 1))
+			|| (their_purported_public_ephemeral == NULL) || (their_purported_public_ephemeral->type != mcJSON_String) || (their_purported_public_ephemeral->valuestring->content_length != (2 * PUBLIC_KEY_SIZE + 1))) {
 		goto fail;
 	}
 
