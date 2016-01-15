@@ -19,6 +19,7 @@
 #include <sodium.h>
 #include <time.h>
 
+#include "constants.h"
 #include "../buffer/buffer.h"
 #include "../mcJSON/mcJSON.h"
 
@@ -33,9 +34,9 @@ struct header_and_message_keystore_node {
 	header_and_message_keystore_node *previous;
 	header_and_message_keystore_node *next;
 	buffer_t message_key[1];
-	unsigned char message_key_storage[crypto_secretbox_KEYBYTES];
+	unsigned char message_key_storage[MESSAGE_KEY_SIZE];
 	buffer_t header_key[1];
-	unsigned char header_key_storage[crypto_aead_chacha20poly1305_KEYBYTES];
+	unsigned char header_key_storage[HEADER_KEY_SIZE];
 	time_t timestamp;
 };
 

@@ -18,6 +18,7 @@
 
 #include <string.h>
 
+#include "constants.h"
 #include "header-and-message-keystore.h"
 
 //create new keystore
@@ -37,8 +38,8 @@ header_and_message_keystore_node *create_node() {
 	}
 
 	//initialise buffers with storage arrays
-	buffer_init_with_pointer(node->message_key, node->message_key_storage, crypto_secretbox_KEYBYTES, 0);
-	buffer_init_with_pointer(node->header_key, node->header_key_storage, crypto_aead_chacha20poly1305_KEYBYTES, 0);
+	buffer_init_with_pointer(node->message_key, node->message_key_storage, MESSAGE_KEY_SIZE, 0);
+	buffer_init_with_pointer(node->header_key, node->header_key_storage, HEADER_KEY_SIZE, 0);
 
 	return node;
 }
@@ -75,8 +76,8 @@ int header_and_message_keystore_add(
 		const buffer_t * const message_key,
 		const buffer_t * const header_key) {
 	//check buffer sizes
-	if ((message_key->content_length != crypto_secretbox_KEYBYTES)
-			|| (header_key->content_length != crypto_aead_chacha20poly1305_KEYBYTES)) {
+	if ((message_key->content_length != MESSAGE_KEY_SIZE)
+			|| (header_key->content_length != HEADER_KEY_SIZE)) {
 		return -6;
 	}
 
@@ -226,8 +227,8 @@ int header_and_message_keystore_json_import(
 		mcJSON *timestamp = mcJSON_GetObjectItem(key, timestamp_string);
 
 		//check if they are valid
-		if ((message_key == NULL) || (message_key->type != mcJSON_String) || (message_key->valuestring->content_length != (2 * crypto_secretbox_KEYBYTES + 1))
-				|| (header_key == NULL) || (header_key->type != mcJSON_String) || (header_key->valuestring->content_length != (2 * crypto_secretbox_KEYBYTES + 1))
+		if ((message_key == NULL) || (message_key->type != mcJSON_String) || (message_key->valuestring->content_length != (2 * MESSAGE_KEY_SIZE + 1))
+				|| (header_key == NULL) || (header_key->type != mcJSON_String) || (header_key->valuestring->content_length != (2 * HEADER_KEY_SIZE + 1))
 				|| (timestamp == NULL) || (timestamp->type != mcJSON_Number)) {
 			header_and_message_keystore_clear(keystore);
 			return -3;
