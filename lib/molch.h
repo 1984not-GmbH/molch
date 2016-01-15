@@ -42,8 +42,8 @@
  * Returns 0 on success.
  */
 int molch_create_user(
-		unsigned char * const public_identity_key, //output, crypto_box_PUBLICKEYBYTES
-		unsigned char * const prekey_list, //output, needs to be 100 * crypto_box_PUBLICKEYBYTES + crypto_onetimeauth_BYTES
+		unsigned char * const public_identity_key, //output, PUBLIC_KEY_SIZE
+		unsigned char * const prekey_list, //output, needs to be 100 * PUBLIC_KEY_SIZE + crypto_onetimeauth_BYTES
 		const unsigned char * const random_data,
 		const size_t random_data_length) __attribute__((warn_unused_result));
 
@@ -98,10 +98,10 @@ int molch_create_send_conversation(
 		size_t *packet_length, //output
 		const unsigned char * const message,
 		const size_t message_length,
-		const unsigned char * const prekey_list, //prekey list of the receiver (PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES)
+		const unsigned char * const prekey_list, //prekey list of the receiver (PREKEY_AMOUNT * PUBLIC_KEY_SIZE)
 		const unsigned char * const sender_public_identity, //identity of the sender (user)
 		const unsigned char * const receiver_public_identity) __attribute__((warn_unused_result));  //identity of the receiver
-//prekeys of the receiver (PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES)
+//prekeys of the receiver (PREKEY_AMOUNT * PUBLIC_KEY_SIZE)
 
 /*
  * Start a new conversation. (receiving)
@@ -122,7 +122,7 @@ int molch_create_receive_conversation(
 		size_t * const message_length, //output
 		const unsigned char * const packet, //received prekey packet
 		const size_t packet_length,
-		unsigned char * const prekey_list, //output, needs to be PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES + crypto_onetimeauth_BYTES, This is the new prekey list for the receiving user
+		unsigned char * const prekey_list, //output, needs to be PREKEY_AMOUNT * PUBLIC_KEY_SIZE + crypto_onetimeauth_BYTES, This is the new prekey list for the receiving user
 		const unsigned char * const sender_public_identity, //identity of the sender
 		const unsigned char * const receiver_public_identity) __attribute__((warn_unused_result)); //identity key of the receiver (user)
 
