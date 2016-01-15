@@ -9,8 +9,7 @@ target_link_libraries(common utils)
 add_library(packet-test-lib packet-test-lib)
 target_link_libraries(packet-test-lib molch molch-buffer utils)
 
-set(tests hkdf-test
-          diffie-hellman-test
+set(tests diffie-hellman-test
           triple-diffie-hellman-test
           chain-key-derivation-test
           message-key-derivation-test

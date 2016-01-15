@@ -9,26 +9,6 @@ An implementation of the axolotl ratchet (https://github.com/trevp/axolotl/wiki)
 
 **WARNING: THIS SOFTWARE ISN'T READY YET. DON'T USE IT!**
 
-status
-------
-There's still a long way to go.
-
-Currently implemented:
-* HKDF (HMAC based Key Derivation Function), see RFC 5869
-* ECDH (Elliptic Curve Diffie Hellman key exchange)
-* Triple Diffie Hellman (Used to derive a shared secret from identity and ephemeral keys)
-  - H(ECDH(A,B0)||ECDH(A0,B)||ECDH(A0,B0))
-  - Where A and B are the identity keys and A0 and B0 the ephemeral keys of Alice and Bob
-* Datatype and helper functions for handling buffers that know their length.
-
-Axolotl specific:
-* Chain key derivation (derive next chain key from previous one, CK = HMAC-Hash(CK, 0x01))
-* Message key derivatin (derive message key from chain key, MK = HMACH-Hash(MK, 0x00))
-* Symmetrically encrypt a message and authenticate header.
-  - `header_length (1Byte) || header || nonce || MAC(Header + nonce + header_length) || CIPHERTEXT (crypto_secretbox)`
-* double linked list for storing message keys that haven't been used yet
-* Ratchet (deriving root, chain and message keys, no message decryption and authentication yet)
-
 how to get the code
 -------------------
 After cloning the repository, the git submodules have to be initialised and updated:
