@@ -16,8 +16,10 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <sodium.h>
+#include <assert.h>
+
 #include "spiced-random.h"
-#include "hkdf.h"
 
 /*
  * Generate a random number by combining the OSs random number
@@ -31,55 +33,59 @@ int spiced_random(
 		buffer_t * const random_output,
 		const buffer_t * const random_spice,
 		const size_t output_length) {
-	//content length defaults to zero in case of failure
-	random_output->content_length = 0;
-
 	//check buffer length
 	if (random_output->buffer_length < output_length) {
 		return -6;
 	}
 
 	int status;
-	buffer_t *os_random = buffer_create_on_heap(output_length, output_length);
+	//buffer to put the random data derived from the random spice into
 	buffer_t *spice = buffer_create_on_heap(output_length, output_length);
 
 	//buffer that contains the random data from the OS
+	buffer_t *os_random = buffer_create_on_heap(output_length, output_length);
 	status = buffer_fill_random(os_random, output_length);
 	if (status != 0) {
-		goto cleanup;
+		goto fail;
 	}
 
-	//create uniformly distributed random numbers from random input
-	//using hkdf
-	buffer_t *empty_buffer = buffer_create_on_heap(0, 0);
-	buffer_create_from_string(salt_string, "some random string as salt     "); //TODO something better?
-	status = hkdf(
-			spice,
-			output_length,
-			salt_string,
-			random_spice,
-			empty_buffer);
-	buffer_destroy_from_heap(empty_buffer);
+	buffer_create_from_string(salt, " molch: an axolotl ratchet lib ");
+	assert(salt->content_length == crypto_pwhash_scryptsalsa208sha256_SALTBYTES);
+
+	//derive random data from the random spice
+	status = crypto_pwhash_scryptsalsa208sha256(
+			spice->content,
+			spice->content_length,
+			(const char*)random_spice->content,
+			random_spice->content_length,
+			salt->content,
+			crypto_pwhash_scryptsalsa208sha256_OPSLIMIT_INTERACTIVE,
+			crypto_pwhash_scryptsalsa208sha256_MEMLIMIT_INTERACTIVE);
 	if (status != 0) {
-		buffer_clear(spice);
-		goto cleanup;
+		goto fail;
 	}
 
 	//now combine the spice with the OS provided random data.
 	status = buffer_xor(os_random, spice);
 	buffer_clear(spice);
 	if (status != 0) {
-		goto cleanup;
+		goto fail;
 	}
 
 	//copy the random data to the output
 	status = buffer_clone(random_output, os_random);
 	if (status != 0) {
-		goto cleanup;
+		goto fail;
 	}
 
+	goto cleanup;
+
+fail:
+	buffer_clear(random_output);
+	random_output->content_length = 0;
 cleanup:
 	buffer_destroy_from_heap(os_random);
 	buffer_destroy_from_heap(spice);
+
 	return status;
 }
