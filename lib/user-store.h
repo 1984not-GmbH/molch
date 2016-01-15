@@ -19,14 +19,13 @@
 #include <sodium.h>
 #include <time.h>
 
+#include "constants.h"
 #include "../buffer/buffer.h"
 #include "../mcJSON/mcJSON.h"
 #include "conversation-store.h"
 
 #ifndef LIB_USER_STORE_H
 #define LIB_USER_STORE_H
-
-#define PREKEY_AMOUNT 100
 
 //The user store stores a linked list of all users identified by their private keys
 //This linked list is supposed to be stored once in a global variable.

@@ -16,12 +16,11 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "constants.h"
 #include "ratchet.h"
 
 #ifndef LIB_CONVERSATION_H
 #define LIB_CONVERSATION_H
-
-#define CONVERSATION_ID_SIZE 32
 
 typedef struct conversation_t {
 	buffer_t id[1]; //unique id of a conversation, generated randomly
