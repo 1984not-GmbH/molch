@@ -498,7 +498,7 @@ user_store *user_store_json_import(const mcJSON * const json) {
 		}
 
 		//import the conversation store
-		if (conversation_store_json_import(node->conversations, conversations) != 0) {
+		if (conversation_store_json_import(conversations, node->conversations) != 0) {
 			sodium_free(node);
 			user_store_destroy(store);
 			return NULL;

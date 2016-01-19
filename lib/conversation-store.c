@@ -183,8 +183,8 @@ mcJSON *conversation_store_json_export(const conversation_store * const store, m
  * Deserialise a conversation store (import from JSON).
  */
 int conversation_store_json_import(
-		conversation_store * const store,
-		const mcJSON * const json) {
+		const mcJSON * const json,
+		conversation_store * const store) {
 	if ((json == NULL) || (json->type != mcJSON_Array) || (store == NULL)) {
 		return -1;
 	}

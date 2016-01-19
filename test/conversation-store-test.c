@@ -179,7 +179,7 @@ int main(void) {
 
 	//test JSON import
 	conversation_store *imported_store = malloc(sizeof(conversation_store));
-	status = conversation_store_json_import(imported_store, json);
+	status = conversation_store_json_import(json, imported_store);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to import from JSON.\n");
 		sodium_memzero(imported_store, sizeof(conversation_store));
