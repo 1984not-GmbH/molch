@@ -23,6 +23,7 @@
 #include <alloca.h>
 
 #include "../lib/conversation-store.h"
+#include "../lib/json.h"
 #include "utils.h"
 
 int test_add_conversation(conversation_store * const store) {
@@ -176,41 +177,34 @@ int main(void) {
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
+	buffer_destroy_from_heap(pool);
 
 	//test JSON import
 	conversation_store *imported_store = malloc(sizeof(conversation_store));
-	status = conversation_store_json_import(imported_store, json);
+	if (imported_store == NULL) {
+		fprintf(stderr, "ERROR: Failed to allocate memory.\n");
+		buffer_destroy_from_heap(output);
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+	JSON_INITIALIZE(imported_store, 100000, output, conversation_store_json_import, status);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to import from JSON.\n");
-		sodium_memzero(imported_store, sizeof(conversation_store));
 		free(imported_store);
-		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(output);
 		goto cleanup;
 	}
 	//export the imported to json again
-	pool->position = 0; //reset the mempool
-	mcJSON *imported_json = conversation_store_json_export(imported_store, pool);
-	if (imported_json == NULL) {
-		fprintf(stderr, "ERROR: Failed to export imported to JSON.\n");
-		conversation_store_clear(imported_store);
-		free(imported_store);
-		buffer_destroy_from_heap(pool);
-		buffer_destroy_from_heap(output);
-		goto cleanup;
-	}
-	buffer_t *imported_output = mcJSON_PrintBuffered(imported_json, 4000, true);
+	JSON_EXPORT(imported_output, 100000, 4000, true, imported_store, conversation_store_json_export);
 	if (imported_output == NULL) {
 		fprintf(stderr, "ERROR: Failed to print imported output.\n");
 		conversation_store_clear(imported_store);
 		free(imported_store);
-		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(output);
 		goto cleanup;
 	}
 	conversation_store_clear(imported_store);
 	free(imported_store);
-	buffer_destroy_from_heap(pool);
 	//compare both JSON strings
 	if (buffer_compare(imported_output, output) != 0) {
 		fprintf(stderr, "ERROR: Imported conversation store is incorrect.\n");

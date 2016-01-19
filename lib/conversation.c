@@ -109,8 +109,8 @@ mcJSON *conversation_json_export(const conversation_t * const conversation, memp
  * Deserialize a conversation (import from JSON)
  */
 int conversation_json_import(
-		conversation_t * const conversation,
-		const mcJSON * const json) {
+		const mcJSON * const json,
+		conversation_t * const conversation) {
 	if ((json == NULL) || (json->type != mcJSON_Object)) {
 		return -2;
 	}

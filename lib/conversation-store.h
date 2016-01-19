@@ -116,6 +116,6 @@ mcJSON *conversation_store_json_export(const conversation_store * const store, m
  * Deserialise a conversation store (import from JSON).
  */
 int conversation_store_json_import(
-		conversation_store * const store,
-		const mcJSON * const json) __attribute__((warn_unused_result));
+		const mcJSON * const json,
+		conversation_store * const store) __attribute__((warn_unused_result));
 #endif

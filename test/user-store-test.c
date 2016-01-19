@@ -22,6 +22,7 @@
 #include <assert.h>
 
 #include "../lib/user-store.h"
+#include "../lib/json.h"
 #include "utils.h"
 #include "common.h"
 
@@ -382,34 +383,35 @@ int main(void) {
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
+	buffer_destroy_from_heap(pool);
 
 	//test JSON import
-	user_store *imported_store = user_store_json_import(json);
+	user_store *imported_store;
+	JSON_IMPORT(imported_store, 100000, output, user_store_json_import);
 	if (imported_store == NULL) {
-		fprintf(stderr, "ERROR: Failed to import user store from JSON.\n");
-		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(output);
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
+
 	//export the imported to JSON again
-	pool->position = 0; //reset the mempool
-	mcJSON *imported_json = user_store_json_export(imported_store, pool);
-	buffer_t *imported_output = mcJSON_PrintBuffered(imported_json, 4000, true);
+	JSON_EXPORT(imported_output, 100000, 4000, true, imported_store, user_store_json_export);
+	user_store_destroy(imported_store);
+	if (imported_output == NULL) {
+		buffer_destroy_from_heap(output);
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
 	//compare with original JSON
 	if (buffer_compare(imported_output, output) != 0) {
 		fprintf(stderr, "ERROR: Imported user store is incorrect.\n");
 		status = EXIT_FAILURE;
 		buffer_destroy_from_heap(output);
 		buffer_destroy_from_heap(imported_output);
-		user_store_destroy(imported_store);
-		buffer_destroy_from_heap(pool);
 		goto cleanup;
 	}
 	buffer_destroy_from_heap(output);
 	buffer_destroy_from_heap(imported_output);
-	user_store_destroy(imported_store);
-	buffer_destroy_from_heap(pool);
 
 	//check the user list
 	list = user_store_list(store);

@@ -24,6 +24,7 @@
 
 #include "common.h"
 #include "../lib/conversation.h"
+#include "../lib/json.h"
 
 int main(void) {
 	int status = sodium_init();
@@ -172,9 +173,9 @@ int main(void) {
 		goto cleanup;
 	}
 	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
+	buffer_destroy_from_heap(pool);
 	if (output == NULL) {
 		fprintf(stderr, "ERROR: Failed to print JSON.\n");
-		buffer_destroy_from_heap(pool);
 		conversation_deinit(charlie_conversation);
 		free(charlie_conversation);
 		conversation_deinit(dora_conversation);
@@ -187,7 +188,6 @@ int main(void) {
 	conversation_t *imported_charlies_conversation = malloc(sizeof(conversation_t));
 	if (imported_charlies_conversation == NULL) {
 		fprintf(stderr, "ERROR: Memory allocation failed.\n");
-		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(output);
 		conversation_deinit(charlie_conversation);
 		free(charlie_conversation);
@@ -195,10 +195,9 @@ int main(void) {
 		free(dora_conversation);
 		goto cleanup;
 	}
-	status = conversation_json_import(imported_charlies_conversation, json);
+	JSON_INITIALIZE(imported_charlies_conversation, 10000, output, conversation_json_import, status);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to import Charlie's conversation form JSON.\n");
-		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(output);
 		conversation_deinit(charlie_conversation);
 		free(charlie_conversation);
@@ -208,13 +207,20 @@ int main(void) {
 		goto cleanup;
 	}
 	//export the imported to JSON again
-	pool->position = 0; //reset the mempool
-	mcJSON *imported_json = conversation_json_export(imported_charlies_conversation, pool);
-	buffer_t *imported_output = mcJSON_PrintBuffered(imported_json, 4000, true);
+	JSON_EXPORT(imported_output, 10000, 4000, true, imported_charlies_conversation, conversation_json_export);
+	if (imported_output == NULL) {
+		fprintf(stderr, "ERROR: Failed to export Charlie's imported conversation to JSON.\n");
+		buffer_destroy_from_heap(output);
+		conversation_deinit(charlie_conversation);
+		free(charlie_conversation);
+		conversation_deinit(dora_conversation);
+		free(dora_conversation);
+		free(imported_charlies_conversation);
+		goto cleanup;
+	}
 	//compare with original JSON
 	if (buffer_compare(imported_output, output) != 0) {
 		fprintf(stderr, "ERROR: Imported conversation is incorrect.\n");
-		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(imported_output);
 		buffer_destroy_from_heap(output);
 		conversation_deinit(charlie_conversation);
@@ -227,7 +233,6 @@ int main(void) {
 	}
 	buffer_destroy_from_heap(imported_output);
 	buffer_destroy_from_heap(output);
-	buffer_destroy_from_heap(pool);
 	conversation_deinit(imported_charlies_conversation);
 	free(imported_charlies_conversation);
 
