@@ -21,6 +21,7 @@
 #include <assert.h>
 
 #include "../lib/header-and-message-keystore.h"
+#include "../lib/json.h"
 #include "utils.h"
 #include "common.h"
 
@@ -84,17 +85,11 @@ int main(void) {
 
 	//JSON export
 	printf("Test JSON export!\n");
-	mempool_t *pool = buffer_create_on_heap(10000, 0);
-	mcJSON *json = header_and_message_keystore_json_export(&keystore, pool);
-	buffer_t *output = mcJSON_PrintBuffered(json, 500, true);
-	if ((json == NULL) || (output == NULL)) {
+	JSON_EXPORT(output, 10000, 500, true, &keystore, header_and_message_keystore_json_export);
+	if (output == NULL) {
 		fprintf(stderr, "ERROR: Failed to export to JSON.\n");
+		buffer_destroy_from_heap(output);
 		header_and_message_keystore_clear(&keystore);
-		if (output != NULL) {
-			buffer_destroy_from_heap(output);
-			header_and_message_keystore_clear(&keystore);
-		}
-		buffer_destroy_from_heap(pool);
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
@@ -102,31 +97,35 @@ int main(void) {
 
 	//JSON import
 	header_and_message_keystore imported_keystore;
-	printf("HERE!\n");
-	status = header_and_message_keystore_json_import(json, &imported_keystore);
+	JSON_INITIALIZE(&imported_keystore, 10000, output, header_and_message_keystore_json_import, status);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to import keystore from JSON. (%i)\n", status);
-		buffer_destroy_from_heap(pool);
+
 		buffer_destroy_from_heap(output);
 		goto cleanup;
 	}
 	//export the imported JSON to JSON again
-	pool->position = 0; //reset the mempool
-	mcJSON *imported_json = header_and_message_keystore_json_export(&imported_keystore, pool);
-	buffer_t *imported_output = mcJSON_PrintBuffered(imported_json, 500, true);
+	JSON_EXPORT(imported_output, 10000, 500, true, &imported_keystore, header_and_message_keystore_json_export);
+	if (imported_output == NULL) {
+		fprintf(stderr, "ERROR: Failed to import from exported JSON.\n");
+		buffer_destroy_from_heap(output);
+		header_and_message_keystore_clear(&keystore);
+		header_and_message_keystore_clear(&imported_keystore);
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
 	//compare with original JSON
 	if (buffer_compare(imported_output, output) != 0) {
 		fprintf(stderr, "ERROR: Imported user store is incorrect.\n");
-		buffer_destroy_from_heap(pool);
 		header_and_message_keystore_clear(&imported_keystore);
 		buffer_destroy_from_heap(output);
 		buffer_destroy_from_heap(imported_output);
+		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	printf("Successfully imported header and message keystore from JSON.\n");
 	buffer_destroy_from_heap(imported_output);
 	buffer_destroy_from_heap(output);
-	buffer_destroy_from_heap(pool);
 
 	//remove key from the head
 	printf("Remove head!\n");
