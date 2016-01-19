@@ -22,6 +22,7 @@
 #include <assert.h>
 
 #include "../lib/ratchet.h"
+#include "../lib/json.h"
 #include "utils.h"
 #include "common.h"
 
@@ -764,64 +765,50 @@ int main(void) {
 
 	//export Alice's ratchet to json
 	printf("Test JSON export!\n");
-	mempool_t *pool = buffer_create_on_heap(100000, 0);
-	mcJSON *json = ratchet_json_export(alice_state, pool);
-	if (json == NULL) {
+	JSON_EXPORT(output, 100000, 1000, true, alice_state, ratchet_json_export);
+	if (output == NULL) {
 		fprintf(stderr, "ERROR: Failed to export to JSON.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		buffer_destroy_from_heap(pool);
-		status = EXIT_FAILURE;
-		goto cleanup;
-	}
-	buffer_t *output = mcJSON_PrintBuffered(json, 1000, true);
-	if (output == NULL) {
-		fprintf(stderr, "ERROR: Failed to print JSON.\n");
-		ratchet_destroy(alice_state);
-		ratchet_destroy(bob_state);
-		buffer_destroy_from_heap(pool);
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	printf("%.*s\n", (int)output->content_length, (char*)output->content);
 
 	//test json import
-	ratchet_state *imported_alice_state = ratchet_json_import(json);
+	ratchet_state *imported_alice_state;
+	JSON_IMPORT(imported_alice_state, 100000, output, ratchet_json_import);
 	if (imported_alice_state == NULL) {
 		fprintf(stderr, "ERROR: Failed to import from JSON.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(output);
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
-	//exporte the imported to JSON again
-	pool->position = 0;
-	mcJSON *imported_json = ratchet_json_export(imported_alice_state, pool);
-	buffer_t *imported_output = mcJSON_PrintBuffered(imported_json, 1000, true);
+	//export the imported to JSON again
+	JSON_EXPORT(imported_output, 100000, 1000, true, imported_alice_state, ratchet_json_export);
 	if (imported_output == NULL) {
-		fprintf(stderr, "ERROR: Failed to print imported JSON.\n");
+		fprintf(stderr, "ERROR: Failed to export imported to JSON again.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		buffer_destroy_from_heap(pool);
+		ratchet_destroy(imported_alice_state);
 		buffer_destroy_from_heap(output);
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
+	ratchet_destroy(imported_alice_state);
 	//compare with original JSON
 	if (buffer_compare(imported_output, output) != 0) {
 		fprintf(stderr, "ERROR: Imported user store is incorrect.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		buffer_destroy_from_heap(pool);
 		buffer_destroy_from_heap(output);
 		buffer_destroy_from_heap(imported_output);
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	buffer_destroy_from_heap(imported_output);
-	buffer_destroy_from_heap(pool);
 	buffer_destroy_from_heap(output);
 
 
