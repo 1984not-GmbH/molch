@@ -36,4 +36,19 @@
 		}\
 	}
 
+//macro to import an object from a JSON buffer
+//NOTE: This only works on json_import functions that return the imported object
+#define JSON_IMPORT(object_name, pool_size, json_string, import_function)\
+	{\
+		object_name = NULL;\
+		mempool_t *pool = buffer_create_on_heap(pool_size, pool_size);\
+		if (pool != NULL) {\
+			mcJSON *json = mcJSON_ParseWithBuffer(json_string, pool);\
+			if (json != NULL) {\
+				object_name = import_function(json);\
+			}\
+			buffer_destroy_from_heap(pool);\
+		}\
+	}
+
 #endif
