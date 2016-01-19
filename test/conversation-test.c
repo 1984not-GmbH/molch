@@ -195,7 +195,7 @@ int main(void) {
 		free(dora_conversation);
 		goto cleanup;
 	}
-	status = conversation_json_import(imported_charlies_conversation, json);
+	status = conversation_json_import(json, imported_charlies_conversation);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to import Charlie's conversation form JSON.\n");
 		buffer_destroy_from_heap(pool);

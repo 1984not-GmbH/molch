@@ -204,7 +204,7 @@ int conversation_store_json_import(
 		}
 
 		//import the conversation
-		int status = conversation_json_import(node->conversation, child);
+		int status = conversation_json_import(child, node->conversation);
 		if (status != 0) {
 			free(node);
 			conversation_store_clear(store);

@@ -57,6 +57,6 @@ mcJSON *conversation_json_export(const conversation_t * const conversation, memp
  * Deserialize a conversation (import from JSON)
  */
 int conversation_json_import(
-		conversation_t * const conversation,
-		const mcJSON * const json) __attribute__((warn_unused_result));
+		const mcJSON * const json,
+		conversation_t * const conversation) __attribute__((warn_unused_result));
 #endif
