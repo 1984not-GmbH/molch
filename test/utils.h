@@ -21,4 +21,6 @@
 #ifndef TEST_UTILS_H
 #define TEST_UTILS_H
 void print_hex(const buffer_t * const data);
+
+void print_to_file(const buffer_t * const data, const char * const filename);
 #endif

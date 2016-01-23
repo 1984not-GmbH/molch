@@ -46,3 +46,14 @@ void print_hex(const buffer_t * const data) {
 	//cleanup
 	buffer_destroy_from_heap(hex);
 }
+
+void print_to_file(const buffer_t * const data, const char * const filename) {
+	FILE *file = fopen(filename, "w");
+	if (file == NULL) {
+		return;
+	}
+
+	fprintf(file, "%.*s", (int)data->content_length, (char*)data->content);
+
+	fclose(file);
+}
