@@ -263,7 +263,7 @@ int derive_initial_root_chain_and_header_keys(
 	//RK = KDF(master_key, 0x00)
 	status = derive_key(
 			root_key,
-			crypto_secretbox_KEYBYTES,
+			ROOT_KEY_SIZE,
 			master_key,
 			0);
 	if (status != 0) {
@@ -272,75 +272,24 @@ int derive_initial_root_chain_and_header_keys(
 
 	//derive chain keys and header keys
 	if (am_i_alice) {
-		//Alice: CKs=<none>, CKr=KDF
-		//CKs=<none>
-		buffer_clear(send_chain_key);
-		send_chain_key->content_length = CHAIN_KEY_SIZE;
-		//CKr = KDF(master_key, 0x01)
-		status = derive_key(
-				receive_chain_key,
-				CHAIN_KEY_SIZE,
-				master_key,
-				1);
-		if (status != 0) {
-			goto fail;
-		}
-
 		//HKs=<none>, HKr=KDF
 		//HKs=<none>
 		buffer_clear(send_header_key);
 		send_header_key->content_length = HEADER_KEY_SIZE;
-		//HKr = KDF(master_key, 0x02)
+		//HKr = KDF(master_key, 0x01)
 		status = derive_key(
 				receive_header_key,
 				HEADER_KEY_SIZE,
 				master_key,
-				2);
+				1);
 		if (status != 0) {
 			goto fail;
 		}
 
 		//NHKs, NHKr
-		//NHKs = KDF(master_key, 0x03)
+		//NHKs = KDF(master_key, 0x02)
 		status = derive_key(
 				next_send_header_key,
-				HEADER_KEY_SIZE,
-				master_key,
-				3);
-		if (status != 0) {
-			goto fail;
-		}
-		//NHKr = KDF(master_key, 0x04)
-		status = derive_key(
-				next_receive_header_key,
-				HEADER_KEY_SIZE,
-				master_key,
-				4);
-		if (status != 0) {
-			goto fail;
-		}
-	} else {
-		//Bob: CKs=KDF, CKr=<none>
-		//CKr = <none>
-		buffer_clear(receive_chain_key);
-		receive_chain_key->content_length = CHAIN_KEY_SIZE;
-		//CKs = KDF(master_key, 0x01)
-		status = derive_key(
-				send_chain_key,
-				CHAIN_KEY_SIZE,
-				master_key,
-				1);
-		if (status != 0) {
-			goto fail;
-		}
-
-		//HKs=HKDF, HKr=<none>
-		//HKr = <none>
-		buffer_clear(receive_header_key);
-		receive_header_key->content_length = HEADER_KEY_SIZE;
-		//HKs = KDF(master_key, 0x02)
-		status = derive_key(
-				send_header_key,
 				HEADER_KEY_SIZE,
 				master_key,
 				2);
@@ -348,7 +297,6 @@ int derive_initial_root_chain_and_header_keys(
 			goto fail;
 		}
 
-		//NHKr, NHKs
 		//NHKr = KDF(master_key, 0x03)
 		status = derive_key(
 				next_receive_header_key,
@@ -358,10 +306,64 @@ int derive_initial_root_chain_and_header_keys(
 		if (status != 0) {
 			goto fail;
 		}
-		//NHKs = KDF(master_key, 0x04)
+
+		//CKs=<none>, CKr=KDF
+		//CKs=<none>
+		buffer_clear(send_chain_key);
+		send_chain_key->content_length = CHAIN_KEY_SIZE;
+		//CKr = KDF(master_key, 0x04)
+		status = derive_key(
+				receive_chain_key,
+				CHAIN_KEY_SIZE,
+				master_key,
+				4);
+		if (status != 0) {
+			goto fail;
+		}
+
+	} else {
+		//HKs=HKDF, HKr=<none>
+		//HKr = <none>
+		buffer_clear(receive_header_key);
+		receive_header_key->content_length = HEADER_KEY_SIZE;
+		//HKs = KDF(master_key, 0x01)
+		status = derive_key(
+				send_header_key,
+				HEADER_KEY_SIZE,
+				master_key,
+				1);
+		if (status != 0) {
+			goto fail;
+		}
+
+		//NHKr, NHKs
+		//NHKr = KDF(master_key, 0x02)
+		status = derive_key(
+				next_receive_header_key,
+				HEADER_KEY_SIZE,
+				master_key,
+				2);
+		if (status != 0) {
+			goto fail;
+		}
+		//NHKs = KDF(master_key, 0x03)
 		status = derive_key(
 				next_send_header_key,
 				HEADER_KEY_SIZE,
+				master_key,
+				3);
+		if (status != 0) {
+			goto fail;
+		}
+
+		//CKs=KDF, CKr=<none>
+		//CKr = <none>
+		buffer_clear(receive_chain_key);
+		receive_chain_key->content_length = CHAIN_KEY_SIZE;
+		//CKs = KDF(master_key, 0x04)
+		status = derive_key(
+				send_chain_key,
+				CHAIN_KEY_SIZE,
 				master_key,
 				4);
 		if (status != 0) {
