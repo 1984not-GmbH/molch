@@ -3,4 +3,5 @@ static-analysis/
 .idea/
 *.orig
 address-sanitizer
+undefined-behavior-sanitizer
 *.swp
