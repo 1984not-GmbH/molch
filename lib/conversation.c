@@ -174,12 +174,6 @@ int conversation_start_send_conversation(
 
 	int status = 0;
 
-	//create buffers
-	buffer_t *send_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_t *send_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-	buffer_t *send_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
-	buffer_t *header = buffer_create_on_heap(PUBLIC_KEY_SIZE + 8, PUBLIC_KEY_SIZE + 8);
-
 	//initialize the conversation
 	status = conversation_init(
 			conversation,
@@ -193,53 +187,18 @@ int conversation_start_send_conversation(
 		goto cleanup;
 	}
 
-	//get keys for encrypting the packet
-	uint32_t send_message_number;
-	uint32_t previous_send_message_number;
-	status = ratchet_send(
-			conversation->ratchet,
-			send_header_key,
-			&send_message_number,
-			&previous_send_message_number,
-			send_ephemeral,
-			send_message_key);
-	if (status != 0) {
-		goto cleanup;
-	}
-
-	//create the header
-	status = header_construct(
-			header,
-			send_ephemeral,
-			send_message_number,
-			previous_send_message_number);
-	if (status != 0) {
-		goto cleanup;
-	}
-
-	//now encrypt the message with those keys
-	const size_t packet_length = header->content_length + 3 + HEADER_NONCE_SIZE + MESSAGE_NONCE_SIZE + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_MACBYTES + message->content_length + 255;
-	*packet = buffer_create_on_heap(packet_length, 0);
-	status = packet_encrypt(
-			*packet,
-			PREKEY_MESSAGE,
-			0, //current protocol version
-			0, //highest supported protocol version
-			header,
-			send_header_key,
+	status = conversation_send(
+			conversation,
 			message,
-			send_message_key);
+			packet);
 	if (status != 0) {
-		buffer_destroy_from_heap(*packet);
-		*packet = NULL;
 		goto cleanup;
 	}
 
 cleanup:
-	buffer_destroy_from_heap(send_header_key);
-	buffer_destroy_from_heap(send_message_key);
-	buffer_destroy_from_heap(send_ephemeral);
-	buffer_destroy_from_heap(header);
+	if (status != 0) {
+		conversation_deinit(conversation);
+	}
 
 	return status;
 }
@@ -385,6 +344,82 @@ cleanup:
 	buffer_destroy_from_heap(message_nonce);
 	buffer_destroy_from_heap(their_signed_public_ephemeral);
 	buffer_destroy_from_heap(message_key);
+
+	return status;
+}
+
+/*
+ * Send a message using an existing conversation.
+ */
+int conversation_send(
+		conversation_t * const conversation,
+		const buffer_t * const message,
+		buffer_t **packet //output, free after use!
+		) {
+	//check input
+	if ((conversation == NULL)
+			|| (message == NULL)
+			|| (packet == NULL)) {
+		return -1;
+	}
+
+	int status = 0;
+
+	*packet = NULL;
+
+	//create buffers
+	buffer_t *send_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_t *send_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	buffer_t *send_ephemeral_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
+	buffer_t *header = buffer_create_on_heap(PUBLIC_KEY_SIZE + 8, PUBLIC_KEY_SIZE + 8);
+
+	uint32_t send_message_number;
+	uint32_t previous_send_message_number;
+	status = ratchet_send(
+			conversation->ratchet,
+			send_header_key,
+			&send_message_number,
+			&previous_send_message_number,
+			send_ephemeral_key,
+			send_message_key);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+	//create the header
+	status = header_construct(
+			header,
+			send_ephemeral_key,
+			send_message_number,
+			previous_send_message_number);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+	const size_t packet_length = header->content_length + 3 + HEADER_NONCE_SIZE + MESSAGE_NONCE_SIZE + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_MACBYTES + message->content_length + 255;
+	*packet = buffer_create_on_heap(packet_length, 0);
+	status = packet_encrypt(
+			*packet,
+			NORMAL_MESSAGE,
+			0, //current protocol version
+			0, //highest supported protocol version
+			header,
+			send_header_key,
+			message,
+			send_message_key);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+cleanup:
+	if ((status != 0) && (*packet != NULL)) {
+		buffer_destroy_from_heap(*packet);
+		*packet = NULL;
+	}
+	buffer_destroy_from_heap(send_header_key);
+	buffer_destroy_from_heap(send_message_key);
+	buffer_destroy_from_heap(send_ephemeral_key);
+	buffer_destroy_from_heap(header);
 
 	return status;
 }

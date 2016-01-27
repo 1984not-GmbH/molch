@@ -30,6 +30,7 @@ set(tests diffie-hellman-test
           spiced-random-test
           molch-test
           conversation-test
+          conversation-packet-test
           list-test
           conversation-store-test)
 

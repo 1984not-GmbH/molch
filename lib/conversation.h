@@ -87,4 +87,13 @@ int conversation_start_receive_conversation(
 		const buffer_t * const receiver_private_identity,
 		const buffer_t * const receiver_public_ephemeral,
 		const buffer_t * const receiver_private_ephemeral) __attribute__((warn_unused_result));
+
+/*
+ * Send a message using an existing conversation.
+ */
+int conversation_send(
+		conversation_t * const conversation,
+		const buffer_t * const message,
+		buffer_t **packet //output, free after use!
+		) __attribute__((warn_unused_result));
 #endif
