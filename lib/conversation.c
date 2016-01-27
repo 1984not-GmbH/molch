@@ -16,7 +16,11 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "constants.h"
 #include "conversation.h"
+#include "molch.h"
+#include "packet.h"
+#include "header.h"
 
 /*
  * Create a new conversation struct and initialise the buffer pointer.
@@ -142,4 +146,100 @@ int conversation_json_import(
 fail:
 	conversation_deinit(conversation);
 	return -1;
+}
+
+/*
+ * Start a new conversation where we are the sender.
+ */
+int conversation_start_send_conversation(
+		conversation_t *const conversation, //conversation to initialize
+		const buffer_t *const message, //message we want to send to the receiver
+		buffer_t ** packet, //output, free after use!
+		const buffer_t * const sender_public_identity, //who is sending this message?
+		const buffer_t * const sender_private_identity,
+		const buffer_t * const sender_public_ephemeral,
+		const buffer_t * const sender_private_ephemeral,
+		const buffer_t * const receiver_public_identity,
+		const buffer_t * const receiver_public_ephemeral) {
+	//check many error conditions
+	if ((conversation == NULL)
+			|| (message == NULL)
+			|| (packet == NULL)
+			|| (receiver_public_identity == NULL) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (sender_public_identity == NULL) || (sender_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (sender_private_identity == NULL) || (sender_private_identity->content_length != PRIVATE_KEY_SIZE)
+			|| (receiver_public_ephemeral == NULL) || (receiver_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
+		return -1;
+	}
+
+	int status = 0;
+
+	//create buffers
+	buffer_t *send_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_t *send_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	buffer_t *send_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
+	buffer_t *header = buffer_create_on_heap(PUBLIC_KEY_SIZE + 8, PUBLIC_KEY_SIZE + 8);
+
+	//initialize the conversation
+	status = conversation_init(
+			conversation,
+			sender_private_identity,
+			sender_public_identity,
+			receiver_public_identity,
+			sender_private_ephemeral,
+			sender_public_ephemeral,
+			receiver_public_ephemeral);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+	//get keys for encrypting the packet
+	uint32_t send_message_number;
+	uint32_t previous_send_message_number;
+	status = ratchet_send(
+			conversation->ratchet,
+			send_header_key,
+			&send_message_number,
+			&previous_send_message_number,
+			send_ephemeral,
+			send_message_key);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+	//create the header
+	status = header_construct(
+			header,
+			send_ephemeral,
+			send_message_number,
+			previous_send_message_number);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+	//now encrypt the message with those keys
+	const size_t packet_length = header->content_length + 3 + HEADER_NONCE_SIZE + MESSAGE_NONCE_SIZE + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_MACBYTES + message->content_length + 255;
+	*packet = buffer_create_on_heap(packet_length, 0);
+	status = packet_encrypt(
+			*packet,
+			PREKEY_MESSAGE,
+			0, //current protocol version
+			0, //highest supported protocol version
+			header,
+			send_header_key,
+			message,
+			send_message_key);
+	if (status != 0) {
+		buffer_destroy_from_heap(*packet);
+		*packet = NULL;
+		goto cleanup;
+	}
+
+cleanup:
+	buffer_destroy_from_heap(send_header_key);
+	buffer_destroy_from_heap(send_message_key);
+	buffer_destroy_from_heap(send_ephemeral);
+	buffer_destroy_from_heap(header);
+
+	return status;
 }

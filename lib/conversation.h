@@ -59,4 +59,18 @@ mcJSON *conversation_json_export(const conversation_t * const conversation, memp
 int conversation_json_import(
 		const mcJSON * const json,
 		conversation_t * const conversation) __attribute__((warn_unused_result));
+
+/*
+ * Start a new conversation where we are the sender.
+ */
+int conversation_start_send_conversation(
+		conversation_t *const conversation, //conversation to initialize
+		const buffer_t *const message, //message we want to send to the receiver
+		buffer_t ** packet, //output, free after use!
+		const buffer_t * const sender_public_identity, //who is sending this message?
+		const buffer_t * const sender_private_identity,
+		const buffer_t * const sender_public_ephemeral,
+		const buffer_t * const sender_private_ephemeral,
+		const buffer_t * const receiver_public_identity,
+		const buffer_t * const receiver_public_ephemeral) __attribute__((warn_unused_result));
 #endif
