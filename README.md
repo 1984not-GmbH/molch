@@ -14,8 +14,7 @@ how to get the code
 After cloning the repository, the git submodules have to be initialised and updated:
 ```
 $ git clone https://github.com/FSMaxB/molch
-$ git submodule init
-$ git submodule update
+$ git submodule update --init --recursive
 ```
 
 You might also have to run `git submodule update` when changing branches or after pulling in new changes.
