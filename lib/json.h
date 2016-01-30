@@ -26,13 +26,13 @@
 #define JSON_EXPORT(buffer_name, pool_size, printbuffer_size, format, object, export_function)\
 	buffer_t * buffer_name = NULL;\
 	{\
-		mempool_t *pool = buffer_create_on_heap(pool_size, pool_size);\
-		if (pool != NULL) {\
-			mcJSON *json = export_function(object, pool);\
-			if (json != NULL) {\
-				buffer_name = mcJSON_PrintBuffered(json, printbuffer_size, format);\
+		mempool_t *__pool = buffer_create_on_heap(pool_size, pool_size);\
+		if (__pool != NULL) {\
+			mcJSON *__json = export_function(object, __pool);\
+			if (__json != NULL) {\
+				buffer_name = mcJSON_PrintBuffered(__json, printbuffer_size, format);\
 			}\
-			buffer_destroy_from_heap(pool);\
+			buffer_destroy_from_heap(__pool);\
 		}\
 	}
 
@@ -41,13 +41,13 @@
 #define JSON_IMPORT(object_name, pool_size, json_string, import_function)\
 	{\
 		object_name = NULL;\
-		mempool_t *pool = buffer_create_on_heap(pool_size, pool_size);\
-		if (pool != NULL) {\
-			mcJSON *json = mcJSON_ParseWithBuffer(json_string, pool);\
-			if (json != NULL) {\
-				object_name = import_function(json);\
+		mempool_t *__pool = buffer_create_on_heap(pool_size, pool_size);\
+		if (__pool != NULL) {\
+			mcJSON *__json = mcJSON_ParseWithBuffer(json_string, __pool);\
+			if (__json != NULL) {\
+				object_name = import_function(__json);\
 			}\
-			buffer_destroy_from_heap(pool);\
+			buffer_destroy_from_heap(__pool);\
 		}\
 	}
 
@@ -56,13 +56,13 @@
 #define JSON_INITIALIZE(object_pointer, pool_size, json_string, import_function, status_value)\
 	{\
 		status = -1;\
-		mempool_t *pool = buffer_create_on_heap(pool_size, pool_size);\
-		if (pool != NULL) {\
-			mcJSON *json = mcJSON_ParseWithBuffer(json_string, pool);\
-			if (json != NULL) {\
-				status = import_function(json, object_pointer);\
+		mempool_t *__pool = buffer_create_on_heap(pool_size, pool_size);\
+		if (__pool != NULL) {\
+			mcJSON *__json = mcJSON_ParseWithBuffer(json_string, __pool);\
+			if (__json != NULL) {\
+				status = import_function(__json, object_pointer);\
 			}\
-			buffer_destroy_from_heap(pool);\
+			buffer_destroy_from_heap(__pool);\
 		}\
 	}
 
