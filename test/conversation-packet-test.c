@@ -48,6 +48,14 @@ int main(void) {
 	buffer_t *packet = NULL;
 	buffer_t *received_message = NULL;
 
+	//packets
+	buffer_t *alice_send_packet2 = NULL;
+	buffer_t *bob_send_packet2 = NULL;
+
+	//receive messages
+	buffer_t *alice_receive_message2 = NULL;
+	buffer_t *bob_receive_message2 = NULL;
+
 	//create keys
 	//alice
 	buffer_create_from_string(alice_string, "Alice");
@@ -113,7 +121,6 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to send message.\n");
 		goto cleanup;
 	}
-	conversation_deinit(&alice_send_conversation);
 	printf("Sent message: %.*s\n", (int)send_message->content_length, (const char*)send_message->content);
 	printf("Packet:\n");
 	print_hex(packet);
@@ -131,20 +138,67 @@ int main(void) {
 			bob_private_identity,
 			bob_public_ephemeral,
 			bob_private_ephemeral);
-	conversation_deinit(&bob_receive_conversation);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to decrypt received message. (%i)\n", status);
+		conversation_deinit(&alice_send_conversation);
+		conversation_deinit(&bob_receive_conversation);
 		goto cleanup;
 	}
 
 	status = buffer_compare(send_message, received_message);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Incorrect message decrypted. (%i)\n", status);
+		conversation_deinit(&alice_send_conversation);
+		conversation_deinit(&bob_receive_conversation);
 		goto cleanup;
 	}
 	printf("Decrypted message matches with the original message.\n");
 
+	//send and receive some more messages
+	//first one
+	buffer_create_from_string(alice_send_message2, "How are you Bob?");
+	status = conversation_send(
+			&alice_send_conversation,
+			alice_send_message2,
+			&alice_send_packet2);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to send Alice' second message!\n");
+		conversation_deinit(&alice_send_conversation);
+		conversation_deinit(&bob_receive_conversation);
+		goto cleanup;
+	}
+	printf("Sent message: %.*s\n", (int)alice_send_message2->content_length, (const char*)alice_send_message2->content);
+	printf("Packet:\n");
+	print_hex(alice_send_packet2);
+	putchar('\n');
 
+	//bob receives the message
+	status = conversation_receive(
+			&bob_receive_conversation,
+			alice_send_packet2,
+			&bob_receive_message2);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Second message from Alice failed to decrypt! (%i)\n", status);
+		conversation_deinit(&alice_send_conversation);
+		conversation_deinit(&bob_receive_conversation);
+		goto cleanup;
+	}
+
+	//now check if the received message was correctly decrypted
+	status = buffer_compare(bob_receive_message2, alice_send_message2);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Received message doesn't match.\n");
+		conversation_deinit(&alice_send_conversation);
+		conversation_deinit(&bob_receive_conversation);
+		goto cleanup;
+	}
+	printf("Alice' second message has been sent correctly!\n");
+
+	conversation_deinit(&alice_send_conversation);
+	conversation_deinit(&bob_receive_conversation);
+
+
+	//---------------------------------------------------------------------------------------------
 	//now test it the other way round (because Axolotl is assymetric in this regard)
 	//Bob sends the message to Alice.
 	conversation_t bob_send_conversation;
@@ -165,7 +219,6 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to send message. (%i)\n", status);
 		goto cleanup;
 	}
-	conversation_deinit(&bob_send_conversation);
 	printf("Sent message: %.*s\n", (int)send_message->content_length, (const char*)send_message->content);
 	printf("Packet:\n");
 	print_hex(packet);
@@ -185,18 +238,64 @@ int main(void) {
 			alice_private_identity,
 			alice_public_ephemeral,
 			alice_private_ephemeral);
-	conversation_deinit(&alice_receive_conversation);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to decrypt received message. (%i)\n", status);
+		conversation_deinit(&bob_send_conversation);
+		conversation_deinit(&alice_receive_conversation);
 		goto cleanup;
 	}
 
 	status = buffer_compare(send_message, received_message);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Incorrect message decrypted. (%i)\n", status);
+		conversation_deinit(&bob_send_conversation);
+		conversation_deinit(&alice_receive_conversation);
 		goto cleanup;
 	}
 	printf("Decrypted message matched with the original message.\n");
+
+	//send and receive some more messages
+	//first one
+	buffer_create_from_string(bob_send_message2, "How are you Alice?");
+	status = conversation_send(
+			&bob_send_conversation,
+			bob_send_message2,
+			&bob_send_packet2);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to send Bobs second message!\n");
+		conversation_deinit(&bob_send_conversation);
+		conversation_deinit(&alice_receive_conversation);
+		goto cleanup;
+	}
+	printf("Sent message: %.*s\n", (int)bob_send_message2->content_length, (const char*)bob_send_message2->content);
+	printf("Packet:\n");
+	print_hex(bob_send_packet2);
+	putchar('\n');
+
+	//alice receives the message
+	status = conversation_receive(
+			&alice_receive_conversation,
+			bob_send_packet2,
+			&alice_receive_message2);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Second message from Bob failed to decrypt! (%i)\n", status);
+		conversation_deinit(&bob_send_conversation);
+		conversation_deinit(&alice_receive_conversation);
+		goto cleanup;
+	}
+
+	//now check if the received message was correctly decrypted
+	status = buffer_compare(alice_receive_message2, bob_send_message2);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Received message doesn't match.\n");
+		conversation_deinit(&bob_send_conversation);
+		conversation_deinit(&alice_receive_conversation);
+		goto cleanup;
+	}
+	printf("Bobs second message has been sent correctly!.\n");
+
+	conversation_deinit(&bob_send_conversation);
+	conversation_deinit(&alice_receive_conversation);
 
 cleanup:
 	if (packet != NULL) {
@@ -204,6 +303,18 @@ cleanup:
 	}
 	if (received_message != NULL) {
 		buffer_destroy_from_heap(received_message);
+	}
+	if (alice_send_packet2 != NULL) {
+		buffer_destroy_from_heap(alice_send_packet2);
+	}
+	if (bob_receive_message2 != NULL) {
+		buffer_destroy_from_heap(bob_receive_message2);
+	}
+	if (bob_send_packet2 != NULL) {
+		buffer_destroy_from_heap(bob_send_packet2);
+	}
+	if (alice_receive_message2 != NULL) {
+		buffer_destroy_from_heap(alice_receive_message2);
 	}
 	buffer_destroy_from_heap(alice_private_identity);
 	buffer_destroy_from_heap(alice_public_identity);
