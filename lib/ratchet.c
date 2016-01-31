@@ -207,10 +207,10 @@ int ratchet_next_send_keys(
 			buffer_destroy_from_heap(previous_root_key);
 			return status;
 		}
-		status = derive_root_chain_and_header_keys(
+		status = derive_root_next_header_and_chain_keys(
 				state->root_key,
-				state->send_chain_key,
 				state->next_send_header_key,
+				state->send_chain_key,
 				state->our_private_ephemeral,
 				state->our_public_ephemeral,
 				state->their_public_ephemeral,
@@ -543,10 +543,10 @@ int ratchet_receive(
 
 		//derive purported root and chain keys
 		//first: input key for kdf (root and chain key derivation)
-		status = derive_root_chain_and_header_keys(
+		status = derive_root_next_header_and_chain_keys(
 				state->purported_root_key,
-				state->purported_receive_chain_key,
 				state->purported_next_receive_header_key,
+				state->purported_receive_chain_key,
 				state->our_private_ephemeral,
 				state->our_public_ephemeral,
 				their_purported_public_ephemeral,
