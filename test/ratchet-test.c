@@ -462,6 +462,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Alice's first send key and Bob's first receive key aren't the same.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
+		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	buffer_clear(alice_send_message_key1);
@@ -473,6 +474,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Alice's second send key and Bob's second receive key aren't the same.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
+		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	buffer_clear(alice_send_message_key2);
@@ -484,6 +486,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Alice's third send key and Bob's third receive key aren't the same.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
+		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	buffer_clear(alice_send_message_key3);
@@ -725,6 +728,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Bob's second send header key and Alice's receive header key aren't the same.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
+		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	printf("Bob's second send header key and Alice's receive header keys match.\n");
@@ -736,6 +740,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Bob's first send key and Alice's first receive key aren't the same.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
+		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	buffer_clear(bob_send_message_key1);
@@ -747,6 +752,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Bob's second send key and Alice's second receive key aren't the same.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
+		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	buffer_clear(bob_send_message_key2);
@@ -758,6 +764,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Bob's third send key and Alice's third receive key aren't the same.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
+		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	buffer_clear(bob_send_message_key3);
