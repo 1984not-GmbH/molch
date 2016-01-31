@@ -86,7 +86,7 @@ typedef struct ratchet_state {
 	ratchet_header_decryptability header_decryptable; //could the last received header be decrypted?
 	//list of previous message and header keys
 	header_and_message_keystore skipped_header_and_message_keys[1]; //skipped_HK_MK (list containing message keys for messages that weren't received)
-	header_and_message_keystore purported_header_and_message_keys[1]; //this represents the staging area specified in the axolotl ratchet
+	header_and_message_keystore staged_header_and_message_keys[1]; //this represents the staging area specified in the axolotl ratchet
 } ratchet_state;
 
 /*

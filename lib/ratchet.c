@@ -69,7 +69,7 @@ ratchet_state *create_ratchet_state() {
 
 	//initialise message keystore for skipped messages
 	header_and_message_keystore_init(state->skipped_header_and_message_keys);
-	header_and_message_keystore_init(state->purported_header_and_message_keys);
+	header_and_message_keystore_init(state->staged_header_and_message_keys);
 
 	return state;
 }
@@ -440,7 +440,7 @@ int stage_skipped_header_and_message_keys(
 		//add message key to list of purported message keys
 		if (pos < purported_message_number) { //only stage previous message keys
 			status = header_and_message_keystore_add(
-					state->purported_header_and_message_keys,
+					state->staged_header_and_message_keys,
 					message_key_buffer,
 					state->receive_header_key);
 			if (status != 0) {
@@ -490,17 +490,17 @@ int commit_skipped_header_and_message_keys(ratchet_state *state) {
 	int status;
 	//as long as the list of purported message keys isn't empty,
 	//add them to the list of skipped message keys
-	while (state->purported_header_and_message_keys->length != 0) {
+	while (state->staged_header_and_message_keys->length != 0) {
 		status = header_and_message_keystore_add(
 				state->skipped_header_and_message_keys,
-				state->purported_header_and_message_keys->head->message_key,
-				state->purported_header_and_message_keys->head->header_key);
+				state->staged_header_and_message_keys->head->message_key,
+				state->staged_header_and_message_keys->head->header_key);
 		if (status != 0) {
 			return status;
 		}
 		header_and_message_keystore_remove(
-				state->purported_header_and_message_keys,
-				state->purported_header_and_message_keys->head);
+				state->staged_header_and_message_keys,
+				state->staged_header_and_message_keys->head);
 	}
 	return 0;
 }
@@ -666,14 +666,14 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
 		//if HKr != <none> and Dec(HKr, header)
 		if (!valid) { //message couldn't be decrypted
 			//clear purported message and header keys
-			header_and_message_keystore_clear(state->purported_header_and_message_keys);
+			header_and_message_keystore_clear(state->staged_header_and_message_keys);
 			return 0; //TODO: Should this really be 0?
 		}
 	} else { //new message chain
 		if (state->ratchet_flag || (header_decryptable != NEXT_DECRYPTABLE) || !valid) {
 			//if ratchet_flag or not Dec(NHKr, header)
 			//clear purported message and header keys
-			header_and_message_keystore_clear(state->purported_header_and_message_keys);
+			header_and_message_keystore_clear(state->staged_header_and_message_keys);
 			return 0; //TODO: Should this really be 0?
 		}
 
@@ -732,7 +732,7 @@ int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
 void ratchet_destroy(ratchet_state *state) {
 	//empty message keystores
 	header_and_message_keystore_clear(state->skipped_header_and_message_keys);
-	header_and_message_keystore_clear(state->purported_header_and_message_keys);
+	header_and_message_keystore_clear(state->staged_header_and_message_keys);
 
 	sodium_free(state); //this also overwrites all the keys with zeroes
 }
@@ -884,15 +884,15 @@ mcJSON *ratchet_json_export(const ratchet_state * const state, mempool_t * const
 
 	//export header and message keystores
 	mcJSON *skipped_header_and_message_keys = header_and_message_keystore_json_export((header_and_message_keystore * const) &(state->skipped_header_and_message_keys), pool);
-	mcJSON *purported_header_and_message_keys = header_and_message_keystore_json_export((header_and_message_keystore * const ) &(state->purported_header_and_message_keys), pool);
+	mcJSON *staged_header_and_message_keys = header_and_message_keystore_json_export((header_and_message_keystore * const ) &(state->staged_header_and_message_keys), pool);
 	mcJSON *keystores = mcJSON_CreateObject(pool);
-	if ((skipped_header_and_message_keys == NULL) || (purported_header_and_message_keys == NULL) || (keystores == NULL)) {
+	if ((skipped_header_and_message_keys == NULL) || (staged_header_and_message_keys == NULL) || (keystores == NULL)) {
 		return NULL;
 	}
 	buffer_create_from_string(skipped_header_and_message_keys_string, "skipped_header_and_message_keys");
 	mcJSON_AddItemToObject(keystores, skipped_header_and_message_keys_string, skipped_header_and_message_keys, pool);
-	buffer_create_from_string(purported_header_and_message_keys_string, "purported_header_and_message_keys");
-	mcJSON_AddItemToObject(keystores, purported_header_and_message_keys_string, purported_header_and_message_keys, pool);
+	buffer_create_from_string(staged_header_and_message_keys_string, "staged_header_and_message_keys");
+	mcJSON_AddItemToObject(keystores, staged_header_and_message_keys_string, staged_header_and_message_keys, pool);
 	buffer_create_from_string(header_and_message_keystores_string, "header_and_message_keystores");
 	mcJSON_AddItemToObject(json, header_and_message_keystores_string, keystores, pool);
 
@@ -1152,9 +1152,9 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	}
 	buffer_create_from_string(skipped_header_and_message_keys_string, "skipped_header_and_message_keys");
 	mcJSON *skipped_header_and_message_keys = mcJSON_GetObjectItem(keystores, skipped_header_and_message_keys_string);
-	buffer_create_from_string(purported_header_and_message_keys_string, "purported_header_and_message_keys");
-	mcJSON *purported_header_and_message_keys = mcJSON_GetObjectItem(keystores, purported_header_and_message_keys_string);
-	if ((skipped_header_and_message_keys == NULL) || (purported_header_and_message_keys == NULL)) {
+	buffer_create_from_string(staged_header_and_message_keys_string, "staged_header_and_message_keys");
+	mcJSON *staged_header_and_message_keys = mcJSON_GetObjectItem(keystores, staged_header_and_message_keys_string);
+	if ((skipped_header_and_message_keys == NULL) || (staged_header_and_message_keys == NULL)) {
 		goto fail;
 	}
 
@@ -1162,7 +1162,7 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	if (header_and_message_keystore_json_import(skipped_header_and_message_keys, state->skipped_header_and_message_keys) != 0) {
 		goto fail;
 	}
-	if (header_and_message_keystore_json_import(purported_header_and_message_keys, state->purported_header_and_message_keys) != 0) {
+	if (header_and_message_keystore_json_import(staged_header_and_message_keys, state->staged_header_and_message_keys) != 0) {
 		goto fail;
 	}
 

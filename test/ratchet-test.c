@@ -721,7 +721,7 @@ int main(void) {
 	print_hex(alice_receive_message_key3);
 	putchar('\n');
 
-	assert(alice_state->purported_header_and_message_keys->length == 1);
+	assert(alice_state->staged_header_and_message_keys->length == 1);
 
 	//confirm validity of the message key
 	status = ratchet_set_last_message_authenticity(alice_state, true);
@@ -732,7 +732,7 @@ int main(void) {
 		goto cleanup;
 	}
 
-	assert(alice_state->purported_header_and_message_keys->length == 0);
+	assert(alice_state->staged_header_and_message_keys->length == 0);
 	assert(alice_state->skipped_header_and_message_keys->length == 1);
 
 	//get the second receive message key from the message and header keystore
