@@ -179,94 +179,141 @@ ratchet_state* ratchet_create(
 }
 
 /*
- * Create message and header keys to encrypt the next sent message with.
+ * Get keys and metadata to send the next message.
  */
-int ratchet_next_send_keys(
-		buffer_t * const next_message_key,
-		buffer_t * const next_header_key,
-		ratchet_state *state) {
+int ratchet_send(
+		ratchet_state *ratchet,
+		buffer_t * const send_header_key, //HEADER_KEY_SIZE, HKs
+		uint32_t * const send_message_number, //Ns
+		uint32_t * const previous_send_message_number, //PNs
+		buffer_t * const our_public_ephemeral, //PUBLIC_KEY_SIZE, DHRs
+		buffer_t * const message_key) { //MESSAGE_KEY_SIZE, MK
 	int status;
-	if (state->ratchet_flag) {
-		//generate new ephemeral key
-		status = crypto_box_keypair(state->our_public_ephemeral->content, state->our_private_ephemeral->content);
+
+	//create buffers
+	buffer_t *root_key_backup = buffer_create_on_heap(ROOT_KEY_SIZE, 0);
+	buffer_t *chain_key_backup = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+
+	//check input
+	if ((ratchet == NULL)
+			|| (send_header_key == NULL) || (send_header_key->buffer_length < HEADER_KEY_SIZE)
+			|| (send_message_number == NULL)
+			|| (previous_send_message_number == NULL)
+			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)
+			|| (message_key == NULL) || (message_key->buffer_length < MESSAGE_KEY_SIZE)) {
+		status = -6;
+		goto cleanup;
+	}
+
+	if (ratchet->ratchet_flag) {
+		//DHRs = generateECDH()
+		status = crypto_box_keypair(
+				ratchet->our_public_ephemeral->content,
+				ratchet->our_private_ephemeral->content);
+		ratchet->our_public_ephemeral->content_length = PUBLIC_KEY_SIZE;
+		ratchet->our_private_ephemeral->content_length = PRIVATE_KEY_SIZE;
 		if (status != 0) {
-			return status;
+			goto cleanup;
 		}
 
-		//HKs = NHKs (shift header keys)
-		status = buffer_clone(state->send_header_key, state->next_send_header_key);
+		//HKs = NHKs
+		status = buffer_clone(ratchet->send_header_key, ratchet->next_send_header_key);
 		if (status != 0) {
-			return status;
+			goto cleanup;
 		}
 
-		//derive next root key and send chain key
-		//RK, CKs, NHKs = KDF(DH(DHs, DHr))
-		buffer_t *previous_root_key = buffer_create_on_heap(ROOT_KEY_SIZE, ROOT_KEY_SIZE);
-		status = buffer_clone(previous_root_key, state->root_key);
+		//clone the root key for it to not be overwritten in the next step
+		status = buffer_clone(root_key_backup, ratchet->root_key);
 		if (status != 0) {
-			buffer_destroy_from_heap(previous_root_key);
-			return status;
+			goto cleanup;
 		}
+
+		//RK, NHKs, CKs = KDF(HMAC-HASH(RK, DH(DHRs, DHRr)))
 		status = derive_root_next_header_and_chain_keys(
-				state->root_key,
-				state->next_send_header_key,
-				state->send_chain_key,
-				state->our_private_ephemeral,
-				state->our_public_ephemeral,
-				state->their_public_ephemeral,
-				previous_root_key,
-				state->am_i_alice);
-		buffer_destroy_from_heap(previous_root_key);
+				ratchet->root_key,
+				ratchet->next_send_header_key,
+				ratchet->send_chain_key,
+				ratchet->our_private_ephemeral,
+				ratchet->our_public_ephemeral,
+				ratchet->their_public_ephemeral,
+				root_key_backup,
+				ratchet->am_i_alice);
 		if (status != 0) {
-			return status;
+			goto cleanup;
 		}
 
-		state->previous_message_number = state->send_message_number;
-		state->send_message_number = 0;
-		state->ratchet_flag = false;
+		//PNs = Ns
+		ratchet->previous_message_number = ratchet->send_message_number;
+
+		//Ns = 0
+		ratchet->send_message_number = 0;
+
+		//ratchet_flag = False
+		ratchet->ratchet_flag = false;
 	}
 
-	//MK = HMAC-HASH(CKs, 0x00)
-	status = derive_message_key(
-			next_message_key,
-			state->send_chain_key);
+	//MK = HMAC-HASH(CKs, "0")
+	status = derive_message_key(message_key, ratchet->send_chain_key);
+	if (status != 0)  {
+		goto cleanup;
+	}
+
+	//copy the other data to the output
+	//(corresponds to
+	//  msg = Enc(HKs, Ns || PNs || DHRs) || Enc(MK, plaintext)
+	//  in the axolotl specification)
+	//HKs:
+	status = buffer_clone(send_header_key, ratchet->send_header_key);
 	if (status != 0) {
-		buffer_clear(next_message_key);
-		return status;
+		goto cleanup;
 	}
-
-	//copy the header key
-	status = buffer_clone(next_header_key, state->send_header_key);
+	//Ns
+	*send_message_number = ratchet->send_message_number;
+	//PNs
+	*previous_send_message_number = ratchet->previous_message_number;
+	//DHRs
+	status = buffer_clone(our_public_ephemeral, ratchet->our_public_ephemeral);
 	if (status != 0) {
-		buffer_clear(next_message_key);
-		buffer_clear(next_header_key);
-		return status;
+		goto cleanup;
 	}
 
-	state->send_message_number++;
+	//Ns = Ns + 1
+	ratchet->send_message_number++;
 
-	//derive next chain key
-	//CKs = HMAC-HASH(CKs, 0x01)
-	buffer_t *old_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-	status = buffer_clone(old_chain_key, state->send_chain_key);
+	//clone the chain key for it to not be overwritten in the next step
+	status = buffer_clone(chain_key_backup, ratchet->send_chain_key);
 	if (status != 0) {
-		buffer_destroy_from_heap(old_chain_key);
-		buffer_clear(next_header_key);
-		buffer_clear(next_message_key);
-		return status;
+		goto cleanup;
 	}
+
+	//CKs = HMAC-HASH(CKs, "1")
 	status = derive_chain_key(
-			state->send_chain_key,
-			old_chain_key);
+			ratchet->send_chain_key,
+			chain_key_backup);
 	if (status != 0) {
-		buffer_destroy_from_heap(old_chain_key);
-		buffer_clear(next_message_key);
-		buffer_clear(next_header_key);
-		return status;
+		goto cleanup;
 	}
-	buffer_destroy_from_heap(old_chain_key);
 
-	return 0;
+cleanup:
+	if (status != 0) {
+		if (send_header_key != NULL) {
+			buffer_clear(send_header_key);
+			send_header_key->content_length = 0;
+		}
+		if (our_public_ephemeral != NULL) {
+			buffer_clear(our_public_ephemeral);
+			our_public_ephemeral->content_length = 0;
+		}
+		if (message_key != NULL) {
+			buffer_clear(message_key);
+			message_key->content_length = 0;
+		}
+	}
+
+	buffer_destroy_from_heap(root_key_backup);
+	buffer_destroy_from_heap(chain_key_backup);
+
+	return status;
 }
 
 /*

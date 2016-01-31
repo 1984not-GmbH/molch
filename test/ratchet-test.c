@@ -48,10 +48,13 @@ int main(void) {
 	//alice send message and header keys
 	buffer_t *alice_send_message_key1 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *alice_send_header_key1 = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *alice_send_ephemeral1 = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
 	buffer_t *alice_send_message_key2 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *alice_send_header_key2 = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *alice_send_ephemeral2 = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
 	buffer_t *alice_send_message_key3 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *alice_send_header_key3 = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *alice_send_ephemeral3 = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
 	//bobs receive keys
 	buffer_t *bob_current_receive_header_key = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	buffer_t *bob_next_receive_header_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
@@ -61,10 +64,13 @@ int main(void) {
 	//bobs śend message and header keys
 	buffer_t *bob_send_message_key1 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *bob_send_header_key1 = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *bob_send_ephemeral1 = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
 	buffer_t *bob_send_message_key2 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *bob_send_header_key2 = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *bob_send_ephemeral2 = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
 	buffer_t *bob_send_message_key3 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *bob_send_header_key3 = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *bob_send_ephemeral3 = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
 	//alice receive keys
 	buffer_t *alice_current_receive_header_key = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	buffer_t *alice_next_receive_header_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
@@ -186,10 +192,15 @@ int main(void) {
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
 	//first, alice sends two messages
-	status = ratchet_next_send_keys(
-			alice_send_message_key1,
+	uint32_t alice_send_message_number1;
+	uint32_t alice_previous_message_number1;
+	status = ratchet_send(
+			alice_state,
 			alice_send_header_key1,
-			alice_state);
+			&alice_send_message_number1,
+			&alice_previous_message_number1,
+			alice_send_ephemeral1,
+			alice_send_message_key1);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Alice's first send message key. (%i)\n", status);
 		ratchet_destroy(alice_state);
@@ -204,10 +215,15 @@ int main(void) {
 	putchar('\n');
 
 	//second message key
-	status = ratchet_next_send_keys(
-			alice_send_message_key2,
+	uint32_t alice_send_message_number2;
+	uint32_t alice_previous_message_number2;
+	status = ratchet_send(
+			alice_state,
 			alice_send_header_key2,
-			alice_state);
+			&alice_send_message_number2,
+			&alice_previous_message_number2,
+			alice_send_ephemeral2,
+			alice_send_message_key2);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Alice's second send message key. (%i)\n", status);
 		ratchet_destroy(alice_state);
@@ -222,10 +238,15 @@ int main(void) {
 	putchar('\n');
 
 	//third message_key
-	status = ratchet_next_send_keys(
-			alice_send_message_key3,
+	uint32_t alice_send_message_number3;
+	uint32_t alice_previous_message_number3;
+	status = ratchet_send(
+			alice_state,
 			alice_send_header_key3,
-			alice_state);
+			&alice_send_message_number3,
+			&alice_previous_message_number3,
+			alice_send_ephemeral3,
+			alice_send_message_key3);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Alice's third send message key. (%i)\n", status);
 		ratchet_destroy(alice_state);
@@ -290,7 +311,7 @@ int main(void) {
 
 	status = ratchet_receive(
 			bob_receive_key1,
-			alice_state->our_public_ephemeral,
+			alice_send_ephemeral1,
 			0, //purported message number
 			0, //purported previous message number
 			bob_state);
@@ -361,7 +382,7 @@ int main(void) {
 	//second receive message key
 	status = ratchet_receive(
 			bob_receive_key2,
-			alice_state->our_public_ephemeral,
+			alice_send_ephemeral2,
 			1, //purported message number
 			0, //purported previous message number
 			bob_state);
@@ -432,7 +453,7 @@ int main(void) {
 	//third receive message key
 	status = ratchet_receive(
 			bob_receive_key3,
-			alice_state->our_public_ephemeral,
+			alice_send_ephemeral3,
 			2, //purported message number
 			0, //purported previous message number
 			bob_state);
@@ -497,10 +518,15 @@ int main(void) {
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
 	//Now Bob replies with three messages
-	status = ratchet_next_send_keys(
-			bob_send_message_key1,
+	uint32_t bob_send_message_number1;
+	uint32_t bob_previous_message_number1;
+	status = ratchet_send(
+			bob_state,
 			bob_send_header_key1,
-			bob_state);
+			&bob_send_message_number1,
+			&bob_previous_message_number1,
+			bob_send_ephemeral1,
+			bob_send_message_key1);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Bob's first send message key. (%i)\n", status);
 		ratchet_destroy(alice_state);
@@ -515,10 +541,15 @@ int main(void) {
 	putchar('\n');
 
 	//second message key
-	status = ratchet_next_send_keys(
-			bob_send_message_key2,
+	uint32_t bob_send_message_number2;
+	uint32_t bob_previous_message_number2;
+	status = ratchet_send(
+			bob_state,
 			bob_send_header_key2,
-			bob_state);
+			&bob_send_message_number2,
+			&bob_previous_message_number2,
+			bob_send_ephemeral2,
+			bob_send_message_key2);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Bob's second send message key. (%i)\n", status);
 		ratchet_destroy(alice_state);
@@ -533,10 +564,15 @@ int main(void) {
 	putchar('\n');
 
 	//third message key
-	status = ratchet_next_send_keys(
-			bob_send_message_key3,
+	uint32_t bob_send_message_number3;
+	uint32_t bob_previous_message_number3;
+	status = ratchet_send(
+			bob_state,
 			bob_send_header_key3,
-			bob_state);
+			&bob_send_message_number3,
+			&bob_previous_message_number3,
+			bob_send_ephemeral3,
+			bob_send_message_key3);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to get Bob's third send message key. (%i)\n", status);
 		ratchet_destroy(alice_state);
@@ -600,7 +636,7 @@ int main(void) {
 
 	status = ratchet_receive(
 			alice_receive_message_key1,
-			bob_state->our_public_ephemeral,
+			bob_send_ephemeral1,
 			0, //purported message number
 			0, //purported previous message number
 			alice_state);
@@ -670,7 +706,7 @@ int main(void) {
 	//third received message key (second message skipped)
 	status = ratchet_receive(
 			alice_receive_message_key3,
-			bob_state->our_public_ephemeral,
+			bob_send_ephemeral3,
 			2,
 			0,
 			alice_state);
@@ -841,10 +877,13 @@ cleanup:
 	//alice send message and header keys
 	buffer_destroy_from_heap(alice_send_message_key1);
 	buffer_destroy_from_heap(alice_send_header_key1);
+	buffer_destroy_from_heap(alice_send_ephemeral1);
 	buffer_destroy_from_heap(alice_send_message_key2);
 	buffer_destroy_from_heap(alice_send_header_key2);
+	buffer_destroy_from_heap(alice_send_ephemeral2);
 	buffer_destroy_from_heap(alice_send_message_key3);
 	buffer_destroy_from_heap(alice_send_header_key3);
+	buffer_destroy_from_heap(alice_send_ephemeral3);
 	//bobs receive keys
 	buffer_destroy_from_heap(bob_current_receive_header_key);
 	buffer_destroy_from_heap(bob_next_receive_header_key);
@@ -854,10 +893,13 @@ cleanup:
 	//bobs śend message and header keys
 	buffer_destroy_from_heap(bob_send_message_key1);
 	buffer_destroy_from_heap(bob_send_header_key1);
+	buffer_destroy_from_heap(bob_send_ephemeral1);
 	buffer_destroy_from_heap(bob_send_message_key2);
 	buffer_destroy_from_heap(bob_send_header_key2);
+	buffer_destroy_from_heap(bob_send_ephemeral2);
 	buffer_destroy_from_heap(bob_send_message_key3);
 	buffer_destroy_from_heap(bob_send_header_key3);
+	buffer_destroy_from_heap(bob_send_ephemeral3);
 	//alice receive keys
 	buffer_destroy_from_heap(alice_current_receive_header_key);
 	buffer_destroy_from_heap(alice_next_receive_header_key);

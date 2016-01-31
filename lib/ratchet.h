@@ -106,13 +106,16 @@ ratchet_state* ratchet_create(
 		const buffer_t * const their_public_ephemeral) __attribute__((warn_unused_result));
 
 /*
- * Create message and header keys to encrypt the next send message with.
+ * Get keys and metadata to send the next message.
  */
-int ratchet_next_send_keys(
-		buffer_t * const next_message_key, //MESSAGE_KEY_SIZE
-		                     //from the ratchet_state struct
-		buffer_t * const next_header_key, //HEADER_KEY_SIZE
-		ratchet_state *state) __attribute__((warn_unused_result));
+int ratchet_send(
+		ratchet_state *state,
+		buffer_t * const send_header_key, //HEADER_KEY_SIZE, HKs
+		uint32_t * const send_message_number, //Ns
+		uint32_t * const previous_send_message_number, //PNs
+		buffer_t * const our_public_ephemeral, //DHRs
+		buffer_t * const message_key //MESSAGE_KEY_SIZE, MK
+		) __attribute__((warn_unused_result));
 
 /*
  * Get a copy of the current and the next receive header key.
