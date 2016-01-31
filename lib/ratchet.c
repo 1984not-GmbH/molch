@@ -32,7 +32,7 @@
  * side channels, especially timing side channels.
  */
 bool is_none(const buffer_t * const buffer) {
-	return sodium_is_zero(buffer->content, buffer->content_length);
+	return (buffer->content_length == 0) || sodium_is_zero(buffer->content, buffer->content_length);
 }
 
 /*
