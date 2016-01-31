@@ -37,7 +37,7 @@ int generate_prekeys(buffer_t * const private_prekeys, buffer_t * const public_p
 	public_prekeys->content_length = public_prekeys->buffer_length;
 
 	int status;
-	for (unsigned int i = 0; i < PREKEY_AMOUNT; i++) {
+	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
 		status = crypto_box_keypair(
 				public_prekeys->content + i * crypto_box_PUBLICKEYBYTES,
 				private_prekeys->content + i * crypto_box_SECRETKEYBYTES);

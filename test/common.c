@@ -27,20 +27,19 @@
  */
 void print_header_and_message_keystore(header_and_message_keystore *keystore) {
 	printf("KEYSTORE-START-----------------------------------------------------------------\n");
-	printf("Length: %i\n", keystore->length);
+	printf("Length: %zu\n", keystore->length);
 	printf("Head: %p\n", (void*) keystore->head);
 	printf("Tail: %p\n\n", (void*) keystore->tail);
 
 	header_and_message_keystore_node* node = keystore->head;
 
 	//print all the keys in the keystore
-	unsigned int i;
-	for (i = 0; i < keystore->length; node = node->next, i++) {
-		printf("Header key %u:\n", i);
+	for (size_t i = 0; i < keystore->length; node = node->next, i++) {
+		printf("Header key %zu:\n", i);
 		print_hex(node->header_key);
 		putchar('\n');
 
-		printf("Message key %u:\n", i);
+		printf("Message key %zu:\n", i);
 		print_hex(node->message_key);
 		if (i != keystore->length - 1) { //omit last one
 			putchar('\n');

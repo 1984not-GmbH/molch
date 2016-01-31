@@ -72,11 +72,11 @@ typedef struct ratchet_state {
 	buffer_t their_purported_public_ephemeral[1]; //DHp
 	const unsigned char their_purported_public_ephemeral_storage[PUBLIC_KEY_SIZE];
 	//message numbers
-	unsigned int send_message_number; //Ns
-	unsigned int receive_message_number; //Nr
-	unsigned int purported_message_number; //Np
-	unsigned int previous_message_number; //PNs (number of messages sent in previous chain)
-	unsigned int purported_previous_message_number; //PNp
+	uint32_t send_message_number; //Ns
+	uint32_t receive_message_number; //Nr
+	uint32_t purported_message_number; //Np
+	uint32_t previous_message_number; //PNs (number of messages sent in previous chain)
+	uint32_t purported_previous_message_number; //PNp
 	//ratchet flag
 	bool ratchet_flag;
 	bool am_i_alice;
@@ -143,8 +143,8 @@ int ratchet_set_header_decryptability(
 int ratchet_receive(
 		buffer_t * const message_key, //used to get the message key back
 		const buffer_t * const their_purported_public_ephemeral,
-		const unsigned int purported_message_number,
-		const unsigned int purported_previous_message_number,
+		const uint32_t purported_message_number,
+		const uint32_t purported_previous_message_number,
 		ratchet_state *state) __attribute__((warn_unused_result));
 
 /*

@@ -337,7 +337,7 @@ int ratchet_set_header_decryptability(
 int stage_skipped_header_and_message_keys(
 		buffer_t * const purported_chain_key, //CKp
 		buffer_t * const message_key, //MK
-		const unsigned int purported_message_number,
+		const uint32_t purported_message_number,
 		const buffer_t * const receive_chain_key,
 		ratchet_state *state) {
 	if ((purported_chain_key->buffer_length < CHAIN_KEY_SIZE)
@@ -374,8 +374,7 @@ int stage_skipped_header_and_message_keys(
 
 
 	//create all message keys
-	unsigned int pos;
-	for (pos = state->receive_message_number; pos <= purported_message_number; pos++) {
+	for (uint32_t pos = state->receive_message_number; pos <= purported_message_number; pos++) {
 		status = derive_message_key(message_key_buffer, purported_current_chain_key);
 		if (status != 0) {
 			goto cleanup;
@@ -462,8 +461,8 @@ int commit_skipped_header_and_message_keys(ratchet_state *state) {
 int ratchet_receive(
 		buffer_t * const message_key,
 		const buffer_t * const their_purported_public_ephemeral,
-		const unsigned int purported_message_number,
-		const unsigned int purported_previous_message_number,
+		const uint32_t purported_message_number,
+		const uint32_t purported_previous_message_number,
 		ratchet_state * const state) {
 	//check buffer sizes
 	if ((message_key->buffer_length < MESSAGE_KEY_SIZE)
