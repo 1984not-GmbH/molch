@@ -130,8 +130,8 @@ int ratchet_get_receive_header_keys(
  * or next (next_receive_header_key) header key, or isn't decryptable.
  */
 int ratchet_set_header_decryptability(
-		ratchet_header_decryptability header_decryptable,
-		ratchet_state *state) __attribute__((warn_unused_result));
+		ratchet_state *ratchet,
+		ratchet_header_decryptability header_decryptable) __attribute__((warn_unused_result));
 
 /*
  * First step after receiving a message: Calculate purported keys.

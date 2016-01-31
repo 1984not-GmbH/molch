@@ -361,9 +361,9 @@ cleanup:
  * or next (next_receive_header_key) header key, or isn't decryptable.
  */
 int ratchet_set_header_decryptability(
-		ratchet_header_decryptability header_decryptable,
-		ratchet_state *state) {
-	if ((state->header_decryptable != NOT_TRIED)) {
+		ratchet_state *ratchet,
+		ratchet_header_decryptability header_decryptable) {
+	if (ratchet->header_decryptable != NOT_TRIED) {
 		//if the last message hasn't been properly handled yet, abort
 		return -10;
 	}
@@ -373,7 +373,7 @@ int ratchet_set_header_decryptability(
 		return -10;
 	}
 
-	state->header_decryptable = header_decryptable;
+	ratchet->header_decryptable = header_decryptable;
 
 	return 0;
 }

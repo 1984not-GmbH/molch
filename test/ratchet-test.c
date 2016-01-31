@@ -300,8 +300,8 @@ int main(void) {
 
 	//set the header decryptability
 	status = ratchet_set_header_decryptability(
-			decryptable,
-			bob_state);
+			bob_state,
+			decryptable);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set Bob's header decryptability. (%i)\n", status);
 		ratchet_destroy(alice_state);
@@ -370,8 +370,8 @@ int main(void) {
 
 	//set the header decryptability
 	status = ratchet_set_header_decryptability(
-			decryptable,
-			bob_state);
+			bob_state,
+			decryptable);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set header decryptability. (%i)\n", status);
 		ratchet_destroy(alice_state);
@@ -441,8 +441,8 @@ int main(void) {
 
 	//set the header decryptability
 	status = ratchet_set_header_decryptability(
-			decryptable,
-			bob_state);
+			bob_state,
+			decryptable);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set header decryptability. (%i)\n", status);
 		ratchet_destroy(alice_state);
@@ -625,8 +625,8 @@ int main(void) {
 
 	//set the header decryptability
 	status = ratchet_set_header_decryptability(
-			decryptable,
-			alice_state);
+			alice_state,
+			decryptable);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set header decryptability. (%i)\n", status);
 		ratchet_destroy(alice_state);
@@ -694,8 +694,8 @@ int main(void) {
 
 	//set the header decryptability
 	status = ratchet_set_header_decryptability(
-			decryptable,
-			alice_state);
+			alice_state,
+			decryptable);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to set header decryptability. (%i)\n", status);
 		ratchet_destroy(alice_state);
