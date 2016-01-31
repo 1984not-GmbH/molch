@@ -323,26 +323,36 @@ int ratchet_get_receive_header_keys(
 		buffer_t * const current_receive_header_key,
 		buffer_t * const next_receive_header_key,
 		ratchet_state *state) {
-	//check buffer sizes
-	if ((current_receive_header_key->buffer_length < HEADER_KEY_SIZE)
-			|| (next_receive_header_key->buffer_length < HEADER_KEY_SIZE)) {
-		return -6;
+	int status;
+
+	//check input
+	if ((current_receive_header_key == NULL) || (current_receive_header_key->buffer_length < HEADER_KEY_SIZE)
+			|| (next_receive_header_key == NULL) || (next_receive_header_key->buffer_length < HEADER_KEY_SIZE)) {
+		status = -6;
+		goto cleanup;
 	}
 
-	int status;
 	//clone the header keys
 	status = buffer_clone(current_receive_header_key, state->receive_header_key);
 	if (status != 0) {
-		buffer_clear(current_receive_header_key);
 		return status;
 	}
 	status = buffer_clone(next_receive_header_key, state->next_receive_header_key);
 	if (status != 0) {
-		buffer_clear(current_receive_header_key);
-		buffer_clear(next_receive_header_key);
 		return status;
 	}
 
+cleanup:
+	if (status != 0) {
+		if (current_receive_header_key != NULL) {
+			buffer_clear(current_receive_header_key);
+			current_receive_header_key->content_length = 0;
+		}
+		if (next_receive_header_key != NULL) {
+			buffer_clear(next_receive_header_key);
+			next_receive_header_key->content_length = 0;
+		}
+	}
 	return 0;
 }
 
