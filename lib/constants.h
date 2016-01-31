@@ -25,6 +25,8 @@
 #define CONVERSATION_ID_SIZE 32U //length of a conversation id in bytes
 #define PREKEY_AMOUNT 100U //number of prekeys that are used
 
+#define DIFFIE_HELLMAN_SIZE crypto_generichash_BYTES
+
 //key sizes
 #define CHAIN_KEY_SIZE crypto_secretbox_KEYBYTES
 #define MESSAGE_KEY_SIZE crypto_secretbox_KEYBYTES
