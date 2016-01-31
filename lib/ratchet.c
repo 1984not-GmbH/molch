@@ -516,124 +516,131 @@ int commit_skipped_header_and_message_keys(ratchet_state *state) {
  * after having verified the message.
  */
 int ratchet_receive(
+		ratchet_state * const ratchet,
 		buffer_t * const message_key,
 		const buffer_t * const their_purported_public_ephemeral,
 		const uint32_t purported_message_number,
-		const uint32_t purported_previous_message_number,
-		ratchet_state * const state) {
-	//check buffer sizes
-	if ((message_key->buffer_length < MESSAGE_KEY_SIZE)
-			|| (their_purported_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
-		return -6;
+		const uint32_t purported_previous_message_number) {
+	int status;
+
+	//create buffers
+	buffer_t *throwaway_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	buffer_t *throwaway_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, 0);
+	buffer_t *purported_chain_key_backup = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+
+	//check input
+	if ((ratchet == NULL)
+			|| (message_key == NULL) || (message_key->buffer_length < MESSAGE_KEY_SIZE)
+			|| (their_purported_public_ephemeral == NULL) || (their_purported_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
+		status = -6;
+		goto cleanup;
 	}
 
-	if (!state->received_valid) {
+	if (!ratchet->received_valid) {
 		//abort because the previously received message hasn't been verified yet.
-		return -10;
+		status = -10;
+		goto cleanup;
 	}
 
 	//header decryption hasn't been tried yet
-	if (state->header_decryptable == NOT_TRIED) {
-		return -10;
+	if (ratchet->header_decryptable == NOT_TRIED) {
+		status = -10;
+		goto cleanup;
 	}
 
-	int status;
-
-	if ((!is_none(state->receive_header_key)) && (state->header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
-		//copy purported message number
-		state->purported_message_number = purported_message_number;
+	if (!is_none(ratchet->receive_header_key) && (ratchet->header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
+		//Np = read(): get the purported message number from the input
+		ratchet->purported_message_number = purported_message_number;
 
 		//create skipped message keys and store current one
 		status = stage_skipped_header_and_message_keys(
-				state->purported_receive_chain_key,
+				ratchet->purported_receive_chain_key,
 				message_key,
 				purported_message_number,
-				state->receive_chain_key,
-				state);
+				ratchet->receive_chain_key,
+				ratchet);
 		if (status != 0) {
-			return status;
+			goto cleanup;
 		}
-
-		//copy their purported public ephemeral (this is necessary to detect if a new chain was started later on when validating the authenticity)
-		status = buffer_clone(state->their_purported_public_ephemeral, their_purported_public_ephemeral);
-		if (status != 0) {
-			return status;
-		}
-
-		state->received_valid = false; //waiting for validation
-		return 0;
 	} else { //new message chain
-		if ((state->ratchet_flag) || (state->header_decryptable != NEXT_DECRYPTABLE)) {
-			return -10;
+		//if ratchet_flag or not Dec(NHKr, header)
+		if (ratchet->ratchet_flag || (ratchet->header_decryptable != NEXT_DECRYPTABLE)) {
+			status = -10;
+			goto cleanup;
 		}
 
-		//copy purported message numbers and ephemerals
-		state->purported_message_number = purported_message_number; //Np
-		state->purported_previous_message_number = purported_previous_message_number; //PNp
-		status = buffer_clone(state->their_purported_public_ephemeral, their_purported_public_ephemeral);
+		//Np = read(): get the purported message number from the input
+		ratchet->purported_message_number = purported_message_number;
+		//PNp = read(): get the purported previous message number from the input
+		ratchet->purported_previous_message_number = purported_previous_message_number;
+		//DHRp = read(): get the purported ephemeral from the input
+		status = buffer_clone(ratchet->their_purported_public_ephemeral, their_purported_public_ephemeral);
 		if (status != 0) {
-			return status;
+			goto cleanup;
 		}
 
-		//temporary storage for the purported chain key (CKp)
-		buffer_t *temp_purported_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-
-		//stage message keys for previous message chain
+		//stage_skipped_header_and_message_keys(HKr, Nr, PNp, CKr)
 		status = stage_skipped_header_and_message_keys(
-				temp_purported_chain_key,
-				message_key,
+				throwaway_chain_key,
+				throwaway_message_key,
 				purported_previous_message_number,
-				state->receive_chain_key,
-				state);
+				ratchet->receive_chain_key,
+				ratchet);
 		if (status != 0) {
-			buffer_destroy_from_heap(temp_purported_chain_key);
-			return status;
+			goto cleanup;
 		}
 
 		//HKp = NHKr
-		status = buffer_clone(state->purported_receive_header_key, state->next_receive_header_key);
+		status = buffer_clone(ratchet->purported_receive_header_key, ratchet->next_receive_header_key);
 		if (status != 0) {
-			buffer_destroy_from_heap(temp_purported_chain_key);
-			return status;
+			goto cleanup;
 		}
 
-		//derive purported root and chain keys
-		//first: input key for kdf (root and chain key derivation)
+		//RKp, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
 		status = derive_root_next_header_and_chain_keys(
-				state->purported_root_key,
-				state->purported_next_receive_header_key,
-				state->purported_receive_chain_key,
-				state->our_private_ephemeral,
-				state->our_public_ephemeral,
+				ratchet->purported_root_key,
+				ratchet->purported_next_receive_header_key,
+				ratchet->purported_receive_chain_key,
+				ratchet->our_private_ephemeral,
+				ratchet->our_public_ephemeral,
 				their_purported_public_ephemeral,
-				state->root_key,
-				state->am_i_alice);
+				ratchet->root_key,
+				ratchet->am_i_alice);
 		if (status != 0) {
-			buffer_destroy_from_heap(temp_purported_chain_key);
-			return status;
+			goto cleanup;
+		}
+
+		//backup the purported chain key because it will get overwritten in the next step
+		status = buffer_clone(purported_chain_key_backup, ratchet->purported_receive_chain_key);
+		if (status != 0) {
+			goto cleanup;
 		}
 
 		//stage message keys for current message chain
 		status = stage_skipped_header_and_message_keys(
-				temp_purported_chain_key,
+				ratchet->purported_receive_chain_key,
 				message_key,
 				purported_message_number,
-				state->purported_receive_chain_key,
-				state);
+				purported_chain_key_backup,
+				ratchet);
 		if (status != 0) {
-			buffer_destroy_from_heap(temp_purported_chain_key);
-			return status;
+			goto cleanup;
 		}
-
-		//copy the temporary purported chain key to the state
-		status = buffer_clone(state->purported_receive_chain_key, temp_purported_chain_key);
-		buffer_destroy_from_heap(temp_purported_chain_key);
-		if (status != 0) {
-			return status;
-		}
-
-		state->received_valid = false; //waiting for validation
 	}
+
+	ratchet->received_valid = false; //waiting for validation (feedback, if the message could actually be decrypted)
+
+cleanup:
+	if (status != 0) {
+		if (message_key != NULL) {
+			buffer_clear(message_key);
+			message_key->content_length = 0;
+		}
+	}
+
+	buffer_destroy_from_heap(throwaway_chain_key);
+	buffer_destroy_from_heap(throwaway_message_key);
+	buffer_destroy_from_heap(purported_chain_key_backup);
 
 	return 0;
 }

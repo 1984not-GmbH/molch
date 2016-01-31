@@ -310,11 +310,11 @@ int main(void) {
 	}
 
 	status = ratchet_receive(
+			bob_state,
 			bob_receive_key1,
 			alice_send_ephemeral1,
 			0, //purported message number
-			0, //purported previous message number
-			bob_state);
+			0); //purported previous message number
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Bob's first receive key. (%i)\n", status);
 		ratchet_destroy(alice_state);
@@ -381,11 +381,11 @@ int main(void) {
 
 	//second receive message key
 	status = ratchet_receive(
+			bob_state,
 			bob_receive_key2,
 			alice_send_ephemeral2,
 			1, //purported message number
-			0, //purported previous message number
-			bob_state);
+			0); //purported previous message number
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Bob's second receive key. (%i)\n", status);
 		ratchet_destroy(alice_state);
@@ -452,11 +452,11 @@ int main(void) {
 
 	//third receive message key
 	status = ratchet_receive(
+			bob_state,
 			bob_receive_key3,
 			alice_send_ephemeral3,
 			2, //purported message number
-			0, //purported previous message number
-			bob_state);
+			0); //purported previous message number
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Bob's third receive key. (%i)\n", status);
 		ratchet_destroy(alice_state);
@@ -635,11 +635,11 @@ int main(void) {
 	}
 
 	status = ratchet_receive(
+			alice_state,
 			alice_receive_message_key1,
 			bob_send_ephemeral1,
 			0, //purported message number
-			0, //purported previous message number
-			alice_state);
+			0); //purported previous message number
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Alice's first receive key. (%i)\n", status);
 		ratchet_destroy(alice_state);
@@ -705,11 +705,11 @@ int main(void) {
 
 	//third received message key (second message skipped)
 	status = ratchet_receive(
+			alice_state,
 			alice_receive_message_key3,
 			bob_send_ephemeral3,
 			2,
-			0,
-			alice_state);
+			0);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to generate Alice's third receive key. (%i)\n", status);
 		ratchet_destroy(alice_state);

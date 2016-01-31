@@ -144,11 +144,11 @@ int ratchet_set_header_decryptability(
  * after having verified the message.
  */
 int ratchet_receive(
+		ratchet_state *state,
 		buffer_t * const message_key, //used to get the message key back
 		const buffer_t * const their_purported_public_ephemeral,
 		const uint32_t purported_message_number,
-		const uint32_t purported_previous_message_number,
-		ratchet_state *state) __attribute__((warn_unused_result));
+		const uint32_t purported_previous_message_number) __attribute__((warn_unused_result));
 
 /*
  * Call this function after trying to decrypt a message and pass it if
