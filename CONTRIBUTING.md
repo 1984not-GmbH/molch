@@ -26,6 +26,7 @@ other practices
   - if you're creating new files, add a new test file in the `test` directory and add it to `test/CMakeLists.txt`
 * add `__attribute__((warn_unused_result))` to functions that return error codes or pointers to heap allocated memory
 * ensure that all resources are freed once you leave a function (even when errors occur)
+* make sure that every test includes `tracing.h`
 
 git usage
 ---------
