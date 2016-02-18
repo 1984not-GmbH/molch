@@ -22,6 +22,7 @@
 #include "utils.h"
 #include "../lib/molch.h"
 #include "../lib/user-store.h" //for PREKEY_AMOUNT
+#include "tracing.h"
 
 int main(void) {
 	if (sodium_init() == -1) {

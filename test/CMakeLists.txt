@@ -2,6 +2,9 @@ cmake_minimum_required (VERSION 2.6)
 
 add_library(utils utils)
 target_link_libraries(utils molch-buffer)
+if (TRACING)
+    target_link_libraries(utils tracing)
+endif()
 
 add_library(common common)
 target_link_libraries(common utils)

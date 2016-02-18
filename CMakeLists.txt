@@ -8,6 +8,15 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
 enable_testing()
 
+option(TRACING "Enable tracing." OFF)
+if (TRACING)
+    message("TRACING ENABLED")
+    add_definitions(-DTRACING)
+    add_library(tracing "test/tracing")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -finstrument-functions -finstrument-functions-exclude-function-list=printf,dladdr")
+    set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -ldl")
+endif()
+
 #check if running debug build
 if ("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
     if ("${CMAKE_C_COMPILER}" MATCHES "clang")

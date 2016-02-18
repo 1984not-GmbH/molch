@@ -25,6 +25,7 @@
 #include "../lib/conversation-store.h"
 #include "../lib/json.h"
 #include "utils.h"
+#include "tracing.h"
 
 int test_add_conversation(conversation_store * const store) {
 	//define key buffers
