@@ -382,99 +382,110 @@ int ratchet_set_header_decryptability(
  * This corresponds to "stage_skipped_header_and_message_keys" from the
  * axolotl protocol description.
  *
- * Calculate all the message keys up the the purported message number
- * and save them in the current ratchet state's staging area.
- *
- * TODO: This could easily be used to make clients hang. Because there are
- * currently no header keys in use, an attacker could specify an arbitrarily
- * high purported message number, thereby making this function calculate
- * all of them -> program hangs. Current workaround: Limiting number
- * of message keys that get precalculated.
+ * Calculates all the message keys up to the purported message number and
+ * saves the skipped ones in the ratchet's staging area.
  */
 int stage_skipped_header_and_message_keys(
-		buffer_t * const purported_chain_key, //CKp
-		buffer_t * const message_key, //MK
-		const uint32_t purported_message_number,
-		const buffer_t * const receive_chain_key,
-		ratchet_state *state) {
-	if ((purported_chain_key->buffer_length < CHAIN_KEY_SIZE)
-			|| (message_key->buffer_length < MESSAGE_KEY_SIZE)
-			|| (receive_chain_key->content_length != CHAIN_KEY_SIZE)) {
-		buffer_clear(message_key);
-		buffer_clear(purported_chain_key);
-		return -6;
-	}
-
-	//if chain key is <none>, don't do anything
-	if (is_none(receive_chain_key)) {
-		buffer_clear(message_key);
-		buffer_clear(purported_chain_key);
-		return 0;
-	}
-
-	//limit number of message keys to calculate
-	static const unsigned int LIMIT = 100;
-	if ((purported_message_number - state->receive_message_number) > LIMIT) {
-		return -10;
-	}
-
+		header_and_message_keystore * const staging_area,
+		buffer_t * const output_chain_key, //output, CHAIN_KEY_SIZE
+		buffer_t * const output_message_key, //output, MESSAGE_KEY_SIZE
+		const buffer_t * const current_header_key,
+		const uint32_t current_message_number,
+		const uint32_t future_message_number,
+		const buffer_t * const chain_key) {
 	int status;
-	//message key buffer
-	buffer_t *message_key_buffer = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-	//copy current chain key to purported chain key
-	buffer_t *purported_current_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-	buffer_t *purported_next_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-	status = buffer_clone(purported_current_chain_key, receive_chain_key);
+
+	//create buffers
+	buffer_t *current_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	buffer_t *next_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	buffer_t *current_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, 0);
+
+	//check input
+	if ((staging_area == NULL)
+			|| ((output_chain_key != NULL) && (output_chain_key->buffer_length < CHAIN_KEY_SIZE))
+			|| ((output_message_key != NULL) && (output_message_key->buffer_length < MESSAGE_KEY_SIZE))
+			|| (current_header_key == NULL) || (current_header_key->content_length != HEADER_KEY_SIZE)
+			|| (chain_key == NULL) || (chain_key->content_length != CHAIN_KEY_SIZE)) {
+		status = -6;
+		goto cleanup;
+	}
+
+	//when chain key is <none>, do nothing
+	if (is_none(chain_key)) {
+		status = 0;
+		goto cleanup;
+	}
+
+	//set current_chain_key to chain key to initialize it for the calculation that's
+	//following
+	status = buffer_clone(current_chain_key, chain_key);
 	if (status != 0) {
 		goto cleanup;
 	}
 
-
-	//create all message keys
-	for (uint32_t pos = state->receive_message_number; pos <= purported_message_number; pos++) {
-		status = derive_message_key(message_key_buffer, purported_current_chain_key);
+	for (uint32_t pos = current_message_number; pos < future_message_number; pos++) {
+		//derive current message key
+		status = derive_message_key(current_message_key, current_chain_key);
 		if (status != 0) {
 			goto cleanup;
 		}
 
-		//add message key to list of purported message keys
-		if (pos < purported_message_number) { //only stage previous message keys
-			status = header_and_message_keystore_add(
-					state->staged_header_and_message_keys,
-					message_key_buffer,
-					state->receive_header_key);
-			if (status != 0) {
-				goto cleanup;
-			}
-		} else { //current message key is not staged, but copied to return it's value
-			status = buffer_clone(message_key, message_key_buffer);
-			if (status != 0) {
-				goto cleanup;
-			}
+		//add the message key, along with current_header_key to the staging area
+		status = header_and_message_keystore_add(
+				staging_area,
+				current_message_key,
+				current_header_key);
+		if (status != 0) {
+			goto cleanup;
 		}
 
-		status = derive_chain_key(purported_next_chain_key, purported_current_chain_key);
+		//derive next chain key
+		status = derive_chain_key(next_chain_key, current_chain_key);
 		if (status != 0) {
 			goto cleanup;
 		}
 
 		//shift chain keys
-		status = buffer_clone(purported_current_chain_key, purported_next_chain_key);
+		status = buffer_clone(current_chain_key, next_chain_key);
 		if (status != 0) {
 			goto cleanup;
 		}
 	}
 
-	//copy chain key to purported_receive_chain_key (this will be used in commit_skipped_header_and_message_keys)
-	status = buffer_clone(purported_chain_key, purported_next_chain_key);
-	if (status != 0) {
-		goto cleanup;
+	//derive the message key that will be returned
+	if (output_message_key != NULL) {
+		status = derive_message_key(output_message_key, current_chain_key);
+		if (status != 0) {
+			goto cleanup;
+		}
+	}
+
+	//derive the chain key that will be returned
+	//TODO: not sure if this additional derivation is needed!
+	if (output_chain_key != NULL) {
+		status = derive_chain_key(output_chain_key, current_chain_key);
+		if (status != 0) {
+			goto cleanup;
+		}
 	}
 
 cleanup:
-	buffer_destroy_from_heap(purported_current_chain_key);
-	buffer_destroy_from_heap(purported_next_chain_key);
-	buffer_destroy_from_heap(message_key_buffer);
+	if (status != 0) {
+		if (output_chain_key != NULL) {
+			buffer_clear(output_chain_key);
+			output_chain_key->content_length = 0;
+		}
+		if (output_message_key != NULL) {
+			buffer_clear(output_message_key);
+			output_message_key->content_length = 0;
+		}
+
+		header_and_message_keystore_clear(staging_area);
+	}
+
+	buffer_destroy_from_heap(current_chain_key);
+	buffer_destroy_from_heap(next_chain_key);
+	buffer_destroy_from_heap(current_message_key);
 
 	return status;
 }
@@ -552,13 +563,15 @@ int ratchet_receive(
 		//Np = read(): get the purported message number from the input
 		ratchet->purported_message_number = purported_message_number;
 
-		//create skipped message keys and store current one
+		//CKp, MK = stage_skipped_header_and_message_keys(HKr, Nr, Np, CKr)
 		status = stage_skipped_header_and_message_keys(
+				ratchet->staged_header_and_message_keys,
 				ratchet->purported_receive_chain_key,
 				message_key,
+				ratchet->receive_header_key,
+				ratchet->receive_message_number,
 				purported_message_number,
-				ratchet->receive_chain_key,
-				ratchet);
+				ratchet->receive_chain_key);
 		if (status != 0) {
 			goto cleanup;
 		}
@@ -581,11 +594,13 @@ int ratchet_receive(
 
 		//stage_skipped_header_and_message_keys(HKr, Nr, PNp, CKr)
 		status = stage_skipped_header_and_message_keys(
-				throwaway_chain_key,
-				throwaway_message_key,
+				ratchet->staged_header_and_message_keys,
+				NULL, //output_chain_key
+				NULL, //output_message_key
+				ratchet->receive_header_key,
+				ratchet->receive_message_number,
 				purported_previous_message_number,
-				ratchet->receive_chain_key,
-				ratchet);
+				ratchet->receive_chain_key);
 		if (status != 0) {
 			goto cleanup;
 		}
@@ -616,13 +631,21 @@ int ratchet_receive(
 			goto cleanup;
 		}
 
-		//stage message keys for current message chain
+		//backup the purported receive chain key to be able to use it in the next step
+		status = buffer_clone(purported_chain_key_backup, ratchet->purported_receive_chain_key);
+		if (status != 0) {
+			goto cleanup;
+		}
+
+		//CKp, MK = staged_header_and_message_keys(HKp, 0, Np, CKp)
 		status = stage_skipped_header_and_message_keys(
+				ratchet->staged_header_and_message_keys,
 				ratchet->purported_receive_chain_key,
 				message_key,
+				ratchet->purported_receive_header_key,
+				0,
 				purported_message_number,
-				purported_chain_key_backup,
-				ratchet);
+				purported_chain_key_backup);
 		if (status != 0) {
 			goto cleanup;
 		}
@@ -649,81 +672,77 @@ cleanup:
  * Call this function after trying to decrypt a message and pass it if
  * the decryption was successful or if it wasn't.
  */
-int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) {
+int ratchet_set_last_message_authenticity(
+		ratchet_state *ratchet,
+		bool valid) {
 	//prepare for being able to receive new messages
-	state->received_valid = true;
+	ratchet->received_valid = true;
 
 	//backup header decryptability
-	ratchet_header_decryptability header_decryptable = state->header_decryptable;
-	state->header_decryptable = NOT_TRIED;
-
-	//TODO make sure this function aborts if it is called at the wrong time
+	ratchet_header_decryptability header_decryptable = ratchet->header_decryptable;
+	ratchet->header_decryptable = NOT_TRIED;
 
 	int status;
 
-	//TODO I can do those if's better. This only happens to be this way because of the specification
-	if ((!is_none(state->receive_header_key)) && (header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
-		//if HKr != <none> and Dec(HKr, header)
-		if (!valid) { //message couldn't be decrypted
-			//clear purported message and header keys
-			header_and_message_keystore_clear(state->staged_header_and_message_keys);
-			return 0; //TODO: Should this really be 0?
-		}
-	} else { //new message chain
-		if (state->ratchet_flag || (header_decryptable != NEXT_DECRYPTABLE) || !valid) {
+	if (!valid) { //message couldn't be decrypted
+		header_and_message_keystore_clear(ratchet->staged_header_and_message_keys);
+		status = 0;
+		goto cleanup;
+	}
+
+	if (is_none(ratchet->receive_header_key) || (header_decryptable != CURRENT_DECRYPTABLE)) { //new message chain
+		if (ratchet->ratchet_flag || (header_decryptable != NEXT_DECRYPTABLE)) {
 			//if ratchet_flag or not Dec(NHKr, header)
 			//clear purported message and header keys
-			header_and_message_keystore_clear(state->staged_header_and_message_keys);
-			return 0; //TODO: Should this really be 0?
+			header_and_message_keystore_clear(ratchet->staged_header_and_message_keys);
+			status = 0;
+			goto cleanup;
 		}
 
 		//otherwise, received message was valid
 		//accept purported values
 		//RK = RKp
-		status = buffer_clone(state->root_key, state->purported_root_key);
+		status = buffer_clone(ratchet->root_key, ratchet->purported_root_key);
 		if (status != 0) {
-			//TODO what to clear here?
-			return status;
+			goto cleanup;
 		}
 		//HKr = HKp
-		status = buffer_clone(state->receive_header_key, state->purported_receive_header_key);
+		status = buffer_clone(ratchet->receive_header_key, ratchet->purported_receive_header_key);
 		if (status != 0) {
-			//TODO what to clear here?
-			return status;
+			goto cleanup;
 		}
 		//NHKr = NHKp
-		status = buffer_clone(state->next_receive_header_key, state->purported_next_receive_header_key);
+		status = buffer_clone(ratchet->next_receive_header_key, ratchet->purported_next_receive_header_key);
 		if (status != 0) {
-			//TODO what to clear here?
-			return status;
+			goto cleanup;
 		}
 		//DHRr = DHRp
-		status = buffer_clone(state->their_public_ephemeral, state->their_purported_public_ephemeral);
+		status = buffer_clone(ratchet->their_public_ephemeral, ratchet->their_purported_public_ephemeral);
 		if (status != 0) {
-			//TODO what to clear here?
-			return status;
+			goto cleanup;
 		}
 		//erase(DHRs)
-		buffer_clear(state->our_private_ephemeral);
-		state->our_private_ephemeral->content_length = PRIVATE_KEY_SIZE; //TODO is this necessary?
+		buffer_clear(ratchet->our_private_ephemeral);
+		ratchet->our_private_ephemeral->content_length = PRIVATE_KEY_SIZE;
 		//ratchet_flag = True
-		state->ratchet_flag = true;
+		ratchet->ratchet_flag = true;
 	}
 
-	status = commit_skipped_header_and_message_keys(state);
+	//commit_skipped_header_and_message_keys
+	status = commit_skipped_header_and_message_keys(ratchet);
 	if (status != 0) {
-		return status;
+		goto cleanup;
 	}
 	//Nr = Np + 1
-	state->receive_message_number = state->purported_message_number + 1;
+	ratchet->receive_message_number = ratchet->purported_message_number + 1;
 	//CKr = CKp
-	status = buffer_clone(state->receive_chain_key, state->purported_receive_chain_key);
+	status = buffer_clone(ratchet->receive_chain_key, ratchet->purported_receive_chain_key);
 	if (status != 0) {
-		//TODO what to clear here?
-		return status;
+		goto cleanup;
 	}
 
-	return 0;
+cleanup:
+	return status;
 }
 
 /*

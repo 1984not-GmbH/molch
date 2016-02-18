@@ -154,7 +154,9 @@ int ratchet_receive(
  * Call this function after trying to decrypt a message and pass it if
  * the decryption was successful or if it wasn't.
  */
-int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) __attribute__((warn_unused_result));
+int ratchet_set_last_message_authenticity(
+		ratchet_state * const ratchet,
+		bool valid) __attribute__((warn_unused_result));
 
 /*
  * End the ratchet chain and free the memory.
