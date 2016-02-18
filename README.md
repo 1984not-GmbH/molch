@@ -49,6 +49,19 @@ $ scan-build make
 ```
 or run the script `ci/clang-static-analysis.sh`.
 
+how to generate traces for debugging
+------------------------------------
+```
+$ mkdir tracing
+$ cd tracing
+$ cmake .. -DCMAKE_BUILD_TYPE=Debug -DTRACING=On
+$ make
+```
+
+Now, when you run one of the tests (those are located at `tracing/test/`), it will generate a file `trace.out` and print all function calls to stdout.
+
+You can postprocess this tracing output with `test/trace.lua`, pass it the path of `trace.out`, or the path to a saved output of the test and it will pretty-print the trace. It can also filter out function calls to make things easier to read, see it's source code for more details.
+
 size of a packet
 ----------------
 NOTE: This may be subject to change.
