@@ -13,7 +13,7 @@ if (TRACING)
     message("TRACING ENABLED")
     add_definitions(-DTRACING)
     add_library(tracing "test/tracing")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -finstrument-functions -finstrument-functions-exclude-function-list=printf,dladdr")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -finstrument-functions -finstrument-functions-exclude-function-list=printf,dladdr,putchar")
     set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -ldl")
 endif()
 
