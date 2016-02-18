@@ -21,6 +21,7 @@
 #include <assert.h>
 
 #include "../lib/list.h"
+#include "tracing.h"
 
 int main(void) {
 	if (sodium_init() == -1) {

@@ -22,6 +22,7 @@
 #include "../lib/packet.h"
 #include "utils.h"
 #include "packet-test-lib.h"
+#include "tracing.h"
 
 int main(void) {
 	if(sodium_init() == -1) {

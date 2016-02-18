@@ -25,6 +25,7 @@
 #include "common.h"
 #include "../lib/conversation.h"
 #include "../lib/json.h"
+#include "tracing.h"
 
 int main(void) {
 	int status = sodium_init();

@@ -22,6 +22,7 @@
 #include "../lib/packet.h"
 #include "utils.h"
 #include "packet-test-lib.h"
+#include "tracing.h"
 
 /*
  * Create message and header keys, encrypt header and message

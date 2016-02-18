@@ -25,6 +25,7 @@
 #include "../lib/json.h"
 #include "utils.h"
 #include "common.h"
+#include "tracing.h"
 
 int generate_prekeys(buffer_t * const private_prekeys, buffer_t * const public_prekeys) {
 	if ((private_prekeys->buffer_length != (PREKEY_AMOUNT * crypto_box_SECRETKEYBYTES))

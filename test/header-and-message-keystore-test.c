@@ -24,6 +24,7 @@
 #include "../lib/json.h"
 #include "utils.h"
 #include "common.h"
+#include "tracing.h"
 
 
 int main(void) {
