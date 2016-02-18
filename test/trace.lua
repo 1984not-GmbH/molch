@@ -36,7 +36,7 @@ local indentation_strings = {
 }
 local function indentation_string(level)
 	for i = indentation_strings.deepest_level + 1, level do
-		indentation_strings[i] = indentation_strings[i - 1] .. "    "
+		indentation_strings[i] = indentation_strings[i - 1] .. ".   "
 	end
 
 	return indentation_strings[level]
