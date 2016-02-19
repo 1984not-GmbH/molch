@@ -23,14 +23,14 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <limits.h>
+#include <string.h>
 #define __USE_GNU
 #include <dlfcn.h>
 #include "tracing.h"
 
 static FILE *trace_file = NULL;
 //level of how deeply the function call was nested
-//starts with UINT_MAX so that the first level is 0
-static unsigned int current_level = UINT_MAX;
+static unsigned int current_level = 0;
 
 void trace_begin(void) {
 	trace_file = fopen("trace.out", "w");
@@ -47,8 +47,6 @@ void trace_end(void) {
 }
 
 void __cyg_profile_func_enter(void *function, void *caller) {
-	current_level++;
-
 	Dl_info function_info;
 	Dl_info caller_info;
 	bool function_info_available = dladdr(function, &function_info);
@@ -60,9 +58,12 @@ void __cyg_profile_func_enter(void *function, void *caller) {
 	if ((trace_file != NULL) && function_info_available && caller_info_available) {
 		fprintf(trace_file, "%u %s -> %s\n", current_level, caller_info.dli_sname, function_info.dli_sname);
 	}
+
+	current_level++;
 }
 
 void __cyg_profile_func_exit(void *function, void *caller) {
+	current_level--;
 	Dl_info function_info;
 	Dl_info caller_info;
 	bool function_info_available = dladdr(function, &function_info);
@@ -74,6 +75,5 @@ void __cyg_profile_func_exit(void *function, void *caller) {
 	if ((trace_file != NULL) && function_info_available && caller_info_available) {
 		fprintf(trace_file, "%u %s <- %s\n", current_level, caller_info.dli_sname, function_info.dli_sname);
 	}
-	current_level--;
 }
 #endif

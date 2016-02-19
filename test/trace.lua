@@ -89,33 +89,74 @@ end
 
 local pattern = "^(%d+) ([%a_%(%)]+) ([%-<>]+) ([%a_%(%)]+)$"
 
-local indentation_strings = {
-	deepest_level = 0,
-	[0] = ""
-}
-local function indentation_string(level)
-	for i = indentation_strings.deepest_level + 1, level do
-		indentation_strings[i] = indentation_strings[i - 1] .. ".   "
+local function get_last_function(call_list)
+	if #call_list == 0 then
+		return nil
 	end
 
-	return indentation_strings[level]
+	for i = #call_list, 1 do
+		if call_list[i].type == "function" then
+			return call_list[i]
+		end
+	end
+
+	return nil
 end
 
--- go trough the file line by line
+local inspect = require("inspect")
+
+-- go through the file line by line
+local call_list = {}
 for line in io.lines(trace_file) do
 	local level, caller, direction, callee = line:match(pattern)
-
-	if not level then -- not a valid trace line, treat as program output
-		print("> "..line)
-	elseif ignore_list[callee] then
+	if not level then
+		table.insert(call_list, {
+			type = "text",
+			text = line
+		})
 	else
-		level = tonumber(level)
+		local last_function = get_last_function(call_list)
+		-- if not last_function then -- first call
+		-- 	table.insert(call_list, {
+		-- 		type = "function",
+		-- 		name = caller,
+		-- 		level = level,
+		-- 		text = line
+		-- 	})
+		-- end
+
 		if direction == "->" then
-			print((".   "):rep(level)..callee)
+			table.insert(call_list, {
+				type = "function",
+				name = callee,
+				level = level,
+				text = line
+			})
 		elseif direction == "<-" then
-			print((".   "):rep(level)..caller)
+			table.insert(call_list, {
+				type = "function",
+				name = caller,
+				level = level,
+				text = line
+			})
 		else
-			print("> "..line) -- treat as program output
+			error("invalid line detected")
+		end
+	end
+end
+
+local ignore_level
+for i, entry in ipairs(call_list) do
+	if entry.type == "text" then
+		print("> "..entry.text)
+	elseif entry.type == "function" then
+		if ignore_list[entry.name] then
+			if (not ignore_level) or (ignore_level >= entry.level) then
+				ignore_level = entry.level
+			end
+		elseif (not ignore_level) or (entry.level <= ignore_level) then
+			ignore_level = nil
+			print((".   "):rep(entry.level)..entry.name)
 		end
 	end
 end
