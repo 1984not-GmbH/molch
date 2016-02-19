@@ -25,6 +25,7 @@ set(tests diffie-hellman-test
           header-test
           header-and-message-keystore-test
           ratchet-test
+          ratchet-test-simple
           user-store-test
           spiced-random-test
           molch-test
