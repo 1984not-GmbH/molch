@@ -106,7 +106,7 @@ ratchet_state* ratchet_create(
 
 	//find out if we are alice by comparing both public keys
 	//the one with the bigger public key is alice
-	int comparison = memcmp(our_public_identity->content, their_public_identity->content, our_public_identity->content_length);
+	int comparison = sodium_compare(our_public_identity->content, their_public_identity->content, our_public_identity->content_length);
 	if (comparison > 0) {
 		state->am_i_alice = true;
 	} else if (comparison < 0) {
