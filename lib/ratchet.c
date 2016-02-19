@@ -665,7 +665,7 @@ cleanup:
 	buffer_destroy_from_heap(throwaway_message_key);
 	buffer_destroy_from_heap(purported_chain_key_backup);
 
-	return 0;
+	return status;
 }
 
 /*
