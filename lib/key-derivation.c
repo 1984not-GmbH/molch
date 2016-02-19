@@ -54,6 +54,7 @@ int derive_key(
 	//create a salt that contains the number of the subkey
 	buffer_t * salt = buffer_create_on_heap(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
 	buffer_clear(salt); //fill with zeroes
+	salt->content_length = crypto_generichash_blake2b_SALTBYTES;
 	//FIXME: This is a really unefficient solution
 	for (; subkey_counter > 0; subkey_counter--) {
 		sodium_increment(salt->content, salt->content_length);
