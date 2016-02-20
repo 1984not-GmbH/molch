@@ -316,7 +316,8 @@ int packet_get_metadata_without_verification(
 		return -10;
 	}
 
-	*packet_type = packet->content[0];
+	unsigned char local_packet_type = packet->content[0];
+	*packet_type = local_packet_type;
 	*current_protocol_version = (0xf0 & packet->content[1]) >> 4;
 	*highest_supported_protocol_version = 0x0f & packet->content[1];
 	*header_length = packet->content[2] - crypto_aead_chacha20poly1305_ABYTES - MESSAGE_NONCE_SIZE;
@@ -338,13 +339,15 @@ int packet_decrypt_header(
 	}
 
 	//extract the purported header length from the packet
-	unsigned char irrelevant_metadata;
+	unsigned char packet_type;
+	unsigned char current_protocol_version;
+	unsigned char highest_supported_protocol_version;
 	unsigned char purported_header_length;
 	int status = packet_get_metadata_without_verification(
 			packet,
-			&irrelevant_metadata,
-			&irrelevant_metadata,
-			&irrelevant_metadata,
+			&packet_type,
+			&current_protocol_version,
+			&highest_supported_protocol_version,
 			&purported_header_length);
 	if (status != 0) {
 		return status;
