@@ -96,4 +96,13 @@ int conversation_send(
 		const buffer_t * const message,
 		buffer_t **packet //output, free after use!
 		) __attribute__((warn_unused_result));
+
+/*
+ * Receive and decrypt a message using an existing conversation.
+ */
+int conversation_receive(
+	conversation_t * const conversation,
+	const buffer_t * const packet, //received packet
+	buffer_t ** const message //output, free after use!
+		) __attribute__((warn_unused_result));
 #endif

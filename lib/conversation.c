@@ -229,15 +229,6 @@ int conversation_start_receive_conversation(
 
 	int status = 0;
 
-	//create buffers
-	buffer_t *current_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_t *next_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_t *header = buffer_create_on_heap(255, 255);
-	buffer_t *message_nonce = buffer_create_on_heap(MESSAGE_NONCE_SIZE, MESSAGE_NONCE_SIZE);
-	buffer_t *their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_t *message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-	*message = buffer_create_on_heap(packet->content_length, 0);
-
 	status = conversation_init(
 			conversation,
 			receiver_private_identity,
@@ -247,103 +238,21 @@ int conversation_start_receive_conversation(
 			receiver_public_ephemeral,
 			sender_public_ephemeral);
 	if (status != 0) {
-		goto fail;
+		goto cleanup;
 	}
 
-	status = ratchet_get_receive_header_keys(
-			current_receive_header_key,
-			next_receive_header_key,
-			conversation->ratchet);
-	if (status != 0) {
-		goto fail;
-	}
-
-	//try to decrypt the packet header with the current receive header key
-	status = packet_decrypt_header(
+	status = conversation_receive(
+			conversation,
 			packet,
-			header,
-			message_nonce,
-			current_receive_header_key);
-	if (status == 0) {
-		status = ratchet_set_header_decryptability(
-				conversation->ratchet,
-				CURRENT_DECRYPTABLE);
-		if (status != 0) {
-			goto fail;
-		}
-	} else if (status != 0) {
-		//since this failed, try to decrypt it with the next receive header key
-		status = packet_decrypt_header(
-				packet,
-				header,
-				message_nonce,
-				next_receive_header_key);
-		if (status == 0) {
-			status = ratchet_set_header_decryptability(
-					conversation->ratchet,
-					NEXT_DECRYPTABLE);
-			if (status != 0) {
-				goto fail;
-			}
-		} else if (status != 0) {
-			int decryptability_status __attribute__((unused)); //tell the static analyser to not complain about this
-			decryptability_status = ratchet_set_header_decryptability(
-					conversation->ratchet,
-					UNDECRYPTABLE);
-			status = -1;
-			goto fail;
-		}
-	}
-
-	//extract data from the header
-	uint32_t message_counter;
-	uint32_t previous_message_counter;
-	status = header_extract(
-			header,
-			their_signed_public_ephemeral,
-			&message_counter,
-			&previous_message_counter);
+			message);
 	if (status != 0) {
-		goto fail;
+		goto cleanup;
 	}
 
-	//and now decrypt the message with the message key
-	//now we have all the data we need to advance the ratchet
-	//so let's do that
-	status = ratchet_receive(
-			conversation->ratchet,
-			message_key,
-			their_signed_public_ephemeral,
-			message_counter,
-			previous_message_counter);
-	if (status != 0) {
-		goto fail;
-	}
-
-	status = packet_decrypt_message(
-			packet,
-			*message,
-			message_nonce,
-			message_key);
-	if (status != 0) {
-		int authenticity_status __attribute__((unused)); //tell the static analyser to not complain about this
-		authenticity_status = ratchet_set_last_message_authenticity(conversation->ratchet, false);
-		status = EXIT_FAILURE;
-		goto fail;
-	}
-
-	goto cleanup;
-
-fail:
-	buffer_destroy_from_heap(*message);
-	*message = NULL;
 cleanup:
-	buffer_destroy_from_heap(current_receive_header_key);
-	buffer_destroy_from_heap(next_receive_header_key);
-	buffer_destroy_from_heap(header);
-	buffer_destroy_from_heap(message_nonce);
-	buffer_destroy_from_heap(their_signed_public_ephemeral);
-	buffer_destroy_from_heap(message_key);
+	if (status != 0) {
+		conversation_deinit(conversation);
+	}
 
 	return status;
 }
@@ -420,6 +329,131 @@ cleanup:
 	buffer_destroy_from_heap(send_message_key);
 	buffer_destroy_from_heap(send_ephemeral_key);
 	buffer_destroy_from_heap(header);
+
+	return status;
+}
+
+/*
+ * Receive and decrypt a message using an existing conversation.
+ */
+int conversation_receive(
+	conversation_t * const conversation,
+	const buffer_t * const packet, //received packet
+	buffer_t ** const message) { //output, free after use!
+	int status = 0;
+
+	//create buffers
+	buffer_t *current_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_t *next_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_t *header = buffer_create_on_heap(255, 255);
+	buffer_t *message_nonce = buffer_create_on_heap(MESSAGE_NONCE_SIZE, MESSAGE_NONCE_SIZE);
+	buffer_t *their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_t *message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	*message = buffer_create_on_heap(packet->content_length, 0);
+
+	status = ratchet_get_receive_header_keys(
+			current_receive_header_key,
+			next_receive_header_key,
+			conversation->ratchet);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+	//try to decrypt the packet header with the current receive header key
+	status = packet_decrypt_header(
+			packet,
+			header,
+			message_nonce,
+			current_receive_header_key);
+	if (status == 0) {
+		status = ratchet_set_header_decryptability(
+				conversation->ratchet,
+				CURRENT_DECRYPTABLE);
+		if (status != 0) {
+			goto cleanup;
+		}
+	} else if (status != 0) {
+		//since this failed, try to decrypt it with the next receive header key
+		status = packet_decrypt_header(
+				packet,
+				header,
+				message_nonce,
+				next_receive_header_key);
+		if (status == 0) {
+			status = ratchet_set_header_decryptability(
+					conversation->ratchet,
+					NEXT_DECRYPTABLE);
+			if (status != 0) {
+				goto cleanup;
+			}
+		} else {
+			int decryptability_status __attribute__((unused)); //tell the static analyser not to complain about this
+			decryptability_status = ratchet_set_header_decryptability(
+					conversation->ratchet,
+					UNDECRYPTABLE);
+			status = -1;
+			goto cleanup;
+		}
+	}
+
+	//extract data from the header
+	uint32_t message_counter;
+	uint32_t previous_message_counter;
+	status = header_extract(
+			header,
+			their_signed_public_ephemeral,
+			&message_counter,
+			&previous_message_counter);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+	//and now decrypt the message with the message key
+	//now we have all the data we need to advance the ratchet
+	//so let's do that
+	status = ratchet_receive(
+			conversation->ratchet,
+			message_key,
+			their_signed_public_ephemeral,
+			message_counter,
+			previous_message_counter);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+	status = packet_decrypt_message(
+			packet,
+			*message,
+			message_nonce,
+			message_key);
+	if (status != 0) {
+		int authenticity_status __attribute__((unused)); //tell the static analyser to not complain about this
+		authenticity_status = ratchet_set_last_message_authenticity(conversation->ratchet, false);
+		status = -1;
+		goto cleanup;
+	}
+
+	status = ratchet_set_last_message_authenticity(conversation->ratchet, true);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+cleanup:
+	if (status != 0) {
+		int authenticity_status __attribute__((unused)); //tell the static analyser to not complain about this
+		authenticity_status = ratchet_set_last_message_authenticity(conversation->ratchet, false);
+	}
+	if ((status != 0) && (*message != NULL)) {
+		buffer_destroy_from_heap(*message);
+		*message = NULL;
+	}
+
+	buffer_destroy_from_heap(current_receive_header_key);
+	buffer_destroy_from_heap(next_receive_header_key);
+	buffer_destroy_from_heap(header);
+	buffer_destroy_from_heap(message_nonce);
+	buffer_destroy_from_heap(their_signed_public_ephemeral);
+	buffer_destroy_from_heap(message_key);
 
 	return status;
 }
