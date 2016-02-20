@@ -251,7 +251,10 @@ int packet_decrypt(
 		buffer_t * const header, //output, As long as the packet or at most 255 bytes
 		const buffer_t * const header_key, //HEADER_KEY_SIZE
 		buffer_t * const message, //output, should be as long as the packet
-		const buffer_t * const message_key) { //MESSAGE_KEY_SIZE
+		const buffer_t * const message_key, //MESSAGE_KEY_SIZE
+		buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages only
+		buffer_t * const public_ephemeral_key, //optional, can be NULL, for prekey messages only
+		buffer_t * const public_prekey) { //optional, can be NULL, for prekey messages only
 	//check the buffer sizes
 	if ((header_key->content_length != HEADER_KEY_SIZE)
 			|| (message_key->content_length != MESSAGE_KEY_SIZE)) {
@@ -266,9 +269,9 @@ int packet_decrypt(
 			current_protocol_version,
 			highest_supported_protocol_version,
 			&purported_header_length,
-			NULL,
-			NULL,
-			NULL);
+			public_identity_key,
+			public_ephemeral_key,
+			public_prekey);
 	if (status != 0) {
 		return status;
 	}
@@ -280,9 +283,9 @@ int packet_decrypt(
 			header,
 			message_nonce,
 			header_key,
-			NULL,
-			NULL,
-			NULL);
+			public_identity_key,
+			public_ephemeral_key,
+			public_prekey);
 	if (status != 0) {
 		buffer_destroy_from_heap(message_nonce);
 		return status;

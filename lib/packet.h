@@ -77,7 +77,11 @@ int packet_decrypt(
 		buffer_t * const header, //output, As long as the packet or at most 255 bytes
 		const buffer_t * const header_key, //HEADER_KEY_SIZE
 		buffer_t * const message, //output, should be as long as the packet
-		const buffer_t * const message_key) __attribute__((warn_unused_result)); //MESSAGE_KEY_SIZE
+		const buffer_t * const message_key, //MESSAGE_KEY_SIZE
+		buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages only
+		buffer_t * const public_ephemeral_key, //optional, can be NULL, for prekey messages only
+		buffer_t * const public_prekey //optional, can be NULL, for prekey messages only
+		) __attribute__((warn_unused_result));
 
 /*
  * Get the metadata of a packet (without verifying it's authenticity).
