@@ -42,7 +42,7 @@ struct header_and_message_keystore_node {
 
 //header of the key store
 typedef struct header_and_message_keystore {
-	unsigned int length;
+	size_t length;
 	header_and_message_keystore_node *head;
 	header_and_message_keystore_node *tail;
 } header_and_message_keystore;

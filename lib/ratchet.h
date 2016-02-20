@@ -72,11 +72,11 @@ typedef struct ratchet_state {
 	buffer_t their_purported_public_ephemeral[1]; //DHp
 	const unsigned char their_purported_public_ephemeral_storage[PUBLIC_KEY_SIZE];
 	//message numbers
-	unsigned int send_message_number; //Ns
-	unsigned int receive_message_number; //Nr
-	unsigned int purported_message_number; //Np
-	unsigned int previous_message_number; //PNs (number of messages sent in previous chain)
-	unsigned int purported_previous_message_number; //PNp
+	uint32_t send_message_number; //Ns
+	uint32_t receive_message_number; //Nr
+	uint32_t purported_message_number; //Np
+	uint32_t previous_message_number; //PNs (number of messages sent in previous chain)
+	uint32_t purported_previous_message_number; //PNp
 	//ratchet flag
 	bool ratchet_flag;
 	bool am_i_alice;
@@ -86,7 +86,7 @@ typedef struct ratchet_state {
 	ratchet_header_decryptability header_decryptable; //could the last received header be decrypted?
 	//list of previous message and header keys
 	header_and_message_keystore skipped_header_and_message_keys[1]; //skipped_HK_MK (list containing message keys for messages that weren't received)
-	header_and_message_keystore purported_header_and_message_keys[1]; //this represents the staging area specified in the axolotl ratchet
+	header_and_message_keystore staged_header_and_message_keys[1]; //this represents the staging area specified in the axolotl ratchet
 } ratchet_state;
 
 /*
@@ -106,13 +106,16 @@ ratchet_state* ratchet_create(
 		const buffer_t * const their_public_ephemeral) __attribute__((warn_unused_result));
 
 /*
- * Create message and header keys to encrypt the next send message with.
+ * Get keys and metadata to send the next message.
  */
-int ratchet_next_send_keys(
-		buffer_t * const next_message_key, //MESSAGE_KEY_SIZE
-		                     //from the ratchet_state struct
-		buffer_t * const next_header_key, //HEADER_KEY_SIZE
-		ratchet_state *state) __attribute__((warn_unused_result));
+int ratchet_send(
+		ratchet_state *state,
+		buffer_t * const send_header_key, //HEADER_KEY_SIZE, HKs
+		uint32_t * const send_message_number, //Ns
+		uint32_t * const previous_send_message_number, //PNs
+		buffer_t * const our_public_ephemeral, //DHRs
+		buffer_t * const message_key //MESSAGE_KEY_SIZE, MK
+		) __attribute__((warn_unused_result));
 
 /*
  * Get a copy of the current and the next receive header key.
@@ -127,8 +130,8 @@ int ratchet_get_receive_header_keys(
  * or next (next_receive_header_key) header key, or isn't decryptable.
  */
 int ratchet_set_header_decryptability(
-		ratchet_header_decryptability header_decryptable,
-		ratchet_state *state) __attribute__((warn_unused_result));
+		ratchet_state *ratchet,
+		ratchet_header_decryptability header_decryptable) __attribute__((warn_unused_result));
 
 /*
  * First step after receiving a message: Calculate purported keys.
@@ -141,17 +144,19 @@ int ratchet_set_header_decryptability(
  * after having verified the message.
  */
 int ratchet_receive(
+		ratchet_state *state,
 		buffer_t * const message_key, //used to get the message key back
 		const buffer_t * const their_purported_public_ephemeral,
-		const unsigned int purported_message_number,
-		const unsigned int purported_previous_message_number,
-		ratchet_state *state) __attribute__((warn_unused_result));
+		const uint32_t purported_message_number,
+		const uint32_t purported_previous_message_number) __attribute__((warn_unused_result));
 
 /*
  * Call this function after trying to decrypt a message and pass it if
  * the decryption was successful or if it wasn't.
  */
-int ratchet_set_last_message_authenticity(ratchet_state *state, bool valid) __attribute__((warn_unused_result));
+int ratchet_set_last_message_authenticity(
+		ratchet_state * const ratchet,
+		bool valid) __attribute__((warn_unused_result));
 
 /*
  * End the ratchet chain and free the memory.

@@ -16,7 +16,7 @@ set(tests diffie-hellman-test
           triple-diffie-hellman-test
           chain-key-derivation-test
           message-key-derivation-test
-          root-chain-and-header-key-derivation-test
+          root-next-header-and-chain-key-derivation-test
           initial-root-chain-and-header-key-derivation-test
           packet-get-metadata-test
           packet-decrypt-header-test
@@ -25,6 +25,7 @@ set(tests diffie-hellman-test
           header-test
           header-and-message-keystore-test
           ratchet-test
+          ratchet-test-simple
           user-store-test
           spiced-random-test
           molch-test

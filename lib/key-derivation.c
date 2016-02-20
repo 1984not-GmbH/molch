@@ -117,89 +117,112 @@ int derive_message_key(
 }
 
 /*
- * Derive a root and initial chain key for a new ratchet.
+ * Derive a root, next header and initial chain key for a new ratchet.
  *
- * The chain and root key have to be CHAIN_KEY_SIZE and ROOT_KEY_SIZE long.
- *
- * RK, CK, HK = KDF( RK, DH(DHRr, DHRs) )
+ * RK, NHKs, CKs = KDF(HMAC-HASH(RK, DH(DHRr, DHRs)))
+ * and
+ * RK, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
  */
-int derive_root_chain_and_header_keys(
+int derive_root_next_header_and_chain_keys(
 		buffer_t * const root_key, //ROOT_KEY_SIZE
+		buffer_t * const next_header_key, //HEADER_KEY_SIZE
 		buffer_t * const chain_key, //CHAIN_KEY_SIZE
-		buffer_t * const header_key, //HEADER_KEY_SIZE
 		const buffer_t * const our_private_ephemeral,
 		const buffer_t * const our_public_ephemeral,
 		const buffer_t * const their_public_ephemeral,
 		const buffer_t * const previous_root_key,
 		bool am_i_alice) {
-	assert(crypto_secretbox_KEYBYTES == crypto_auth_KEYBYTES);
-	//check size of the buffers
-	if ((root_key->buffer_length < ROOT_KEY_SIZE)
-			|| (chain_key->buffer_length < CHAIN_KEY_SIZE)
-			|| (header_key->buffer_length < HEADER_KEY_SIZE)
-			|| (our_private_ephemeral->content_length != PRIVATE_KEY_SIZE)
-			|| (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
-			|| (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
-			|| (previous_root_key->content_length != ROOT_KEY_SIZE)) {
-		return -6;
+	int status;
+
+	//create buffers
+	buffer_t *diffie_hellman_secret = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, 0);
+	buffer_t *derivation_key = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
+
+	//check input
+	if ((root_key == NULL) || (root_key->buffer_length < ROOT_KEY_SIZE)
+			|| (next_header_key == NULL) || (next_header_key->buffer_length < HEADER_KEY_SIZE)
+			|| (chain_key == NULL) || (chain_key->buffer_length < CHAIN_KEY_SIZE)
+			|| (our_private_ephemeral == NULL) || (our_private_ephemeral->content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_ephemeral == NULL) || (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
+			|| (previous_root_key == NULL) || (previous_root_key->content_length != ROOT_KEY_SIZE)) {
+		status = -6;
+		goto cleanup;
 	}
 
-	int status;
-	//input key for KDF (root key and chain key derivation)
-	//input_key = DH(our_private_ephemeral, their_public_ephemeral)
-	buffer_t *input_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	//DH(DHRs, DHRr) or DH(DHRp, DHRs)
 	status = diffie_hellman(
-			input_key,
+			diffie_hellman_secret,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral,
 			am_i_alice);
 	if (status != 0) {
-		goto fail;
+		goto cleanup;
 	}
 
-	//derive root key
+	//key to derive from
+	//HMAC-HASH(RK, DH(..., ...))
+	status = crypto_generichash(
+			derivation_key->content,
+			derivation_key->content_length,
+			diffie_hellman_secret->content,
+			diffie_hellman_secret->content_length,
+			previous_root_key->content,
+			previous_root_key->content_length);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+	//now derive the different keys from the derivation key
+	//root key
 	status = derive_key(
 			root_key,
 			ROOT_KEY_SIZE,
-			input_key,
+			derivation_key,
 			0);
 	if (status != 0) {
-		goto fail;
+		goto cleanup;
 	}
 
-	//derive chain key
+	//next header key
+	status = derive_key(
+			next_header_key,
+			HEADER_KEY_SIZE,
+			derivation_key,
+			1);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+	//chain key
 	status = derive_key(
 			chain_key,
 			CHAIN_KEY_SIZE,
-			input_key,
-			1);
-	if (status != 0) {
-		goto fail;
-	}
-
-	//derive header key
-	status = derive_key(
-			header_key,
-			HEADER_KEY_SIZE,
-			input_key,
+			derivation_key,
 			2);
 	if (status != 0) {
-		goto fail;
+		goto cleanup;
 	}
 
-	goto cleanup;
-
-fail:
-	buffer_clear(root_key);
-	root_key->content_length = 0;
-	buffer_clear(chain_key);
-	chain_key->content_length = 0;
-	buffer_clear(header_key);
-	header_key->content_length = 0;
-
 cleanup:
-	buffer_destroy_from_heap(input_key);
+	if (status != 0) {
+		if (root_key != NULL) {
+			buffer_clear(root_key);
+			root_key->content_length = 0;
+		}
+		if (next_header_key != NULL) {
+			buffer_clear(next_header_key);
+			next_header_key->content_length = 0;
+		}
+		if (chain_key != NULL) {
+			buffer_clear(chain_key);
+			chain_key->content_length = 0;
+		}
+	}
+
+	buffer_destroy_from_heap(diffie_hellman_secret);
+	buffer_destroy_from_heap(derivation_key);
 
 	return status;
 }

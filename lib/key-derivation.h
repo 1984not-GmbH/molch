@@ -61,14 +61,16 @@ int derive_message_key(
 		const buffer_t * const chain_key) __attribute__((warn_unused_result));
 
 /*
- * Derive a root, header and initial chain key for a new ratchet.
+ * Derive a root, next header and initial chain key for a new ratchet.
  *
- * RK, CK, HK = KDF( RK, DH(DHRr, DHRs) )
+ * RK, NHKs, CKs = KDF(HMAC-HASH(RK, DH(DHRr, DHRs)))
+ * and
+ * RK, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
  */
-int derive_root_chain_and_header_keys(
+int derive_root_next_header_and_chain_keys(
 		buffer_t * const root_key, //ROOT_KEY_SIZE
+		buffer_t * const next_header_key, //HEADER_KEY_SIZE
 		buffer_t * const chain_key, //CHAIN_KEY_SIZE
-		buffer_t * const header_key, //HEADER_KEY_SIZE
 		const buffer_t * const our_private_ephemeral,
 		const buffer_t * const our_public_ephemeral,
 		const buffer_t * const their_public_ephemeral,

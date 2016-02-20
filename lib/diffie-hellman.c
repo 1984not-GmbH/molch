@@ -35,7 +35,7 @@
  * Bob:   H(ECDH(our_private_key,their_public_key)|their_public_key|our_public_key)
  */
 int diffie_hellman(
-		buffer_t * const derived_key, //needs to be crypto_generichash_BYTES long
+		buffer_t * const derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
 		const buffer_t * const our_private_key, //needs to be PRIVATE_KEY_SIZE long
 		const buffer_t * const our_public_key, //needs to be PUBLIC_KEY_SIZE long
 		const buffer_t * const their_public_key, //needs to be PUBLIC_KEY_SIZE long
@@ -43,12 +43,13 @@ int diffie_hellman(
 	//make sure that the assumptions are correct
 	assert(PUBLIC_KEY_SIZE == crypto_scalarmult_SCALARBYTES);
 	assert(PRIVATE_KEY_SIZE == crypto_scalarmult_SCALARBYTES);
+	assert(DIFFIE_HELLMAN_SIZE == crypto_generichash_BYTES);
 
 	//set content length of output to 0 (can prevent use on failure)
 	derived_key->content_length = 0;
 
 	//check buffer sizes
-	if ((derived_key->buffer_length < crypto_generichash_BYTES)
+	if ((derived_key->buffer_length < DIFFIE_HELLMAN_SIZE)
 			|| (our_private_key->content_length != PRIVATE_KEY_SIZE)
 			|| (our_public_key->content_length != PUBLIC_KEY_SIZE)
 			|| (their_public_key->content_length != PUBLIC_KEY_SIZE)
@@ -75,7 +76,7 @@ int diffie_hellman(
 			hash_state,
 			NULL, //key
 			0, //key_length
-			crypto_generichash_BYTES); //output length
+			DIFFIE_HELLMAN_SIZE); //output length
 	if (status != 0) {
 		buffer_destroy_from_heap(dh_secret);
 		sodium_memzero(hash_state, sizeof(crypto_generichash_state));
@@ -122,12 +123,12 @@ int diffie_hellman(
 	}
 
 	//finally write the hash to derived_key
-	status = crypto_generichash_final(hash_state, derived_key->content, crypto_generichash_BYTES);
+	status = crypto_generichash_final(hash_state, derived_key->content, DIFFIE_HELLMAN_SIZE);
 	if (status != 0) {
 		sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 		return status;
 	}
-	derived_key->content_length = crypto_generichash_BYTES;
+	derived_key->content_length = DIFFIE_HELLMAN_SIZE;
 	sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 	return status;
 }
@@ -161,7 +162,7 @@ int triple_diffie_hellman(
 	derived_key->content_length = 0;
 
 	//check buffer sizes
-	if ((derived_key->buffer_length < crypto_generichash_BYTES)
+	if ((derived_key->buffer_length < DIFFIE_HELLMAN_SIZE)
 			|| (our_private_identity->content_length != PRIVATE_KEY_SIZE)
 			|| (our_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (their_public_identity->content_length != PUBLIC_KEY_SIZE)
@@ -179,9 +180,9 @@ int triple_diffie_hellman(
 
 	int status;
 	//buffers for all 3 Diffie Hellman exchanges
-	buffer_t *dh1 = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
-	buffer_t *dh2 = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
-	buffer_t *dh3 = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	buffer_t *dh1 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+	buffer_t *dh2 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+	buffer_t *dh3 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
 
 	if (am_i_alice) {
 		//DH(our_identity, their_ephemeral)
@@ -250,36 +251,36 @@ int triple_diffie_hellman(
 			hash_state,
 			NULL, //key
 			0, //key_length
-			crypto_generichash_BYTES); //output_length
+			DIFFIE_HELLMAN_SIZE); //output_length
 	if (status != 0) {
 		goto cleanup;
 	}
 
 	//add dh1 to hash input
-	status = crypto_generichash_update(hash_state, dh1->content, crypto_generichash_BYTES);
+	status = crypto_generichash_update(hash_state, dh1->content, DIFFIE_HELLMAN_SIZE);
 	if (status != 0) {
 		goto cleanup;
 	}
 
 	//add dh2 to hash input
-	status = crypto_generichash_update(hash_state, dh2->content, crypto_generichash_BYTES);
+	status = crypto_generichash_update(hash_state, dh2->content, DIFFIE_HELLMAN_SIZE);
 	if (status != 0) {
 		goto cleanup;
 	}
 
 	//add dh3 to hash input
-	status = crypto_generichash_update(hash_state, dh3->content, crypto_generichash_BYTES);
+	status = crypto_generichash_update(hash_state, dh3->content, DIFFIE_HELLMAN_SIZE);
 	if (status != 0) {
 		goto cleanup;
 	}
 
 	//write final hash to output (derived_key)
-	status = crypto_generichash_final(hash_state, derived_key->content, crypto_generichash_BYTES);
+	status = crypto_generichash_final(hash_state, derived_key->content, DIFFIE_HELLMAN_SIZE);
 	if (status != 0) {
 		sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 		goto cleanup;
 	}
-	derived_key->content_length = crypto_generichash_BYTES;
+	derived_key->content_length = DIFFIE_HELLMAN_SIZE;
 	sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 
 cleanup:

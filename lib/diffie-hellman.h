@@ -37,7 +37,7 @@
  * Bob:   H(ECDH(our_private_key,their_public_key)|their_public_key|our_public_key)
  */
 int diffie_hellman(
-		buffer_t * const derived_key, //needs to be crypto_generichash_BYTES long
+		buffer_t * const derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
 		const buffer_t * const our_private_key, //needs to be PRIVATE_KEY_SIZE long
 		const buffer_t * const our_public_key, //needs to be PUBLIC_KEY_SIZE long
 		const buffer_t * const their_public_key, //needs to be PUBLIC_KEY_SIZE long
