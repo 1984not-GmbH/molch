@@ -488,13 +488,15 @@ int packet_decrypt_message(
 	message->content_length = 0;
 
 	//get the header length
-	unsigned char irrelevant_metadata;
+	unsigned char packet_type;
+	unsigned char current_protocol_version;
+	unsigned char highest_supported_protocol_version;
 	unsigned char purported_header_length;
 	int status = packet_get_metadata_without_verification(
 			packet,
-			&irrelevant_metadata,
-			&irrelevant_metadata,
-			&irrelevant_metadata,
+			&packet_type,
+			&current_protocol_version,
+			&highest_supported_protocol_version,
 			&purported_header_length,
 			NULL,
 			NULL,
@@ -503,8 +505,9 @@ int packet_decrypt_message(
 		return status;
 	}
 
+	off_t header_nonce_offset = 3 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
 	//length of message and padding
-	const size_t purported_plaintext_length = packet->content_length - 3 - purported_header_length - HEADER_NONCE_SIZE - MESSAGE_NONCE_SIZE- crypto_secretbox_MACBYTES - crypto_aead_chacha20poly1305_ABYTES;
+	const size_t purported_plaintext_length = packet->content_length - header_nonce_offset - purported_header_length - HEADER_NONCE_SIZE - MESSAGE_NONCE_SIZE- crypto_secretbox_MACBYTES - crypto_aead_chacha20poly1305_ABYTES;
 	if (purported_plaintext_length >= packet->content_length) {
 		return -10;
 	}
