@@ -68,7 +68,7 @@ int packet_encrypt(
 	//check buffer sizes
 	if ((header_key->content_length != HEADER_KEY_SIZE)
 			|| (message_key->content_length != MESSAGE_KEY_SIZE)
-			|| (packet == NULL) || (packet->buffer_length < 3 + HEADER_NONCE_SIZE + (packet_type == PREKEY_MESSAGE) * 2 * PUBLIC_KEY_SIZE + MESSAGE_NONCE_SIZE + header->content_length + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_MACBYTES + message->content_length + 255)) {
+			|| (packet == NULL) || (packet->buffer_length < 3 + HEADER_NONCE_SIZE + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE + MESSAGE_NONCE_SIZE + header->content_length + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_MACBYTES + message->content_length + 255)) {
 		return -6;
 	}
 
@@ -106,7 +106,7 @@ int packet_encrypt(
 	packet->content[0] = packet_type;
 	packet->content[1] = 0xf0 & (current_protocol_version << 4); //put current version into 4MSB
 	packet->content[1] |= (0x0f & highest_supported_protocol_version); //put highest version into 4LSB
-	packet->content[2] = header->content_length + crypto_aead_chacha20poly1305_ABYTES + MESSAGE_NONCE_SIZE; //header length with authenticator and message nonce
+	packet->content[2] = header->content_length + crypto_aead_chacha20poly1305_ABYTES + MESSAGE_NONCE_SIZE + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE; //header length with authenticator and message nonce
 	packet->content_length = 3;
 
 	int status;
@@ -267,7 +267,10 @@ int packet_decrypt(
 			packet_type,
 			current_protocol_version,
 			highest_supported_protocol_version,
-			&purported_header_length);
+			&purported_header_length,
+			NULL,
+			NULL,
+			NULL);
 	if (status != 0) {
 		return status;
 	}
@@ -306,21 +309,78 @@ int packet_get_metadata_without_verification(
 		unsigned char * const packet_type,
 		unsigned char * const current_protocol_version,
 		unsigned char * const highest_supported_protocol_version,
-		unsigned char * const header_length) { //this is the raw header length, without the authenticator
+		unsigned char * const header_length, //this is the raw header length, without the authenticator
+		buffer_t * const public_identity_key, //output, optional, can be NULL, only works with prekey messages
+		buffer_t * const public_ephemeral_key, //output, optional, can be NULL, only works with prekey messages
+		buffer_t * const public_prekey) { //output, optional, can be NULL, only works with prekey messages
 	//check if packet_length is long enough to get the header length
 	if (packet->content_length < 3) {
 		return -10;
 	}
-	//check if packet is long enough to get the rest of the metadata
-	if (packet->content_length < (3 + packet->content[2] +  HEADER_NONCE_SIZE)) {
+
+	//check if the additional prekey data fulfills the length requirements
+	if ((public_identity_key != NULL) && (public_identity_key->buffer_length < PUBLIC_KEY_SIZE)) {
+		return -10;
+	}
+
+	if ((public_prekey != NULL) && (public_prekey->buffer_length < PUBLIC_KEY_SIZE)) {
 		return -10;
 	}
 
 	unsigned char local_packet_type = packet->content[0];
 	*packet_type = local_packet_type;
+
+	//check if packet is long enough to get the rest of the metadata
+	if (packet->content_length < (3 + packet->content[2] +  HEADER_NONCE_SIZE)) {
+		return -10;
+	}
+
 	*current_protocol_version = (0xf0 & packet->content[1]) >> 4;
 	*highest_supported_protocol_version = 0x0f & packet->content[1];
-	*header_length = packet->content[2] - crypto_aead_chacha20poly1305_ABYTES - MESSAGE_NONCE_SIZE;
+	*header_length = packet->content[2] - crypto_aead_chacha20poly1305_ABYTES - MESSAGE_NONCE_SIZE - (local_packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
+
+	if (local_packet_type == PREKEY_MESSAGE) {
+		int status;
+		if (public_identity_key != NULL) {
+			status = buffer_copy(
+					public_identity_key,
+					0,
+					packet,
+					3,
+					PUBLIC_KEY_SIZE);
+			if (status != 0) {
+				buffer_clear(public_identity_key);
+				return status;
+			}
+		}
+
+		if (public_ephemeral_key != NULL) {
+			status = buffer_copy(
+					public_ephemeral_key,
+					0,
+					packet,
+					3 + PUBLIC_KEY_SIZE,
+					PUBLIC_KEY_SIZE);
+			if (status != 0) {
+				buffer_clear(public_ephemeral_key);
+				return status;
+			}
+		}
+
+		if (public_prekey != NULL) {
+			status = buffer_copy(
+					public_prekey,
+					0,
+					packet,
+					3 + 2 * PUBLIC_KEY_SIZE,
+					PUBLIC_KEY_SIZE);
+			if (status != 0) {
+				buffer_clear(public_prekey);
+				return status;
+			}
+		}
+	}
+
 	return 0;
 }
 
@@ -348,7 +408,10 @@ int packet_decrypt_header(
 			&packet_type,
 			&current_protocol_version,
 			&highest_supported_protocol_version,
-			&purported_header_length);
+			&purported_header_length,
+			NULL,
+			NULL,
+			NULL);
 	if (status != 0) {
 		return status;
 	}
@@ -422,7 +485,10 @@ int packet_decrypt_message(
 			&irrelevant_metadata,
 			&irrelevant_metadata,
 			&irrelevant_metadata,
-			&purported_header_length);
+			&purported_header_length,
+			NULL,
+			NULL,
+			NULL);
 	if (status != 0) {
 		return status;
 	}

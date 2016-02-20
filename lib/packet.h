@@ -87,7 +87,11 @@ int packet_get_metadata_without_verification(
 		unsigned char * const packet_type, //1 Byte, no array
 		unsigned char * const current_protocol_version, //1 Byte, no array
 		unsigned char * const highest_supported_protocol_version, //1 Byte, no array
-		unsigned char * const header_length) __attribute__((warn_unused_result)); //this is the raw header length, without the authenticator
+		unsigned char * const header_length, //this is the raw header length, without the authenticator
+		buffer_t * const public_identity_key, //output, optional, can be NULL, only works with prekey messages
+		buffer_t * const public_ephemeral_key, //output, optional, can be NULL, only works with prekey messages
+		buffer_t * const public_prekey //output, optional, can be NULL, only works with prekey messages
+		) __attribute__((warn_unused_result));
 
 /*
  * Decrypt the header of a packet. (This also authenticates the metadata!)

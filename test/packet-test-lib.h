@@ -30,4 +30,7 @@ int create_and_print_message(
 		const buffer_t * const message,
 		buffer_t * const message_key, //output, crypto_secretbox_KEYBYTES
 		const buffer_t * const header,
-		buffer_t * const header_key); //output, crypto_secretbox_KEYBYTES
+		buffer_t * const header_key, //output, crypto_secretbox_KEYBYTES
+		const buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages
+		const buffer_t * const public_epehemeral_key, //optional, can be NULL, for prekey messages
+		const buffer_t * const public_prekey); //optional, can be NULL, for prekey messages

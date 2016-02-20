@@ -59,7 +59,10 @@ int main(void) {
 			message,
 			message_key,
 			header,
-			header_key);
+			header_key,
+			NULL,
+			NULL,
+			NULL);
 	if (status != 0) {
 		goto cleanup;
 	}
