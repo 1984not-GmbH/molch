@@ -76,7 +76,10 @@ int create_and_print_message(
 			header,
 			header_key,
 			message,
-			message_key);
+			message_key,
+			NULL,
+			NULL,
+			NULL);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to encrypt message and header. (%i)\n", status);
 		return status;

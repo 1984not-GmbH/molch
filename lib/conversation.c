@@ -315,7 +315,10 @@ int conversation_send(
 			header,
 			send_header_key,
 			message,
-			send_message_key);
+			send_message_key,
+			NULL,
+			NULL,
+			NULL);
 	if (status != 0) {
 		goto cleanup;
 	}

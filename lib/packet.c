@@ -22,6 +22,7 @@
 
 #include "constants.h"
 #include "packet.h"
+#include "molch.h"
 
 /*
  * Encrypt a message and header with a symmetric key and a nonce.
@@ -36,8 +37,11 @@
  * packet = {
  *   protocol_version(1), //4MSB: current version; 4LSB: highest supported version
  *   packet_type(1),
+ *   our_public_identity_key(PUBLIC_KEY_SIZE), //optional, only prekey messages
+ *   our_public_ephemeral_key(PUBLIC_KEY_SIZE, //optional, only prekey messages
+ *   public_prekey(PUBLIC_KEY_SIZE), //optional, only prekey messages
  *   header_length(1),
- *   header_nonce(HEADER_KEY_SIZE),
+ *   header_nonce(HEADER_NONCE_SIZE),
  *   header {
  *       axolotl_header(?),
  *       message_nonce(MESSAGE_NONCE_SIZE)
@@ -57,11 +61,26 @@ int packet_encrypt(
 		const buffer_t * const header,
 		const buffer_t * const header_key, //HEADER_KEY_SIZE
 		const buffer_t * const message,
-		const buffer_t * const message_key) { //MESSAGE_KEY_SIZE
+		const buffer_t * const message_key, //MESSAGE_KEY_SIZE
+		const buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages only
+		const buffer_t * const public_ephemeral_key, //optional, can be NULL, for prekey messages only
+		const buffer_t * const public_prekey) { //optional, can be NULL, for prekey messages only
 	//check buffer sizes
 	if ((header_key->content_length != HEADER_KEY_SIZE)
-			|| (message_key->content_length != MESSAGE_KEY_SIZE)) {
+			|| (message_key->content_length != MESSAGE_KEY_SIZE)
+			|| (packet == NULL) || (packet->buffer_length < 3 + HEADER_NONCE_SIZE + (packet_type == PREKEY_MESSAGE) * 2 * PUBLIC_KEY_SIZE + MESSAGE_NONCE_SIZE + header->content_length + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_MACBYTES + message->content_length + 255)) {
 		return -6;
+	}
+
+	if ((packet_type == PREKEY_MESSAGE) && (
+				(public_identity_key == NULL) || (public_identity_key->content_length != PUBLIC_KEY_SIZE)
+				|| (public_ephemeral_key == NULL) || (public_ephemeral_key->content_length != PUBLIC_KEY_SIZE)
+				|| (public_prekey == NULL) || (public_prekey->content_length != PUBLIC_KEY_SIZE))) {
+		return -7;
+	}
+
+	if ((packet_type != PREKEY_MESSAGE) && ((public_identity_key != NULL) || (public_prekey != NULL) || (public_ephemeral_key != NULL))) {
+		return -7;
 	}
 
 	//make sure that the length assumptions are correct
@@ -79,7 +98,7 @@ int packet_encrypt(
 	}
 
 	//check if the packet buffer is long enough (only roughly) FIXME correct numbers here!
-	if (packet->buffer_length < (3 + crypto_aead_chacha20poly1305_ABYTES + MESSAGE_NONCE_SIZE + HEADER_NONCE_SIZE + message->content_length + crypto_secretbox_MACBYTES)) {
+	if (packet->buffer_length < (3 + crypto_aead_chacha20poly1305_ABYTES + MESSAGE_NONCE_SIZE + HEADER_NONCE_SIZE + message->content_length + crypto_secretbox_MACBYTES + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE)) {
 		return -6;
 	}
 
@@ -88,10 +107,50 @@ int packet_encrypt(
 	packet->content[1] = 0xf0 & (current_protocol_version << 4); //put current version into 4MSB
 	packet->content[1] |= (0x0f & highest_supported_protocol_version); //put highest version into 4LSB
 	packet->content[2] = header->content_length + crypto_aead_chacha20poly1305_ABYTES + MESSAGE_NONCE_SIZE; //header length with authenticator and message nonce
+	packet->content_length = 3;
 
 	int status;
+
+	off_t header_offset = 3;
+	if (packet_type == PREKEY_MESSAGE) {
+		header_offset += 3 * PUBLIC_KEY_SIZE;
+
+		//copy our public identity key
+		status = buffer_copy(
+				packet,
+				3,
+				public_identity_key,
+				0,
+				PUBLIC_KEY_SIZE);
+		if (status != 0) {
+			return -10;
+		}
+
+		//copy our public ephemeral key
+		status = buffer_copy(
+				packet,
+				3 + PUBLIC_KEY_SIZE,
+				public_ephemeral_key,
+				0,
+				PUBLIC_KEY_SIZE);
+		if (status != 0) {
+			return -10;
+		}
+
+		//copy the public prekey of the receiver
+		status = buffer_copy(
+				packet,
+				3 + 2 * PUBLIC_KEY_SIZE,
+				public_prekey,
+				0,
+				PUBLIC_KEY_SIZE);
+		if (status != 0) {
+			return -10;
+		}
+	}
+
 	//create the header nonce
-	buffer_create_with_existing_array(header_nonce, packet->content + 3, HEADER_NONCE_SIZE);
+	buffer_create_with_existing_array(header_nonce, packet->content + header_offset, HEADER_NONCE_SIZE);
 	status = buffer_fill_random(header_nonce, header_nonce->buffer_length);
 	if (status != 0) {
 		return status;
@@ -114,9 +173,9 @@ int packet_encrypt(
 	}
 
 	//buffer that points to the part of the packet where the header ciphertext will be stored
-	buffer_create_with_existing_array(header_ciphertext, packet->content + 3 + header_nonce->content_length, header_buffer->content_length + crypto_aead_chacha20poly1305_ABYTES);
+	buffer_create_with_existing_array(header_ciphertext, packet->content + header_offset + header_nonce->content_length, header_buffer->content_length + crypto_aead_chacha20poly1305_ABYTES);
 	//same for the additional data
-	buffer_create_with_existing_array(additional_data, packet->content, 3 + header_nonce->content_length);
+	buffer_create_with_existing_array(additional_data, packet->content, 3 + header_nonce->content_length + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE);
 
 	//encrypt the header and authenticate the additional data (1st 3 Bytes)
 	unsigned long long header_ciphertext_length;

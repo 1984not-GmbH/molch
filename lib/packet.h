@@ -36,6 +36,9 @@
  * packet = {
  *   protocol_version(1), //4MSB: current version; 4LSB: highest supported version
  *   packet_type(1),
+ *   our_public_identity_key(PUBLIC_KEY_SIZE), //optional, only prekey messages
+ *   our_public_ephemeral_key(PUBLIC_KEY_SIZE), //optional, only prekey messages
+ *   public_prekey(PUBLIC_KEY_SIZE), //optional, only prekey messages
  *   header_length(1),
  *   header_nonce(HEADER_NONCE_SIZE),
  *   header {
@@ -57,7 +60,11 @@ int packet_encrypt(
 		const buffer_t * const header,
 		const buffer_t * const header_key, //HEADER_KEY_SIZE
 		const buffer_t * const message,
-		const buffer_t * const message_key) __attribute__((warn_unused_result)); //MESSAGE_KEY_SIZE
+		const buffer_t * const message_key, //MESSAGE_KEY_SIZE
+		const buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages only
+		const buffer_t * const public_ephemeral_key, //otpional, can be NULL, for prekey messages only
+		const buffer_t * const public_prekey //optional, can be NULL, for prekey messages only
+		) __attribute__((warn_unused_result));
 
 /*
  * Decrypt and authenticate a packet.
