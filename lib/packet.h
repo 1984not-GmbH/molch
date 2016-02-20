@@ -36,10 +36,10 @@
  * packet = {
  *   protocol_version(1), //4MSB: current version; 4LSB: highest supported version
  *   packet_type(1),
+ *   header_length(1),
  *   our_public_identity_key(PUBLIC_KEY_SIZE), //optional, only prekey messages
  *   our_public_ephemeral_key(PUBLIC_KEY_SIZE), //optional, only prekey messages
  *   public_prekey(PUBLIC_KEY_SIZE), //optional, only prekey messages
- *   header_length(1),
  *   header_nonce(HEADER_NONCE_SIZE),
  *   header {
  *       axolotl_header(?),
@@ -99,8 +99,12 @@ int packet_get_metadata_without_verification(
 int packet_decrypt_header(
 		const buffer_t * const packet,
 		buffer_t * const header, //As long as the packet or at most 255 bytes
-		buffer_t * const message_nonce, //output
-		const buffer_t * const header_key) __attribute__((warn_unused_result)); //HEADER_KEY_SIZE
+		buffer_t * const message_nonce, //output, MESSAGE_KEY_SIZE
+		const buffer_t * const header_key, //HEADER_KEY_SIZE
+		buffer_t * const public_identity_key, //output, optional, can be NULL, for prekey messages only
+		buffer_t * const public_ephemeral_key, //output, optional, can be NULL, for prekey messages only
+		buffer_t * const public_prekey //output, optional, can be NULL, for prekey messages only
+		) __attribute__((warn_unused_result));
 
 /*
  * Decrypt the message inside a packet.

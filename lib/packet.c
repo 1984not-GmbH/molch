@@ -37,10 +37,10 @@
  * packet = {
  *   protocol_version(1), //4MSB: current version; 4LSB: highest supported version
  *   packet_type(1),
+ *   header_length(1),
  *   our_public_identity_key(PUBLIC_KEY_SIZE), //optional, only prekey messages
  *   our_public_ephemeral_key(PUBLIC_KEY_SIZE, //optional, only prekey messages
  *   public_prekey(PUBLIC_KEY_SIZE), //optional, only prekey messages
- *   header_length(1),
  *   header_nonce(HEADER_NONCE_SIZE),
  *   header {
  *       axolotl_header(?),
@@ -111,10 +111,8 @@ int packet_encrypt(
 
 	int status;
 
-	off_t header_offset = 3;
+	off_t header_nonce_offset = 3 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
 	if (packet_type == PREKEY_MESSAGE) {
-		header_offset += 3 * PUBLIC_KEY_SIZE;
-
 		//copy our public identity key
 		status = buffer_copy(
 				packet,
@@ -150,7 +148,7 @@ int packet_encrypt(
 	}
 
 	//create the header nonce
-	buffer_create_with_existing_array(header_nonce, packet->content + header_offset, HEADER_NONCE_SIZE);
+	buffer_create_with_existing_array(header_nonce, packet->content + header_nonce_offset, HEADER_NONCE_SIZE);
 	status = buffer_fill_random(header_nonce, header_nonce->buffer_length);
 	if (status != 0) {
 		return status;
@@ -173,9 +171,9 @@ int packet_encrypt(
 	}
 
 	//buffer that points to the part of the packet where the header ciphertext will be stored
-	buffer_create_with_existing_array(header_ciphertext, packet->content + header_offset + header_nonce->content_length, header_buffer->content_length + crypto_aead_chacha20poly1305_ABYTES);
+	buffer_create_with_existing_array(header_ciphertext, packet->content + header_nonce_offset + header_nonce->content_length, header_buffer->content_length + crypto_aead_chacha20poly1305_ABYTES);
 	//same for the additional data
-	buffer_create_with_existing_array(additional_data, packet->content, 3 + header_nonce->content_length + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE);
+	buffer_create_with_existing_array(additional_data, packet->content, 3 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE + HEADER_NONCE_SIZE);
 
 	//encrypt the header and authenticate the additional data (1st 3 Bytes)
 	unsigned long long header_ciphertext_length;
@@ -281,7 +279,10 @@ int packet_decrypt(
 			packet,
 			header,
 			message_nonce,
-			header_key);
+			header_key,
+			NULL,
+			NULL,
+			NULL);
 	if (status != 0) {
 		buffer_destroy_from_heap(message_nonce);
 		return status;
@@ -390,8 +391,11 @@ int packet_get_metadata_without_verification(
 int packet_decrypt_header(
 		const buffer_t * const packet,
 		buffer_t * const header, //As long as the packet or at most 255 bytes
-		buffer_t * const message_nonce,
-		const buffer_t * const header_key) {
+		buffer_t * const message_nonce, //output, MESSAGE_KEY_SIZE
+		const buffer_t * const header_key, //HEADER_KEY_SIZE
+		buffer_t * const public_identity_key, //output, optional, can be NULL, for prekey messages only
+		buffer_t * const public_ephemeral_key, //output, optional, can be NULL, for prekey messages only
+		buffer_t * const public_prekey) { //output, optional, can be NULL, for prekey messages only
 	//check sizes of the buffers
 	if ((message_nonce->buffer_length < MESSAGE_NONCE_SIZE)
 			|| (header_key->content_length != HEADER_KEY_SIZE)) {
@@ -409,16 +413,22 @@ int packet_decrypt_header(
 			&current_protocol_version,
 			&highest_supported_protocol_version,
 			&purported_header_length,
-			NULL,
-			NULL,
-			NULL);
+			public_identity_key,
+			public_ephemeral_key,
+			public_prekey);
 	if (status != 0) {
 		return status;
 	}
 
+	off_t header_nonce_offset = 3 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
+	//check if the packet is long enough
+	if (packet->content_length < ((size_t)header_nonce_offset + HEADER_NONCE_SIZE + purported_header_length + crypto_aead_chacha20poly1305_ABYTES)) {
+		return -10;
+	}
+
 	//buffer that points to different parts of the header
-	buffer_create_with_existing_array(header_nonce, packet->content + 3, HEADER_NONCE_SIZE);
-	buffer_create_with_existing_array(additional_data, packet->content, 3 + header_nonce->content_length);
+	buffer_create_with_existing_array(header_nonce, packet->content + header_nonce_offset, HEADER_NONCE_SIZE);
+	buffer_create_with_existing_array(additional_data, packet->content, header_nonce_offset + header_nonce->content_length);
 	buffer_create_with_existing_array(header_ciphertext, packet->content + additional_data->content_length, purported_header_length + MESSAGE_NONCE_SIZE + crypto_aead_chacha20poly1305_ABYTES);
 	//encrypt the header
 	buffer_t *header_buffer = buffer_create_on_heap(purported_header_length + MESSAGE_NONCE_SIZE, purported_header_length + MESSAGE_NONCE_SIZE);

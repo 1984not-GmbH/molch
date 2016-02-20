@@ -73,7 +73,10 @@ int main(void) {
 			packet,
 			decrypted_header,
 			decrypted_message_nonce,
-			header_key);
+			header_key,
+			NULL,
+			NULL,
+			NULL);
 	buffer_clear(decrypted_header);
 	buffer_clear(header_key);
 	if (status != 0) {

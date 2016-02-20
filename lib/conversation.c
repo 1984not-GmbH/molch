@@ -367,7 +367,10 @@ int conversation_receive(
 			packet,
 			header,
 			message_nonce,
-			current_receive_header_key);
+			current_receive_header_key,
+			NULL,
+			NULL,
+			NULL);
 	if (status == 0) {
 		status = ratchet_set_header_decryptability(
 				conversation->ratchet,
@@ -381,7 +384,10 @@ int conversation_receive(
 				packet,
 				header,
 				message_nonce,
-				next_receive_header_key);
+				next_receive_header_key,
+				NULL,
+				NULL,
+				NULL);
 		if (status == 0) {
 			status = ratchet_set_header_decryptability(
 					conversation->ratchet,
