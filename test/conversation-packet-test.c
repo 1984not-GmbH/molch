@@ -160,7 +160,10 @@ int main(void) {
 	status = conversation_send(
 			&alice_send_conversation,
 			alice_send_message2,
-			&alice_send_packet2);
+			&alice_send_packet2,
+			NULL,
+			NULL,
+			NULL);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to send Alice' second message!\n");
 		conversation_deinit(&alice_send_conversation);
@@ -260,7 +263,10 @@ int main(void) {
 	status = conversation_send(
 			&bob_send_conversation,
 			bob_send_message2,
-			&bob_send_packet2);
+			&bob_send_packet2,
+			NULL,
+			NULL,
+			NULL);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to send Bobs second message!\n");
 		conversation_deinit(&bob_send_conversation);

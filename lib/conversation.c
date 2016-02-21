@@ -190,7 +190,10 @@ int conversation_start_send_conversation(
 	status = conversation_send(
 			conversation,
 			message,
-			packet);
+			packet,
+			NULL,
+			NULL,
+			NULL);
 	if (status != 0) {
 		goto cleanup;
 	}
@@ -263,13 +266,32 @@ cleanup:
 int conversation_send(
 		conversation_t * const conversation,
 		const buffer_t * const message,
-		buffer_t **packet //output, free after use!
+		buffer_t **packet, //output, free after use!
+		const buffer_t * const public_identity_key, //can be NULL, if not NULL, this will be a prekey message
+		const buffer_t * const public_ephemeral_key, //can be NULL, if not NULL, this will be a prekey message
+		const buffer_t * const public_prekey //can be NULL, if not NULL, this will be a prekey message
 		) {
 	//check input
 	if ((conversation == NULL)
 			|| (message == NULL)
 			|| (packet == NULL)) {
 		return -1;
+	}
+
+	//ensure that either both public keys are NULL or set
+	if (((public_identity_key == NULL) && (public_prekey != NULL)) || ((public_prekey == NULL) && (public_identity_key != NULL))) {
+		return -1;
+	}
+
+	//check the size of the public keys
+	if (((public_identity_key != NULL) && (public_identity_key->content_length != PUBLIC_KEY_SIZE)) || ((public_prekey != NULL) && (public_prekey->content_length != PUBLIC_KEY_SIZE))) {
+		return -1;
+	}
+
+	unsigned char packet_type = NORMAL_MESSAGE;
+	//check if this is a prekey message
+	if (public_identity_key != NULL) {
+		packet_type = PREKEY_MESSAGE;
 	}
 
 	int status = 0;
@@ -309,16 +331,16 @@ int conversation_send(
 	*packet = buffer_create_on_heap(packet_length, 0);
 	status = packet_encrypt(
 			*packet,
-			NORMAL_MESSAGE,
+			packet_type,
 			0, //current protocol version
 			0, //highest supported protocol version
 			header,
 			send_header_key,
 			message,
 			send_message_key,
-			NULL,
-			NULL,
-			NULL);
+			public_identity_key,
+			public_ephemeral_key,
+			public_prekey);
 	if (status != 0) {
 		goto cleanup;
 	}

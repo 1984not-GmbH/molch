@@ -94,7 +94,10 @@ int conversation_start_receive_conversation(
 int conversation_send(
 		conversation_t * const conversation,
 		const buffer_t * const message,
-		buffer_t **packet //output, free after use!
+		buffer_t **packet, //output, free after use!
+		const buffer_t * const public_identity_key, //can be NULL, if not NULL, this will be a prekey message
+		const buffer_t * const public_ephemeral_key, //cann be NULL, if not NULL, this will be a prekey message
+		const buffer_t * const public_prekey //can be NULL, if not NULL, this will be a prekey message
 		) __attribute__((warn_unused_result));
 
 /*
