@@ -73,4 +73,12 @@ int prekey_store_list(
 int prekey_store_rotate(prekey_store * const store) __attribute__((warn_unused_result));
 
 void prekey_store_destroy(prekey_store * const store);
+
+/*
+ * Serialise a prekey store into JSON. It get's a mempool_t buffer and stores a tree of
+ * mcJSON objects into the buffer starting at pool->position.
+ *
+ * Returns NULL in case of Failure.
+ */
+mcJSON *prekey_store_json_export(const prekey_store * const store, mempool_t * const pool) __attribute__((warn_unused_result));
 #endif

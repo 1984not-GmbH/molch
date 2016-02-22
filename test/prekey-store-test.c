@@ -129,6 +129,16 @@ int main(void) {
 	}
 	printf("Detected invalid public prekey!\n");
 
+	//Test JSON Export!
+	JSON_EXPORT(json_string, 100000, 10000, true, store, prekey_store_json_export);
+	if (json_string == NULL) {
+		fprintf(stderr, "ERROR: Failed to export to JSON!\n");
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+	printf("%.*s\n", (int)json_string->content_length, (char*)json_string->content);
+	buffer_destroy_from_heap(json_string);
+
 	//test the automatic deprecation of old keys
 	status = buffer_clone(public_prekey, store->prekeys[PREKEY_AMOUNT-1].public_key);
 	if (status != 0) {

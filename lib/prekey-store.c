@@ -326,3 +326,109 @@ void prekey_store_destroy(prekey_store * const store) {
 		sodium_free(node);
 	}
 }
+
+/*
+ * Helper that serialises a prekey_store_node as json.
+ */
+mcJSON *prekey_store_node_json_export(const prekey_store_node * const node, mempool_t * const pool) {
+	if (node == NULL) {
+		return NULL;
+	}
+
+	mcJSON *json = mcJSON_CreateObject(pool);
+	if (json == NULL) {
+		return NULL;
+	}
+
+	//add timestamp
+	mcJSON *timestamp = mcJSON_CreateNumber((double)node->timestamp, pool);
+	if (timestamp == NULL) {
+		return NULL;
+	}
+	buffer_create_from_string(timestamp_string, "timestamp");
+	mcJSON_AddItemToObject(json, timestamp_string, timestamp, pool);
+
+	//add public key
+	mcJSON *public_key_hex = mcJSON_CreateHexString(node->public_key, pool);
+	if (public_key_hex == NULL) {
+		return NULL;
+	}
+	buffer_create_from_string(public_key_string, "public_key");
+	mcJSON_AddItemToObject(json, public_key_string, public_key_hex, pool);
+
+	//add private key
+	mcJSON *private_key_hex = mcJSON_CreateHexString(node->private_key, pool);
+	if (private_key_hex == NULL) {
+		return NULL;
+	}
+	buffer_create_from_string(private_key_string, "private_key");
+	mcJSON_AddItemToObject(json, private_key_string, private_key_hex, pool);
+
+	return json;
+}
+
+/*
+ * Serialise a prekey store into JSON. It get's a mempool_t buffer and stores a tree of
+ * mcJSON objects into the buffer starting at pool->position.
+ *
+ * Returns NULL in case of Failure.
+ */
+mcJSON *prekey_store_json_export(const prekey_store * const store, mempool_t * const pool) {
+	mcJSON *json = mcJSON_CreateObject(pool);
+	if (json == NULL) {
+		return NULL;
+	}
+
+	//add oldest timestamp
+	mcJSON *oldest_timestamp = mcJSON_CreateNumber((double)store->oldest_timestamp, pool);
+	if (oldest_timestamp == NULL) {
+		return NULL;
+	}
+	buffer_create_from_string(oldest_timestamp_string, "oldest_timestamp");
+	mcJSON_AddItemToObject(json, oldest_timestamp_string, oldest_timestamp, pool);
+
+	//add oldest_deprecated_timestamp
+	mcJSON *oldest_deprecated_timestamp = mcJSON_CreateNumber((double)store->oldest_deprecated_timestamp, pool);
+	if (oldest_deprecated_timestamp == NULL) {
+		return NULL;
+	}
+	buffer_create_from_string(oldest_deprecated_timestamp_string, "oldest_deprecated_timestamp");
+	mcJSON_AddItemToObject(json, oldest_deprecated_timestamp_string, oldest_deprecated_timestamp, pool);
+
+	//create the list of prekeys
+	mcJSON *prekeys = mcJSON_CreateArray(pool);
+	if (prekeys == NULL) {
+		return NULL;
+	}
+	buffer_create_from_string(prekeys_string, "prekeys");
+	mcJSON_AddItemToObject(json, prekeys_string, prekeys, pool);
+
+	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
+		mcJSON *node = prekey_store_node_json_export(&(store->prekeys[i]), pool);
+		if (node == NULL) {
+			return NULL;
+		}
+		mcJSON_AddItemToArray(prekeys, node, pool);
+	}
+
+	//create the list of deprecated prekeys
+	mcJSON *deprecated_prekeys = mcJSON_CreateArray(pool);
+	if (deprecated_prekeys == NULL) {
+		return NULL;
+	}
+	buffer_create_from_string(deprecated_prekeys_string, "deprecated_prekeys");
+	mcJSON_AddItemToObject(json, deprecated_prekeys_string, deprecated_prekeys, pool);
+
+	prekey_store_node *next = store->deprecated_prekeys;
+	while (next != NULL) {
+		mcJSON *node = prekey_store_node_json_export(next, pool);
+		if (node == NULL) {
+			return NULL;
+		}
+		mcJSON_AddItemToArray(deprecated_prekeys, node, pool);
+
+		next = next->next;
+	}
+
+	return json;
+}
