@@ -14,6 +14,7 @@ target_link_libraries(packet-test-lib molch molch-buffer utils)
 
 set(tests diffie-hellman-test
           triple-diffie-hellman-test
+          key-derivation-test
           chain-key-derivation-test
           message-key-derivation-test
           root-next-header-and-chain-key-derivation-test
