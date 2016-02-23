@@ -432,3 +432,119 @@ mcJSON *prekey_store_json_export(const prekey_store * const store, mempool_t * c
 
 	return json;
 }
+
+/*
+ * Helper to import a prekey store node from json.
+ */
+int prekey_store_node_json_import(prekey_store_node * const node, const mcJSON * const json) {
+	if ((json == NULL) || (node == NULL)) {
+		return -1;
+	}
+
+	buffer_create_from_string(timestamp_string, "timestamp");
+	mcJSON *timestamp = mcJSON_GetObjectItem(json, timestamp_string);
+	if ((timestamp == NULL) || (timestamp->type != mcJSON_Number)) {
+		return -1;
+	}
+	node->timestamp = (time_t) timestamp->valuedouble;
+
+	buffer_create_from_string(public_key_string, "public_key");
+	mcJSON *public_key = mcJSON_GetObjectItem(json, public_key_string);
+	if ((public_key == NULL) || (public_key->type != mcJSON_String) || (public_key->valuestring->content_length != ((2 * PUBLIC_KEY_SIZE) + 1))) {
+		return -1;
+	}
+	buffer_init_with_pointer(node->public_key, node->public_key_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	if (buffer_clone_from_hex(node->public_key, public_key->valuestring) != 0) {
+		return -1;
+	}
+
+	buffer_create_from_string(private_key_string, "private_key");
+	mcJSON *private_key = mcJSON_GetObjectItem(json, private_key_string);
+	if ((private_key == NULL) || (private_key->type != mcJSON_String) || (private_key->valuestring->content_length != ((2 * PUBLIC_KEY_SIZE) + 1))) {
+		return -1;
+	}
+	buffer_init_with_pointer(node->private_key, node->private_key_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	if (buffer_clone_from_hex(node->private_key, private_key->valuestring) != 0) {
+		return -1;
+	}
+
+	return 0;
+}
+
+/*
+ * Deserialise a prekey store (import from JSON).
+ */
+prekey_store *prekey_store_json_import(const mcJSON * const json __attribute__((unused))) {
+	prekey_store *store = sodium_malloc(sizeof(prekey_store));
+	if (store == NULL) {
+		return NULL;
+	}
+
+	store->deprecated_prekeys = NULL;
+
+	int status = 0;
+
+	//timestamps
+	buffer_create_from_string(oldest_timestamp_string, "oldest_timestamp");
+	mcJSON *oldest_timestamp = mcJSON_GetObjectItem(json, oldest_timestamp_string);
+	if ((oldest_timestamp == NULL) || (oldest_timestamp->type != mcJSON_Number)) {
+		status = -1;
+		goto cleanup;
+	}
+	store->oldest_timestamp = (time_t)oldest_timestamp->valuedouble;
+
+	buffer_create_from_string(oldest_deprecated_timestamp_string, "oldest_deprecated_timestamp");
+	mcJSON *oldest_deprecated_timestamp = mcJSON_GetObjectItem(json, oldest_deprecated_timestamp_string);
+	if ((oldest_deprecated_timestamp == NULL) || (oldest_deprecated_timestamp->type != mcJSON_Number)) {
+		status = -1;
+		goto cleanup;
+	}
+	store->oldest_deprecated_timestamp = (time_t)oldest_deprecated_timestamp->valuedouble;
+
+	//load all the regular prekeys
+	buffer_create_from_string(prekeys_string, "prekeys");
+	mcJSON *prekeys = mcJSON_GetObjectItem(json, prekeys_string);
+	if ((prekeys == NULL) || (prekeys->type != mcJSON_Array) || (prekeys->length != PREKEY_AMOUNT)) {
+		status = -1;
+		goto cleanup;
+	}
+	mcJSON *node = prekeys->child;
+	for (size_t i = 0; (i < PREKEY_AMOUNT) && (node != NULL); i++, node = node->next) {
+		status = prekey_store_node_json_import(&(store->prekeys[i]), node);
+		if (status != 0) {
+			goto cleanup;
+		}
+	}
+
+	//load all the deprecated prekeys
+	buffer_create_from_string(deprecated_prekeys_string, "deprecated_prekeys");
+	mcJSON *deprecated_prekeys = mcJSON_GetObjectItem(json, deprecated_prekeys_string);
+	if ((deprecated_prekeys == NULL) || (deprecated_prekeys->type != mcJSON_Array)) {
+		status = -1;
+		goto cleanup;
+	}
+	node = mcJSON_GetArrayItem(deprecated_prekeys, deprecated_prekeys->length - 1); //last element
+	for (size_t i = 0; (i < deprecated_prekeys->length) && (node != NULL); i++, node = node->prev) {
+		prekey_store_node *prekey_node = sodium_malloc(sizeof(prekey_store_node));
+		if (prekey_node == NULL) {
+			status = -1;
+			goto cleanup;
+		}
+		prekey_node->next = store->deprecated_prekeys;
+
+		status = prekey_store_node_json_import(prekey_node, node);
+		if (status != 0) {
+			goto cleanup;
+		}
+
+		store->deprecated_prekeys = prekey_node;
+	}
+
+cleanup:
+	if (status != 0) {
+		prekey_store_destroy(store);
+		return NULL;
+	}
+
+	return store;
+}

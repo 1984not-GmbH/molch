@@ -81,4 +81,9 @@ void prekey_store_destroy(prekey_store * const store);
  * Returns NULL in case of Failure.
  */
 mcJSON *prekey_store_json_export(const prekey_store * const store, mempool_t * const pool) __attribute__((warn_unused_result));
+
+/*
+ * Deserialise a prekey store (import from JSON).
+ */
+prekey_store *prekey_store_json_import(const mcJSON * const json) __attribute__((warn_unused_result));
 #endif

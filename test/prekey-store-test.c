@@ -137,7 +137,37 @@ int main(void) {
 		goto cleanup;
 	}
 	printf("%.*s\n", (int)json_string->content_length, (char*)json_string->content);
+	prekey_store_destroy(store);
+
+	//Import it again
+	JSON_IMPORT(store, 100000, json_string, prekey_store_json_import);
+	if (store == NULL) {
+		fprintf(stderr, "ERROR: Failed to import from JSON!\n");
+		status = EXIT_FAILURE;
+		buffer_destroy_from_heap(json_string);
+		goto cleanup;
+	}
+
+	//Export it again
+	JSON_EXPORT(json_string2, 100000, 10000, true, store, prekey_store_json_export);
+	if (json_string2 == NULL) {
+		fprintf(stderr, "ERROR: Failed to export imported JSON.!\n");
+		status = EXIT_FAILURE;
+		buffer_destroy_from_heap(json_string);
+		goto cleanup;
+	}
+
+	//compare both
+	if (buffer_compare(json_string, json_string2) != 0) {
+		fprintf(stderr, "ERROR: Imported JSON is incorrect!\n");
+		status = EXIT_FAILURE;
+		buffer_destroy_from_heap(json_string);
+		buffer_destroy_from_heap(json_string2);
+		goto cleanup;
+	}
+
 	buffer_destroy_from_heap(json_string);
+	buffer_destroy_from_heap(json_string2);
 
 	//test the automatic deprecation of old keys
 	status = buffer_clone(public_prekey, store->prekeys[PREKEY_AMOUNT-1].public_key);
