@@ -157,10 +157,9 @@ int conversation_start_send_conversation(
 		buffer_t ** packet, //output, free after use!
 		const buffer_t * const sender_public_identity, //who is sending this message?
 		const buffer_t * const sender_private_identity,
-		const buffer_t * const sender_public_ephemeral,
-		const buffer_t * const sender_private_ephemeral,
 		const buffer_t * const receiver_public_identity,
-		const buffer_t * const receiver_public_ephemeral) {
+		const buffer_t * const receiver_prekey_list //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+		) {
 	//check many error conditions
 	if ((conversation == NULL)
 			|| (message == NULL)
@@ -168,11 +167,25 @@ int conversation_start_send_conversation(
 			|| (receiver_public_identity == NULL) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (sender_public_identity == NULL) || (sender_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (sender_private_identity == NULL) || (sender_private_identity->content_length != PRIVATE_KEY_SIZE)
-			|| (receiver_public_ephemeral == NULL) || (receiver_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
+			|| (receiver_prekey_list == NULL) || (receiver_prekey_list->content_length != (PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
 		return -1;
 	}
 
 	int status = 0;
+	//create an ephemeral keypair
+	buffer_t *sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_t *sender_private_ephemeral = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	status = crypto_box_keypair(sender_public_ephemeral->content, sender_private_ephemeral->content);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+	//choose a prekey
+	uint32_t prekey_number = randombytes_uniform(PREKEY_AMOUNT);
+	buffer_create_with_existing_array(
+			receiver_public_prekey,
+			&(receiver_prekey_list->content[prekey_number * PUBLIC_KEY_SIZE]),
+			PUBLIC_KEY_SIZE);
 
 	//initialize the conversation
 	status = conversation_init(
@@ -182,7 +195,7 @@ int conversation_start_send_conversation(
 			receiver_public_identity,
 			sender_private_ephemeral,
 			sender_public_ephemeral,
-			receiver_public_ephemeral);
+			receiver_public_prekey);
 	if (status != 0) {
 		goto cleanup;
 	}
@@ -191,9 +204,9 @@ int conversation_start_send_conversation(
 			conversation,
 			message,
 			packet,
-			NULL,
-			NULL,
-			NULL);
+			sender_public_identity,
+			sender_public_ephemeral,
+			receiver_public_prekey);
 	if (status != 0) {
 		goto cleanup;
 	}
@@ -202,6 +215,9 @@ cleanup:
 	if (status != 0) {
 		conversation_deinit(conversation);
 	}
+
+	buffer_destroy_from_heap(sender_public_ephemeral);
+	buffer_destroy_from_heap(sender_private_ephemeral);
 
 	return status;
 }
@@ -213,32 +229,66 @@ int conversation_start_receive_conversation(
 		conversation_t * const conversation, //conversation to initialize
 		const buffer_t * const packet, //received packet
 		buffer_t ** message, //output, free after use!
-		const buffer_t * const sender_public_identity,
-		const buffer_t * const sender_public_ephemeral,
 		const buffer_t * const receiver_public_identity,
 		const buffer_t * const receiver_private_identity,
-		const buffer_t * const receiver_public_ephemeral,
-		const buffer_t * const receiver_private_ephemeral) {
+		prekey_store * const receiver_prekeys //prekeys of the receiver
+		) {
 	if ((conversation == NULL)
 			|| (packet ==NULL)
 			|| (message == NULL)
-			|| (sender_public_identity == NULL) || (sender_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (receiver_public_identity == NULL) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (receiver_private_identity == NULL) || (receiver_private_identity->content_length != PRIVATE_KEY_SIZE)
-			|| (receiver_public_ephemeral == NULL) || (receiver_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
-			|| (receiver_private_ephemeral == NULL) || (receiver_private_ephemeral->content_length != PRIVATE_KEY_SIZE)) {
+			|| (receiver_prekeys == NULL)) {
 		return -1;
 	}
 
 	int status = 0;
+
+	//key buffers
+	buffer_t *receiver_public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_t *receiver_private_prekey = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	buffer_t *sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_t *sender_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+
+	//get the senders keys and our public prekey from the packet
+	unsigned char packet_type;
+	unsigned char current_protocol_version;
+	unsigned char highest_supported_protocol_version;
+	unsigned char header_length;
+	status = packet_get_metadata_without_verification(
+			packet,
+			&packet_type,
+			&current_protocol_version,
+			&highest_supported_protocol_version,
+			&header_length,
+			sender_public_identity,
+			sender_public_ephemeral,
+			receiver_public_prekey);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+	if (packet_type != PREKEY_MESSAGE) {
+		status = -11;
+		goto cleanup;
+	}
+
+	//get the private prekey that corresponds to the public prekey used in the message
+	status = prekey_store_get_prekey(
+			receiver_prekeys,
+			receiver_public_prekey,
+			receiver_private_prekey);
+	if (status != 0) {
+		goto cleanup;
+	}
 
 	status = conversation_init(
 			conversation,
 			receiver_private_identity,
 			receiver_public_identity,
 			sender_public_identity,
-			receiver_private_ephemeral,
-			receiver_public_ephemeral,
+			receiver_private_prekey,
+			receiver_public_prekey,
 			sender_public_ephemeral);
 	if (status != 0) {
 		goto cleanup;
@@ -256,6 +306,11 @@ cleanup:
 	if (status != 0) {
 		conversation_deinit(conversation);
 	}
+
+	buffer_destroy_from_heap(receiver_public_prekey);
+	buffer_destroy_from_heap(receiver_private_prekey);
+	buffer_destroy_from_heap(sender_public_ephemeral);
+	buffer_destroy_from_heap(sender_public_identity);
 
 	return status;
 }
@@ -327,7 +382,7 @@ int conversation_send(
 		goto cleanup;
 	}
 
-	const size_t packet_length = header->content_length + 3 + HEADER_NONCE_SIZE + MESSAGE_NONCE_SIZE + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_MACBYTES + message->content_length + 255;
+	const size_t packet_length = header->content_length + 3 + HEADER_NONCE_SIZE + MESSAGE_NONCE_SIZE + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_MACBYTES + message->content_length + 255 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
 	*packet = buffer_create_on_heap(packet_length, 0);
 	status = packet_encrypt(
 			*packet,

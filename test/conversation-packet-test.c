@@ -37,13 +37,9 @@ int main(void) {
 	//alice' keys
 	buffer_t *alice_private_identity = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	buffer_t *alice_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_t *alice_private_ephemeral = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	buffer_t *alice_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	//bobs keys
 	buffer_t *bob_private_identity = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	buffer_t *bob_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_t *bob_private_ephemeral = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	buffer_t *bob_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
 	buffer_t *packet = NULL;
 	buffer_t *received_message = NULL;
@@ -60,6 +56,12 @@ int main(void) {
 	buffer_t *alice_received_response = NULL;
 	buffer_t *bob_received_response = NULL;
 
+	//create prekey stores
+	prekey_store *alice_prekeys = prekey_store_create();
+	prekey_store *bob_prekeys = prekey_store_create();
+
+	buffer_t *prekey_list = buffer_create_on_heap(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
+
 	//create keys
 	//alice
 	buffer_create_from_string(alice_string, "Alice");
@@ -74,17 +76,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to generate keys! (%i)\n", status);
 		goto cleanup;
 	}
-	//ephemeral
-	buffer_create_from_string(ephemeral_string, "ephemeral");
-	status = generate_and_print_keypair(
-			alice_public_ephemeral,
-			alice_private_ephemeral,
-			alice_string,
-			ephemeral_string);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate keys! (%i)\n", status);
-		goto cleanup;
-	}
+
 	//bob
 	buffer_create_from_string(bob_string, "Bob");
 	//identity
@@ -97,14 +89,10 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to generate keys! (%i)\n", status);
 		goto cleanup;
 	}
-	//ephemeral
-	status = generate_and_print_keypair(
-			bob_public_ephemeral,
-			bob_private_ephemeral,
-			bob_string,
-			ephemeral_string);
+
+	//get the prekey list
+	status = prekey_store_list(bob_prekeys, prekey_list);
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate keys! (%i)\n", status);
 		goto cleanup;
 	}
 
@@ -117,12 +105,10 @@ int main(void) {
 			&packet,
 			alice_public_identity,
 			alice_private_identity,
-			alice_public_ephemeral,
-			alice_private_ephemeral,
 			bob_public_identity,
-			bob_public_ephemeral);
+			prekey_list);
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to send message.\n");
+		fprintf(stderr, "ERROR: Failed to send message. (%i)\n", status);
 		goto cleanup;
 	}
 	printf("Sent message: %.*s\n", (int)send_message->content_length, (const char*)send_message->content);
@@ -136,12 +122,9 @@ int main(void) {
 			&bob_receive_conversation,
 			packet,
 			&received_message,
-			alice_public_identity,
-			alice_public_ephemeral,
 			bob_public_identity,
 			bob_private_identity,
-			bob_public_ephemeral,
-			bob_private_ephemeral);
+			bob_prekeys);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to decrypt received message. (%i)\n", status);
 		conversation_deinit(&alice_send_conversation);
@@ -250,6 +233,13 @@ int main(void) {
 	//---------------------------------------------------------------------------------------------
 	//now test it the other way round (because Axolotl is assymetric in this regard)
 	//Bob sends the message to Alice.
+
+	//get alice prekey list
+	status = prekey_store_list(alice_prekeys, prekey_list);
+	if (status != 0) {
+		goto cleanup;
+	}
+
 	conversation_t bob_send_conversation;
 	//destroy the old packet
 	buffer_destroy_from_heap(packet);
@@ -260,10 +250,8 @@ int main(void) {
 			&packet,
 			bob_public_identity,
 			bob_private_identity,
-			bob_public_ephemeral,
-			bob_private_ephemeral,
 			alice_public_identity,
-			alice_public_ephemeral);
+			prekey_list);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to send message. (%i)\n", status);
 		goto cleanup;
@@ -281,12 +269,9 @@ int main(void) {
 			&alice_receive_conversation,
 			packet,
 			&received_message,
-			bob_public_identity,
-			bob_public_ephemeral,
 			alice_public_identity,
 			alice_private_identity,
-			alice_public_ephemeral,
-			alice_private_ephemeral);
+			alice_prekeys);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to decrypt received message. (%i)\n", status);
 		conversation_deinit(&bob_send_conversation);
@@ -392,6 +377,12 @@ int main(void) {
 	conversation_deinit(&alice_receive_conversation);
 
 cleanup:
+	if (alice_prekeys != NULL) {
+		prekey_store_destroy(alice_prekeys);
+	}
+	if (bob_prekeys != NULL) {
+		prekey_store_destroy(bob_prekeys);
+	}
 	if (packet != NULL) {
 		buffer_destroy_from_heap(packet);
 	}
@@ -424,12 +415,10 @@ cleanup:
 	}
 	buffer_destroy_from_heap(alice_private_identity);
 	buffer_destroy_from_heap(alice_public_identity);
-	buffer_destroy_from_heap(alice_private_ephemeral);
-	buffer_destroy_from_heap(alice_public_ephemeral);
 	buffer_destroy_from_heap(bob_private_identity);
 	buffer_destroy_from_heap(bob_public_identity);
-	buffer_destroy_from_heap(bob_private_ephemeral);
-	buffer_destroy_from_heap(bob_public_ephemeral);
+	buffer_destroy_from_heap(prekey_list);
+
 
 	return status;
 }
