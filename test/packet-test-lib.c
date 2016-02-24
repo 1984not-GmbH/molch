@@ -36,7 +36,10 @@ int create_and_print_message(
 		const buffer_t * const message,
 		buffer_t * const message_key, //output, crypto_secretbox_KEYBYTES
 		const buffer_t * const header,
-		buffer_t * const header_key) { //output, crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const header_key, //output, crypto_aead_chacha20poly1305_KEYBYTES
+		const buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages
+		const buffer_t * const public_ephemeral_key, //optional, can be NULL, for prekey messages
+		const buffer_t * const public_prekey) { //optional, can be NULL, for prekey messages
 	int status;
 	//create header key
 	status = buffer_fill_random(header_key, crypto_aead_chacha20poly1305_KEYBYTES);
@@ -76,7 +79,10 @@ int create_and_print_message(
 			header,
 			header_key,
 			message,
-			message_key);
+			message_key,
+			public_identity_key,
+			public_ephemeral_key,
+			public_prekey);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to encrypt message and header. (%i)\n", status);
 		return status;

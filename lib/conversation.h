@@ -18,6 +18,7 @@
 
 #include "constants.h"
 #include "ratchet.h"
+#include "prekey-store.h"
 
 #ifndef LIB_CONVERSATION_H
 #define LIB_CONVERSATION_H
@@ -59,4 +60,50 @@ mcJSON *conversation_json_export(const conversation_t * const conversation, memp
 int conversation_json_import(
 		const mcJSON * const json,
 		conversation_t * const conversation) __attribute__((warn_unused_result));
+
+/*
+ * Start a new conversation where we are the sender.
+ */
+int conversation_start_send_conversation(
+		conversation_t *const conversation, //conversation to initialize
+		const buffer_t *const message, //message we want to send to the receiver
+		buffer_t ** packet, //output, free after use!
+		const buffer_t * const sender_public_identity, //who is sending this message?
+		const buffer_t * const sender_private_identity,
+		const buffer_t * const receiver_public_identity,
+		const buffer_t * const receiver_prekey_list //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+		) __attribute__((warn_unused_result));
+
+/*
+ * Start a new conversation where we are the receiver.
+ */
+int conversation_start_receive_conversation(
+		conversation_t * const conversation, //conversation to initialize
+		const buffer_t * const packet, //received packet
+		buffer_t ** message, //output, free after use!
+		const buffer_t * const receiver_public_identity,
+		const buffer_t * const receiver_private_identity,
+		prekey_store * const receiver_prekeys //prekeys of the receiver
+		) __attribute__((warn_unused_result));
+
+/*
+ * Send a message using an existing conversation.
+ */
+int conversation_send(
+		conversation_t * const conversation,
+		const buffer_t * const message,
+		buffer_t **packet, //output, free after use!
+		const buffer_t * const public_identity_key, //can be NULL, if not NULL, this will be a prekey message
+		const buffer_t * const public_ephemeral_key, //cann be NULL, if not NULL, this will be a prekey message
+		const buffer_t * const public_prekey //can be NULL, if not NULL, this will be a prekey message
+		) __attribute__((warn_unused_result));
+
+/*
+ * Receive and decrypt a message using an existing conversation.
+ */
+int conversation_receive(
+	conversation_t * const conversation,
+	const buffer_t * const packet, //received packet
+	buffer_t ** const message //output, free after use!
+		) __attribute__((warn_unused_result));
 #endif

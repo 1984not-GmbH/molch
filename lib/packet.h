@@ -37,6 +37,9 @@
  *   protocol_version(1), //4MSB: current version; 4LSB: highest supported version
  *   packet_type(1),
  *   header_length(1),
+ *   our_public_identity_key(PUBLIC_KEY_SIZE), //optional, only prekey messages
+ *   our_public_ephemeral_key(PUBLIC_KEY_SIZE), //optional, only prekey messages
+ *   public_prekey(PUBLIC_KEY_SIZE), //optional, only prekey messages
  *   header_nonce(HEADER_NONCE_SIZE),
  *   header {
  *       axolotl_header(?),
@@ -57,7 +60,11 @@ int packet_encrypt(
 		const buffer_t * const header,
 		const buffer_t * const header_key, //HEADER_KEY_SIZE
 		const buffer_t * const message,
-		const buffer_t * const message_key) __attribute__((warn_unused_result)); //MESSAGE_KEY_SIZE
+		const buffer_t * const message_key, //MESSAGE_KEY_SIZE
+		const buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages only
+		const buffer_t * const public_ephemeral_key, //otpional, can be NULL, for prekey messages only
+		const buffer_t * const public_prekey //optional, can be NULL, for prekey messages only
+		) __attribute__((warn_unused_result));
 
 /*
  * Decrypt and authenticate a packet.
@@ -70,7 +77,11 @@ int packet_decrypt(
 		buffer_t * const header, //output, As long as the packet or at most 255 bytes
 		const buffer_t * const header_key, //HEADER_KEY_SIZE
 		buffer_t * const message, //output, should be as long as the packet
-		const buffer_t * const message_key) __attribute__((warn_unused_result)); //MESSAGE_KEY_SIZE
+		const buffer_t * const message_key, //MESSAGE_KEY_SIZE
+		buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages only
+		buffer_t * const public_ephemeral_key, //optional, can be NULL, for prekey messages only
+		buffer_t * const public_prekey //optional, can be NULL, for prekey messages only
+		) __attribute__((warn_unused_result));
 
 /*
  * Get the metadata of a packet (without verifying it's authenticity).
@@ -80,7 +91,11 @@ int packet_get_metadata_without_verification(
 		unsigned char * const packet_type, //1 Byte, no array
 		unsigned char * const current_protocol_version, //1 Byte, no array
 		unsigned char * const highest_supported_protocol_version, //1 Byte, no array
-		unsigned char * const header_length) __attribute__((warn_unused_result)); //this is the raw header length, without the authenticator
+		unsigned char * const header_length, //this is the raw header length, without the authenticator
+		buffer_t * const public_identity_key, //output, optional, can be NULL, only works with prekey messages
+		buffer_t * const public_ephemeral_key, //output, optional, can be NULL, only works with prekey messages
+		buffer_t * const public_prekey //output, optional, can be NULL, only works with prekey messages
+		) __attribute__((warn_unused_result));
 
 /*
  * Decrypt the header of a packet. (This also authenticates the metadata!)
@@ -88,8 +103,12 @@ int packet_get_metadata_without_verification(
 int packet_decrypt_header(
 		const buffer_t * const packet,
 		buffer_t * const header, //As long as the packet or at most 255 bytes
-		buffer_t * const message_nonce, //output
-		const buffer_t * const header_key) __attribute__((warn_unused_result)); //HEADER_KEY_SIZE
+		buffer_t * const message_nonce, //output, MESSAGE_KEY_SIZE
+		const buffer_t * const header_key, //HEADER_KEY_SIZE
+		buffer_t * const public_identity_key, //output, optional, can be NULL, for prekey messages only
+		buffer_t * const public_ephemeral_key, //output, optional, can be NULL, for prekey messages only
+		buffer_t * const public_prekey //output, optional, can be NULL, for prekey messages only
+		) __attribute__((warn_unused_result));
 
 /*
  * Decrypt the message inside a packet.
