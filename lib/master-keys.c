@@ -193,6 +193,45 @@ cleanup:
 }
 
 /*
+ * Sign a piece of data. Returns the data and signature in one output buffer.
+ */
+int master_keys_sign(
+		master_keys * const keys,
+		const buffer_t * const data,
+		buffer_t * const signed_data) { //output, length of data + SIGNATURE_SIZE
+	if ((keys == NULL)
+			|| (data == NULL)
+			|| (signed_data == NULL)
+			|| (signed_data->buffer_length < (data->content_length + SIGNATURE_SIZE))) {
+		return -6;
+	}
+
+	sodium_mprotect_readonly(keys);
+
+	int status = 0;
+	unsigned long long signed_message_length;
+	status = crypto_sign(
+			signed_data->content,
+			&signed_message_length,
+			data->content,
+			data->content_length,
+			keys->private_signing_key->content);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+	signed_data->content_length = (size_t) signed_message_length;
+
+cleanup:
+	sodium_mprotect_noaccess(keys);
+
+	if (status != 0) {
+		signed_data->content_length = 0;
+	}
+	return status;
+}
+
+/*
  * Serialise the master keys into JSON. It get's a mempool_t buffer and stores mcJSON
  * Objects into it starting at pool->position.
  */

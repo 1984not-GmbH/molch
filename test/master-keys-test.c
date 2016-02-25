@@ -24,7 +24,6 @@
 #include "utils.h"
 #include "tracing.h"
 
-
 int main(void) {
 	if (sodium_init() == -1) {
 		return -1;
@@ -36,6 +35,9 @@ int main(void) {
 	//public key buffers
 	buffer_t *public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
 	buffer_t *public_identity_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+
+	buffer_t *signed_data = buffer_create_on_heap(100, 0);
+	buffer_t *unwrapped_data = buffer_create_on_heap(100, 0);
 
 	int status = 0;
 
@@ -127,6 +129,38 @@ int main(void) {
 	}
 	sodium_mprotect_noaccess(spiced_master_keys);
 
+	//sign some data
+	buffer_create_from_string(data, "This is some data to be signed.");
+	printf("Data to be signed.\n");
+	printf("%.*s\n", (int)data->content_length, (char*)data->content);
+
+	status = master_keys_sign(
+			spiced_master_keys,
+			data,
+			signed_data);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to sign data!\n");
+		goto cleanup;
+	}
+	printf("Signed data:\n");
+	print_hex(signed_data);
+
+	//now check the signature
+	unsigned long long unwrapped_data_length;
+	status = crypto_sign_open(
+			unwrapped_data->content,
+			&unwrapped_data_length,
+			signed_data->content,
+			signed_data->content_length,
+			public_signing_key->content);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to verify signature!\n");
+		goto cleanup;
+	}
+	unwrapped_data->content_length = (size_t) unwrapped_data_length;
+
+	printf("\nSignature was successfully verified!\n");
+
 cleanup:
 	if (unspiced_master_keys != NULL) {
 		sodium_free(unspiced_master_keys);
@@ -137,6 +171,8 @@ cleanup:
 
 	buffer_destroy_from_heap(public_signing_key);
 	buffer_destroy_from_heap(public_identity_key);
+	buffer_destroy_from_heap(signed_data);
+	buffer_destroy_from_heap(unwrapped_data);
 
 	return status;
 }

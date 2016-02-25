@@ -66,6 +66,15 @@ int master_keys_get_identity_key(
 		buffer_t * const public_identity_key) __attribute__((warn_unused_result));
 
 /*
+ * Sign a piece of data. Returns the data and signature in one output buffer.
+ */
+int master_keys_sign(
+		master_keys * const keys,
+		const buffer_t * const data,
+		buffer_t * const signed_data //output, length of data + SIGNATURE_SIZE
+		) __attribute__((warn_unused_result));
+
+/*
  * Serialise the master keys into JSON. It get's a mempool_t buffer and stores mcJSON
  * Objects into it starting at pool->position.
  */
