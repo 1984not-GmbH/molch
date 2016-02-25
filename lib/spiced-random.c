@@ -41,10 +41,10 @@ int spiced_random(
 
 	int status;
 	//buffer to put the random data derived from the random spice into
-	buffer_t *spice = buffer_create_on_heap(output_length, output_length);
+	buffer_t *spice = buffer_create_with_custom_allocator(output_length, output_length, sodium_malloc, sodium_free);
 
 	//buffer that contains the random data from the OS
-	buffer_t *os_random = buffer_create_on_heap(output_length, output_length);
+	buffer_t *os_random = buffer_create_with_custom_allocator(output_length, output_length, sodium_malloc, sodium_free);
 	status = buffer_fill_random(os_random, output_length);
 	if (status != 0) {
 		goto fail;
@@ -85,8 +85,8 @@ fail:
 	buffer_clear(random_output);
 	random_output->content_length = 0;
 cleanup:
-	buffer_destroy_from_heap(os_random);
-	buffer_destroy_from_heap(spice);
+	buffer_destroy_with_custom_deallocator(os_random, sodium_free);
+	buffer_destroy_with_custom_deallocator(spice, sodium_free);
 
 	return status;
 }
