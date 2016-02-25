@@ -235,7 +235,62 @@ cleanup:
  * Serialise the master keys into JSON. It get's a mempool_t buffer and stores mcJSON
  * Objects into it starting at pool->position.
  */
-mcJSON *master_keys_json_export(master_keys * const keys, mempool_t * const pool) __attribute__((warn_unused_result));
+mcJSON *master_keys_json_export(master_keys * const keys, mempool_t * const pool) {
+	if ((keys == NULL) || (pool == NULL)) {
+		return NULL;
+	}
+
+	mcJSON *json = mcJSON_CreateObject(pool);
+	if (json == NULL) {
+		return NULL;
+	}
+
+	sodium_mprotect_readonly(keys);
+
+	//public signing key
+	buffer_create_from_string(public_signing_key_string, "public_signing_key");
+	mcJSON *public_signing_key = mcJSON_CreateHexString(keys->public_signing_key, pool);
+	if (public_signing_key == NULL) {
+		goto fail;
+	}
+	mcJSON_AddItemToObject(json, public_signing_key_string, public_signing_key, pool);
+
+	//private signing key
+	buffer_create_from_string(private_signing_key_string, "private_signing_key");
+	mcJSON *private_signing_key = mcJSON_CreateHexString(keys->private_signing_key, pool);
+	if (private_signing_key == NULL) {
+		goto fail;
+	}
+	mcJSON_AddItemToObject(json, private_signing_key_string, private_signing_key, pool);
+
+	//public identity key
+	buffer_create_from_string(public_identity_key_string, "public_identity_key");
+	mcJSON *public_identity_key = mcJSON_CreateHexString(keys->public_identity_key, pool);
+	if (public_identity_key == NULL) {
+		goto fail;
+	}
+	mcJSON_AddItemToObject(json, public_identity_key_string, public_identity_key, pool);
+
+	//private identity key
+	buffer_create_from_string(private_identity_key_string, "private_identity_key");
+	mcJSON *private_identity_key = mcJSON_CreateHexString(keys->private_identity_key, pool);
+	if (private_identity_key == NULL) {
+		goto fail;
+	}
+	mcJSON_AddItemToObject(json, private_identity_key_string, private_identity_key, pool);
+
+	goto cleanup;
+
+fail:
+	sodium_mprotect_noaccess(keys);
+
+	return NULL;
+
+cleanup:
+	sodium_mprotect_noaccess(keys);
+
+	return json;
+}
 
 /*
  * Deserialize a set of master keys (import from JSON).

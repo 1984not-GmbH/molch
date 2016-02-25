@@ -21,6 +21,7 @@
 
 #include "../lib/master-keys.h"
 #include "../lib/constants.h"
+#include "../lib/json.h"
 #include "utils.h"
 #include "tracing.h"
 
@@ -160,6 +161,17 @@ int main(void) {
 	unwrapped_data->content_length = (size_t) unwrapped_data_length;
 
 	printf("\nSignature was successfully verified!\n");
+
+	//Test JSON export
+	JSON_EXPORT(json_string1, 10000, 500, true, spiced_master_keys, master_keys_json_export);
+	if (json_string1 == NULL) {
+		fprintf(stderr, "ERROR: Failed to export to JSON!\n");
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+	printf("JSON:\n");
+	printf("%.*s\n", (int)json_string1->content_length, (char*)json_string1->content);
+	buffer_destroy_from_heap(json_string1);
 
 cleanup:
 	if (unspiced_master_keys != NULL) {
