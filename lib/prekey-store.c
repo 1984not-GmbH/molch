@@ -523,7 +523,11 @@ prekey_store *prekey_store_json_import(const mcJSON * const json __attribute__((
 		status = -1;
 		goto cleanup;
 	}
-	node = mcJSON_GetArrayItem(deprecated_prekeys, deprecated_prekeys->length - 1); //last element
+	if (deprecated_prekeys->length == 0) {
+		node = NULL;
+	} else {
+		node = mcJSON_GetArrayItem(deprecated_prekeys, deprecated_prekeys->length - 1); //last element
+	}
 	for (size_t i = 0; (i < deprecated_prekeys->length) && (node != NULL); i++, node = node->prev) {
 		prekey_store_node *prekey_node = sodium_malloc(sizeof(prekey_store_node));
 		if (prekey_node == NULL) {
