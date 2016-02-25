@@ -143,6 +143,56 @@ cleanup:
 }
 
 /*
+ * Get the public signing key.
+ */
+int master_keys_get_signing_key(
+		master_keys * const keys,
+		buffer_t * const public_signing_key) {
+	//check input
+	if ((keys == NULL) || (public_signing_key == NULL) || (public_signing_key->buffer_length < PUBLIC_MASTER_KEY_SIZE)) {
+		return -6;
+	}
+
+	sodium_mprotect_readonly(keys);
+
+	int status = 0;
+	status = buffer_clone(public_signing_key, keys->public_signing_key);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+cleanup:
+	sodium_mprotect_noaccess(keys);
+
+	return status;
+}
+
+/*
+ * Get the public identity key.
+ */
+int master_keys_get_identity_key(
+		master_keys * const keys,
+		buffer_t * const public_identity_key) {
+	//check input
+	if ((keys == NULL) || (public_identity_key == NULL) || (public_identity_key->buffer_length < PUBLIC_KEY_SIZE)) {
+		return -6;
+	}
+
+	sodium_mprotect_readonly(keys);
+
+	int status = 0;
+	status = buffer_clone(public_identity_key, keys->public_identity_key);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+cleanup:
+	sodium_mprotect_noaccess(keys);
+
+	return status;
+}
+
+/*
  * Serialise the master keys into JSON. It get's a mempool_t buffer and stores mcJSON
  * Objects into it starting at pool->position.
  */

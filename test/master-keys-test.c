@@ -47,6 +47,18 @@ int main(void) {
 		goto cleanup;
 	}
 
+	//get the public keys
+	status = master_keys_get_signing_key(unspiced_master_keys, public_signing_key);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to get the public signing key! (%i)\n", status);
+		goto cleanup;
+	}
+	status = master_keys_get_identity_key(unspiced_master_keys, public_identity_key);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to get the public identity key! (%i)\n", status);
+		goto cleanup;
+	}
+
 	//print the keys
 	sodium_mprotect_readonly(unspiced_master_keys);
 	printf("Signing keypair:\n");
@@ -62,6 +74,19 @@ int main(void) {
 
 	printf("\nPrivate:\n");
 	print_hex(unspiced_master_keys->private_identity_key);
+
+	//check the exported public keys
+	if (buffer_compare(public_signing_key, unspiced_master_keys->public_signing_key) != 0) {
+		fprintf(stderr, "ERROR: Exported public signing key doesn't match!\n");
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+	if (buffer_compare(public_identity_key, unspiced_master_keys->public_identity_key) != 0) {
+		fprintf(stderr, "ERROR: Exported public identity key doesn't match!\n");
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+	sodium_mprotect_noaccess(unspiced_master_keys);
 
 
 	//create the spiced master keys

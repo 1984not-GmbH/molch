@@ -52,6 +52,20 @@ master_keys *master_keys_create(
 		) __attribute__((warn_unused_result));
 
 /*
+ * Get the public signing key.
+ */
+int master_keys_get_signing_key(
+		master_keys * const keys,
+		buffer_t * const public_signing_key) __attribute__((warn_unused_result));
+
+/*
+ * Get the public identity key.
+ */
+int master_keys_get_identity_key(
+		master_keys * const keys,
+		buffer_t * const public_identity_key) __attribute__((warn_unused_result));
+
+/*
  * Serialise the master keys into JSON. It get's a mempool_t buffer and stores mcJSON
  * Objects into it starting at pool->position.
  */
