@@ -23,6 +23,7 @@
 #include "../buffer/buffer.h"
 #include "../mcJSON/mcJSON.h"
 #include "conversation-store.h"
+#include "prekey-store.h"
 
 #ifndef LIB_USER_STORE_H
 #define LIB_USER_STORE_H
@@ -39,12 +40,7 @@ struct user_store_node {
 	unsigned char public_identity_key_storage[PUBLIC_KEY_SIZE];
 	buffer_t private_identity_key[1];
 	unsigned char private_identity_key_storage[PRIVATE_KEY_SIZE];
-	//FIXME those prekey should be replaced by it's own prekey store in the future
-	//(this allows still having old prekeys around)
-	buffer_t public_prekeys[PREKEY_AMOUNT];
-	unsigned char public_prekey_storage[PREKEY_AMOUNT * PUBLIC_KEY_SIZE];
-	buffer_t private_prekeys[PREKEY_AMOUNT];
-	unsigned char private_prekey_storage[PREKEY_AMOUNT * PRIVATE_KEY_SIZE];
+	prekey_store *prekeys;
 	conversation_store conversations[1];
 };
 
@@ -66,9 +62,7 @@ void user_store_destroy(user_store * const store);
 int user_store_add(
 		user_store * const keystore,
 		const buffer_t * const public_identity,
-		const buffer_t * const private_identity,
-		const buffer_t * const public_prekeys,
-		const buffer_t * const private_prekeys) __attribute__((warn_unused_result));
+		const buffer_t * const private_identity) __attribute__((warn_unused_result));
 
 /*
  * Find a user for a given public identity key.

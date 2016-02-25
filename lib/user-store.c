@@ -90,16 +90,12 @@ user_store_node *create_user_store_node() {
 	//initialise pointers
 	node->previous = NULL;
 	node->next = NULL;
+	node->prekeys = NULL;
 
 	//initialise all the buffers
 	buffer_init_with_pointer(node->public_identity_key, node->public_identity_key_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_init_with_pointer(node->private_identity_key, node->private_identity_key_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 
-	//initialise prekey buffers
-	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		buffer_init_with_pointer(&(node->public_prekeys[i]), &(node->public_prekey_storage[i * PUBLIC_KEY_SIZE]), PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		buffer_init_with_pointer(&(node->private_prekeys[i]), &(node->private_prekey_storage[i * PRIVATE_KEY_SIZE]), PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	}
 
 	conversation_store_init(node->conversations);
 
@@ -111,14 +107,10 @@ user_store_node *create_user_store_node() {
 int user_store_add(
 		user_store *store,
 		const buffer_t * const public_identity,
-		const buffer_t * const private_identity,
-		const buffer_t * const public_prekeys,
-		const buffer_t * const private_prekeys) {
+		const buffer_t * const private_identity) {
 	//check size of the input buffers
 	if ((public_identity->content_length != PUBLIC_KEY_SIZE)
-			|| (private_identity->content_length != PRIVATE_KEY_SIZE)
-			|| (public_prekeys->content_length != PREKEY_AMOUNT * PUBLIC_KEY_SIZE)
-			|| (private_prekeys->content_length != PREKEY_AMOUNT * PRIVATE_KEY_SIZE)) {
+			|| (private_identity->content_length != PRIVATE_KEY_SIZE)) {
 		return -6;
 	}
 
@@ -141,19 +133,18 @@ int user_store_add(
 	}
 
 	//prekeys
-	//copy them
-	status = buffer_clone_to_raw(new_node->public_prekey_storage, sizeof(new_node->private_prekey_storage), public_prekeys);
-	if (status != 0) {
-		sodium_free(new_node);
-		return status;
-	}
-	status = buffer_clone_to_raw(new_node->private_prekey_storage, sizeof(new_node->private_prekey_storage), private_prekeys);
-	if (status != 0) {
-		sodium_free(new_node);
-		return status;
+	new_node->prekeys = prekey_store_create();
+	if (new_node->prekeys == NULL) {
+		status = -1;
+		goto cleanup;
 	}
 
 	add_user_store_node(store, new_node);
+
+cleanup:
+	if (status != 0) {
+		sodium_free(new_node);
+	}
 
 	return 0;
 }
@@ -304,38 +295,13 @@ mcJSON *user_store_node_json_export(user_store_node * const node, mempool_t * co
 	buffer_create_from_string(private_identity_string, "private_identity");
 	mcJSON_AddItemToObject(json, private_identity_string, private_identity, pool);
 
-	/* create arrays for prekeys */
-	mcJSON *public_prekey_array = mcJSON_CreateArray(pool);
-	if (public_prekey_array == NULL) {
+	//add prekeys
+	mcJSON *prekeys = prekey_store_json_export(node->prekeys, pool);
+	if (prekeys == NULL) {
 		return NULL;
 	}
-	buffer_create_from_string(public_prekeys_string, "public_prekeys");
-	mcJSON_AddItemToObject(json, public_prekeys_string, public_prekey_array, pool);
-	mcJSON *private_prekey_array = mcJSON_CreateArray(pool);
-	if (private_prekey_array == NULL) {
-		return NULL;
-	}
-	buffer_create_from_string(private_prekeys_string, "private_prekeys");
-	mcJSON_AddItemToObject(json, private_prekeys_string, private_prekey_array, pool);
-
-	/* fill prekey arrays */
-	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		assert(PUBLIC_KEY_SIZE == PRIVATE_KEY_SIZE);
-
-		//public prekey
-		mcJSON *public_prekey = mcJSON_CreateHexString(&(node->public_prekeys[i]), pool);
-		if (public_prekey == NULL) {
-			return NULL;
-		}
-		mcJSON_AddItemToArray(public_prekey_array, public_prekey, pool);
-
-		//private_prekey
-		mcJSON *private_prekey = mcJSON_CreateHexString(&(node->private_prekeys[i]), pool);
-		if (private_prekey == NULL) {
-			return NULL;
-		}
-		mcJSON_AddItemToArray(private_prekey_array, private_prekey, pool);
-	}
+	buffer_create_from_string(prekeys_string, "prekeys");
+	mcJSON_AddItemToObject(json, prekeys_string, prekeys, pool);
 
 	//add conversation store
 	mcJSON *conversations = conversation_store_json_export(node->conversations, pool);
@@ -387,49 +353,6 @@ mcJSON *user_store_json_export(user_store * const store, mempool_t * const pool)
 }
 
 /*
- * Import a list of prekeys from JSON.
- */
-int prekey_import(user_store_node * const node, const mcJSON * const public_prekey_array, const mcJSON * const private_prekey_array) {
-	if ((public_prekey_array == NULL) || (public_prekey_array->type != mcJSON_Array) || (public_prekey_array->length != PREKEY_AMOUNT)
-			|| (private_prekey_array == NULL) || (private_prekey_array->type != mcJSON_Array) || (private_prekey_array->length != PREKEY_AMOUNT)) {
-		return -1;
-	}
-
-	mcJSON *current_private_prekey = private_prekey_array->child;
-	mcJSON *current_public_prekey = public_prekey_array->child;
-	//copy the prekeys
-	size_t i;
-	for (i = 0;
-			(i < PREKEY_AMOUNT)
-				&& (current_private_prekey != NULL)
-				&& (current_private_prekey->type == mcJSON_String)
-				&& (current_private_prekey->valuestring->content_length == (2 * PRIVATE_KEY_SIZE + 1))
-				&& (current_public_prekey != NULL)
-				&& (current_public_prekey->type == mcJSON_String)
-				&& (current_public_prekey->valuestring->content_length == (2 * PUBLIC_KEY_SIZE + 1));
-			i++,
-				current_private_prekey = current_private_prekey->next,
-				current_public_prekey = current_public_prekey->next) {
-		//copy private prekey
-		int status = buffer_clone_from_hex(&(node->private_prekeys[i]), current_private_prekey->valuestring);
-		if (status != 0) {
-			return status;
-		}
-		//copy public prekey
-		status = buffer_clone_from_hex(&(node->public_prekeys[i]), current_public_prekey->valuestring);
-		if (status != 0) {
-			return status;
-		}
-	}
-
-	if (i != PREKEY_AMOUNT) {
-		return -5;
-	}
-
-	return 0;
-}
-
-/*
  * Deserialise a user store (import from JSON).
  */
 user_store *user_store_json_import(const mcJSON * const json) {
@@ -442,70 +365,85 @@ user_store *user_store_json_import(const mcJSON * const json) {
 		return NULL;
 	}
 
+	user_store_node *node = NULL;
+
+	int status = 0;
 	//add all the users
 	mcJSON *user = json->child;
 	for (size_t i = 0; (i < json->length) && (user != NULL); i++, user = user->next) {
-		//get reference to the relevant mcJSON objects
-		buffer_create_from_string(private_identity_string, "private_identity");
-		mcJSON *private_identity = mcJSON_GetObjectItem(user, private_identity_string);
-		buffer_create_from_string(public_identity_string, "public_identity");
-		mcJSON *public_identity = mcJSON_GetObjectItem(user, public_identity_string);
-		buffer_create_from_string(private_prekeys_string, "private_prekeys");
-		mcJSON *private_prekeys = mcJSON_GetObjectItem(user, private_prekeys_string);
-		buffer_create_from_string(public_prekeys_string, "public_prekeys");
-		mcJSON *public_prekeys = mcJSON_GetObjectItem(user, public_prekeys_string);
-		buffer_create_from_string(conversations_string, "conversations");
-		mcJSON *conversations = mcJSON_GetObjectItem(user, conversations_string);
-
-		//check if they are valid
-		if ((private_identity == NULL) || (private_identity->type != mcJSON_String) || (private_identity->valuestring->content_length != (2 * PRIVATE_KEY_SIZE + 1))
-				|| (public_identity == NULL) || (public_identity->type != mcJSON_String) || (public_identity->valuestring->content_length != (2 * PUBLIC_KEY_SIZE + 1))
-				|| (conversations->type != mcJSON_Array)) {
-			user_store_destroy(store);
-			return NULL;
-		}
-
 		//create new user_store_node
 		user_store_node *node = create_user_store_node();
 		if (node == NULL) {
-			user_store_destroy(store);
-			return NULL;
+			status = -1;
+			goto cleanup;
 		}
 
-		//copy private_identity
+		//private identity key
+		buffer_create_from_string(private_identity_string, "private_identity");
+		mcJSON *private_identity = mcJSON_GetObjectItem(user, private_identity_string);
+		if ((private_identity == NULL) || (private_identity->type != mcJSON_String) || (private_identity->valuestring->content_length != (2 * PRIVATE_KEY_SIZE + 1))) {
+			status = -1;
+			goto cleanup;
+		}
 		node->private_identity_key->readonly = false;
 		if (buffer_clone_from_hex(node->private_identity_key, private_identity->valuestring) != 0) {
-			sodium_free(node);
-			user_store_destroy(store);
-			return NULL;
+			status = -1;
+			goto cleanup;
 		}
 		node->private_identity_key->readonly = true;
 
-		//copy public_identity
+		//public identity key
+		buffer_create_from_string(public_identity_string, "public_identity");
+		mcJSON *public_identity = mcJSON_GetObjectItem(user, public_identity_string);
+		if ((public_identity == NULL) || (public_identity->type != mcJSON_String) || (public_identity->valuestring->content_length != (2 * PUBLIC_KEY_SIZE + 1))) {
+			status = -1;
+			goto cleanup;
+		}
 		node->public_identity_key->readonly = false;
 		if (buffer_clone_from_hex(node->public_identity_key, public_identity->valuestring) != 0) {
-			sodium_free(node);
-			user_store_destroy(store);
-			return NULL;
+			status = -1;
+			goto cleanup;
 		}
 		node->public_identity_key->readonly = true;
 
-		//copy the prekeys
-		if (prekey_import(node, public_prekeys, private_prekeys) != 0) {
-			sodium_free(node);
-			user_store_destroy(store);
-			return NULL;
+		//prekeys
+		buffer_create_from_string(prekeys_string, "prekeys");
+		mcJSON *prekeys = mcJSON_GetObjectItem(user, prekeys_string);
+		if ((prekeys == NULL) || (prekeys->type != mcJSON_Object)) {
+			status = -1;
+			goto cleanup;
+		}
+		node->prekeys = prekey_store_json_import(prekeys);
+		if (node->prekeys == NULL) {
+			status = -1;
+			goto cleanup;
 		}
 
-		//import the conversation store
-		if (conversation_store_json_import(conversations, node->conversations) != 0) {
-			sodium_free(node);
-			user_store_destroy(store);
-			return NULL;
+		//conversations
+		buffer_create_from_string(conversations_string, "conversations");
+		mcJSON *conversations = mcJSON_GetObjectItem(user, conversations_string);
+		if ((conversations == NULL) || (conversations->type != mcJSON_Array)) {
+			status = -1;
+			goto cleanup;
+		}
+		status = conversation_store_json_import(conversations, node->conversations);
+		if (status != 0) {
+			goto cleanup;
 		}
 
 		//now add the imported node to the user store, this also does all the sodium_mprotect work
 		add_user_store_node(store, node);
+	}
+
+cleanup:
+	if (status != 0) {
+		user_store_destroy(store);
+		if (node != NULL) {
+			if (node->prekeys != NULL) {
+				prekey_store_destroy(node->prekeys);
+			}
+			sodium_free(node);
+		}
 	}
 
 	return store;

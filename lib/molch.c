@@ -69,51 +69,33 @@ int molch_create_user(
 	int status;
 	//buffer to put all the private keys into (random numbers created using the random input
 	//in combination with system provided random data)
-	buffer_t *random_seeds = buffer_create_with_custom_allocator((PREKEY_AMOUNT + 1) * crypto_box_SEEDBYTES, 0, sodium_malloc, sodium_free);
+	buffer_t *random_seed = buffer_create_with_custom_allocator(crypto_box_SEEDBYTES, 0, sodium_malloc, sodium_free);
 	//buffer for the random input
 	buffer_create_with_existing_array(random_data_buffer, (unsigned char*) random_data, random_data_length);
 	random_data_buffer->readonly = true;
 
-	//create private key
+	//key buffers
 	buffer_t *private_identity = buffer_create_with_custom_allocator(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE, sodium_malloc, sodium_free);
-	buffer_t *private_prekeys = buffer_create_with_custom_allocator(PRIVATE_KEY_SIZE * PREKEY_AMOUNT, PRIVATE_KEY_SIZE * PREKEY_AMOUNT, sodium_malloc, sodium_free);
-
-	//public identity
 	buffer_t *public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	//public prekeys
-	buffer_t *public_prekeys = buffer_create_on_heap(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
 
 	//create private keys
-	status = spiced_random(random_seeds, random_data_buffer, random_seeds->buffer_length);
+	status = spiced_random(random_seed, random_data_buffer, random_seed->buffer_length);
 	if (status != 0) {
 		goto cleanup;
 	}
 
 	//now calculate the identity keys from the seed
-	status = crypto_box_seed_keypair(public_identity->content, private_identity->content, random_seeds->content);
+	status = crypto_box_seed_keypair(public_identity->content, private_identity->content, random_seed->content);
 	if (status != 0) {
 		goto cleanup;
-	}
-
-	//calculate all the prekeys
-	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		status = crypto_box_seed_keypair(
-				public_prekeys->content + i * PUBLIC_KEY_SIZE,
-				private_prekeys->content + i * PRIVATE_KEY_SIZE,
-				random_seeds->content + i * crypto_box_SEEDBYTES);
-		if (status != 0) {
-			goto cleanup;
-		}
 	}
 
 	//now create the user
 	status = user_store_add(
 			users,
 			public_identity,
-			private_identity,
-			public_prekeys,
-			private_prekeys);
+			private_identity);
 	if (status != 0) {
 		goto cleanup;
 	}
@@ -125,20 +107,26 @@ int molch_create_user(
 		goto cleanup;
 	}
 
-	status = buffer_copy_to_raw(prekey_list, 0, public_prekeys, 0, public_prekeys->content_length);
-	if (status != 0) {
+	//get the prekey list
+	buffer_t prekeys[1];
+	buffer_init_with_pointer(prekeys, prekey_list, PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
+	user_store_node *user = user_store_find_node(users, public_identity);
+	if (user == NULL) {
 		status = -10;
 		goto cleanup;
 	}
-
+	sodium_mprotect_readonly(user);
+	status = prekey_store_list(user->prekeys, prekeys);
+	if (status != 0) {
+		goto cleanup;
+	}
+	sodium_mprotect_noaccess(user);
 cleanup:
 	//destroy the private keys
-	buffer_destroy_with_custom_deallocator(random_seeds, sodium_free);
+	buffer_destroy_with_custom_deallocator(random_seed, sodium_free);
 	buffer_destroy_with_custom_deallocator(private_identity, sodium_free);
-	buffer_destroy_with_custom_deallocator(private_prekeys, sodium_free);
 
 	buffer_destroy_from_heap(public_identity);
-	buffer_destroy_from_heap(public_prekeys);
 
 	return status;
 }
@@ -316,22 +304,6 @@ int molch_create_send_conversation(
 }
 
 /*
- * Find out the position a prekey is in.
- *
- * Returns SIZE_MAX if it wasn't found.
- */
-size_t get_prekey_number(const buffer_t * const prekeys, const buffer_t * const prekey) {
-	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		if (buffer_compare(prekey, &prekeys[i]) == 0) {
-			//prekey found
-			return i;
-		}
-	}
-
-	return SIZE_MAX; //prekey not found
-}
-
-/*
  * Start a new conversation. (receiving)
  *
  * This also generates a new set of prekeys to be uploaded to the server.
@@ -368,16 +340,11 @@ int molch_create_receive_conversation(
 
 	//get the public prekey from the message
 	buffer_create_with_existing_array(public_prekey, (unsigned char*)(packet + sizeof(molch_message_type)), PUBLIC_KEY_SIZE);
-	sodium_mprotect_readwrite(user);
-	size_t prekey_number = get_prekey_number(user->public_prekeys, public_prekey);
-	if (prekey_number == SIZE_MAX) { //prekey not found
-		sodium_mprotect_noaccess(user);
-		return -3;
-	}
 
 	//get the corresponding private prekey
+	sodium_mprotect_readwrite(user);
 	buffer_t *private_prekey = buffer_create_on_heap(PRIVATE_KEY_SIZE, 0);
-	int status = buffer_clone(private_prekey, &user->private_prekeys[prekey_number]);
+	int status = prekey_store_get_prekey(user->prekeys, public_prekey, private_prekey);
 	if (status != 0) {
 		sodium_mprotect_noaccess(user);
 		buffer_destroy_from_heap(private_prekey);
@@ -593,12 +560,12 @@ unsigned char *molch_json_export(size_t *length) {
 
 	//allocate a memory pool
 	//FIXME: Don't allocate a fixed amount
-	unsigned char *pool_content = sodium_malloc(100000);
+	unsigned char *pool_content = sodium_malloc(5000000);
 	mempool_t *pool = alloca(sizeof(mempool_t));
 	buffer_init_with_pointer(
 			pool,
 			pool_content,
-			100000,
+			5000000,
 			0);
 
 	//serialize state into tree of mcJSON objects
@@ -611,7 +578,7 @@ unsigned char *molch_json_export(size_t *length) {
 
 	//print to string
 	//FIXME: Don't allocate a fixed amount (that's the only way to do it right now unfortunately)
-	buffer_t *printed_json = mcJSON_PrintBuffered(json, 100000, false);
+	buffer_t *printed_json = mcJSON_PrintBuffered(json, 5000000, false);
 	sodium_free(pool_content);
 	if (printed_json == NULL) {
 		*length = 0;
@@ -643,7 +610,7 @@ int molch_json_import(const unsigned char *const json, const size_t length){
 
 	//parse the json
 	//FIXME: Don't allocate fixed amount
-	mcJSON *json_tree = mcJSON_ParseBuffered(json_buffer, 100000);
+	mcJSON *json_tree = mcJSON_ParseBuffered(json_buffer, 5000000);
 	if (json_tree == NULL) {
 		return -1;
 	}
