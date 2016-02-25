@@ -32,6 +32,7 @@ int main(void) {
 
 	master_keys *unspiced_master_keys = NULL;
 	master_keys *spiced_master_keys = NULL;
+	master_keys *imported_master_keys = NULL;
 
 	//public key buffers
 	buffer_t *public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
@@ -171,7 +172,37 @@ int main(void) {
 	}
 	printf("JSON:\n");
 	printf("%.*s\n", (int)json_string1->content_length, (char*)json_string1->content);
+
+	//import it again
+	JSON_IMPORT(imported_master_keys, 10000, json_string1, master_keys_json_import);
+	if (imported_master_keys == NULL) {
+		fprintf(stderr, "ERROR: Failed to import from JSON!\n");
+		buffer_destroy_from_heap(json_string1);
+		goto cleanup;
+	}
+	printf("Successfully imported from JSON!\n");
+
+	//export it again
+	JSON_EXPORT(exported_json_string, 10000, 500, true, imported_master_keys, master_keys_json_export);
+	if (exported_json_string == NULL) {
+		fprintf(stderr, "ERROR: Failed to exported imported back to JSON!\n");
+		buffer_destroy_from_heap(json_string1);
+		goto cleanup;
+	}
+	printf("Successfully exported back to JSON!\n");
+
+	//compare them
+	if (buffer_compare(json_string1, exported_json_string) != 0) {
+		fprintf(stderr, "ERROR: Object imported from JSON was incorrect!\n");
+		buffer_destroy_from_heap(json_string1);
+		buffer_destroy_from_heap(exported_json_string);
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+	printf("Imported Object matches!\n");
+
 	buffer_destroy_from_heap(json_string1);
+	buffer_destroy_from_heap(exported_json_string);
 
 cleanup:
 	if (unspiced_master_keys != NULL) {
@@ -179,6 +210,9 @@ cleanup:
 	}
 	if (spiced_master_keys != NULL) {
 		sodium_free(spiced_master_keys);
+	}
+	if (imported_master_keys != NULL) {
+		sodium_free(imported_master_keys);
 	}
 
 	buffer_destroy_from_heap(public_signing_key);

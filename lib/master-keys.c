@@ -295,4 +295,69 @@ cleanup:
 /*
  * Deserialize a set of master keys (import from JSON).
  */
-master_keys *master_keys_json_import(const mcJSON * const json) __attribute__((warn_unused_result));
+master_keys *master_keys_json_import(const mcJSON * const json) {
+	if ((json == NULL) || (json->type != mcJSON_Object)) {
+		return NULL;
+	}
+
+	master_keys *keys = sodium_malloc(sizeof(master_keys));
+	if (keys == NULL) {
+		return NULL;
+	}
+
+	//the public signing key
+	buffer_init_with_pointer(keys->public_signing_key, keys->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	buffer_create_from_string(public_signing_key_string, "public_signing_key");
+	mcJSON *public_signing_key = mcJSON_GetObjectItem(json, public_signing_key_string);
+	if ((public_signing_key == NULL) || (public_signing_key->type != mcJSON_String) || (public_signing_key->valuestring->content_length != (2 * PUBLIC_MASTER_KEY_SIZE + 1))) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(keys->public_signing_key, public_signing_key->valuestring) != 0) {
+		goto fail;
+	}
+
+	//the private signing key
+	buffer_init_with_pointer(keys->private_signing_key, keys->private_signing_key_storage, PRIVATE_MASTER_KEY_SIZE, PRIVATE_MASTER_KEY_SIZE);
+	buffer_create_from_string(private_signing_key_string, "private_signing_key");
+	mcJSON *private_signing_key = mcJSON_GetObjectItem(json, private_signing_key_string);
+	if ((private_signing_key == NULL) || (private_signing_key->type != mcJSON_String) || (private_signing_key->valuestring->content_length != (2 * PRIVATE_MASTER_KEY_SIZE + 1))) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(keys->private_signing_key, private_signing_key->valuestring) != 0) {
+		goto fail;
+	}
+
+	//the public identity key
+	buffer_init_with_pointer(keys->public_identity_key, keys->public_identity_key_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_create_from_string(public_identity_key_string, "public_identity_key");
+	mcJSON *public_identity_key = mcJSON_GetObjectItem(json, public_identity_key_string);
+	if ((public_identity_key == NULL) || (public_identity_key->type != mcJSON_String) || (public_identity_key->valuestring->content_length != (2 * PUBLIC_KEY_SIZE + 1))) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(keys->public_identity_key, public_identity_key->valuestring) != 0) {
+		goto fail;
+	}
+
+	//the private identity key
+	buffer_init_with_pointer(keys->private_identity_key, keys->private_identity_key_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	buffer_create_from_string(private_identity_key_string, "private_identity_key");
+	mcJSON *private_identity_key = mcJSON_GetObjectItem(json, private_identity_key_string);
+	if ((private_identity_key == NULL) || (private_identity_key->type != mcJSON_String) || (private_identity_key->valuestring->content_length != (2 * PRIVATE_KEY_SIZE + 1))) {
+		goto fail;
+	}
+	if (buffer_clone_from_hex(keys->private_identity_key, private_identity_key->valuestring) != 0) {
+		goto fail;
+	}
+
+	goto cleanup;
+
+fail:
+	sodium_free(keys);
+
+	return NULL;
+
+cleanup:
+	sodium_mprotect_noaccess(keys);
+
+	return keys;
+}
