@@ -22,11 +22,38 @@
  * Init new conversation store.
  */
 void conversation_store_init(conversation_store * const store) {
-	list_init((list_t*)store);
+	store->length = 0;
+	store->head = NULL;
+	store->tail = NULL;
 }
 
 int add_conversation_store_node(conversation_store * const store, conversation_store_node *node) {
-	return list_add((list_t*)store, node->conversation, (list_node*)node);
+	if ((store == NULL) || (node == NULL)) {
+		return -1;
+	}
+
+	if (store->head == NULL) { //first node in the list
+		node->previous = NULL;
+		node->next = NULL;
+		store->head = node;
+		store->tail = node;
+
+		//update length
+		store->length++;
+
+		return 0;
+	}
+
+	//add the new node to the tail of the list
+	store->tail->next = node;
+	node->previous = store->tail;
+	node->next = NULL;
+	store->tail = node;
+
+	//update length
+	store->length++;
+
+	return 0;
 }
 
 /*
@@ -74,8 +101,27 @@ int conversation_store_add(
  * Remove a conversation from the conversation_store.
  */
 void conversation_store_remove(conversation_store * const store, conversation_store_node * const node) {
+	if ((store == NULL) || (node == NULL)) {
+		return;
+	}
+
 	conversation_deinit(node->conversation);
-	list_remove((list_t*)store, (list_node*)node, free, NULL);
+
+	if ((node->next != NULL) && (node != store->tail)) { //node is not the tail
+		node->next->previous = node->previous;
+	} else {
+		store->tail = node->previous;
+	}
+
+	if ((node->previous != NULL) && (node != store->head)) { //node is not the head
+		node->previous->next = node->next;
+	} else {
+		store->head = node->next;
+	}
+
+	store->length--;
+
+	free(node);
 }
 
 /*

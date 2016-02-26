@@ -16,7 +16,6 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "list.h"
 #include "conversation.h"
 
 #ifndef LIB_CONVERSATION_STORE_H
@@ -24,15 +23,11 @@
 
 typedef struct conversation_store_node conversation_store_node;
 struct conversation_store_node {
-	//this is identical to list_node
 	conversation_store_node *previous;
 	conversation_store_node *next;
-	conversation_t *data;
-	//this is specific for conversation_store_node
 	conversation_t conversation[1];
 };
 
-//this is identical to list_t
 typedef struct conversation_store {
 	size_t length;
 	conversation_store_node *head;
@@ -91,7 +86,7 @@ void conversation_store_clear(conversation_store * const store);
 		conversation_store_node *node = store->head;\
 		for (size_t index = 0; (index < store->length) && (node != NULL); index++, node = node->next) {\
 			conversation_t *value __attribute__((unused));\
-			value = node->data;\
+			value = node->conversation;\
 			code\
 		}\
 	}\
