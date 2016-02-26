@@ -51,8 +51,8 @@ static user_store *users = NULL;
  * Returns 0 on success.
  */
 int molch_create_user(
-		unsigned char * const public_identity_key, //output, PUBLIC_KEY_SIZE
-		unsigned char * const prekey_list, //output, needs to be 100 * PUBLIC_KEY_SIZE + crypto_onetimeauth_BYTES
+		unsigned char * const public_master_key, //output, PUBLIC_MASTER_KEY_SIZE
+		unsigned char * const prekey_list, //output, needs to be 100 * PUBLIC_KEY_SIZE
 		const unsigned char * const random_data,
 		const size_t random_data_length) {
 	//create user store if it doesn't exist already
@@ -66,68 +66,39 @@ int molch_create_user(
 		}
 	}
 
-	int status;
-	//buffer to put all the private keys into (random numbers created using the random input
-	//in combination with system provided random data)
-	buffer_t *random_seed = buffer_create_with_custom_allocator(crypto_box_SEEDBYTES, 0, sodium_malloc, sodium_free);
-	//buffer for the random input
-	buffer_create_with_existing_array(random_data_buffer, (unsigned char*) random_data, random_data_length);
-	random_data_buffer->readonly = true;
+	int status = 0;
+	//create a buffer for the random data
+	buffer_t random_data_buffer[1];
+	buffer_init_with_pointer(random_data_buffer, (unsigned char*)random_data, random_data_length, random_data_length);
 
-	//key buffers
-	buffer_t *private_identity = buffer_create_with_custom_allocator(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE, sodium_malloc, sodium_free);
-	buffer_t *public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	//create a buffer for the public master key
+	buffer_t public_master_key_buffer[1];
+	buffer_init_with_pointer(public_master_key_buffer, public_master_key, PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
 
-
-	//create private keys
-	status = spiced_random(random_seed, random_data_buffer, random_seed->buffer_length);
-	if (status != 0) {
-		goto cleanup;
-	}
-
-	//now calculate the identity keys from the seed
-	status = crypto_box_seed_keypair(public_identity->content, private_identity->content, random_seed->content);
-	if (status != 0) {
-		goto cleanup;
-	}
-
-	//now create the user
-	status = user_store_add(
+	//create the user
+	status = user_store_create_user(
 			users,
-			public_identity,
-			private_identity);
+			random_data_buffer,
+			public_master_key_buffer,
+			NULL);
 	if (status != 0) {
-		goto cleanup;
-	}
-
-	//copy the keys to the output
-	status = buffer_copy_to_raw(public_identity_key, 0, public_identity, 0, public_identity->content_length);
-	if (status != 0) {
-		status = -10;
 		goto cleanup;
 	}
 
 	//get the prekey list
 	buffer_t prekeys[1];
 	buffer_init_with_pointer(prekeys, prekey_list, PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
-	user_store_node *user = user_store_find_node(users, public_identity);
+	user_store_node *user = user_store_find_node(users, public_master_key_buffer);
 	if (user == NULL) {
 		status = -10;
 		goto cleanup;
 	}
-	sodium_mprotect_readonly(user);
 	status = prekey_store_list(user->prekeys, prekeys);
 	if (status != 0) {
 		goto cleanup;
 	}
-	sodium_mprotect_noaccess(user);
+
 cleanup:
-	//destroy the private keys
-	buffer_destroy_with_custom_deallocator(random_seed, sodium_free);
-	buffer_destroy_with_custom_deallocator(private_identity, sodium_free);
-
-	buffer_destroy_from_heap(public_identity);
-
 	return status;
 }
 
@@ -156,12 +127,7 @@ size_t molch_user_count() {
 		return 0;
 	}
 
-	size_t user_count;
-	sodium_mprotect_readonly(users);
-	user_count = users->length;
-	sodium_mprotect_noaccess(users);
-
-	return user_count;
+	return users->length;
 }
 
 /*
@@ -171,6 +137,8 @@ void molch_destroy_all_users() {
 	if (users != NULL) {
 		user_store_clear(users);
 	}
+
+	users = NULL;
 }
 
 /*
@@ -188,9 +156,7 @@ unsigned char *molch_user_list(size_t *count) {
 		return NULL;
 	}
 
-	sodium_mprotect_readonly(users);
-	*count = users->length;
-	sodium_mprotect_noaccess(users);
+	*count = molch_user_count();
 
 	unsigned char *user_list = user_list_buffer->content;
 	free(user_list_buffer); //free the buffer_t struct while leaving content intact
@@ -263,12 +229,11 @@ int molch_create_send_conversation(
 		return -2;
 	}
 
-	sodium_mprotect_readwrite(user);
 	//start a conversation
 	status = conversation_store_add(
 			user->conversations,
-			user->private_identity_key,
-			user->public_identity_key,
+			user->public_signing_key, //FIXME: this is bullshit, on purpose!
+			user->public_signing_key, //FIXME: this is bullshit, on purpose!
 			receiver_public_identity_buffer,
 			our_private_ephemeral,
 			our_public_ephemeral,
@@ -282,7 +247,6 @@ int molch_create_send_conversation(
 			conversation_store_remove(user->conversations, user->conversations->tail);
 		}
 	}
-	sodium_mprotect_noaccess(user);
 	buffer_destroy_from_heap(our_private_ephemeral);
 	if (status != 0) {
 		return status;
@@ -342,11 +306,9 @@ int molch_create_receive_conversation(
 	buffer_create_with_existing_array(public_prekey, (unsigned char*)(packet + sizeof(molch_message_type)), PUBLIC_KEY_SIZE);
 
 	//get the corresponding private prekey
-	sodium_mprotect_readwrite(user);
 	buffer_t *private_prekey = buffer_create_on_heap(PRIVATE_KEY_SIZE, 0);
 	int status = prekey_store_get_prekey(user->prekeys, public_prekey, private_prekey);
 	if (status != 0) {
-		sodium_mprotect_noaccess(user);
 		buffer_destroy_from_heap(private_prekey);
 		return status;
 	}
@@ -358,8 +320,8 @@ int molch_create_receive_conversation(
 	//create a new conversation
 	status = conversation_store_add(
 			user->conversations,
-			user->private_identity_key,
-			user->public_identity_key,
+			user->public_signing_key, //FIXME, this is bullshit, on purpose
+			user->public_signing_key, //FIXME, this is bullshit, on purpose
 			sender_public_identity_buffer,
 			private_prekey,
 			public_prekey,
@@ -367,7 +329,6 @@ int molch_create_receive_conversation(
 	buffer_destroy_from_heap(private_prekey);
 	buffer_destroy_from_heap(sender_public_ephemeral_buffer);
 	if (status != 0) {
-		sodium_mprotect_noaccess(user);
 		return status;
 	}
 
@@ -375,7 +336,6 @@ int molch_create_receive_conversation(
 	status = buffer_clone_to_raw(conversation_id, CONVERSATION_ID_SIZE, user->conversations->tail->conversation->id);
 	if (status != 0) {
 		conversation_store_remove(user->conversations, user->conversations->tail);
-		sodium_mprotect_noaccess(user);
 		return status;
 	}
 
@@ -383,10 +343,8 @@ int molch_create_receive_conversation(
 	if (status != 0) {
 		free(*message);
 		conversation_store_remove(user->conversations, user->conversations->tail);
-		sodium_mprotect_noaccess(user);
 		return status;
 	}
-	sodium_mprotect_noaccess(user);
 
 	return 0;
 }
@@ -398,22 +356,17 @@ conversation_t *find_conversation(const unsigned char * const conversation_id) {
 	buffer_create_with_existing_array(conversation_id_buffer, (unsigned char*)conversation_id, CONVERSATION_ID_SIZE);
 
 	//go through all the users
-	sodium_mprotect_readonly(users);
 	user_store_node *node = users->head;
 	conversation_store_node *conversation_node = NULL;
 	while (node != NULL) {
-		sodium_mprotect_readonly(node);
 		conversation_node = conversation_store_find_node(node->conversations, conversation_id_buffer);
 		if (conversation_node != NULL) {
 			//found the conversation where searching for
-			sodium_mprotect_noaccess(node);
 			break;
 		}
 		user_store_node *next = node->next;
-		sodium_mprotect_noaccess(node);
 		node = next;
 	}
-	sodium_mprotect_noaccess(users);
 
 	return conversation_node->conversation;
 }
@@ -495,9 +448,7 @@ void molch_end_conversation(const unsigned char * const conversation_id) {
 	if (user == NULL) {
 		return;
 	}
-	sodium_mprotect_readwrite(user);
 	conversation_store_remove_by_id(user->conversations, conversation->id);
-	sodium_mprotect_noaccess(user);
 }
 
 /*
@@ -521,9 +472,7 @@ unsigned char *molch_list_conversations(const unsigned char * const user_public_
 		return NULL;
 	}
 
-	sodium_mprotect_readonly(user);
 	buffer_t *conversation_id_buffer = conversation_store_list(user->conversations);
-	sodium_mprotect_noaccess(user);
 
 	if (conversation_id_buffer == NULL) {
 		*number = 0;

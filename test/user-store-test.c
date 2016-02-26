@@ -32,143 +32,113 @@ int main(void) {
 		return -1;
 	}
 
+	int status = 0;
+
+	//create public signing key buffers
+	buffer_t *alice_public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	buffer_t *bob_public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	buffer_t *charlie_public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+
+	buffer_t *list = NULL;
+
 	//create a user_store
 	user_store *store = user_store_create();
+	if (store == NULL) {
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
 
 	//check the content
-	buffer_t *list = user_store_list(store);
+	list = user_store_list(store);
+	if (list == NULL) {
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
 	if (list->content_length != 0) {
 		fprintf(stderr, "ERROR: List of users is not empty.\n");
-		user_store_destroy(store);
-		buffer_destroy_from_heap(list);
-
-		return EXIT_FAILURE;
+		status = EXIT_FAILURE;
+		goto cleanup;
 	}
 	buffer_destroy_from_heap(list);
+	list = NULL;
 
-	int status;
-	//create buffers
-	//alice keys
-	buffer_t *alice_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *alice_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	//bobs keys
-	buffer_t *bob_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *bob_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	//charlies keys
-	buffer_t *charlie_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *charlie_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-
-	//create three users
-	//first alice
-	//alice identity key
-	buffer_create_from_string(alice_string, "Alice");
-	buffer_create_from_string(identity_string, "identity");
-	status = generate_and_print_keypair(
-			alice_public_identity,
-			alice_private_identity,
-			alice_string,
-			identity_string);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate Alice's identity keypair.\n");
-		goto cleanup;
-	}
-
-	//then bob
-	//bob's identity key
-	buffer_create_from_string(bob_string, "Bob");
-	status = generate_and_print_keypair(
-			bob_public_identity,
-			bob_private_identity,
-			bob_string,
-			identity_string);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate Bob's identity keypair.\n");
-		goto cleanup;
-	}
-
-	//then charlie
-	//charlie's identity key
-	buffer_create_from_string(charlie_string, "Charlie");
-	status = generate_and_print_keypair(
-			charlie_public_identity,
-			charlie_private_identity,
-			charlie_string,
-			identity_string);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate Charlie's identity keypair.\n");
-		goto cleanup;
-	}
-
-	//add alice to the user store
-	status = user_store_add(
+	//create alice
+	status = user_store_create_user(
 			store,
-			alice_public_identity,
-			alice_private_identity);
+			NULL,
+			alice_public_signing_key,
+			NULL);
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to add Alice to the user store.\n");
+		fprintf(stderr, "ERROR: Failed to create Alice.\n");
 		goto cleanup;
 	}
-	printf("Successfully added Alice to the user store.\n");
+	printf("Successfully created Alice to the user store.\n");
 
 	//check length of the user store
-	sodium_mprotect_readonly(store);
 	if (store->length != 1) {
 		fprintf(stderr, "ERROR: User store has incorrect length.\n");
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
-	sodium_mprotect_noaccess(store);
 	printf("Length of the user store matches.");
 
 	//list user store
 	list = user_store_list(store);
-	if (buffer_compare(list, alice_public_identity) != 0) {
+	if (list == NULL) {
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+	if (buffer_compare(list, alice_public_signing_key) != 0) {
 		fprintf(stderr, "ERROR: Failed to list users.\n");
-		buffer_destroy_from_heap(list);
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	buffer_destroy_from_heap(list);
+	list = NULL;
 	printf("Successfully listed users.\n");
 
-	//add bob to the user store
-	status = user_store_add(
+	//create bob
+	status = user_store_create_user(
 			store,
-			bob_public_identity,
-			bob_private_identity);
+			NULL,
+			bob_public_signing_key,
+			NULL);
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to add Bob to the user store.\n");
+		fprintf(stderr, "ERROR: Failed to create Bob.\n");
 		goto cleanup;
 	}
-	printf("Successfully added Bob to the user store.\n");
+	printf("Successfully created Bob.\n");
 
 	//check length of the user store
-	sodium_mprotect_readonly(store);
 	if (store->length != 2) {
 		fprintf(stderr, "ERROR: User store has incorrect length.\n");
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
-	sodium_mprotect_noaccess(store);
 	printf("Length of the user store matches.");
 
 	//list user store
 	list = user_store_list(store);
-	if ((buffer_compare_partial(list, 0, alice_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)
-			|| (buffer_compare_partial(list, crypto_box_PUBLICKEYBYTES, bob_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)) {
+	if (list == NULL) {
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+	if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		fprintf(stderr, "ERROR: Failed to list users.\n");
-		buffer_destroy_from_heap(list);
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	buffer_destroy_from_heap(list);
+	list = NULL;
 	printf("Successfully listed users.\n");
 
-	//add charlie to the user store
-	status = user_store_add(
+	//create charlie
+	status = user_store_create_user(
 			store,
-			charlie_public_identity,
-			charlie_private_identity);
+			NULL,
+			charlie_public_signing_key,
+			NULL);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to add Charlie to the user store.\n");
 		goto cleanup;
@@ -176,30 +146,32 @@ int main(void) {
 	printf("Successfully added Charlie to the user store.\n");
 
 	//check length of the user store
-	sodium_mprotect_readonly(store);
 	if (store->length != 3) {
 		fprintf(stderr, "ERROR: User store has incorrect length.\n");
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
-	sodium_mprotect_noaccess(store);
 	printf("Length of the user store matches.");
 
 	//list user store
 	list = user_store_list(store);
-	if ((buffer_compare_partial(list, 0, alice_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)
-			|| (buffer_compare_partial(list, crypto_box_PUBLICKEYBYTES, bob_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)
-			|| (buffer_compare_partial(list, 2 * crypto_box_PUBLICKEYBYTES, charlie_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)) {
+	if (list == NULL) {
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+	if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+			|| (buffer_compare_partial(list, 2 * PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		fprintf(stderr, "ERROR: Failed to list users.\n");
-		buffer_destroy_from_heap(list);
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	buffer_destroy_from_heap(list);
+	list = NULL;
 	printf("Successfully listed users.\n");
 
 	//find node
-	user_store_node *bob_node = user_store_find_node(store, bob_public_identity);
+	user_store_node *bob_node = user_store_find_node(store, bob_public_signing_key);
 	if (bob_node == NULL) {
 		fprintf(stderr, "ERROR: Failed to find Bob's node.\n");
 		status = EXIT_FAILURE;
@@ -207,52 +179,52 @@ int main(void) {
 	}
 	printf("Node found.\n");
 
-	sodium_mprotect_readonly(bob_node);
-	if ((buffer_compare(bob_node->public_identity_key, bob_public_identity) != 0)
-			|| (buffer_compare(bob_node->private_identity_key, bob_private_identity) != 0)) {
+	if (buffer_compare(bob_node->public_signing_key, bob_public_signing_key) != 0) {
 		fprintf(stderr, "ERROR: Bob's data from the user store doesn't match.\n");
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
-	sodium_mprotect_noaccess(bob_node);
 	printf("Data from the node matches.\n");
 
 	//remove a user identified by it's key
-	user_store_remove_by_key(store, bob_public_identity);
+	user_store_remove_by_key(store, bob_public_signing_key);
 	//check the length
-	sodium_mprotect_readonly(store);
 	if (store->length != 2) {
 		fprintf(stderr, "ERROR: User store has incorrect length.\n");
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
-	sodium_mprotect_noaccess(store);
 	printf("Length of the user store matches.");
 	//check the user list
 	list = user_store_list(store);
-	if ((buffer_compare_partial(list, 0, alice_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)
-			|| (buffer_compare_partial(list, crypto_box_PUBLICKEYBYTES, charlie_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)) {
+	if (list == NULL) {
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+	if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		fprintf(stderr, "ERROR: Removing user failed.\n");
-		buffer_destroy_from_heap(list);
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	buffer_destroy_from_heap(list);
+	list = NULL;
 	printf("Successfully removed user.\n");
 
-	//readd bob
-	status = user_store_add(
+	//recreate bob
+	status = user_store_create_user(
 			store,
-			bob_public_identity,
-			bob_private_identity);
+			NULL,
+			bob_public_signing_key,
+			NULL);
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to readd Bob to the user store.\n");
+		fprintf(stderr, "ERROR: Failed to recreate.\n");
 		goto cleanup;
 	}
-	printf("Successfully readded Bob to the user store.\n");
+	printf("Successfully recreated Bob.\n");
 
 	//now find bob again
-	bob_node = user_store_find_node(store, bob_public_identity);
+	bob_node = user_store_find_node(store, bob_public_signing_key);
 	if (bob_node == NULL) {
 		fprintf(stderr, "ERROR: Failed to find Bob's node.\n");
 		status = EXIT_FAILURE;
@@ -263,13 +235,11 @@ int main(void) {
 	//remove bob by it's node
 	user_store_remove(store, bob_node);
 	//check the length
-	sodium_mprotect_readonly(store);
 	if (store->length != 2) {
 		fprintf(stderr, "ERROR: User store has incorrect length.\n");
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
-	sodium_mprotect_noaccess(store);
 	printf("Length of the user store matches.");
 
 	//test JSON export
@@ -329,24 +299,19 @@ int main(void) {
 
 	//check the user list
 	list = user_store_list(store);
-	if ((buffer_compare_partial(list, 0, alice_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)
-			|| (buffer_compare_partial(list, crypto_box_PUBLICKEYBYTES, charlie_public_identity, 0, crypto_box_PUBLICKEYBYTES) != 0)) {
+	if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		fprintf(stderr, "ERROR: Removing user failed.\n");
-		buffer_destroy_from_heap(list);
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	buffer_destroy_from_heap(list);
+	list = NULL;
 	printf("Successfully removed user.\n");
-
-	buffer_clear(alice_private_identity);
-	buffer_clear(bob_private_identity);
-	buffer_clear(charlie_private_identity);
 
 	//clear the user store
 	user_store_clear(store);
 	//check the length
-	sodium_mprotect_readonly(store);
 	if (store->length != 0) {
 		fprintf(stderr, "ERROR: User store has incorrect length.\n");
 		status = EXIT_FAILURE;
@@ -360,20 +325,18 @@ int main(void) {
 	}
 	printf("Successfully cleared user store.\n");
 
-	sodium_mprotect_noaccess(store);
 
 cleanup:
-	//alice keys
-	buffer_destroy_from_heap(alice_private_identity);
-	buffer_destroy_from_heap(alice_public_identity);
-	//bobs keys
-	buffer_destroy_from_heap(bob_private_identity);
-	buffer_destroy_from_heap(bob_public_identity);
-	//charlies keys
-	buffer_destroy_from_heap(charlie_private_identity);
-	buffer_destroy_from_heap(charlie_public_identity);
+	if (store != NULL) {
+		user_store_destroy(store);
+	}
+	if (list != NULL) {
+		buffer_destroy_from_heap(list);
+	}
 
-	user_store_destroy(store);
+	buffer_destroy_from_heap(alice_public_signing_key);
+	buffer_destroy_from_heap(bob_public_signing_key);
+	buffer_destroy_from_heap(charlie_public_signing_key);
 
 	return status;
 }

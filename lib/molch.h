@@ -26,7 +26,7 @@
  */
 
 /*
- * Create a new user. The user is identified by the public key.
+ * Create a new user. The user is identified by the public master key.
  *
  * Get's random input (can be in any format and doesn't have
  * to be uniformly distributed) and uses it in combination
@@ -42,8 +42,8 @@
  * Returns 0 on success.
  */
 int molch_create_user(
-		unsigned char * const public_identity_key, //output, PUBLIC_KEY_SIZE
-		unsigned char * const prekey_list, //output, needs to be 100 * PUBLIC_KEY_SIZE + crypto_onetimeauth_BYTES
+		unsigned char * const public_master_key, //output, PUBLIC_MASTER_KEY_SIZE
+		unsigned char * const prekey_list, //output, needs to be 100 * PUBLIC_KEY_SIZE
 		const unsigned char * const random_data,
 		const size_t random_data_length) __attribute__((warn_unused_result));
 
