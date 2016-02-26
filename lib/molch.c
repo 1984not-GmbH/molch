@@ -368,6 +368,10 @@ conversation_t *find_conversation(const unsigned char * const conversation_id) {
 		node = next;
 	}
 
+	if (conversation_node == NULL) {
+		return NULL;
+	}
+
 	return conversation_node->conversation;
 }
 
