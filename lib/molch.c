@@ -242,7 +242,7 @@ int molch_create_send_conversation(
 
 	//copy the conversation id
 	if (status == 0) {
-		status = buffer_clone_to_raw(conversation_id, CONVERSATION_ID_SIZE, user->conversations->tail->conversation->id);
+		status = buffer_clone_to_raw(conversation_id, CONVERSATION_ID_SIZE, user->conversations->tail->id);
 		if (status != 0) {
 			conversation_store_remove(user->conversations, user->conversations->tail);
 		}
@@ -333,7 +333,7 @@ int molch_create_receive_conversation(
 	}
 
 	//copy the conversation id
-	status = buffer_clone_to_raw(conversation_id, CONVERSATION_ID_SIZE, user->conversations->tail->conversation->id);
+	status = buffer_clone_to_raw(conversation_id, CONVERSATION_ID_SIZE, user->conversations->tail->id);
 	if (status != 0) {
 		conversation_store_remove(user->conversations, user->conversations->tail);
 		return status;
@@ -357,7 +357,7 @@ conversation_t *find_conversation(const unsigned char * const conversation_id) {
 
 	//go through all the users
 	user_store_node *node = users->head;
-	conversation_store_node *conversation_node = NULL;
+	conversation_t *conversation_node = NULL;
 	while (node != NULL) {
 		conversation_node = conversation_store_find_node(node->conversations, conversation_id_buffer);
 		if (conversation_node != NULL) {
@@ -372,7 +372,7 @@ conversation_t *find_conversation(const unsigned char * const conversation_id) {
 		return NULL;
 	}
 
-	return conversation_node->conversation;
+	return conversation_node;
 }
 
 /*

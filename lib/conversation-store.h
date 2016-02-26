@@ -21,17 +21,10 @@
 #ifndef LIB_CONVERSATION_STORE_H
 #define LIB_CONVERSATION_STORE_H
 
-typedef struct conversation_store_node conversation_store_node;
-struct conversation_store_node {
-	conversation_store_node *previous;
-	conversation_store_node *next;
-	conversation_t *conversation;
-};
-
 typedef struct conversation_store {
 	size_t length;
-	conversation_store_node *head;
-	conversation_store_node *tail;
+	conversation_t *head;
+	conversation_t *tail;
 } conversation_store;
 
 /*
@@ -54,7 +47,7 @@ int conversation_store_add(
 /*
  * Remove a conversation from the conversation_store.
  */
-void conversation_store_remove(conversation_store * const store, conversation_store_node * const node);
+void conversation_store_remove(conversation_store * const store, conversation_t * const node);
 
 /*
  * Remove a conversation from the conversation store.
@@ -68,7 +61,7 @@ void conversation_store_remove_by_id(conversation_store * const store, const buf
  *
  * Returns NULL if no conversation was found.
  */
-conversation_store_node *conversation_store_find_node(
+conversation_t *conversation_store_find_node(
 		conversation_store * const store,
 		const buffer_t * const id) __attribute__((warn_unused_result));
 
@@ -83,10 +76,10 @@ void conversation_store_clear(conversation_store * const store);
  */
 #define conversation_store_foreach(store, code) {\
 	if (store != NULL) {\
-		conversation_store_node *node = store->head;\
+		conversation_t *node = store->head;\
 		for (size_t index = 0; (index < store->length) && (node != NULL); index++, node = node->next) {\
 			conversation_t *value __attribute__((unused));\
-			value = node->conversation;\
+			value = node;\
 			code\
 		}\
 	}\

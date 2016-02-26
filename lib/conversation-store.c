@@ -27,7 +27,7 @@ void conversation_store_init(conversation_store * const store) {
 	store->tail = NULL;
 }
 
-int add_conversation_store_node(conversation_store * const store, conversation_store_node *node) {
+int add_conversation(conversation_store * const store, conversation_t *node) {
 	if ((store == NULL) || (node == NULL)) {
 		return -1;
 	}
@@ -67,22 +67,16 @@ int conversation_store_add(
 		const buffer_t * const our_private_ephemeral,
 		const buffer_t * const our_public_ephemeral,
 		const buffer_t * const their_public_ephemeral) {
-	conversation_store_node *node = malloc(sizeof(conversation_store_node));
+	conversation_t *node = malloc(sizeof(conversation_t));
 	if (node == NULL) {
 		return -1;
 	}
 
 	int status = 0;
 
-	node->conversation = malloc(sizeof(conversation_t));
-	if (node->conversation == NULL) {
-		status = -1;
-		goto cleanup;
-	}
-
 	//initialize the conversation
 	status = conversation_init(
-			node->conversation,
+			node,
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,
@@ -94,17 +88,14 @@ int conversation_store_add(
 	}
 
 	//add to the conversation store
-	status = add_conversation_store_node(store, node);
+	status = add_conversation(store, node);
 	if (status != 0) {
-		conversation_deinit(node->conversation);
+		conversation_deinit(node);
 		goto cleanup;
 	}
 
 cleanup:
 	if (status != 0) {
-		if (node->conversation != NULL) {
-			free(node->conversation);
-		}
 		free(node);
 	}
 
@@ -114,13 +105,11 @@ cleanup:
 /*
  * Remove a conversation from the conversation_store.
  */
-void conversation_store_remove(conversation_store * const store, conversation_store_node * const node) {
+void conversation_store_remove(conversation_store * const store, conversation_t * const node) {
 	if ((store == NULL) || (node == NULL)) {
 		return;
 	}
 
-	conversation_deinit(node->conversation);
-	free(node->conversation);
 
 	if ((node->next != NULL) && (node != store->tail)) { //node is not the tail
 		node->next->previous = node->previous;
@@ -136,6 +125,7 @@ void conversation_store_remove(conversation_store * const store, conversation_st
 
 	store->length--;
 
+	conversation_deinit(node);
 	free(node);
 }
 
@@ -145,7 +135,7 @@ void conversation_store_remove(conversation_store * const store, conversation_st
  * The conversation is identified by it's id.
  */
 void conversation_store_remove_by_id(conversation_store * const store, const buffer_t * const id) {
-	conversation_store_node *node = conversation_store_find_node(store, id);
+	conversation_t *node = conversation_store_find_node(store, id);
 	if (node == NULL) {
 		return;
 	}
@@ -158,7 +148,7 @@ void conversation_store_remove_by_id(conversation_store * const store, const buf
  *
  * Returns NULL if no conversation was found.
  */
-conversation_store_node *conversation_store_find_node(
+conversation_t *conversation_store_find_node(
 		conversation_store * const store,
 		const buffer_t * const id) {
 	conversation_store_foreach(store,
@@ -230,7 +220,7 @@ mcJSON *conversation_store_json_export(const conversation_store * const store, m
 
 	//add all the conversations to the array
 	conversation_store_foreach(store,
-		mcJSON * conversation = conversation_json_export(node->conversation, pool);
+		mcJSON * conversation = conversation_json_export(node, pool);
 		if (conversation == NULL) {
 			return NULL;
 		}
@@ -257,31 +247,25 @@ int conversation_store_json_import(
 
 	//iterate through array
 	mcJSON *child = json->child;
-	conversation_store_node *node = NULL;
+	conversation_t *node = NULL;
 	for (size_t i = 0; (i < json->length) && (child != NULL); i++, child = child->next) {
 		//create the node
-		node = malloc(sizeof(conversation_store_node));
+		node = malloc(sizeof(conversation_t));
 		if (node == NULL) {
 			status = -2;
 			goto cleanup;
 		}
 
-		node->conversation = malloc(sizeof(conversation_t));
-		if (node->conversation == NULL) {
-			status = -3;
-			goto cleanup;
-		}
-
 		//import the conversation
-		status = conversation_json_import(child, node->conversation);
+		status = conversation_json_import(child, node);
 		if (status != 0) {
 			goto cleanup;
 		}
 
 		//add it to the conversation store
-		status = add_conversation_store_node(store, node);
+		status = add_conversation(store, node);
 		if (status != 0) {
-			conversation_deinit(node->conversation);
+			conversation_deinit(node);
 			goto cleanup;
 		}
 
@@ -291,10 +275,6 @@ int conversation_store_json_import(
 cleanup:
 	if (status != 0) {
 		if (node != NULL) {
-			if (node->conversation != NULL) {
-				free(node->conversation);
-			}
-
 			free(node);
 		}
 

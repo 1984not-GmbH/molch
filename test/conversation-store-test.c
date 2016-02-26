@@ -124,7 +124,7 @@ int main(void) {
 	);
 
 	//find node by id
-	if (conversation_store_find_node(store, store->head->next->next->conversation->id)
+	if (conversation_store_find_node(store, store->head->next->next->id)
 			!= store->head->next->next) {
 		fprintf(stderr, "ERROR: Failed to find node by ID.\n");
 		status = EXIT_FAILURE;
@@ -231,7 +231,7 @@ int main(void) {
 	printf("Successfully removed nodes.\n");
 
 	//remove node by id
-	conversation_store_remove_by_id(store, store->tail->conversation->id);
+	conversation_store_remove_by_id(store, store->tail->id);
 	if (store->length != 1) {
 		fprintf(stderr, "ERROR: Failed to remove node by id.\n");
 		status = EXIT_FAILURE;
