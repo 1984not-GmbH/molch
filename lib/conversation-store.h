@@ -25,7 +25,7 @@ typedef struct conversation_store_node conversation_store_node;
 struct conversation_store_node {
 	conversation_store_node *previous;
 	conversation_store_node *next;
-	conversation_t conversation[1];
+	conversation_t *conversation;
 };
 
 typedef struct conversation_store {

@@ -72,8 +72,16 @@ int conversation_store_add(
 		return -1;
 	}
 
+	int status = 0;
+
+	node->conversation = malloc(sizeof(conversation_t));
+	if (node->conversation == NULL) {
+		status = -1;
+		goto cleanup;
+	}
+
 	//initialize the conversation
-	int status = conversation_init(
+	status = conversation_init(
 			node->conversation,
 			our_private_identity,
 			our_public_identity,
@@ -82,19 +90,25 @@ int conversation_store_add(
 			our_public_ephemeral,
 			their_public_ephemeral);
 	if (status != 0) {
-		free(node);
-		return status;
+		goto cleanup;
 	}
 
 	//add to the conversation store
 	status = add_conversation_store_node(store, node);
 	if (status != 0) {
 		conversation_deinit(node->conversation);
-		free(node);
-		return status;
+		goto cleanup;
 	}
 
-	return 0;
+cleanup:
+	if (status != 0) {
+		if (node->conversation != NULL) {
+			free(node->conversation);
+		}
+		free(node);
+	}
+
+	return status;
 }
 
 /*
@@ -106,6 +120,7 @@ void conversation_store_remove(conversation_store * const store, conversation_st
 	}
 
 	conversation_deinit(node->conversation);
+	free(node->conversation);
 
 	if ((node->next != NULL) && (node != store->tail)) { //node is not the tail
 		node->next->previous = node->previous;
@@ -238,33 +253,53 @@ int conversation_store_json_import(
 	//initialise the conversation store
 	conversation_store_init(store);
 
+	int status = 0;
+
 	//iterate through array
 	mcJSON *child = json->child;
+	conversation_store_node *node = NULL;
 	for (size_t i = 0; (i < json->length) && (child != NULL); i++, child = child->next) {
 		//create the node
-		conversation_store_node *node = malloc(sizeof(conversation_store_node));
+		node = malloc(sizeof(conversation_store_node));
 		if (node == NULL) {
-			free(node);
-			conversation_store_clear(store);
-			return -2;
+			status = -2;
+			goto cleanup;
+		}
+
+		node->conversation = malloc(sizeof(conversation_t));
+		if (node->conversation == NULL) {
+			status = -3;
+			goto cleanup;
 		}
 
 		//import the conversation
-		int status = conversation_json_import(child, node->conversation);
+		status = conversation_json_import(child, node->conversation);
 		if (status != 0) {
-			free(node);
-			conversation_store_clear(store);
-			return status;
+			goto cleanup;
 		}
 
 		//add it to the conversation store
 		status = add_conversation_store_node(store, node);
 		if (status != 0) {
-			free(node);
-			conversation_store_clear(store);
-			return status;
+			conversation_deinit(node->conversation);
+			goto cleanup;
 		}
+
+		node = NULL;
 	}
 
-	return 0;
+cleanup:
+	if (status != 0) {
+		if (node != NULL) {
+			if (node->conversation != NULL) {
+				free(node->conversation);
+			}
+
+			free(node);
+		}
+
+		conversation_store_clear(store);
+	}
+
+	return status;
 }
