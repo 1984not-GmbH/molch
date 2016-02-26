@@ -23,11 +23,14 @@
 #ifndef LIB_CONVERSATION_H
 #define LIB_CONVERSATION_H
 
-typedef struct conversation_t {
+typedef struct conversation_t conversation_t;
+struct conversation_t {
+	conversation_t *previous;
+	conversation_t *next;
 	buffer_t id[1]; //unique id of a conversation, generated randomly
 	unsigned char id_storage[CONVERSATION_ID_SIZE];
 	ratchet_state *ratchet;
-} conversation_t;
+};
 
 /*
  * Create a new conversation

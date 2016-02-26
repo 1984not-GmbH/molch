@@ -28,6 +28,8 @@
 void init_struct(conversation_t *conversation) {
 	buffer_init_with_pointer(conversation->id, conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 	conversation->ratchet = NULL;
+	conversation->previous = NULL;
+	conversation->next = NULL;
 }
 
 /*
