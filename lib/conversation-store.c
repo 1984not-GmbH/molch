@@ -27,16 +27,21 @@ void conversation_store_init(conversation_store * const store) {
 	store->tail = NULL;
 }
 
-int add_conversation(conversation_store * const store, conversation_t *node) {
-	if ((store == NULL) || (node == NULL)) {
+/*
+ * add a conversation to the conversation store.
+ */
+int conversation_store_add(
+		conversation_store * const store,
+		conversation_t * const conversation) {
+	if ((store == NULL) || (conversation == NULL)) {
 		return -1;
 	}
 
-	if (store->head == NULL) { //first node in the list
-		node->previous = NULL;
-		node->next = NULL;
-		store->head = node;
-		store->tail = node;
+	if (store->head == NULL) { //first conversation in the list
+		conversation->previous = NULL;
+		conversation->next = NULL;
+		store->head = conversation;
+		store->tail = conversation;
 
 		//update length
 		store->length++;
@@ -44,62 +49,16 @@ int add_conversation(conversation_store * const store, conversation_t *node) {
 		return 0;
 	}
 
-	//add the new node to the tail of the list
-	store->tail->next = node;
-	node->previous = store->tail;
-	node->next = NULL;
-	store->tail = node;
+	//add the new conversation to the tail of the list
+	store->tail->next = conversation;
+	conversation->previous = store->tail;
+	conversation->next = NULL;
+	store->tail = conversation;
 
 	//update length
 	store->length++;
 
 	return 0;
-}
-
-/*
- * add a conversation to the conversation store.
- */
-int conversation_store_add(
-		conversation_store * const store,
-		const buffer_t * const our_private_identity,
-		const buffer_t * const our_public_identity,
-		const buffer_t * const their_public_identity,
-		const buffer_t * const our_private_ephemeral,
-		const buffer_t * const our_public_ephemeral,
-		const buffer_t * const their_public_ephemeral) {
-	conversation_t *node = malloc(sizeof(conversation_t));
-	if (node == NULL) {
-		return -1;
-	}
-
-	int status = 0;
-
-	//initialize the conversation
-	status = conversation_init(
-			node,
-			our_private_identity,
-			our_public_identity,
-			their_public_identity,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_ephemeral);
-	if (status != 0) {
-		goto cleanup;
-	}
-
-	//add to the conversation store
-	status = add_conversation(store, node);
-	if (status != 0) {
-		conversation_deinit(node);
-		goto cleanup;
-	}
-
-cleanup:
-	if (status != 0) {
-		free(node);
-	}
-
-	return status;
 }
 
 /*
@@ -125,8 +84,7 @@ void conversation_store_remove(conversation_store * const store, conversation_t 
 
 	store->length--;
 
-	conversation_deinit(node);
-	free(node);
+	conversation_destroy(node);
 }
 
 /*
@@ -249,23 +207,16 @@ int conversation_store_json_import(
 	mcJSON *child = json->child;
 	conversation_t *node = NULL;
 	for (size_t i = 0; (i < json->length) && (child != NULL); i++, child = child->next) {
-		//create the node
-		node = malloc(sizeof(conversation_t));
+		//import the conversation
+		node = conversation_json_import(child);
 		if (node == NULL) {
 			status = -2;
 			goto cleanup;
 		}
 
-		//import the conversation
-		status = conversation_json_import(child, node);
-		if (status != 0) {
-			goto cleanup;
-		}
-
 		//add it to the conversation store
-		status = add_conversation(store, node);
+		status = conversation_store_add(store, node);
 		if (status != 0) {
-			conversation_deinit(node);
 			goto cleanup;
 		}
 
@@ -275,7 +226,7 @@ int conversation_store_json_import(
 cleanup:
 	if (status != 0) {
 		if (node != NULL) {
-			free(node);
+			conversation_destroy(node);
 		}
 
 		conversation_store_clear(store);

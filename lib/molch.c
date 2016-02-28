@@ -189,6 +189,56 @@ molch_message_type molch_get_message_type(
 }
 
 /*
+ * Create a conversation (for now, for refactoring) FIXME: Remove this.
+ */
+conversation_t *create_conversation(
+		const buffer_t * const our_private_identity,
+		const buffer_t * const our_public_identity,
+		const buffer_t * const their_public_identity,
+		const buffer_t * const our_private_ephemeral,
+		const buffer_t * const our_public_ephemeral,
+		const buffer_t * const their_public_ephemeral) {
+	conversation_t *conversation = malloc(sizeof(conversation_t));
+	if (conversation == NULL) {
+		return NULL;
+	}
+
+	buffer_init_with_pointer(conversation->id, conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	conversation->ratchet = NULL;
+	conversation->previous = NULL;
+	conversation->next = NULL;
+
+	int status = 0;
+
+	//create random id
+	if (buffer_fill_random(conversation->id, CONVERSATION_ID_SIZE) != 0) {
+		status = -1;
+		goto cleanup;
+	}
+
+	conversation->ratchet = ratchet_create(
+			our_private_identity,
+			our_public_identity,
+			their_public_identity,
+			our_private_ephemeral,
+			our_public_ephemeral,
+			their_public_ephemeral);
+	if (conversation->ratchet == NULL) {
+		status = -2;
+		goto cleanup;
+	}
+
+cleanup:
+	if (status != 0) {
+		free(conversation);
+
+		return NULL;
+	}
+
+	return conversation;
+}
+
+/*
  * Start a new conversation. (sending)
  *
  * The conversation can be identified by it's ID
@@ -222,24 +272,30 @@ int molch_create_send_conversation(
 	//create ephemeral keys
 	buffer_t *our_private_ephemeral = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	buffer_t *our_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+
+	conversation_t *conversation = NULL;
+
 	int status = crypto_box_keypair(our_public_ephemeral->content, our_private_ephemeral->content);
 	if (status != 0) {
-		buffer_destroy_from_heap(our_private_ephemeral);
-		buffer_destroy_from_heap(our_public_ephemeral);
-		return -2;
+		status = -2;
+		goto cleanup;
 	}
 
-	//start a conversation
-	status = conversation_store_add(
-			user->conversations,
+	//create a conversation
+	conversation = create_conversation(
 			user->public_signing_key, //FIXME: this is bullshit, on purpose!
 			user->public_signing_key, //FIXME: this is bullshit, on purpose!
 			receiver_public_identity_buffer,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			receiver_public_ephemeral);
-	buffer_destroy_from_heap(our_public_ephemeral);
+	if (conversation == NULL) {
+		status = -1;
+		goto cleanup;
+	}
 
+	//start a conversation
+	status = conversation_store_add(user->conversations, conversation);
 	//copy the conversation id
 	if (status == 0) {
 		status = buffer_clone_to_raw(conversation_id, CONVERSATION_ID_SIZE, user->conversations->tail->id);
@@ -247,9 +303,9 @@ int molch_create_send_conversation(
 			conversation_store_remove(user->conversations, user->conversations->tail);
 		}
 	}
-	buffer_destroy_from_heap(our_private_ephemeral);
+	conversation = NULL;
 	if (status != 0) {
-		return status;
+		goto cleanup;
 	}
 
 	//create the packet
@@ -257,14 +313,22 @@ int molch_create_send_conversation(
 	if (status != 0) {
 		free(*packet);
 		*packet_length = 0;
-		return status;
+		goto cleanup;
 	}
 
 	//make message type PREKEY_MESSAGE
 	static const molch_message_type PREKEY = PREKEY_MESSAGE;
 	memcpy(*packet, &PREKEY, sizeof(molch_message_type));
 
-	return 0;
+cleanup:
+	if (conversation != NULL) {
+		conversation_destroy(conversation);
+	}
+
+	buffer_destroy_from_heap(our_public_ephemeral);
+	buffer_destroy_from_heap(our_private_ephemeral);
+
+	return status;
 }
 
 /*
@@ -305,48 +369,58 @@ int molch_create_receive_conversation(
 	//get the public prekey from the message
 	buffer_create_with_existing_array(public_prekey, (unsigned char*)(packet + sizeof(molch_message_type)), PUBLIC_KEY_SIZE);
 
-	//get the corresponding private prekey
+	//buffers
 	buffer_t *private_prekey = buffer_create_on_heap(PRIVATE_KEY_SIZE, 0);
+	buffer_t *sender_public_ephemeral_buffer = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+
+	conversation_t *conversation = NULL;
+
 	int status = prekey_store_get_prekey(user->prekeys, public_prekey, private_prekey);
 	if (status != 0) {
-		buffer_destroy_from_heap(private_prekey);
-		return status;
+		goto cleanup;
 	}
 
 	buffer_create_with_existing_array(sender_public_identity_buffer, (unsigned char*)sender_public_identity, PUBLIC_KEY_SIZE);
-	buffer_t *sender_public_ephemeral_buffer = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	memset(sender_public_ephemeral_buffer->content, 1, sender_public_ephemeral_buffer->content_length); //filled with 1s for now TODO: this has to be changed later on
 
-	//create a new conversation
-	status = conversation_store_add(
-			user->conversations,
+	//create a fake conversation
+	conversation = create_conversation(
 			user->public_signing_key, //FIXME, this is bullshit, on purpose
 			user->public_signing_key, //FIXME, this is bullshit, on purpose
 			sender_public_identity_buffer,
 			private_prekey,
 			public_prekey,
 			sender_public_ephemeral_buffer);
-	buffer_destroy_from_heap(private_prekey);
-	buffer_destroy_from_heap(sender_public_ephemeral_buffer);
+
+	//add it to the conversation store
+	status = conversation_store_add(user->conversations, conversation);
 	if (status != 0) {
-		return status;
+		goto cleanup;
 	}
+	conversation = NULL;
 
 	//copy the conversation id
 	status = buffer_clone_to_raw(conversation_id, CONVERSATION_ID_SIZE, user->conversations->tail->id);
 	if (status != 0) {
 		conversation_store_remove(user->conversations, user->conversations->tail);
-		return status;
+		goto cleanup;
 	}
 
 	status = molch_decrypt_message(message, message_length, packet, packet_length, conversation_id);
 	if (status != 0) {
 		free(*message);
 		conversation_store_remove(user->conversations, user->conversations->tail);
-		return status;
+		goto cleanup;
 	}
 
-	return 0;
+cleanup:
+	if (conversation != NULL) {
+		conversation_destroy(conversation);
+	}
+	buffer_destroy_from_heap(private_prekey);
+	buffer_destroy_from_heap(sender_public_ephemeral_buffer);
+
+	return status;
 }
 
 /*

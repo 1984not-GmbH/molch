@@ -38,8 +38,11 @@ int test_add_conversation(conversation_store * const store) {
 	buffer_t *our_public_ephemeral= buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_t *their_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 
+	conversation_t *conversation = NULL;
+
 	//generate the keys
-	int status;
+	int status = 0;
+
 	status = crypto_box_keypair(our_public_identity->content, our_private_identity->content);
 	if (status != 0) {
 		goto keygen_fail;
@@ -57,24 +60,52 @@ int test_add_conversation(conversation_store * const store) {
 		goto keygen_fail;
 	}
 
-	status = conversation_store_add(
-			store,
+	//create the conversation manually
+	conversation = malloc(sizeof(conversation_t));
+	if (conversation == NULL) {
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+
+	conversation->next = NULL;
+	conversation->previous = NULL;
+	conversation->ratchet = NULL;
+
+	//create the conversation id
+	buffer_init_with_pointer(conversation->id, conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+
+	status = buffer_fill_random(conversation->id, CONVERSATION_ID_SIZE);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+	conversation->ratchet = ratchet_create(
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral);
+	if (conversation->ratchet == NULL) {
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+
+	status = conversation_store_add(store, conversation);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to add conversation to store. (%i)\n", status);
 		goto cleanup;
 	}
+	conversation = NULL;
 
 	goto cleanup;
 
 keygen_fail:
 	fprintf(stderr, "ERROR: Failed to generate keys. (%i)\n", status);
 cleanup:
+	if (conversation != NULL) {
+		conversation_destroy(conversation);
+	}
 	//destroy all the buffers
 	buffer_destroy_from_heap(our_private_identity);
 	buffer_destroy_from_heap(our_public_identity);

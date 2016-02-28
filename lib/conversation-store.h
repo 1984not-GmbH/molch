@@ -37,12 +37,7 @@ void conversation_store_init(conversation_store * const store);
  */
 int conversation_store_add(
 		conversation_store * const store,
-		const buffer_t * const our_private_identity,
-		const buffer_t * const our_public_identity,
-		const buffer_t * const their_public_identity,
-		const buffer_t * const our_private_ephemeral,
-		const buffer_t * const our_public_ephemeral,
-		const buffer_t * const their_public_ephemeral) __attribute__((warn_unused_result));
+		conversation_t * const conversation) __attribute__((warn_unused_result));
 
 /*
  * Remove a conversation from the conversation_store.
