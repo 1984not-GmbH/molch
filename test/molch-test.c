@@ -45,17 +45,20 @@ int main(void) {
 
 	//alice key buffers
 	buffer_t *alice_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *alice_public_prekeys = buffer_create_on_heap(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
+	unsigned char *alice_public_prekeys = NULL;
+	size_t alice_public_prekeys_length = 0;
 
 	//bobs key buffers
 	buffer_t *bob_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *bob_public_prekeys = buffer_create_on_heap(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
+	unsigned char *bob_public_prekeys = NULL;
+	size_t bob_public_prekeys_length = 0;
 
 	//create a new user
 	buffer_create_from_string(alice_head_on_keyboard, "mn ujkhuzn7b7bzh6ujg7j8hn");
 	status = molch_create_user(
 			alice_public_identity->content,
-			alice_public_prekeys->content,
+			&alice_public_prekeys,
+			&alice_public_prekeys_length,
 			alice_head_on_keyboard->content,
 			alice_head_on_keyboard->content_length);
 	if (status != 0) {
@@ -77,7 +80,8 @@ int main(void) {
 	buffer_create_from_string(bob_head_on_keyboard, "jnu8h77z6ht56ftgnujh");
 	status = molch_create_user(
 			bob_public_identity->content,
-			bob_public_prekeys->content,
+			&bob_public_prekeys,
+			&bob_public_prekeys_length,
 			bob_head_on_keyboard->content,
 			bob_head_on_keyboard->content_length);
 	if (status != 0) {
@@ -118,7 +122,8 @@ int main(void) {
 			&alice_send_packet_length,
 			alice_send_message->content,
 			alice_send_message->content_length,
-			bob_public_prekeys->content,
+			bob_public_prekeys,
+			bob_public_prekeys_length,
 			alice_public_identity->content,
 			bob_public_identity->content);
 	if (status != 0) {
@@ -153,6 +158,10 @@ int main(void) {
 		goto cleanup;
 	}
 
+	if (bob_public_prekeys != NULL) {
+		free(bob_public_prekeys);
+		bob_public_prekeys = NULL;
+	}
 	//create a new receive conversation (bob receives from alice)
 	unsigned char *bob_receive_message;
 	size_t bob_receive_message_length;
@@ -162,7 +171,8 @@ int main(void) {
 			&bob_receive_message_length,
 			alice_send_packet,
 			alice_send_packet_length,
-			bob_public_prekeys->content,
+			&bob_public_prekeys,
+			&bob_public_prekeys_length,
 			alice_public_identity->content,
 			bob_public_identity->content);
 	free(alice_send_packet);
@@ -290,13 +300,17 @@ int main(void) {
 
 
 cleanup:
+	if (alice_public_prekeys != NULL) {
+		free(alice_public_prekeys);
+	}
+	if (bob_public_prekeys != NULL) {
+		free(bob_public_prekeys);
+	}
 	molch_destroy_all_users();
 	buffer_destroy_from_heap(alice_conversation);
 	buffer_destroy_from_heap(bob_conversation);
 	buffer_destroy_from_heap(alice_public_identity);
-	buffer_destroy_from_heap(alice_public_prekeys);
 	buffer_destroy_from_heap(bob_public_identity);
-	buffer_destroy_from_heap(bob_public_prekeys);
 
 	return status;
 }
