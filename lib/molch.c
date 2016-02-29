@@ -389,7 +389,7 @@ int molch_create_send_conversation(
 	buffer_create_with_existing_array(message_buffer, (unsigned char*)message, message_length);
 	buffer_create_with_existing_array(sender_public_signing_key_buffer, (unsigned char*)sender_public_signing_key, PUBLIC_MASTER_KEY_SIZE);
 	buffer_create_with_existing_array(receiver_public_signing_key_buffer, (unsigned char*)receiver_public_signing_key, PUBLIC_MASTER_KEY_SIZE);
-	buffer_create_with_existing_array(prekeys, (unsigned char*)prekey_list + PUBLIC_KEY_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(time_t));
+	buffer_create_with_existing_array(prekeys, (unsigned char*)prekey_list + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(time_t));
 
 	//get the user that matches the public signing key of the sender
 	user_store_node *user = user_store_find_node(users, sender_public_signing_key_buffer);
