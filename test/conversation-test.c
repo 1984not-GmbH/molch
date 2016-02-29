@@ -157,6 +157,7 @@ int main(void) {
 	}
 	if (charlie_conversation->id->content_length != CONVERSATION_ID_SIZE) {
 		fprintf(stderr, "ERROR: Charlie's conversation has an incorrect ID length.\n");
+		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 
@@ -170,12 +171,14 @@ int main(void) {
 			charlie_public_ephemeral);
 	buffer_clear(dora_private_identity);
 	buffer_clear(dora_private_ephemeral);
-	if (status != 0) {
+	if (dora_conversation == NULL) {
 		fprintf(stderr, "ERROR: Failed to init Dora's conversation.\n");
+		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	if (dora_conversation->id->content_length != CONVERSATION_ID_SIZE) {
 		fprintf(stderr, "ERROR: Dora's conversation has an incorrect ID length.\n");
+		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 
@@ -186,17 +189,20 @@ int main(void) {
 	if (json == NULL) {
 		fprintf(stderr, "ERROR: Failed to export into JSON!\n");
 		buffer_destroy_from_heap(pool);
+		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	if (json->length != 2) {
 		fprintf(stderr, "ERROR: JSON for Charlie's conversation is invalid!");
 		buffer_destroy_from_heap(pool);
+		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
 	buffer_destroy_from_heap(pool);
 	if (output == NULL) {
 		fprintf(stderr, "ERROR: Failed to print JSON.\n");
+		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	printf("%.*s\n", (int)output->content_length, (char*)output->content);
@@ -214,6 +220,7 @@ int main(void) {
 	if (imported_output == NULL) {
 		fprintf(stderr, "ERROR: Failed to export Charlie's imported conversation to JSON.\n");
 		buffer_destroy_from_heap(output);
+		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	//compare with original JSON
@@ -221,6 +228,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Imported conversation is incorrect.\n");
 		buffer_destroy_from_heap(imported_output);
 		buffer_destroy_from_heap(output);
+		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	buffer_destroy_from_heap(imported_output);

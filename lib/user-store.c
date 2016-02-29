@@ -398,6 +398,7 @@ user_store *user_store_json_import(const mcJSON * const json) {
 
 		//now add the imported node to the user store
 		add_user_store_node(store, node);
+		node = NULL;
 	}
 
 cleanup:

@@ -480,7 +480,9 @@ cleanup:
 			output_message_key->content_length = 0;
 		}
 
-		header_and_message_keystore_clear(staging_area);
+		if (staging_area != NULL) {
+			header_and_message_keystore_clear(staging_area);
+		}
 	}
 
 	buffer_destroy_from_heap(current_chain_key);
