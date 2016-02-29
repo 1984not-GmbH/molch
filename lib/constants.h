@@ -27,6 +27,8 @@
 
 #define DIFFIE_HELLMAN_SIZE crypto_generichash_BYTES
 
+#define SIGNATURE_SIZE crypto_sign_BYTES
+
 //key sizes
 #define CHAIN_KEY_SIZE crypto_secretbox_KEYBYTES
 #define MESSAGE_KEY_SIZE crypto_secretbox_KEYBYTES
@@ -34,6 +36,8 @@
 #define ROOT_KEY_SIZE crypto_secretbox_KEYBYTES
 #define PRIVATE_KEY_SIZE crypto_box_SECRETKEYBYTES
 #define PUBLIC_KEY_SIZE crypto_box_PUBLICKEYBYTES
+#define PUBLIC_MASTER_KEY_SIZE crypto_sign_PUBLICKEYBYTES
+#define PRIVATE_MASTER_KEY_SIZE crypto_sign_SECRETKEYBYTES
 
 //nonce sizes
 #define MESSAGE_NONCE_SIZE crypto_secretbox_NONCEBYTES

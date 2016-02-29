@@ -23,28 +23,19 @@
 #ifndef LIB_CONVERSATION_H
 #define LIB_CONVERSATION_H
 
-typedef struct conversation_t {
+typedef struct conversation_t conversation_t;
+struct conversation_t {
+	conversation_t *previous;
+	conversation_t *next;
 	buffer_t id[1]; //unique id of a conversation, generated randomly
 	unsigned char id_storage[CONVERSATION_ID_SIZE];
 	ratchet_state *ratchet;
-} conversation_t;
-
-/*
- * Create a new conversation
- */
-int conversation_init(
-		conversation_t * const conversation,
-		const buffer_t * const our_private_identity,
-		const buffer_t * const our_public_identity,
-		const buffer_t * const their_public_identity,
-		const buffer_t * const our_private_ephemeral,
-		const buffer_t * const our_public_ephemeral,
-		const buffer_t * const their_public_ephemeral) __attribute__((warn_unused_result));
+};
 
 /*
  * Destroy a conversation.
  */
-void conversation_deinit(conversation_t * const conversation);
+void conversation_destroy(conversation_t * const conversation);
 
 /*
  * Serialise a conversation into JSON. It get#s a mempool_t buffer and stores a tree of
@@ -57,15 +48,12 @@ mcJSON *conversation_json_export(const conversation_t * const conversation, memp
 /*
  * Deserialize a conversation (import from JSON)
  */
-int conversation_json_import(
-		const mcJSON * const json,
-		conversation_t * const conversation) __attribute__((warn_unused_result));
+conversation_t *conversation_json_import(const mcJSON * const json) __attribute__((warn_unused_result));
 
 /*
  * Start a new conversation where we are the sender.
  */
-int conversation_start_send_conversation(
-		conversation_t *const conversation, //conversation to initialize
+conversation_t *conversation_start_send_conversation(
 		const buffer_t *const message, //message we want to send to the receiver
 		buffer_t ** packet, //output, free after use!
 		const buffer_t * const sender_public_identity, //who is sending this message?
@@ -77,8 +65,7 @@ int conversation_start_send_conversation(
 /*
  * Start a new conversation where we are the receiver.
  */
-int conversation_start_receive_conversation(
-		conversation_t * const conversation, //conversation to initialize
+conversation_t *conversation_start_receive_conversation(
 		const buffer_t * const packet, //received packet
 		buffer_t ** message, //output, free after use!
 		const buffer_t * const receiver_public_identity,

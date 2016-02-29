@@ -26,12 +26,12 @@
  */
 
 /*
- * Create a new user. The user is identified by the public key.
+ * Create a new user. The user is identified by the public master key.
  *
  * Get's random input (can be in any format and doesn't have
  * to be uniformly distributed) and uses it in combination
- * with the OS's random number generator to generate an
- * identity keypair for the user.
+ * with the OS's random number generator to generate a
+ * signing and identity keypair for the user.
  *
  * IMPORTANT: Don't put random numbers provided by the operating
  * system in there.
@@ -42,8 +42,9 @@
  * Returns 0 on success.
  */
 int molch_create_user(
-		unsigned char * const public_identity_key, //output, PUBLIC_KEY_SIZE
-		unsigned char * const prekey_list, //output, needs to be 100 * PUBLIC_KEY_SIZE + crypto_onetimeauth_BYTES
+		unsigned char * const public_master_key, //output, PUBLIC_MASTER_KEY_SIZE
+		unsigned char ** const prekey_list, //output, needs to be freed
+		size_t * const prekey_list_length,
 		const unsigned char * const random_data,
 		const size_t random_data_length) __attribute__((warn_unused_result));
 
@@ -51,7 +52,7 @@ int molch_create_user(
  * Destroy a user.
  */
 int molch_destroy_user(
-		const unsigned char * const public_identity_key);
+		const unsigned char * const public_signing_key);
 
 /*
  * Get the number of users.
@@ -99,9 +100,9 @@ int molch_create_send_conversation(
 		const unsigned char * const message,
 		const size_t message_length,
 		const unsigned char * const prekey_list, //prekey list of the receiver (PREKEY_AMOUNT * PUBLIC_KEY_SIZE)
-		const unsigned char * const sender_public_identity, //identity of the sender (user)
-		const unsigned char * const receiver_public_identity) __attribute__((warn_unused_result));  //identity of the receiver
-//prekeys of the receiver (PREKEY_AMOUNT * PUBLIC_KEY_SIZE)
+		const size_t prekey_list_length,
+		const unsigned char * const sender_public_signing_key, //signing key of the sender (user)
+		const unsigned char * const receiver_public_signing_key) __attribute__((warn_unused_result));  //signing key of the receiver
 
 /*
  * Start a new conversation. (receiving)
@@ -122,9 +123,10 @@ int molch_create_receive_conversation(
 		size_t * const message_length, //output
 		const unsigned char * const packet, //received prekey packet
 		const size_t packet_length,
-		unsigned char * const prekey_list, //output, needs to be PREKEY_AMOUNT * PUBLIC_KEY_SIZE + crypto_onetimeauth_BYTES, This is the new prekey list for the receiving user
-		const unsigned char * const sender_public_identity, //identity of the sender
-		const unsigned char * const receiver_public_identity) __attribute__((warn_unused_result)); //identity key of the receiver (user)
+		unsigned char ** const prekey_list, //output, free after use
+		size_t * const prekey_list_length,
+		const unsigned char * const sender_public_signing_key, //signing key of the sender
+		const unsigned char * const receiver_public_signing_key) __attribute__((warn_unused_result)); //signing key of the receiver (user)
 
 /*
  * Encrypt a message and create a packet that can be sent to the receiver.
@@ -168,7 +170,7 @@ void molch_end_conversation(const unsigned char * const conversation_id);
  *
  * Returns NULL if the user doesn't exist or if there is no conversation.
  */
-unsigned char *molch_list_conversations(const unsigned char * const user_public_identity, size_t *number) __attribute__((warn_unused_result));
+unsigned char *molch_list_conversations(const unsigned char * const user_public_signing_key, size_t *number) __attribute__((warn_unused_result));
 
 /*
  * Serialise molch's state into JSON.

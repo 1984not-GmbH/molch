@@ -16,27 +16,15 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "list.h"
 #include "conversation.h"
 
 #ifndef LIB_CONVERSATION_STORE_H
 #define LIB_CONVERSATION_STORE_H
 
-typedef struct conversation_store_node conversation_store_node;
-struct conversation_store_node {
-	//this is identical to list_node
-	conversation_store_node *previous;
-	conversation_store_node *next;
-	conversation_t *data;
-	//this is specific for conversation_store_node
-	conversation_t conversation[1];
-};
-
-//this is identical to list_t
 typedef struct conversation_store {
 	size_t length;
-	conversation_store_node *head;
-	conversation_store_node *tail;
+	conversation_t *head;
+	conversation_t *tail;
 } conversation_store;
 
 /*
@@ -49,17 +37,12 @@ void conversation_store_init(conversation_store * const store);
  */
 int conversation_store_add(
 		conversation_store * const store,
-		const buffer_t * const our_private_identity,
-		const buffer_t * const our_public_identity,
-		const buffer_t * const their_public_identity,
-		const buffer_t * const our_private_ephemeral,
-		const buffer_t * const our_public_ephemeral,
-		const buffer_t * const their_public_ephemeral) __attribute__((warn_unused_result));
+		conversation_t * const conversation) __attribute__((warn_unused_result));
 
 /*
  * Remove a conversation from the conversation_store.
  */
-void conversation_store_remove(conversation_store * const store, conversation_store_node * const node);
+void conversation_store_remove(conversation_store * const store, conversation_t * const node);
 
 /*
  * Remove a conversation from the conversation store.
@@ -73,7 +56,7 @@ void conversation_store_remove_by_id(conversation_store * const store, const buf
  *
  * Returns NULL if no conversation was found.
  */
-conversation_store_node *conversation_store_find_node(
+conversation_t *conversation_store_find_node(
 		conversation_store * const store,
 		const buffer_t * const id) __attribute__((warn_unused_result));
 
@@ -88,10 +71,10 @@ void conversation_store_clear(conversation_store * const store);
  */
 #define conversation_store_foreach(store, code) {\
 	if (store != NULL) {\
-		conversation_store_node *node = store->head;\
+		conversation_t *node = store->head;\
 		for (size_t index = 0; (index < store->length) && (node != NULL); index++, node = node->next) {\
 			conversation_t *value __attribute__((unused));\
-			value = node->data;\
+			value = node;\
 			code\
 		}\
 	}\

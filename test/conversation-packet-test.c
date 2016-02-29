@@ -62,6 +62,12 @@ int main(void) {
 
 	buffer_t *prekey_list = buffer_create_on_heap(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
+	//conversations
+	conversation_t *alice_send_conversation = NULL;
+	conversation_t *alice_receive_conversation = NULL;
+	conversation_t *bob_send_conversation = NULL;
+	conversation_t *bob_receive_conversation = NULL;
+
 	//create keys
 	//alice
 	buffer_create_from_string(alice_string, "Alice");
@@ -98,16 +104,15 @@ int main(void) {
 
 	//start a send conversation
 	buffer_create_from_string(send_message, "Hello there!");
-	conversation_t alice_send_conversation;
-	status = conversation_start_send_conversation(
-			&alice_send_conversation,
+	alice_send_conversation = conversation_start_send_conversation(
 			send_message,
 			&packet,
 			alice_public_identity,
 			alice_private_identity,
 			bob_public_identity,
 			prekey_list);
-	if (status != 0) {
+	if (alice_send_conversation == NULL) {
+		status = EXIT_FAILURE;
 		fprintf(stderr, "ERROR: Failed to send message. (%i)\n", status);
 		goto cleanup;
 	}
@@ -117,26 +122,21 @@ int main(void) {
 	putchar('\n');
 
 	//let bob receive the packet
-	conversation_t bob_receive_conversation;
-	status = conversation_start_receive_conversation(
-			&bob_receive_conversation,
+	bob_receive_conversation = conversation_start_receive_conversation(
 			packet,
 			&received_message,
 			bob_public_identity,
 			bob_private_identity,
 			bob_prekeys);
-	if (status != 0) {
+	if (bob_receive_conversation == NULL) {
+		status = EXIT_FAILURE;
 		fprintf(stderr, "ERROR: Failed to decrypt received message. (%i)\n", status);
-		conversation_deinit(&alice_send_conversation);
-		conversation_deinit(&bob_receive_conversation);
 		goto cleanup;
 	}
 
 	status = buffer_compare(send_message, received_message);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Incorrect message decrypted. (%i)\n", status);
-		conversation_deinit(&alice_send_conversation);
-		conversation_deinit(&bob_receive_conversation);
 		goto cleanup;
 	}
 	printf("Decrypted message matches with the original message.\n");
@@ -145,7 +145,7 @@ int main(void) {
 	//first one
 	buffer_create_from_string(alice_send_message2, "How are you Bob?");
 	status = conversation_send(
-			&alice_send_conversation,
+			alice_send_conversation,
 			alice_send_message2,
 			&alice_send_packet2,
 			NULL,
@@ -153,8 +153,6 @@ int main(void) {
 			NULL);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to send Alice' second message!\n");
-		conversation_deinit(&alice_send_conversation);
-		conversation_deinit(&bob_receive_conversation);
 		goto cleanup;
 	}
 	printf("Sent message: %.*s\n", (int)alice_send_message2->content_length, (const char*)alice_send_message2->content);
@@ -164,13 +162,11 @@ int main(void) {
 
 	//bob receives the message
 	status = conversation_receive(
-			&bob_receive_conversation,
+			bob_receive_conversation,
 			alice_send_packet2,
 			&bob_receive_message2);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Second message from Alice failed to decrypt! (%i)\n", status);
-		conversation_deinit(&alice_send_conversation);
-		conversation_deinit(&bob_receive_conversation);
 		goto cleanup;
 	}
 
@@ -178,8 +174,6 @@ int main(void) {
 	status = buffer_compare(bob_receive_message2, alice_send_message2);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Received message doesn't match.\n");
-		conversation_deinit(&alice_send_conversation);
-		conversation_deinit(&bob_receive_conversation);
 		goto cleanup;
 	}
 	printf("Alice' second message has been sent correctly!\n");
@@ -187,7 +181,7 @@ int main(void) {
 	//Bob responds to alice
 	buffer_create_from_string(bob_response_message, "I'm fine, thanks. How are you?");
 	status = conversation_send(
-			&bob_receive_conversation,
+			bob_receive_conversation,
 			bob_response_message,
 			&bob_response_packet,
 			NULL,
@@ -195,8 +189,6 @@ int main(void) {
 			NULL);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to send Bob's response message!\n");
-		conversation_deinit(&alice_send_conversation);
-		conversation_deinit(&bob_receive_conversation);
 		goto cleanup;
 	}
 	printf("Sent message: %.*s\n", (int)bob_response_message->content_length, (const char*)bob_response_message->content);
@@ -206,13 +198,11 @@ int main(void) {
 
 	//Alice receives the response
 	status = conversation_receive(
-			&alice_send_conversation,
+			alice_send_conversation,
 			bob_response_packet,
 			&alice_received_response);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Response from Bob failed to decrypt! (%i) \n", status);
-		conversation_deinit(&alice_send_conversation);
-		conversation_deinit(&bob_receive_conversation);
 		goto cleanup;
 	}
 
@@ -220,15 +210,9 @@ int main(void) {
 	status = buffer_compare(bob_response_message, alice_received_response);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Received response doesn't match!\n");
-		conversation_deinit(&alice_send_conversation);
-		conversation_deinit(&bob_receive_conversation);
 		goto cleanup;
 	}
 	printf("Successfully received Bob's response!\n");
-
-	conversation_deinit(&alice_send_conversation);
-	conversation_deinit(&bob_receive_conversation);
-
 
 	//---------------------------------------------------------------------------------------------
 	//now test it the other way round (because Axolotl is assymetric in this regard)
@@ -240,19 +224,18 @@ int main(void) {
 		goto cleanup;
 	}
 
-	conversation_t bob_send_conversation;
 	//destroy the old packet
 	buffer_destroy_from_heap(packet);
 	packet = NULL;
-	status = conversation_start_send_conversation(
-			&bob_send_conversation,
+	bob_send_conversation = conversation_start_send_conversation(
 			send_message,
 			&packet,
 			bob_public_identity,
 			bob_private_identity,
 			alice_public_identity,
 			prekey_list);
-	if (status != 0) {
+	if (bob_send_conversation == NULL) {
+		status = EXIT_FAILURE;
 		fprintf(stderr, "ERROR: Failed to send message. (%i)\n", status);
 		goto cleanup;
 	}
@@ -262,28 +245,23 @@ int main(void) {
 	putchar('\n');
 
 	//let alice receive the packet
-	conversation_t alice_receive_conversation;
 	buffer_destroy_from_heap(received_message);
 	received_message = NULL;
-	status = conversation_start_receive_conversation(
-			&alice_receive_conversation,
+	alice_receive_conversation = conversation_start_receive_conversation(
 			packet,
 			&received_message,
 			alice_public_identity,
 			alice_private_identity,
 			alice_prekeys);
-	if (status != 0) {
+	if (alice_receive_conversation == NULL) {
+		status = EXIT_FAILURE;
 		fprintf(stderr, "ERROR: Failed to decrypt received message. (%i)\n", status);
-		conversation_deinit(&bob_send_conversation);
-		conversation_deinit(&alice_receive_conversation);
 		goto cleanup;
 	}
 
 	status = buffer_compare(send_message, received_message);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Incorrect message decrypted. (%i)\n", status);
-		conversation_deinit(&bob_send_conversation);
-		conversation_deinit(&alice_receive_conversation);
 		goto cleanup;
 	}
 	printf("Decrypted message matched with the original message.\n");
@@ -292,7 +270,7 @@ int main(void) {
 	//first one
 	buffer_create_from_string(bob_send_message2, "How are you Alice?");
 	status = conversation_send(
-			&bob_send_conversation,
+			bob_send_conversation,
 			bob_send_message2,
 			&bob_send_packet2,
 			NULL,
@@ -300,8 +278,6 @@ int main(void) {
 			NULL);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to send Bobs second message!\n");
-		conversation_deinit(&bob_send_conversation);
-		conversation_deinit(&alice_receive_conversation);
 		goto cleanup;
 	}
 	printf("Sent message: %.*s\n", (int)bob_send_message2->content_length, (const char*)bob_send_message2->content);
@@ -311,13 +287,11 @@ int main(void) {
 
 	//alice receives the message
 	status = conversation_receive(
-			&alice_receive_conversation,
+			alice_receive_conversation,
 			bob_send_packet2,
 			&alice_receive_message2);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Second message from Bob failed to decrypt! (%i)\n", status);
-		conversation_deinit(&bob_send_conversation);
-		conversation_deinit(&alice_receive_conversation);
 		goto cleanup;
 	}
 
@@ -325,8 +299,6 @@ int main(void) {
 	status = buffer_compare(alice_receive_message2, bob_send_message2);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Received message doesn't match.\n");
-		conversation_deinit(&bob_send_conversation);
-		conversation_deinit(&alice_receive_conversation);
 		goto cleanup;
 	}
 	printf("Bobs second message has been sent correctly!.\n");
@@ -334,7 +306,7 @@ int main(void) {
 	//Alice responds to Bob
 	buffer_create_from_string(alice_response_message, "I'm fine, thanks. How are you?");
 	status = conversation_send(
-			&alice_receive_conversation,
+			alice_receive_conversation,
 			alice_response_message,
 			&alice_response_packet,
 			NULL,
@@ -342,8 +314,6 @@ int main(void) {
 			NULL);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to send Alice' response message!\n");
-		conversation_deinit(&bob_send_conversation);
-		conversation_deinit(&alice_receive_conversation);
 		goto cleanup;
 	}
 	printf("Sent message: %.*s\n", (int)alice_response_message->content_length, (const char*)alice_response_message->content);
@@ -353,13 +323,11 @@ int main(void) {
 
 	//Bob receives the response
 	status = conversation_receive(
-			&bob_send_conversation,
+			bob_send_conversation,
 			alice_response_packet,
 			&bob_received_response);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Response from Alice failed to decrypt! (%i)\n", status);
-		conversation_deinit(&bob_send_conversation);
-		conversation_deinit(&alice_receive_conversation);
 		goto cleanup;
 	}
 
@@ -367,14 +335,9 @@ int main(void) {
 	status = buffer_compare(alice_response_message, bob_received_response);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Received response doesn't match!\n");
-		conversation_deinit(&bob_send_conversation);
-		conversation_deinit(&alice_receive_conversation);
 		goto cleanup;
 	}
 	printf("Successfully received Alice' response!\n");
-
-	conversation_deinit(&bob_send_conversation);
-	conversation_deinit(&alice_receive_conversation);
 
 cleanup:
 	if (alice_prekeys != NULL) {
@@ -412,6 +375,18 @@ cleanup:
 	}
 	if (bob_received_response != NULL) {
 		buffer_destroy_from_heap(bob_received_response);
+	}
+	if (alice_send_conversation != NULL) {
+		conversation_destroy(alice_send_conversation);
+	}
+	if (alice_receive_conversation != NULL) {
+		conversation_destroy(alice_receive_conversation);
+	}
+	if (bob_send_conversation != NULL) {
+		conversation_destroy(bob_send_conversation);
+	}
+	if (bob_receive_conversation != NULL) {
+		conversation_destroy(bob_receive_conversation);
 	}
 	buffer_destroy_from_heap(alice_private_identity);
 	buffer_destroy_from_heap(alice_public_identity);

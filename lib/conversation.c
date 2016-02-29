@@ -28,52 +28,72 @@
 void init_struct(conversation_t *conversation) {
 	buffer_init_with_pointer(conversation->id, conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 	conversation->ratchet = NULL;
+	conversation->previous = NULL;
+	conversation->next = NULL;
 }
 
 /*
- * Create a new conversation
+ * Create a new conversation.
  */
-int conversation_init(
-		conversation_t * const conversation,
+conversation_t *conversation_create(
+		const buffer_t * const,
+		const buffer_t * const,
+		const buffer_t * const,
+		const buffer_t * const,
+		const buffer_t * const,
+		const buffer_t * const) __attribute__((warn_unused_result));
+conversation_t *conversation_create(
 		const buffer_t * const our_private_identity,
 		const buffer_t * const our_public_identity,
 		const buffer_t * const their_public_identity,
 		const buffer_t * const our_private_ephemeral,
 		const buffer_t * const our_public_ephemeral,
 		const buffer_t * const their_public_ephemeral) {
+	conversation_t *conversation = malloc(sizeof(conversation_t));
+	if (conversation == NULL) {
+		return NULL;
+	}
+
 	init_struct(conversation);
+
+	int status = 0;
 
 	//create random id
 	if (buffer_fill_random(conversation->id, CONVERSATION_ID_SIZE) != 0) {
-		sodium_memzero(conversation, sizeof(conversation_t));
-		return -1;
+		status = -1;
+		goto cleanup;
 	}
 
-	ratchet_state *ratchet = ratchet_create(
+	conversation->ratchet = ratchet_create(
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral);
-	if (ratchet == NULL) {
-		sodium_memzero(conversation, sizeof(conversation_t));
-		return -2;
+	if (conversation->ratchet == NULL) {
+		status = -2;
+		goto cleanup;
 	}
 
-	conversation->ratchet = ratchet;
+cleanup:
+	if (status != 0) {
+		free(conversation);
 
-	return 0;
+		return NULL;
+	}
+
+	return conversation;
 }
 
 /*
  * Destroy a conversation.
  */
-void conversation_deinit(conversation_t * const conversation) {
+void conversation_destroy(conversation_t * const conversation) {
 	if (conversation->ratchet != NULL) {
 		ratchet_destroy(conversation->ratchet);
 	}
-	sodium_memzero(conversation, sizeof(conversation_t));
+	free(conversation);
 }
 
 /*
@@ -112,14 +132,18 @@ mcJSON *conversation_json_export(const conversation_t * const conversation, memp
 /*
  * Deserialize a conversation (import from JSON)
  */
-int conversation_json_import(
-		const mcJSON * const json,
-		conversation_t * const conversation) {
+conversation_t *conversation_json_import(const mcJSON * const json) {
 	if ((json == NULL) || (json->type != mcJSON_Object)) {
-		return -2;
+		return NULL;
 	}
 
+	conversation_t *conversation = malloc(sizeof(conversation_t));
+	if (conversation == NULL) {
+		return NULL;
+	}
 	init_struct(conversation);
+
+	int status = 0;
 
 	//import the json
 	buffer_create_from_string(id_string, "id");
@@ -128,31 +152,41 @@ int conversation_json_import(
 	mcJSON *ratchet = mcJSON_GetObjectItem(json, ratchet_string);
 	if ((id == NULL) || (id->type != mcJSON_String) || (id->valuestring->content_length != (2 * CONVERSATION_ID_SIZE + 1))
 			|| (ratchet == NULL) || (ratchet->type != mcJSON_Object)) {
-		goto fail;
+		status = -1;
+		goto cleanup;
 	}
 
 	//copy the id
 	if (buffer_clone_from_hex(conversation->id, id->valuestring) != 0) {
-		goto fail;
+		status = -1;
+		goto cleanup;
 	}
 
 	//import the ratchet state
 	conversation->ratchet = ratchet_json_import(ratchet);
 	if (conversation->ratchet == NULL) {
-		goto fail;
+		status = -1;
+		goto cleanup;
 	}
 
-	return 0;
-fail:
-	conversation_deinit(conversation);
-	return -1;
+cleanup:
+	if (status != 0) {
+		if (conversation->ratchet != NULL) {
+			ratchet_destroy(conversation->ratchet);
+		}
+
+		free(conversation);
+
+		return NULL;
+	}
+
+	return conversation;
 }
 
 /*
  * Start a new conversation where we are the sender.
  */
-int conversation_start_send_conversation(
-		conversation_t *const conversation, //conversation to initialize
+conversation_t *conversation_start_send_conversation(
 		const buffer_t *const message, //message we want to send to the receiver
 		buffer_t ** packet, //output, free after use!
 		const buffer_t * const sender_public_identity, //who is sending this message?
@@ -161,15 +195,16 @@ int conversation_start_send_conversation(
 		const buffer_t * const receiver_prekey_list //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 		) {
 	//check many error conditions
-	if ((conversation == NULL)
-			|| (message == NULL)
+	if ((message == NULL)
 			|| (packet == NULL)
 			|| (receiver_public_identity == NULL) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (sender_public_identity == NULL) || (sender_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (sender_private_identity == NULL) || (sender_private_identity->content_length != PRIVATE_KEY_SIZE)
 			|| (receiver_prekey_list == NULL) || (receiver_prekey_list->content_length != (PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
-		return -1;
+		return NULL;
 	}
+
+	conversation_t *conversation = NULL;
 
 	int status = 0;
 	//create an ephemeral keypair
@@ -188,15 +223,15 @@ int conversation_start_send_conversation(
 			PUBLIC_KEY_SIZE);
 
 	//initialize the conversation
-	status = conversation_init(
-			conversation,
+	conversation = conversation_create(
 			sender_private_identity,
 			sender_public_identity,
 			receiver_public_identity,
 			sender_private_ephemeral,
 			sender_public_ephemeral,
 			receiver_public_prekey);
-	if (status != 0) {
+	if (conversation == NULL) {
+		status = -1;
 		goto cleanup;
 	}
 
@@ -212,43 +247,47 @@ int conversation_start_send_conversation(
 	}
 
 cleanup:
-	if (status != 0) {
-		conversation_deinit(conversation);
-	}
-
 	buffer_destroy_from_heap(sender_public_ephemeral);
 	buffer_destroy_from_heap(sender_private_ephemeral);
 
-	return status;
+	if (status != 0) {
+		if (conversation != NULL) {
+			conversation_destroy(conversation);
+		}
+		return NULL;
+	}
+
+	return conversation;
 }
 
 /*
  * Start a new conversation where we are the receiver.
  */
-int conversation_start_receive_conversation(
-		conversation_t * const conversation, //conversation to initialize
+conversation_t *conversation_start_receive_conversation(
 		const buffer_t * const packet, //received packet
 		buffer_t ** message, //output, free after use!
 		const buffer_t * const receiver_public_identity,
 		const buffer_t * const receiver_private_identity,
 		prekey_store * const receiver_prekeys //prekeys of the receiver
 		) {
-	if ((conversation == NULL)
-			|| (packet ==NULL)
+	if ((packet ==NULL)
 			|| (message == NULL)
 			|| (receiver_public_identity == NULL) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (receiver_private_identity == NULL) || (receiver_private_identity->content_length != PRIVATE_KEY_SIZE)
 			|| (receiver_prekeys == NULL)) {
-		return -1;
+		return NULL;
 	}
 
 	int status = 0;
+
 
 	//key buffers
 	buffer_t *receiver_public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_t *receiver_private_prekey = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	buffer_t *sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_t *sender_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+
+	conversation_t *conversation = NULL;
 
 	//get the senders keys and our public prekey from the packet
 	unsigned char packet_type;
@@ -282,15 +321,15 @@ int conversation_start_receive_conversation(
 		goto cleanup;
 	}
 
-	status = conversation_init(
-			conversation,
+	conversation = conversation_create(
 			receiver_private_identity,
 			receiver_public_identity,
 			sender_public_identity,
 			receiver_private_prekey,
 			receiver_public_prekey,
 			sender_public_ephemeral);
-	if (status != 0) {
+	if (conversation == NULL) {
+		status = -1;
 		goto cleanup;
 	}
 
@@ -303,16 +342,20 @@ int conversation_start_receive_conversation(
 	}
 
 cleanup:
-	if (status != 0) {
-		conversation_deinit(conversation);
-	}
-
 	buffer_destroy_from_heap(receiver_public_prekey);
 	buffer_destroy_from_heap(receiver_private_prekey);
 	buffer_destroy_from_heap(sender_public_ephemeral);
 	buffer_destroy_from_heap(sender_public_identity);
 
-	return status;
+	if (status != 0) {
+		if (conversation != NULL) {
+			conversation_destroy(conversation);
+		}
+
+		return NULL;
+	}
+
+	return conversation;
 }
 
 /*

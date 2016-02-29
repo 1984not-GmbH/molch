@@ -45,17 +45,24 @@ int main(void) {
 
 	//alice key buffers
 	buffer_t *alice_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *alice_public_prekeys = buffer_create_on_heap(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
+	unsigned char *alice_public_prekeys = NULL;
+	size_t alice_public_prekeys_length = 0;
 
 	//bobs key buffers
 	buffer_t *bob_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *bob_public_prekeys = buffer_create_on_heap(PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES, PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES);
+	unsigned char *bob_public_prekeys = NULL;
+	size_t bob_public_prekeys_length = 0;
+
+	//packet pointers
+	unsigned char * alice_send_packet = NULL;
+	unsigned char * bob_send_packet = NULL;
 
 	//create a new user
 	buffer_create_from_string(alice_head_on_keyboard, "mn ujkhuzn7b7bzh6ujg7j8hn");
 	status = molch_create_user(
 			alice_public_identity->content,
-			alice_public_prekeys->content,
+			&alice_public_prekeys,
+			&alice_public_prekeys_length,
 			alice_head_on_keyboard->content,
 			alice_head_on_keyboard->content_length);
 	if (status != 0) {
@@ -77,7 +84,8 @@ int main(void) {
 	buffer_create_from_string(bob_head_on_keyboard, "jnu8h77z6ht56ftgnujh");
 	status = molch_create_user(
 			bob_public_identity->content,
-			bob_public_prekeys->content,
+			&bob_public_prekeys,
+			&bob_public_prekeys_length,
 			bob_head_on_keyboard->content,
 			bob_head_on_keyboard->content_length);
 	if (status != 0) {
@@ -110,7 +118,6 @@ int main(void) {
 
 	//create a new send conversation (alice sends to bob)
 	buffer_create_from_string(alice_send_message, "Hi Bob. Alice here!");
-	unsigned char *alice_send_packet;
 	size_t alice_send_packet_length;
 	status = molch_create_send_conversation(
 			alice_conversation->content,
@@ -118,12 +125,12 @@ int main(void) {
 			&alice_send_packet_length,
 			alice_send_message->content,
 			alice_send_message->content_length,
-			bob_public_prekeys->content,
+			bob_public_prekeys,
+			bob_public_prekeys_length,
 			alice_public_identity->content,
 			bob_public_identity->content);
 	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to start send conversation.\n");
-		free(alice_send_packet);
+		fprintf(stderr, "ERROR: Failed to start send conversation. (%i)\n", status);
 		goto cleanup;
 	}
 
@@ -132,14 +139,12 @@ int main(void) {
 	unsigned char *conversation_list = molch_list_conversations(alice_public_identity->content, &number_of_conversations);
 	if (conversation_list == NULL) {
 		fprintf(stderr, "ERROR: Failed to list conversations.\n");
-		free(alice_send_packet);
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 	if ((number_of_conversations != 1) || (buffer_compare_to_raw(alice_conversation, conversation_list, alice_conversation->content_length) != 0)) {
 		fprintf(stderr, "ERROR: Failed to list conversations.\n");
 		free(conversation_list);
-		free(alice_send_packet);
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
@@ -148,11 +153,14 @@ int main(void) {
 	//check the message type
 	if (molch_get_message_type(alice_send_packet, alice_send_packet_length) != PREKEY_MESSAGE) {
 		fprintf(stderr, "ERROR: Wrong message type.\n");
-		free(alice_send_packet);
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
 
+	if (bob_public_prekeys != NULL) {
+		free(bob_public_prekeys);
+		bob_public_prekeys = NULL;
+	}
 	//create a new receive conversation (bob receives from alice)
 	unsigned char *bob_receive_message;
 	size_t bob_receive_message_length;
@@ -162,10 +170,10 @@ int main(void) {
 			&bob_receive_message_length,
 			alice_send_packet,
 			alice_send_packet_length,
-			bob_public_prekeys->content,
+			&bob_public_prekeys,
+			&bob_public_prekeys_length,
 			alice_public_identity->content,
 			bob_public_identity->content);
-	free(alice_send_packet);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to start receive conversation. (%i)\n", status);
 		goto cleanup;
@@ -185,7 +193,6 @@ int main(void) {
 
 	//bob replies
 	buffer_create_from_string(bob_send_message, "Welcome Alice!");
-	unsigned char *bob_send_packet;
 	size_t bob_send_packet_length;
 	status = molch_encrypt_message(
 			&bob_send_packet,
@@ -195,14 +202,12 @@ int main(void) {
 			bob_conversation->content);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Couldn't send bobs message.\n");
-		free(bob_send_packet);
 		goto cleanup;
 	}
 
 	//check the message type
 	if (molch_get_message_type(bob_send_packet, bob_send_packet_length) != NORMAL_MESSAGE) {
 		fprintf(stderr, "ERROR: Wrong message type.\n");
-		free(bob_send_packet);
 		status = EXIT_FAILURE;
 		goto cleanup;
 	}
@@ -216,7 +221,6 @@ int main(void) {
 			bob_send_packet,
 			bob_send_packet_length,
 			alice_conversation->content);
-	free(bob_send_packet);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Incorrect message received.\n");
 		free(alice_receive_message);
@@ -290,13 +294,23 @@ int main(void) {
 
 
 cleanup:
+	if (alice_public_prekeys != NULL) {
+		free(alice_public_prekeys);
+	}
+	if (bob_public_prekeys != NULL) {
+		free(bob_public_prekeys);
+	}
+	if (alice_send_packet != NULL) {
+		free(alice_send_packet);
+	}
+	if (bob_send_packet != NULL) {
+		free(bob_send_packet);
+	}
 	molch_destroy_all_users();
 	buffer_destroy_from_heap(alice_conversation);
 	buffer_destroy_from_heap(bob_conversation);
 	buffer_destroy_from_heap(alice_public_identity);
-	buffer_destroy_from_heap(alice_public_prekeys);
 	buffer_destroy_from_heap(bob_public_identity);
-	buffer_destroy_from_heap(bob_public_prekeys);
 
 	return status;
 }
