@@ -24,6 +24,9 @@
 /*
  * THIS HEADER IS ONLY AN EARLY PREVIEW. IT WILL MOST CERTAINLY CHANGE IN THE FUTURE.
  */
+/*
+ * WARNING: ALTHOUGH THIS IMPLEMENTS THE AXOLOTL PROTOCOL, IT ISN't CONSIDERED SECURE ENOUGH TO USE AT THIS POINT
+ */
 
 /*
  * Create a new user. The user is identified by the public master key.
@@ -133,7 +136,6 @@ int molch_create_receive_conversation(
  *
  * Returns 0 on success.
  */
-//TODO DO ACTUAL ENCRYPTION IN HERE! (currently unencrypted)
 int molch_encrypt_message(
 		unsigned char ** const packet, //output, will be malloced by the function, don't forget to free it after use!
 		size_t *packet_length, //output, length of the packet
