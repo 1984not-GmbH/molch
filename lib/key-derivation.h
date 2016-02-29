@@ -34,7 +34,7 @@ int derive_key(
 		buffer_t * const derived_key,
 		size_t derived_size,
 		const buffer_t * const input_key,
-		unsigned int subkey_counter) __attribute__((warn_unused_result)); //number of the current subkey, used to derive multiple keys from the same input key
+		uint32_t subkey_counter) __attribute__((warn_unused_result)); //number of the current subkey, used to derive multiple keys from the same input key
 
 /*
  * Derive the next chain key in a message chain.
