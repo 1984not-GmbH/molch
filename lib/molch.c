@@ -31,6 +31,7 @@
 #include "../buffer/buffer.h"
 #include "user-store.h"
 #include "spiced-random.h"
+#include "endianness.h"
 
 //global user store
 static user_store *users = NULL;
@@ -47,11 +48,11 @@ int create_prekey_list(
 
 	//create buffers
 	buffer_t *unsigned_prekey_list = buffer_create_on_heap(
-			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(time_t),
-			0); //FIXME this is currently architecture dependent because of time_t
+			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t),
+			0);
 	buffer_t *prekey_list_buffer = buffer_create_on_heap(
-			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(time_t) + SIGNATURE_SIZE,
-			0); //FIXME this is currently architecture dependent because of time_t
+			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t) + SIGNATURE_SIZE,
+			0);
 	buffer_t *public_identity_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
 	//buffer for the prekey part of unsigned_prekey_list
@@ -85,18 +86,14 @@ int create_prekey_list(
 		goto cleanup;
 	}
 
-	//add the timestamp FIXME: This is currently architecture dependent
-	//because of Endianness and size of time_t
+	//add the timestamp
 	time_t timestamp = time(NULL);
-	status = buffer_copy_from_raw(
-			unsigned_prekey_list,
-			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE,
-			(unsigned char*) &timestamp,
-			0,
-			sizeof(time_t));
+	buffer_create_with_existing_array(big_endian_timestamp, unsigned_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
+	status = endianness_time_to_big_endian(timestamp, big_endian_timestamp);
 	if (status != 0) {
 		goto cleanup;
 	}
+	unsigned_prekey_list->content_length = unsigned_prekey_list->buffer_length;
 
 	//sign the prekey list with the current identity key
 	status = master_keys_sign(
@@ -320,12 +317,8 @@ int verify_prekey_list(
 
 	//get the timestamp
 	time_t timestamp;
-	status = buffer_copy_to_raw(
-			(unsigned char*)&timestamp,
-			0,
-			verified_prekey_list,
-			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE,
-			sizeof(time_t));
+	buffer_create_with_existing_array(big_endian_timestamp, verified_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
+	status = endianness_time_from_big_endian(&timestamp, big_endian_timestamp);
 	if (status != 0) {
 		goto cleanup;
 	}
@@ -389,7 +382,7 @@ int molch_create_send_conversation(
 	buffer_create_with_existing_array(message_buffer, (unsigned char*)message, message_length);
 	buffer_create_with_existing_array(sender_public_signing_key_buffer, (unsigned char*)sender_public_signing_key, PUBLIC_MASTER_KEY_SIZE);
 	buffer_create_with_existing_array(receiver_public_signing_key_buffer, (unsigned char*)receiver_public_signing_key, PUBLIC_MASTER_KEY_SIZE);
-	buffer_create_with_existing_array(prekeys, (unsigned char*)prekey_list + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(time_t));
+	buffer_create_with_existing_array(prekeys, (unsigned char*)prekey_list + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t));
 
 	//get the user that matches the public signing key of the sender
 	user_store_node *user = user_store_find_node(users, sender_public_signing_key_buffer);

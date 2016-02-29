@@ -34,7 +34,9 @@ set(tests diffie-hellman-test
           conversation-packet-test
           conversation-store-test
           prekey-store-test
-          master-keys-test)
+          master-keys-test
+          endianness-test
+)
 
 foreach(test ${tests})
     add_executable(${test} ${test})

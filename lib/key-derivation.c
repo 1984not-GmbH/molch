@@ -22,6 +22,7 @@
 #include "constants.h"
 #include "key-derivation.h"
 #include "diffie-hellman.h"
+#include "endianness.h"
 
 /*
  * Derive a key of length between crypto_generichash_blake2b_BYTES_MIN (16 Bytes)
@@ -34,7 +35,7 @@ int derive_key(
 		buffer_t * const derived_key,
 		size_t derived_size,
 		const buffer_t * const input_key,
-		unsigned int subkey_counter) { //number of the current subkey, used to derive multiple keys from the same input key
+		uint32_t subkey_counter) { //number of the current subkey, used to derive multiple keys from the same input key
 	//check if inputs are valid
 	if ((derived_size > crypto_generichash_blake2b_BYTES_MAX)
 			|| (derived_size < crypto_generichash_blake2b_BYTES_MIN)
@@ -55,12 +56,14 @@ int derive_key(
 	buffer_t * salt = buffer_create_on_heap(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
 	buffer_clear(salt); //fill with zeroes
 	salt->content_length = crypto_generichash_blake2b_SALTBYTES;
-	//FIXME: This is a really unefficient solution
-	for (; subkey_counter > 0; subkey_counter--) {
-		sodium_increment(salt->content, salt->content_length);
+	//fill the salt with a big endian representation of the subkey counter
+	buffer_create_with_existing_array(big_endian_subkey_counter, salt->content + salt->content_length - sizeof(uint32_t), sizeof(uint32_t));
+	int status = endianness_uint32_to_big_endian(subkey_counter, big_endian_subkey_counter);
+	if (status != 0) {
+		goto cleanup;
 	}
 
-	int status = crypto_generichash_blake2b_salt_personal(
+	status = crypto_generichash_blake2b_salt_personal(
 			derived_key->content,
 			derived_key->content_length,
 			NULL, //input
@@ -70,11 +73,13 @@ int derive_key(
 			salt->content,
 			personal->content);
 	if (status != 0) {
-		derived_key->content_length = 0;
 		goto cleanup;
 	}
 
 cleanup:
+	if (status != 0) {
+		derived_key->content_length = 0;
+	}
 	buffer_destroy_from_heap(salt);
 
 	return status;

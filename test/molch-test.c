@@ -292,6 +292,8 @@ int main(void) {
 		goto cleanup;
 	}
 
+	//TODO check detection of invalid prekey list signatures and old timestamps + more scenarios
+
 
 cleanup:
 	if (alice_public_prekeys != NULL) {
