@@ -175,6 +175,15 @@ void molch_end_conversation(const unsigned char * const conversation_id);
 unsigned char *molch_list_conversations(const unsigned char * const user_public_signing_key, size_t *number) __attribute__((warn_unused_result));
 
 /*
+ * Serialize a conversation into JSON.
+ *
+ * Use sodium_free to free it after use.
+ *
+ * Returns NULL on failure.
+ */
+unsigned char *molch_conversation_json_export(const unsigned char * const conversation_id, size_t * const length) __attribute__((warn_unused_result));
+
+/*
  * Serialise molch's state into JSON.
  *
  * Returns NULL on failure.

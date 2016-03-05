@@ -758,6 +758,74 @@ unsigned char *molch_list_conversations(const unsigned char * const user_public_
 }
 
 /*
+ * Serialize a conversation into JSON.
+ *
+ * Use sodium_free to free it after use.
+ *
+ * Returns NULL on failure.
+ */
+unsigned char *molch_conversation_json_export(const unsigned char * const conversation_id, size_t * const length) {
+	//check input
+	if ((conversation_id == NULL) || (length == NULL)) {
+		return NULL;
+	}
+
+	conversation_t *conversation = find_conversation(conversation_id);
+	if (conversation == NULL) {
+		return NULL;
+	}
+
+	mcJSON *json = NULL;
+	unsigned char *json_string_content = NULL;
+	mempool_t *json_string = NULL;
+	int status = 0;
+
+	//allocate a memory pool
+	//FIXME: Don't allocate a fixed amount
+	mempool_t *pool = buffer_create_with_custom_allocator(1000000, 0, sodium_malloc, sodium_free);
+	if (pool == NULL) {
+		status = -1;
+		goto cleanup;
+	}
+
+	json = conversation_json_export(conversation, pool);
+	if (json == NULL) {
+		status = -1;
+		goto cleanup;
+	}
+
+	//print to string
+	//FIXME: Don't allocate a fixed amount
+	json_string = mcJSON_PrintBuffered(json, 100000, false);
+	if (json_string == NULL) {
+		status = -1;
+		goto cleanup;
+	}
+
+	*length = json_string->content_length;
+	json_string_content = json_string->content;
+
+cleanup:
+	buffer_destroy_with_custom_deallocator(pool, sodium_free);
+
+	if (status != 0) {
+		if (json != NULL) {
+			free(json);
+		}
+
+		if (json_string != NULL) {
+			buffer_destroy_with_custom_deallocator(json_string, sodium_free);
+		}
+
+		return NULL;
+	}
+
+	sodium_free(json_string);
+
+	return json_string_content;
+}
+
+/*
  * Serialise molch's state into JSON.
  *
  * Use sodium_free to free it after use!
