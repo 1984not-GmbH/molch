@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 if ! hash scan-build; then
     echo Clang static analyzer not installed. Skipping ...
     exit 0

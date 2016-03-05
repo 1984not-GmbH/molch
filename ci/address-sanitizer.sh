@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 [ ! -e address-sanitizer ] && mkdir address-sanitizer
 cd address-sanitizer
 #check if address sanitizer is available

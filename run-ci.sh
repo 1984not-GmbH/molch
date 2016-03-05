@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 TESTS=("ci/test.sh" "ci/clang-static-analysis.sh" "ci/address-sanitizer.sh" "ci/undefined-behavior-sanitizer.sh")
 STATUS="OK"
 

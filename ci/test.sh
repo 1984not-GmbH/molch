@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 [ ! -e build ] && mkdir build
 RETURN_VALUE=0
 cd build

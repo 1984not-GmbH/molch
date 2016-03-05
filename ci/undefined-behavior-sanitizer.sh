@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 [ ! -e undefined-behavior-sanitizer ] && mkdir undefined-behavior-sanitizer
 cd undefined-behavior-sanitizer
 #check if undefined-behavior sanitizer is available
