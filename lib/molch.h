@@ -186,6 +186,8 @@ unsigned char *molch_conversation_json_export(const unsigned char * const conver
 /*
  * Serialise molch's state into JSON.
  *
+ * Use sodium_free to free it after use.
+ *
  * Returns NULL on failure.
  */
 unsigned char *molch_json_export(size_t *length) __attribute__((warn_unused_result));
