@@ -570,7 +570,10 @@ cleanup:
 /*
  * Find a conversation based on it's conversation id.
  */
-conversation_t *find_conversation(const unsigned char * const conversation_id) {
+conversation_t *find_conversation(
+		const unsigned char * const conversation_id,
+		conversation_store ** const conversation_store //optional, can be NULL, the conversation store where the conversation is in
+		) {
 	buffer_create_with_existing_array(conversation_id_buffer, (unsigned char*)conversation_id, CONVERSATION_ID_SIZE);
 
 	//go through all the users
@@ -588,6 +591,10 @@ conversation_t *find_conversation(const unsigned char * const conversation_id) {
 
 	if (conversation_node == NULL) {
 		return NULL;
+	}
+
+	if (conversation_store != NULL) {
+		*conversation_store = node->conversations;
 	}
 
 	return conversation_node;
@@ -613,7 +620,7 @@ int molch_encrypt_message(
 	buffer_t *packet_buffer = NULL;
 
 	//find the conversation
-	conversation_t *conversation = find_conversation(conversation_id);
+	conversation_t *conversation = find_conversation(conversation_id, NULL);
 	if (conversation == NULL) {
 		status = -1;
 		goto cleanup;
@@ -667,7 +674,7 @@ int molch_decrypt_message(
 	buffer_t *message_buffer = NULL;
 
 	//find the conversation
-	conversation_t *conversation = find_conversation(conversation_id);
+	conversation_t *conversation = find_conversation(conversation_id, NULL);
 	if (conversation == NULL) {
 		status = -1;
 		goto cleanup;
@@ -704,7 +711,7 @@ cleanup:
  */
 void molch_end_conversation(const unsigned char * const conversation_id) {
 	//find the conversation
-	conversation_t *conversation = find_conversation(conversation_id);
+	conversation_t *conversation = find_conversation(conversation_id, NULL);
 	if (conversation == NULL) {
 		return;
 	}
@@ -770,7 +777,7 @@ unsigned char *molch_conversation_json_export(const unsigned char * const conver
 		return NULL;
 	}
 
-	conversation_t *conversation = find_conversation(conversation_id);
+	conversation_t *conversation = find_conversation(conversation_id, NULL);
 	if (conversation == NULL) {
 		return NULL;
 	}
