@@ -193,6 +193,13 @@ unsigned char *molch_conversation_json_export(const unsigned char * const conver
 unsigned char *molch_json_export(size_t *length) __attribute__((warn_unused_result));
 
 /*
+ * Import a conversation from JSON (overwrites the current one if it exists).
+ *
+ * Returns 0 on succes.
+ */
+int molch_conversation_json_import(const unsigned char * const json, const size_t length) __attribute__((warn_unused_result));
+
+/*
  * Import the molch's state from JSON (overwrites the current state!)
  *
  * Returns 0 on success.

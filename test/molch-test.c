@@ -288,6 +288,33 @@ int main(void) {
 	printf("Alice' conversation exported to JSON:\n");
 	printf("%.*s\n", (int)json_length, (char*)json);
 
+	//import again
+	status = molch_conversation_json_import(json, json_length);
+	if (status != 0) {
+		fprintf(stderr, "ERROR: Failed to import Alice' conversation from JSON! (%i)\n", status);
+		sodium_free(json);
+		goto cleanup;
+	}
+
+	//export again
+	imported_json = molch_conversation_json_export(alice_conversation->content, &imported_json_length);
+	if (imported_json == NULL) {
+		fprintf(stderr, "ERROR: Failed to export Alice imported conversation as JSON!\n");
+		status = EXIT_FAILURE;
+		sodium_free(json);
+		goto cleanup;
+	}
+
+	//compare
+	if ((json_length != imported_json_length) || (sodium_memcmp(json, imported_json, json_length) != 0)) {
+		fprintf(stderr, "ERROR: JSON of imported conversation is incorrect!\n");
+		status = EXIT_FAILURE;
+		sodium_free(json);
+		sodium_free(imported_json);
+		goto cleanup;
+	}
+
+	sodium_free(imported_json);
 	sodium_free(json);
 
 	//destroy the conversations

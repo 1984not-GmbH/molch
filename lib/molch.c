@@ -833,6 +833,94 @@ cleanup:
 }
 
 /*
+ * Import a conversation from JSON (overwrites the current one if it exists).
+ *
+ * Returns 0 on succes.
+ */
+int molch_conversation_json_import(const unsigned char * const json, const size_t length) {
+	if (json == NULL) {
+		return -1;
+	}
+
+	//set allocation function of mcJSON to the libsodium allocation functions
+	mcJSON_Hooks allocation_functions = {
+		sodium_malloc,
+		sodium_free
+	};
+	mcJSON_InitHooks(&allocation_functions);
+
+	//create a buffer for the JSON string
+	buffer_create_with_existing_array(json_buffer, (unsigned char*)json, length);
+
+	//create a buffer for the conversation id
+	buffer_t *conversation_id = buffer_create_on_heap(CONVERSATION_ID_SIZE, 0);
+
+	int status = 0;
+
+	conversation_t *imported_conversation = NULL;
+
+	//parse the json
+	mcJSON *json_tree = mcJSON_ParseBuffered(json_buffer, 100000);
+	if (json_tree == NULL) {
+		status = -1;
+		goto cleanup;
+	}
+
+	//get the conversation id
+	buffer_create_from_string(id_string, "id");
+	mcJSON *conversation_id_json = mcJSON_GetObjectItem(json_tree, id_string);
+	if ((conversation_id_json == NULL) || (conversation_id_json->type != mcJSON_String) || (conversation_id_json->valuestring->content_length != (2 * CONVERSATION_ID_SIZE + 1))) {
+		status = -2;
+		goto cleanup;
+	}
+
+	status = buffer_clone_from_hex(conversation_id, conversation_id_json->valuestring);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+	//import the conversation
+	imported_conversation = conversation_json_import(json_tree);
+	if (imported_conversation == NULL) {
+		status = -3;
+		goto cleanup;
+	}
+
+	//search the conversation in the conversation store
+	conversation_store *store = NULL;
+	conversation_t *old_conversation = find_conversation(conversation_id->content, &store);
+	if (old_conversation != NULL) {
+		molch_end_conversation(conversation_id->content);
+	}
+
+	if (store == NULL) {
+		status = -1;
+		goto cleanup;
+	}
+
+	//now add the conversation to the store
+	status = conversation_store_add(store, imported_conversation);
+	if (status != 0) {
+		goto cleanup;
+	}
+
+cleanup:
+	if (status != 0) {
+		if (json_tree != NULL) {
+			sodium_free(json_tree);
+		}
+
+		if (imported_conversation != NULL) {
+			conversation_destroy(imported_conversation);
+		}
+	}
+
+	buffer_destroy_from_heap(conversation_id);
+
+	return status;
+}
+
+/*
  * Serialise molch's state into JSON.
  *
  * Use sodium_free to free it after use!
