@@ -49,13 +49,19 @@ int molch_create_user(
 		unsigned char ** const prekey_list, //output, needs to be freed
 		size_t * const prekey_list_length,
 		const unsigned char * const random_data,
-		const size_t random_data_length) __attribute__((warn_unused_result));
+		const size_t random_data_length,
+		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
+		size_t * const json_export_length //optional, can be NULL
+		) __attribute__((warn_unused_result));
 
 /*
  * Destroy a user.
  */
 int molch_destroy_user(
-		const unsigned char * const public_signing_key);
+		const unsigned char * const public_signing_key,
+		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use
+		size_t * const json_export_length //optional, can be NULL
+	);
 
 /*
  * Get the number of users.
@@ -105,7 +111,10 @@ int molch_create_send_conversation(
 		const unsigned char * const prekey_list, //prekey list of the receiver (PREKEY_AMOUNT * PUBLIC_KEY_SIZE)
 		const size_t prekey_list_length,
 		const unsigned char * const sender_public_signing_key, //signing key of the sender (user)
-		const unsigned char * const receiver_public_signing_key) __attribute__((warn_unused_result));  //signing key of the receiver
+		const unsigned char * const receiver_public_signing_key, //signing key of the receiver
+		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
+		size_t * const json_export_length //optional, can be NULL
+		) __attribute__((warn_unused_result));
 
 /*
  * Start a new conversation. (receiving)
@@ -129,7 +138,10 @@ int molch_create_receive_conversation(
 		unsigned char ** const prekey_list, //output, free after use
 		size_t * const prekey_list_length,
 		const unsigned char * const sender_public_signing_key, //signing key of the sender
-		const unsigned char * const receiver_public_signing_key) __attribute__((warn_unused_result)); //signing key of the receiver (user)
+		const unsigned char * const receiver_public_signing_key, //signing key of the receiver (user)
+		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
+		size_t * const json_export_length //optional, can be NULL
+		) __attribute__((warn_unused_result));
 
 /*
  * Encrypt a message and create a packet that can be sent to the receiver.
@@ -141,7 +153,10 @@ int molch_encrypt_message(
 		size_t *packet_length, //output, length of the packet
 		const unsigned char * const message,
 		const size_t message_length,
-		const unsigned char * const conversation_id) __attribute__((warn_unused_result));
+		const unsigned char * const conversation_id,
+		unsigned char ** const json_export_conversation, //optional, can be NULL, exports the conversation as json, free with sodium_free, check if NULL before use!
+		size_t * const json_export_conversation_length
+		) __attribute__((warn_unused_result));
 
 /*
  * Decrypt a message.
@@ -153,14 +168,21 @@ int molch_decrypt_message(
 		size_t *message_length, //output
 		const unsigned char * const packet, //received packet
 		const size_t packet_length,
-		const unsigned char * const conversation_id) __attribute__((warn_unused_result));
+		const unsigned char * const conversation_id,
+		unsigned char ** const json_export_conversation, //optional, can be NULL, exports the conversation as json, free with sodium_free, check if NULL before use!
+		size_t * const json_export_conversation_length
+		) __attribute__((warn_unused_result));
 
 /*
  * End a conversation.
  *
  * This will almost certainly be changed later on!!!!!!
  */
-void molch_end_conversation(const unsigned char * const conversation_id);
+void molch_end_conversation(
+		const unsigned char * const conversation_id,
+		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
+		size_t * const json_export_length
+		);
 
 /*
  * List the conversations of a user.

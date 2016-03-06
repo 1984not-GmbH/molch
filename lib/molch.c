@@ -140,7 +140,10 @@ int molch_create_user(
 		unsigned char ** const prekey_list, //output, needs to be freed
 		size_t * const prekey_list_length,
 		const unsigned char * const random_data,
-		const size_t random_data_length) {
+		const size_t random_data_length,
+		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
+		size_t * const json_export_length //optional, can be NULL
+		) {
 	//create user store if it doesn't exist already
 	if (users == NULL) {
 		if (sodium_init() == -1) {
@@ -176,9 +179,17 @@ int molch_create_user(
 		goto cleanup;
 	}
 
+	if (json_export != NULL) {
+		if (json_export_length == NULL) {
+			*json_export = NULL;
+		} else {
+			*json_export = molch_json_export(json_export_length);
+		}
+	}
+
 cleanup:
 	if (status != 0) {
-		molch_destroy_user(public_master_key);
+		molch_destroy_user(public_master_key, NULL, NULL);
 	}
 
 	return status;
@@ -188,7 +199,11 @@ cleanup:
  * Destroy a user.
  */
 //(although they are selfcontained, so maybe not)
-int molch_destroy_user(const unsigned char * const public_signing_key) {
+int molch_destroy_user(
+		const unsigned char * const public_signing_key,
+		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
+		size_t * const json_export_length //optional, can be NULL
+		) {
 	if (users == NULL) {
 		return -1;
 	}
@@ -197,6 +212,14 @@ int molch_destroy_user(const unsigned char * const public_signing_key) {
 
 	buffer_create_with_existing_array(public_signing_key_buffer, (unsigned char*)public_signing_key, PUBLIC_KEY_SIZE);
 	user_store_remove_by_key(users, public_signing_key_buffer);
+
+	if (json_export != NULL) {
+		if (json_export_length == NULL) {
+			*json_export = NULL;
+		} else {
+			*json_export = molch_json_export(json_export_length);
+		}
+	}
 
 	return 0;
 }
@@ -365,7 +388,10 @@ int molch_create_send_conversation(
 		const unsigned char * const prekey_list, //prekey list of the receiver (PREKEY_AMOUNT * PUBLIC_KEY_SIZE)
 		const size_t prekey_list_length,
 		const unsigned char * const sender_public_signing_key, //signing key of the sender (user)
-		const unsigned char * const receiver_public_signing_key) { //signing key of the receiver
+		const unsigned char * const receiver_public_signing_key, //signing key of the receiver
+		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
+		size_t * const json_export_length //optional, can be NULL
+		) {
 
 	//check input
 	if ((conversation_id == NULL)
@@ -441,6 +467,14 @@ int molch_create_send_conversation(
 	*packet = packet_buffer->content;
 	*packet_length = packet_buffer->content_length;
 
+	if (json_export != NULL) {
+		if (json_export_length == NULL) {
+			*json_export = NULL;
+		} else {
+			*json_export = molch_json_export(json_export_length);
+		}
+	}
+
 cleanup:
 	buffer_destroy_from_heap(sender_public_identity);
 	buffer_destroy_from_heap(receiver_public_identity);
@@ -485,7 +519,10 @@ int molch_create_receive_conversation(
 		unsigned char ** const prekey_list, //output, free after use
 		size_t * const prekey_list_length,
 		const unsigned char * const sender_public_signing_key, //signing key of the sender
-		const unsigned char * const receiver_public_signing_key) { //signing key of the receiver (user)
+		const unsigned char * const receiver_public_signing_key, //signing key of the receiver (user)
+		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
+		size_t * const json_export_length //optional, can be NULL
+		) {
 
 	//create buffers to wrap the raw arrays
 	buffer_create_with_existing_array(conversation_id_buffer, (unsigned char*)conversation_id, CONVERSATION_ID_SIZE);
@@ -544,6 +581,13 @@ int molch_create_receive_conversation(
 	*message = message_buffer->content;
 	*message_length = message_buffer->content_length;
 
+	if (json_export != NULL) {
+		if (json_export_length == NULL) {
+			*json_export = NULL;
+		} else {
+			*json_export = molch_json_export(json_export_length);
+		}
+	}
 
 cleanup:
 	if (status != 0) {
@@ -610,7 +654,10 @@ int molch_encrypt_message(
 		size_t *packet_length, //output, length of the packet
 		const unsigned char * const message,
 		const size_t message_length,
-		const unsigned char * const conversation_id) {
+		const unsigned char * const conversation_id,
+		unsigned char ** const json_export_conversation, //optional, can be NULL, exports the conversation as json, free with sodium_free, check if NULL before use!
+		size_t * const json_export_conversation_length //optional, can be NULL
+		) {
 
 	//create buffer for message array
 	buffer_create_with_existing_array(message_buffer, (unsigned char*) message, message_length);
@@ -640,6 +687,14 @@ int molch_encrypt_message(
 	*packet = packet_buffer->content;
 	*packet_length = packet_buffer->content_length;
 
+	if (json_export_conversation != NULL) {
+		if (json_export_conversation_length == NULL) {
+			*json_export_conversation = NULL;
+		} else {
+			*json_export_conversation = molch_conversation_json_export(conversation->id->content, json_export_conversation_length);
+		}
+	}
+
 cleanup:
 	if (status != 0) {
 		if (packet_buffer != NULL) {
@@ -664,7 +719,10 @@ int molch_decrypt_message(
 		size_t *message_length, //output
 		const unsigned char * const packet, //received packet
 		const size_t packet_length,
-		const unsigned char * const conversation_id) {
+		const unsigned char * const conversation_id,
+		unsigned char ** const json_export_conversation, //optional, can be NULL, exports the conversation as json, free with sodium_free, check if NULL before use!
+		size_t * const json_export_conversation_length //optional, can be NULL
+	) {
 
 	//create buffer for the packet
 	buffer_create_with_existing_array(packet_buffer, (unsigned char*)packet, packet_length);
@@ -691,6 +749,14 @@ int molch_decrypt_message(
 	*message = message_buffer->content;
 	*message_length = message_buffer->content_length;
 
+	if (json_export_conversation != NULL) {
+		if (json_export_conversation_length == NULL) {
+			*json_export_conversation = NULL;
+		} else {
+			*json_export_conversation = molch_conversation_json_export(conversation->id->content, json_export_conversation_length);
+		}
+	}
+
 cleanup:
 	if (status != 0) {
 		if (message_buffer != NULL) {
@@ -709,7 +775,11 @@ cleanup:
  *
  * This will almost certainly be changed later on!!!!!!
  */
-void molch_end_conversation(const unsigned char * const conversation_id) {
+void molch_end_conversation(
+		const unsigned char * const conversation_id,
+		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
+		size_t * const json_export_length
+		) {
 	//find the conversation
 	conversation_t *conversation = find_conversation(conversation_id, NULL);
 	if (conversation == NULL) {
@@ -721,6 +791,14 @@ void molch_end_conversation(const unsigned char * const conversation_id) {
 		return;
 	}
 	conversation_store_remove_by_id(user->conversations, conversation->id);
+
+	if (json_export != NULL) {
+		if (json_export_length == NULL) {
+			*json_export = NULL;
+		} else {
+			*json_export = molch_json_export(json_export_length);
+		}
+	}
 }
 
 /*
@@ -890,7 +968,7 @@ int molch_conversation_json_import(const unsigned char * const json, const size_
 	conversation_store *store = NULL;
 	conversation_t *old_conversation = find_conversation(conversation_id->content, &store);
 	if (old_conversation != NULL) {
-		molch_end_conversation(conversation_id->content);
+		molch_end_conversation(conversation_id->content, NULL, NULL);
 	}
 
 	if (store == NULL) {

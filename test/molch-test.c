@@ -59,12 +59,16 @@ int main(void) {
 
 	//create a new user
 	buffer_create_from_string(alice_head_on_keyboard, "mn ujkhuzn7b7bzh6ujg7j8hn");
+	unsigned char *complete_json_export = NULL;
+	size_t complete_json_export_length = 0;
 	status = molch_create_user(
 			alice_public_identity->content,
 			&alice_public_prekeys,
 			&alice_public_prekeys_length,
 			alice_head_on_keyboard->content,
-			alice_head_on_keyboard->content_length);
+			alice_head_on_keyboard->content_length,
+			&complete_json_export,
+			&complete_json_export_length);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to create Alice! (%i)\n", status);
 		goto cleanup;
@@ -72,6 +76,14 @@ int main(void) {
 	printf("Alice public identity (%zu Bytes):\n", alice_public_identity->content_length);
 	print_hex(alice_public_identity);
 	putchar('\n');
+	if (complete_json_export == NULL) {
+		fprintf(stderr, "ERROR: Failed to export the library state as json after creating alice!\n");
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+	printf("%.*s\n", (int)complete_json_export_length, (char*)complete_json_export);
+	sodium_free(complete_json_export);
+
 
 	//check user count
 	if (molch_user_count() != 1) {
@@ -87,7 +99,9 @@ int main(void) {
 			&bob_public_prekeys,
 			&bob_public_prekeys_length,
 			bob_head_on_keyboard->content,
-			bob_head_on_keyboard->content_length);
+			bob_head_on_keyboard->content_length,
+			NULL,
+			NULL);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to create Bob! (%i)\n", status);
 		goto cleanup;
@@ -128,7 +142,9 @@ int main(void) {
 			bob_public_prekeys,
 			bob_public_prekeys_length,
 			alice_public_identity->content,
-			bob_public_identity->content);
+			bob_public_identity->content,
+			NULL,
+			NULL);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to start send conversation. (%i)\n", status);
 		goto cleanup;
@@ -173,7 +189,9 @@ int main(void) {
 			&bob_public_prekeys,
 			&bob_public_prekeys_length,
 			alice_public_identity->content,
-			bob_public_identity->content);
+			bob_public_identity->content,
+			NULL,
+			NULL);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to start receive conversation. (%i)\n", status);
 		goto cleanup;
@@ -194,16 +212,28 @@ int main(void) {
 	//bob replies
 	buffer_create_from_string(bob_send_message, "Welcome Alice!");
 	size_t bob_send_packet_length;
+	unsigned char * conversation_json_export = NULL;
+	size_t conversation_json_export_length = 0;
 	status = molch_encrypt_message(
 			&bob_send_packet,
 			&bob_send_packet_length,
 			bob_send_message->content,
 			bob_send_message->content_length,
-			bob_conversation->content);
+			bob_conversation->content,
+			&conversation_json_export,
+			&conversation_json_export_length);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Couldn't send bobs message.\n");
 		goto cleanup;
 	}
+
+	if (conversation_json_export == NULL) {
+		fprintf(stderr, "ERROR: Failed to export the conversation after encrypting a message!\n");
+		status = EXIT_FAILURE;
+		goto cleanup;
+	}
+	printf("%.*s\n", (int)conversation_json_export_length, (char*)conversation_json_export);
+	sodium_free(conversation_json_export);
 
 	//check the message type
 	if (molch_get_message_type(bob_send_packet, bob_send_packet_length) != NORMAL_MESSAGE) {
@@ -220,7 +250,9 @@ int main(void) {
 			&alice_receive_message_length,
 			bob_send_packet,
 			bob_send_packet_length,
-			alice_conversation->content);
+			alice_conversation->content,
+			NULL,
+			NULL);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Incorrect message received.\n");
 		free(alice_receive_message);
@@ -318,8 +350,8 @@ int main(void) {
 	sodium_free(json);
 
 	//destroy the conversations
-	molch_end_conversation(alice_conversation->content);
-	molch_end_conversation(bob_conversation->content);
+	molch_end_conversation(alice_conversation->content, NULL, NULL);
+	molch_end_conversation(bob_conversation->content, NULL, NULL);
 
 	//destroy the users again
 	molch_destroy_all_users();
