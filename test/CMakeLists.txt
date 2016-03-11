@@ -36,6 +36,7 @@ set(tests diffie-hellman-test
           prekey-store-test
           master-keys-test
           endianness-test
+          return-status-test
 )
 
 foreach(test ${tests})
