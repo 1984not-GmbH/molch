@@ -32,6 +32,7 @@
 #include "user-store.h"
 #include "spiced-random.h"
 #include "endianness.h"
+#include "return-status.h"
 
 //global user store
 static user_store *users = NULL;
@@ -133,63 +134,70 @@ cleanup:
  * This also creates a signed list of prekeys to be uploaded to
  * the server.
  *
- * Returns 0 on success.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int molch_create_user(
-		unsigned char * const public_master_key, //output, PUBLIC_MASTER_KEY_SIZE
-		unsigned char ** const prekey_list, //output, needs to be freed
-		size_t * const prekey_list_length,
-		const unsigned char * const random_data,
+return_status molch_create_user(
+		unsigned char *const public_master_key, //output, PUBLIC_MASTER_KEY_SIZE
+		unsigned char **const prekey_list, //output, needs to be freed
+		size_t *const prekey_list_length,
+		const unsigned char *const random_data,
 		const size_t random_data_length,
-		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
-		size_t * const json_export_length //optional, can be NULL
-		) {
-	//create user store if it doesn't exist already
-	if (users == NULL) {
-		if (sodium_init() == -1) {
-			return -1;
-		}
-		users = user_store_create();
-		if (users == NULL) { //failed to create user store
-			return -10;
-		}
-	}
+		unsigned char **const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
+		size_t *const json_export_length //optional, can be NULL
+) {
+	return_status status = return_status_init();
+	bool user_store_created = false;
 
 	//create buffers wrapping the raw arrays
 	buffer_create_with_existing_array(random_data_buffer, (unsigned char*)random_data, random_data_length);
 	buffer_create_with_existing_array(public_master_key_buffer, public_master_key, PUBLIC_MASTER_KEY_SIZE);
 
-	int status = 0;
+	//create user store if it doesn't exist already
+	if (users == NULL) {
+		if (sodium_init() == -1) {
+			throw(INIT_ERROR, "Failed to init libsodium.");
+		}
+		users = user_store_create();
+		if (users == NULL) {
+			throw(CREATION_ERROR, "Failed to create user store.")
+		}
+	}
+
+	int status_int = 0;
 
 	//create the user
-	status = user_store_create_user(
+	status_int = user_store_create_user(
 			users,
 			random_data_buffer,
 			public_master_key_buffer,
 			NULL);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(CREATION_ERROR, "Failed to create user.");
 	}
+	user_store_created = true;
 
-	status = create_prekey_list(
+	status_int = create_prekey_list(
 			public_master_key_buffer,
 			prekey_list,
 			prekey_list_length);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(CREATION_ERROR, "Failed to create prekey list.");
 	}
 
 	if (json_export != NULL) {
 		if (json_export_length == NULL) {
 			*json_export = NULL;
 		} else {
-			*json_export = molch_json_export(json_export_length);
+			status = molch_json_export(json_export, json_export_length);
+			throw_on_error(EXPORT_ERROR, "Failed to export JSON.");
 		}
 	}
 
 cleanup:
-	if (status != 0) {
-		molch_destroy_user(public_master_key, NULL, NULL);
+	if ((status.status != SUCCESS) && user_store_created) {
+		return_status new_status = molch_destroy_user(public_master_key, NULL, NULL);
+		return_status_destroy_errors(&new_status);
 	}
 
 	return status;
@@ -197,15 +205,19 @@ cleanup:
 
 /*
  * Destroy a user.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-//(although they are selfcontained, so maybe not)
-int molch_destroy_user(
-		const unsigned char * const public_signing_key,
-		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
-		size_t * const json_export_length //optional, can be NULL
-		) {
+return_status molch_destroy_user(
+		const unsigned char *const public_signing_key,
+		unsigned char **const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
+		size_t *const json_export_length //optional, can be NULL
+) {
+	return_status status = return_status_init();
+
 	if (users == NULL) {
-		return -1;
+		throw(INVALID_INPUT, "\"users\" is NULL.")
 	}
 
 	//TODO maybe check beforehand if the user exists and return nonzero if not
@@ -217,11 +229,13 @@ int molch_destroy_user(
 		if (json_export_length == NULL) {
 			*json_export = NULL;
 		} else {
-			*json_export = molch_json_export(json_export_length);
+			status = molch_json_export(json_export, json_export_length);
+			throw_on_error(EXPORT_ERROR, "Failed to export JSON.");
 		}
 	}
 
-	return 0;
+cleanup:
+	return status;
 }
 
 /*
@@ -249,24 +263,32 @@ void molch_destroy_all_users() {
 /*
  * List all of the users (list of the public keys),
  * NULL if there are no users.
+ *
+ * The list is accessible via the return status' 'data' property.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-unsigned char *molch_user_list(size_t *count) {
+return_status molch_user_list(unsigned char **const user_list, size_t *count) {
+	return_status status = return_status_init();
+
 	if (users == NULL) {
-		return NULL;
+		throw(INVALID_INPUT, "\"users\" is NULL.");
 	}
 
 	//get the list of users and copy it
 	buffer_t *user_list_buffer = user_store_list(users);
 	if (user_list_buffer == NULL) {
-		return NULL;
+		throw(CREATION_ERROR, "Failed to create user list.");
 	}
 
 	*count = molch_user_count();
 
-	unsigned char *user_list = user_list_buffer->content;
+	*user_list = user_list_buffer->content;
 	free(user_list_buffer); //free the buffer_t struct while leaving content intact
 
-	return user_list;
+cleanup:
+	return status;
 }
 
 /*
@@ -377,44 +399,29 @@ cleanup:
  *
  * This requires a new set of prekeys from the receiver.
  *
- * Returns 0 on success.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int molch_create_send_conversation(
-		unsigned char * const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
-		unsigned char ** const packet, //output, will be malloced by the function, don't forget to free it after use!
+return_status molch_create_send_conversation(
+		unsigned char *const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
+		unsigned char **const packet, //output, will be malloced by the function, don't forget to free it after use!
 		size_t *packet_length, //output
-		const unsigned char * const message,
+		const unsigned char *const message,
 		const size_t message_length,
-		const unsigned char * const prekey_list, //prekey list of the receiver (PREKEY_AMOUNT * PUBLIC_KEY_SIZE)
+		const unsigned char *const prekey_list, //prekey list of the receiver (PREKEY_AMOUNT * PUBLIC_KEY_SIZE)
 		const size_t prekey_list_length,
-		const unsigned char * const sender_public_signing_key, //signing key of the sender (user)
-		const unsigned char * const receiver_public_signing_key, //signing key of the receiver
-		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
-		size_t * const json_export_length //optional, can be NULL
-		) {
-
-	//check input
-	if ((conversation_id == NULL)
-			|| (packet == NULL)
-			|| (packet_length == NULL)
-			|| (prekey_list == NULL)
-			|| (sender_public_signing_key == NULL)
-			|| (receiver_public_signing_key == NULL)) {
-		return -1;
-	}
-
+		const unsigned char *const sender_public_signing_key, //signing key of the sender (user)
+		const unsigned char *const receiver_public_signing_key, //signing key of the receiver
+		unsigned char **const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
+		size_t *const json_export_length //optional, can be NULL
+) {
 	//create buffers wrapping the raw input
 	buffer_create_with_existing_array(conversation_id_buffer, (unsigned char*)conversation_id, CONVERSATION_ID_SIZE);
 	buffer_create_with_existing_array(message_buffer, (unsigned char*)message, message_length);
 	buffer_create_with_existing_array(sender_public_signing_key_buffer, (unsigned char*)sender_public_signing_key, PUBLIC_MASTER_KEY_SIZE);
 	buffer_create_with_existing_array(receiver_public_signing_key_buffer, (unsigned char*)receiver_public_signing_key, PUBLIC_MASTER_KEY_SIZE);
 	buffer_create_with_existing_array(prekeys, (unsigned char*)prekey_list + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t));
-
-	//get the user that matches the public signing key of the sender
-	user_store_node *user = user_store_find_node(users, sender_public_signing_key_buffer);
-	if (user == NULL) {
-		return -1;
-	}
 
 	//create buffers
 	buffer_t *sender_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
@@ -423,17 +430,36 @@ int molch_create_send_conversation(
 
 	conversation_t *conversation = NULL;
 	buffer_t *packet_buffer = NULL;
+	user_store_node *user = NULL;
 
-	int status = 0;
+	return_status status = return_status_init();
+
+	//check input
+	if ((conversation_id == NULL)
+			|| (packet == NULL)
+			|| (packet_length == NULL)
+			|| (prekey_list == NULL)
+			|| (sender_public_signing_key == NULL)
+			|| (receiver_public_signing_key == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to molch_create_send_conversation.");
+	}
+
+	//get the user that matches the public signing key of the sender
+	user = user_store_find_node(users, sender_public_signing_key_buffer);
+	if (user == NULL) {
+		throw(NOT_FOUND, "User not found.");
+	}
+
+	int status_int = 0;
 
 	//get the receivers public ephemeral and identity
-	status = verify_prekey_list(
+	status_int = verify_prekey_list(
 			prekey_list,
 			prekey_list_length,
 			receiver_public_identity,
 			receiver_public_signing_key_buffer);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(VERIFICATION_FAILED, "Failed to verify prekey list.");
 	}
 
 	//unlock the master keys
@@ -448,19 +474,18 @@ int molch_create_send_conversation(
 			receiver_public_identity,
 			prekeys);
 	if (conversation == NULL) {
-		status = -1;
-		goto cleanup;
+		throw(CREATION_ERROR, "Failed to start send converstion.");
 	}
 
 	//copy the conversation id
-	status = buffer_clone(conversation_id_buffer, conversation->id);
-	if (status != 0) {
-		goto cleanup;
+	status_int = buffer_clone(conversation_id_buffer, conversation->id);
+	if (status_int != 0) {
+		throw(BUFFER_ERROR, "Failed to clone conversation id.");
 	}
 
-	status = conversation_store_add(user->conversations, conversation);
-	if (status != 0) {
-		goto cleanup;
+	status_int = conversation_store_add(user->conversations, conversation);
+	if (status_int != 0) {
+		throw(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
 	}
 	conversation = NULL;
 
@@ -471,7 +496,8 @@ int molch_create_send_conversation(
 		if (json_export_length == NULL) {
 			*json_export = NULL;
 		} else {
-			*json_export = molch_json_export(json_export_length);
+			status = molch_json_export(json_export, json_export_length);
+			throw_on_error(EXPORT_ERROR, "Failed to export JSON.");
 		}
 	}
 
@@ -488,7 +514,7 @@ cleanup:
 		sodium_mprotect_noaccess(user->master_keys);
 	}
 
-	if (status != 0) {
+	if (status.status != SUCCESS) {
 		if (packet_buffer != NULL) {
 			free(packet_buffer->content);
 		}
@@ -508,9 +534,10 @@ cleanup:
  *
  * This function is called after receiving a prekey message.
  *
- * conversation->valid is false on failure
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int molch_create_receive_conversation(
+return_status molch_create_receive_conversation(
 		unsigned char * const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
 		unsigned char ** const message, //output, will be malloced by the function, don't forget to free it after use!
 		size_t * const message_length, //output
@@ -524,25 +551,28 @@ int molch_create_receive_conversation(
 		size_t * const json_export_length //optional, can be NULL
 		) {
 
+	return_status status = return_status_init();
+
 	//create buffers to wrap the raw arrays
 	buffer_create_with_existing_array(conversation_id_buffer, (unsigned char*)conversation_id, CONVERSATION_ID_SIZE);
 	buffer_create_with_existing_array(packet_buffer, (unsigned char*)packet, packet_length);
 	buffer_create_with_existing_array(sender_public_signing_key_buffer, (unsigned char*) sender_public_signing_key, PUBLIC_MASTER_KEY_SIZE);
 	buffer_create_with_existing_array(receiver_public_signing_key_buffer, (unsigned char*)receiver_public_signing_key, PUBLIC_MASTER_KEY_SIZE);
 
-	//get the user that matches the public signing key of the receiver
-	user_store_node *user = user_store_find_node(users, receiver_public_signing_key_buffer);
-	if (user == NULL) {
-		return -1;
-	}
-
 	conversation_t *conversation = NULL;
 	buffer_t *message_buffer = NULL;
+	user_store_node *user = NULL;
+
+	//get the user that matches the public signing key of the receiver
+	user = user_store_find_node(users, receiver_public_signing_key_buffer);
+	if (user == NULL) {
+		throw(NOT_FOUND, "User not found in the user store.");
+	}
 
 	//unlock the master keys
 	sodium_mprotect_readonly(user->master_keys);
 
-	int status = 0;
+	int status_int = 0;
 
 	//create the conversation
 	conversation = conversation_start_receive_conversation(
@@ -552,29 +582,28 @@ int molch_create_receive_conversation(
 			user->master_keys->private_identity_key,
 			user->prekeys);
 	if (conversation == NULL) {
-		status = -1;
-		goto cleanup;
+		throw(CREATION_ERROR, "Failed to start receive conversation.");
 	}
 
 	//copy the conversation id
-	status = buffer_clone(conversation_id_buffer, conversation->id);
-	if (status != 0) {
-		goto cleanup;
+	status_int = buffer_clone(conversation_id_buffer, conversation->id);
+	if (status_int != 0) {
+		throw(BUFFER_ERROR, "Failed to clone conversation id.");
 	}
 
 	//create the prekey list
-	status = create_prekey_list(
+	status_int = create_prekey_list(
 			receiver_public_signing_key_buffer,
 			prekey_list,
 			prekey_list_length);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(CREATION_ERROR, "Failed to create prekey list.");
 	}
 
 	//add the conversation to the conversation store
-	status = conversation_store_add(user->conversations, conversation);
-	if (status != 0) {
-		goto cleanup;
+	status_int = conversation_store_add(user->conversations, conversation);
+	if (status_int != 0) {
+		throw(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
 	}
 	conversation = NULL;
 
@@ -585,12 +614,13 @@ int molch_create_receive_conversation(
 		if (json_export_length == NULL) {
 			*json_export = NULL;
 		} else {
-			*json_export = molch_json_export(json_export_length);
+			status = molch_json_export(json_export, json_export_length);
+			throw_on_error(EXPORT_ERROR, "Failed to export JSON.");
 		}
 	}
 
 cleanup:
-	if (status != 0) {
+	if (status.status != SUCCESS) {
 		if (message_buffer != NULL) {
 			free(message_buffer->content);
 		}
@@ -647,9 +677,10 @@ conversation_t *find_conversation(
 /*
  * Encrypt a message and create a packet that can be sent to the receiver.
  *
- * Returns 0 on success.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int molch_encrypt_message(
+return_status molch_encrypt_message(
 		unsigned char ** const packet, //output, will be malloced by the function, don't forget to free it after use!
 		size_t *packet_length, //output, length of the packet
 		const unsigned char * const message,
@@ -662,26 +693,28 @@ int molch_encrypt_message(
 	//create buffer for message array
 	buffer_create_with_existing_array(message_buffer, (unsigned char*) message, message_length);
 
-	int status = 0;
-
 	buffer_t *packet_buffer = NULL;
+	conversation_t *conversation = NULL;
+
+	return_status status = return_status_init();
+
+	int status_int = 0;
 
 	//find the conversation
-	conversation_t *conversation = find_conversation(conversation_id, NULL);
+	conversation = find_conversation(conversation_id, NULL);
 	if (conversation == NULL) {
-		status = -1;
-		goto cleanup;
+		throw(NOT_FOUND, "Failed to find a conversation for the given ID.");
 	}
 
-	status = conversation_send(
+	status_int = conversation_send(
 			conversation,
 			message_buffer,
 			&packet_buffer,
 			NULL,
 			NULL,
 			NULL);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(GENERIC_ERROR, "Failed to send message.");
 	}
 
 	*packet = packet_buffer->content;
@@ -691,12 +724,13 @@ int molch_encrypt_message(
 		if (json_export_conversation_length == NULL) {
 			*json_export_conversation = NULL;
 		} else {
-			*json_export_conversation = molch_conversation_json_export(conversation->id->content, json_export_conversation_length);
+			status = molch_conversation_json_export(json_export_conversation, conversation->id->content, json_export_conversation_length);
+			throw_on_error(EXPORT_ERROR, "Failed to export conversation as JSON.");
 		}
 	}
 
 cleanup:
-	if (status != 0) {
+	if (status.status != SUCCESS) {
 		if (packet_buffer != NULL) {
 			free(packet_buffer->content);
 		}
@@ -712,9 +746,10 @@ cleanup:
 /*
  * Decrypt a message.
  *
- * Returns 0 on success.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int molch_decrypt_message(
+return_status molch_decrypt_message(
 		unsigned char ** const message, //output, will be malloced by the function, don't forget to free it after use!
 		size_t *message_length, //output
 		const unsigned char * const packet, //received packet
@@ -727,23 +762,24 @@ int molch_decrypt_message(
 	//create buffer for the packet
 	buffer_create_with_existing_array(packet_buffer, (unsigned char*)packet, packet_length);
 
-	int status;
+	int status_int;
+	return_status status = return_status_init();
 
 	buffer_t *message_buffer = NULL;
+	conversation_t *conversation = NULL;
 
 	//find the conversation
-	conversation_t *conversation = find_conversation(conversation_id, NULL);
+	conversation = find_conversation(conversation_id, NULL);
 	if (conversation == NULL) {
-		status = -1;
-		goto cleanup;
+		throw(NOT_FOUND, "Failed to find conversation with the given ID.");
 	}
 
-	status = conversation_receive(
+	status_int = conversation_receive(
 			conversation,
 			packet_buffer,
 			&message_buffer);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(GENERIC_ERROR, "Failed to receive message.");
 	}
 
 	*message = message_buffer->content;
@@ -753,12 +789,13 @@ int molch_decrypt_message(
 		if (json_export_conversation_length == NULL) {
 			*json_export_conversation = NULL;
 		} else {
-			*json_export_conversation = molch_conversation_json_export(conversation->id->content, json_export_conversation_length);
+			status = molch_conversation_json_export(json_export_conversation, conversation->id->content, json_export_conversation_length);
+			throw_on_error(EXPORT_ERROR, "Failed to export conversation as JSON.");
 		}
 	}
 
 cleanup:
-	if (status != 0) {
+	if (status.status != SUCCESS) {
 		if (message_buffer != NULL) {
 			free(message_buffer->content);
 		}
@@ -796,7 +833,11 @@ void molch_end_conversation(
 		if (json_export_length == NULL) {
 			*json_export = NULL;
 		} else {
-			*json_export = molch_json_export(json_export_length);
+			return_status status = molch_json_export(json_export, json_export_length);
+			if (status.status != SUCCESS) {
+				*json_export = NULL;
+			}
+			return_status_destroy_errors(&status);
 		}
 	}
 }
@@ -807,118 +848,144 @@ void molch_end_conversation(
  * Returns the number of conversations and a list of conversations for a given user.
  * (all the conversation ids in one big list).
  *
- * Don't forget to free it after use.
+ * Don't forget to free conversation_list after use.
  *
- * number is set to the number of conversations or SIZE_MAX if there is any error
- * (e.g. the user doesn't exist)
- *
- * Returns NULL if the user doesn't exist or if there is no conversation.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-unsigned char *molch_list_conversations(const unsigned char * const user_public_identity, size_t *number) {
+return_status molch_list_conversations(
+		const unsigned char * const user_public_identity,
+		unsigned char ** const conversation_list,
+		size_t *number) {
 	buffer_create_with_existing_array(user_public_identity_buffer, (unsigned char*)user_public_identity, PUBLIC_KEY_SIZE);
-	user_store_node *user = user_store_find_node(users, user_public_identity_buffer);
-	if (user == NULL) {
-		*number = SIZE_MAX;
-		return NULL;
+	buffer_t *conversation_id_buffer = NULL;
+
+	return_status status = return_status_init();
+
+	if ((user_public_identity == NULL) || (conversation_list == NULL) || (number == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to molch_list_conversations.");
 	}
 
-	buffer_t *conversation_id_buffer = conversation_store_list(user->conversations);
+	*conversation_list = NULL;
 
+	user_store_node *user = user_store_find_node(users, user_public_identity_buffer);
+	if (user == NULL) {
+		throw(NOT_FOUND, "No user found for the given public identity.")
+	}
+
+	conversation_id_buffer = conversation_store_list(user->conversations);
 	if (conversation_id_buffer == NULL) {
-		*number = 0;
-		return NULL;
+		throw(GENERIC_ERROR, "Failed to list conversation ids.");
 	}
 
 	if ((conversation_id_buffer->content_length % CONVERSATION_ID_SIZE) != 0) {
-		*number = SIZE_MAX;
-		buffer_destroy_from_heap(conversation_id_buffer);
-		return NULL;
+		throw(INCORRECT_BUFFER_SIZE, "The conversation ID buffer has an incorrect length.");
 	}
 	*number = conversation_id_buffer->content_length / CONVERSATION_ID_SIZE;
 
-	unsigned char *conversation_ids = conversation_id_buffer->content;
+	*conversation_list = conversation_id_buffer->content;
 	free(conversation_id_buffer); //free buffer_t struct
+	conversation_id_buffer = NULL;
 
-	return conversation_ids;
+cleanup:
+	if (status.status != SUCCESS) {
+		if (number != NULL) {
+			*number = 0;
+		}
+
+		if (conversation_id_buffer != NULL) {
+			buffer_destroy_from_heap(conversation_id_buffer);
+		}
+	}
+
+	return status;
 }
 
 /*
  * Serialize a conversation into JSON.
  *
- * Use sodium_free to free it after use.
+ * Use sodium_free to free json after use.
  *
- * Returns NULL on failure.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-unsigned char *molch_conversation_json_export(const unsigned char * const conversation_id, size_t * const length) {
+return_status molch_conversation_json_export(
+		unsigned char ** const json,
+		const unsigned char * const conversation_id, size_t * const length) {
+
+	//set allocation functions of mcJSON to the libsodium allocation functions
+	mcJSON_Hooks allocation_functions = {
+		sodium_malloc,
+		sodium_free
+	};
+	mcJSON_InitHooks(&allocation_functions);
+
+	return_status status = return_status_init();
+
+	mempool_t *json_string = NULL;
+	mempool_t *pool = NULL;
+
 	//check input
-	if ((conversation_id == NULL) || (length == NULL)) {
-		return NULL;
+	if ((conversation_id == NULL) || (length == NULL) || (json == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to molch_conversation_json_export");
 	}
 
 	conversation_t *conversation = find_conversation(conversation_id, NULL);
 	if (conversation == NULL) {
-		return NULL;
+		throw(NOT_FOUND, "No conversation found for the given ID.");
 	}
 
-	mcJSON *json = NULL;
-	unsigned char *json_string_content = NULL;
-	mempool_t *json_string = NULL;
-	int status = 0;
+	mcJSON *json_tree = NULL;
 
 	//allocate a memory pool
 	//FIXME: Don't allocate a fixed amount
-	mempool_t *pool = buffer_create_with_custom_allocator(1000000, 0, sodium_malloc, sodium_free);
+	pool = buffer_create_with_custom_allocator(1000000, 0, sodium_malloc, sodium_free);
 	if (pool == NULL) {
-		status = -1;
-		goto cleanup;
+		throw(ALLOCATION_FAILED, "Failed to allocate memory pool.");
 	}
 
-	json = conversation_json_export(conversation, pool);
-	if (json == NULL) {
-		status = -1;
-		goto cleanup;
+	json_tree = conversation_json_export(conversation, pool);
+	if (json_tree == NULL) {
+		throw(EXPORT_ERROR, "Failed to export conversation as JSON.");
 	}
 
 	//print to string
 	//FIXME: Don't allocate a fixed amount
-	json_string = mcJSON_PrintBuffered(json, 100000, false);
+	json_string = mcJSON_PrintBuffered(json_tree, 100000, false);
 	if (json_string == NULL) {
-		status = -1;
-		goto cleanup;
+		throw(GENERIC_ERROR, "Failed to print JSON.");
 	}
 
 	*length = json_string->content_length;
-	json_string_content = json_string->content;
+	*json = json_string->content;
+	sodium_free(json_string);
 
 cleanup:
-	buffer_destroy_with_custom_deallocator(pool, sodium_free);
+	if (pool != NULL) {
+		buffer_destroy_with_custom_deallocator(pool, sodium_free);
+	}
 
-	if (status != 0) {
-		if (json != NULL) {
-			free(json);
+	if (status.status != SUCCESS) {
+		if (length != NULL) {
+			*length = 0;
 		}
 
 		if (json_string != NULL) {
 			buffer_destroy_with_custom_deallocator(json_string, sodium_free);
 		}
-
-		return NULL;
 	}
 
-	sodium_free(json_string);
-
-	return json_string_content;
+	return status;
 }
 
 /*
  * Import a conversation from JSON (overwrites the current one if it exists).
  *
- * Returns 0 on succes.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int molch_conversation_json_import(const unsigned char * const json, const size_t length) {
-	if (json == NULL) {
-		return -1;
-	}
+return_status molch_conversation_json_import(const unsigned char * const json, const size_t length) {
+	return_status status = return_status_init();
 
 	//set allocation function of mcJSON to the libsodium allocation functions
 	mcJSON_Hooks allocation_functions = {
@@ -927,63 +994,64 @@ int molch_conversation_json_import(const unsigned char * const json, const size_
 	};
 	mcJSON_InitHooks(&allocation_functions);
 
-	//create a buffer for the JSON string
-	buffer_create_with_existing_array(json_buffer, (unsigned char*)json, length);
-
+	mcJSON *json_tree = NULL;
+	conversation_t *imported_conversation = NULL;
 	//create a buffer for the conversation id
 	buffer_t *conversation_id = buffer_create_on_heap(CONVERSATION_ID_SIZE, 0);
 
-	int status = 0;
+	if (json == NULL) {
+		throw(INVALID_INPUT, "\"json\" is NULL.");
+	}
 
-	conversation_t *imported_conversation = NULL;
+	//create a buffer for the JSON string
+	buffer_create_with_existing_array(json_buffer, (unsigned char*)json, length);
+
+
+	int status_int = 0;
 
 	//parse the json
-	mcJSON *json_tree = mcJSON_ParseBuffered(json_buffer, 100000);
+	json_tree = mcJSON_ParseBuffered(json_buffer, 100000);
 	if (json_tree == NULL) {
-		status = -1;
-		goto cleanup;
+		throw(IMPORT_ERROR, "Failed to parse JSON.");
 	}
 
 	//get the conversation id
 	buffer_create_from_string(id_string, "id");
 	mcJSON *conversation_id_json = mcJSON_GetObjectItem(json_tree, id_string);
 	if ((conversation_id_json == NULL) || (conversation_id_json->type != mcJSON_String) || (conversation_id_json->valuestring->content_length != (2 * CONVERSATION_ID_SIZE + 1))) {
-		status = -2;
-		goto cleanup;
+		throw(IMPORT_ERROR, "Invalid JSON.");
 	}
 
-	status = buffer_clone_from_hex(conversation_id, conversation_id_json->valuestring);
-	if (status != 0) {
-		goto cleanup;
+	status_int = buffer_clone_from_hex(conversation_id, conversation_id_json->valuestring);
+	if (status_int != 0) {
+		throw(BUFFER_ERROR, "Failed to clone conversation ID.");
 	}
 
 	//import the conversation
 	imported_conversation = conversation_json_import(json_tree);
 	if (imported_conversation == NULL) {
-		status = -3;
-		goto cleanup;
+		throw(IMPORT_ERROR, "Failed to import conversation.");
 	}
 
 	//search the conversation in the conversation store
 	conversation_store *store = NULL;
 	conversation_t *old_conversation = find_conversation(conversation_id->content, &store);
-	if (old_conversation != NULL) {
+	if (old_conversation != NULL) { //destroy the old one if it exists
 		molch_end_conversation(conversation_id->content, NULL, NULL);
 	}
 
 	if (store == NULL) {
-		status = -1;
-		goto cleanup;
+		throw(NOT_FOUND, "No conversation store to put the conversation into.");
 	}
 
 	//now add the conversation to the store
-	status = conversation_store_add(store, imported_conversation);
-	if (status != 0) {
-		goto cleanup;
+	status_int = conversation_store_add(store, imported_conversation);
+	if (status_int != 0) {
+		throw(ADDITION_ERROR, "Failed to add conversation to the conversation store.");
 	}
 
 cleanup:
-	if (status != 0) {
+	if (status.status != SUCCESS) {
 		if (json_tree != NULL) {
 			sodium_free(json_tree);
 		}
@@ -1001,11 +1069,14 @@ cleanup:
 /*
  * Serialise molch's state into JSON.
  *
- * Use sodium_free to free it after use!
+ * Use sodium_free to free json after use.
  *
- * Returns NULL on failure.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-unsigned char *molch_json_export(size_t *length) {
+return_status molch_json_export(
+		unsigned char ** const json,
+		size_t *length) {
 	//set allocation functions of mcJSON to the libsodium allocation functions
 	mcJSON_Hooks allocation_functions = {
 		sodium_malloc,
@@ -1013,52 +1084,74 @@ unsigned char *molch_json_export(size_t *length) {
 	};
 	mcJSON_InitHooks(&allocation_functions);
 
+	mempool_t *pool = NULL;
+	buffer_t *json_string = NULL;
+
+	return_status status = return_status_init();
+
+	if ((json == NULL) || (length == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to molch_json_export.");
+	}
+
 	//allocate a memory pool
 	//FIXME: Don't allocate a fixed amount
-	unsigned char *pool_content = sodium_malloc(5000000);
-	mempool_t *pool = alloca(sizeof(mempool_t));
-	buffer_init_with_pointer(
-			pool,
-			pool_content,
-			5000000,
-			0);
+	pool = buffer_create_with_custom_allocator(5000000, 0, sodium_malloc, sodium_free);
+	if (pool == NULL) {
+		throw(ALLOCATION_FAILED, "Failed to allocate memory pool.");
+	}
 
 	//serialize state into tree of mcJSON objects
-	mcJSON *json = user_store_json_export(users, pool);
-	if (json == NULL) {
-		sodium_free(pool_content);
-		*length = 0;
-		return NULL;
+	mcJSON *json_tree = user_store_json_export(users, pool);
+	if (json_tree == NULL) {
+		throw(EXPORT_ERROR, "Failed to export user store to JSON.");
 	}
 
 	//print to string
 	//FIXME: Don't allocate a fixed amount (that's the only way to do it right now unfortunately)
-	buffer_t *printed_json = mcJSON_PrintBuffered(json, 5000000, false);
-	sodium_free(pool_content);
-	if (printed_json == NULL) {
-		*length = 0;
-		return NULL;
+	json_string = mcJSON_PrintBuffered(json_tree, 5000000, false);
+	if (json_string == NULL) {
+		throw(GENERIC_ERROR, "Failed to print JSON.");
 	}
 
-	*length = printed_json->content_length;
-	unsigned char *printed_json_content = printed_json->content;
-	sodium_free(printed_json); //free the buffer_t struct (leaving content intact)
+	*length = json_string->content_length;
+	*json = json_string->content;
+	sodium_free(json_string); //free the buffer_t struct (leaving content intact)
 
-	return printed_json_content;
+cleanup:
+	if (pool != NULL) {
+		buffer_destroy_with_custom_deallocator(pool, sodium_free);
+	}
+
+	if (status.status != SUCCESS) {
+		if (length != 0) {
+			*length = 0;
+		}
+
+		if (json_string != NULL) {
+			buffer_destroy_with_custom_deallocator(json_string, sodium_free);
+		}
+	}
+
+	return status;
 }
 
 /*
  * Import the molch's state from JSON (overwrites the current state!)
  *
- * Returns 0 on success.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int molch_json_import(const unsigned char *const json, const size_t length){
+return_status molch_json_import(const unsigned char *const json, const size_t length){
 	//set allocation functions of mcJSON to the libsodium allocation functions
 	mcJSON_Hooks allocation_functions = {
 		sodium_malloc,
 		sodium_free
 	};
 	mcJSON_InitHooks(&allocation_functions);
+
+	user_store *users_backup = NULL;
+
+	return_status status = return_status_init();
 
 	//create buffer for the json string
 	buffer_create_with_existing_array(json_buffer, (unsigned char*)json, length);
@@ -1067,20 +1160,25 @@ int molch_json_import(const unsigned char *const json, const size_t length){
 	//FIXME: Don't allocate fixed amount
 	mcJSON *json_tree = mcJSON_ParseBuffered(json_buffer, 5000000);
 	if (json_tree == NULL) {
-		return -1;
+		throw(IMPORT_ERROR, "Failed to parse JSON.");
 	}
 
 	//backup the old user_store
-	user_store *users_backup = users;
+	users_backup = users;
 
 	//import the user store from json
 	users = user_store_json_import(json_tree);
 	if (users == NULL) {
-		users = users_backup; //roll back backup
-		return -2;
+		throw(IMPORT_ERROR, "Failed to import user store from JSON.");
 	}
 
 	user_store_destroy(users_backup);
+	users_backup = NULL;
 
-	return 0;
+cleanup:
+	if (users_backup != NULL) {
+		users = users_backup; //roll back backup
+	}
+
+	return status;
 }

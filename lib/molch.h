@@ -17,6 +17,7 @@
  */
 
 #include <stdbool.h>
+#include "return-status.h"
 
 #ifndef LIB_MOLCH_H
 #define LIB_MOLCH_H
@@ -42,26 +43,30 @@
  * This also creates a signed list of prekeys to be uploaded to
  * the server.
  *
- * Returns 0 on success.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int molch_create_user(
-		unsigned char * const public_master_key, //output, PUBLIC_MASTER_KEY_SIZE
-		unsigned char ** const prekey_list, //output, needs to be freed
-		size_t * const prekey_list_length,
-		const unsigned char * const random_data,
+return_status molch_create_user(
+		unsigned char *const public_master_key, //output, PUBLIC_MASTER_KEY_SIZE
+		unsigned char **const prekey_list, //output, needs to be freed
+		size_t *const prekey_list_length,
+		const unsigned char *const random_data,
 		const size_t random_data_length,
-		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
-		size_t * const json_export_length //optional, can be NULL
-		) __attribute__((warn_unused_result));
+		unsigned char **const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
+		size_t *const json_export_length //optional, can be NULL
+	) __attribute__((warn_unused_result));
 
 /*
  * Destroy a user.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int molch_destroy_user(
-		const unsigned char * const public_signing_key,
-		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use
-		size_t * const json_export_length //optional, can be NULL
-	);
+return_status molch_destroy_user(
+		const unsigned char *const public_signing_key,
+		unsigned char **const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use
+		size_t *const json_export_length //optional, can be NULL
+);
 
 /*
  * Get the number of users.
@@ -73,8 +78,11 @@ size_t molch_user_count();
  * NULL if there are no users.
  *
  * This list is heap allocated, so don't forget to free it.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-unsigned char* molch_user_list(size_t *count);
+return_status molch_user_list(unsigned char **const user_list, size_t *count);
 
 /*
  * Delete all users.
@@ -100,9 +108,10 @@ molch_message_type molch_get_message_type(
  *
  * This requires a new set of prekeys from the receiver.
  *
- * Returns 0 on success.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int molch_create_send_conversation(
+return_status molch_create_send_conversation(
 		unsigned char * const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
 		unsigned char ** const packet, //output, will be malloced by the function, don't forget to free it after use!
 		size_t *packet_length, //output
@@ -125,11 +134,10 @@ int molch_create_send_conversation(
  *
  * The conversation can be identified by it's ID
  *
- * conversation->valid is false on failure
- *
- * Returns 0 on success.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int molch_create_receive_conversation(
+return_status molch_create_receive_conversation(
 		unsigned char * const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
 		unsigned char ** const message, //output, will be malloced by the function, don't forget to free it after use!
 		size_t * const message_length, //output
@@ -146,9 +154,10 @@ int molch_create_receive_conversation(
 /*
  * Encrypt a message and create a packet that can be sent to the receiver.
  *
- * Returns 0 on success.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int molch_encrypt_message(
+return_status molch_encrypt_message(
 		unsigned char ** const packet, //output, will be malloced by the function, don't forget to free it after use!
 		size_t *packet_length, //output, length of the packet
 		const unsigned char * const message,
@@ -161,9 +170,10 @@ int molch_encrypt_message(
 /*
  * Decrypt a message.
  *
- * Returns 0 on success.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int molch_decrypt_message(
+return_status molch_decrypt_message(
 		unsigned char ** const message, //output, will be malloced by the function, don't forget to free it after use!
 		size_t *message_length, //output
 		const unsigned char * const packet, //received packet
@@ -190,41 +200,54 @@ void molch_end_conversation(
  * Returns the number of conversations and a list of conversations for a given user.
  * (all the conversation ids in one big list).
  *
- * Don't forget to free it after use.
+ * Don't forget to free conversation_list after use.
  *
- * Returns NULL if the user doesn't exist or if there is no conversation.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-unsigned char *molch_list_conversations(const unsigned char * const user_public_signing_key, size_t *number) __attribute__((warn_unused_result));
+return_status molch_list_conversations(
+		const unsigned char * const user_public_signing_key,
+		unsigned char ** const conversation_list,
+		size_t *number) __attribute__((warn_unused_result));
 
 /*
  * Serialize a conversation into JSON.
  *
- * Use sodium_free to free it after use.
+ * Use sodium_free to free json after use.
  *
- * Returns NULL on failure.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-unsigned char *molch_conversation_json_export(const unsigned char * const conversation_id, size_t * const length) __attribute__((warn_unused_result));
+return_status molch_conversation_json_export(
+		unsigned char ** const json,
+		const unsigned char * const conversation_id,
+		size_t * const length) __attribute__((warn_unused_result));
 
 /*
  * Serialise molch's state into JSON.
  *
- * Use sodium_free to free it after use.
+ * Use sodium_free to free json after use.
  *
- * Returns NULL on failure.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-unsigned char *molch_json_export(size_t *length) __attribute__((warn_unused_result));
+return_status molch_json_export(
+		unsigned char ** const json,
+		size_t *length) __attribute__((warn_unused_result));
 
 /*
  * Import a conversation from JSON (overwrites the current one if it exists).
  *
- * Returns 0 on succes.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int molch_conversation_json_import(const unsigned char * const json, const size_t length) __attribute__((warn_unused_result));
+return_status molch_conversation_json_import(const unsigned char * const json, const size_t length) __attribute__((warn_unused_result));
 
 /*
  * Import the molch's state from JSON (overwrites the current state!)
  *
- * Returns 0 on success.
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int molch_json_import(const unsigned char* const json, const size_t length) __attribute__((warn_unused_result));
+return_status molch_json_import(const unsigned char* const json, const size_t length) __attribute__((warn_unused_result));
 #endif

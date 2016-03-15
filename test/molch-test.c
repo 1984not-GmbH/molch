@@ -32,13 +32,9 @@ int main(void) {
 	//mustn't crash here!
 	molch_destroy_all_users();
 
-	//check user count
-	if (molch_user_count() != 0) {
-		fprintf(stderr, "ERROR: Wrong user count.\n");
-		return EXIT_FAILURE;
-	}
+	int status_int = 0;
+	return_status status = return_status_init();
 
-	int status;
 	//create conversation buffers
 	buffer_t *alice_conversation = buffer_create_on_heap(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 	buffer_t *bob_conversation = buffer_create_on_heap(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
@@ -57,6 +53,12 @@ int main(void) {
 	unsigned char * alice_send_packet = NULL;
 	unsigned char * bob_send_packet = NULL;
 
+	//check user count
+	if (molch_user_count() != 0) {
+		throw(INVALID_VALUE, "Wrong user count.");
+	}
+
+
 	//create a new user
 	buffer_create_from_string(alice_head_on_keyboard, "mn ujkhuzn7b7bzh6ujg7j8hn");
 	unsigned char *complete_json_export = NULL;
@@ -69,17 +71,13 @@ int main(void) {
 			alice_head_on_keyboard->content_length,
 			&complete_json_export,
 			&complete_json_export_length);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to create Alice! (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(status.status, "Failed to create Alice!");
+
 	printf("Alice public identity (%zu Bytes):\n", alice_public_identity->content_length);
 	print_hex(alice_public_identity);
 	putchar('\n');
 	if (complete_json_export == NULL) {
-		fprintf(stderr, "ERROR: Failed to export the library state as json after creating alice!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(EXPORT_ERROR, "Failed to export the librarys state as JSON after creating alice.");
 	}
 	printf("%.*s\n", (int)complete_json_export_length, (char*)complete_json_export);
 	sodium_free(complete_json_export);
@@ -87,9 +85,7 @@ int main(void) {
 
 	//check user count
 	if (molch_user_count() != 1) {
-		fprintf(stderr, "ERROR: Wrong user count.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Wrong user count.");
 	}
 
 	//create another user
@@ -102,31 +98,27 @@ int main(void) {
 			bob_head_on_keyboard->content_length,
 			NULL,
 			NULL);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to create Bob! (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(status.status, "Failed to create Bob!");
+
 	printf("Bob public identity (%zu Bytes):\n", bob_public_identity->content_length);
 	print_hex(bob_public_identity);
 	putchar('\n');
 
 	//check user count
 	if (molch_user_count() != 2) {
-		fprintf(stderr, "ERROR: Wrong user count.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Wrong user count.");
 	}
 
 	//check user list
 	size_t user_count;
-	unsigned char *user_list = molch_user_list(&user_count);
+	unsigned char *user_list = NULL;
+	status = molch_user_list(&user_list, &user_count);
+	throw_on_error(CREATION_ERROR, "Failed to list users.");
 	if ((user_count != 2)
 			|| (sodium_memcmp(alice_public_identity->content, user_list, alice_public_identity->content_length) != 0)
 			|| (sodium_memcmp(bob_public_identity->content, user_list + crypto_box_PUBLICKEYBYTES, alice_public_identity->content_length) != 0)) {
-		fprintf(stderr, "ERROR: Wrong user list.\n");
 		free(user_list);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "User list is incorrect.");
 	}
 	free(user_list);
 
@@ -145,32 +137,22 @@ int main(void) {
 			bob_public_identity->content,
 			NULL,
 			NULL);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to start send conversation. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(CREATION_ERROR, "Failed to start send conversation.");
 
 	//check conversation export
 	size_t number_of_conversations;
-	unsigned char *conversation_list = molch_list_conversations(alice_public_identity->content, &number_of_conversations);
-	if (conversation_list == NULL) {
-		fprintf(stderr, "ERROR: Failed to list conversations.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
-	}
+	unsigned char *conversation_list = NULL;
+	status = molch_list_conversations(alice_public_identity->content, &conversation_list, &number_of_conversations);
+	throw_on_error(GENERIC_ERROR, "Failed to list conversations.");
 	if ((number_of_conversations != 1) || (buffer_compare_to_raw(alice_conversation, conversation_list, alice_conversation->content_length) != 0)) {
-		fprintf(stderr, "ERROR: Failed to list conversations.\n");
 		free(conversation_list);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(GENERIC_ERROR, "Failed to list conversations.");
 	}
 	free(conversation_list);
 
 	//check the message type
 	if (molch_get_message_type(alice_send_packet, alice_send_packet_length) != PREKEY_MESSAGE) {
-		fprintf(stderr, "ERROR: Wrong message type.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Wrong message type.");
 	}
 
 	if (bob_public_prekeys != NULL) {
@@ -192,20 +174,15 @@ int main(void) {
 			bob_public_identity->content,
 			NULL,
 			NULL);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to start receive conversation. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(CREATION_ERROR, "Failed to start receive conversation.");
 
 	//compare sent and received messages
 	printf("sent (Alice): %s\n", alice_send_message->content);
 	printf("received (Bob): %s\n", bob_receive_message);
 	if ((alice_send_message->content_length != bob_receive_message_length)
 			|| (sodium_memcmp(alice_send_message->content, bob_receive_message, bob_receive_message_length) != 0)) {
-		fprintf(stderr, "ERROR: Incorrect message received.\n");
 		free(bob_receive_message);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(GENERIC_ERROR, "Incorrect message received.");
 	}
 	free(bob_receive_message);
 
@@ -222,24 +199,17 @@ int main(void) {
 			bob_conversation->content,
 			&conversation_json_export,
 			&conversation_json_export_length);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Couldn't send bobs message.\n");
-		goto cleanup;
-	}
+	throw_on_error(GENERIC_ERROR, "Couldn't send bobs message.");
 
 	if (conversation_json_export == NULL) {
-		fprintf(stderr, "ERROR: Failed to export the conversation after encrypting a message!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(EXPORT_ERROR, "Failed to export the conversation after encrypting a message.");
 	}
 	printf("%.*s\n", (int)conversation_json_export_length, (char*)conversation_json_export);
 	sodium_free(conversation_json_export);
 
 	//check the message type
 	if (molch_get_message_type(bob_send_packet, bob_send_packet_length) != NORMAL_MESSAGE) {
-		fprintf(stderr, "ERROR: Wrong message type.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Wrong message type.");
 	}
 
 	//alice receives reply
@@ -253,97 +223,82 @@ int main(void) {
 			alice_conversation->content,
 			NULL,
 			NULL);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Incorrect message received.\n");
+	on_error(
 		free(alice_receive_message);
-		goto cleanup;
-	}
+		throw(GENERIC_ERROR, "Incorrect message received.");
+	)
 
 	//compare sent and received messages
 	printf("sent (Bob): %s\n", bob_send_message->content);
 	printf("received (Alice): %s\n", alice_receive_message);
 	if ((bob_send_message->content_length != alice_receive_message_length)
 			|| (sodium_memcmp(bob_send_message->content, alice_receive_message, alice_receive_message_length) != 0)) {
-		fprintf(stderr, "ERROR: Incorrect message received.\n");
 		free(alice_receive_message);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(GENERIC_ERROR, "Incorrect message received.");
 	}
 	free(alice_receive_message);
 
 	//test JSON export
 	printf("Test JSON export:\n");
 	size_t json_length;
-	unsigned char *json = molch_json_export(&json_length);
-	if (json == NULL) {
-		fprintf(stderr, "ERROR: Failed to export to JSON.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
-	}
+	unsigned char *json = NULL;
+	status = molch_json_export(&json, &json_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export to JSON.");
+
 	printf("%.*s\n", (int)json_length, json);
 
 	//test JSON import
 	printf("Test JSON import:\n");
 	status = molch_json_import(json, json_length);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to import JSON. (%i)\n", status);
+	on_error(
 		sodium_free(json);
-		goto cleanup;
-	}
+		throw(IMPORT_ERROR, "Failed to import JSON.");
+	)
+
 	//now export again
 	size_t imported_json_length;
-	unsigned char *imported_json = molch_json_export(&imported_json_length);
-	if (imported_json == NULL) {
-		fprintf(stderr, "ERROR: Failed to export imported JSON.\n");
+	unsigned char *imported_json = NULL;
+	status = molch_json_export(&imported_json, &imported_json_length);
+	on_error(
 		sodium_free(json);
-		status = EXIT_FAILURE;
-		goto cleanup;
-	}
+		throw(EXPORT_ERROR, "Failed to export imported JSON.");
+	)
+
 	//compare
 	if ((json_length != imported_json_length) || (sodium_memcmp(json, imported_json, json_length) != 0)) {
-		fprintf(stderr, "ERROR: Imported JSON is incorrect.\n");
 		sodium_free(json);
 		sodium_free(imported_json);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(IMPORT_ERROR, "Imported JSON is incorrect.");
 	}
 	sodium_free(json);
 	sodium_free(imported_json);
 
 	//test conversation JSON export
-	json = molch_conversation_json_export(alice_conversation->content, &json_length);
-	if (json == NULL) {
-		fprintf(stderr, "ERROR: Failed to export Alice' convesation as JSON!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
-	}
+	status = molch_conversation_json_export(&json, alice_conversation->content, &json_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export Alice' conversation as JSON.");
+
 	printf("Alice' conversation exported to JSON:\n");
 	printf("%.*s\n", (int)json_length, (char*)json);
 
 	//import again
 	status = molch_conversation_json_import(json, json_length);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to import Alice' conversation from JSON! (%i)\n", status);
+	on_error(
 		sodium_free(json);
-		goto cleanup;
-	}
+		throw(IMPORT_ERROR, "Failed to import Alice' conversation from JSON.");
+	)
 
 	//export again
-	imported_json = molch_conversation_json_export(alice_conversation->content, &imported_json_length);
-	if (imported_json == NULL) {
-		fprintf(stderr, "ERROR: Failed to export Alice imported conversation as JSON!\n");
-		status = EXIT_FAILURE;
+	status = molch_conversation_json_export(&imported_json, alice_conversation->content, &imported_json_length);
+	on_error(
 		sodium_free(json);
-		goto cleanup;
-	}
+		throw(EXPORT_ERROR, "Failed to export Alice imported conversation as JSON.");
+	)
 
 	//compare
 	if ((json_length != imported_json_length) || (sodium_memcmp(json, imported_json, json_length) != 0)) {
-		fprintf(stderr, "ERROR: JSON of imported conversation is incorrect!\n");
-		status = EXIT_FAILURE;
 		sodium_free(json);
 		sodium_free(imported_json);
-		goto cleanup;
+		throw(IMPORT_ERROR, "JSON of imported conversation is incorrect.");
 	}
 
 	sodium_free(imported_json);
@@ -358,9 +313,7 @@ int main(void) {
 
 	//check user count
 	if (molch_user_count() != 0) {
-		fprintf(stderr, "ERROR: Wrong user count.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Wrong user count.");
 	}
 
 	//TODO check detection of invalid prekey list signatures and old timestamps + more scenarios
@@ -385,5 +338,14 @@ cleanup:
 	buffer_destroy_from_heap(alice_public_identity);
 	buffer_destroy_from_heap(bob_public_identity);
 
-	return status;
+	if (status.status != SUCCESS) {
+		print_errors(&status);
+	}
+	return_status_destroy_errors(&status);
+
+	if (status_int != 0) {
+		status.status = GENERIC_ERROR;
+	}
+
+	return status.status;
 }
