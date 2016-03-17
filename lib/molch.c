@@ -756,7 +756,6 @@ return_status molch_decrypt_message(
 	//create buffer for the packet
 	buffer_create_with_existing_array(packet_buffer, (unsigned char*)packet, packet_length);
 
-	int status_int;
 	return_status status = return_status_init();
 
 	buffer_t *message_buffer = NULL;
@@ -768,13 +767,11 @@ return_status molch_decrypt_message(
 		throw(NOT_FOUND, "Failed to find conversation with the given ID.");
 	}
 
-	status_int = conversation_receive(
+	status = conversation_receive(
 			conversation,
 			packet_buffer,
 			&message_buffer);
-	if (status_int != 0) {
-		throw(GENERIC_ERROR, "Failed to receive message.");
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to receive message.");
 
 	*message = message_buffer->content;
 	*message_length = message_buffer->content_length;

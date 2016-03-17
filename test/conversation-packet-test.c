@@ -161,13 +161,11 @@ int main(void) {
 	putchar('\n');
 
 	//bob receives the message
-	status_int = conversation_receive(
+	status = conversation_receive(
 			bob_receive_conversation,
 			alice_send_packet2,
 			&bob_receive_message2);
-	if (status_int != 0) {
-		throw(RECEIVE_ERROR, "Second message from Alice failed to decrypt.");
-	}
+	throw_on_error(RECEIVE_ERROR, "Second message from Alice failed to decrypt.");
 
 	//now check if the received message was correctly decrypted
 	status_int = buffer_compare(bob_receive_message2, alice_send_message2);
@@ -193,13 +191,11 @@ int main(void) {
 	putchar('\n');
 
 	//Alice receives the response
-	status_int = conversation_receive(
+	status = conversation_receive(
 			alice_send_conversation,
 			bob_response_packet,
 			&alice_received_response);
-	if (status_int != 0) {
-		throw(RECEIVE_ERROR, "Response from Bob failed to decrypt.");
-	}
+	throw_on_error(RECEIVE_ERROR, "Response from Bob failed to decrypt.");
 
 	//compare sent and received messages
 	status_int = buffer_compare(bob_response_message, alice_received_response);
@@ -272,13 +268,11 @@ int main(void) {
 	putchar('\n');
 
 	//alice receives the message
-	status_int = conversation_receive(
+	status = conversation_receive(
 			alice_receive_conversation,
 			bob_send_packet2,
 			&alice_receive_message2);
-	if (status_int != 0) {
-		throw(RECEIVE_ERROR, "Second message from Bob failed to decrypt.");
-	}
+	throw_on_error(RECEIVE_ERROR, "Second message from Bob failed to decrypt.");
 
 	//now check if the received message was correctly decrypted
 	status_int = buffer_compare(alice_receive_message2, bob_send_message2);
@@ -304,13 +298,11 @@ int main(void) {
 	putchar('\n');
 
 	//Bob receives the response
-	status_int = conversation_receive(
+	status = conversation_receive(
 			bob_send_conversation,
 			alice_response_packet,
 			&bob_received_response);
-	if (status_int != 0) {
-		throw(RECEIVE_ERROR, "Response from Alice failed to decrypt.");
-	}
+	throw_on_error(RECEIVE_ERROR, "Response from Alice failed to decrypt.");
 
 	//compare sent and received messages
 	status_int = buffer_compare(alice_response_message, bob_received_response);

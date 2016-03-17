@@ -99,8 +99,11 @@ return_status conversation_send(
 
 /*
  * Receive and decrypt a message using an existing conversation.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int conversation_receive(
+return_status conversation_receive(
 	conversation_t * const conversation,
 	const buffer_t * const packet, //received packet
 	buffer_t ** const message //output, free after use!
