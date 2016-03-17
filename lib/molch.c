@@ -466,16 +466,15 @@ return_status molch_create_send_conversation(
 	sodium_mprotect_readonly(user->master_keys);
 
 	//create the conversation and encrypt the message
-	conversation = conversation_start_send_conversation(
+	status = conversation_start_send_conversation(
+			&conversation,
 			message_buffer,
 			&packet_buffer,
 			user->master_keys->public_identity_key,
 			user->master_keys->private_identity_key,
 			receiver_public_identity,
 			prekeys);
-	if (conversation == NULL) {
-		throw(CREATION_ERROR, "Failed to start send converstion.");
-	}
+	throw_on_error(CREATION_ERROR, "Failed to start send converstion.");
 
 	//copy the conversation id
 	status_int = buffer_clone(conversation_id_buffer, conversation->id);

@@ -185,8 +185,12 @@ cleanup:
 
 /*
  * Start a new conversation where we are the sender.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-conversation_t *conversation_start_send_conversation(
+return_status conversation_start_send_conversation(
+		conversation_t ** const conversation, //output, newly created conversation
 		const buffer_t *const message, //message we want to send to the receiver
 		buffer_t ** packet, //output, free after use!
 		const buffer_t * const sender_public_identity, //who is sending this message?
@@ -194,25 +198,30 @@ conversation_t *conversation_start_send_conversation(
 		const buffer_t * const receiver_public_identity,
 		const buffer_t * const receiver_prekey_list //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 		) {
+
+	return_status status = return_status_init();
+
+	buffer_t *sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_t *sender_private_ephemeral = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+
 	//check many error conditions
-	if ((message == NULL)
+	if ((conversation == NULL)
+			|| (message == NULL)
 			|| (packet == NULL)
 			|| (receiver_public_identity == NULL) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (sender_public_identity == NULL) || (sender_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (sender_private_identity == NULL) || (sender_private_identity->content_length != PRIVATE_KEY_SIZE)
 			|| (receiver_prekey_list == NULL) || (receiver_prekey_list->content_length != (PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
-		return NULL;
+		throw(INVALID_INPUT, "Invalid input to conversation_start_send_conversation.");
 	}
 
-	conversation_t *conversation = NULL;
+	*conversation = NULL;
 
-	int status = 0;
+	int status_int = 0;
 	//create an ephemeral keypair
-	buffer_t *sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_t *sender_private_ephemeral = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	status = crypto_box_keypair(sender_public_ephemeral->content, sender_private_ephemeral->content);
-	if (status != 0) {
-		goto cleanup;
+	status_int = crypto_box_keypair(sender_public_ephemeral->content, sender_private_ephemeral->content);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate ephemeral keypair.");
 	}
 
 	//choose a prekey
@@ -223,41 +232,42 @@ conversation_t *conversation_start_send_conversation(
 			PUBLIC_KEY_SIZE);
 
 	//initialize the conversation
-	conversation = conversation_create(
+	*conversation = conversation_create(
 			sender_private_identity,
 			sender_public_identity,
 			receiver_public_identity,
 			sender_private_ephemeral,
 			sender_public_ephemeral,
 			receiver_public_prekey);
-	if (conversation == NULL) {
-		status = -1;
-		goto cleanup;
+	if (*conversation == NULL) {
+		throw(CREATION_ERROR, "Failed to create conversation.");
 	}
 
-	status = conversation_send(
-			conversation,
+	status_int = conversation_send(
+			*conversation,
 			message,
 			packet,
 			sender_public_identity,
 			sender_public_ephemeral,
 			receiver_public_prekey);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(SEND_ERROR, "Failed to send message using newly created conversation.");
 	}
 
 cleanup:
 	buffer_destroy_from_heap(sender_public_ephemeral);
 	buffer_destroy_from_heap(sender_private_ephemeral);
 
-	if (status != 0) {
+	if (status.status != SUCCESS) {
 		if (conversation != NULL) {
-			conversation_destroy(conversation);
+			if (*conversation != NULL) {
+				conversation_destroy(*conversation);
+			}
+			*conversation = NULL;
 		}
-		return NULL;
 	}
 
-	return conversation;
+	return status;
 }
 
 /*

@@ -35,7 +35,10 @@ typedef enum status_type { //TODO add more error types
 	NOT_FOUND,
 	VERIFICATION_FAILED,
 	EXPORT_ERROR,
-	IMPORT_ERROR
+	IMPORT_ERROR,
+	KEYGENERATION_FAILED,
+	SEND_ERROR,
+	RECEIVE_ERROR
 } status_type;
 
 typedef struct error_message error_message;

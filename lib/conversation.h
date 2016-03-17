@@ -19,6 +19,7 @@
 #include "constants.h"
 #include "ratchet.h"
 #include "prekey-store.h"
+#include "return-status.h"
 
 #ifndef LIB_CONVERSATION_H
 #define LIB_CONVERSATION_H
@@ -52,8 +53,12 @@ conversation_t *conversation_json_import(const mcJSON * const json) __attribute_
 
 /*
  * Start a new conversation where we are the sender.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-conversation_t *conversation_start_send_conversation(
+return_status conversation_start_send_conversation(
+		conversation_t ** const conversation, //output, newly created conversation
 		const buffer_t *const message, //message we want to send to the receiver
 		buffer_t ** packet, //output, free after use!
 		const buffer_t * const sender_public_identity, //who is sending this message?
