@@ -484,6 +484,13 @@ int conversation_receive(
 	buffer_t *message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 	*message = buffer_create_on_heap(packet->content_length, 0);
 
+	if ((conversation == NULL)
+			|| (packet == NULL)
+			|| (message == NULL)) {
+		status = -1;
+		goto cleanup;
+	}
+
 	status = ratchet_get_receive_header_keys(
 			current_receive_header_key,
 			next_receive_header_key,
@@ -580,7 +587,9 @@ int conversation_receive(
 cleanup:
 	if (status != 0) {
 		int authenticity_status __attribute__((unused)); //tell the static analyser to not complain about this
-		authenticity_status = ratchet_set_last_message_authenticity(conversation->ratchet, false);
+		if (conversation != NULL) {
+			authenticity_status = ratchet_set_last_message_authenticity(conversation->ratchet, false);
+		}
 	}
 	if ((status != 0) && (*message != NULL)) {
 		buffer_destroy_from_heap(*message);
