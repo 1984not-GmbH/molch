@@ -258,16 +258,14 @@ return_status conversation_start_send_conversation(
 			receiver_public_prekey);
 	throw_on_error(CREATION_ERROR, "Failed to create conversation.");
 
-	status_int = conversation_send(
+	status = conversation_send(
 			*conversation,
 			message,
 			packet,
 			sender_public_identity,
 			sender_public_ephemeral,
 			receiver_public_prekey);
-	if (status_int != 0) {
-		throw(SEND_ERROR, "Failed to send message using newly created conversation.");
-	}
+	throw_on_error(SEND_ERROR, "Failed to send message using newly created conversation.");
 
 cleanup:
 	buffer_destroy_from_heap(sender_public_ephemeral);
@@ -389,8 +387,11 @@ cleanup:
 
 /*
  * Send a message using an existing conversation.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int conversation_send(
+return_status conversation_send(
 		conversation_t * const conversation,
 		const buffer_t * const message,
 		buffer_t **packet, //output, free after use!
@@ -398,21 +399,30 @@ int conversation_send(
 		const buffer_t * const public_ephemeral_key, //can be NULL, if not NULL, this will be a prekey message
 		const buffer_t * const public_prekey //can be NULL, if not NULL, this will be a prekey message
 		) {
+
+	//create buffers
+	buffer_t *send_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_t *send_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	buffer_t *send_ephemeral_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
+	buffer_t *header = buffer_create_on_heap(PUBLIC_KEY_SIZE + 8, PUBLIC_KEY_SIZE + 8);
+
+	return_status status = return_status_init();
+
 	//check input
 	if ((conversation == NULL)
 			|| (message == NULL)
 			|| (packet == NULL)) {
-		return -1;
+		throw(INVALID_INPUT, "Invalid input to conversation_send.");
 	}
 
 	//ensure that either both public keys are NULL or set
 	if (((public_identity_key == NULL) && (public_prekey != NULL)) || ((public_prekey == NULL) && (public_identity_key != NULL))) {
-		return -1;
+		throw(INVALID_INPUT, "Invalid combination of provided key buffers.");
 	}
 
 	//check the size of the public keys
 	if (((public_identity_key != NULL) && (public_identity_key->content_length != PUBLIC_KEY_SIZE)) || ((public_prekey != NULL) && (public_prekey->content_length != PUBLIC_KEY_SIZE))) {
-		return -1;
+		throw(INCORRECT_BUFFER_SIZE, "Public key output has incorrect size.");
 	}
 
 	unsigned char packet_type = NORMAL_MESSAGE;
@@ -421,42 +431,36 @@ int conversation_send(
 		packet_type = PREKEY_MESSAGE;
 	}
 
-	int status = 0;
+	int status_int = 0;
 
 	*packet = NULL;
 
-	//create buffers
-	buffer_t *send_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_t *send_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-	buffer_t *send_ephemeral_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
-	buffer_t *header = buffer_create_on_heap(PUBLIC_KEY_SIZE + 8, PUBLIC_KEY_SIZE + 8);
-
 	uint32_t send_message_number;
 	uint32_t previous_send_message_number;
-	status = ratchet_send(
+	status_int = ratchet_send(
 			conversation->ratchet,
 			send_header_key,
 			&send_message_number,
 			&previous_send_message_number,
 			send_ephemeral_key,
 			send_message_key);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(SEND_ERROR, "Failed to get send keys.");
 	}
 
 	//create the header
-	status = header_construct(
+	status_int = header_construct(
 			header,
 			send_ephemeral_key,
 			send_message_number,
 			previous_send_message_number);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(CREATION_ERROR, "Failed to construct header.");
 	}
 
 	const size_t packet_length = header->content_length + 3 + HEADER_NONCE_SIZE + MESSAGE_NONCE_SIZE + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_MACBYTES + message->content_length + 255 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
 	*packet = buffer_create_on_heap(packet_length, 0);
-	status = packet_encrypt(
+	status_int = packet_encrypt(
 			*packet,
 			packet_type,
 			0, //current protocol version
@@ -468,14 +472,18 @@ int conversation_send(
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(ENCRYPT_ERROR, "Failed to encrypt packet.");
 	}
 
 cleanup:
-	if ((status != 0) && (*packet != NULL)) {
-		buffer_destroy_from_heap(*packet);
-		*packet = NULL;
+	if (status.status != SUCCESS) {
+		if (packet != NULL) {
+			if (*packet != NULL) {
+				buffer_destroy_from_heap(*packet);
+			}
+			*packet = NULL;
+		}
 	}
 	buffer_destroy_from_heap(send_header_key);
 	buffer_destroy_from_heap(send_message_key);
@@ -610,7 +618,7 @@ cleanup:
 			authenticity_status = ratchet_set_last_message_authenticity(conversation->ratchet, false);
 		}
 	}
-	if ((status != 0) && (*message != NULL)) {
+	if ((status != 0) && (message != NULL) && (*message != NULL)) {
 		buffer_destroy_from_heap(*message);
 		*message = NULL;
 	}

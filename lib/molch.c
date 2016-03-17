@@ -696,24 +696,20 @@ return_status molch_encrypt_message(
 
 	return_status status = return_status_init();
 
-	int status_int = 0;
-
 	//find the conversation
 	conversation = find_conversation(conversation_id, NULL);
 	if (conversation == NULL) {
 		throw(NOT_FOUND, "Failed to find a conversation for the given ID.");
 	}
 
-	status_int = conversation_send(
+	status = conversation_send(
 			conversation,
 			message_buffer,
 			&packet_buffer,
 			NULL,
 			NULL,
 			NULL);
-	if (status_int != 0) {
-		throw(GENERIC_ERROR, "Failed to send message.");
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to send message.");
 
 	*packet = packet_buffer->content;
 	*packet_length = packet_buffer->content_length;

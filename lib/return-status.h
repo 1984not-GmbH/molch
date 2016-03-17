@@ -39,7 +39,9 @@ typedef enum status_type { //TODO add more error types
 	KEYGENERATION_FAILED,
 	SEND_ERROR,
 	RECEIVE_ERROR,
-	DATA_FETCH_ERROR
+	DATA_FETCH_ERROR,
+	ENCRYPT_ERROR,
+	DECRYPT_ERROR
 } status_type;
 
 typedef struct error_message error_message;

@@ -84,8 +84,11 @@ return_status conversation_start_receive_conversation(
 
 /*
  * Send a message using an existing conversation.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int conversation_send(
+return_status conversation_send(
 		conversation_t * const conversation,
 		const buffer_t * const message,
 		buffer_t **packet, //output, free after use!

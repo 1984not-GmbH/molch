@@ -146,16 +146,15 @@ int main(void) {
 	//send and receive some more messages
 	//first one
 	buffer_create_from_string(alice_send_message2, "How are you Bob?");
-	status_int = conversation_send(
+	status = conversation_send(
 			alice_send_conversation,
 			alice_send_message2,
 			&alice_send_packet2,
 			NULL,
 			NULL,
 			NULL);
-	if (status_int != 0) {
-		throw(SEND_ERROR, "Failed to send Alice' second message.");
-	}
+	throw_on_error(SEND_ERROR, "Failed to send Alice' second message.");
+
 	printf("Sent message: %.*s\n", (int)alice_send_message2->content_length, (const char*)alice_send_message2->content);
 	printf("Packet:\n");
 	print_hex(alice_send_packet2);
@@ -179,16 +178,15 @@ int main(void) {
 
 	//Bob responds to alice
 	buffer_create_from_string(bob_response_message, "I'm fine, thanks. How are you?");
-	status_int = conversation_send(
+	status = conversation_send(
 			bob_receive_conversation,
 			bob_response_message,
 			&bob_response_packet,
 			NULL,
 			NULL,
 			NULL);
-	if (status_int != 0) {
-		throw(SEND_ERROR, "Failed to send Bob's response message.");
-	}
+	throw_on_error(SEND_ERROR, "Failed to send Bob's response message.");
+
 	printf("Sent message: %.*s\n", (int)bob_response_message->content_length, (const char*)bob_response_message->content);
 	printf("Packet:\n");
 	print_hex(bob_response_packet);
@@ -259,16 +257,15 @@ int main(void) {
 	//send and receive some more messages
 	//first one
 	buffer_create_from_string(bob_send_message2, "How are you Alice?");
-	status_int = conversation_send(
+	status = conversation_send(
 			bob_send_conversation,
 			bob_send_message2,
 			&bob_send_packet2,
 			NULL,
 			NULL,
 			NULL);
-	if (status_int != 0) {
-		throw(SEND_ERROR, "Failed to send Bob's second message.");
-	}
+	throw_on_error(SEND_ERROR, "Failed to send Bob's second message.");
+
 	printf("Sent message: %.*s\n", (int)bob_send_message2->content_length, (const char*)bob_send_message2->content);
 	printf("Packet:\n");
 	print_hex(bob_send_packet2);
@@ -292,16 +289,15 @@ int main(void) {
 
 	//Alice responds to Bob
 	buffer_create_from_string(alice_response_message, "I'm fine, thanks. How are you?");
-	status_int = conversation_send(
+	status = conversation_send(
 			alice_receive_conversation,
 			alice_response_message,
 			&alice_response_packet,
 			NULL,
 			NULL,
 			NULL);
-	if (status_int != 0) {
-		throw(SEND_ERROR, "Failed to send Alice' response message.");
-	}
+	throw_on_error(SEND_ERROR, "Failed to send Alice' response message.");
+
 	printf("Sent message: %.*s\n", (int)alice_response_message->content_length, (const char*)alice_response_message->content);
 	printf("Packet:\n");
 	print_hex(alice_response_packet);
