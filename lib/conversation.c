@@ -34,56 +34,72 @@ void init_struct(conversation_t *conversation) {
 
 /*
  * Create a new conversation.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-conversation_t *conversation_create(
+return_status conversation_create(
+		conversation_t **const conversation,
 		const buffer_t * const,
 		const buffer_t * const,
 		const buffer_t * const,
 		const buffer_t * const,
 		const buffer_t * const,
 		const buffer_t * const) __attribute__((warn_unused_result));
-conversation_t *conversation_create(
+return_status conversation_create(
+		conversation_t **const conversation,
 		const buffer_t * const our_private_identity,
 		const buffer_t * const our_public_identity,
 		const buffer_t * const their_public_identity,
 		const buffer_t * const our_private_ephemeral,
 		const buffer_t * const our_public_ephemeral,
 		const buffer_t * const their_public_ephemeral) {
-	conversation_t *conversation = malloc(sizeof(conversation_t));
-	if (conversation == NULL) {
-		return NULL;
+
+	return_status status = return_status_init();
+
+	//check input
+	if ((conversation == NULL)
+			|| (our_private_identity == NULL) || (our_private_identity->content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_identity == NULL) || (our_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_identity == NULL) || (their_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (our_private_ephemeral == NULL) || (our_public_ephemeral->content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_ephemeral == NULL) || (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
+		throw(INVALID_INPUT, "Invalid input for conversation_create.");
 	}
 
-	init_struct(conversation);
+	*conversation = malloc(sizeof(conversation_t));
+	if (conversation == NULL) {
+		throw(ALLOCATION_FAILED, "Failed to allocate memory for conversation.");
+	}
 
-	int status = 0;
+	init_struct(*conversation);
 
 	//create random id
-	if (buffer_fill_random(conversation->id, CONVERSATION_ID_SIZE) != 0) {
-		status = -1;
-		goto cleanup;
+	if (buffer_fill_random((*conversation)->id, CONVERSATION_ID_SIZE) != 0) {
+		throw(BUFFER_ERROR, "Failed to create random conversation id.");
 	}
 
-	conversation->ratchet = ratchet_create(
+	(*conversation)->ratchet = ratchet_create(
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral);
-	if (conversation->ratchet == NULL) {
-		status = -2;
-		goto cleanup;
+	if ((*conversation)->ratchet == NULL) {
+		throw(CREATION_ERROR, "Failed to create ratchet.");
 	}
 
 cleanup:
-	if (status != 0) {
-		free(conversation);
-
-		return NULL;
+	if (status.status != 0) {
+		if ((conversation != NULL) && (*conversation != NULL)) {
+			free(*conversation);
+			*conversation = NULL;
+		}
 	}
 
-	return conversation;
+	return status;
 }
 
 /*
@@ -232,16 +248,15 @@ return_status conversation_start_send_conversation(
 			PUBLIC_KEY_SIZE);
 
 	//initialize the conversation
-	*conversation = conversation_create(
+	status = conversation_create(
+			conversation,
 			sender_private_identity,
 			sender_public_identity,
 			receiver_public_identity,
 			sender_private_ephemeral,
 			sender_public_ephemeral,
 			receiver_public_prekey);
-	if (*conversation == NULL) {
-		throw(CREATION_ERROR, "Failed to create conversation.");
-	}
+	throw_on_error(CREATION_ERROR, "Failed to create conversation.");
 
 	status_int = conversation_send(
 			*conversation,
@@ -336,16 +351,15 @@ return_status conversation_start_receive_conversation(
 		throw(DATA_FETCH_ERROR, "Failed to get public prekey.");
 	}
 
-	*conversation = conversation_create(
+	status = conversation_create(
+			conversation,
 			receiver_private_identity,
 			receiver_public_identity,
 			sender_public_identity,
 			receiver_private_prekey,
 			receiver_public_prekey,
 			sender_public_ephemeral);
-	if (conversation == NULL) {
-		throw(CREATION_ERROR, "Failed to create conversation.");
-	}
+	throw_on_error(CREATION_ERROR, "Failed to create conversation.");
 
 	status_int = conversation_receive(
 			*conversation,
