@@ -272,39 +272,45 @@ cleanup:
 
 /*
  * Start a new conversation where we are the receiver.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-conversation_t *conversation_start_receive_conversation(
+return_status conversation_start_receive_conversation(
+		conversation_t ** const conversation, //output, newly created conversation
 		const buffer_t * const packet, //received packet
 		buffer_t ** message, //output, free after use!
 		const buffer_t * const receiver_public_identity,
 		const buffer_t * const receiver_private_identity,
 		prekey_store * const receiver_prekeys //prekeys of the receiver
 		) {
-	if ((packet ==NULL)
-			|| (message == NULL)
-			|| (receiver_public_identity == NULL) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
-			|| (receiver_private_identity == NULL) || (receiver_private_identity->content_length != PRIVATE_KEY_SIZE)
-			|| (receiver_prekeys == NULL)) {
-		return NULL;
-	}
-
-	int status = 0;
-
-
 	//key buffers
 	buffer_t *receiver_public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_t *receiver_private_prekey = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	buffer_t *sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_t *sender_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
-	conversation_t *conversation = NULL;
+	return_status status = return_status_init();
+
+	if ((conversation == NULL)
+			|| (packet ==NULL)
+			|| (message == NULL)
+			|| (receiver_public_identity == NULL) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (receiver_private_identity == NULL) || (receiver_private_identity->content_length != PRIVATE_KEY_SIZE)
+			|| (receiver_prekeys == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to conversation_start_receive_conversation.");
+	}
+
+	int status_int = 0;
+
+	*conversation = NULL;
 
 	//get the senders keys and our public prekey from the packet
 	unsigned char packet_type;
 	unsigned char current_protocol_version;
 	unsigned char highest_supported_protocol_version;
 	unsigned char header_length;
-	status = packet_get_metadata_without_verification(
+	status_int = packet_get_metadata_without_verification(
 			packet,
 			&packet_type,
 			&current_protocol_version,
@@ -313,25 +319,24 @@ conversation_t *conversation_start_receive_conversation(
 			sender_public_identity,
 			sender_public_ephemeral,
 			receiver_public_prekey);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(GENERIC_ERROR, "Failed to get packet metadata.");
 	}
 
 	if (packet_type != PREKEY_MESSAGE) {
-		status = -11;
-		goto cleanup;
+		throw(INVALID_VALUE, "Packet is not a prekey message.");
 	}
 
 	//get the private prekey that corresponds to the public prekey used in the message
-	status = prekey_store_get_prekey(
+	status_int = prekey_store_get_prekey(
 			receiver_prekeys,
 			receiver_public_prekey,
 			receiver_private_prekey);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(DATA_FETCH_ERROR, "Failed to get public prekey.");
 	}
 
-	conversation = conversation_create(
+	*conversation = conversation_create(
 			receiver_private_identity,
 			receiver_public_identity,
 			sender_public_identity,
@@ -339,16 +344,15 @@ conversation_t *conversation_start_receive_conversation(
 			receiver_public_prekey,
 			sender_public_ephemeral);
 	if (conversation == NULL) {
-		status = -1;
-		goto cleanup;
+		throw(CREATION_ERROR, "Failed to create conversation.");
 	}
 
-	status = conversation_receive(
-			conversation,
+	status_int = conversation_receive(
+			*conversation,
 			packet,
 			message);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(RECEIVE_ERROR, "Failed to receive message.");
 	}
 
 cleanup:
@@ -357,15 +361,16 @@ cleanup:
 	buffer_destroy_from_heap(sender_public_ephemeral);
 	buffer_destroy_from_heap(sender_public_identity);
 
-	if (status != 0) {
+	if (status.status != SUCCESS) {
 		if (conversation != NULL) {
-			conversation_destroy(conversation);
+			if (*conversation != NULL) {
+				conversation_destroy(*conversation);
+			}
+			*conversation = NULL;
 		}
-
-		return NULL;
 	}
 
-	return conversation;
+	return status;
 }
 
 /*

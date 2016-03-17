@@ -128,15 +128,14 @@ int main(void) {
 	putchar('\n');
 
 	//let bob receive the packet
-	bob_receive_conversation = conversation_start_receive_conversation(
+	status = conversation_start_receive_conversation(
+			&bob_receive_conversation,
 			packet,
 			&received_message,
 			bob_public_identity,
 			bob_private_identity,
 			bob_prekeys);
-	if (bob_receive_conversation == NULL) {
-		throw(RECEIVE_ERROR, "Failed to decrypt received message.");
-	}
+	throw_on_error(RECEIVE_ERROR, "Failed to decrypt received message.");
 
 	status_int = buffer_compare(send_message, received_message);
 	if (status_int != 0) {
@@ -242,15 +241,14 @@ int main(void) {
 	//let alice receive the packet
 	buffer_destroy_from_heap(received_message);
 	received_message = NULL;
-	alice_receive_conversation = conversation_start_receive_conversation(
+	status = conversation_start_receive_conversation(
+			&alice_receive_conversation,
 			packet,
 			&received_message,
 			alice_public_identity,
 			alice_private_identity,
 			alice_prekeys);
-	if (alice_receive_conversation == NULL) {
-		throw(RECEIVE_ERROR, "Failed to decrypt received message.");
-	}
+	throw_on_error(RECEIVE_ERROR, "Failed to decrypt received message.");
 
 	status_int = buffer_compare(send_message, received_message);
 	if (status_int != 0) {

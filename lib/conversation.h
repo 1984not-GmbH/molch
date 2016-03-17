@@ -69,8 +69,12 @@ return_status conversation_start_send_conversation(
 
 /*
  * Start a new conversation where we are the receiver.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-conversation_t *conversation_start_receive_conversation(
+return_status conversation_start_receive_conversation(
+		conversation_t ** const conversation, //output, newly created conversation
 		const buffer_t * const packet, //received packet
 		buffer_t ** message, //output, free after use!
 		const buffer_t * const receiver_public_identity,

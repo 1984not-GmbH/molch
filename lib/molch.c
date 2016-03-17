@@ -574,15 +574,14 @@ return_status molch_create_receive_conversation(
 	int status_int = 0;
 
 	//create the conversation
-	conversation = conversation_start_receive_conversation(
+	status = conversation_start_receive_conversation(
+			&conversation,
 			packet_buffer,
 			&message_buffer,
 			user->master_keys->public_identity_key,
 			user->master_keys->private_identity_key,
 			user->prekeys);
-	if (conversation == NULL) {
-		throw(CREATION_ERROR, "Failed to start receive conversation.");
-	}
+	throw_on_error(CREATION_ERROR, "Failed to start receive conversation.");
 
 	//copy the conversation id
 	status_int = buffer_clone(conversation_id_buffer, conversation->id);
