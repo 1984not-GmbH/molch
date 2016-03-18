@@ -122,8 +122,11 @@ return_status packet_decrypt_header(
  * Decrypt the message inside a packet.
  * (only do this if the packet metadata is already
  * verified)
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int packet_decrypt_message(
+return_status packet_decrypt_message(
 		const buffer_t * const packet,
 		buffer_t * const message, //This buffer should be as large as the packet
 		const buffer_t * const message_nonce,

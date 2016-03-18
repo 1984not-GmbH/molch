@@ -596,12 +596,12 @@ return_status conversation_receive(
 		throw(DECRYPT_ERROR, "Failed to get decryption keys.");
 	}
 
-	status_int = packet_decrypt_message(
+	status = packet_decrypt_message(
 			packet,
 			*message,
 			message_nonce,
 			message_key);
-	if (status_int != 0) {
+	if (status.status != SUCCESS) {
 		int authenticity_status_int __attribute__((unused)); //tell the static analyser to not complain about this
 		authenticity_status_int = ratchet_set_last_message_authenticity(conversation->ratchet, false);
 		throw(DECRYPT_ERROR, "Failed to decrypt message.");

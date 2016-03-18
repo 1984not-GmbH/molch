@@ -94,14 +94,12 @@ int main(void) {
 	putchar('\n');
 
 	//now decrypt the message
-	status_int = packet_decrypt_message(
+	status = packet_decrypt_message(
 			packet,
 			decrypted_message,
 			decrypted_message_nonce,
 			message_key);
-	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt message.");
-	}
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
 
 	//check the message size
 	if (decrypted_message->content_length != message->content_length) {
@@ -121,13 +119,15 @@ int main(void) {
 	printf("Manipulating message.\n");
 
 	//try to decrypt
-	status_int = packet_decrypt_message(
+	status = packet_decrypt_message(
 			packet,
 			decrypted_message,
 			decrypted_message_nonce,
 			message_key);
-	if (status_int == 0) { //message was decrypted although it shouldn't
+	if (status.status == SUCCESS) { //message was decrypted although it shouldn't
 		throw(GENERIC_ERROR, "Decrypted manipulated message.");
+	} else {
+		return_status_destroy_errors(&status);
 	}
 	printf("Manipulation detected.\n\n");
 
@@ -181,14 +181,12 @@ int main(void) {
 	putchar('\n');
 
 	//now decrypt the message
-	status_int = packet_decrypt_message(
+	status = packet_decrypt_message(
 			packet,
 			decrypted_message,
 			decrypted_message_nonce,
 			message_key);
-	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt message.");
-	}
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
 
 	//check the message size
 	if (decrypted_message->content_length != message->content_length) {

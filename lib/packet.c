@@ -304,14 +304,12 @@ return_status packet_decrypt(
 	throw_on_error(DECRYPT_ERROR, "Failed to decrypt header.");
 
 	//decrypt the message
-	status_int = packet_decrypt_message(
+	status = packet_decrypt_message(
 			packet,
 			message,
 			message_nonce,
 			message_key);
-	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt message.");
-	}
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
 
 cleanup:
 	buffer_destroy_from_heap(message_nonce);
@@ -503,16 +501,22 @@ cleanup:
  * Decrypt the message inside a packet.
  * (only do this if the packet metadata is already
  * verified)
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int packet_decrypt_message(
+return_status packet_decrypt_message(
 		const buffer_t * const packet,
 		buffer_t * const message, //This buffer should be as large as the packet
 		const buffer_t * const message_nonce,
 		const buffer_t * const message_key) { //MESSAGE_KEY_SIZE
+
+	return_status status = return_status_init();
+
 	//check buffer sizes
 	if ((message_nonce->content_length != MESSAGE_NONCE_SIZE)
 			|| (message_key->content_length != MESSAGE_KEY_SIZE)) {
-		return -6;
+		throw(INCORRECT_BUFFER_SIZE, "Incorrect message key size or message nonce size.");
 	}
 	//set message length to 0
 	message->content_length = 0;
@@ -522,7 +526,7 @@ int packet_decrypt_message(
 	unsigned char current_protocol_version;
 	unsigned char highest_supported_protocol_version;
 	unsigned char purported_header_length;
-	int status = packet_get_metadata_without_verification(
+	int status_int = packet_get_metadata_without_verification(
 			packet,
 			&packet_type,
 			&current_protocol_version,
@@ -531,19 +535,19 @@ int packet_decrypt_message(
 			NULL,
 			NULL,
 			NULL);
-	if (status != 0) {
-		return status;
+	if (status_int != 0) {
+		throw(DATA_FETCH_ERROR, "Failed to get metadata.");
 	}
 
 	off_t header_nonce_offset = 3 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
 	//length of message and padding
 	const size_t purported_plaintext_length = packet->content_length - header_nonce_offset - purported_header_length - HEADER_NONCE_SIZE - MESSAGE_NONCE_SIZE- crypto_secretbox_MACBYTES - crypto_aead_chacha20poly1305_ABYTES;
 	if (purported_plaintext_length >= packet->content_length) {
-		return -10;
+		throw(INVALID_VALUE, "Purported plaintext length is longer than the packet length.");
 	}
 
 	if (purported_plaintext_length > message->buffer_length) {
-		return -6;
+		throw(INVALID_VALUE, "Purported plaintext length is longer than the message buffer length.");
 	}
 
 	//buffer pointing to the message ciphertext
@@ -551,31 +555,32 @@ int packet_decrypt_message(
 
 	//decrypt the message (padding included)
 	buffer_t *plaintext = buffer_create_on_heap(purported_plaintext_length, purported_plaintext_length);
-	status = crypto_secretbox_open_easy(
+	status_int = crypto_secretbox_open_easy(
 			plaintext->content,
 			message_ciphertext->content,
 			message_ciphertext->content_length,
 			message_nonce->content,
 			message_key->content);
-	if (status != 0) {
+	if (status_int != 0) {
 		buffer_destroy_from_heap(plaintext);
-		return status;
+		throw(DECRYPT_ERROR, "Failed to decrypt message.");
 	}
 
 	//get amount of padding from last byte (pkcs7)
 	const unsigned char padding = plaintext->content[purported_plaintext_length - 1];
-	if (padding > purported_plaintext_length) { //check if pdding is valid
+	if (padding > purported_plaintext_length) { //check if padding is valid
 		buffer_destroy_from_heap(plaintext);
-		return -10;
+		throw(INVALID_VALUE, "Padding length is longer than the purported plaintext length.");
 	}
 
 	//copy the message from the plaintext
-	status = buffer_copy(message, 0, plaintext, 0, purported_plaintext_length - padding);
+	status_int = buffer_copy(message, 0, plaintext, 0, purported_plaintext_length - padding);
 	buffer_destroy_from_heap(plaintext);
-	if (status != 0) {
+	if (status_int != 0) {
 		buffer_clear(message);
-		return status;
+		throw(BUFFER_ERROR, "Failed to copy message from the plaintext.");
 	}
 
-	return 0;
+cleanup:
+	return status;
 }
