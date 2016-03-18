@@ -60,7 +60,8 @@ int main(void) {
 
 	//A NORMAL MESSAGE
 	printf("NORMAL MESSAGE:\n");
-	int status_int = create_and_print_message(
+	int status_int = 0;
+	status = create_and_print_message(
 			packet,
 			packet_type,
 			current_protocol_version,
@@ -72,9 +73,7 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	if (status_int != 0) {
-		throw(GENERIC_ERROR, "Failed to create and print message.");
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now extract the metadata
 	unsigned char extracted_packet_type;
@@ -130,7 +129,7 @@ int main(void) {
 
 	buffer_clear(packet);
 	packet_type = PREKEY_MESSAGE;
-	status_int = create_and_print_message(
+	status = create_and_print_message(
 			packet,
 			packet_type,
 			current_protocol_version,
@@ -142,9 +141,7 @@ int main(void) {
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	if (status_int != 0) {
-		throw(GENERIC_ERROR, "Failed to create and print message.");
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now extract the metadata
 	status = packet_get_metadata_without_verification(

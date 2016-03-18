@@ -27,8 +27,11 @@
 /*
  * Create message and header keys, encrypt header and message
  * and print them.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int create_and_print_message(
+return_status create_and_print_message(
 		buffer_t * const packet, //needs to be 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message_length + header_length + crypto_secretbox_MACBYTES + 255
 		const unsigned char packet_type,
 		const unsigned char current_protocol_version,
@@ -102,7 +105,5 @@ cleanup:
 		buffer_clear(message_key);
 	}
 
-	return_status_destroy_errors(&status);
-
-	return status.status;
+	return status;
 }
