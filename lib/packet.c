@@ -250,8 +250,11 @@ cleanup:
 
 /*
  * Decrypt and authenticate a packet.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int packet_decrypt(
+return_status packet_decrypt(
 		const buffer_t * const packet,
 		unsigned char * const packet_type, //1 Byte, no array
 		unsigned char * const current_protocol_version, //1 Byte, no array
@@ -263,15 +266,20 @@ int packet_decrypt(
 		buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages only
 		buffer_t * const public_ephemeral_key, //optional, can be NULL, for prekey messages only
 		buffer_t * const public_prekey) { //optional, can be NULL, for prekey messages only
+
+	return_status status = return_status_init();
+
+	buffer_t *message_nonce = buffer_create_on_heap(MESSAGE_NONCE_SIZE, MESSAGE_NONCE_SIZE);
+
 	//check the buffer sizes
 	if ((header_key->content_length != HEADER_KEY_SIZE)
 			|| (message_key->content_length != MESSAGE_KEY_SIZE)) {
-		return -6;
+		throw(INVALID_INPUT, "Invalid input for packet_decrypt.");
 	}
 
 	//get the packet metadata
 	unsigned char purported_header_length;
-	int status = packet_get_metadata_without_verification(
+	int status_int = packet_get_metadata_without_verification(
 			packet,
 			packet_type,
 			current_protocol_version,
@@ -280,13 +288,12 @@ int packet_decrypt(
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	if (status != 0) {
-		return status;
+	if (status_int != 0) {
+		throw(DATA_FETCH_ERROR, "Failed to get metadata.");
 	}
 
 	//decrypt the header
-	buffer_t *message_nonce = buffer_create_on_heap(MESSAGE_NONCE_SIZE, MESSAGE_NONCE_SIZE);
-	status = packet_decrypt_header(
+	status_int = packet_decrypt_header(
 			packet,
 			header,
 			message_nonce,
@@ -294,23 +301,24 @@ int packet_decrypt(
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	if (status != 0) {
-		buffer_destroy_from_heap(message_nonce);
-		return status;
+	if (status_int != 0) {
+		throw(DECRYPT_ERROR, "Failed to decrypt header.");
 	}
 
 	//decrypt the message
-	status = packet_decrypt_message(
+	status_int = packet_decrypt_message(
 			packet,
 			message,
 			message_nonce,
 			message_key);
-	buffer_destroy_from_heap(message_nonce);
-	if (status != 0) {
-		return status;
+	if (status_int != 0) {
+		throw(DECRYPT_ERROR, "Failed to decrypt message.");
 	}
 
-	return 0;
+cleanup:
+	buffer_destroy_from_heap(message_nonce);
+
+	return status;
 }
 
 /*

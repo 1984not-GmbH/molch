@@ -27,9 +27,6 @@
 #include "tracing.h"
 
 int main(void) {
-	if (sodium_init() == -1) {
-		return -1;
-	}
 
 	buffer_create_from_string(message, "Hello world!\n");
 
@@ -47,6 +44,12 @@ int main(void) {
 	buffer_t *decrypted_header = buffer_create_on_heap(255, 255);
 	buffer_t *decrypted_message = buffer_create_on_heap(packet->content_length, packet->content_length);
 
+	return_status status = return_status_init();
+
+	if (sodium_init() == -1) {
+		throw(INIT_ERROR, "Failed to initialize libsodium.");
+	}
+
 	//generate keys and message
 	header->content[0] = 0x01;
 	header->content[1] = 0x02;
@@ -62,7 +65,7 @@ int main(void) {
 
 	//NORMAL MESSAGE
 	printf("NORMAL MESSAGE\n");
-	int status = create_and_print_message(
+	int status_int = create_and_print_message(
 			packet,
 			packet_type,
 			current_protocol_version,
@@ -74,8 +77,8 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(CREATION_ERROR, "Failed to create and print normal message.");
 	}
 
 	//now decrypt the packet
@@ -94,71 +97,56 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to decrypt the packet. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt the packet.");
 
 	if ((packet_type != authenticated_packet_type)
 		|| (current_protocol_version != authenticated_current_protocol_version)
 		|| (highest_supported_protocol_version != authenticated_highest_supported_protocol_version)) {
-		fprintf(stderr, "ERROR: Failed to retrieve metadata!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(DATA_FETCH_ERROR, "Failed to retrieve metadata.");
 	}
 
 
 	if (decrypted_header->content_length != header->content_length) {
-		fprintf(stderr, "ERROR: Decrypted header isn't of the same length!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Decrypted header isn't of the same length!");
 	}
 	printf("Decrypted header has the same length.\n");
 
 	//compare headers
 	if (buffer_compare(header, decrypted_header) != 0) {
-		fprintf(stderr, "ERROR: Decrypted header doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Decrypted header doesn't match.");
 	}
 	printf("Decrypted header matches.\n\n");
 
 	if (decrypted_message->content_length != message->content_length) {
-		fprintf(stderr, "ERROR: Decrypted message isn't of the same length!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Decrypted message isn't of the same length.");
 	}
 	printf("Decrypted message has the same length.\n");
 
 	//compare messages
 	if (buffer_compare(message, decrypted_message) != 0) {
-		fprintf(stderr, "ERROR: Decrypted message doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Decrypted message doesn't match.");
 	}
 	printf("Decrypted message matches.\n");
 
 	//PREKEY MESSAGE
 	printf("PREKEY MESSAGE\n");
 	//create the public keys
-	status = buffer_fill_random(public_identity_key, PUBLIC_KEY_SIZE);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate public identity key. (%i)\n", status);
-		goto cleanup;
+	status_int = buffer_fill_random(public_identity_key, PUBLIC_KEY_SIZE);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate public identity key.");
 	}
-	status = buffer_fill_random(public_ephemeral_key, PUBLIC_KEY_SIZE);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate public ephemeral key. (%i)\n", status);
+	status_int = buffer_fill_random(public_ephemeral_key, PUBLIC_KEY_SIZE);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
 	}
-	status = buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generae public prekey. (%i)\n", status);
-		goto cleanup;
+	status_int = buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate public prekey.");
 	}
 
 	buffer_clear(packet);
 	packet_type = PREKEY_MESSAGE;
-	status = create_and_print_message(
+	status_int = create_and_print_message(
 			packet,
 			packet_type,
 			current_protocol_version,
@@ -170,8 +158,8 @@ int main(void) {
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(GENERIC_ERROR, "Failed to create and print prekey message.");
 	}
 
 	//now decrypt the packet
@@ -187,68 +175,49 @@ int main(void) {
 			extracted_public_identity_key,
 			extracted_public_ephemeral_key,
 			extracted_public_prekey);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to decrypt the packet. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt the packet.");
 
 	if ((packet_type != authenticated_packet_type)
 			|| (current_protocol_version != authenticated_current_protocol_version)
 			|| (highest_supported_protocol_version != authenticated_highest_supported_protocol_version)) {
-		fprintf(stderr, "ERROR: Failed to retrieve metadata!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(DATA_FETCH_ERROR, "Failed to retrieve metadata.");
 	}
 
 	if (decrypted_header->content_length != header->content_length) {
-		fprintf(stderr, "ERROR: Decrypted header isn't of the same length!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Decrypted header isn't of the same length.");
 	}
 	printf("Decrypted header has the same length!\n");
 
 	//compare headers
 	if (buffer_compare(header, decrypted_header) != 0) {
-		fprintf(stderr, "ERROR: Decrypted header doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Decrypted header doesn't match.");
 	}
 	printf("Decrypted header matches!\n");
 
 	if (decrypted_message->content_length != message->content_length) {
-		fprintf(stderr, "ERROR: Decrypted message isn't the same length!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Decrypted message isn't of the same length.");
 	}
 	printf("Decrypted message has the same length.\n");
 
 	//compare messages
 	if (buffer_compare(message, decrypted_message) != 0) {
-		fprintf(stderr, "ERROR: Decrypted message doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Decrypted message doesn't match.");
 	}
 	printf("Decrypted message matches.\n");
 
 	//compare public keys
 	if (buffer_compare(public_identity_key, extracted_public_identity_key) != 0) {
-		fprintf(stderr, "ERROR: Extracted public identity key doesn't match.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extracted public identity key doesn't match.");
 	}
 	printf("Extracted public identity key matches!\n");
 
 	if (buffer_compare(public_ephemeral_key, extracted_public_ephemeral_key) != 0) {
-		fprintf(stderr, "ERROR: Extracted public ephemeral key doesn't match.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extracted public ephemeral key doesn't match.");
 	}
 	printf("Extracted public ephemeral key matches!\n");
 
 	if (buffer_compare(public_prekey, extracted_public_prekey) != 0) {
-		fprintf(stderr, "ERROR: Extracted public prekey doesn't match.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extracted public prekey doesn't match.");
 	}
 	printf("Extracted public prekey matches!\n");
 
@@ -266,5 +235,10 @@ cleanup:
 	buffer_destroy_from_heap(extracted_public_ephemeral_key);
 	buffer_destroy_from_heap(extracted_public_prekey);
 
-	return status;
+	if (status.status != SUCCESS) {
+		print_errors(&status);
+		return_status_destroy_errors(&status);
+	}
+
+	return status.status;
 }
