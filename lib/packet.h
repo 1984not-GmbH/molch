@@ -104,8 +104,11 @@ int packet_get_metadata_without_verification(
 
 /*
  * Decrypt the header of a packet. (This also authenticates the metadata!)
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int packet_decrypt_header(
+return_status packet_decrypt_header(
 		const buffer_t * const packet,
 		buffer_t * const header, //As long as the packet or at most 255 bytes
 		buffer_t * const message_nonce, //output, MESSAGE_KEY_SIZE

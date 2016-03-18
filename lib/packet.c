@@ -293,7 +293,7 @@ return_status packet_decrypt(
 	}
 
 	//decrypt the header
-	status_int = packet_decrypt_header(
+	status = packet_decrypt_header(
 			packet,
 			header,
 			message_nonce,
@@ -301,9 +301,7 @@ return_status packet_decrypt(
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt header.");
-	}
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt header.");
 
 	//decrypt the message
 	status_int = packet_decrypt_message(
@@ -406,8 +404,11 @@ int packet_get_metadata_without_verification(
 
 /*
  * Decrypt the header of a packet. (This also authenticates the metadata)
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int packet_decrypt_header(
+return_status packet_decrypt_header(
 		const buffer_t * const packet,
 		buffer_t * const header, //As long as the packet or at most 255 bytes
 		buffer_t * const message_nonce, //output, MESSAGE_KEY_SIZE
@@ -415,10 +416,15 @@ int packet_decrypt_header(
 		buffer_t * const public_identity_key, //output, optional, can be NULL, for prekey messages only
 		buffer_t * const public_ephemeral_key, //output, optional, can be NULL, for prekey messages only
 		buffer_t * const public_prekey) { //output, optional, can be NULL, for prekey messages only
+
+	return_status status = return_status_init();
+
+	buffer_t *header_buffer = NULL;
+
 	//check sizes of the buffers
 	if ((message_nonce->buffer_length < MESSAGE_NONCE_SIZE)
 			|| (header_key->content_length != HEADER_KEY_SIZE)) {
-		return -6;
+		throw(INVALID_INPUT, "Invalid input to packet_decrypt_header.");
 	}
 
 	//extract the purported header length from the packet
@@ -426,7 +432,7 @@ int packet_decrypt_header(
 	unsigned char current_protocol_version;
 	unsigned char highest_supported_protocol_version;
 	unsigned char purported_header_length;
-	int status = packet_get_metadata_without_verification(
+	int status_int = packet_get_metadata_without_verification(
 			packet,
 			&packet_type,
 			&current_protocol_version,
@@ -435,14 +441,14 @@ int packet_decrypt_header(
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	if (status != 0) {
-		return status;
+	if (status_int != 0) {
+		throw(DATA_FETCH_ERROR, "Failed to get metadata.");
 	}
 
 	off_t header_nonce_offset = 3 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
 	//check if the packet is long enough
 	if (packet->content_length < ((size_t)header_nonce_offset + HEADER_NONCE_SIZE + purported_header_length + crypto_aead_chacha20poly1305_ABYTES)) {
-		return -10;
+		throw(INCORRECT_BUFFER_SIZE, "Packet isn't long enough.");
 	}
 
 	//buffer that points to different parts of the header
@@ -450,9 +456,9 @@ int packet_decrypt_header(
 	buffer_create_with_existing_array(additional_data, packet->content, header_nonce_offset + header_nonce->content_length);
 	buffer_create_with_existing_array(header_ciphertext, packet->content + additional_data->content_length, purported_header_length + MESSAGE_NONCE_SIZE + crypto_aead_chacha20poly1305_ABYTES);
 	//encrypt the header
-	buffer_t *header_buffer = buffer_create_on_heap(purported_header_length + MESSAGE_NONCE_SIZE, purported_header_length + MESSAGE_NONCE_SIZE);
+	header_buffer = buffer_create_on_heap(purported_header_length + MESSAGE_NONCE_SIZE, purported_header_length + MESSAGE_NONCE_SIZE);
 	unsigned long long decrypted_length;
-	status = crypto_aead_chacha20poly1305_decrypt(
+	status_int = crypto_aead_chacha20poly1305_decrypt(
 			header_buffer->content,
 			&decrypted_length,
 			NULL,
@@ -462,28 +468,33 @@ int packet_decrypt_header(
 			additional_data->content_length,
 			header_nonce->content, //nonce
 			header_key->content);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(DECRYPT_ERROR, "Failed to decrypt header.");
 	}
 
 	assert(purported_header_length == decrypted_length - MESSAGE_NONCE_SIZE);
 
 	//copy the header
-	status = buffer_copy(header, 0, header_buffer, 0, purported_header_length);
-	if (status != 0) {
-		buffer_clear(header);
-		goto cleanup;
+	status_int = buffer_copy(header, 0, header_buffer, 0, purported_header_length);
+	if (status_int != 0) {
+		throw(BUFFER_ERROR, "Failed too copy header.");
 	}
 	//copy the message nonce
-	status = buffer_copy(message_nonce, 0, header_buffer, purported_header_length, MESSAGE_NONCE_SIZE);
-	if (status != 0) {
-		buffer_clear(header);
-		buffer_clear(message_nonce);
+	status_int = buffer_copy(message_nonce, 0, header_buffer, purported_header_length, MESSAGE_NONCE_SIZE);
+	if (status_int != 0) {
+		throw(BUFFER_ERROR, "Failed to copy message nonce.");
 	}
 	header->content_length = purported_header_length;
 
 cleanup:
-	buffer_destroy_from_heap(header_buffer);
+	if (header_buffer != NULL) {
+		buffer_destroy_from_heap(header_buffer);
+	}
+
+	if (status.status != SUCCESS) {
+		buffer_clear(header);
+		buffer_clear(message_nonce);
+	}
 
 	return status;
 }

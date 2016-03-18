@@ -528,7 +528,7 @@ return_status conversation_receive(
 	}
 
 	//try to decrypt the packet header with the current receive header key
-	status_int = packet_decrypt_header(
+	status = packet_decrypt_header(
 			packet,
 			header,
 			message_nonce,
@@ -536,15 +536,18 @@ return_status conversation_receive(
 			NULL,
 			NULL,
 			NULL);
-	if (status_int == 0) {
+	if (status.status == SUCCESS) {
 		status_int = ratchet_set_header_decryptability(
 				conversation->ratchet,
 				CURRENT_DECRYPTABLE);
 		if (status_int != 0) {
-			throw(DATA_SET_ERROR, "Failed to set decryptability to CURRENT_DECRYPTABLE."); }
-	} else if (status_int != 0) {
+			throw(DATA_SET_ERROR, "Failed to set decryptability to CURRENT_DECRYPTABLE.");
+		}
+	} else {
+		return_status_destroy_errors(&status); //free the error stack to avoid memory leak.
+
 		//since this failed, try to decrypt it with the next receive header key
-		status_int = packet_decrypt_header(
+		status = packet_decrypt_header(
 				packet,
 				header,
 				message_nonce,
@@ -552,7 +555,7 @@ return_status conversation_receive(
 				NULL,
 				NULL,
 				NULL);
-		if (status_int == 0) {
+		if (status.status == SUCCESS) {
 			status_int = ratchet_set_header_decryptability(
 					conversation->ratchet,
 					NEXT_DECRYPTABLE);
