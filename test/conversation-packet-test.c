@@ -366,6 +366,10 @@ cleanup:
 	buffer_destroy_from_heap(bob_public_identity);
 	buffer_destroy_from_heap(prekey_list);
 
+	if (status.status != SUCCESS) {
+		print_errors(&status);
+		return_status_destroy_errors(&status);
+	}
 
 	return status.status;
 }
