@@ -17,6 +17,7 @@
  */
 
 #include "../buffer/buffer.h"
+#include "return-status.h"
 
 #ifndef LIB_MESSAGE_H
 #define LIB_MESSAGE_H
@@ -49,8 +50,11 @@
  *       MAC(crypto_secretbox_MACBYTES)
  *   }
  * }
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int packet_encrypt(
+return_status packet_encrypt(
 		buffer_t * const packet, //output, has to be long enough, see format above
 		const unsigned char packet_type,
 		const unsigned char current_protocol_version, //this can't be larger than 0xF = 15

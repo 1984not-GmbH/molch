@@ -52,8 +52,11 @@
  *       MAC(crypto_secretbox_MACBYTES)
  *   }
  * }
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int packet_encrypt(
+return_status packet_encrypt(
 		buffer_t * const packet, //output, has to be long enough, see format above TODO: Be more specific
 		const unsigned char packet_type,
 		const unsigned char current_protocol_version, //this can't be larger than 0xF = 15
@@ -65,22 +68,25 @@ int packet_encrypt(
 		const buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages only
 		const buffer_t * const public_ephemeral_key, //optional, can be NULL, for prekey messages only
 		const buffer_t * const public_prekey) { //optional, can be NULL, for prekey messages only
+
+	return_status status = return_status_init();
+
 	//check buffer sizes
 	if ((header_key->content_length != HEADER_KEY_SIZE)
 			|| (message_key->content_length != MESSAGE_KEY_SIZE)
 			|| (packet == NULL) || (packet->buffer_length < 3 + HEADER_NONCE_SIZE + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE + MESSAGE_NONCE_SIZE + header->content_length + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_MACBYTES + message->content_length + 255)) {
-		return -6;
+		throw(INVALID_INPUT, "Invalid input for packet_encrypt.");
 	}
 
 	if ((packet_type == PREKEY_MESSAGE) && (
 				(public_identity_key == NULL) || (public_identity_key->content_length != PUBLIC_KEY_SIZE)
 				|| (public_ephemeral_key == NULL) || (public_ephemeral_key->content_length != PUBLIC_KEY_SIZE)
 				|| (public_prekey == NULL) || (public_prekey->content_length != PUBLIC_KEY_SIZE))) {
-		return -7;
+		throw(INVALID_INPUT, "Invalid input for prekey messages.");
 	}
 
 	if ((packet_type != PREKEY_MESSAGE) && ((public_identity_key != NULL) || (public_prekey != NULL) || (public_ephemeral_key != NULL))) {
-		return -7;
+		throw(INVALID_INPUT, "Invalid input for non prekey messages.");
 	}
 
 	//make sure that the length assumptions are correct
@@ -89,17 +95,17 @@ int packet_encrypt(
 	//protocol version has to be equal or less than 0xF
 	if ((current_protocol_version > 0x0f)
 			|| (highest_supported_protocol_version > 0x0f)) {
-		return -8;
+		throw(INVALID_VALUE, "Incorrect protocol version.");
 	}
 
 	//make sure the header length fits into one byte
 	if (header->content_length > (0xff - crypto_aead_chacha20poly1305_ABYTES - MESSAGE_NONCE_SIZE)) {
-		return -9;
+		throw(INVALID_VALUE, "Header length doesn't fit into one byte.");
 	}
 
 	//check if the packet buffer is long enough (only roughly) FIXME correct numbers here!
 	if (packet->buffer_length < (3 + crypto_aead_chacha20poly1305_ABYTES + MESSAGE_NONCE_SIZE + HEADER_NONCE_SIZE + message->content_length + crypto_secretbox_MACBYTES + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE)) {
-		return -6;
+		throw(INCORRECT_BUFFER_SIZE, "Packet buffer isn't long enough.");
 	}
 
 	//put packet type and protocol version into the packet
@@ -109,65 +115,65 @@ int packet_encrypt(
 	packet->content[2] = header->content_length + crypto_aead_chacha20poly1305_ABYTES + MESSAGE_NONCE_SIZE + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE; //header length with authenticator and message nonce
 	packet->content_length = 3;
 
-	int status;
+	int status_int;
 
 	off_t header_nonce_offset = 3 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
 	if (packet_type == PREKEY_MESSAGE) {
 		//copy our public identity key
-		status = buffer_copy(
+		status_int = buffer_copy(
 				packet,
 				3,
 				public_identity_key,
 				0,
 				PUBLIC_KEY_SIZE);
-		if (status != 0) {
-			return -10;
+		if (status_int != 0) {
+			throw(BUFFER_ERROR, "Failed to copy public identity to packet.");
 		}
 
 		//copy our public ephemeral key
-		status = buffer_copy(
+		status_int = buffer_copy(
 				packet,
 				3 + PUBLIC_KEY_SIZE,
 				public_ephemeral_key,
 				0,
 				PUBLIC_KEY_SIZE);
-		if (status != 0) {
-			return -10;
+		if (status_int != 0) {
+			throw(BUFFER_ERROR, "Failed to copy public ephemeral to packet.");
 		}
 
 		//copy the public prekey of the receiver
-		status = buffer_copy(
+		status_int = buffer_copy(
 				packet,
 				3 + 2 * PUBLIC_KEY_SIZE,
 				public_prekey,
 				0,
 				PUBLIC_KEY_SIZE);
-		if (status != 0) {
-			return -10;
+		if (status_int != 0) {
+			throw(BUFFER_ERROR, "Failed to copy prekey to packet.");
 		}
 	}
 
 	//create the header nonce
 	buffer_create_with_existing_array(header_nonce, packet->content + header_nonce_offset, HEADER_NONCE_SIZE);
-	status = buffer_fill_random(header_nonce, header_nonce->buffer_length);
-	if (status != 0) {
-		return status;
+	status_int = buffer_fill_random(header_nonce, header_nonce->buffer_length);
+	if (status_int != 0) {
+		throw(GENERIC_ERROR, "Failed to generate random header nonce.")
 	}
 
 	//create buffer for the encrypted part of the header
 	buffer_t *header_buffer = buffer_create_on_heap(header->content_length + MESSAGE_NONCE_SIZE, header->content_length + MESSAGE_NONCE_SIZE);
 	//copy header
-	status = buffer_copy(header_buffer, 0, header, 0, header->content_length);
-	if (status != 0) {
+	status_int = buffer_copy(header_buffer, 0, header, 0, header->content_length);
+	if (status_int != 0) {
 		buffer_destroy_from_heap(header_buffer);
-		return status;
+		throw(BUFFER_ERROR, "Failed to copy header to the header buffer.");
 	}
 	//create message nonce
 	buffer_create_with_existing_array(message_nonce, header_buffer->content + header->content_length, MESSAGE_NONCE_SIZE);
-	status = buffer_fill_random(message_nonce, message_nonce->buffer_length);
-	if (status != 0) {
+	status_int = buffer_fill_random(message_nonce, message_nonce->buffer_length);
+	if (status_int != 0) {
 		buffer_destroy_from_heap(header_buffer);
-		return status;
+		throw(GENERIC_ERROR, "Failed to generate random message nonce.");
 	}
 
 	//buffer that points to the part of the packet where the header ciphertext will be stored
@@ -177,7 +183,7 @@ int packet_encrypt(
 
 	//encrypt the header and authenticate the additional data (1st 3 Bytes)
 	unsigned long long header_ciphertext_length;
-	status = crypto_aead_chacha20poly1305_encrypt(
+	status_int = crypto_aead_chacha20poly1305_encrypt(
 			header_ciphertext->content, //ciphertext
 			&header_ciphertext_length, //ciphertext length
 			header_buffer->content, //plaintext
@@ -188,9 +194,9 @@ int packet_encrypt(
 			header_nonce->content,
 			header_key->content);
 	assert(header_ciphertext->content_length == header_ciphertext_length);
-	if (status != 0) {
+	if (status_int != 0) {
 		buffer_destroy_from_heap(header_buffer);
-		return status;
+		throw(ENCRYPT_ERROR, "Failed to encrypt header.");
 	}
 
 	//make sure the header_length property in the packet is correct
@@ -205,11 +211,11 @@ int packet_encrypt(
 	buffer_t *plaintext_buffer = buffer_create_on_heap(message->content_length + padding, message->content_length + padding);
 
 	//copy message to plaintext buffer
-	status = buffer_copy(plaintext_buffer, 0, message, 0, message->content_length);
-	if (status != 0) {
+	status_int = buffer_copy(plaintext_buffer, 0, message, 0, message->content_length);
+	if (status_int != 0) {
 		buffer_destroy_from_heap(plaintext_buffer);
 		buffer_destroy_from_heap(header_buffer);
-		return status;
+		throw(BUFFER_ERROR, "Failed to copy plaintext message.");
 	}
 	assert(plaintext_buffer->content_length == (message->content_length + padding));
 
@@ -222,7 +228,7 @@ int packet_encrypt(
 	//buffer that points to the message ciphertext position in the packet
 	buffer_create_with_existing_array(message_ciphertext, packet->content + PRE_CIPHERTEXT_LENGTH, message->content_length + padding + crypto_secretbox_MACBYTES);
 	//encrypt the message
-	status = crypto_secretbox_easy(
+	status_int = crypto_secretbox_easy(
 			message_ciphertext->content, //ciphertext
 			plaintext_buffer->content, //message
 			plaintext_buffer->content_length, //message length
@@ -230,14 +236,16 @@ int packet_encrypt(
 			message_key->content);
 	buffer_destroy_from_heap(plaintext_buffer);
 	buffer_destroy_from_heap(header_buffer);
-	if (status != 0) {
+	if (status_int != 0) {
 		buffer_clear(packet);
-		return status;
+		throw(ENCRYPT_ERROR, "Failed to encrypt message.");
 	}
 
 	//set length of entire encrypted message
 	packet->content_length = PRE_CIPHERTEXT_LENGTH + message->content_length + padding + crypto_secretbox_MACBYTES;
-	return 0;
+
+cleanup:
+	return status;
 }
 
 /*
