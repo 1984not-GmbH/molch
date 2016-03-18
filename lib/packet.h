@@ -90,8 +90,11 @@ return_status packet_decrypt(
 
 /*
  * Get the metadata of a packet (without verifying it's authenticity).
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int packet_get_metadata_without_verification(
+return_status packet_get_metadata_without_verification(
 		const buffer_t * const packet,
 		unsigned char * const packet_type, //1 Byte, no array
 		unsigned char * const current_protocol_version, //1 Byte, no array

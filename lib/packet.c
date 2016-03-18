@@ -279,7 +279,7 @@ return_status packet_decrypt(
 
 	//get the packet metadata
 	unsigned char purported_header_length;
-	int status_int = packet_get_metadata_without_verification(
+	status = packet_get_metadata_without_verification(
 			packet,
 			packet_type,
 			current_protocol_version,
@@ -288,9 +288,7 @@ return_status packet_decrypt(
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Failed to get metadata.");
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Failed to get metadata.");
 
 	//decrypt the header
 	status = packet_decrypt_header(
@@ -319,8 +317,11 @@ cleanup:
 
 /*
  * Get the metadata of a packet (without verifying it's authenticity).
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int packet_get_metadata_without_verification(
+return_status packet_get_metadata_without_verification(
 		const buffer_t * const packet,
 		unsigned char * const packet_type,
 		unsigned char * const current_protocol_version,
@@ -329,18 +330,21 @@ int packet_get_metadata_without_verification(
 		buffer_t * const public_identity_key, //output, optional, can be NULL, only works with prekey messages
 		buffer_t * const public_ephemeral_key, //output, optional, can be NULL, only works with prekey messages
 		buffer_t * const public_prekey) { //output, optional, can be NULL, only works with prekey messages
+
+	return_status status = return_status_init();
+
 	//check if packet_length is long enough to get the header length
 	if (packet->content_length < 3) {
-		return -10;
+		throw(INVALID_INPUT, "Packet isn't long enough to get the header length.");
 	}
 
 	//check if the additional prekey data fulfills the length requirements
 	if ((public_identity_key != NULL) && (public_identity_key->buffer_length < PUBLIC_KEY_SIZE)) {
-		return -10;
+		throw(INCORRECT_BUFFER_SIZE, "Public identity key has incorrect length.");
 	}
 
 	if ((public_prekey != NULL) && (public_prekey->buffer_length < PUBLIC_KEY_SIZE)) {
-		return -10;
+		throw(INCORRECT_BUFFER_SIZE, "Public prekey has incorrect length.");
 	}
 
 	unsigned char local_packet_type = packet->content[0];
@@ -348,7 +352,7 @@ int packet_get_metadata_without_verification(
 
 	//check if packet is long enough to get the rest of the metadata
 	if (packet->content_length < (3 + packet->content[2] +  HEADER_NONCE_SIZE)) {
-		return -10;
+		throw(INVALID_INPUT, "Packet isn't long enough to get the rest of the metadata.");
 	}
 
 	*current_protocol_version = (0xf0 & packet->content[1]) >> 4;
@@ -356,48 +360,59 @@ int packet_get_metadata_without_verification(
 	*header_length = packet->content[2] - crypto_aead_chacha20poly1305_ABYTES - MESSAGE_NONCE_SIZE - (local_packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
 
 	if (local_packet_type == PREKEY_MESSAGE) {
-		int status;
+		int status_int;
 		if (public_identity_key != NULL) {
-			status = buffer_copy(
+			status_int = buffer_copy(
 					public_identity_key,
 					0,
 					packet,
 					3,
 					PUBLIC_KEY_SIZE);
-			if (status != 0) {
-				buffer_clear(public_identity_key);
-				return status;
+			if (status_int != 0) {
+				throw(BUFFER_ERROR, "Failed to copy public identity key.");
 			}
 		}
 
 		if (public_ephemeral_key != NULL) {
-			status = buffer_copy(
+			status_int = buffer_copy(
 					public_ephemeral_key,
 					0,
 					packet,
 					3 + PUBLIC_KEY_SIZE,
 					PUBLIC_KEY_SIZE);
-			if (status != 0) {
-				buffer_clear(public_ephemeral_key);
-				return status;
+			if (status_int != 0) {
+				throw(BUFFER_ERROR, "Failed to copy public ephemeral key.");
 			}
 		}
 
 		if (public_prekey != NULL) {
-			status = buffer_copy(
+			status_int = buffer_copy(
 					public_prekey,
 					0,
 					packet,
 					3 + 2 * PUBLIC_KEY_SIZE,
 					PUBLIC_KEY_SIZE);
-			if (status != 0) {
-				buffer_clear(public_prekey);
-				return status;
+			if (status_int != 0) {
+				throw(BUFFER_ERROR, "Failed to copy public prekey.");
 			}
 		}
 	}
 
-	return 0;
+cleanup:
+	if (status.status != SUCCESS) {
+		if (public_identity_key != NULL) {
+			buffer_clear(public_identity_key);
+		}
+
+		if (public_ephemeral_key != NULL) {
+			buffer_clear(public_ephemeral_key);
+		}
+
+		if (public_prekey != NULL) {
+			buffer_clear(public_prekey);
+		}
+	}
+	return status;
 }
 
 /*
@@ -430,7 +445,8 @@ return_status packet_decrypt_header(
 	unsigned char current_protocol_version;
 	unsigned char highest_supported_protocol_version;
 	unsigned char purported_header_length;
-	int status_int = packet_get_metadata_without_verification(
+	int status_int = 0;
+	status = packet_get_metadata_without_verification(
 			packet,
 			&packet_type,
 			&current_protocol_version,
@@ -439,9 +455,7 @@ return_status packet_decrypt_header(
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Failed to get metadata.");
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Failed to get metadata.");
 
 	off_t header_nonce_offset = 3 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
 	//check if the packet is long enough
@@ -526,7 +540,8 @@ return_status packet_decrypt_message(
 	unsigned char current_protocol_version;
 	unsigned char highest_supported_protocol_version;
 	unsigned char purported_header_length;
-	int status_int = packet_get_metadata_without_verification(
+	int status_int = 0;
+	status = packet_get_metadata_without_verification(
 			packet,
 			&packet_type,
 			&current_protocol_version,
@@ -535,9 +550,7 @@ return_status packet_decrypt_message(
 			NULL,
 			NULL,
 			NULL);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Failed to get metadata.");
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Failed to get metadata.");
 
 	off_t header_nonce_offset = 3 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
 	//length of message and padding

@@ -308,7 +308,7 @@ molch_message_type molch_get_message_type(
 	unsigned char current_protocol_version;
 	unsigned char highest_supported_protocol_version;
 	unsigned char header_length;
-	int status = packet_get_metadata_without_verification(
+	return_status status = packet_get_metadata_without_verification(
 		packet_buffer,
 		&packet_type,
 		&current_protocol_version,
@@ -317,9 +317,10 @@ molch_message_type molch_get_message_type(
 		NULL,
 		NULL,
 		NULL);
-	if (status != 0) {
+	on_error(
+		return_status_destroy_errors(&status);
 		return INVALID;
-	}
+	)
 
 	if (packet_type == PREKEY_MESSAGE) {
 		return PREKEY_MESSAGE;

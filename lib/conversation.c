@@ -323,7 +323,7 @@ return_status conversation_start_receive_conversation(
 	unsigned char current_protocol_version;
 	unsigned char highest_supported_protocol_version;
 	unsigned char header_length;
-	status_int = packet_get_metadata_without_verification(
+	status = packet_get_metadata_without_verification(
 			packet,
 			&packet_type,
 			&current_protocol_version,
@@ -332,9 +332,7 @@ return_status conversation_start_receive_conversation(
 			sender_public_identity,
 			sender_public_ephemeral,
 			receiver_public_prekey);
-	if (status_int != 0) {
-		throw(GENERIC_ERROR, "Failed to get packet metadata.");
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to get packet metadata.");
 
 	if (packet_type != PREKEY_MESSAGE) {
 		throw(INVALID_VALUE, "Packet is not a prekey message.");
