@@ -17,6 +17,7 @@
  */
 
 #include "../buffer/buffer.h"
+#include "return-status.h"
 
 #ifndef LIB_HEADER_H
 #define LIB_HEADER_H
@@ -30,8 +31,11 @@
  *   message_counter (4)
  *   previous_message_counter(4)
  * }
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int header_construct(
+return_status header_construct(
 		buffer_t * const header, //PUBLIC_KEY_SIZE + 8, output
 		const buffer_t * const our_public_ephemeral, //PUBLIC_KEY_SIZE
 		const uint32_t message_counter,

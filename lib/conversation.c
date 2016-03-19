@@ -445,14 +445,12 @@ return_status conversation_send(
 	}
 
 	//create the header
-	status_int = header_construct(
+	status = header_construct(
 			header,
 			send_ephemeral_key,
 			send_message_number,
 			previous_send_message_number);
-	if (status_int != 0) {
-		throw(CREATION_ERROR, "Failed to construct header.");
-	}
+	throw_on_error(CREATION_ERROR, "Failed to construct header.");
 
 	const size_t packet_length = header->content_length + 3 + HEADER_NONCE_SIZE + MESSAGE_NONCE_SIZE + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_MACBYTES + message->content_length + 255 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
 	*packet = buffer_create_on_heap(packet_length, 0);

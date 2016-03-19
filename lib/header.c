@@ -32,43 +32,50 @@
  *   message_counter (4)
  *   previous_message_counter(4)
  * }
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int header_construct(
+return_status header_construct(
 		buffer_t * const header, //PUBLIC_KEY_SIZE + 8
 		const buffer_t * const our_public_ephemeral, //PUBLIC_KEY_SIZE
 		const uint32_t message_counter,
 		const uint32_t previous_message_counter) {
-	//check buffer sizes
-	if ((header->buffer_length < PUBLIC_KEY_SIZE + 2 * sizeof(uint32_t))
-			|| (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
-		header->content_length = 0;
-		return -6;
+	return_status status = return_status_init();
+
+	//check input
+	if ((header == NULL) || (header->buffer_length < PUBLIC_KEY_SIZE + 2 * sizeof(uint32_t))
+			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
+		throw(INVALID_INPUT, "Invalid input to header_construct.");
 	}
-	int status;
-	status = buffer_clone(header, our_public_ephemeral);
-	if (status != 0) {
-		goto cleanup;
+
+	int status_int;
+	status_int = buffer_clone(header, our_public_ephemeral);
+	if (status_int != 0) {
+		throw(BUFFER_ERROR, "Failed to copy public ephemeral to header.");
 	}
 
 	//message counter as big endian
 	buffer_create_with_existing_array(big_endian_message_counter, header->content + PUBLIC_KEY_SIZE, sizeof(uint32_t));
-	status = endianness_uint32_to_big_endian(message_counter, big_endian_message_counter);
-	if (status != 0) {
-		goto cleanup;
+	status_int = endianness_uint32_to_big_endian(message_counter, big_endian_message_counter);
+	if (status_int != 0) {
+		throw(GENERIC_ERROR, "Failed to convert message counter to big endian.");
 	}
 
 	//previous message counter as big endian
 	buffer_create_with_existing_array(big_endian_previous_message_counter, header->content + PUBLIC_KEY_SIZE + sizeof(uint32_t), sizeof(uint32_t));
-	status = endianness_uint32_to_big_endian(previous_message_counter, big_endian_previous_message_counter);
-	if (status != 0) {
-		goto cleanup;
+	status_int = endianness_uint32_to_big_endian(previous_message_counter, big_endian_previous_message_counter);
+	if (status_int != 0) {
+		throw(GENERIC_ERROR, "Failed to convert previous message counter to big endian.");
 	}
 
 	header->content_length = PUBLIC_KEY_SIZE + 2 * sizeof(uint32_t);
 
 cleanup:
-	if (status != 0) {
-		buffer_clear(header);
+	if (status.status != SUCCESS) {
+		if (header != NULL) {
+			buffer_clear(header);
+		}
 	}
 
 	return status;
