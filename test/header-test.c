@@ -67,14 +67,12 @@ int main(void) {
 	//get data back out of the header again
 	uint32_t extracted_message_number;
 	uint32_t extracted_previous_message_number;
-	status_int = header_extract(
+	status = header_extract(
 			header,
 			extracted_public_ephemeral_key,
 			&extracted_message_number,
 			&extracted_previous_message_number);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Failed to extract data from header.");
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Failed to extract data from header.");
 
 	printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key->content_length);
 	print_hex(extracted_public_ephemeral_key);

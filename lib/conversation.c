@@ -570,14 +570,12 @@ return_status conversation_receive(
 	//extract data from the header
 	uint32_t message_counter;
 	uint32_t previous_message_counter;
-	status_int = header_extract(
+	status = header_extract(
 			header,
 			their_signed_public_ephemeral,
 			&message_counter,
 			&previous_message_counter);
-	if (status_int != 0) {
-		throw(GENERIC_ERROR, "Failed to extract data from header.");
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to extract data from header.");
 
 	//and now decrypt the message with the message key
 	//now we have all the data we need to advance the ratchet
