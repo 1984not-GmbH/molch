@@ -24,4 +24,6 @@
 void print_hex(const buffer_t * const data);
 
 void print_to_file(const buffer_t * const data, const char * const filename);
+
+void read_file(buffer_t ** const data, const char * const filename);
 #endif
