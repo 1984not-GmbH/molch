@@ -1,5 +1,6 @@
 /* Molch, an implementation of the axolotl ratchet based on libsodium
- *  Copyright (C) 2016  Max Bruckner (FSMaxB)
+ *  Copyright (C) 2015-2016 1984not Security GmbH
+ *  Author: Max Bruckner (FSMaxB)
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
