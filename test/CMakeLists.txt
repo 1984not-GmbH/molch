@@ -1,5 +1,7 @@
 cmake_minimum_required (VERSION 2.6)
 
+add_subdirectory(test-data)
+
 add_library(utils utils)
 target_link_libraries(utils molch-buffer)
 if (TRACING)
@@ -36,6 +38,7 @@ set(tests diffie-hellman-test
           prekey-store-test
           master-keys-test
           endianness-test
+          molch-init-test
 )
 
 foreach(test ${tests})

@@ -1061,6 +1061,13 @@ int molch_json_import(const unsigned char *const json, const size_t length){
 	};
 	mcJSON_InitHooks(&allocation_functions);
 
+	//initialize libsodium if not done already
+	if (users == NULL) {
+		if (sodium_init() == -1) {
+			return -1;
+		}
+	}
+
 	//create buffer for the json string
 	buffer_create_with_existing_array(json_buffer, (unsigned char*)json, length);
 
@@ -1081,7 +1088,9 @@ int molch_json_import(const unsigned char *const json, const size_t length){
 		return -2;
 	}
 
-	user_store_destroy(users_backup);
+	if (users_backup != NULL) {
+		user_store_destroy(users_backup);
+	}
 
 	return 0;
 }

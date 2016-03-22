@@ -58,3 +58,25 @@ void print_to_file(const buffer_t * const data, const char * const filename) {
 
 	fclose(file);
 }
+
+void read_file(buffer_t ** const data, const char * const filename) {
+	if (data == NULL) {
+		return;
+	}
+
+	*data = NULL;
+
+	FILE *file = NULL;
+
+	file = fopen(filename, "r");
+
+	//get the filesize
+	fseek(file, 0, SEEK_END);
+	long filesize = ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	*data = buffer_create_on_heap(filesize, filesize);
+	(*data)->content_length = fread((*data)->content, 1, filesize, file);
+
+	fclose(file);
+}
