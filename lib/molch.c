@@ -1088,7 +1088,9 @@ int molch_json_import(const unsigned char *const json, const size_t length){
 		return -2;
 	}
 
-	user_store_destroy(users_backup);
+	if (users_backup != NULL) {
+		user_store_destroy(users_backup);
+	}
 
 	return 0;
 }

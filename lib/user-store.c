@@ -40,8 +40,10 @@ user_store* user_store_create() {
 
 //destroy a user store
 void user_store_destroy(user_store* store) {
-	user_store_clear(store);
-	sodium_free(store);
+	if (store != NULL) {
+		user_store_clear(store);
+		sodium_free(store);
+	}
 }
 
 /*
