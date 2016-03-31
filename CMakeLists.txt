@@ -19,7 +19,7 @@ endif()
 
 #check if running debug build
 if ("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
-    if ("${CMAKE_C_COMPILER}" MATCHES "clang")
+    if ("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
         set(SECURITY_C_FLAGS "-O0")
     else()
         set(SECURITY_C_FLAGS "-Og")
