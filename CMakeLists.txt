@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
 
-project (molch)
+project (molch C)
 
 subdirs(test lib buffer mcJSON)
 
