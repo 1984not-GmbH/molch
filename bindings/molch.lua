@@ -49,6 +49,7 @@ function molch.user.new()
 	user.raw_data.prekey_list = molch_interface.ucstring_array(user.raw_data.prekey_list_length:value())
 	-- copy the prekey list over to an array managed by swig and free the old
 	molch_interface.ucstring_copy(user.raw_data.prekey_list, molch_interface.dereference_ucstring_pointer(temp_prekey_list), user.raw_data.prekey_list_length:value())
+	molch_interface.free(molch_interface.dereference_ucstring_pointer(temp_prekey_list))
 	molch_interface.free(molch_interface.ucstring_to_void(temp_prekey_list))
 
 
@@ -56,6 +57,7 @@ function molch.user.new()
 
 	-- copy the json over to an array managed by swig and free the old
 	molch_interface.ucstring_copy(user.raw_data.json, molch_interface.dereference_ucstring_pointer(temp_json), user.raw_data.json_length:value())
+	molch_interface.sodium_free(molch_interface.dereference_ucstring_pointer(temp_json))
 	molch_interface.free(molch_interface.ucstring_to_void(temp_json))
 
 	-- create lua strings from the data
