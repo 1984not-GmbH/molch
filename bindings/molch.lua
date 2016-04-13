@@ -30,15 +30,22 @@ function convert_to_c_string(data)
 	return new_string, #data
 end
 
-function copy_callee_allocated_string(pointer_pointer, length, free)
+function copy_callee_allocated_string(pointer, length, free)
 	length = (type(length) == 'userdata') and length:value() or length
 	free = free or molch_interface.free
 
+	local free_pointer = true
+	if swig_type(pointer) == "unsigned char **" then
+		pointer = molch_interface.dereference_ucstring_pointer(pointer)
+		free_pointer = false
+	end
+
 	local new_string = molch_interface.ucstring_array(length)
-	local pointer = molch_interface.dereference_ucstring_pointer(pointer_pointer)
 	molch_interface.ucstring_copy(new_string, pointer, length)
 	free(pointer)
-	molch_interface.free(pointer_pointer)
+	if free_pointer then
+		molch_interface.free(pointer_pointer)
+	end
 
 	return new_string
 end
