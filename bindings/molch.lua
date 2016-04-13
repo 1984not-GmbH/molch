@@ -2,6 +2,28 @@ local molch = {}
 
 local molch_interface = require("molch-interface")
 
+function convert_to_lua_string(data, size)
+	size = (type(size) == 'userdata') and size:value() or size
+	local characters = {}
+	for i = 0, size - 1 do
+		table.insert(characters, string.char(data[i]))
+	end
+	return table.concat(characters)
+end
+
+function copy_callee_allocated_string(pointer_pointer, length, free)
+	length = (type(length) == 'userdata') and length:value() or length
+	free = free or molch_interface.free
+
+	local new_string = molch_interface.ucstring_array(length)
+	local pointer = molch_interface.dereference_ucstring_pointer(pointer_pointer)
+	molch_interface.ucstring_copy(new_string, pointer, length)
+	free(pointer)
+	molch_interface.free(pointer_pointer)
+
+	return new_string
+end
+
 function molch.print_hex(data, width)
 	width = width or 16
 	for i = 1, #data do
@@ -46,38 +68,15 @@ function molch.user.new()
 		-- TODO free temp_prekey_list
 	end
 
-	user.raw_data.prekey_list = molch_interface.ucstring_array(user.raw_data.prekey_list_length:value())
 	-- copy the prekey list over to an array managed by swig and free the old
-	molch_interface.ucstring_copy(user.raw_data.prekey_list, molch_interface.dereference_ucstring_pointer(temp_prekey_list), user.raw_data.prekey_list_length:value())
-	molch_interface.free(molch_interface.dereference_ucstring_pointer(temp_prekey_list))
-	molch_interface.free(molch_interface.ucstring_to_void(temp_prekey_list))
-
-
-	user.raw_data.json = molch_interface.ucstring_array(user.raw_data.json_length:value())
-
+	user.raw_data.prekey_list = copy_callee_allocated_string(temp_prekey_list, user.raw_data.prekey_list_length)
 	-- copy the json over to an array managed by swig and free the old
-	molch_interface.ucstring_copy(user.raw_data.json, molch_interface.dereference_ucstring_pointer(temp_json), user.raw_data.json_length:value())
-	molch_interface.sodium_free(molch_interface.dereference_ucstring_pointer(temp_json))
-	molch_interface.free(molch_interface.ucstring_to_void(temp_json))
+	user.raw_data.json = copy_callee_allocated_string(temp_json, user.raw_data.json_length, molch_interface.sodium_free)
 
 	-- create lua strings from the data
-	local id = {}
-	for i = 0, 31 do
-		table.insert(id, string.char(user.raw_data.id[i]))
-	end
-	user.id = table.concat(id)
-
-	local prekey_list = {}
-	for i = 0, user.raw_data.prekey_list_length:value() - 1 do
-		table.insert(prekey_list, string.char(user.raw_data.prekey_list[i]))
-	end
-	user.prekey_list = table.concat(prekey_list)
-
-	local json = {}
-	for i = 0, user.raw_data.json_length:value() - 1 do
-		table.insert(json, string.char(user.raw_data.json[i]))
-	end
-	user.json = table.concat(json)
+	user.id = convert_to_lua_string(user.raw_data.id, 32)
+	user.prekey_list = convert_to_lua_string(user.raw_data.prekey_list, user.raw_data.prekey_list_length)
+	user.json = convert_to_lua_string(user.raw_data.json, user.raw_data.json_length)
 
 	return user
 end
