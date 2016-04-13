@@ -11,6 +11,16 @@ function convert_to_lua_string(data, size)
 	return table.concat(characters)
 end
 
+function convert_to_c_string(data)
+	local new_string = molch_interface.ucstring_array(#data)
+
+	for i = 0, #data - 1 do
+		new_string[i] = string.byte(data, i + 1)
+	end
+
+	return new_string, #data
+end
+
 function copy_callee_allocated_string(pointer_pointer, length, free)
 	length = (type(length) == 'userdata') and length:value() or length
 	free = free or molch_interface.free
@@ -39,7 +49,7 @@ end
 molch.user = {}
 molch.user.__index = molch.user
 
-function molch.user.new()
+function molch.user.new(random_spice --[[optional]])
 	local user = {}
 	setmetatable(user, molch.user)
 
@@ -51,6 +61,8 @@ function molch.user.new()
 		json_length = molch_interface.size_t()
 	}
 
+	local spice_userdata, spice_userdata_length = random_spice and convert_to_c_string(random_spice) or nil, 0
+
 	-- this will be allocated by molch!
 	local temp_prekey_list = molch_interface.create_ucstring_pointer()
 	local temp_json = molch_interface.create_ucstring_pointer()
@@ -59,13 +71,14 @@ function molch.user.new()
 		user.raw_data.id,
 		temp_prekey_list,
 		user.raw_data.prekey_list_length,
-		nil,
-		0,
+		spice_userdata,
+		spice_userdata_length,
 		temp_json,
 		user.raw_data.json_length
 	)
 	if status ~= 0 then
-		-- TODO free temp_prekey_list
+		molch_interface.free(temp_prekey_list)
+		molch_interface.free(temp_json)
 	end
 
 	-- copy the prekey list over to an array managed by swig and free the old
