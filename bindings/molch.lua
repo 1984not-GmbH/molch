@@ -140,4 +140,16 @@ function molch.user_count()
 end
 molch.user.count = molch.user_count
 
+function molch.user_list()
+	local list = {}
+	for user_id, user in pairs(users) do
+		if user_id ~= 'attributes' then
+			table.insert(list, user_id)
+		end
+	end
+
+	return list
+end
+molch.user.list = molch.user_list
+
 return molch
