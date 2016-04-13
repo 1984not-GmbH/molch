@@ -2,6 +2,15 @@ local molch = {}
 
 local molch_interface = require("molch-interface")
 
+function recursively_delete_table(t)
+	for key, value in pairs(t) do
+		if type(value) == 'table' then
+			recursively_delete_table(value)
+		end
+		t[key] = nil
+	end
+end
+
 function convert_to_lua_string(data, size)
 	size = (type(size) == 'userdata') and size:value() or size
 	local characters = {}
@@ -92,6 +101,16 @@ function molch.user.new(random_spice --[[optional]])
 	user.json = convert_to_lua_string(user.raw_data.json, user.raw_data.json_length)
 
 	return user
+end
+
+function molch.user:destroy()
+	molch_interface.molch_destroy_user(
+		self.raw_data.id,
+		nil,
+		nil)
+
+	setmetatable(self, nil)
+	recursively_delete_table(self)
 end
 
 return molch
