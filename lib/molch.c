@@ -1014,6 +1014,18 @@ unsigned char *molch_json_export(size_t *length) {
 	};
 	mcJSON_InitHooks(&allocation_functions);
 
+	if (length == NULL) {
+		return NULL;
+	}
+
+	// empty array when there is no content
+	if (users == NULL) {
+		unsigned char *json = sodium_malloc(sizeof("[]"));
+		strncpy((char*)json, "[]", sizeof("[]"));
+		*length = sizeof("[]");
+		return json;
+	}
+
 	//allocate a memory pool
 	//FIXME: Don't allocate a fixed amount
 	unsigned char *pool_content = sodium_malloc(5000000);

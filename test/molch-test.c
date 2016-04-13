@@ -39,6 +39,16 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
+	// JSON for empty library
+	buffer_create_from_string(empty_array, "[]");
+	size_t empty_json_length;
+	unsigned char *empty_json = molch_json_export(&empty_json_length);
+	printf("%.*s\n", (int)empty_json_length, (char*)empty_json);
+	if (buffer_compare_to_raw(empty_array, empty_json, empty_json_length) != 0) {
+		fprintf(stderr, "ERROR: Incorrect JSON output when there is no user!\n");
+		return EXIT_FAILURE;
+	}
+
 	int status;
 	//create conversation buffers
 	buffer_t *alice_conversation = buffer_create_on_heap(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
