@@ -63,7 +63,10 @@ end
 
 -- table containing references to all users
 local users = {
-	count = 0
+	attributes = {
+		count = 0,
+		json = ""
+	}
 }
 
 molch.user = {}
@@ -113,7 +116,7 @@ function molch.user.new(random_spice --[[optional]])
 
 	-- add to global list of users
 	users[user.id] = user
-	users.count = users.count + 1
+	users.attributes.count = users.attributes.count + 1
 
 	return user
 end
@@ -126,14 +129,14 @@ function molch.user:destroy()
 
 	-- remove from list of users
 	users[self.id] = nil
-	users.count = users.count - 1
+	users.attributes.count = users.attributes.count - 1
 
 	setmetatable(self, nil)
 	recursively_delete_table(self)
 end
 
 function molch.user_count()
-	return users.count
+	return users.attributes.count
 end
 molch.user.count = molch.user_count
 
