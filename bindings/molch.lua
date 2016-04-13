@@ -152,4 +152,31 @@ function molch.user_list()
 end
 molch.user.list = molch.user_list
 
+function molch.json_export()
+	local json_length = molch_interface.size_t()
+
+	local json
+	if users.attributes.count == 0 then -- work around ugly bug that makes it crash under some circumstances when using sodium_malloc
+		users.attributes.json = "[]\0"
+		json = convert_to_c_string(users.attributes.json)
+	else
+		local temp_json = molch_interface.molch_json_export(json_length)
+		if not temp_json then
+			error("Failed to export JSON.")
+		end
+
+		json = copy_callee_allocated_string(temp_json, json_length, molch_interface.sodium_free)
+		users.attributes.json = convert_to_lua_string(json, json_length)
+	end
+
+
+	if self then -- called on an object
+		self.json = users.attributes.json
+		self.raw_data.json = json
+	end
+
+	return users.attributes.json
+end
+molch.user.json_export = molch.json_export
+
 return molch
