@@ -54,6 +54,10 @@ function molch.print_hex(data, width)
 	io.write('\n')
 end
 
+-- table containing references to all users
+local users = {
+	count = 0
+}
 
 molch.user = {}
 molch.user.__index = molch.user
@@ -100,6 +104,10 @@ function molch.user.new(random_spice --[[optional]])
 	user.prekey_list = convert_to_lua_string(user.raw_data.prekey_list, user.raw_data.prekey_list_length)
 	user.json = convert_to_lua_string(user.raw_data.json, user.raw_data.json_length)
 
+	-- add to global list of users
+	users[user.id] = user
+	users.count = users.count + 1
+
 	return user
 end
 
@@ -109,8 +117,17 @@ function molch.user:destroy()
 		nil,
 		nil)
 
+	-- remove from list of users
+	users[self.id] = nil
+	users.count = users.count - 1
+
 	setmetatable(self, nil)
 	recursively_delete_table(self)
 end
+
+function molch.user_count()
+	return users.count
+end
+molch.user.count = molch.user_count
 
 return molch
