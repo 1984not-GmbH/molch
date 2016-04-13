@@ -179,4 +179,21 @@ function molch.json_export()
 end
 molch.user.json_export = molch.json_export
 
+function molch.destroy_all_users()
+	local user_list = molch.user_list()
+
+	for _,user_id in ipairs(user_list) do
+		users[user_id]:destroy()
+	end
+
+	molch_interface.molch_destroy_all_users()
+
+	recursively_delete_table(users)
+
+	users.attributes = {
+		count = 0,
+		json = ""
+	}
+end
+
 return molch
