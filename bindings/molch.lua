@@ -2,6 +2,13 @@ local molch = {}
 
 local molch_interface = require("molch-interface")
 
+function molch.read_file(filename)
+	local file = io.open(filename, "rb")
+	local content = file:read("*all")
+	file:close()
+	return content
+end
+
 function recursively_delete_table(t)
 	for key, value in pairs(t) do
 		if type(value) == 'table' then
