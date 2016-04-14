@@ -211,4 +211,19 @@ function molch.get_message_type(packet)
 	end
 end
 
+function molch.user:list_conversations()
+	local count = molch_interface.size_t()
+	local raw_list = molch_interface.molch_list_conversations(convert_to_c_string(self.id), count)
+	raw_list = copy_callee_allocated_string(raw_list, count:value() * molch_interface.CONVERSATION_ID_SIZE)
+	local lua_raw_list = convert_to_lua_string(raw_list, count:value() * molch_interface.CONVERSATION_ID_SIZE)
+
+	local list = {}
+	for i = 0, count:value() - 1 do
+		local conversation_id = lua_raw_list:sub(i * molch_interface.CONVERSATION_ID_SIZE + 1, (i + 1) * molch_interface.CONVERSATION_ID_SIZE)
+		table.insert(list, conversation_id)
+	end
+
+	return list
+end
+
 return molch
