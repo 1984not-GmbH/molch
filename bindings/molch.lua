@@ -116,6 +116,8 @@ function molch.user.new(random_spice --[[optional]])
 	users[user.id] = user
 	users.attributes.count = users.attributes.count + 1
 
+	user.conversations = {}
+
 	return user
 end
 
@@ -224,6 +226,44 @@ function molch.user:list_conversations()
 	end
 
 	return list
+end
+
+function molch.json_import(json)
+	local json_string, json_length = convert_to_c_string(json)
+
+	local status = molch_interface.molch_json_import(json_string, json_length)
+	if status ~= 0 then
+		error("Failed to import JSON.")
+	end
+
+	-- update global user list
+	local user_list = molch.user_list()
+	local user_id_lookup = {}
+	for _,user_id in ipairs(user_list) do
+		user_id_lookup[user_id] = true
+
+		if users[user_id] then
+			recursively_delete_table(users[user_id])
+		else
+			users[user_id] = {}
+			setmetatable(users[user_id], molch.user)
+		end
+
+		local user = users[user_id]
+		user.id = user_id
+		user.json = json
+
+		-- add the conversations
+		user.conversations = user:list_conversations()
+	end
+
+	-- remove users that don't exist anymore
+	for user_id,user in pairs(users) do
+		if not user_id_lookup[user_id] then
+			recursively_delete_table(user)
+			users[user_id] = nil
+		end
+	end
 end
 
 return molch
