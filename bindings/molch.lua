@@ -64,7 +64,6 @@ end
 -- table containing references to all users
 local users = {
 	attributes = {
-		count = 0,
 		json = ""
 	}
 }
@@ -111,10 +110,10 @@ function molch.user.new(random_spice --[[optional]])
 	user.id = convert_to_lua_string(raw_id, 32)
 	user.prekey_list = convert_to_lua_string(raw_prekey_list, prekey_list_length)
 	user.json = convert_to_lua_string(raw_json, json_length)
+	users.attributes.json = user.json
 
 	-- add to global list of users
 	users[user.id] = user
-	users.attributes.count = users.attributes.count + 1
 
 	user.conversations = {}
 
@@ -129,14 +128,13 @@ function molch.user:destroy()
 
 	-- remove from list of users
 	users[self.id] = nil
-	users.attributes.count = users.attributes.count - 1
 
 	setmetatable(self, nil)
 	recursively_delete_table(self)
 end
 
 function molch.user_count()
-	return users.attributes.count
+	return molch_interface.molch_user_count()
 end
 molch.user.count = molch.user_count
 
@@ -160,7 +158,7 @@ function molch.json_export()
 	local json_length = molch_interface.size_t()
 
 	local json
-	if users.attributes.count == 0 then -- work around ugly bug that makes it crash under some circumstances when using sodium_malloc
+	if molch.user_count() == 0 then -- work around ugly bug that makes it crash under some circumstances when using sodium_malloc
 		users.attributes.json = "[]\0"
 		json = convert_to_c_string(users.attributes.json)
 	else
@@ -194,7 +192,6 @@ function molch.destroy_all_users()
 	recursively_delete_table(users)
 
 	users.attributes = {
-		count = 0,
 		json = ""
 	}
 end
@@ -252,6 +249,7 @@ function molch.json_import(json)
 		local user = users[user_id]
 		user.id = user_id
 		user.json = json
+		users.attributes.json = json
 
 		-- add the conversations
 		user.conversations = user:list_conversations()
