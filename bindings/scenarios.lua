@@ -11,6 +11,8 @@ local bob_sent = {}
 local alice_conversation = nil
 local bob_conversation = nil
 
+local functions = {}
+
 -- print what we're doing
 local echo = false
 
@@ -21,6 +23,7 @@ function echo_on()
 
 	echo = true
 end
+functions.echo_on = echo_on
 
 function echo_off()
 	if echo then
@@ -28,6 +31,7 @@ function echo_off()
 	end
 	echo = false
 end
+functions.echo_off = echo_off
 
 function alice_send(message)
 	if echo then
@@ -43,6 +47,7 @@ function alice_send(message)
 
 	table.insert(alice_sent, {message = message, packet = packet})
 end
+functions.alice_send = alice_send
 
 function bob_send(message)
 	if echo then
@@ -58,6 +63,7 @@ function bob_send(message)
 
 	table.insert(bob_sent, {message = message, packet = packet})
 end
+functions.bob_send = bob_send
 
 function alice_receive(number)
 	if echo then
@@ -81,6 +87,7 @@ function alice_receive(number)
 
 	print(message)
 end
+functions.alice_receive = alice_receive
 
 function bob_receive(number)
 	if echo then
@@ -104,6 +111,7 @@ function bob_receive(number)
 
 	print(message)
 end
+functions.bob_receive = bob_receive
 
 function alice_packets()
 	if echo then
@@ -116,6 +124,7 @@ function alice_packets()
 		print("\n")
 	end
 end
+functions.alice_packets = alice_packets
 
 function alice_messages()
 	if echo then
@@ -128,6 +137,7 @@ function alice_messages()
 		print("")
 	end
 end
+functions.alice_messages = alice_messages
 
 function bob_packets()
 	if echo then
@@ -140,6 +150,7 @@ function bob_packets()
 		print("\n")
 	end
 end
+functions.bob_packets = bob_packets
 
 function bob_messages()
 	if echo then
@@ -150,5 +161,32 @@ function bob_messages()
 		print(i .. ": Length " .. #entry.message)
 		print(entry.message)
 		print("")
+	end
+end
+functions.bob_messages = bob_messages
+
+function errors_on()
+	if echo then
+		print("> errors_on()")
+	end
+
+	for name,func in pairs(functions) do
+		_G[name] = function (...)
+			local status, error_message = pcall(func, ...)
+			if not status then
+				print("ERROR: " .. error_message)
+				os.exit(1)
+			end
+		end
+	end
+end
+
+function errors_off()
+	if echo then
+		print("> error_off()")
+	end
+
+	for name, func in pairs(functions) do
+		_G[name] = func
 	end
 end
