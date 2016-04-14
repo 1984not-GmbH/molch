@@ -78,6 +78,10 @@ local users = {
 molch.user = {}
 molch.user.__index = molch.user
 
+molch.conversation = {}
+molch.conversation.__index = molch.conversation
+
+
 function molch.user.new(random_spice --[[optional]])
 	local user = {}
 	setmetatable(user, molch.user)
@@ -260,6 +264,10 @@ function molch.json_import(json)
 
 		-- add the conversations
 		user.conversations = user:list_conversations()
+		for _,conversation_id in ipairs(user:list_conversations()) do
+			user.conversations[conversation_id] = {id = conversation_id}
+			setmetatable(user.conversations[conversation_id], molch.conversation)
+		end
 	end
 
 	-- remove users that don't exist anymore
@@ -269,6 +277,194 @@ function molch.json_import(json)
 			users[user_id] = nil
 		end
 	end
+end
+
+function molch.user:create_send_conversation(message, prekey_list, receiver_id)
+	local conversation = {}
+	setmetatable(conversation, molch.conversation)
+
+	local raw_conversation_id = molch_interface.ucstring_array(molch_interface.CONVERSATION_ID_SIZE)
+	local raw_packet = molch_interface.create_ucstring_pointer()
+	local raw_packet_length = molch_interface.size_t()
+	local raw_json = molch_interface.create_ucstring_pointer()
+	local raw_json_length = molch_interface.size_t()
+
+	local raw_message, raw_message_length = convert_to_c_string(message)
+	local raw_prekey_list, raw_prekey_list_length = convert_to_c_string(prekey_list)
+
+	local status = molch_interface.molch_create_send_conversation(
+		raw_conversation_id,
+		raw_packet,
+		raw_packet_length,
+		raw_message,
+		raw_message_length,
+		raw_prekey_list,
+		raw_prekey_list_length,
+		convert_to_c_string(self.id),
+		convert_to_c_string(receiver_id),
+		raw_json,
+		raw_json_length)
+	if status ~= 0 then
+		molch_interface.free(raw_packet)
+		molch_interface.free(raw_json)
+		error("Failed to create send conversation.")
+	end
+
+	local conversation_id = convert_to_lua_string(raw_conversation_id, molch_interface.CONVERSATION_ID_SIZE)
+	raw_packet = copy_callee_allocated_string(raw_packet, raw_packet_length)
+	raw_json = copy_callee_allocated_string(raw_json, raw_json_length, molch_interface.sodium_free)
+
+	local packet = convert_to_lua_string(raw_packet, raw_packet_length)
+	local json = convert_to_lua_string(raw_json, raw_json_length)
+
+	conversation.json = json
+	conversation.id = conversation_id
+
+	-- add to the users list of conversations
+	self.conversations[conversation_id] = conversation
+
+	return conversation, packet
+end
+
+function molch.user:create_receive_conversation(packet, sender_id)
+	local conversation = {}
+	setmetatable(conversation, molch.conversation)
+
+	local raw_conversation_id = molch_interface.ucstring_array(molch_interface.CONVERSATION_ID_SIZE)
+	local raw_message = molch_interface.create_ucstring_pointer()
+	local raw_message_length = molch_interface.size_t()
+	local raw_prekey_list = molch_interface.create_ucstring_pointer()
+	local raw_prekey_list_length = molch_interface.size_t()
+	local raw_json = molch_interface.create_ucstring_pointer()
+	local raw_json_length = molch_interface.size_t()
+
+	local raw_packet, raw_packet_length = convert_to_c_string(packet)
+
+	local status = molch_interface.molch_create_receive_conversation(
+		raw_conversation_id,
+		raw_message,
+		raw_message_length,
+		raw_packet,
+		raw_packet_length,
+		raw_prekey_list,
+		raw_prekey_list_length,
+		convert_to_c_string(sender_id),
+		convert_to_c_string(self.id),
+		raw_json,
+		raw_json_length)
+	if status ~= 0 then
+		molch_interface.free(raw_message)
+		molch_interface.free(raw_prekey_list)
+		molch_interface.free(raw_json)
+		error("Failed to create send conversation.")
+	end
+
+	local conversation_id = convert_to_lua_string(raw_conversation_id, molch_interface.CONVERSATION_ID_SIZE)
+	raw_message = copy_callee_allocated_string(raw_message, raw_message_length)
+	raw_prekey_list = copy_callee_allocated_string(raw_prekey_list, raw_prekey_list_length)
+	raw_json = copy_callee_allocated_string(raw_json, raw_json_length, molch_interface.sodium_free)
+
+	local message = convert_to_lua_string(raw_message, raw_message_length)
+	local prekey_list = convert_to_lua_string(raw_prekey_list, raw_prekey_list_length)
+	local json = convert_to_lua_string(raw_json, raw_json_length)
+
+	conversation.json = json
+	conversation. id = conversation_id
+	self.prekey_list = prekey_list
+
+	-- add to the users list of conversations
+	self.conversations[conversation_id] = conversation
+
+	return conversation, message
+end
+
+function molch.conversation:encrypt_message(message)
+	local raw_message, raw_message_length = convert_to_c_string(message)
+	local raw_packet = molch_interface.create_ucstring_pointer()
+	local raw_packet_length = molch_interface.size_t()
+	local raw_json = molch_interface.create_ucstring_pointer()
+	local raw_json_length = molch_interface.size_t()
+
+	local status = molch_interface.molch_encrypt_message(
+		raw_packet,
+		raw_packet_length,
+		raw_message,
+		raw_message_length,
+		convert_to_c_string(self.id),
+		raw_json,
+		raw_json_length)
+	if status ~= 0 then
+		molch_interface.free(raw_packet)
+		molch_interface.free(raw_json)
+		error("Failed to encrypt message!")
+	end
+
+	raw_packet = copy_callee_allocated_string(raw_packet, raw_packet_length)
+	raw_json = copy_callee_allocated_string(raw_json, raw_json_length, molch_interface.sodium_free)
+
+	local packet = convert_to_lua_string(raw_packet, raw_packet_length)
+	self.json = convert_to_lua_string(raw_json, raw_json_length)
+
+	return packet
+end
+
+function molch.conversation:decrypt_message(packet)
+	local raw_packet, raw_packet_length = convert_to_c_string(packet)
+	local raw_message = molch_interface.create_ucstring_pointer()
+	local raw_message_length = molch_interface.size_t()
+	local raw_json = molch_interface.create_ucstring_pointer()
+	local raw_json_length = molch_interface.size_t()
+
+	local status = molch_interface.molch_decrypt_message(
+		raw_message,
+		raw_message_length,
+		raw_packet,
+		raw_packet_length,
+		convert_to_c_string(self.id),
+		raw_json,
+		raw_json_length)
+	if status ~= 0 then
+		molch_interface.free(raw_message)
+		molch_interface.free(raw_json)
+		error("Failed to decrypt message.")
+	end
+
+	raw_message = copy_callee_allocated_string(raw_message, raw_message_length)
+	raw_json = copy_callee_allocated_string(raw_json, raw_json_length, molch_interface.sodium_free)
+
+	local message = convert_to_lua_string(raw_message, raw_message_length)
+	self.json = convert_to_lua_string(raw_json, raw_json_length)
+
+	return message
+end
+
+function molch.conversation:destroy()
+	-- search the user that the conversation belongs to
+	local containing_user
+	for id,user in pairs(users) do
+		if (id ~= 'attributes') and user.conversations[self.id] then
+			containing_user = user
+			break
+		end
+	end
+
+	local raw_json = molch_interface.create_ucstring_pointer()
+	local raw_json_length = molch_interface.size_t()
+
+	molch_interface.molch_end_conversation(
+		convert_to_c_string(self.id),
+		raw_json,
+		raw_json_length)
+
+	raw_json = copy_callee_allocated_string(raw_json, raw_json_length --[[FIXME Why does this crash?, molch_interface.sodium_free]])
+
+	local json = convert_to_lua_string(raw_json, raw_json_length)
+
+	containing_user.json = json
+	users.attributes.json = json
+
+	containing_user.conversations[self.id] = nil
+	recursively_delete_table(self)
 end
 
 return molch
