@@ -197,4 +197,18 @@ function molch.destroy_all_users()
 	}
 end
 
+function molch.get_message_type(packet)
+	local packet_string, length = convert_to_c_string(packet)
+	local message_type = molch_interface.molch_get_message_type(packet_string, length)
+	if message_type == molch_interface.PREKEY_MESSAGE then
+		return "PREKEY_MESSAGE"
+	elseif message_type == molch_interface.NORMAL_MESSAGE then
+		return "NORMAL_MESSAGE"
+	elseif message_type == molch_interface.INVALID then
+		return "INVALID"
+	else
+		error("No valid message type")
+	end
+end
+
 return molch
