@@ -139,11 +139,15 @@ end
 molch.user.count = molch.user_count
 
 function molch.user_list()
+	local count = molch_interface.size_t()
+	local raw_list = molch_interface.molch_user_list(count)
+	local raw_list = copy_callee_allocated_string(raw_list, count:value() * 32)
+	local lua_raw_list = convert_to_lua_string(raw_list, count:value() * 32)
+
 	local list = {}
-	for user_id, user in pairs(users) do
-		if user_id ~= 'attributes' then
-			table.insert(list, user_id)
-		end
+	for i = 0, count:value() - 1 do
+		local id = lua_raw_list:sub(i * 32 + 1, i * 32 + 32)
+		table.insert(list, id)
 	end
 
 	return list
@@ -177,10 +181,10 @@ end
 molch.user.json_export = molch.json_export
 
 function molch.destroy_all_users()
-	local user_list = molch.user_list()
-
-	for _,user_id in ipairs(user_list) do
-		users[user_id]:destroy()
+	for user_id,user in pairs(users) do
+		if user_id ~= "attributes" then
+			user:destroy()
+		end
 	end
 
 	molch_interface.molch_destroy_all_users()
