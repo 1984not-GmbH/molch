@@ -76,13 +76,10 @@ function molch.user.new(random_spice --[[optional]])
 	local user = {}
 	setmetatable(user, molch.user)
 
-	user.raw_data = {
-		id = molch_interface.ucstring_array(32),
-		prekey_list = nil,
-		prekey_list_length = molch_interface.size_t(),
-		json = nil,
-		json_length = molch_interface.size_t()
-	}
+	local raw_id = molch_interface.ucstring_array(32)
+	local prekey_list_length = molch_interface.size_t()
+	local json_length = molch_interface.size_t()
+
 
 	local spice_userdata, spice_userdata_length = random_spice and convert_to_c_string(random_spice) or nil, 0
 
@@ -91,28 +88,29 @@ function molch.user.new(random_spice --[[optional]])
 	local temp_json = molch_interface.create_ucstring_pointer()
 
 	local status = molch_interface.molch_create_user(
-		user.raw_data.id,
+		raw_id,
 		temp_prekey_list,
-		user.raw_data.prekey_list_length,
+		prekey_list_length,
 		spice_userdata,
 		spice_userdata_length,
 		temp_json,
-		user.raw_data.json_length
+		json_length
 	)
 	if status ~= 0 then
 		molch_interface.free(temp_prekey_list)
 		molch_interface.free(temp_json)
+		error("Failed to create user!")
 	end
 
 	-- copy the prekey list over to an array managed by swig and free the old
-	user.raw_data.prekey_list = copy_callee_allocated_string(temp_prekey_list, user.raw_data.prekey_list_length)
+	local raw_prekey_list = copy_callee_allocated_string(temp_prekey_list, prekey_list_length)
 	-- copy the json over to an array managed by swig and free the old
-	user.raw_data.json = copy_callee_allocated_string(temp_json, user.raw_data.json_length, molch_interface.sodium_free)
+	local raw_json = copy_callee_allocated_string(temp_json, json_length, molch_interface.sodium_free)
 
 	-- create lua strings from the data
-	user.id = convert_to_lua_string(user.raw_data.id, 32)
-	user.prekey_list = convert_to_lua_string(user.raw_data.prekey_list, user.raw_data.prekey_list_length)
-	user.json = convert_to_lua_string(user.raw_data.json, user.raw_data.json_length)
+	user.id = convert_to_lua_string(raw_id, 32)
+	user.prekey_list = convert_to_lua_string(raw_prekey_list, prekey_list_length)
+	user.json = convert_to_lua_string(raw_json, json_length)
 
 	-- add to global list of users
 	users[user.id] = user
@@ -123,7 +121,7 @@ end
 
 function molch.user:destroy()
 	molch_interface.molch_destroy_user(
-		self.raw_data.id,
+		convert_to_c_string(self.id),
 		nil,
 		nil)
 
@@ -172,7 +170,6 @@ function molch.json_export()
 
 	if self then -- called on an object
 		self.json = users.attributes.json
-		self.raw_data.json = json
 	end
 
 	return users.attributes.json
