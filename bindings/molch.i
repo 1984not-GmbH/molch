@@ -3,7 +3,7 @@
 %{
 #include <lib/molch.h>
 #include <lib/constants.h>
-#include <malloc.h>
+#include <stdlib.h>
 #include <string.h>
 %}
 
