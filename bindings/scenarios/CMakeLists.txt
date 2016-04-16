@@ -1,4 +1,4 @@
-set(scenarios normal-conversation)
+set(scenarios normal-conversation reordering)
 
 execute_process(COMMAND cmake -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/scenarios.lua" "${CMAKE_CURRENT_BINARY_DIR}/scenarios.lua")
 

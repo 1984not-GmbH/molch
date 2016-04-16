@@ -1,0 +1,8 @@
+errors_on()
+echo_on()
+alice_send("Hi Bob!")
+alice_send("How's it going!")
+alice_send("Please answer!")
+bob_receive()
+bob_receive(2)
+bob_receive()

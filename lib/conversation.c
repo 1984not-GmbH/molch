@@ -458,6 +458,54 @@ cleanup:
 }
 
 /*
+ * Try to decrypt a packet with skipped over header and message keys.
+ * This corresponds to "try_skipped_header_and_message_keys" from the
+ * Axolotl protocol description.
+ *
+ * Returns 0, if it was able to decrypt the packet.
+ */
+int try_skipped_header_and_message_keys(
+		header_and_message_keystore * const skipped_keys,
+		const buffer_t * const packet,
+		buffer_t ** const message) {
+	//create buffers
+	buffer_t *message_nonce = buffer_create_on_heap(MESSAGE_NONCE_SIZE, MESSAGE_NONCE_SIZE);
+	buffer_t *header = buffer_create_on_heap(255, 0);
+
+	int status = 0;
+	header_and_message_keystore_node* node = skipped_keys->head;
+	for (size_t i = 0; (i < skipped_keys->length) && (node != NULL); i++, node = node->next) {
+		status = packet_decrypt_header(
+				packet,
+				header,
+				message_nonce,
+				node->header_key,
+				NULL,
+				NULL,
+				NULL);
+		if (status == 0) {
+			status = packet_decrypt_message(
+					packet,
+					*message,
+					message_nonce,
+					node->message_key);
+			if (status == 0) {
+				header_and_message_keystore_remove(skipped_keys, node);
+				goto cleanup;
+			}
+		}
+	}
+
+	status = -11;
+
+cleanup:
+	buffer_destroy_from_heap(message_nonce);
+	buffer_destroy_from_heap(header);
+
+	return status;
+}
+
+/*
  * Receive and decrypt a message using an existing conversation.
  */
 int conversation_receive(
@@ -474,6 +522,15 @@ int conversation_receive(
 	buffer_t *their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_t *message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 	*message = buffer_create_on_heap(packet->content_length, 0);
+
+	status = try_skipped_header_and_message_keys(
+			conversation->ratchet->skipped_header_and_message_keys,
+			packet,
+			message);
+	if (status == 0) {
+		// found a key and successfully decrypted the message
+		goto cleanup;
+	}
 
 	status = ratchet_get_receive_header_keys(
 			current_receive_header_key,
