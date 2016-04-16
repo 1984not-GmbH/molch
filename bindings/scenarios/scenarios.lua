@@ -1,3 +1,6 @@
+package.path = "../?.lua;" .. package.path
+package.cpath = "../?.so;../?.dylib;" .. package.cpath
+
 local molch = require("molch")
 
 -- users for alice and bob
