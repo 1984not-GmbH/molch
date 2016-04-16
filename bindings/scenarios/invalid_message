@@ -1,0 +1,22 @@
+errors_on()
+echo_on()
+alice_send("Hi Bob!")
+local invalid_message = alice_sent[1]
+bob_receive()
+bob_send("Hi Alice!")
+alice_receive()
+alice_send("How's it going!")
+bob_receive()
+bob_send("Going great!")
+alice_receive()
+bob_sent[1] = invalid_message
+errors_off()
+local status, error_message = pcall(alice_receive)
+if status then
+	error("ERROR: Decryption didn't fail!")
+else
+	print(error_message)
+end
+errors_on()
+bob_send("Noch da?")
+alice_receive()
