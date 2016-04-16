@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 
 project (molch C)
 
-subdirs(test lib buffer mcJSON)
+subdirs(test lib buffer mcJSON bindings)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
