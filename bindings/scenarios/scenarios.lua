@@ -186,7 +186,7 @@ end
 
 function errors_off()
 	if echo then
-		print("> error_off()")
+		print("> errors_off()")
 	end
 
 	for name, func in pairs(functions) do
