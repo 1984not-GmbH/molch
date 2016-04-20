@@ -17,6 +17,12 @@ if(GENERATE_LUA_BINDINGS AND (NOT APPLE))
             # copy the lua binding
             execute_process(COMMAND cmake -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/molch.lua" "${CMAKE_CURRENT_BINARY_DIR}/molch.lua")
 
+            find_program(MKFIFO mkfifo)
+            if (NOT (MKFIFO MATCHES "MKFIFO-NOTFOUND"))
+                execute_process(COMMAND cmake -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/base64.lua" "${CMAKE_CURRENT_BINARY_DIR}/base64.lua")
+                execute_process(COMMAND cmake -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/pipe.lua" "${CMAKE_CURRENT_BINARY_DIR}/pipe.lua")
+            endif()
+
             subdirs(scenarios)
         endif()
     endif()
