@@ -1,12 +1,32 @@
-#!/usr/bin/env lua
--- Lua 5.1+ base64 v3.0 (c) 2009 by Alex Kloss <alexthkloss@web.de>
--- licensed under the terms of the LGPL2
+-- Lua 5.1+ base64 v3.0
+-- Copyright (C) 2009 by Alex Kloss <alexthkloss@web.de>
+--
+-- Modified by: Max Bruckner (FSMaxB)
+-- * remove command line interface
+-- * make it loadable via "require"
+-- * rename "enc" -> "encode" and "dec" -> "decode"
+--
+--  This library is free software; you can redistribute it and/or
+--  modify it under the terms of the GNU Lesser General Public
+--  License as published by the Free Software Foundation; either
+--  version 2.1 of the License, or (at your option) any later version.
+--
+--  This library is distributed in the hope that it will be useful,
+--  but WITHOUT ANY WARRANTY; without even the implied warranty of
+--  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+--  Lesser General Public License for more details.
+--
+--  You should have received a copy of the GNU Lesser General Public
+--  License along with this library; if not, write to the Free Software
+--  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+
+local base64 = {}
 
 -- character table string
 local b='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 
 -- encoding
-function enc(data)
+function base64.encode(data)
 	return ((data:gsub('.', function(x)
 		local r,b='',x:byte()
 		for i=8,1,-1 do r=r..(b%2^i-b%2^(i-1)>0 and '1' or '0') end
@@ -20,7 +40,7 @@ function enc(data)
 end
 
 -- decoding
-function dec(data)
+function base64.decode(data)
 	data = string.gsub(data, '[^'..b..'=]', '')
 	return (data:gsub('.', function(x)
 		if (x == '=') then return '' end
@@ -35,17 +55,4 @@ function dec(data)
 	end))
 end
 
--- command line if not called as library
-if (arg ~= nil) then
-	local func = 'enc'
-	for n,v in ipairs(arg) do
-		if (n > 0) then
-			if (v == "-h") then print "base64.lua [-e] [-d] text/data" break
-			elseif (v == "-e") then func = 'enc'
-			elseif (v == "-d") then func = 'dec'
-			else print(_G[func](v)) end
-		end
-	end
-else
-	module('base64',package.seeall)
-end
+return base64
