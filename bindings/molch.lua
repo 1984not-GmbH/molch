@@ -74,6 +74,7 @@ local users = {
 		json = ""
 	}
 }
+molch.users = users
 
 molch.user = {}
 molch.user.__index = molch.user
