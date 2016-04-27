@@ -1,5 +1,7 @@
 local molch = {}
 
+print("WARNING: This interface should only be used for debugging!")
+
 local molch_interface = require("molch-interface")
 
 function molch.read_file(filename)
