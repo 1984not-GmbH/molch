@@ -188,6 +188,25 @@ function json_import()
 end
 functions.json_import = json_import
 
+function restart()
+	if echo then
+		print("> restart()")
+	end
+
+	local alice_id = alice.id
+	local bob_id = bob.id
+
+	json = molch.json_export()
+	molch.destroy_all_users()
+	molch.json_import(json)
+
+	alice = molch.users[alice_id]
+	alice_conversation = alice.conversations[alice.conversations[1]]
+	bob = molch.users[bob_id]
+	bob_conversation = bob.conversations[bob.conversations[1]]
+end
+functions.restart = restart
+
 function errors_on()
 	if echo then
 		print("> errors_on()")
