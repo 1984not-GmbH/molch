@@ -25,4 +25,5 @@ else
     exit $? #abort on failure
 fi
 export ASAN_OPTIONS="$ASAN_OPTIONS:detect_stack_use_after_return=1:check_initialization_order=1"
+export CTEST_OUTPUT_ON_FAILURE=1
 make test

@@ -24,4 +24,5 @@ if make; then
 else
     exit $? #abort on failure
 fi
+export CTEST_OUTPUT_ON_FAILURE=1
 make test
