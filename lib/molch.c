@@ -67,12 +67,10 @@ return_status create_prekey_list(
 
 	//get the public identity key
 	int status_int = 0;
-	status_int = master_keys_get_identity_key(
+	status = master_keys_get_identity_key(
 			user->master_keys,
 			public_identity_key);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Failed to get public identity key from master keys.");
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Failed to get public identity key from master keys.");
 
 	//copy the public identity to the prekey list
 	if (buffer_copy(unsigned_prekey_list, 0, public_identity_key, 0, PUBLIC_KEY_SIZE) != 0) {

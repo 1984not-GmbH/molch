@@ -52,10 +52,8 @@ int main(void) {
 	//get the public keys
 	status = master_keys_get_signing_key(unspiced_master_keys, public_signing_key);
 	throw_on_error(DATA_FETCH_ERROR, "Failed to get the public signing key!");
-	status_int = master_keys_get_identity_key(unspiced_master_keys, public_identity_key);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Failed to get the public identity key.");
-	}
+	status = master_keys_get_identity_key(unspiced_master_keys, public_identity_key);
+	throw_on_error(DATA_FETCH_ERROR, "Failed to get the public identity key.");
 
 	//print the keys
 	sodium_mprotect_readonly(unspiced_master_keys);

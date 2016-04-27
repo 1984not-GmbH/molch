@@ -63,7 +63,7 @@ return_status master_keys_get_signing_key(
 /*
  * Get the public identity key.
  */
-int master_keys_get_identity_key(
+return_status master_keys_get_identity_key(
 		master_keys * const keys,
 		buffer_t * const public_identity_key) __attribute__((warn_unused_result));
 

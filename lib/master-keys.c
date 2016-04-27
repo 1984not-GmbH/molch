@@ -182,24 +182,26 @@ cleanup:
 /*
  * Get the public identity key.
  */
-int master_keys_get_identity_key(
+return_status master_keys_get_identity_key(
 		master_keys * const keys,
 		buffer_t * const public_identity_key) {
+	return_status status = return_status_init();
+
 	//check input
 	if ((keys == NULL) || (public_identity_key == NULL) || (public_identity_key->buffer_length < PUBLIC_KEY_SIZE)) {
-		return -6;
+		throw(INVALID_INPUT, "Invalid input to master_keys_get_identity_key.");
 	}
 
 	sodium_mprotect_readonly(keys);
 
-	int status = 0;
-	status = buffer_clone(public_identity_key, keys->public_identity_key);
-	if (status != 0) {
+	if (buffer_clone(public_identity_key, keys->public_identity_key) != 0) {
 		goto cleanup;
 	}
 
 cleanup:
-	sodium_mprotect_noaccess(keys);
+	if (keys != NULL) {
+		sodium_mprotect_noaccess(keys);
+	}
 
 	return status;
 }
