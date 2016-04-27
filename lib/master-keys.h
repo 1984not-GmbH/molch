@@ -17,6 +17,7 @@
  */
 
 #include "constants.h"
+#include "return-status.h"
 #include "../buffer/buffer.h"
 #include "../mcJSON/mcJSON.h"
 
@@ -45,7 +46,8 @@ typedef struct master_keys {
  *
  * WARNING: Don't use Entropy from the OSs CPRNG as seed!
  */
-master_keys *master_keys_create(
+return_status master_keys_create(
+		master_keys ** const keys, //output
 		const buffer_t * const seed,
 		buffer_t * const public_signing_key, //output, optional, can be NULL
 		buffer_t * const public_identity_key //output, optional, can be NULL

@@ -30,6 +30,8 @@ int main(void) {
 		return -1;
 	}
 
+	return_status status = return_status_init();
+
 	master_keys *unspiced_master_keys = NULL;
 	master_keys *spiced_master_keys = NULL;
 	master_keys *imported_master_keys = NULL;
@@ -41,26 +43,20 @@ int main(void) {
 	buffer_t *signed_data = buffer_create_on_heap(100, 0);
 	buffer_t *unwrapped_data = buffer_create_on_heap(100, 0);
 
-	int status = 0;
+	int status_int = 0;
 
 	//create the unspiced master keys
-	unspiced_master_keys = master_keys_create(NULL, NULL, NULL);
-	if (unspiced_master_keys == NULL) {
-		fprintf(stderr, "ERROR: Failed to create unspiced master keys!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
-	}
+	status = master_keys_create(&unspiced_master_keys, NULL, NULL, NULL);
+	throw_on_error(CREATION_ERROR, "Failed to create unspiced master keys.");
 
 	//get the public keys
-	status = master_keys_get_signing_key(unspiced_master_keys, public_signing_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get the public signing key! (%i)\n", status);
-		goto cleanup;
+	status_int = master_keys_get_signing_key(unspiced_master_keys, public_signing_key);
+	if (status_int != 0) {
+		throw(DATA_FETCH_ERROR, "Failed to get the public signing key!");
 	}
-	status = master_keys_get_identity_key(unspiced_master_keys, public_identity_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get the public identity key! (%i)\n", status);
-		goto cleanup;
+	status_int = master_keys_get_identity_key(unspiced_master_keys, public_identity_key);
+	if (status_int != 0) {
+		throw(DATA_FETCH_ERROR, "Failed to get the public identity key.");
 	}
 
 	//print the keys
@@ -81,26 +77,18 @@ int main(void) {
 
 	//check the exported public keys
 	if (buffer_compare(public_signing_key, unspiced_master_keys->public_signing_key) != 0) {
-		fprintf(stderr, "ERROR: Exported public signing key doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Exported public signing key doesn't match.");
 	}
 	if (buffer_compare(public_identity_key, unspiced_master_keys->public_identity_key) != 0) {
-		fprintf(stderr, "ERROR: Exported public identity key doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Exported public identity key doesn't match.");
 	}
 	sodium_mprotect_noaccess(unspiced_master_keys);
 
 
 	//create the spiced master keys
 	buffer_create_from_string(seed, ";a;awoeih]]pquw4t[spdif\\aslkjdf;'ihdg#)%!@))%)#)(*)@)#)h;kuhe[orih;o's':ke';sa'd;kfa';;.calijv;a/orq930u[sd9f0u;09[02;oasijd;adk");
-	spiced_master_keys = master_keys_create(seed, public_signing_key, public_identity_key);
-	if (spiced_master_keys == NULL) {
-		fprintf(stderr, "ERROR: Failed to create spiced master keys!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
-	}
+	status = master_keys_create(&spiced_master_keys, seed, public_signing_key, public_identity_key);
+	throw_on_error(CREATION_ERROR, "Failed to create spiced master keys.");
 
 	//print the keys
 	sodium_mprotect_readonly(spiced_master_keys);
@@ -120,14 +108,10 @@ int main(void) {
 
 	//check the exported public keys
 	if (buffer_compare(public_signing_key, spiced_master_keys->public_signing_key) != 0) {
-		fprintf(stderr, "ERROR: Exported public signing key doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Exported public signing key doesn't match.");
 	}
 	if (buffer_compare(public_identity_key, spiced_master_keys->public_identity_key) != 0) {
-		fprintf(stderr, "ERROR: Exported public identity key doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Exported public identity key doesn't match.");
 	}
 	sodium_mprotect_noaccess(spiced_master_keys);
 
@@ -136,28 +120,26 @@ int main(void) {
 	printf("Data to be signed.\n");
 	printf("%.*s\n", (int)data->content_length, (char*)data->content);
 
-	status = master_keys_sign(
+	status_int = master_keys_sign(
 			spiced_master_keys,
 			data,
 			signed_data);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to sign data!\n");
-		goto cleanup;
+	if (status_int != 0) {
+		throw(SIGN_ERROR, "Failed to sign data.");
 	}
 	printf("Signed data:\n");
 	print_hex(signed_data);
 
 	//now check the signature
 	unsigned long long unwrapped_data_length;
-	status = crypto_sign_open(
+	status_int = crypto_sign_open(
 			unwrapped_data->content,
 			&unwrapped_data_length,
 			signed_data->content,
 			signed_data->content_length,
 			public_signing_key->content);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to verify signature!\n");
-		goto cleanup;
+	if (status_int != 0) {
+		throw(VERIFY_ERROR, "Failed to verify signature.");
 	}
 	unwrapped_data->content_length = (size_t) unwrapped_data_length;
 
@@ -166,9 +148,7 @@ int main(void) {
 	//Test JSON export
 	JSON_EXPORT(json_string1, 10000, 500, true, spiced_master_keys, master_keys_json_export);
 	if (json_string1 == NULL) {
-		fprintf(stderr, "ERROR: Failed to export to JSON!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(EXPORT_ERROR, "Failed to export to JSON.");
 	}
 	printf("JSON:\n");
 	printf("%.*s\n", (int)json_string1->content_length, (char*)json_string1->content);
@@ -176,28 +156,24 @@ int main(void) {
 	//import it again
 	JSON_IMPORT(imported_master_keys, 10000, json_string1, master_keys_json_import);
 	if (imported_master_keys == NULL) {
-		fprintf(stderr, "ERROR: Failed to import from JSON!\n");
 		buffer_destroy_from_heap(json_string1);
-		goto cleanup;
+		throw(IMPORT_ERROR, "Failed to import from JSON.")
 	}
 	printf("Successfully imported from JSON!\n");
 
 	//export it again
 	JSON_EXPORT(exported_json_string, 10000, 500, true, imported_master_keys, master_keys_json_export);
 	if (exported_json_string == NULL) {
-		fprintf(stderr, "ERROR: Failed to exported imported back to JSON!\n");
 		buffer_destroy_from_heap(json_string1);
-		goto cleanup;
+		throw(EXPORT_ERROR, "Failed to export imported back to JSON.");
 	}
 	printf("Successfully exported back to JSON!\n");
 
 	//compare them
 	if (buffer_compare(json_string1, exported_json_string) != 0) {
-		fprintf(stderr, "ERROR: Object imported from JSON was incorrect!\n");
 		buffer_destroy_from_heap(json_string1);
 		buffer_destroy_from_heap(exported_json_string);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Object imported from JSON was incorrect.");
 	}
 	printf("Imported Object matches!\n");
 
@@ -220,5 +196,14 @@ cleanup:
 	buffer_destroy_from_heap(signed_data);
 	buffer_destroy_from_heap(unwrapped_data);
 
-	return status;
+	if (status.status != SUCCESS) {
+		print_errors(&status);
+	}
+	return_status_destroy_errors(&status);
+
+	if (status_int != 0) {
+		status.status = GENERIC_ERROR;
+	}
+
+	return status.status;
 }

@@ -45,6 +45,7 @@ typedef enum status_type { //TODO add more error types
 	DECRYPT_ERROR,
 	CONVERSION_ERROR,
 	SIGN_ERROR,
+	VERIFY_ERROR,
 	REMOVE_ERROR
 } status_type;
 

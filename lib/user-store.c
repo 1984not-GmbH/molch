@@ -139,13 +139,12 @@ return_status user_store_create_user(
 	throw_on_error(CREATION_ERROR, "Failed to create new user store node.");
 
 	//generate the master keys
-	new_node->master_keys = master_keys_create(
+	status = master_keys_create(
+			&(new_node->master_keys),
 			seed,
 			new_node->public_signing_key,
 			public_identity_key);
-	if (new_node->master_keys == NULL) {
-		throw(CREATION_ERROR, "Failed to create master keys.")
-	}
+	throw_on_error(CREATION_ERROR, "Failed to create master keys.");
 
 	//prekeys
 	new_node->prekeys = prekey_store_create();
