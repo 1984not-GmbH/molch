@@ -14,6 +14,8 @@ local bob_sent = {}
 local alice_conversation = nil
 local bob_conversation = nil
 
+local json = nil
+
 local functions = {}
 
 -- print what we're doing
@@ -168,6 +170,24 @@ function bob_messages()
 end
 functions.bob_messages = bob_messages
 
+function json_export()
+	if echo then
+		print("> json_export()")
+	end
+
+	json = molch.json_export()
+end
+functions.json_export = json_export
+
+function json_import()
+	if echo then
+		print("> json_import()")
+	end
+
+	molch.json_import(json)
+end
+functions.json_import = json_import
+
 function errors_on()
 	if echo then
 		print("> errors_on()")
@@ -175,10 +195,13 @@ function errors_on()
 
 	for name,func in pairs(functions) do
 		_G[name] = function (...)
-			local status, error_message = pcall(func, ...)
+			local status, error_message = xpcall(func, function (error_message)
+				print(error_message)
+				print(debug.traceback())
+			end,
+			...)
 			if not status then
-				print("ERROR: " .. error_message)
-				os.exit(1)
+				os.exit(status)
 			end
 		end
 	end
