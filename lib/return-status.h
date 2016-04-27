@@ -42,7 +42,10 @@ typedef enum status_type { //TODO add more error types
 	DATA_FETCH_ERROR,
 	DATA_SET_ERROR,
 	ENCRYPT_ERROR,
-	DECRYPT_ERROR
+	DECRYPT_ERROR,
+	CONVERSION_ERROR,
+	SIGN_ERROR,
+	REMOVE_ERROR
 } status_type;
 
 typedef struct error_message error_message;

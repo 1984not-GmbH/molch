@@ -40,12 +40,12 @@ static user_store *users = NULL;
 /*
  * Create a prekey list.
  */
-int create_prekey_list(
+return_status create_prekey_list(
 		const buffer_t * const public_signing_key,
 		unsigned char ** const prekey_list, //output, needs to be freed
 		size_t * const prekey_list_length) {
 
-	int status = 0;
+	return_status status = return_status_init();
 
 	//create buffers
 	buffer_t *unsigned_prekey_list = buffer_create_on_heap(
@@ -61,55 +61,51 @@ int create_prekey_list(
 
 
 	//get the user
-	user_store_node *user = user_store_find_node(users, public_signing_key);
-	if (user == NULL) {
-		status = -1;
-		goto cleanup;
-	}
+	user_store_node *user = NULL;
+	status = user_store_find_node(&user, users, public_signing_key);
+	throw_on_error(NOT_FOUND, "Failed to find user.");
 
 	//get the public identity key
-	status = master_keys_get_identity_key(
+	int status_int = 0;
+	status_int = master_keys_get_identity_key(
 			user->master_keys,
 			public_identity_key);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(DATA_FETCH_ERROR, "Failed to get public identity key from master keys.");
 	}
 
 	//copy the public identity to the prekey list
-	status = buffer_copy(unsigned_prekey_list, 0, public_identity_key, 0, PUBLIC_KEY_SIZE);
-	if (status != 0) {
-		goto cleanup;
+	if (buffer_copy(unsigned_prekey_list, 0, public_identity_key, 0, PUBLIC_KEY_SIZE) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy public identity to prekey list.");
 	}
 
-	//get the prekey list
-	status = prekey_store_list(user->prekeys, prekeys);
-	if (status != 0) {
-		goto cleanup;
+	//get the prekeys
+	if (prekey_store_list(user->prekeys, prekeys) != 0) {
+		throw(DATA_FETCH_ERROR, "Failed to get prekeys.");
 	}
 
 	//add the timestamp
 	time_t timestamp = time(NULL);
 	buffer_create_with_existing_array(big_endian_timestamp, unsigned_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
-	status = endianness_time_to_big_endian(timestamp, big_endian_timestamp);
-	if (status != 0) {
-		goto cleanup;
+	if (endianness_time_to_big_endian(timestamp, big_endian_timestamp) != 0) {
+		throw(CONVERSION_ERROR, "Failed to convert timestamp to big endian.");
 	}
 	unsigned_prekey_list->content_length = unsigned_prekey_list->buffer_length;
 
 	//sign the prekey list with the current identity key
-	status = master_keys_sign(
+	status_int = master_keys_sign(
 			user->master_keys,
 			unsigned_prekey_list,
 			prekey_list_buffer);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(SIGN_ERROR, "Failed to sign prekey list.");
 	}
 
 	*prekey_list = prekey_list_buffer->content;
 	*prekey_list_length = prekey_list_buffer->content_length;
 
 cleanup:
-	if (status != 0) {
+	if (status.status != SUCCESS) {
 		free(prekey_list_buffer->content);
 	}
 
@@ -158,32 +154,25 @@ return_status molch_create_user(
 		if (sodium_init() == -1) {
 			throw(INIT_ERROR, "Failed to init libsodium.");
 		}
-		users = user_store_create();
-		if (users == NULL) {
-			throw(CREATION_ERROR, "Failed to create user store.")
-		}
+		status = user_store_create(&users);
+		throw_on_error(CREATION_ERROR, "Failed to create user store.")
 	}
 
-	int status_int = 0;
-
 	//create the user
-	status_int = user_store_create_user(
+	status = user_store_create_user(
 			users,
 			random_data_buffer,
 			public_master_key_buffer,
 			NULL);
-	if (status_int != 0) {
-		throw(CREATION_ERROR, "Failed to create user.");
-	}
+	throw_on_error(CREATION_ERROR, "Failed to create user.");
+
 	user_store_created = true;
 
-	status_int = create_prekey_list(
+	status = create_prekey_list(
 			public_master_key_buffer,
 			prekey_list,
 			prekey_list_length);
-	if (status_int != 0) {
-		throw(CREATION_ERROR, "Failed to create prekey list.");
-	}
+	throw_on_error(CREATION_ERROR, "Failed to create prekey list.");
 
 	if (json_export != NULL) {
 		if (json_export_length == NULL) {
@@ -223,7 +212,8 @@ return_status molch_destroy_user(
 	//TODO maybe check beforehand if the user exists and return nonzero if not
 
 	buffer_create_with_existing_array(public_signing_key_buffer, (unsigned char*)public_signing_key, PUBLIC_KEY_SIZE);
-	user_store_remove_by_key(users, public_signing_key_buffer);
+	status = user_store_remove_by_key(users, public_signing_key_buffer);
+	throw_on_error(REMOVE_ERROR, "Failed to remoe user from user store by key.");
 
 	if (json_export != NULL) {
 		if (json_export_length == NULL) {
@@ -277,10 +267,9 @@ return_status molch_user_list(unsigned char **const user_list, size_t *count) {
 	}
 
 	//get the list of users and copy it
-	buffer_t *user_list_buffer = user_store_list(users);
-	if (user_list_buffer == NULL) {
-		throw(CREATION_ERROR, "Failed to create user list.");
-	}
+	buffer_t *user_list_buffer = NULL;
+	status = user_store_list(&user_list_buffer, users);
+	throw_on_error(CREATION_ERROR, "Failed to create user list.");
 
 	*count = molch_user_count();
 
@@ -446,10 +435,8 @@ return_status molch_create_send_conversation(
 	}
 
 	//get the user that matches the public signing key of the sender
-	user = user_store_find_node(users, sender_public_signing_key_buffer);
-	if (user == NULL) {
-		throw(NOT_FOUND, "User not found.");
-	}
+	status = user_store_find_node(&user, users, sender_public_signing_key_buffer);
+	throw_on_error(NOT_FOUND, "User not found.");
 
 	int status_int = 0;
 
@@ -564,10 +551,8 @@ return_status molch_create_receive_conversation(
 	user_store_node *user = NULL;
 
 	//get the user that matches the public signing key of the receiver
-	user = user_store_find_node(users, receiver_public_signing_key_buffer);
-	if (user == NULL) {
-		throw(NOT_FOUND, "User not found in the user store.");
-	}
+	status = user_store_find_node(&user, users, receiver_public_signing_key_buffer);
+	throw_on_error(NOT_FOUND, "User not found in the user store.");
 
 	//unlock the master keys
 	sodium_mprotect_readonly(user->master_keys);
@@ -591,13 +576,11 @@ return_status molch_create_receive_conversation(
 	}
 
 	//create the prekey list
-	status_int = create_prekey_list(
+	status = create_prekey_list(
 			receiver_public_signing_key_buffer,
 			prekey_list,
 			prekey_list_length);
-	if (status_int != 0) {
-		throw(CREATION_ERROR, "Failed to create prekey list.");
-	}
+	throw_on_error(CREATION_ERROR, "Failed to create prekey list.");
 
 	//add the conversation to the conversation store
 	status_int = conversation_store_add(user->conversations, conversation);
@@ -815,8 +798,11 @@ void molch_end_conversation(
 		return;
 	}
 	//find the corresponding user
-	user_store_node *user = user_store_find_node(users, conversation->ratchet->our_public_identity);
-	if (user == NULL) {
+	return_status status = return_status_init();
+	user_store_node *user = NULL;
+	status = user_store_find_node(&user, users, conversation->ratchet->our_public_identity);
+	if (status.status != SUCCESS) {
+		return_status_destroy_errors(&status);
 		return;
 	}
 	conversation_store_remove_by_id(user->conversations, conversation->id);
@@ -860,10 +846,9 @@ return_status molch_list_conversations(
 
 	*conversation_list = NULL;
 
-	user_store_node *user = user_store_find_node(users, user_public_identity_buffer);
-	if (user == NULL) {
-		throw(NOT_FOUND, "No user found for the given public identity.")
-	}
+	user_store_node *user = NULL;
+	status = user_store_find_node(&user, users, user_public_identity_buffer);
+	throw_on_error(NOT_FOUND, "No user found for the given public identity.")
 
 	conversation_id_buffer = conversation_store_list(user->conversations);
 	if (conversation_id_buffer == NULL) {
