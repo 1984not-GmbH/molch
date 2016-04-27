@@ -272,7 +272,7 @@ function molch.json_import(json)
 
 	-- remove users that don't exist anymore
 	for user_id,user in pairs(users) do
-		if not user_id_lookup[user_id] then
+		if (not user_id == "attributes") and (not user_id_lookup[user_id]) then
 			recursively_delete_table(user)
 			users[user_id] = nil
 		end
