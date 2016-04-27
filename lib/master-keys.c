@@ -67,9 +67,8 @@ return_status master_keys_create(
 			throw(ALLOCATION_FAILED, "Failed to allocate cyrpto_seeds buffer.");
 		}
 
-		if (spiced_random(crypto_seeds, seed, crypto_seeds->buffer_length) != 0) {
-			throw(GENERIC_ERROR, "Failed to create spiced random data.");
-		}
+		status = spiced_random(crypto_seeds, seed, crypto_seeds->buffer_length);
+		throw_on_error(GENERIC_ERROR, "Failed to create spiced random data.");
 
 		//generate the signing keypair
 		int status_int = 0;

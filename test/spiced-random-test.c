@@ -28,6 +28,8 @@ int main(void) {
 		return -1;
 	}
 
+	return_status status = return_status_init();
+
 	//some random user input (idiot bashing his head on the keyboard)
 	buffer_create_from_string(spice, "aäipoewur+ü 093+2ß3+2ü+ ß09234rt #2ß 0iw4eräp9ui23+ 03943");
 	printf("\"Random\" input from the user (%zu Bytes):\n", spice->content_length);
@@ -41,12 +43,8 @@ int main(void) {
 	buffer_t *output2 = buffer_create_on_heap(42, 0);
 
 	//fill buffer with spiced random data
-	int status;
 	status = spiced_random(output1, spice, output1->buffer_length);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate spiced random data. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to generate spiced random data.");
 
 	printf("Spiced random data 1 (%zu Bytes):\n", output1->content_length);
 	print_hex(output1);
@@ -55,10 +53,7 @@ int main(void) {
 
 	//fill buffer with spiced random data
 	status = spiced_random(output2, spice, output2->buffer_length);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate spiced random data. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to generate spiced random data.");
 
 	printf("Spiced random data 2 (%zu Bytes):\n", output2->content_length);
 	print_hex(output2);
@@ -66,21 +61,21 @@ int main(void) {
 
 	//compare the two (mustn't be identical!)
 	if (buffer_compare(output1, output2) == 0) {
-		fprintf(stderr, "ERROR: Random numbers aren't random!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Random numbers aren't random.");
 	}
 
 	//don't crash with output length 0
 	status = spiced_random(output1, spice, 0);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate spiced random data. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to generate spiced random data of length 0.");
 
 cleanup:
 	buffer_destroy_from_heap(output1);
 	buffer_destroy_from_heap(output2);
 
-	return status;
+	if (status.status != SUCCESS) {
+		print_errors(&status);
+	}
+	return_status_destroy_errors(&status);
+
+	return status.status;
 }

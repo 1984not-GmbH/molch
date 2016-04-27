@@ -30,7 +30,6 @@
 #include "packet.h"
 #include "../buffer/buffer.h"
 #include "user-store.h"
-#include "spiced-random.h"
 #include "endianness.h"
 #include "return-status.h"
 

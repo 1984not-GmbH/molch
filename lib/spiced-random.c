@@ -21,6 +21,7 @@
 
 #include "constants.h"
 #include "spiced-random.h"
+#include "return-status.h"
 
 /*
  * Generate a random number by combining the OSs random number
@@ -30,31 +31,32 @@
  * WARNING: Don't feed this with random numbers from the OSs random
  * source because it might annihilate the randomness.
  */
-int spiced_random(
+return_status spiced_random(
 		buffer_t * const random_output,
 		const buffer_t * const random_spice,
 		const size_t output_length) {
-	//check buffer length
-	if (random_output->buffer_length < output_length) {
-		return -6;
-	}
+	return_status status = return_status_init();
 
-	int status;
 	//buffer to put the random data derived from the random spice into
 	buffer_t *spice = buffer_create_with_custom_allocator(output_length, output_length, sodium_malloc, sodium_free);
-
 	//buffer that contains the random data from the OS
 	buffer_t *os_random = buffer_create_with_custom_allocator(output_length, output_length, sodium_malloc, sodium_free);
-	status = buffer_fill_random(os_random, output_length);
-	if (status != 0) {
-		goto fail;
+
+	//check buffer length
+	if (random_output->buffer_length < output_length) {
+		throw(INCORRECT_BUFFER_SIZE, "Output buffers is too short.");
+	}
+
+	if (buffer_fill_random(os_random, output_length) != 0) {
+		throw(GENERIC_ERROR, "Failed to fill buffer with random data.");
 	}
 
 	buffer_create_from_string(salt, " molch: an axolotl ratchet lib ");
 	assert(salt->content_length == crypto_pwhash_scryptsalsa208sha256_SALTBYTES);
 
 	//derive random data from the random spice
-	status = crypto_pwhash_scryptsalsa208sha256(
+	int status_int = 0;
+	status_int = crypto_pwhash_scryptsalsa208sha256(
 			spice->content,
 			spice->content_length,
 			(const char*)random_spice->content,
@@ -62,31 +64,29 @@ int spiced_random(
 			salt->content,
 			crypto_pwhash_scryptsalsa208sha256_OPSLIMIT_INTERACTIVE,
 			crypto_pwhash_scryptsalsa208sha256_MEMLIMIT_INTERACTIVE);
-	if (status != 0) {
-		goto fail;
+	if (status_int != 0) {
+		throw(GENERIC_ERROR, "Failed to derive random data from spice.");
 	}
 
 	//now combine the spice with the OS provided random data.
-	status = buffer_xor(os_random, spice);
-	buffer_clear(spice);
-	if (status != 0) {
-		goto fail;
+	if (buffer_xor(os_random, spice) != 0) {
+		throw(GENERIC_ERROR, "Failed to xor os random data and random data derived from spice.");
 	}
 
 	//copy the random data to the output
-	status = buffer_clone(random_output, os_random);
-	if (status != 0) {
-		goto fail;
+	if (buffer_clone(random_output, os_random) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy random data.");
 	}
 
-	goto cleanup;
-
-fail:
-	buffer_clear(random_output);
-	random_output->content_length = 0;
 cleanup:
-	buffer_destroy_with_custom_deallocator(os_random, sodium_free);
+	if (status.status != SUCCESS) {
+		if (random_output != NULL) {
+			buffer_clear(random_output);
+			random_output->content_length = 0;
+		}
+	}
 	buffer_destroy_with_custom_deallocator(spice, sodium_free);
+	buffer_destroy_with_custom_deallocator(os_random, sodium_free);
 
 	return status;
 }
