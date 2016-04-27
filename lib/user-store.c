@@ -424,9 +424,8 @@ user_store *user_store_json_import(const mcJSON * const json) {
 			throw(IMPORT_ERROR, "Failed to import master keys from JSON.");
 		}
 		//copy the public signing key
-		if (master_keys_get_signing_key(node->master_keys, node->public_signing_key) != 0) {
-			throw(DATA_FETCH_ERROR, "Failed to get signing key from master keys.");
-		}
+		status = master_keys_get_signing_key(node->master_keys, node->public_signing_key);
+		throw_on_error(DATA_FETCH_ERROR, "Failed to get signing key from master keys.");
 
 		//prekeys
 		buffer_create_from_string(prekeys_string, "prekeys");

@@ -56,7 +56,7 @@ return_status master_keys_create(
 /*
  * Get the public signing key.
  */
-int master_keys_get_signing_key(
+return_status master_keys_get_signing_key(
 		master_keys * const keys,
 		buffer_t * const public_signing_key) __attribute__((warn_unused_result));
 

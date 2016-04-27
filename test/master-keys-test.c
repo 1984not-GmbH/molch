@@ -50,10 +50,8 @@ int main(void) {
 	throw_on_error(CREATION_ERROR, "Failed to create unspiced master keys.");
 
 	//get the public keys
-	status_int = master_keys_get_signing_key(unspiced_master_keys, public_signing_key);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Failed to get the public signing key!");
-	}
+	status = master_keys_get_signing_key(unspiced_master_keys, public_signing_key);
+	throw_on_error(DATA_FETCH_ERROR, "Failed to get the public signing key!");
 	status_int = master_keys_get_identity_key(unspiced_master_keys, public_identity_key);
 	if (status_int != 0) {
 		throw(DATA_FETCH_ERROR, "Failed to get the public identity key.");
