@@ -70,7 +70,7 @@ return_status master_keys_get_identity_key(
 /*
  * Sign a piece of data. Returns the data and signature in one output buffer.
  */
-int master_keys_sign(
+return_status master_keys_sign(
 		master_keys * const keys,
 		const buffer_t * const data,
 		buffer_t * const signed_data //output, length of data + SIGNATURE_SIZE

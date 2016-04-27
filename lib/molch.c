@@ -66,7 +66,6 @@ return_status create_prekey_list(
 	throw_on_error(NOT_FOUND, "Failed to find user.");
 
 	//get the public identity key
-	int status_int = 0;
 	status = master_keys_get_identity_key(
 			user->master_keys,
 			public_identity_key);
@@ -91,13 +90,11 @@ return_status create_prekey_list(
 	unsigned_prekey_list->content_length = unsigned_prekey_list->buffer_length;
 
 	//sign the prekey list with the current identity key
-	status_int = master_keys_sign(
+	status = master_keys_sign(
 			user->master_keys,
 			unsigned_prekey_list,
 			prekey_list_buffer);
-	if (status_int != 0) {
-		throw(SIGN_ERROR, "Failed to sign prekey list.");
-	}
+	throw_on_error(SIGN_ERROR, "Failed to sign prekey list.");
 
 	*prekey_list = prekey_list_buffer->content;
 	*prekey_list_length = prekey_list_buffer->content_length;

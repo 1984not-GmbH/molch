@@ -116,13 +116,11 @@ int main(void) {
 	printf("Data to be signed.\n");
 	printf("%.*s\n", (int)data->content_length, (char*)data->content);
 
-	status_int = master_keys_sign(
+	status = master_keys_sign(
 			spiced_master_keys,
 			data,
 			signed_data);
-	if (status_int != 0) {
-		throw(SIGN_ERROR, "Failed to sign data.");
-	}
+	throw_on_error(SIGN_ERROR, "Failed to sign data.");
 	printf("Signed data:\n");
 	print_hex(signed_data);
 
