@@ -244,6 +244,19 @@ function molch.json_import(json)
 		error("Failed to import JSON.")
 	end
 
+	-- backup of all running conversations
+	local conversation_backup = {}
+	for user_id, user in pairs(users) do
+		if user_id ~= "attributes" then
+			for conversation_id, conversation in pairs(user.conversations) do
+				if type(conversation) ~= "string" then
+					conversation_backup[conversation_id] = conversation
+					user.conversations[conversation_id] = nil
+				end
+			end
+		end
+	end
+
 	-- update global user list
 	local user_list = molch.user_list()
 	local user_id_lookup = {}
@@ -265,8 +278,13 @@ function molch.json_import(json)
 		-- add the conversations
 		user.conversations = user:list_conversations()
 		for _,conversation_id in ipairs(user:list_conversations()) do
-			user.conversations[conversation_id] = {id = conversation_id}
-			setmetatable(user.conversations[conversation_id], molch.conversation)
+			if conversation_backup[conversation_id] then
+				user.conversations[conversation_id] = conversation_backup[conversation_id]
+				conversation_backup[conversation_id] = nil
+			else
+				user.conversations[conversation_id] = {id = conversation_id}
+				setmetatable(user.conversations[conversation_id], molch.conversation)
+			end
 		end
 	end
 
@@ -276,6 +294,12 @@ function molch.json_import(json)
 			recursively_delete_table(user)
 			users[user_id] = nil
 		end
+	end
+
+	-- destroy conversations that don't exist anymore
+	for _, conversation in pairs(conversation_backup) do
+		print(type(conversation))
+		recursively_delete_table(conversation)
 	end
 end
 
