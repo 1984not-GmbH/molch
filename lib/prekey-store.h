@@ -19,6 +19,7 @@
 #include <time.h>
 
 #include "constants.h"
+#include "return-status.h"
 #include "../buffer/buffer.h"
 #include "../mcJSON/mcJSON.h"
 
@@ -53,7 +54,7 @@ prekey_store *prekey_store_create() __attribute__((warn_unused_result));
  * deprecate the requested prekey put it in the outdated key store and
  * generate a new one.
  */
-int prekey_store_get_prekey(
+return_status prekey_store_get_prekey(
 		prekey_store * const store,
 		const buffer_t * const public_key, //input
 		buffer_t * const private_key) __attribute__((warn_unused_result)); //output

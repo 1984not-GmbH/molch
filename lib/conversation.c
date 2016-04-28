@@ -314,8 +314,6 @@ return_status conversation_start_receive_conversation(
 		throw(INVALID_INPUT, "Invalid input to conversation_start_receive_conversation.");
 	}
 
-	int status_int = 0;
-
 	*conversation = NULL;
 
 	//get the senders keys and our public prekey from the packet
@@ -339,13 +337,11 @@ return_status conversation_start_receive_conversation(
 	}
 
 	//get the private prekey that corresponds to the public prekey used in the message
-	status_int = prekey_store_get_prekey(
+	status = prekey_store_get_prekey(
 			receiver_prekeys,
 			receiver_public_prekey,
 			receiver_private_prekey);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Failed to get public prekey.");
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Failed to get public prekey.");
 
 	status = conversation_create(
 			conversation,

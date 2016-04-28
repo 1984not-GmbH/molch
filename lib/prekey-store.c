@@ -138,18 +138,20 @@ cleanup:
  * deprecate the requested prekey put it in the outdated key store and
  * generate a new one.
  */
-int prekey_store_get_prekey(
+return_status prekey_store_get_prekey(
 		prekey_store * const store,
 		const buffer_t * const public_key, //input
 		buffer_t * const private_key) { //output
+
+	return_status status = return_status_init();
+
 	//check buffers sizes
 	if ((store == NULL) || (public_key->content_length != PUBLIC_KEY_SIZE) || (private_key->buffer_length < PRIVATE_KEY_SIZE)) {
-		return -1;
+		throw(INVALID_INPUT, "Invalid input for prekey_store_get_prekey.");
 	}
 
 	prekey_store_node *found_prekey = NULL;
 
-	int status = 0;
 	//search for the prekey
 	size_t i;
 	for (i = 0; i < PREKEY_AMOUNT; i++) {
@@ -160,8 +162,9 @@ int prekey_store_get_prekey(
 	}
 
 	//if not found, search in the list of deprecated keys.
+	bool deprecated = false;
 	if (found_prekey == NULL) {
-		i = SIZE_MAX;
+		deprecated = true;
 		prekey_store_node *next = store->deprecated_prekeys;
 		while (next != NULL) {
 			if (buffer_compare(public_key, next->public_key) == 0) {
@@ -174,22 +177,19 @@ int prekey_store_get_prekey(
 
 	if (found_prekey == NULL) {
 		private_key->content_length = 0;
-		status = -1;
-		goto cleanup;
+		throw(NOT_FOUND, "No matching prekey found.");
 	}
 
 	//copy the private key
-	status = buffer_clone(private_key, found_prekey->private_key);
-	if (status != 0) {
+	if (buffer_clone(private_key, found_prekey->private_key) != 0) {
 		private_key->content_length = 0;
-		goto cleanup;
+		throw(BUFFER_ERROR, "Failed to copy private key.");
 	}
 
 	//if the key wasn't in the deprectated list already, deprecate it
-	if (i != SIZE_MAX) {
-		status = deprecate(store, i);
-		if (status != 0) {
-			goto cleanup;
+	if (!deprecated) {
+		if (deprecate(store, i) != 0) {
+			throw(GENERIC_ERROR, "Failed to deprecate prekey.");
 		}
 	}
 
