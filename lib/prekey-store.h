@@ -63,7 +63,7 @@ return_status prekey_store_get_prekey(
  * Generate a list containing all public prekeys.
  * (this list can then be stored on a public server).
  */
-int prekey_store_list(
+return_status prekey_store_list(
 		prekey_store * const store,
 		buffer_t * const list) __attribute__((warn_unused_result)); //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 

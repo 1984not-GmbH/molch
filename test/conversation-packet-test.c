@@ -105,10 +105,8 @@ int main(void) {
 	}
 
 	//get the prekey list
-	status_int = prekey_store_list(bob_prekeys, prekey_list);
-	if (status_int != 0) {
-		throw(GENERIC_ERROR, "Failed to get Bob's prekey list.");
-	}
+	status = prekey_store_list(bob_prekeys, prekey_list);
+	throw_on_error(GENERIC_ERROR, "Failed to get Bob's prekey list.");
 
 	//start a send conversation
 	buffer_create_from_string(send_message, "Hello there!");
@@ -209,10 +207,8 @@ int main(void) {
 	//Bob sends the message to Alice.
 
 	//get alice prekey list
-	status_int = prekey_store_list(alice_prekeys, prekey_list);
-	if (status_int != 0) {
-		throw(GENERIC_ERROR, "Failed to get Alice' prekey list.");
-	}
+	status = prekey_store_list(alice_prekeys, prekey_list);
+	throw_on_error(GENERIC_ERROR, "Failed to get Alice' prekey list.");
 
 	//destroy the old packet
 	buffer_destroy_from_heap(packet);

@@ -201,25 +201,27 @@ cleanup:
  * Generate a list containing all public prekeys.
  * (this list can then be stored on a public server).
  */
-int prekey_store_list(
+return_status prekey_store_list(
 		prekey_store * const store,
 		buffer_t * const list) { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+	return_status status = return_status_init();
+
 	//check input
 	if ((store == NULL) || (list->buffer_length < (PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
-		return -1;
+		throw(INVALID_INPUT, "Invalid input to prekey_store_list.");
 	}
 
-	int status = 0;
 	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		status = buffer_copy(
+		int status_int = 0;
+		status_int = buffer_copy(
 				list,
 				PUBLIC_KEY_SIZE * i,
 				store->prekeys[i].public_key,
 				0,
 				PUBLIC_KEY_SIZE);
-		if (status != 0) {
+		if (status_int != 0) {
 			list->content_length = 0;
-			goto cleanup;
+			throw(BUFFER_ERROR, "Failed to copy public prekey.");
 		}
 	}
 

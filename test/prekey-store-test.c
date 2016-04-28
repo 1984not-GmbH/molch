@@ -43,9 +43,8 @@ int main(void) {
 		throw(CREATION_ERROR, "Failed to create a prekey store.");
 	}
 
-	if (prekey_store_list(store, prekey_list) != 0) {
-		throw(DATA_FETCH_ERROR, "Failed to list prekeys.");
-	}
+	status = prekey_store_list(store, prekey_list);
+	throw_on_error(DATA_FETCH_ERROR, "Failed to list prekeys.");
 	printf("Prekey list:\n");
 	print_hex(prekey_list);
 	putchar('\n');

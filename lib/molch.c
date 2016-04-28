@@ -76,9 +76,8 @@ return_status create_prekey_list(
 	}
 
 	//get the prekeys
-	if (prekey_store_list(user->prekeys, prekeys) != 0) {
-		throw(DATA_FETCH_ERROR, "Failed to get prekeys.");
-	}
+	status = prekey_store_list(user->prekeys, prekeys);
+	throw_on_error(DATA_FETCH_ERROR, "Failed to get prekeys.");
 
 	//add the timestamp
 	time_t timestamp = time(NULL);
