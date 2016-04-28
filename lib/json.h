@@ -55,12 +55,12 @@
 //NOTE: This only works on json_import functions that receive a pointer to an existing object
 #define JSON_INITIALIZE(object_pointer, pool_size, json_string, import_function, status_value)\
 	{\
-		status = -1;\
+		status_value = -1;\
 		mempool_t *__pool = buffer_create_on_heap(pool_size, pool_size);\
 		if (__pool != NULL) {\
 			mcJSON *__json = mcJSON_ParseWithBuffer(json_string, __pool);\
 			if (__json != NULL) {\
-				status = import_function(__json, object_pointer);\
+				status_value = import_function(__json, object_pointer);\
 			}\
 			buffer_destroy_from_heap(__pool);\
 		}\
