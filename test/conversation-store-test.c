@@ -148,8 +148,10 @@ int main(void) {
 	);
 
 	//find node by id
-	if (conversation_store_find_node(store, store->head->next->next->id)
-			!= store->head->next->next) {
+	conversation_t *found_node = NULL;
+	status = conversation_store_find_node(&found_node, store, store->head->next->next->id);
+	throw_on_error(NOT_FOUND, "Failed to find conversation.");
+	if (found_node != store->head->next->next) {
 		throw(NOT_FOUND, "Failed to find node by ID.");
 	}
 	printf("Found node by ID.\n");
@@ -163,7 +165,8 @@ int main(void) {
 	//check for all conversations that they exist
 	for (size_t i = 0; i < (conversation_list->content_length / CONVERSATION_ID_SIZE); i++) {
 		buffer_create_with_existing_array(current_id, conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
-		if (conversation_store_find_node(store, current_id) == NULL) {
+		status = conversation_store_find_node(&found_node, store, current_id);
+		if ((status.status != SUCCESS) || (found_node == NULL)) {
 			buffer_destroy_from_heap(conversation_list);
 			throw(INCORRECT_DATA, "Exported list of conversations was incorrect.");
 		}

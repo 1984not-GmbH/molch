@@ -98,7 +98,14 @@ void conversation_store_remove(conversation_store * const store, conversation_t 
  * The conversation is identified by it's id.
  */
 void conversation_store_remove_by_id(conversation_store * const store, const buffer_t * const id) {
-	conversation_t *node = conversation_store_find_node(store, id);
+	return_status status = return_status_init();
+
+	conversation_t *node = NULL;
+	status = conversation_store_find_node(&node, store, id);
+	on_error(
+		return_status_destroy_errors(&status);
+		return;
+	)
 	if (node == NULL) {
 		return;
 	}
@@ -111,16 +118,28 @@ void conversation_store_remove_by_id(conversation_store * const store, const buf
  *
  * Returns NULL if no conversation was found.
  */
-conversation_t *conversation_store_find_node(
+return_status conversation_store_find_node(
+		conversation_t ** const conversation,
 		conversation_store * const store,
 		const buffer_t * const id) {
+	return_status status = return_status_init();
+
+	if ((conversation == NULL) || (store == NULL) || (id == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to conversation_store_find.");
+	}
+
+	*conversation = NULL;
+
 	conversation_store_foreach(store,
 			if (buffer_compare(value->id, id) == 0) {
-				return node;
+				*conversation = node;
+				break;
 			}
 		);
 
-	return NULL;
+cleanup:
+
+	return status;
 }
 
 /*

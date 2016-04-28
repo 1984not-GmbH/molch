@@ -615,17 +615,26 @@ cleanup:
 /*
  * Find a conversation based on it's conversation id.
  */
-conversation_t *find_conversation(
+return_status find_conversation(
+		conversation_t ** const conversation, //output
 		const unsigned char * const conversation_id,
 		conversation_store ** const conversation_store //optional, can be NULL, the conversation store where the conversation is in
 		) {
+	return_status status = return_status_init();
+
+	conversation_t *conversation_node = NULL;
+
+	if ((conversation == NULL) || (conversation_id == NULL)) {
+		throw(INVALID_INPUT, "Invalid input for find_conversation.");
+	}
+
 	buffer_create_with_existing_array(conversation_id_buffer, (unsigned char*)conversation_id, CONVERSATION_ID_SIZE);
 
 	//go through all the users
 	user_store_node *node = users->head;
-	conversation_t *conversation_node = NULL;
 	while (node != NULL) {
-		conversation_node = conversation_store_find_node(node->conversations, conversation_id_buffer);
+		status = conversation_store_find_node(&conversation_node, node->conversations, conversation_id_buffer);
+		throw_on_error(GENERIC_ERROR, "Failure while searching for node.");
 		if (conversation_node != NULL) {
 			//found the conversation where searching for
 			break;
@@ -635,14 +644,23 @@ conversation_t *find_conversation(
 	}
 
 	if (conversation_node == NULL) {
-		return NULL;
+		goto cleanup;
 	}
 
 	if (conversation_store != NULL) {
 		*conversation_store = node->conversations;
 	}
 
-	return conversation_node;
+cleanup:
+	if (status.status != SUCCESS) {
+		if (conversation != NULL) {
+			*conversation = NULL;
+		}
+	} else {
+		*conversation = conversation_node;
+	}
+
+	return status;
 }
 
 /*
@@ -670,7 +688,8 @@ return_status molch_encrypt_message(
 	return_status status = return_status_init();
 
 	//find the conversation
-	conversation = find_conversation(conversation_id, NULL);
+	status = find_conversation(&conversation, conversation_id, NULL);
+	throw_on_error(GENERIC_ERROR, "Error while searching for conversation.");
 	if (conversation == NULL) {
 		throw(NOT_FOUND, "Failed to find a conversation for the given ID.");
 	}
@@ -735,7 +754,8 @@ return_status molch_decrypt_message(
 	conversation_t *conversation = NULL;
 
 	//find the conversation
-	conversation = find_conversation(conversation_id, NULL);
+	status = find_conversation(&conversation, conversation_id, NULL);
+	throw_on_error(GENERIC_ERROR, "Error while searching for conversation.");
 	if (conversation == NULL) {
 		throw(NOT_FOUND, "Failed to find conversation with the given ID.");
 	}
@@ -781,19 +801,25 @@ void molch_end_conversation(
 		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
 		size_t * const json_export_length
 		) {
+	return_status status = return_status_init();
+
 	//find the conversation
-	conversation_t *conversation = find_conversation(conversation_id, NULL);
+	conversation_t *conversation = NULL;
+	status = find_conversation(&conversation, conversation_id, NULL);
+	on_error(
+		return_status_destroy_errors(&status);
+		return;
+	);
 	if (conversation == NULL) {
 		return;
 	}
 	//find the corresponding user
-	return_status status = return_status_init();
 	user_store_node *user = NULL;
 	status = user_store_find_node(&user, users, conversation->ratchet->our_public_identity);
-	if (status.status != SUCCESS) {
+	on_error(
 		return_status_destroy_errors(&status);
 		return;
-	}
+	)
 	conversation_store_remove_by_id(user->conversations, conversation->id);
 
 	if (json_export != NULL) {
@@ -896,7 +922,9 @@ return_status molch_conversation_json_export(
 		throw(INVALID_INPUT, "Invalid input to molch_conversation_json_export");
 	}
 
-	conversation_t *conversation = find_conversation(conversation_id, NULL);
+	conversation_t *conversation = NULL;
+	status = find_conversation(&conversation, conversation_id, NULL);
+	throw_on_error(GENERIC_ERROR, "Error while searching for conversation.");
 	if (conversation == NULL) {
 		throw(NOT_FOUND, "No conversation found for the given ID.");
 	}
@@ -1001,7 +1029,12 @@ return_status molch_conversation_json_import(const unsigned char * const json, c
 
 	//search the conversation in the conversation store
 	conversation_store *store = NULL;
-	conversation_t *old_conversation = find_conversation(conversation_id->content, &store);
+	conversation_t *old_conversation = NULL;
+	status = find_conversation(&old_conversation, conversation_id->content, &store);
+	on_error(
+		molch_end_conversation(conversation_id->content, NULL, NULL);
+		throw(GENERIC_ERROR, "Error while searching for conversation.");
+	);
 	if (old_conversation != NULL) { //destroy the old one if it exists
 		molch_end_conversation(conversation_id->content, NULL, NULL);
 	}

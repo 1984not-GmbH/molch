@@ -57,7 +57,8 @@ void conversation_store_remove_by_id(conversation_store * const store, const buf
  *
  * Returns NULL if no conversation was found.
  */
-conversation_t *conversation_store_find_node(
+return_status conversation_store_find_node(
+		conversation_t ** const conversation,
 		conversation_store * const store,
 		const buffer_t * const id) __attribute__((warn_unused_result));
 
