@@ -147,10 +147,8 @@ return_status user_store_create_user(
 	throw_on_error(CREATION_ERROR, "Failed to create master keys.");
 
 	//prekeys
-	new_node->prekeys = prekey_store_create();
-	if (new_node->prekeys == NULL) {
-		throw(CREATION_ERROR, "Failed to create prekey store.")
-	}
+	status = prekey_store_create(&(new_node->prekeys));
+	throw_on_error(CREATION_ERROR, "Failed to create prekey store.")
 
 	//copy the public signing key, if requested
 	if (public_signing_key != NULL) {

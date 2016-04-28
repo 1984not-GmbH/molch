@@ -47,7 +47,7 @@ struct prekey_store {
 /*
  * Initialise a new keystore. Generates all the keys.
  */
-prekey_store *prekey_store_create() __attribute__((warn_unused_result));
+return_status prekey_store_create(prekey_store ** const store) __attribute__((warn_unused_result));
 
 /*
  * Get a private prekey from it's public key. This will automatically

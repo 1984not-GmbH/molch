@@ -69,14 +69,10 @@ int main(void) {
 	}
 
 	//create prekey stores
-	alice_prekeys = prekey_store_create();
-	if (alice_prekeys == NULL) {
-		throw(CREATION_ERROR, "Failed to create Alice' prekey store.");
-	}
-	bob_prekeys = prekey_store_create();
-	if (bob_prekeys == NULL) {
-		throw(CREATION_ERROR, "Failed to create Bobs prekey store.");
-	}
+	status = prekey_store_create(&alice_prekeys);
+	throw_on_error(CREATION_ERROR, "Failed to create Alice' prekey store.");
+	status = prekey_store_create(&bob_prekeys);
+	throw_on_error(CREATION_ERROR, "Failed to create Bobs prekey store.");
 
 	//create keys
 	//alice

@@ -38,10 +38,9 @@ int main(void) {
 	buffer_t *private_prekey2 = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	buffer_t *prekey_list = buffer_create_on_heap(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
-	prekey_store *store = prekey_store_create();
-	if (store == NULL) {
-		throw(CREATION_ERROR, "Failed to create a prekey store.");
-	}
+	prekey_store *store = NULL;
+	status = prekey_store_create(&store);
+	throw_on_error(CREATION_ERROR, "Failed to create a prekey store.");
 
 	status = prekey_store_list(store, prekey_list);
 	throw_on_error(DATA_FETCH_ERROR, "Failed to list prekeys.");

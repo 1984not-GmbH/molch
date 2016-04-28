@@ -23,55 +23,64 @@
 /*
  * Initialise a new keystore. Generates all the keys.
  */
-prekey_store *prekey_store_create() {
-	prekey_store *store = sodium_malloc(sizeof(prekey_store));
+return_status prekey_store_create(prekey_store ** const store) {
+	return_status status = return_status_init();
+
 	if (store == NULL) {
-		return NULL;
+		throw(INVALID_INPUT, "Invalid input to prekey_store_create.");
+	}
+
+	*store = sodium_malloc(sizeof(prekey_store));
+	if (*store == NULL) {
+		throw(ALLOCATION_FAILED, "Failed to allocate prekey store.");
 	}
 	//set timestamp to the past --> rotate will create new keys
-	store->oldest_timestamp = 0;
-	store->oldest_deprecated_timestamp = 0;
+	(*store)->oldest_timestamp = 0;
+	(*store)->oldest_deprecated_timestamp = 0;
 
-	store->deprecated_prekeys = NULL;
+	(*store)->deprecated_prekeys = NULL;
 
-	int status = 0;
-	size_t i;
-	for (i = 0; i < PREKEY_AMOUNT; i++) {
-		store->prekeys[i].timestamp = time(NULL);
-		if ((store->oldest_timestamp == 0) || (store->prekeys[i].timestamp < store->oldest_timestamp)) {
-			store->oldest_timestamp = store->prekeys[i].timestamp;
+	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
+		(*store)->prekeys[i].timestamp = time(NULL);
+		if (((*store)->oldest_timestamp == 0) || ((*store)->prekeys[i].timestamp < (*store)->oldest_timestamp)) {
+			(*store)->oldest_timestamp = (*store)->prekeys[i].timestamp;
 		}
 
-		store->prekeys[i].next = NULL;
+		(*store)->prekeys[i].next = NULL;
 
 		//initialize the key buffers
 		buffer_init_with_pointer(
-				store->prekeys[i].public_key,
-				store->prekeys[i].public_key_storage,
+				(*store)->prekeys[i].public_key,
+				(*store)->prekeys[i].public_key_storage,
 				PUBLIC_KEY_SIZE,
 				PUBLIC_KEY_SIZE);
 		buffer_init_with_pointer(
-				store->prekeys[i].private_key,
-				store->prekeys[i].private_key_storage,
+				(*store)->prekeys[i].private_key,
+				(*store)->prekeys[i].private_key_storage,
 				PRIVATE_KEY_SIZE,
 				PRIVATE_KEY_SIZE);
 
 		//generate the keys
-		status = crypto_box_keypair(
-				store->prekeys[i].public_key->content,
-				store->prekeys[i].private_key->content);
-		if (status != 0) {
-			goto cleanup;
+		int status_int = 0;
+		status_int = crypto_box_keypair(
+				(*store)->prekeys[i].public_key->content,
+				(*store)->prekeys[i].private_key->content);
+		if (status_int != 0) {
+			throw(KEYGENERATION_FAILED, "Failed to generate prekey pair.");
 		}
 	}
 
 cleanup:
-	if (status != 0) {
-		sodium_free(store);
-		return NULL;
+	if (status.status != SUCCESS) {
+		if (store != NULL) {
+			if (*store != NULL) {
+				sodium_free(store);
+				*store = NULL;
+			}
+		}
 	}
 
-	return store;
+	return status;
 }
 
 /*
