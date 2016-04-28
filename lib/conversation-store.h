@@ -17,6 +17,7 @@
  */
 
 #include "conversation.h"
+#include "return-status.h"
 
 #ifndef LIB_CONVERSATION_STORE_H
 #define LIB_CONVERSATION_STORE_H
@@ -35,7 +36,7 @@ void conversation_store_init(conversation_store * const store);
 /*
  * add a conversation to the conversation store.
  */
-int conversation_store_add(
+return_status conversation_store_add(
 		conversation_store * const store,
 		conversation_t * const conversation) __attribute__((warn_unused_result));
 

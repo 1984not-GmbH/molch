@@ -463,10 +463,8 @@ return_status molch_create_send_conversation(
 		throw(BUFFER_ERROR, "Failed to clone conversation id.");
 	}
 
-	status_int = conversation_store_add(user->conversations, conversation);
-	if (status_int != 0) {
-		throw(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
-	}
+	status = conversation_store_add(user->conversations, conversation);
+	throw_on_error(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
 	conversation = NULL;
 
 	*packet = packet_buffer->content;
@@ -576,10 +574,8 @@ return_status molch_create_receive_conversation(
 	throw_on_error(CREATION_ERROR, "Failed to create prekey list.");
 
 	//add the conversation to the conversation store
-	status_int = conversation_store_add(user->conversations, conversation);
-	if (status_int != 0) {
-		throw(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
-	}
+	status = conversation_store_add(user->conversations, conversation);
+	throw_on_error(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
 	conversation = NULL;
 
 	*message = message_buffer->content;
@@ -1015,10 +1011,8 @@ return_status molch_conversation_json_import(const unsigned char * const json, c
 	}
 
 	//now add the conversation to the store
-	status_int = conversation_store_add(store, imported_conversation);
-	if (status_int != 0) {
-		throw(ADDITION_ERROR, "Failed to add conversation to the conversation store.");
-	}
+	status = conversation_store_add(store, imported_conversation);
+	throw_on_error(ADDITION_ERROR, "Failed to add conversation to the conversation store.");
 
 cleanup:
 	if (status.status != SUCCESS) {

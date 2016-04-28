@@ -30,11 +30,14 @@ void conversation_store_init(conversation_store * const store) {
 /*
  * add a conversation to the conversation store.
  */
-int conversation_store_add(
+return_status conversation_store_add(
 		conversation_store * const store,
 		conversation_t * const conversation) {
+
+	return_status status = return_status_init();
+
 	if ((store == NULL) || (conversation == NULL)) {
-		return -1;
+		throw(INVALID_INPUT, "Invalid input to conversation_store_add");
 	}
 
 	if (store->head == NULL) { //first conversation in the list
@@ -46,7 +49,7 @@ int conversation_store_add(
 		//update length
 		store->length++;
 
-		return 0;
+		goto cleanup;
 	}
 
 	//add the new conversation to the tail of the list
@@ -58,7 +61,9 @@ int conversation_store_add(
 	//update length
 	store->length++;
 
-	return 0;
+cleanup:
+
+	return status;
 }
 
 /*
@@ -194,43 +199,46 @@ mcJSON *conversation_store_json_export(const conversation_store * const store, m
 int conversation_store_json_import(
 		const mcJSON * const json,
 		conversation_store * const store) {
+
+	return_status status = return_status_init();
+
+	conversation_t *node = NULL;
+
 	if ((json == NULL) || (json->type != mcJSON_Array) || (store == NULL)) {
-		return -1;
+		throw(INVALID_INPUT, "Invalid input to conversation_store_json_import.");
 	}
 
 	//initialise the conversation store
 	conversation_store_init(store);
 
-	int status = 0;
-
 	//iterate through array
 	mcJSON *child = json->child;
-	conversation_t *node = NULL;
 	for (size_t i = 0; (i < json->length) && (child != NULL); i++, child = child->next) {
 		//import the conversation
 		node = conversation_json_import(child);
 		if (node == NULL) {
-			status = -2;
-			goto cleanup;
+			throw(IMPORT_ERROR, "Failed to import conversation from JSON.");
 		}
 
 		//add it to the conversation store
 		status = conversation_store_add(store, node);
-		if (status != 0) {
-			goto cleanup;
-		}
+		throw_on_error(ADDITION_ERROR, "Failed to add conversation to conversation store.");
 
 		node = NULL;
 	}
 
 cleanup:
-	if (status != 0) {
+	if (status.status != 0) {
 		if (node != NULL) {
 			conversation_destroy(node);
 		}
 
-		conversation_store_clear(store);
+		if (store != NULL) {
+			conversation_store_clear(store);
+		}
 	}
 
-	return status;
+	return_status_destroy_errors(&status);
+
+	return status.status;
 }
