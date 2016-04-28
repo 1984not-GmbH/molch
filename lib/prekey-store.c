@@ -233,9 +233,11 @@ cleanup:
  * Automatically deprecate old keys and generate new ones
  * and throw away deprecated ones that are too old.
  */
-int prekey_store_rotate(prekey_store * const store) {
+return_status prekey_store_rotate(prekey_store * const store) {
+	return_status status = return_status_init();
+
 	if (store == NULL) {
-		return -1;
+		throw(INVALID_INPUT, "Invalid input to prekey_store_rotate: store is NULL.");
 	}
 
 	//time after which a prekey get's deprecated
@@ -244,8 +246,6 @@ int prekey_store_rotate(prekey_store * const store) {
 	static const time_t remove_time = 3600; //one hour
 
 	time_t current_time = time(NULL);
-
-	int status = 0;
 
 	//Is the timestamp in the future?
 	if (current_time < store->oldest_timestamp) {
@@ -261,7 +261,7 @@ int prekey_store_rotate(prekey_store * const store) {
 			next = next->next;
 		}
 
-		goto cleanup;
+		goto cleanup; //TODO Doesn't this skip the deprecated ones?
 	}
 
 	//At least one outdated prekey
@@ -269,9 +269,8 @@ int prekey_store_rotate(prekey_store * const store) {
 	if ((store->oldest_timestamp + deprecated_time) < current_time) {
 		for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
 			if ((store->prekeys[i].timestamp + deprecated_time) < current_time) {
-				status = deprecate(store, i);
-				if (status != 0) {
-					goto cleanup;
+				if (deprecate(store, i) != 0) {
+					throw(GENERIC_ERROR, "Failed to deprecate key.");
 				}
 			} else if (store->prekeys[i].timestamp < new_oldest_timestamp) {
 				new_oldest_timestamp = store->prekeys[i].timestamp;

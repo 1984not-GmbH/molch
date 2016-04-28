@@ -148,9 +148,8 @@ int main(void) {
 	store->prekeys[PREKEY_AMOUNT-1].timestamp -= 365 * 24 * 3600; //one year
 	store->oldest_timestamp = store->prekeys[PREKEY_AMOUNT - 1].timestamp;
 
-	if (prekey_store_rotate(store) != 0) {
-		throw(GENERIC_ERROR, "Failed to rotate the prekeys.");
-	}
+	status = prekey_store_rotate(store);
+	throw_on_error(GENERIC_ERROR, "Failed to rotate the prekeys.");
 
 	if (buffer_compare(store->deprecated_prekeys->public_key, public_prekey) != 0) {
 		throw(GENERIC_ERROR, "Failed to deprecate outdated key.");
@@ -165,9 +164,8 @@ int main(void) {
 	store->deprecated_prekeys->next->timestamp -= 24 * 3600;
 	store->oldest_deprecated_timestamp = store->deprecated_prekeys->next->timestamp;
 
-	if (prekey_store_rotate(store) != 0) {
-		throw(GENERIC_ERROR, "Failed to rotate the prekeys.");
-	}
+	status = prekey_store_rotate(store);
+	throw_on_error(GENERIC_ERROR, "Failed to rotate the prekeys.");
 
 	if (store->deprecated_prekeys->next != NULL) {
 		throw(GENERIC_ERROR, "Failed to remove outdated key.");
