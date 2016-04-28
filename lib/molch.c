@@ -851,7 +851,7 @@ return_status molch_list_conversations(
 		unsigned char ** const conversation_list,
 		size_t *number) {
 	buffer_create_with_existing_array(user_public_identity_buffer, (unsigned char*)user_public_identity, PUBLIC_KEY_SIZE);
-	buffer_t *conversation_id_buffer = NULL;
+	buffer_t *conversation_list_buffer = NULL;
 
 	return_status status = return_status_init();
 
@@ -865,19 +865,25 @@ return_status molch_list_conversations(
 	status = user_store_find_node(&user, users, user_public_identity_buffer);
 	throw_on_error(NOT_FOUND, "No user found for the given public identity.")
 
-	conversation_id_buffer = conversation_store_list(user->conversations);
-	if (conversation_id_buffer == NULL) {
-		throw(GENERIC_ERROR, "Failed to list conversation ids.");
+	status = conversation_store_list(&conversation_list_buffer, user->conversations);
+	on_error(
+		throw(DATA_FETCH_ERROR, "Failed to list conversations.");
+	);
+	if (conversation_list_buffer == NULL) {
+		// list is empty
+		*conversation_list = NULL;
+		*number = 0;
+		goto cleanup;
 	}
 
-	if ((conversation_id_buffer->content_length % CONVERSATION_ID_SIZE) != 0) {
+	if ((conversation_list_buffer->content_length % CONVERSATION_ID_SIZE) != 0) {
 		throw(INCORRECT_BUFFER_SIZE, "The conversation ID buffer has an incorrect length.");
 	}
-	*number = conversation_id_buffer->content_length / CONVERSATION_ID_SIZE;
+	*number = conversation_list_buffer->content_length / CONVERSATION_ID_SIZE;
 
-	*conversation_list = conversation_id_buffer->content;
-	free(conversation_id_buffer); //free buffer_t struct
-	conversation_id_buffer = NULL;
+	*conversation_list = conversation_list_buffer->content;
+	free(conversation_list_buffer); //free buffer_t struct
+	conversation_list_buffer = NULL;
 
 cleanup:
 	if (status.status != SUCCESS) {
@@ -885,8 +891,8 @@ cleanup:
 			*number = 0;
 		}
 
-		if (conversation_id_buffer != NULL) {
-			buffer_destroy_from_heap(conversation_id_buffer);
+		if (conversation_list_buffer != NULL) {
+			buffer_destroy_from_heap(conversation_list_buffer);
 		}
 	}
 

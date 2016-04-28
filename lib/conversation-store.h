@@ -87,7 +87,7 @@ void conversation_store_clear(conversation_store * const store);
  *
  * Returns NULL if empty.
  */
-buffer_t *conversation_store_list(conversation_store * const store) __attribute__((warn_unused_result));
+return_status conversation_store_list(buffer_t ** const list, conversation_store * const store) __attribute__((warn_unused_result));
 
 /*
  * Serialise a conversation store into JSON. It gets a mempool_t buffer and stre a tree of

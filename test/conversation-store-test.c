@@ -157,7 +157,11 @@ int main(void) {
 	printf("Found node by ID.\n");
 
 	//test list export feature
-	buffer_t *conversation_list = conversation_store_list(store);
+	buffer_t *conversation_list = NULL;
+	status = conversation_store_list(&conversation_list, store);
+	on_error(
+		throw(DATA_FETCH_ERROR, "Failed to list conversations.");
+	);
 	if ((conversation_list == NULL) || (conversation_list->content_length != (CONVERSATION_ID_SIZE * store->length))) {
 		throw(DATA_FETCH_ERROR, "Failed to get list of conversations.");
 	}

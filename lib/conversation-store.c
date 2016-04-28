@@ -160,28 +160,39 @@ void conversation_store_clear(conversation_store * const store) {
  *
  * Returns NULL if empty.
  */
-buffer_t *conversation_store_list(conversation_store * const store) {
-	if (store->length == 0) {
-		return NULL;
+return_status conversation_store_list(buffer_t ** const list, conversation_store * const store) {
+	return_status status = return_status_init();
+
+	if ((list == NULL) || (store == NULL) || (store->length == 0)) {
+		throw(INVALID_INPUT, "Invalid input to conversation_store_list.");
 	}
 
-	buffer_t *list = buffer_create_on_heap(store->length * CONVERSATION_ID_SIZE, 0);
+	*list = buffer_create_on_heap(store->length * CONVERSATION_ID_SIZE, 0);
 	//copy all the id's
 	conversation_store_foreach(
 			store,
-			int status = buffer_copy(
-				list,
+			int status_int = buffer_copy(
+				*list,
 				CONVERSATION_ID_SIZE * index,
 				value->id,
 				0,
 				value->id->content_length);
-			if (status != 0) {
-				buffer_destroy_from_heap(list);
-				return NULL;
+			if (status_int != 0) {
+				throw(BUFFER_ERROR, "Failed to copy conversation id.");
 			}
 	);
 
-	return list;
+cleanup:
+	if (status.status != SUCCESS) {
+		if (list != NULL) {
+			if (*list != NULL) {
+				buffer_destroy_from_heap(*list);
+				*list = NULL;
+			}
+		}
+	}
+
+	return status;
 }
 
 /*
