@@ -74,6 +74,10 @@ status_type return_status_add_error_message(
 
 void return_status_destroy_errors(return_status * const status);
 
+/*
+ * Get the name of a status type as a string.
+ */
+const char *return_status_get_name(status_type status);
 
 //This assumes that there is a return_status struct and there is a "cleanup" label to jump to.
 #define throw(status_type_value, message) {\
