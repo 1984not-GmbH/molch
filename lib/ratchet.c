@@ -23,7 +23,6 @@
 
 #include "constants.h"
 #include "ratchet.h"
-#include "diffie-hellman.h"
 #include "key-derivation.h"
 
 /*

@@ -19,6 +19,7 @@
 #include <stdbool.h>
 
 #include "../buffer/buffer.h"
+#include "return-status.h"
 
 #ifndef LIB_DIFFIE_HELLMAN_H
 #define LIB_DIFFIE_HELLMAN_H
@@ -59,7 +60,7 @@ int diffie_hellman(
  * -->Alice: HASH(DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_identity)||DH(our_ephemeral, their_ephemeral))
  * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
  */
-int triple_diffie_hellman(
+return_status triple_diffie_hellman(
 		buffer_t * const derived_key,
 		const buffer_t * const our_private_identity,
 		const buffer_t * const our_public_identity,

@@ -149,7 +149,7 @@ int diffie_hellman(
  * -->Alice: HASH(DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_identity)||DH(our_ephemeral, their_ephemeral))
  * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
  */
-int triple_diffie_hellman(
+return_status triple_diffie_hellman(
 		buffer_t * const derived_key,
 		const buffer_t * const our_private_identity,
 		const buffer_t * const our_public_identity,
@@ -158,8 +158,15 @@ int triple_diffie_hellman(
 		const buffer_t * const their_public_identity,
 		const buffer_t * const their_public_ephemeral,
 		const bool am_i_alice) {
+	return_status status = return_status_init();
+
 	//set content length of output to 0 (can prevent use on failure)
 	derived_key->content_length = 0;
+
+	//buffers for all 3 Diffie Hellman exchanges
+	buffer_t *dh1 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+	buffer_t *dh2 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+	buffer_t *dh3 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
 
 	//check buffer sizes
 	if ((derived_key->buffer_length < DIFFIE_HELLMAN_SIZE)
@@ -175,71 +182,66 @@ int triple_diffie_hellman(
 			|| (our_private_ephemeral->buffer_length < PRIVATE_KEY_SIZE)
 			|| (our_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)
 			|| (their_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)) {
-		return -6;
+		throw(INVALID_INPUT, "Invalid input to triple_diffie_hellman.");
 	}
 
-	int status;
-	//buffers for all 3 Diffie Hellman exchanges
-	buffer_t *dh1 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-	buffer_t *dh2 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-	buffer_t *dh3 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-
+	int status_int = 0;
 	if (am_i_alice) {
 		//DH(our_identity, their_ephemeral)
-		status = diffie_hellman(
+		status_int = diffie_hellman(
 				dh1,
 				our_private_identity,
 				our_public_identity,
 				their_public_ephemeral,
 				am_i_alice);
-		if (status != 0) {
-			goto cleanup;
+		if (status_int != 0) {
+			throw(KEYDERIVATION_FAILED, "Failed to perform diffie hellman on our identity and their ephemeral.");
 		}
 
 		//DH(our_ephemeral, their_identity)
-		status = diffie_hellman(
+		status_int = diffie_hellman(
 				dh2,
 				our_private_ephemeral,
 				our_public_ephemeral,
 				their_public_identity,
 				am_i_alice);
-		if (status != 0) {
-			goto cleanup;
+		if (status_int != 0) {
+			throw(KEYDERIVATION_FAILED, "Failed to perform diffie hellman on our ephemeral and their identity.");
 		}
 	} else {
 		//DH(our_ephemeral, their_identity)
-		status = diffie_hellman(
+		status_int = diffie_hellman(
 				dh1,
 				our_private_ephemeral,
 				our_public_ephemeral,
 				their_public_identity,
 				am_i_alice);
-		if (status != 0) {
-			goto cleanup;
+		if (status_int != 0) {
+			throw(KEYDERIVATION_FAILED, "Failed to perform diffie hellman on our ephemeral and their identy.");
 		}
 
 		//DH(our_identity, their_ephemeral)
-		status = diffie_hellman(
+		status_int = diffie_hellman(
 				dh2,
 				our_private_identity,
 				our_public_identity,
 				their_public_ephemeral,
 				am_i_alice);
-		if (status != 0) {
-			goto cleanup;
+		if (status_int != 0) {
+			throw(KEYDERIVATION_FAILED, "Failed to perform diffie hellman on our identity and their ephemeral.");
 		}
 	}
 
 	//DH(our_ephemeral, their_ephemeral)
 	//this is identical for both Alice and Bob
-	status = diffie_hellman(
+	status_int = diffie_hellman(
 			dh3,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral,
 			am_i_alice);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(KEYDERIVATION_FAILED, "Failed to perform diffie hellman on our ephemeral and their ephemeral.");
 	}
 
 	//now calculate HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0))
@@ -247,38 +249,34 @@ int triple_diffie_hellman(
 
 	//initialize hashing
 	crypto_generichash_state hash_state[1];
-	status = crypto_generichash_init(
+	status_int = crypto_generichash_init(
 			hash_state,
 			NULL, //key
 			0, //key_length
 			DIFFIE_HELLMAN_SIZE); //output_length
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(GENERIC_ERROR, "Failed to initialize hash.");
 	}
 
 	//add dh1 to hash input
-	status = crypto_generichash_update(hash_state, dh1->content, DIFFIE_HELLMAN_SIZE);
-	if (status != 0) {
-		goto cleanup;
+	if (crypto_generichash_update(hash_state, dh1->content, DIFFIE_HELLMAN_SIZE) != 0) {
+		throw(GENERIC_ERROR, "Failed to add dh1 to the hash input.");
 	}
 
 	//add dh2 to hash input
-	status = crypto_generichash_update(hash_state, dh2->content, DIFFIE_HELLMAN_SIZE);
-	if (status != 0) {
-		goto cleanup;
+	if (crypto_generichash_update(hash_state, dh2->content, DIFFIE_HELLMAN_SIZE) != 0) {
+		throw(GENERIC_ERROR, "Failed to add dh2 to the hash input.");
 	}
 
 	//add dh3 to hash input
-	status = crypto_generichash_update(hash_state, dh3->content, DIFFIE_HELLMAN_SIZE);
-	if (status != 0) {
-		goto cleanup;
+	if (crypto_generichash_update(hash_state, dh3->content, DIFFIE_HELLMAN_SIZE) != 0) {
+		throw(GENERIC_ERROR, "Failed to add dh3 to the hash input.");
 	}
 
 	//write final hash to output (derived_key)
-	status = crypto_generichash_final(hash_state, derived_key->content, DIFFIE_HELLMAN_SIZE);
-	if (status != 0) {
+	if (crypto_generichash_final(hash_state, derived_key->content, DIFFIE_HELLMAN_SIZE) != 0) {
 		sodium_memzero(hash_state, sizeof(crypto_generichash_state));
-		goto cleanup;
+		throw(GENERIC_ERROR, "Failed to finalize hash");
 	}
 	derived_key->content_length = DIFFIE_HELLMAN_SIZE;
 	sodium_memzero(hash_state, sizeof(crypto_generichash_state));
@@ -287,5 +285,6 @@ cleanup:
 	buffer_destroy_from_heap(dh1);
 	buffer_destroy_from_heap(dh2);
 	buffer_destroy_from_heap(dh3);
+
 	return status;
 }

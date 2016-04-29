@@ -272,12 +272,11 @@ return_status derive_initial_root_chain_and_header_keys(
 		throw(INVALID_INPUT, "Invalid input to derive_initial_root_chain_and_header_keys.");
 	}
 
-	int status_int = 0;
 	//derive master_key to later derive the initial root key,
 	//header keys and chain keys from
 	//master_key = HASH( DH(A,B0) || DH(A0,B) || DH(A0,B0) )
 	assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES);
-	status_int = triple_diffie_hellman(
+	status = triple_diffie_hellman(
 			master_key,
 			our_private_identity,
 			our_public_identity,
@@ -286,9 +285,7 @@ return_status derive_initial_root_chain_and_header_keys(
 			their_public_identity,
 			their_public_ephemeral,
 			am_i_alice);
-	if (status_int != 0) {
-		throw(KEYDERIVATION_FAILED, "Failed to perform triple diffie hellman.");
-	}
+	throw_on_error(KEYDERIVATION_FAILED, "Failed to perform triple diffie hellman.");
 
 	//derive root key
 	//RK = KDF(master_key, 0x00)
