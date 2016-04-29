@@ -79,6 +79,14 @@ void return_status_destroy_errors(return_status * const status);
  */
 const char *return_status_get_name(status_type status);
 
+/*
+ * Pretty print the error stack into a buffer.
+ *
+ * Don't forget to free with "free" after usage.
+ */
+char *return_status_print(const return_status * const status, size_t *length) __attribute__((warn_unused_result));
+
+
 //This assumes that there is a return_status struct and there is a "cleanup" label to jump to.
 #define throw(status_type_value, message) {\
 	status.status = status_type_value;\
