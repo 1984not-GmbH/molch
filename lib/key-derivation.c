@@ -128,7 +128,7 @@ int derive_message_key(
  * and
  * RK, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
  */
-int derive_root_next_header_and_chain_keys(
+return_status derive_root_next_header_and_chain_keys(
 		buffer_t * const root_key, //ROOT_KEY_SIZE
 		buffer_t * const next_header_key, //HEADER_KEY_SIZE
 		buffer_t * const chain_key, //CHAIN_KEY_SIZE
@@ -137,7 +137,7 @@ int derive_root_next_header_and_chain_keys(
 		const buffer_t * const their_public_ephemeral,
 		const buffer_t * const previous_root_key,
 		bool am_i_alice) {
-	int status;
+	return_status status = return_status_init();
 
 	//create buffers
 	buffer_t *diffie_hellman_secret = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, 0);
@@ -151,67 +151,67 @@ int derive_root_next_header_and_chain_keys(
 			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
 			|| (their_public_ephemeral == NULL) || (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
 			|| (previous_root_key == NULL) || (previous_root_key->content_length != ROOT_KEY_SIZE)) {
-		status = -6;
-		goto cleanup;
+		throw(INVALID_INPUT, "Invalid input to derive_root_next_header_and_chain_keys.");
 	}
 
+	int status_int = 0;
 	//DH(DHRs, DHRr) or DH(DHRp, DHRs)
-	status = diffie_hellman(
+	status_int = diffie_hellman(
 			diffie_hellman_secret,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral,
 			am_i_alice);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(KEYDERIVATION_FAILED, "Failed to perform diffie hellman.");
 	}
 
 	//key to derive from
 	//HMAC-HASH(RK, DH(..., ...))
-	status = crypto_generichash(
+	status_int = crypto_generichash(
 			derivation_key->content,
 			derivation_key->content_length,
 			diffie_hellman_secret->content,
 			diffie_hellman_secret->content_length,
 			previous_root_key->content,
 			previous_root_key->content_length);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(GENERIC_ERROR, "Failed to hash diffie hellman and previous root key.");
 	}
 
 	//now derive the different keys from the derivation key
 	//root key
-	status = derive_key(
+	status_int = derive_key(
 			root_key,
 			ROOT_KEY_SIZE,
 			derivation_key,
 			0);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(KEYDERIVATION_FAILED, "Failed to derive root key from derivation key.");
 	}
 
 	//next header key
-	status = derive_key(
+	status_int = derive_key(
 			next_header_key,
 			HEADER_KEY_SIZE,
 			derivation_key,
 			1);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(KEYDERIVATION_FAILED, "Failed to derive next header key from derivation key.");
 	}
 
 	//chain key
-	status = derive_key(
+	status_int = derive_key(
 			chain_key,
 			CHAIN_KEY_SIZE,
 			derivation_key,
 			2);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(KEYDERIVATION_FAILED, "Failed to derive chain key from derivation key.");
 	}
 
 cleanup:
-	if (status != 0) {
+	on_error(
 		if (root_key != NULL) {
 			buffer_clear(root_key);
 			root_key->content_length = 0;
@@ -224,7 +224,7 @@ cleanup:
 			buffer_clear(chain_key);
 			chain_key->content_length = 0;
 		}
-	}
+	);
 
 	buffer_destroy_from_heap(diffie_hellman_secret);
 	buffer_destroy_from_heap(derivation_key);

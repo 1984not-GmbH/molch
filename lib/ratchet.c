@@ -241,7 +241,7 @@ return_status ratchet_send(
 		}
 
 		//RK, NHKs, CKs = KDF(HMAC-HASH(RK, DH(DHRs, DHRr)))
-		status_int = derive_root_next_header_and_chain_keys(
+		status = derive_root_next_header_and_chain_keys(
 				ratchet->root_key,
 				ratchet->next_send_header_key,
 				ratchet->send_chain_key,
@@ -250,9 +250,7 @@ return_status ratchet_send(
 				ratchet->their_public_ephemeral,
 				root_key_backup,
 				ratchet->am_i_alice);
-		if (status_int != 0) {
-			throw(KEYDERIVATION_FAILED, "Failed to derive root next header and chain keys.");
-		}
+		throw_on_error(KEYDERIVATION_FAILED, "Failed to derive root next header and chain keys.");
 
 		//PNs = Ns
 		ratchet->previous_message_number = ratchet->send_message_number;
@@ -569,8 +567,6 @@ return_status ratchet_receive(
 		throw(INVALID_STATE, "Header decryption hasn't been tried yet.");
 	}
 
-	int status_int = 0;
-
 	if (!is_none(ratchet->receive_header_key) && (ratchet->header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
 		//Np = read(): get the purported message number from the input
 		ratchet->purported_message_number = purported_message_number;
@@ -617,7 +613,7 @@ return_status ratchet_receive(
 		}
 
 		//RKp, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
-		status_int = derive_root_next_header_and_chain_keys(
+		status = derive_root_next_header_and_chain_keys(
 				ratchet->purported_root_key,
 				ratchet->purported_next_receive_header_key,
 				ratchet->purported_receive_chain_key,
@@ -626,9 +622,7 @@ return_status ratchet_receive(
 				their_purported_public_ephemeral,
 				ratchet->root_key,
 				ratchet->am_i_alice);
-		if (status_int != 0) {
-			throw(KEYDERIVATION_FAILED, "Faield to derive root next header and chain keys.");
-		}
+		throw_on_error(KEYDERIVATION_FAILED, "Faield to derive root next header and chain keys.");
 
 		//backup the purported chain key because it will get overwritten in the next step
 		if (buffer_clone(purported_chain_key_backup, ratchet->purported_receive_chain_key) != 0) {

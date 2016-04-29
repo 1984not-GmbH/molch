@@ -68,7 +68,7 @@ int derive_message_key(
  * and
  * RK, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
  */
-int derive_root_next_header_and_chain_keys(
+return_status derive_root_next_header_and_chain_keys(
 		buffer_t * const root_key, //ROOT_KEY_SIZE
 		buffer_t * const next_header_key, //HEADER_KEY_SIZE
 		buffer_t * const chain_key, //CHAIN_KEY_SIZE
