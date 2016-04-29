@@ -904,6 +904,22 @@ char *molch_print_status(return_status status, size_t * const output_length) {
 }
 
 /*
+ * Get a string describing the return status type.
+ *
+ * (return_status.status)
+ */
+const char *molch_print_status_type(status_type type) {
+	return return_status_get_name(type);
+}
+
+/*
+ * Destroy a return status (only needs to be called if there was an error).
+ */
+void molch_destroy_return_status(return_status * const status) {
+	return_status_destroy_errors(status);
+}
+
+/*
  * Serialize a conversation into JSON.
  *
  * Use sodium_free to free json after use.

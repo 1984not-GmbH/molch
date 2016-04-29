@@ -43,7 +43,7 @@
  * This also creates a signed list of prekeys to be uploaded to
  * the server.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
+ * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
 return_status molch_create_user(
@@ -59,7 +59,7 @@ return_status molch_create_user(
 /*
  * Destroy a user.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
+ * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
 return_status molch_destroy_user(
@@ -79,7 +79,7 @@ size_t molch_user_count();
  *
  * This list is heap allocated, so don't forget to free it.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
+ * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
 return_status molch_user_list(unsigned char **const user_list, size_t *count);
@@ -108,7 +108,7 @@ molch_message_type molch_get_message_type(
  *
  * This requires a new set of prekeys from the receiver.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
+ * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
 return_status molch_create_send_conversation(
@@ -134,7 +134,7 @@ return_status molch_create_send_conversation(
  *
  * The conversation can be identified by it's ID
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
+ * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
 return_status molch_create_receive_conversation(
@@ -154,7 +154,7 @@ return_status molch_create_receive_conversation(
 /*
  * Encrypt a message and create a packet that can be sent to the receiver.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
+ * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
 return_status molch_encrypt_message(
@@ -170,7 +170,7 @@ return_status molch_encrypt_message(
 /*
  * Decrypt a message.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
+ * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
 return_status molch_decrypt_message(
@@ -202,7 +202,7 @@ void molch_end_conversation(
  *
  * Don't forget to free conversation_list after use.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
+ * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
 return_status molch_list_conversations(
@@ -218,11 +218,23 @@ return_status molch_list_conversations(
 char *molch_print_status(return_status status, size_t * const output_length) __attribute__((warn_unused_result));
 
 /*
+ * Get a string describing the return status type.
+ *
+ * (return_status.status)
+ */
+const char *molch_print_status_type(status_type type);
+
+/*
+ * Destroy a return status (only needs to be called if there was an error).
+ */
+void molch_destroy_return_status(return_status * const status);
+
+/*
  * Serialize a conversation into JSON.
  *
  * Use sodium_free to free json after use.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
+ * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
 return_status molch_conversation_json_export(
@@ -235,7 +247,7 @@ return_status molch_conversation_json_export(
  *
  * Use sodium_free to free json after use.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
+ * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
 return_status molch_json_export(
@@ -245,7 +257,7 @@ return_status molch_json_export(
 /*
  * Import a conversation from JSON (overwrites the current one if it exists).
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
+ * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
 return_status molch_conversation_json_import(const unsigned char * const json, const size_t length) __attribute__((warn_unused_result));
@@ -253,7 +265,7 @@ return_status molch_conversation_json_import(const unsigned char * const json, c
 /*
  * Import the molch's state from JSON (overwrites the current state!)
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
+ * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
 return_status molch_json_import(const unsigned char* const json, const size_t length) __attribute__((warn_unused_result));
