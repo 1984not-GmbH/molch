@@ -131,8 +131,7 @@ return_status ratchet_create(
 	}
 
 	//derive initial chain, root and header keys
-	int status_int = 0;
-	status_int = derive_initial_root_chain_and_header_keys(
+	status = derive_initial_root_chain_and_header_keys(
 			(*ratchet)->root_key,
 			(*ratchet)->send_chain_key,
 			(*ratchet)->receive_chain_key,
@@ -147,9 +146,7 @@ return_status ratchet_create(
 			our_public_ephemeral,
 			their_public_ephemeral,
 			(*ratchet)->am_i_alice);
-	if (status_int != 0) {
-		throw(KEYDERIVATION_FAILED, "Failed to derive initial root chain and header keys.");
-	}
+	throw_on_error(KEYDERIVATION_FAILED, "Failed to derive initial root chain and header keys.");
 	//copy keys into state
 	//our public identity
 	if (buffer_clone((*ratchet)->our_public_identity, our_public_identity) != 0) {

@@ -19,6 +19,7 @@
 #include <stdbool.h>
 
 #include "../buffer/buffer.h"
+#include "return-status.h"
 
 #ifndef LIB_KEY_DERIVATION_H
 #define LIB_KEY_DERIVATION_H
@@ -82,7 +83,7 @@ int derive_root_next_header_and_chain_keys(
  *
  * RK, CKs/r, HKs/r = KDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
  */
-int derive_initial_root_chain_and_header_keys(
+return_status derive_initial_root_chain_and_header_keys(
 		buffer_t * const root_key, //ROOT_KEY_SIZE
 		buffer_t * const send_chain_key, //CHAIN_KEY_SIZE
 		buffer_t * const receive_chain_key, //CHAIN_KEY_SIZE
