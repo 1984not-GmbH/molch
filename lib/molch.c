@@ -895,6 +895,15 @@ cleanup:
 }
 
 /*
+ * Print a return status into a nice looking error message.
+ *
+ * Don't forget to free the output after use.
+ */
+char *molch_print_status(return_status status, size_t * const output_length) {
+	return return_status_print(&status, output_length);
+}
+
+/*
  * Serialize a conversation into JSON.
  *
  * Use sodium_free to free json after use.

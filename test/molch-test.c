@@ -53,6 +53,8 @@ int main(void) {
 	unsigned char * alice_send_packet = NULL;
 	unsigned char * bob_send_packet = NULL;
 
+	unsigned char *printed_status = NULL;
+
 	//check user count
 	if (molch_user_count() != 0) {
 		throw(INVALID_VALUE, "Wrong user count.");
@@ -318,6 +320,12 @@ int main(void) {
 
 	//TODO check detection of invalid prekey list signatures and old timestamps + more scenarios
 
+	buffer_create_from_string(success_buffer, "SUCCESS");
+	size_t printed_status_length = 0;
+	printed_status = (unsigned char*) molch_print_status(return_status_init(), &printed_status_length);
+	if (buffer_compare_to_raw(success_buffer, printed_status, printed_status_length) != 0) {
+		throw(INCORRECT_DATA, "molch_print_status produces incorrect output.");
+	}
 
 cleanup:
 	if (alice_public_prekeys != NULL) {
@@ -331,6 +339,9 @@ cleanup:
 	}
 	if (bob_send_packet != NULL) {
 		free(bob_send_packet);
+	}
+	if (printed_status != NULL) {
+		free(printed_status);
 	}
 	molch_destroy_all_users();
 	buffer_destroy_from_heap(alice_conversation);

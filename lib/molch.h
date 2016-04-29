@@ -211,6 +211,13 @@ return_status molch_list_conversations(
 		size_t *number) __attribute__((warn_unused_result));
 
 /*
+ * Print a return status into a nice looking error message.
+ *
+ * Don't forget to free the output after use.
+ */
+char *molch_print_status(return_status status, size_t * const output_length) __attribute__((warn_unused_result));
+
+/*
  * Serialize a conversation into JSON.
  *
  * Use sodium_free to free json after use.
