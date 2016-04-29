@@ -431,15 +431,12 @@ return_status stage_skipped_header_and_message_keys(
 		status = derive_message_key(current_message_key, current_chain_key);
 		throw_on_error(KEYDERIVATION_FAILED, "Failed to derive message key.");
 
-		int status_int = 0;
 		//add the message key, along with current_header_key to the staging area
-		status_int = header_and_message_keystore_add(
+		status = header_and_message_keystore_add(
 				staging_area,
 				current_message_key,
 				current_header_key);
-		if (status_int != 0) {
-			throw(ADDITION_ERROR, "Failed to add keys to header and message keystore.");
-		}
+		throw_on_error(ADDITION_ERROR, "Failed to add keys to header and message keystore.");
 
 		//derive next chain key
 		status = derive_chain_key(next_chain_key, current_chain_key);
@@ -497,18 +494,14 @@ cleanup:
 return_status commit_skipped_header_and_message_keys(ratchet_state *state) {
 	return_status status = return_status_init();
 
-	int status_int = 0;
-
 	//as long as the list of purported message keys isn't empty,
 	//add them to the list of skipped message keys
 	while (state->staged_header_and_message_keys->length != 0) {
-		status_int = header_and_message_keystore_add(
+		status = header_and_message_keystore_add(
 				state->skipped_header_and_message_keys,
 				state->staged_header_and_message_keys->head->message_key,
 				state->staged_header_and_message_keys->head->header_key);
-		if (status_int != 0) {
-			throw(ADDITION_ERROR, "Failed to add keys to skipped header and message keys.");
-		}
+		throw_on_error(ADDITION_ERROR, "Failed to add keys to skipped header and message keys.");
 		header_and_message_keystore_remove(
 				state->staged_header_and_message_keys,
 				state->staged_header_and_message_keys->head);

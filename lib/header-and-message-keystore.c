@@ -71,38 +71,41 @@ void add_node(header_and_message_keystore * const keystore, header_and_message_k
 
 //add a message key to the keystore
 //NOTE: The entire keys are copied, not only the pointer
-int header_and_message_keystore_add(
+return_status header_and_message_keystore_add(
 		header_and_message_keystore *keystore,
 		const buffer_t * const message_key,
 		const buffer_t * const header_key) {
+	return_status status = return_status_init();
+
 	//check buffer sizes
 	if ((message_key->content_length != MESSAGE_KEY_SIZE)
 			|| (header_key->content_length != HEADER_KEY_SIZE)) {
-		return -6;
+		throw(INVALID_INPUT, "Invalid input to header_and_message_keystore_add.");
 	}
 
 	header_and_message_keystore_node *new_node = create_node();
 	if (new_node == NULL) {
-		return -1;
+		throw(CREATION_ERROR, "Failed to create node.");
 	}
 
-	int status;
+	int status_int = 0;
 	//set keys and timestamp
 	new_node->timestamp = time(NULL);
-	status = buffer_clone(new_node->message_key, message_key);
-	if (status != 0) {
+	status_int = buffer_clone(new_node->message_key, message_key);
+	if (status_int != 0) {
 		sodium_free(new_node);
-		return status;
+		throw(BUFFER_ERROR, "Failed to copy message key.");
 	}
-	status = buffer_clone(new_node->header_key, header_key);
-	if (status != 0) {
+	status_int = buffer_clone(new_node->header_key, header_key);
+	if (status_int != 0) {
 		sodium_free(new_node);
-		return status;
+		throw(BUFFER_ERROR, "Failed to copy header key.");
 	}
 
 	add_node(keystore, new_node);
 
-	return 0;
+cleanup:
+	return status;
 }
 
 //remove a set of header and message keys from the keystore

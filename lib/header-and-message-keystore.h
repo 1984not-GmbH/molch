@@ -20,6 +20,7 @@
 #include <time.h>
 
 #include "constants.h"
+#include "return-status.h"
 #include "../buffer/buffer.h"
 #include "../mcJSON/mcJSON.h"
 
@@ -52,7 +53,7 @@ void header_and_message_keystore_init(header_and_message_keystore * const keysto
 
 //add a hader and message key to the keystore
 //NOTE: The entire keys are copied, not only the pointer
-int header_and_message_keystore_add(
+return_status header_and_message_keystore_add(
 		header_and_message_keystore *keystore,
 		const buffer_t * const message_key,
 		const buffer_t * const header_key) __attribute__((warn_unused_result));
