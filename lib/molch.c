@@ -82,9 +82,8 @@ return_status create_prekey_list(
 	//add the timestamp
 	time_t timestamp = time(NULL);
 	buffer_create_with_existing_array(big_endian_timestamp, unsigned_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
-	if (endianness_time_to_big_endian(timestamp, big_endian_timestamp) != 0) {
-		throw(CONVERSION_ERROR, "Failed to convert timestamp to big endian.");
-	}
+	status = endianness_time_to_big_endian(timestamp, big_endian_timestamp);
+	throw_on_error(CONVERSION_ERROR, "Failed to convert timestamp to big endian.");
 	unsigned_prekey_list->content_length = unsigned_prekey_list->buffer_length;
 
 	//sign the prekey list with the current identity key
@@ -319,27 +318,28 @@ molch_message_type molch_get_message_type(
  * Verify prekey list and extract the public identity
  * and choose a prekey.
  */
-int verify_prekey_list(
+return_status verify_prekey_list(
 		const unsigned char * const prekey_list,
 		const size_t prekey_list_length,
 		buffer_t * const public_identity_key, //output, PUBLIC_KEY_SIZE
 		const buffer_t * const public_signing_key
 		) {
+	return_status status = return_status_init();
 
 	buffer_t *verified_prekey_list = buffer_create_on_heap(prekey_list_length - SIGNATURE_SIZE, prekey_list_length - SIGNATURE_SIZE);
 
-	int status = 0;
+	int status_int = 0;
 
 	//verify the signature
 	unsigned long long verified_length;
-	status = crypto_sign_open(
+	status_int = crypto_sign_open(
 			verified_prekey_list->content,
 			&verified_length,
 			prekey_list,
 			(unsigned long long)prekey_list_length,
 			public_signing_key->content);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(VERIFICATION_FAILED, "Failed to verify prekey list signature.");
 	}
 	verified_prekey_list->content_length = verified_length;
 
@@ -347,26 +347,23 @@ int verify_prekey_list(
 	time_t timestamp;
 	buffer_create_with_existing_array(big_endian_timestamp, verified_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
 	status = endianness_time_from_big_endian(&timestamp, big_endian_timestamp);
-	if (status != 0) {
-		goto cleanup;
-	}
+	throw_on_error(CONVERSION_ERROR, "Failed to convert timestamp to big endian.");
 
 	//make sure the prekey list isn't to old
 	time_t current_time = time(NULL);
 	if ((timestamp + 3600 * 24 * 31 * 3) < current_time) { //timestamp is older than 3 months
-		status = -1;
-		goto cleanup;
+		throw(OUTDATED, "Timestamp is too old (older than 3 months).");
 	}
 
 	//copy the public identity key
-	status = buffer_copy(
+	status_int = buffer_copy(
 			public_identity_key,
 			0,
 			verified_prekey_list,
 			0,
 			PUBLIC_KEY_SIZE);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(BUFFER_ERROR, "Failed to copy public identity.");
 	}
 
 cleanup:
@@ -434,14 +431,12 @@ return_status molch_create_send_conversation(
 	int status_int = 0;
 
 	//get the receivers public ephemeral and identity
-	status_int = verify_prekey_list(
+	status = verify_prekey_list(
 			prekey_list,
 			prekey_list_length,
 			receiver_public_identity,
 			receiver_public_signing_key_buffer);
-	if (status_int != 0) {
-		throw(VERIFICATION_FAILED, "Failed to verify prekey list.");
-	}
+	throw_on_error(VERIFICATION_FAILED, "Failed to verify prekey list.");
 
 	//unlock the master keys
 	sodium_mprotect_readonly(user->master_keys);

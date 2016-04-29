@@ -57,17 +57,13 @@ return_status header_construct(
 
 	//message counter as big endian
 	buffer_create_with_existing_array(big_endian_message_counter, header->content + PUBLIC_KEY_SIZE, sizeof(uint32_t));
-	status_int = endianness_uint32_to_big_endian(message_counter, big_endian_message_counter);
-	if (status_int != 0) {
-		throw(GENERIC_ERROR, "Failed to convert message counter to big endian.");
-	}
+	status = endianness_uint32_to_big_endian(message_counter, big_endian_message_counter);
+	throw_on_error(GENERIC_ERROR, "Failed to convert message counter to big endian.");
 
 	//previous message counter as big endian
 	buffer_create_with_existing_array(big_endian_previous_message_counter, header->content + PUBLIC_KEY_SIZE + sizeof(uint32_t), sizeof(uint32_t));
-	status_int = endianness_uint32_to_big_endian(previous_message_counter, big_endian_previous_message_counter);
-	if (status_int != 0) {
-		throw(GENERIC_ERROR, "Failed to convert previous message counter to big endian.");
-	}
+	status = endianness_uint32_to_big_endian(previous_message_counter, big_endian_previous_message_counter);
+	throw_on_error(GENERIC_ERROR, "Failed to convert previous message counter to big endian.");
 
 	header->content_length = PUBLIC_KEY_SIZE + 2 * sizeof(uint32_t);
 
@@ -108,17 +104,13 @@ return_status header_extract(
 
 	//message counter from big endian
 	buffer_create_with_existing_array(big_endian_message_counter, header->content + PUBLIC_KEY_SIZE, sizeof(uint32_t));
-	status_int = endianness_uint32_from_big_endian(message_counter, big_endian_message_counter);
-	if (status_int != 0) {
-		throw(GENERIC_ERROR, "Failed to convert message counter back from big endian.");
-	}
+	status = endianness_uint32_from_big_endian(message_counter, big_endian_message_counter);
+	throw_on_error(GENERIC_ERROR, "Failed to convert message counter back from big endian.");
 
 	//previous message counter from big endian
 	buffer_create_with_existing_array(big_endian_previous_message_counter, header->content + PUBLIC_KEY_SIZE + sizeof(uint32_t), sizeof(uint32_t));
-	status_int = endianness_uint32_from_big_endian(previous_message_counter, big_endian_previous_message_counter);
-	if (status_int != 0) {
-		throw(GENERIC_ERROR, "Failed to convert previous message counter back from big endian.");
-	}
+	status = endianness_uint32_from_big_endian(previous_message_counter, big_endian_previous_message_counter);
+	throw_on_error(GENERIC_ERROR, "Failed to convert previous message counter back from big endian.");
 
 cleanup:
 	if (status.status != SUCCESS) {

@@ -49,7 +49,8 @@ typedef enum status_type { //TODO add more error types
 	VERIFY_ERROR,
 	REMOVE_ERROR,
 	SHOULDNT_HAPPEN,
-	INVALID_STATE
+	INVALID_STATE,
+	OUTDATED
 } status_type;
 
 typedef struct error_message error_message;

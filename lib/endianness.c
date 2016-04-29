@@ -35,11 +35,13 @@ bool endianness_is_little_endian() {
 /*
  * Copy a 32 bit unsigned integer to a buffer in big endian format.
  */
-int endianness_uint32_to_big_endian(
+return_status endianness_uint32_to_big_endian(
 		uint32_t integer,
 		buffer_t * const output) {
+	return_status status = return_status_init();
+
 	if ((output == NULL) || (output->buffer_length < sizeof(uint32_t))) {
-		return -1;
+		throw(INVALID_INPUT, "Invalid input to endianness_uint32_to_big_endian.");
 	}
 
 	if (endianness_is_little_endian()) {
@@ -51,20 +53,25 @@ int endianness_uint32_to_big_endian(
 		output->content[3] = pointer[0];
 	} else {
 		//if already big endian, just copy
-		return buffer_clone_from_raw(output, (unsigned char*) &integer, sizeof(int32_t));
+		if (buffer_clone_from_raw(output, (unsigned char*) &integer, sizeof(int32_t)) != 0) {
+			throw(BUFFER_ERROR, "Failed to copy number.");
+		}
 	}
 
-	return 0;
+cleanup:
+	return status;
 }
 
 /*
  * Get a 32 bit unsigned integer from a buffer in big endian format.
  */
-int endianness_uint32_from_big_endian(
+return_status endianness_uint32_from_big_endian(
 		uint32_t *integer,
 		const buffer_t * const buffer) {
+	return_status status = return_status_init();
+
 	if ((integer == NULL) || (buffer == NULL) || (buffer->content_length != sizeof(uint32_t))) {
-		return -1;
+		throw(INVALID_INPUT, "Invalid input to endianness_uint32_from_big_endian.");
 	}
 
 	if (endianness_is_little_endian()) {
@@ -75,16 +82,19 @@ int endianness_uint32_from_big_endian(
 		pointer[3] = buffer->content[0];
 	} else {
 		//if already big endian, just copy
-		return buffer_clone_to_raw((unsigned char*) integer, sizeof(uint32_t), buffer);
+		if (buffer_clone_to_raw((unsigned char*) integer, sizeof(uint32_t), buffer) != 0) {
+			throw(BUFFER_ERROR, "Failed to copy number.");
+		}
 	}
 
-	return 0;
+cleanup:
+	return status;
 }
 
 /*
  * Copy a 32 bit signed integer to a buffer in big endian format.
  */
-int endianness_int32_to_big_endian(
+return_status endianness_int32_to_big_endian(
 		int32_t integer,
 		buffer_t * const output) {
 	return endianness_uint32_to_big_endian(*((uint32_t*)&integer), output);
@@ -93,7 +103,7 @@ int endianness_int32_to_big_endian(
 /*
  * Get a 32 bit signed integer from a buffer in big endian format.
  */
-int endianness_int32_from_big_endian(
+return_status endianness_int32_from_big_endian(
 		int32_t *integer,
 		const buffer_t * const buffer) {
 	return endianness_uint32_from_big_endian((uint32_t*) integer, buffer);
@@ -102,11 +112,13 @@ int endianness_int32_from_big_endian(
 /*
  * Copy a 64 bit unsigned integer to a buffer in big endian format.
  */
-int endianness_uint64_to_big_endian(
+return_status endianness_uint64_to_big_endian(
 		uint64_t integer,
 		buffer_t * const output) {
+	return_status status = return_status_init();
+
 	if ((output == NULL) || (output->buffer_length < sizeof(uint64_t))) {
-		return -1;
+		throw(INVALID_INPUT, "Invalid input to endianness_uint64_to_big_endian.");
 	}
 
 	if (endianness_is_little_endian()) {
@@ -122,20 +134,25 @@ int endianness_uint64_to_big_endian(
 		output->content[7] = pointer[0];
 	} else {
 		//if already big endian, just copy
-		return buffer_clone_from_raw(output, (unsigned char*) &integer, sizeof(uint64_t));
+		if (buffer_clone_from_raw(output, (unsigned char*) &integer, sizeof(uint64_t)) != 0) {
+			throw(BUFFER_ERROR, "Failed to copy number.");
+		}
 	}
 
-	return 0;
+cleanup:
+	return status;
 }
 
 /*
  * Get a 64 bit unsigned integer from a buffer in big endian format.
  */
-int endianness_uint64_from_big_endian(
+return_status endianness_uint64_from_big_endian(
 		uint64_t *integer,
 		const buffer_t * const buffer) {
+	return_status status = return_status_init();
+
 	if ((integer == NULL) || (buffer == NULL) || (buffer->content_length != sizeof(uint64_t))) {
-		return -1;
+		throw(INVALID_INPUT, "Invalid input to endianness_uint64_from_big_endian.");
 	}
 
 	if (endianness_is_little_endian()) {
@@ -150,16 +167,19 @@ int endianness_uint64_from_big_endian(
 		pointer[7] = buffer->content[0];
 	} else {
 		//if already big endian, just copy
-		return buffer_clone_to_raw((unsigned char*) integer, sizeof(uint64_t), buffer);
+		if (buffer_clone_to_raw((unsigned char*) integer, sizeof(uint64_t), buffer) != 0) {
+			throw(BUFFER_ERROR, "Failed to copy number.");
+		}
 	}
 
-	return 0;
+cleanup:
+	return status;
 }
 
 /*
  * Copy a 64 bit unsigned integer to a buffer in big endian format.
  */
-int endianness_int64_to_big_endian(
+return_status endianness_int64_to_big_endian(
 		int64_t integer,
 		buffer_t * const output) {
 	return endianness_uint64_to_big_endian(*((uint64_t*)&integer), output);
@@ -168,7 +188,7 @@ int endianness_int64_to_big_endian(
 /*
  * Get a 64 bit signed integer from a buffer in big endian format.
  */
-int endianness_int64_from_big_endian(
+return_status endianness_int64_from_big_endian(
 		int64_t *integer,
 		const buffer_t * const buffer) {
 	return endianness_uint64_from_big_endian((uint64_t*)integer, buffer);
@@ -177,7 +197,7 @@ int endianness_int64_from_big_endian(
 /*
  * Copy a time_t value to a 64 bit signed integer in a buffer in big endian format
  */
-int endianness_time_to_big_endian(
+return_status endianness_time_to_big_endian(
 		time_t time,
 		buffer_t * const output) {
 
@@ -188,16 +208,17 @@ int endianness_time_to_big_endian(
 /*
  * Get a time_t from a buffer in big endian format.
  */
-int endianness_time_from_big_endian(
+return_status endianness_time_from_big_endian(
 		time_t *time,
 		const buffer_t * const buffer) {
-	int64_t timestamp;
-	int status = endianness_int64_from_big_endian(&timestamp, buffer);
-	if (status != 0) {
-		return status;
-	}
+	return_status status = return_status_init();
+
+	int64_t timestamp = 0;
+	status = endianness_int64_from_big_endian(&timestamp, buffer);
+	throw_on_error(CONVERSION_ERROR, "Failed to convert int64 from big endian.");
 
 	*time = (time_t) timestamp;
 
-	return 0;
+cleanup:
+	return status;
 }
