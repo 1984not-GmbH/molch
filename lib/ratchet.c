@@ -544,13 +544,13 @@ int commit_skipped_header_and_message_keys(ratchet_state *state) {
  * returned by this function and call ratchet_set_last_message_authenticity
  * after having verified the message.
  */
-int ratchet_receive(
+return_status ratchet_receive(
 		ratchet_state * const ratchet,
 		buffer_t * const message_key,
 		const buffer_t * const their_purported_public_ephemeral,
 		const uint32_t purported_message_number,
 		const uint32_t purported_previous_message_number) {
-	int status;
+	return_status status = return_status_init();
 
 	//create buffers
 	buffer_t *throwaway_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
@@ -561,28 +561,27 @@ int ratchet_receive(
 	if ((ratchet == NULL)
 			|| (message_key == NULL) || (message_key->buffer_length < MESSAGE_KEY_SIZE)
 			|| (their_purported_public_ephemeral == NULL) || (their_purported_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
-		status = -6;
-		goto cleanup;
+		throw(INVALID_INPUT, "Invalid input to ratchet_receive.");
 	}
 
 	if (!ratchet->received_valid) {
 		//abort because the previously received message hasn't been verified yet.
-		status = -10;
-		goto cleanup;
+		throw(INVALID_STATE, "Previously received message hasn't been verified yet.");
 	}
 
 	//header decryption hasn't been tried yet
 	if (ratchet->header_decryptable == NOT_TRIED) {
-		status = -10;
-		goto cleanup;
+		throw(INVALID_STATE, "Header decryption hasn't been tried yet.");
 	}
+
+	int status_int = 0;
 
 	if (!is_none(ratchet->receive_header_key) && (ratchet->header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
 		//Np = read(): get the purported message number from the input
 		ratchet->purported_message_number = purported_message_number;
 
 		//CKp, MK = stage_skipped_header_and_message_keys(HKr, Nr, Np, CKr)
-		status = stage_skipped_header_and_message_keys(
+		status_int = stage_skipped_header_and_message_keys(
 				ratchet->staged_header_and_message_keys,
 				ratchet->purported_receive_chain_key,
 				message_key,
@@ -590,14 +589,13 @@ int ratchet_receive(
 				ratchet->receive_message_number,
 				purported_message_number,
 				ratchet->receive_chain_key);
-		if (status != 0) {
-			goto cleanup;
+		if (status_int != 0) {
+			throw(GENERIC_ERROR, "Failed to stage skipped header and message keys.");
 		}
 	} else { //new message chain
 		//if ratchet_flag or not Dec(NHKr, header)
 		if (ratchet->ratchet_flag || (ratchet->header_decryptable != NEXT_DECRYPTABLE)) {
-			status = -10;
-			goto cleanup;
+			throw(DECRYPT_ERROR, "Undecryptable.");
 		}
 
 		//Np = read(): get the purported message number from the input
@@ -605,13 +603,12 @@ int ratchet_receive(
 		//PNp = read(): get the purported previous message number from the input
 		ratchet->purported_previous_message_number = purported_previous_message_number;
 		//DHRp = read(): get the purported ephemeral from the input
-		status = buffer_clone(ratchet->their_purported_public_ephemeral, their_purported_public_ephemeral);
-		if (status != 0) {
-			goto cleanup;
+		if (buffer_clone(ratchet->their_purported_public_ephemeral, their_purported_public_ephemeral) != 0) {
+			throw(BUFFER_ERROR, "Failed to copy their purported public ephemeral.");
 		}
 
 		//stage_skipped_header_and_message_keys(HKr, Nr, PNp, CKr)
-		status = stage_skipped_header_and_message_keys(
+		status_int = stage_skipped_header_and_message_keys(
 				ratchet->staged_header_and_message_keys,
 				NULL, //output_chain_key
 				NULL, //output_message_key
@@ -619,18 +616,17 @@ int ratchet_receive(
 				ratchet->receive_message_number,
 				purported_previous_message_number,
 				ratchet->receive_chain_key);
-		if (status != 0) {
-			goto cleanup;
+		if (status_int != 0) {
+			throw(GENERIC_ERROR, "Failed to stage skipped header and message keys.");
 		}
 
 		//HKp = NHKr
-		status = buffer_clone(ratchet->purported_receive_header_key, ratchet->next_receive_header_key);
-		if (status != 0) {
-			goto cleanup;
+		if (buffer_clone(ratchet->purported_receive_header_key, ratchet->next_receive_header_key) != 0) {
+			throw(BUFFER_ERROR, "Failed to copy next receive header key to purported receive header key.");
 		}
 
 		//RKp, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
-		status = derive_root_next_header_and_chain_keys(
+		status_int = derive_root_next_header_and_chain_keys(
 				ratchet->purported_root_key,
 				ratchet->purported_next_receive_header_key,
 				ratchet->purported_receive_chain_key,
@@ -639,24 +635,17 @@ int ratchet_receive(
 				their_purported_public_ephemeral,
 				ratchet->root_key,
 				ratchet->am_i_alice);
-		if (status != 0) {
-			goto cleanup;
+		if (status_int != 0) {
+			throw(KEYDERIVATION_FAILED, "Faield to derive root next header and chain keys.");
 		}
 
 		//backup the purported chain key because it will get overwritten in the next step
-		status = buffer_clone(purported_chain_key_backup, ratchet->purported_receive_chain_key);
-		if (status != 0) {
-			goto cleanup;
-		}
-
-		//backup the purported receive chain key to be able to use it in the next step
-		status = buffer_clone(purported_chain_key_backup, ratchet->purported_receive_chain_key);
-		if (status != 0) {
-			goto cleanup;
+		if (buffer_clone(purported_chain_key_backup, ratchet->purported_receive_chain_key) != 0) {
+			throw(BUFFER_ERROR, "Failed to backup purported receive chain key.");
 		}
 
 		//CKp, MK = staged_header_and_message_keys(HKp, 0, Np, CKp)
-		status = stage_skipped_header_and_message_keys(
+		status_int = stage_skipped_header_and_message_keys(
 				ratchet->staged_header_and_message_keys,
 				ratchet->purported_receive_chain_key,
 				message_key,
@@ -664,20 +653,20 @@ int ratchet_receive(
 				0,
 				purported_message_number,
 				purported_chain_key_backup);
-		if (status != 0) {
-			goto cleanup;
+		if (status_int != 0) {
+			throw(GENERIC_ERROR, "Failed to stage skipped header and message keys.");
 		}
 	}
 
 	ratchet->received_valid = false; //waiting for validation (feedback, if the message could actually be decrypted)
 
 cleanup:
-	if (status != 0) {
+	on_error(
 		if (message_key != NULL) {
 			buffer_clear(message_key);
 			message_key->content_length = 0;
 		}
-	}
+	);
 
 	buffer_destroy_from_heap(throwaway_chain_key);
 	buffer_destroy_from_heap(throwaway_message_key);

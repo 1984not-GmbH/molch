@@ -302,17 +302,17 @@ int main(void) {
 		throw(DATA_SET_ERROR, "Failed to set Bob's header decryptability.");
 	);
 
-	status_int = ratchet_receive(
+	status = ratchet_receive(
 			bob_state,
 			bob_receive_key1,
 			alice_send_ephemeral1,
 			0, //purported message number
 			0); //purported previous message number
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(RECEIVE_ERROR, "Failed to generate Bob's first receive key.");
-	}
+	);
 	//print it out!
 	printf("Bob Ratchet 1 receive message key 1:\n");
 	print_hex(bob_receive_key1);
@@ -369,17 +369,17 @@ int main(void) {
 	);
 
 	//second receive message key
-	status_int = ratchet_receive(
+	status = ratchet_receive(
 			bob_state,
 			bob_receive_key2,
 			alice_send_ephemeral2,
 			1, //purported message number
 			0); //purported previous message number
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(RECEIVE_ERROR, "Failed to generate Bob's second receive key.");
-	}
+	);
 	//print it out!
 	printf("Bob Ratchet 1 receive message key 2:\n");
 	print_hex(bob_receive_key2);
@@ -436,17 +436,17 @@ int main(void) {
 	);
 
 	//third receive message key
-	status_int = ratchet_receive(
+	status = ratchet_receive(
 			bob_state,
 			bob_receive_key3,
 			alice_send_ephemeral3,
 			2, //purported message number
 			0); //purported previous message number
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(RECEIVE_ERROR, "Failed to generate Bob's third receive key.");
-	}
+	);
 	//print it out!
 	printf("Bob Ratchet 1 receive message key 3:\n");
 	print_hex(bob_receive_key3);
@@ -606,17 +606,17 @@ int main(void) {
 		throw(DATA_SET_ERROR, "Failed to set header decryptability.");
 	);
 
-	status_int = ratchet_receive(
+	status = ratchet_receive(
 			alice_state,
 			alice_receive_message_key1,
 			bob_send_ephemeral1,
 			0, //purported message number
 			0); //purported previous message number
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(RECEIVE_ERROR, "Failed to generate Alice's first receive key.");
-	}
+	);
 	//print it out
 	printf("Alice Ratchet 2 receive message key 1:\n");
 	print_hex(alice_receive_message_key1);
@@ -672,17 +672,17 @@ int main(void) {
 	);
 
 	//third received message key (second message skipped)
-	status_int = ratchet_receive(
+	status = ratchet_receive(
 			alice_state,
 			alice_receive_message_key3,
 			bob_send_ephemeral3,
 			2,
 			0);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(RECEIVE_ERROR, "Faield to generate Alice's third receive key.");
-	}
+	);
 	//print it out
 	printf("Alice Ratchet 2 receive message key 3:\n");
 	print_hex(alice_receive_message_key3);

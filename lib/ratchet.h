@@ -145,7 +145,7 @@ return_status ratchet_set_header_decryptability(
  * returned by this function and call ratchet_set_last_message_authenticity
  * after having verified the message.
  */
-int ratchet_receive(
+return_status ratchet_receive(
 		ratchet_state *state,
 		buffer_t * const message_key, //used to get the message key back
 		const buffer_t * const their_purported_public_ephemeral,

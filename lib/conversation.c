@@ -566,15 +566,13 @@ return_status conversation_receive(
 	//and now decrypt the message with the message key
 	//now we have all the data we need to advance the ratchet
 	//so let's do that
-	status_int = ratchet_receive(
+	status = ratchet_receive(
 			conversation->ratchet,
 			message_key,
 			their_signed_public_ephemeral,
 			message_counter,
 			previous_message_counter);
-	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to get decryption keys.");
-	}
+	throw_on_error(DECRYPT_ERROR, "Failed to get decryption keys.");
 
 	status = packet_decrypt_message(
 			packet,

@@ -189,15 +189,13 @@ int main(void) {
 	status = ratchet_set_header_decryptability(bob_receive_ratchet, decryptability);
 	throw_on_error(DATA_SET_ERROR, "Failed to set header decryptability.");
 
-	status_int = ratchet_receive(
+	status = ratchet_receive(
 			bob_receive_ratchet,
 			receive_message_key,
 			public_send_ephemeral,
 			send_message_number,
 			previous_send_message_number);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Failed to get receive message key.");
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Failed to get receive message key.");
 	export_ratchet(bob_receive_ratchet, "bob-receive-ratchet-after-receiving.json");
 
 	//now check if the message key is the same
@@ -238,15 +236,13 @@ int main(void) {
 	status = ratchet_set_header_decryptability(alice_receive_ratchet, decryptability);
 	throw_on_error(DATA_SET_ERROR, "Alice-Receive: Failed to set header decryptability.");
 
-	status_int = ratchet_receive(
+	status = ratchet_receive(
 			alice_receive_ratchet,
 			receive_message_key,
 			public_send_ephemeral,
 			send_message_number,
 			previous_send_message_number);
-	if (status_int != 0) {
-		throw(RECEIVE_ERROR, "Alice-Receive: Failed to get receive message key.");
-	}
+	throw_on_error(RECEIVE_ERROR, "Alice-Receive: Failed to get receive message key.");
 	export_ratchet(alice_receive_ratchet, "alice-receive-ratchet-after-receiving.json");
 
 	//now check if the message key is the same
@@ -288,15 +284,13 @@ int main(void) {
 	status = ratchet_set_header_decryptability(alice_send_ratchet, decryptability);
 	throw_on_error(DATA_SET_ERROR, "Alice-Roundtrip: Failed  to set header decryptability.");
 
-	status_int = ratchet_receive(
+	status = ratchet_receive(
 			alice_send_ratchet,
 			receive_message_key,
 			public_send_ephemeral,
 			send_message_number,
 			previous_send_message_number);
-	if (status_int != 0) {
-		throw(RECEIVE_ERROR, "Alice-Roundtrip: Failed to get receive message key.");
-	}
+	throw_on_error(RECEIVE_ERROR, "Alice-Roundtrip: Failed to get receive message key.");
 	export_ratchet(alice_send_ratchet, "alice-send-ratchet-after-receiving.json");
 
 	//now check if the message key is the same
@@ -338,15 +332,13 @@ int main(void) {
 	status = ratchet_set_header_decryptability(bob_send_ratchet, decryptability);
 	throw_on_error(DATA_SET_ERROR, "Bob-Roundtrip: Failed to set header decryptability.");
 
-	status_int = ratchet_receive(
+	status = ratchet_receive(
 			bob_send_ratchet,
 			receive_message_key,
 			public_send_ephemeral,
 			send_message_number,
 			previous_send_message_number);
-	if (status_int != 0) {
-		throw(RECEIVE_ERROR, "Bob-Roundtrip: Failed to get receive message key.");
-	}
+	throw_on_error(RECEIVE_ERROR, "Bob-Roundtrip: Failed to get receive message key.");
 	export_ratchet(bob_send_ratchet, "bob-send-ratchet-after-receiving.json");
 
 	//now check if the message key is the same
