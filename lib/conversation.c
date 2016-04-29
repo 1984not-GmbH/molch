@@ -80,16 +80,15 @@ return_status conversation_create(
 		throw(BUFFER_ERROR, "Failed to create random conversation id.");
 	}
 
-	(*conversation)->ratchet = ratchet_create(
+	status = ratchet_create(
+			&((*conversation)->ratchet),
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral);
-	if ((*conversation)->ratchet == NULL) {
-		throw(CREATION_ERROR, "Failed to create ratchet.");
-	}
+	throw_on_error(CREATION_ERROR, "Failed to create ratchet.");
 
 cleanup:
 	if (status.status != 0) {

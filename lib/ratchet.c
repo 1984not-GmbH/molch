@@ -38,40 +38,47 @@ bool is_none(const buffer_t * const buffer) {
 /*
  * Create a new ratchet_state and initialise the pointers.
  */
-ratchet_state *create_ratchet_state() {
-	ratchet_state *state = sodium_malloc(sizeof(ratchet_state));
-	if (state == NULL) { //failed to allocate memory
-		return NULL;
+return_status create_ratchet_state(ratchet_state ** const ratchet) {
+	return_status status = return_status_init();
+
+	if (ratchet == NULL) {
+		throw(INVALID_INPUT, "Invalid input to create_ratchet_state.");
+	}
+
+	*ratchet = sodium_malloc(sizeof(ratchet_state));
+	if (*ratchet == NULL) {
+		throw(ALLOCATION_FAILED, "Failed to allocate ratchet state.");
 	}
 
 	//initialize the buffers with the storage arrays
-	buffer_init_with_pointer(state->root_key, (unsigned char*)state->root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
-	buffer_init_with_pointer(state->purported_root_key, (unsigned char*)state->purported_root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->root_key, (unsigned char*)(*ratchet)->root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->purported_root_key, (unsigned char*)(*ratchet)->purported_root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
 	//header keys
-	buffer_init_with_pointer(state->send_header_key, (unsigned char*)state->send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_init_with_pointer(state->receive_header_key, (unsigned char*)state->receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_init_with_pointer(state->next_send_header_key, (unsigned char*)state->next_send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_init_with_pointer(state->next_receive_header_key, (unsigned char*)state->next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_init_with_pointer(state->purported_receive_header_key, (unsigned char*)state->purported_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_init_with_pointer(state->purported_next_receive_header_key, (unsigned char*)state->purported_next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->send_header_key, (unsigned char*)(*ratchet)->send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->receive_header_key, (unsigned char*)(*ratchet)->receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->next_send_header_key, (unsigned char*)(*ratchet)->next_send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->next_receive_header_key, (unsigned char*)(*ratchet)->next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->purported_receive_header_key, (unsigned char*)(*ratchet)->purported_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->purported_next_receive_header_key, (unsigned char*)(*ratchet)->purported_next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	//chain keys
-	buffer_init_with_pointer(state->send_chain_key, (unsigned char*)state->send_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-	buffer_init_with_pointer(state->receive_chain_key, (unsigned char*)state->receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-	buffer_init_with_pointer(state->purported_receive_chain_key, (unsigned char*)state->purported_receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->send_chain_key, (unsigned char*)(*ratchet)->send_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->receive_chain_key, (unsigned char*)(*ratchet)->receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->purported_receive_chain_key, (unsigned char*)(*ratchet)->purported_receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
 	//identity keys
-	buffer_init_with_pointer(state->our_public_identity, (unsigned char*)state->our_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_init_with_pointer(state->their_public_identity, (unsigned char*)state->their_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->our_public_identity, (unsigned char*)(*ratchet)->our_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->their_public_identity, (unsigned char*)(*ratchet)->their_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	//ephemeral keys (ratchet keys)
-	buffer_init_with_pointer(state->our_private_ephemeral, (unsigned char*)state->our_private_ephemeral_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	buffer_init_with_pointer(state->our_public_ephemeral, (unsigned char*)state->our_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_init_with_pointer(state->their_public_ephemeral, (unsigned char*)state->their_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_init_with_pointer(state->their_purported_public_ephemeral, (unsigned char*)state->their_purported_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->our_private_ephemeral, (unsigned char*)(*ratchet)->our_private_ephemeral_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->our_public_ephemeral, (unsigned char*)(*ratchet)->our_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->their_public_ephemeral, (unsigned char*)(*ratchet)->their_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->their_purported_public_ephemeral, (unsigned char*)(*ratchet)->their_purported_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
 	//initialise message keystore for skipped messages
-	header_and_message_keystore_init(state->skipped_header_and_message_keys);
-	header_and_message_keystore_init(state->staged_header_and_message_keys);
+	header_and_message_keystore_init((*ratchet)->skipped_header_and_message_keys);
+	header_and_message_keystore_init((*ratchet)->staged_header_and_message_keys);
 
-	return state;
+cleanup:
+	return status;
 }
 
 /*
@@ -82,13 +89,16 @@ ratchet_state *create_ratchet_state() {
  *
  * The return value is a valid ratchet state or NULL if an error occured.
  */
-ratchet_state* ratchet_create(
+return_status ratchet_create(
+		ratchet_state ** const ratchet,
 		const buffer_t * const our_private_identity,
 		const buffer_t * const our_public_identity,
 		const buffer_t * const their_public_identity,
 		const buffer_t * const our_private_ephemeral,
 		const buffer_t * const our_public_ephemeral,
 		const buffer_t * const their_public_ephemeral) {
+	return_status status = return_status_init();
+
 	//check buffer sizes
 	if ((our_private_identity->content_length != PRIVATE_KEY_SIZE)
 			|| (our_public_identity->content_length != PUBLIC_KEY_SIZE)
@@ -96,86 +106,90 @@ ratchet_state* ratchet_create(
 			|| (our_private_ephemeral->content_length != PRIVATE_KEY_SIZE)
 			|| (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
 			|| (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
-		return NULL;
+		throw(INVALID_INPUT, "Invalid input to ratchet_create.");
 	}
 
-	ratchet_state *state = create_ratchet_state();
-	if (state == NULL) {
-		return NULL;
+	*ratchet = NULL;
+
+	status = create_ratchet_state(ratchet);
+	throw_on_error(CREATION_ERROR, "Failed to create ratchet.");
+	if ((ratchet == NULL) || (*ratchet == NULL)) {
+		//FIXME: I'm quite sure this case won't happen, but the static analyzer
+		//complains anyway.
+		assert(false && "This isn't supposed to happen.");
 	}
 
 	//find out if we are alice by comparing both public keys
 	//the one with the bigger public key is alice
 	int comparison = sodium_compare(our_public_identity->content, their_public_identity->content, our_public_identity->content_length);
 	if (comparison > 0) {
-		state->am_i_alice = true;
+		(*ratchet)->am_i_alice = true;
 	} else if (comparison < 0) {
-		state->am_i_alice = false;
+		(*ratchet)->am_i_alice = false;
 	} else {
-		assert(false && "This mustn't happen, both conversation partners have the same public key!");
+		throw(SHOULDNT_HAPPEN, "This mustn't happen, both conversation partners have the same public key!");
 	}
 
 	//derive initial chain, root and header keys
-	int status = derive_initial_root_chain_and_header_keys(
-			state->root_key,
-			state->send_chain_key,
-			state->receive_chain_key,
-			state->send_header_key,
-			state->receive_header_key,
-			state->next_send_header_key,
-			state->next_receive_header_key,
+	int status_int = 0;
+	status_int = derive_initial_root_chain_and_header_keys(
+			(*ratchet)->root_key,
+			(*ratchet)->send_chain_key,
+			(*ratchet)->receive_chain_key,
+			(*ratchet)->send_header_key,
+			(*ratchet)->receive_header_key,
+			(*ratchet)->next_send_header_key,
+			(*ratchet)->next_receive_header_key,
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral,
-			state->am_i_alice);
-	if (status != 0) {
-		sodium_free(state);
-		return NULL;
+			(*ratchet)->am_i_alice);
+	if (status_int != 0) {
+		throw(KEYDERIVATION_FAILED, "Failed to derive initial root chain and header keys.");
 	}
 	//copy keys into state
 	//our public identity
-	status = buffer_clone(state->our_public_identity, our_public_identity);
-	if (status != 0) {
-		sodium_free(state);
-		return NULL;
+	if (buffer_clone((*ratchet)->our_public_identity, our_public_identity) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy our public identity key.");
 	}
 	//their_public_identity
-	status = buffer_clone(state->their_public_identity, their_public_identity);
-	if (status != 0) {
-		sodium_free(state);
-		return NULL;
+	if (buffer_clone((*ratchet)->their_public_identity, their_public_identity) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy their public identity key.");
 	}
 	//our_private_ephemeral
-	status = buffer_clone(state->our_private_ephemeral, our_private_ephemeral);
-	if (status != 0) {
-		sodium_free(state);
-		return NULL;
+	if (buffer_clone((*ratchet)->our_private_ephemeral, our_private_ephemeral) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy our private ephemeral key.");
 	}
 	//our_public_ephemeral
-	status = buffer_clone(state->our_public_ephemeral, our_public_ephemeral);
-	if (status != 0) {
-		sodium_free(state);
-		return NULL;
+	if (buffer_clone((*ratchet)->our_public_ephemeral, our_public_ephemeral) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy our public ephemeral key.");
 	}
 	//their_public_ephemeral
-	status = buffer_clone(state->their_public_ephemeral, their_public_ephemeral);
-	if (status != 0) {
-		sodium_free(state);
-		return NULL;
+	if (buffer_clone((*ratchet)->their_public_ephemeral, their_public_ephemeral) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy their public ephemeral.");
 	}
 
 	//set other state
-	state->ratchet_flag = state->am_i_alice;
-	state->received_valid = true; //allowing the receival of new messages
-	state->header_decryptable = NOT_TRIED;
-	state->send_message_number = 0;
-	state->receive_message_number = 0;
-	state->previous_message_number = 0;
+	(*ratchet)->ratchet_flag = (*ratchet)->am_i_alice;
+	(*ratchet)->received_valid = true; //allowing the receival of new messages
+	(*ratchet)->header_decryptable = NOT_TRIED;
+	(*ratchet)->send_message_number = 0;
+	(*ratchet)->receive_message_number = 0;
+	(*ratchet)->previous_message_number = 0;
 
-	return state;
+cleanup:
+	on_error(
+		if (ratchet != NULL) {
+			if (*ratchet != NULL) {
+				sodium_free(*ratchet);
+			}
+		}
+	);
+
+	return status;
 }
 
 /*
@@ -924,25 +938,23 @@ mcJSON *ratchet_json_export(const ratchet_state * const state, mempool_t * const
  * Deserialise a ratchet (import from JSON).
  */
 ratchet_state *ratchet_json_import(const mcJSON * const json) {
-	if (json == NULL) {
-		return NULL;
+	return_status status = return_status_init();
+
+	ratchet_state *state = NULL;
+
+	if ((json == NULL) || (json->type != mcJSON_Object)) {
+		throw(INVALID_INPUT, "Invalid input to ratchet_json_import.");
 	}
 
-	ratchet_state *state = create_ratchet_state();
-	if (state == NULL) {
-		return NULL;
-	}
-
-	if (json->type != mcJSON_Object) {
-		goto fail;
-	}
+	status = create_ratchet_state(&state);
+	throw_on_error(CREATION_ERROR, "Failed to create ratchet state.");
 
 	//import root keys
 	//get from json
 	buffer_create_from_string(root_keys_string, "root_keys");
 	mcJSON *root_keys = mcJSON_GetObjectItem(json, root_keys_string);
 	if ((root_keys == NULL) || (root_keys->type != mcJSON_Object)) {
-		goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get root keys from JSON tree.");
 	}
 
 	buffer_create_from_string(root_key_string, "root_key");
@@ -951,15 +963,15 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	mcJSON *purported_root_key = mcJSON_GetObjectItem(root_keys, purported_root_key_string);
 	if ((root_key == NULL) || (root_key->type != mcJSON_String) || (root_key->valuestring->content_length != (2 * ROOT_KEY_SIZE + 1))
 			|| (purported_root_key == NULL) || (purported_root_key->type != mcJSON_String) || (purported_root_key->valuestring->content_length != (2 * ROOT_KEY_SIZE + 1))) {
-		goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get root key and purported root key from JSON tree.");
 	}
 
 	//copy to state
 	if (buffer_clone_from_hex(state->root_key, root_key->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy root key from HEX.");
 	}
 	if (buffer_clone_from_hex(state->purported_root_key, purported_root_key->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy purported root key from HEX.");
 	}
 
 	//import header keys
@@ -967,7 +979,7 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	buffer_create_from_string(header_keys_string, "header_keys");
 	mcJSON *header_keys = mcJSON_GetObjectItem(json, header_keys_string);
 	if ((header_keys == NULL) || (header_keys->type != mcJSON_Object)) {
-		goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get header keys from JSON tree.");
 	}
 
 	buffer_create_from_string(send_header_key_string, "send_header_key");
@@ -988,27 +1000,27 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 			|| (next_receive_header_key == NULL) || (next_receive_header_key->type != mcJSON_String) || (next_receive_header_key->valuestring->content_length != (2 * HEADER_KEY_SIZE + 1))
 			|| (purported_receive_header_key == NULL) || (purported_receive_header_key->type != mcJSON_String) || (purported_receive_header_key->valuestring->content_length != (2 * HEADER_KEY_SIZE + 1))
 			|| (purported_next_receive_header_key == NULL) || (purported_next_receive_header_key->type != mcJSON_String) || (purported_next_receive_header_key->valuestring->content_length != (2 * HEADER_KEY_SIZE + 1))) {
-		goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get header keys from JSON tree.");
 	}
 
 	//copy to state
 	if (buffer_clone_from_hex(state->send_header_key, send_header_key->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy send header key from HEX.");
 	}
 	if (buffer_clone_from_hex(state->receive_header_key, receive_header_key->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy receive header key from HEX.");
 	}
 	if (buffer_clone_from_hex(state->next_send_header_key, next_send_header_key->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy next send header key from HEX.");
 	}
 	if (buffer_clone_from_hex(state->next_receive_header_key, next_receive_header_key->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy next receive header key from HEX.");
 	}
 	if (buffer_clone_from_hex(state->purported_receive_header_key, purported_receive_header_key->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy purported receive header key from HEX.");
 	}
 	if (buffer_clone_from_hex(state->purported_next_receive_header_key, purported_next_receive_header_key->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy purported next receive header key.");
 	}
 
 	//import chain keys
@@ -1016,7 +1028,7 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	buffer_create_from_string(chain_keys_string, "chain_keys");
 	mcJSON *chain_keys = mcJSON_GetObjectItem(json, chain_keys_string);
 	if ((chain_keys == NULL) || (chain_keys->type != mcJSON_Object)) {
-		goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get chain keys from JSON tree.");
 	}
 	buffer_create_from_string(send_chain_key_string, "send_chain_key");
 	mcJSON *send_chain_key = mcJSON_GetObjectItem(chain_keys, send_chain_key_string);
@@ -1027,21 +1039,21 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	if ((send_chain_key == NULL) || (send_chain_key->type != mcJSON_String) || (send_chain_key->valuestring->content_length != (2 * CHAIN_KEY_SIZE + 1))
 			|| (receive_chain_key == NULL) || (receive_chain_key->type != mcJSON_String) || (receive_chain_key->valuestring->content_length != (2 * CHAIN_KEY_SIZE + 1))
 			|| (purported_receive_chain_key == NULL) || (purported_receive_chain_key->type != mcJSON_String) || (purported_receive_chain_key->valuestring->content_length != (2 * CHAIN_KEY_SIZE + 1))) {
-			goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get chain keys from JSON tree.");
 	}
 
 	//copy to state
 	if (buffer_clone_from_hex(state->send_chain_key, send_chain_key->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy send chain key from HEX.");
 	}
 	if (buffer_clone_from_hex(state->receive_chain_key, receive_chain_key->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy receive chain key from HEX.");
 	}
 	if (buffer_clone_from_hex(state->purported_receive_chain_key, purported_receive_chain_key->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy purported receive chain key.");
 	}
 	if (buffer_clone_from_hex(state->purported_next_receive_header_key, purported_next_receive_header_key->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy purported next receive header key.");
 	}
 
 	//import our keys
@@ -1049,7 +1061,7 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	buffer_create_from_string(our_keys_string, "our_keys");
 	mcJSON *our_keys = mcJSON_GetObjectItem(json, our_keys_string);
 	if ((our_keys == NULL) || (our_keys->type != mcJSON_Object)) {
-		goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get our keys from JSON tree.");
 	}
 	buffer_create_from_string(public_identity_string, "public_identity");
 	mcJSON *our_public_identity = mcJSON_GetObjectItem(our_keys, public_identity_string);
@@ -1060,18 +1072,18 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	if ((our_public_identity == NULL) || (our_public_identity->type != mcJSON_String) || (our_public_identity->valuestring->content_length != (2 * PUBLIC_KEY_SIZE + 1))
 			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->type != mcJSON_String) || (our_public_ephemeral->valuestring->content_length != (2 * PUBLIC_KEY_SIZE + 1))
 			|| (our_private_ephemeral == NULL) || (our_private_ephemeral->type != mcJSON_String) || (our_private_ephemeral->valuestring->content_length != (2 * PRIVATE_KEY_SIZE + 1))) {
-		goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get our keys from JSON tree.");
 	}
 
 	//copy to state
 	if (buffer_clone_from_hex(state->our_public_identity, our_public_identity->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy our public identity from HEX.");
 	}
 	if (buffer_clone_from_hex(state->our_public_ephemeral, our_public_ephemeral->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy our public ephemeral from HEX.");
 	}
 	if (buffer_clone_from_hex(state->our_private_ephemeral, our_private_ephemeral->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy our private ephemeral from HEX.");
 	}
 
 	//import their keys
@@ -1079,7 +1091,7 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	buffer_create_from_string(their_keys_string, "their_keys");
 	mcJSON *their_keys = mcJSON_GetObjectItem(json, their_keys_string);
 	if ((their_keys == NULL) || (their_keys->type != mcJSON_Object)) {
-		goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get their keys from JSON tree.");
 	}
 	mcJSON *their_public_identity = mcJSON_GetObjectItem(their_keys, public_identity_string);
 	mcJSON *their_public_ephemeral = mcJSON_GetObjectItem(their_keys, public_ephemeral_string);
@@ -1088,18 +1100,18 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	if ((their_public_identity == NULL) || (their_public_identity->type != mcJSON_String) || (their_public_identity->valuestring->content_length != (2 * PUBLIC_KEY_SIZE + 1))
 			|| (their_public_ephemeral == NULL) || (their_public_ephemeral->type != mcJSON_String) || (their_public_ephemeral->valuestring->content_length != (2 * PUBLIC_KEY_SIZE + 1))
 			|| (their_purported_public_ephemeral == NULL) || (their_purported_public_ephemeral->type != mcJSON_String) || (their_purported_public_ephemeral->valuestring->content_length != (2 * PUBLIC_KEY_SIZE + 1))) {
-		goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get their keys from JSON tree.");
 	}
 
 	//copy to state
 	if (buffer_clone_from_hex(state->their_public_identity, their_public_identity->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy their public identity from HEX.");
 	}
 	if (buffer_clone_from_hex(state->their_public_ephemeral, their_public_ephemeral->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy their public ephemeral from HEX.");
 	}
 	if (buffer_clone_from_hex(state->their_purported_public_ephemeral, their_purported_public_ephemeral->valuestring) != 0) {
-		goto fail;
+		throw(BUFFER_ERROR, "Failed to copy their purported public ephemeral from HEX.");
 	}
 
 	//import message numbers
@@ -1107,7 +1119,7 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	buffer_create_from_string(message_numbers_string, "message_numbers");
 	mcJSON *message_numbers = mcJSON_GetObjectItem(json, message_numbers_string);
 	if ((message_numbers == NULL) || (message_numbers->type != mcJSON_Object)) {
-		goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get message numbers from JSON tree.");
 	}
 	buffer_create_from_string(send_message_number_string, "send_message_number");
 	mcJSON *send_message_number = mcJSON_GetObjectItem(message_numbers, send_message_number_string);
@@ -1129,7 +1141,7 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 
 			|| (purported_previous_message_number == NULL) || (purported_previous_message_number->valuedouble > SIZE_MAX) || (purported_previous_message_number->valuedouble < 0)
 ) {
-		goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get message numbers from JSON tree.");
 	}
 
 	//copy to state
@@ -1155,7 +1167,7 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 			|| (header_decryptable == NULL) || (!mcJSON_IsInteger(header_decryptable))
 			|| ((header_decryptable->valueint != CURRENT_DECRYPTABLE) && (header_decryptable->valueint != NEXT_DECRYPTABLE)
 				&& (header_decryptable->valueint != UNDECRYPTABLE) && (header_decryptable->valueint != NOT_TRIED))) {
-		goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get other data from JSON tree.")
 	}
 
 	//copy to state
@@ -1169,26 +1181,33 @@ ratchet_state *ratchet_json_import(const mcJSON * const json) {
 	buffer_create_from_string(header_and_message_keystores_string, "header_and_message_keystores");
 	mcJSON *keystores = mcJSON_GetObjectItem(json, header_and_message_keystores_string);
 	if ((keystores == NULL) || (keystores->type != mcJSON_Object)) {
-		goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get header and message keystores from JSON tree.");
 	}
 	buffer_create_from_string(skipped_header_and_message_keys_string, "skipped_header_and_message_keys");
 	mcJSON *skipped_header_and_message_keys = mcJSON_GetObjectItem(keystores, skipped_header_and_message_keys_string);
 	buffer_create_from_string(staged_header_and_message_keys_string, "staged_header_and_message_keys");
 	mcJSON *staged_header_and_message_keys = mcJSON_GetObjectItem(keystores, staged_header_and_message_keys_string);
 	if ((skipped_header_and_message_keys == NULL) || (staged_header_and_message_keys == NULL)) {
-		goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get staged header and message keys from JSON tree.");
 	}
 
 	//copy to state
 	if (header_and_message_keystore_json_import(skipped_header_and_message_keys, state->skipped_header_and_message_keys) != 0) {
-		goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get skipped hader and message keys from JSON tree.");
 	}
 	if (header_and_message_keystore_json_import(staged_header_and_message_keys, state->staged_header_and_message_keys) != 0) {
-		goto fail;
+		throw(DATA_FETCH_ERROR, "Failed to get staged header and message keys from JSON tree.");
 	}
 
+cleanup:
+	on_error(
+		if (state != NULL) {
+			ratchet_destroy(state);
+			state = NULL;
+		}
+	);
+
+	return_status_destroy_errors(&status);
+
 	return state;
-fail:
-	ratchet_destroy(state);
-	return NULL;
 }

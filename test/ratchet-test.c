@@ -32,7 +32,9 @@ int main(void) {
 		return -1;
 	}
 
-	int status;
+	return_status status = return_status_init();
+
+	int status_int;
 
 	//create all the buffers
 	//alice keys
@@ -82,50 +84,52 @@ int main(void) {
 	//creating Alice's identity keypair
 	buffer_create_from_string(alice_string, "Alice");
 	buffer_create_from_string(identity_string, "identity");
-	status = generate_and_print_keypair(
+	status_int = generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
 			alice_string,
 			identity_string);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate and print Alice' identity keypair.");
 	}
 
 	//creating Alice's ephemeral keypair
 	buffer_create_from_string(ephemeral_string, "ephemeral");
-	status = generate_and_print_keypair(
+	status_int = generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
 			alice_string,
 			ephemeral_string);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate and print Alice' ephemeral keypair.");
 	}
 
 	//creating Bob's identity keypair
 	buffer_create_from_string(bob_string, "Bob");
-	status = generate_and_print_keypair(
+	status_int = generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
 			bob_string,
 			identity_string);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate and print Bob's identity keypair.");
 	}
 
 	//creating Bob's ephemeral keypair
-	status = generate_and_print_keypair(
+	status_int = generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
 			bob_string,
 			ephemeral_string);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate and print Bob's ephemeral keypair.");
 	}
 
 	//start new ratchet for alice
 	printf("Creating new ratchet for Alice ...\n");
-	ratchet_state *alice_state = ratchet_create(
+	ratchet_state *alice_state = NULL;
+	status = ratchet_create(
+			&alice_state,
 			alice_private_identity,
 			alice_public_identity,
 			bob_public_identity,
@@ -134,10 +138,7 @@ int main(void) {
 			bob_public_ephemeral);
 	buffer_clear(alice_private_ephemeral);
 	buffer_clear(alice_private_identity);
-	if (alice_state == NULL) {
-		status = EXIT_FAILURE;
-		goto cleanup;
-	}
+	throw_on_error(CREATION_ERROR, "Failed to create Alice' ratchet.");
 	putchar('\n');
 	//print Alice's initial root and chain keys
 	printf("Alice's initial root key (%zu Bytes):\n", alice_state->root_key->content_length);
@@ -148,7 +149,9 @@ int main(void) {
 
 	//start new ratchet for bob
 	printf("Creating new ratchet for Bob ...\n");
-	ratchet_state *bob_state = ratchet_create(
+	ratchet_state *bob_state = NULL;
+	status = ratchet_create(
+			&bob_state,
 			bob_private_identity,
 			bob_public_identity,
 			alice_public_identity,
@@ -157,10 +160,7 @@ int main(void) {
 			alice_public_ephemeral);
 	buffer_clear(bob_private_identity);
 	buffer_clear(bob_private_ephemeral);
-	if (bob_state == NULL) {
-		status = EXIT_FAILURE;
-		goto cleanup;
-	}
+	throw_on_error(CREATION_ERROR, "Failed to create Bob's ratchet.");
 	putchar('\n');
 	//print Bob's initial root and chain keys
 	printf("Bob's initial root key (%zu Bytes):\n", bob_state->root_key->content_length);
@@ -170,22 +170,20 @@ int main(void) {
 	putchar('\n');
 
 	//compare Alice's and Bob's initial root and chain keys
-	status = buffer_compare(alice_state->root_key, bob_state->root_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Alice's and Bob's initial root keys aren't the same.\n");
+	status_int = buffer_compare(alice_state->root_key, bob_state->root_key);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(INCORRECT_DATA, "Alice's and Bob's initial root keys arent't the same.");
 	}
 	printf("Alice's and Bob's initial root keys match!\n");
 
 	//initial chain key
-	status = buffer_compare(alice_state->receive_chain_key, bob_state->send_chain_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Alice's and Bob's initial chain keys aren't the same.\n");
+	status_int = buffer_compare(alice_state->receive_chain_key, bob_state->send_chain_key);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(INCORRECT_DATA, "Alice's and Bob's initial chain keys aren't the same.");
 	}
 	printf("Alice's and Bob's initial chain keys match!\n\n");
 
@@ -194,18 +192,17 @@ int main(void) {
 	//first, alice sends two messages
 	uint32_t alice_send_message_number1;
 	uint32_t alice_previous_message_number1;
-	status = ratchet_send(
+	status_int = ratchet_send(
 			alice_state,
 			alice_send_header_key1,
 			&alice_send_message_number1,
 			&alice_previous_message_number1,
 			alice_send_ephemeral1,
 			alice_send_message_key1);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get Alice's first send message key. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_FETCH_ERROR, "Failed to get Alice's first send message key.");
 	}
 	//print the send message key
 	printf("Alice Ratchet 1 send message key 1:\n");
@@ -217,18 +214,17 @@ int main(void) {
 	//second message key
 	uint32_t alice_send_message_number2;
 	uint32_t alice_previous_message_number2;
-	status = ratchet_send(
+	status_int = ratchet_send(
 			alice_state,
 			alice_send_header_key2,
 			&alice_send_message_number2,
 			&alice_previous_message_number2,
 			alice_send_ephemeral2,
 			alice_send_message_key2);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get Alice's second send message key. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_FETCH_ERROR, "Failed to get Alice's second send message key.");
 	}
 	//print the send message key
 	printf("Alice Ratchet 1 send message key 2:\n");
@@ -240,18 +236,17 @@ int main(void) {
 	//third message_key
 	uint32_t alice_send_message_number3;
 	uint32_t alice_previous_message_number3;
-	status = ratchet_send(
+	status_int = ratchet_send(
 			alice_state,
 			alice_send_header_key3,
 			&alice_send_message_number3,
 			&alice_previous_message_number3,
 			alice_send_ephemeral3,
 			alice_send_message_key3);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get Alice's third send message key. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_FETCH_ERROR, "Failed to get Alice's third send message key.");
 	}
 	//print the send message key
 	printf("Alice Ratchet 1 send message key 3:\n");
@@ -263,15 +258,14 @@ int main(void) {
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
 	//get pointers to bob's receive header keys
-	status = ratchet_get_receive_header_keys(
+	status_int = ratchet_get_receive_header_keys(
 			bob_current_receive_header_key,
 			bob_next_receive_header_key,
 			bob_state);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get Bob's receive header keys. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_FETCH_ERROR, "Failed to get Bob's receive header keys.");
 	}
 
 	printf("Bob's first current receive header key:\n");
@@ -290,7 +284,7 @@ int main(void) {
 		printf("Header decryptable with next header key.\n");
 	} else {
 		decryptable = UNDECRYPTABLE;
-		fprintf(stderr, "ERROR: Failed to decrypt header.\n");
+		fprintf(stderr, "Failed to decrypt header.");
 	}
 	buffer_clear(alice_send_header_key1);
 	buffer_clear(bob_current_receive_header_key);
@@ -299,27 +293,25 @@ int main(void) {
 	//now the receive end, Bob recreates the message keys
 
 	//set the header decryptability
-	status = ratchet_set_header_decryptability(
+	status_int = ratchet_set_header_decryptability(
 			bob_state,
 			decryptable);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to set Bob's header decryptability. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_SET_ERROR, "Failed to set Bob's header decryptability.");
 	}
 
-	status = ratchet_receive(
+	status_int = ratchet_receive(
 			bob_state,
 			bob_receive_key1,
 			alice_send_ephemeral1,
 			0, //purported message number
 			0); //purported previous message number
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate Bob's first receive key. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(RECEIVE_ERROR, "Failed to generate Bob's first receive key.");
 	}
 	//print it out!
 	printf("Bob Ratchet 1 receive message key 1:\n");
@@ -328,23 +320,21 @@ int main(void) {
 
 	//confirm validity of the message key (this is normally done after successfully decrypting
 	//and authenticating a message with the key
-	status = ratchet_set_last_message_authenticity(bob_state, true);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to set authenticity state. (%i)\n", status);
+	status_int = ratchet_set_last_message_authenticity(bob_state, true);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_SET_ERROR, "Failed to set authenticity state.");
 	}
 
-	status = ratchet_get_receive_header_keys(
+	status_int = ratchet_get_receive_header_keys(
 			bob_current_receive_header_key,
 			bob_next_receive_header_key,
 			bob_state);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get Bob's header keys. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_FETCH_ERROR, "Failed to get Bob's header keys.");
 	}
 
 	printf("Bob's second current receive header key:\n");
@@ -362,35 +352,33 @@ int main(void) {
 		printf("Header decryptable with next header key.\n");
 	} else {
 		decryptable = UNDECRYPTABLE;
-		fprintf(stderr, "ERROR: Failed to decrypt header.\n");
+		fprintf(stderr, "Failed to decrypt header.");
 	}
 	buffer_clear(alice_send_header_key2);
 	buffer_clear(bob_current_receive_header_key);
 	buffer_clear(bob_next_receive_header_key);
 
 	//set the header decryptability
-	status = ratchet_set_header_decryptability(
+	status_int = ratchet_set_header_decryptability(
 			bob_state,
 			decryptable);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to set header decryptability. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_SET_ERROR, "Failed to set header decryptability.");
 	}
 
 	//second receive message key
-	status = ratchet_receive(
+	status_int = ratchet_receive(
 			bob_state,
 			bob_receive_key2,
 			alice_send_ephemeral2,
 			1, //purported message number
 			0); //purported previous message number
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate Bob's second receive key. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(RECEIVE_ERROR, "Failed to generate Bob's second receive key.");
 	}
 	//print it out!
 	printf("Bob Ratchet 1 receive message key 2:\n");
@@ -399,23 +387,21 @@ int main(void) {
 
 	//confirm validity of the message key (this is normally done after successfully decrypting
 	//and authenticating a message with the key
-	status = ratchet_set_last_message_authenticity(bob_state, true);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to set authenticity state. (%i)\n", status);
+	status_int = ratchet_set_last_message_authenticity(bob_state, true);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_SET_ERROR, "Failed to set authenticity state.");
 	}
 
-	status = ratchet_get_receive_header_keys(
+	status_int = ratchet_get_receive_header_keys(
 			bob_current_receive_header_key,
 			bob_next_receive_header_key,
 			bob_state);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get receive header key buffers. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_FETCH_ERROR, "Failed to get receive header key buffers.");
 	}
 
 	printf("Bob's third current receive header key:\n");
@@ -433,35 +419,33 @@ int main(void) {
 		printf("Header decryptable with next header key.\n");
 	} else {
 		decryptable = UNDECRYPTABLE;
-		fprintf(stderr, "ERROR: Failed to decrypt header.\n");
+		fprintf(stderr, "Failed to decrypt header.");
 	}
 	buffer_clear(alice_send_header_key3);
 	buffer_clear(bob_current_receive_header_key);
 	buffer_clear(bob_next_receive_header_key);
 
 	//set the header decryptability
-	status = ratchet_set_header_decryptability(
+	status_int = ratchet_set_header_decryptability(
 			bob_state,
 			decryptable);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to set header decryptability. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_SET_ERROR, "Failed to set header decryptability.");
 	}
 
 	//third receive message key
-	status = ratchet_receive(
+	status_int = ratchet_receive(
 			bob_state,
 			bob_receive_key3,
 			alice_send_ephemeral3,
 			2, //purported message number
 			0); //purported previous message number
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate Bob's third receive key. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(RECEIVE_ERROR, "Failed to generate Bob's third receive key.");
 	}
 	//print it out!
 	printf("Bob Ratchet 1 receive message key 3:\n");
@@ -470,21 +454,18 @@ int main(void) {
 
 	//confirm validity of the message key (this is normally done after successfully decrypting
 	//and authenticating a message with the key
-	status = ratchet_set_last_message_authenticity(bob_state, true);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to set authenticity state. (%i)\n", status);
+	status_int = ratchet_set_last_message_authenticity(bob_state, true);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_SET_ERROR, "Failed to set authenticity state.");
 	}
 
 	//compare the message keys
 	if (buffer_compare(alice_send_message_key1, bob_receive_key1) != 0) {
-		fprintf(stderr, "ERROR: Alice's first send key and Bob's first receive key aren't the same.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Alice's first send key and Bob's first receive key aren't the same.");
 	}
 	buffer_clear(alice_send_message_key1);
 	buffer_clear(bob_receive_key1);
@@ -492,11 +473,9 @@ int main(void) {
 
 	//second key
 	if (buffer_compare(alice_send_message_key2, bob_receive_key2) != 0) {
-		fprintf(stderr, "ERROR: Alice's second send key and Bob's second receive key aren't the same.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Alice's second send key and Bob's second receive key aren't the same.");
 	}
 	buffer_clear(alice_send_message_key2);
 	buffer_clear(bob_receive_key2);
@@ -504,11 +483,9 @@ int main(void) {
 
 	//third key
 	if (buffer_compare(alice_send_message_key3, bob_receive_key3) != 0) {
-		fprintf(stderr, "ERROR: Alice's third send key and Bob's third receive key aren't the same.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Alice's third send key and Bob's third receive key aren't the same.");
 	}
 	buffer_clear(alice_send_message_key3);
 	buffer_clear(bob_receive_key3);
@@ -520,18 +497,17 @@ int main(void) {
 	//Now Bob replies with three messages
 	uint32_t bob_send_message_number1;
 	uint32_t bob_previous_message_number1;
-	status = ratchet_send(
+	status_int = ratchet_send(
 			bob_state,
 			bob_send_header_key1,
 			&bob_send_message_number1,
 			&bob_previous_message_number1,
 			bob_send_ephemeral1,
 			bob_send_message_key1);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get Bob's first send message key. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_FETCH_ERROR, "Failed to get Bob's first send message key.");
 	}
 	//print the send message key
 	printf("Bob Ratchet 2 send message key 1:\n");
@@ -543,18 +519,17 @@ int main(void) {
 	//second message key
 	uint32_t bob_send_message_number2;
 	uint32_t bob_previous_message_number2;
-	status = ratchet_send(
+	status_int = ratchet_send(
 			bob_state,
 			bob_send_header_key2,
 			&bob_send_message_number2,
 			&bob_previous_message_number2,
 			bob_send_ephemeral2,
 			bob_send_message_key2);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get Bob's second send message key. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_FETCH_ERROR, "Failed to get Bob's second send message key.");
 	}
 	//print the send message key
 	printf("Bob Ratchet 2 send message key 1:\n");
@@ -566,18 +541,17 @@ int main(void) {
 	//third message key
 	uint32_t bob_send_message_number3;
 	uint32_t bob_previous_message_number3;
-	status = ratchet_send(
+	status_int = ratchet_send(
 			bob_state,
 			bob_send_header_key3,
 			&bob_send_message_number3,
 			&bob_previous_message_number3,
 			bob_send_ephemeral3,
 			bob_send_message_key3);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get Bob's third send message key. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_FETCH_ERROR, "Failed to get Bob's third send message key.");
 	}
 	//print the send message key
 	printf("Bob Ratchet 2 send message key 3:\n");
@@ -589,15 +563,14 @@ int main(void) {
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
 	//get pointers to alice's receive header keys
-	status = ratchet_get_receive_header_keys(
+	status_int = ratchet_get_receive_header_keys(
 			alice_current_receive_header_key,
 			alice_next_receive_header_key,
 			alice_state);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get Alice' receive keys. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_FETCH_ERROR, "Failed to get Alice' receive keys.");
 	}
 
 	printf("Alice's first current receive header key:\n");
@@ -615,7 +588,7 @@ int main(void) {
 		printf("Header decryptable with next header key.\n");
 	} else {
 		decryptable = UNDECRYPTABLE;
-		fprintf(stderr, "ERROR: Failed to decrypt header.\n");
+		fprintf(stderr, "Failed to decrypt header.");
 	}
 	buffer_clear(bob_send_header_key1);
 	buffer_clear(alice_current_receive_header_key);
@@ -624,27 +597,25 @@ int main(void) {
 	//now alice receives the first, then the third message (second message skipped)
 
 	//set the header decryptability
-	status = ratchet_set_header_decryptability(
+	status_int = ratchet_set_header_decryptability(
 			alice_state,
 			decryptable);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to set header decryptability. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_SET_ERROR, "Failed to set header decryptability.");
 	}
 
-	status = ratchet_receive(
+	status_int = ratchet_receive(
 			alice_state,
 			alice_receive_message_key1,
 			bob_send_ephemeral1,
 			0, //purported message number
 			0); //purported previous message number
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate Alice's first receive key. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(RECEIVE_ERROR, "Failed to generate Alice's first receive key.");
 	}
 	//print it out
 	printf("Alice Ratchet 2 receive message key 1:\n");
@@ -652,23 +623,21 @@ int main(void) {
 	putchar('\n');
 
 	//confirm validity of the message key
-	status = ratchet_set_last_message_authenticity(alice_state, true);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to set authenticity state. (%i)\n", status);
+	status_int = ratchet_set_last_message_authenticity(alice_state, true);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_SET_ERROR, "Failed to set authenticity state.");
 	}
 
-	status = ratchet_get_receive_header_keys(
+	status_int = ratchet_get_receive_header_keys(
 			alice_current_receive_header_key,
 			alice_next_receive_header_key,
 			alice_state);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get Alice' receive header keys. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_FETCH_ERROR, "Failed to get Alice' receive header keys.");
 	}
 
 	printf("Alice's current receive header key:\n");
@@ -686,35 +655,33 @@ int main(void) {
 		printf("Header decryptable with next header key.\n");
 	} else {
 		decryptable = UNDECRYPTABLE;
-		fprintf(stderr, "ERROR: Failed to decrypt header.\n");
+		fprintf(stderr, "Failed to decrypt header.");
 	}
 	buffer_clear(bob_send_header_key3);
 	buffer_clear(alice_current_receive_header_key);
 	buffer_clear(alice_next_receive_header_key);
 
 	//set the header decryptability
-	status = ratchet_set_header_decryptability(
+	status_int = ratchet_set_header_decryptability(
 			alice_state,
 			decryptable);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to set header decryptability. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_SET_ERROR, "Failed to set header decryptability.");
 	}
 
 	//third received message key (second message skipped)
-	status = ratchet_receive(
+	status_int = ratchet_receive(
 			alice_state,
 			alice_receive_message_key3,
 			bob_send_ephemeral3,
 			2,
 			0);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate Alice's third receive key. (%i)\n", status);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(RECEIVE_ERROR, "Faield to generate Alice's third receive key.");
 	}
 	//print it out
 	printf("Alice Ratchet 2 receive message key 3:\n");
@@ -724,36 +691,33 @@ int main(void) {
 	assert(alice_state->staged_header_and_message_keys->length == 1);
 
 	//confirm validity of the message key
-	status = ratchet_set_last_message_authenticity(alice_state, true);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to set authenticity state. (%i)\n", status);
+	status_int = ratchet_set_last_message_authenticity(alice_state, true);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(DATA_SET_ERROR, "Failed to set authenticity state.");
 	}
 
 	assert(alice_state->staged_header_and_message_keys->length == 0);
 	assert(alice_state->skipped_header_and_message_keys->length == 1);
 
 	//get the second receive message key from the message and header keystore
-	status = buffer_clone(alice_receive_message_key2, alice_state->skipped_header_and_message_keys->tail->message_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get Alice's second receive message key. (%i)\n", status);
+	status_int = buffer_clone(alice_receive_message_key2, alice_state->skipped_header_and_message_keys->tail->message_key);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(BUFFER_ERROR, "Failed to get Alice's second receive message key.");
 	}
 	printf("Alice Ratchet 2 receive message key 2:\n");
 	print_hex(alice_receive_message_key2);
 	putchar('\n');
 
 	//get the second receive header key from the message and header keystore
-	status = buffer_clone(alice_receive_header_key2, alice_state->skipped_header_and_message_keys->tail->header_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get Alice's second receive header key. (%i)\n", status);
+	status_int = buffer_clone(alice_receive_header_key2, alice_state->skipped_header_and_message_keys->tail->header_key);
+	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		goto cleanup;
+		throw(BUFFER_ERROR, "Failed to get Alice's second receive header key.");
 	}
 	printf("Alice Ratchet 2 receive header key 2:\n");
 	print_hex(alice_receive_header_key2);
@@ -761,11 +725,9 @@ int main(void) {
 
 	//compare header keys
 	if (buffer_compare(alice_receive_header_key2, bob_send_header_key2) != 0) {
-		fprintf(stderr, "ERROR: Bob's second send header key and Alice's receive header key aren't the same.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Bob's second send header key and Alice's receive header key aren't the same.");
 	}
 	printf("Bob's second send header key and Alice's receive header keys match.\n");
 	buffer_clear(alice_receive_header_key2);
@@ -773,11 +735,9 @@ int main(void) {
 
 	//compare the keys
 	if (buffer_compare(bob_send_message_key1, alice_receive_message_key1) != 0) {
-		fprintf(stderr, "ERROR: Bob's first send key and Alice's first receive key aren't the same.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Bob's first send key and Alice's first receive key aren't the same.");
 	}
 	buffer_clear(bob_send_message_key1);
 	buffer_clear(bob_send_message_key1);
@@ -785,11 +745,9 @@ int main(void) {
 
 	//second key
 	if (buffer_compare(bob_send_message_key2, alice_receive_message_key2) != 0) {
-		fprintf(stderr, "ERROR: Bob's second send key and Alice's second receive key aren't the same.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Bob's second send key and Alice's second receive key aren't the same.");
 	}
 	buffer_clear(bob_send_message_key2);
 	buffer_clear(alice_receive_message_key2);
@@ -797,11 +755,9 @@ int main(void) {
 
 	//third key
 	if (buffer_compare(bob_send_message_key3, alice_receive_message_key3) != 0) {
-		fprintf(stderr, "ERROR: Bob's third send key and Alice's third receive key aren't the same.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Bob's third send key and Alice's third receive key aren't the same.");
 	}
 	buffer_clear(bob_send_message_key3);
 	buffer_clear(alice_receive_message_key3);
@@ -811,11 +767,9 @@ int main(void) {
 	printf("Test JSON export!\n");
 	JSON_EXPORT(output, 100000, 1000, true, alice_state, ratchet_json_export);
 	if (output == NULL) {
-		fprintf(stderr, "ERROR: Failed to export to JSON.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(EXPORT_ERROR, "Failed to export to JSON.");
 	}
 	printf("%.*s\n", (int)output->content_length, (char*)output->content);
 
@@ -823,34 +777,28 @@ int main(void) {
 	ratchet_state *imported_alice_state;
 	JSON_IMPORT(imported_alice_state, 100000, output, ratchet_json_import);
 	if (imported_alice_state == NULL) {
-		fprintf(stderr, "ERROR: Failed to import from JSON.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		buffer_destroy_from_heap(output);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(IMPORT_ERROR, "Failed to import from JSON.");
 	}
 	//export the imported to JSON again
 	JSON_EXPORT(imported_output, 100000, 1000, true, imported_alice_state, ratchet_json_export);
 	if (imported_output == NULL) {
-		fprintf(stderr, "ERROR: Failed to export imported to JSON again.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		ratchet_destroy(imported_alice_state);
 		buffer_destroy_from_heap(output);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(EXPORT_ERROR, "Failed to export imported to JSON again.");
 	}
 	ratchet_destroy(imported_alice_state);
 	//compare with original JSON
 	if (buffer_compare(imported_output, output) != 0) {
-		fprintf(stderr, "ERROR: Imported user store is incorrect.\n");
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		buffer_destroy_from_heap(output);
 		buffer_destroy_from_heap(imported_output);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Imported user store is incorrect.");
 	}
 	buffer_destroy_from_heap(imported_output);
 	buffer_destroy_from_heap(output);
@@ -908,5 +856,10 @@ cleanup:
 	buffer_destroy_from_heap(alice_receive_message_key3);
 	buffer_destroy_from_heap(alice_receive_header_key2);
 
-	return status;
+	if (status.status != SUCCESS) {
+		print_errors(&status);
+	}
+	return_status_destroy_errors(&status);
+
+	return status.status;
 }

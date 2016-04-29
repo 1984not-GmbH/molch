@@ -20,6 +20,7 @@
 
 #include "constants.h"
 #include "header-and-message-keystore.h"
+#include "return-status.h"
 
 #ifndef LIB_RATCHET_H
 #define LIB_RATCHET_H
@@ -97,7 +98,8 @@ typedef struct ratchet_state {
  *
  * The return value is a valid ratchet state or NULL if an error occured.
  */
-ratchet_state* ratchet_create(
+return_status ratchet_create(
+		ratchet_state ** const ratchet,
 		const buffer_t * const our_private_identity,
 		const buffer_t * const our_public_identity,
 		const buffer_t * const their_public_identity,

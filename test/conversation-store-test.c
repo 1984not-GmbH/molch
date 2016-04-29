@@ -80,7 +80,8 @@ return_status test_add_conversation(conversation_store * const store) {
 		throw(GENERIC_ERROR, "Failed to fill buffer with random data.");
 	}
 
-	conversation->ratchet = ratchet_create(
+	status = ratchet_create(
+			&(conversation->ratchet),
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,

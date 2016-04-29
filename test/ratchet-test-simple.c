@@ -22,6 +22,7 @@
 
 #include "../lib/ratchet.h"
 #include "../lib/json.h"
+#include "utils.h"
 #include "tracing.h"
 
 int keypair(buffer_t *private_key, buffer_t *public_key) {
@@ -47,10 +48,12 @@ void export_ratchet(const ratchet_state *const ratchet, const char * const filen
 }
 
 int main(void) {
-	int status = sodium_init();
-	if (status != 0) {
-		return status;
+	int status_int = sodium_init();
+	if (status_int != 0) {
+		return status_int;
 	}
+
+	return_status status = return_status_init();
 
 	//create all the buffers
 	//Keys:
@@ -82,25 +85,17 @@ int main(void) {
 	ratchet_state *bob_receive_ratchet = NULL;
 
 	//generate the keys
-	status = keypair(alice_private_identity, alice_public_identity);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate Alice' idendity kepair! (%i)\n", status);
-		goto cleanup;
+	if (keypair(alice_private_identity, alice_public_identity) != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate Alice' identity keypair.");
 	}
-	status = keypair(alice_private_ephemeral, alice_public_ephemeral);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate Alice' ephemeral keypair! (%i)\n", status);
-		goto cleanup;
+	if (keypair(alice_private_ephemeral, alice_public_ephemeral) != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate Alice' ephemeral keypair.");
 	}
-	status = keypair(bob_private_identity, bob_public_identity);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate Bobs identity keypair! (%i)\n", status);
-		goto cleanup;
+	if (keypair(bob_private_identity, bob_public_identity) != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate Bobs identity keypair.");
 	}
-	status = keypair(bob_private_ephemeral, bob_public_ephemeral);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate Bobs ephemeral keypair! (%i)\n", status);
-		goto cleanup;
+	if (keypair(bob_private_ephemeral, bob_public_ephemeral) != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate Bobs ephemeral keypair.");
 	}
 
 	//compare public identity keys, the one with the bigger key will be alice
@@ -121,84 +116,70 @@ int main(void) {
 
 	//initialise the ratchets
 	//Alice
-	alice_send_ratchet = ratchet_create(
+	status = ratchet_create(
+			&alice_send_ratchet,
 			alice_private_identity,
 			alice_public_identity,
 			bob_public_identity,
 			alice_private_ephemeral,
 			alice_public_ephemeral,
 			bob_public_ephemeral);
-	if (alice_send_ratchet == NULL) {
-		fprintf(stderr, "ERROR: Failed to create Alice' send ratchet.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
-	}
+	throw_on_error(CREATION_ERROR, "Failed to create Alice' send ratchet.");
 	export_ratchet(alice_send_ratchet, "alice-send-ratchet-initial.json");
-	alice_receive_ratchet = ratchet_create(
+	status = ratchet_create(
+			&alice_receive_ratchet,
 			alice_private_identity,
 			alice_public_identity,
 			bob_public_identity,
 			alice_private_ephemeral,
 			alice_public_ephemeral,
 			bob_public_ephemeral);
-	if (alice_receive_ratchet == NULL) {
-		fprintf(stderr, "ERROR: Failed to create Alice' receive ratchet.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
-	}
+	throw_on_error(CREATION_ERROR, "Failed to create Alice' receive ratchet.");
 	export_ratchet(alice_send_ratchet, "alice-receive-ratchet-initial.json");
 	//Bob
-	bob_send_ratchet = ratchet_create(
+	status = ratchet_create(
+			&bob_send_ratchet,
 			bob_private_identity,
 			bob_public_identity,
 			alice_public_identity,
 			bob_private_ephemeral,
 			bob_public_ephemeral,
 			alice_public_ephemeral);
-	if (bob_send_ratchet == NULL) {
-		fprintf(stderr, "ERROR: Failed to create Bobs send ratchet.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
-	}
+	throw_on_error(CREATION_ERROR, "Failed to create Bobs send ratchet.");
 	export_ratchet(bob_send_ratchet, "bob-send-ratchet-initial.json");
-	bob_receive_ratchet = ratchet_create(
+	status = ratchet_create(
+			&bob_receive_ratchet,
 			bob_private_identity,
 			bob_public_identity,
 			alice_public_identity,
 			bob_private_ephemeral,
 			bob_public_ephemeral,
 			alice_public_ephemeral);
-	if (bob_receive_ratchet == NULL) {
-		fprintf(stderr, "ERROR: Failed to create Bobs receive ratchet.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
-	}
+	throw_on_error(CREATION_ERROR, "Failed to create Bobs receive ratchet.");
 	export_ratchet(bob_send_ratchet, "bob-receive-ratchet-initial.json");
 
 	// FIRST SCENARIO: ALICE SENDS A MESSAGE TO BOB
 	uint32_t send_message_number;
 	uint32_t previous_send_message_number;
-	status = ratchet_send(
+	status_int = ratchet_send(
 			alice_send_ratchet,
 			send_header_key,
 			&send_message_number,
 			&previous_send_message_number,
 			public_send_ephemeral,
 			send_message_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Alice-Send: Failed to get send keys. (%i)\n", status);
-		goto cleanup;
+	if (status_int != 0) {
+		throw(DATA_FETCH_ERROR, "Failed to get send keys.");
 	}
 	export_ratchet(alice_send_ratchet, "alice-send-ratchet-after-sending.json");
 
 	//bob receives
-	status = ratchet_get_receive_header_keys(
+	status_int = ratchet_get_receive_header_keys(
 			current_receive_header_key,
 			next_receive_header_key,
 			bob_receive_ratchet);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Bob-Receive: Failed to get receive header keys. (%i)\n", status);
-		goto cleanup;
+	if (status_int != 0) {
+		throw(DATA_FETCH_ERROR, "Failed to get receive header keys.");
 	}
 
 	ratchet_header_decryptability decryptability;
@@ -209,61 +190,54 @@ int main(void) {
 	} else {
 		decryptability = UNDECRYPTABLE;
 	}
-	status = ratchet_set_header_decryptability(bob_receive_ratchet, decryptability);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Bob-Receive: Failed to set header decryptability. (%i)\n", status);
-		goto cleanup;
+	status_int = ratchet_set_header_decryptability(bob_receive_ratchet, decryptability);
+	if (status_int != 0) {
+		throw(DATA_SET_ERROR, "Failed to set header decryptability.");
 	}
 
-	status = ratchet_receive(
+	status_int = ratchet_receive(
 			bob_receive_ratchet,
 			receive_message_key,
 			public_send_ephemeral,
 			send_message_number,
 			previous_send_message_number);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Bob-Receive: Failed to get receive message key. (%i)\n", status);
-		goto cleanup;
+	if (status_int != 0) {
+		throw(DATA_FETCH_ERROR, "Failed to get receive message key.");
 	}
 	export_ratchet(bob_receive_ratchet, "bob-receive-ratchet-after-receiving.json");
 
 	//now check if the message key is the same
 	if (buffer_compare(send_message_key, receive_message_key) != 0) {
-		fprintf(stderr, "ERROR: Bobs receive message key isn't the same as Alice' send message key.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Bobs receive message key isn't the same as Alice' send message key.");
 	}
 	printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
 
-	status = ratchet_set_last_message_authenticity(bob_receive_ratchet, true);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Bob-Receive: Failed to set message authenticity. (%i)\n", status);
-		goto cleanup;
+	status_int = ratchet_set_last_message_authenticity(bob_receive_ratchet, true);
+	if (status_int != 0) {
+		throw(DATA_SET_ERROR, "Bob-Receive: Failed to set message authenticity.");
 	}
 
 
 	//SECOND SCENARIO: BOB SENDS MESSAGE TO ALICE
-	status = ratchet_send(
+	status_int = ratchet_send(
 			bob_send_ratchet,
 			send_header_key,
 			&send_message_number,
 			&previous_send_message_number,
 			public_send_ephemeral,
 			send_message_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Bob-Send: Failed to get send keys. (%i)\n", status);
-		goto cleanup;
+	if (status_int != 0) {
+		throw(DATA_FETCH_ERROR, "Bob-Send: Failed to get send keys.");
 	}
 	export_ratchet(bob_send_ratchet, "bob-send-ratchet-after-sending.json");
 
 	//alice receives
-	status = ratchet_get_receive_header_keys(
+	status_int = ratchet_get_receive_header_keys(
 			current_receive_header_key,
 			next_receive_header_key,
 			alice_receive_ratchet);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Alice-Receive: Failed to get receive header keys. (%i)\n", status);
-		goto cleanup;
+	if (status_int != 0) {
+		throw(DATA_FETCH_ERROR, "Alice-Receive: Failed to get receive header keys.");
 	}
 
 	if (buffer_compare(send_header_key, current_receive_header_key) == 0) {
@@ -271,60 +245,53 @@ int main(void) {
 	} else if (buffer_compare(send_header_key, next_receive_header_key) == 0) {
 		decryptability = UNDECRYPTABLE;
 	}
-	status = ratchet_set_header_decryptability(alice_receive_ratchet, decryptability);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Alice-Receive: Failed to set header decryptability. (%i)\n", status);
-		goto cleanup;
+	status_int = ratchet_set_header_decryptability(alice_receive_ratchet, decryptability);
+	if (status_int != 0) {
+		throw(DATA_SET_ERROR, "Alice-Receive: Failed to set header decryptability.");
 	}
 
-	status = ratchet_receive(
+	status_int = ratchet_receive(
 			alice_receive_ratchet,
 			receive_message_key,
 			public_send_ephemeral,
 			send_message_number,
 			previous_send_message_number);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Alice-Receive: Failed to get receive message key. (%i)\n", status);
-		goto cleanup;
+	if (status_int != 0) {
+		throw(RECEIVE_ERROR, "Alice-Receive: Failed to get receive message key.");
 	}
 	export_ratchet(alice_receive_ratchet, "alice-receive-ratchet-after-receiving.json");
 
 	//now check if the message key is the same
 	if (buffer_compare(send_message_key, receive_message_key) != 0) {
-		fprintf(stderr, "ERROR: Alice' receive message key isn't the same as Bobs send message key.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Alice' receive message key isn't the same as Bobs send message key.");
 	}
 	printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
 
-	status = ratchet_set_last_message_authenticity(alice_receive_ratchet, true);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Alice-Receive: Failed to set message authenticity. (%i)\n", status);
-		goto cleanup;
+	status_int = ratchet_set_last_message_authenticity(alice_receive_ratchet, true);
+	if (status_int != 0) {
+		throw(DATA_SET_ERROR, "Alice-Receive: Failed to set message authenticity.");
 	}
 
 	//THIRD SCENARIO: BOB ANSWERS ALICE AFTER HAVING RECEIVED HER FIRST MESSAGE
-	status = ratchet_send(
+	status_int = ratchet_send(
 			bob_receive_ratchet,
 			send_header_key,
 			&send_message_number,
 			&previous_send_message_number,
 			public_send_ephemeral,
 			send_message_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Bob-Response: Failed to get send keys. (%i)\n", status);
-		goto cleanup;
+	if (status_int != 0) {
+		throw(DATA_FETCH_ERROR, "Bob-Response: Failed to get send keys.");
 	}
 	export_ratchet(bob_receive_ratchet, "bob-receive-ratchet-after-responding.json");
 
 	//alice receives
-	status = ratchet_get_receive_header_keys(
+	status_int = ratchet_get_receive_header_keys(
 			current_receive_header_key,
 			next_receive_header_key,
 			alice_send_ratchet);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Alice-Roundtrip: Failed to get receive header keys. (%i)\n", status);
-		goto cleanup;
+	if (status_int != 0) {
+		throw(DATA_FETCH_ERROR, "Alice-Roundtrip: Failed to get receive header keys.");
 	}
 
 	if (buffer_compare(send_header_key, current_receive_header_key) == 0) {
@@ -334,60 +301,53 @@ int main(void) {
 	} else {
 		decryptability = UNDECRYPTABLE;
 	}
-	status = ratchet_set_header_decryptability(alice_send_ratchet, decryptability);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Alice-Roundtrip: Failed to set header decryptability. (%i)\n", status);
-		goto cleanup;
+	status_int = ratchet_set_header_decryptability(alice_send_ratchet, decryptability);
+	if (status_int != 0) {
+		throw(DATA_SET_ERROR, "Alice-Roundtrip: Failed  to set header decryptability.");
 	}
 
-	status = ratchet_receive(
+	status_int = ratchet_receive(
 			alice_send_ratchet,
 			receive_message_key,
 			public_send_ephemeral,
 			send_message_number,
 			previous_send_message_number);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Alice-Roundtrip: Failed to get receive message key. (%i)\n", status);
-		goto cleanup;
+	if (status_int != 0) {
+		throw(RECEIVE_ERROR, "Alice-Roundtrip: Failed to get receive message key.");
 	}
 	export_ratchet(alice_send_ratchet, "alice-send-ratchet-after-receiving.json");
 
 	//now check if the message key is the same
 	if (buffer_compare(send_message_key, receive_message_key) != 0) {
-		fprintf(stderr, "ERROR: Alice' receive message key isn't the same as Bobs send message key.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Alice' receive message key isn't the same as Bobs send message key.");
 	}
 	printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
 
-	status = ratchet_set_last_message_authenticity(alice_send_ratchet, true);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Alice-Roundtrip: Failed to set message authenticity. (%i)\n", status);
-		goto cleanup;
+	status_int = ratchet_set_last_message_authenticity(alice_send_ratchet, true);
+	if (status_int != 0) {
+		throw(DATA_SET_ERROR, "Alice-Roundtrip: Failed to set message authenticity.");
 	}
 
 	//FOURTH SCENARIO: ALICE ANSWERS BOB AFTER HAVING RECEIVED HER FIRST MESSAGE
-	status = ratchet_send(
+	status_int = ratchet_send(
 			alice_receive_ratchet,
 			send_header_key,
 			&send_message_number,
 			&previous_send_message_number,
 			public_send_ephemeral,
 			send_message_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Bob-Roundtrip: Failed to get send-keys. (%i)\n", status);
-		goto cleanup;
+	if (status_int != 0) {
+		throw(DATA_FETCH_ERROR, "Bob-Roundtrip: Failed to get send-keys.");
 	}
 	export_ratchet(alice_receive_ratchet, "alice-receive-ratchet-after-responding.json");
 
 	//bob receives
-	status = ratchet_get_receive_header_keys(
+	status_int = ratchet_get_receive_header_keys(
 			current_receive_header_key,
 			next_receive_header_key,
 			bob_send_ratchet);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Bob-Roundtrip: Failed to get receive header keys. (%i)\n", status);
-		goto cleanup;
+	if (status_int != 0) {
+		throw(DATA_FETCH_ERROR, "Bob-Roundtrip: Failed to get receive header keys.");
 	}
 
 	if (buffer_compare(send_header_key, current_receive_header_key) == 0) {
@@ -397,36 +357,31 @@ int main(void) {
 	} else {
 		decryptability = UNDECRYPTABLE;
 	}
-	status = ratchet_set_header_decryptability(bob_send_ratchet, decryptability);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Bob-Roundtrip: Failed to set header decryptability. (%i)\n", status);
-		goto cleanup;
+	status_int = ratchet_set_header_decryptability(bob_send_ratchet, decryptability);
+	if (status_int != 0) {
+		throw(DATA_SET_ERROR, "Bob-Roundtrip: Failed to set header decryptability.");
 	}
 
-	status = ratchet_receive(
+	status_int = ratchet_receive(
 			bob_send_ratchet,
 			receive_message_key,
 			public_send_ephemeral,
 			send_message_number,
 			previous_send_message_number);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Bob-Roundtrip: Failed to get receive message key. (%i)\n", status);
-		goto cleanup;
+	if (status_int != 0) {
+		throw(RECEIVE_ERROR, "Bob-Roundtrip: Failed to get receive message key.");
 	}
 	export_ratchet(bob_send_ratchet, "bob-send-ratchet-after-receiving.json");
 
 	//now check if the message key is the same
 	if (buffer_compare(send_message_key, receive_message_key) != 0) {
-		fprintf(stderr, "ERROR: Bobs receive message key isn't the same as Alice' send message key.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Bobs receive message key isn't the same as Alice' send message key.");
 	}
 	printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
 
-	status = ratchet_set_last_message_authenticity(bob_send_ratchet, true);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Bob-Roundtrip: Failed to set message authenticity. (%i)\n", status);
-		goto cleanup;
+	status_int = ratchet_set_last_message_authenticity(bob_send_ratchet, true);
+	if (status_int != 0) {
+		throw(DATA_SET_ERROR, "Bob-Roundtrip: Failed to set message authenticity.");
 	}
 
 cleanup:
@@ -459,5 +414,10 @@ cleanup:
 		ratchet_destroy(bob_receive_ratchet);
 	}
 
-	return status;
+	on_error(
+		print_errors(&status);
+	);
+	return_status_destroy_errors(&status);
+
+	return status.status;
 }
