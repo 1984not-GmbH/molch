@@ -522,12 +522,10 @@ return_status conversation_receive(
 			NULL,
 			NULL);
 	if (status.status == SUCCESS) {
-		status_int = ratchet_set_header_decryptability(
+		status = ratchet_set_header_decryptability(
 				conversation->ratchet,
 				CURRENT_DECRYPTABLE);
-		if (status_int != 0) {
-			throw(DATA_SET_ERROR, "Failed to set decryptability to CURRENT_DECRYPTABLE.");
-		}
+		throw_on_error(DATA_SET_ERROR, "Failed to set decryptability to CURRENT_DECRYPTABLE.");
 	} else {
 		return_status_destroy_errors(&status); //free the error stack to avoid memory leak.
 
@@ -541,17 +539,16 @@ return_status conversation_receive(
 				NULL,
 				NULL);
 		if (status.status == SUCCESS) {
-			status_int = ratchet_set_header_decryptability(
+			status = ratchet_set_header_decryptability(
 					conversation->ratchet,
 					NEXT_DECRYPTABLE);
-			if (status_int != 0) {
-				throw(DATA_SET_ERROR, "Failed to set decryptability to NEXT_DECRYPTABLE.");
-			}
+			throw_on_error(DATA_SET_ERROR, "Failed to set decryptability to NEXT_DECRYPTABLE.");
 		} else {
-			int decryptability_status_int __attribute__((unused)); //tell the static analyser not to complain about this
-			decryptability_status_int = ratchet_set_header_decryptability(
+			return_status decryptability_status = return_status_init();
+			decryptability_status = ratchet_set_header_decryptability(
 					conversation->ratchet,
 					UNDECRYPTABLE);
+			return_status_destroy_errors(&decryptability_status);
 			throw(DECRYPT_ERROR, "Header undecryptable.");
 		}
 	}

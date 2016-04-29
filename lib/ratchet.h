@@ -131,7 +131,7 @@ return_status ratchet_get_receive_header_keys(
  * Set if the header is decryptable with the current (state->receive_header_key)
  * or next (next_receive_header_key) header key, or isn't decryptable.
  */
-int ratchet_set_header_decryptability(
+return_status ratchet_set_header_decryptability(
 		ratchet_state *ratchet,
 		ratchet_header_decryptability header_decryptable) __attribute__((warn_unused_result));
 

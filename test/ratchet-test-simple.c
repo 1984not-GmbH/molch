@@ -186,10 +186,8 @@ int main(void) {
 	} else {
 		decryptability = UNDECRYPTABLE;
 	}
-	status_int = ratchet_set_header_decryptability(bob_receive_ratchet, decryptability);
-	if (status_int != 0) {
-		throw(DATA_SET_ERROR, "Failed to set header decryptability.");
-	}
+	status = ratchet_set_header_decryptability(bob_receive_ratchet, decryptability);
+	throw_on_error(DATA_SET_ERROR, "Failed to set header decryptability.");
 
 	status_int = ratchet_receive(
 			bob_receive_ratchet,
@@ -237,10 +235,8 @@ int main(void) {
 	} else if (buffer_compare(send_header_key, next_receive_header_key) == 0) {
 		decryptability = UNDECRYPTABLE;
 	}
-	status_int = ratchet_set_header_decryptability(alice_receive_ratchet, decryptability);
-	if (status_int != 0) {
-		throw(DATA_SET_ERROR, "Alice-Receive: Failed to set header decryptability.");
-	}
+	status = ratchet_set_header_decryptability(alice_receive_ratchet, decryptability);
+	throw_on_error(DATA_SET_ERROR, "Alice-Receive: Failed to set header decryptability.");
 
 	status_int = ratchet_receive(
 			alice_receive_ratchet,
@@ -289,10 +285,8 @@ int main(void) {
 	} else {
 		decryptability = UNDECRYPTABLE;
 	}
-	status_int = ratchet_set_header_decryptability(alice_send_ratchet, decryptability);
-	if (status_int != 0) {
-		throw(DATA_SET_ERROR, "Alice-Roundtrip: Failed  to set header decryptability.");
-	}
+	status = ratchet_set_header_decryptability(alice_send_ratchet, decryptability);
+	throw_on_error(DATA_SET_ERROR, "Alice-Roundtrip: Failed  to set header decryptability.");
 
 	status_int = ratchet_receive(
 			alice_send_ratchet,
@@ -341,10 +335,8 @@ int main(void) {
 	} else {
 		decryptability = UNDECRYPTABLE;
 	}
-	status_int = ratchet_set_header_decryptability(bob_send_ratchet, decryptability);
-	if (status_int != 0) {
-		throw(DATA_SET_ERROR, "Bob-Roundtrip: Failed to set header decryptability.");
-	}
+	status = ratchet_set_header_decryptability(bob_send_ratchet, decryptability);
+	throw_on_error(DATA_SET_ERROR, "Bob-Roundtrip: Failed to set header decryptability.");
 
 	status_int = ratchet_receive(
 			bob_send_ratchet,

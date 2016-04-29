@@ -373,22 +373,25 @@ cleanup:
  * Set if the header is decryptable with the current (state->receive_header_key)
  * or next (next_receive_header_key) header key, or isn't decryptable.
  */
-int ratchet_set_header_decryptability(
+return_status ratchet_set_header_decryptability(
 		ratchet_state *ratchet,
 		ratchet_header_decryptability header_decryptable) {
+	return_status status = return_status_init();
+
 	if (ratchet->header_decryptable != NOT_TRIED) {
 		//if the last message hasn't been properly handled yet, abort
-		return -10;
+		throw(GENERIC_ERROR, "Message hasn't been handled yet.");
 	}
 
 	if (header_decryptable == NOT_TRIED) {
 		//can't set to "NOT_TRIED"
-		return -10;
+		throw(INVALID_INPUT, "Can't set to \"NOT_TRIED\"");
 	}
 
 	ratchet->header_decryptable = header_decryptable;
 
-	return 0;
+cleanup:
+	return status;
 }
 
 /*

@@ -293,14 +293,14 @@ int main(void) {
 	//now the receive end, Bob recreates the message keys
 
 	//set the header decryptability
-	status_int = ratchet_set_header_decryptability(
+	status = ratchet_set_header_decryptability(
 			bob_state,
 			decryptable);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_SET_ERROR, "Failed to set Bob's header decryptability.");
-	}
+	);
 
 	status_int = ratchet_receive(
 			bob_state,
@@ -359,14 +359,14 @@ int main(void) {
 	buffer_clear(bob_next_receive_header_key);
 
 	//set the header decryptability
-	status_int = ratchet_set_header_decryptability(
+	status = ratchet_set_header_decryptability(
 			bob_state,
 			decryptable);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_SET_ERROR, "Failed to set header decryptability.");
-	}
+	);
 
 	//second receive message key
 	status_int = ratchet_receive(
@@ -426,14 +426,14 @@ int main(void) {
 	buffer_clear(bob_next_receive_header_key);
 
 	//set the header decryptability
-	status_int = ratchet_set_header_decryptability(
+	status = ratchet_set_header_decryptability(
 			bob_state,
 			decryptable);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_SET_ERROR, "Failed to set header decryptability.");
-	}
+	);
 
 	//third receive message key
 	status_int = ratchet_receive(
@@ -597,14 +597,14 @@ int main(void) {
 	//now alice receives the first, then the third message (second message skipped)
 
 	//set the header decryptability
-	status_int = ratchet_set_header_decryptability(
+	status = ratchet_set_header_decryptability(
 			alice_state,
 			decryptable);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_SET_ERROR, "Failed to set header decryptability.");
-	}
+	);
 
 	status_int = ratchet_receive(
 			alice_state,
@@ -662,14 +662,14 @@ int main(void) {
 	buffer_clear(alice_next_receive_header_key);
 
 	//set the header decryptability
-	status_int = ratchet_set_header_decryptability(
+	status = ratchet_set_header_decryptability(
 			alice_state,
 			decryptable);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_SET_ERROR, "Failed to set header decryptability.");
-	}
+	);
 
 	//third received message key (second message skipped)
 	status_int = ratchet_receive(
