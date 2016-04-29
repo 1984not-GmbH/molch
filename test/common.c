@@ -51,21 +51,23 @@ void print_header_and_message_keystore(header_and_message_keystore *keystore) {
 /*
  * Generates and prints a crypto_box keypair.
  */
-int generate_and_print_keypair(
+return_status generate_and_print_keypair(
 		buffer_t * const public_key, //crypto_box_PUBLICKEYBYTES
 		buffer_t * const private_key, //crypto_box_SECRETKEYBYTES
 		const buffer_t * name, //Name of the key owner (e.g. "Alice")
 		const buffer_t * type) { //type of the key (e.g. "ephemeral")
+	return_status status = return_status_init();
+
 	//check buffer sizes
 	if ((public_key->buffer_length < crypto_box_PUBLICKEYBYTES)
 			|| (private_key->buffer_length < crypto_box_SECRETKEYBYTES)) {
-		return -6;
+		throw(INCORRECT_BUFFER_SIZE, "Public key buffer is too short.");
 	}
 	//generate keypair
-	int status = crypto_box_keypair(public_key->content, private_key->content);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate %.*s's %.*s keypair. (%i)\n", (int)name->content_length, name->content, (int)type->content_length, type->content, status);
-		return status;
+	int status_int = 0;
+	status_int = crypto_box_keypair(public_key->content, private_key->content);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate keypair.");
 	}
 	public_key->content_length = crypto_box_PUBLICKEYBYTES;
 	private_key->content_length = crypto_box_SECRETKEYBYTES;
@@ -78,5 +80,6 @@ int generate_and_print_keypair(
 	print_hex(private_key);
 	putchar('\n');
 
-	return 0;
+cleanup:
+	return status;
 }

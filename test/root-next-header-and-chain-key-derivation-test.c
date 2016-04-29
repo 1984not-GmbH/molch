@@ -44,29 +44,24 @@ int main(void) {
 	buffer_t *bob_chain_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *bob_header_key = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 
-	int status_int = 0;
 	//create Alice's keypair
 	buffer_create_from_string(alice_string, "Alice");
 	buffer_create_from_string(ephemeral_string, "ephemeral");
-	status_int = generate_and_print_keypair(
+	status = generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
 			alice_string,
 			ephemeral_string);
-	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate and print Alice's ephemeral keypair.");
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice's ephemeral keypair.");
 
 	//create Bob's keypair
 	buffer_create_from_string(bob_string, "Bob");
-	status_int = generate_and_print_keypair(
+	status = generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
 			bob_string,
 			ephemeral_string);
-	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate and print Bob's ephemeral keypair.");
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's ephemeral keypair.");
 
 	//create previous root key
 	if (buffer_fill_random(previous_root_key, crypto_secretbox_KEYBYTES) != 0) {

@@ -43,25 +43,21 @@ int main(void) {
 	//create Alice's keypair
 	buffer_create_from_string(alice_string, "Alice");
 	buffer_create_from_string(empty_string, "");
-	status_int = generate_and_print_keypair(
+	status = generate_and_print_keypair(
 			alice_public_key,
 			alice_private_key,
 			alice_string,
 			empty_string);
-	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate and print Alice's keypair.");
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice's keypair.");
 
 	//create Bob's keypair
 	buffer_create_from_string(bob_string, "Bob");
-	status_int = generate_and_print_keypair(
+	status = generate_and_print_keypair(
 			bob_public_key,
 			bob_private_key,
 			bob_string,
 			empty_string);
-	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate and print Bob's keypair.");
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's keypair.");
 
 	//Diffie Hellman on Alice's side
 	status = diffie_hellman(

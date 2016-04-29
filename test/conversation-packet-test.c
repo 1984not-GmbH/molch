@@ -79,26 +79,22 @@ int main(void) {
 	buffer_create_from_string(alice_string, "Alice");
 	//identity
 	buffer_create_from_string(identity_string, "identity");
-	status_int = generate_and_print_keypair(
+	status = generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
 			alice_string,
 			identity_string);
-	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate Alice' identity keys.");
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Failed to generate Alice' identity keys.");
 
 	//bob
 	buffer_create_from_string(bob_string, "Bob");
 	//identity
-	status_int = generate_and_print_keypair(
+	status = generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
 			bob_string,
 			identity_string);
-	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate Bob's identity keys.");
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Failed to generate Bob's identity keys.");
 
 	//get the prekey list
 	status = prekey_store_list(bob_prekeys, prekey_list);

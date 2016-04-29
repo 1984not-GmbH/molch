@@ -84,46 +84,38 @@ int main(void) {
 	//creating Alice's identity keypair
 	buffer_create_from_string(alice_string, "Alice");
 	buffer_create_from_string(identity_string, "identity");
-	status_int = generate_and_print_keypair(
+	status = generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
 			alice_string,
 			identity_string);
-	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate and print Alice' identity keypair.");
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice' identity keypair.");
 
 	//creating Alice's ephemeral keypair
 	buffer_create_from_string(ephemeral_string, "ephemeral");
-	status_int = generate_and_print_keypair(
+	status = generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
 			alice_string,
 			ephemeral_string);
-	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate and print Alice' ephemeral keypair.");
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice' ephemeral keypair.");
 
 	//creating Bob's identity keypair
 	buffer_create_from_string(bob_string, "Bob");
-	status_int = generate_and_print_keypair(
+	status = generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
 			bob_string,
 			identity_string);
-	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate and print Bob's identity keypair.");
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's identity keypair.");
 
 	//creating Bob's ephemeral keypair
-	status_int = generate_and_print_keypair(
+	status = generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
 			bob_string,
 			ephemeral_string);
-	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate and print Bob's ephemeral keypair.");
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's ephemeral keypair.");
 
 	//start new ratchet for alice
 	printf("Creating new ratchet for Alice ...\n");
