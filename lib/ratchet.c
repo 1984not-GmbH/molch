@@ -401,7 +401,7 @@ cleanup:
  * Calculates all the message keys up to the purported message number and
  * saves the skipped ones in the ratchet's staging area.
  */
-int stage_skipped_header_and_message_keys(
+return_status stage_skipped_header_and_message_keys(
 		header_and_message_keystore * const staging_area,
 		buffer_t * const output_chain_key, //output, CHAIN_KEY_SIZE
 		buffer_t * const output_message_key, //output, MESSAGE_KEY_SIZE
@@ -409,7 +409,7 @@ int stage_skipped_header_and_message_keys(
 		const uint32_t current_message_number,
 		const uint32_t future_message_number,
 		const buffer_t * const chain_key) {
-	int status;
+	return_status status = return_status_init();
 
 	//create buffers
 	buffer_t *current_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
@@ -422,71 +422,64 @@ int stage_skipped_header_and_message_keys(
 			|| ((output_message_key != NULL) && (output_message_key->buffer_length < MESSAGE_KEY_SIZE))
 			|| (current_header_key == NULL) || (current_header_key->content_length != HEADER_KEY_SIZE)
 			|| (chain_key == NULL) || (chain_key->content_length != CHAIN_KEY_SIZE)) {
-		status = -6;
-		goto cleanup;
+		throw(INVALID_INPUT, "Invalid input to stage_skipped_header_and_message_keys.");
 	}
 
 	//when chain key is <none>, do nothing
 	if (is_none(chain_key)) {
-		status = 0;
 		goto cleanup;
 	}
 
 	//set current_chain_key to chain key to initialize it for the calculation that's
 	//following
-	status = buffer_clone(current_chain_key, chain_key);
-	if (status != 0) {
+	if (buffer_clone(current_chain_key, chain_key) != 0) {
 		goto cleanup;
 	}
 
 	for (uint32_t pos = current_message_number; pos < future_message_number; pos++) {
 		//derive current message key
-		status = derive_message_key(current_message_key, current_chain_key);
-		if (status != 0) {
-			goto cleanup;
+		if (derive_message_key(current_message_key, current_chain_key) != 0) {
+			throw(KEYDERIVATION_FAILED, "Failed to derive message key.");
 		}
 
+		int status_int = 0;
 		//add the message key, along with current_header_key to the staging area
-		status = header_and_message_keystore_add(
+		status_int = header_and_message_keystore_add(
 				staging_area,
 				current_message_key,
 				current_header_key);
-		if (status != 0) {
-			goto cleanup;
+		if (status_int != 0) {
+			throw(ADDITION_ERROR, "Failed to add keys to header and message keystore.");
 		}
 
 		//derive next chain key
-		status = derive_chain_key(next_chain_key, current_chain_key);
-		if (status != 0) {
-			goto cleanup;
+		if (derive_chain_key(next_chain_key, current_chain_key) != 0) {
+			throw(KEYDERIVATION_FAILED, "Failed to derive chain key.");
 		}
 
 		//shift chain keys
-		status = buffer_clone(current_chain_key, next_chain_key);
-		if (status != 0) {
-			goto cleanup;
+		if (buffer_clone(current_chain_key, next_chain_key) != 0) {
+			throw(BUFFER_ERROR, "Failed to copy chain key.");
 		}
 	}
 
 	//derive the message key that will be returned
 	if (output_message_key != NULL) {
-		status = derive_message_key(output_message_key, current_chain_key);
-		if (status != 0) {
-			goto cleanup;
+		if (derive_message_key(output_message_key, current_chain_key) != 0) {
+			throw(KEYDERIVATION_FAILED, "Failed to derive message key.");
 		}
 	}
 
 	//derive the chain key that will be returned
 	//TODO: not sure if this additional derivation is needed!
 	if (output_chain_key != NULL) {
-		status = derive_chain_key(output_chain_key, current_chain_key);
-		if (status != 0) {
-			goto cleanup;
+		if (derive_chain_key(output_chain_key, current_chain_key) != 0) {
+			throw(KEYDERIVATION_FAILED, "Failed to derive chain key.");
 		}
 	}
 
 cleanup:
-	if (status != 0) {
+	on_error(
 		if (output_chain_key != NULL) {
 			buffer_clear(output_chain_key);
 			output_chain_key->content_length = 0;
@@ -499,7 +492,7 @@ cleanup:
 		if (staging_area != NULL) {
 			header_and_message_keystore_clear(staging_area);
 		}
-	}
+	);
 
 	buffer_destroy_from_heap(current_chain_key);
 	buffer_destroy_from_heap(next_chain_key);
@@ -581,7 +574,7 @@ return_status ratchet_receive(
 		ratchet->purported_message_number = purported_message_number;
 
 		//CKp, MK = stage_skipped_header_and_message_keys(HKr, Nr, Np, CKr)
-		status_int = stage_skipped_header_and_message_keys(
+		status = stage_skipped_header_and_message_keys(
 				ratchet->staged_header_and_message_keys,
 				ratchet->purported_receive_chain_key,
 				message_key,
@@ -589,9 +582,7 @@ return_status ratchet_receive(
 				ratchet->receive_message_number,
 				purported_message_number,
 				ratchet->receive_chain_key);
-		if (status_int != 0) {
-			throw(GENERIC_ERROR, "Failed to stage skipped header and message keys.");
-		}
+		throw_on_error(GENERIC_ERROR, "Failed to stage skipped header and message keys.");
 	} else { //new message chain
 		//if ratchet_flag or not Dec(NHKr, header)
 		if (ratchet->ratchet_flag || (ratchet->header_decryptable != NEXT_DECRYPTABLE)) {
@@ -608,7 +599,7 @@ return_status ratchet_receive(
 		}
 
 		//stage_skipped_header_and_message_keys(HKr, Nr, PNp, CKr)
-		status_int = stage_skipped_header_and_message_keys(
+		status = stage_skipped_header_and_message_keys(
 				ratchet->staged_header_and_message_keys,
 				NULL, //output_chain_key
 				NULL, //output_message_key
@@ -616,9 +607,7 @@ return_status ratchet_receive(
 				ratchet->receive_message_number,
 				purported_previous_message_number,
 				ratchet->receive_chain_key);
-		if (status_int != 0) {
-			throw(GENERIC_ERROR, "Failed to stage skipped header and message keys.");
-		}
+		throw_on_error(GENERIC_ERROR, "Failed to stage skipped header and message keys.");
 
 		//HKp = NHKr
 		if (buffer_clone(ratchet->purported_receive_header_key, ratchet->next_receive_header_key) != 0) {
@@ -645,7 +634,7 @@ return_status ratchet_receive(
 		}
 
 		//CKp, MK = staged_header_and_message_keys(HKp, 0, Np, CKp)
-		status_int = stage_skipped_header_and_message_keys(
+		status = stage_skipped_header_and_message_keys(
 				ratchet->staged_header_and_message_keys,
 				ratchet->purported_receive_chain_key,
 				message_key,
@@ -653,9 +642,7 @@ return_status ratchet_receive(
 				0,
 				purported_message_number,
 				purported_chain_key_backup);
-		if (status_int != 0) {
-			throw(GENERIC_ERROR, "Failed to stage skipped header and message keys.");
-		}
+		throw_on_error(GENERIC_ERROR, "Failed to stage skipped header and message keys.");
 	}
 
 	ratchet->received_valid = false; //waiting for validation (feedback, if the message could actually be decrypted)
