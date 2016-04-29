@@ -195,14 +195,14 @@ cleanup:
 /*
  * Get keys and metadata to send the next message.
  */
-int ratchet_send(
+return_status ratchet_send(
 		ratchet_state *ratchet,
 		buffer_t * const send_header_key, //HEADER_KEY_SIZE, HKs
 		uint32_t * const send_message_number, //Ns
 		uint32_t * const previous_send_message_number, //PNs
 		buffer_t * const our_public_ephemeral, //PUBLIC_KEY_SIZE, DHRs
 		buffer_t * const message_key) { //MESSAGE_KEY_SIZE, MK
-	int status;
+	return_status status = return_status_init();
 
 	//create buffers
 	buffer_t *root_key_backup = buffer_create_on_heap(ROOT_KEY_SIZE, 0);
@@ -215,35 +215,36 @@ int ratchet_send(
 			|| (previous_send_message_number == NULL)
 			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)
 			|| (message_key == NULL) || (message_key->buffer_length < MESSAGE_KEY_SIZE)) {
-		status = -6;
-		goto cleanup;
+		throw(INVALID_INPUT, "Invalid input to ratchet_send.");
 	}
+
+	int status_int = 0;
 
 	if (ratchet->ratchet_flag) {
 		//DHRs = generateECDH()
-		status = crypto_box_keypair(
+		status_int = crypto_box_keypair(
 				ratchet->our_public_ephemeral->content,
 				ratchet->our_private_ephemeral->content);
 		ratchet->our_public_ephemeral->content_length = PUBLIC_KEY_SIZE;
 		ratchet->our_private_ephemeral->content_length = PRIVATE_KEY_SIZE;
-		if (status != 0) {
-			goto cleanup;
+		if (status_int != 0) {
+			throw(KEYGENERATION_FAILED, "Failed to generate new ephemeral keypair.");
 		}
 
 		//HKs = NHKs
-		status = buffer_clone(ratchet->send_header_key, ratchet->next_send_header_key);
-		if (status != 0) {
-			goto cleanup;
+		status_int = buffer_clone(ratchet->send_header_key, ratchet->next_send_header_key);
+		if (status_int != 0) {
+			throw(BUFFER_ERROR, "Failed to copy send header key to next send header key.");
 		}
 
 		//clone the root key for it to not be overwritten in the next step
-		status = buffer_clone(root_key_backup, ratchet->root_key);
-		if (status != 0) {
-			goto cleanup;
+		status_int = buffer_clone(root_key_backup, ratchet->root_key);
+		if (status_int != 0) {
+			throw(BUFFER_ERROR, "Failed to backup root key.");
 		}
 
 		//RK, NHKs, CKs = KDF(HMAC-HASH(RK, DH(DHRs, DHRr)))
-		status = derive_root_next_header_and_chain_keys(
+		status_int = derive_root_next_header_and_chain_keys(
 				ratchet->root_key,
 				ratchet->next_send_header_key,
 				ratchet->send_chain_key,
@@ -252,8 +253,8 @@ int ratchet_send(
 				ratchet->their_public_ephemeral,
 				root_key_backup,
 				ratchet->am_i_alice);
-		if (status != 0) {
-			goto cleanup;
+		if (status_int != 0) {
+			throw(KEYDERIVATION_FAILED, "Failed to derive root next header and chain keys.");
 		}
 
 		//PNs = Ns
@@ -267,9 +268,9 @@ int ratchet_send(
 	}
 
 	//MK = HMAC-HASH(CKs, "0")
-	status = derive_message_key(message_key, ratchet->send_chain_key);
-	if (status != 0)  {
-		goto cleanup;
+	status_int = derive_message_key(message_key, ratchet->send_chain_key);
+	if (status_int != 0)  {
+		throw(KEYDERIVATION_FAILED, "Failed to derive message key.");
 	}
 
 	//copy the other data to the output
@@ -277,39 +278,39 @@ int ratchet_send(
 	//  msg = Enc(HKs, Ns || PNs || DHRs) || Enc(MK, plaintext)
 	//  in the axolotl specification)
 	//HKs:
-	status = buffer_clone(send_header_key, ratchet->send_header_key);
-	if (status != 0) {
-		goto cleanup;
+	status_int = buffer_clone(send_header_key, ratchet->send_header_key);
+	if (status_int != 0) {
+		throw(BUFFER_ERROR, "Failed to copy send header key.");
 	}
 	//Ns
 	*send_message_number = ratchet->send_message_number;
 	//PNs
 	*previous_send_message_number = ratchet->previous_message_number;
 	//DHRs
-	status = buffer_clone(our_public_ephemeral, ratchet->our_public_ephemeral);
-	if (status != 0) {
-		goto cleanup;
+	status_int = buffer_clone(our_public_ephemeral, ratchet->our_public_ephemeral);
+	if (status_int != 0) {
+		throw(BUFFER_ERROR, "Failed to copy public ephemeral.");
 	}
 
 	//Ns = Ns + 1
 	ratchet->send_message_number++;
 
 	//clone the chain key for it to not be overwritten in the next step
-	status = buffer_clone(chain_key_backup, ratchet->send_chain_key);
-	if (status != 0) {
-		goto cleanup;
+	status_int = buffer_clone(chain_key_backup, ratchet->send_chain_key);
+	if (status_int != 0) {
+		throw(BUFFER_ERROR, "Failed to backup send chain key.");
 	}
 
 	//CKs = HMAC-HASH(CKs, "1")
-	status = derive_chain_key(
+	status_int = derive_chain_key(
 			ratchet->send_chain_key,
 			chain_key_backup);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(KEYDERIVATION_FAILED, "Failed to derive chain key.");
 	}
 
 cleanup:
-	if (status != 0) {
+	on_error(
 		if (send_header_key != NULL) {
 			buffer_clear(send_header_key);
 			send_header_key->content_length = 0;
@@ -322,7 +323,7 @@ cleanup:
 			buffer_clear(message_key);
 			message_key->content_length = 0;
 		}
-	}
+	);
 
 	buffer_destroy_from_heap(root_key_backup);
 	buffer_destroy_from_heap(chain_key_backup);

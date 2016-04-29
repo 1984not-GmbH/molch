@@ -422,22 +422,18 @@ return_status conversation_send(
 		packet_type = PREKEY_MESSAGE;
 	}
 
-	int status_int = 0;
-
 	*packet = NULL;
 
 	uint32_t send_message_number;
 	uint32_t previous_send_message_number;
-	status_int = ratchet_send(
+	status = ratchet_send(
 			conversation->ratchet,
 			send_header_key,
 			&send_message_number,
 			&previous_send_message_number,
 			send_ephemeral_key,
 			send_message_key);
-	if (status_int != 0) {
-		throw(SEND_ERROR, "Failed to get send keys.");
-	}
+	throw_on_error(SEND_ERROR, "Failed to get send keys.");
 
 	//create the header
 	status = header_construct(

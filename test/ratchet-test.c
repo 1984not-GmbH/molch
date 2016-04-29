@@ -192,18 +192,18 @@ int main(void) {
 	//first, alice sends two messages
 	uint32_t alice_send_message_number1;
 	uint32_t alice_previous_message_number1;
-	status_int = ratchet_send(
+	status = ratchet_send(
 			alice_state,
 			alice_send_header_key1,
 			&alice_send_message_number1,
 			&alice_previous_message_number1,
 			alice_send_ephemeral1,
 			alice_send_message_key1);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_FETCH_ERROR, "Failed to get Alice's first send message key.");
-	}
+	);
 	//print the send message key
 	printf("Alice Ratchet 1 send message key 1:\n");
 	print_hex(alice_send_message_key1);
@@ -214,18 +214,18 @@ int main(void) {
 	//second message key
 	uint32_t alice_send_message_number2;
 	uint32_t alice_previous_message_number2;
-	status_int = ratchet_send(
+	status = ratchet_send(
 			alice_state,
 			alice_send_header_key2,
 			&alice_send_message_number2,
 			&alice_previous_message_number2,
 			alice_send_ephemeral2,
 			alice_send_message_key2);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_FETCH_ERROR, "Failed to get Alice's second send message key.");
-	}
+	);
 	//print the send message key
 	printf("Alice Ratchet 1 send message key 2:\n");
 	print_hex(alice_send_message_key2);
@@ -236,18 +236,18 @@ int main(void) {
 	//third message_key
 	uint32_t alice_send_message_number3;
 	uint32_t alice_previous_message_number3;
-	status_int = ratchet_send(
+	status = ratchet_send(
 			alice_state,
 			alice_send_header_key3,
 			&alice_send_message_number3,
 			&alice_previous_message_number3,
 			alice_send_ephemeral3,
 			alice_send_message_key3);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_FETCH_ERROR, "Failed to get Alice's third send message key.");
-	}
+	);
 	//print the send message key
 	printf("Alice Ratchet 1 send message key 3:\n");
 	print_hex(alice_send_message_key3);
@@ -497,18 +497,18 @@ int main(void) {
 	//Now Bob replies with three messages
 	uint32_t bob_send_message_number1;
 	uint32_t bob_previous_message_number1;
-	status_int = ratchet_send(
+	status = ratchet_send(
 			bob_state,
 			bob_send_header_key1,
 			&bob_send_message_number1,
 			&bob_previous_message_number1,
 			bob_send_ephemeral1,
 			bob_send_message_key1);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_FETCH_ERROR, "Failed to get Bob's first send message key.");
-	}
+	);
 	//print the send message key
 	printf("Bob Ratchet 2 send message key 1:\n");
 	print_hex(bob_send_message_key1);
@@ -519,18 +519,18 @@ int main(void) {
 	//second message key
 	uint32_t bob_send_message_number2;
 	uint32_t bob_previous_message_number2;
-	status_int = ratchet_send(
+	status = ratchet_send(
 			bob_state,
 			bob_send_header_key2,
 			&bob_send_message_number2,
 			&bob_previous_message_number2,
 			bob_send_ephemeral2,
 			bob_send_message_key2);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_FETCH_ERROR, "Failed to get Bob's second send message key.");
-	}
+	);
 	//print the send message key
 	printf("Bob Ratchet 2 send message key 1:\n");
 	print_hex(bob_send_message_key2);
@@ -541,18 +541,18 @@ int main(void) {
 	//third message key
 	uint32_t bob_send_message_number3;
 	uint32_t bob_previous_message_number3;
-	status_int = ratchet_send(
+	status = ratchet_send(
 			bob_state,
 			bob_send_header_key3,
 			&bob_send_message_number3,
 			&bob_previous_message_number3,
 			bob_send_ephemeral3,
 			bob_send_message_key3);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_FETCH_ERROR, "Failed to get Bob's third send message key.");
-	}
+	);
 	//print the send message key
 	printf("Bob Ratchet 2 send message key 3:\n");
 	print_hex(bob_send_message_key3);

@@ -161,16 +161,14 @@ int main(void) {
 	// FIRST SCENARIO: ALICE SENDS A MESSAGE TO BOB
 	uint32_t send_message_number;
 	uint32_t previous_send_message_number;
-	status_int = ratchet_send(
+	status = ratchet_send(
 			alice_send_ratchet,
 			send_header_key,
 			&send_message_number,
 			&previous_send_message_number,
 			public_send_ephemeral,
 			send_message_key);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Failed to get send keys.");
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Failed to get send keys.");
 	export_ratchet(alice_send_ratchet, "alice-send-ratchet-after-sending.json");
 
 	//bob receives
@@ -219,16 +217,14 @@ int main(void) {
 
 
 	//SECOND SCENARIO: BOB SENDS MESSAGE TO ALICE
-	status_int = ratchet_send(
+	status = ratchet_send(
 			bob_send_ratchet,
 			send_header_key,
 			&send_message_number,
 			&previous_send_message_number,
 			public_send_ephemeral,
 			send_message_key);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Bob-Send: Failed to get send keys.");
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Bob-Send: Failed to get send keys.");
 	export_ratchet(bob_send_ratchet, "bob-send-ratchet-after-sending.json");
 
 	//alice receives
@@ -273,16 +269,14 @@ int main(void) {
 	}
 
 	//THIRD SCENARIO: BOB ANSWERS ALICE AFTER HAVING RECEIVED HER FIRST MESSAGE
-	status_int = ratchet_send(
+	status = ratchet_send(
 			bob_receive_ratchet,
 			send_header_key,
 			&send_message_number,
 			&previous_send_message_number,
 			public_send_ephemeral,
 			send_message_key);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Bob-Response: Failed to get send keys.");
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Bob-Response: Failed to get send keys.");
 	export_ratchet(bob_receive_ratchet, "bob-receive-ratchet-after-responding.json");
 
 	//alice receives
@@ -329,16 +323,14 @@ int main(void) {
 	}
 
 	//FOURTH SCENARIO: ALICE ANSWERS BOB AFTER HAVING RECEIVED HER FIRST MESSAGE
-	status_int = ratchet_send(
+	status = ratchet_send(
 			alice_receive_ratchet,
 			send_header_key,
 			&send_message_number,
 			&previous_send_message_number,
 			public_send_ephemeral,
 			send_message_key);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Bob-Roundtrip: Failed to get send-keys.");
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Bob-Roundtrip: Failed to get send-keys.");
 	export_ratchet(alice_receive_ratchet, "alice-receive-ratchet-after-responding.json");
 
 	//bob receives

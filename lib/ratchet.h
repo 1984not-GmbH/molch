@@ -110,7 +110,7 @@ return_status ratchet_create(
 /*
  * Get keys and metadata to send the next message.
  */
-int ratchet_send(
+return_status ratchet_send(
 		ratchet_state *state,
 		buffer_t * const send_header_key, //HEADER_KEY_SIZE, HKs
 		uint32_t * const send_message_number, //Ns
