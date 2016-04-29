@@ -1,5 +1,6 @@
 /*  Molch, an implementation of the axolotl ratchet based on libsodium
- *  Copyright (C) 2015  Max Bruckner (FSMaxB)
+ *  Copyright (C) 2015-2016 1984not Security GmbH
+ *  Author: Max Bruckner (FSMaxB)
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -68,4 +69,26 @@ void print_errors(return_status * const status) {
 	for (size_t i = 1; error != NULL; i++, error = error->next) {
 		fprintf(stderr, "%zu: %s\n", i, error->message);
 	}
+}
+
+void read_file(buffer_t ** const data, const char * const filename) {
+	if (data == NULL) {
+		return;
+	}
+
+	*data = NULL;
+
+	FILE *file = NULL;
+
+	file = fopen(filename, "r");
+
+	//get the filesize
+	fseek(file, 0, SEEK_END);
+	long filesize = ftell(file);
+	fseek(file, 0, SEEK_SET);
+
+	*data = buffer_create_on_heap(filesize, filesize);
+	(*data)->content_length = fread((*data)->content, 1, filesize, file);
+
+	fclose(file);
 }

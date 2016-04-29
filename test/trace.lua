@@ -4,7 +4,8 @@
 -- This is a small lua script to convert the output of tracing.c into
 -- a somewhat more readable form and be able to filter out some functions
 --
---  Copyright (C) 2016  Max Bruckner (FSMaxB)
+--  Copyright (C) 2015-2016 1984not Security GmbH
+--  Author: Max Bruckner (FSMaxB)
 --
 --  This library is free software; you can redistribute it and/or
 --  modify it under the terms of the GNU Lesser General Public

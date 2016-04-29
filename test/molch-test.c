@@ -1,5 +1,6 @@
 /* Molch, an implementation of the axolotl ratchet based on libsodium
- *  Copyright (C) 2015  Max Bruckner (FSMaxB)
+ *  Copyright (C) 2015-2016 1984not Security GmbH
+ *  Author: Max Bruckner (FSMaxB)
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -54,6 +55,17 @@ int main(void) {
 	unsigned char * bob_send_packet = NULL;
 
 	unsigned char *printed_status = NULL;
+
+	// JSON for empty library
+	buffer_create_from_string(empty_array, "[]");
+	size_t empty_json_length;
+	unsigned char *empty_json = NULL;
+	status = molch_json_export(&empty_json, &empty_json_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export to JSON.");
+	printf("%.*s\n", (int)empty_json_length, (char*)empty_json);
+	if (buffer_compare_to_raw(empty_array, empty_json, empty_json_length) != 0) {
+		throw(INCORRECT_DATA, "Incorrect JSON output when there is no user.");
+	}
 
 	//check user count
 	if (molch_user_count() != 0) {

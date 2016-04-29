@@ -1,8 +1,8 @@
 cmake_minimum_required (VERSION 2.6)
 
-project (molch)
+project (molch C)
 
-subdirs(test lib buffer mcJSON)
+subdirs(test lib buffer mcJSON bindings)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
@@ -19,18 +19,18 @@ endif()
 
 #check if running debug build
 if ("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
-    if ("${CMAKE_C_COMPILER}" MATCHES "clang")
+    if ("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
         set(SECURITY_C_FLAGS "-O0")
     else()
         set(SECURITY_C_FLAGS "-Og")
     endif()
 else()
     if(APPLE)
-        set(SECURITY_C_FLAGS "-O1 -Wformat -Wformat-security -fPIE")
+        set(SECURITY_C_FLAGS "-O1 -Wformat -Wformat-security")
         #TODO: Find secure Linker flags that work on Mac OS X
     else()
-        set(SECURITY_C_FLAGS "-fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -O1 -Wformat -Wformat-security -fPIE")
-        set(SECURITY_LINK_FLAGS "-z relro,now,noexecstack,noexecheap -pie")
+        set(SECURITY_C_FLAGS "-fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -O1 -Wformat -Wformat-security")
+        set(SECURITY_LINK_FLAGS "-z relro -z now -z noexecstack -z noexecheap -pie")
     endif()
 endif()
 
@@ -39,7 +39,7 @@ find_package(Sodium REQUIRED)
 include_directories(${SODIUM_INCLUDE_DIR})
 SET(libs ${libs} ${SODIUM_LIBRARY})
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -pedantic -Wall -Wextra -Werror ${SECURITY_C_FLAGS}")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -pedantic -Wall -Wextra -Werror -fPIC ${SECURITY_C_FLAGS}")
 set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${SECURITY_LINK_FLAGS}")
 
 find_program(MEMORYCHECK_COMMAND valgrind)

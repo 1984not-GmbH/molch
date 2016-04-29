@@ -11,7 +11,18 @@ fi
 rm test.c
 
 export CC=clang
-cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS='-fsanitize=undefined,integer -fno-sanitize-recover=undefined,integer -O1 -fno-omit-frame-pointer -fno-common -fno-optimize-sibling-calls -g' -DDISABLE_MEMORYCHECK_COMMAND="TRUE"
+if cmake .. -DCMAKE_C_COMPILER=clang -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_FLAGS='-fsanitize=undefined,integer -fno-sanitize-recover=undefined,integer -O1 -fno-omit-frame-pointer -fno-common -fno-optimize-sibling-calls -g' -DDISABLE_MEMORYCHECK_COMMAND="TRUE" -DGENERATE_LUA_BINDINGS=OFF; then
+    # This has to be done with else because with '!' it won't work on Mac OS X
+    echo
+else
+    exit $? #abort on failure
+fi
 make clean
-make
+if make; then
+    # This has to be done with else because with '!' it won't work on Mac OS X
+    echo
+else
+    exit $? #abort on failure
+fi
+export CTEST_OUTPUT_ON_FAILURE=1
 make test

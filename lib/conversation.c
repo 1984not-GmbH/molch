@@ -1,5 +1,6 @@
 /* Molch, an implementation of the axolotl ratchet based on libsodium
- *  Copyright (C) 2015  Max Bruckner (FSMaxB)
+ *  Copyright (C) 2015-2016 1984not Security GmbH
+ *  Author: Max Bruckner (FSMaxB)
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -477,6 +478,57 @@ cleanup:
 }
 
 /*
+ * Try to decrypt a packet with skipped over header and message keys.
+ * This corresponds to "try_skipped_header_and_message_keys" from the
+ * Axolotl protocol description.
+ *
+ * Returns 0, if it was able to decrypt the packet.
+ */
+int try_skipped_header_and_message_keys(
+		header_and_message_keystore * const skipped_keys,
+		const buffer_t * const packet,
+		buffer_t ** const message) {
+	//create buffers
+	buffer_t *message_nonce = buffer_create_on_heap(MESSAGE_NONCE_SIZE, MESSAGE_NONCE_SIZE);
+	buffer_t *header = buffer_create_on_heap(255, 0);
+
+	return_status status = return_status_init();
+	header_and_message_keystore_node* node = skipped_keys->head;
+	for (size_t i = 0; (i < skipped_keys->length) && (node != NULL); i++, node = node->next) {
+		status = packet_decrypt_header(
+				packet,
+				header,
+				message_nonce,
+				node->header_key,
+				NULL,
+				NULL,
+				NULL);
+		if (status.status == SUCCESS) {
+			status = packet_decrypt_message(
+					packet,
+					*message,
+					message_nonce,
+					node->message_key);
+			if (status.status == SUCCESS) {
+				header_and_message_keystore_remove(skipped_keys, node);
+				goto cleanup;
+			}
+		}
+		return_status_destroy_errors(&status);
+	}
+
+	status.status = NOT_FOUND;
+
+cleanup:
+	buffer_destroy_from_heap(message_nonce);
+	buffer_destroy_from_heap(header);
+
+	return_status_destroy_errors(&status);
+
+	return status.status;
+}
+
+/*
  * Receive and decrypt a message using an existing conversation.
  *
  * Don't forget to destroy the return status with return_status_destroy_errors()
@@ -504,6 +556,16 @@ return_status conversation_receive(
 	}
 
 	*message = buffer_create_on_heap(packet->content_length, 0);
+
+	int status_int = 0;
+	status_int = try_skipped_header_and_message_keys(
+			conversation->ratchet->skipped_header_and_message_keys,
+			packet,
+			message);
+	if (status_int == 0) {
+		// found a key and successfully decrypted the message
+		goto cleanup;
+	}
 
 	status = ratchet_get_receive_header_keys(
 			current_receive_header_key,

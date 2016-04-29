@@ -1,5 +1,6 @@
 /* Molch, an implementation of the axolotl ratchet based on libsodium
- *  Copyright (C) 2015  Max Bruckner (FSMaxB)
+ *  Copyright (C) 2015-2016 1984not Security GmbH
+ *  Author: Max Bruckner (FSMaxB)
  *
  *  This library is free software; you can redistribute it and/or
  *  modify it under the terms of the GNU Lesser General Public
@@ -1116,6 +1117,14 @@ return_status molch_json_export(
 		throw(INVALID_INPUT, "Invalid input to molch_json_export.");
 	}
 
+	// empty array when there is no content
+	if (users == NULL) {
+		*json = sodium_malloc(sizeof("[]"));
+		strncpy((char*)*json, "[]", sizeof("[]"));
+		*length = sizeof("[]");
+		goto cleanup;
+	}
+
 	//allocate a memory pool
 	//FIXME: Don't allocate a fixed amount
 	pool = buffer_create_with_custom_allocator(5000000, 0, sodium_malloc, sodium_free);
@@ -1176,6 +1185,13 @@ return_status molch_json_import(const unsigned char *const json, const size_t le
 
 	return_status status = return_status_init();
 
+	//initialize libsodium if not done already
+	if (users == NULL) {
+		if (sodium_init() == -1) {
+			throw(INIT_ERROR, "Failed to initialise libsodium.");
+		}
+	}
+
 	//create buffer for the json string
 	buffer_create_with_existing_array(json_buffer, (unsigned char*)json, length);
 
@@ -1195,13 +1211,17 @@ return_status molch_json_import(const unsigned char *const json, const size_t le
 		throw(IMPORT_ERROR, "Failed to import user store from JSON.");
 	}
 
-	user_store_destroy(users_backup);
-	users_backup = NULL;
+	if (users_backup != NULL) {
+		user_store_destroy(users_backup);
+		users_backup = NULL;
+	}
 
 cleanup:
-	if (users_backup != NULL) {
-		users = users_backup; //roll back backup
-	}
+	on_error(
+		if (users_backup != NULL) {
+			users = users_backup; //roll back backup
+		}
+	);
 
 	return status;
 }
