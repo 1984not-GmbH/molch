@@ -204,10 +204,8 @@ int main(void) {
 	}
 	printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
 
-	status_int = ratchet_set_last_message_authenticity(bob_receive_ratchet, true);
-	if (status_int != 0) {
-		throw(DATA_SET_ERROR, "Bob-Receive: Failed to set message authenticity.");
-	}
+	status = ratchet_set_last_message_authenticity(bob_receive_ratchet, true);
+	throw_on_error(DATA_SET_ERROR, "Bob-Receive: Failed to set message authenticity.");
 
 
 	//SECOND SCENARIO: BOB SENDS MESSAGE TO ALICE
@@ -251,10 +249,8 @@ int main(void) {
 	}
 	printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
 
-	status_int = ratchet_set_last_message_authenticity(alice_receive_ratchet, true);
-	if (status_int != 0) {
-		throw(DATA_SET_ERROR, "Alice-Receive: Failed to set message authenticity.");
-	}
+	status = ratchet_set_last_message_authenticity(alice_receive_ratchet, true);
+	throw_on_error(DATA_SET_ERROR, "Alice-Receive: Failed to set message authenticity.");
 
 	//THIRD SCENARIO: BOB ANSWERS ALICE AFTER HAVING RECEIVED HER FIRST MESSAGE
 	status = ratchet_send(
@@ -299,10 +295,8 @@ int main(void) {
 	}
 	printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
 
-	status_int = ratchet_set_last_message_authenticity(alice_send_ratchet, true);
-	if (status_int != 0) {
-		throw(DATA_SET_ERROR, "Alice-Roundtrip: Failed to set message authenticity.");
-	}
+	status = ratchet_set_last_message_authenticity(alice_send_ratchet, true);
+	throw_on_error(DATA_SET_ERROR, "Alice-Roundtrip: Failed to set message authenticity.");
 
 	//FOURTH SCENARIO: ALICE ANSWERS BOB AFTER HAVING RECEIVED HER FIRST MESSAGE
 	status = ratchet_send(
@@ -347,10 +341,8 @@ int main(void) {
 	}
 	printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
 
-	status_int = ratchet_set_last_message_authenticity(bob_send_ratchet, true);
-	if (status_int != 0) {
-		throw(DATA_SET_ERROR, "Bob-Roundtrip: Failed to set message authenticity.");
-	}
+	status = ratchet_set_last_message_authenticity(bob_send_ratchet, true);
+	throw_on_error(DATA_SET_ERROR, "Bob-Roundtrip: Failed to set message authenticity.");
 
 cleanup:
 	buffer_destroy_from_heap(alice_private_identity);

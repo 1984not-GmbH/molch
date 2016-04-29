@@ -486,7 +486,6 @@ return_status conversation_receive(
 	conversation_t * const conversation,
 	const buffer_t * const packet, //received packet
 	buffer_t ** const message) { //output, free after use!
-	int status_int = 0;
 
 	//create buffers
 	buffer_t *current_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
@@ -579,22 +578,22 @@ return_status conversation_receive(
 			*message,
 			message_nonce,
 			message_key);
-	if (status.status != SUCCESS) {
-		int authenticity_status_int __attribute__((unused)); //tell the static analyser to not complain about this
-		authenticity_status_int = ratchet_set_last_message_authenticity(conversation->ratchet, false);
+	on_error(
+		return_status authenticity_status = return_status_init();
+		authenticity_status = ratchet_set_last_message_authenticity(conversation->ratchet, false);
+		return_status_destroy_errors(&authenticity_status);
 		throw(DECRYPT_ERROR, "Failed to decrypt message.");
-	}
+	);
 
-	status_int = ratchet_set_last_message_authenticity(conversation->ratchet, true);
-	if (status_int != 0) {
-		throw(DATA_SET_ERROR, "Failed to set message authenticity.");
-	}
+	status = ratchet_set_last_message_authenticity(conversation->ratchet, true);
+	throw_on_error(DATA_SET_ERROR, "Failed to set message authenticity.");
 
 cleanup:
-	if (status.status != SUCCESS) {
-		int authenticity_status __attribute__((unused)); //tell the static analyser to not complain about this
+	on_error(
+		return_status authenticity_status = return_status_init();
 		if (conversation != NULL) {
 			authenticity_status = ratchet_set_last_message_authenticity(conversation->ratchet, false);
+			return_status_destroy_errors(&authenticity_status);
 		}
 		if (message != NULL) {
 			if (*message != NULL) {
@@ -602,7 +601,7 @@ cleanup:
 			}
 			*message = NULL;
 		}
-	}
+	);
 
 	buffer_destroy_from_heap(current_receive_header_key);
 	buffer_destroy_from_heap(next_receive_header_key);

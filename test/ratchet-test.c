@@ -320,12 +320,12 @@ int main(void) {
 
 	//confirm validity of the message key (this is normally done after successfully decrypting
 	//and authenticating a message with the key
-	status_int = ratchet_set_last_message_authenticity(bob_state, true);
-	if (status_int != 0) {
+	status = ratchet_set_last_message_authenticity(bob_state, true);
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_SET_ERROR, "Failed to set authenticity state.");
-	}
+	);
 
 	status = ratchet_get_receive_header_keys(
 			bob_current_receive_header_key,
@@ -387,12 +387,12 @@ int main(void) {
 
 	//confirm validity of the message key (this is normally done after successfully decrypting
 	//and authenticating a message with the key
-	status_int = ratchet_set_last_message_authenticity(bob_state, true);
-	if (status_int != 0) {
+	status = ratchet_set_last_message_authenticity(bob_state, true);
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_SET_ERROR, "Failed to set authenticity state.");
-	}
+	);
 
 	status = ratchet_get_receive_header_keys(
 			bob_current_receive_header_key,
@@ -454,12 +454,12 @@ int main(void) {
 
 	//confirm validity of the message key (this is normally done after successfully decrypting
 	//and authenticating a message with the key
-	status_int = ratchet_set_last_message_authenticity(bob_state, true);
-	if (status_int != 0) {
+	status = ratchet_set_last_message_authenticity(bob_state, true);
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_SET_ERROR, "Failed to set authenticity state.");
-	}
+	);
 
 	//compare the message keys
 	if (buffer_compare(alice_send_message_key1, bob_receive_key1) != 0) {
@@ -623,12 +623,12 @@ int main(void) {
 	putchar('\n');
 
 	//confirm validity of the message key
-	status_int = ratchet_set_last_message_authenticity(alice_state, true);
-	if (status_int != 0) {
+	status = ratchet_set_last_message_authenticity(alice_state, true);
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_SET_ERROR, "Failed to set authenticity state.");
-	}
+	);
 
 	status = ratchet_get_receive_header_keys(
 			alice_current_receive_header_key,
@@ -691,12 +691,12 @@ int main(void) {
 	assert(alice_state->staged_header_and_message_keys->length == 1);
 
 	//confirm validity of the message key
-	status_int = ratchet_set_last_message_authenticity(alice_state, true);
-	if (status_int != 0) {
+	status = ratchet_set_last_message_authenticity(alice_state, true);
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_SET_ERROR, "Failed to set authenticity state.");
-	}
+	);
 
 	assert(alice_state->staged_header_and_message_keys->length == 0);
 	assert(alice_state->skipped_header_and_message_keys->length == 1);

@@ -679,9 +679,11 @@ cleanup:
  * Call this function after trying to decrypt a message and pass it if
  * the decryption was successful or if it wasn't.
  */
-int ratchet_set_last_message_authenticity(
+return_status ratchet_set_last_message_authenticity(
 		ratchet_state *ratchet,
 		bool valid) {
+	return_status status = return_status_init();
+
 	//prepare for being able to receive new messages
 	ratchet->received_valid = true;
 
@@ -689,11 +691,8 @@ int ratchet_set_last_message_authenticity(
 	ratchet_header_decryptability header_decryptable = ratchet->header_decryptable;
 	ratchet->header_decryptable = NOT_TRIED;
 
-	int status;
-
 	if (!valid) { //message couldn't be decrypted
 		header_and_message_keystore_clear(ratchet->staged_header_and_message_keys);
-		status = 0;
 		goto cleanup;
 	}
 
@@ -702,31 +701,26 @@ int ratchet_set_last_message_authenticity(
 			//if ratchet_flag or not Dec(NHKr, header)
 			//clear purported message and header keys
 			header_and_message_keystore_clear(ratchet->staged_header_and_message_keys);
-			status = 0;
 			goto cleanup;
 		}
 
 		//otherwise, received message was valid
 		//accept purported values
 		//RK = RKp
-		status = buffer_clone(ratchet->root_key, ratchet->purported_root_key);
-		if (status != 0) {
-			goto cleanup;
+		if (buffer_clone(ratchet->root_key, ratchet->purported_root_key) != 0) {
+			throw(BUFFER_ERROR, "Failed to copy purported root key to root key.");
 		}
 		//HKr = HKp
-		status = buffer_clone(ratchet->receive_header_key, ratchet->purported_receive_header_key);
-		if (status != 0) {
-			goto cleanup;
+		if (buffer_clone(ratchet->receive_header_key, ratchet->purported_receive_header_key) != 0) {
+			throw(BUFFER_ERROR, "Failed to copy purported receive header key to receive header key.");
 		}
 		//NHKr = NHKp
-		status = buffer_clone(ratchet->next_receive_header_key, ratchet->purported_next_receive_header_key);
-		if (status != 0) {
-			goto cleanup;
+		if (buffer_clone(ratchet->next_receive_header_key, ratchet->purported_next_receive_header_key) != 0) {
+			throw(BUFFER_ERROR, "Failed to copy purported next receive header key to next receive header key.");
 		}
 		//DHRr = DHRp
-		status = buffer_clone(ratchet->their_public_ephemeral, ratchet->their_purported_public_ephemeral);
-		if (status != 0) {
-			goto cleanup;
+		if (buffer_clone(ratchet->their_public_ephemeral, ratchet->their_purported_public_ephemeral) != 0) {
+			throw(BUFFER_ERROR, "Failed to copy their purported public ephemeral to their public ephemeral.");
 		}
 		//erase(DHRs)
 		buffer_clear(ratchet->our_private_ephemeral);
@@ -736,16 +730,14 @@ int ratchet_set_last_message_authenticity(
 	}
 
 	//commit_skipped_header_and_message_keys
-	status = commit_skipped_header_and_message_keys(ratchet);
-	if (status != 0) {
-		goto cleanup;
+	if (commit_skipped_header_and_message_keys(ratchet) != 0) {
+		throw(GENERIC_ERROR, "Failed to commit skipped header and message keys.");
 	}
 	//Nr = Np + 1
 	ratchet->receive_message_number = ratchet->purported_message_number + 1;
 	//CKr = CKp
-	status = buffer_clone(ratchet->receive_chain_key, ratchet->purported_receive_chain_key);
-	if (status != 0) {
-		goto cleanup;
+	if (buffer_clone(ratchet->receive_chain_key, ratchet->purported_receive_chain_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy purported receive chain key to receive chain key.");
 	}
 
 cleanup:
