@@ -161,15 +161,13 @@ return_status derive_root_next_header_and_chain_keys(
 
 	int status_int = 0;
 	//DH(DHRs, DHRr) or DH(DHRp, DHRs)
-	status_int = diffie_hellman(
+	status = diffie_hellman(
 			diffie_hellman_secret,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral,
 			am_i_alice);
-	if (status_int != 0) {
-		throw(KEYDERIVATION_FAILED, "Failed to perform diffie hellman.");
-	}
+	throw_on_error(KEYDERIVATION_FAILED, "Failed to perform diffie hellman.");
 
 	//key to derive from
 	//HMAC-HASH(RK, DH(..., ...))

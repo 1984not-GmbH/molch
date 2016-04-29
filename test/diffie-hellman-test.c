@@ -29,7 +29,7 @@ int main(void) {
 		return -1;
 	}
 
-	int status;
+	return_status status = return_status_init();
 
 	//create buffers
 	buffer_t *alice_public_key = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
@@ -39,27 +39,28 @@ int main(void) {
 	buffer_t *bob_private_key = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	buffer_t *bob_shared_secret = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
 
+	int status_int = 0;
 	//create Alice's keypair
 	buffer_create_from_string(alice_string, "Alice");
 	buffer_create_from_string(empty_string, "");
-	status = generate_and_print_keypair(
+	status_int = generate_and_print_keypair(
 			alice_public_key,
 			alice_private_key,
 			alice_string,
 			empty_string);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate and print Alice's keypair.");
 	}
 
 	//create Bob's keypair
 	buffer_create_from_string(bob_string, "Bob");
-	status = generate_and_print_keypair(
+	status_int = generate_and_print_keypair(
 			bob_public_key,
 			bob_private_key,
 			bob_string,
 			empty_string);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate and print Bob's keypair.");
 	}
 
 	//Diffie Hellman on Alice's side
@@ -70,10 +71,7 @@ int main(void) {
 			bob_public_key,
 			true);
 	buffer_clear(alice_private_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Diffie Hellman with Alice's private key failed. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Diffie Hellman with Alice's private key failed.");
 
 	//print Alice's shared secret
 	printf("Alice's shared secret ECDH(A_priv, B_pub) (%zu Bytes):\n", alice_shared_secret->content_length);
@@ -88,10 +86,7 @@ int main(void) {
 			alice_public_key,
 			false);
 	buffer_clear(bob_private_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Diffie Hellman with Bob's private key failed. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Diffie Hellman with Bob's private key failed.");
 
 	//print Bob's shared secret
 	printf("Bob's shared secret ECDH(B_priv, A_pub) (%zu Bytes):\n", bob_shared_secret->content_length);
@@ -99,12 +94,11 @@ int main(void) {
 	putchar('\n');
 
 	//compare both shared secrets
-	status = buffer_compare(alice_shared_secret, bob_shared_secret);
+	status_int = buffer_compare(alice_shared_secret, bob_shared_secret);
 	buffer_clear(alice_shared_secret);
 	buffer_clear(bob_shared_secret);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Diffie Hellman didn't produce the same shared secret. (%i)\n", status);
-		goto cleanup;
+	if (status_int != 0) {
+		throw(INCORRECT_DATA, "Diffie Hellman didn't produce the same shared secret.");
 	}
 
 	printf("Both shared secrets match!\n");
@@ -117,5 +111,10 @@ cleanup:
 	buffer_destroy_from_heap(bob_private_key);
 	buffer_destroy_from_heap(bob_shared_secret);
 
-	return status;
+	on_error(
+		print_errors(&status);
+	);
+	return_status_destroy_errors(&status);
+
+	return status.status;
 }
