@@ -508,23 +508,28 @@ cleanup:
  * Commit all the purported message keys into the message key store thats used
  * to actually decrypt late messages.
  */
-int commit_skipped_header_and_message_keys(ratchet_state *state) {
-	int status;
+return_status commit_skipped_header_and_message_keys(ratchet_state *state) {
+	return_status status = return_status_init();
+
+	int status_int = 0;
+
 	//as long as the list of purported message keys isn't empty,
 	//add them to the list of skipped message keys
 	while (state->staged_header_and_message_keys->length != 0) {
-		status = header_and_message_keystore_add(
+		status_int = header_and_message_keystore_add(
 				state->skipped_header_and_message_keys,
 				state->staged_header_and_message_keys->head->message_key,
 				state->staged_header_and_message_keys->head->header_key);
-		if (status != 0) {
-			return status;
+		if (status_int != 0) {
+			throw(ADDITION_ERROR, "Failed to add keys to skipped header and message keys.");
 		}
 		header_and_message_keystore_remove(
 				state->staged_header_and_message_keys,
 				state->staged_header_and_message_keys->head);
 	}
-	return 0;
+
+cleanup:
+	return status;
 }
 
 /*
@@ -717,9 +722,8 @@ return_status ratchet_set_last_message_authenticity(
 	}
 
 	//commit_skipped_header_and_message_keys
-	if (commit_skipped_header_and_message_keys(ratchet) != 0) {
-		throw(GENERIC_ERROR, "Failed to commit skipped header and message keys.");
-	}
+	status = commit_skipped_header_and_message_keys(ratchet);
+	throw_on_error(GENERIC_ERROR, "Failed to commit skipped header and message keys.");
 	//Nr = Np + 1
 	ratchet->receive_message_number = ratchet->purported_message_number + 1;
 	//CKr = CKp
