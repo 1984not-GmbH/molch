@@ -31,11 +31,18 @@
  * The input key needs to be between crypto_generichash_blake2b_KEYBYTES_MIN (16 Bytes)
  * and crypto_generichash_blake2b_KEYBYTES_MAX (64 Bytes).
  */
-int derive_key(
+return_status derive_key(
 		buffer_t * const derived_key,
 		size_t derived_size,
 		const buffer_t * const input_key,
 		uint32_t subkey_counter) { //number of the current subkey, used to derive multiple keys from the same input key
+	return_status status = return_status_init();
+
+	//create a salt that contains the number of the subkey
+	buffer_t * salt = buffer_create_on_heap(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
+	buffer_clear(salt); //fill with zeroes
+	salt->content_length = crypto_generichash_blake2b_SALTBYTES;
+
 	//check if inputs are valid
 	if ((derived_size > crypto_generichash_blake2b_BYTES_MAX)
 			|| (derived_size < crypto_generichash_blake2b_BYTES_MIN)
@@ -43,7 +50,7 @@ int derive_key(
 			|| (input_key == NULL)
 			|| (input_key->content_length > crypto_generichash_blake2b_KEYBYTES_MAX)
 			|| (input_key->content_length < crypto_generichash_blake2b_KEYBYTES_MIN)) {
-		return -10;
+		throw(INVALID_INPUT, "Invalid input to derive_key.");
 	}
 
 	//set length of output
@@ -52,18 +59,14 @@ int derive_key(
 	buffer_create_from_string(personal, "molch cryptolib"); //string that's unique to molch
 	assert(personal->content_length == crypto_generichash_blake2b_PERSONALBYTES);
 
-	//create a salt that contains the number of the subkey
-	buffer_t * salt = buffer_create_on_heap(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
-	buffer_clear(salt); //fill with zeroes
-	salt->content_length = crypto_generichash_blake2b_SALTBYTES;
 	//fill the salt with a big endian representation of the subkey counter
 	buffer_create_with_existing_array(big_endian_subkey_counter, salt->content + salt->content_length - sizeof(uint32_t), sizeof(uint32_t));
-	int status = endianness_uint32_to_big_endian(subkey_counter, big_endian_subkey_counter);
-	if (status != 0) {
-		goto cleanup;
+	if (endianness_uint32_to_big_endian(subkey_counter, big_endian_subkey_counter) != 0) {
+		throw(CONVERSION_ERROR, "Failed to convert subkey counter to big endian.");
 	}
 
-	status = crypto_generichash_blake2b_salt_personal(
+	int status_int = 0;
+	status_int = crypto_generichash_blake2b_salt_personal(
 			derived_key->content,
 			derived_key->content_length,
 			NULL, //input
@@ -72,14 +75,16 @@ int derive_key(
 			input_key->content_length,
 			salt->content,
 			personal->content);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(KEYDERIVATION_FAILED, "Failed to derive key via crypto_generichash_blake2b_salt_personal");
 	}
 
 cleanup:
-	if (status != 0) {
-		derived_key->content_length = 0;
-	}
+	on_error(
+		if (derived_key != NULL) {
+			derived_key->content_length = 0;
+		}
+	);
 	buffer_destroy_from_heap(salt);
 
 	return status;
@@ -93,7 +98,7 @@ cleanup:
  * CK_new = HMAC-Hash(CK_prev, 0x01)
  * (previous chain key as key, 0x01 as message)
  */
-int derive_chain_key(
+return_status derive_chain_key(
 		buffer_t * const new_chain_key,
 		const buffer_t * const previous_chain_key) {
 	return derive_key(
@@ -111,7 +116,7 @@ int derive_chain_key(
  * MK = HMAC-Hash(CK, 0x00)
  * (chain_key as key, 0x00 as message)
  */
-int derive_message_key(
+return_status derive_message_key(
 		buffer_t * const message_key,
 		const buffer_t * const chain_key) {
 	return derive_key(
@@ -181,34 +186,28 @@ return_status derive_root_next_header_and_chain_keys(
 
 	//now derive the different keys from the derivation key
 	//root key
-	status_int = derive_key(
+	status = derive_key(
 			root_key,
 			ROOT_KEY_SIZE,
 			derivation_key,
 			0);
-	if (status_int != 0) {
-		throw(KEYDERIVATION_FAILED, "Failed to derive root key from derivation key.");
-	}
+	throw_on_error(KEYDERIVATION_FAILED, "Failed to derive root key from derivation key.");
 
 	//next header key
-	status_int = derive_key(
+	status = derive_key(
 			next_header_key,
 			HEADER_KEY_SIZE,
 			derivation_key,
 			1);
-	if (status_int != 0) {
-		throw(KEYDERIVATION_FAILED, "Failed to derive next header key from derivation key.");
-	}
+	throw_on_error(KEYDERIVATION_FAILED, "Failed to derive next header key from derivation key.");
 
 	//chain key
-	status_int = derive_key(
+	status = derive_key(
 			chain_key,
 			CHAIN_KEY_SIZE,
 			derivation_key,
 			2);
-	if (status_int != 0) {
-		throw(KEYDERIVATION_FAILED, "Failed to derive chain key from derivation key.");
-	}
+	throw_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key from derivation key.");
 
 cleanup:
 	on_error(
@@ -293,14 +292,12 @@ return_status derive_initial_root_chain_and_header_keys(
 
 	//derive root key
 	//RK = KDF(master_key, 0x00)
-	status_int = derive_key(
+	status = derive_key(
 			root_key,
 			ROOT_KEY_SIZE,
 			master_key,
 			0);
-	if (status_int != 0) {
-		throw(KEYDERIVATION_FAILED, "Failed to derive root key from master key.");
-	}
+	throw_on_error(KEYDERIVATION_FAILED, "Failed to derive root key from master key.");
 
 	//derive chain keys and header keys
 	if (am_i_alice) {
@@ -309,49 +306,41 @@ return_status derive_initial_root_chain_and_header_keys(
 		buffer_clear(send_header_key);
 		send_header_key->content_length = HEADER_KEY_SIZE;
 		//HKr = KDF(master_key, 0x01)
-		status_int = derive_key(
+		status = derive_key(
 				receive_header_key,
 				HEADER_KEY_SIZE,
 				master_key,
 				1);
-		if (status_int != 0) {
-			throw(KEYDERIVATION_FAILED, "Failed to derive receive header key from master key.");
-		}
+		throw_on_error(KEYDERIVATION_FAILED, "Failed to derive receive header key from master key.");
 
 		//NHKs, NHKr
 		//NHKs = KDF(master_key, 0x02)
-		status_int = derive_key(
+		status = derive_key(
 				next_send_header_key,
 				HEADER_KEY_SIZE,
 				master_key,
 				2);
-		if (status_int != 0) {
-			throw(KEYDERIVATION_FAILED, "Failed to derive next send header key from master key.");
-		}
+		throw_on_error(KEYDERIVATION_FAILED, "Failed to derive next send header key from master key.");
 
 		//NHKr = KDF(master_key, 0x03)
-		status_int = derive_key(
+		status = derive_key(
 				next_receive_header_key,
 				HEADER_KEY_SIZE,
 				master_key,
 				3);
-		if (status_int != 0) {
-			throw(KEYDERIVATION_FAILED, "Failed to derive next receive header key from master key.");
-		}
+		throw_on_error(KEYDERIVATION_FAILED, "Failed to derive next receive header key from master key.");
 
 		//CKs=<none>, CKr=KDF
 		//CKs=<none>
 		buffer_clear(send_chain_key);
 		send_chain_key->content_length = CHAIN_KEY_SIZE;
 		//CKr = KDF(master_key, 0x04)
-		status_int = derive_key(
+		status = derive_key(
 				receive_chain_key,
 				CHAIN_KEY_SIZE,
 				master_key,
 				4);
-		if (status_int != 0) {
-			throw(KEYDERIVATION_FAILED, "Failed to derive receive chain key from master key.");
-		}
+		throw_on_error(KEYDERIVATION_FAILED, "Failed to derive receive chain key from master key.");
 
 	} else {
 		//HKs=HKDF, HKr=<none>
@@ -359,48 +348,40 @@ return_status derive_initial_root_chain_and_header_keys(
 		buffer_clear(receive_header_key);
 		receive_header_key->content_length = HEADER_KEY_SIZE;
 		//HKs = KDF(master_key, 0x01)
-		status_int = derive_key(
+		status = derive_key(
 				send_header_key,
 				HEADER_KEY_SIZE,
 				master_key,
 				1);
-		if (status_int != 0) {
-			throw(KEYDERIVATION_FAILED, "Failed to derive send header key from master key.");
-		}
+		throw_on_error(KEYDERIVATION_FAILED, "Failed to derive send header key from master key.");
 
 		//NHKr, NHKs
 		//NHKr = KDF(master_key, 0x02)
-		status_int = derive_key(
+		status = derive_key(
 				next_receive_header_key,
 				HEADER_KEY_SIZE,
 				master_key,
 				2);
-		if (status_int != 0) {
-			throw(KEYDERIVATION_FAILED, "Failed to derive next receive header key from master key.");
-		}
+		throw_on_error(KEYDERIVATION_FAILED, "Failed to derive next receive header key from master key.");
 		//NHKs = KDF(master_key, 0x03)
-		status_int = derive_key(
+		status = derive_key(
 				next_send_header_key,
 				HEADER_KEY_SIZE,
 				master_key,
 				3);
-		if (status_int != 0) {
-			throw(KEYDERIVATION_FAILED, "Failed to derive next send header key from master key.");
-		}
+		throw_on_error(KEYDERIVATION_FAILED, "Failed to derive next send header key from master key.");
 
 		//CKs=KDF, CKr=<none>
 		//CKr = <none>
 		buffer_clear(receive_chain_key);
 		receive_chain_key->content_length = CHAIN_KEY_SIZE;
 		//CKs = KDF(master_key, 0x04)
-		status_int = derive_key(
+		status = derive_key(
 				send_chain_key,
 				CHAIN_KEY_SIZE,
 				master_key,
 				4);
-		if (status_int != 0) {
-			throw(KEYDERIVATION_FAILED, "Failed to derive send chain key from master key.");
-		}
+		throw_on_error(KEYDERIVATION_FAILED, "Failed to derive send chain key from master key.");
 	}
 
 cleanup:

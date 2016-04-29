@@ -263,10 +263,8 @@ return_status ratchet_send(
 	}
 
 	//MK = HMAC-HASH(CKs, "0")
-	status_int = derive_message_key(message_key, ratchet->send_chain_key);
-	if (status_int != 0)  {
-		throw(KEYDERIVATION_FAILED, "Failed to derive message key.");
-	}
+	status = derive_message_key(message_key, ratchet->send_chain_key);
+	throw_on_error(KEYDERIVATION_FAILED, "Failed to derive message key.");
 
 	//copy the other data to the output
 	//(corresponds to
@@ -297,12 +295,10 @@ return_status ratchet_send(
 	}
 
 	//CKs = HMAC-HASH(CKs, "1")
-	status_int = derive_chain_key(
+	status = derive_chain_key(
 			ratchet->send_chain_key,
 			chain_key_backup);
-	if (status_int != 0) {
-		throw(KEYDERIVATION_FAILED, "Failed to derive chain key.");
-	}
+	throw_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key.");
 
 cleanup:
 	on_error(
@@ -433,9 +429,8 @@ return_status stage_skipped_header_and_message_keys(
 
 	for (uint32_t pos = current_message_number; pos < future_message_number; pos++) {
 		//derive current message key
-		if (derive_message_key(current_message_key, current_chain_key) != 0) {
-			throw(KEYDERIVATION_FAILED, "Failed to derive message key.");
-		}
+		status = derive_message_key(current_message_key, current_chain_key);
+		throw_on_error(KEYDERIVATION_FAILED, "Failed to derive message key.");
 
 		int status_int = 0;
 		//add the message key, along with current_header_key to the staging area
@@ -448,9 +443,8 @@ return_status stage_skipped_header_and_message_keys(
 		}
 
 		//derive next chain key
-		if (derive_chain_key(next_chain_key, current_chain_key) != 0) {
-			throw(KEYDERIVATION_FAILED, "Failed to derive chain key.");
-		}
+		status = derive_chain_key(next_chain_key, current_chain_key);
+		throw_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key.");
 
 		//shift chain keys
 		if (buffer_clone(current_chain_key, next_chain_key) != 0) {
@@ -460,17 +454,15 @@ return_status stage_skipped_header_and_message_keys(
 
 	//derive the message key that will be returned
 	if (output_message_key != NULL) {
-		if (derive_message_key(output_message_key, current_chain_key) != 0) {
-			throw(KEYDERIVATION_FAILED, "Failed to derive message key.");
-		}
+		status = derive_message_key(output_message_key, current_chain_key);
+		throw_on_error(KEYDERIVATION_FAILED, "Failed to derive message key.");
 	}
 
 	//derive the chain key that will be returned
 	//TODO: not sure if this additional derivation is needed!
 	if (output_chain_key != NULL) {
-		if (derive_chain_key(output_chain_key, current_chain_key) != 0) {
-			throw(KEYDERIVATION_FAILED, "Failed to derive chain key.");
-		}
+		status = derive_chain_key(output_chain_key, current_chain_key);
+		throw_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key.");
 	}
 
 cleanup:

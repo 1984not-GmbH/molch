@@ -31,7 +31,7 @@
  * The input key needs to be between crypto_generichash_blake2b_KEYBYTES_MIN (16 Bytes)
  * and crypto_generichash_blake2b_KEYBYTES_MAX (64 Bytes).
  */
-int derive_key(
+return_status derive_key(
 		buffer_t * const derived_key,
 		size_t derived_size,
 		const buffer_t * const input_key,
@@ -45,7 +45,7 @@ int derive_key(
  * CK_new = HMAC-Hash(CK_prev, 0x01)
  * (previous chain key as key, 0x01 as message)
  */
-int derive_chain_key(
+return_status derive_chain_key(
 		buffer_t * const new_chain_key,
 		const buffer_t * const previous_chain_key) __attribute__((warn_unused_result));
 
@@ -57,7 +57,7 @@ int derive_chain_key(
  * MK = HMAC-Hash(CK, 0x00)
  * (chain_key as key, 0x00 as message)
  */
-int derive_message_key(
+return_status derive_message_key(
 		buffer_t * const message_key,
 		const buffer_t * const chain_key) __attribute__((warn_unused_result));
 
