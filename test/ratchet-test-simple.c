@@ -172,13 +172,11 @@ int main(void) {
 	export_ratchet(alice_send_ratchet, "alice-send-ratchet-after-sending.json");
 
 	//bob receives
-	status_int = ratchet_get_receive_header_keys(
+	status = ratchet_get_receive_header_keys(
 			current_receive_header_key,
 			next_receive_header_key,
 			bob_receive_ratchet);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Failed to get receive header keys.");
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Failed to get receive header keys.");
 
 	ratchet_header_decryptability decryptability;
 	if (buffer_compare(send_header_key, current_receive_header_key) == 0) {
@@ -228,13 +226,11 @@ int main(void) {
 	export_ratchet(bob_send_ratchet, "bob-send-ratchet-after-sending.json");
 
 	//alice receives
-	status_int = ratchet_get_receive_header_keys(
+	status = ratchet_get_receive_header_keys(
 			current_receive_header_key,
 			next_receive_header_key,
 			alice_receive_ratchet);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Alice-Receive: Failed to get receive header keys.");
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Alice-Receive: Failed to get receive header keys.");
 
 	if (buffer_compare(send_header_key, current_receive_header_key) == 0) {
 		decryptability = CURRENT_DECRYPTABLE;
@@ -280,13 +276,11 @@ int main(void) {
 	export_ratchet(bob_receive_ratchet, "bob-receive-ratchet-after-responding.json");
 
 	//alice receives
-	status_int = ratchet_get_receive_header_keys(
+	status = ratchet_get_receive_header_keys(
 			current_receive_header_key,
 			next_receive_header_key,
 			alice_send_ratchet);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Alice-Roundtrip: Failed to get receive header keys.");
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Alice-Roundtrip: Failed to get receive header keys.");
 
 	if (buffer_compare(send_header_key, current_receive_header_key) == 0) {
 		decryptability = CURRENT_DECRYPTABLE;
@@ -334,13 +328,11 @@ int main(void) {
 	export_ratchet(alice_receive_ratchet, "alice-receive-ratchet-after-responding.json");
 
 	//bob receives
-	status_int = ratchet_get_receive_header_keys(
+	status = ratchet_get_receive_header_keys(
 			current_receive_header_key,
 			next_receive_header_key,
 			bob_send_ratchet);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Bob-Roundtrip: Failed to get receive header keys.");
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Bob-Roundtrip: Failed to get receive header keys.");
 
 	if (buffer_compare(send_header_key, current_receive_header_key) == 0) {
 		decryptability = CURRENT_DECRYPTABLE;

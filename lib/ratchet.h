@@ -122,7 +122,7 @@ return_status ratchet_send(
 /*
  * Get a copy of the current and the next receive header key.
  */
-int ratchet_get_receive_header_keys(
+return_status ratchet_get_receive_header_keys(
 		buffer_t * const current_receive_header_key,
 		buffer_t * const next_receive_header_key,
 		ratchet_state *state) __attribute__((warn_unused_result));

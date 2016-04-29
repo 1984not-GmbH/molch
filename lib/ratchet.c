@@ -334,31 +334,28 @@ cleanup:
 /*
  * Get a copy of the current and the next receive header key.
  */
-int ratchet_get_receive_header_keys(
+return_status ratchet_get_receive_header_keys(
 		buffer_t * const current_receive_header_key,
 		buffer_t * const next_receive_header_key,
 		ratchet_state *state) {
-	int status;
+	return_status status = return_status_init();
 
 	//check input
 	if ((current_receive_header_key == NULL) || (current_receive_header_key->buffer_length < HEADER_KEY_SIZE)
 			|| (next_receive_header_key == NULL) || (next_receive_header_key->buffer_length < HEADER_KEY_SIZE)) {
-		status = -6;
-		goto cleanup;
+		throw(INVALID_INPUT, "Invalid input to ratchet_get_receive_header_keys.");
 	}
 
 	//clone the header keys
-	status = buffer_clone(current_receive_header_key, state->receive_header_key);
-	if (status != 0) {
-		return status;
+	if (buffer_clone(current_receive_header_key, state->receive_header_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy current receive header key.");
 	}
-	status = buffer_clone(next_receive_header_key, state->next_receive_header_key);
-	if (status != 0) {
-		return status;
+	if (buffer_clone(next_receive_header_key, state->next_receive_header_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy next receive header key.");
 	}
 
 cleanup:
-	if (status != 0) {
+	on_error(
 		if (current_receive_header_key != NULL) {
 			buffer_clear(current_receive_header_key);
 			current_receive_header_key->content_length = 0;
@@ -367,8 +364,9 @@ cleanup:
 			buffer_clear(next_receive_header_key);
 			next_receive_header_key->content_length = 0;
 		}
-	}
-	return 0;
+	);
+
+	return status;
 }
 
 /*

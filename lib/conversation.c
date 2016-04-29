@@ -506,13 +506,11 @@ return_status conversation_receive(
 
 	*message = buffer_create_on_heap(packet->content_length, 0);
 
-	status_int = ratchet_get_receive_header_keys(
+	status = ratchet_get_receive_header_keys(
 			current_receive_header_key,
 			next_receive_header_key,
 			conversation->ratchet);
-	if (status_int != 0) {
-		throw(DATA_FETCH_ERROR, "Failed to get receive header keys.");
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Failed to get receive header keys.");
 
 	//try to decrypt the packet header with the current receive header key
 	status = packet_decrypt_header(

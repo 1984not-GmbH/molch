@@ -258,15 +258,15 @@ int main(void) {
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
 	//get pointers to bob's receive header keys
-	status_int = ratchet_get_receive_header_keys(
+	status = ratchet_get_receive_header_keys(
 			bob_current_receive_header_key,
 			bob_next_receive_header_key,
 			bob_state);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_FETCH_ERROR, "Failed to get Bob's receive header keys.");
-	}
+	);
 
 	printf("Bob's first current receive header key:\n");
 	print_hex(bob_current_receive_header_key);
@@ -327,15 +327,15 @@ int main(void) {
 		throw(DATA_SET_ERROR, "Failed to set authenticity state.");
 	}
 
-	status_int = ratchet_get_receive_header_keys(
+	status = ratchet_get_receive_header_keys(
 			bob_current_receive_header_key,
 			bob_next_receive_header_key,
 			bob_state);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_FETCH_ERROR, "Failed to get Bob's header keys.");
-	}
+	);
 
 	printf("Bob's second current receive header key:\n");
 	print_hex(bob_current_receive_header_key);
@@ -394,15 +394,15 @@ int main(void) {
 		throw(DATA_SET_ERROR, "Failed to set authenticity state.");
 	}
 
-	status_int = ratchet_get_receive_header_keys(
+	status = ratchet_get_receive_header_keys(
 			bob_current_receive_header_key,
 			bob_next_receive_header_key,
 			bob_state);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_FETCH_ERROR, "Failed to get receive header key buffers.");
-	}
+	);
 
 	printf("Bob's third current receive header key:\n");
 	print_hex(bob_current_receive_header_key);
@@ -563,15 +563,15 @@ int main(void) {
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
 	//get pointers to alice's receive header keys
-	status_int = ratchet_get_receive_header_keys(
+	status = ratchet_get_receive_header_keys(
 			alice_current_receive_header_key,
 			alice_next_receive_header_key,
 			alice_state);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_FETCH_ERROR, "Failed to get Alice' receive keys.");
-	}
+	);
 
 	printf("Alice's first current receive header key:\n");
 	print_hex(alice_current_receive_header_key);
@@ -630,15 +630,15 @@ int main(void) {
 		throw(DATA_SET_ERROR, "Failed to set authenticity state.");
 	}
 
-	status_int = ratchet_get_receive_header_keys(
+	status = ratchet_get_receive_header_keys(
 			alice_current_receive_header_key,
 			alice_next_receive_header_key,
 			alice_state);
-	if (status_int != 0) {
+	on_error(
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		throw(DATA_FETCH_ERROR, "Failed to get Alice' receive header keys.");
-	}
+	);
 
 	printf("Alice's current receive header key:\n");
 	print_hex(alice_current_receive_header_key);
