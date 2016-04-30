@@ -130,6 +130,14 @@ int main(void) {
 	printf("Initialize the conversation store.\n");
 	conversation_store_init(store);
 
+	// list an empty conversation store
+	buffer_t *empty_list;
+	status = conversation_store_list(&empty_list, store);
+	throw_on_error(DATA_FETCH_ERROR, "Failed to list empty conversation store.");
+	if (empty_list != NULL) {
+		throw(INCORRECT_DATA, "List of empty conversation store is not NULL.");
+	}
+
 	// add five conversations
 	printf("Add five conversations.\n");
 	for (size_t i = 0; i < 5; i++) {

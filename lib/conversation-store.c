@@ -164,8 +164,13 @@ void conversation_store_clear(conversation_store * const store) {
 return_status conversation_store_list(buffer_t ** const list, conversation_store * const store) {
 	return_status status = return_status_init();
 
-	if ((list == NULL) || (store == NULL) || (store->length == 0)) {
+	if ((list == NULL) || (store == NULL)) {
 		throw(INVALID_INPUT, "Invalid input to conversation_store_list.");
+	}
+
+	if (store->length == 0) {
+		*list = NULL;
+		goto cleanup;
 	}
 
 	*list = buffer_create_on_heap(store->length * CONVERSATION_ID_SIZE, 0);
