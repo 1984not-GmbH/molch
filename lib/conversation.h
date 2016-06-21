@@ -20,6 +20,7 @@
 #include "constants.h"
 #include "ratchet.h"
 #include "prekey-store.h"
+#include "return-status.h"
 
 #ifndef LIB_CONVERSATION_H
 #define LIB_CONVERSATION_H
@@ -53,8 +54,12 @@ conversation_t *conversation_json_import(const mcJSON * const json) __attribute_
 
 /*
  * Start a new conversation where we are the sender.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-conversation_t *conversation_start_send_conversation(
+return_status conversation_start_send_conversation(
+		conversation_t ** const conversation, //output, newly created conversation
 		const buffer_t *const message, //message we want to send to the receiver
 		buffer_t ** packet, //output, free after use!
 		const buffer_t * const sender_public_identity, //who is sending this message?
@@ -65,8 +70,12 @@ conversation_t *conversation_start_send_conversation(
 
 /*
  * Start a new conversation where we are the receiver.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-conversation_t *conversation_start_receive_conversation(
+return_status conversation_start_receive_conversation(
+		conversation_t ** const conversation, //output, newly created conversation
 		const buffer_t * const packet, //received packet
 		buffer_t ** message, //output, free after use!
 		const buffer_t * const receiver_public_identity,
@@ -76,8 +85,11 @@ conversation_t *conversation_start_receive_conversation(
 
 /*
  * Send a message using an existing conversation.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int conversation_send(
+return_status conversation_send(
 		conversation_t * const conversation,
 		const buffer_t * const message,
 		buffer_t **packet, //output, free after use!
@@ -88,8 +100,11 @@ int conversation_send(
 
 /*
  * Receive and decrypt a message using an existing conversation.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int conversation_receive(
+return_status conversation_receive(
 	conversation_t * const conversation,
 	const buffer_t * const packet, //received packet
 	buffer_t ** const message //output, free after use!

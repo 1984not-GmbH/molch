@@ -20,6 +20,7 @@
 #include <time.h>
 
 #include "constants.h"
+#include "return-status.h"
 #include "../buffer/buffer.h"
 #include "../mcJSON/mcJSON.h"
 
@@ -47,14 +48,14 @@ struct prekey_store {
 /*
  * Initialise a new keystore. Generates all the keys.
  */
-prekey_store *prekey_store_create() __attribute__((warn_unused_result));
+return_status prekey_store_create(prekey_store ** const store) __attribute__((warn_unused_result));
 
 /*
  * Get a private prekey from it's public key. This will automatically
  * deprecate the requested prekey put it in the outdated key store and
  * generate a new one.
  */
-int prekey_store_get_prekey(
+return_status prekey_store_get_prekey(
 		prekey_store * const store,
 		const buffer_t * const public_key, //input
 		buffer_t * const private_key) __attribute__((warn_unused_result)); //output
@@ -63,7 +64,7 @@ int prekey_store_get_prekey(
  * Generate a list containing all public prekeys.
  * (this list can then be stored on a public server).
  */
-int prekey_store_list(
+return_status prekey_store_list(
 		prekey_store * const store,
 		buffer_t * const list) __attribute__((warn_unused_result)); //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 
@@ -71,7 +72,7 @@ int prekey_store_list(
  * Automatically deprecate old keys and generate new ones
  * and throw away deprecated ones that are too old.
  */
-int prekey_store_rotate(prekey_store * const store) __attribute__((warn_unused_result));
+return_status prekey_store_rotate(prekey_store * const store) __attribute__((warn_unused_result));
 
 void prekey_store_destroy(prekey_store * const store);
 

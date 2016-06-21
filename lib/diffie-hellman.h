@@ -20,6 +20,7 @@
 #include <stdbool.h>
 
 #include "../buffer/buffer.h"
+#include "return-status.h"
 
 #ifndef LIB_DIFFIE_HELLMAN_H
 #define LIB_DIFFIE_HELLMAN_H
@@ -37,7 +38,7 @@
  * Alice: H(ECDH(our_private_key,their_public_key)|our_public_key|their_public_key)
  * Bob:   H(ECDH(our_private_key,their_public_key)|their_public_key|our_public_key)
  */
-int diffie_hellman(
+return_status diffie_hellman(
 		buffer_t * const derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
 		const buffer_t * const our_private_key, //needs to be PRIVATE_KEY_SIZE long
 		const buffer_t * const our_public_key, //needs to be PUBLIC_KEY_SIZE long
@@ -60,7 +61,7 @@ int diffie_hellman(
  * -->Alice: HASH(DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_identity)||DH(our_ephemeral, their_ephemeral))
  * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
  */
-int triple_diffie_hellman(
+return_status triple_diffie_hellman(
 		buffer_t * const derived_key,
 		const buffer_t * const our_private_identity,
 		const buffer_t * const our_public_identity,

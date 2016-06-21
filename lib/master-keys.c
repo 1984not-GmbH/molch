@@ -30,26 +30,32 @@
  *
  * WARNING: Don't use Entropy from the OSs CPRNG as seed!
  */
-master_keys *master_keys_create(
+return_status master_keys_create(
+		master_keys ** const keys, //output
 		const buffer_t * const seed,
 		buffer_t * const public_signing_key, //output, optional, can be NULL
 		buffer_t * const public_identity_key //output, optional, can be NULL
 		) {
-	master_keys *keys = sodium_malloc(sizeof(master_keys));
-	if (keys == NULL) {
-		return NULL;
-	}
+	return_status status = return_status_init();
 
-	//initialize the buffers
-	buffer_init_with_pointer(keys->public_signing_key, keys->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	buffer_init_with_pointer(keys->private_signing_key, keys->private_signing_key_storage, PRIVATE_MASTER_KEY_SIZE, PRIVATE_MASTER_KEY_SIZE);
-	buffer_init_with_pointer(keys->public_identity_key, keys->public_identity_key_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_init_with_pointer(keys->private_identity_key, keys->private_identity_key_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 
 	//seeds
 	buffer_t *crypto_seeds = NULL;
 
-	int status = 0;
+	if (keys == NULL) {
+		throw(INVALID_INPUT, "Invalid input for master_keys_create.");
+	}
+
+	*keys = sodium_malloc(sizeof(master_keys));
+	if (*keys == NULL) {
+		throw(ALLOCATION_FAILED, "Failed to allocate master keys.");
+	}
+
+	//initialize the buffers
+	buffer_init_with_pointer((*keys)->public_signing_key, (*keys)->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	buffer_init_with_pointer((*keys)->private_signing_key, (*keys)->private_signing_key_storage, PRIVATE_MASTER_KEY_SIZE, PRIVATE_MASTER_KEY_SIZE);
+	buffer_init_with_pointer((*keys)->public_identity_key, (*keys)->public_identity_key_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_init_with_pointer((*keys)->private_identity_key, (*keys)->private_identity_key_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 
 	if (seed != NULL) { //use external seed
 		//create the seed buffer
@@ -59,47 +65,46 @@ master_keys *master_keys_create(
 				sodium_malloc,
 				sodium_free);
 		if (crypto_seeds == NULL) {
-			status = -1;
-			goto cleanup;
+			throw(ALLOCATION_FAILED, "Failed to allocate cyrpto_seeds buffer.");
 		}
 
 		status = spiced_random(crypto_seeds, seed, crypto_seeds->buffer_length);
-		if (status != 0) {
-			goto cleanup;
-		}
+		throw_on_error(GENERIC_ERROR, "Failed to create spiced random data.");
 
 		//generate the signing keypair
-		status = crypto_sign_seed_keypair(
-				keys->public_signing_key->content,
-				keys->private_signing_key_storage,
+		int status_int = 0;
+		status_int = crypto_sign_seed_keypair(
+				(*keys)->public_signing_key->content,
+				(*keys)->private_signing_key_storage,
 				crypto_seeds->content);
-		if (status != 0) {
-			goto cleanup;
+		if (status_int != 0) {
+			throw(KEYGENERATION_FAILED, "Failed to generate signing keypair.");
 		}
 
 		//generate the identity keypair
-		status = crypto_box_seed_keypair(
-				keys->public_identity_key->content,
-				keys->private_identity_key->content,
+		status_int = crypto_box_seed_keypair(
+				(*keys)->public_identity_key->content,
+				(*keys)->private_identity_key->content,
 				crypto_seeds->content + crypto_sign_SEEDBYTES);
-		if (status != 0) {
-			goto cleanup;
+		if (status_int != 0) {
+			throw(KEYGENERATION_FAILED, "Failed to generate encryption keypair.");
 		}
 	} else { //don't use external seed
 		//generate the signing keypair
-		status = crypto_sign_keypair(
-				keys->public_signing_key->content,
-				keys->private_signing_key->content);
-		if (status != 0) {
-			goto cleanup;
+		int status_int = 0;
+		status_int = crypto_sign_keypair(
+				(*keys)->public_signing_key->content,
+				(*keys)->private_signing_key->content);
+		if (status_int != 0) {
+			throw(KEYGENERATION_FAILED, "Failed to generate signing keypair.");
 		}
 
 		//generate the identity keypair
-		status = crypto_box_keypair(
-				keys->public_identity_key->content,
-				keys->private_identity_key->content);
-		if (status != 0) {
-			goto cleanup;
+		status_int = crypto_box_keypair(
+				(*keys)->public_identity_key->content,
+				(*keys)->private_identity_key->content);
+		if (status_int != 0) {
+			throw(KEYGENERATION_FAILED, "Failed to generate encryption keypair.");
 		}
 	}
 
@@ -107,25 +112,21 @@ master_keys *master_keys_create(
 	if (public_signing_key != NULL) {
 		if (public_signing_key->buffer_length < PUBLIC_MASTER_KEY_SIZE) {
 			public_signing_key->content_length = 0;
-			status = -1;
-			goto cleanup;
+			throw(INCORRECT_BUFFER_SIZE, "Public master key buffer is too short.");
 		}
 
-		status = buffer_clone(public_signing_key, keys->public_signing_key);
-		if (status != 0) {
-			goto cleanup;
+		if (buffer_clone(public_signing_key, (*keys)->public_signing_key) != 0) {
+			throw(BUFFER_ERROR, "Failed to copy public signing key.");
 		}
 	}
 	if (public_identity_key != NULL) {
 		if (public_identity_key->buffer_length < PUBLIC_KEY_SIZE) {
 			public_identity_key->content_length = 0;
-			status = -1;
-			goto cleanup;
+			throw(INCORRECT_BUFFER_SIZE, "Public encryption key buffer is too short.");
 		}
 
-		status = buffer_clone(public_identity_key, keys->public_identity_key);
-		if (status != 0) {
-			goto cleanup;
+		if (buffer_clone(public_identity_key, (*keys)->public_identity_key) != 0) {
+			throw(BUFFER_ERROR, "Failed to copy public encryption key.");
 		}
 	}
 
@@ -134,36 +135,46 @@ cleanup:
 		buffer_destroy_with_custom_deallocator(crypto_seeds, sodium_free);
 	}
 
-	if (status != 0) {
-		sodium_free(keys);
-		return NULL;
+	if (status.status != SUCCESS) {
+		if (keys != NULL) {
+			if (*keys != NULL) {
+				sodium_free(keys);
+				*keys = NULL;
+			}
+		}
+
+		return status;
 	}
 
-	sodium_mprotect_noaccess(keys);
-	return keys;
+	if ((keys != NULL) && (*keys != NULL)) {
+		sodium_mprotect_noaccess(*keys);
+	}
+	return status;
 }
 
 /*
  * Get the public signing key.
  */
-int master_keys_get_signing_key(
+return_status master_keys_get_signing_key(
 		master_keys * const keys,
 		buffer_t * const public_signing_key) {
+	return_status status = return_status_init();
+
 	//check input
 	if ((keys == NULL) || (public_signing_key == NULL) || (public_signing_key->buffer_length < PUBLIC_MASTER_KEY_SIZE)) {
-		return -6;
+		throw(INVALID_INPUT, "Invalid input to master_keys_get_signing_key.");
 	}
 
 	sodium_mprotect_readonly(keys);
 
-	int status = 0;
-	status = buffer_clone(public_signing_key, keys->public_signing_key);
-	if (status != 0) {
-		goto cleanup;
+	if (buffer_clone(public_signing_key, keys->public_signing_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy public signing key.");
 	}
 
 cleanup:
-	sodium_mprotect_noaccess(keys);
+	if (keys != NULL) {
+		sodium_mprotect_noaccess(keys);
+	}
 
 	return status;
 }
@@ -171,24 +182,26 @@ cleanup:
 /*
  * Get the public identity key.
  */
-int master_keys_get_identity_key(
+return_status master_keys_get_identity_key(
 		master_keys * const keys,
 		buffer_t * const public_identity_key) {
+	return_status status = return_status_init();
+
 	//check input
 	if ((keys == NULL) || (public_identity_key == NULL) || (public_identity_key->buffer_length < PUBLIC_KEY_SIZE)) {
-		return -6;
+		throw(INVALID_INPUT, "Invalid input to master_keys_get_identity_key.");
 	}
 
 	sodium_mprotect_readonly(keys);
 
-	int status = 0;
-	status = buffer_clone(public_identity_key, keys->public_identity_key);
-	if (status != 0) {
+	if (buffer_clone(public_identity_key, keys->public_identity_key) != 0) {
 		goto cleanup;
 	}
 
 cleanup:
-	sodium_mprotect_noaccess(keys);
+	if (keys != NULL) {
+		sodium_mprotect_noaccess(keys);
+	}
 
 	return status;
 }
@@ -196,39 +209,46 @@ cleanup:
 /*
  * Sign a piece of data. Returns the data and signature in one output buffer.
  */
-int master_keys_sign(
+return_status master_keys_sign(
 		master_keys * const keys,
 		const buffer_t * const data,
 		buffer_t * const signed_data) { //output, length of data + SIGNATURE_SIZE
+	return_status status = return_status_init();
+
 	if ((keys == NULL)
 			|| (data == NULL)
 			|| (signed_data == NULL)
 			|| (signed_data->buffer_length < (data->content_length + SIGNATURE_SIZE))) {
-		return -6;
+		throw(INVALID_INPUT, "Invalid input to master_keys_sign.");
 	}
 
 	sodium_mprotect_readonly(keys);
 
-	int status = 0;
+	int status_int = 0;
 	unsigned long long signed_message_length;
-	status = crypto_sign(
+	status_int = crypto_sign(
 			signed_data->content,
 			&signed_message_length,
 			data->content,
 			data->content_length,
 			keys->private_signing_key->content);
-	if (status != 0) {
-		goto cleanup;
+	if (status_int != 0) {
+		throw(SIGN_ERROR, "Failed to sign message.");
 	}
 
 	signed_data->content_length = (size_t) signed_message_length;
 
 cleanup:
-	sodium_mprotect_noaccess(keys);
-
-	if (status != 0) {
-		signed_data->content_length = 0;
+	if (keys != NULL) {
+		sodium_mprotect_noaccess(keys);
 	}
+
+	if (status.status != SUCCESS) {
+		if (signed_data != NULL) {
+			signed_data->content_length = 0;
+		}
+	}
+
 	return status;
 }
 

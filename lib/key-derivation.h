@@ -20,6 +20,7 @@
 #include <stdbool.h>
 
 #include "../buffer/buffer.h"
+#include "return-status.h"
 
 #ifndef LIB_KEY_DERIVATION_H
 #define LIB_KEY_DERIVATION_H
@@ -31,7 +32,7 @@
  * The input key needs to be between crypto_generichash_blake2b_KEYBYTES_MIN (16 Bytes)
  * and crypto_generichash_blake2b_KEYBYTES_MAX (64 Bytes).
  */
-int derive_key(
+return_status derive_key(
 		buffer_t * const derived_key,
 		size_t derived_size,
 		const buffer_t * const input_key,
@@ -45,7 +46,7 @@ int derive_key(
  * CK_new = HMAC-Hash(CK_prev, 0x01)
  * (previous chain key as key, 0x01 as message)
  */
-int derive_chain_key(
+return_status derive_chain_key(
 		buffer_t * const new_chain_key,
 		const buffer_t * const previous_chain_key) __attribute__((warn_unused_result));
 
@@ -57,7 +58,7 @@ int derive_chain_key(
  * MK = HMAC-Hash(CK, 0x00)
  * (chain_key as key, 0x00 as message)
  */
-int derive_message_key(
+return_status derive_message_key(
 		buffer_t * const message_key,
 		const buffer_t * const chain_key) __attribute__((warn_unused_result));
 
@@ -68,7 +69,7 @@ int derive_message_key(
  * and
  * RK, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
  */
-int derive_root_next_header_and_chain_keys(
+return_status derive_root_next_header_and_chain_keys(
 		buffer_t * const root_key, //ROOT_KEY_SIZE
 		buffer_t * const next_header_key, //HEADER_KEY_SIZE
 		buffer_t * const chain_key, //CHAIN_KEY_SIZE
@@ -83,7 +84,7 @@ int derive_root_next_header_and_chain_keys(
  *
  * RK, CKs/r, HKs/r = KDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
  */
-int derive_initial_root_chain_and_header_keys(
+return_status derive_initial_root_chain_and_header_keys(
 		buffer_t * const root_key, //ROOT_KEY_SIZE
 		buffer_t * const send_chain_key, //CHAIN_KEY_SIZE
 		buffer_t * const receive_chain_key, //CHAIN_KEY_SIZE

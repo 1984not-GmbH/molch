@@ -33,22 +33,17 @@ int main(void) {
 	unsigned char *json = NULL;
 	unsigned char *prekey_list = NULL;
 
-	int status = 0;
+	return_status status = return_status_init();
 
 	//load the json backup from a file
 	read_file(&json_backup, "test-data/molch-init.json");
 	if (json_backup == NULL) {
-		fprintf(stderr, "ERROR: Failed to read JSON backup from a file.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(DATA_FETCH_ERROR, "Failed to read JSON backup from a file.");
 	}
 
 	//try to import the backup
 	status = molch_json_import(json_backup->content, json_backup->content_length);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to import backup from JSON. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(IMPORT_ERROR, "Failed to import backup from JSON.");
 
 	//destroy again
 	molch_destroy_all_users();
@@ -64,14 +59,9 @@ int main(void) {
 			sizeof("random"),
 			&json,
 			&json_length);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to create user. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(CREATION_ERROR, "Failed to create user.");
 	if (json == NULL) {
-		fprintf(stderr, "ERROR: Failed to export JSON.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(EXPORT_ERROR, "Failed to export JSON.");
 	}
 
 	//print the json to a file
@@ -90,5 +80,10 @@ cleanup:
 		buffer_destroy_from_heap(json_backup);
 	}
 
-	return status;
+	on_error(
+		print_errors(&status);
+	);
+	return_status_destroy_errors(&status);
+
+	return status.status;
 }

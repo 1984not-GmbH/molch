@@ -28,15 +28,11 @@
 #include "tracing.h"
 
 int main(void) {
-	if(sodium_init() == -1) {
-		return -1;
-	}
-
 	//decrypted header buffers
 	buffer_t *decrypted_header = buffer_create_on_heap(255, 255);
 	buffer_t *decrypted_message_nonce = buffer_create_on_heap(crypto_secretbox_NONCEBYTES, crypto_secretbox_NONCEBYTES);
 
-	//generate keys and message
+	//generate keys
 	buffer_t *header_key = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	buffer_t *message_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *public_identity_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
@@ -45,13 +41,22 @@ int main(void) {
 	buffer_t *extracted_public_identity_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_t *extracted_public_ephemeral_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_t *extracted_public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_create_from_string(message, "Hello world!\n");
+
 	buffer_t *header = buffer_create_on_heap(4, 4);
+	buffer_create_from_string(message, "Hello world!\n");
+	buffer_t *packet = buffer_create_on_heap(3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255 + 3 * PUBLIC_KEY_SIZE, 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255 + 3 * PUBLIC_KEY_SIZE);
+
+	return_status status = return_status_init();
+
+	if(sodium_init() == -1) {
+		throw(INIT_ERROR, "Failed to initialize libsodium.");
+	}
+
+	//generate message
 	header->content[0] = 0x01;
 	header->content[1] = 0x02;
 	header->content[2] = 0x03;
 	header->content[3] = 0x04;
-	buffer_t *packet = buffer_create_on_heap(3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255 + 3 * PUBLIC_KEY_SIZE, 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255 + 3 * PUBLIC_KEY_SIZE);
 	unsigned char packet_type = 1;
 	printf("Packet type: %02x\n", packet_type);
 	const unsigned char current_protocol_version = 2;
@@ -62,7 +67,8 @@ int main(void) {
 
 	//NORMAL MESSAGE
 	printf("NORMAL MESSAGE\n");
-	int status = create_and_print_message(
+	int status_int = 0;
+	status = create_and_print_message(
 			packet,
 			packet_type,
 			current_protocol_version,
@@ -74,9 +80,7 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	if (status != 0) {
-		goto cleanup;
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now decrypt the header
 	status = packet_decrypt_header(
@@ -87,15 +91,11 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to decrypt the header. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt the header.");
 
 
 	if (decrypted_header->content_length != header->content_length) {
-		fprintf(stderr, "ERROR: Decrypted header isn't of the same length!\n");
-		goto cleanup;
+		throw(INVALID_VALUE, "Decrypted header isn't of the same length.");
 	}
 	printf("Decrypted header has the same length.\n\n");
 
@@ -105,9 +105,7 @@ int main(void) {
 
 	//compare headers
 	if (buffer_compare(header, decrypted_header) != 0) {
-		fprintf(stderr, "ERROR: Decrypted header doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Decrypted header doesn't match.");
 	}
 	printf("Decrypted header matches.\n\n");
 
@@ -122,10 +120,12 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	if (status == 0) { //header was decrypted despite manipulation
-		fprintf(stderr, "ERROR: Manipulated packet was accepted!\n");
-		goto cleanup;
+	if (status.status == SUCCESS) {
+		throw(GENERIC_ERROR, "Manipulated packet was accepted.");
+	} else {
+		return_status_destroy_errors(&status);
 	}
+
 	printf("Header manipulation detected.\n\n");
 
 	//repair manipulation
@@ -141,11 +141,12 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	if (status == 0) { //header was decrypted desp
-		fprintf(stderr, "ERROR: Manipulated packet was accepted!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+	if (status.status == SUCCESS) {
+		throw(GENERIC_ERROR, "Manipulated packet was accepted.");
+	} else {
+		return_status_destroy_errors(&status);
 	}
+
 	printf("Header manipulation detected!\n\n");
 
 	//undo header manipulation
@@ -154,20 +155,17 @@ int main(void) {
 	//PREKEY MESSAGE
 	printf("PREKEY_MESSAGE\n");
 	//create the public keys
-	status = buffer_fill_random(public_identity_key, PUBLIC_KEY_SIZE);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate public identity key. (%i)\n", status);
-		goto cleanup;
+	status_int = buffer_fill_random(public_identity_key, PUBLIC_KEY_SIZE);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate public identity key.");
 	}
-	status = buffer_fill_random(public_ephemeral_key, PUBLIC_KEY_SIZE);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate public ephemeral key. (%i)\n", status);
-		goto cleanup;
+	status_int = buffer_fill_random(public_ephemeral_key, PUBLIC_KEY_SIZE);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
 	}
-	status = buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to geneate public prekey. (%i)\n", status);
-		goto cleanup;
+	status_int = buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate public prekey.");
 	}
 
 	buffer_clear(packet);
@@ -184,9 +182,7 @@ int main(void) {
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	if (status != 0) {
-		goto cleanup;
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to crate and print message.");
 
 	//now decrypt the header
 	status = packet_decrypt_header(
@@ -197,14 +193,10 @@ int main(void) {
 			extracted_public_identity_key,
 			extracted_public_ephemeral_key,
 			extracted_public_prekey);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to decrypt the header. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt the header.");
 
 	if (decrypted_header->content_length != header->content_length) {
-		fprintf(stderr, "ERROR: Decrypted header isn't of the same length!\n");
-		goto cleanup;
+		throw(INVALID_VALUE, "Decrypted header isn't of the same length.");
 	}
 	printf("Decrypted header has the same length.\n\n");
 
@@ -214,31 +206,23 @@ int main(void) {
 
 	//compare headers
 	if (buffer_compare(header, decrypted_header) != 0) {
-		fprintf(stderr, "ERROR: Decrypted header doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Decrypted header doesn't match.");
 	}
 	printf("Decrypted header matches.\n");
 
 	//compare public keys
 	if (buffer_compare(public_identity_key, extracted_public_identity_key) != 0) {
-		fprintf(stderr, "ERROR: Extracted public identity key doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extracted public identity key doesn't match.");
 	}
 	printf("Extracted public identity key matches!\n");
 
 	if (buffer_compare(public_ephemeral_key, extracted_public_ephemeral_key) != 0) {
-		fprintf(stderr, "ERROR: Extracted public ephemeral key doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extracted public ephemeral key doesn't match.");
 	}
 	printf("Extracted public ephemeral key matches!\n");
 
 	if (buffer_compare(public_prekey, extracted_public_prekey) != 0) {
-		fprintf(stderr, "ERROR: Extracted public prekey doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extracted public prekey doesn't match.");
 	}
 	printf("Extracted public prekey matches!\n");
 
@@ -256,5 +240,10 @@ cleanup:
 	buffer_destroy_from_heap(extracted_public_ephemeral_key);
 	buffer_destroy_from_heap(extracted_public_prekey);
 
-	return status;
+	if (status.status != SUCCESS) {
+		print_errors(&status);
+		return_status_destroy_errors(&status);
+	}
+
+	return status.status;
 }

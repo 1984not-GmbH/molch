@@ -59,6 +59,18 @@ void print_to_file(const buffer_t * const data, const char * const filename) {
 	fclose(file);
 }
 
+void print_errors(return_status * const status) {
+	if (status == NULL) {
+		return;
+	}
+
+	fprintf(stderr, "ERROR STACK:\n");
+	error_message *error = status->error;
+	for (size_t i = 1; error != NULL; i++, error = error->next) {
+		fprintf(stderr, "%zu: %s\n", i, error->message);
+	}
+}
+
 void read_file(buffer_t ** const data, const char * const filename) {
 	if (data == NULL) {
 		return;

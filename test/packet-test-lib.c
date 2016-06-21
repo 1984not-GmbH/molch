@@ -28,8 +28,11 @@
 /*
  * Create message and header keys, encrypt header and message
  * and print them.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int create_and_print_message(
+return_status create_and_print_message(
 		buffer_t * const packet, //needs to be 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message_length + header_length + crypto_secretbox_MACBYTES + 255
 		const unsigned char packet_type,
 		const unsigned char current_protocol_version,
@@ -41,23 +44,23 @@ int create_and_print_message(
 		const buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages
 		const buffer_t * const public_ephemeral_key, //optional, can be NULL, for prekey messages
 		const buffer_t * const public_prekey) { //optional, can be NULL, for prekey messages
-	int status;
+
+	return_status status = return_status_init();
+	int status_int;
+
 	//create header key
-	status = buffer_fill_random(header_key, crypto_aead_chacha20poly1305_KEYBYTES);
-	if (status != 0) {
-		buffer_clear(header_key);
-		return status;
+	status_int = buffer_fill_random(header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate header key.");
 	}
 	printf("Header key (%zu Bytes):\n", header_key->content_length);
 	print_hex(header_key);
 	putchar('\n');
 
 	//create message key
-	status = buffer_fill_random(message_key, crypto_secretbox_KEYBYTES);
-	if (status != 0) {
-		buffer_clear(header_key);
-		buffer_clear(message_key);
-		return status;
+	status_int = buffer_fill_random(message_key, crypto_secretbox_KEYBYTES);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate message key.");
 	}
 	printf("Message key (%zu Bytes):\n", message_key->content_length);
 	print_hex(message_key);
@@ -84,10 +87,7 @@ int create_and_print_message(
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to encrypt message and header. (%i)\n", status);
-		return status;
-	}
+	throw_on_error(ENCRYPT_ERROR, "Failed to encrypt message and header.");
 
 	//print header nonce
 	buffer_create_with_existing_array(header_nonce, packet->content + 3, crypto_aead_chacha20poly1305_NPUBBYTES);
@@ -100,5 +100,11 @@ int create_and_print_message(
 	print_hex(packet);
 	putchar('\n');
 
-	return 0;
+cleanup:
+	if (status.status != SUCCESS) {
+		buffer_clear(header_key);
+		buffer_clear(message_key);
+	}
+
+	return status;
 }

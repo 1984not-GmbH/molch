@@ -18,6 +18,7 @@
  */
 
 #include "conversation.h"
+#include "return-status.h"
 
 #ifndef LIB_CONVERSATION_STORE_H
 #define LIB_CONVERSATION_STORE_H
@@ -36,7 +37,7 @@ void conversation_store_init(conversation_store * const store);
 /*
  * add a conversation to the conversation store.
  */
-int conversation_store_add(
+return_status conversation_store_add(
 		conversation_store * const store,
 		conversation_t * const conversation) __attribute__((warn_unused_result));
 
@@ -57,7 +58,8 @@ void conversation_store_remove_by_id(conversation_store * const store, const buf
  *
  * Returns NULL if no conversation was found.
  */
-conversation_t *conversation_store_find_node(
+return_status conversation_store_find_node(
+		conversation_t ** const conversation,
 		conversation_store * const store,
 		const buffer_t * const id) __attribute__((warn_unused_result));
 
@@ -86,7 +88,7 @@ void conversation_store_clear(conversation_store * const store);
  *
  * Returns NULL if empty.
  */
-buffer_t *conversation_store_list(conversation_store * const store) __attribute__((warn_unused_result));
+return_status conversation_store_list(buffer_t ** const list, conversation_store * const store) __attribute__((warn_unused_result));
 
 /*
  * Serialise a conversation store into JSON. It gets a mempool_t buffer and stre a tree of

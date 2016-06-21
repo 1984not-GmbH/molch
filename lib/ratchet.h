@@ -21,6 +21,7 @@
 
 #include "constants.h"
 #include "header-and-message-keystore.h"
+#include "return-status.h"
 
 #ifndef LIB_RATCHET_H
 #define LIB_RATCHET_H
@@ -98,7 +99,8 @@ typedef struct ratchet_state {
  *
  * The return value is a valid ratchet state or NULL if an error occured.
  */
-ratchet_state* ratchet_create(
+return_status ratchet_create(
+		ratchet_state ** const ratchet,
 		const buffer_t * const our_private_identity,
 		const buffer_t * const our_public_identity,
 		const buffer_t * const their_public_identity,
@@ -109,7 +111,7 @@ ratchet_state* ratchet_create(
 /*
  * Get keys and metadata to send the next message.
  */
-int ratchet_send(
+return_status ratchet_send(
 		ratchet_state *state,
 		buffer_t * const send_header_key, //HEADER_KEY_SIZE, HKs
 		uint32_t * const send_message_number, //Ns
@@ -121,7 +123,7 @@ int ratchet_send(
 /*
  * Get a copy of the current and the next receive header key.
  */
-int ratchet_get_receive_header_keys(
+return_status ratchet_get_receive_header_keys(
 		buffer_t * const current_receive_header_key,
 		buffer_t * const next_receive_header_key,
 		ratchet_state *state) __attribute__((warn_unused_result));
@@ -130,7 +132,7 @@ int ratchet_get_receive_header_keys(
  * Set if the header is decryptable with the current (state->receive_header_key)
  * or next (next_receive_header_key) header key, or isn't decryptable.
  */
-int ratchet_set_header_decryptability(
+return_status ratchet_set_header_decryptability(
 		ratchet_state *ratchet,
 		ratchet_header_decryptability header_decryptable) __attribute__((warn_unused_result));
 
@@ -144,7 +146,7 @@ int ratchet_set_header_decryptability(
  * returned by this function and call ratchet_set_last_message_authenticity
  * after having verified the message.
  */
-int ratchet_receive(
+return_status ratchet_receive(
 		ratchet_state *state,
 		buffer_t * const message_key, //used to get the message key back
 		const buffer_t * const their_purported_public_ephemeral,
@@ -155,7 +157,7 @@ int ratchet_receive(
  * Call this function after trying to decrypt a message and pass it if
  * the decryption was successful or if it wasn't.
  */
-int ratchet_set_last_message_authenticity(
+return_status ratchet_set_last_message_authenticity(
 		ratchet_state * const ratchet,
 		bool valid) __attribute__((warn_unused_result));
 

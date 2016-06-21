@@ -109,10 +109,12 @@ function molch.user.new(random_spice --[[optional]])
 		temp_json,
 		json_length
 	)
-	if status ~= 0 then
+	local status_type = molch_interface.get_status(status)
+	if status_type ~= molch_interface.SUCCESS then
+		molch_interface.molch_destroy_return_status(status)
 		molch_interface.free(temp_prekey_list)
 		molch_interface.free(temp_json)
-		error("Failed to create user!")
+		error(molch.print_errors(status))
 	end
 
 	-- copy the prekey list over to an array managed by swig and free the old
@@ -135,10 +137,14 @@ function molch.user.new(random_spice --[[optional]])
 end
 
 function molch.user:destroy()
-	molch_interface.molch_destroy_user(
+	local status = molch_interface.molch_destroy_user(
 		convert_to_c_string(self.id),
 		nil,
 		nil)
+	local status_type = molch_interface.get_status(status)
+	if status_type ~= molch_interface.SUCCESS then
+		error(molch.print_errors())
+	end
 
 	-- remove from list of users
 	users[self.id] = nil
@@ -154,7 +160,12 @@ molch.user.count = molch.user_count
 
 function molch.user_list()
 	local count = molch_interface.size_t()
-	local raw_list = molch_interface.molch_user_list(count)
+	local raw_list = molch_interface.create_ucstring_pointer()
+	local status = molch_interface.molch_user_list(raw_list, count)
+	local status_type = molch_interface.get_status(status)
+	if status_type ~= molch_interface.SUCCESS then
+		error(molch.print_errors(status))
+	end
 	local raw_list = copy_callee_allocated_string(raw_list, count:value() * 32)
 	local lua_raw_list = convert_to_lua_string(raw_list, count:value() * 32)
 
@@ -176,9 +187,11 @@ function molch.json_export()
 		users.attributes.json = "[]\0"
 		json = convert_to_c_string(users.attributes.json)
 	else
-		local temp_json = molch_interface.molch_json_export(json_length)
-		if not temp_json then
-			error("Failed to export JSON.")
+		local temp_json = molch_interface.create_ucstring_pointer()
+		local status = molch_interface.molch_json_export(temp_json, json_length)
+		local status_type = molch_interface.get_status(status)
+		if status_type ~= molch_interface.SUCCESS then
+			error(molch.print_errors(status))
 		end
 
 		json = copy_callee_allocated_string(temp_json, json_length, molch_interface.sodium_free)
@@ -226,7 +239,15 @@ end
 
 function molch.user:list_conversations()
 	local count = molch_interface.size_t()
-	local raw_list = molch_interface.molch_list_conversations(convert_to_c_string(self.id), count)
+	local raw_list = molch_interface.create_ucstring_pointer()
+	local status = molch_interface.molch_list_conversations(convert_to_c_string(self.id), raw_list, count)
+	local status_type = molch_interface.get_status(status)
+	if status_type ~= molch_interface.SUCCESS then
+		error(molch.print_errors(status))
+	end
+	if count:value() == 0 then
+		return {}
+	end
 	raw_list = copy_callee_allocated_string(raw_list, count:value() * molch_interface.CONVERSATION_ID_SIZE)
 	local lua_raw_list = convert_to_lua_string(raw_list, count:value() * molch_interface.CONVERSATION_ID_SIZE)
 
@@ -243,8 +264,9 @@ function molch.json_import(json)
 	local json_string, json_length = convert_to_c_string(json)
 
 	local status = molch_interface.molch_json_import(json_string, json_length)
-	if status ~= 0 then
-		error("Failed to import JSON.")
+	local status_type = molch_interface.get_status(status)
+	if status_type ~= molch_interface.SUCCESS then
+		error(molch.print_errors(status))
 	end
 
 	-- backup of all running conversations
@@ -331,10 +353,11 @@ function molch.user:create_send_conversation(message, prekey_list, receiver_id)
 		convert_to_c_string(receiver_id),
 		raw_json,
 		raw_json_length)
-	if status ~= 0 then
+	local status_type = molch_interface.get_status(status)
+	if status_type ~= molch_interface.SUCCESS then
 		molch_interface.free(raw_packet)
 		molch_interface.free(raw_json)
-		error("Failed to create send conversation.")
+		error(molch.print_errors(status))
 	end
 
 	local conversation_id = convert_to_lua_string(raw_conversation_id, molch_interface.CONVERSATION_ID_SIZE)
@@ -379,11 +402,12 @@ function molch.user:create_receive_conversation(packet, sender_id)
 		convert_to_c_string(self.id),
 		raw_json,
 		raw_json_length)
-	if status ~= 0 then
+	local status_type = molch_interface.get_status(status)
+	if status_type ~= molch_interface.SUCCESS then
 		molch_interface.free(raw_message)
 		molch_interface.free(raw_prekey_list)
 		molch_interface.free(raw_json)
-		error("Failed to create send conversation.")
+		error(molch.print_errors(status))
 	end
 
 	local conversation_id = convert_to_lua_string(raw_conversation_id, molch_interface.CONVERSATION_ID_SIZE)
@@ -420,10 +444,11 @@ function molch.conversation:encrypt_message(message)
 		convert_to_c_string(self.id),
 		raw_json,
 		raw_json_length)
-	if status ~= 0 then
+	local status_type = molch_interface.get_status(status)
+	if status_type ~= molch_interface.SUCCESS then
 		molch_interface.free(raw_packet)
 		molch_interface.free(raw_json)
-		error("Failed to encrypt message!")
+		error(molch.print_errors(status))
 	end
 
 	raw_packet = copy_callee_allocated_string(raw_packet, raw_packet_length)
@@ -450,10 +475,11 @@ function molch.conversation:decrypt_message(packet)
 		convert_to_c_string(self.id),
 		raw_json,
 		raw_json_length)
-	if status ~= 0 then
+	local status_type = molch_interface.get_status(status)
+	if status_type ~= molch_interface.SUCCESS then
 		molch_interface.free(raw_message)
 		molch_interface.free(raw_json)
-		error("Failed to decrypt message.")
+		error(molch.print_errors(status))
 	end
 
 	raw_message = copy_callee_allocated_string(raw_message, raw_message_length)
@@ -492,6 +518,13 @@ function molch.conversation:destroy()
 
 	containing_user.conversations[self.id] = nil
 	recursively_delete_table(self)
+end
+
+function molch.print_errors(status)
+	local size = molch_interface.size_t()
+	local raw_error_stack = molch_interface.molch_print_status(status, size)
+	molch_interface.molch_destroy_return_status(status)
+	return raw_error_stack
 end
 
 return molch

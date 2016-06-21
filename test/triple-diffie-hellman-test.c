@@ -30,7 +30,7 @@ int main(void) {
 		return -1;
 	}
 
-	int status;
+	return_status status = return_status_init();
 
 	//create buffers
 	//alice keys
@@ -48,6 +48,7 @@ int main(void) {
 
 	printf("Generate Alice's keys -------------------------------------------------------\n\n");
 
+	int status_int = 0;
 	//create Alice's identity keypair
 	buffer_create_from_string(alice_string, "Alice");
 	buffer_create_from_string(identity_string, "identity");
@@ -56,9 +57,7 @@ int main(void) {
 			alice_private_identity,
 			alice_string,
 			identity_string);
-	if (status != 0) {
-		goto cleanup;
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice' identity keypair.");
 
 	//create Alice's ephemeral keypair
 	buffer_create_from_string(ephemeral_string, "ephemeral");
@@ -67,9 +66,7 @@ int main(void) {
 			alice_private_ephemeral,
 			alice_string,
 			ephemeral_string);
-	if (status != 0) {
-		goto cleanup;
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice' ephemeral keypair.");
 
 	printf("Generate Bob's keys ---------------------------------------------------------\n\n");
 
@@ -80,9 +77,7 @@ int main(void) {
 			bob_private_identity,
 			bob_string,
 			identity_string);
-	if (status != 0) {
-		goto cleanup;
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's identity keypair.");
 
 	//create Bob's ephemeral keypair
 	status = generate_and_print_keypair(
@@ -90,9 +85,7 @@ int main(void) {
 			bob_private_ephemeral,
 			bob_string,
 			ephemeral_string);
-	if (status != 0) {
-		goto cleanup;
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's ephemeral keypair.");
 
 	printf("Calculate shared secret via Triple Diffie Hellman ---------------------------\n\n");
 
@@ -108,10 +101,7 @@ int main(void) {
 			true);
 	buffer_clear(alice_private_identity);
 	buffer_clear(alice_private_ephemeral);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Triple Diffie Hellman for Alice failed. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Triple Diffie Hellman for Alice failed.");
 	//print Alice's shared secret
 	printf("Alice's shared secret H(DH(A_priv,B0_pub)||DH(A0_priv,B_pub)||DH(A0_priv,B0_pub)):\n");
 	print_hex(alice_shared_secret);
@@ -129,22 +119,18 @@ int main(void) {
 			false);
 	buffer_clear(bob_private_identity);
 	buffer_clear(bob_private_ephemeral);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Triple Diffie Hellman for Bob failed. (%i)\n", status);
-		buffer_clear(bob_shared_secret);
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Triple Diffie Hellnan for Bob failed.");
 	//print Bob's shared secret
 	printf("Bob's shared secret H(DH(B0_priv, A_pub)||DH(B_priv, A0_pub)||DH(B0_priv, A0_pub)):\n");
 	print_hex(bob_shared_secret);
 	putchar('\n');
 
 	//compare both shared secrets
-	status = buffer_compare(alice_shared_secret, bob_shared_secret);
+	status_int = buffer_compare(alice_shared_secret, bob_shared_secret);
 	buffer_clear(alice_shared_secret);
 	buffer_clear(bob_shared_secret);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Triple Diffie Hellman didn't produce the same shared secret. (%i)\n", status);
-		return status;
+	if (status_int != 0) {
+		throw(INCORRECT_DATA, "Triple Diffie Hellman didn't produce the same shared secret.");
 	}
 
 	printf("Both shared secrets match!\n");
@@ -163,5 +149,10 @@ cleanup:
 	buffer_destroy_from_heap(bob_private_ephemeral);
 	buffer_destroy_from_heap(bob_shared_secret);
 
-	return status;
+	on_error(
+		print_errors(&status);
+	);
+	return_status_destroy_errors(&status);
+
+	return status.status;
 }

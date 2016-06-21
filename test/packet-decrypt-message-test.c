@@ -28,10 +28,6 @@
 #include "tracing.h"
 
 int main(void) {
-	if (sodium_init() == -1) {
-		return -1;
-	}
-
 	buffer_create_from_string(message, "Hello world!\n");
 	//create buffers
 	buffer_t *header_key = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
@@ -44,6 +40,12 @@ int main(void) {
 	buffer_t *decrypted_header = buffer_create_on_heap(255, 255);
 	buffer_t *decrypted_message_nonce = buffer_create_on_heap(crypto_secretbox_NONCEBYTES, crypto_secretbox_NONCEBYTES);
 	buffer_t *decrypted_message = buffer_create_on_heap(packet->content_length, packet->content_length);
+
+	return_status status = return_status_init();
+
+	if (sodium_init() == -1) {
+		throw(INIT_ERROR, "Failed to initialize libsodium.");
+	}
 
 	//generate keys and message
 	header->content[0] = 0x01;
@@ -60,7 +62,8 @@ int main(void) {
 
 	//NORMAL MESSAGE
 	printf("NORMAL MESSAGE\n");
-	int status = create_and_print_message(
+	int status_int = 0;
+	status = create_and_print_message(
 			packet,
 			packet_type,
 			current_protocol_version,
@@ -72,9 +75,7 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	if (status != 0) {
-		goto cleanup;
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now decrypt the header
 	status = packet_decrypt_header(
@@ -86,10 +87,7 @@ int main(void) {
 			NULL,
 			NULL);
 	buffer_clear(decrypted_header);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to decrypt header. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt header.");
 
 	printf("Decrypted message nonce (%zu Bytes):\n", decrypted_message_nonce->content_length);
 	print_hex(decrypted_message_nonce);
@@ -101,24 +99,17 @@ int main(void) {
 			decrypted_message,
 			decrypted_message_nonce,
 			message_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to decrypt message. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
 
 	//check the message size
 	if (decrypted_message->content_length != message->content_length) {
-		fprintf(stderr, "ERROR: Decrypted message length isn't the same.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Decrypted message length isn't the same.");
 	}
 	printf("Decrypted message length is the same.\n");
 
 	//compare the message
 	if (buffer_compare(message, decrypted_message) != 0) {
-		fprintf(stderr, "ERROR: Decrypted message doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Decrypted message doesn't match.");
 	}
 	buffer_clear(decrypted_message);
 	printf("Decrypted message is the same.\n\n");
@@ -133,30 +124,27 @@ int main(void) {
 			decrypted_message,
 			decrypted_message_nonce,
 			message_key);
-	if (status == 0) { //message was decrypted although it shouldn't
-		fprintf(stderr, "ERROR: Decrypted manipulated message.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+	if (status.status == SUCCESS) { //message was decrypted although it shouldn't
+		throw(GENERIC_ERROR, "Decrypted manipulated message.");
+	} else {
+		return_status_destroy_errors(&status);
 	}
 	printf("Manipulation detected.\n\n");
 
 	//PREKEY MESSAGE
 	printf("PREKEY MESSAGE\n");
 	//create the public keys
-	status = buffer_fill_random(public_identity_key, PUBLIC_KEY_SIZE);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate public identity key. (%i)\n", status);
-		goto cleanup;
+	status_int = buffer_fill_random(public_identity_key, PUBLIC_KEY_SIZE);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate public identity key.");
 	}
-	status = buffer_fill_random(public_ephemeral_key, PUBLIC_KEY_SIZE);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate public ephemeral key. (%i)\n", status);
-		goto cleanup;
+	status_int = buffer_fill_random(public_ephemeral_key, PUBLIC_KEY_SIZE);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
 	}
-	status = buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate public prekey. (%i)\n", status);
-		goto cleanup;
+	status_int = buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate public prekey.");
 	}
 
 	buffer_clear(packet);
@@ -173,9 +161,7 @@ int main(void) {
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	if (status != 0) {
-		goto cleanup;
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now decrypt the header
 	status = packet_decrypt_header(
@@ -186,10 +172,7 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to decrypt header. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt header.");
 
 	printf("Decrypted message nonce (%zu Bytes):\n", decrypted_message_nonce->content_length);
 	print_hex(decrypted_message_nonce);
@@ -201,24 +184,17 @@ int main(void) {
 			decrypted_message,
 			decrypted_message_nonce,
 			message_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to decrypt message. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
 
 	//check the message size
 	if (decrypted_message->content_length != message->content_length) {
-		fprintf(stderr, "ERROR: Decrypted message length isn't the same.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Decrypted message length isn't the same.");
 	}
 	printf("Decrypted message length is the same.\n");
 
 	//compare the message
 	if (buffer_compare(message, decrypted_message) != 0) {
-		fprintf(stderr, "ERROR: Decrypted message doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Decrypted message doesn't match.");
 	}
 	buffer_clear(decrypted_message);
 	printf("Decrypted message is the same.\n");
@@ -234,5 +210,11 @@ cleanup:
 	buffer_destroy_from_heap(public_identity_key);
 	buffer_destroy_from_heap(public_ephemeral_key);
 	buffer_destroy_from_heap(public_prekey);
-	return status;
+
+	if (status.status != SUCCESS) {
+		print_errors(&status);
+		return_status_destroy_errors(&status);
+	}
+
+	return status.status;
 }

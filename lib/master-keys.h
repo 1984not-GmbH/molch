@@ -18,6 +18,7 @@
  */
 
 #include "constants.h"
+#include "return-status.h"
 #include "../buffer/buffer.h"
 #include "../mcJSON/mcJSON.h"
 
@@ -46,7 +47,8 @@ typedef struct master_keys {
  *
  * WARNING: Don't use Entropy from the OSs CPRNG as seed!
  */
-master_keys *master_keys_create(
+return_status master_keys_create(
+		master_keys ** const keys, //output
 		const buffer_t * const seed,
 		buffer_t * const public_signing_key, //output, optional, can be NULL
 		buffer_t * const public_identity_key //output, optional, can be NULL
@@ -55,21 +57,21 @@ master_keys *master_keys_create(
 /*
  * Get the public signing key.
  */
-int master_keys_get_signing_key(
+return_status master_keys_get_signing_key(
 		master_keys * const keys,
 		buffer_t * const public_signing_key) __attribute__((warn_unused_result));
 
 /*
  * Get the public identity key.
  */
-int master_keys_get_identity_key(
+return_status master_keys_get_identity_key(
 		master_keys * const keys,
 		buffer_t * const public_identity_key) __attribute__((warn_unused_result));
 
 /*
  * Sign a piece of data. Returns the data and signature in one output buffer.
  */
-int master_keys_sign(
+return_status master_keys_sign(
 		master_keys * const keys,
 		const buffer_t * const data,
 		buffer_t * const signed_data //output, length of data + SIGNATURE_SIZE

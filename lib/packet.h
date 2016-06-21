@@ -18,6 +18,7 @@
  */
 
 #include "../buffer/buffer.h"
+#include "return-status.h"
 
 #ifndef LIB_MESSAGE_H
 #define LIB_MESSAGE_H
@@ -50,8 +51,11 @@
  *       MAC(crypto_secretbox_MACBYTES)
  *   }
  * }
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int packet_encrypt(
+return_status packet_encrypt(
 		buffer_t * const packet, //output, has to be long enough, see format above
 		const unsigned char packet_type,
 		const unsigned char current_protocol_version, //this can't be larger than 0xF = 15
@@ -67,8 +71,11 @@ int packet_encrypt(
 
 /*
  * Decrypt and authenticate a packet.
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int packet_decrypt(
+return_status packet_decrypt(
 		const buffer_t * const packet,
 		unsigned char * const packet_type, //1 Byte, no array
 		unsigned char * const current_protocol_version, //1 Byte, no array
@@ -84,8 +91,11 @@ int packet_decrypt(
 
 /*
  * Get the metadata of a packet (without verifying it's authenticity).
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int packet_get_metadata_without_verification(
+return_status packet_get_metadata_without_verification(
 		const buffer_t * const packet,
 		unsigned char * const packet_type, //1 Byte, no array
 		unsigned char * const current_protocol_version, //1 Byte, no array
@@ -98,8 +108,11 @@ int packet_get_metadata_without_verification(
 
 /*
  * Decrypt the header of a packet. (This also authenticates the metadata!)
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int packet_decrypt_header(
+return_status packet_decrypt_header(
 		const buffer_t * const packet,
 		buffer_t * const header, //As long as the packet or at most 255 bytes
 		buffer_t * const message_nonce, //output, MESSAGE_KEY_SIZE
@@ -113,8 +126,11 @@ int packet_decrypt_header(
  * Decrypt the message inside a packet.
  * (only do this if the packet metadata is already
  * verified)
+ *
+ * Don't forget to destroy the return status with return_status_destroy_errors()
+ * if an error has occurred.
  */
-int packet_decrypt_message(
+return_status packet_decrypt_message(
 		const buffer_t * const packet,
 		buffer_t * const message, //This buffer should be as large as the packet
 		const buffer_t * const message_nonce,

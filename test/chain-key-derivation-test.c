@@ -30,16 +30,14 @@ int main(void) {
 		return -1;
 	}
 
-	int status;
+	return_status status = return_status_init();
 
 	//buffer for derived chain keys
 	buffer_t *next_chain_key = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
 	//create random initial chain key
 	buffer_t *last_chain_key = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
-	status = buffer_fill_random(last_chain_key, last_chain_key->buffer_length);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to create last chain key. (%i)\n", status);
-		goto cleanup;
+	if (buffer_fill_random(last_chain_key, last_chain_key->buffer_length) != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to create last chain key.");
 	}
 
 	//print first chain key
@@ -52,10 +50,7 @@ int main(void) {
 	unsigned int counter;
 	for (counter = 1; counter <= 5; counter++) {
 		status = derive_chain_key(next_chain_key, last_chain_key);
-		if (status != 0) {
-			fprintf(stderr, "ERROR: Failed to derive chain key %i. (%i)\n", counter, status);
-			goto cleanup;
-		}
+		throw_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key.");
 
 		//print the derived chain key
 		printf("Chain key Nr. %i:\n", counter);
@@ -63,22 +58,24 @@ int main(void) {
 		putchar('\n');
 
 		//check that chain keys are different
-		status = buffer_compare(last_chain_key, next_chain_key);
-		if (status == 0) {
-			fprintf(stderr, "ERROR: Derived chain key is identical. (%i)\n", status);
-			status = -5;
-			goto cleanup;
+		if (buffer_compare(last_chain_key, next_chain_key) == 0) {
+			throw(INCORRECT_DATA, "Derived chain key is identical.");
 		}
 
 		//move next_chain_key to last_chain_key
-		status = buffer_clone(last_chain_key, next_chain_key);
-		if (status != 0) {
-			goto cleanup;
+		if (buffer_clone(last_chain_key, next_chain_key) != 0) {
+			throw(BUFFER_ERROR, "Failed to copy chain key.");
 		}
 	}
 
 cleanup:
 	buffer_destroy_from_heap(last_chain_key);
 	buffer_destroy_from_heap(next_chain_key);
-	return status;
+
+	on_error(
+		print_errors(&status);
+	);
+	return_status_destroy_errors(&status);
+
+	return status.status;
 }

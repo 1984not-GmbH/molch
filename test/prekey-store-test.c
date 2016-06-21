@@ -32,23 +32,19 @@ int main(void) {
 		return -1;
 	}
 
-	prekey_store *store = prekey_store_create();
-	if (store == NULL) {
-		fprintf(stderr, "ERROR: Failed to create a prekey store!\n");
-		return EXIT_FAILURE;
-	}
+	return_status status = return_status_init();
 
 	buffer_t *public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_t *private_prekey1 = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	buffer_t *private_prekey2 = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	buffer_t *prekey_list = buffer_create_on_heap(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
-	int status = 0;
+	prekey_store *store = NULL;
+	status = prekey_store_create(&store);
+	throw_on_error(CREATION_ERROR, "Failed to create a prekey store.");
+
 	status = prekey_store_list(store, prekey_list);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to list prekey (%i)!\n", status);
-		goto cleanup;
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Failed to list prekeys.");
 	printf("Prekey list:\n");
 	print_hex(prekey_list);
 	putchar('\n');
@@ -56,26 +52,19 @@ int main(void) {
 	//compare the public keys with the ones in the prekey store
 	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
 		if (buffer_compare_partial(prekey_list, PUBLIC_KEY_SIZE * i, store->prekeys[i].public_key, 0, PUBLIC_KEY_SIZE) != 0) {
-			fprintf(stderr, "ERROR: Key list doesn't match the prekey store.\n");
-			status = EXIT_FAILURE;
-			goto cleanup;
+			throw(INCORRECT_DATA, "Key list doesn't match the prekey store.");
 		}
 	}
 	printf("Prekey list matches the prekey store!\n");
 
 	//get a private key
 	const size_t prekey_index = 10;
-	status = buffer_clone(public_prekey, store->prekeys[prekey_index].public_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to clone public key! (%i)\n", status);
-		goto cleanup;
+	if (buffer_clone(public_prekey, store->prekeys[prekey_index].public_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to clone public key.");
 	}
 
 	status = prekey_store_get_prekey(store, public_prekey, private_prekey1);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get prekey. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Failed to get prekey.")
 	printf("Get a Prekey:\n");
 	printf("Public key:\n");
 	print_hex(public_prekey);
@@ -84,58 +73,45 @@ int main(void) {
 	putchar('\n');
 
 	if (store->deprecated_prekeys == NULL) {
-		fprintf(stderr, "ERROR: Failed to deprecate requested key!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(GENERIC_ERROR, "Failed to deprecate requested key.");
 	}
 
 	if ((buffer_compare(public_prekey, store->deprecated_prekeys->public_key) != 0)
 			|| (buffer_compare(private_prekey1, store->deprecated_prekeys->private_key) != 0)) {
-		fprintf(stderr, "ERROR: Deprecated key is incorrect!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Deprecated key is incorrect.");
 	}
 
 	if (buffer_compare(store->prekeys[prekey_index].public_key, public_prekey) == 0) {
-		fprintf(stderr, "ERROR: Failed to generate new key for deprecated one!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(KEYGENERATION_FAILED, "Failed to generate new key for deprecated one.");
 	}
 	printf("Successfully deprecated requested key!\n");
 
 	//check if the prekey can be obtained from the deprecated keys
 	status = prekey_store_get_prekey(store, public_prekey, private_prekey2);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to get key from the deprecated area! (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Failed to get key from the deprecated area.");
 
 	if (buffer_compare(private_prekey1, private_prekey2) != 0) {
-		fprintf(stderr, "ERROR: Prekey from the deprecated area didn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Prekey from the deprecated area didn't match.");
 	}
 	printf("Successfully got prekey from the deprecated area!\n");
 
 	//try to get a nonexistent key
-	status = buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate invalid public prekey! (%i)\n", status);
-		goto cleanup;
+	if (buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE) != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate invalid public prekey.");
 	}
-	if (prekey_store_get_prekey(store, public_prekey, private_prekey1) == 0) {
-		fprintf(stderr, "ERROR: Didn't complain about invalid public key!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+	status = prekey_store_get_prekey(store, public_prekey, private_prekey1);
+	if (status.status == SUCCESS) {
+		throw(GENERIC_ERROR, "Didn't complain about invalid public key.");
 	}
 	printf("Detected invalid public prekey!\n");
+	//reset return status
+	return_status_destroy_errors(&status);
+	status.status = SUCCESS;
 
 	//Test JSON Export!
 	JSON_EXPORT(json_string, 100000, 10000, true, store, prekey_store_json_export);
 	if (json_string == NULL) {
-		fprintf(stderr, "ERROR: Failed to export to JSON!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(EXPORT_ERROR, "Failed to export to JSON.");
 	}
 	printf("%.*s\n", (int)json_string->content_length, (char*)json_string->content);
 	prekey_store_destroy(store);
@@ -143,76 +119,56 @@ int main(void) {
 	//Import it again
 	JSON_IMPORT(store, 100000, json_string, prekey_store_json_import);
 	if (store == NULL) {
-		fprintf(stderr, "ERROR: Failed to import from JSON!\n");
-		status = EXIT_FAILURE;
 		buffer_destroy_from_heap(json_string);
-		goto cleanup;
+		throw(IMPORT_ERROR, "Failed to import from JSON.");
 	}
 
 	//Export it again
 	JSON_EXPORT(json_string2, 100000, 10000, true, store, prekey_store_json_export);
 	if (json_string2 == NULL) {
-		fprintf(stderr, "ERROR: Failed to export imported JSON.!\n");
-		status = EXIT_FAILURE;
 		buffer_destroy_from_heap(json_string);
-		goto cleanup;
+		throw(EXPORT_ERROR, "Failed to export imported JSON.");
 	}
 
 	//compare both
 	if (buffer_compare(json_string, json_string2) != 0) {
-		fprintf(stderr, "ERROR: Imported JSON is incorrect!\n");
-		status = EXIT_FAILURE;
 		buffer_destroy_from_heap(json_string);
 		buffer_destroy_from_heap(json_string2);
-		goto cleanup;
+		throw(INCORRECT_DATA, "Imported JSON is incorrect.");
 	}
 
 	buffer_destroy_from_heap(json_string);
 	buffer_destroy_from_heap(json_string2);
 
 	//test the automatic deprecation of old keys
-	status = buffer_clone(public_prekey, store->prekeys[PREKEY_AMOUNT-1].public_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to clone public key!\n");
-		goto cleanup;
+	if (buffer_clone(public_prekey, store->prekeys[PREKEY_AMOUNT-1].public_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to clone public key.");
 	}
 
 	store->prekeys[PREKEY_AMOUNT-1].timestamp -= 365 * 24 * 3600; //one year
 	store->oldest_timestamp = store->prekeys[PREKEY_AMOUNT - 1].timestamp;
 
 	status = prekey_store_rotate(store);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to rotate the prekeys!\n");
-		goto cleanup;
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to rotate the prekeys.");
 
 	if (buffer_compare(store->deprecated_prekeys->public_key, public_prekey) != 0) {
-		fprintf(stderr, "ERROR: Failed to deprecate outdated key!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(GENERIC_ERROR, "Failed to deprecate outdated key.");
 	}
 	printf("Successfully deprecated outdated key!\n");
 
 	//test the automatic removal of old deprecated keys!
-	status = buffer_clone(public_prekey, store->deprecated_prekeys->next->public_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to clone public key!\n");
-		goto cleanup;
+	if (buffer_clone(public_prekey, store->deprecated_prekeys->next->public_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to clone public key.");
 	}
 
 	store->deprecated_prekeys->next->timestamp -= 24 * 3600;
 	store->oldest_deprecated_timestamp = store->deprecated_prekeys->next->timestamp;
 
 	status = prekey_store_rotate(store);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to rotate the prekeys!\n");
-		goto cleanup;
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to rotate the prekeys.");
 
 	if (store->deprecated_prekeys->next != NULL) {
-		fprintf(stderr, "ERROR: Failed to remove outdated key!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(GENERIC_ERROR, "Failed to remove outdated key.");
 	}
 	printf("Successfully removed outdated deprecated key!\n");
 
@@ -223,5 +179,10 @@ cleanup:
 	buffer_destroy_from_heap(prekey_list);
 	prekey_store_destroy(store);
 
-	return status;
+	if (status.status != SUCCESS) {
+		print_errors(&status);
+	}
+	return_status_destroy_errors(&status);
+
+	return status.status;
 }

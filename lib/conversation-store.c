@@ -31,11 +31,14 @@ void conversation_store_init(conversation_store * const store) {
 /*
  * add a conversation to the conversation store.
  */
-int conversation_store_add(
+return_status conversation_store_add(
 		conversation_store * const store,
 		conversation_t * const conversation) {
+
+	return_status status = return_status_init();
+
 	if ((store == NULL) || (conversation == NULL)) {
-		return -1;
+		throw(INVALID_INPUT, "Invalid input to conversation_store_add");
 	}
 
 	if (store->head == NULL) { //first conversation in the list
@@ -47,7 +50,7 @@ int conversation_store_add(
 		//update length
 		store->length++;
 
-		return 0;
+		goto cleanup;
 	}
 
 	//add the new conversation to the tail of the list
@@ -59,7 +62,9 @@ int conversation_store_add(
 	//update length
 	store->length++;
 
-	return 0;
+cleanup:
+
+	return status;
 }
 
 /*
@@ -94,7 +99,14 @@ void conversation_store_remove(conversation_store * const store, conversation_t 
  * The conversation is identified by it's id.
  */
 void conversation_store_remove_by_id(conversation_store * const store, const buffer_t * const id) {
-	conversation_t *node = conversation_store_find_node(store, id);
+	return_status status = return_status_init();
+
+	conversation_t *node = NULL;
+	status = conversation_store_find_node(&node, store, id);
+	on_error(
+		return_status_destroy_errors(&status);
+		return;
+	)
 	if (node == NULL) {
 		return;
 	}
@@ -107,16 +119,28 @@ void conversation_store_remove_by_id(conversation_store * const store, const buf
  *
  * Returns NULL if no conversation was found.
  */
-conversation_t *conversation_store_find_node(
+return_status conversation_store_find_node(
+		conversation_t ** const conversation,
 		conversation_store * const store,
 		const buffer_t * const id) {
+	return_status status = return_status_init();
+
+	if ((conversation == NULL) || (store == NULL) || (id == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to conversation_store_find.");
+	}
+
+	*conversation = NULL;
+
 	conversation_store_foreach(store,
 			if (buffer_compare(value->id, id) == 0) {
-				return node;
+				*conversation = node;
+				break;
 			}
 		);
 
-	return NULL;
+cleanup:
+
+	return status;
 }
 
 /*
@@ -137,28 +161,44 @@ void conversation_store_clear(conversation_store * const store) {
  *
  * Returns NULL if empty.
  */
-buffer_t *conversation_store_list(conversation_store * const store) {
-	if (store->length == 0) {
-		return NULL;
+return_status conversation_store_list(buffer_t ** const list, conversation_store * const store) {
+	return_status status = return_status_init();
+
+	if ((list == NULL) || (store == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to conversation_store_list.");
 	}
 
-	buffer_t *list = buffer_create_on_heap(store->length * CONVERSATION_ID_SIZE, 0);
+	if (store->length == 0) {
+		*list = NULL;
+		goto cleanup;
+	}
+
+	*list = buffer_create_on_heap(store->length * CONVERSATION_ID_SIZE, 0);
 	//copy all the id's
 	conversation_store_foreach(
 			store,
-			int status = buffer_copy(
-				list,
+			int status_int = buffer_copy(
+				*list,
 				CONVERSATION_ID_SIZE * index,
 				value->id,
 				0,
 				value->id->content_length);
-			if (status != 0) {
-				buffer_destroy_from_heap(list);
-				return NULL;
+			if (status_int != 0) {
+				throw(BUFFER_ERROR, "Failed to copy conversation id.");
 			}
 	);
 
-	return list;
+cleanup:
+	if (status.status != SUCCESS) {
+		if (list != NULL) {
+			if (*list != NULL) {
+				buffer_destroy_from_heap(*list);
+				*list = NULL;
+			}
+		}
+	}
+
+	return status;
 }
 
 /*
@@ -195,43 +235,46 @@ mcJSON *conversation_store_json_export(const conversation_store * const store, m
 int conversation_store_json_import(
 		const mcJSON * const json,
 		conversation_store * const store) {
+
+	return_status status = return_status_init();
+
+	conversation_t *node = NULL;
+
 	if ((json == NULL) || (json->type != mcJSON_Array) || (store == NULL)) {
-		return -1;
+		throw(INVALID_INPUT, "Invalid input to conversation_store_json_import.");
 	}
 
 	//initialise the conversation store
 	conversation_store_init(store);
 
-	int status = 0;
-
 	//iterate through array
 	mcJSON *child = json->child;
-	conversation_t *node = NULL;
 	for (size_t i = 0; (i < json->length) && (child != NULL); i++, child = child->next) {
 		//import the conversation
 		node = conversation_json_import(child);
 		if (node == NULL) {
-			status = -2;
-			goto cleanup;
+			throw(IMPORT_ERROR, "Failed to import conversation from JSON.");
 		}
 
 		//add it to the conversation store
 		status = conversation_store_add(store, node);
-		if (status != 0) {
-			goto cleanup;
-		}
+		throw_on_error(ADDITION_ERROR, "Failed to add conversation to conversation store.");
 
 		node = NULL;
 	}
 
 cleanup:
-	if (status != 0) {
+	if (status.status != 0) {
 		if (node != NULL) {
 			conversation_destroy(node);
 		}
 
-		conversation_store_clear(store);
+		if (store != NULL) {
+			conversation_store_clear(store);
+		}
 	}
 
-	return status;
+	return_status_destroy_errors(&status);
+
+	return status.status;
 }

@@ -18,6 +18,7 @@
  */
 
 #include "../buffer/buffer.h"
+#include "return-status.h"
 
 #ifndef LIB_SPICED_RANDOM_H
 #define LIB_SPICED_RANDOM_H
@@ -30,7 +31,7 @@
  * WARNING: Don't feed this with random numbers from the OSs random
  * source because it might annihilate the randomness.
  */
-int spiced_random(
+return_status spiced_random(
 		buffer_t * const random_output,
 		const buffer_t * const random_spice,
 		const size_t output_length) __attribute__((warn_unused_result));

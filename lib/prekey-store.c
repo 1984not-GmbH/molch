@@ -24,55 +24,64 @@
 /*
  * Initialise a new keystore. Generates all the keys.
  */
-prekey_store *prekey_store_create() {
-	prekey_store *store = sodium_malloc(sizeof(prekey_store));
+return_status prekey_store_create(prekey_store ** const store) {
+	return_status status = return_status_init();
+
 	if (store == NULL) {
-		return NULL;
+		throw(INVALID_INPUT, "Invalid input to prekey_store_create.");
+	}
+
+	*store = sodium_malloc(sizeof(prekey_store));
+	if (*store == NULL) {
+		throw(ALLOCATION_FAILED, "Failed to allocate prekey store.");
 	}
 	//set timestamp to the past --> rotate will create new keys
-	store->oldest_timestamp = 0;
-	store->oldest_deprecated_timestamp = 0;
+	(*store)->oldest_timestamp = 0;
+	(*store)->oldest_deprecated_timestamp = 0;
 
-	store->deprecated_prekeys = NULL;
+	(*store)->deprecated_prekeys = NULL;
 
-	int status = 0;
-	size_t i;
-	for (i = 0; i < PREKEY_AMOUNT; i++) {
-		store->prekeys[i].timestamp = time(NULL);
-		if ((store->oldest_timestamp == 0) || (store->prekeys[i].timestamp < store->oldest_timestamp)) {
-			store->oldest_timestamp = store->prekeys[i].timestamp;
+	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
+		(*store)->prekeys[i].timestamp = time(NULL);
+		if (((*store)->oldest_timestamp == 0) || ((*store)->prekeys[i].timestamp < (*store)->oldest_timestamp)) {
+			(*store)->oldest_timestamp = (*store)->prekeys[i].timestamp;
 		}
 
-		store->prekeys[i].next = NULL;
+		(*store)->prekeys[i].next = NULL;
 
 		//initialize the key buffers
 		buffer_init_with_pointer(
-				store->prekeys[i].public_key,
-				store->prekeys[i].public_key_storage,
+				(*store)->prekeys[i].public_key,
+				(*store)->prekeys[i].public_key_storage,
 				PUBLIC_KEY_SIZE,
 				PUBLIC_KEY_SIZE);
 		buffer_init_with_pointer(
-				store->prekeys[i].private_key,
-				store->prekeys[i].private_key_storage,
+				(*store)->prekeys[i].private_key,
+				(*store)->prekeys[i].private_key_storage,
 				PRIVATE_KEY_SIZE,
 				PRIVATE_KEY_SIZE);
 
 		//generate the keys
-		status = crypto_box_keypair(
-				store->prekeys[i].public_key->content,
-				store->prekeys[i].private_key->content);
-		if (status != 0) {
-			goto cleanup;
+		int status_int = 0;
+		status_int = crypto_box_keypair(
+				(*store)->prekeys[i].public_key->content,
+				(*store)->prekeys[i].private_key->content);
+		if (status_int != 0) {
+			throw(KEYGENERATION_FAILED, "Failed to generate prekey pair.");
 		}
 	}
 
 cleanup:
-	if (status != 0) {
-		sodium_free(store);
-		return NULL;
+	if (status.status != SUCCESS) {
+		if (store != NULL) {
+			if (*store != NULL) {
+				sodium_free(store);
+				*store = NULL;
+			}
+		}
 	}
 
-	return store;
+	return status;
 }
 
 /*
@@ -139,18 +148,20 @@ cleanup:
  * deprecate the requested prekey put it in the outdated key store and
  * generate a new one.
  */
-int prekey_store_get_prekey(
+return_status prekey_store_get_prekey(
 		prekey_store * const store,
 		const buffer_t * const public_key, //input
 		buffer_t * const private_key) { //output
+
+	return_status status = return_status_init();
+
 	//check buffers sizes
 	if ((store == NULL) || (public_key->content_length != PUBLIC_KEY_SIZE) || (private_key->buffer_length < PRIVATE_KEY_SIZE)) {
-		return -1;
+		throw(INVALID_INPUT, "Invalid input for prekey_store_get_prekey.");
 	}
 
 	prekey_store_node *found_prekey = NULL;
 
-	int status = 0;
 	//search for the prekey
 	size_t i;
 	for (i = 0; i < PREKEY_AMOUNT; i++) {
@@ -161,8 +172,9 @@ int prekey_store_get_prekey(
 	}
 
 	//if not found, search in the list of deprecated keys.
+	bool deprecated = false;
 	if (found_prekey == NULL) {
-		i = SIZE_MAX;
+		deprecated = true;
 		prekey_store_node *next = store->deprecated_prekeys;
 		while (next != NULL) {
 			if (buffer_compare(public_key, next->public_key) == 0) {
@@ -175,22 +187,19 @@ int prekey_store_get_prekey(
 
 	if (found_prekey == NULL) {
 		private_key->content_length = 0;
-		status = -1;
-		goto cleanup;
+		throw(NOT_FOUND, "No matching prekey found.");
 	}
 
 	//copy the private key
-	status = buffer_clone(private_key, found_prekey->private_key);
-	if (status != 0) {
+	if (buffer_clone(private_key, found_prekey->private_key) != 0) {
 		private_key->content_length = 0;
-		goto cleanup;
+		throw(BUFFER_ERROR, "Failed to copy private key.");
 	}
 
 	//if the key wasn't in the deprectated list already, deprecate it
-	if (i != SIZE_MAX) {
-		status = deprecate(store, i);
-		if (status != 0) {
-			goto cleanup;
+	if (!deprecated) {
+		if (deprecate(store, i) != 0) {
+			throw(GENERIC_ERROR, "Failed to deprecate prekey.");
 		}
 	}
 
@@ -202,25 +211,27 @@ cleanup:
  * Generate a list containing all public prekeys.
  * (this list can then be stored on a public server).
  */
-int prekey_store_list(
+return_status prekey_store_list(
 		prekey_store * const store,
 		buffer_t * const list) { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+	return_status status = return_status_init();
+
 	//check input
 	if ((store == NULL) || (list->buffer_length < (PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
-		return -1;
+		throw(INVALID_INPUT, "Invalid input to prekey_store_list.");
 	}
 
-	int status = 0;
 	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		status = buffer_copy(
+		int status_int = 0;
+		status_int = buffer_copy(
 				list,
 				PUBLIC_KEY_SIZE * i,
 				store->prekeys[i].public_key,
 				0,
 				PUBLIC_KEY_SIZE);
-		if (status != 0) {
+		if (status_int != 0) {
 			list->content_length = 0;
-			goto cleanup;
+			throw(BUFFER_ERROR, "Failed to copy public prekey.");
 		}
 	}
 
@@ -232,9 +243,11 @@ cleanup:
  * Automatically deprecate old keys and generate new ones
  * and throw away deprecated ones that are too old.
  */
-int prekey_store_rotate(prekey_store * const store) {
+return_status prekey_store_rotate(prekey_store * const store) {
+	return_status status = return_status_init();
+
 	if (store == NULL) {
-		return -1;
+		throw(INVALID_INPUT, "Invalid input to prekey_store_rotate: store is NULL.");
 	}
 
 	//time after which a prekey get's deprecated
@@ -243,8 +256,6 @@ int prekey_store_rotate(prekey_store * const store) {
 	static const time_t remove_time = 3600; //one hour
 
 	time_t current_time = time(NULL);
-
-	int status = 0;
 
 	//Is the timestamp in the future?
 	if (current_time < store->oldest_timestamp) {
@@ -260,7 +271,7 @@ int prekey_store_rotate(prekey_store * const store) {
 			next = next->next;
 		}
 
-		goto cleanup;
+		goto cleanup; //TODO Doesn't this skip the deprecated ones?
 	}
 
 	//At least one outdated prekey
@@ -268,9 +279,8 @@ int prekey_store_rotate(prekey_store * const store) {
 	if ((store->oldest_timestamp + deprecated_time) < current_time) {
 		for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
 			if ((store->prekeys[i].timestamp + deprecated_time) < current_time) {
-				status = deprecate(store, i);
-				if (status != 0) {
-					goto cleanup;
+				if (deprecate(store, i) != 0) {
+					throw(GENERIC_ERROR, "Failed to deprecate key.");
 				}
 			} else if (store->prekeys[i].timestamp < new_oldest_timestamp) {
 				new_oldest_timestamp = store->prekeys[i].timestamp;

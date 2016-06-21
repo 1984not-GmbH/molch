@@ -30,17 +30,15 @@ int main(void) {
 		return -1;
 	}
 
-	int status;
+	return_status status = return_status_init();
 
 	//create buffers;
 	buffer_t *chain_key = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
 	buffer_t *message_key = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
 
 	//create random chain key
-	status = buffer_fill_random(chain_key, chain_key->buffer_length);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to create chain key. (%i)\n", status);
-		goto cleanup;
+	if (buffer_fill_random(chain_key, chain_key->buffer_length) != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to create chain key.");
 	}
 
 	//print first chain key
@@ -51,10 +49,7 @@ int main(void) {
 	//derive message key from chain key
 	status = derive_message_key(message_key, chain_key);
 	buffer_clear(chain_key);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to derive message key. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(KEYGENERATION_FAILED, "Failed to derive message key.");
 
 	//print message key
 	printf("Message key (%zu Bytes):\n", message_key->content_length);
@@ -64,5 +59,11 @@ int main(void) {
 cleanup:
 	buffer_destroy_from_heap(chain_key);
 	buffer_destroy_from_heap(message_key);
-	return status;
+
+	on_error(
+		print_errors(&status);
+	);
+	return_status_destroy_errors(&status);
+
+	return status.status;
 }

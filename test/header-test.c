@@ -25,21 +25,22 @@
 #include "tracing.h"
 
 int main(void) {
-	if (sodium_init() == -1) {
-		return -1;
-	}
-
 	//create buffers
 	buffer_t *our_public_ephemeral_key = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_t *header = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES + 8, crypto_box_PUBLICKEYBYTES + 8);
 	buffer_t *extracted_public_ephemeral_key = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 
-	int status;
+	return_status status = return_status_init();
+
+	if (sodium_init() == -1) {
+		throw(INIT_ERROR, "Failed to initialize libsodium.");
+	}
+
+	int status_int;
 	//create ephemeral key
-	status = buffer_fill_random(our_public_ephemeral_key, our_public_ephemeral_key->content_length);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to create our public ephemeral. (%i)\n", status);
-		goto cleanup;
+	status_int = buffer_fill_random(our_public_ephemeral_key, our_public_ephemeral_key->content_length);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to create our public ephemeral.");
 	}
 	printf("Our public ephemeral key (%zu Bytes):\n", our_public_ephemeral_key->content_length);
 	print_hex(our_public_ephemeral_key);
@@ -57,10 +58,7 @@ int main(void) {
 			our_public_ephemeral_key,
 			message_number,
 			previous_message_number);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to create header. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(CREATION_ERROR, "Failed to create header.");
 
 	//print the header
 	printf("Header (%zu Bytes):\n", header->content_length);
@@ -75,10 +73,7 @@ int main(void) {
 			extracted_public_ephemeral_key,
 			&extracted_message_number,
 			&extracted_previous_message_number);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to extract data from header. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Failed to extract data from header.");
 
 	printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key->content_length);
 	print_hex(extracted_public_ephemeral_key);
@@ -88,23 +83,17 @@ int main(void) {
 
 	//compare them
 	if (buffer_compare(our_public_ephemeral_key, extracted_public_ephemeral_key) != 0) {
-		fprintf(stderr, "ERROR: Public ephemeral keys don't match.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Public ephemeral keys don't match.");
 	}
 	printf("Public ephemeral keys match.\n");
 
 	if (message_number != extracted_message_number) {
-		fprintf(stderr, "ERROR: Message numbers don't match.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Message number doesn't match.");
 	}
 	printf("Message numbers match.\n");
 
 	if (previous_message_number != extracted_previous_message_number) {
-		fprintf(stderr, "ERROR: Message numbers don't match.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Previous message number doesn't match.");
 	}
 	printf("Previous message numbers match.\n");
 
@@ -113,5 +102,10 @@ cleanup:
 	buffer_destroy_from_heap(header);
 	buffer_destroy_from_heap(extracted_public_ephemeral_key);
 
-	return status;
+	if (status.status != SUCCESS) {
+		print_errors(&status);
+		return_status_destroy_errors(&status);
+	}
+
+	return status.status;
 }

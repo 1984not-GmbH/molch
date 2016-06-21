@@ -13,5 +13,6 @@ add_library(molch
 	prekey-store
 	master-keys
 	endianness
+	return-status
 )
 target_link_libraries(molch ${libs} molch-buffer mcjson)

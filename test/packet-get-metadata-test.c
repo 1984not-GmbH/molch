@@ -28,10 +28,6 @@
 #include "tracing.h"
 
 int main(void) {
-	if (sodium_init() == -1) {
-		return -1;
-	}
-
 	//generate keys and message
 	buffer_t *header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	buffer_t *message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
@@ -43,11 +39,18 @@ int main(void) {
 	buffer_t *extracted_public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_create_from_string(message, "Hello world!\n");
 	buffer_t *header = buffer_create_on_heap(4, 4);
+	buffer_t *packet = buffer_create_on_heap(3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255 + 3 * PUBLIC_KEY_SIZE, 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255 + 3 * PUBLIC_KEY_SIZE);
+
+	return_status status = return_status_init();
+
+	if (sodium_init() == -1) {
+		throw(INIT_ERROR, "Failed to initialize libsodium.");
+	}
+
 	header->content[0] = 0x01;
 	header->content[1] = 0x02;
 	header->content[2] = 0x03;
 	header->content[3] = 0x04;
-	buffer_t *packet = buffer_create_on_heap(3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255 + 3 * PUBLIC_KEY_SIZE, 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255 + 3 * PUBLIC_KEY_SIZE);
 	unsigned char packet_type = NORMAL_MESSAGE;
 	printf("Packet type: %02x\n", packet_type);
 	const unsigned char current_protocol_version = 2;
@@ -58,7 +61,8 @@ int main(void) {
 
 	//A NORMAL MESSAGE
 	printf("NORMAL MESSAGE:\n");
-	int status = create_and_print_message(
+	int status_int = 0;
+	status = create_and_print_message(
 			packet,
 			packet_type,
 			current_protocol_version,
@@ -70,9 +74,7 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	if (status != 0) {
-		goto cleanup;
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now extract the metadata
 	unsigned char extracted_packet_type;
@@ -88,56 +90,42 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Couldn't extract metadata from the packet. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Couldn't extract metadata from the packet.");
 
 	if (packet_type != extracted_packet_type) {
-		fprintf(stderr, "ERROR: Extracted packet type doesn't match (%i)!\n", extracted_packet_type);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extracted packet type doesn't match.");
 	}
 	printf("Packet type matches!\n");
 
 	if (current_protocol_version != extracted_current_protocol_version) {
-		fprintf(stderr, "ERROR: Extracted current protocol version doesn't match (%i)!\n", extracted_current_protocol_version);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extracted current protocol version doesn't match.");
 	}
 	printf("Current protocol version matches!\n");
 
 	if (highest_supported_protocol_version != extracted_highest_supported_protocol_version) {
-		fprintf(stderr, "ERROR: Extracted highest supported protocol version doesn't match (%i)!\n", extracted_highest_supported_protocol_version);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extracted highest supported protocol version doesn't match.");
 	}
 	printf("Highest supoorted protocol version matches (%i)!\n", extracted_highest_supported_protocol_version);
 
 	if (header->content_length != extracted_header_length) {
-		fprintf(stderr, "ERROR: Extracted header length doesn't match (%i)!\n", extracted_header_length);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extracted header length doesn't match.");
 	}
 	printf("Header length matches!\n");
 
 	//NOW A PREKEY MESSAGE
 	printf("PREKEY MESSAGE:\n");
 	//create the keys
-	status = buffer_fill_random(public_identity_key, PUBLIC_KEY_SIZE);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate public identity key. (%i)\n", status);
-		goto cleanup;
+	status_int = buffer_fill_random(public_identity_key, PUBLIC_KEY_SIZE);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate public identity key.");
 	}
-	status = buffer_fill_random(public_ephemeral_key, PUBLIC_KEY_SIZE);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate public ephemeral key. (%i)\n", status);
-		goto cleanup;
+	status_int = buffer_fill_random(public_ephemeral_key, PUBLIC_KEY_SIZE);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
 	}
-	status = buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to generate public prekey. (%i)\n", status);
-		goto cleanup;
+	status_int = buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE);
+	if (status_int != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate public prekey.");
 	}
 
 	buffer_clear(packet);
@@ -154,9 +142,7 @@ int main(void) {
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	if (status != 0) {
-		goto cleanup;
-	}
+	throw_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now extract the metadata
 	status = packet_get_metadata_without_verification(
@@ -168,57 +154,40 @@ int main(void) {
 			extracted_public_identity_key,
 			extracted_public_ephemeral_key,
 			extracted_public_prekey);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Couldn't extract metadata from the packet. (%i)\n", status);
-		goto cleanup;
-	}
+	throw_on_error(DATA_FETCH_ERROR, "Couldn't extract metadata from the packet.");
 
 	if (packet_type != extracted_packet_type) {
-		fprintf(stderr, "ERROR: Extracted packet type doesn't match (%i)!\n", extracted_packet_type);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extracted packet type doesn't match.");
 	}
 	printf("Packet type matches!\n");
 
 	if (current_protocol_version != extracted_current_protocol_version) {
-		fprintf(stderr, "ERROR: Extracted current protocol version doesn't match (%i)!\n", extracted_current_protocol_version);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extracted current protocol version doesn't match.");
 	}
 	printf("Current protocol version matches!\n");
 
 	if (highest_supported_protocol_version != extracted_highest_supported_protocol_version) {
-		fprintf(stderr, "ERROR: Extracted highest supported protocol version doesn't match (%i)!\n", extracted_highest_supported_protocol_version);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extracted highest supported protocl version doesn't match.");
 	}
 	printf("Highest supoorted protocol version matches (%i)!\n", extracted_highest_supported_protocol_version);
 
 	if (header->content_length != extracted_header_length) {
-		fprintf(stderr, "ERROR: Extracted header length doesn't match (%i)!\n", extracted_header_length);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extracted header length doesn't match.");
 	}
 	printf("Header length matches!\n");
 
 	if (buffer_compare(public_identity_key, extracted_public_identity_key) != 0) {
-		fprintf(stderr, "ERROR: Extracted public identity key doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extracted public identity key doesn't match.");
 	}
 	printf("Extracted public identity key matches!\n");
 
 	if (buffer_compare(public_ephemeral_key, extracted_public_ephemeral_key) != 0) {
-		fprintf(stderr, "ERROR: Extracted public ephemeral key doesn't match!\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extratec public ephemeral key doesn't match.");
 	}
 	printf("Extracted public ephemeral key matches!\n");
 
 	if (buffer_compare(public_prekey, extracted_public_prekey) != 0) {
-		fprintf(stderr, "ERROR: Extracted public prekey doesn't match.\n");
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INVALID_VALUE, "Extracted public prekey doesn't match.");
 	}
 	printf("Extracted public prekey matches!\n");
 
@@ -234,5 +203,10 @@ cleanup:
 	buffer_destroy_from_heap(extracted_public_ephemeral_key);
 	buffer_destroy_from_heap(extracted_public_prekey);
 
-	return status;
+	if (status.status != SUCCESS) {
+		print_errors(&status);
+		return_status_destroy_errors(&status);
+	}
+
+	return status.status;
 }

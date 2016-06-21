@@ -33,6 +33,8 @@ int main(void) {
 		return -1;
 	}
 
+	return_status status = return_status_init();
+
 	//buffer for message keys
 	buffer_t *header_key = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	buffer_t *message_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
@@ -44,30 +46,27 @@ int main(void) {
 	assert(keystore.head == NULL);
 	assert(keystore.tail == NULL);
 
-	int status;
-
+	int status_int = 0;
 	//add keys to the keystore
-	unsigned int i;
+	size_t i;
 	for (i = 0; i < 6; i++) {
 		//create new keys
-		status = buffer_fill_random(header_key, header_key->buffer_length);
-		if (status != 0) {
-			fprintf(stderr, "ERROR: Failed to create header key. (%i)\n", status);
-			goto cleanup;
+		status_int = buffer_fill_random(header_key, header_key->buffer_length);
+		if (status_int != 0) {
+			throw(KEYGENERATION_FAILED, "Failed to create header key.");
 		}
-		status = buffer_fill_random(message_key, message_key->buffer_length);
-		if (status != 0) {
-			fprintf(stderr, "ERROR: Failed to create header key. (%i)\n", status);
-			goto cleanup;
+		status_int = buffer_fill_random(message_key, message_key->buffer_length);
+		if (status_int != 0) {
+			throw(KEYGENERATION_FAILED, "Failed to create header key.");
 		}
 
 		//print the new header key
-		printf("New Header Key No. %u:\n", i);
+		printf("New Header Key No. %zu:\n", i);
 		print_hex(header_key);
 		putchar('\n');
 
 		//print the new message key
-		printf("New message key No. %u:\n", i);
+		printf("New message key No. %zu:\n", i);
 		print_hex(message_key);
 		putchar('\n');
 
@@ -75,10 +74,7 @@ int main(void) {
 		status = header_and_message_keystore_add(&keystore, message_key, header_key);
 		buffer_clear(message_key);
 		buffer_clear(header_key);
-		if (status != 0) {
-			fprintf(stderr, "ERROR: Failed to add key to keystore. (%i)\n", status);
-			goto cleanup;
-		}
+		throw_on_error(ADDITION_ERROR, "Failed to add key to keystore.");
 
 		print_header_and_message_keystore(&keystore);
 
@@ -89,41 +85,33 @@ int main(void) {
 	printf("Test JSON export!\n");
 	JSON_EXPORT(output, 10000, 500, true, &keystore, header_and_message_keystore_json_export);
 	if (output == NULL) {
-		fprintf(stderr, "ERROR: Failed to export to JSON.\n");
 		buffer_destroy_from_heap(output);
 		header_and_message_keystore_clear(&keystore);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(EXPORT_ERROR, "Failed to export to JSON.");
 	}
 	printf("%.*s\n", (int)output->content_length, (char*)output->content);
 
 	//JSON import
 	header_and_message_keystore imported_keystore;
-	JSON_INITIALIZE(&imported_keystore, 10000, output, header_and_message_keystore_json_import, status);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to import keystore from JSON. (%i)\n", status);
-
+	JSON_INITIALIZE(&imported_keystore, 10000, output, header_and_message_keystore_json_import, status_int);
+	if (status_int != 0) {
 		buffer_destroy_from_heap(output);
-		goto cleanup;
+		throw(IMPORT_ERROR, "Failed to import keystore from JSON.");
 	}
 	//export the imported JSON to JSON again
 	JSON_EXPORT(imported_output, 10000, 500, true, &imported_keystore, header_and_message_keystore_json_export);
 	if (imported_output == NULL) {
-		fprintf(stderr, "ERROR: Failed to import from exported JSON.\n");
 		buffer_destroy_from_heap(output);
 		header_and_message_keystore_clear(&keystore);
 		header_and_message_keystore_clear(&imported_keystore);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(EXPORT_ERROR, "Failed to export from imported JSON.");
 	}
 	//compare with original JSON
 	if (buffer_compare(imported_output, output) != 0) {
-		fprintf(stderr, "ERROR: Imported user store is incorrect.\n");
 		header_and_message_keystore_clear(&imported_keystore);
 		buffer_destroy_from_heap(output);
 		buffer_destroy_from_heap(imported_output);
-		status = EXIT_FAILURE;
-		goto cleanup;
+		throw(INCORRECT_DATA, "Imported header and message keystore is incorrect.");
 	}
 	printf("Successfully imported header and message keystore from JSON.\n");
 	buffer_destroy_from_heap(imported_output);
@@ -161,5 +149,10 @@ cleanup:
 	assert(keystore.tail == NULL);
 	print_header_and_message_keystore(&keystore);
 
-	return status;
+	on_error(
+		print_errors(&status);
+	);
+	return_status_destroy_errors(&status);
+
+	return status.status;
 }

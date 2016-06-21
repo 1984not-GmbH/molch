@@ -18,12 +18,15 @@
  */
 
 #include "../buffer/buffer.h"
+#include "../lib/return-status.h"
 
 #ifndef TEST_UTILS_H
 #define TEST_UTILS_H
 void print_hex(const buffer_t * const data);
 
 void print_to_file(const buffer_t * const data, const char * const filename);
+
+void print_errors(return_status * const status);
 
 void read_file(buffer_t ** const data, const char * const filename);
 #endif
