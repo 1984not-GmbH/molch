@@ -9,6 +9,7 @@
 -- * remove __ attributes
 -- * rename "to_base64" -> "encode" and "from_base64" -> "decode"
 -- * make it a loadable module via require
+-- * fix use of the modulo operator (math.mod -> %)
 --
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
@@ -72,10 +73,10 @@ function base64.encode(to_encode)
 
     -- Check the number of bytes. If it's not evenly divisible by three,
     -- zero-pad the ending & append on the correct number of ``=``s.
-    if math.mod(string.len(bit_pattern), 3) == 2 then
+    if (string.len(bit_pattern) % 3) == 2 then
         trailing = '=='
         bit_pattern = bit_pattern .. '0000000000000000'
-    elseif math.mod(string.len(bit_pattern), 3) == 1 then
+    elseif (string.len(bit_pattern) % 3) == 1 then
         trailing = '='
         bit_pattern = bit_pattern .. '00000000'
     end
