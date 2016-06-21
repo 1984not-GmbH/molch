@@ -118,7 +118,7 @@ return_status molch_create_send_conversation(
 		size_t *packet_length, //output
 		const unsigned char * const message,
 		const size_t message_length,
-		const unsigned char * const prekey_list, //prekey list of the receiver (PREKEY_AMOUNT * PUBLIC_KEY_SIZE)
+		const unsigned char * const prekey_list, //prekey list of the receiver
 		const size_t prekey_list_length,
 		const unsigned char * const sender_public_signing_key, //signing key of the sender (user)
 		const unsigned char * const receiver_public_signing_key, //signing key of the receiver
@@ -270,4 +270,15 @@ return_status molch_conversation_json_import(const unsigned char * const json, c
  * if an error has occurred.
  */
 return_status molch_json_import(const unsigned char* const json, const size_t length) __attribute__((warn_unused_result));
+
+/*
+ * Get a signed list of prekeys for a given user.
+ *
+ * Don't forget to destroy the return status with molch_destroy_return_status()
+ * if an error has occured.
+ */
+return_status molch_get_prekey_list(
+		unsigned char * const public_signing_key,
+		unsigned char ** const prekey_list,  //output, free after use
+		size_t * const prekey_list_length) __attribute__((warn_unused_result));
 #endif
