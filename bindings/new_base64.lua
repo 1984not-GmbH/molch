@@ -7,6 +7,7 @@
 -- Modified by: Max Bruckner (FSMaxB)
 -- * remove unnecessary "require"
 -- * remove __ attributes
+-- * rename "to_base64" -> "encode" and "from_base64" -> "decode"
 --
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
@@ -57,7 +58,7 @@ function from_binary(bin_bits)
 end
 
 
-function to_base64(to_encode)
+function encode(to_encode)
     local bit_pattern = ''
     local encoded = ''
     local trailing = ''
@@ -86,7 +87,7 @@ function to_base64(to_encode)
 end
 
 
-function from_base64(to_decode)
+function decode(to_decode)
     local padded = to_decode:gsub("%s", "")
     local unpadded = padded:gsub("=", "")
     local bit_pattern = ''
