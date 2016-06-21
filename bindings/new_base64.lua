@@ -8,6 +8,7 @@
 -- * remove unnecessary "require"
 -- * remove __ attributes
 -- * rename "to_base64" -> "encode" and "from_base64" -> "decode"
+-- * make it a loadable module via require
 --
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
@@ -32,10 +33,12 @@
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+local base64 = {}
+
 local index_table = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 
 
-function to_binary(integer)
+local function to_binary(integer)
     local remaining = tonumber(integer)
     local bin_bits = ''
 
@@ -53,12 +56,12 @@ function to_binary(integer)
     return bin_bits
 end
 
-function from_binary(bin_bits)
+local function from_binary(bin_bits)
     return tonumber(bin_bits, 2)
 end
 
 
-function encode(to_encode)
+function base64.encode(to_encode)
     local bit_pattern = ''
     local encoded = ''
     local trailing = ''
@@ -87,7 +90,7 @@ function encode(to_encode)
 end
 
 
-function decode(to_decode)
+function base64.decode(to_decode)
     local padded = to_decode:gsub("%s", "")
     local unpadded = padded:gsub("=", "")
     local bit_pattern = ''
@@ -115,3 +118,5 @@ function decode(to_decode)
     end
     return decoded
 end
+
+return base64
