@@ -4,6 +4,10 @@
 -- Copyright (c) 2012, Daniel Lindsley
 -- All rights reserved.
 --
+-- Modified by: Max Bruckner (FSMaxB)
+-- * remove unnecessary "require"
+-- * remove __ attributes
+--
 -- Redistribution and use in source and binary forms, with or without
 -- modification, are permitted provided that the following conditions are met:
 --
@@ -26,14 +30,6 @@
 -- CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 -- OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 -- OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-require('math')
-
-
-local __author__ = 'Daniel Lindsley'
-local __version__ = 'scm-1'
-local __license__ = 'BSD'
-
 
 local index_table = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 
