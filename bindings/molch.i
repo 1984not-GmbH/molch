@@ -62,8 +62,7 @@ typedef enum status_type {
 	ENCRYPT_ERROR,
 	DECRYPT_ERROR,
 	CONVERSION_ERROR,
-	SIGN_ERROR,
-	VERIFY_ERROR,
+	SIGN_ERROR, VERIFY_ERROR,
 	REMOVE_ERROR,
 	SHOULDNT_HAPPEN,
 	INVALID_STATE,
@@ -178,3 +177,8 @@ extern return_status molch_json_export(
 extern return_status molch_conversation_json_import(const unsigned char * const json, const size_t length);
 
 extern return_status molch_json_import(const unsigned char* const json, const size_t length);
+
+extern return_status molch_get_prekey_list(
+		unsigned char * const public_signing_key,
+		unsigned char ** const prekey_list,
+		size_t * const prekey_list_length);

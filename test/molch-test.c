@@ -173,6 +173,18 @@ int main(void) {
 		free(bob_public_prekeys);
 		bob_public_prekeys = NULL;
 	}
+
+	// delete
+	free(alice_public_prekeys);
+	alice_public_prekeys = NULL;
+
+	// export the prekeys again
+	status = molch_get_prekey_list(
+			alice_public_identity->content,
+			&alice_public_prekeys,
+			&alice_public_prekeys_length);
+	throw_on_error(DATA_FETCH_ERROR, "Failed to get Alice' prekey list.");
+
 	//create a new receive conversation (bob receives from alice)
 	unsigned char *bob_receive_message;
 	size_t bob_receive_message_length;

@@ -429,6 +429,28 @@ function molch.user:create_receive_conversation(packet, sender_id)
 	return conversation, message
 end
 
+function molch.user:get_prekey_list()
+	local prekey_list_length = molch_interface.size_t()
+	local temp_prekey_list = molch_interface.create_ucstring_pointer()
+
+	local status = molch_interface.molch_get_prekey_list(
+		convert_to_c_string(self.id),
+		temp_prekey_list,
+		prekey_list_length)
+	local status_type = molch_interface.get_status(status)
+	if status_type ~= molch_interface.SUCCESS then
+		molch_interface.free(temp_prekey_list)
+		error(molch.print_errors(status))
+	end
+
+	-- copy the prekey list over to an array managed by swig and free the old
+	local raw_prekey_list = copy_callee_allocated_string(temp_prekey_list, prekey_list_length)
+
+	self.prekey_list = convert_to_lua_string(raw_prekey_list, prekey_list_length)
+
+	return self.prekey_list
+end
+
 function molch.conversation:encrypt_message(message)
 	local raw_message, raw_message_length = convert_to_c_string(message)
 	local raw_packet = molch_interface.create_ucstring_pointer()

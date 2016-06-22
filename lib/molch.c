@@ -1225,3 +1225,32 @@ cleanup:
 
 	return status;
 }
+
+/*
+ * Get a signed list of prekeys for a given user.
+ *
+ * Don't forget to destroy the return status with molch_destroy_return_status()
+ * if an error has occured.
+ */
+return_status molch_get_prekey_list(
+		unsigned char * const public_signing_key,
+		unsigned char ** const prekey_list,  //output, free after use
+		size_t * const prekey_list_length) {
+	return_status status = return_status_init();
+
+	// check input
+	if ((public_signing_key == NULL) || (prekey_list == NULL) || (prekey_list_length == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to molch_get_prekey_list.");
+	}
+
+	buffer_create_with_existing_array(public_signing_key_buffer, public_signing_key, PUBLIC_MASTER_KEY_SIZE);
+
+	status = create_prekey_list(
+			public_signing_key_buffer,
+			prekey_list,
+			prekey_list_length);
+	throw_on_error(CREATION_ERROR, "Failed to create prekey list.");
+
+cleanup:
+	return status;
+}
