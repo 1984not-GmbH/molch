@@ -40,6 +40,10 @@ int main(void) {
 	buffer_t *alice_conversation = buffer_create_on_heap(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 	buffer_t *bob_conversation = buffer_create_on_heap(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 
+	//message numbers
+	uint32_t alice_receive_message_number = UINT32_MAX;
+	uint32_t alice_previous_receive_message_number = UINT32_MAX;
+
 	//alice key buffers
 	buffer_t *alice_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	unsigned char *alice_public_prekeys = NULL;
@@ -247,12 +251,19 @@ int main(void) {
 			bob_send_packet,
 			bob_send_packet_length,
 			alice_conversation->content,
+			&alice_receive_message_number,
+			&alice_previous_receive_message_number,
 			NULL,
 			NULL);
 	on_error(
 		free(alice_receive_message);
 		throw(GENERIC_ERROR, "Incorrect message received.");
 	)
+
+	if ((alice_receive_message_number != 0) || (alice_previous_receive_message_number != 0)) {
+		free(alice_receive_message);
+		throw(INCORRECT_DATA, "Incorrect receive message number for Alice.");
+	}
 
 	//compare sent and received messages
 	printf("sent (Bob): %s\n", bob_send_message->content);
