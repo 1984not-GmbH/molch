@@ -740,7 +740,6 @@ return_status molch_decrypt_message(
 		unsigned char ** const json_export_conversation, //optional, can be NULL, exports the conversation as json, free with sodium_free, check if NULL before use!
 		size_t * const json_export_conversation_length //optional, can be NULL
 	) {
-
 	//create buffer for the packet
 	buffer_create_with_existing_array(packet_buffer, (unsigned char*)packet, packet_length);
 
@@ -756,9 +755,14 @@ return_status molch_decrypt_message(
 		throw(NOT_FOUND, "Failed to find conversation with the given ID.");
 	}
 
+	uint32_t receive_message_number = UINT32_MAX;
+	uint32_t previous_receive_message_number = UINT32_MAX;
+
 	status = conversation_receive(
 			conversation,
 			packet_buffer,
+			&receive_message_number,
+			&previous_receive_message_number,
 			&message_buffer);
 	throw_on_error(GENERIC_ERROR, "Failed to receive message.");
 
