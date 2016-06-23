@@ -82,15 +82,22 @@ function alice_receive(number)
 	number = number or 1
 
 	local message
+	local receive_message_number
+	local previous_receive_message_number
 	local packet = table.remove(bob_sent, number).packet
 
 	if not alice_conversation then
 		alice_conversation, message = alice:create_receive_conversation(packet, bob.id)
+		receive_message_number = 0
+		previous_receive_message_number = 0
 	else
-		message = alice_conversation:decrypt_message(packet)
+		message, receive_message_number, previous_receive_message_number = alice_conversation:decrypt_message(packet)
 	end
 
+	print(receive_message_number, previous_receive_message_number)
 	print(message)
+
+	return message, receive_message_number, previous_receive_message_number
 end
 functions.alice_receive = alice_receive
 
@@ -106,15 +113,22 @@ function bob_receive(number)
 	number = number or 1
 
 	local message
+	local receive_message_number
+	local previous_receive_message_number
 	local packet = table.remove(alice_sent, number).packet
 
 	if not bob_conversation then
 		bob_conversation, message = bob:create_receive_conversation(packet, alice.id)
+		receive_message_number = 0
+		previous_receive_message_number = 0
 	else
-		message = bob_conversation:decrypt_message(packet)
+		message, receive_message_number, previous_receive_message_number = bob_conversation:decrypt_message(packet)
 	end
 
+	print(receive_message_number, previous_receive_message_number)
 	print(message)
+
+	return message, receive_message_number, previous_receive_message_number
 end
 functions.bob_receive = bob_receive
 
@@ -214,14 +228,18 @@ function errors_on()
 
 	for name,func in pairs(functions) do
 		_G[name] = function (...)
-			local status, error_message = xpcall(func, function (error_message)
+			local return_values = {xpcall(func, function (error_message)
 				print(error_message)
 				print(debug.traceback())
 			end,
-			...)
+			...)}
+
+			local status = table.remove(return_values, 1)
 			if not status then
 				os.exit(status)
 			end
+
+			return table.unpack(return_values)
 		end
 	end
 end

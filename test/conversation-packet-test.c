@@ -63,6 +63,12 @@ int main(void) {
 	conversation_t *bob_send_conversation = NULL;
 	conversation_t *bob_receive_conversation = NULL;
 
+	//message numbers
+	uint32_t alice_receive_message_number = UINT32_MAX;
+	uint32_t alice_previous_receive_message_number = UINT32_MAX;
+	uint32_t bob_receive_message_number = UINT32_MAX;
+	uint32_t bob_previous_receive_message_number = UINT32_MAX;
+
 	return_status status = return_status_init();
 	int status_int = sodium_init();
 	if (status_int != 0) {
@@ -113,7 +119,6 @@ int main(void) {
 			prekey_list);
 	throw_on_error(SEND_ERROR, "Failed to send message.");
 
-	printf("Sent message: %.*s\n", (int)send_message->content_length, (const char*)send_message->content);
 	printf("Packet:\n");
 	print_hex(packet);
 	putchar('\n');
@@ -155,8 +160,15 @@ int main(void) {
 	status = conversation_receive(
 			bob_receive_conversation,
 			alice_send_packet2,
+			&bob_receive_message_number,
+			&bob_previous_receive_message_number,
 			&bob_receive_message2);
 	throw_on_error(RECEIVE_ERROR, "Second message from Alice failed to decrypt.");
+
+	// check the message numbers
+	if ((bob_receive_message_number != 1) || (bob_previous_receive_message_number != 0)) {
+		throw(INCORRECT_DATA, "Incorrect receive message number for Bob.");
+	}
 
 	//now check if the received message was correctly decrypted
 	status_int = buffer_compare(bob_receive_message2, alice_send_message2);
@@ -185,8 +197,15 @@ int main(void) {
 	status = conversation_receive(
 			alice_send_conversation,
 			bob_response_packet,
+			&alice_receive_message_number,
+			&alice_previous_receive_message_number,
 			&alice_received_response);
 	throw_on_error(RECEIVE_ERROR, "Response from Bob failed to decrypt.");
+
+	// check the message numbers
+	if ((alice_receive_message_number != 0) || (alice_previous_receive_message_number != 0)) {
+		throw(INCORRECT_DATA, "Incorrect receive message number for Alice.");
+	}
 
 	//compare sent and received messages
 	status_int = buffer_compare(bob_response_message, alice_received_response);
@@ -260,8 +279,15 @@ int main(void) {
 	status = conversation_receive(
 			alice_receive_conversation,
 			bob_send_packet2,
+			&alice_receive_message_number,
+			&alice_previous_receive_message_number,
 			&alice_receive_message2);
 	throw_on_error(RECEIVE_ERROR, "Second message from Bob failed to decrypt.");
+
+	// check message numbers
+	if ((alice_receive_message_number != 1) || (alice_previous_receive_message_number != 0)) {
+		throw(INCORRECT_DATA, "Incorrect receive message numbers for Alice.");
+	}
 
 	//now check if the received message was correctly decrypted
 	status_int = buffer_compare(alice_receive_message2, bob_send_message2);
@@ -290,8 +316,15 @@ int main(void) {
 	status = conversation_receive(
 			bob_send_conversation,
 			alice_response_packet,
+			&bob_receive_message_number,
+			&bob_previous_receive_message_number,
 			&bob_received_response);
 	throw_on_error(RECEIVE_ERROR, "Response from Alice failed to decrypt.");
+
+	// check message numbers
+	if ((bob_receive_message_number != 0) || (bob_previous_receive_message_number != 0)) {
+		throw(INCORRECT_DATA, "Incorrect receive message numbers for Alice.");
+	}
 
 	//compare sent and received messages
 	status_int = buffer_compare(alice_response_message, bob_received_response);

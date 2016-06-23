@@ -12,6 +12,7 @@
 
 // tell SWIG to treat size_t as an integer
 typedef unsigned int size_t;
+typedef unsigned int uint32_t;
 
 %include <cpointer.i>
 %pointer_class(size_t, size_t);
@@ -144,6 +145,8 @@ extern return_status molch_decrypt_message(
 		const unsigned char * const packet,
 		const size_t packet_length,
 		const unsigned char * const conversation_id,
+		uint32_t * const receive_message_number,
+		uint32_t * const previous_receive_message_number,
 		unsigned char ** const json_export_conversation,
 		size_t * const json_export_conversation_length
 		);

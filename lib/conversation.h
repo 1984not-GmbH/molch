@@ -107,6 +107,8 @@ return_status conversation_send(
 return_status conversation_receive(
 	conversation_t * const conversation,
 	const buffer_t * const packet, //received packet
+	uint32_t * const receive_message_number,
+	uint32_t * const previous_receive_message_number,
 	buffer_t ** const message //output, free after use!
 		) __attribute__((warn_unused_result));
 #endif

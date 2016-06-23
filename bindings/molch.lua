@@ -488,6 +488,8 @@ function molch.conversation:decrypt_message(packet)
 	local raw_message_length = molch_interface.size_t()
 	local raw_json = molch_interface.create_ucstring_pointer()
 	local raw_json_length = molch_interface.size_t()
+	local raw_receive_message_number = molch_interface.size_t()
+	local raw_previous_receive_message_number = molch_interface.size_t()
 
 	local status = molch_interface.molch_decrypt_message(
 		raw_message,
@@ -495,6 +497,8 @@ function molch.conversation:decrypt_message(packet)
 		raw_packet,
 		raw_packet_length,
 		convert_to_c_string(self.id),
+		raw_receive_message_number,
+		raw_previous_receive_message_number,
 		raw_json,
 		raw_json_length)
 	local status_type = molch_interface.get_status(status)
@@ -510,7 +514,7 @@ function molch.conversation:decrypt_message(packet)
 	local message = convert_to_lua_string(raw_message, raw_message_length)
 	self.json = convert_to_lua_string(raw_json, raw_json_length)
 
-	return message
+	return message, raw_receive_message_number:value(), raw_previous_receive_message_number:value()
 end
 
 function molch.conversation:destroy()
