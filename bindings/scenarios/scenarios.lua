@@ -96,6 +96,8 @@ function alice_receive(number)
 
 	print(receive_message_number, previous_receive_message_number)
 	print(message)
+
+	return message, receive_message_number, previous_receive_message_number
 end
 functions.alice_receive = alice_receive
 
@@ -125,6 +127,8 @@ function bob_receive(number)
 
 	print(receive_message_number, previous_receive_message_number)
 	print(message)
+
+	return message, receive_message_number, previous_receive_message_number
 end
 functions.bob_receive = bob_receive
 
@@ -224,14 +228,18 @@ function errors_on()
 
 	for name,func in pairs(functions) do
 		_G[name] = function (...)
-			local status, error_message = xpcall(func, function (error_message)
+			local return_values = {xpcall(func, function (error_message)
 				print(error_message)
 				print(debug.traceback())
 			end,
-			...)
+			...)}
+
+			local status = table.remove(return_values, 1)
 			if not status then
 				os.exit(status)
 			end
+
+			return table.unpack(return_values)
 		end
 	end
 end
