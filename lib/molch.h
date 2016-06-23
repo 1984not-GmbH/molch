@@ -283,4 +283,12 @@ return_status molch_get_prekey_list(
 		unsigned char * const public_signing_key,
 		unsigned char ** const prekey_list,  //output, free after use
 		size_t * const prekey_list_length) __attribute__((warn_unused_result));
+
+/*
+ * Generate and return a new key for encrypting the exported library state.
+ *
+ * Don't forget to destroy the return status with molch_destroy_return_status()
+ * if an error has occured.
+ */
+return_status molch_update_backup_key(unsigned char * const new_key /*output with length of BACKUP_KEY_SIZE */) __attribute__((warn_unused_result));
 #endif

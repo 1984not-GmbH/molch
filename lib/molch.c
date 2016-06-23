@@ -36,6 +36,7 @@
 
 //global user store
 static user_store *users = NULL;
+static buffer_t *backup_key = NULL;
 
 /*
  * Create a prekey list.
@@ -1255,5 +1256,54 @@ return_status molch_get_prekey_list(
 	throw_on_error(CREATION_ERROR, "Failed to create prekey list.");
 
 cleanup:
+	return status;
+}
+
+/*
+ * Generate and return a new key for encrypting the exported library state.
+ *
+ * Don't forget to destroy the return status with molch_destroy_return_status()
+ * if an error has occured.
+ */
+return_status molch_update_backup_key(unsigned char * const new_key /*output with length of BACKUP_KEY_SIZE */) {
+	return_status status = return_status_init();
+
+	buffer_create_with_existing_array(new_key_buffer, new_key, BACKUP_KEY_SIZE);
+
+	if (new_key == NULL) {
+		throw(INVALID_INPUT, "Invalid input to molch_update_backup_key.");
+	}
+
+	// create a backup key buffer if it doesnt exist already
+	if (backup_key == NULL) {
+		backup_key = buffer_create_with_custom_allocator(BACKUP_KEY_SIZE, 0, sodium_malloc, sodium_free);
+		if (backup_key == NULL) {
+			throw(CREATION_ERROR, "Failed to create backup key buffer.");
+		}
+	}
+
+	//make backup key buffer writable
+	if (sodium_mprotect_readwrite(backup_key) != 0) {
+		throw(GENERIC_ERROR, "Failed to make backup key readwrite.");
+	}
+	//make the content of the backup key writable
+	if (sodium_mprotect_readwrite(backup_key->content) != 0) {
+		throw(GENERIC_ERROR, "Failed to make backup key content readwrite.");
+	}
+
+	if (buffer_fill_random(backup_key, BACKUP_KEY_SIZE) != 0) {
+		throw(KEYGENERATION_FAILED, "Failed to generate new backup key.");
+	}
+
+	if (buffer_clone(new_key_buffer, backup_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy new backup key.");
+	}
+
+cleanup:
+	if (backup_key != NULL) {
+		sodium_mprotect_readonly(backup_key);
+		sodium_mprotect_readonly(backup_key->content);
+	}
+
 	return status;
 }

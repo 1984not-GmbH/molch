@@ -36,6 +36,9 @@ int main(void) {
 	int status_int = 0;
 	return_status status = return_status_init();
 
+	//backup key buffer
+	buffer_t *backup_key = buffer_create_on_heap(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
+
 	//create conversation buffers
 	buffer_t *alice_conversation = buffer_create_on_heap(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 	buffer_t *bob_conversation = buffer_create_on_heap(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
@@ -105,6 +108,14 @@ int main(void) {
 	if (molch_user_count() != 1) {
 		throw(INVALID_VALUE, "Wrong user count.");
 	}
+
+	//create a new backup key
+	status = molch_update_backup_key(backup_key->content);
+	throw_on_error(KEYGENERATION_FAILED, "Failed to update the backup key.");
+
+	printf("Updated backup key:\n");
+	print_hex(backup_key);
+	putchar('\n');
 
 	//create another user
 	buffer_create_from_string(bob_head_on_keyboard, "jnu8h77z6ht56ftgnujh");
@@ -383,6 +394,7 @@ cleanup:
 	buffer_destroy_from_heap(bob_conversation);
 	buffer_destroy_from_heap(alice_public_identity);
 	buffer_destroy_from_heap(bob_public_identity);
+	buffer_destroy_from_heap(backup_key);
 
 	if (status.status != SUCCESS) {
 		print_errors(&status);
