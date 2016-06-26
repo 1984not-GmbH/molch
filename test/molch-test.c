@@ -38,6 +38,7 @@ int main(void) {
 
 	//backup key buffer
 	buffer_t *backup_key = buffer_create_on_heap(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
+	buffer_t *new_backup_key = buffer_create_on_heap(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
 
 	//create conversation buffers
 	buffer_t *alice_conversation = buffer_create_on_heap(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
@@ -63,15 +64,17 @@ int main(void) {
 
 	unsigned char *printed_status = NULL;
 
-	// JSON for empty library
-	buffer_create_from_string(empty_array, "[]");
-	size_t empty_json_length;
-	unsigned char *empty_json = NULL;
-	status = molch_json_export(&empty_json, &empty_json_length);
-	throw_on_error(EXPORT_ERROR, "Failed to export to JSON.");
-	printf("%.*s\n", (int)empty_json_length, (char*)empty_json);
-	if (buffer_compare_to_raw(empty_array, empty_json, empty_json_length) != 0) {
-		throw(INCORRECT_DATA, "Incorrect JSON output when there is no user.");
+	status = molch_update_backup_key(backup_key->content);
+	throw_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
+
+	//backup for empty library
+	size_t empty_backup_length;
+	unsigned char *empty_backup= NULL;
+	status = molch_export(&empty_backup, &empty_backup_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export empty library.");
+	free(empty_backup);
+	if (empty_backup_length != (sizeof("[]") + BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES)) {
+		throw(INCORRECT_DATA, "Incorrect output length when there is no user.");
 	}
 
 	//check user count
@@ -82,26 +85,25 @@ int main(void) {
 
 	//create a new user
 	buffer_create_from_string(alice_head_on_keyboard, "mn ujkhuzn7b7bzh6ujg7j8hn");
-	unsigned char *complete_json_export = NULL;
-	size_t complete_json_export_length = 0;
+	unsigned char *complete_export = NULL;
+	size_t complete_export_length = 0;
 	status = molch_create_user(
 			alice_public_identity->content,
 			&alice_public_prekeys,
 			&alice_public_prekeys_length,
 			alice_head_on_keyboard->content,
 			alice_head_on_keyboard->content_length,
-			&complete_json_export,
-			&complete_json_export_length);
+			&complete_export,
+			&complete_export_length);
 	throw_on_error(status.status, "Failed to create Alice!");
 
 	printf("Alice public identity (%zu Bytes):\n", alice_public_identity->content_length);
 	print_hex(alice_public_identity);
 	putchar('\n');
-	if (complete_json_export == NULL) {
+	if (complete_export == NULL) {
 		throw(EXPORT_ERROR, "Failed to export the librarys state as JSON after creating alice.");
 	}
-	printf("%.*s\n", (int)complete_json_export_length, (char*)complete_json_export);
-	sodium_free(complete_json_export);
+	free(complete_export);
 
 
 	//check user count
@@ -286,71 +288,103 @@ int main(void) {
 	}
 	free(alice_receive_message);
 
-	//test JSON export
-	printf("Test JSON export:\n");
-	size_t json_length;
-	unsigned char *json = NULL;
-	status = molch_json_export(&json, &json_length);
-	throw_on_error(EXPORT_ERROR, "Failed to export to JSON.");
+	//test export
+	printf("Test export!\n");
+	size_t backup_length;
+	unsigned char *backup = NULL;
+	status = molch_export(&backup, &backup_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export.");
 
-	printf("%.*s\n", (int)json_length, json);
-
-	//test JSON import
-	printf("Test JSON import:\n");
-	status = molch_json_import(json, json_length);
+	//test import
+	printf("Test import!\n");
+	status = molch_import(backup, backup_length, backup_key->content, new_backup_key->content);
 	on_error(
-		sodium_free(json);
-		throw(IMPORT_ERROR, "Failed to import JSON.");
+		free(backup);
+		throw(IMPORT_ERROR, "Failed to import backup.");
 	)
+
+	//decrypt the first export (for comparison later on)
+	status_int = crypto_secretbox_open_easy(
+			backup,
+			backup,
+			backup_length - BACKUP_NONCE_SIZE,
+			backup + backup_length - BACKUP_NONCE_SIZE,
+			backup_key->content);
+	if (status_int != 0) {
+		throw(DECRYPT_ERROR, "Failed to decrypt the backup.")
+	}
+	backup_length -= BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES;
+
+	//compare the keys
+	if (buffer_compare(backup_key, new_backup_key) == 0) {
+		throw(INCORRECT_DATA, "New backup key expected.");
+	}
+
+	//copy the backup key
+	if (buffer_clone(backup_key, new_backup_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy backup key.");
+	}
 
 	//now export again
-	size_t imported_json_length;
-	unsigned char *imported_json = NULL;
-	status = molch_json_export(&imported_json, &imported_json_length);
+	size_t imported_backup_length;
+	unsigned char *imported_backup = NULL;
+	status = molch_export(&imported_backup, &imported_backup_length);
 	on_error(
-		sodium_free(json);
-		throw(EXPORT_ERROR, "Failed to export imported JSON.");
+		free(backup);
+		throw(EXPORT_ERROR, "Failed to export imported backup.");
 	)
 
-	//compare
-	if ((json_length != imported_json_length) || (sodium_memcmp(json, imported_json, json_length) != 0)) {
-		sodium_free(json);
-		sodium_free(imported_json);
-		throw(IMPORT_ERROR, "Imported JSON is incorrect.");
+	//decrypt the secondt export (for comparison later on)
+	status_int = crypto_secretbox_open_easy(
+			imported_backup,
+			imported_backup,
+			imported_backup_length - BACKUP_NONCE_SIZE,
+			imported_backup + imported_backup_length - BACKUP_NONCE_SIZE,
+			backup_key->content);
+	if (status_int != 0) {
+		throw(DECRYPT_ERROR, "Failed to decrypt the backup.")
 	}
-	sodium_free(json);
-	sodium_free(imported_json);
+	imported_backup_length -= BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES;
+
+	//compare
+	if ((backup_length != imported_backup_length) || (sodium_memcmp(backup, imported_backup, backup_length) != 0)) {
+		free(backup);
+		free(imported_backup);
+		throw(IMPORT_ERROR, "Imported backup is incorrect.");
+	}
+	free(backup);
+	free(imported_backup);
 
 	//test conversation JSON export
-	status = molch_conversation_json_export(&json, alice_conversation->content, &json_length);
+	status = molch_conversation_json_export(&backup, alice_conversation->content, &backup_length);
 	throw_on_error(EXPORT_ERROR, "Failed to export Alice' conversation as JSON.");
 
 	printf("Alice' conversation exported to JSON:\n");
-	printf("%.*s\n", (int)json_length, (char*)json);
+	printf("%.*s\n", (int)backup_length, (char*)backup);
 
 	//import again
-	status = molch_conversation_json_import(json, json_length);
+	status = molch_conversation_json_import(backup, backup_length);
 	on_error(
-		sodium_free(json);
+		sodium_free(backup);
 		throw(IMPORT_ERROR, "Failed to import Alice' conversation from JSON.");
 	)
 
 	//export again
-	status = molch_conversation_json_export(&imported_json, alice_conversation->content, &imported_json_length);
+	status = molch_conversation_json_export(&imported_backup, alice_conversation->content, &imported_backup_length);
 	on_error(
-		sodium_free(json);
+		sodium_free(backup);
 		throw(EXPORT_ERROR, "Failed to export Alice imported conversation as JSON.");
 	)
 
 	//compare
-	if ((json_length != imported_json_length) || (sodium_memcmp(json, imported_json, json_length) != 0)) {
-		sodium_free(json);
-		sodium_free(imported_json);
+	if ((backup_length != imported_backup_length) || (sodium_memcmp(backup, imported_backup, backup_length) != 0)) {
+		sodium_free(backup);
+		sodium_free(imported_backup);
 		throw(IMPORT_ERROR, "JSON of imported conversation is incorrect.");
 	}
 
-	sodium_free(imported_json);
-	sodium_free(json);
+	sodium_free(imported_backup);
+	sodium_free(backup);
 
 	//destroy the conversations
 	molch_end_conversation(alice_conversation->content, NULL, NULL);
@@ -395,6 +429,7 @@ cleanup:
 	buffer_destroy_from_heap(alice_public_identity);
 	buffer_destroy_from_heap(bob_public_identity);
 	buffer_destroy_from_heap(backup_key);
+	buffer_destroy_from_heap(new_backup_key);
 
 	if (status.status != SUCCESS) {
 		print_errors(&status);

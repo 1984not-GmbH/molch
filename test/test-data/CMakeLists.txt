@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
 
-set(test-files molch-init.json)
+set(test-files molch-init.backup molch-init-backup.key)
 
 # copy all test files to the test binary dir
 foreach(test-file ${test-files})
