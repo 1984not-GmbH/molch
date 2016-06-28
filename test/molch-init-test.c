@@ -73,6 +73,7 @@ int main(void) {
 			&prekey_list_length,
 			(unsigned char*)"random",
 			sizeof("random"),
+			backup_key,
 			&backup,
 			&backup_length);
 	throw_on_error(CREATION_ERROR, "Failed to create user.");

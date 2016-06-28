@@ -82,7 +82,6 @@ int main(void) {
 		throw(INVALID_VALUE, "Wrong user count.");
 	}
 
-
 	//create a new user
 	buffer_create_from_string(alice_head_on_keyboard, "mn ujkhuzn7b7bzh6ujg7j8hn");
 	unsigned char *complete_export = NULL;
@@ -93,9 +92,18 @@ int main(void) {
 			&alice_public_prekeys_length,
 			alice_head_on_keyboard->content,
 			alice_head_on_keyboard->content_length,
+			new_backup_key->content,
 			&complete_export,
 			&complete_export_length);
 	throw_on_error(status.status, "Failed to create Alice!");
+
+	if (buffer_compare(backup_key, new_backup_key) == 0) {
+		throw(INCORRECT_DATA, "New backup key is the same as the old one.");
+	}
+
+	if (buffer_clone(backup_key, new_backup_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy backup key.");
+	}
 
 	printf("Alice public identity (%zu Bytes):\n", alice_public_identity->content_length);
 	print_hex(alice_public_identity);
@@ -127,6 +135,7 @@ int main(void) {
 			&bob_public_prekeys_length,
 			bob_head_on_keyboard->content,
 			bob_head_on_keyboard->content_length,
+			backup_key->content,
 			NULL,
 			NULL);
 	throw_on_error(status.status, "Failed to create Bob!");

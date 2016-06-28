@@ -117,12 +117,12 @@ cleanup:
 }
 
 /*
- * Create a new user. The user is identified by the public key.
+ * Create a new user. The user is identified by the public master key.
  *
  * Get's random input (can be in any format and doesn't have
  * to be uniformly distributed) and uses it in combination
  * with the OS's random number generator to generate a
- * identity keypair for the user.
+ * signing and identity keypair for the user.
  *
  * IMPORTANT: Don't put random numbers provided by the operating
  * system in there.
@@ -130,7 +130,9 @@ cleanup:
  * This also creates a signed list of prekeys to be uploaded to
  * the server.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
+ * A new backup key is generated that subsequent backups of the library state will be encrypted with.
+ *
+ * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
 return_status molch_create_user(
@@ -139,6 +141,7 @@ return_status molch_create_user(
 		size_t *const prekey_list_length,
 		const unsigned char *const random_data,
 		const size_t random_data_length,
+		unsigned char * backup_key, //output, BACKUP_KEY_SIZE
 		unsigned char **const backup, //optional, can be NULL, exports the entire library state, free after use, check if NULL before use!
 		size_t *const backup_length //optional, can be NULL
 ) {
@@ -157,6 +160,10 @@ return_status molch_create_user(
 		status = user_store_create(&users);
 		throw_on_error(CREATION_ERROR, "Failed to create user store.")
 	}
+
+	//create a new backup key
+	status = molch_update_backup_key(backup_key);
+	throw_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
 
 	//create the user
 	status = user_store_create_user(
