@@ -256,8 +256,7 @@ int main(void) {
 	if (conversation_json_export == NULL) {
 		throw(EXPORT_ERROR, "Failed to export the conversation after encrypting a message.");
 	}
-	printf("%.*s\n", (int)conversation_json_export_length, (char*)conversation_json_export);
-	sodium_free(conversation_json_export);
+	free(conversation_json_export);
 
 	//check the message type
 	if (molch_get_message_type(bob_send_packet, bob_send_packet_length) != NORMAL_MESSAGE) {
@@ -364,36 +363,65 @@ int main(void) {
 	free(backup);
 	free(imported_backup);
 
-	//test conversation JSON export
-	status = molch_conversation_json_export(&backup, alice_conversation->content, &backup_length);
-	throw_on_error(EXPORT_ERROR, "Failed to export Alice' conversation as JSON.");
+	//test conversation export
+	status = molch_conversation_export(&backup, alice_conversation->content, &backup_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export Alice' conversation.");
 
-	printf("Alice' conversation exported to JSON:\n");
-	printf("%.*s\n", (int)backup_length, (char*)backup);
+	printf("Alice' conversation exported!");
 
 	//import again
-	status = molch_conversation_json_import(backup, backup_length);
+	status = molch_conversation_import(backup, backup_length, backup_key->content, new_backup_key->content);
 	on_error(
-		sodium_free(backup);
-		throw(IMPORT_ERROR, "Failed to import Alice' conversation from JSON.");
+		free(backup);
+		throw(IMPORT_ERROR, "Failed to import Alice' conversation from backup.");
 	)
 
+	//decrypt the backup
+	status_int = crypto_secretbox_open_easy(
+			backup,
+			backup,
+			backup_length - BACKUP_NONCE_SIZE,
+			backup + backup_length - BACKUP_NONCE_SIZE,
+			backup_key->content);
+	if (status_int != 0) {
+		throw(DECRYPT_ERROR, "Failed to decrypt the backup.")
+	}
+	backup_length -= BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES;
+
+	//copy the backup key
+	if (buffer_clone(backup_key, new_backup_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy backup key.");
+	}
+
+
 	//export again
-	status = molch_conversation_json_export(&imported_backup, alice_conversation->content, &imported_backup_length);
+	status = molch_conversation_export(&imported_backup, alice_conversation->content, &imported_backup_length);
 	on_error(
-		sodium_free(backup);
-		throw(EXPORT_ERROR, "Failed to export Alice imported conversation as JSON.");
+		free(backup);
+		throw(EXPORT_ERROR, "Failed to export Alice imported conversation.");
 	)
+
+	//decrypt the first export (for comparison later on)
+	status_int = crypto_secretbox_open_easy(
+			imported_backup,
+			imported_backup,
+			imported_backup_length - BACKUP_NONCE_SIZE,
+			imported_backup + imported_backup_length - BACKUP_NONCE_SIZE,
+			backup_key->content);
+	if (status_int != 0) {
+		throw(DECRYPT_ERROR, "Failed to decrypt the backup.")
+	}
+	imported_backup_length -= BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES;
 
 	//compare
 	if ((backup_length != imported_backup_length) || (sodium_memcmp(backup, imported_backup, backup_length) != 0)) {
-		sodium_free(backup);
-		sodium_free(imported_backup);
+		free(backup);
+		free(imported_backup);
 		throw(IMPORT_ERROR, "JSON of imported conversation is incorrect.");
 	}
 
-	sodium_free(imported_backup);
-	sodium_free(backup);
+	free(imported_backup);
+	free(backup);
 
 	//destroy the conversations
 	molch_end_conversation(alice_conversation->content, NULL, NULL);

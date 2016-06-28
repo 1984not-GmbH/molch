@@ -167,8 +167,8 @@ return_status molch_encrypt_message(
 		const unsigned char * const message,
 		const size_t message_length,
 		const unsigned char * const conversation_id,
-		unsigned char ** const json_export_conversation, //optional, can be NULL, exports the conversation as json, free with sodium_free, check if NULL before use!
-		size_t * const json_export_conversation_length
+		unsigned char ** const backup, //optional, can be NULL, exports the conversationn, free after use, check if NULL before use!
+		size_t * const backup_length
 		) __attribute__((warn_unused_result));
 
 /*
@@ -185,8 +185,8 @@ return_status molch_decrypt_message(
 		const unsigned char * const conversation_id,
 		uint32_t * const receive_message_number, //output
 		uint32_t * const previous_receive_message_number, //output
-		unsigned char ** const json_export_conversation, //optional, can be NULL, exports the conversation as json, free with sodium_free, check if NULL before use!
-		size_t * const json_export_conversation_length
+		unsigned char ** const backup, //optional, can be NULL, exports the conversation, free after use, check if NULL before use!
+		size_t * const backup_length
 		) __attribute__((warn_unused_result));
 
 /*
@@ -236,15 +236,15 @@ const char *molch_print_status_type(status_type type);
 void molch_destroy_return_status(return_status * const status);
 
 /*
- * Serialize a conversation into JSON.
+ * Serialize a conversation.
  *
- * Use sodium_free to free json after use.
+ * Don't forget to free the output after use.
  *
  * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
-return_status molch_conversation_json_export(
-		unsigned char ** const json,
+return_status molch_conversation_export(
+		unsigned char ** const backup,
 		const unsigned char * const conversation_id,
 		size_t * const length) __attribute__((warn_unused_result));
 
@@ -261,12 +261,17 @@ return_status molch_export(
 		size_t *length) __attribute__((warn_unused_result));
 
 /*
- * Import a conversation from JSON (overwrites the current one if it exists).
+ * Import a conversation from a backup (overwrites the current one if it exists).
  *
  * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
-return_status molch_conversation_json_import(const unsigned char * const json, const size_t length) __attribute__((warn_unused_result));
+return_status molch_conversation_import(
+		const unsigned char * const backup,
+		const size_t backup_length,
+		const unsigned char * backup_key, //BACKUP_KEY_SIZE
+		unsigned char * new_backup_key //output, BACKUP_KEY_SIZE, can be the same pointer as the backup key
+		) __attribute__((warn_unused_result));
 
 /*
  * Import molch's internal state from a backup (overwrites the current state)
@@ -281,7 +286,7 @@ return_status molch_import(
 		unsigned char * const backup,
 		const size_t backup_length,
 		const unsigned char * const backup_key, //BACKUP_KEY_SIZE
-		unsigned char * const new_backup_key //BACKUP_KEY_SIZE, can be the same pointer as the backup key
+		unsigned char * const new_backup_key //output, BACKUP_KEY_SIZE, can be the same pointer as the backup key
 		) __attribute__((warn_unused_result));
 
 /*

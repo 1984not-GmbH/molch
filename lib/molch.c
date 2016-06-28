@@ -43,6 +43,11 @@ return_status molch_json_import(const unsigned char* const json, const size_t le
 return_status molch_json_export(
 		unsigned char ** const json,
 		size_t *length) __attribute__((warn_unused_result));
+return_status molch_conversation_json_export(
+		unsigned char ** const json,
+		const unsigned char * const conversation_id,
+		size_t * const length) __attribute__((warn_unused_result));
+return_status molch_conversation_json_import(const unsigned char * const json, const size_t length) __attribute__((warn_unused_result));
 
 /*
  * Create a prekey list.
@@ -685,8 +690,8 @@ return_status molch_encrypt_message(
 		const unsigned char * const message,
 		const size_t message_length,
 		const unsigned char * const conversation_id,
-		unsigned char ** const json_export_conversation, //optional, can be NULL, exports the conversation as json, free with sodium_free, check if NULL before use!
-		size_t * const json_export_conversation_length //optional, can be NULL
+		unsigned char ** const backup, //optional, can be NULL, exports the conversation, free after use, check if NULL before use!
+		size_t * const backup_length //optional, can be NULL
 		) {
 
 	//create buffer for message array
@@ -716,11 +721,11 @@ return_status molch_encrypt_message(
 	*packet = packet_buffer->content;
 	*packet_length = packet_buffer->content_length;
 
-	if (json_export_conversation != NULL) {
-		if (json_export_conversation_length == 0) {
-			*json_export_conversation = NULL;
+	if (backup != NULL) {
+		if (backup_length == 0) {
+			*backup = NULL;
 		} else {
-			status = molch_conversation_json_export(json_export_conversation, conversation->id->content, json_export_conversation_length);
+			status = molch_conversation_export(backup, conversation->id->content, backup_length);
 			throw_on_error(EXPORT_ERROR, "Failed to export conversation as JSON.");
 		}
 	}
@@ -753,8 +758,8 @@ return_status molch_decrypt_message(
 		const unsigned char * const conversation_id,
 		uint32_t * const receive_message_number, //output
 		uint32_t * const previous_receive_message_number, //output
-		unsigned char ** const json_export_conversation, //optional, can be NULL, exports the conversation as json, free with sodium_free, check if NULL before use!
-		size_t * const json_export_conversation_length //optional, can be NULL
+		unsigned char ** const backup, //optional, can be NULL, exports the conversation, free after use, check if NULL before use!
+		size_t * const backup_length //optional, can be NULL
 	) {
 	//create buffer for the packet
 	buffer_create_with_existing_array(packet_buffer, (unsigned char*)packet, packet_length);
@@ -782,11 +787,11 @@ return_status molch_decrypt_message(
 	*message = message_buffer->content;
 	*message_length = message_buffer->content_length;
 
-	if (json_export_conversation != NULL) {
-		if (json_export_conversation_length == 0) {
-			*json_export_conversation = NULL;
+	if (backup != NULL) {
+		if (backup_length == 0) {
+			*backup = NULL;
 		} else {
-			status = molch_conversation_json_export(json_export_conversation, conversation->id->content, json_export_conversation_length);
+			status = molch_conversation_export(backup, conversation->id->content, backup_length);
 			throw_on_error(EXPORT_ERROR, "Failed to export conversation as JSON.");
 		}
 	}
@@ -1017,6 +1022,90 @@ cleanup:
 }
 
 /*
+ * Serialize a conversation.
+ *
+ * Don't forget to free the output after use.
+ *
+ * Don't forget to destroy the return status with molch_destroy_return_status()
+ * if an error has occurred.
+ */
+return_status molch_conversation_export(
+		unsigned char ** const backup,
+		const unsigned char * const conversation_id,
+		size_t * const length) {
+	//FIXME: Less duplication
+	return_status status = return_status_init();
+
+	unsigned char *json = NULL;
+	size_t json_length = 0;
+
+	//buffers
+	buffer_t *backup_buffer = NULL;
+	buffer_t *backup_nonce = buffer_create_on_heap(BACKUP_NONCE_SIZE, 0);
+
+	if ((backup == NULL) || (length == NULL) || (conversation_id == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to molch_conversation_export.");
+	}
+
+	if ((backup_key == NULL) || (backup_key->content_length == 0)) {
+		throw(INCORRECT_DATA, "No backup key found.");
+	}
+
+	status = molch_conversation_json_export(&json, conversation_id, &json_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export conversation to JSON.");
+
+	backup_buffer = buffer_create_on_heap(json_length + BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES, json_length + BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES);
+	if (backup_buffer == NULL) {
+		throw(ALLOCATION_FAILED, "Failed to create backup buffer.");
+	}
+
+	//generate the nonce
+	if (buffer_fill_random(backup_nonce, BACKUP_NONCE_SIZE) != 0) {
+		throw(GENERIC_ERROR, "Failed to generate backup nonce.");
+	}
+
+	//encrypt the JSON
+	int status_int = crypto_secretbox_easy(
+			backup_buffer->content,
+			json,
+			json_length,
+			backup_nonce->content,
+			backup_key->content);
+	if (status_int != 0) {
+		throw(ENCRYPT_ERROR, "Failed to encrypt library state.");
+	}
+
+	//copy the nonce at the end of the output
+	status_int = buffer_copy_to_raw(
+			backup_buffer->content,
+			json_length + crypto_secretbox_MACBYTES,
+			backup_nonce,
+			0,
+			BACKUP_NONCE_SIZE);
+	if (status_int != 0) {
+		throw(BUFFER_ERROR, "Failed to copy nonce to backup.");
+	}
+
+	*backup = backup_buffer->content;
+	*length = backup_buffer->content_length;
+
+	free(backup_buffer);
+
+cleanup:
+	on_error(
+		if (backup_buffer != NULL) {
+			buffer_destroy_from_heap(backup_buffer);
+		}
+	);
+
+	buffer_destroy_from_heap(backup_nonce);
+	if (json != NULL) {
+		sodium_free(json);
+	}
+
+	return status;
+}
+/*
  * Import a conversation from JSON (overwrites the current one if it exists).
  *
  * Don't forget to destroy the return status with return_status_destroy_errors()
@@ -1108,9 +1197,64 @@ cleanup:
 }
 
 /*
+ * Import a conversation from a backup (overwrites the current one if it exists).
+ *
+ * Don't forget to destroy the return status with molch_destroy_return_status()
+ * if an error has occurred.
+ */
+return_status molch_conversation_import(
+		const unsigned char * const backup,
+		const size_t backup_length,
+		const unsigned char * local_backup_key, //BACKUP_KEY_SIZE
+		unsigned char * new_backup_key) { //output, BACKUP_KEY_SIZE, can be the same pointer as the backup key
+	return_status status = return_status_init();
+
+	buffer_t *json = buffer_create_with_custom_allocator(backup_length, 0, sodium_malloc, sodium_free);
+
+	//check input
+	if ((backup == NULL) || (local_backup_key == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to molch_import.");
+	}
+
+
+	//check the lengths
+	if (backup_length < BACKUP_NONCE_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "Backup is too short.");
+	}
+
+	size_t json_length = backup_length - BACKUP_NONCE_SIZE - crypto_secretbox_MACBYTES;
+
+	//decrypt the backup
+	int status_int = crypto_secretbox_open_easy(
+			json->content,
+			backup,
+			backup_length - BACKUP_NONCE_SIZE,
+			backup + backup_length - BACKUP_NONCE_SIZE,
+			local_backup_key);
+	if (status_int != 0) {
+		throw(DECRYPT_ERROR, "Failed to decrypt backup.");
+	}
+
+	json->content_length = json_length;
+
+	status = molch_update_backup_key(new_backup_key);
+	throw_on_error(KEYGENERATION_FAILED, "Faild to generate a new backup key.");
+
+	status = molch_conversation_json_import(
+			json->content,
+			json->content_length);
+	throw_on_error(IMPORT_ERROR, "Failed to import conversation from decrypted JSON.");
+
+cleanup:
+	buffer_destroy_with_custom_deallocator(json, sodium_free);
+
+	return status;
+}
+
+/*
  * Serialise molch's state into JSON.
  *
- * Use sodium_free to free json after use.
+ * Don't forget to free after use.
  *
  * Don't forget to destroy the return status with return_status_destroy_errors()
  * if an error has occurred.
@@ -1339,7 +1483,7 @@ return_status molch_import(
 		unsigned char * const backup,
 		const size_t backup_length,
 		const unsigned char * const local_backup_key, //BACKUP_KEY_SIZE
-		unsigned char * const new_backup_key //BACKUP_KEY_SIZE, can be the same pointer as the backup key
+		unsigned char * const new_backup_key //output, BACKUP_KEY_SIZE, can be the same pointer as the backup key
 		) {
 	return_status status = return_status_init();
 
