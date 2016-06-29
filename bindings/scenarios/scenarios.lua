@@ -14,7 +14,7 @@ local bob_sent = {}
 local alice_conversation = nil
 local bob_conversation = nil
 
-local json = nil
+local backup = nil
 
 local functions = {}
 
@@ -184,23 +184,23 @@ function bob_messages()
 end
 functions.bob_messages = bob_messages
 
-function json_export()
+function export()
 	if echo then
-		print("> json_export()")
+		print("> export()")
 	end
 
-	json = molch.json_export()
+	backup = molch.export()
 end
-functions.json_export = json_export
+functions.export = export
 
-function json_import()
+function import()
 	if echo then
-		print("> json_import()")
+		print("> import()")
 	end
 
-	molch.json_import(json)
+	molch.import(backup)
 end
-functions.json_import = json_import
+functions.import = import
 
 function restart()
 	if echo then
@@ -210,9 +210,9 @@ function restart()
 	local alice_id = alice.id
 	local bob_id = bob.id
 
-	json = molch.json_export()
+	backup = molch.export()
 	molch.destroy_all_users()
-	molch.json_import(json)
+	molch.import(backup)
 
 	alice = molch.users[alice_id]
 	alice_conversation = alice.conversations[alice.conversations[1]]

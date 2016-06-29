@@ -79,14 +79,15 @@ extern return_status molch_create_user(
 		size_t *const prekey_list_length,
 		const unsigned char *const random_data,
 		const size_t random_data_length,
-		unsigned char **const json_export,
-		size_t *const json_export_length
+		unsigned char * backup_key,
+		unsigned char **const backup,
+		size_t *const backup_length
 	);
 
 extern return_status molch_destroy_user(
 		const unsigned char *const public_signing_key,
-		unsigned char **const json_export,
-		size_t *const json_export_length
+		unsigned char **const backup,
+		size_t *const backup_length
 );
 
 extern size_t molch_user_count();
@@ -111,8 +112,8 @@ extern return_status molch_create_send_conversation(
 		const size_t prekey_list_length,
 		const unsigned char * const sender_public_signing_key,
 		const unsigned char * const receiver_public_signing_key,
-		unsigned char ** const json_export,
-		size_t * const json_export_length
+		unsigned char ** const backup,
+		size_t * const backup_length
 		);
 
 extern return_status molch_create_receive_conversation(
@@ -125,8 +126,8 @@ extern return_status molch_create_receive_conversation(
 		size_t * const prekey_list_length,
 		const unsigned char * const sender_public_signing_key,
 		const unsigned char * const receiver_public_signing_key,
-		unsigned char ** const json_export,
-		size_t * const json_export_length
+		unsigned char ** const backup,
+		size_t * const backup_length
 		);
 
 extern return_status molch_encrypt_message(
@@ -135,8 +136,8 @@ extern return_status molch_encrypt_message(
 		const unsigned char * const message,
 		const size_t message_length,
 		const unsigned char * const conversation_id,
-		unsigned char ** const json_export_conversation,
-		size_t * const json_export_conversation_length
+		unsigned char ** const backup,
+		size_t * const backup_length
 		);
 
 extern return_status molch_decrypt_message(
@@ -147,14 +148,14 @@ extern return_status molch_decrypt_message(
 		const unsigned char * const conversation_id,
 		uint32_t * const receive_message_number,
 		uint32_t * const previous_receive_message_number,
-		unsigned char ** const json_export_conversation,
-		size_t * const json_export_conversation_length
+		unsigned char ** const backup,
+		size_t * const backup_length
 		);
 
 extern void molch_end_conversation(
 		const unsigned char * const conversation_id,
-		unsigned char ** const json_export,
-		size_t * const json_export_length
+		unsigned char ** const backup,
+		size_t * const backup_length
 		);
 
 extern return_status molch_list_conversations(
@@ -168,20 +169,28 @@ extern const char *molch_print_status_type(status_type type);
 
 extern void molch_destroy_return_status(return_status * const status);
 
-extern return_status molch_conversation_json_export(
-		unsigned char ** const json,
+extern return_status molch_conversation_export(
+		unsigned char ** const backup,
 		const unsigned char * const conversation_id,
 		size_t * const length);
 
-extern return_status molch_json_export(
-		unsigned char ** const json,
-		size_t *length);
+extern return_status molch_export(unsigned char ** const backup, size_t *length);
 
-extern return_status molch_conversation_json_import(const unsigned char * const json, const size_t length);
+extern return_status molch_conversation_import(
+		const unsigned char * const backup,
+		const size_t backup_length,
+		const unsigned char * backup_key,
+		unsigned char * new_backup_key);
 
-extern return_status molch_json_import(const unsigned char* const json, const size_t length);
+return_status molch_import(
+		unsigned char * const backup,
+		const size_t backup_length,
+		const unsigned char * const backup_key,
+		unsigned char * const new_backup_key);
 
 extern return_status molch_get_prekey_list(
 		unsigned char * const public_signing_key,
 		unsigned char ** const prekey_list,
 		size_t * const prekey_list_length);
+
+extern return_status molch_update_backup_key(unsigned char * const new_key);

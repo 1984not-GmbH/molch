@@ -1,6 +1,6 @@
 option(GENERATE_LUA_BINDINGS "Enable the Lua binding for testing purposes" ON)
 
-if(GENERATE_LUA_BINDINGS AND (NOT APPLE) AND FALSE)
+if(GENERATE_LUA_BINDINGS AND (NOT APPLE))
     find_package(SWIG)
     if(SWIG_FOUND)
         include(${SWIG_USE_FILE})
