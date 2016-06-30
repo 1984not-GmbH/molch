@@ -256,7 +256,7 @@ size_t molch_user_count() {
  */
 void molch_destroy_all_users() {
 	if (users != NULL) {
-		user_store_clear(users);
+		user_store_destroy(users);
 	}
 
 	users = NULL;
