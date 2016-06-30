@@ -227,7 +227,7 @@ function molch.user_list()
 end
 molch.user.list = molch.user_list
 
-function molch.json_export()
+function molch:json_export()
 	local json_length = molch_interface.size_t()
 
 	local json
