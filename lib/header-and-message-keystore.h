@@ -39,7 +39,7 @@ struct header_and_message_keystore_node {
 	unsigned char message_key_storage[MESSAGE_KEY_SIZE];
 	buffer_t header_key[1];
 	unsigned char header_key_storage[HEADER_KEY_SIZE];
-	time_t timestamp;
+	time_t expiration_date;
 };
 
 //header of the key store

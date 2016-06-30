@@ -22,6 +22,8 @@
 #include "constants.h"
 #include "header-and-message-keystore.h"
 
+static const time_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
+
 //create new keystore
 void header_and_message_keystore_init(header_and_message_keystore * const keystore) {
 	keystore->length = 0;
@@ -90,8 +92,8 @@ return_status header_and_message_keystore_add(
 	}
 
 	int status_int = 0;
-	//set keys and timestamp
-	new_node->timestamp = time(NULL);
+	//set keys and expiration date
+	new_node->expiration_date = time(NULL) + EXPIRATION_TIME;
 	status_int = buffer_clone(new_node->message_key, message_key);
 	if (status_int != 0) {
 		sodium_free(new_node);
@@ -146,13 +148,13 @@ mcJSON *header_and_message_keystore_node_json_export(header_and_message_keystore
 		return NULL;
 	}
 
-	//add timestamp
-	mcJSON *timestamp = mcJSON_CreateNumber((double)node->timestamp, pool);
-	if (timestamp == NULL) {
+	//add expiration_date
+	mcJSON *expiration_date = mcJSON_CreateNumber((double)node->expiration_date, pool);
+	if (expiration_date == NULL) {
 		return NULL;
 	}
-	buffer_create_from_string(timestamp_string, "timestamp");
-	mcJSON_AddItemToObject(json, timestamp_string, timestamp, pool);
+	buffer_create_from_string(expiration_date_string, "expiration_date");
+	mcJSON_AddItemToObject(json, expiration_date_string, expiration_date, pool);
 
 	//add message key
 	mcJSON *message_key_hex = mcJSON_CreateHexString(node->message_key, pool);
@@ -227,13 +229,13 @@ int header_and_message_keystore_json_import(
 		mcJSON *message_key = mcJSON_GetObjectItem(key, message_key_string);
 		buffer_create_from_string(header_key_string, "header_key");
 		mcJSON *header_key = mcJSON_GetObjectItem(key, header_key_string);
-		buffer_create_from_string(timestamp_string, "timestamp");
-		mcJSON *timestamp = mcJSON_GetObjectItem(key, timestamp_string);
+		buffer_create_from_string(expiration_date_string, "expiration_date");
+		mcJSON *expiration_date = mcJSON_GetObjectItem(key, expiration_date_string);
 
 		//check if they are valid
 		if ((message_key == NULL) || (message_key->type != mcJSON_String) || (message_key->valuestring->content_length != (2 * MESSAGE_KEY_SIZE + 1))
 				|| (header_key == NULL) || (header_key->type != mcJSON_String) || (header_key->valuestring->content_length != (2 * HEADER_KEY_SIZE + 1))
-				|| (timestamp == NULL) || (timestamp->type != mcJSON_Number)) {
+				|| (expiration_date == NULL) || (expiration_date->type != mcJSON_Number)) {
 			header_and_message_keystore_clear(keystore);
 			return -3;
 		}
@@ -260,7 +262,7 @@ int header_and_message_keystore_json_import(
 			return status;
 		}
 
-		node->timestamp = timestamp->valuedouble; //double should be large enough
+		node->expiration_date = expiration_date->valuedouble; //double should be large enough
 
 		add_node(keystore, node);
 	}
