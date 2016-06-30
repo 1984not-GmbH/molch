@@ -34,15 +34,15 @@ struct prekey_store_node {
 	unsigned char public_key_storage[PUBLIC_KEY_SIZE];
 	buffer_t private_key[1];
 	unsigned char private_key_storage[PRIVATE_KEY_SIZE];
-	time_t timestamp;
+	time_t expiration_date;
 };
 
 typedef struct prekey_store prekey_store;
 struct prekey_store {
-	time_t oldest_timestamp;
+	time_t oldest_expiration_date;
 	prekey_store_node prekeys[PREKEY_AMOUNT];
 	prekey_store_node *deprecated_prekeys;
-	time_t oldest_deprecated_timestamp;
+	time_t oldest_deprecated_expiration_date;
 };
 
 /*
