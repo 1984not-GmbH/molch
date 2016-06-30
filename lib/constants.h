@@ -39,8 +39,10 @@
 #define PUBLIC_KEY_SIZE crypto_box_PUBLICKEYBYTES
 #define PUBLIC_MASTER_KEY_SIZE crypto_sign_PUBLICKEYBYTES
 #define PRIVATE_MASTER_KEY_SIZE crypto_sign_SECRETKEYBYTES
+#define BACKUP_KEY_SIZE crypto_secretbox_KEYBYTES
 
 //nonce sizes
 #define MESSAGE_NONCE_SIZE crypto_secretbox_NONCEBYTES
 #define HEADER_NONCE_SIZE crypto_aead_chacha20poly1305_NPUBBYTES
+#define BACKUP_NONCE_SIZE crypto_secretbox_NONCEBYTES
 #endif

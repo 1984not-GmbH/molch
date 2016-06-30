@@ -1,4 +1,4 @@
-set(scenarios normal-conversation reordering invalid_message json-double-import json-restart)
+set(scenarios normal-conversation reordering invalid_message double-import restart)
 
 execute_process(COMMAND cmake -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/scenarios.lua" "${CMAKE_CURRENT_BINARY_DIR}/scenarios.lua")
 
