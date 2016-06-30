@@ -84,6 +84,54 @@ molch.user.__index = molch.user
 molch.conversation = {}
 molch.conversation.__index = molch.conversation
 
+molch.backup = {}
+molch.backup.__index = molch.backup
+
+function molch.backup.new(content, length, key)
+	local backup = {
+		content = "",
+		key = ""
+	}
+
+	setmetatable(backup, molch.backup)
+
+	if content and (key or users.attributes.last_backup_key) then
+		backup:set(content, length, key)
+	end
+
+
+	return backup
+end
+
+function molch.backup:set(content, length, key)
+	key = key or molch.users.attributes.last_backup_key
+
+	if type(content) == "string" then
+		self.content = content
+	else
+		self.content = convert_to_lua_string(content, length)
+	end
+
+	if type(key) == "string" then
+		self.key = key
+	else
+		self.key = convert_to_lua_string(key, 32)
+	end
+end
+
+function molch.backup:to_c()
+	local raw_content, content_length = convert_to_c_string(self.content)
+	local raw_key, key_length = convert_to_c_string(self.key)
+
+	return raw_content, content_length, raw_key, key_length
+end
+
+function molch.backup:copy()
+	local copy = molch.backup.new()
+	copy:set(self.content, nil, self.key)
+
+	return copy
+end
 
 function molch.user.new(random_spice --[[optional]])
 	local user = {}
