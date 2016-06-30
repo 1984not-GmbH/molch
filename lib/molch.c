@@ -92,11 +92,11 @@ return_status create_prekey_list(
 	status = prekey_store_list(user->prekeys, prekeys);
 	throw_on_error(DATA_FETCH_ERROR, "Failed to get prekeys.");
 
-	//add the timestamp
-	time_t timestamp = time(NULL);
-	buffer_create_with_existing_array(big_endian_timestamp, unsigned_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
-	status = endianness_time_to_big_endian(timestamp, big_endian_timestamp);
-	throw_on_error(CONVERSION_ERROR, "Failed to convert timestamp to big endian.");
+	//add the expiration date
+	time_t expiration_date = time(NULL) + 3600 * 24 * 31 * 3; //the prekey list will expire in 3 months
+	buffer_create_with_existing_array(big_endian_expiration_date, unsigned_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
+	status = endianness_time_to_big_endian(expiration_date, big_endian_expiration_date);
+	throw_on_error(CONVERSION_ERROR, "Failed to convert expiration date to big endian.");
 	unsigned_prekey_list->content_length = unsigned_prekey_list->buffer_length;
 
 	//sign the prekey list with the current identity key
@@ -363,16 +363,16 @@ return_status verify_prekey_list(
 	}
 	verified_prekey_list->content_length = verified_length;
 
-	//get the timestamp
-	time_t timestamp;
-	buffer_create_with_existing_array(big_endian_timestamp, verified_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
-	status = endianness_time_from_big_endian(&timestamp, big_endian_timestamp);
-	throw_on_error(CONVERSION_ERROR, "Failed to convert timestamp to big endian.");
+	//get the expiration date
+	time_t expiration_date;
+	buffer_create_with_existing_array(big_endian_expiration_date, verified_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
+	status = endianness_time_from_big_endian(&expiration_date, big_endian_expiration_date);
+	throw_on_error(CONVERSION_ERROR, "Failed to convert expiration date to big endian.");
 
-	//make sure the prekey list isn't to old
+	//make sure the prekey list isn't too old
 	time_t current_time = time(NULL);
-	if ((timestamp + 3600 * 24 * 31 * 3) < current_time) { //timestamp is older than 3 months
-		throw(OUTDATED, "Timestamp is too old (older than 3 months).");
+	if (expiration_date < current_time) {
+		throw(OUTDATED, "Prekey list has expired (older than 3 months).");
 	}
 
 	//copy the public identity key
