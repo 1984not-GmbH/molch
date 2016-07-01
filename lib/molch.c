@@ -201,7 +201,7 @@ return_status molch_create_user(
 
 cleanup:
 	if ((status.status != SUCCESS) && user_store_created) {
-		return_status new_status = molch_destroy_user(public_master_key, NULL, NULL);
+		return_status new_status = molch_destroy_user(public_master_key, public_master_key_length, NULL, NULL);
 		return_status_destroy_errors(&new_status);
 	}
 
@@ -215,7 +215,8 @@ cleanup:
  * if an error has occurred.
  */
 return_status molch_destroy_user(
-		const unsigned char *const public_signing_key,
+		const unsigned char *const public_master_key,
+		const size_t public_master_key_length,
 		unsigned char **const backup, //optional, can be NULL, exports the entire library state, free after use, check if NULL before use!
 		size_t *const backup_length //optional, can be NULL
 ) {
@@ -225,9 +226,13 @@ return_status molch_destroy_user(
 		throw(INVALID_INPUT, "\"users\" is NULL.")
 	}
 
+	if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "Public master key has incorrect size.");
+	}
+
 	//TODO maybe check beforehand if the user exists and return nonzero if not
 
-	buffer_create_with_existing_array(public_signing_key_buffer, (unsigned char*)public_signing_key, PUBLIC_KEY_SIZE);
+	buffer_create_with_existing_array(public_signing_key_buffer, (unsigned char*)public_master_key, PUBLIC_KEY_SIZE);
 	status = user_store_remove_by_key(users, public_signing_key_buffer);
 	throw_on_error(REMOVE_ERROR, "Failed to remoe user from user store by key.");
 

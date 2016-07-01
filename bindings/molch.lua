@@ -196,6 +196,7 @@ end
 function molch.user:destroy()
 	local status = molch_interface.molch_destroy_user(
 		convert_to_c_string(self.id),
+		#self.id,
 		nil,
 		nil)
 	local status_type = molch_interface.get_status(status)

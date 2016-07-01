@@ -87,7 +87,8 @@ extern return_status molch_create_user(
 	);
 
 extern return_status molch_destroy_user(
-		const unsigned char *const public_signing_key,
+		const unsigned char *const public_master_key,
+		const size_t public_master_key_length,
 		unsigned char **const backup,
 		size_t *const backup_length
 );
