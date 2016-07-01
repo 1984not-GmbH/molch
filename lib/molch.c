@@ -131,16 +131,31 @@ cleanup:
  */
 return_status molch_create_user(
 		unsigned char *const public_master_key, //output, PUBLIC_MASTER_KEY_SIZE
+		const size_t public_master_key_length,
 		unsigned char **const prekey_list, //output, needs to be freed
 		size_t *const prekey_list_length,
 		const unsigned char *const random_data,
 		const size_t random_data_length,
 		unsigned char * backup_key, //output, BACKUP_KEY_SIZE
+		const size_t backup_key_length,
 		unsigned char **const backup, //optional, can be NULL, exports the entire library state, free after use, check if NULL before use!
 		size_t *const backup_length //optional, can be NULL
 ) {
 	return_status status = return_status_init();
 	bool user_store_created = false;
+
+	if ((public_master_key == NULL)
+		|| (prekey_list == NULL) || (prekey_list_length == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to molch_create_user.");
+	}
+
+	if (backup_key_length != BACKUP_KEY_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "Backup key has incorrect length.");
+	}
+
+	if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "Public master key has incorrect length.");
+	}
 
 	//create buffers wrapping the raw arrays
 	buffer_create_with_existing_array(random_data_buffer, (unsigned char*)random_data, random_data_length);

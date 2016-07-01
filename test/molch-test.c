@@ -88,11 +88,13 @@ int main(void) {
 	size_t complete_export_length = 0;
 	status = molch_create_user(
 			alice_public_identity->content,
+			alice_public_identity->content_length,
 			&alice_public_prekeys,
 			&alice_public_prekeys_length,
 			alice_head_on_keyboard->content,
 			alice_head_on_keyboard->content_length,
 			new_backup_key->content,
+			new_backup_key->content_length,
 			&complete_export,
 			&complete_export_length);
 	throw_on_error(status.status, "Failed to create Alice!");
@@ -131,11 +133,13 @@ int main(void) {
 	buffer_create_from_string(bob_head_on_keyboard, "jnu8h77z6ht56ftgnujh");
 	status = molch_create_user(
 			bob_public_identity->content,
+			bob_public_identity->content_length,
 			&bob_public_prekeys,
 			&bob_public_prekeys_length,
 			bob_head_on_keyboard->content,
 			bob_head_on_keyboard->content_length,
 			backup_key->content,
+			backup_key->content_length,
 			NULL,
 			NULL);
 	throw_on_error(status.status, "Failed to create Bob!");

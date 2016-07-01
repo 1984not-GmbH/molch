@@ -69,11 +69,13 @@ int main(void) {
 	size_t prekey_list_length;
 	status = molch_create_user(
 			user_id->content,
+			user_id->content_length,
 			&prekey_list,
 			&prekey_list_length,
 			(unsigned char*)"random",
 			sizeof("random"),
 			backup_key,
+			BACKUP_KEY_SIZE,
 			&backup,
 			&backup_length);
 	throw_on_error(CREATION_ERROR, "Failed to create user.");

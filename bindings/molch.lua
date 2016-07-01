@@ -152,11 +152,13 @@ function molch.user.new(random_spice --[[optional]])
 
 	local status = molch_interface.molch_create_user(
 		raw_id,
+		32,
 		temp_prekey_list,
 		prekey_list_length,
 		spice_userdata,
 		spice_userdata_length,
 		raw_backup_key,
+		32,
 		temp_backup,
 		backup_length
 	)

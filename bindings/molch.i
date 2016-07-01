@@ -75,11 +75,13 @@ extern void sodium_free(void *);
 
 extern return_status molch_create_user(
 		unsigned char *const public_master_key,
+		const size_t public_master_key_length,
 		unsigned char **const prekey_list,
 		size_t *const prekey_list_length,
 		const unsigned char *const random_data,
 		const size_t random_data_length,
 		unsigned char * backup_key,
+		const size_t backup_key_length,
 		unsigned char **const backup,
 		size_t *const backup_length
 	);
