@@ -38,17 +38,6 @@
 static user_store *users = NULL;
 static buffer_t *backup_key = NULL;
 
-//function prototypes
-return_status molch_json_import(const unsigned char* const json, const size_t length) __attribute__((warn_unused_result));
-return_status molch_json_export(
-		unsigned char ** const json,
-		size_t *length) __attribute__((warn_unused_result));
-return_status molch_conversation_json_export(
-		unsigned char ** const json,
-		const unsigned char * const conversation_id,
-		size_t * const length) __attribute__((warn_unused_result));
-return_status molch_conversation_json_import(const unsigned char * const json, const size_t length) __attribute__((warn_unused_result));
-
 /*
  * Create a prekey list.
  */
