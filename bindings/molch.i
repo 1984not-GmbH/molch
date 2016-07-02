@@ -192,7 +192,7 @@ extern return_status molch_conversation_export(
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length);
 
-extern return_status molch_export(unsigned char ** const backup, size_t *length);
+extern return_status molch_export(unsigned char ** const backup, size_t *backup_length);
 
 extern return_status molch_conversation_import(
 		const unsigned char * const backup,

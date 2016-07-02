@@ -276,7 +276,7 @@ return_status molch_conversation_export(
  */
 return_status molch_export(
 		unsigned char ** const backup, //output, free after use
-		size_t *length) __attribute__((warn_unused_result));
+		size_t *backup_length) __attribute__((warn_unused_result));
 
 /*
  * Import a conversation from a backup (overwrites the current one if it exists).

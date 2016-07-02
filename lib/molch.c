@@ -1438,7 +1438,7 @@ cleanup:
  */
 return_status molch_export(
 		unsigned char ** const backup, //output, free after use
-		size_t *length) {
+		size_t *backup_length) {
 	return_status status = return_status_init();
 
 	unsigned char *json = NULL;
@@ -1448,7 +1448,7 @@ return_status molch_export(
 	buffer_t *backup_buffer = NULL;
 	buffer_t *backup_nonce = buffer_create_on_heap(BACKUP_NONCE_SIZE, 0);
 
-	if ((backup == NULL) || (length == NULL)) {
+	if ((backup == NULL) || (backup_length == NULL)) {
 		throw(INVALID_INPUT, "Invalid input to molch_export.");
 	}
 
@@ -1492,7 +1492,7 @@ return_status molch_export(
 	}
 
 	*backup = backup_buffer->content;
-	*length = backup_buffer->content_length;
+	*backup_length = backup_buffer->content_length;
 
 	free(backup_buffer);
 
