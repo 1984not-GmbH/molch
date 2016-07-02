@@ -629,4 +629,20 @@ function molch.print_errors(status)
 	return raw_error_stack
 end
 
+function molch.update_backup_key()
+	local raw_new_backup_key = molch_interface.ucstring_array(32)
+
+	local status = molch_interface.molch_update_backup_key(raw_new_backup_key, 32)
+	local status_type = molch_interface.get_status(status)
+	if status_type ~= molch_interface.SUCCESS then
+		error(molch.print_errors(status))
+	end
+
+	local new_backup_key = convert_to_lua_string(raw_new_backup_key, 32)
+
+	molch.users.attributes.last_backup_key = new_backup_key
+
+	return new_backup_key
+end
+
 return molch
