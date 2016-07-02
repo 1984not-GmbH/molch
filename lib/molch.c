@@ -1306,7 +1306,9 @@ return_status molch_conversation_import(
 		const unsigned char * const backup,
 		const size_t backup_length,
 		const unsigned char * local_backup_key, //BACKUP_KEY_SIZE
-		unsigned char * new_backup_key) { //output, BACKUP_KEY_SIZE, can be the same pointer as the backup key
+		const size_t local_backup_key_length,
+		unsigned char * new_backup_key, //output, BACKUP_KEY_SIZE, can be the same pointer as the backup key
+		const size_t new_backup_key_length) {
 	return_status status = return_status_init();
 
 	buffer_t *json = buffer_create_with_custom_allocator(backup_length, 0, sodium_malloc, sodium_free);
@@ -1316,6 +1318,13 @@ return_status molch_conversation_import(
 		throw(INVALID_INPUT, "Invalid input to molch_import.");
 	}
 
+	if (local_backup_key_length != BACKUP_KEY_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
+	}
+
+	if (new_backup_key_length != BACKUP_KEY_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "New backup key has an incorrect length.");
+	}
 
 	//check the lengths
 	if (backup_length < BACKUP_NONCE_SIZE) {

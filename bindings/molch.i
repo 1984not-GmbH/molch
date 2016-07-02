@@ -198,7 +198,9 @@ extern return_status molch_conversation_import(
 		const unsigned char * const backup,
 		const size_t backup_length,
 		const unsigned char * backup_key,
-		unsigned char * new_backup_key);
+		const size_t backup_key,
+		unsigned char * new_backup_key,
+		const size_t new_backup_key_length);
 
 return_status molch_import(
 		unsigned char * const backup,
