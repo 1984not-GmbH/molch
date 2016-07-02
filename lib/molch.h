@@ -196,6 +196,7 @@ return_status molch_decrypt_message(
 		const unsigned char * const packet, //received packet
 		const size_t packet_length,
 		const unsigned char * const conversation_id,
+		const size_t conversation_id_length,
 		uint32_t * const receive_message_number, //output
 		uint32_t * const previous_receive_message_number, //output
 		unsigned char ** const backup, //optional, can be NULL, exports the conversation, free after use, check if NULL before use!

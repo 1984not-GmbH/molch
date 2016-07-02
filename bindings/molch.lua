@@ -568,6 +568,7 @@ function molch.conversation:decrypt_message(packet)
 		raw_packet,
 		raw_packet_length,
 		convert_to_c_string(self.id),
+		#self.id,
 		raw_receive_message_number,
 		raw_previous_receive_message_number,
 		raw_backup,

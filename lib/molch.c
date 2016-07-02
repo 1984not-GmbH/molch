@@ -819,6 +819,7 @@ return_status molch_decrypt_message(
 		const unsigned char * const packet, //received packet
 		const size_t packet_length,
 		const unsigned char * const conversation_id,
+		const size_t conversation_id_length,
 		uint32_t * const receive_message_number, //output
 		uint32_t * const previous_receive_message_number, //output
 		unsigned char ** const backup, //optional, can be NULL, exports the conversation, free after use, check if NULL before use!
@@ -831,6 +832,19 @@ return_status molch_decrypt_message(
 
 	buffer_t *message_buffer = NULL;
 	conversation_t *conversation = NULL;
+
+	if ((message == NULL) || (message_length == NULL)
+		|| (packet == NULL)
+		|| (conversation_id == NULL)
+		|| (receive_message_number == NULL)
+		|| (previous_receive_message_number == NULL)) {
+		printf("HERE\n");
+		throw(INVALID_INPUT, "Invalid input to molch_decrypt_message.");
+	}
+
+	if (conversation_id_length != CONVERSATION_ID_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size.");
+	}
 
 	//find the conversation
 	status = find_conversation(&conversation, conversation_id, NULL);

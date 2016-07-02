@@ -159,6 +159,7 @@ extern return_status molch_decrypt_message(
 		const unsigned char * const packet,
 		const size_t packet_length,
 		const unsigned char * const conversation_id,
+		const size_t conversation_id_length,
 		uint32_t * const receive_message_number,
 		uint32_t * const previous_receive_message_number,
 		unsigned char ** const backup,
