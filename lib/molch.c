@@ -280,11 +280,14 @@ void molch_destroy_all_users() {
  * Don't forget to destroy the return status with return_status_destroy_errors()
  * if an error has occurred.
  */
-return_status molch_user_list(unsigned char **const user_list, size_t *count) {
+return_status molch_user_list(
+		unsigned char **const user_list,
+		size_t * const user_list_length, //length in bytes
+		size_t * const count) {
 	return_status status = return_status_init();
 
-	if (users == NULL) {
-		throw(INVALID_INPUT, "\"users\" is NULL.");
+	if ((users == NULL) || (user_list_length == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to molch_user_list.");
 	}
 
 	//get the list of users and copy it
@@ -295,6 +298,7 @@ return_status molch_user_list(unsigned char **const user_list, size_t *count) {
 	*count = molch_user_count();
 
 	*user_list = user_list_buffer->content;
+	*user_list_length = user_list_buffer->content_length;
 	free(user_list_buffer); //free the buffer_t struct while leaving content intact
 
 cleanup:

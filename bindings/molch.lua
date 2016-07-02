@@ -218,14 +218,15 @@ molch.user.count = molch.user_count
 
 function molch.user_list()
 	local count = molch_interface.size_t()
+	local list_length = molch_interface.size_t()
 	local raw_list = molch_interface.create_ucstring_pointer()
-	local status = molch_interface.molch_user_list(raw_list, count)
+	local status = molch_interface.molch_user_list(raw_list, list_length, count)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		error(molch.print_errors(status))
 	end
-	local raw_list = copy_callee_allocated_string(raw_list, count:value() * 32)
-	local lua_raw_list = convert_to_lua_string(raw_list, count:value() * 32)
+	local raw_list = copy_callee_allocated_string(raw_list, list_length)
+	local lua_raw_list = convert_to_lua_string(raw_list, list_length)
 
 	local list = {}
 	for i = 0, count:value() - 1 do

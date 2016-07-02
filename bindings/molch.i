@@ -95,7 +95,10 @@ extern return_status molch_destroy_user(
 
 extern size_t molch_user_count();
 
-extern return_status molch_user_list(unsigned char **const user_list, size_t *count);
+extern return_status molch_user_list(
+	unsigned char **const user_list,
+	size_t * const user_list_length,
+	size_t * count);
 
 extern void molch_destroy_all_users();
 
