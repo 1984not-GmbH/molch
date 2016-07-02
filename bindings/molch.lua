@@ -322,7 +322,9 @@ function molch.import(backup)
 		backup_string,
 		backup_length,
 		raw_backup_key,
-		new_backup_key)
+		32,
+		new_backup_key,
+		32)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		error(molch.print_errors(status))
