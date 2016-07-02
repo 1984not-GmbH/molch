@@ -123,14 +123,17 @@ molch_message_type molch_get_message_type(
  */
 return_status molch_create_send_conversation(
 		unsigned char * const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
+		const size_t conversation_id_length,
 		unsigned char ** const packet, //output, will be malloced by the function, don't forget to free it after use!
 		size_t *packet_length, //output
 		const unsigned char * const message,
 		const size_t message_length,
 		const unsigned char * const prekey_list, //prekey list of the receiver
 		const size_t prekey_list_length,
-		const unsigned char * const sender_public_signing_key, //signing key of the sender (user)
-		const unsigned char * const receiver_public_signing_key, //signing key of the receiver
+		const unsigned char * const sender_public_master_key, //signing key of the sender (user)
+		const size_t sender_public_master_key_length,
+		const unsigned char * const receiver_public_master_key, //signing key of the receiver
+		const size_t receiver_public_master_key_length,
 		unsigned char ** const backup, //optional, can be NULL, exports the entire library state, free after use, check if NULL before use!
 		size_t * const backup_length //optional, can be NULL
 		) __attribute__((warn_unused_result));

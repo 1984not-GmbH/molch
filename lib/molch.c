@@ -418,22 +418,25 @@ cleanup:
  */
 return_status molch_create_send_conversation(
 		unsigned char *const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
+		const size_t conversation_id_length,
 		unsigned char **const packet, //output, will be malloced by the function, don't forget to free it after use!
 		size_t *packet_length, //output
 		const unsigned char *const message,
 		const size_t message_length,
 		const unsigned char *const prekey_list, //prekey list of the receiver (PREKEY_AMOUNT * PUBLIC_KEY_SIZE)
 		const size_t prekey_list_length,
-		const unsigned char *const sender_public_signing_key, //signing key of the sender (user)
-		const unsigned char *const receiver_public_signing_key, //signing key of the receiver
+		const unsigned char *const sender_public_master_key, //signing key of the sender (user)
+		const size_t sender_public_master_key_length,
+		const unsigned char *const receiver_public_master_key, //signing key of the receiver
+		const size_t receiver_public_master_key_length,
 		unsigned char **const backup, //optional, can be NULL, exports the entire library state, free after use, check if NULL before use!
 		size_t *const backup_length //optional, can be NULL
 ) {
 	//create buffers wrapping the raw input
 	buffer_create_with_existing_array(conversation_id_buffer, (unsigned char*)conversation_id, CONVERSATION_ID_SIZE);
 	buffer_create_with_existing_array(message_buffer, (unsigned char*)message, message_length);
-	buffer_create_with_existing_array(sender_public_signing_key_buffer, (unsigned char*)sender_public_signing_key, PUBLIC_MASTER_KEY_SIZE);
-	buffer_create_with_existing_array(receiver_public_signing_key_buffer, (unsigned char*)receiver_public_signing_key, PUBLIC_MASTER_KEY_SIZE);
+	buffer_create_with_existing_array(sender_public_master_key_buffer, (unsigned char*)sender_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+	buffer_create_with_existing_array(receiver_public_master_key_buffer, (unsigned char*)receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
 	buffer_create_with_existing_array(prekeys, (unsigned char*)prekey_list + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t));
 
 	//create buffers
@@ -452,13 +455,25 @@ return_status molch_create_send_conversation(
 			|| (packet == NULL)
 			|| (packet_length == NULL)
 			|| (prekey_list == NULL)
-			|| (sender_public_signing_key == NULL)
-			|| (receiver_public_signing_key == NULL)) {
+			|| (sender_public_master_key == NULL)
+			|| (receiver_public_master_key == NULL)) {
 		throw(INVALID_INPUT, "Invalid input to molch_create_send_conversation.");
 	}
 
+	if (conversation_id_length != CONVERSATION_ID_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "conversation id has incorrect size.");
+	}
+
+	if (sender_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "sender public master key has incorrect size.");
+	}
+
+	if (receiver_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "receiver public master key has incorrect size.");
+	}
+
 	//get the user that matches the public signing key of the sender
-	status = user_store_find_node(&user, users, sender_public_signing_key_buffer);
+	status = user_store_find_node(&user, users, sender_public_master_key_buffer);
 	throw_on_error(NOT_FOUND, "User not found.");
 
 	int status_int = 0;
@@ -468,7 +483,7 @@ return_status molch_create_send_conversation(
 			prekey_list,
 			prekey_list_length,
 			receiver_public_identity,
-			receiver_public_signing_key_buffer);
+			receiver_public_master_key_buffer);
 	throw_on_error(VERIFICATION_FAILED, "Failed to verify prekey list.");
 
 	//unlock the master keys
