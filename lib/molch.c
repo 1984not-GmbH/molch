@@ -66,6 +66,10 @@ return_status create_prekey_list(
 	status = user_store_find_node(&user, users, public_signing_key);
 	throw_on_error(NOT_FOUND, "Failed to find user.");
 
+	//rotate the prekeys
+	status = prekey_store_rotate(user->prekeys);
+	throw_on_error(GENERIC_ERROR, "Failed to rotate prekeys.");
+
 	//get the public identity key
 	status = master_keys_get_identity_key(
 			user->master_keys,
@@ -130,17 +134,19 @@ cleanup:
  * if an error has occurred.
  */
 return_status molch_create_user(
-		unsigned char *const public_master_key, //output, PUBLIC_MASTER_KEY_SIZE
+		//outputs
+		unsigned char *const public_master_key, //PUBLIC_MASTER_KEY_SIZE
 		const size_t public_master_key_length,
-		unsigned char **const prekey_list, //output, needs to be freed
+		unsigned char **const prekey_list, //needs to be freed
 		size_t *const prekey_list_length,
-		const unsigned char *const random_data,
-		const size_t random_data_length,
-		unsigned char * backup_key, //output, BACKUP_KEY_SIZE
+		unsigned char * backup_key, //BACKUP_KEY_SIZE
 		const size_t backup_key_length,
-		unsigned char **const backup, //optional, can be NULL, exports the entire library state, free after use, check if NULL before use!
-		size_t *const backup_length //optional, can be NULL
-) {
+		//optional output (can be NULL)
+		unsigned char **const backup, //exports the entire library state, free after use, check if NULL before use!
+		size_t *const backup_length,
+		//optional input (can be NULL)
+		const unsigned char *const random_data,
+		const size_t random_data_length) {
 	return_status status = return_status_init();
 	bool user_store_created = false;
 

@@ -155,12 +155,12 @@ function molch.user.new(random_spice --[[optional]])
 		32,
 		temp_prekey_list,
 		prekey_list_length,
-		spice_userdata,
-		spice_userdata_length,
 		raw_backup_key,
 		32,
 		temp_backup,
-		backup_length
+		backup_length,
+		spice_userdata,
+		spice_userdata_length
 	)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then

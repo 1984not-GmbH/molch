@@ -91,12 +91,12 @@ int main(void) {
 			alice_public_identity->content_length,
 			&alice_public_prekeys,
 			&alice_public_prekeys_length,
-			alice_head_on_keyboard->content,
-			alice_head_on_keyboard->content_length,
 			new_backup_key->content,
 			new_backup_key->content_length,
 			&complete_export,
-			&complete_export_length);
+			&complete_export_length,
+			alice_head_on_keyboard->content,
+			alice_head_on_keyboard->content_length);
 	throw_on_error(status.status, "Failed to create Alice!");
 
 	if (buffer_compare(backup_key, new_backup_key) == 0) {
@@ -136,12 +136,12 @@ int main(void) {
 			bob_public_identity->content_length,
 			&bob_public_prekeys,
 			&bob_public_prekeys_length,
-			bob_head_on_keyboard->content,
-			bob_head_on_keyboard->content_length,
 			backup_key->content,
 			backup_key->content_length,
 			NULL,
-			NULL);
+			NULL,
+			bob_head_on_keyboard->content,
+			bob_head_on_keyboard->content_length);
 	throw_on_error(status.status, "Failed to create Bob!");
 
 	printf("Bob public identity (%zu Bytes):\n", bob_public_identity->content_length);
