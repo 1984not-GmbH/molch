@@ -508,6 +508,7 @@ function molch.user:get_prekey_list()
 
 	local status = molch_interface.molch_get_prekey_list(
 		convert_to_c_string(self.id),
+		#self.id,
 		temp_prekey_list,
 		prekey_list_length)
 	local status_type = molch_interface.get_status(status)

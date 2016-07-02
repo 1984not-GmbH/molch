@@ -211,7 +211,8 @@ return_status molch_import(
 		const size_t new_backup_key_length);
 
 extern return_status molch_get_prekey_list(
-		unsigned char * const public_signing_key,
+		unsigned char * const public_master_key,
+		const size_t public_master_key_length,
 		unsigned char ** const prekey_list,
 		size_t * const prekey_list_length);
 
