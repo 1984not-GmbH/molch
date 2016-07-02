@@ -216,4 +216,4 @@ extern return_status molch_get_prekey_list(
 		unsigned char ** const prekey_list,
 		size_t * const prekey_list_length);
 
-extern return_status molch_update_backup_key(unsigned char * const new_key);
+extern return_status molch_update_backup_key(unsigned char * const new_key, const size_t new_key_length);

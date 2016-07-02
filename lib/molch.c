@@ -171,7 +171,7 @@ return_status molch_create_user(
 	}
 
 	//create a new backup key
-	status = molch_update_backup_key(backup_key);
+	status = molch_update_backup_key(backup_key, backup_key_length);
 	throw_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
 
 	//create the user
@@ -1346,7 +1346,7 @@ return_status molch_conversation_import(
 
 	json->content_length = json_length;
 
-	status = molch_update_backup_key(new_backup_key);
+	status = molch_update_backup_key(new_backup_key, new_backup_key_length);
 	throw_on_error(KEYGENERATION_FAILED, "Faild to generate a new backup key.");
 
 	status = molch_conversation_json_import(
@@ -1633,7 +1633,7 @@ return_status molch_import(
 
 	json->content_length = json_length;
 
-	status = molch_update_backup_key(new_backup_key);
+	status = molch_update_backup_key(new_backup_key, new_backup_key_length);
 	throw_on_error(KEYGENERATION_FAILED, "Faild to generate a new backup key.");
 
 	status = molch_json_import(
@@ -1687,13 +1687,19 @@ cleanup:
  * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occured.
  */
-return_status molch_update_backup_key(unsigned char * const new_key /*output with length of BACKUP_KEY_SIZE */) {
+return_status molch_update_backup_key(
+		unsigned char * const new_key, //output, BACKUP_KEY_SIZE
+		const size_t new_key_length) {
 	return_status status = return_status_init();
 
 	buffer_create_with_existing_array(new_key_buffer, new_key, BACKUP_KEY_SIZE);
 
 	if (new_key == NULL) {
 		throw(INVALID_INPUT, "Invalid input to molch_update_backup_key.");
+	}
+
+	if (new_key_length != BACKUP_KEY_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "New key has an incorrect length.");
 	}
 
 	// create a backup key buffer if it doesnt exist already

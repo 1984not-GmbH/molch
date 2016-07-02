@@ -64,7 +64,7 @@ int main(void) {
 
 	unsigned char *printed_status = NULL;
 
-	status = molch_update_backup_key(backup_key->content);
+	status = molch_update_backup_key(backup_key->content, backup_key->content_length);
 	throw_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
 
 	//backup for empty library
@@ -122,7 +122,7 @@ int main(void) {
 	}
 
 	//create a new backup key
-	status = molch_update_backup_key(backup_key->content);
+	status = molch_update_backup_key(backup_key->content, backup_key->content_length);
 	throw_on_error(KEYGENERATION_FAILED, "Failed to update the backup key.");
 
 	printf("Updated backup key:\n");

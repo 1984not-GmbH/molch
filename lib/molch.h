@@ -329,5 +329,7 @@ return_status molch_get_prekey_list(
  * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occured.
  */
-return_status molch_update_backup_key(unsigned char * const new_key /*output with length of BACKUP_KEY_SIZE */) __attribute__((warn_unused_result));
+return_status molch_update_backup_key(
+		unsigned char * const new_key, //output, BACKUP_KEY_SIZE
+		const size_t new_key_length) __attribute__((warn_unused_result));
 #endif
