@@ -262,8 +262,9 @@ void molch_destroy_return_status(return_status * const status);
  */
 return_status molch_conversation_export(
 		unsigned char ** const backup,
+		size_t * const backup_length,
 		const unsigned char * const conversation_id,
-		size_t * const length) __attribute__((warn_unused_result));
+		const size_t conversation_id_length) __attribute__((warn_unused_result));
 
 /*
  * Serialise molch's internal state. The output is encrypted with the backup key.

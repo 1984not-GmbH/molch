@@ -788,7 +788,7 @@ return_status molch_encrypt_message(
 		if (backup_length == 0) {
 			*backup = NULL;
 		} else {
-			status = molch_conversation_export(backup, conversation->id->content, backup_length);
+			status = molch_conversation_export(backup, backup_length, conversation->id->content, conversation->id->content_length);
 			throw_on_error(EXPORT_ERROR, "Failed to export conversation as JSON.");
 		}
 	}
@@ -868,7 +868,7 @@ return_status molch_decrypt_message(
 		if (backup_length == 0) {
 			*backup = NULL;
 		} else {
-			status = molch_conversation_export(backup, conversation->id->content, backup_length);
+			status = molch_conversation_export(backup, backup_length, conversation->id->content, conversation->id->content_length);
 			throw_on_error(EXPORT_ERROR, "Failed to export conversation as JSON.");
 		}
 	}
@@ -1126,8 +1126,9 @@ cleanup:
  */
 return_status molch_conversation_export(
 		unsigned char ** const backup,
+		size_t * const backup_length,
 		const unsigned char * const conversation_id,
-		size_t * const length) {
+		const size_t conversation_id_length) {
 	//FIXME: Less duplication
 	return_status status = return_status_init();
 
@@ -1138,8 +1139,12 @@ return_status molch_conversation_export(
 	buffer_t *backup_buffer = NULL;
 	buffer_t *backup_nonce = buffer_create_on_heap(BACKUP_NONCE_SIZE, 0);
 
-	if ((backup == NULL) || (length == NULL) || (conversation_id == NULL)) {
+	if ((backup == NULL) || (backup_length == NULL) || (conversation_id == NULL)) {
 		throw(INVALID_INPUT, "Invalid input to molch_conversation_export.");
+	}
+
+	if (conversation_id_length != CONVERSATION_ID_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect length.");
 	}
 
 	if ((backup_key == NULL) || (backup_key->content_length == 0)) {
@@ -1182,7 +1187,7 @@ return_status molch_conversation_export(
 	}
 
 	*backup = backup_buffer->content;
-	*length = backup_buffer->content_length;
+	*backup_length = backup_buffer->content_length;
 
 	free(backup_buffer);
 

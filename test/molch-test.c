@@ -382,7 +382,11 @@ int main(void) {
 	free(imported_backup);
 
 	//test conversation export
-	status = molch_conversation_export(&backup, alice_conversation->content, &backup_length);
+	status = molch_conversation_export(
+			&backup,
+			&backup_length,
+			alice_conversation->content,
+			alice_conversation->content_length);
 	throw_on_error(EXPORT_ERROR, "Failed to export Alice' conversation.");
 
 	printf("Alice' conversation exported!");
@@ -413,7 +417,11 @@ int main(void) {
 
 
 	//export again
-	status = molch_conversation_export(&imported_backup, alice_conversation->content, &imported_backup_length);
+	status = molch_conversation_export(
+			&imported_backup,
+			&imported_backup_length,
+			alice_conversation->content,
+			alice_conversation->content_length);
 	on_error(
 		free(backup);
 		throw(EXPORT_ERROR, "Failed to export Alice imported conversation.");
