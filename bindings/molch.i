@@ -174,9 +174,11 @@ extern void molch_end_conversation(
 		);
 
 extern return_status molch_list_conversations(
-		const unsigned char * const user_public_signing_key,
+		const unsigned char * const user_public_master_key,
+		const size_t user_public_master_key_length,
 		unsigned char ** const conversation_list,
-		size_t *number);
+		size_t * const conversation_list_length,
+		size_t * const number);
 
 extern char *molch_print_status(return_status status, size_t * const output_length);
 

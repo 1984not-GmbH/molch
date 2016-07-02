@@ -292,8 +292,9 @@ end
 
 function molch.user:list_conversations()
 	local count = molch_interface.size_t()
+	local raw_list_length = molch_interface.size_t()
 	local raw_list = molch_interface.create_ucstring_pointer()
-	local status = molch_interface.molch_list_conversations(convert_to_c_string(self.id), raw_list, count)
+	local status = molch_interface.molch_list_conversations(convert_to_c_string(self.id), #self.id, raw_list, raw_list_length, count)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		error(molch.print_errors(status))
@@ -301,8 +302,8 @@ function molch.user:list_conversations()
 	if count:value() == 0 then
 		return {}
 	end
-	raw_list = copy_callee_allocated_string(raw_list, count:value() * molch_interface.CONVERSATION_ID_SIZE)
-	local lua_raw_list = convert_to_lua_string(raw_list, count:value() * molch_interface.CONVERSATION_ID_SIZE)
+	raw_list = copy_callee_allocated_string(raw_list, raw_list_length:value())
+	local lua_raw_list = convert_to_lua_string(raw_list, raw_list_length:value())
 
 	local list = {}
 	for i = 0, count:value() - 1 do

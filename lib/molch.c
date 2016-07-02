@@ -953,22 +953,28 @@ cleanup:
  * if an error has occurred.
  */
 return_status molch_list_conversations(
-		const unsigned char * const user_public_identity,
+		const unsigned char * const user_public_master_key,
+		const size_t user_public_master_key_length,
 		unsigned char ** const conversation_list,
-		size_t *number) {
-	buffer_create_with_existing_array(user_public_identity_buffer, (unsigned char*)user_public_identity, PUBLIC_KEY_SIZE);
+		size_t * const conversation_list_length,
+		size_t * const number) {
+	buffer_create_with_existing_array(user_public_master_key_buffer, (unsigned char*)user_public_master_key, PUBLIC_KEY_SIZE);
 	buffer_t *conversation_list_buffer = NULL;
 
 	return_status status = return_status_init();
 
-	if ((user_public_identity == NULL) || (conversation_list == NULL) || (number == NULL)) {
+	if ((user_public_master_key == NULL) || (conversation_list == NULL) || (conversation_list_length == NULL) || (number == NULL)) {
 		throw(INVALID_INPUT, "Invalid input to molch_list_conversations.");
+	}
+
+	if (user_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "Public master key has an incorrect length.");
 	}
 
 	*conversation_list = NULL;
 
 	user_store_node *user = NULL;
-	status = user_store_find_node(&user, users, user_public_identity_buffer);
+	status = user_store_find_node(&user, users, user_public_master_key_buffer);
 	throw_on_error(NOT_FOUND, "No user found for the given public identity.")
 
 	status = conversation_store_list(&conversation_list_buffer, user->conversations);
@@ -988,6 +994,7 @@ return_status molch_list_conversations(
 	*number = conversation_list_buffer->content_length / CONVERSATION_ID_SIZE;
 
 	*conversation_list = conversation_list_buffer->content;
+	*conversation_list_length = conversation_list_buffer->content_length;
 	free(conversation_list_buffer); //free buffer_t struct
 	conversation_list_buffer = NULL;
 

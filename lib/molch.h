@@ -227,9 +227,11 @@ void molch_end_conversation(
  * if an error has occurred.
  */
 return_status molch_list_conversations(
-		const unsigned char * const user_public_signing_key,
+		const unsigned char * const user_public_master_key,
+		const size_t user_public_master_key_length,
 		unsigned char ** const conversation_list,
-		size_t *number) __attribute__((warn_unused_result));
+		size_t * const conversation_list_length,
+		size_t * const number) __attribute__((warn_unused_result));
 
 /*
  * Print a return status into a nice looking error message.
