@@ -17,7 +17,6 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <stdbool.h>
 #include "return-status.h"
 
 #ifndef LIB_MOLCH_H
