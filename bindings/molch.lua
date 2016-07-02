@@ -605,6 +605,7 @@ function molch.conversation:destroy()
 
 	molch_interface.molch_end_conversation(
 		convert_to_c_string(self.id),
+		#self.id,
 		raw_backup,
 		raw_backup_length)
 

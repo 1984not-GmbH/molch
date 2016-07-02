@@ -441,8 +441,8 @@ int main(void) {
 	free(backup);
 
 	//destroy the conversations
-	molch_end_conversation(alice_conversation->content, NULL, NULL);
-	molch_end_conversation(bob_conversation->content, NULL, NULL);
+	molch_end_conversation(alice_conversation->content, alice_conversation->content_length, NULL, NULL);
+	molch_end_conversation(bob_conversation->content, bob_conversation->content_length, NULL, NULL);
 
 	//destroy the users again
 	molch_destroy_all_users();

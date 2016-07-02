@@ -168,6 +168,7 @@ extern return_status molch_decrypt_message(
 
 extern void molch_end_conversation(
 		const unsigned char * const conversation_id,
+		const size_t conversation_id_length,
 		unsigned char ** const backup,
 		size_t * const backup_length
 		);

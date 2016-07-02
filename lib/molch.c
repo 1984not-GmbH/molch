@@ -893,18 +893,25 @@ cleanup:
  */
 void molch_end_conversation(
 		const unsigned char * const conversation_id,
+		const size_t conversation_id_length,
 		unsigned char ** const backup, //optional, can be NULL, exports the entire library state, free after use, check if NULL before use!
 		size_t * const backup_length
 		) {
 	return_status status = return_status_init();
 
+	if (conversation_id == NULL) {
+		throw(INVALID_INPUT, "Invalid input to molch_end_conversation.");
+	}
+
+	if (conversation_id_length != CONVERSATION_ID_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect length.");
+	}
+
 	//find the conversation
 	conversation_t *conversation = NULL;
 	status = find_conversation(&conversation, conversation_id, NULL);
-	on_error(
-		return_status_destroy_errors(&status);
-		return;
-	);
+	throw_on_error(NOT_FOUND, "Couldn't find converstion.");
+
 	if (conversation == NULL) {
 		return;
 	}
@@ -925,9 +932,13 @@ void molch_end_conversation(
 			if (status.status != SUCCESS) {
 				*backup = NULL;
 			}
-			return_status_destroy_errors(&status);
 		}
 	}
+
+cleanup:
+	return_status_destroy_errors(&status);
+
+	return;
 }
 
 /*
@@ -1242,11 +1253,11 @@ return_status molch_conversation_json_import(const unsigned char * const json, c
 	conversation_t *old_conversation = NULL;
 	status = find_conversation(&old_conversation, conversation_id->content, &store);
 	on_error(
-		molch_end_conversation(conversation_id->content, NULL, NULL);
+		molch_end_conversation(conversation_id->content, conversation_id->content_length, NULL, NULL);
 		throw(GENERIC_ERROR, "Error while searching for conversation.");
 	);
 	if (old_conversation != NULL) { //destroy the old one if it exists
-		molch_end_conversation(conversation_id->content, NULL, NULL);
+		molch_end_conversation(conversation_id->content, conversation_id->content_length, NULL, NULL);
 	}
 
 	if (store == NULL) {

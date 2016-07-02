@@ -210,6 +210,7 @@ return_status molch_decrypt_message(
  */
 void molch_end_conversation(
 		const unsigned char * const conversation_id,
+		const size_t conversation_id_length,
 		unsigned char ** const backup, //optional, can be NULL, exports the entire library state, free after use, check if NULL before use!
 		size_t * const backup_length
 		);
