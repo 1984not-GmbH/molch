@@ -73,8 +73,9 @@ return_status molch_create_user(
 return_status molch_destroy_user(
 		const unsigned char *const public_master_key,
 		const size_t public_master_key_length,
-		unsigned char **const backup, //optional, can be NULL, exports the entire library state, free after use, check if NULL before use
-		size_t *const backup_length //optional, can be NULL
+		//optional output (can be NULL)
+		unsigned char **const backup, //exports the entire library state, free after use, check if NULL before use
+		size_t *const backup_length
 );
 
 /*
