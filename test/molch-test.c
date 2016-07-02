@@ -260,6 +260,7 @@ int main(void) {
 			bob_send_message->content,
 			bob_send_message->content_length,
 			bob_conversation->content,
+			bob_conversation->content_length,
 			&conversation_json_export,
 			&conversation_json_export_length);
 	throw_on_error(GENERIC_ERROR, "Couldn't send bobs message.");

@@ -534,6 +534,7 @@ function molch.conversation:encrypt_message(message)
 		raw_message,
 		raw_message_length,
 		convert_to_c_string(self.id),
+		#self.id,
 		raw_backup,
 		raw_backup_length)
 	local status_type = molch_interface.get_status(status)

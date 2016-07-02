@@ -742,6 +742,7 @@ return_status molch_encrypt_message(
 		const unsigned char * const message,
 		const size_t message_length,
 		const unsigned char * const conversation_id,
+		const size_t conversation_id_length,
 		unsigned char ** const backup, //optional, can be NULL, exports the conversation, free after use, check if NULL before use!
 		size_t * const backup_length //optional, can be NULL
 		) {
@@ -753,6 +754,16 @@ return_status molch_encrypt_message(
 	conversation_t *conversation = NULL;
 
 	return_status status = return_status_init();
+
+	if ((packet == NULL) || (packet_length == NULL)
+		|| (message == NULL)
+		|| (conversation_id == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to molch_encrypt_message.");
+	}
+
+	if (conversation_id_length != CONVERSATION_ID_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size.");
+	}
 
 	//find the conversation
 	status = find_conversation(&conversation, conversation_id, NULL);

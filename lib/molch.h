@@ -179,6 +179,7 @@ return_status molch_encrypt_message(
 		const unsigned char * const message,
 		const size_t message_length,
 		const unsigned char * const conversation_id,
+		const size_t conversation_id_length,
 		unsigned char ** const backup, //optional, can be NULL, exports the conversationn, free after use, check if NULL before use!
 		size_t * const backup_length
 		) __attribute__((warn_unused_result));
