@@ -152,11 +152,13 @@ function molch.user.new(random_spice --[[optional]])
 
 	local status = molch_interface.molch_create_user(
 		raw_id,
+		32,
 		temp_prekey_list,
 		prekey_list_length,
 		spice_userdata,
 		spice_userdata_length,
 		raw_backup_key,
+		32,
 		temp_backup,
 		backup_length
 	)
@@ -194,6 +196,7 @@ end
 function molch.user:destroy()
 	local status = molch_interface.molch_destroy_user(
 		convert_to_c_string(self.id),
+		#self.id,
 		nil,
 		nil)
 	local status_type = molch_interface.get_status(status)
@@ -215,14 +218,15 @@ molch.user.count = molch.user_count
 
 function molch.user_list()
 	local count = molch_interface.size_t()
+	local list_length = molch_interface.size_t()
 	local raw_list = molch_interface.create_ucstring_pointer()
-	local status = molch_interface.molch_user_list(raw_list, count)
+	local status = molch_interface.molch_user_list(raw_list, list_length, count)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		error(molch.print_errors(status))
 	end
-	local raw_list = copy_callee_allocated_string(raw_list, count:value() * 32)
-	local lua_raw_list = convert_to_lua_string(raw_list, count:value() * 32)
+	local raw_list = copy_callee_allocated_string(raw_list, list_length)
+	local lua_raw_list = convert_to_lua_string(raw_list, list_length)
 
 	local list = {}
 	for i = 0, count:value() - 1 do
@@ -288,8 +292,9 @@ end
 
 function molch.user:list_conversations()
 	local count = molch_interface.size_t()
+	local raw_list_length = molch_interface.size_t()
 	local raw_list = molch_interface.create_ucstring_pointer()
-	local status = molch_interface.molch_list_conversations(convert_to_c_string(self.id), raw_list, count)
+	local status = molch_interface.molch_list_conversations(convert_to_c_string(self.id), #self.id, raw_list, raw_list_length, count)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		error(molch.print_errors(status))
@@ -297,8 +302,8 @@ function molch.user:list_conversations()
 	if count:value() == 0 then
 		return {}
 	end
-	raw_list = copy_callee_allocated_string(raw_list, count:value() * molch_interface.CONVERSATION_ID_SIZE)
-	local lua_raw_list = convert_to_lua_string(raw_list, count:value() * molch_interface.CONVERSATION_ID_SIZE)
+	raw_list = copy_callee_allocated_string(raw_list, raw_list_length:value())
+	local lua_raw_list = convert_to_lua_string(raw_list, raw_list_length:value())
 
 	local list = {}
 	for i = 0, count:value() - 1 do
@@ -317,7 +322,9 @@ function molch.import(backup)
 		backup_string,
 		backup_length,
 		raw_backup_key,
-		new_backup_key)
+		32,
+		new_backup_key,
+		32)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		error(molch.print_errors(status))
@@ -398,6 +405,7 @@ function molch.user:create_send_conversation(message, prekey_list, receiver_id)
 
 	local status = molch_interface.molch_create_send_conversation(
 		raw_conversation_id,
+		molch_interface.CONVERSATION_ID_SIZE,
 		raw_packet,
 		raw_packet_length,
 		raw_message,
@@ -405,7 +413,9 @@ function molch.user:create_send_conversation(message, prekey_list, receiver_id)
 		raw_prekey_list,
 		raw_prekey_list_length,
 		convert_to_c_string(self.id),
+		#self.id,
 		convert_to_c_string(receiver_id),
+		#receiver_id,
 		raw_backup,
 		raw_backup_length)
 	local status_type = molch_interface.get_status(status)
@@ -450,6 +460,7 @@ function molch.user:create_receive_conversation(packet, sender_id)
 
 	local status = molch_interface.molch_create_receive_conversation(
 		raw_conversation_id,
+		molch_interface.CONVERSATION_ID_SIZE,
 		raw_message,
 		raw_message_length,
 		raw_packet,
@@ -457,7 +468,9 @@ function molch.user:create_receive_conversation(packet, sender_id)
 		raw_prekey_list,
 		raw_prekey_list_length,
 		convert_to_c_string(sender_id),
+		#sender_id,
 		convert_to_c_string(self.id),
+		#self.id,
 		raw_backup,
 		raw_backup_length)
 	local status_type = molch_interface.get_status(status)
@@ -495,6 +508,7 @@ function molch.user:get_prekey_list()
 
 	local status = molch_interface.molch_get_prekey_list(
 		convert_to_c_string(self.id),
+		#self.id,
 		temp_prekey_list,
 		prekey_list_length)
 	local status_type = molch_interface.get_status(status)
@@ -524,6 +538,7 @@ function molch.conversation:encrypt_message(message)
 		raw_message,
 		raw_message_length,
 		convert_to_c_string(self.id),
+		#self.id,
 		raw_backup,
 		raw_backup_length)
 	local status_type = molch_interface.get_status(status)
@@ -557,6 +572,7 @@ function molch.conversation:decrypt_message(packet)
 		raw_packet,
 		raw_packet_length,
 		convert_to_c_string(self.id),
+		#self.id,
 		raw_receive_message_number,
 		raw_previous_receive_message_number,
 		raw_backup,
@@ -593,6 +609,7 @@ function molch.conversation:destroy()
 
 	molch_interface.molch_end_conversation(
 		convert_to_c_string(self.id),
+		#self.id,
 		raw_backup,
 		raw_backup_length)
 

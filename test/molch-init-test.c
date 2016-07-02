@@ -58,7 +58,13 @@ int main(void) {
 	}
 
 	//try to import the backup
-	status = molch_import(backup_file->content, backup_file->content_length, backup_key_file->content, backup_key);
+	status = molch_import(
+			backup_file->content,
+			backup_file->content_length,
+			backup_key_file->content,
+			backup_key_file->content_length,
+			backup_key,
+			BACKUP_KEY_SIZE);
 	throw_on_error(IMPORT_ERROR, "Failed to import backup from backup.");
 
 	//destroy again
@@ -69,11 +75,13 @@ int main(void) {
 	size_t prekey_list_length;
 	status = molch_create_user(
 			user_id->content,
+			user_id->content_length,
 			&prekey_list,
 			&prekey_list_length,
 			(unsigned char*)"random",
 			sizeof("random"),
 			backup_key,
+			BACKUP_KEY_SIZE,
 			&backup,
 			&backup_length);
 	throw_on_error(CREATION_ERROR, "Failed to create user.");
