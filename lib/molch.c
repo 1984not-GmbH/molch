@@ -1694,6 +1694,12 @@ return_status molch_update_backup_key(
 
 	buffer_create_with_existing_array(new_key_buffer, new_key, BACKUP_KEY_SIZE);
 
+	if (users == NULL) {
+		if (sodium_init() == -1) {
+			throw(INIT_ERROR, "Failed to initialize libsodium.");
+		}
+	}
+
 	if (new_key == NULL) {
 		throw(INVALID_INPUT, "Invalid input to molch_update_backup_key.");
 	}
