@@ -127,14 +127,17 @@ extern return_status molch_create_send_conversation(
 
 extern return_status molch_create_receive_conversation(
 		unsigned char * const conversation_id,
+		const size_t conversation_id_length,
 		unsigned char ** const message,
 		size_t * const message_length,
 		const unsigned char * const packet,
 		const size_t packet_length,
 		unsigned char ** const prekey_list,
 		size_t * const prekey_list_length,
-		const unsigned char * const sender_public_signing_key,
-		const unsigned char * const receiver_public_signing_key,
+		const unsigned char * const sender_public_master_key,
+		const size_t sender_public_master_key_length,
+		const unsigned char * const receiver_public_master_key,
+		const size_t receiver_public_master_key_length,
 		unsigned char ** const backup,
 		size_t * const backup_length
 		);

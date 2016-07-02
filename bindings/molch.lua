@@ -457,6 +457,7 @@ function molch.user:create_receive_conversation(packet, sender_id)
 
 	local status = molch_interface.molch_create_receive_conversation(
 		raw_conversation_id,
+		molch_interface.CONVERSATION_ID_SIZE,
 		raw_message,
 		raw_message_length,
 		raw_packet,
@@ -464,7 +465,9 @@ function molch.user:create_receive_conversation(packet, sender_id)
 		raw_prekey_list,
 		raw_prekey_list_length,
 		convert_to_c_string(sender_id),
+		#sender_id,
 		convert_to_c_string(self.id),
+		#self.id,
 		raw_backup,
 		raw_backup_length)
 	local status_type = molch_interface.get_status(status)
