@@ -1,26 +1,30 @@
-/* Molch, an implementation of the axolotl ratchet based on libsodium
- *  Copyright (C) 2015-2016 1984not Security GmbH
- *  Author: Max Bruckner (FSMaxB)
+/*
+ * Molch, an implementation of the axolotl ratchet based on libsodium
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Lesser General Public
- *  License as published by the Free Software Foundation; either
- *  version 2.1 of the License, or (at your option) any later version.
+ * ISC License
  *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Lesser General Public License for more details.
+ * Copyright (C) 2015-2016 1984not Security GmbH
+ * Author: Max Bruckner (FSMaxB)
  *
- *  You should have received a copy of the GNU Lesser General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include <string.h>
 
 #include "constants.h"
 #include "header-and-message-keystore.h"
+
+static const time_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
 
 //create new keystore
 void header_and_message_keystore_init(header_and_message_keystore * const keystore) {
@@ -90,8 +94,8 @@ return_status header_and_message_keystore_add(
 	}
 
 	int status_int = 0;
-	//set keys and timestamp
-	new_node->timestamp = time(NULL);
+	//set keys and expiration date
+	new_node->expiration_date = time(NULL) + EXPIRATION_TIME;
 	status_int = buffer_clone(new_node->message_key, message_key);
 	if (status_int != 0) {
 		sodium_free(new_node);
@@ -146,13 +150,13 @@ mcJSON *header_and_message_keystore_node_json_export(header_and_message_keystore
 		return NULL;
 	}
 
-	//add timestamp
-	mcJSON *timestamp = mcJSON_CreateNumber((double)node->timestamp, pool);
-	if (timestamp == NULL) {
+	//add expiration_date
+	mcJSON *expiration_date = mcJSON_CreateNumber((double)node->expiration_date, pool);
+	if (expiration_date == NULL) {
 		return NULL;
 	}
-	buffer_create_from_string(timestamp_string, "timestamp");
-	mcJSON_AddItemToObject(json, timestamp_string, timestamp, pool);
+	buffer_create_from_string(expiration_date_string, "expiration_date");
+	mcJSON_AddItemToObject(json, expiration_date_string, expiration_date, pool);
 
 	//add message key
 	mcJSON *message_key_hex = mcJSON_CreateHexString(node->message_key, pool);
@@ -227,13 +231,13 @@ int header_and_message_keystore_json_import(
 		mcJSON *message_key = mcJSON_GetObjectItem(key, message_key_string);
 		buffer_create_from_string(header_key_string, "header_key");
 		mcJSON *header_key = mcJSON_GetObjectItem(key, header_key_string);
-		buffer_create_from_string(timestamp_string, "timestamp");
-		mcJSON *timestamp = mcJSON_GetObjectItem(key, timestamp_string);
+		buffer_create_from_string(expiration_date_string, "expiration_date");
+		mcJSON *expiration_date = mcJSON_GetObjectItem(key, expiration_date_string);
 
 		//check if they are valid
 		if ((message_key == NULL) || (message_key->type != mcJSON_String) || (message_key->valuestring->content_length != (2 * MESSAGE_KEY_SIZE + 1))
 				|| (header_key == NULL) || (header_key->type != mcJSON_String) || (header_key->valuestring->content_length != (2 * HEADER_KEY_SIZE + 1))
-				|| (timestamp == NULL) || (timestamp->type != mcJSON_Number)) {
+				|| (expiration_date == NULL) || (expiration_date->type != mcJSON_Number)) {
 			header_and_message_keystore_clear(keystore);
 			return -3;
 		}
@@ -260,7 +264,7 @@ int header_and_message_keystore_json_import(
 			return status;
 		}
 
-		node->timestamp = timestamp->valuedouble; //double should be large enough
+		node->expiration_date = expiration_date->valuedouble; //double should be large enough
 
 		add_node(keystore, node);
 	}

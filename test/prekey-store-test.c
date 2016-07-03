@@ -1,20 +1,22 @@
-/* Molch, an implementation of the axolotl ratchet based on libsodium
- *  Copyright (C) 2015-2016 1984not Security GmbH
- *  Author: Max Bruckner (FSMaxB)
+/*
+ * Molch, an implementation of the axolotl ratchet based on libsodium
  *
- *  This library is free software; you can redistribute it and/or
- *  modify it under the terms of the GNU Lesser General Public
- *  License as published by the Free Software Foundation; either
- *  version 2.1 of the License, or (at your option) any later version.
+ * ISC License
  *
- *  This library is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- *  Lesser General Public License for more details.
+ * Copyright (C) 2015-2016 1984not Security GmbH
+ * Author: Max Bruckner (FSMaxB)
  *
- *  You should have received a copy of the GNU Lesser General Public
- *  License along with this library; if not, write to the Free Software
- *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * Permission to use, copy, modify, and/or distribute this software for any
+ * purpose with or without fee is hereby granted, provided that the above
+ * copyright notice and this permission notice appear in all copies.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+ * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+ * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+ * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+ * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
 #include <stdio.h>
@@ -145,8 +147,8 @@ int main(void) {
 		throw(BUFFER_ERROR, "Failed to clone public key.");
 	}
 
-	store->prekeys[PREKEY_AMOUNT-1].timestamp -= 365 * 24 * 3600; //one year
-	store->oldest_timestamp = store->prekeys[PREKEY_AMOUNT - 1].timestamp;
+	store->prekeys[PREKEY_AMOUNT-1].expiration_date -= 365 * 24 * 3600; //one year
+	store->oldest_expiration_date = store->prekeys[PREKEY_AMOUNT - 1].expiration_date;
 
 	status = prekey_store_rotate(store);
 	throw_on_error(GENERIC_ERROR, "Failed to rotate the prekeys.");
@@ -161,8 +163,8 @@ int main(void) {
 		throw(BUFFER_ERROR, "Failed to clone public key.");
 	}
 
-	store->deprecated_prekeys->next->timestamp -= 24 * 3600;
-	store->oldest_deprecated_timestamp = store->deprecated_prekeys->next->timestamp;
+	store->deprecated_prekeys->next->expiration_date -= 24 * 3600;
+	store->oldest_deprecated_expiration_date = store->deprecated_prekeys->next->expiration_date;
 
 	status = prekey_store_rotate(store);
 	throw_on_error(GENERIC_ERROR, "Failed to rotate the prekeys.");
