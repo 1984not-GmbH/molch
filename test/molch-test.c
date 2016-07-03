@@ -220,10 +220,10 @@ int main(void) {
 
 	// export the prekeys again
 	status = molch_get_prekey_list(
-			alice_public_identity->content,
-			alice_public_identity->content_length,
 			&alice_public_prekeys,
-			&alice_public_prekeys_length);
+			&alice_public_prekeys_length,
+			alice_public_identity->content,
+			alice_public_identity->content_length);
 	throw_on_error(DATA_FETCH_ERROR, "Failed to get Alice' prekey list.");
 
 	//create a new receive conversation (bob receives from alice)
