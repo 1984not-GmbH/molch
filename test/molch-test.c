@@ -328,12 +328,12 @@ int main(void) {
 	//test import
 	printf("Test import!\n");
 	status = molch_import(
+			new_backup_key->content,
+			new_backup_key->content_length,
 			backup,
 			backup_length,
 			backup_key->content,
-			backup_key->content_length,
-			new_backup_key->content,
-			new_backup_key->content_length);
+			backup_key->content_length);
 	on_error(
 		free(backup);
 		throw(IMPORT_ERROR, "Failed to import backup.");

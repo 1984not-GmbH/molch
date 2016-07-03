@@ -203,12 +203,12 @@ extern return_status molch_conversation_import(
 		const size_t backup_key);
 
 return_status molch_import(
+		unsigned char * const new_backup_key,
+		const size_t new_backup_key_length,
 		unsigned char * const backup,
 		const size_t backup_length,
 		const unsigned char * const backup_key,
-		const size_t backup_key_length,
-		unsigned char * const new_backup_key,
-		const size_t new_backup_key_length);
+		const size_t backup_key_length);
 
 extern return_status molch_get_prekey_list(
 		unsigned char * const public_master_key,

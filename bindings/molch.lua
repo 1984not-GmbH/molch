@@ -324,11 +324,11 @@ function molch.import(backup)
 	local new_backup_key = molch_interface.ucstring_array(32)
 
 	local status = molch_interface.molch_import(
+		new_backup_key,
+		32,
 		backup_string,
 		backup_length,
 		raw_backup_key,
-		32,
-		new_backup_key,
 		32)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then

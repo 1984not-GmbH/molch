@@ -326,12 +326,14 @@ return_status molch_conversation_import(
  * if an error has occured.
  */
 return_status molch_import(
+		//output
+		unsigned char * const new_backup_key, //BACKUP_KEY_SIZE, can be the same pointer as the backup key
+		const size_t new_backup_key_length,
+		//inputs
 		unsigned char * const backup,
 		const size_t backup_length,
 		const unsigned char * const backup_key, //BACKUP_KEY_SIZE
-		const size_t backup_key_length,
-		unsigned char * const new_backup_key, //output, BACKUP_KEY_SIZE, can be the same pointer as the backup key
-		const size_t new_backup_key_length
+		const size_t backup_key_length
 		) __attribute__((warn_unused_result));
 
 /*

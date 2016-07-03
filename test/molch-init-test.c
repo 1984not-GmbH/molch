@@ -59,12 +59,12 @@ int main(void) {
 
 	//try to import the backup
 	status = molch_import(
+			backup_key,
+			BACKUP_KEY_SIZE,
 			backup_file->content,
 			backup_file->content_length,
 			backup_key_file->content,
-			backup_key_file->content_length,
-			backup_key,
-			BACKUP_KEY_SIZE);
+			backup_key_file->content_length);
 	throw_on_error(IMPORT_ERROR, "Failed to import backup from backup.");
 
 	//destroy again
