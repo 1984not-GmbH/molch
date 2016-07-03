@@ -423,7 +423,7 @@ cleanup:
  * Don't forget to destroy the return status with return_status_destroy_errors()
  * if an error has occurred.
  */
-return_status molch_create_send_conversation(
+return_status molch_start_send_conversation(
 		//outputs
 		unsigned char *const conversation_id, //CONVERSATION_ID_SIZE long (from conversation.h)
 		const size_t conversation_id_length,
@@ -467,7 +467,7 @@ return_status molch_create_send_conversation(
 			|| (prekey_list == NULL)
 			|| (sender_public_master_key == NULL)
 			|| (receiver_public_master_key == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_create_send_conversation.");
+		throw(INVALID_INPUT, "Invalid input to molch_start_send_conversation.");
 	}
 
 	if (conversation_id_length != CONVERSATION_ID_SIZE) {
@@ -568,7 +568,7 @@ cleanup:
  * Don't forget to destroy the return status with return_status_destroy_errors()
  * if an error has occurred.
  */
-return_status molch_create_receive_conversation(
+return_status molch_start_receive_conversation(
 		unsigned char * const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
 		const size_t conversation_id_length,
 		unsigned char ** const message, //output, will be malloced by the function, don't forget to free it after use!
@@ -603,7 +603,7 @@ return_status molch_create_receive_conversation(
 		|| (prekey_list == NULL) || (prekey_list_length == NULL)
 		|| (sender_public_master_key == NULL)
 		|| (receiver_public_master_key == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_create_receive_conversation.");
+		throw(INVALID_INPUT, "Invalid input to molch_start_receive_conversation.");
 	}
 
 	if (conversation_id_length != CONVERSATION_ID_SIZE) {

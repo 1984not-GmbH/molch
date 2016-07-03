@@ -390,7 +390,7 @@ function molch.import(backup)
 	end
 end
 
-function molch.user:create_send_conversation(message, prekey_list, receiver_id)
+function molch.user:start_send_conversation(message, prekey_list, receiver_id)
 	local conversation = {}
 	setmetatable(conversation, molch.conversation)
 
@@ -403,7 +403,7 @@ function molch.user:create_send_conversation(message, prekey_list, receiver_id)
 	local raw_message, raw_message_length = convert_to_c_string(message)
 	local raw_prekey_list, raw_prekey_list_length = convert_to_c_string(prekey_list)
 
-	local status = molch_interface.molch_create_send_conversation(
+	local status = molch_interface.molch_start_send_conversation(
 		raw_conversation_id,
 		molch_interface.CONVERSATION_ID_SIZE,
 		raw_packet,
@@ -444,7 +444,7 @@ function molch.user:create_send_conversation(message, prekey_list, receiver_id)
 	return conversation, packet
 end
 
-function molch.user:create_receive_conversation(packet, sender_id)
+function molch.user:start_receive_conversation(packet, sender_id)
 	local conversation = {}
 	setmetatable(conversation, molch.conversation)
 
@@ -458,7 +458,7 @@ function molch.user:create_receive_conversation(packet, sender_id)
 
 	local raw_packet, raw_packet_length = convert_to_c_string(packet)
 
-	local status = molch_interface.molch_create_receive_conversation(
+	local status = molch_interface.molch_start_receive_conversation(
 		raw_conversation_id,
 		molch_interface.CONVERSATION_ID_SIZE,
 		raw_message,

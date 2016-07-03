@@ -170,7 +170,7 @@ int main(void) {
 	//create a new send conversation (alice sends to bob)
 	buffer_create_from_string(alice_send_message, "Hi Bob. Alice here!");
 	size_t alice_send_packet_length;
-	status = molch_create_send_conversation(
+	status = molch_start_send_conversation(
 			alice_conversation->content,
 			alice_conversation->content_length,
 			&alice_send_packet,
@@ -224,7 +224,7 @@ int main(void) {
 	//create a new receive conversation (bob receives from alice)
 	unsigned char *bob_receive_message;
 	size_t bob_receive_message_length;
-	status = molch_create_receive_conversation(
+	status = molch_start_receive_conversation(
 			bob_conversation->content,
 			bob_conversation->content_length,
 			&bob_receive_message,

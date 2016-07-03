@@ -124,7 +124,7 @@ molch_message_type molch_get_message_type(
  * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
-return_status molch_create_send_conversation(
+return_status molch_start_send_conversation(
 		//outputs
 		unsigned char * const conversation_id, //CONVERSATION_ID_SIZE long (from conversation.h)
 		const size_t conversation_id_length,
@@ -156,7 +156,7 @@ return_status molch_create_send_conversation(
  * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
-return_status molch_create_receive_conversation(
+return_status molch_start_receive_conversation(
 		unsigned char * const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
 		const size_t conversation_id_length,
 		unsigned char ** const message, //output, will be malloced by the function, don't forget to free it after use!

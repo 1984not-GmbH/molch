@@ -108,7 +108,7 @@ extern molch_message_type molch_get_message_type(
 		const unsigned char * const packet,
 		const size_t packet_length);
 
-extern return_status molch_create_send_conversation(
+extern return_status molch_start_send_conversation(
 		unsigned char * const conversation_id,
 		const size_t conversation_id_length,
 		unsigned char ** const packet,
@@ -125,7 +125,7 @@ extern return_status molch_create_send_conversation(
 		size_t * const backup_length
 		);
 
-extern return_status molch_create_receive_conversation(
+extern return_status molch_start_receive_conversation(
 		unsigned char * const conversation_id,
 		const size_t conversation_id_length,
 		unsigned char ** const message,

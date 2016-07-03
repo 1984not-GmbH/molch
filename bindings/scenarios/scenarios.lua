@@ -45,7 +45,7 @@ function alice_send(message)
 
 	local packet
 	if not alice_conversation then
-		alice_conversation, packet = alice:create_send_conversation(message, bob.prekey_list, bob.id)
+		alice_conversation, packet = alice:start_send_conversation(message, bob.prekey_list, bob.id)
 	else
 		packet = alice_conversation:encrypt_message(message)
 	end
@@ -61,7 +61,7 @@ function bob_send(message)
 
 	local packet
 	if not bob_conversation then
-		bob_conversation, packet = bob:create_send_conversation(message, alice.prekey_list, alice.id)
+		bob_conversation, packet = bob:start_send_conversation(message, alice.prekey_list, alice.id)
 	else
 		packet = bob_conversation:encrypt_message(message)
 	end
@@ -87,7 +87,7 @@ function alice_receive(number)
 	local packet = table.remove(bob_sent, number).packet
 
 	if not alice_conversation then
-		alice_conversation, message = alice:create_receive_conversation(packet, bob.id)
+		alice_conversation, message = alice:start_receive_conversation(packet, bob.id)
 		receive_message_number = 0
 		previous_receive_message_number = 0
 	else
@@ -118,7 +118,7 @@ function bob_receive(number)
 	local packet = table.remove(alice_sent, number).packet
 
 	if not bob_conversation then
-		bob_conversation, message = bob:create_receive_conversation(packet, alice.id)
+		bob_conversation, message = bob:start_receive_conversation(packet, alice.id)
 		receive_message_number = 0
 		previous_receive_message_number = 0
 	else
