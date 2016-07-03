@@ -1148,8 +1148,10 @@ cleanup:
  * if an error has occurred.
  */
 return_status molch_conversation_export(
+		//output
 		unsigned char ** const backup,
 		size_t * const backup_length,
+		//input
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length) {
 	//FIXME: Less duplication

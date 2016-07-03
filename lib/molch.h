@@ -280,8 +280,10 @@ void molch_destroy_return_status(return_status * const status);
  * if an error has occurred.
  */
 return_status molch_conversation_export(
+		//output
 		unsigned char ** const backup,
 		size_t * const backup_length,
+		//input
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length) __attribute__((warn_unused_result));
 
