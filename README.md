@@ -105,6 +105,7 @@ This library is licensed under the ISC license.
 > ISC License
 >
 > Copyright (C) 2015-2016 1984not Security GmbH
+>
 > Author: Max Bruckner (FSMaxB)
 >
 > Permission to use, copy, modify, and/or distribute this software for any
