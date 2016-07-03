@@ -283,12 +283,12 @@ int main(void) {
 	status = molch_decrypt_message(
 			&alice_receive_message,
 			&alice_receive_message_length,
-			bob_send_packet,
-			bob_send_packet_length,
-			alice_conversation->content,
-			alice_conversation->content_length,
 			&alice_receive_message_number,
 			&alice_previous_receive_message_number,
+			alice_conversation->content,
+			alice_conversation->content_length,
+			bob_send_packet,
+			bob_send_packet_length,
 			NULL,
 			NULL);
 	on_error(

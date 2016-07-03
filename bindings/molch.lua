@@ -569,12 +569,12 @@ function molch.conversation:decrypt_message(packet)
 	local status = molch_interface.molch_decrypt_message(
 		raw_message,
 		raw_message_length,
-		raw_packet,
-		raw_packet_length,
-		convert_to_c_string(self.id),
-		#self.id,
 		raw_receive_message_number,
 		raw_previous_receive_message_number,
+		convert_to_c_string(self.id),
+		#self.id,
+		raw_packet,
+		raw_packet_length,
 		raw_backup,
 		raw_backup_length)
 	local status_type = molch_interface.get_status(status)

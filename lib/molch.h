@@ -203,15 +203,18 @@ return_status molch_encrypt_message(
  * if an error has occurred.
  */
 return_status molch_decrypt_message(
-		unsigned char ** const message, //output, will be malloced by the function, don't forget to free it after use!
-		size_t *message_length, //output
-		const unsigned char * const packet, //received packet
-		const size_t packet_length,
+		//output
+		unsigned char ** const message, //free after use
+		size_t *message_length,
+		uint32_t * const receive_message_number,
+		uint32_t * const previous_receive_message_number,
+		//inputs
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length,
-		uint32_t * const receive_message_number, //output
-		uint32_t * const previous_receive_message_number, //output
-		unsigned char ** const backup, //optional, can be NULL, exports the conversation, free after use, check if NULL before use!
+		const unsigned char * const packet, //received packet
+		const size_t packet_length,
+		//optional output (can be NULL)
+		unsigned char ** const backup, //exports the conversation, free after use, check if NULL before use!
 		size_t * const backup_length
 		) __attribute__((warn_unused_result));
 

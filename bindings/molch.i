@@ -156,12 +156,12 @@ extern return_status molch_encrypt_message(
 extern return_status molch_decrypt_message(
 		unsigned char ** const message,
 		size_t *message_length,
-		const unsigned char * const packet,
-		const size_t packet_length,
-		const unsigned char * const conversation_id,
-		const size_t conversation_id_length,
 		uint32_t * const receive_message_number,
 		uint32_t * const previous_receive_message_number,
+		const unsigned char * const conversation_id,
+		const size_t conversation_id_length,
+		const unsigned char * const packet,
+		const size_t packet_length,
 		unsigned char ** const backup,
 		size_t * const backup_length
 		);
