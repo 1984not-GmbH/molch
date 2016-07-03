@@ -287,14 +287,14 @@ void molch_destroy_all_users() {
  * Don't forget to destroy the return status with return_status_destroy_errors()
  * if an error has occurred.
  */
-return_status molch_user_list(
+return_status molch_list_users(
 		unsigned char **const user_list,
 		size_t * const user_list_length, //length in bytes
 		size_t * const count) {
 	return_status status = return_status_init();
 
 	if ((users == NULL) || (user_list_length == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_user_list.");
+		throw(INVALID_INPUT, "Invalid input to molch_list_users.");
 	}
 
 	//get the list of users and copy it

@@ -157,7 +157,7 @@ int main(void) {
 	size_t user_count = 0;
 	size_t user_list_length = 0;
 	unsigned char *user_list = NULL;
-	status = molch_user_list(&user_list, &user_list_length, &user_count);
+	status = molch_list_users(&user_list, &user_list_length, &user_count);
 	throw_on_error(CREATION_ERROR, "Failed to list users.");
 	if ((user_count != 2)
 			|| (sodium_memcmp(alice_public_identity->content, user_list, alice_public_identity->content_length) != 0)

@@ -216,11 +216,11 @@ function molch.user_count()
 end
 molch.user.count = molch.user_count
 
-function molch.user_list()
+function molch.list_users()
 	local count = molch_interface.size_t()
 	local list_length = molch_interface.size_t()
 	local raw_list = molch_interface.create_ucstring_pointer()
-	local status = molch_interface.molch_user_list(raw_list, list_length, count)
+	local status = molch_interface.molch_list_users(raw_list, list_length, count)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		error(molch.print_errors(status))
@@ -236,7 +236,7 @@ function molch.user_list()
 
 	return list
 end
-molch.user.list = molch.user_list
+molch.user.list = molch.list_users
 
 function molch:export()
 	local backup_length = molch_interface.size_t()
@@ -347,7 +347,7 @@ function molch.import(backup)
 	end
 
 	-- update global user list
-	local user_list = molch.user_list()
+	local user_list = molch.list_users()
 	local user_id_lookup = {}
 	for _,user_id in ipairs(user_list) do
 		user_id_lookup[user_id] = true
