@@ -183,13 +183,16 @@ return_status molch_start_receive_conversation(
  * if an error has occurred.
  */
 return_status molch_encrypt_message(
-		unsigned char ** const packet, //output, will be malloced by the function, don't forget to free it after use!
-		size_t *packet_length, //output, length of the packet
-		const unsigned char * const message,
-		const size_t message_length,
+		//output
+		unsigned char ** const packet, //free after use
+		size_t *packet_length,
+		//inputs
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length,
-		unsigned char ** const backup, //optional, can be NULL, exports the conversationn, free after use, check if NULL before use!
+		const unsigned char * const message,
+		const size_t message_length,
+		//optional output (can be NULL)
+		unsigned char ** const backup, //exports the conversationn, free after use, check if NULL before use!
 		size_t * const backup_length
 		) __attribute__((warn_unused_result));
 

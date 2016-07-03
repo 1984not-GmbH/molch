@@ -145,10 +145,10 @@ extern return_status molch_start_receive_conversation(
 extern return_status molch_encrypt_message(
 		unsigned char ** const packet,
 		size_t *packet_length,
-		const unsigned char * const message,
-		const size_t message_length,
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length,
+		const unsigned char * const message,
+		const size_t message_length,
 		unsigned char ** const backup,
 		size_t * const backup_length
 		);

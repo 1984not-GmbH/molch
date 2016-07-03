@@ -535,10 +535,10 @@ function molch.conversation:encrypt_message(message)
 	local status = molch_interface.molch_encrypt_message(
 		raw_packet,
 		raw_packet_length,
-		raw_message,
-		raw_message_length,
 		convert_to_c_string(self.id),
 		#self.id,
+		raw_message,
+		raw_message_length,
 		raw_backup,
 		raw_backup_length)
 	local status_type = molch_interface.get_status(status)
