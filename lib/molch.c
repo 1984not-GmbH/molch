@@ -66,6 +66,10 @@ return_status create_prekey_list(
 	status = user_store_find_node(&user, users, public_signing_key);
 	throw_on_error(NOT_FOUND, "Failed to find user.");
 
+	//rotate the prekeys
+	status = prekey_store_rotate(user->prekeys);
+	throw_on_error(GENERIC_ERROR, "Failed to rotate prekeys.");
+
 	//get the public identity key
 	status = master_keys_get_identity_key(
 			user->master_keys,
@@ -130,17 +134,19 @@ cleanup:
  * if an error has occurred.
  */
 return_status molch_create_user(
-		unsigned char *const public_master_key, //output, PUBLIC_MASTER_KEY_SIZE
+		//outputs
+		unsigned char *const public_master_key, //PUBLIC_MASTER_KEY_SIZE
 		const size_t public_master_key_length,
-		unsigned char **const prekey_list, //output, needs to be freed
+		unsigned char **const prekey_list, //needs to be freed
 		size_t *const prekey_list_length,
-		const unsigned char *const random_data,
-		const size_t random_data_length,
-		unsigned char * backup_key, //output, BACKUP_KEY_SIZE
+		unsigned char * backup_key, //BACKUP_KEY_SIZE
 		const size_t backup_key_length,
-		unsigned char **const backup, //optional, can be NULL, exports the entire library state, free after use, check if NULL before use!
-		size_t *const backup_length //optional, can be NULL
-) {
+		//optional output (can be NULL)
+		unsigned char **const backup, //exports the entire library state, free after use, check if NULL before use!
+		size_t *const backup_length,
+		//optional input (can be NULL)
+		const unsigned char *const random_data,
+		const size_t random_data_length) {
 	return_status status = return_status_init();
 	bool user_store_created = false;
 
@@ -217,8 +223,9 @@ cleanup:
 return_status molch_destroy_user(
 		const unsigned char *const public_master_key,
 		const size_t public_master_key_length,
-		unsigned char **const backup, //optional, can be NULL, exports the entire library state, free after use, check if NULL before use!
-		size_t *const backup_length //optional, can be NULL
+		//optional output (can be NULL)
+		unsigned char **const backup, //exports the entire library state, free after use, check if NULL before use!
+		size_t *const backup_length
 ) {
 	return_status status = return_status_init();
 
@@ -280,14 +287,14 @@ void molch_destroy_all_users() {
  * Don't forget to destroy the return status with return_status_destroy_errors()
  * if an error has occurred.
  */
-return_status molch_user_list(
+return_status molch_list_users(
 		unsigned char **const user_list,
 		size_t * const user_list_length, //length in bytes
 		size_t * const count) {
 	return_status status = return_status_init();
 
 	if ((users == NULL) || (user_list_length == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_user_list.");
+		throw(INVALID_INPUT, "Invalid input to molch_list_users.");
 	}
 
 	//get the list of users and copy it
@@ -416,21 +423,24 @@ cleanup:
  * Don't forget to destroy the return status with return_status_destroy_errors()
  * if an error has occurred.
  */
-return_status molch_create_send_conversation(
-		unsigned char *const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
+return_status molch_start_send_conversation(
+		//outputs
+		unsigned char *const conversation_id, //CONVERSATION_ID_SIZE long (from conversation.h)
 		const size_t conversation_id_length,
-		unsigned char **const packet, //output, will be malloced by the function, don't forget to free it after use!
-		size_t *packet_length, //output
-		const unsigned char *const message,
-		const size_t message_length,
-		const unsigned char *const prekey_list, //prekey list of the receiver (PREKEY_AMOUNT * PUBLIC_KEY_SIZE)
-		const size_t prekey_list_length,
+		unsigned char **const packet, //free after use
+		size_t *packet_length,
+		//inputs
 		const unsigned char *const sender_public_master_key, //signing key of the sender (user)
 		const size_t sender_public_master_key_length,
 		const unsigned char *const receiver_public_master_key, //signing key of the receiver
 		const size_t receiver_public_master_key_length,
-		unsigned char **const backup, //optional, can be NULL, exports the entire library state, free after use, check if NULL before use!
-		size_t *const backup_length //optional, can be NULL
+		const unsigned char *const prekey_list, //prekey list of the receiver
+		const size_t prekey_list_length,
+		const unsigned char *const message,
+		const size_t message_length,
+		//optional output (can be NULL)
+		unsigned char **const backup, //exports the entire library state, free after use, check if NULL before use!
+		size_t *const backup_length
 ) {
 	//create buffers wrapping the raw input
 	buffer_create_with_existing_array(conversation_id_buffer, (unsigned char*)conversation_id, CONVERSATION_ID_SIZE);
@@ -457,7 +467,7 @@ return_status molch_create_send_conversation(
 			|| (prekey_list == NULL)
 			|| (sender_public_master_key == NULL)
 			|| (receiver_public_master_key == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_create_send_conversation.");
+		throw(INVALID_INPUT, "Invalid input to molch_start_send_conversation.");
 	}
 
 	if (conversation_id_length != CONVERSATION_ID_SIZE) {
@@ -558,21 +568,24 @@ cleanup:
  * Don't forget to destroy the return status with return_status_destroy_errors()
  * if an error has occurred.
  */
-return_status molch_create_receive_conversation(
-		unsigned char * const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
+return_status molch_start_receive_conversation(
+		//outputs
+		unsigned char * const conversation_id, //CONVERSATION_ID_SIZE long (from conversation.h)
 		const size_t conversation_id_length,
-		unsigned char ** const message, //output, will be malloced by the function, don't forget to free it after use!
-		size_t * const message_length, //output
-		const unsigned char * const packet, //received prekey packet
-		const size_t packet_length,
-		unsigned char ** const prekey_list, //output, free after use
+		unsigned char ** const prekey_list, //free after use
 		size_t * const prekey_list_length,
-		const unsigned char * const sender_public_master_key, //signing key of the sender
-		const size_t sender_public_master_key_length,
+		unsigned char ** const message, //free after use
+		size_t * const message_length,
+		//inputs
 		const unsigned char * const receiver_public_master_key, //signing key of the receiver (user)
 		const size_t receiver_public_master_key_length,
-		unsigned char ** const backup, //optional, can be NULL, exports the entire library state, free after use, check if NULL before use!
-		size_t * const backup_length //optional, can be NULL
+		const unsigned char * const sender_public_master_key, //signing key of the sender
+		const size_t sender_public_master_key_length,
+		const unsigned char * const packet, //received prekey packet
+		const size_t packet_length,
+		//optional output (can be NULL)
+		unsigned char ** const backup, //exports the entire library state, free after use, check if NULL before use!
+		size_t * const backup_length
 		) {
 
 	return_status status = return_status_init();
@@ -593,7 +606,7 @@ return_status molch_create_receive_conversation(
 		|| (prekey_list == NULL) || (prekey_list_length == NULL)
 		|| (sender_public_master_key == NULL)
 		|| (receiver_public_master_key == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_create_receive_conversation.");
+		throw(INVALID_INPUT, "Invalid input to molch_start_receive_conversation.");
 	}
 
 	if (conversation_id_length != CONVERSATION_ID_SIZE) {
@@ -737,14 +750,17 @@ cleanup:
  * if an error has occurred.
  */
 return_status molch_encrypt_message(
-		unsigned char ** const packet, //output, will be malloced by the function, don't forget to free it after use!
-		size_t *packet_length, //output, length of the packet
-		const unsigned char * const message,
-		const size_t message_length,
+		//output
+		unsigned char ** const packet, //free after use
+		size_t *packet_length,
+		//inputs
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length,
-		unsigned char ** const backup, //optional, can be NULL, exports the conversation, free after use, check if NULL before use!
-		size_t * const backup_length //optional, can be NULL
+		const unsigned char * const message,
+		const size_t message_length,
+		//optional output (can be NULL)
+		unsigned char ** const conversation_backup, //exports the conversation, free after use, check if NULL before use!
+		size_t * const conversation_backup_length
 		) {
 
 	//create buffer for message array
@@ -784,11 +800,11 @@ return_status molch_encrypt_message(
 	*packet = packet_buffer->content;
 	*packet_length = packet_buffer->content_length;
 
-	if (backup != NULL) {
-		if (backup_length == 0) {
-			*backup = NULL;
+	if (conversation_backup != NULL) {
+		if (conversation_backup_length == 0) {
+			*conversation_backup = NULL;
 		} else {
-			status = molch_conversation_export(backup, backup_length, conversation->id->content, conversation->id->content_length);
+			status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id->content, conversation->id->content_length);
 			throw_on_error(EXPORT_ERROR, "Failed to export conversation as JSON.");
 		}
 	}
@@ -814,16 +830,19 @@ cleanup:
  * if an error has occurred.
  */
 return_status molch_decrypt_message(
-		unsigned char ** const message, //output, will be malloced by the function, don't forget to free it after use!
-		size_t *message_length, //output
-		const unsigned char * const packet, //received packet
-		const size_t packet_length,
+		//outputs
+		unsigned char ** const message, //free after use
+		size_t *message_length,
+		uint32_t * const receive_message_number,
+		uint32_t * const previous_receive_message_number,
+		//inputs
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length,
-		uint32_t * const receive_message_number, //output
-		uint32_t * const previous_receive_message_number, //output
-		unsigned char ** const backup, //optional, can be NULL, exports the conversation, free after use, check if NULL before use!
-		size_t * const backup_length //optional, can be NULL
+		const unsigned char * const packet,
+		const size_t packet_length,
+		//optional output (can be NULL)
+		unsigned char ** const conversation_backup, //exports the conversation, free after use, check if NULL before use!
+		size_t * const conversation_backup_length
 	) {
 	//create buffer for the packet
 	buffer_create_with_existing_array(packet_buffer, (unsigned char*)packet, packet_length);
@@ -864,11 +883,11 @@ return_status molch_decrypt_message(
 	*message = message_buffer->content;
 	*message_length = message_buffer->content_length;
 
-	if (backup != NULL) {
-		if (backup_length == 0) {
-			*backup = NULL;
+	if (conversation_backup != NULL) {
+		if (conversation_backup_length == 0) {
+			*conversation_backup = NULL;
 		} else {
-			status = molch_conversation_export(backup, backup_length, conversation->id->content, conversation->id->content_length);
+			status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id->content, conversation->id->content_length);
 			throw_on_error(EXPORT_ERROR, "Failed to export conversation as JSON.");
 		}
 	}
@@ -892,9 +911,11 @@ cleanup:
  * This will almost certainly be changed later on!!!!!!
  */
 void molch_end_conversation(
+		//input
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length,
-		unsigned char ** const backup, //optional, can be NULL, exports the entire library state, free after use, check if NULL before use!
+		//optional output (can be NULL)
+		unsigned char ** const backup, //exports the entire library state, free after use, check if NULL before use!
 		size_t * const backup_length
 		) {
 	return_status status = return_status_init();
@@ -953,11 +974,13 @@ cleanup:
  * if an error has occurred.
  */
 return_status molch_list_conversations(
-		const unsigned char * const user_public_master_key,
-		const size_t user_public_master_key_length,
+		//outputs
 		unsigned char ** const conversation_list,
 		size_t * const conversation_list_length,
-		size_t * const number) {
+		size_t * const number,
+		//inputs
+		const unsigned char * const user_public_master_key,
+		const size_t user_public_master_key_length) {
 	buffer_create_with_existing_array(user_public_master_key_buffer, (unsigned char*)user_public_master_key, PUBLIC_KEY_SIZE);
 	buffer_t *conversation_list_buffer = NULL;
 
@@ -1017,7 +1040,7 @@ cleanup:
  *
  * Don't forget to free the output after use.
  */
-char *molch_print_status(return_status status, size_t * const output_length) {
+char *molch_print_status(size_t * const output_length, return_status status) {
 	return return_status_print(&status, output_length);
 }
 
@@ -1125,8 +1148,10 @@ cleanup:
  * if an error has occurred.
  */
 return_status molch_conversation_export(
+		//output
 		unsigned char ** const backup,
 		size_t * const backup_length,
+		//input
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length) {
 	//FIXME: Less duplication
@@ -1303,12 +1328,14 @@ cleanup:
  * if an error has occurred.
  */
 return_status molch_conversation_import(
+		//output
+		unsigned char * new_backup_key, //BACKUP_KEY_SIZE, can be the same pointer as the backup key
+		const size_t new_backup_key_length,
+		//inputs
 		const unsigned char * const backup,
 		const size_t backup_length,
 		const unsigned char * local_backup_key, //BACKUP_KEY_SIZE
-		const size_t local_backup_key_length,
-		unsigned char * new_backup_key, //output, BACKUP_KEY_SIZE, can be the same pointer as the backup key
-		const size_t new_backup_key_length) {
+		const size_t local_backup_key_length) {
 	return_status status = return_status_init();
 
 	buffer_t *json = buffer_create_with_custom_allocator(backup_length, 0, sodium_malloc, sodium_free);
@@ -1589,12 +1616,14 @@ cleanup:
  * if an error has occured.
  */
 return_status molch_import(
+		//output
+		unsigned char * const new_backup_key, //BACKUP_KEY_SIZE, can be the same pointer as the backup key
+		const size_t new_backup_key_length,
+		//inputs
 		unsigned char * const backup,
 		const size_t backup_length,
 		const unsigned char * const local_backup_key, //BACKUP_KEY_SIZE
-		const size_t local_backup_key_length,
-		unsigned char * const new_backup_key, //output, BACKUP_KEY_SIZE, can be the same pointer as the backup key
-		const size_t new_backup_key_length
+		const size_t local_backup_key_length
 		) {
 	return_status status = return_status_init();
 

@@ -155,12 +155,12 @@ function molch.user.new(random_spice --[[optional]])
 		32,
 		temp_prekey_list,
 		prekey_list_length,
-		spice_userdata,
-		spice_userdata_length,
 		raw_backup_key,
 		32,
 		temp_backup,
-		backup_length
+		backup_length,
+		spice_userdata,
+		spice_userdata_length
 	)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
@@ -216,11 +216,11 @@ function molch.user_count()
 end
 molch.user.count = molch.user_count
 
-function molch.user_list()
+function molch.list_users()
 	local count = molch_interface.size_t()
 	local list_length = molch_interface.size_t()
 	local raw_list = molch_interface.create_ucstring_pointer()
-	local status = molch_interface.molch_user_list(raw_list, list_length, count)
+	local status = molch_interface.molch_list_users(raw_list, list_length, count)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		error(molch.print_errors(status))
@@ -236,7 +236,7 @@ function molch.user_list()
 
 	return list
 end
-molch.user.list = molch.user_list
+molch.user.list = molch.list_users
 
 function molch:export()
 	local backup_length = molch_interface.size_t()
@@ -294,7 +294,12 @@ function molch.user:list_conversations()
 	local count = molch_interface.size_t()
 	local raw_list_length = molch_interface.size_t()
 	local raw_list = molch_interface.create_ucstring_pointer()
-	local status = molch_interface.molch_list_conversations(convert_to_c_string(self.id), #self.id, raw_list, raw_list_length, count)
+	local status = molch_interface.molch_list_conversations(
+		raw_list,
+		raw_list_length,
+		count,
+		convert_to_c_string(self.id),
+		#self.id)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		error(molch.print_errors(status))
@@ -319,11 +324,11 @@ function molch.import(backup)
 	local new_backup_key = molch_interface.ucstring_array(32)
 
 	local status = molch_interface.molch_import(
+		new_backup_key,
+		32,
 		backup_string,
 		backup_length,
 		raw_backup_key,
-		32,
-		new_backup_key,
 		32)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
@@ -347,7 +352,7 @@ function molch.import(backup)
 	end
 
 	-- update global user list
-	local user_list = molch.user_list()
+	local user_list = molch.list_users()
 	local user_id_lookup = {}
 	for _,user_id in ipairs(user_list) do
 		user_id_lookup[user_id] = true
@@ -390,7 +395,7 @@ function molch.import(backup)
 	end
 end
 
-function molch.user:create_send_conversation(message, prekey_list, receiver_id)
+function molch.user:start_send_conversation(message, prekey_list, receiver_id)
 	local conversation = {}
 	setmetatable(conversation, molch.conversation)
 
@@ -403,19 +408,19 @@ function molch.user:create_send_conversation(message, prekey_list, receiver_id)
 	local raw_message, raw_message_length = convert_to_c_string(message)
 	local raw_prekey_list, raw_prekey_list_length = convert_to_c_string(prekey_list)
 
-	local status = molch_interface.molch_create_send_conversation(
+	local status = molch_interface.molch_start_send_conversation(
 		raw_conversation_id,
 		molch_interface.CONVERSATION_ID_SIZE,
 		raw_packet,
 		raw_packet_length,
-		raw_message,
-		raw_message_length,
-		raw_prekey_list,
-		raw_prekey_list_length,
 		convert_to_c_string(self.id),
 		#self.id,
 		convert_to_c_string(receiver_id),
 		#receiver_id,
+		raw_prekey_list,
+		raw_prekey_list_length,
+		raw_message,
+		raw_message_length,
 		raw_backup,
 		raw_backup_length)
 	local status_type = molch_interface.get_status(status)
@@ -444,7 +449,7 @@ function molch.user:create_send_conversation(message, prekey_list, receiver_id)
 	return conversation, packet
 end
 
-function molch.user:create_receive_conversation(packet, sender_id)
+function molch.user:start_receive_conversation(packet, sender_id)
 	local conversation = {}
 	setmetatable(conversation, molch.conversation)
 
@@ -458,19 +463,19 @@ function molch.user:create_receive_conversation(packet, sender_id)
 
 	local raw_packet, raw_packet_length = convert_to_c_string(packet)
 
-	local status = molch_interface.molch_create_receive_conversation(
+	local status = molch_interface.molch_start_receive_conversation(
 		raw_conversation_id,
 		molch_interface.CONVERSATION_ID_SIZE,
 		raw_message,
 		raw_message_length,
-		raw_packet,
-		raw_packet_length,
 		raw_prekey_list,
 		raw_prekey_list_length,
-		convert_to_c_string(sender_id),
-		#sender_id,
 		convert_to_c_string(self.id),
 		#self.id,
+		convert_to_c_string(sender_id),
+		#sender_id,
+		raw_packet,
+		raw_packet_length,
 		raw_backup,
 		raw_backup_length)
 	local status_type = molch_interface.get_status(status)
@@ -535,10 +540,10 @@ function molch.conversation:encrypt_message(message)
 	local status = molch_interface.molch_encrypt_message(
 		raw_packet,
 		raw_packet_length,
-		raw_message,
-		raw_message_length,
 		convert_to_c_string(self.id),
 		#self.id,
+		raw_message,
+		raw_message_length,
 		raw_backup,
 		raw_backup_length)
 	local status_type = molch_interface.get_status(status)
@@ -569,12 +574,12 @@ function molch.conversation:decrypt_message(packet)
 	local status = molch_interface.molch_decrypt_message(
 		raw_message,
 		raw_message_length,
-		raw_packet,
-		raw_packet_length,
-		convert_to_c_string(self.id),
-		#self.id,
 		raw_receive_message_number,
 		raw_previous_receive_message_number,
+		convert_to_c_string(self.id),
+		#self.id,
+		raw_packet,
+		raw_packet_length,
 		raw_backup,
 		raw_backup_length)
 	local status_type = molch_interface.get_status(status)
@@ -624,7 +629,7 @@ end
 
 function molch.print_errors(status)
 	local size = molch_interface.size_t()
-	local raw_error_stack = molch_interface.molch_print_status(status, size)
+	local raw_error_stack = molch_interface.molch_print_status(size, status)
 	molch_interface.molch_destroy_return_status(status)
 	return raw_error_stack
 end

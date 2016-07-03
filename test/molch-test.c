@@ -91,12 +91,12 @@ int main(void) {
 			alice_public_identity->content_length,
 			&alice_public_prekeys,
 			&alice_public_prekeys_length,
-			alice_head_on_keyboard->content,
-			alice_head_on_keyboard->content_length,
 			new_backup_key->content,
 			new_backup_key->content_length,
 			&complete_export,
-			&complete_export_length);
+			&complete_export_length,
+			alice_head_on_keyboard->content,
+			alice_head_on_keyboard->content_length);
 	throw_on_error(status.status, "Failed to create Alice!");
 
 	if (buffer_compare(backup_key, new_backup_key) == 0) {
@@ -136,12 +136,12 @@ int main(void) {
 			bob_public_identity->content_length,
 			&bob_public_prekeys,
 			&bob_public_prekeys_length,
-			bob_head_on_keyboard->content,
-			bob_head_on_keyboard->content_length,
 			backup_key->content,
 			backup_key->content_length,
 			NULL,
-			NULL);
+			NULL,
+			bob_head_on_keyboard->content,
+			bob_head_on_keyboard->content_length);
 	throw_on_error(status.status, "Failed to create Bob!");
 
 	printf("Bob public identity (%zu Bytes):\n", bob_public_identity->content_length);
@@ -157,7 +157,7 @@ int main(void) {
 	size_t user_count = 0;
 	size_t user_list_length = 0;
 	unsigned char *user_list = NULL;
-	status = molch_user_list(&user_list, &user_list_length, &user_count);
+	status = molch_list_users(&user_list, &user_list_length, &user_count);
 	throw_on_error(CREATION_ERROR, "Failed to list users.");
 	if ((user_count != 2)
 			|| (sodium_memcmp(alice_public_identity->content, user_list, alice_public_identity->content_length) != 0)
@@ -170,19 +170,19 @@ int main(void) {
 	//create a new send conversation (alice sends to bob)
 	buffer_create_from_string(alice_send_message, "Hi Bob. Alice here!");
 	size_t alice_send_packet_length;
-	status = molch_create_send_conversation(
+	status = molch_start_send_conversation(
 			alice_conversation->content,
 			alice_conversation->content_length,
 			&alice_send_packet,
 			&alice_send_packet_length,
-			alice_send_message->content,
-			alice_send_message->content_length,
-			bob_public_prekeys,
-			bob_public_prekeys_length,
 			alice_public_identity->content,
 			alice_public_identity->content_length,
 			bob_public_identity->content,
 			bob_public_identity->content_length,
+			bob_public_prekeys,
+			bob_public_prekeys_length,
+			alice_send_message->content,
+			alice_send_message->content_length,
 			NULL,
 			NULL);
 	throw_on_error(CREATION_ERROR, "Failed to start send conversation.");
@@ -191,7 +191,12 @@ int main(void) {
 	size_t number_of_conversations = 0;;
 	size_t conversation_list_length = 0;
 	unsigned char *conversation_list = NULL;
-	status = molch_list_conversations(alice_public_identity->content, alice_public_identity->content_length, &conversation_list, &conversation_list_length, &number_of_conversations);
+	status = molch_list_conversations(
+			&conversation_list,
+			&conversation_list_length,
+			&number_of_conversations,
+			alice_public_identity->content,
+			alice_public_identity->content_length);
 	throw_on_error(GENERIC_ERROR, "Failed to list conversations.");
 	if ((number_of_conversations != 1) || (buffer_compare_to_raw(alice_conversation, conversation_list, alice_conversation->content_length) != 0)) {
 		free(conversation_list);
@@ -224,19 +229,19 @@ int main(void) {
 	//create a new receive conversation (bob receives from alice)
 	unsigned char *bob_receive_message;
 	size_t bob_receive_message_length;
-	status = molch_create_receive_conversation(
+	status = molch_start_receive_conversation(
 			bob_conversation->content,
 			bob_conversation->content_length,
-			&bob_receive_message,
-			&bob_receive_message_length,
-			alice_send_packet,
-			alice_send_packet_length,
 			&bob_public_prekeys,
 			&bob_public_prekeys_length,
-			alice_public_identity->content,
-			alice_public_identity->content_length,
+			&bob_receive_message,
+			&bob_receive_message_length,
 			bob_public_identity->content,
 			bob_public_identity->content_length,
+			alice_public_identity->content,
+			alice_public_identity->content_length,
+			alice_send_packet,
+			alice_send_packet_length,
 			NULL,
 			NULL);
 	throw_on_error(CREATION_ERROR, "Failed to start receive conversation.");
@@ -259,10 +264,10 @@ int main(void) {
 	status = molch_encrypt_message(
 			&bob_send_packet,
 			&bob_send_packet_length,
-			bob_send_message->content,
-			bob_send_message->content_length,
 			bob_conversation->content,
 			bob_conversation->content_length,
+			bob_send_message->content,
+			bob_send_message->content_length,
 			&conversation_json_export,
 			&conversation_json_export_length);
 	throw_on_error(GENERIC_ERROR, "Couldn't send bobs message.");
@@ -280,16 +285,15 @@ int main(void) {
 	//alice receives reply
 	unsigned char *alice_receive_message = NULL;
 	size_t alice_receive_message_length;
-	printf("BEFORE molch_decrypt_message\n");
 	status = molch_decrypt_message(
 			&alice_receive_message,
 			&alice_receive_message_length,
-			bob_send_packet,
-			bob_send_packet_length,
-			alice_conversation->content,
-			alice_conversation->content_length,
 			&alice_receive_message_number,
 			&alice_previous_receive_message_number,
+			alice_conversation->content,
+			alice_conversation->content_length,
+			bob_send_packet,
+			bob_send_packet_length,
 			NULL,
 			NULL);
 	on_error(
@@ -298,7 +302,6 @@ int main(void) {
 		}
 		throw(GENERIC_ERROR, "Incorrect message received.");
 	)
-	printf("AFTER molch_decrypt_message\n");
 
 	if ((alice_receive_message_number != 0) || (alice_previous_receive_message_number != 0)) {
 		free(alice_receive_message);
@@ -325,12 +328,12 @@ int main(void) {
 	//test import
 	printf("Test import!\n");
 	status = molch_import(
+			new_backup_key->content,
+			new_backup_key->content_length,
 			backup,
 			backup_length,
 			backup_key->content,
-			backup_key->content_length,
-			new_backup_key->content,
-			new_backup_key->content_length);
+			backup_key->content_length);
 	on_error(
 		free(backup);
 		throw(IMPORT_ERROR, "Failed to import backup.");
@@ -400,12 +403,12 @@ int main(void) {
 
 	//import again
 	status = molch_conversation_import(
+			new_backup_key->content,
+			new_backup_key->content_length,
 			backup,
 			backup_length,
 			backup_key->content,
-			backup_key->content_length,
-			new_backup_key->content,
-			new_backup_key->content_length);
+			backup_key->content_length);
 	on_error(
 		free(backup);
 		throw(IMPORT_ERROR, "Failed to import Alice' conversation from backup.");
@@ -478,7 +481,7 @@ int main(void) {
 
 	buffer_create_from_string(success_buffer, "SUCCESS");
 	size_t printed_status_length = 0;
-	printed_status = (unsigned char*) molch_print_status(return_status_init(), &printed_status_length);
+	printed_status = (unsigned char*) molch_print_status(&printed_status_length, return_status_init());
 	if (buffer_compare_to_raw(success_buffer, printed_status, printed_status_length) != 0) {
 		throw(INCORRECT_DATA, "molch_print_status produces incorrect output.");
 	}

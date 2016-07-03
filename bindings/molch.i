@@ -78,12 +78,12 @@ extern return_status molch_create_user(
 		const size_t public_master_key_length,
 		unsigned char **const prekey_list,
 		size_t *const prekey_list_length,
-		const unsigned char *const random_data,
-		const size_t random_data_length,
 		unsigned char * backup_key,
 		const size_t backup_key_length,
 		unsigned char **const backup,
-		size_t *const backup_length
+		size_t *const backup_length,
+		const unsigned char *const random_data,
+		const size_t random_data_length
 	);
 
 extern return_status molch_destroy_user(
@@ -95,7 +95,7 @@ extern return_status molch_destroy_user(
 
 extern size_t molch_user_count();
 
-extern return_status molch_user_list(
+extern return_status molch_list_users(
 	unsigned char **const user_list,
 	size_t * const user_list_length,
 	size_t * count);
@@ -108,36 +108,36 @@ extern molch_message_type molch_get_message_type(
 		const unsigned char * const packet,
 		const size_t packet_length);
 
-extern return_status molch_create_send_conversation(
+extern return_status molch_start_send_conversation(
 		unsigned char * const conversation_id,
 		const size_t conversation_id_length,
 		unsigned char ** const packet,
 		size_t *packet_length,
-		const unsigned char * const message,
-		const size_t message_length,
-		const unsigned char * const prekey_list,
-		const size_t prekey_list_length,
 		const unsigned char * const sender_public_master_key,
 		const size_t sender_public_master_key_length,
 		const unsigned char * const receiver_public_master_key,
 		const size_t receiver_public_master_key_length,
+		const unsigned char * const prekey_list,
+		const size_t prekey_list_length,
+		const unsigned char * const message,
+		const size_t message_length,
 		unsigned char ** const backup,
 		size_t * const backup_length
 		);
 
-extern return_status molch_create_receive_conversation(
+extern return_status molch_start_receive_conversation(
 		unsigned char * const conversation_id,
 		const size_t conversation_id_length,
 		unsigned char ** const message,
 		size_t * const message_length,
-		const unsigned char * const packet,
-		const size_t packet_length,
 		unsigned char ** const prekey_list,
 		size_t * const prekey_list_length,
-		const unsigned char * const sender_public_master_key,
-		const size_t sender_public_master_key_length,
 		const unsigned char * const receiver_public_master_key,
 		const size_t receiver_public_master_key_length,
+		const unsigned char * const sender_public_master_key,
+		const size_t sender_public_master_key_length,
+		const unsigned char * const packet,
+		const size_t packet_length,
 		unsigned char ** const backup,
 		size_t * const backup_length
 		);
@@ -145,10 +145,10 @@ extern return_status molch_create_receive_conversation(
 extern return_status molch_encrypt_message(
 		unsigned char ** const packet,
 		size_t *packet_length,
-		const unsigned char * const message,
-		const size_t message_length,
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length,
+		const unsigned char * const message,
+		const size_t message_length,
 		unsigned char ** const backup,
 		size_t * const backup_length
 		);
@@ -156,12 +156,12 @@ extern return_status molch_encrypt_message(
 extern return_status molch_decrypt_message(
 		unsigned char ** const message,
 		size_t *message_length,
-		const unsigned char * const packet,
-		const size_t packet_length,
-		const unsigned char * const conversation_id,
-		const size_t conversation_id_length,
 		uint32_t * const receive_message_number,
 		uint32_t * const previous_receive_message_number,
+		const unsigned char * const conversation_id,
+		const size_t conversation_id_length,
+		const unsigned char * const packet,
+		const size_t packet_length,
 		unsigned char ** const backup,
 		size_t * const backup_length
 		);
@@ -174,13 +174,13 @@ extern void molch_end_conversation(
 		);
 
 extern return_status molch_list_conversations(
-		const unsigned char * const user_public_master_key,
-		const size_t user_public_master_key_length,
 		unsigned char ** const conversation_list,
 		size_t * const conversation_list_length,
-		size_t * const number);
+		size_t * const number,
+		const unsigned char * const user_public_master_key,
+		const size_t user_public_master_key_length);
 
-extern char *molch_print_status(return_status status, size_t * const output_length);
+extern char *molch_print_status(size_t * const output_length, return_status status);
 
 extern const char *molch_print_status_type(status_type type);
 
@@ -195,20 +195,20 @@ extern return_status molch_conversation_export(
 extern return_status molch_export(unsigned char ** const backup, size_t *backup_length);
 
 extern return_status molch_conversation_import(
+		unsigned char * new_backup_key,
+		const size_t new_backup_key_length,
 		const unsigned char * const backup,
 		const size_t backup_length,
 		const unsigned char * backup_key,
-		const size_t backup_key,
-		unsigned char * new_backup_key,
-		const size_t new_backup_key_length);
+		const size_t backup_key);
 
 return_status molch_import(
+		unsigned char * const new_backup_key,
+		const size_t new_backup_key_length,
 		unsigned char * const backup,
 		const size_t backup_length,
 		const unsigned char * const backup_key,
-		const size_t backup_key_length,
-		unsigned char * const new_backup_key,
-		const size_t new_backup_key_length);
+		const size_t backup_key_length);
 
 extern return_status molch_get_prekey_list(
 		unsigned char * const public_master_key,
