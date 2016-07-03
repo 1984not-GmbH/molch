@@ -403,12 +403,12 @@ int main(void) {
 
 	//import again
 	status = molch_conversation_import(
+			new_backup_key->content,
+			new_backup_key->content_length,
 			backup,
 			backup_length,
 			backup_key->content,
-			backup_key->content_length,
-			new_backup_key->content,
-			new_backup_key->content_length);
+			backup_key->content_length);
 	on_error(
 		free(backup);
 		throw(IMPORT_ERROR, "Failed to import Alice' conversation from backup.");

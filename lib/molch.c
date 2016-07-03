@@ -1328,12 +1328,14 @@ cleanup:
  * if an error has occurred.
  */
 return_status molch_conversation_import(
+		//output
+		unsigned char * new_backup_key, //BACKUP_KEY_SIZE, can be the same pointer as the backup key
+		const size_t new_backup_key_length,
+		//inputs
 		const unsigned char * const backup,
 		const size_t backup_length,
 		const unsigned char * local_backup_key, //BACKUP_KEY_SIZE
-		const size_t local_backup_key_length,
-		unsigned char * new_backup_key, //output, BACKUP_KEY_SIZE, can be the same pointer as the backup key
-		const size_t new_backup_key_length) {
+		const size_t local_backup_key_length) {
 	return_status status = return_status_init();
 
 	buffer_t *json = buffer_create_with_custom_allocator(backup_length, 0, sodium_malloc, sodium_free);
