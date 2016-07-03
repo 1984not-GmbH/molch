@@ -280,7 +280,6 @@ int main(void) {
 	//alice receives reply
 	unsigned char *alice_receive_message = NULL;
 	size_t alice_receive_message_length;
-	printf("BEFORE molch_decrypt_message\n");
 	status = molch_decrypt_message(
 			&alice_receive_message,
 			&alice_receive_message_length,
@@ -298,7 +297,6 @@ int main(void) {
 		}
 		throw(GENERIC_ERROR, "Incorrect message received.");
 	)
-	printf("AFTER molch_decrypt_message\n");
 
 	if ((alice_receive_message_number != 0) || (alice_previous_receive_message_number != 0)) {
 		free(alice_receive_message);
