@@ -294,7 +294,12 @@ function molch.user:list_conversations()
 	local count = molch_interface.size_t()
 	local raw_list_length = molch_interface.size_t()
 	local raw_list = molch_interface.create_ucstring_pointer()
-	local status = molch_interface.molch_list_conversations(convert_to_c_string(self.id), #self.id, raw_list, raw_list_length, count)
+	local status = molch_interface.molch_list_conversations(
+		raw_list,
+		raw_list_length,
+		count,
+		convert_to_c_string(self.id),
+		#self.id)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		error(molch.print_errors(status))

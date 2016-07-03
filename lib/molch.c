@@ -974,11 +974,13 @@ cleanup:
  * if an error has occurred.
  */
 return_status molch_list_conversations(
-		const unsigned char * const user_public_master_key,
-		const size_t user_public_master_key_length,
+		//outputs
 		unsigned char ** const conversation_list,
 		size_t * const conversation_list_length,
-		size_t * const number) {
+		size_t * const number,
+		//inputs
+		const unsigned char * const user_public_master_key,
+		const size_t user_public_master_key_length) {
 	buffer_create_with_existing_array(user_public_master_key_buffer, (unsigned char*)user_public_master_key, PUBLIC_KEY_SIZE);
 	buffer_t *conversation_list_buffer = NULL;
 

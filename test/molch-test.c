@@ -191,7 +191,12 @@ int main(void) {
 	size_t number_of_conversations = 0;;
 	size_t conversation_list_length = 0;
 	unsigned char *conversation_list = NULL;
-	status = molch_list_conversations(alice_public_identity->content, alice_public_identity->content_length, &conversation_list, &conversation_list_length, &number_of_conversations);
+	status = molch_list_conversations(
+			&conversation_list,
+			&conversation_list_length,
+			&number_of_conversations,
+			alice_public_identity->content,
+			alice_public_identity->content_length);
 	throw_on_error(GENERIC_ERROR, "Failed to list conversations.");
 	if ((number_of_conversations != 1) || (buffer_compare_to_raw(alice_conversation, conversation_list, alice_conversation->content_length) != 0)) {
 		free(conversation_list);
