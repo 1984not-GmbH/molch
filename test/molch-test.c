@@ -481,7 +481,7 @@ int main(void) {
 
 	buffer_create_from_string(success_buffer, "SUCCESS");
 	size_t printed_status_length = 0;
-	printed_status = (unsigned char*) molch_print_status(return_status_init(), &printed_status_length);
+	printed_status = (unsigned char*) molch_print_status(&printed_status_length, return_status_init());
 	if (buffer_compare_to_raw(success_buffer, printed_status, printed_status_length) != 0) {
 		throw(INCORRECT_DATA, "molch_print_status produces incorrect output.");
 	}

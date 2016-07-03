@@ -180,7 +180,7 @@ extern return_status molch_list_conversations(
 		const unsigned char * const user_public_master_key,
 		const size_t user_public_master_key_length);
 
-extern char *molch_print_status(return_status status, size_t * const output_length);
+extern char *molch_print_status(size_t * const output_length, return_status status);
 
 extern const char *molch_print_status_type(status_type type);
 

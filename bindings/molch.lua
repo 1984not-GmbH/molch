@@ -629,7 +629,7 @@ end
 
 function molch.print_errors(status)
 	local size = molch_interface.size_t()
-	local raw_error_stack = molch_interface.molch_print_status(status, size)
+	local raw_error_stack = molch_interface.molch_print_status(size, status)
 	molch_interface.molch_destroy_return_status(status)
 	return raw_error_stack
 end

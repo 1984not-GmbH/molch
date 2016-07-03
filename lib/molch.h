@@ -257,7 +257,7 @@ return_status molch_list_conversations(
  *
  * Don't forget to free the output after use.
  */
-char *molch_print_status(return_status status, size_t * const output_length) __attribute__((warn_unused_result));
+char *molch_print_status(size_t * const output_length, return_status status) __attribute__((warn_unused_result));
 
 /*
  * Get a string describing the return status type.

@@ -1040,7 +1040,7 @@ cleanup:
  *
  * Don't forget to free the output after use.
  */
-char *molch_print_status(return_status status, size_t * const output_length) {
+char *molch_print_status(size_t * const output_length, return_status status) {
 	return return_status_print(&status, output_length);
 }
 
