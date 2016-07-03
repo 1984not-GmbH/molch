@@ -21,6 +21,9 @@
 #include <limits.h>
 #include "prekey-store.h"
 
+static const time_t PREKEY_EXPIRATION_TIME = 3600 * 24 * 31; //one month
+static const time_t DEPRECATED_PREKEY_EXPIRATION_TIME = 3600; //one hour
+
 /*
  * Initialise a new keystore. Generates all the keys.
  */
@@ -35,16 +38,16 @@ return_status prekey_store_create(prekey_store ** const store) {
 	if (*store == NULL) {
 		throw(ALLOCATION_FAILED, "Failed to allocate prekey store.");
 	}
-	//set timestamp to the past --> rotate will create new keys
-	(*store)->oldest_timestamp = 0;
-	(*store)->oldest_deprecated_timestamp = 0;
+	//set expiration date to the past --> rotate will create new keys
+	(*store)->oldest_expiration_date = 0;
+	(*store)->oldest_deprecated_expiration_date = 0;
 
 	(*store)->deprecated_prekeys = NULL;
 
 	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		(*store)->prekeys[i].timestamp = time(NULL);
-		if (((*store)->oldest_timestamp == 0) || ((*store)->prekeys[i].timestamp < (*store)->oldest_timestamp)) {
-			(*store)->oldest_timestamp = (*store)->prekeys[i].timestamp;
+		(*store)->prekeys[i].expiration_date = time(NULL) + PREKEY_EXPIRATION_TIME;
+		if (((*store)->oldest_expiration_date == 0) || ((*store)->prekeys[i].expiration_date < (*store)->oldest_expiration_date)) {
+			(*store)->oldest_expiration_date = (*store)->prekeys[i].expiration_date;
 		}
 
 		(*store)->prekeys[i].next = NULL;
@@ -98,7 +101,7 @@ int deprecate(prekey_store * const store, size_t index) {
 
 	//initialise the deprecated node
 	deprecated_node->next =store->deprecated_prekeys;
-	deprecated_node->timestamp = time(NULL);
+	deprecated_node->expiration_date = time(NULL) + DEPRECATED_PREKEY_EXPIRATION_TIME;
 	buffer_init_with_pointer(
 			deprecated_node->public_key,
 			deprecated_node->public_key_storage,
@@ -121,8 +124,8 @@ int deprecate(prekey_store * const store, size_t index) {
 	}
 
 	//add it to the list of deprecated keys
-	if ((store->oldest_deprecated_timestamp == 0) || (store->oldest_deprecated_timestamp > deprecated_node->timestamp)) {
-		store->oldest_deprecated_timestamp = deprecated_node->timestamp;
+	if ((store->oldest_deprecated_expiration_date == 0) || (store->oldest_deprecated_expiration_date > deprecated_node->expiration_date)) {
+		store->oldest_deprecated_expiration_date = deprecated_node->expiration_date;
 	}
 	store->deprecated_prekeys = deprecated_node;
 
@@ -133,7 +136,7 @@ int deprecate(prekey_store * const store, size_t index) {
 	if (status != 0) {
 		goto cleanup;
 	}
-	store->prekeys[index].timestamp = time(NULL);
+	store->prekeys[index].expiration_date = time(NULL) + PREKEY_EXPIRATION_TIME;
 
 cleanup:
 	if ((status != 0) && (deprecated_node != NULL)) {
@@ -250,24 +253,19 @@ return_status prekey_store_rotate(prekey_store * const store) {
 		throw(INVALID_INPUT, "Invalid input to prekey_store_rotate: store is NULL.");
 	}
 
-	//time after which a prekey get's deprecated
-	static const time_t deprecated_time = 3600 * 24 * 31; //one month
-	//time after which a deprecated prekey gets removed
-	static const time_t remove_time = 3600; //one hour
-
 	time_t current_time = time(NULL);
 
-	//Is the timestamp in the future?
-	if (current_time < store->oldest_timestamp) {
+	//Is the expiration date too far into the future?
+	if ((current_time + PREKEY_EXPIRATION_TIME) < store->oldest_expiration_date) {
 		//TODO: Is this correct behavior?
-		//Set the timestamp of everything to the current time
+		//Set the expiration date of everything to the current time + PREKEY_EXPIRATION_TIME
 		for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-			store->prekeys[i].timestamp = current_time;
+			store->prekeys[i].expiration_date = current_time + PREKEY_EXPIRATION_TIME;
 		}
 
 		prekey_store_node *next = store->deprecated_prekeys;
 		while (next != NULL) {
-			next->timestamp = current_time;
+			next->expiration_date = current_time + DEPRECATED_PREKEY_EXPIRATION_TIME;
 			next = next->next;
 		}
 
@@ -275,27 +273,27 @@ return_status prekey_store_rotate(prekey_store * const store) {
 	}
 
 	//At least one outdated prekey
-	time_t new_oldest_timestamp = current_time;
-	if ((store->oldest_timestamp + deprecated_time) < current_time) {
+	time_t new_oldest_expiration_date = current_time + PREKEY_EXPIRATION_TIME;
+	if (store->oldest_expiration_date < current_time) {
 		for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-			if ((store->prekeys[i].timestamp + deprecated_time) < current_time) {
+			if (store->prekeys[i].expiration_date < current_time) {
 				if (deprecate(store, i) != 0) {
 					throw(GENERIC_ERROR, "Failed to deprecate key.");
 				}
-			} else if (store->prekeys[i].timestamp < new_oldest_timestamp) {
-				new_oldest_timestamp = store->prekeys[i].timestamp;
+			} else if (store->prekeys[i].expiration_date < new_oldest_expiration_date) {
+				new_oldest_expiration_date = store->prekeys[i].expiration_date;
 			}
 		}
 	}
-	store->oldest_timestamp = new_oldest_timestamp;
+	store->oldest_expiration_date = new_oldest_expiration_date;
 
-	//Is the deprecated oldest timestamp in the future?
-	if (current_time < store->oldest_deprecated_timestamp) {
+	//Is the deprecated oldest expiration date too far into the future?
+	if ((current_time + DEPRECATED_PREKEY_EXPIRATION_TIME) < store->oldest_deprecated_expiration_date) {
 		//TODO: Is this correct behavior?
-		//Set the timestamp of everything to the current time
+		//Set the expiration date of everything to the current time + DEPRECATED_PREKEY_EXPIRATION_TIME
 		prekey_store_node *next = store->deprecated_prekeys;
 		while (next != NULL) {
-			next->timestamp = current_time;
+			next->expiration_date = current_time + DEPRECATED_PREKEY_EXPIRATION_TIME;
 			next = next->next;
 		}
 
@@ -303,18 +301,18 @@ return_status prekey_store_rotate(prekey_store * const store) {
 	}
 
 	//At least one key to be removed
-	time_t new_oldest_deprecated_timestamp = current_time;
-	if ((store->deprecated_prekeys != NULL) && (store->oldest_deprecated_timestamp + remove_time) < current_time) {
+	time_t new_oldest_deprecated_expiration_date = current_time + DEPRECATED_PREKEY_EXPIRATION_TIME;
+	if ((store->deprecated_prekeys != NULL) && (store->oldest_deprecated_expiration_date < current_time)) {
 		prekey_store_node **last_pointer = &(store->deprecated_prekeys);
 		prekey_store_node *next = store->deprecated_prekeys;
 		while(next != NULL) {
-			if ((next->timestamp + remove_time) < current_time) {
+			if (next->expiration_date < current_time) {
 				*last_pointer = next->next;
 				sodium_free(next);
 				next = *last_pointer;
 				continue;
-			} else if (next->timestamp < new_oldest_deprecated_timestamp) {
-				new_oldest_deprecated_timestamp = next->timestamp;
+			} else if (next->expiration_date < new_oldest_deprecated_expiration_date) {
+				new_oldest_deprecated_expiration_date = next->expiration_date;
 			}
 
 			last_pointer = &(next->next);
@@ -351,13 +349,13 @@ mcJSON *prekey_store_node_json_export(const prekey_store_node * const node, memp
 		return NULL;
 	}
 
-	//add timestamp
-	mcJSON *timestamp = mcJSON_CreateNumber((double)node->timestamp, pool);
-	if (timestamp == NULL) {
+	//add expiration date
+	mcJSON *expiration_date = mcJSON_CreateNumber((double)node->expiration_date, pool);
+	if (expiration_date == NULL) {
 		return NULL;
 	}
-	buffer_create_from_string(timestamp_string, "timestamp");
-	mcJSON_AddItemToObject(json, timestamp_string, timestamp, pool);
+	buffer_create_from_string(expiration_date_string, "expiration_date");
+	mcJSON_AddItemToObject(json, expiration_date_string, expiration_date, pool);
 
 	//add public key
 	mcJSON *public_key_hex = mcJSON_CreateHexString(node->public_key, pool);
@@ -390,21 +388,21 @@ mcJSON *prekey_store_json_export(const prekey_store * const store, mempool_t * c
 		return NULL;
 	}
 
-	//add oldest timestamp
-	mcJSON *oldest_timestamp = mcJSON_CreateNumber((double)store->oldest_timestamp, pool);
-	if (oldest_timestamp == NULL) {
+	//add oldest expiration_date
+	mcJSON *oldest_expiration_date = mcJSON_CreateNumber((double)store->oldest_expiration_date, pool);
+	if (oldest_expiration_date == NULL) {
 		return NULL;
 	}
-	buffer_create_from_string(oldest_timestamp_string, "oldest_timestamp");
-	mcJSON_AddItemToObject(json, oldest_timestamp_string, oldest_timestamp, pool);
+	buffer_create_from_string(oldest_expiration_date_string, "oldest_expiration_date");
+	mcJSON_AddItemToObject(json, oldest_expiration_date_string, oldest_expiration_date, pool);
 
-	//add oldest_deprecated_timestamp
-	mcJSON *oldest_deprecated_timestamp = mcJSON_CreateNumber((double)store->oldest_deprecated_timestamp, pool);
-	if (oldest_deprecated_timestamp == NULL) {
+	//add oldest deprecated expiration date
+	mcJSON *oldest_deprecated_expiration_date = mcJSON_CreateNumber((double)store->oldest_deprecated_expiration_date, pool);
+	if (oldest_deprecated_expiration_date == NULL) {
 		return NULL;
 	}
-	buffer_create_from_string(oldest_deprecated_timestamp_string, "oldest_deprecated_timestamp");
-	mcJSON_AddItemToObject(json, oldest_deprecated_timestamp_string, oldest_deprecated_timestamp, pool);
+	buffer_create_from_string(oldest_deprecated_expiration_date_string, "oldest_deprecated_expiration_date");
+	mcJSON_AddItemToObject(json, oldest_deprecated_expiration_date_string, oldest_deprecated_expiration_date, pool);
 
 	//create the list of prekeys
 	mcJSON *prekeys = mcJSON_CreateArray(pool);
@@ -452,12 +450,12 @@ int prekey_store_node_json_import(prekey_store_node * const node, const mcJSON *
 		return -1;
 	}
 
-	buffer_create_from_string(timestamp_string, "timestamp");
-	mcJSON *timestamp = mcJSON_GetObjectItem(json, timestamp_string);
-	if ((timestamp == NULL) || (timestamp->type != mcJSON_Number)) {
+	buffer_create_from_string(expiration_date_string, "expiration_date");
+	mcJSON *expiration_date = mcJSON_GetObjectItem(json, expiration_date_string);
+	if ((expiration_date == NULL) || (expiration_date->type != mcJSON_Number)) {
 		return -1;
 	}
-	node->timestamp = (time_t) timestamp->valuedouble;
+	node->expiration_date = (time_t) expiration_date->valuedouble;
 
 	buffer_create_from_string(public_key_string, "public_key");
 	mcJSON *public_key = mcJSON_GetObjectItem(json, public_key_string);
@@ -495,22 +493,22 @@ prekey_store *prekey_store_json_import(const mcJSON * const json __attribute__((
 
 	int status = 0;
 
-	//timestamps
-	buffer_create_from_string(oldest_timestamp_string, "oldest_timestamp");
-	mcJSON *oldest_timestamp = mcJSON_GetObjectItem(json, oldest_timestamp_string);
-	if ((oldest_timestamp == NULL) || (oldest_timestamp->type != mcJSON_Number)) {
+	//expiration dates
+	buffer_create_from_string(oldest_expiration_date_string, "oldest_expiration_date");
+	mcJSON *oldest_expiration_date = mcJSON_GetObjectItem(json, oldest_expiration_date_string);
+	if ((oldest_expiration_date == NULL) || (oldest_expiration_date->type != mcJSON_Number)) {
 		status = -1;
 		goto cleanup;
 	}
-	store->oldest_timestamp = (time_t)oldest_timestamp->valuedouble;
+	store->oldest_expiration_date = (time_t)oldest_expiration_date->valuedouble;
 
-	buffer_create_from_string(oldest_deprecated_timestamp_string, "oldest_deprecated_timestamp");
-	mcJSON *oldest_deprecated_timestamp = mcJSON_GetObjectItem(json, oldest_deprecated_timestamp_string);
-	if ((oldest_deprecated_timestamp == NULL) || (oldest_deprecated_timestamp->type != mcJSON_Number)) {
+	buffer_create_from_string(oldest_deprecated_expiration_date_string, "oldest_deprecated_expiration_date");
+	mcJSON *oldest_deprecated_expiration_date = mcJSON_GetObjectItem(json, oldest_deprecated_expiration_date_string);
+	if ((oldest_deprecated_expiration_date == NULL) || (oldest_deprecated_expiration_date->type != mcJSON_Number)) {
 		status = -1;
 		goto cleanup;
 	}
-	store->oldest_deprecated_timestamp = (time_t)oldest_deprecated_timestamp->valuedouble;
+	store->oldest_deprecated_expiration_date = (time_t)oldest_deprecated_expiration_date->valuedouble;
 
 	//load all the regular prekeys
 	buffer_create_from_string(prekeys_string, "prekeys");

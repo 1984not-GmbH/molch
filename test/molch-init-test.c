@@ -29,56 +29,88 @@
 int main(void) {
 	/* don't initialize libsodium here */
 	buffer_t *user_id = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	buffer_t *json_backup = NULL; //json backup to import from
-	unsigned char *json = NULL;
+	buffer_t *backup_file = NULL; //backup to import from
+	buffer_t *backup_key_file = NULL;
+
+	unsigned char *backup = NULL;
 	unsigned char *prekey_list = NULL;
+	unsigned char *backup_key = malloc(BACKUP_KEY_SIZE);
 
 	return_status status = return_status_init();
 
-	//load the json backup from a file
-	read_file(&json_backup, "test-data/molch-init.json");
-	if (json_backup == NULL) {
-		throw(DATA_FETCH_ERROR, "Failed to read JSON backup from a file.");
+	if (sodium_init() != 0) {
+		throw(INIT_ERROR, "Failed to initialize libsodium.");
+	}
+
+	//load the backup from a file
+	read_file(&backup_file, "test-data/molch-init.backup");
+	if (backup_file == NULL) {
+		throw(DATA_FETCH_ERROR, "Failed to read backup from a file.");
+	}
+
+	//load the backup key from a file
+	read_file(&backup_key_file, "test-data/molch-init-backup.key");
+	if (backup_key_file == NULL) {
+		throw(DATA_FETCH_ERROR, "Failed to read backup key from a file.");
+	}
+	if (backup_key_file->content_length != BACKUP_KEY_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "Backup key from file has an incorrect length.");
 	}
 
 	//try to import the backup
-	status = molch_json_import(json_backup->content, json_backup->content_length);
-	throw_on_error(IMPORT_ERROR, "Failed to import backup from JSON.");
+	status = molch_import(
+			backup_file->content,
+			backup_file->content_length,
+			backup_key_file->content,
+			backup_key_file->content_length,
+			backup_key,
+			BACKUP_KEY_SIZE);
+	throw_on_error(IMPORT_ERROR, "Failed to import backup from backup.");
 
 	//destroy again
 	molch_destroy_all_users();
 
 	//create a new user
-	size_t json_length;
+	size_t backup_length;
 	size_t prekey_list_length;
 	status = molch_create_user(
 			user_id->content,
+			user_id->content_length,
 			&prekey_list,
 			&prekey_list_length,
+			backup_key,
+			BACKUP_KEY_SIZE,
+			&backup,
+			&backup_length,
 			(unsigned char*)"random",
-			sizeof("random"),
-			&json,
-			&json_length);
+			sizeof("random"));
 	throw_on_error(CREATION_ERROR, "Failed to create user.");
-	if (json == NULL) {
-		throw(EXPORT_ERROR, "Failed to export JSON.");
+	if (backup == NULL) {
+		throw(EXPORT_ERROR, "Failed to export backup.");
 	}
 
-	//print the json to a file
-	buffer_create_with_existing_array(json_buffer, json, json_length);
-	print_to_file(json_buffer, "molch-init.json");
+	//print the backup to a file
+	buffer_create_with_existing_array(backup_buffer, backup, backup_length);
+	buffer_create_with_existing_array(backup_key_buffer, backup_key, BACKUP_KEY_SIZE);
+	print_to_file(backup_buffer, "molch-init.backup");
+	print_to_file(backup_key_buffer, "molch-init-backup.key");
 
 cleanup:
 	buffer_destroy_from_heap(user_id);
-	if (json != NULL) {
-		sodium_free(json);
+	if (backup != NULL) {
+		free(backup);
 	}
 	if (prekey_list != NULL) {
 		free(prekey_list);
 	}
-	if (json_backup != NULL) {
-		buffer_destroy_from_heap(json_backup);
+	if (backup_file != NULL) {
+		buffer_destroy_from_heap(backup_file);
 	}
+	if (backup_key_file != NULL) {
+		buffer_destroy_from_heap(backup_key_file);
+	}
+
+	free(backup_key);
 
 	on_error(
 		print_errors(&status);

@@ -54,7 +54,7 @@ void print_to_file(const buffer_t * const data, const char * const filename) {
 		return;
 	}
 
-	fprintf(file, "%.*s", (int)data->content_length, (char*)data->content);
+	fwrite(data->content, 1, data->content_length, file);
 
 	fclose(file);
 }

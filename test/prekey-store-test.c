@@ -145,8 +145,8 @@ int main(void) {
 		throw(BUFFER_ERROR, "Failed to clone public key.");
 	}
 
-	store->prekeys[PREKEY_AMOUNT-1].timestamp -= 365 * 24 * 3600; //one year
-	store->oldest_timestamp = store->prekeys[PREKEY_AMOUNT - 1].timestamp;
+	store->prekeys[PREKEY_AMOUNT-1].expiration_date -= 365 * 24 * 3600; //one year
+	store->oldest_expiration_date = store->prekeys[PREKEY_AMOUNT - 1].expiration_date;
 
 	status = prekey_store_rotate(store);
 	throw_on_error(GENERIC_ERROR, "Failed to rotate the prekeys.");
@@ -161,8 +161,8 @@ int main(void) {
 		throw(BUFFER_ERROR, "Failed to clone public key.");
 	}
 
-	store->deprecated_prekeys->next->timestamp -= 24 * 3600;
-	store->oldest_deprecated_timestamp = store->deprecated_prekeys->next->timestamp;
+	store->deprecated_prekeys->next->expiration_date -= 24 * 3600;
+	store->oldest_deprecated_expiration_date = store->deprecated_prekeys->next->expiration_date;
 
 	status = prekey_store_rotate(store);
 	throw_on_error(GENERIC_ERROR, "Failed to rotate the prekeys.");

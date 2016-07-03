@@ -73,7 +73,8 @@ end
 -- table containing references to all users
 local users = {
 	attributes = {
-		json = ""
+		backup = {},
+		last_backup_key = ""
 	}
 }
 molch.users = users
@@ -84,49 +85,105 @@ molch.user.__index = molch.user
 molch.conversation = {}
 molch.conversation.__index = molch.conversation
 
+molch.backup = {}
+molch.backup.__index = molch.backup
+
+function molch.backup.new(content, length, key)
+	local backup = {
+		content = "",
+		key = ""
+	}
+
+	setmetatable(backup, molch.backup)
+
+	if content and (key or users.attributes.last_backup_key) then
+		backup:set(content, length, key)
+	end
+
+
+	return backup
+end
+
+function molch.backup:set(content, length, key)
+	key = key or molch.users.attributes.last_backup_key
+
+	if type(content) == "string" then
+		self.content = content
+	else
+		self.content = convert_to_lua_string(content, length)
+	end
+
+	if type(key) == "string" then
+		self.key = key
+	else
+		self.key = convert_to_lua_string(key, 32)
+	end
+end
+
+function molch.backup:to_c()
+	local raw_content, content_length = convert_to_c_string(self.content)
+	local raw_key, key_length = convert_to_c_string(self.key)
+
+	return raw_content, content_length, raw_key, key_length
+end
+
+function molch.backup:copy()
+	local copy = molch.backup.new()
+	copy:set(self.content, nil, self.key)
+
+	return copy
+end
 
 function molch.user.new(random_spice --[[optional]])
 	local user = {}
 	setmetatable(user, molch.user)
 
 	local raw_id = molch_interface.ucstring_array(32)
+	local raw_backup_key = molch_interface.ucstring_array(32)
 	local prekey_list_length = molch_interface.size_t()
-	local json_length = molch_interface.size_t()
+	local backup_length = molch_interface.size_t()
 
 
 	local spice_userdata, spice_userdata_length = random_spice and convert_to_c_string(random_spice) or nil, 0
 
 	-- this will be allocated by molch!
 	local temp_prekey_list = molch_interface.create_ucstring_pointer()
-	local temp_json = molch_interface.create_ucstring_pointer()
+	local temp_backup = molch_interface.create_ucstring_pointer()
 
 	local status = molch_interface.molch_create_user(
 		raw_id,
+		32,
 		temp_prekey_list,
 		prekey_list_length,
+		raw_backup_key,
+		32,
+		temp_backup,
+		backup_length,
 		spice_userdata,
-		spice_userdata_length,
-		temp_json,
-		json_length
+		spice_userdata_length
 	)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		molch_interface.molch_destroy_return_status(status)
 		molch_interface.free(temp_prekey_list)
-		molch_interface.free(temp_json)
+		molch_interface.free(temp_backup)
 		error(molch.print_errors(status))
 	end
 
 	-- copy the prekey list over to an array managed by swig and free the old
 	local raw_prekey_list = copy_callee_allocated_string(temp_prekey_list, prekey_list_length)
-	-- copy the json over to an array managed by swig and free the old
-	local raw_json = copy_callee_allocated_string(temp_json, json_length, molch_interface.sodium_free)
+	-- copy the backup over to an array managed by swig and free the old
+	local raw_backup = copy_callee_allocated_string(temp_backup, backup_length)
 
 	-- create lua strings from the data
 	user.id = convert_to_lua_string(raw_id, 32)
 	user.prekey_list = convert_to_lua_string(raw_prekey_list, prekey_list_length)
-	user.json = convert_to_lua_string(raw_json, json_length)
-	users.attributes.json = user.json
+
+	-- create backup object
+	user.backup = molch.backup.new(raw_backup, backup_length, raw_backup_key)
+	users.attributes.backup = user.backup:copy()
+
+	users.attributes.last_backup_key = user.backup.key
 
 	-- add to global list of users
 	users[user.id] = user
@@ -139,6 +196,7 @@ end
 function molch.user:destroy()
 	local status = molch_interface.molch_destroy_user(
 		convert_to_c_string(self.id),
+		#self.id,
 		nil,
 		nil)
 	local status_type = molch_interface.get_status(status)
@@ -158,16 +216,17 @@ function molch.user_count()
 end
 molch.user.count = molch.user_count
 
-function molch.user_list()
+function molch.list_users()
 	local count = molch_interface.size_t()
+	local list_length = molch_interface.size_t()
 	local raw_list = molch_interface.create_ucstring_pointer()
-	local status = molch_interface.molch_user_list(raw_list, count)
+	local status = molch_interface.molch_list_users(raw_list, list_length, count)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		error(molch.print_errors(status))
 	end
-	local raw_list = copy_callee_allocated_string(raw_list, count:value() * 32)
-	local lua_raw_list = convert_to_lua_string(raw_list, count:value() * 32)
+	local raw_list = copy_callee_allocated_string(raw_list, list_length)
+	local lua_raw_list = convert_to_lua_string(raw_list, list_length)
 
 	local list = {}
 	for i = 0, count:value() - 1 do
@@ -177,35 +236,29 @@ function molch.user_list()
 
 	return list
 end
-molch.user.list = molch.user_list
+molch.user.list = molch.list_users
 
-function molch.json_export()
-	local json_length = molch_interface.size_t()
+function molch:export()
+	local backup_length = molch_interface.size_t()
 
-	local json
-	if molch.user_count() == 0 then -- work around ugly bug that makes it crash under some circumstances when using sodium_malloc
-		users.attributes.json = "[]\0"
-		json = convert_to_c_string(users.attributes.json)
-	else
-		local temp_json = molch_interface.create_ucstring_pointer()
-		local status = molch_interface.molch_json_export(temp_json, json_length)
-		local status_type = molch_interface.get_status(status)
-		if status_type ~= molch_interface.SUCCESS then
-			error(molch.print_errors(status))
-		end
-
-		json = copy_callee_allocated_string(temp_json, json_length, molch_interface.sodium_free)
-		users.attributes.json = convert_to_lua_string(json, json_length)
+	local backup
+	local raw_backup = molch_interface.create_ucstring_pointer()
+	local status = molch_interface.molch_export(raw_backup, backup_length)
+	local status_type = molch_interface.get_status(status)
+	if status_type ~= molch_interface.SUCCESS then
+		error(molch.print_errors(status))
 	end
 
+	raw_backup = copy_callee_allocated_string(raw_backup, backup_length)
+	users.attributes.backup = molch.backup.new(raw_backup, backup_length)
 
 	if self then -- called on an object
-		self.json = users.attributes.json
+		self.backup = users.attributes.backup:copy()
 	end
 
-	return users.attributes.json
+	return users.attributes.backup:copy()
 end
-molch.user.json_export = molch.json_export
+molch.user.backup_export = molch.backup_export
 
 function molch.destroy_all_users()
 	for user_id,user in pairs(users) do
@@ -219,7 +272,7 @@ function molch.destroy_all_users()
 	recursively_delete_table(users)
 
 	users.attributes = {
-		json = ""
+		backup = ""
 	}
 end
 
@@ -239,8 +292,9 @@ end
 
 function molch.user:list_conversations()
 	local count = molch_interface.size_t()
+	local raw_list_length = molch_interface.size_t()
 	local raw_list = molch_interface.create_ucstring_pointer()
-	local status = molch_interface.molch_list_conversations(convert_to_c_string(self.id), raw_list, count)
+	local status = molch_interface.molch_list_conversations(convert_to_c_string(self.id), #self.id, raw_list, raw_list_length, count)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		error(molch.print_errors(status))
@@ -248,8 +302,8 @@ function molch.user:list_conversations()
 	if count:value() == 0 then
 		return {}
 	end
-	raw_list = copy_callee_allocated_string(raw_list, count:value() * molch_interface.CONVERSATION_ID_SIZE)
-	local lua_raw_list = convert_to_lua_string(raw_list, count:value() * molch_interface.CONVERSATION_ID_SIZE)
+	raw_list = copy_callee_allocated_string(raw_list, raw_list_length:value())
+	local lua_raw_list = convert_to_lua_string(raw_list, raw_list_length:value())
 
 	local list = {}
 	for i = 0, count:value() - 1 do
@@ -260,14 +314,24 @@ function molch.user:list_conversations()
 	return list
 end
 
-function molch.json_import(json)
-	local json_string, json_length = convert_to_c_string(json)
+function molch.import(backup)
+	local backup_string, backup_length, raw_backup_key = backup:to_c()
+	local new_backup_key = molch_interface.ucstring_array(32)
 
-	local status = molch_interface.molch_json_import(json_string, json_length)
+	local status = molch_interface.molch_import(
+		backup_string,
+		backup_length,
+		raw_backup_key,
+		32,
+		new_backup_key,
+		32)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		error(molch.print_errors(status))
 	end
+
+	users.attributes.backup = backup
+	users.attributes.last_backup_key = convert_to_lua_string(new_backup_key, 32)
 
 	-- backup of all running conversations
 	local conversation_backup = {}
@@ -283,7 +347,7 @@ function molch.json_import(json)
 	end
 
 	-- update global user list
-	local user_list = molch.user_list()
+	local user_list = molch.list_users()
 	local user_id_lookup = {}
 	for _,user_id in ipairs(user_list) do
 		user_id_lookup[user_id] = true
@@ -297,8 +361,7 @@ function molch.json_import(json)
 
 		local user = users[user_id]
 		user.id = user_id
-		user.json = json
-		users.attributes.json = json
+		user.backup = backup
 
 		-- add the conversations
 		user.conversations = user:list_conversations()
@@ -323,51 +386,56 @@ function molch.json_import(json)
 
 	-- destroy conversations that don't exist anymore
 	for _, conversation in pairs(conversation_backup) do
-		print(type(conversation))
 		recursively_delete_table(conversation)
 	end
 end
 
-function molch.user:create_send_conversation(message, prekey_list, receiver_id)
+function molch.user:start_send_conversation(message, prekey_list, receiver_id)
 	local conversation = {}
 	setmetatable(conversation, molch.conversation)
 
 	local raw_conversation_id = molch_interface.ucstring_array(molch_interface.CONVERSATION_ID_SIZE)
 	local raw_packet = molch_interface.create_ucstring_pointer()
 	local raw_packet_length = molch_interface.size_t()
-	local raw_json = molch_interface.create_ucstring_pointer()
-	local raw_json_length = molch_interface.size_t()
+	local raw_backup = molch_interface.create_ucstring_pointer()
+	local raw_backup_length = molch_interface.size_t()
 
 	local raw_message, raw_message_length = convert_to_c_string(message)
 	local raw_prekey_list, raw_prekey_list_length = convert_to_c_string(prekey_list)
 
-	local status = molch_interface.molch_create_send_conversation(
+	local status = molch_interface.molch_start_send_conversation(
 		raw_conversation_id,
+		molch_interface.CONVERSATION_ID_SIZE,
 		raw_packet,
 		raw_packet_length,
-		raw_message,
-		raw_message_length,
+		convert_to_c_string(self.id),
+		#self.id,
+		convert_to_c_string(receiver_id),
+		#receiver_id,
 		raw_prekey_list,
 		raw_prekey_list_length,
-		convert_to_c_string(self.id),
-		convert_to_c_string(receiver_id),
-		raw_json,
-		raw_json_length)
+		raw_message,
+		raw_message_length,
+		raw_backup,
+		raw_backup_length)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		molch_interface.free(raw_packet)
-		molch_interface.free(raw_json)
+		molch_interface.free(raw_backup)
 		error(molch.print_errors(status))
 	end
 
 	local conversation_id = convert_to_lua_string(raw_conversation_id, molch_interface.CONVERSATION_ID_SIZE)
 	raw_packet = copy_callee_allocated_string(raw_packet, raw_packet_length)
-	raw_json = copy_callee_allocated_string(raw_json, raw_json_length, molch_interface.sodium_free)
+	raw_backup = copy_callee_allocated_string(raw_backup, raw_backup_length)
+
+	self.backup = molch.backup.new(raw_backup, raw_backup_length)
+	users.attributes.backup = self.backup:copy()
 
 	local packet = convert_to_lua_string(raw_packet, raw_packet_length)
-	local json = convert_to_lua_string(raw_json, raw_json_length)
+	local backup = convert_to_lua_string(raw_backup, raw_backup_length)
 
-	conversation.json = json
+	conversation.backup = molch.backup.new()
 	conversation.id = conversation_id
 
 	-- add to the users list of conversations
@@ -376,7 +444,7 @@ function molch.user:create_send_conversation(message, prekey_list, receiver_id)
 	return conversation, packet
 end
 
-function molch.user:create_receive_conversation(packet, sender_id)
+function molch.user:start_receive_conversation(packet, sender_id)
 	local conversation = {}
 	setmetatable(conversation, molch.conversation)
 
@@ -385,42 +453,47 @@ function molch.user:create_receive_conversation(packet, sender_id)
 	local raw_message_length = molch_interface.size_t()
 	local raw_prekey_list = molch_interface.create_ucstring_pointer()
 	local raw_prekey_list_length = molch_interface.size_t()
-	local raw_json = molch_interface.create_ucstring_pointer()
-	local raw_json_length = molch_interface.size_t()
+	local raw_backup = molch_interface.create_ucstring_pointer()
+	local raw_backup_length = molch_interface.size_t()
 
 	local raw_packet, raw_packet_length = convert_to_c_string(packet)
 
-	local status = molch_interface.molch_create_receive_conversation(
+	local status = molch_interface.molch_start_receive_conversation(
 		raw_conversation_id,
+		molch_interface.CONVERSATION_ID_SIZE,
 		raw_message,
 		raw_message_length,
-		raw_packet,
-		raw_packet_length,
 		raw_prekey_list,
 		raw_prekey_list_length,
-		convert_to_c_string(sender_id),
 		convert_to_c_string(self.id),
-		raw_json,
-		raw_json_length)
+		#self.id,
+		convert_to_c_string(sender_id),
+		#sender_id,
+		raw_packet,
+		raw_packet_length,
+		raw_backup,
+		raw_backup_length)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		molch_interface.free(raw_message)
 		molch_interface.free(raw_prekey_list)
-		molch_interface.free(raw_json)
+		molch_interface.free(raw_backup)
 		error(molch.print_errors(status))
 	end
 
 	local conversation_id = convert_to_lua_string(raw_conversation_id, molch_interface.CONVERSATION_ID_SIZE)
 	raw_message = copy_callee_allocated_string(raw_message, raw_message_length)
 	raw_prekey_list = copy_callee_allocated_string(raw_prekey_list, raw_prekey_list_length)
-	raw_json = copy_callee_allocated_string(raw_json, raw_json_length, molch_interface.sodium_free)
+	raw_backup = copy_callee_allocated_string(raw_backup, raw_backup_length)
+
+	self.backup = molch.backup.new(raw_backup, raw_backup_length)
+	users.attributes.backup = self.backup:copy()
 
 	local message = convert_to_lua_string(raw_message, raw_message_length)
 	local prekey_list = convert_to_lua_string(raw_prekey_list, raw_prekey_list_length)
-	local json = convert_to_lua_string(raw_json, raw_json_length)
 
-	conversation.json = json
-	conversation. id = conversation_id
+	conversation.backup = molch.backup.new()
+	conversation.id = conversation_id
 	self.prekey_list = prekey_list
 
 	-- add to the users list of conversations
@@ -435,6 +508,7 @@ function molch.user:get_prekey_list()
 
 	local status = molch_interface.molch_get_prekey_list(
 		convert_to_c_string(self.id),
+		#self.id,
 		temp_prekey_list,
 		prekey_list_length)
 	local status_type = molch_interface.get_status(status)
@@ -455,8 +529,8 @@ function molch.conversation:encrypt_message(message)
 	local raw_message, raw_message_length = convert_to_c_string(message)
 	local raw_packet = molch_interface.create_ucstring_pointer()
 	local raw_packet_length = molch_interface.size_t()
-	local raw_json = molch_interface.create_ucstring_pointer()
-	local raw_json_length = molch_interface.size_t()
+	local raw_backup = molch_interface.create_ucstring_pointer()
+	local raw_backup_length = molch_interface.size_t()
 
 	local status = molch_interface.molch_encrypt_message(
 		raw_packet,
@@ -464,20 +538,21 @@ function molch.conversation:encrypt_message(message)
 		raw_message,
 		raw_message_length,
 		convert_to_c_string(self.id),
-		raw_json,
-		raw_json_length)
+		#self.id,
+		raw_backup,
+		raw_backup_length)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		molch_interface.free(raw_packet)
-		molch_interface.free(raw_json)
+		molch_interface.free(raw_backup)
 		error(molch.print_errors(status))
 	end
 
 	raw_packet = copy_callee_allocated_string(raw_packet, raw_packet_length)
-	raw_json = copy_callee_allocated_string(raw_json, raw_json_length, molch_interface.sodium_free)
+	raw_backup = copy_callee_allocated_string(raw_backup, raw_backup_length)
 
 	local packet = convert_to_lua_string(raw_packet, raw_packet_length)
-	self.json = convert_to_lua_string(raw_json, raw_json_length)
+	self.backup = molch.backup.new(raw_backup, raw_packet_length)
 
 	return packet
 end
@@ -486,8 +561,8 @@ function molch.conversation:decrypt_message(packet)
 	local raw_packet, raw_packet_length = convert_to_c_string(packet)
 	local raw_message = molch_interface.create_ucstring_pointer()
 	local raw_message_length = molch_interface.size_t()
-	local raw_json = molch_interface.create_ucstring_pointer()
-	local raw_json_length = molch_interface.size_t()
+	local raw_backup = molch_interface.create_ucstring_pointer()
+	local raw_backup_length = molch_interface.size_t()
 	local raw_receive_message_number = molch_interface.size_t()
 	local raw_previous_receive_message_number = molch_interface.size_t()
 
@@ -497,22 +572,24 @@ function molch.conversation:decrypt_message(packet)
 		raw_packet,
 		raw_packet_length,
 		convert_to_c_string(self.id),
+		#self.id,
 		raw_receive_message_number,
 		raw_previous_receive_message_number,
-		raw_json,
-		raw_json_length)
+		raw_backup,
+		raw_backup_length)
 	local status_type = molch_interface.get_status(status)
 	if status_type ~= molch_interface.SUCCESS then
 		molch_interface.free(raw_message)
-		molch_interface.free(raw_json)
+		molch_interface.free(raw_backup)
 		error(molch.print_errors(status))
 	end
 
 	raw_message = copy_callee_allocated_string(raw_message, raw_message_length)
-	raw_json = copy_callee_allocated_string(raw_json, raw_json_length, molch_interface.sodium_free)
+	raw_backup = copy_callee_allocated_string(raw_backup, raw_backup_length)
+
 
 	local message = convert_to_lua_string(raw_message, raw_message_length)
-	self.json = convert_to_lua_string(raw_json, raw_json_length)
+	self.backup = molch.backup.new(raw_backup, raw_backup_length)
 
 	return message, raw_receive_message_number:value(), raw_previous_receive_message_number:value()
 end
@@ -527,20 +604,19 @@ function molch.conversation:destroy()
 		end
 	end
 
-	local raw_json = molch_interface.create_ucstring_pointer()
-	local raw_json_length = molch_interface.size_t()
+	local raw_backup = molch_interface.create_ucstring_pointer()
+	local raw_backup_length = molch_interface.size_t()
 
 	molch_interface.molch_end_conversation(
 		convert_to_c_string(self.id),
-		raw_json,
-		raw_json_length)
+		#self.id,
+		raw_backup,
+		raw_backup_length)
 
-	raw_json = copy_callee_allocated_string(raw_json, raw_json_length --[[FIXME Why does this crash?, molch_interface.sodium_free]])
+	raw_backup = copy_callee_allocated_string(raw_backup, raw_backup_length)
 
-	local json = convert_to_lua_string(raw_json, raw_json_length)
-
-	containing_user.json = json
-	users.attributes.json = json
+	containing_user.backup = molch.backup.new(raw_backup, raw_backup_length)
+	users.attributes.backup = containing_user.backup.copy()
 
 	containing_user.conversations[self.id] = nil
 	recursively_delete_table(self)
@@ -551,6 +627,22 @@ function molch.print_errors(status)
 	local raw_error_stack = molch_interface.molch_print_status(status, size)
 	molch_interface.molch_destroy_return_status(status)
 	return raw_error_stack
+end
+
+function molch.update_backup_key()
+	local raw_new_backup_key = molch_interface.ucstring_array(32)
+
+	local status = molch_interface.molch_update_backup_key(raw_new_backup_key, 32)
+	local status_type = molch_interface.get_status(status)
+	if status_type ~= molch_interface.SUCCESS then
+		error(molch.print_errors(status))
+	end
+
+	local new_backup_key = convert_to_lua_string(raw_new_backup_key, 32)
+
+	molch.users.attributes.last_backup_key = new_backup_key
+
+	return new_backup_key
 end
 
 return molch

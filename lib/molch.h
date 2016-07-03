@@ -17,7 +17,6 @@
  *  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include <stdbool.h>
 #include "return-status.h"
 
 #ifndef LIB_MOLCH_H
@@ -44,17 +43,25 @@
  * This also creates a signed list of prekeys to be uploaded to
  * the server.
  *
+ * A new backup key is generated that subsequent backups of the library state will be encrypted with.
+ *
  * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
 return_status molch_create_user(
-		unsigned char *const public_master_key, //output, PUBLIC_MASTER_KEY_SIZE
-		unsigned char **const prekey_list, //output, needs to be freed
+		//outputs
+		unsigned char *const public_master_key, //PUBLIC_MASTER_KEY_SIZE
+		const size_t public_master_key_length,
+		unsigned char **const prekey_list, //needs to be freed
 		size_t *const prekey_list_length,
+		unsigned char * backup_key, //BACKUP_KEY_SIZE
+		const size_t backup_key_length,
+		//optional output (can be NULL)
+		unsigned char **const backup, //exports the entire library state, free after use, check if NULL before use!
+		size_t *const backup_length,
+		//optional input (can be NULL)
 		const unsigned char *const random_data,
-		const size_t random_data_length,
-		unsigned char **const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
-		size_t *const json_export_length //optional, can be NULL
+		const size_t random_data_length
 	) __attribute__((warn_unused_result));
 
 /*
@@ -64,9 +71,11 @@ return_status molch_create_user(
  * if an error has occurred.
  */
 return_status molch_destroy_user(
-		const unsigned char *const public_signing_key,
-		unsigned char **const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use
-		size_t *const json_export_length //optional, can be NULL
+		const unsigned char *const public_master_key,
+		const size_t public_master_key_length,
+		//optional output (can be NULL)
+		unsigned char **const backup, //exports the entire library state, free after use, check if NULL before use
+		size_t *const backup_length
 );
 
 /*
@@ -83,7 +92,10 @@ size_t molch_user_count();
  * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
-return_status molch_user_list(unsigned char **const user_list, size_t *count);
+return_status molch_list_users(
+		unsigned char **const user_list,
+		size_t * const user_list_length, //length in bytes
+		size_t *count);
 
 /*
  * Delete all users.
@@ -112,18 +124,24 @@ molch_message_type molch_get_message_type(
  * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
-return_status molch_create_send_conversation(
-		unsigned char * const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
-		unsigned char ** const packet, //output, will be malloced by the function, don't forget to free it after use!
-		size_t *packet_length, //output
-		const unsigned char * const message,
-		const size_t message_length,
+return_status molch_start_send_conversation(
+		//outputs
+		unsigned char * const conversation_id, //CONVERSATION_ID_SIZE long (from conversation.h)
+		const size_t conversation_id_length,
+		unsigned char ** const packet, //free after use
+		size_t *packet_length,
+		//inputs
+		const unsigned char * const sender_public_master_key, //signing key of the sender (user)
+		const size_t sender_public_master_key_length,
+		const unsigned char * const receiver_public_master_key, //signing key of the receiver
+		const size_t receiver_public_master_key_length,
 		const unsigned char * const prekey_list, //prekey list of the receiver
 		const size_t prekey_list_length,
-		const unsigned char * const sender_public_signing_key, //signing key of the sender (user)
-		const unsigned char * const receiver_public_signing_key, //signing key of the receiver
-		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
-		size_t * const json_export_length //optional, can be NULL
+		const unsigned char * const message,
+		const size_t message_length,
+		//optional output (can be NULL)
+		unsigned char ** const backup, //exports the entire library state, free after use, check if NULL before use!
+		size_t * const backup_length
 		) __attribute__((warn_unused_result));
 
 /*
@@ -138,18 +156,24 @@ return_status molch_create_send_conversation(
  * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
-return_status molch_create_receive_conversation(
-		unsigned char * const conversation_id, //output, CONVERSATION_ID_SIZE long (from conversation.h)
-		unsigned char ** const message, //output, will be malloced by the function, don't forget to free it after use!
-		size_t * const message_length, //output
+return_status molch_start_receive_conversation(
+		//outputs
+		unsigned char * const conversation_id, //CONVERSATION_ID_SIZE long (from conversation.h)
+		const size_t conversation_id_length,
+		unsigned char ** const prekey_list, //free after use
+		size_t * const prekey_list_length,
+		unsigned char ** const message, //free after use
+		size_t * const message_length,
+		//inputs
+		const unsigned char * const receiver_public_master_key, //signing key of the receiver (user)
+		const size_t receiver_public_master_key_length,
+		const unsigned char * const sender_public_master_key, //signing key of the sender
+		const size_t sender_public_master_key_length,
 		const unsigned char * const packet, //received prekey packet
 		const size_t packet_length,
-		unsigned char ** const prekey_list, //output, free after use
-		size_t * const prekey_list_length,
-		const unsigned char * const sender_public_signing_key, //signing key of the sender
-		const unsigned char * const receiver_public_signing_key, //signing key of the receiver (user)
-		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
-		size_t * const json_export_length //optional, can be NULL
+		//optional output (can be NULL)
+		unsigned char ** const backup, //exports the entire library state, free after use, check if NULL before use!
+		size_t * const backup_length
 		) __attribute__((warn_unused_result));
 
 /*
@@ -164,8 +188,9 @@ return_status molch_encrypt_message(
 		const unsigned char * const message,
 		const size_t message_length,
 		const unsigned char * const conversation_id,
-		unsigned char ** const json_export_conversation, //optional, can be NULL, exports the conversation as json, free with sodium_free, check if NULL before use!
-		size_t * const json_export_conversation_length
+		const size_t conversation_id_length,
+		unsigned char ** const backup, //optional, can be NULL, exports the conversationn, free after use, check if NULL before use!
+		size_t * const backup_length
 		) __attribute__((warn_unused_result));
 
 /*
@@ -180,10 +205,11 @@ return_status molch_decrypt_message(
 		const unsigned char * const packet, //received packet
 		const size_t packet_length,
 		const unsigned char * const conversation_id,
+		const size_t conversation_id_length,
 		uint32_t * const receive_message_number, //output
 		uint32_t * const previous_receive_message_number, //output
-		unsigned char ** const json_export_conversation, //optional, can be NULL, exports the conversation as json, free with sodium_free, check if NULL before use!
-		size_t * const json_export_conversation_length
+		unsigned char ** const backup, //optional, can be NULL, exports the conversation, free after use, check if NULL before use!
+		size_t * const backup_length
 		) __attribute__((warn_unused_result));
 
 /*
@@ -193,8 +219,9 @@ return_status molch_decrypt_message(
  */
 void molch_end_conversation(
 		const unsigned char * const conversation_id,
-		unsigned char ** const json_export, //optional, can be NULL, exports the entire library state as json, free with sodium_free, check if NULL before use!
-		size_t * const json_export_length
+		const size_t conversation_id_length,
+		unsigned char ** const backup, //optional, can be NULL, exports the entire library state, free after use, check if NULL before use!
+		size_t * const backup_length
 		);
 
 /*
@@ -209,9 +236,11 @@ void molch_end_conversation(
  * if an error has occurred.
  */
 return_status molch_list_conversations(
-		const unsigned char * const user_public_signing_key,
+		const unsigned char * const user_public_master_key,
+		const size_t user_public_master_key_length,
 		unsigned char ** const conversation_list,
-		size_t *number) __attribute__((warn_unused_result));
+		size_t * const conversation_list_length,
+		size_t * const number) __attribute__((warn_unused_result));
 
 /*
  * Print a return status into a nice looking error message.
@@ -233,45 +262,63 @@ const char *molch_print_status_type(status_type type);
 void molch_destroy_return_status(return_status * const status);
 
 /*
- * Serialize a conversation into JSON.
+ * Serialize a conversation.
  *
- * Use sodium_free to free json after use.
+ * Don't forget to free the output after use.
  *
  * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
-return_status molch_conversation_json_export(
-		unsigned char ** const json,
+return_status molch_conversation_export(
+		unsigned char ** const backup,
+		size_t * const backup_length,
 		const unsigned char * const conversation_id,
-		size_t * const length) __attribute__((warn_unused_result));
+		const size_t conversation_id_length) __attribute__((warn_unused_result));
 
 /*
- * Serialise molch's state into JSON.
+ * Serialise molch's internal state. The output is encrypted with the backup key.
  *
- * Use sodium_free to free json after use.
+ * Don't forget to free the output after use.
+ *
+ * Don't forget to destroy the return status with molch_destroy_return_status()
+ * if an error has occured.
+ */
+return_status molch_export(
+		unsigned char ** const backup, //output, free after use
+		size_t *backup_length) __attribute__((warn_unused_result));
+
+/*
+ * Import a conversation from a backup (overwrites the current one if it exists).
  *
  * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
-return_status molch_json_export(
-		unsigned char ** const json,
-		size_t *length) __attribute__((warn_unused_result));
+return_status molch_conversation_import(
+		const unsigned char * const backup,
+		const size_t backup_length,
+		const unsigned char * backup_key, //BACKUP_KEY_SIZE
+		const size_t backup_key_length,
+		unsigned char * new_backup_key, //output, BACKUP_KEY_SIZE, can be the same pointer as the backup key
+		const size_t new_backup_key_length
+		) __attribute__((warn_unused_result));
 
 /*
- * Import a conversation from JSON (overwrites the current one if it exists).
+ * Import molch's internal state from a backup (overwrites the current state)
+ * and generates a new backup key.
+ *
+ * The backup key is needed to decrypt the backup.
  *
  * Don't forget to destroy the return status with molch_destroy_return_status()
- * if an error has occurred.
+ * if an error has occured.
  */
-return_status molch_conversation_json_import(const unsigned char * const json, const size_t length) __attribute__((warn_unused_result));
-
-/*
- * Import the molch's state from JSON (overwrites the current state!)
- *
- * Don't forget to destroy the return status with molch_destroy_return_status()
- * if an error has occurred.
- */
-return_status molch_json_import(const unsigned char* const json, const size_t length) __attribute__((warn_unused_result));
+return_status molch_import(
+		unsigned char * const backup,
+		const size_t backup_length,
+		const unsigned char * const backup_key, //BACKUP_KEY_SIZE
+		const size_t backup_key_length,
+		unsigned char * const new_backup_key, //output, BACKUP_KEY_SIZE, can be the same pointer as the backup key
+		const size_t new_backup_key_length
+		) __attribute__((warn_unused_result));
 
 /*
  * Get a signed list of prekeys for a given user.
@@ -280,7 +327,18 @@ return_status molch_json_import(const unsigned char* const json, const size_t le
  * if an error has occured.
  */
 return_status molch_get_prekey_list(
-		unsigned char * const public_signing_key,
+		unsigned char * const public_master_key,
+		const size_t public_master_key_length,
 		unsigned char ** const prekey_list,  //output, free after use
 		size_t * const prekey_list_length) __attribute__((warn_unused_result));
+
+/*
+ * Generate and return a new key for encrypting the exported library state.
+ *
+ * Don't forget to destroy the return status with molch_destroy_return_status()
+ * if an error has occured.
+ */
+return_status molch_update_backup_key(
+		unsigned char * const new_key, //output, BACKUP_KEY_SIZE
+		const size_t new_key_length) __attribute__((warn_unused_result));
 #endif
