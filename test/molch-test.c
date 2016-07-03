@@ -227,16 +227,16 @@ int main(void) {
 	status = molch_start_receive_conversation(
 			bob_conversation->content,
 			bob_conversation->content_length,
-			&bob_receive_message,
-			&bob_receive_message_length,
-			alice_send_packet,
-			alice_send_packet_length,
 			&bob_public_prekeys,
 			&bob_public_prekeys_length,
-			alice_public_identity->content,
-			alice_public_identity->content_length,
+			&bob_receive_message,
+			&bob_receive_message_length,
 			bob_public_identity->content,
 			bob_public_identity->content_length,
+			alice_public_identity->content,
+			alice_public_identity->content_length,
+			alice_send_packet,
+			alice_send_packet_length,
 			NULL,
 			NULL);
 	throw_on_error(CREATION_ERROR, "Failed to start receive conversation.");
