@@ -408,14 +408,14 @@ function molch.user:create_send_conversation(message, prekey_list, receiver_id)
 		molch_interface.CONVERSATION_ID_SIZE,
 		raw_packet,
 		raw_packet_length,
-		raw_message,
-		raw_message_length,
-		raw_prekey_list,
-		raw_prekey_list_length,
 		convert_to_c_string(self.id),
 		#self.id,
 		convert_to_c_string(receiver_id),
 		#receiver_id,
+		raw_prekey_list,
+		raw_prekey_list_length,
+		raw_message,
+		raw_message_length,
 		raw_backup,
 		raw_backup_length)
 	local status_type = molch_interface.get_status(status)

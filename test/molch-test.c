@@ -175,14 +175,14 @@ int main(void) {
 			alice_conversation->content_length,
 			&alice_send_packet,
 			&alice_send_packet_length,
-			alice_send_message->content,
-			alice_send_message->content_length,
-			bob_public_prekeys,
-			bob_public_prekeys_length,
 			alice_public_identity->content,
 			alice_public_identity->content_length,
 			bob_public_identity->content,
 			bob_public_identity->content_length,
+			bob_public_prekeys,
+			bob_public_prekeys_length,
+			alice_send_message->content,
+			alice_send_message->content_length,
 			NULL,
 			NULL);
 	throw_on_error(CREATION_ERROR, "Failed to start send conversation.");
