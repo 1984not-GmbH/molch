@@ -759,8 +759,8 @@ return_status molch_encrypt_message(
 		const unsigned char * const message,
 		const size_t message_length,
 		//optional output (can be NULL)
-		unsigned char ** const backup, //exports the conversation, free after use, check if NULL before use!
-		size_t * const backup_length
+		unsigned char ** const conversation_backup, //exports the conversation, free after use, check if NULL before use!
+		size_t * const conversation_backup_length
 		) {
 
 	//create buffer for message array
@@ -800,11 +800,11 @@ return_status molch_encrypt_message(
 	*packet = packet_buffer->content;
 	*packet_length = packet_buffer->content_length;
 
-	if (backup != NULL) {
-		if (backup_length == 0) {
-			*backup = NULL;
+	if (conversation_backup != NULL) {
+		if (conversation_backup_length == 0) {
+			*conversation_backup = NULL;
 		} else {
-			status = molch_conversation_export(backup, backup_length, conversation->id->content, conversation->id->content_length);
+			status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id->content, conversation->id->content_length);
 			throw_on_error(EXPORT_ERROR, "Failed to export conversation as JSON.");
 		}
 	}
@@ -841,8 +841,8 @@ return_status molch_decrypt_message(
 		const unsigned char * const packet,
 		const size_t packet_length,
 		//optional output (can be NULL)
-		unsigned char ** const backup, //exports the conversation, free after use, check if NULL before use!
-		size_t * const backup_length
+		unsigned char ** const conversation_backup, //exports the conversation, free after use, check if NULL before use!
+		size_t * const conversation_backup_length
 	) {
 	//create buffer for the packet
 	buffer_create_with_existing_array(packet_buffer, (unsigned char*)packet, packet_length);
@@ -883,11 +883,11 @@ return_status molch_decrypt_message(
 	*message = message_buffer->content;
 	*message_length = message_buffer->content_length;
 
-	if (backup != NULL) {
-		if (backup_length == 0) {
-			*backup = NULL;
+	if (conversation_backup != NULL) {
+		if (conversation_backup_length == 0) {
+			*conversation_backup = NULL;
 		} else {
-			status = molch_conversation_export(backup, backup_length, conversation->id->content, conversation->id->content_length);
+			status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id->content, conversation->id->content_length);
 			throw_on_error(EXPORT_ERROR, "Failed to export conversation as JSON.");
 		}
 	}
