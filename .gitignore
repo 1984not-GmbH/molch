@@ -6,3 +6,4 @@ address-sanitizer
 undefined-behavior-sanitizer
 *.swp
 tracing/
+dummy

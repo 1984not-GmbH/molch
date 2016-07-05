@@ -734,7 +734,7 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = address-sanitizer build static-analysis undefined-behavior-sanitizer axolotl-specification/junk.md buffer/address-sanitizer buffer/build buffer/static-analysis buffer/undefined-behavior-sanitizer mcJSON/address-sanitizer mcJSON/build mcJSON/static-analysis mcJSON/undefined-behavior-sanitizer mcJSON/buffer/address-sanitizer mcJSON/buffer/build mcJSON/buffer/static-analysis mcJSON/buffer/undefined-behavior-sanitizer mcJSON/fuzzing
+EXCLUDE                = address-sanitizer build static-analysis undefined-behavior-sanitizer dummy tracing axolotl-specification/junk.md buffer/address-sanitizer buffer/build buffer/static-analysis buffer/undefined-behavior-sanitizer mcJSON/address-sanitizer mcJSON/build mcJSON/static-analysis mcJSON/undefined-behavior-sanitizer mcJSON/buffer/address-sanitizer mcJSON/buffer/build mcJSON/buffer/static-analysis mcJSON/buffer/undefined-behavior-sanitizer mcJSON/fuzzing
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded
