@@ -15,7 +15,7 @@ matrix:
 
 before_install:
   - "if [ $TRAVIS_OS_NAME == 'osx' ]; then brew update; else true; fi"
-  - "if [ $TRAVIS_OS_NAME == 'osx' ]; then brew install libsodium valgrind swig lua graphviz doxygen; else true; fi"
+  - "if [ $TRAVIS_OS_NAME == 'osx' ]; then brew install libsodium valgrind swig lua graphviz doxygen protobuf-c; else true; fi"
 script:
   - "git submodule update --init --recursive"
   - "if [ $TRAVIS_OS_NAME == 'linux' ]; then curl -s https://raw.githubusercontent.com/mikkeloscar/arch-travis/master/arch-travis.sh | bash; else true; fi"
@@ -30,5 +30,6 @@ arch:
     - lua
     - doxygen
     - graphviz
+    - protobuf-c
   script:
       - "bash run-ci.sh"
