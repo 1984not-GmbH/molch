@@ -58,8 +58,14 @@ option(GENERATE_DOC "Generate documentation with Doxygen." OFF)
 
 if (GENERATE_DOC)
     find_package(Doxygen)
-    if (DOXYGEN_FOUND AND DOXYGEN_DOT_FOUND)
-        execute_process(COMMAND ${DOXYGEN_EXECUTABLE}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+    if (NOT DOXYGEN_FOUND)
+        message(FATAL_ERROR "Doxygen wasn't found.")
     endif()
+
+    if (NOT DOXYGEN_DOT_FOUND)
+        message(FATAL_ERROR "Graphviz' 'dot' wasn't found.")
+    endif()
+
+    execute_process(COMMAND ${DOXYGEN_EXECUTABLE}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
