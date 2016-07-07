@@ -43,6 +43,7 @@ if (RUN_TESTS)
               endianness-test
               return-status-test
               molch-init-test
+              alignment-test
     )
 
     foreach(test ${tests})

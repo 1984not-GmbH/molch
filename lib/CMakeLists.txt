@@ -14,5 +14,6 @@ add_library(molch
 	master-keys
 	endianness
 	return-status
+	alignment
 )
 target_link_libraries(molch ${libs} molch-buffer mcjson)
