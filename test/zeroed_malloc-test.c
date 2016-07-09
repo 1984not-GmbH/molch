@@ -51,6 +51,9 @@ int main(void) {
 
 	zeroed_free(pointer);
 
+	void *new_pointer = protobuf_c_allocator(NULL, 20);
+	protobuf_c_free(NULL, new_pointer);
+
 cleanup:
 	on_error(
 		print_errors(&status);

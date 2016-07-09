@@ -72,3 +72,11 @@ void zeroed_free(void *pointer) {
 
 	free(malloced_address);
 }
+
+void *protobuf_c_allocator(void *allocator_data __attribute__((unused)), size_t size) {
+	return zeroed_malloc(size);
+}
+
+void protobuf_c_free(void *allocator_data __attribute__((unused)), void *pointer) {
+	zeroed_free(pointer);
+}

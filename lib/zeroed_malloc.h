@@ -28,6 +28,8 @@
 #ifndef LIB_ZEROED_MALLOC_H
 #define LIB_ZEROED_MALLOC_H
 
+#include <protobuf-c/protobuf-c.h>
+
 /*!
  * Allocates a buffer of 'size' and stores it's size.
  *
@@ -46,5 +48,33 @@ void *zeroed_malloc(size_t size) __attribute__((warn_unused_result));
  *   A pointer to the memory that was allocated via zeroed_malloc.
  */
 void zeroed_free(void *pointer);
+
+/*!
+ * Wrapper around zeroed_malloc that can be used by Protobuf-C.
+ *
+ * \param allocator_data
+ *   Opaque pointer that will get passed to the functions by Protobuf-C. Ignored!
+ * \param size
+ *   The amount of bytes to be allocated.
+ * \return
+ *   A pointer to a heap allocated memory region of size 'size'.
+ */
+void *protobuf_c_allocator(void *allocator_data, size_t size) __attribute__((warn_unused_result));
+
+/*!
+ * Wrapper around zeroed_free that can be used by Protobuf-C.
+ *
+ * \param allocator_data
+ *   Opaque pointer that will get passed to the functions by Protobuf-C. Ignored!
+ * \param pointer
+ *   A pointer to the memory that was allocated via zeroed_malloc.
+ */
+void protobuf_c_free(void *allocator_data, void *pointer);
+
+static ProtobufCAllocator protobuf_c_allocators __attribute__((unused)) = {
+	&protobuf_c_allocator,
+	&protobuf_c_free,
+	NULL
+};
 
 #endif
