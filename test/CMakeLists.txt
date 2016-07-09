@@ -44,6 +44,7 @@ if (RUN_TESTS)
               return-status-test
               molch-init-test
               alignment-test
+              zeroed_malloc-test
     )
 
     foreach(test ${tests})

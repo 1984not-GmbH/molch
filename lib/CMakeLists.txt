@@ -15,5 +15,6 @@ add_library(molch
 	endianness
 	return-status
 	alignment
+	zeroed_malloc
 )
 target_link_libraries(molch ${libs} molch-buffer mcjson)
