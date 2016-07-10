@@ -56,7 +56,8 @@ typedef enum status_type { //TODO add more error types
 	OUTDATED,
 	PROTOBUF_PACK_ERROR,
 	PROTOBUF_UNPACK_ERROR,
-	PROTOBUF_MISSING_ERROR
+	PROTOBUF_MISSING_ERROR,
+	UNSUPPORTED_PROTOCOL_VERSION
 } status_type;
 
 typedef struct error_message error_message;

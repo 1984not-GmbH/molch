@@ -176,6 +176,9 @@ const char *return_status_get_name(status_type status) {
 		case PROTOBUF_MISSING_ERROR:
 			return "PROTOBUF_MISSING_ERROR";
 
+		case UNSUPPORTED_PROTOCOL_VERSION:
+			return "UNSUPPORTED_PROTOCOL_VERSION";
+
 		default:
 			return "(NULL)";
 	}
