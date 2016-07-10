@@ -167,6 +167,15 @@ const char *return_status_get_name(status_type status) {
 		case OUTDATED:
 			return "OUTDATED";
 
+		case PROTOBUF_PACK_ERROR:
+			return "PROTOBUF_PACK_ERROR";
+
+		case PROTOBUF_UNPACK_ERROR:
+			return "PROTOBUF_UNPACK_ERROR";
+
+		case PROTOBUF_MISSING_ERROR:
+			return "PROTOBUF_MISSING_ERROR";
+
 		default:
 			return "(NULL)";
 	}
