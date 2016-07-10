@@ -29,7 +29,7 @@
  * if an error has occurred.
  */
 return_status create_and_print_message(
-		buffer_t * const packet, //needs to be 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_secretbox_NONCEBYTES + message_length + header_length + crypto_secretbox_MACBYTES
+		buffer_t * const packet, //needs to be 3 + HEADER_NONCE_SIZE + crypto_secretbox_NONCEBYTES + message_length + header_length + crypto_secretbox_MACBYTES
 		const unsigned char packet_type,
 		const unsigned char current_protocol_version,
 		const unsigned char highest_supported_protocol_version,

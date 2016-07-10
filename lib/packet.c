@@ -31,10 +31,6 @@
 /*
  * Encrypt a message and header with a symmetric key and a nonce.
  *
- * For the header, AEAD is used (authenticated encryption with
- * additional data) to authenticate the header length, version
- * and packet type.
- *
  * packet has to have at least the following length:
  *
  * The packet has the following format:
@@ -50,7 +46,7 @@
  *       axolotl_header(?),
  *       message_nonce(MESSAGE_NONCE_SIZE)
  *   },
- *   header_and_additional_data_MAC(crypto_aead_chacha20poly1305_ABYTES),
+ *   header_and_additional_data_MAC(crypto_secretbox_MACBYTES),
  *   authenticated_encrypted_message {
  *       message(?),
  *       MAC(crypto_secretbox_MACBYTES)
@@ -78,7 +74,7 @@ return_status packet_encrypt(
 	//check buffer sizes
 	if ((header_key->content_length != HEADER_KEY_SIZE)
 			|| (message_key->content_length != MESSAGE_KEY_SIZE)
-			|| (packet == NULL) || (packet->buffer_length < 3 + HEADER_NONCE_SIZE + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE + MESSAGE_NONCE_SIZE + header->content_length + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_MACBYTES + message->content_length + 255)) {
+			|| (packet == NULL) || (packet->buffer_length < 3 + HEADER_NONCE_SIZE + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE + MESSAGE_NONCE_SIZE + header->content_length + 2 * crypto_secretbox_MACBYTES + message->content_length + 255)) {
 		throw(INVALID_INPUT, "Invalid input for packet_encrypt.");
 	}
 
@@ -103,12 +99,12 @@ return_status packet_encrypt(
 	}
 
 	//make sure the header length fits into one byte
-	if (header->content_length > (0xff - crypto_aead_chacha20poly1305_ABYTES - MESSAGE_NONCE_SIZE)) {
+	if (header->content_length > (0xff - crypto_secretbox_MACBYTES - MESSAGE_NONCE_SIZE)) {
 		throw(INVALID_VALUE, "Header length doesn't fit into one byte.");
 	}
 
 	//check if the packet buffer is long enough (only roughly) FIXME correct numbers here!
-	if (packet->buffer_length < (3 + crypto_aead_chacha20poly1305_ABYTES + MESSAGE_NONCE_SIZE + HEADER_NONCE_SIZE + message->content_length + crypto_secretbox_MACBYTES + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE)) {
+	if (packet->buffer_length < (3 + crypto_secretbox_MACBYTES + MESSAGE_NONCE_SIZE + HEADER_NONCE_SIZE + message->content_length + crypto_secretbox_MACBYTES + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE)) {
 		throw(INCORRECT_BUFFER_SIZE, "Packet buffer isn't long enough.");
 	}
 
@@ -116,7 +112,7 @@ return_status packet_encrypt(
 	packet->content[0] = packet_type;
 	packet->content[1] = 0xf0 & (current_protocol_version << 4); //put current version into 4MSB
 	packet->content[1] |= (0x0f & highest_supported_protocol_version); //put highest version into 4LSB
-	packet->content[2] = header->content_length + crypto_aead_chacha20poly1305_ABYTES + MESSAGE_NONCE_SIZE + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE; //header length with authenticator and message nonce
+	packet->content[2] = header->content_length + crypto_secretbox_MACBYTES + MESSAGE_NONCE_SIZE + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE; //header length with authenticator and message nonce
 	packet->content_length = 3;
 
 	int status_int;
@@ -181,30 +177,24 @@ return_status packet_encrypt(
 	}
 
 	//buffer that points to the part of the packet where the header ciphertext will be stored
-	buffer_create_with_existing_array(header_ciphertext, packet->content + header_nonce_offset + header_nonce->content_length, header_buffer->content_length + crypto_aead_chacha20poly1305_ABYTES);
+	buffer_create_with_existing_array(header_ciphertext, packet->content + header_nonce_offset + header_nonce->content_length, header_buffer->content_length + crypto_secretbox_MACBYTES);
 	//same for the additional data
 	buffer_create_with_existing_array(additional_data, packet->content, 3 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE + HEADER_NONCE_SIZE);
 
 	//encrypt the header and authenticate the additional data (1st 3 Bytes)
-	unsigned long long header_ciphertext_length;
-	status_int = crypto_aead_chacha20poly1305_encrypt(
+	status_int = crypto_secretbox_easy(
 			header_ciphertext->content, //ciphertext
-			&header_ciphertext_length, //ciphertext length
 			header_buffer->content, //plaintext
 			header_buffer->content_length, //message length
-			additional_data->content,
-			additional_data->content_length,
-			NULL,
 			header_nonce->content,
 			header_key->content);
-	assert(header_ciphertext->content_length == header_ciphertext_length);
 	if (status_int != 0) {
 		buffer_destroy_from_heap(header_buffer);
 		throw(ENCRYPT_ERROR, "Failed to encrypt header.");
 	}
 
 	//make sure the header_length property in the packet is correct
-	assert((header->content_length + crypto_aead_chacha20poly1305_ABYTES + MESSAGE_NONCE_SIZE) == header_ciphertext_length);
+	assert((header->content_length + crypto_secretbox_MACBYTES + MESSAGE_NONCE_SIZE) == header_ciphertext->content_length);
 
 	//now encrypt the message
 
@@ -227,7 +217,7 @@ return_status packet_encrypt(
 	memset(plaintext_buffer->content + message->content_length, padding, padding);
 
 	//length of everything in front of the ciphertext
-	const size_t PRE_CIPHERTEXT_LENGTH = additional_data->content_length + header_ciphertext_length;
+	const size_t PRE_CIPHERTEXT_LENGTH = additional_data->content_length + header_ciphertext->content_length;
 
 	//buffer that points to the message ciphertext position in the packet
 	buffer_create_with_existing_array(message_ciphertext, packet->content + PRE_CIPHERTEXT_LENGTH, message->content_length + padding + crypto_secretbox_MACBYTES);
@@ -361,7 +351,7 @@ return_status packet_get_metadata_without_verification(
 
 	*current_protocol_version = (0xf0 & packet->content[1]) >> 4;
 	*highest_supported_protocol_version = 0x0f & packet->content[1];
-	*header_length = packet->content[2] - crypto_aead_chacha20poly1305_ABYTES - MESSAGE_NONCE_SIZE - (local_packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
+	*header_length = packet->content[2] - crypto_secretbox_MACBYTES - MESSAGE_NONCE_SIZE - (local_packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
 
 	if (local_packet_type == PREKEY_MESSAGE) {
 		int status_int;
@@ -463,32 +453,27 @@ return_status packet_decrypt_header(
 
 	off_t header_nonce_offset = 3 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
 	//check if the packet is long enough
-	if (packet->content_length < ((size_t)header_nonce_offset + HEADER_NONCE_SIZE + purported_header_length + crypto_aead_chacha20poly1305_ABYTES)) {
+	if (packet->content_length < ((size_t)header_nonce_offset + HEADER_NONCE_SIZE + purported_header_length + crypto_secretbox_MACBYTES)) {
 		throw(INCORRECT_BUFFER_SIZE, "Packet isn't long enough.");
 	}
 
 	//buffer that points to different parts of the header
 	buffer_create_with_existing_array(header_nonce, packet->content + header_nonce_offset, HEADER_NONCE_SIZE);
 	buffer_create_with_existing_array(additional_data, packet->content, header_nonce_offset + header_nonce->content_length);
-	buffer_create_with_existing_array(header_ciphertext, packet->content + additional_data->content_length, purported_header_length + MESSAGE_NONCE_SIZE + crypto_aead_chacha20poly1305_ABYTES);
+	buffer_create_with_existing_array(header_ciphertext, packet->content + additional_data->content_length, purported_header_length + MESSAGE_NONCE_SIZE + crypto_secretbox_MACBYTES);
 	//encrypt the header
 	header_buffer = buffer_create_on_heap(purported_header_length + MESSAGE_NONCE_SIZE, purported_header_length + MESSAGE_NONCE_SIZE);
-	unsigned long long decrypted_length;
-	status_int = crypto_aead_chacha20poly1305_decrypt(
+	status_int = crypto_secretbox_open_easy(
 			header_buffer->content,
-			&decrypted_length,
-			NULL,
 			header_ciphertext->content, //ciphertext of header
 			header_ciphertext->content_length, //ciphertext length
-			additional_data->content,
-			additional_data->content_length,
 			header_nonce->content, //nonce
 			header_key->content);
 	if (status_int != 0) {
 		throw(DECRYPT_ERROR, "Failed to decrypt header.");
 	}
 
-	assert(purported_header_length == decrypted_length - MESSAGE_NONCE_SIZE);
+	assert(purported_header_length == header_buffer->content_length - MESSAGE_NONCE_SIZE);
 
 	//copy the header
 	status_int = buffer_copy(header, 0, header_buffer, 0, purported_header_length);
@@ -558,7 +543,7 @@ return_status packet_decrypt_message(
 
 	off_t header_nonce_offset = 3 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
 	//length of message and padding
-	const size_t purported_plaintext_length = packet->content_length - header_nonce_offset - purported_header_length - HEADER_NONCE_SIZE - MESSAGE_NONCE_SIZE- crypto_secretbox_MACBYTES - crypto_aead_chacha20poly1305_ABYTES;
+	const size_t purported_plaintext_length = packet->content_length - header_nonce_offset - purported_header_length - HEADER_NONCE_SIZE - MESSAGE_NONCE_SIZE- crypto_secretbox_MACBYTES - crypto_secretbox_MACBYTES;
 	if (purported_plaintext_length >= packet->content_length) {
 		throw(INVALID_VALUE, "Purported plaintext length is longer than the packet length.");
 	}

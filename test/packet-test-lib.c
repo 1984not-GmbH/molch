@@ -24,6 +24,7 @@
 #include <sodium.h>
 
 #include "../lib/packet.h"
+#include "../lib/constants.h"
 #include "utils.h"
 #include "packet-test-lib.h"
 #include "tracing.h"
@@ -36,14 +37,14 @@
  * if an error has occurred.
  */
 return_status create_and_print_message(
-		buffer_t * const packet, //needs to be 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message_length + header_length + crypto_secretbox_MACBYTES + 255
+		buffer_t * const packet, //needs to be 3 + HEADER_NONCE_SIZE + crypto_secretbox_MACBYTES + crypto_secretbox_NONCEBYTES + message_length + header_length + crypto_secretbox_MACBYTES + 255
 		const unsigned char packet_type,
 		const unsigned char current_protocol_version,
 		const unsigned char highest_supported_protocol_version,
 		const buffer_t * const message,
 		buffer_t * const message_key, //output, crypto_secretbox_KEYBYTES
 		const buffer_t * const header,
-		buffer_t * const header_key, //output, crypto_aead_chacha20poly1305_KEYBYTES
+		buffer_t * const header_key, //output, HEADER_KEY_SIZE
 		const buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages
 		const buffer_t * const public_ephemeral_key, //optional, can be NULL, for prekey messages
 		const buffer_t * const public_prekey) { //optional, can be NULL, for prekey messages
@@ -52,7 +53,7 @@ return_status create_and_print_message(
 	int status_int;
 
 	//create header key
-	status_int = buffer_fill_random(header_key, crypto_aead_chacha20poly1305_KEYBYTES);
+	status_int = buffer_fill_random(header_key, HEADER_KEY_SIZE);
 	if (status_int != 0) {
 		throw(KEYGENERATION_FAILED, "Failed to generate header key.");
 	}
@@ -93,7 +94,7 @@ return_status create_and_print_message(
 	throw_on_error(ENCRYPT_ERROR, "Failed to encrypt message and header.");
 
 	//print header nonce
-	buffer_create_with_existing_array(header_nonce, packet->content + 3, crypto_aead_chacha20poly1305_NPUBBYTES);
+	buffer_create_with_existing_array(header_nonce, packet->content + 3, HEADER_NONCE_SIZE);
 	printf("Header Nonce (%zu Bytes):\n", header_nonce->content_length);
 	print_hex(header_nonce);
 	putchar('\n');

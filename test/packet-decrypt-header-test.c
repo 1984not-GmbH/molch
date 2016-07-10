@@ -36,7 +36,7 @@ int main(void) {
 	buffer_t *decrypted_message_nonce = buffer_create_on_heap(crypto_secretbox_NONCEBYTES, crypto_secretbox_NONCEBYTES);
 
 	//generate keys
-	buffer_t *header_key = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	buffer_t *message_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *public_identity_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_t *public_ephemeral_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
@@ -47,7 +47,7 @@ int main(void) {
 
 	buffer_t *header = buffer_create_on_heap(4, 4);
 	buffer_create_from_string(message, "Hello world!\n");
-	buffer_t *packet = buffer_create_on_heap(3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255 + 3 * PUBLIC_KEY_SIZE, 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255 + 3 * PUBLIC_KEY_SIZE);
+	buffer_t *packet = buffer_create_on_heap(3 + HEADER_NONCE_SIZE + crypto_secretbox_MACBYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255 + 3 * PUBLIC_KEY_SIZE, 3 + HEADER_NONCE_SIZE + crypto_secretbox_MACBYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255 + 3 * PUBLIC_KEY_SIZE);
 
 	return_status status = return_status_init();
 
@@ -135,7 +135,7 @@ int main(void) {
 	packet->content[2]--;
 	//check if it decrypts manipulated packets (manipulated header)
 	printf("Manipulate header.\n");
-	packet->content[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= 0x12;
+	packet->content[3 + HEADER_NONCE_SIZE + 1] ^= 0x12;
 	status = packet_decrypt_header(
 			packet,
 			decrypted_header,
@@ -153,7 +153,7 @@ int main(void) {
 	printf("Header manipulation detected!\n\n");
 
 	//undo header manipulation
-	packet->content[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= 0x12;
+	packet->content[3 + HEADER_NONCE_SIZE + 1] ^= 0x12;
 
 	//PREKEY MESSAGE
 	printf("PREKEY_MESSAGE\n");

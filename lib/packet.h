@@ -28,10 +28,6 @@
 /*
  * Encrypt a message and header with a symmetric key and a nonce.
  *
- * For the header, AEAD is used (authenticated encryption with
- * additional data) to authenticate the header length, version
- * and packet type.
- *
  * packet has to have at least the following length:
  *
  * The packet has the following format:
@@ -47,7 +43,7 @@
  *       axolotl_header(?),
  *       message_nonce(MESSAGE_NONCE_SIZE)
  *   },
- *   header_and_additional_data_MAC(crypto_aead_chacha20poly1305_ABYTES),
+ *   header_MAC(crypto_secretbox_MACBYTES),
  *   authenticated_encrypted_message {
  *       message(?),
  *       MAC(crypto_secretbox_MACBYTES)
