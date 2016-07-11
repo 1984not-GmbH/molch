@@ -19,14 +19,35 @@ if(GENERATE_LUA_BINDINGS AND (NOT APPLE))
     swig_add_module(molch-interface lua molch.i)
     swig_link_libraries(molch-interface molch ${LUA_LIBRARIES})
 
+    set(BINDING_FILES "${CMAKE_CURRENT_BINARY_DIR}/molch.lua")
+
     # copy the lua binding
-    execute_process(COMMAND cmake -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/molch.lua" "${CMAKE_CURRENT_BINARY_DIR}/molch.lua")
+    add_custom_command(
+        OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/molch.lua"
+        COMMAND "${CMAKE_COMMAND}"
+        ARGS -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/molch.lua" "${CMAKE_CURRENT_BINARY_DIR}/molch.lua"
+        COMMENT "Copying molch.lua"
+        VERBATIM)
 
     find_program(MKFIFO mkfifo)
     if (NOT (MKFIFO MATCHES "MKFIFO-NOTFOUND"))
-        execute_process(COMMAND cmake -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/base64.lua" "${CMAKE_CURRENT_BINARY_DIR}/base64.lua")
-        execute_process(COMMAND cmake -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/pipe.lua" "${CMAKE_CURRENT_BINARY_DIR}/pipe.lua")
+        add_custom_command(
+            OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/base64.lua"
+            COMMAND "${CMAKE_COMMAND}"
+            ARGS -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/base64.lua" "${CMAKE_CURRENT_BINARY_DIR}/base64.lua"
+            COMMENT "Copying base64.lua"
+            VERBATIM)
+        add_custom_command(
+            OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/pipe.lua"
+            COMMAND "${CMAKE_COMMAND}"
+            ARGS -E copy_if_different "${CMAKE_CURRENT_SOURCE_DIR}/pipe.lua" "${CMAKE_CURRENT_BINARY_DIR}/pipe.lua"
+            COMMENT "Copying pipe.lua"
+            VERBATIM)
+
+        list(APPEND BINDING_FILES "${CMAKE_CURRENT_BINARY_DIR}/base64.lua" "${CMAKE_CURRENT_BINARY_DIR}/pipe.lua")
     endif()
+
+    add_custom_target(lua-bindings ALL SOURCES ${BINDING_FILES})
 
     subdirs(scenarios)
 endif()
