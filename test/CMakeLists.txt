@@ -17,9 +17,6 @@ if (RUN_TESTS)
     add_library(packet-test-lib packet-test-lib)
     target_link_libraries(packet-test-lib molch molch-buffer utils)
 
-    add_library(proto-packet-test-lib proto-packet-test-lib)
-    target_link_libraries(proto-packet-test-lib molch molch-buffer utils)
-
     set(tests diffie-hellman-test
               triple-diffie-hellman-test
               key-derivation-test
@@ -31,10 +28,6 @@ if (RUN_TESTS)
               packet-decrypt-header-test
               packet-decrypt-message-test
               packet-decrypt-test
-              proto-packet-get-metadata-test
-              proto-packet-decrypt-header-test
-              proto-packet-decrypt-message-test
-              proto-packet-decrypt-test
               header-test
               header-and-message-keystore-test
               ratchet-test
@@ -56,7 +49,7 @@ if (RUN_TESTS)
 
     foreach(test ${tests})
         add_executable(${test} ${test})
-        target_link_libraries(${test} molch molch-buffer utils common packet-test-lib proto-packet-test-lib)
+        target_link_libraries(${test} molch molch-buffer utils common packet-test-lib)
         add_test(${test} "./${test}")
         if(NOT ("${MEMORYCHECK_COMMAND}" MATCHES "MEMORYCHECK_COMMAND-NOTFOUND"))
             add_test("${test}-valgrind" ${MEMORYCHECK_COMMAND} ${MEMORYCHECK_COMMAND_OPTIONS} "./${test}")

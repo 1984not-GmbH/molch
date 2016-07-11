@@ -42,7 +42,7 @@ int main(void) {
 	buffer_t *extracted_public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_create_from_string(message, "Hello world!\n");
 	buffer_t *header = buffer_create_on_heap(4, 4);
-	buffer_t *packet = buffer_create_on_heap(3 + HEADER_NONCE_SIZE + crypto_secretbox_MACBYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255 + 3 * PUBLIC_KEY_SIZE, 3 + HEADER_NONCE_SIZE + crypto_secretbox_MACBYTES + crypto_secretbox_NONCEBYTES + message->content_length + header->content_length + crypto_secretbox_MACBYTES + 255 + 3 * PUBLIC_KEY_SIZE);
+	buffer_t *packet = NULL;
 
 	return_status status = return_status_init();
 
@@ -54,66 +54,54 @@ int main(void) {
 	header->content[1] = 0x02;
 	header->content[2] = 0x03;
 	header->content[3] = 0x04;
-	unsigned char packet_type = NORMAL_MESSAGE;
+	molch_message_type packet_type = NORMAL_MESSAGE;
 	printf("Packet type: %02x\n", packet_type);
-	const unsigned char current_protocol_version = 2;
-	printf("Current protocol version: %02x\n", current_protocol_version);
-	const unsigned char highest_supported_protocol_version = 3;
-	printf("Highest supported protocol version: %02x\n", highest_supported_protocol_version);
 	putchar('\n');
 
 	//A NORMAL MESSAGE
 	printf("NORMAL MESSAGE:\n");
 	int status_int = 0;
 	status = create_and_print_message(
-			packet,
-			packet_type,
-			current_protocol_version,
-			highest_supported_protocol_version,
-			message,
-			message_key,
-			header,
+			&packet,
 			header_key,
+			message_key,
+			packet_type,
+			header,
+			message,
 			NULL,
 			NULL,
 			NULL);
 	throw_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now extract the metadata
-	unsigned char extracted_packet_type;
-	unsigned char extracted_current_protocol_version;
-	unsigned char extracted_highest_supported_protocol_version;
-	unsigned char extracted_header_length;
+	molch_message_type extracted_packet_type;
+	uint32_t extracted_current_protocol_version;
+	uint32_t extracted_highest_supported_protocol_version;
 	status = packet_get_metadata_without_verification(
-			packet,
-			&extracted_packet_type,
 			&extracted_current_protocol_version,
 			&extracted_highest_supported_protocol_version,
-			&extracted_header_length,
+			&extracted_packet_type,
+			packet,
 			NULL,
 			NULL,
 			NULL);
 	throw_on_error(DATA_FETCH_ERROR, "Couldn't extract metadata from the packet.");
 
+	printf("extracted_packet_type = %u\n", extracted_packet_type);
 	if (packet_type != extracted_packet_type) {
 		throw(INVALID_VALUE, "Extracted packet type doesn't match.");
 	}
 	printf("Packet type matches!\n");
 
-	if (current_protocol_version != extracted_current_protocol_version) {
+	if (extracted_current_protocol_version != 0) {
 		throw(INVALID_VALUE, "Extracted current protocol version doesn't match.");
 	}
 	printf("Current protocol version matches!\n");
 
-	if (highest_supported_protocol_version != extracted_highest_supported_protocol_version) {
+	if (extracted_highest_supported_protocol_version != 0) {
 		throw(INVALID_VALUE, "Extracted highest supported protocol version doesn't match.");
 	}
 	printf("Highest supoorted protocol version matches (%i)!\n", extracted_highest_supported_protocol_version);
-
-	if (header->content_length != extracted_header_length) {
-		throw(INVALID_VALUE, "Extracted header length doesn't match.");
-	}
-	printf("Header length matches!\n");
 
 	//NOW A PREKEY MESSAGE
 	printf("PREKEY MESSAGE:\n");
@@ -131,17 +119,17 @@ int main(void) {
 		throw(KEYGENERATION_FAILED, "Failed to generate public prekey.");
 	}
 
-	buffer_clear(packet);
+	buffer_destroy_from_heap(packet);
+	packet = NULL;
+
 	packet_type = PREKEY_MESSAGE;
 	status = create_and_print_message(
-			packet,
-			packet_type,
-			current_protocol_version,
-			highest_supported_protocol_version,
-			message,
-			message_key,
-			header,
+			&packet,
 			header_key,
+			message_key,
+			packet_type,
+			header,
+			message,
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
@@ -149,35 +137,30 @@ int main(void) {
 
 	//now extract the metadata
 	status = packet_get_metadata_without_verification(
-			packet,
-			&extracted_packet_type,
 			&extracted_current_protocol_version,
 			&extracted_highest_supported_protocol_version,
-			&extracted_header_length,
+			&extracted_packet_type,
+			packet,
 			extracted_public_identity_key,
 			extracted_public_ephemeral_key,
 			extracted_public_prekey);
 	throw_on_error(DATA_FETCH_ERROR, "Couldn't extract metadata from the packet.");
 
+	printf("extracted_type = %u\n", extracted_packet_type);
 	if (packet_type != extracted_packet_type) {
 		throw(INVALID_VALUE, "Extracted packet type doesn't match.");
 	}
 	printf("Packet type matches!\n");
 
-	if (current_protocol_version != extracted_current_protocol_version) {
+	if (extracted_current_protocol_version != 0) {
 		throw(INVALID_VALUE, "Extracted current protocol version doesn't match.");
 	}
 	printf("Current protocol version matches!\n");
 
-	if (highest_supported_protocol_version != extracted_highest_supported_protocol_version) {
+	if (extracted_highest_supported_protocol_version != 0) {
 		throw(INVALID_VALUE, "Extracted highest supported protocl version doesn't match.");
 	}
 	printf("Highest supoorted protocol version matches (%i)!\n", extracted_highest_supported_protocol_version);
-
-	if (header->content_length != extracted_header_length) {
-		throw(INVALID_VALUE, "Extracted header length doesn't match.");
-	}
-	printf("Header length matches!\n");
 
 	if (buffer_compare(public_identity_key, extracted_public_identity_key) != 0) {
 		throw(INVALID_VALUE, "Extracted public identity key doesn't match.");
@@ -198,7 +181,9 @@ cleanup:
 	buffer_destroy_from_heap(header_key);
 	buffer_destroy_from_heap(message_key);
 	buffer_destroy_from_heap(header);
-	buffer_destroy_from_heap(packet);
+	if (packet != NULL) {
+		buffer_destroy_from_heap(packet);
+	}
 	buffer_destroy_from_heap(public_identity_key);
 	buffer_destroy_from_heap(public_ephemeral_key);
 	buffer_destroy_from_heap(public_prekey);

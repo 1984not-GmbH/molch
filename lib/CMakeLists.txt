@@ -7,7 +7,6 @@ add_library(molch
 	diffie-hellman
 	key-derivation
 	packet
-	proto-packet
 	header
 	header-and-message-keystore
 	ratchet user-store

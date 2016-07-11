@@ -19,24 +19,49 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "../lib/packet.h"
+#ifndef TEST_PACKET_TEST_LIB_H
+#define TEST_PACKET_TEST_LIB_H
 
-/*
+#include "../lib/molch.h"
+
+/*!
  * Create message and header keys, encrypt header and message
  * and print them.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
+ * \param packet
+ *   The resulting packet.
+ * \param header_key
+ *   A header key that will be generated. Has a length of HEADER_KEY_SIZE.
+ * \param message_key
+ *   A message key that will be generated. Has a length of MESSAGE_KEY_SIZE.
+ * \param packet_type
+ *   Prekey or normal packet?
+ * \param header
+ *   The header to encrypt.
+ * \param message
+ *   The message to encrypt.
+ * \param public_identity_key
+ *   Optional. Public identity key of the sender. For prekey messages only.
+ * \param public_epheneral_key
+ *   Optional. Public ephemeral key of the sender. For prekey messages only.
+ * \param public_prekey
+ *   Optional. Prekey of the receiver. For prekey messages only.
+ *
+ * \return
+ *   Error status, destroy with return_status_destroy_errors if an error occurs.
  */
 return_status create_and_print_message(
-		buffer_t * const packet, //needs to be 3 + HEADER_NONCE_SIZE + crypto_secretbox_NONCEBYTES + message_length + header_length + crypto_secretbox_MACBYTES
-		const unsigned char packet_type,
-		const unsigned char current_protocol_version,
-		const unsigned char highest_supported_protocol_version,
-		const buffer_t * const message,
-		buffer_t * const message_key, //output, crypto_secretbox_KEYBYTES
+		//output
+		buffer_t ** const packet,
+		buffer_t * const header_key, //HEADER_KEY_SIZE
+		buffer_t * const message_key, //MESSAGE_KEY_SIZE
+		//inputs
+		const molch_message_type packet_type,
 		const buffer_t * const header,
-		buffer_t * const header_key, //output, crypto_secretbox_KEYBYTES
-		const buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages
-		const buffer_t * const public_epehemeral_key, //optional, can be NULL, for prekey messages
-		const buffer_t * const public_prekey); //optional, can be NULL, for prekey messages
+		const buffer_t * const message,
+		//optional inputs (prekey messages only)
+		const buffer_t * const public_identity_key,
+		const buffer_t * const public_epehemeral_key,
+		const buffer_t * const public_prekey) __attribute__((warn_unused_result));
+
+#endif
