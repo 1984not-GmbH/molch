@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-set(proto-files header)
+set(proto-files header packet packet_header)
 
 foreach(proto-file ${proto-files})
 	add_custom_command(

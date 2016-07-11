@@ -1,0 +1,7 @@
+import "packet_header.proto";
+
+message Packet {
+	required PacketHeader packet_header = 1;
+	optional bytes encrypted_axolotl_header = 2;
+	optional bytes encrypted_message = 3;
+}

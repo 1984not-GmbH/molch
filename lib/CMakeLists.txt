@@ -6,7 +6,9 @@ include_directories("${CMAKE_CURRENT_BINARY_DIR}/protobuf")
 add_library(molch
 	diffie-hellman
 	key-derivation
-	packet header
+	packet
+	proto-packet
+	header
 	header-and-message-keystore
 	ratchet user-store
 	spiced-random
