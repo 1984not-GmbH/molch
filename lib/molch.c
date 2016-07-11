@@ -327,16 +327,14 @@ molch_message_type molch_get_message_type(
 	//create a buffer for the packet
 	buffer_create_with_existing_array(packet_buffer, (unsigned char*)packet, packet_length);
 
-	unsigned char packet_type;
-	unsigned char current_protocol_version;
-	unsigned char highest_supported_protocol_version;
-	unsigned char header_length;
+	molch_message_type packet_type;
+	uint32_t current_protocol_version;
+	uint32_t highest_supported_protocol_version;
 	return_status status = packet_get_metadata_without_verification(
-		packet_buffer,
-		&packet_type,
 		&current_protocol_version,
 		&highest_supported_protocol_version,
-		&header_length,
+		&packet_type,
+		packet_buffer,
 		NULL,
 		NULL,
 		NULL);
@@ -345,15 +343,7 @@ molch_message_type molch_get_message_type(
 		return INVALID;
 	)
 
-	if (packet_type == PREKEY_MESSAGE) {
-		return PREKEY_MESSAGE;
-	}
-
-	if (packet_type == NORMAL_MESSAGE) {
-		return NORMAL_MESSAGE;
-	}
-
-	return INVALID;
+	return packet_type;
 }
 
 /*
@@ -859,7 +849,6 @@ return_status molch_decrypt_message(
 		|| (conversation_id == NULL)
 		|| (receive_message_number == NULL)
 		|| (previous_receive_message_number == NULL)) {
-		printf("HERE\n");
 		throw(INVALID_INPUT, "Invalid input to molch_decrypt_message.");
 	}
 

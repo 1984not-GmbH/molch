@@ -18,108 +18,106 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-#include <sodium.h>
-#include <string.h>
-#include <assert.h>
 
-#include "constants.h"
+#include <header.pb-c.h>
 #include "header.h"
-#include "endianness.h"
+#include "constants.h"
+#include "zeroed_malloc.h"
 
-/*
- * Create a new header.
- *
- * The header looks like follows:
- * header (40) = {
- *   public_ephemeral_key (PUBLIC_KEY_SIZE = 32),
- *   message_counter (4)
- *   previous_message_counter(4)
- * }
- *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
- */
 return_status header_construct(
-		buffer_t * const header, //PUBLIC_KEY_SIZE + 8
+		//output
+		buffer_t ** const header,
+		//inputs
 		const buffer_t * const our_public_ephemeral, //PUBLIC_KEY_SIZE
-		const uint32_t message_counter,
-		const uint32_t previous_message_counter) {
+		const uint32_t message_number,
+		const uint32_t previous_message_number) {
 	return_status status = return_status_init();
 
+	Header header_struct = HEADER__INIT;
+
 	//check input
-	if ((header == NULL) || (header->buffer_length < PUBLIC_KEY_SIZE + 2 * sizeof(uint32_t))
+	if ((header == NULL)
 			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
 		throw(INVALID_INPUT, "Invalid input to header_construct.");
 	}
 
-	int status_int;
-	status_int = buffer_clone(header, our_public_ephemeral);
-	if (status_int != 0) {
-		throw(BUFFER_ERROR, "Failed to copy public ephemeral to header.");
+	//initialize the output buffer
+	*header = NULL;
+
+	//create buffer for our public ephemeral
+	ProtobufCBinaryData protobuf_our_public_ephemeral;
+	protobuf_our_public_ephemeral.len = our_public_ephemeral->content_length;
+	protobuf_our_public_ephemeral.data = our_public_ephemeral->content;
+
+	//fill the struct
+	header_struct.message_number = message_number;
+	header_struct.has_message_number = true;
+	header_struct.previous_message_number = previous_message_number;
+	header_struct.has_previous_message_number = true;
+	header_struct.public_ephemeral_key = protobuf_our_public_ephemeral;
+	header_struct.has_public_ephemeral_key = true;
+
+	//allocate the header buffer
+	size_t header_length = header__get_packed_size(&header_struct);
+	*header = buffer_create_on_heap(header_length, header_length);
+
+	//pack it
+	size_t packed_length = header__pack(&header_struct, (*header)->content);
+	if (packed_length != header_length) {
+		throw(PROTOBUF_PACK_ERROR, "Packed header has incorrect length.");
 	}
-
-	//message counter as big endian
-	buffer_create_with_existing_array(big_endian_message_counter, header->content + PUBLIC_KEY_SIZE, sizeof(uint32_t));
-	status = endianness_uint32_to_big_endian(message_counter, big_endian_message_counter);
-	throw_on_error(GENERIC_ERROR, "Failed to convert message counter to big endian.");
-
-	//previous message counter as big endian
-	buffer_create_with_existing_array(big_endian_previous_message_counter, header->content + PUBLIC_KEY_SIZE + sizeof(uint32_t), sizeof(uint32_t));
-	status = endianness_uint32_to_big_endian(previous_message_counter, big_endian_previous_message_counter);
-	throw_on_error(GENERIC_ERROR, "Failed to convert previous message counter to big endian.");
-
-	header->content_length = PUBLIC_KEY_SIZE + 2 * sizeof(uint32_t);
 
 cleanup:
-	if (status.status != SUCCESS) {
-		if (header != NULL) {
-			buffer_clear(header);
+	on_error(
+		if ((header != NULL) && (*header != NULL)) {
+			buffer_destroy_from_heap(*header);
 		}
-	}
-
+	);
 	return status;
 }
 
-/*
- * Get the content of the header.
- *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
- */
 return_status header_extract(
-		const buffer_t * const header, //PUBLIC_KEY_SIZE + 8, input
-		buffer_t * const their_public_ephemeral, //PUBLIC_KEY_SIZE, output
-		uint32_t * const message_counter,
-		uint32_t * const previous_message_counter) {
+		//outputs
+		buffer_t * const their_public_ephemeral, //PUBLIC_KEY_SIZE
+		uint32_t * const message_number,
+		uint32_t * const previous_message_number,
+		//intput
+		const buffer_t * const header) {
 	return_status status = return_status_init();
 
+	Header *header_struct = NULL;
+
 	//check input
-	if ((header == NULL) || (header->content_length != PUBLIC_KEY_SIZE + 8)
-			|| (their_public_ephemeral == NULL) || (their_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)) {
+	if ((their_public_ephemeral == NULL) || (their_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)
+			|| (message_number == NULL) || (previous_message_number == NULL)
+			|| (header == NULL)) {
 		throw(INVALID_INPUT, "Invalid input to header_extract.");
 	}
 
-	int status_int = 0;
-	status_int = buffer_copy(their_public_ephemeral, 0, header, 0, PUBLIC_KEY_SIZE);
-	if (status_int != 0) {
-		throw(BUFFER_ERROR, "Failed to copy public ephemeral from the header.");
+	//unpack the message
+	header_struct = header__unpack(&protobuf_c_allocators, header->content_length, header->content);
+	if (header_struct == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack header.");
 	}
 
-	//message counter from big endian
-	buffer_create_with_existing_array(big_endian_message_counter, header->content + PUBLIC_KEY_SIZE, sizeof(uint32_t));
-	status = endianness_uint32_from_big_endian(message_counter, big_endian_message_counter);
-	throw_on_error(GENERIC_ERROR, "Failed to convert message counter back from big endian.");
+	if (!header_struct->has_message_number || !header_struct->has_previous_message_number || !header_struct->has_public_ephemeral_key) {
+		throw(PROTOBUF_MISSING_ERROR, "Missing fields in header.");
+	}
 
-	//previous message counter from big endian
-	buffer_create_with_existing_array(big_endian_previous_message_counter, header->content + PUBLIC_KEY_SIZE + sizeof(uint32_t), sizeof(uint32_t));
-	status = endianness_uint32_from_big_endian(previous_message_counter, big_endian_previous_message_counter);
-	throw_on_error(GENERIC_ERROR, "Failed to convert previous message counter back from big endian.");
+	if (header_struct->public_ephemeral_key.len != PUBLIC_KEY_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "The public ephemeral key in the header has an incorrect size.");
+	}
+
+	*message_number = header_struct->message_number;
+	*previous_message_number = header_struct->previous_message_number;
+
+	if (buffer_clone_from_raw(their_public_ephemeral, header_struct->public_ephemeral_key.data, header_struct->public_ephemeral_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy public ephemeral key.")
+	}
 
 cleanup:
-	if (status.status != SUCCESS) {
-		if (their_public_ephemeral != NULL) {
-			buffer_clear(their_public_ephemeral);
-		}
+	if (header_struct != NULL) {
+		header__free_unpacked(header_struct, &protobuf_c_allocators);
 	}
 
 	return status;

@@ -35,9 +35,11 @@ else()
 endif()
 
 find_package(Sodium REQUIRED)
+find_package(Protobuf-C REQUIRED)
+find_package(Protoc-C REQUIRED)
 
-include_directories(${SODIUM_INCLUDE_DIR})
-SET(libs ${libs} ${SODIUM_LIBRARY})
+include_directories(${SODIUM_INCLUDE_DIR} ${PROTOBUFC_INCLUDE_DIR})
+SET(libs ${libs} ${SODIUM_LIBRARY} ${PROTOBUFC_LIBRARY})
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -pedantic -Wall -Wextra -Werror -fPIC ${SECURITY_C_FLAGS}")
 set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${SECURITY_LINK_FLAGS}")
