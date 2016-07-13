@@ -62,37 +62,24 @@ Now, when you run one of the tests (those are located at `tracing/test/`), it wi
 
 You can postprocess this tracing output with `test/trace.lua`, pass it the path of `trace.out`, or the path to a saved output of the test and it will pretty-print the trace. It can also filter out function calls to make things easier to read, see it's source code for more details.
 
-size of a packet
+format of a packet
 ----------------
-NOTE: This may be subject to change.
+Molch uses [Googles Protocol Buffers](https://developers.google.com/protocol-buffers/) via the [Protobuf-C](https://github.com/protobuf-c/protobuf-c) library. You can find the protocol descriptions in `lib/protobuf`.
 
-```
-packet (>=362) = {
-  protocol_version(1),
-  packet_type(1),
-  header_length(1),
-  header_nonce(crypto_aead_chacha20poly1305_NPUBBYTES = 8),
-  header (64) {
-      axolotl_header(crypto_box_PUBLICKEYBYTES + 8 = 40) {
-        sender_public_ephemeral (crypto_box_PUBLICKEYBYTES = 32),
-        message_number (4),
-        previous_message_number (4)
-      }
-      message_nonce(crypto_secretbox_NONCEBYTES = 24)
-  },
-  header_and_additional_data_MAC(crypto_aead_chacha20poly1305_ABYTES = 16),
-  authenticated_encrypted_message (>=271) {
-      message(>=255),
-      MAC(crypto_secretbox_MACBYTES = 16)
-  }
-}
+cryptography
+------------
+This is a brief non-complete overview of the cryptographic primitives used by molch. A detailed description of what molch does cryptographically is only provided by its source code at the moment.
 
-To be precise: 362 + n*255 with n = 0, 1, 2, ...
-```
+Molch uses only primitives implemented by [libsodium](https://github.com/jedisct1/libsodium).
 
-If the message length exceeds 254 Bytes, you have to add another 255 bytes because of the padding. The length of the padded message is always the following:
+**Key derivation:** Blake2b
+**Header encryption:** Xsalsa20 with Poly1305 MAC
+**Message encryption:** XSalsa20 with Poly1305 MAC
+**Signing keys (used to sign prekeys and the identity key):** Ed25519
+**Other keypairs:** X25519
+**Key exchange:** ECDH with X25519
 
-`ceil(raw_message_length / 255) * 255`
+Molch allows you to mix in a low entropy random source to the creation of signing and identity keypairs. In this case, the low entropy random source is used as input to Argon2i and the output xored with high entropy random numbers provided by the operating system.
 
 Want to help?
 -------------------
