@@ -33,9 +33,11 @@ coding practices
 
 other practices
 ---------------
+* document every new function with doxygen doc comments. Functions that are also in the header are only documented in the header file.
 * use a layer based approach (function calls / access to data structures is only done top down, not the other way round), the functions that are called mustn't know by whom they are called etc.
 * don't use `buffer_create` to allocate buffers, use `buffer_create_on_heap` instead. There's still old code using `buffer_create`, but don't introduce new one
 * deallocate those buffers with `buffer_destroy_from_heap`, this ensures, that it get's zeroed out properly
+* make sure to always overwrite memory locations that held confidential data with zeroes afterwards using sodium_memzero (`buffer_destroy_from_heap` already does that)
 * if possible, always work with buffers that know their length (not `char *`)
 * write tests for everything you do
   - if you're modifying existing files, just add your test to the appropriate file in the `test` directory
