@@ -8,6 +8,22 @@ Take a look at existing code to see how the code style looks like. Some notewort
 * split function calls / function definitions into multiple lines if they get too long (see the code for examples)
 * no one line ifs/fors/whiles ..., every one of those must use two curly braces
 
+APIs
+----
+These are guidelines on how to structure APIs, this applies not only to the public API, but also to internal APIs between components.
+
+Function parameters:
+* output first, followed by input
+* public key first, then private key
+* optional parameters at the end (optional outputs **after** regular inputs)
+* strings/data are followed by their length (when not using buffer_t)
+* if a function works on a struct, pass the pointer first (like a `self` parameter in class methods)
+
+Naming conventions:
+* Functions:
+  - `molch_end_conversation` instead of `molch_conversation_end` (verb first)
+  - but start with the 'class' that the function belongs to (`molch` in the example above)
+
 coding practices
 ----------------
 * make as much `const` as possible, including pointers (e.g. `const buffer_t * const buffer`)
