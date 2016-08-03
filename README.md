@@ -50,6 +50,16 @@ On Max OS X (via homebrew):
 brew install libsodium valgrind swig lua graphviz doxygen protobuf-c
 ```
 
+supported platforms
+-------------------
+Molch is constantly tested on the following platforms:
+| processor        | os                          |
+| :--------------- | :-------------------------- |
+| x86_64           | Archlinux                   |
+| i686             | Archlinux                   |
+| ARMv7hf          | Ubuntu 16.04 (Xenial Xerus) |
+| PowerPC Apple G4 | Debian Stretch (Testing)    |
+
 how to build
 ------------
 This has been tested on GNU/Linux and Mac OS X.
