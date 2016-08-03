@@ -19,6 +19,37 @@ $ git submodule update --init --recursive
 
 You might also have to run `git submodule update` when changing branches or after pulling in new changes.
 
+dependencies
+--------------------
+Molch depends on the following:
+* [libsodium](https://github.com/jedisct1/libsodium)
+* [protobuf-c](https://github.com/protobuf-c/protobuf-c)
+* CMake (build and tests)
+* C-Compiler (build)
+* Clang Static Analyzer (tests)
+* Address Sanitizer (tests)
+* Undefined Behavior Sanitizer (tests)
+* [Valgrind](http://valgrind.org/)
+* [Lua](https://www.lua.org/) (optional, for Lua-Bindings)
+* [Swig](http://swig.org/) (optional, for Lua-Bindings)
+* [Doxygen](https://www.stack.nl/~dimitri/doxygen/) (optional, documentation)
+* [Graphviz](http://graphviz.org/) (optional, documentation)
+
+On Ubuntu:
+```
+sudo apt-get install libsodium18 libsodium-dev libprotobuf-c-dev libprotobuf-c1 libprotobuf-c1-dbg libprotobuf9v5:armhf protobuf-c-compiler cmake clang libubsan0 libasan0 libasan1 libasan2 valgrind liblua5.3 lua5.3 liblua5.3-dev swig doxygen graphviz
+```
+
+On Arch:
+```
+sudo pacman -S cmake clang-analyzer libsodium valgrind swig lua doxygen graphviz protobuf-c
+```
+
+On Max OS X (via homebrew):
+```
+brew install libsodium valgrind swig lua graphviz doxygen protobuf-c
+```
+
 how to build
 ------------
 This has been tested on GNU/Linux and Mac OS X.
