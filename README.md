@@ -19,35 +19,52 @@ $ git submodule update --init --recursive
 
 You might also have to run `git submodule update` when changing branches or after pulling in new changes.
 
+dependencies
+--------------------
+Molch depends on the following:
+* [libsodium](https://github.com/jedisct1/libsodium)
+* [protobuf-c](https://github.com/protobuf-c/protobuf-c)
+* CMake (build and tests)
+* C-Compiler (build)
+* Clang Static Analyzer (tests)
+* Address Sanitizer (tests)
+* Undefined Behavior Sanitizer (tests)
+* [Valgrind](http://valgrind.org/)
+* [Lua](https://www.lua.org/) (optional, for Lua-Bindings)
+* [Swig](http://swig.org/) (optional, for Lua-Bindings)
+* [Doxygen](https://www.stack.nl/~dimitri/doxygen/) (optional, documentation)
+* [Graphviz](http://graphviz.org/) (optional, documentation)
+
+On Ubuntu:
+```
+sudo apt-get install libsodium18 libsodium-dev libprotobuf-c-dev libprotobuf-c1 libprotobuf-c1-dbg libprotobuf9v5:armhf protobuf-c-compiler cmake clang libubsan0 libasan0 libasan1 libasan2 valgrind liblua5.3 lua5.3 liblua5.3-dev swig doxygen graphviz
+```
+
+On Arch:
+```
+sudo pacman -S cmake clang-analyzer libsodium valgrind swig lua doxygen graphviz protobuf-c
+```
+
+On Max OS X (via homebrew):
+```
+brew install libsodium valgrind swig lua graphviz doxygen protobuf-c
+```
+
+supported platforms
+-------------------
+Molch is constantly tested on the following platforms:
+| processor        | os                          |
+| :--------------- | :-------------------------- |
+| x86_64           | Archlinux                   |
+| i686             | Archlinux                   |
+| ARMv7hf          | Ubuntu 16.04 (Xenial Xerus) |
+| PowerPC Apple G4 | Debian Stretch (Testing)    |
+
 how to build
 ------------
-This has been tested on GNU/Linux and Mac OS X.
+Run the script `ci/test.sh` from the project root to build Molch and run the tests.
 
-First make sure `libsodium` and `cmake` are installed.
-
-Then do the following:
-```
-$ mkdir build #make build directory
-$ cd build    #change into it
-$ cmake ..    #run cmake (only required once)
-$ make        #finally compile the software
-```
-or run the script `ci/build.sh`.
-
-Run the tests (you need to have valgrind installed):
-```
-$ cd build
-$ make test
-```
-
-Run the static analysis (you need clang and clangs static analyzer):
-```
-$ mkdir static-analysis
-$ cd static-analysis
-$ scan-build cmake ..
-$ scan-build make
-```
-or run the script `ci/clang-static-analysis.sh`.
+Run the script `ci/clang-static-analysis.sh` from the project root to run static analysis.
 
 how to generate traces for debugging
 ------------------------------------
