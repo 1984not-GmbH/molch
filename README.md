@@ -53,8 +53,9 @@ brew install libsodium valgrind swig lua graphviz doxygen protobuf-c
 supported platforms
 -------------------
 Molch is constantly tested on the following platforms:
+
 | processor        | os                          |
-| :--------------- | :-------------------------- |
+|:-----------------|:----------------------------|
 | x86_64           | Archlinux                   |
 | i686             | Archlinux                   |
 | ARMv7hf          | Ubuntu 16.04 (Xenial Xerus) |
