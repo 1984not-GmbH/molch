@@ -59,6 +59,7 @@ Molch is constantly tested on the following platforms:
 | i686             | Archlinux                   |
 | ARMv7hf          | Ubuntu 16.04 (Xenial Xerus) |
 | PowerPC Apple G4 | Debian Stretch (Testing)    |
+| x86_64           | Mac OS X 10.9 Mavericks     |
 
 how to build
 ------------
