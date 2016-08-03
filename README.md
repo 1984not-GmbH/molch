@@ -62,33 +62,9 @@ Molch is constantly tested on the following platforms:
 
 how to build
 ------------
-This has been tested on GNU/Linux and Mac OS X.
+Run the script `ci/test.sh` from the project root to build Molch and run the tests.
 
-First make sure `libsodium` and `cmake` are installed.
-
-Then do the following:
-```
-$ mkdir build #make build directory
-$ cd build    #change into it
-$ cmake ..    #run cmake (only required once)
-$ make        #finally compile the software
-```
-or run the script `ci/build.sh`.
-
-Run the tests (you need to have valgrind installed):
-```
-$ cd build
-$ make test
-```
-
-Run the static analysis (you need clang and clangs static analyzer):
-```
-$ mkdir static-analysis
-$ cd static-analysis
-$ scan-build cmake ..
-$ scan-build make
-```
-or run the script `ci/clang-static-analysis.sh`.
+Run the script `ci/clang-static-analysis.sh` from the project root to run static analysis.
 
 how to generate traces for debugging
 ------------------------------------
