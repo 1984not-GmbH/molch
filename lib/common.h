@@ -26,4 +26,18 @@
 
 #include "return-status.h"
 
+// macros that free memory and delete the pointer afterwards
+#define free_and_null(pointer)\
+	free(pointer);\
+	pointer = NULL;
+#define sodium_free_and_null(pointer)\
+	sodium_free(pointer);\
+	pointer = NULL;
+#define buffer_destroy_from_heap_and_null(buffer)\
+	buffer_destroy_from_heap(buffer);\
+	buffer = NULL;
+#define buffer_destroy_with_custom_deallocator_and_null(buffer, deallocator)\
+	buffer_destroy_with_custom_deallocator(buffer, deallocator);\
+	buffer = NULL;
+
 #endif

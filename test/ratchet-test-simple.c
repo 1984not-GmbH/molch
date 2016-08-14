@@ -47,7 +47,7 @@ void export_ratchet(const ratchet_state *const ratchet, const char * const filen
 	fprintf(file, "%.*s", (int)json->content_length, json->content);
 	fclose(file);
 
-	buffer_destroy_from_heap(json);
+	buffer_destroy_from_heap_and_null(json);
 }
 
 int main(void) {
@@ -348,21 +348,21 @@ int main(void) {
 	throw_on_error(DATA_SET_ERROR, "Bob-Roundtrip: Failed to set message authenticity.");
 
 cleanup:
-	buffer_destroy_from_heap(alice_private_identity);
-	buffer_destroy_from_heap(alice_public_identity);
-	buffer_destroy_from_heap(alice_private_ephemeral);
-	buffer_destroy_from_heap(alice_public_ephemeral);
-	buffer_destroy_from_heap(bob_private_identity);
-	buffer_destroy_from_heap(bob_public_identity);
-	buffer_destroy_from_heap(bob_private_ephemeral);
-	buffer_destroy_from_heap(bob_public_ephemeral);
+	buffer_destroy_from_heap_and_null(alice_private_identity);
+	buffer_destroy_from_heap_and_null(alice_public_identity);
+	buffer_destroy_from_heap_and_null(alice_private_ephemeral);
+	buffer_destroy_from_heap_and_null(alice_public_ephemeral);
+	buffer_destroy_from_heap_and_null(bob_private_identity);
+	buffer_destroy_from_heap_and_null(bob_public_identity);
+	buffer_destroy_from_heap_and_null(bob_private_ephemeral);
+	buffer_destroy_from_heap_and_null(bob_public_ephemeral);
 
-	buffer_destroy_from_heap(send_header_key);
-	buffer_destroy_from_heap(send_message_key);
-	buffer_destroy_from_heap(public_send_ephemeral);
-	buffer_destroy_from_heap(current_receive_header_key);
-	buffer_destroy_from_heap(next_receive_header_key);
-	buffer_destroy_from_heap(receive_message_key);
+	buffer_destroy_from_heap_and_null(send_header_key);
+	buffer_destroy_from_heap_and_null(send_message_key);
+	buffer_destroy_from_heap_and_null(public_send_ephemeral);
+	buffer_destroy_from_heap_and_null(current_receive_header_key);
+	buffer_destroy_from_heap_and_null(next_receive_header_key);
+	buffer_destroy_from_heap_and_null(receive_message_key);
 
 	if (alice_send_ratchet != NULL) {
 		ratchet_destroy(alice_send_ratchet);

@@ -96,8 +96,7 @@ return_status conversation_create(
 cleanup:
 	if (status.status != 0) {
 		if ((conversation != NULL) && (*conversation != NULL)) {
-			free(*conversation);
-			*conversation = NULL;
+			free_and_null(*conversation);
 		}
 	}
 
@@ -193,7 +192,7 @@ cleanup:
 			ratchet_destroy(conversation->ratchet);
 		}
 
-		free(conversation);
+		free_and_null(conversation);
 
 		return NULL;
 	}
@@ -270,8 +269,8 @@ return_status conversation_start_send_conversation(
 	throw_on_error(SEND_ERROR, "Failed to send message using newly created conversation.");
 
 cleanup:
-	buffer_destroy_from_heap(sender_public_ephemeral);
-	buffer_destroy_from_heap(sender_private_ephemeral);
+	buffer_destroy_from_heap_and_null(sender_public_ephemeral);
+	buffer_destroy_from_heap_and_null(sender_private_ephemeral);
 
 	if (status.status != SUCCESS) {
 		if (conversation != NULL) {
@@ -365,10 +364,10 @@ return_status conversation_start_receive_conversation(
 	throw_on_error(RECEIVE_ERROR, "Failed to receive message.");
 
 cleanup:
-	buffer_destroy_from_heap(receiver_public_prekey);
-	buffer_destroy_from_heap(receiver_private_prekey);
-	buffer_destroy_from_heap(sender_public_ephemeral);
-	buffer_destroy_from_heap(sender_public_identity);
+	buffer_destroy_from_heap_and_null(receiver_public_prekey);
+	buffer_destroy_from_heap_and_null(receiver_private_prekey);
+	buffer_destroy_from_heap_and_null(sender_public_ephemeral);
+	buffer_destroy_from_heap_and_null(sender_public_identity);
 
 	if (status.status != SUCCESS) {
 		if (conversation != NULL) {
@@ -465,16 +464,15 @@ cleanup:
 	if (status.status != SUCCESS) {
 		if (packet != NULL) {
 			if (*packet != NULL) {
-				buffer_destroy_from_heap(*packet);
+				buffer_destroy_from_heap_and_null(*packet);
 			}
-			*packet = NULL;
 		}
 	}
-	buffer_destroy_from_heap(send_header_key);
-	buffer_destroy_from_heap(send_message_key);
-	buffer_destroy_from_heap(send_ephemeral_key);
+	buffer_destroy_from_heap_and_null(send_header_key);
+	buffer_destroy_from_heap_and_null(send_message_key);
+	buffer_destroy_from_heap_and_null(send_ephemeral_key);
 	if (header != NULL) {
-		buffer_destroy_from_heap(header);
+		buffer_destroy_from_heap_and_null(header);
 	}
 
 	return status;
@@ -529,15 +527,14 @@ int try_skipped_header_and_message_keys(
 
 cleanup:
 	if (header != NULL) {
-		buffer_destroy_from_heap(header);
+		buffer_destroy_from_heap_and_null(header);
 	}
 	on_error(
 		if ((message != NULL) && (*message != NULL)) {
-			buffer_destroy_from_heap(*message);
-			*message = NULL;
+			buffer_destroy_from_heap_and_null(*message);
 		}
 	);
-	buffer_destroy_from_heap(their_signed_public_ephemeral);
+	buffer_destroy_from_heap_and_null(their_signed_public_ephemeral);
 
 	return_status_destroy_errors(&status);
 
@@ -674,19 +671,18 @@ cleanup:
 		}
 		if (message != NULL) {
 			if (*message != NULL) {
-				buffer_destroy_from_heap(*message);
+				buffer_destroy_from_heap_and_null(*message);
 			}
-			*message = NULL;
 		}
 	);
 
-	buffer_destroy_from_heap(current_receive_header_key);
-	buffer_destroy_from_heap(next_receive_header_key);
+	buffer_destroy_from_heap_and_null(current_receive_header_key);
+	buffer_destroy_from_heap_and_null(next_receive_header_key);
 	if (header != NULL) {
-		buffer_destroy_from_heap(header);
+		buffer_destroy_from_heap_and_null(header);
 	}
-	buffer_destroy_from_heap(their_signed_public_ephemeral);
-	buffer_destroy_from_heap(message_key);
+	buffer_destroy_from_heap_and_null(their_signed_public_ephemeral);
+	buffer_destroy_from_heap_and_null(message_key);
 
 	return status;
 }

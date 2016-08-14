@@ -25,6 +25,7 @@
 
 #include "zeroed_malloc.h"
 #include "alignment.h"
+#include "common.h"
 
 /*! \file
  * The purpose of these functions is to implement a memory allocator that gets memory
@@ -70,7 +71,7 @@ void zeroed_free(void *pointer) {
 
 	sodium_memzero(pointer, size);
 
-	free(malloced_address);
+	free_and_null(malloced_address);
 }
 
 void *protobuf_c_allocator(void *allocator_data __attribute__((unused)), size_t size) {

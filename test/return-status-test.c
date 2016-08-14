@@ -104,12 +104,12 @@ cleanup:
 		print_errors(&status);
 	}
 	if (printed_status != NULL) {
-		free(printed_status);
+		free_and_null(printed_status);
 	}
 	return_status_destroy_errors(&status);
 
 	if (error_stack != NULL) {
-		free(error_stack);
+		free_and_null(error_stack);
 	}
 
 	return status.status;

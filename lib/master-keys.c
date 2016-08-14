@@ -134,14 +134,13 @@ return_status master_keys_create(
 
 cleanup:
 	if (crypto_seeds != NULL) {
-		buffer_destroy_with_custom_deallocator(crypto_seeds, sodium_free);
+		buffer_destroy_with_custom_deallocator_and_null(crypto_seeds, sodium_free);
 	}
 
 	if (status.status != SUCCESS) {
 		if (keys != NULL) {
 			if (*keys != NULL) {
-				sodium_free(keys);
-				*keys = NULL;
+				sodium_free_and_null(*keys);
 			}
 		}
 
@@ -375,7 +374,7 @@ master_keys *master_keys_json_import(const mcJSON * const json) {
 	goto cleanup;
 
 fail:
-	sodium_free(keys);
+	sodium_free_and_null(keys);
 
 	return NULL;
 

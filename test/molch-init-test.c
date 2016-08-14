@@ -98,21 +98,21 @@ int main(void) {
 	print_to_file(backup_key_buffer, "molch-init-backup.key");
 
 cleanup:
-	buffer_destroy_from_heap(user_id);
+	buffer_destroy_from_heap_and_null(user_id);
 	if (backup != NULL) {
-		free(backup);
+		free_and_null(backup);
 	}
 	if (prekey_list != NULL) {
-		free(prekey_list);
+		free_and_null(prekey_list);
 	}
 	if (backup_file != NULL) {
-		buffer_destroy_from_heap(backup_file);
+		buffer_destroy_from_heap_and_null(backup_file);
 	}
 	if (backup_key_file != NULL) {
-		buffer_destroy_from_heap(backup_key_file);
+		buffer_destroy_from_heap_and_null(backup_key_file);
 	}
 
-	free(backup_key);
+	free_and_null(backup_key);
 
 	on_error(
 		print_errors(&status);

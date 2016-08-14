@@ -87,7 +87,7 @@ cleanup:
 			derived_key->content_length = 0;
 		}
 	);
-	buffer_destroy_from_heap(salt);
+	buffer_destroy_from_heap_and_null(salt);
 
 	return status;
 }
@@ -225,8 +225,8 @@ cleanup:
 		}
 	);
 
-	buffer_destroy_from_heap(diffie_hellman_secret);
-	buffer_destroy_from_heap(derivation_key);
+	buffer_destroy_from_heap_and_null(diffie_hellman_secret);
+	buffer_destroy_from_heap_and_null(derivation_key);
 
 	return status;
 }
@@ -400,7 +400,7 @@ cleanup:
 		next_receive_header_key->content_length = 0;
 	);
 
-	buffer_destroy_from_heap(master_key);
+	buffer_destroy_from_heap_and_null(master_key);
 
 	return status;
 }

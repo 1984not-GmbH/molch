@@ -775,7 +775,7 @@ int main(void) {
 	if (imported_alice_state == NULL) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		buffer_destroy_from_heap(output);
+		buffer_destroy_from_heap_and_null(output);
 		throw(IMPORT_ERROR, "Failed to import from JSON.");
 	}
 	//export the imported to JSON again
@@ -784,7 +784,7 @@ int main(void) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		ratchet_destroy(imported_alice_state);
-		buffer_destroy_from_heap(output);
+		buffer_destroy_from_heap_and_null(output);
 		throw(EXPORT_ERROR, "Failed to export imported to JSON again.");
 	}
 	ratchet_destroy(imported_alice_state);
@@ -792,12 +792,12 @@ int main(void) {
 	if (buffer_compare(imported_output, output) != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
-		buffer_destroy_from_heap(output);
-		buffer_destroy_from_heap(imported_output);
+		buffer_destroy_from_heap_and_null(output);
+		buffer_destroy_from_heap_and_null(imported_output);
 		throw(INCORRECT_DATA, "Imported user store is incorrect.");
 	}
-	buffer_destroy_from_heap(imported_output);
-	buffer_destroy_from_heap(output);
+	buffer_destroy_from_heap_and_null(imported_output);
+	buffer_destroy_from_heap_and_null(output);
 
 
 	//destroy the ratchets again
@@ -809,48 +809,48 @@ int main(void) {
 cleanup:
 	//create all the buffers
 	//alice keys
-	buffer_destroy_from_heap(alice_private_identity);
-	buffer_destroy_from_heap(alice_public_identity);
-	buffer_destroy_from_heap(alice_private_ephemeral);
-	buffer_destroy_from_heap(alice_public_ephemeral);
+	buffer_destroy_from_heap_and_null(alice_private_identity);
+	buffer_destroy_from_heap_and_null(alice_public_identity);
+	buffer_destroy_from_heap_and_null(alice_private_ephemeral);
+	buffer_destroy_from_heap_and_null(alice_public_ephemeral);
 	//bob keys
-	buffer_destroy_from_heap(bob_private_identity);
-	buffer_destroy_from_heap(bob_public_identity);
-	buffer_destroy_from_heap(bob_private_ephemeral);
-	buffer_destroy_from_heap(bob_public_ephemeral);
+	buffer_destroy_from_heap_and_null(bob_private_identity);
+	buffer_destroy_from_heap_and_null(bob_public_identity);
+	buffer_destroy_from_heap_and_null(bob_private_ephemeral);
+	buffer_destroy_from_heap_and_null(bob_public_ephemeral);
 	//alice send message and header keys
-	buffer_destroy_from_heap(alice_send_message_key1);
-	buffer_destroy_from_heap(alice_send_header_key1);
-	buffer_destroy_from_heap(alice_send_ephemeral1);
-	buffer_destroy_from_heap(alice_send_message_key2);
-	buffer_destroy_from_heap(alice_send_header_key2);
-	buffer_destroy_from_heap(alice_send_ephemeral2);
-	buffer_destroy_from_heap(alice_send_message_key3);
-	buffer_destroy_from_heap(alice_send_header_key3);
-	buffer_destroy_from_heap(alice_send_ephemeral3);
+	buffer_destroy_from_heap_and_null(alice_send_message_key1);
+	buffer_destroy_from_heap_and_null(alice_send_header_key1);
+	buffer_destroy_from_heap_and_null(alice_send_ephemeral1);
+	buffer_destroy_from_heap_and_null(alice_send_message_key2);
+	buffer_destroy_from_heap_and_null(alice_send_header_key2);
+	buffer_destroy_from_heap_and_null(alice_send_ephemeral2);
+	buffer_destroy_from_heap_and_null(alice_send_message_key3);
+	buffer_destroy_from_heap_and_null(alice_send_header_key3);
+	buffer_destroy_from_heap_and_null(alice_send_ephemeral3);
 	//bobs receive keys
-	buffer_destroy_from_heap(bob_current_receive_header_key);
-	buffer_destroy_from_heap(bob_next_receive_header_key);
-	buffer_destroy_from_heap(bob_receive_key1);
-	buffer_destroy_from_heap(bob_receive_key2);
-	buffer_destroy_from_heap(bob_receive_key3);
+	buffer_destroy_from_heap_and_null(bob_current_receive_header_key);
+	buffer_destroy_from_heap_and_null(bob_next_receive_header_key);
+	buffer_destroy_from_heap_and_null(bob_receive_key1);
+	buffer_destroy_from_heap_and_null(bob_receive_key2);
+	buffer_destroy_from_heap_and_null(bob_receive_key3);
 	//bobs śend message and header keys
-	buffer_destroy_from_heap(bob_send_message_key1);
-	buffer_destroy_from_heap(bob_send_header_key1);
-	buffer_destroy_from_heap(bob_send_ephemeral1);
-	buffer_destroy_from_heap(bob_send_message_key2);
-	buffer_destroy_from_heap(bob_send_header_key2);
-	buffer_destroy_from_heap(bob_send_ephemeral2);
-	buffer_destroy_from_heap(bob_send_message_key3);
-	buffer_destroy_from_heap(bob_send_header_key3);
-	buffer_destroy_from_heap(bob_send_ephemeral3);
+	buffer_destroy_from_heap_and_null(bob_send_message_key1);
+	buffer_destroy_from_heap_and_null(bob_send_header_key1);
+	buffer_destroy_from_heap_and_null(bob_send_ephemeral1);
+	buffer_destroy_from_heap_and_null(bob_send_message_key2);
+	buffer_destroy_from_heap_and_null(bob_send_header_key2);
+	buffer_destroy_from_heap_and_null(bob_send_ephemeral2);
+	buffer_destroy_from_heap_and_null(bob_send_message_key3);
+	buffer_destroy_from_heap_and_null(bob_send_header_key3);
+	buffer_destroy_from_heap_and_null(bob_send_ephemeral3);
 	//alice receive keys
-	buffer_destroy_from_heap(alice_current_receive_header_key);
-	buffer_destroy_from_heap(alice_next_receive_header_key);
-	buffer_destroy_from_heap(alice_receive_message_key1);
-	buffer_destroy_from_heap(alice_receive_message_key2);
-	buffer_destroy_from_heap(alice_receive_message_key3);
-	buffer_destroy_from_heap(alice_receive_header_key2);
+	buffer_destroy_from_heap_and_null(alice_current_receive_header_key);
+	buffer_destroy_from_heap_and_null(alice_next_receive_header_key);
+	buffer_destroy_from_heap_and_null(alice_receive_message_key1);
+	buffer_destroy_from_heap_and_null(alice_receive_message_key2);
+	buffer_destroy_from_heap_and_null(alice_receive_message_key3);
+	buffer_destroy_from_heap_and_null(alice_receive_header_key2);
 
 	if (status.status != SUCCESS) {
 		print_errors(&status);

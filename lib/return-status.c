@@ -67,7 +67,7 @@ void return_status_destroy_errors(return_status * const status) {
 
 	while (status->error != NULL) {
 		error_message *next_error = status->error->next;
-		free(status->error);
+		free_and_null(status->error);
 		status->error = next_error;
 	}
 }
@@ -329,7 +329,7 @@ cleanup:
 	char *output_string = NULL;
 	if (status.status != SUCCESS) {
 		if (output != NULL) {
-			buffer_destroy_from_heap(output);
+			buffer_destroy_from_heap_and_null(output);
 			output = NULL;
 		}
 	} else {
@@ -337,7 +337,7 @@ cleanup:
 		if (length != NULL) {
 			*length = output->content_length;
 		}
-		free(output);
+		free_and_null(output);
 	}
 
 	return_status_destroy_errors(&status);

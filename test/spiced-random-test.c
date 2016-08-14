@@ -73,8 +73,8 @@ int main(void) {
 	throw_on_error(GENERIC_ERROR, "Failed to generate spiced random data of length 0.");
 
 cleanup:
-	buffer_destroy_from_heap(output1);
-	buffer_destroy_from_heap(output2);
+	buffer_destroy_from_heap_and_null(output1);
+	buffer_destroy_from_heap_and_null(output2);
 
 	if (status.status != SUCCESS) {
 		print_errors(&status);

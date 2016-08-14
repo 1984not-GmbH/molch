@@ -119,8 +119,7 @@ int main(void) {
 		throw(KEYGENERATION_FAILED, "Failed to generate public prekey.");
 	}
 
-	buffer_destroy_from_heap(packet);
-	packet = NULL;
+	buffer_destroy_from_heap_and_null(packet);
 
 	packet_type = PREKEY_MESSAGE;
 	status = create_and_print_message(
@@ -178,18 +177,18 @@ int main(void) {
 	printf("Extracted public prekey matches!\n");
 
 cleanup:
-	buffer_destroy_from_heap(header_key);
-	buffer_destroy_from_heap(message_key);
-	buffer_destroy_from_heap(header);
+	buffer_destroy_from_heap_and_null(header_key);
+	buffer_destroy_from_heap_and_null(message_key);
+	buffer_destroy_from_heap_and_null(header);
 	if (packet != NULL) {
-		buffer_destroy_from_heap(packet);
+		buffer_destroy_from_heap_and_null(packet);
 	}
-	buffer_destroy_from_heap(public_identity_key);
-	buffer_destroy_from_heap(public_ephemeral_key);
-	buffer_destroy_from_heap(public_prekey);
-	buffer_destroy_from_heap(extracted_public_identity_key);
-	buffer_destroy_from_heap(extracted_public_ephemeral_key);
-	buffer_destroy_from_heap(extracted_public_prekey);
+	buffer_destroy_from_heap_and_null(public_identity_key);
+	buffer_destroy_from_heap_and_null(public_ephemeral_key);
+	buffer_destroy_from_heap_and_null(public_prekey);
+	buffer_destroy_from_heap_and_null(extracted_public_identity_key);
+	buffer_destroy_from_heap_and_null(extracted_public_ephemeral_key);
+	buffer_destroy_from_heap_and_null(extracted_public_prekey);
 
 	if (status.status != SUCCESS) {
 		print_errors(&status);

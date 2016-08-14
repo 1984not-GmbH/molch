@@ -183,7 +183,7 @@ cleanup:
 	on_error(
 		if (ratchet != NULL) {
 			if (*ratchet != NULL) {
-				sodium_free(*ratchet);
+				sodium_free_and_null(*ratchet);
 			}
 		}
 	);
@@ -318,8 +318,8 @@ cleanup:
 		}
 	);
 
-	buffer_destroy_from_heap(root_key_backup);
-	buffer_destroy_from_heap(chain_key_backup);
+	buffer_destroy_from_heap_and_null(root_key_backup);
+	buffer_destroy_from_heap_and_null(chain_key_backup);
 
 	return status;
 }
@@ -480,9 +480,9 @@ cleanup:
 		}
 	);
 
-	buffer_destroy_from_heap(current_chain_key);
-	buffer_destroy_from_heap(next_chain_key);
-	buffer_destroy_from_heap(current_message_key);
+	buffer_destroy_from_heap_and_null(current_chain_key);
+	buffer_destroy_from_heap_and_null(next_chain_key);
+	buffer_destroy_from_heap_and_null(current_message_key);
 
 	return status;
 }
@@ -638,9 +638,9 @@ cleanup:
 		}
 	);
 
-	buffer_destroy_from_heap(throwaway_chain_key);
-	buffer_destroy_from_heap(throwaway_message_key);
-	buffer_destroy_from_heap(purported_chain_key_backup);
+	buffer_destroy_from_heap_and_null(throwaway_chain_key);
+	buffer_destroy_from_heap_and_null(throwaway_message_key);
+	buffer_destroy_from_heap_and_null(purported_chain_key_backup);
 
 	return status;
 }
@@ -721,7 +721,7 @@ void ratchet_destroy(ratchet_state *state) {
 	header_and_message_keystore_clear(state->skipped_header_and_message_keys);
 	header_and_message_keystore_clear(state->staged_header_and_message_keys);
 
-	sodium_free(state); //this also overwrites all the keys with zeroes
+	sodium_free_and_null(state); //this also overwrites all the keys with zeroes
 }
 
 /*

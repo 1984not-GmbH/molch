@@ -72,8 +72,8 @@ int main(void) {
 	}
 
 cleanup:
-	buffer_destroy_from_heap(last_chain_key);
-	buffer_destroy_from_heap(next_chain_key);
+	buffer_destroy_from_heap_and_null(last_chain_key);
+	buffer_destroy_from_heap_and_null(next_chain_key);
 
 	on_error(
 		print_errors(&status);

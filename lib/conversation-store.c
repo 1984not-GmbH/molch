@@ -194,8 +194,7 @@ cleanup:
 	if (status.status != SUCCESS) {
 		if (list != NULL) {
 			if (*list != NULL) {
-				buffer_destroy_from_heap(*list);
-				*list = NULL;
+				buffer_destroy_from_heap_and_null(*list);
 			}
 		}
 	}

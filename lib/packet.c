@@ -276,29 +276,28 @@ return_status packet_encrypt(
 cleanup:
 	on_error(
 		if ((packet != NULL) && (*packet != NULL)) {
-			buffer_destroy_from_heap(*packet);
-			*packet = NULL;
+			buffer_destroy_from_heap_and_null(*packet);
 		}
 	);
 
 	if (header_nonce != NULL) {
-		buffer_destroy_from_heap(header_nonce);
+		buffer_destroy_from_heap_and_null(header_nonce);
 	}
 
 	if (message_nonce != NULL) {
-		buffer_destroy_from_heap(message_nonce);
+		buffer_destroy_from_heap_and_null(message_nonce);
 	}
 
 	if (encrypted_axolotl_header != NULL) {
-		buffer_destroy_from_heap(encrypted_axolotl_header);
+		buffer_destroy_from_heap_and_null(encrypted_axolotl_header);
 	}
 
 	if (padded_message != NULL) {
-		buffer_destroy_from_heap(padded_message);
+		buffer_destroy_from_heap_and_null(padded_message);
 	}
 
 	if (encrypted_message != NULL) {
-		buffer_destroy_from_heap(encrypted_message);
+		buffer_destroy_from_heap_and_null(encrypted_message);
 	}
 
 	return status;
@@ -361,12 +360,12 @@ cleanup:
 		}
 
 		if ((axolotl_header != NULL) && (*axolotl_header != NULL)) {
-			buffer_destroy_from_heap(*axolotl_header);
+			buffer_destroy_from_heap_and_null(*axolotl_header);
 			*axolotl_header = NULL;
 		}
 
 		if ((message != NULL) && (*message != NULL)) {
-			buffer_destroy_from_heap(*message);
+			buffer_destroy_from_heap_and_null(*message);
 			*message = NULL;
 		}
 
@@ -508,7 +507,7 @@ cleanup:
 	if (axolotl_header != NULL) {
 		on_error(
 			if (*axolotl_header != NULL) {
-				buffer_destroy_from_heap(*axolotl_header);
+				buffer_destroy_from_heap_and_null(*axolotl_header);
 				*axolotl_header = NULL;
 			}
 		);
@@ -580,13 +579,13 @@ cleanup:
 	}
 
 	if (padded_message != NULL) {
-		buffer_destroy_from_heap(padded_message);
+		buffer_destroy_from_heap_and_null(padded_message);
 	}
 
 	if (message != NULL) {
 		on_error(
 			if (*message != NULL) {
-				buffer_destroy_from_heap(*message);
+				buffer_destroy_from_heap_and_null(*message);
 				*message = NULL;
 			}
 		);
