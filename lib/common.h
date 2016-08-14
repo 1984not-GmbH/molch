@@ -19,23 +19,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "../buffer/buffer.h"
-#include "common.h"
+//! \file Common includes and macros.
 
-#ifndef LIB_SPICED_RANDOM_H
-#define LIB_SPICED_RANDOM_H
+#ifndef LIB_COMMON_H
+#define LIB_COMMON_H
 
-/*
- * Generate a random number by combining the OSs random number
- * generator with an external source of randomness (like some kind of
- * user input).
- *
- * WARNING: Don't feed this with random numbers from the OSs random
- * source because it might annihilate the randomness.
- */
-return_status spiced_random(
-		buffer_t * const random_output,
-		const buffer_t * const random_spice,
-		const size_t output_length) __attribute__((warn_unused_result));
+#include "return-status.h"
 
 #endif

@@ -22,7 +22,7 @@
 #include <stdbool.h>
 
 #include "../buffer/buffer.h"
-#include "return-status.h"
+#include "common.h"
 
 #ifndef LIB_KEY_DERIVATION_H
 #define LIB_KEY_DERIVATION_H

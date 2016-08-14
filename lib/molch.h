@@ -19,7 +19,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "return-status.h"
+#include "common.h"
 
 #ifndef LIB_MOLCH_H
 #define LIB_MOLCH_H

@@ -22,6 +22,8 @@
 #ifndef LIB_RETURN_STATUS_H
 #define LIB_RETURN_STATUS_H
 
+#include "common.h"
+
 // possible status types, either SUCCESS or a variety of error types.
 typedef enum status_type { //TODO add more error types
 	SUCCESS = 0,
