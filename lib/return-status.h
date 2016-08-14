@@ -119,4 +119,9 @@ if (status.status != SUCCESS) {\
 
 #define throw_on_error(status_type_value, message) on_error(throw(status_type_value, message))
 
+#define throw_on_failed_alloc(pointer) \
+	if (pointer == NULL) {\
+		throw(ALLOCATION_FAILED, "Failed to allocate memory.");\
+	}
+
 #endif
