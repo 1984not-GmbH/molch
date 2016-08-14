@@ -30,7 +30,7 @@
 #ifndef LIB_HEADER_H
 #define LIB_HEADER_H
 
-#include "return-status.h"
+#include "common.h"
 #include "../buffer/buffer.h"
 
 /*!

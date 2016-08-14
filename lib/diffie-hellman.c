@@ -122,7 +122,7 @@ return_status diffie_hellman(
 	derived_key->content_length = DIFFIE_HELLMAN_SIZE;
 
 cleanup:
-	buffer_destroy_from_heap(dh_secret);
+	buffer_destroy_from_heap_and_null(dh_secret);
 	sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 
 	return status;
@@ -267,9 +267,9 @@ return_status triple_diffie_hellman(
 	sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 
 cleanup:
-	buffer_destroy_from_heap(dh1);
-	buffer_destroy_from_heap(dh2);
-	buffer_destroy_from_heap(dh3);
+	buffer_destroy_from_heap_and_null(dh1);
+	buffer_destroy_from_heap_and_null(dh2);
+	buffer_destroy_from_heap_and_null(dh3);
 
 	return status;
 }

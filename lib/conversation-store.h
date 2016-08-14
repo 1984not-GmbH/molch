@@ -20,7 +20,7 @@
  */
 
 #include "conversation.h"
-#include "return-status.h"
+#include "common.h"
 
 #ifndef LIB_CONVERSATION_STORE_H
 #define LIB_CONVERSATION_STORE_H

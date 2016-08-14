@@ -121,26 +121,26 @@ int main(void) {
 	//Import it again
 	JSON_IMPORT(store, 100000, json_string, prekey_store_json_import);
 	if (store == NULL) {
-		buffer_destroy_from_heap(json_string);
+		buffer_destroy_from_heap_and_null(json_string);
 		throw(IMPORT_ERROR, "Failed to import from JSON.");
 	}
 
 	//Export it again
 	JSON_EXPORT(json_string2, 100000, 10000, true, store, prekey_store_json_export);
 	if (json_string2 == NULL) {
-		buffer_destroy_from_heap(json_string);
+		buffer_destroy_from_heap_and_null(json_string);
 		throw(EXPORT_ERROR, "Failed to export imported JSON.");
 	}
 
 	//compare both
 	if (buffer_compare(json_string, json_string2) != 0) {
-		buffer_destroy_from_heap(json_string);
-		buffer_destroy_from_heap(json_string2);
+		buffer_destroy_from_heap_and_null(json_string);
+		buffer_destroy_from_heap_and_null(json_string2);
 		throw(INCORRECT_DATA, "Imported JSON is incorrect.");
 	}
 
-	buffer_destroy_from_heap(json_string);
-	buffer_destroy_from_heap(json_string2);
+	buffer_destroy_from_heap_and_null(json_string);
+	buffer_destroy_from_heap_and_null(json_string2);
 
 	//test the automatic deprecation of old keys
 	if (buffer_clone(public_prekey, store->prekeys[PREKEY_AMOUNT-1].public_key) != 0) {
@@ -175,10 +175,10 @@ int main(void) {
 	printf("Successfully removed outdated deprecated key!\n");
 
 cleanup:
-	buffer_destroy_from_heap(public_prekey);
-	buffer_destroy_from_heap(private_prekey1);
-	buffer_destroy_from_heap(private_prekey2);
-	buffer_destroy_from_heap(prekey_list);
+	buffer_destroy_from_heap_and_null(public_prekey);
+	buffer_destroy_from_heap_and_null(private_prekey1);
+	buffer_destroy_from_heap_and_null(private_prekey2);
+	buffer_destroy_from_heap_and_null(prekey_list);
 	prekey_store_destroy(store);
 
 	if (status.status != SUCCESS) {

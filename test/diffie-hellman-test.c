@@ -104,12 +104,12 @@ int main(void) {
 	printf("Both shared secrets match!\n");
 
 cleanup:
-	buffer_destroy_from_heap(alice_public_key);
-	buffer_destroy_from_heap(alice_private_key);
-	buffer_destroy_from_heap(alice_shared_secret);
-	buffer_destroy_from_heap(bob_public_key);
-	buffer_destroy_from_heap(bob_private_key);
-	buffer_destroy_from_heap(bob_shared_secret);
+	buffer_destroy_from_heap_and_null(alice_public_key);
+	buffer_destroy_from_heap_and_null(alice_private_key);
+	buffer_destroy_from_heap_and_null(alice_shared_secret);
+	buffer_destroy_from_heap_and_null(bob_public_key);
+	buffer_destroy_from_heap_and_null(bob_private_key);
+	buffer_destroy_from_heap_and_null(bob_shared_secret);
 
 	on_error(
 		print_errors(&status);

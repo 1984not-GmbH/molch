@@ -96,8 +96,7 @@ int main(void) {
 	packet->content[packet->content_length - crypto_secretbox_MACBYTES - 1] ^= 0xf0;
 	printf("Manipulating message.\n");
 
-	buffer_destroy_from_heap(decrypted_message);
-	decrypted_message = NULL;
+	buffer_destroy_from_heap_and_null(decrypted_message);
 
 	//try to decrypt
 	status = packet_decrypt_message(
@@ -127,8 +126,7 @@ int main(void) {
 		throw(KEYGENERATION_FAILED, "Failed to generate public prekey.");
 	}
 
-	buffer_destroy_from_heap(packet);
-	packet = NULL;
+	buffer_destroy_from_heap_and_null(packet);
 
 	packet_type = PREKEY_MESSAGE;
 	status = create_and_print_message(
@@ -163,18 +161,18 @@ int main(void) {
 	printf("Decrypted message is the same.\n");
 
 cleanup:
-	buffer_destroy_from_heap(header_key);
-	buffer_destroy_from_heap(message_key);
-	buffer_destroy_from_heap(header);
+	buffer_destroy_from_heap_and_null(header_key);
+	buffer_destroy_from_heap_and_null(message_key);
+	buffer_destroy_from_heap_and_null(header);
 	if (packet != NULL) {
-		buffer_destroy_from_heap(packet);
+		buffer_destroy_from_heap_and_null(packet);
 	}
 	if (decrypted_message != NULL) {
-		buffer_destroy_from_heap(decrypted_message);
+		buffer_destroy_from_heap_and_null(decrypted_message);
 	}
-	buffer_destroy_from_heap(public_identity_key);
-	buffer_destroy_from_heap(public_ephemeral_key);
-	buffer_destroy_from_heap(public_prekey);
+	buffer_destroy_from_heap_and_null(public_identity_key);
+	buffer_destroy_from_heap_and_null(public_ephemeral_key);
+	buffer_destroy_from_heap_and_null(public_prekey);
 
 	if (status.status != SUCCESS) {
 		print_errors(&status);

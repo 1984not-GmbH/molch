@@ -70,7 +70,7 @@ return_status header_construct(
 cleanup:
 	on_error(
 		if ((header != NULL) && (*header != NULL)) {
-			buffer_destroy_from_heap(*header);
+			buffer_destroy_from_heap_and_null(*header);
 		}
 	);
 	return status;

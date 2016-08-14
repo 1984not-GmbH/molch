@@ -60,8 +60,8 @@ int main(void) {
 	putchar('\n');
 
 cleanup:
-	buffer_destroy_from_heap(chain_key);
-	buffer_destroy_from_heap(message_key);
+	buffer_destroy_from_heap_and_null(chain_key);
+	buffer_destroy_from_heap_and_null(message_key);
 
 	on_error(
 		print_errors(&status);

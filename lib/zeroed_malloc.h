@@ -29,6 +29,7 @@
 #define LIB_ZEROED_MALLOC_H
 
 #include <protobuf-c/protobuf-c.h>
+#include "common.h"
 
 /*!
  * Allocates a buffer of 'size' and stores it's size.

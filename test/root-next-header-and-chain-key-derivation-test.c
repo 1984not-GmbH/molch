@@ -144,17 +144,17 @@ int main(void) {
 	}
 
 cleanup:
-	buffer_destroy_from_heap(alice_public_ephemeral);
-	buffer_destroy_from_heap(alice_private_ephemeral);
-	buffer_destroy_from_heap(bob_public_ephemeral);
-	buffer_destroy_from_heap(bob_private_ephemeral);
-	buffer_destroy_from_heap(previous_root_key);
-	buffer_destroy_from_heap(alice_root_key);
-	buffer_destroy_from_heap(alice_chain_key);
-	buffer_destroy_from_heap(alice_header_key);
-	buffer_destroy_from_heap(bob_root_key);
-	buffer_destroy_from_heap(bob_chain_key);
-	buffer_destroy_from_heap(bob_header_key);
+	buffer_destroy_from_heap_and_null(alice_public_ephemeral);
+	buffer_destroy_from_heap_and_null(alice_private_ephemeral);
+	buffer_destroy_from_heap_and_null(bob_public_ephemeral);
+	buffer_destroy_from_heap_and_null(bob_private_ephemeral);
+	buffer_destroy_from_heap_and_null(previous_root_key);
+	buffer_destroy_from_heap_and_null(alice_root_key);
+	buffer_destroy_from_heap_and_null(alice_chain_key);
+	buffer_destroy_from_heap_and_null(alice_header_key);
+	buffer_destroy_from_heap_and_null(bob_root_key);
+	buffer_destroy_from_heap_and_null(bob_chain_key);
+	buffer_destroy_from_heap_and_null(bob_header_key);
 
 	on_error(
 		print_errors(&status);

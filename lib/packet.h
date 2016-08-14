@@ -23,7 +23,7 @@
 #define LIB_PACKET_H
 
 #include "../buffer/buffer.h"
-#include "return-status.h"
+#include "common.h"
 #include "molch.h"
 
 /*! \file

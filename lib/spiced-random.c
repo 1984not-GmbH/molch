@@ -88,8 +88,8 @@ cleanup:
 			random_output->content_length = 0;
 		}
 	}
-	buffer_destroy_with_custom_deallocator(spice, sodium_free);
-	buffer_destroy_with_custom_deallocator(os_random, sodium_free);
+	buffer_destroy_with_custom_deallocator_and_null(spice, sodium_free);
+	buffer_destroy_with_custom_deallocator_and_null(os_random, sodium_free);
 
 	return status;
 }

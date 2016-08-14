@@ -23,7 +23,7 @@
 
 #include "constants.h"
 #include "header-and-message-keystore.h"
-#include "return-status.h"
+#include "common.h"
 
 #ifndef LIB_RATCHET_H
 #define LIB_RATCHET_H

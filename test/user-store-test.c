@@ -56,8 +56,7 @@ int main(void) {
 	if (list->content_length != 0) {
 		throw(INCORRECT_DATA, "List of users is not empty.");
 	}
-	buffer_destroy_from_heap(list);
-	list = NULL;
+	buffer_destroy_from_heap_and_null(list);
 
 	//create alice
 	status = user_store_create_user(
@@ -83,8 +82,7 @@ int main(void) {
 	if (buffer_compare(list, alice_public_signing_key) != 0) {
 		throw(INCORRECT_DATA, "Failed to list users.");
 	}
-	buffer_destroy_from_heap(list);
-	list = NULL;
+	buffer_destroy_from_heap_and_null(list);
 	printf("Successfully listed users.\n");
 
 	//create bob
@@ -113,8 +111,7 @@ int main(void) {
 			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		throw(INCORRECT_DATA, "Failed to list users.");
 	}
-	buffer_destroy_from_heap(list);
-	list = NULL;
+	buffer_destroy_from_heap_and_null(list);
 	printf("Successfully listed users.\n");
 
 	//create charlie
@@ -143,8 +140,7 @@ int main(void) {
 			|| (buffer_compare_partial(list, 2 * PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		throw(INCORRECT_DATA, "Failed to list users.");
 	}
-	buffer_destroy_from_heap(list);
-	list = NULL;
+	buffer_destroy_from_heap_and_null(list);
 	printf("Successfully listed users.\n");
 
 	//find node
@@ -176,8 +172,7 @@ int main(void) {
 			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		throw(INCORRECT_DATA, "Removing user failed.");
 	}
-	buffer_destroy_from_heap(list);
-	list = NULL;
+	buffer_destroy_from_heap_and_null(list);
 	printf("Successfully removed user.\n");
 
 	//recreate bob
@@ -207,27 +202,27 @@ int main(void) {
 	mempool_t *pool = buffer_create_on_heap(200000, 0);
 	mcJSON *json = user_store_json_export(store, pool);
 	if (json == NULL) {
-		buffer_destroy_from_heap(pool);
+		buffer_destroy_from_heap_and_null(pool);
 		throw(EXPORT_ERROR, "Failed to export to JSON.");
 	}
 	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
 	if (output == NULL) {
-		buffer_destroy_from_heap(pool);
+		buffer_destroy_from_heap_and_null(pool);
 		throw(EXPORT_ERROR, "Failed to print exported JSON.");
 	}
 	printf("%.*s\n", (int) output->content_length, (char*)output->content);
 	if (json->length != 2) {
-		buffer_destroy_from_heap(output);
-		buffer_destroy_from_heap(pool);
+		buffer_destroy_from_heap_and_null(output);
+		buffer_destroy_from_heap_and_null(pool);
 		throw(INCORRECT_DATA, "Exported JSON doesn't contain all users.");
 	}
-	buffer_destroy_from_heap(pool);
+	buffer_destroy_from_heap_and_null(pool);
 
 	//test JSON import
 	user_store *imported_store;
 	JSON_IMPORT(imported_store, 200000, output, user_store_json_import);
 	if (imported_store == NULL) {
-		buffer_destroy_from_heap(output);
+		buffer_destroy_from_heap_and_null(output);
 		throw(IMPORT_ERROR, "Failed to import from JSON.");
 	}
 
@@ -235,17 +230,17 @@ int main(void) {
 	JSON_EXPORT(imported_output, 200000, 4000, true, imported_store, user_store_json_export);
 	user_store_destroy(imported_store);
 	if (imported_output == NULL) {
-		buffer_destroy_from_heap(output);
+		buffer_destroy_from_heap_and_null(output);
 		throw(EXPORT_ERROR, "Failed to export the imported JSON again.");
 	}
 	//compare with original JSON
 	if (buffer_compare(imported_output, output) != 0) {
-		buffer_destroy_from_heap(output);
-		buffer_destroy_from_heap(imported_output);
+		buffer_destroy_from_heap_and_null(output);
+		buffer_destroy_from_heap_and_null(imported_output);
 		throw(INCORRECT_DATA, "Imported user store is incorrect.");
 	}
-	buffer_destroy_from_heap(output);
-	buffer_destroy_from_heap(imported_output);
+	buffer_destroy_from_heap_and_null(output);
+	buffer_destroy_from_heap_and_null(imported_output);
 
 	//check the user list
 	status = user_store_list(&list, store);
@@ -254,8 +249,7 @@ int main(void) {
 			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		throw(REMOVE_ERROR, "Removing user failed.");
 	}
-	buffer_destroy_from_heap(list);
-	list = NULL;
+	buffer_destroy_from_heap_and_null(list);
 	printf("Successfully removed user.\n");
 
 	//clear the user store
@@ -278,12 +272,12 @@ cleanup:
 		user_store_destroy(store);
 	}
 	if (list != NULL) {
-		buffer_destroy_from_heap(list);
+		buffer_destroy_from_heap_and_null(list);
 	}
 
-	buffer_destroy_from_heap(alice_public_signing_key);
-	buffer_destroy_from_heap(bob_public_signing_key);
-	buffer_destroy_from_heap(charlie_public_signing_key);
+	buffer_destroy_from_heap_and_null(alice_public_signing_key);
+	buffer_destroy_from_heap_and_null(bob_public_signing_key);
+	buffer_destroy_from_heap_and_null(charlie_public_signing_key);
 
 	if (status.status != SUCCESS) {
 		print_errors(&status);

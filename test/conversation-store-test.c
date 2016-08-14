@@ -106,12 +106,12 @@ cleanup:
 		conversation_destroy(conversation);
 	}
 	//destroy all the buffers
-	buffer_destroy_from_heap(our_private_identity);
-	buffer_destroy_from_heap(our_public_identity);
-	buffer_destroy_from_heap(their_public_identity);
-	buffer_destroy_from_heap(our_private_ephemeral);
-	buffer_destroy_from_heap(our_public_ephemeral);
-	buffer_destroy_from_heap(their_public_ephemeral);
+	buffer_destroy_from_heap_and_null(our_private_identity);
+	buffer_destroy_from_heap_and_null(our_public_identity);
+	buffer_destroy_from_heap_and_null(their_public_identity);
+	buffer_destroy_from_heap_and_null(our_private_ephemeral);
+	buffer_destroy_from_heap_and_null(our_public_ephemeral);
+	buffer_destroy_from_heap_and_null(their_public_ephemeral);
 
 	return status;
 }
@@ -183,64 +183,64 @@ int main(void) {
 		buffer_create_with_existing_array(current_id, conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
 		status = conversation_store_find_node(&found_node, store, current_id);
 		if ((status.status != SUCCESS) || (found_node == NULL)) {
-			buffer_destroy_from_heap(conversation_list);
+			buffer_destroy_from_heap_and_null(conversation_list);
 			throw(INCORRECT_DATA, "Exported list of conversations was incorrect.");
 		}
 	}
-	buffer_destroy_from_heap(conversation_list);
+	buffer_destroy_from_heap_and_null(conversation_list);
 
 	//test JSON export
 	printf("Test JSON export!\n");
 	mempool_t *pool = buffer_create_on_heap(100000, 0);
 	mcJSON *json = conversation_store_json_export(store, pool);
 	if (json == NULL) {
-		buffer_destroy_from_heap(pool);
+		buffer_destroy_from_heap_and_null(pool);
 		throw(EXPORT_ERROR, "Failed to export JSON.");
 	}
 	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
 	if (output == NULL) {
-		buffer_destroy_from_heap(pool);
-		buffer_destroy_from_heap(output);
+		buffer_destroy_from_heap_and_null(pool);
+		buffer_destroy_from_heap_and_null(output);
 		throw(GENERIC_ERROR, "Failed to print json.");
 	}
 	printf("%.*s\n", (int)output->content_length, output->content);
 	if (json->length != 5) {
-		buffer_destroy_from_heap(pool);
-		buffer_destroy_from_heap(output);
+		buffer_destroy_from_heap_and_null(pool);
+		buffer_destroy_from_heap_and_null(output);
 		throw(INCORRECT_DATA, "Exported JSON doesn't contain all conversations.");
 	}
-	buffer_destroy_from_heap(pool);
+	buffer_destroy_from_heap_and_null(pool);
 
 	//test JSON import
 	conversation_store *imported_store = malloc(sizeof(conversation_store));
 	if (imported_store == NULL) {
-		buffer_destroy_from_heap(output);
+		buffer_destroy_from_heap_and_null(output);
 		throw(ALLOCATION_FAILED, "Failed to allocate conversation store.");
 	}
 	JSON_INITIALIZE(imported_store, 100000, output, conversation_store_json_import, status_int);
 	if (status_int != 0) {
-		free(imported_store);
-		buffer_destroy_from_heap(output);
+		free_and_null(imported_store);
+		buffer_destroy_from_heap_and_null(output);
 		throw(IMPORT_ERROR, "Failed to import from JSON.");
 	}
 	//export the imported to json again
 	JSON_EXPORT(imported_output, 100000, 4000, true, imported_store, conversation_store_json_export);
 	if (imported_output == NULL) {
 		conversation_store_clear(imported_store);
-		free(imported_store);
-		buffer_destroy_from_heap(output);
+		free_and_null(imported_store);
+		buffer_destroy_from_heap_and_null(output);
 		throw(GENERIC_ERROR, "Failed to print imported output.");
 	}
 	conversation_store_clear(imported_store);
-	free(imported_store);
+	free_and_null(imported_store);
 	//compare both JSON strings
 	if (buffer_compare(imported_output, output) != 0) {
-		buffer_destroy_from_heap(output);
-		buffer_destroy_from_heap(imported_output);
+		buffer_destroy_from_heap_and_null(output);
+		buffer_destroy_from_heap_and_null(imported_output);
 		throw(INCORRECT_DATA, "Imported conversation store is incorrect.");
 	}
-	buffer_destroy_from_heap(output);
-	buffer_destroy_from_heap(imported_output);
+	buffer_destroy_from_heap_and_null(output);
+	buffer_destroy_from_heap_and_null(imported_output);
 
 	//remove nodes
 	conversation_store_remove(store, store->head);
@@ -266,7 +266,7 @@ int main(void) {
 
 cleanup:
 	conversation_store_clear(store);
-	free(store);
+	free_and_null(store);
 
 	if (status.status != SUCCESS) {
 		print_errors(&status);

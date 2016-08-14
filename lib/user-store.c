@@ -58,7 +58,7 @@ cleanup:
 void user_store_destroy(user_store* store) {
 	if (store != NULL) {
 		user_store_clear(store);
-		sodium_free(store);
+		sodium_free_and_null(store);
 	}
 }
 
@@ -175,10 +175,10 @@ cleanup:
 				prekey_store_destroy(new_node->prekeys);
 			}
 			if (new_node->master_keys != NULL) {
-				sodium_free(new_node->master_keys);
+				sodium_free_and_null(new_node->master_keys);
 			}
 
-			sodium_free(new_node);
+			sodium_free_and_null(new_node);
 		}
 	}
 
@@ -261,7 +261,7 @@ cleanup:
 	if (status.status != SUCCESS) {
 		if (list != NULL) {
 			if (*list != NULL) {
-				buffer_destroy_from_heap(*list);
+				buffer_destroy_from_heap_and_null(*list);
 			}
 		}
 	}
@@ -307,7 +307,7 @@ void user_store_remove(user_store *store, user_store_node *node) {
 		store->head = node->next;
 	}
 
-	sodium_free(node);
+	sodium_free_and_null(node);
 
 	//update length
 	store->length--;
@@ -467,9 +467,9 @@ cleanup:
 				prekey_store_destroy(node->prekeys);
 			}
 			if (node->master_keys != NULL) {
-				sodium_free(node->master_keys);
+				sodium_free_and_null(node->master_keys);
 			}
-			sodium_free(node);
+			sodium_free_and_null(node);
 		}
 
 		return_status_destroy_errors(&status);

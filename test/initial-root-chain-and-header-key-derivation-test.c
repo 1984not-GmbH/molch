@@ -239,29 +239,29 @@ int main(void) {
 
 cleanup:
 	//alice keys
-	buffer_destroy_from_heap(alice_public_identity);
-	buffer_destroy_from_heap(alice_private_identity);
-	buffer_destroy_from_heap(alice_public_ephemeral);
-	buffer_destroy_from_heap(alice_private_ephemeral);
-	buffer_destroy_from_heap(alice_root_key);
-	buffer_destroy_from_heap(alice_send_chain_key);
-	buffer_destroy_from_heap(alice_receive_chain_key);
-	buffer_destroy_from_heap(alice_send_header_key);
-	buffer_destroy_from_heap(alice_receive_header_key);
-	buffer_destroy_from_heap(alice_next_send_header_key);
-	buffer_destroy_from_heap(alice_next_receive_header_key);
+	buffer_destroy_from_heap_and_null(alice_public_identity);
+	buffer_destroy_from_heap_and_null(alice_private_identity);
+	buffer_destroy_from_heap_and_null(alice_public_ephemeral);
+	buffer_destroy_from_heap_and_null(alice_private_ephemeral);
+	buffer_destroy_from_heap_and_null(alice_root_key);
+	buffer_destroy_from_heap_and_null(alice_send_chain_key);
+	buffer_destroy_from_heap_and_null(alice_receive_chain_key);
+	buffer_destroy_from_heap_and_null(alice_send_header_key);
+	buffer_destroy_from_heap_and_null(alice_receive_header_key);
+	buffer_destroy_from_heap_and_null(alice_next_send_header_key);
+	buffer_destroy_from_heap_and_null(alice_next_receive_header_key);
 	//bobs keys
-	buffer_destroy_from_heap(bob_public_identity);
-	buffer_destroy_from_heap(bob_private_identity);
-	buffer_destroy_from_heap(bob_public_ephemeral);
-	buffer_destroy_from_heap(bob_private_ephemeral);
-	buffer_destroy_from_heap(bob_root_key);
-	buffer_destroy_from_heap(bob_send_chain_key);
-	buffer_destroy_from_heap(bob_receive_chain_key);
-	buffer_destroy_from_heap(bob_send_header_key);
-	buffer_destroy_from_heap(bob_receive_header_key);
-	buffer_destroy_from_heap(bob_next_send_header_key);
-	buffer_destroy_from_heap(bob_next_receive_header_key);
+	buffer_destroy_from_heap_and_null(bob_public_identity);
+	buffer_destroy_from_heap_and_null(bob_private_identity);
+	buffer_destroy_from_heap_and_null(bob_public_ephemeral);
+	buffer_destroy_from_heap_and_null(bob_private_ephemeral);
+	buffer_destroy_from_heap_and_null(bob_root_key);
+	buffer_destroy_from_heap_and_null(bob_send_chain_key);
+	buffer_destroy_from_heap_and_null(bob_receive_chain_key);
+	buffer_destroy_from_heap_and_null(bob_send_header_key);
+	buffer_destroy_from_heap_and_null(bob_receive_header_key);
+	buffer_destroy_from_heap_and_null(bob_next_send_header_key);
+	buffer_destroy_from_heap_and_null(bob_next_receive_header_key);
 
 	on_error(
 		print_errors(&status);
