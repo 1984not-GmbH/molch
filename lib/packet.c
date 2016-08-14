@@ -198,6 +198,7 @@ return_status packet_encrypt(
 
 	//generate the header nonce and add it to the packet header
 	header_nonce = buffer_create_on_heap(HEADER_NONCE_SIZE, 0);
+	throw_on_failed_alloc(header_nonce);
 	if (buffer_fill_random(header_nonce, HEADER_NONCE_SIZE) != 0) {
 		throw(BUFFER_ERROR, "Failed to generate header nonce.");
 	}
@@ -209,6 +210,7 @@ return_status packet_encrypt(
 	encrypted_axolotl_header = buffer_create_on_heap(
 			axolotl_header->content_length + crypto_secretbox_MACBYTES,
 			axolotl_header->content_length + crypto_secretbox_MACBYTES);
+	throw_on_failed_alloc(encrypted_axolotl_header);
 	int status_int = crypto_secretbox_easy(
 			encrypted_axolotl_header->content,
 			axolotl_header->content,
@@ -226,6 +228,7 @@ return_status packet_encrypt(
 
 	//generate the message nonce and add it to the packet header
 	message_nonce = buffer_create_on_heap(MESSAGE_NONCE_SIZE, 0);
+	throw_on_failed_alloc(message_nonce);
 	if (buffer_fill_random(message_nonce, MESSAGE_NONCE_SIZE) != 0) {
 		throw(BUFFER_ERROR, "Failed to generate message nonce.");
 	}
@@ -236,6 +239,7 @@ return_status packet_encrypt(
 	//pad the message (PKCS7 padding to 255 byte blocks, see RFC5652 section 6.3)
 	unsigned char padding = 255 - (message->content_length % 255);
 	padded_message = buffer_create_on_heap(message->content_length + padding, 0);
+	throw_on_failed_alloc(padded_message);
 	//copy the message
 	if (buffer_clone(padded_message, message) != 0) {
 		throw(BUFFER_ERROR, "Failed to clone message.");
@@ -248,6 +252,7 @@ return_status packet_encrypt(
 	encrypted_message = buffer_create_on_heap(
 			padded_message->content_length + crypto_secretbox_MACBYTES,
 			padded_message->content_length + crypto_secretbox_MACBYTES);
+	throw_on_failed_alloc(encrypted_message);
 	status_int = crypto_secretbox_easy(
 			encrypted_message->content,
 			padded_message->content,
@@ -268,6 +273,7 @@ return_status packet_encrypt(
 
 	//pack the packet
 	*packet = buffer_create_on_heap(packed_length, 0);
+	throw_on_failed_alloc(*packet);
 	(*packet)->content_length = packet__pack(&packet_struct, (*packet)->content);
 	if ((*packet)->content_length != packed_length) {
 		throw(PROTOBUF_PACK_ERROR, "Packet packet has incorrect length.");
@@ -488,6 +494,7 @@ return_status packet_decrypt_header(
 
 	const size_t axolotl_header_length = packet_struct->encrypted_axolotl_header.len - crypto_secretbox_MACBYTES;
 	*axolotl_header = buffer_create_on_heap(axolotl_header_length, axolotl_header_length);
+	throw_on_failed_alloc(*axolotl_header);
 
 	int status_int = crypto_secretbox_open_easy(
 			(*axolotl_header)->content,
@@ -548,6 +555,7 @@ return_status packet_decrypt_message(
 		throw(INCORRECT_BUFFER_SIZE, "The padded message is too short.")
 	}
 	padded_message = buffer_create_on_heap(padded_message_length, padded_message_length);
+	throw_on_failed_alloc(padded_message);
 
 	int status_int = crypto_secretbox_open_easy(
 			padded_message->content,
@@ -568,6 +576,7 @@ return_status packet_decrypt_message(
 	//extract the message
 	const size_t message_length = padded_message->content_length - padding;
 	*message = buffer_create_on_heap(message_length, 0);
+	throw_on_failed_alloc(*message);
 	//TODO this doesn't need to be copied, setting the length should be enough
 	if (buffer_copy(*message, 0, padded_message, 0, message_length) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy message from padded message.");

@@ -48,9 +48,7 @@ return_status create_ratchet_state(ratchet_state ** const ratchet) {
 	}
 
 	*ratchet = sodium_malloc(sizeof(ratchet_state));
-	if (*ratchet == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate ratchet state.");
-	}
+	throw_on_failed_alloc(*ratchet);
 
 	//initialize the buffers with the storage arrays
 	buffer_init_with_pointer((*ratchet)->root_key, (unsigned char*)(*ratchet)->root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
@@ -204,8 +202,12 @@ return_status ratchet_send(
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *root_key_backup = buffer_create_on_heap(ROOT_KEY_SIZE, 0);
-	buffer_t *chain_key_backup = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	buffer_t *root_key_backup = NULL;
+	buffer_t *chain_key_backup = NULL;
+	root_key_backup = buffer_create_on_heap(ROOT_KEY_SIZE, 0);
+	throw_on_failed_alloc(root_key_backup);
+	chain_key_backup = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	throw_on_failed_alloc(chain_key_backup);
 
 	//check input
 	if ((ratchet == NULL)
@@ -405,9 +407,15 @@ return_status stage_skipped_header_and_message_keys(
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *current_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
-	buffer_t *next_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
-	buffer_t *current_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, 0);
+	buffer_t *current_chain_key = NULL;
+	buffer_t *next_chain_key = NULL;
+	buffer_t *current_message_key = NULL;
+	current_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	throw_on_failed_alloc(current_chain_key);
+	next_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	throw_on_failed_alloc(next_chain_key);
+	current_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, 0);
+	throw_on_failed_alloc(current_message_key);
 
 	//check input
 	if ((staging_area == NULL)
@@ -533,9 +541,15 @@ return_status ratchet_receive(
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *throwaway_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
-	buffer_t *throwaway_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, 0);
-	buffer_t *purported_chain_key_backup = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	buffer_t *throwaway_chain_key = NULL;
+	buffer_t *throwaway_message_key = NULL;
+	buffer_t *purported_chain_key_backup = NULL;
+	throwaway_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	throw_on_failed_alloc(throwaway_chain_key);
+	throwaway_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, 0);
+	throw_on_failed_alloc(throwaway_message_key);
+	purported_chain_key_backup = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	throw_on_failed_alloc(purported_chain_key_backup);
 
 	//check input
 	if ((ratchet == NULL)

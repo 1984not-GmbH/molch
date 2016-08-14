@@ -176,6 +176,7 @@ return_status conversation_store_list(buffer_t ** const list, conversation_store
 	}
 
 	*list = buffer_create_on_heap(store->length * CONVERSATION_ID_SIZE, 0);
+	throw_on_failed_alloc(*list);
 	//copy all the id's
 	conversation_store_foreach(
 			store,
