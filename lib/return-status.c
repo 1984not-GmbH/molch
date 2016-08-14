@@ -231,6 +231,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 	}
 
 	output = buffer_create_on_heap(output_size, 0);
+	throw_on_failed_alloc(output);
 
 	int status_int = 0;
 	// now fill the output

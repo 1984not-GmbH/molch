@@ -35,9 +35,7 @@ return_status user_store_create(user_store ** const store) {
 	}
 
 	*store = sodium_malloc(sizeof(user_store));
-	if (*store == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate user store.");
-	}
+	throw_on_failed_alloc(*store);
 
 	//initialise
 	(*store)->length = 0;
@@ -99,9 +97,7 @@ return_status create_user_store_node(user_store_node ** const node) {
 	}
 
 	*node = sodium_malloc(sizeof(user_store_node));
-	if (*node == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate user store node.");
-	}
+	throw_on_failed_alloc(*node);
 
 	//initialise pointers
 	(*node)->previous = NULL;
@@ -237,9 +233,7 @@ return_status user_store_list(buffer_t ** const list, user_store * const store) 
 	}
 
 	*list = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE * store->length, PUBLIC_MASTER_KEY_SIZE * store->length);
-	if (*list == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate user list buffer.");
-	}
+	throw_on_failed_alloc(*list);
 
 	user_store_node *current_node = store->head;
 	for (size_t i = 0; (i < store->length) && (current_node != NULL); i++) {

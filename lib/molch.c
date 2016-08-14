@@ -51,13 +51,19 @@ return_status create_prekey_list(
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *unsigned_prekey_list = buffer_create_on_heap(
+	buffer_t *unsigned_prekey_list = NULL;
+	buffer_t *prekey_list_buffer = NULL;
+	buffer_t *public_identity_key = NULL;
+	unsigned_prekey_list = buffer_create_on_heap(
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t),
 			0);
-	buffer_t *prekey_list_buffer = buffer_create_on_heap(
+	throw_on_failed_alloc(unsigned_prekey_list);
+	prekey_list_buffer = buffer_create_on_heap(
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t) + SIGNATURE_SIZE,
 			0);
-	buffer_t *public_identity_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(prekey_list_buffer);
+	public_identity_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(public_identity_key);
 
 	//buffer for the prekey part of unsigned_prekey_list
 	buffer_create_with_existing_array(prekeys, unsigned_prekey_list->content + PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
@@ -105,9 +111,11 @@ return_status create_prekey_list(
 	*prekey_list_length = prekey_list_buffer->content_length;
 
 cleanup:
-	if (status.status != SUCCESS) {
-		free(prekey_list_buffer->content);
-	}
+	on_error(
+		if (prekey_list_buffer != NULL) {
+			free(prekey_list_buffer->content);
+		}
+	);
 
 	buffer_destroy_from_heap_and_null(public_identity_key);
 	buffer_destroy_from_heap_and_null(unsigned_prekey_list);
@@ -359,6 +367,7 @@ return_status verify_prekey_list(
 	return_status status = return_status_init();
 
 	buffer_t *verified_prekey_list = buffer_create_on_heap(prekey_list_length - SIGNATURE_SIZE, prekey_list_length - SIGNATURE_SIZE);
+	throw_on_failed_alloc(verified_prekey_list);
 
 	int status_int = 0;
 
@@ -441,16 +450,22 @@ return_status molch_start_send_conversation(
 	buffer_create_with_existing_array(receiver_public_master_key_buffer, (unsigned char*)receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
 	buffer_create_with_existing_array(prekeys, (unsigned char*)prekey_list + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t));
 
-	//create buffers
-	buffer_t *sender_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_t *receiver_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_t *receiver_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-
 	conversation_t *conversation = NULL;
 	buffer_t *packet_buffer = NULL;
 	user_store_node *user = NULL;
 
 	return_status status = return_status_init();
+
+	//create buffers
+	buffer_t *sender_public_identity = NULL;
+	buffer_t *receiver_public_identity = NULL;
+	buffer_t *receiver_public_ephemeral = NULL;
+	sender_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(sender_public_identity);
+	receiver_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(receiver_public_identity);
+	receiver_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(receiver_public_ephemeral);
 
 	//check input
 	if ((conversation_id == NULL)
@@ -1092,9 +1107,7 @@ return_status molch_conversation_json_export(
 	//allocate a memory pool
 	//FIXME: Don't allocate a fixed amount
 	pool = buffer_create_with_custom_allocator(1000000, 0, sodium_malloc, sodium_free);
-	if (pool == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate memory pool.");
-	}
+	throw_on_failed_alloc(pool);
 
 	json_tree = conversation_json_export(conversation, pool);
 	if (json_tree == NULL) {
@@ -1154,6 +1167,7 @@ return_status molch_conversation_export(
 	//buffers
 	buffer_t *backup_buffer = NULL;
 	buffer_t *backup_nonce = buffer_create_on_heap(BACKUP_NONCE_SIZE, 0);
+	throw_on_failed_alloc(backup_nonce);
 
 	if ((backup == NULL) || (backup_length == NULL) || (conversation_id == NULL)) {
 		throw(INVALID_INPUT, "Invalid input to molch_conversation_export.");
@@ -1171,9 +1185,7 @@ return_status molch_conversation_export(
 	throw_on_error(EXPORT_ERROR, "Failed to export conversation to JSON.");
 
 	backup_buffer = buffer_create_on_heap(json_length + BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES, json_length + BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES);
-	if (backup_buffer == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to create backup buffer.");
-	}
+	throw_on_failed_alloc(backup_buffer);
 
 	//generate the nonce
 	if (buffer_fill_random(backup_nonce, BACKUP_NONCE_SIZE) != 0) {
@@ -1241,6 +1253,7 @@ return_status molch_conversation_json_import(const unsigned char * const json, c
 	conversation_t *imported_conversation = NULL;
 	//create a buffer for the conversation id
 	buffer_t *conversation_id = buffer_create_on_heap(CONVERSATION_ID_SIZE, 0);
+	throw_on_failed_alloc(conversation_id);
 
 	if (json == NULL) {
 		throw(INVALID_INPUT, "\"json\" is NULL.");
@@ -1330,6 +1343,7 @@ return_status molch_conversation_import(
 	return_status status = return_status_init();
 
 	buffer_t *json = buffer_create_with_custom_allocator(backup_length, 0, sodium_malloc, sodium_free);
+	throw_on_failed_alloc(json);
 
 	//check input
 	if ((backup == NULL) || (local_backup_key == NULL)) {
@@ -1408,6 +1422,7 @@ return_status molch_json_export(
 	// empty array when there is no content
 	if (users == NULL) {
 		*json = sodium_malloc(sizeof("[]"));
+		throw_on_failed_alloc(*json);
 		strncpy((char*)*json, "[]", sizeof("[]"));
 		*length = sizeof("[]");
 		goto cleanup;
@@ -1416,9 +1431,7 @@ return_status molch_json_export(
 	//allocate a memory pool
 	//FIXME: Don't allocate a fixed amount
 	pool = buffer_create_with_custom_allocator(5000000, 0, sodium_malloc, sodium_free);
-	if (pool == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate memory pool.");
-	}
+	throw_on_failed_alloc(pool);
 
 	//serialize state into tree of mcJSON objects
 	mcJSON *json_tree = user_store_json_export(users, pool);
@@ -1474,6 +1487,7 @@ return_status molch_export(
 	//buffers
 	buffer_t *backup_buffer = NULL;
 	buffer_t *backup_nonce = buffer_create_on_heap(BACKUP_NONCE_SIZE, 0);
+	throw_on_failed_alloc(backup_nonce);
 
 	if ((backup == NULL) || (backup_length == NULL)) {
 		throw(INVALID_INPUT, "Invalid input to molch_export.");
@@ -1487,9 +1501,7 @@ return_status molch_export(
 	throw_on_error(EXPORT_ERROR, "Failed to export the library state to JSON.");
 
 	backup_buffer = buffer_create_on_heap(json_length + BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES, json_length + BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES);
-	if (backup_buffer == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to create backup buffer.");
-	}
+	throw_on_failed_alloc(backup_buffer);
 
 	//generate the nonce
 	if (buffer_fill_random(backup_nonce, BACKUP_NONCE_SIZE) != 0) {
@@ -1619,6 +1631,7 @@ return_status molch_import(
 	return_status status = return_status_init();
 
 	buffer_t *json = buffer_create_with_custom_allocator(backup_length, 0, sodium_malloc, sodium_free);
+	throw_on_failed_alloc(json);
 
 	//check input
 	if ((backup == NULL) || (local_backup_key == NULL)) {
@@ -1733,9 +1746,7 @@ return_status molch_update_backup_key(
 	// create a backup key buffer if it doesnt exist already
 	if (backup_key == NULL) {
 		backup_key = buffer_create_with_custom_allocator(BACKUP_KEY_SIZE, 0, sodium_malloc, sodium_free);
-		if (backup_key == NULL) {
-			throw(CREATION_ERROR, "Failed to create backup key buffer.");
-		}
+		throw_on_failed_alloc(backup_key);
 	}
 
 	//make backup key buffer writable

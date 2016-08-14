@@ -72,9 +72,7 @@ return_status conversation_create(
 	}
 
 	*conversation = malloc(sizeof(conversation_t));
-	if (conversation == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate memory for conversation.");
-	}
+	throw_on_failed_alloc(*conversation);
 
 	init_struct(*conversation);
 
@@ -218,8 +216,13 @@ return_status conversation_start_send_conversation(
 
 	return_status status = return_status_init();
 
-	buffer_t *sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_t *sender_private_ephemeral = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	buffer_t *sender_public_ephemeral = NULL;
+	buffer_t *sender_private_ephemeral = NULL;
+
+	sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(sender_public_ephemeral);
+	sender_private_ephemeral = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	throw_on_failed_alloc(sender_private_ephemeral);
 
 	//check many error conditions
 	if ((conversation == NULL)
@@ -301,13 +304,22 @@ return_status conversation_start_receive_conversation(
 	uint32_t receive_message_number = 0;
 	uint32_t previous_receive_message_number = 0;
 
-	//key buffers
-	buffer_t *receiver_public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_t *receiver_private_prekey = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	buffer_t *sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_t *sender_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-
 	return_status status = return_status_init();
+
+	//key buffers
+	buffer_t *receiver_public_prekey = NULL;
+	buffer_t *receiver_private_prekey = NULL;
+	buffer_t *sender_public_ephemeral = NULL;
+	buffer_t *sender_public_identity = NULL;
+
+	receiver_public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(receiver_public_prekey);
+	receiver_private_prekey = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	throw_on_failed_alloc(receiver_private_prekey);
+	sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(sender_public_ephemeral);
+	sender_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(sender_public_identity);
 
 	if ((conversation == NULL)
 			|| (packet ==NULL)
@@ -395,14 +407,21 @@ return_status conversation_send(
 		const buffer_t * const public_ephemeral_key, //can be NULL, if not NULL, this will be a prekey message
 		const buffer_t * const public_prekey //can be NULL, if not NULL, this will be a prekey message
 		) {
+	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *send_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_t *send_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-	buffer_t *send_ephemeral_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
+	buffer_t *send_header_key = NULL;
+	buffer_t *send_message_key = NULL;
+	buffer_t *send_ephemeral_key = NULL;
 	buffer_t *header = NULL;
 
-	return_status status = return_status_init();
+	send_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	throw_on_failed_alloc(send_header_key);
+	send_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	throw_on_failed_alloc(send_message_key);
+	send_ephemeral_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
+	throw_on_failed_alloc(send_ephemeral_key);
+
 
 	//check input
 	if ((conversation == NULL)
@@ -491,11 +510,14 @@ int try_skipped_header_and_message_keys(
 		buffer_t ** const message,
 		uint32_t * const receive_message_number,
 		uint32_t * const previous_receive_message_number) {
+	return_status status = return_status_init();
+
 	//create buffers
 	buffer_t *header = NULL;
-	buffer_t *their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_t *their_signed_public_ephemeral = NULL;
+	their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(their_signed_public_ephemeral);
 
-	return_status status = return_status_init();
 	header_and_message_keystore_node* node = skipped_keys->head;
 	for (size_t i = 0; (i < skipped_keys->length) && (node != NULL); i++, node = node->next) {
 		status = packet_decrypt_header(
@@ -553,15 +575,23 @@ return_status conversation_receive(
 	uint32_t * const receive_message_number,
 	uint32_t * const previous_receive_message_number,
 	buffer_t ** const message) { //output, free after use!
+	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *current_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_t *next_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_t *current_receive_header_key = NULL;
+	buffer_t *next_receive_header_key = NULL;
 	buffer_t *header = NULL;
-	buffer_t *their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_t *message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	buffer_t *message_key = NULL;
+	buffer_t *their_signed_public_ephemeral = NULL;
 
-	return_status status = return_status_init();
+	current_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	throw_on_failed_alloc(current_receive_header_key);
+	next_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	throw_on_failed_alloc(next_receive_header_key);
+	their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(their_signed_public_ephemeral);
+	message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	throw_on_failed_alloc(message_key);
 
 	if ((conversation == NULL)
 			|| (packet == NULL)
@@ -572,6 +602,7 @@ return_status conversation_receive(
 	}
 
 	*message = buffer_create_on_heap(packet->content_length, 0);
+	throw_on_failed_alloc(*message);
 
 	int status_int = 0;
 	status_int = try_skipped_header_and_message_keys(

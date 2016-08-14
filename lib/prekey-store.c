@@ -37,9 +37,8 @@ return_status prekey_store_create(prekey_store ** const store) {
 	}
 
 	*store = sodium_malloc(sizeof(prekey_store));
-	if (*store == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate prekey store.");
-	}
+	throw_on_failed_alloc(*store);
+
 	//set expiration date to the past --> rotate will create new keys
 	(*store)->oldest_expiration_date = 0;
 	(*store)->oldest_deprecated_expiration_date = 0;

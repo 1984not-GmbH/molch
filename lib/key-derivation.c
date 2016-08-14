@@ -42,7 +42,8 @@ return_status derive_key(
 	return_status status = return_status_init();
 
 	//create a salt that contains the number of the subkey
-	buffer_t * salt = buffer_create_on_heap(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
+	buffer_t *salt = buffer_create_on_heap(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
+	throw_on_failed_alloc(salt);
 	buffer_clear(salt); //fill with zeroes
 	salt->content_length = crypto_generichash_blake2b_SALTBYTES;
 
@@ -147,8 +148,12 @@ return_status derive_root_next_header_and_chain_keys(
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *diffie_hellman_secret = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, 0);
-	buffer_t *derivation_key = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	buffer_t *diffie_hellman_secret = NULL;
+	buffer_t *derivation_key = NULL;
+	diffie_hellman_secret = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, 0);
+	throw_on_failed_alloc(diffie_hellman_secret);
+	derivation_key = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	throw_on_failed_alloc(derivation_key);
 
 	//check input
 	if ((root_key == NULL) || (root_key->buffer_length < ROOT_KEY_SIZE)
@@ -254,6 +259,7 @@ return_status derive_initial_root_chain_and_header_keys(
 	return_status status = return_status_init();
 
 	buffer_t *master_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	throw_on_failed_alloc(master_key);
 
 	//check buffer sizes
 	if ((root_key->buffer_length < ROOT_KEY_SIZE)
