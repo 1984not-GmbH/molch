@@ -396,7 +396,7 @@ int main(void) {
 			alice_conversation->content_length);
 	throw_on_error(EXPORT_ERROR, "Failed to export Alice' conversation.");
 
-	printf("Alice' conversation exported!");
+	printf("Alice' conversation exported!\n");
 
 	//import again
 	status = molch_conversation_import(
