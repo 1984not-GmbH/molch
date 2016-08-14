@@ -1,5 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
 
+include_directories("${CMAKE_CURRENT_BINARY_DIR}/../lib/protobuf")
 option(RUN_TESTS "Generate the tests." OFF)
 
 if (RUN_TESTS)

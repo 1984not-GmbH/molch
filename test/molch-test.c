@@ -26,7 +26,68 @@
 #include "utils.h"
 #include "../lib/molch.h"
 #include "../lib/user-store.h" //for PREKEY_AMOUNT
+#include "../lib/zeroed_malloc.h"
 #include "tracing.h"
+
+#include <encrypted_backup.pb-c.h>
+
+return_status decrypt_backup(buffer_t ** decrypted_backup, buffer_t *backup_key, unsigned char *backup, size_t backup_length) {
+	return_status status = return_status_init();
+
+	EncryptedBackup *backup_struct = NULL;
+
+	//check the inputs
+	if ((decrypted_backup == NULL) || (backup == NULL) || (backup_key == NULL) || (backup_key->content_length != BACKUP_KEY_SIZE)) {
+		throw(INVALID_INPUT, "Invalid input to decrypt_backup.");
+	}
+
+	//unpack the backup
+	backup_struct = encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup);
+	if (backup_struct == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack backup.");
+	}
+
+	//check if it adheres to the correct format
+	if (!backup_struct->has_encrypted_backup || !backup_struct->has_encrypted_backup_nonce || (backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "Backup is missing fields.");
+	}
+	if (backup_struct->backup_version != 0) {
+		throw(INCORRECT_DATA, "Backup has an incorrect version.");
+	}
+
+	//allocate memory for the decrypted backup
+	size_t decrypted_backup_length = backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES;
+	*decrypted_backup = buffer_create_with_custom_allocator(decrypted_backup_length, 0, sodium_malloc, sodium_free);
+	if (*decrypted_backup == NULL) {
+		throw(ALLOCATION_FAILED, "Failed to allocate decrypted backup.");
+	}
+
+	//decrypt the backup
+	int status_int = crypto_secretbox_open_easy(
+			(*decrypted_backup)->content,
+			backup_struct->encrypted_backup.data,
+			backup_struct->encrypted_backup.len,
+			backup_struct->encrypted_backup_nonce.data,
+			backup_key->content);
+	if (status_int != 0) {
+		throw(DECRYPT_ERROR, "Failed to decrypt the backup.");
+	}
+	(*decrypted_backup)->content_length = decrypted_backup_length;
+
+cleanup:
+	on_error(
+		if ((decrypted_backup != NULL) && (*decrypted_backup != NULL)) {
+			buffer_destroy_with_custom_deallocator(*decrypted_backup, sodium_free);
+			*decrypted_backup = NULL;
+		}
+	);
+	if (backup_struct != NULL) {
+		encrypted_backup__free_unpacked(backup_struct, &protobuf_c_allocators);
+		backup_struct = NULL;
+	}
+
+	return status;
+}
 
 int main(void) {
 	if (sodium_init() == -1) {
@@ -67,18 +128,16 @@ int main(void) {
 
 	unsigned char *printed_status = NULL;
 
+	// backups
+	unsigned char *backup = NULL;
+	unsigned char *imported_backup = NULL;
+
+	// decrypted backups
+	buffer_t *decrypted_backup = NULL;
+	buffer_t *decrypted_imported_backup = NULL;
+
 	status = molch_update_backup_key(backup_key->content, backup_key->content_length);
 	throw_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
-
-	//backup for empty library
-	size_t empty_backup_length;
-	unsigned char *empty_backup= NULL;
-	status = molch_export(&empty_backup, &empty_backup_length);
-	throw_on_error(EXPORT_ERROR, "Failed to export empty library.");
-	free_and_null_if_valid(empty_backup);
-	if (empty_backup_length != (sizeof("[]") + BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES)) {
-		throw(INCORRECT_DATA, "Incorrect output length when there is no user.");
-	}
 
 	//check user count
 	if (molch_user_count() != 0) {
@@ -318,7 +377,6 @@ int main(void) {
 	//test export
 	printf("Test export!\n");
 	size_t backup_length;
-	unsigned char *backup = NULL;
 	status = molch_export(&backup, &backup_length);
 	throw_on_error(EXPORT_ERROR, "Failed to export.");
 
@@ -332,21 +390,11 @@ int main(void) {
 			backup_key->content,
 			backup_key->content_length);
 	on_error(
-		free_and_null_if_valid(backup);
 		throw(IMPORT_ERROR, "Failed to import backup.");
 	)
 
-	//decrypt the first export (for comparison later on)
-	status_int = crypto_secretbox_open_easy(
-			backup,
-			backup,
-			backup_length - BACKUP_NONCE_SIZE,
-			backup + backup_length - BACKUP_NONCE_SIZE,
-			backup_key->content);
-	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt the backup.")
-	}
-	backup_length -= BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES;
+	status = decrypt_backup(&decrypted_backup, backup_key, backup, backup_length);
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt backup.");
 
 	//compare the keys
 	if (buffer_compare(backup_key, new_backup_key) == 0) {
@@ -360,29 +408,16 @@ int main(void) {
 
 	//now export again
 	size_t imported_backup_length;
-	unsigned char *imported_backup = NULL;
 	status = molch_export(&imported_backup, &imported_backup_length);
 	on_error(
-		free_and_null_if_valid(backup);
 		throw(EXPORT_ERROR, "Failed to export imported backup.");
 	)
 
-	//decrypt the secondt export (for comparison later on)
-	status_int = crypto_secretbox_open_easy(
-			imported_backup,
-			imported_backup,
-			imported_backup_length - BACKUP_NONCE_SIZE,
-			imported_backup + imported_backup_length - BACKUP_NONCE_SIZE,
-			backup_key->content);
-	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt the backup.")
-	}
-	imported_backup_length -= BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES;
+	status = decrypt_backup(&decrypted_imported_backup, backup_key, imported_backup, imported_backup_length);
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt imported backup.");
 
 	//compare
-	if ((backup_length != imported_backup_length) || (sodium_memcmp(backup, imported_backup, backup_length) != 0)) {
-		free_and_null_if_valid(backup);
-		free_and_null_if_valid(imported_backup);
+	if (buffer_compare(decrypted_backup, decrypted_imported_backup) != 0) {
 		throw(IMPORT_ERROR, "Imported backup is incorrect.");
 	}
 	free_and_null_if_valid(backup);
@@ -407,7 +442,6 @@ int main(void) {
 			backup_key->content,
 			backup_key->content_length);
 	on_error(
-		free_and_null_if_valid(backup);
 		throw(IMPORT_ERROR, "Failed to import Alice' conversation from backup.");
 	)
 
@@ -436,7 +470,6 @@ int main(void) {
 			alice_conversation->content,
 			alice_conversation->content_length);
 	on_error(
-		free_and_null_if_valid(backup);
 		throw(EXPORT_ERROR, "Failed to export Alice imported conversation.");
 	)
 
@@ -454,13 +487,8 @@ int main(void) {
 
 	//compare
 	if ((backup_length != imported_backup_length) || (sodium_memcmp(backup, imported_backup, backup_length) != 0)) {
-		free_and_null_if_valid(backup);
-		free_and_null_if_valid(imported_backup);
 		throw(IMPORT_ERROR, "JSON of imported conversation is incorrect.");
 	}
-
-	free_and_null_if_valid(imported_backup);
-	free_and_null_if_valid(backup);
 
 	//destroy the conversations
 	molch_end_conversation(alice_conversation->content, alice_conversation->content_length, NULL, NULL);
@@ -485,10 +513,14 @@ int main(void) {
 
 cleanup:
 	free_and_null_if_valid(alice_public_prekeys);
-		free_and_null_if_valid(bob_public_prekeys);
-		free_and_null_if_valid(alice_send_packet);
-		free_and_null_if_valid(bob_send_packet);
-		free_and_null_if_valid(printed_status);
+	free_and_null_if_valid(bob_public_prekeys);
+	free_and_null_if_valid(alice_send_packet);
+	free_and_null_if_valid(bob_send_packet);
+	free_and_null_if_valid(printed_status);
+	free_and_null_if_valid(backup);
+	free_and_null_if_valid(imported_backup);
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(decrypted_backup, sodium_free);
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(decrypted_imported_backup, sodium_free);
 	molch_destroy_all_users();
 	buffer_destroy_from_heap_and_null_if_valid(alice_conversation);
 	buffer_destroy_from_heap_and_null_if_valid(bob_conversation);

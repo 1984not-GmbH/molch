@@ -35,6 +35,9 @@
 #include "user-store.h"
 #include "endianness.h"
 #include "return-status.h"
+#include "zeroed_malloc.h"
+
+#include <encrypted_backup.pb-c.h>
 
 //global user store
 static user_store *users = NULL;
@@ -1465,6 +1468,9 @@ return_status molch_export(
 
 	unsigned char *json = NULL;
 	size_t json_length = 0;
+	EncryptedBackup backup_struct;
+	encrypted_backup__init(&backup_struct);
+	backup_struct.backup_version = 0;
 
 	//buffers
 	buffer_t *backup_buffer = NULL;
@@ -1482,13 +1488,18 @@ return_status molch_export(
 	status = molch_json_export(&json, &json_length);
 	throw_on_error(EXPORT_ERROR, "Failed to export the library state to JSON.");
 
-	backup_buffer = buffer_create_on_heap(json_length + BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES, json_length + BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES);
+	backup_buffer = buffer_create_on_heap(json_length + crypto_secretbox_MACBYTES, json_length + crypto_secretbox_MACBYTES);
 	throw_on_failed_alloc(backup_buffer);
 
 	//generate the nonce
 	if (buffer_fill_random(backup_nonce, BACKUP_NONCE_SIZE) != 0) {
 		throw(GENERIC_ERROR, "Failed to generate backup nonce.");
 	}
+
+	//set the content of nonce
+	backup_struct.encrypted_backup_nonce.data = backup_nonce->content;
+	backup_struct.encrypted_backup_nonce.len = backup_nonce->content_length;
+	backup_struct.has_encrypted_backup_nonce = true;
 
 	//encrypt the JSON
 	int status_int = crypto_secretbox_easy(
@@ -1501,27 +1512,29 @@ return_status molch_export(
 		throw(ENCRYPT_ERROR, "Failed to encrypt library state.");
 	}
 
-	//copy the nonce at the end of the output
-	status_int = buffer_copy_to_raw(
-			backup_buffer->content,
-			json_length + crypto_secretbox_MACBYTES,
-			backup_nonce,
-			0,
-			BACKUP_NONCE_SIZE);
-	if (status_int != 0) {
-		throw(BUFFER_ERROR, "Failed to copy nonce to backup.");
+	//set the content of the encrypted backup
+	backup_struct.encrypted_backup.data = backup_buffer->content;
+	backup_struct.encrypted_backup.len = backup_buffer->content_length;
+	backup_struct.has_encrypted_backup = true;
+
+
+	//pack the struct
+	size_t encrypted_backup_length = encrypted_backup__get_packed_size(&backup_struct);
+	*backup = malloc(encrypted_backup_length);
+	if (*backup == NULL) {
+		throw(ALLOCATION_FAILED, "Failed to allocate backup.");
 	}
-
-	*backup = backup_buffer->content;
-	*backup_length = backup_buffer->content_length;
-
-	free_and_null_if_valid(backup_buffer);
+	encrypted_backup__pack(&backup_struct, *backup);
+	*backup_length = encrypted_backup_length;
 
 cleanup:
 	on_error(
-		buffer_destroy_from_heap_and_null_if_valid(backup_buffer);
-	)
+		if (backup != NULL) {
+			free_and_null_if_valid(*backup);
+		}
+	);
 
+	buffer_destroy_from_heap_and_null_if_valid(backup_buffer);
 	buffer_destroy_from_heap_and_null_if_valid(backup_nonce);
 	sodium_free_and_null_if_valid(json);
 
@@ -1607,9 +1620,9 @@ return_status molch_import(
 		const size_t local_backup_key_length
 		) {
 	return_status status = return_status_init();
+	EncryptedBackup* backup_struct = NULL;
 
-	buffer_t *json = buffer_create_with_custom_allocator(backup_length, 0, sodium_malloc, sodium_free);
-	throw_on_failed_alloc(json);
+	buffer_t *json = NULL;
 
 	//check input
 	if ((backup == NULL) || (local_backup_key == NULL)) {
@@ -1624,19 +1637,30 @@ return_status molch_import(
 		throw(INCORRECT_BUFFER_SIZE, "New backup key has an incorrect length.");
 	}
 
-	//check the lengths
-	if (backup_length < BACKUP_NONCE_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Backup is too short.");
+	// unpack the backup
+	backup_struct = encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup);
+	if (backup_struct == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack backup.");
 	}
 
-	size_t json_length = backup_length - BACKUP_NONCE_SIZE - crypto_secretbox_MACBYTES;
+	if (!backup_struct->has_encrypted_backup_nonce || !backup_struct->has_encrypted_backup) {
+		throw(PROTOBUF_MISSING_ERROR, "Backup is missing some fields.");
+	}
+
+	if (backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE) {
+		throw(PROTOBUF_MISSING_ERROR, "Backup nonce has an incorrect length.");
+	}
+
+	//allocate the json
+	size_t json_length = backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES;
+	json = buffer_create_with_custom_allocator(json_length, 0, sodium_malloc, sodium_free);
 
 	//decrypt the backup
 	int status_int = crypto_secretbox_open_easy(
 			json->content,
-			backup,
-			backup_length - BACKUP_NONCE_SIZE,
-			backup + backup_length - BACKUP_NONCE_SIZE,
+			backup_struct->encrypted_backup.data,
+			backup_struct->encrypted_backup.len,
+			backup_struct->encrypted_backup_nonce.data,
 			local_backup_key);
 	if (status_int != 0) {
 		throw(DECRYPT_ERROR, "Failed to decrypt backup.");
@@ -1654,6 +1678,11 @@ return_status molch_import(
 
 cleanup:
 	buffer_destroy_with_custom_deallocator_and_null_if_valid(json, sodium_free);
+
+	if (backup_struct != NULL) {
+		encrypted_backup__free_unpacked(backup_struct, &protobuf_c_allocators);
+		backup_struct = NULL;
+	}
 
 	return status;
 }
