@@ -7,3 +7,10 @@ undefined-behavior-sanitizer
 *.swp
 tracing/
 dummy
+molch.config
+molch.files
+molch.includes
+molch.creator*
+.browse.VC.db
+.browse.VC.db-wal
+.vscode
