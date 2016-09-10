@@ -68,6 +68,50 @@ cleanup:
 	return status;
 }
 
+return_status protobuf_import(
+		header_and_message_keystore * const keystore,
+		buffer_t ** const exported_buffers,
+		size_t const buffers_size) {
+	return_status status = return_status_init();
+
+	KeyBundle ** key_bundles = zeroed_malloc(buffers_size * sizeof(KeyBundle*));
+	throw_on_failed_alloc(key_bundles);
+
+	//set all pointers to NULL
+	memset(key_bundles, '\n', buffers_size * sizeof(KeyBundle*));
+
+	//parse all the exported protobuf buffers
+	for (size_t i = 0; i < buffers_size; i++) {
+		key_bundles[i] = key_bundle__unpack(
+			&protobuf_c_allocators,
+			exported_buffers[i]->content_length,
+			exported_buffers[i]->content);
+		if (key_bundles[i] == NULL) {
+			throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack key bundle from protobuf.");
+		}
+	}
+
+	//now do the actual import
+	status = header_and_message_keystore_import(
+		keystore,
+		key_bundles,
+		buffers_size);
+	throw_on_error(IMPORT_ERROR, "Failed to import header_and_message_keystore from Protobuf-C.");
+
+cleanup:
+	if (key_bundles != NULL) {
+		for (size_t i = 0; i < buffers_size; i++) {
+			if (key_bundles[i] != NULL) {
+				key_bundle__free_unpacked(key_bundles[i], &protobuf_c_allocators);
+				key_bundles[i] = NULL;
+			}
+		}
+		zeroed_free_and_null_if_valid(key_bundles);
+	}
+
+	return status;
+}
+
 
 int main(void) {
 	if (sodium_init() == -1) {
@@ -145,7 +189,34 @@ int main(void) {
 		puts(",\n");
 	}
 	puts("]\n\n");
-	//TODO: Export and import again
+
+	printf("Import from Protobuf-C\n");
+	header_and_message_keystore_clear(&keystore);
+	protobuf_import(
+		&keystore,
+		protobuf_export_buffers,
+		protobuf_export_bundles_size);
+	throw_on_error(IMPORT_ERROR, "Failed to import from protobuf-c.");
+
+	//now export again
+	printf("Export imported as Protobuf-C\n");
+	status = protobuf_export(
+		&keystore,
+		&protobuf_second_export_bundles,
+		&protobuf_second_export_bundles_size,
+		&protobuf_second_export_buffers);
+	throw_on_error(EXPORT_ERROR, "Failed to export imported data via protobuf-c.");
+
+	//compare both exports
+	printf("Compare\n");
+	if (protobuf_export_bundles_size != protobuf_second_export_bundles_size) {
+		throw(INCORRECT_DATA, "Both exports contain different amounts of keys.");
+	}
+	for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
+		if (buffer_compare(protobuf_export_buffers[i], protobuf_second_export_buffers[i]) != 0) {
+			throw(INCORRECT_DATA, "First and second export are not identical.");
+		}
+	}
 
 	//JSON export
 	printf("Test JSON export!\n");

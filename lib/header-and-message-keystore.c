@@ -124,7 +124,7 @@ cleanup:
 	)
 
 	return status;
-	}
+}
 
 //add a message key to the keystore
 //NOTE: The entire keys are copied, not only the pointer
@@ -310,6 +310,62 @@ cleanup:
 			*bundle_size = 0;
 		}
 	)
+
+	return status;
+}
+
+return_status header_and_message_keystore_import(
+		header_and_message_keystore * const store,
+		KeyBundle ** const key_bundles,
+		const size_t bundles_size) {
+	return_status status =  return_status_init();
+
+	header_and_message_keystore_node *current_node = NULL;
+
+	if ((store != NULL) && (bundles_size == 0) && (key_bundles == NULL)) {
+		//valid empty keystore
+		goto cleanup;
+	}
+
+	//check input
+	if ((store == NULL)
+			|| ((bundles_size == 0) && (key_bundles != NULL))
+			|| ((bundles_size > 0) && (key_bundles == NULL))) {
+		throw(INVALID_INPUT, "Invalid input to header_and_message_keystore_import.");
+	}
+
+	header_and_message_keystore_init(store);
+
+	//add all the keys
+	for (size_t i = 0; i < bundles_size; i++) {
+		KeyBundle *current_key_bundle = key_bundles[i];
+
+		if (!current_key_bundle->has_expiration_time) {
+			throw(PROTOBUF_MISSING_ERROR, "Key bundle has no expiration time.");
+		}
+
+		//create buffers that point to the data in the protobuf struct
+		buffer_create_with_existing_array(header_key, current_key_bundle->header_key->key.data, current_key_bundle->message_key->key.len);
+		buffer_create_with_existing_array(message_key, current_key_bundle->message_key->key.data, current_key_bundle->message_key->key.len);
+
+		//create new node
+		status = create_and_populate_node(&current_node, current_key_bundle->expiration_time, header_key, message_key);
+		throw_on_error(CREATION_ERROR, "Failed to create header_and_message_keystore_node.");
+
+		add_node(store, current_node);
+		current_node = NULL; //set to NULL because we don't have the ownership anymore
+	}
+
+cleanup:
+	on_error(
+		if (store != NULL) {
+			header_and_message_keystore_clear(store);
+		}
+
+		if (current_node != NULL) {
+			sodium_free_and_null_if_valid(current_node);
+		}
+	);
 
 	return status;
 }

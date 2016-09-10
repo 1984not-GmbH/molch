@@ -81,6 +81,18 @@ return_status header_and_message_keystore_export(
 		KeyBundle *** const key_bundles,
 		size_t * const bundles_size) __attribute__((warn_unused_result));
 
+//! Import a header_and_message_keystore form a Protobuf-C struct.
+/*
+ * \param store The keystore to import to.
+ * \param key_bundles An array of Protobuf-C key-bundles to import from.
+ * \param bundles_size Size of the array.
+ * \return The status.
+ */
+return_status header_and_message_keystore_import(
+		header_and_message_keystore * const store,
+		KeyBundle ** const key_bundles,
+		const size_t bundles_size) __attribute__((warn_unused_result));
+
 /*
  * Serialise a header_and_message_keystore into JSON. It get's a mempool_t buffer and stores a
  * tree of mcJSON objects into the buffer starting at pool->position
