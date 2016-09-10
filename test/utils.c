@@ -32,7 +32,7 @@ void print_hex(const buffer_t * const data) {
 
 	if (buffer_clone_as_hex(hex, data) != 0) {
 		fprintf(stderr, "ERROR: Failed printing hex.\n");
-		buffer_destroy_from_heap_and_null(hex);
+		buffer_destroy_from_heap_and_null_if_valid(hex);
 		return;
 	}
 
@@ -48,7 +48,7 @@ void print_hex(const buffer_t * const data) {
 	putchar('\n');
 
 	//cleanup
-	buffer_destroy_from_heap_and_null(hex);
+	buffer_destroy_from_heap_and_null_if_valid(hex);
 }
 
 void print_to_file(const buffer_t * const data, const char * const filename) {

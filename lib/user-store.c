@@ -43,11 +43,11 @@ return_status user_store_create(user_store ** const store) {
 	(*store)->tail = NULL;
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (store != NULL) {
 			*store = NULL;
 		}
-	}
+	)
 
 	return status;
 }
@@ -56,7 +56,7 @@ cleanup:
 void user_store_destroy(user_store* store) {
 	if (store != NULL) {
 		user_store_clear(store);
-		sodium_free_and_null(store);
+		sodium_free_and_null_if_valid(store);
 	}
 }
 
@@ -111,11 +111,11 @@ return_status create_user_store_node(user_store_node ** const node) {
 	conversation_store_init((*node)->conversations);
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (node != NULL) {
 			*node = NULL;
 		}
-	}
+	)
 
 	return status;
 }
@@ -165,18 +165,18 @@ return_status user_store_create_user(
 	add_user_store_node(store, new_node);
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (new_node != NULL) {
 			if (new_node->prekeys != NULL) {
 				prekey_store_destroy(new_node->prekeys);
 			}
 			if (new_node->master_keys != NULL) {
-				sodium_free_and_null(new_node->master_keys);
+				sodium_free_and_null_if_valid(new_node->master_keys);
 			}
 
-			sodium_free_and_null(new_node);
+			sodium_free_and_null_if_valid(new_node);
 		}
-	}
+	)
 
 	return status;
 }
@@ -208,11 +208,11 @@ return_status user_store_find_node(user_store_node ** const node, user_store * c
 	}
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (node != NULL) {
 			*node = NULL;
 		}
-	}
+	)
 
 	return status;
 }
@@ -252,13 +252,11 @@ return_status user_store_list(buffer_t ** const list, user_store * const store) 
 	}
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (list != NULL) {
-			if (*list != NULL) {
-				buffer_destroy_from_heap_and_null(*list);
-			}
+				buffer_destroy_from_heap_and_null_if_valid(*list);
 		}
-	}
+	)
 
 	return status;
 }
@@ -301,7 +299,7 @@ void user_store_remove(user_store *store, user_store_node *node) {
 		store->head = node->next;
 	}
 
-	sodium_free_and_null(node);
+	sodium_free_and_null_if_valid(node);
 
 	//update length
 	store->length--;
@@ -451,7 +449,7 @@ user_store *user_store_json_import(const mcJSON * const json) {
 	}
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (store != NULL) {
 			user_store_destroy(store);
 		}
@@ -460,14 +458,12 @@ cleanup:
 			if (node->prekeys != NULL) {
 				prekey_store_destroy(node->prekeys);
 			}
-			if (node->master_keys != NULL) {
-				sodium_free_and_null(node->master_keys);
-			}
-			sodium_free_and_null(node);
+			sodium_free_and_null_if_valid(node->master_keys);
+			sodium_free_and_null_if_valid(node);
 		}
 
 		return_status_destroy_errors(&status);
-	}
+	)
 
 	return store;
 }

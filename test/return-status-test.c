@@ -100,17 +100,13 @@ int main(void) {
 	}
 
 cleanup:
-	if (status.error != NULL) {
+	on_error(
 		print_errors(&status);
-	}
-	if (printed_status != NULL) {
-		free_and_null(printed_status);
-	}
+	)
+	free_and_null_if_valid(printed_status);
 	return_status_destroy_errors(&status);
 
-	if (error_stack != NULL) {
-		free_and_null(error_stack);
-	}
+	free_and_null_if_valid(error_stack);
 
 	return status.status;
 }

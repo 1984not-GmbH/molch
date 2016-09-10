@@ -92,11 +92,11 @@ return_status conversation_create(
 	throw_on_error(CREATION_ERROR, "Failed to create ratchet.");
 
 cleanup:
-	if (status.status != 0) {
-		if ((conversation != NULL) && (*conversation != NULL)) {
-			free_and_null(*conversation);
+	on_error(
+		if (conversation != NULL) {
+			free_and_null_if_valid(*conversation);
 		}
-	}
+	)
 
 	return status;
 }
@@ -190,7 +190,7 @@ cleanup:
 			ratchet_destroy(conversation->ratchet);
 		}
 
-		free_and_null(conversation);
+		free_and_null_if_valid(conversation);
 
 		return NULL;
 	}
@@ -272,17 +272,17 @@ return_status conversation_start_send_conversation(
 	throw_on_error(SEND_ERROR, "Failed to send message using newly created conversation.");
 
 cleanup:
-	buffer_destroy_from_heap_and_null(sender_public_ephemeral);
-	buffer_destroy_from_heap_and_null(sender_private_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(sender_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(sender_private_ephemeral);
 
-	if (status.status != SUCCESS) {
+	on_error(
 		if (conversation != NULL) {
 			if (*conversation != NULL) {
 				conversation_destroy(*conversation);
 			}
 			*conversation = NULL;
 		}
-	}
+	)
 
 	return status;
 }
@@ -376,19 +376,19 @@ return_status conversation_start_receive_conversation(
 	throw_on_error(RECEIVE_ERROR, "Failed to receive message.");
 
 cleanup:
-	buffer_destroy_from_heap_and_null(receiver_public_prekey);
-	buffer_destroy_from_heap_and_null(receiver_private_prekey);
-	buffer_destroy_from_heap_and_null(sender_public_ephemeral);
-	buffer_destroy_from_heap_and_null(sender_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(receiver_public_prekey);
+	buffer_destroy_from_heap_and_null_if_valid(receiver_private_prekey);
+	buffer_destroy_from_heap_and_null_if_valid(sender_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(sender_public_identity);
 
-	if (status.status != SUCCESS) {
+	on_error(
 		if (conversation != NULL) {
 			if (*conversation != NULL) {
 				conversation_destroy(*conversation);
 			}
 			*conversation = NULL;
 		}
-	}
+	)
 
 	return status;
 }
@@ -480,19 +480,15 @@ return_status conversation_send(
 	throw_on_error(ENCRYPT_ERROR, "Failed to encrypt packet.");
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (packet != NULL) {
-			if (*packet != NULL) {
-				buffer_destroy_from_heap_and_null(*packet);
-			}
+			buffer_destroy_from_heap_and_null_if_valid(*packet);
 		}
-	}
-	buffer_destroy_from_heap_and_null(send_header_key);
-	buffer_destroy_from_heap_and_null(send_message_key);
-	buffer_destroy_from_heap_and_null(send_ephemeral_key);
-	if (header != NULL) {
-		buffer_destroy_from_heap_and_null(header);
-	}
+	)
+	buffer_destroy_from_heap_and_null_if_valid(send_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(send_message_key);
+	buffer_destroy_from_heap_and_null_if_valid(send_ephemeral_key);
+	buffer_destroy_from_heap_and_null_if_valid(header);
 
 	return status;
 }
@@ -548,15 +544,14 @@ int try_skipped_header_and_message_keys(
 	status.status = NOT_FOUND;
 
 cleanup:
-	if (header != NULL) {
-		buffer_destroy_from_heap_and_null(header);
-	}
+	buffer_destroy_from_heap_and_null_if_valid(header);
+
 	on_error(
-		if ((message != NULL) && (*message != NULL)) {
-			buffer_destroy_from_heap_and_null(*message);
+		if (message != NULL) {
+			buffer_destroy_from_heap_and_null_if_valid(*message);
 		}
-	);
-	buffer_destroy_from_heap_and_null(their_signed_public_ephemeral);
+	)
+	buffer_destroy_from_heap_and_null_if_valid(their_signed_public_ephemeral);
 
 	return_status_destroy_errors(&status);
 
@@ -685,7 +680,7 @@ return_status conversation_receive(
 		authenticity_status = ratchet_set_last_message_authenticity(conversation->ratchet, false);
 		return_status_destroy_errors(&authenticity_status);
 		throw(DECRYPT_ERROR, "Failed to decrypt message.");
-	);
+	)
 
 	status = ratchet_set_last_message_authenticity(conversation->ratchet, true);
 	throw_on_error(DATA_SET_ERROR, "Failed to set message authenticity.");
@@ -701,19 +696,15 @@ cleanup:
 			return_status_destroy_errors(&authenticity_status);
 		}
 		if (message != NULL) {
-			if (*message != NULL) {
-				buffer_destroy_from_heap_and_null(*message);
-			}
+			buffer_destroy_from_heap_and_null_if_valid(*message);
 		}
-	);
+	)
 
-	buffer_destroy_from_heap_and_null(current_receive_header_key);
-	buffer_destroy_from_heap_and_null(next_receive_header_key);
-	if (header != NULL) {
-		buffer_destroy_from_heap_and_null(header);
-	}
-	buffer_destroy_from_heap_and_null(their_signed_public_ephemeral);
-	buffer_destroy_from_heap_and_null(message_key);
+	buffer_destroy_from_heap_and_null_if_valid(current_receive_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(next_receive_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(header);
+	buffer_destroy_from_heap_and_null_if_valid(their_signed_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(message_key);
 
 	return status;
 }

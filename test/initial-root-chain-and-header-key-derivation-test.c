@@ -239,33 +239,33 @@ int main(void) {
 
 cleanup:
 	//alice keys
-	buffer_destroy_from_heap_and_null(alice_public_identity);
-	buffer_destroy_from_heap_and_null(alice_private_identity);
-	buffer_destroy_from_heap_and_null(alice_public_ephemeral);
-	buffer_destroy_from_heap_and_null(alice_private_ephemeral);
-	buffer_destroy_from_heap_and_null(alice_root_key);
-	buffer_destroy_from_heap_and_null(alice_send_chain_key);
-	buffer_destroy_from_heap_and_null(alice_receive_chain_key);
-	buffer_destroy_from_heap_and_null(alice_send_header_key);
-	buffer_destroy_from_heap_and_null(alice_receive_header_key);
-	buffer_destroy_from_heap_and_null(alice_next_send_header_key);
-	buffer_destroy_from_heap_and_null(alice_next_receive_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(alice_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(alice_private_identity);
+	buffer_destroy_from_heap_and_null_if_valid(alice_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(alice_private_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(alice_root_key);
+	buffer_destroy_from_heap_and_null_if_valid(alice_send_chain_key);
+	buffer_destroy_from_heap_and_null_if_valid(alice_receive_chain_key);
+	buffer_destroy_from_heap_and_null_if_valid(alice_send_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(alice_receive_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(alice_next_send_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(alice_next_receive_header_key);
 	//bobs keys
-	buffer_destroy_from_heap_and_null(bob_public_identity);
-	buffer_destroy_from_heap_and_null(bob_private_identity);
-	buffer_destroy_from_heap_and_null(bob_public_ephemeral);
-	buffer_destroy_from_heap_and_null(bob_private_ephemeral);
-	buffer_destroy_from_heap_and_null(bob_root_key);
-	buffer_destroy_from_heap_and_null(bob_send_chain_key);
-	buffer_destroy_from_heap_and_null(bob_receive_chain_key);
-	buffer_destroy_from_heap_and_null(bob_send_header_key);
-	buffer_destroy_from_heap_and_null(bob_receive_header_key);
-	buffer_destroy_from_heap_and_null(bob_next_send_header_key);
-	buffer_destroy_from_heap_and_null(bob_next_receive_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(bob_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(bob_private_identity);
+	buffer_destroy_from_heap_and_null_if_valid(bob_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(bob_private_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(bob_root_key);
+	buffer_destroy_from_heap_and_null_if_valid(bob_send_chain_key);
+	buffer_destroy_from_heap_and_null_if_valid(bob_receive_chain_key);
+	buffer_destroy_from_heap_and_null_if_valid(bob_send_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(bob_receive_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(bob_next_send_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(bob_next_receive_header_key);
 
 	on_error(
 		print_errors(&status);
-	);
+	)
 	return_status_destroy_errors(&status);
 
 	return status.status;

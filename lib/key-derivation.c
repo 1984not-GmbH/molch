@@ -87,8 +87,8 @@ cleanup:
 		if (derived_key != NULL) {
 			derived_key->content_length = 0;
 		}
-	);
-	buffer_destroy_from_heap_and_null(salt);
+	)
+	buffer_destroy_from_heap_and_null_if_valid(salt);
 
 	return status;
 }
@@ -228,10 +228,10 @@ cleanup:
 			buffer_clear(chain_key);
 			chain_key->content_length = 0;
 		}
-	);
+	)
 
-	buffer_destroy_from_heap_and_null(diffie_hellman_secret);
-	buffer_destroy_from_heap_and_null(derivation_key);
+	buffer_destroy_from_heap_and_null_if_valid(diffie_hellman_secret);
+	buffer_destroy_from_heap_and_null_if_valid(derivation_key);
 
 	return status;
 }
@@ -404,9 +404,9 @@ cleanup:
 		next_send_header_key->content_length = 0;
 		buffer_clear(next_receive_header_key);
 		next_receive_header_key->content_length = 0;
-	);
+	)
 
-	buffer_destroy_from_heap_and_null(master_key);
+	buffer_destroy_from_heap_and_null_if_valid(master_key);
 
 	return status;
 }

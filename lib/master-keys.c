@@ -129,19 +129,15 @@ return_status master_keys_create(
 	}
 
 cleanup:
-	if (crypto_seeds != NULL) {
-		buffer_destroy_with_custom_deallocator_and_null(crypto_seeds, sodium_free);
-	}
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(crypto_seeds, sodium_free);
 
-	if (status.status != SUCCESS) {
+	on_error(
 		if (keys != NULL) {
-			if (*keys != NULL) {
-				sodium_free_and_null(*keys);
-			}
+			sodium_free_and_null_if_valid(*keys);
 		}
 
 		return status;
-	}
+	)
 
 	if ((keys != NULL) && (*keys != NULL)) {
 		sodium_mprotect_noaccess(*keys);
@@ -240,11 +236,11 @@ cleanup:
 		sodium_mprotect_noaccess(keys);
 	}
 
-	if (status.status != SUCCESS) {
+	on_error(
 		if (signed_data != NULL) {
 			signed_data->content_length = 0;
 		}
-	}
+	)
 
 	return status;
 }
@@ -370,7 +366,7 @@ master_keys *master_keys_json_import(const mcJSON * const json) {
 	goto cleanup;
 
 fail:
-	sodium_free_and_null(keys);
+	sodium_free_and_null_if_valid(keys);
 
 	return NULL;
 

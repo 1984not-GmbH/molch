@@ -115,11 +115,11 @@ cleanup:
 		if (prekey_list_buffer != NULL) {
 			free(prekey_list_buffer->content);
 		}
-	);
+	)
 
-	buffer_destroy_from_heap_and_null(public_identity_key);
-	buffer_destroy_from_heap_and_null(unsigned_prekey_list);
-	free_and_null(prekey_list_buffer);
+	buffer_destroy_from_heap_and_null_if_valid(public_identity_key);
+	buffer_destroy_from_heap_and_null_if_valid(unsigned_prekey_list);
+	free_and_null_if_valid(prekey_list_buffer);
 
 	return status;
 }
@@ -216,10 +216,12 @@ return_status molch_create_user(
 	}
 
 cleanup:
-	if ((status.status != SUCCESS) && user_store_created) {
-		return_status new_status = molch_destroy_user(public_master_key, public_master_key_length, NULL, NULL);
-		return_status_destroy_errors(&new_status);
-	}
+	on_error(
+		if (user_store_created) {
+			return_status new_status = molch_destroy_user(public_master_key, public_master_key_length, NULL, NULL);
+			return_status_destroy_errors(&new_status);
+		}
+	)
 
 	return status;
 }
@@ -316,7 +318,7 @@ return_status molch_list_users(
 
 	*user_list = user_list_buffer->content;
 	*user_list_length = user_list_buffer->content_length;
-	free_and_null(user_list_buffer); //free the buffer_t struct while leaving content intact
+	free_and_null_if_valid(user_list_buffer); //free the buffer_t struct while leaving content intact
 
 cleanup:
 	return status;
@@ -408,7 +410,7 @@ return_status verify_prekey_list(
 	}
 
 cleanup:
-	buffer_destroy_from_heap_and_null(verified_prekey_list);
+	buffer_destroy_from_heap_and_null_if_valid(verified_prekey_list);
 
 	return status;
 }
@@ -540,9 +542,9 @@ return_status molch_start_send_conversation(
 	}
 
 cleanup:
-	buffer_destroy_from_heap_and_null(sender_public_identity);
-	buffer_destroy_from_heap_and_null(receiver_public_identity);
-	buffer_destroy_from_heap_and_null(receiver_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(sender_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(receiver_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(receiver_public_ephemeral);
 
 	if (conversation != NULL) {
 		conversation_destroy(conversation);
@@ -552,15 +554,14 @@ cleanup:
 		sodium_mprotect_noaccess(user->master_keys);
 	}
 
-	if (status.status != SUCCESS) {
+	on_error(
 		if (packet_buffer != NULL) {
+			//not using free_and_null_if_valid because content is const
 			free(packet_buffer->content);
 		}
-	}
+	)
 
-	if (packet_buffer != NULL) {
-		free_and_null(packet_buffer);
-	}
+	free_and_null_if_valid(packet_buffer);
 
 	return status;
 }
@@ -678,15 +679,13 @@ return_status molch_start_receive_conversation(
 	}
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (message_buffer != NULL) {
 			free(message_buffer->content);
 		}
-	}
+	)
 
-	if (message_buffer != NULL) {
-		free_and_null(message_buffer);
-	}
+	free_and_null_if_valid(message_buffer);
 
 	if (conversation != NULL) {
 		conversation_destroy(conversation);
@@ -817,15 +816,14 @@ return_status molch_encrypt_message(
 	}
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (packet_buffer != NULL) {
+			// not using free_and_null_if_valid because content is const
 			free(packet_buffer->content);
 		}
-	}
+	)
 
-	if (packet_buffer != NULL) {
-		free_and_null(packet_buffer);
-	}
+	free_and_null_if_valid(packet_buffer);
 
 	return status;
 }
@@ -899,15 +897,15 @@ return_status molch_decrypt_message(
 	}
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (message_buffer != NULL) {
+			// not using free_and_null_if_valid because content is const
 			free(message_buffer->content);
 		}
-	}
+	)
 
-	if (message_buffer != NULL) {
-		free_and_null(message_buffer);
-	}
+	free_and_null_if_valid(message_buffer);
+
 	return status;
 }
 
@@ -956,9 +954,9 @@ void molch_end_conversation(
 			*backup = NULL;
 		} else {
 			return_status status = molch_export(backup, backup_length);
-			if (status.status != SUCCESS) {
+			on_error(
 				*backup = NULL;
-			}
+			)
 		}
 	}
 
@@ -1009,7 +1007,7 @@ return_status molch_list_conversations(
 	status = conversation_store_list(&conversation_list_buffer, user->conversations);
 	on_error(
 		throw(DATA_FETCH_ERROR, "Failed to list conversations.");
-	);
+	)
 	if (conversation_list_buffer == NULL) {
 		// list is empty
 		*conversation_list = NULL;
@@ -1028,15 +1026,13 @@ return_status molch_list_conversations(
 	conversation_list_buffer = NULL;
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (number != NULL) {
 			*number = 0;
 		}
 
-		if (conversation_list_buffer != NULL) {
-			buffer_destroy_from_heap_and_null(conversation_list_buffer);
-		}
-	}
+		buffer_destroy_from_heap_and_null_if_valid(conversation_list_buffer);
+	)
 
 	return status;
 }
@@ -1123,22 +1119,18 @@ return_status molch_conversation_json_export(
 
 	*length = json_string->content_length;
 	*json = json_string->content;
-	sodium_free_and_null(json_string);
+	sodium_free_and_null_if_valid(json_string);
 
 cleanup:
-	if (pool != NULL) {
-		buffer_destroy_with_custom_deallocator_and_null(pool, sodium_free);
-	}
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(pool, sodium_free);
 
-	if (status.status != SUCCESS) {
+	on_error(
 		if (length != NULL) {
 			*length = 0;
 		}
 
-		if (json_string != NULL) {
-			buffer_destroy_with_custom_deallocator_and_null(json_string, sodium_free);
-		}
-	}
+		buffer_destroy_with_custom_deallocator_and_null_if_valid(json_string, sodium_free);
+	)
 
 	return status;
 }
@@ -1217,19 +1209,15 @@ return_status molch_conversation_export(
 	*backup = backup_buffer->content;
 	*backup_length = backup_buffer->content_length;
 
-	free_and_null(backup_buffer);
+	free_and_null_if_valid(backup_buffer);
 
 cleanup:
 	on_error(
-		if (backup_buffer != NULL) {
-			buffer_destroy_from_heap_and_null(backup_buffer);
-		}
-	);
+		buffer_destroy_from_heap_and_null_if_valid(backup_buffer);
+	)
 
-	buffer_destroy_from_heap_and_null(backup_nonce);
-	if (json != NULL) {
-		sodium_free_and_null(json);
-	}
+	buffer_destroy_from_heap_and_null_if_valid(backup_nonce);
+	sodium_free_and_null_if_valid(json);
 
 	return status;
 }
@@ -1296,7 +1284,7 @@ return_status molch_conversation_json_import(const unsigned char * const json, c
 	on_error(
 		molch_end_conversation(conversation_id->content, conversation_id->content_length, NULL, NULL);
 		throw(GENERIC_ERROR, "Error while searching for conversation.");
-	);
+	)
 	if (old_conversation != NULL) { //destroy the old one if it exists
 		molch_end_conversation(conversation_id->content, conversation_id->content_length, NULL, NULL);
 	}
@@ -1310,17 +1298,15 @@ return_status molch_conversation_json_import(const unsigned char * const json, c
 	throw_on_error(ADDITION_ERROR, "Failed to add conversation to the conversation store.");
 
 cleanup:
-	if (status.status != SUCCESS) {
-		if (json_tree != NULL) {
-			sodium_free_and_null(json_tree);
-		}
+	on_error(
+		sodium_free_and_null_if_valid(json_tree);
 
 		if (imported_conversation != NULL) {
 			conversation_destroy(imported_conversation);
 		}
-	}
+	)
 
-	buffer_destroy_from_heap_and_null(conversation_id);
+	buffer_destroy_from_heap_and_null_if_valid(conversation_id);
 
 	return status;
 }
@@ -1387,7 +1373,7 @@ return_status molch_conversation_import(
 	throw_on_error(IMPORT_ERROR, "Failed to import conversation from decrypted JSON.");
 
 cleanup:
-	buffer_destroy_with_custom_deallocator_and_null(json, sodium_free);
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(json, sodium_free);
 
 	return status;
 }
@@ -1448,22 +1434,18 @@ return_status molch_json_export(
 
 	*length = json_string->content_length;
 	*json = json_string->content;
-	sodium_free_and_null(json_string); //free the buffer_t struct (leaving content intact)
+	sodium_free_and_null_if_valid(json_string); //free the buffer_t struct (leaving content intact)
 
 cleanup:
-	if (pool != NULL) {
-		buffer_destroy_with_custom_deallocator_and_null(pool, sodium_free);
-	}
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(pool, sodium_free);
 
-	if (status.status != SUCCESS) {
+	on_error(
 		if (length != 0) {
 			*length = 0;
 		}
 
-		if (json_string != NULL) {
-			buffer_destroy_with_custom_deallocator_and_null(json_string, sodium_free);
-		}
-	}
+		buffer_destroy_with_custom_deallocator_and_null_if_valid(json_string, sodium_free);
+	)
 
 	return status;
 }
@@ -1533,19 +1515,15 @@ return_status molch_export(
 	*backup = backup_buffer->content;
 	*backup_length = backup_buffer->content_length;
 
-	free_and_null(backup_buffer);
+	free_and_null_if_valid(backup_buffer);
 
 cleanup:
 	on_error(
-		if (backup_buffer != NULL) {
-			buffer_destroy_from_heap_and_null(backup_buffer);
-		}
-	);
+		buffer_destroy_from_heap_and_null_if_valid(backup_buffer);
+	)
 
-	buffer_destroy_from_heap_and_null(backup_nonce);
-	if (json != NULL) {
-		sodium_free_and_null(json);
-	}
+	buffer_destroy_from_heap_and_null_if_valid(backup_nonce);
+	sodium_free_and_null_if_valid(json);
 
 	return status;
 }
@@ -1604,7 +1582,7 @@ cleanup:
 		if (users_backup != NULL) {
 			users = users_backup; //roll back backup
 		}
-	);
+	)
 
 	return status;
 }
@@ -1675,7 +1653,7 @@ return_status molch_import(
 	throw_on_error(IMPORT_ERROR, "Failed to import from decrypted JSON.");
 
 cleanup:
-	buffer_destroy_with_custom_deallocator_and_null(json, sodium_free);
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(json, sodium_free);
 
 	return status;
 }

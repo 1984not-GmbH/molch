@@ -87,14 +87,14 @@ return_status spiced_random(
 	}
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (random_output != NULL) {
 			buffer_clear(random_output);
 			random_output->content_length = 0;
 		}
-	}
-	buffer_destroy_with_custom_deallocator_and_null(spice, sodium_free);
-	buffer_destroy_with_custom_deallocator_and_null(os_random, sodium_free);
+	)
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(spice, sodium_free);
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(os_random, sodium_free);
 
 	return status;
 }

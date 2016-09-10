@@ -231,8 +231,7 @@ void molch_end_conversation(
 		const size_t conversation_id_length,
 		//optional output (can be NULL)
 		unsigned char ** const backup, //exports the entire library state, free after use, check if NULL before use!
-		size_t * const backup_length
-		);
+		size_t * const backup_length);
 
 /*
  * List the conversations of a user.

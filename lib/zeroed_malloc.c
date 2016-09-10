@@ -71,7 +71,7 @@ void zeroed_free(void *pointer) {
 
 	sodium_memzero(pointer, size);
 
-	free_and_null(malloced_address);
+	free_and_null_if_valid(malloced_address);
 }
 
 void *protobuf_c_allocator(void *allocator_data __attribute__((unused)), size_t size) {

@@ -122,7 +122,7 @@ cleanup:
 			packet__free_unpacked(*packet_struct, &protobuf_c_allocators);
 			*packet_struct = NULL;
 		}
-	);
+	)
 
 	return status;
 }
@@ -281,30 +281,16 @@ return_status packet_encrypt(
 
 cleanup:
 	on_error(
-		if ((packet != NULL) && (*packet != NULL)) {
-			buffer_destroy_from_heap_and_null(*packet);
+		if (packet != NULL) {
+			buffer_destroy_from_heap_and_null_if_valid(*packet);
 		}
-	);
+	)
 
-	if (header_nonce != NULL) {
-		buffer_destroy_from_heap_and_null(header_nonce);
-	}
-
-	if (message_nonce != NULL) {
-		buffer_destroy_from_heap_and_null(message_nonce);
-	}
-
-	if (encrypted_axolotl_header != NULL) {
-		buffer_destroy_from_heap_and_null(encrypted_axolotl_header);
-	}
-
-	if (padded_message != NULL) {
-		buffer_destroy_from_heap_and_null(padded_message);
-	}
-
-	if (encrypted_message != NULL) {
-		buffer_destroy_from_heap_and_null(encrypted_message);
-	}
+	buffer_destroy_from_heap_and_null_if_valid(header_nonce);
+	buffer_destroy_from_heap_and_null_if_valid(message_nonce);
+	buffer_destroy_from_heap_and_null_if_valid(encrypted_axolotl_header);
+	buffer_destroy_from_heap_and_null_if_valid(padded_message);
+	buffer_destroy_from_heap_and_null_if_valid(encrypted_message);
 
 	return status;
 }
@@ -365,14 +351,12 @@ cleanup:
 			*packet_type = INVALID;
 		}
 
-		if ((axolotl_header != NULL) && (*axolotl_header != NULL)) {
-			buffer_destroy_from_heap_and_null(*axolotl_header);
-			*axolotl_header = NULL;
+		if (axolotl_header != NULL) {
+			buffer_destroy_from_heap_and_null_if_valid(*axolotl_header);
 		}
 
-		if ((message != NULL) && (*message != NULL)) {
-			buffer_destroy_from_heap_and_null(*message);
-			*message = NULL;
+		if (message != NULL) {
+			buffer_destroy_from_heap_and_null_if_valid(*message);
 		}
 
 		if (public_identity_key != NULL) {
@@ -386,7 +370,7 @@ cleanup:
 		if (public_prekey != NULL) {
 			buffer_clear(public_prekey);
 		}
-	);
+	)
 
 	return status;
 }
@@ -462,7 +446,7 @@ cleanup:
 		if (packet_type != NULL) {
 			*packet_type = INVALID;
 		}
-	);
+	)
 
 	return status;
 }
@@ -511,14 +495,11 @@ cleanup:
 		packet__free_unpacked(packet_struct, &protobuf_c_allocators);
 	}
 
-	if (axolotl_header != NULL) {
-		on_error(
-			if (*axolotl_header != NULL) {
-				buffer_destroy_from_heap_and_null(*axolotl_header);
-				*axolotl_header = NULL;
-			}
-		);
-	}
+	on_error(
+		if (axolotl_header != NULL) {
+			buffer_destroy_from_heap_and_null_if_valid(*axolotl_header);
+		}
+	)
 
 	return status;
 }
@@ -587,18 +568,13 @@ cleanup:
 		packet__free_unpacked(packet_struct, &protobuf_c_allocators);
 	}
 
-	if (padded_message != NULL) {
-		buffer_destroy_from_heap_and_null(padded_message);
-	}
+	buffer_destroy_from_heap_and_null_if_valid(padded_message);
 
-	if (message != NULL) {
-		on_error(
-			if (*message != NULL) {
-				buffer_destroy_from_heap_and_null(*message);
-				*message = NULL;
-			}
-		);
-	}
+	on_error(
+		if (message != NULL) {
+			buffer_destroy_from_heap_and_null_if_valid(*message);
+		}
+	)
 
 	return status;
 }

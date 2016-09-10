@@ -26,21 +26,36 @@
 
 #include "return-status.h"
 
+// execute code if a pointer is not NULL
+#define if_valid(pointer, code)\
+	if (pointer != NULL) {\
+		code\
+	}
 // macros that free memory and delete the pointer afterwards
-#define free_and_null(pointer)\
-	free(pointer);\
-	pointer = NULL;
-#define sodium_free_and_null(pointer)\
-	sodium_free(pointer);\
-	pointer = NULL;
-#define zeroed_free_and_null(pointer)\
-	zeroed_free(pointer);\
-	pointer = NULL;
-#define buffer_destroy_from_heap_and_null(buffer)\
-	buffer_destroy_from_heap(buffer);\
-	buffer = NULL;
-#define buffer_destroy_with_custom_deallocator_and_null(buffer, deallocator)\
-	buffer_destroy_with_custom_deallocator(buffer, deallocator);\
-	buffer = NULL;
+#define free_and_null_if_valid(pointer)\
+	if_valid(pointer,\
+		free(pointer);\
+		pointer = NULL;\
+	)
+#define sodium_free_and_null_if_valid(pointer)\
+	if_valid(pointer,\
+		sodium_free(pointer);\
+		pointer = NULL;\
+	)
+#define zeroed_free_and_null_if_valid(pointer)\
+	if_valid(pointer,\
+		zeroed_free(pointer);\
+		pointer = NULL;\
+	)
+#define buffer_destroy_from_heap_and_null_if_valid(buffer)\
+	if_valid(buffer,\
+		buffer_destroy_from_heap(buffer);\
+		buffer = NULL;\
+	)
+#define buffer_destroy_with_custom_deallocator_and_null_if_valid(buffer, deallocator)\
+	if_valid(buffer,\
+		buffer_destroy_with_custom_deallocator(buffer, deallocator);\
+		buffer = NULL;\
+	)
 
 #endif

@@ -75,7 +75,7 @@ int main(void) {
 	unsigned char *empty_backup= NULL;
 	status = molch_export(&empty_backup, &empty_backup_length);
 	throw_on_error(EXPORT_ERROR, "Failed to export empty library.");
-	free_and_null(empty_backup);
+	free_and_null_if_valid(empty_backup);
 	if (empty_backup_length != (sizeof("[]") + BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES)) {
 		throw(INCORRECT_DATA, "Incorrect output length when there is no user.");
 	}
@@ -116,7 +116,7 @@ int main(void) {
 	if (complete_export == NULL) {
 		throw(EXPORT_ERROR, "Failed to export the librarys state as JSON after creating alice.");
 	}
-	free_and_null(complete_export);
+	free_and_null_if_valid(complete_export);
 
 
 	//check user count
@@ -165,10 +165,10 @@ int main(void) {
 	if ((user_count != 2)
 			|| (sodium_memcmp(alice_public_identity->content, user_list, alice_public_identity->content_length) != 0)
 			|| (sodium_memcmp(bob_public_identity->content, user_list + crypto_box_PUBLICKEYBYTES, alice_public_identity->content_length) != 0)) {
-		free_and_null(user_list);
+		free_and_null_if_valid(user_list);
 		throw(INCORRECT_DATA, "User list is incorrect.");
 	}
-	free_and_null(user_list);
+	free_and_null_if_valid(user_list);
 
 	//create a new send conversation (alice sends to bob)
 	buffer_create_from_string(alice_send_message, "Hi Bob. Alice here!");
@@ -202,22 +202,20 @@ int main(void) {
 			alice_public_identity->content_length);
 	throw_on_error(GENERIC_ERROR, "Failed to list conversations.");
 	if ((number_of_conversations != 1) || (buffer_compare_to_raw(alice_conversation, conversation_list, alice_conversation->content_length) != 0)) {
-		free_and_null(conversation_list);
+		free_and_null_if_valid(conversation_list);
 		throw(GENERIC_ERROR, "Failed to list conversations.");
 	}
-	free_and_null(conversation_list);
+	free_and_null_if_valid(conversation_list);
 
 	//check the message type
 	if (molch_get_message_type(alice_send_packet, alice_send_packet_length) != PREKEY_MESSAGE) {
 		throw(INVALID_VALUE, "Wrong message type.");
 	}
 
-	if (bob_public_prekeys != NULL) {
-		free_and_null(bob_public_prekeys);
-	}
+	free_and_null_if_valid(bob_public_prekeys);
 
 	// delete
-	free_and_null(alice_public_prekeys);
+	free_and_null_if_valid(alice_public_prekeys);
 
 	// export the prekeys again
 	status = molch_get_prekey_list(
@@ -252,10 +250,10 @@ int main(void) {
 	printf("received (Bob): %s\n", bob_receive_message);
 	if ((alice_send_message->content_length != bob_receive_message_length)
 			|| (sodium_memcmp(alice_send_message->content, bob_receive_message, bob_receive_message_length) != 0)) {
-		free_and_null(bob_receive_message);
+		free_and_null_if_valid(bob_receive_message);
 		throw(GENERIC_ERROR, "Incorrect message received.");
 	}
-	free_and_null(bob_receive_message);
+	free_and_null_if_valid(bob_receive_message);
 
 	//bob replies
 	buffer_create_from_string(bob_send_message, "Welcome Alice!");
@@ -276,7 +274,7 @@ int main(void) {
 	if (conversation_json_export == NULL) {
 		throw(EXPORT_ERROR, "Failed to export the conversation after encrypting a message.");
 	}
-	free_and_null(conversation_json_export);
+	free_and_null_if_valid(conversation_json_export);
 
 	//check the message type
 	if (molch_get_message_type(bob_send_packet, bob_send_packet_length) != NORMAL_MESSAGE) {
@@ -298,14 +296,12 @@ int main(void) {
 			NULL,
 			NULL);
 	on_error(
-		if (alice_receive_message != NULL) {
-			free_and_null(alice_receive_message);
-		}
+		free_and_null_if_valid(alice_receive_message);
 		throw(GENERIC_ERROR, "Incorrect message received.");
 	)
 
 	if ((alice_receive_message_number != 0) || (alice_previous_receive_message_number != 0)) {
-		free_and_null(alice_receive_message);
+		free_and_null_if_valid(alice_receive_message);
 		throw(INCORRECT_DATA, "Incorrect receive message number for Alice.");
 	}
 
@@ -314,10 +310,10 @@ int main(void) {
 	printf("received (Alice): %s\n", alice_receive_message);
 	if ((bob_send_message->content_length != alice_receive_message_length)
 			|| (sodium_memcmp(bob_send_message->content, alice_receive_message, alice_receive_message_length) != 0)) {
-		free_and_null(alice_receive_message);
+		free_and_null_if_valid(alice_receive_message);
 		throw(GENERIC_ERROR, "Incorrect message received.");
 	}
-	free_and_null(alice_receive_message);
+	free_and_null_if_valid(alice_receive_message);
 
 	//test export
 	printf("Test export!\n");
@@ -336,7 +332,7 @@ int main(void) {
 			backup_key->content,
 			backup_key->content_length);
 	on_error(
-		free_and_null(backup);
+		free_and_null_if_valid(backup);
 		throw(IMPORT_ERROR, "Failed to import backup.");
 	)
 
@@ -367,7 +363,7 @@ int main(void) {
 	unsigned char *imported_backup = NULL;
 	status = molch_export(&imported_backup, &imported_backup_length);
 	on_error(
-		free_and_null(backup);
+		free_and_null_if_valid(backup);
 		throw(EXPORT_ERROR, "Failed to export imported backup.");
 	)
 
@@ -385,12 +381,12 @@ int main(void) {
 
 	//compare
 	if ((backup_length != imported_backup_length) || (sodium_memcmp(backup, imported_backup, backup_length) != 0)) {
-		free_and_null(backup);
-		free_and_null(imported_backup);
+		free_and_null_if_valid(backup);
+		free_and_null_if_valid(imported_backup);
 		throw(IMPORT_ERROR, "Imported backup is incorrect.");
 	}
-	free_and_null(backup);
-	free_and_null(imported_backup);
+	free_and_null_if_valid(backup);
+	free_and_null_if_valid(imported_backup);
 
 	//test conversation export
 	status = molch_conversation_export(
@@ -411,7 +407,7 @@ int main(void) {
 			backup_key->content,
 			backup_key->content_length);
 	on_error(
-		free_and_null(backup);
+		free_and_null_if_valid(backup);
 		throw(IMPORT_ERROR, "Failed to import Alice' conversation from backup.");
 	)
 
@@ -440,7 +436,7 @@ int main(void) {
 			alice_conversation->content,
 			alice_conversation->content_length);
 	on_error(
-		free_and_null(backup);
+		free_and_null_if_valid(backup);
 		throw(EXPORT_ERROR, "Failed to export Alice imported conversation.");
 	)
 
@@ -458,13 +454,13 @@ int main(void) {
 
 	//compare
 	if ((backup_length != imported_backup_length) || (sodium_memcmp(backup, imported_backup, backup_length) != 0)) {
-		free_and_null(backup);
-		free_and_null(imported_backup);
+		free_and_null_if_valid(backup);
+		free_and_null_if_valid(imported_backup);
 		throw(IMPORT_ERROR, "JSON of imported conversation is incorrect.");
 	}
 
-	free_and_null(imported_backup);
-	free_and_null(backup);
+	free_and_null_if_valid(imported_backup);
+	free_and_null_if_valid(backup);
 
 	//destroy the conversations
 	molch_end_conversation(alice_conversation->content, alice_conversation->content_length, NULL, NULL);
@@ -488,32 +484,22 @@ int main(void) {
 	}
 
 cleanup:
-	if (alice_public_prekeys != NULL) {
-		free_and_null(alice_public_prekeys);
-	}
-	if (bob_public_prekeys != NULL) {
-		free_and_null(bob_public_prekeys);
-	}
-	if (alice_send_packet != NULL) {
-		free_and_null(alice_send_packet);
-	}
-	if (bob_send_packet != NULL) {
-		free_and_null(bob_send_packet);
-	}
-	if (printed_status != NULL) {
-		free_and_null(printed_status);
-	}
+	free_and_null_if_valid(alice_public_prekeys);
+		free_and_null_if_valid(bob_public_prekeys);
+		free_and_null_if_valid(alice_send_packet);
+		free_and_null_if_valid(bob_send_packet);
+		free_and_null_if_valid(printed_status);
 	molch_destroy_all_users();
-	buffer_destroy_from_heap_and_null(alice_conversation);
-	buffer_destroy_from_heap_and_null(bob_conversation);
-	buffer_destroy_from_heap_and_null(alice_public_identity);
-	buffer_destroy_from_heap_and_null(bob_public_identity);
-	buffer_destroy_from_heap_and_null(backup_key);
-	buffer_destroy_from_heap_and_null(new_backup_key);
+	buffer_destroy_from_heap_and_null_if_valid(alice_conversation);
+	buffer_destroy_from_heap_and_null_if_valid(bob_conversation);
+	buffer_destroy_from_heap_and_null_if_valid(alice_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(bob_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(backup_key);
+	buffer_destroy_from_heap_and_null_if_valid(new_backup_key);
 
-	if (status.status != SUCCESS) {
+	on_error(
 		print_errors(&status);
-	}
+	)
 	return_status_destroy_errors(&status);
 
 	if (status_int != 0) {
