@@ -23,12 +23,50 @@
 #include <stdlib.h>
 #include <sodium.h>
 #include <assert.h>
+#include <string.h>
+
+#include <key_bundle.pb-c.h>
 
 #include "../lib/header-and-message-keystore.h"
 #include "../lib/json.h"
+#include "../lib/zeroed_malloc.h"
 #include "utils.h"
 #include "common.h"
 #include "tracing.h"
+
+return_status protobuf_export(
+			header_and_message_keystore * const keystore,
+			KeyBundle *** const key_bundles,
+			size_t * const bundles_size,
+			buffer_t *** const export_buffers) {
+	return_status status = return_status_init();
+
+	status = header_and_message_keystore_export(
+			keystore,
+			key_bundles,
+			bundles_size);
+	throw_on_error(EXPORT_ERROR, "Failed to export keystore as protobuf struct.");
+
+	*export_buffers = zeroed_malloc((*bundles_size) * sizeof(buffer_t*));
+	throw_on_failed_alloc(*export_buffers);
+
+	//initialize pointers with NULL
+	memset(*export_buffers, '\0', (*bundles_size) * sizeof(buffer_t *));
+
+	//create all the export buffers
+	for (size_t i = 0; i < (*bundles_size); i++) {
+		size_t export_size = key_bundle__get_packed_size((*key_bundles)[i]);
+		(*export_buffers)[i] = buffer_create_on_heap(export_size, 0);
+		throw_on_failed_alloc((*export_buffers)[i]);
+
+		size_t packed_size = key_bundle__pack((*key_bundles)[i], (*export_buffers)[i]->content);
+		(*export_buffers)[i]->content_length = packed_size;
+	}
+
+cleanup:
+	// cleanup is done in the main function
+	return status;
+}
 
 
 int main(void) {
@@ -41,6 +79,14 @@ int main(void) {
 	//buffer for message keys
 	buffer_t *header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	buffer_t *message_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+
+	// buffers for exporting protobuf-c
+	buffer_t **protobuf_export_buffers = NULL;
+	buffer_t **protobuf_second_export_buffers = NULL;
+	KeyBundle ** protobuf_export_bundles = NULL;
+	size_t protobuf_export_bundles_size = 0;
+	KeyBundle ** protobuf_second_export_bundles = NULL;
+	size_t protobuf_second_export_bundles_size = 0;
 
 	//initialise message keystore
 	header_and_message_keystore keystore;
@@ -83,6 +129,23 @@ int main(void) {
 
 		assert(keystore.length == (i + 1));
 	}
+
+	//Protobuf-C export
+	printf("Test Protobuf-C export:\n");
+	status = protobuf_export(
+			&keystore,
+			&protobuf_export_bundles,
+			&protobuf_export_bundles_size,
+			&protobuf_export_buffers);
+	throw_on_error(EXPORT_ERROR, "Failed to export keystore via protobuf-c.");
+
+	puts("[\n");
+	for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
+		print_hex(protobuf_export_buffers[i]);
+		puts(",\n");
+	}
+	puts("]\n\n");
+	//TODO: Export and import again
 
 	//JSON export
 	printf("Test JSON export!\n");
@@ -141,6 +204,44 @@ int main(void) {
 cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(header_key);
 	buffer_destroy_from_heap_and_null_if_valid(message_key);
+
+	if (protobuf_export_bundles != NULL) {
+		for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
+			if (protobuf_export_bundles[i] != NULL) {
+				key_bundle__free_unpacked(protobuf_export_bundles[i], &protobuf_c_allocators);
+				protobuf_export_bundles[i] = NULL;
+			}
+		}
+		zeroed_free_and_null_if_valid(protobuf_export_bundles);
+	}
+
+	if (protobuf_export_buffers != NULL) {
+		for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
+			if (protobuf_export_buffers[i] != NULL) {
+				buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffers[i]);
+			}
+		}
+		zeroed_free_and_null_if_valid(protobuf_export_buffers);
+	}
+
+	if (protobuf_second_export_bundles != NULL) {
+		for (size_t i = 0; i < protobuf_second_export_bundles_size; i++) {
+			if (protobuf_second_export_bundles[i] != NULL) {
+				key_bundle__free_unpacked(protobuf_second_export_bundles[i], &protobuf_c_allocators);
+				protobuf_second_export_bundles[i] = NULL;
+			}
+		}
+		zeroed_free_and_null_if_valid(protobuf_second_export_bundles);
+	}
+
+	if (protobuf_second_export_buffers != NULL) {
+		for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
+			if (protobuf_second_export_buffers[i] != NULL) {
+				buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_buffers[i]);
+			}
+		}
+		zeroed_free_and_null_if_valid(protobuf_second_export_buffers);
+	}
 
 	header_and_message_keystore_clear(&keystore);
 

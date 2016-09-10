@@ -22,6 +22,8 @@
 #include <sodium.h>
 #include <time.h>
 
+#include <key_bundle.pb-c.h>
+
 #include "constants.h"
 #include "common.h"
 #include "../buffer/buffer.h"
@@ -66,6 +68,18 @@ void header_and_message_keystore_remove(header_and_message_keystore *keystore, h
 
 //clear the entire keystore
 void header_and_message_keystore_clear(header_and_message_keystore *keystore);
+
+//! Export a header_and_message_keystore as Protobuf-C struct.
+/*!
+ * \param store The keystore to export.
+ * \param key_bundles Pointer to a pointer of protobuf-c key bundle structs, it will be allocated in this function.
+ * \param bundle_size Size of the outputted array.
+ * \return The status.
+ */
+return_status header_and_message_keystore_export(
+		header_and_message_keystore * const store,
+		KeyBundle *** const key_bundles,
+		size_t * const bundles_size) __attribute__((warn_unused_result));
 
 /*
  * Serialise a header_and_message_keystore into JSON. It get's a mempool_t buffer and stores a

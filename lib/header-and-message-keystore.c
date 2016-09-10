@@ -21,8 +21,13 @@
 
 #include <string.h>
 
+#include "common.h"
 #include "constants.h"
 #include "header-and-message-keystore.h"
+#include "zeroed_malloc.h"
+
+#include <key.pb-c.h>
+#include <key_bundle.pb-c.h>
 
 static const time_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
 
@@ -174,6 +179,139 @@ void header_and_message_keystore_clear(header_and_message_keystore *keystore){
 	while (keystore->length > 0) {
 		header_and_message_keystore_remove(keystore, keystore->head);
 	}
+}
+
+return_status header_and_message_keystore_node_export(header_and_message_keystore_node * const node, KeyBundle ** const bundle) {
+	return_status status = return_status_init();
+
+	Key *header_key = NULL;
+	Key *message_key = NULL;
+
+	//check input
+	if ((node == NULL) || (bundle == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to header_and_message_keystore_node_export.");
+	}
+
+	//allocate the buffers
+	//key bundle
+	*bundle = zeroed_malloc(sizeof(KeyBundle));
+	throw_on_failed_alloc(*bundle);
+	key_bundle__init(*bundle);
+
+	//header key
+	header_key = zeroed_malloc(sizeof(Key));
+	throw_on_failed_alloc(header_key);
+	key__init(header_key);
+	header_key->key.data = zeroed_malloc(HEADER_KEY_SIZE);
+	throw_on_failed_alloc(header_key->key.data);
+
+	//message key
+	message_key = zeroed_malloc(sizeof(Key));
+	throw_on_failed_alloc(message_key);
+	key__init(message_key);
+	message_key->key.data = zeroed_malloc(MESSAGE_KEY_SIZE);
+	throw_on_failed_alloc(message_key->key.data);
+
+	//backup header key
+	int status_int;
+	status_int = buffer_clone_to_raw(
+		header_key->key.data,
+		HEADER_KEY_SIZE,
+		node->header_key);
+	if (status_int != 0) {
+		throw(BUFFER_ERROR, "Failed to copy header_key to backup.");
+	}
+	header_key->key.len = node->header_key->content_length;
+
+	//backup message key
+	status_int = buffer_clone_to_raw(
+		message_key->key.data,
+		HEADER_KEY_SIZE,
+		node->message_key);
+	if (status_int != 0) {
+		throw(BUFFER_ERROR, "Failed to copy message_key to backup.");
+	}
+	message_key->key.len = node->message_key->content_length;
+
+	//set expiration time
+	(*bundle)->expiration_time = node->expiration_date;
+	(*bundle)->has_expiration_time = true;
+
+	//fill key bundle
+	(*bundle)->header_key = header_key;
+	(*bundle)->message_key = message_key;
+
+cleanup:
+	on_error(
+		if ((bundle != NULL) && (*bundle != NULL)) {
+			key_bundle__free_unpacked(*bundle, &protobuf_c_allocators);
+			*bundle = NULL;
+		} else {
+			if (header_key != NULL) {
+				key__free_unpacked(header_key, &protobuf_c_allocators);
+				header_key = NULL;
+			}
+
+			if (message_key != NULL) {
+				key__free_unpacked(message_key, &protobuf_c_allocators);
+				message_key = NULL;
+			}
+		}
+	);
+
+	return status;
+}
+
+return_status header_and_message_keystore_export(
+		header_and_message_keystore * const store,
+		KeyBundle *** const key_bundles,
+		size_t * const bundle_size) {
+	return_status status = return_status_init();
+
+	//check input
+	if ((store == NULL) || (key_bundles == NULL) || (bundle_size == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to header_and_message_keystore_export.");
+	}
+
+	if (store->length != 0) {
+		*key_bundles = zeroed_malloc(store->length * sizeof(KeyBundle));
+		throw_on_failed_alloc(*key_bundles);
+		//initialize with NULL pointers
+		memset(*key_bundles, '\0', store->length * sizeof(KeyBundle));
+	} else {
+		*key_bundles = NULL;
+	}
+
+	size_t i;
+	header_and_message_keystore_node *node = NULL;
+	for (i = 0, node = store->head;
+		 	(i < store->length) && (node != NULL);
+			i++, node = node->next) {
+		status = header_and_message_keystore_node_export(node, &(*key_bundles)[i]);
+		throw_on_error(EXPORT_ERROR, "Failed to export header and message keystore node.");
+	}
+
+	*bundle_size = store->length;
+
+cleanup:
+	on_error(
+		if ((key_bundles != NULL) && (*key_bundles != NULL) && (store != NULL)) {
+			for (size_t i = 0; i < store->length; i++) {
+				if ((*key_bundles)[i] != NULL) {
+					key_bundle__free_unpacked((*key_bundles)[i], &protobuf_c_allocators);
+					(*key_bundles)[i] = NULL;
+				}
+			}
+
+			zeroed_free_and_null_if_valid(*key_bundles);
+		}
+
+		if (bundle_size != NULL) {
+			*bundle_size = 0;
+		}
+	)
+
+	return status;
 }
 
 mcJSON *header_and_message_keystore_node_json_export(header_and_message_keystore_node * const node, mempool_t * const pool) {
