@@ -78,6 +78,49 @@ void add_node(header_and_message_keystore * const keystore, header_and_message_k
 	keystore->length++;
 }
 
+return_status create_and_populate_node(
+		header_and_message_keystore_node ** const new_node,
+		const time_t expiration_date,
+		const buffer_t * const header_key,
+		const buffer_t * const message_key) __attribute__((warn_unused_result));
+return_status create_and_populate_node(
+		header_and_message_keystore_node ** const new_node,
+		const time_t expiration_date,
+		const buffer_t * const header_key,
+		const buffer_t * const message_key) {
+	return_status status = return_status_init();
+
+	//check buffer sizes
+	if ((message_key->content_length != MESSAGE_KEY_SIZE)
+			|| (header_key->content_length != HEADER_KEY_SIZE)) {
+		throw(INVALID_INPUT, "Invalid input to populate_node.");
+	}
+
+	*new_node = create_node();
+	throw_on_failed_alloc(*new_node);
+
+	int status_int = 0;
+	//set keys and expiration date
+	(*new_node)->expiration_date = expiration_date;
+	status_int = buffer_clone((*new_node)->message_key, message_key);
+	if (status_int != 0) {
+		throw(BUFFER_ERROR, "Failed to copy message key.");
+	}
+	status_int = buffer_clone((*new_node)->header_key, header_key);
+	if (status_int != 0) {
+		throw(BUFFER_ERROR, "Failed to copy header key.");
+	}
+
+cleanup:
+	on_error(
+		if (new_node != NULL) {
+			sodium_free_and_null_if_valid(*new_node);
+		}
+	)
+
+	return status;
+	}
+
 //add a message key to the keystore
 //NOTE: The entire keys are copied, not only the pointer
 return_status header_and_message_keystore_add(
@@ -86,34 +129,19 @@ return_status header_and_message_keystore_add(
 		const buffer_t * const header_key) {
 	return_status status = return_status_init();
 
-	//check buffer sizes
-	if ((message_key->content_length != MESSAGE_KEY_SIZE)
-			|| (header_key->content_length != HEADER_KEY_SIZE)) {
-		throw(INVALID_INPUT, "Invalid input to header_and_message_keystore_add.");
-	}
+	header_and_message_keystore_node *new_node = NULL;
 
-	header_and_message_keystore_node *new_node = create_node();
-	if (new_node == NULL) {
-		throw(CREATION_ERROR, "Failed to create node.");
-	}
+	time_t expiration_date = time(NULL) + EXPIRATION_TIME;
 
-	int status_int = 0;
-	//set keys and expiration date
-	new_node->expiration_date = time(NULL) + EXPIRATION_TIME;
-	status_int = buffer_clone(new_node->message_key, message_key);
-	if (status_int != 0) {
-		sodium_free_and_null_if_valid(new_node);
-		throw(BUFFER_ERROR, "Failed to copy message key.");
-	}
-	status_int = buffer_clone(new_node->header_key, header_key);
-	if (status_int != 0) {
-		sodium_free_and_null_if_valid(new_node);
-		throw(BUFFER_ERROR, "Failed to copy header key.");
-	}
+	status = create_and_populate_node(&new_node, expiration_date, header_key, message_key);
+	throw_on_error(INIT_ERROR, "Failed to populate node.")
 
 	add_node(keystore, new_node);
 
 cleanup:
+	on_error(
+		sodium_free_and_null_if_valid(new_node);
+	)
 	return status;
 }
 
