@@ -33,6 +33,9 @@
 #define sodium_free_and_null(pointer)\
 	sodium_free(pointer);\
 	pointer = NULL;
+#define zeroed_free_and_null(pointer)\
+	zeroed_free(pointer);\
+	pointer = NULL;
 #define buffer_destroy_from_heap_and_null(buffer)\
 	buffer_destroy_from_heap(buffer);\
 	buffer = NULL;
