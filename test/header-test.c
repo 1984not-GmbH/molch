@@ -101,17 +101,14 @@ int main(void) {
 	printf("Previous message numbers match.\n");
 
 cleanup:
-	buffer_destroy_from_heap_and_null(our_public_ephemeral_key);
-	buffer_destroy_from_heap_and_null(extracted_public_ephemeral_key);
+	buffer_destroy_from_heap_and_null_if_valid(our_public_ephemeral_key);
+	buffer_destroy_from_heap_and_null_if_valid(extracted_public_ephemeral_key);
+	buffer_destroy_from_heap_and_null_if_valid(header);
 
-	if (header != NULL) {
-		buffer_destroy_from_heap_and_null(header);
-	}
-
-	if (status.status != SUCCESS) {
+	on_error(
 		print_errors(&status);
 		return_status_destroy_errors(&status);
-	}
+	)
 
 	return status.status;
 }

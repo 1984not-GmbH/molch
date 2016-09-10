@@ -76,14 +76,11 @@ return_status prekey_store_create(prekey_store ** const store) {
 	}
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (store != NULL) {
-			if (*store != NULL) {
-				sodium_free_and_null(*store);
-				*store = NULL;
-			}
+				sodium_free_and_null_if_valid(*store);
 		}
-	}
+	)
 
 	return status;
 }
@@ -140,8 +137,8 @@ int deprecate(prekey_store * const store, size_t index) {
 	store->prekeys[index].expiration_date = time(NULL) + PREKEY_EXPIRATION_TIME;
 
 cleanup:
-	if ((status != 0) && (deprecated_node != NULL)) {
-		sodium_free_and_null(deprecated_node);
+	if (status != 0) {
+		sodium_free_and_null_if_valid(deprecated_node);
 	}
 
 	return status;
@@ -309,7 +306,7 @@ return_status prekey_store_rotate(prekey_store * const store) {
 		while(next != NULL) {
 			if (next->expiration_date < current_time) {
 				*last_pointer = next->next;
-				sodium_free_and_null(next);
+				sodium_free_and_null_if_valid(next);
 				next = *last_pointer;
 				continue;
 			} else if (next->expiration_date < new_oldest_deprecated_expiration_date) {
@@ -333,7 +330,7 @@ void prekey_store_destroy(prekey_store * const store) {
 	while (store->deprecated_prekeys != NULL) {
 		prekey_store_node *node = store->deprecated_prekeys;
 		store->deprecated_prekeys = node->next;
-		sodium_free_and_null(node);
+		sodium_free_and_null_if_valid(node);
 	}
 }
 

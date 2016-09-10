@@ -86,11 +86,11 @@ return_status create_conversation(
 	throw_on_error(CREATION_ERROR, "Failed to create ratchet.");
 
 cleanup:
-	if (status.status != 0) {
-		if ((conversation != NULL) && (*conversation != NULL)) {
-			free_and_null(*conversation);
+	on_error(
+		if (conversation != NULL) {
+			free_and_null_if_valid(*conversation);
 		}
-	}
+	)
 
 	return status;
 }
@@ -191,15 +191,15 @@ int main(void) {
 	mempool_t *pool = buffer_create_on_heap(10000, 0);
 	mcJSON *json = conversation_json_export(charlie_conversation, pool);
 	if (json == NULL) {
-		buffer_destroy_from_heap_and_null(pool);
+		buffer_destroy_from_heap_and_null_if_valid(pool);
 		throw(EXPORT_ERROR, "Failed to export as JSON.");
 	}
 	if (json->length != 2) {
-		buffer_destroy_from_heap_and_null(pool);
+		buffer_destroy_from_heap_and_null_if_valid(pool);
 		throw(INCORRECT_DATA, "JSON for Charlie's conversation is invalid.");
 	}
 	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
-	buffer_destroy_from_heap_and_null(pool);
+	buffer_destroy_from_heap_and_null_if_valid(pool);
 	if (output == NULL) {
 		throw(GENERIC_ERROR, "Failed to print JSON.");
 	}
@@ -208,23 +208,23 @@ int main(void) {
 	//test JSON import
 	JSON_IMPORT(imported_charlies_conversation, 10000, output, conversation_json_import);
 	if (imported_charlies_conversation == NULL) {
-		buffer_destroy_from_heap_and_null(output);
+		buffer_destroy_from_heap_and_null_if_valid(output);
 		throw(IMPORT_ERROR, "Failed to import Charlie's conversation from JSON.");
 	}
 	//export the imported to JSON again
 	JSON_EXPORT(imported_output, 10000, 4000, true, imported_charlies_conversation, conversation_json_export);
 	if (imported_output == NULL) {
-		buffer_destroy_from_heap_and_null(output);
+		buffer_destroy_from_heap_and_null_if_valid(output);
 		throw(EXPORT_ERROR, "Failed to export Charlie's imported conversation as JSON.");
 	}
 	//compare with original JSON
 	if (buffer_compare(imported_output, output) != 0) {
-		buffer_destroy_from_heap_and_null(imported_output);
-		buffer_destroy_from_heap_and_null(output);
+		buffer_destroy_from_heap_and_null_if_valid(imported_output);
+		buffer_destroy_from_heap_and_null_if_valid(output);
 		throw(INCORRECT_DATA, "Imported conversation is incorrect.");
 	}
-	buffer_destroy_from_heap_and_null(imported_output);
-	buffer_destroy_from_heap_and_null(output);
+	buffer_destroy_from_heap_and_null_if_valid(imported_output);
+	buffer_destroy_from_heap_and_null_if_valid(output);
 
 cleanup:
 	if (charlie_conversation != NULL) {
@@ -237,18 +237,18 @@ cleanup:
 		conversation_destroy(imported_charlies_conversation);
 	}
 
-	buffer_destroy_from_heap_and_null(charlie_private_identity);
-	buffer_destroy_from_heap_and_null(charlie_public_identity);
-	buffer_destroy_from_heap_and_null(charlie_private_ephemeral);
-	buffer_destroy_from_heap_and_null(charlie_public_ephemeral);
-	buffer_destroy_from_heap_and_null(dora_private_identity);
-	buffer_destroy_from_heap_and_null(dora_public_identity);
-	buffer_destroy_from_heap_and_null(dora_private_ephemeral);
-	buffer_destroy_from_heap_and_null(dora_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(charlie_private_identity);
+	buffer_destroy_from_heap_and_null_if_valid(charlie_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(charlie_private_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(charlie_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(dora_private_identity);
+	buffer_destroy_from_heap_and_null_if_valid(dora_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(dora_private_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(dora_public_ephemeral);
 
 	on_error(
 		print_errors(&status);
-	);
+	)
 	return_status_destroy_errors(&status);
 
 	return status.status;

@@ -47,7 +47,7 @@ void export_ratchet(const ratchet_state *const ratchet, const char * const filen
 	fprintf(file, "%.*s", (int)json->content_length, json->content);
 	fclose(file);
 
-	buffer_destroy_from_heap_and_null(json);
+	buffer_destroy_from_heap_and_null_if_valid(json);
 }
 
 int main(void) {
@@ -348,21 +348,21 @@ int main(void) {
 	throw_on_error(DATA_SET_ERROR, "Bob-Roundtrip: Failed to set message authenticity.");
 
 cleanup:
-	buffer_destroy_from_heap_and_null(alice_private_identity);
-	buffer_destroy_from_heap_and_null(alice_public_identity);
-	buffer_destroy_from_heap_and_null(alice_private_ephemeral);
-	buffer_destroy_from_heap_and_null(alice_public_ephemeral);
-	buffer_destroy_from_heap_and_null(bob_private_identity);
-	buffer_destroy_from_heap_and_null(bob_public_identity);
-	buffer_destroy_from_heap_and_null(bob_private_ephemeral);
-	buffer_destroy_from_heap_and_null(bob_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(alice_private_identity);
+	buffer_destroy_from_heap_and_null_if_valid(alice_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(alice_private_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(alice_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(bob_private_identity);
+	buffer_destroy_from_heap_and_null_if_valid(bob_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(bob_private_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(bob_public_ephemeral);
 
-	buffer_destroy_from_heap_and_null(send_header_key);
-	buffer_destroy_from_heap_and_null(send_message_key);
-	buffer_destroy_from_heap_and_null(public_send_ephemeral);
-	buffer_destroy_from_heap_and_null(current_receive_header_key);
-	buffer_destroy_from_heap_and_null(next_receive_header_key);
-	buffer_destroy_from_heap_and_null(receive_message_key);
+	buffer_destroy_from_heap_and_null_if_valid(send_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(send_message_key);
+	buffer_destroy_from_heap_and_null_if_valid(public_send_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(current_receive_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(next_receive_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(receive_message_key);
 
 	if (alice_send_ratchet != NULL) {
 		ratchet_destroy(alice_send_ratchet);
@@ -379,7 +379,7 @@ cleanup:
 
 	on_error(
 		print_errors(&status);
-	);
+	)
 	return_status_destroy_errors(&status);
 
 	return status.status;

@@ -57,7 +57,7 @@ int main(void) {
 cleanup:
 	on_error(
 		print_errors(&status);
-	);
+	)
 	return_status_destroy_errors(&status);
 
 	return status.status;

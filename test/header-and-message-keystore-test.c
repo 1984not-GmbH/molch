@@ -88,7 +88,7 @@ int main(void) {
 	printf("Test JSON export!\n");
 	JSON_EXPORT(output, 10000, 500, true, &keystore, header_and_message_keystore_json_export);
 	if (output == NULL) {
-		buffer_destroy_from_heap_and_null(output);
+		buffer_destroy_from_heap_and_null_if_valid(output);
 		header_and_message_keystore_clear(&keystore);
 		throw(EXPORT_ERROR, "Failed to export to JSON.");
 	}
@@ -98,13 +98,13 @@ int main(void) {
 	header_and_message_keystore imported_keystore;
 	JSON_INITIALIZE(&imported_keystore, 10000, output, header_and_message_keystore_json_import, status_int);
 	if (status_int != 0) {
-		buffer_destroy_from_heap_and_null(output);
+		buffer_destroy_from_heap_and_null_if_valid(output);
 		throw(IMPORT_ERROR, "Failed to import keystore from JSON.");
 	}
 	//export the imported JSON to JSON again
 	JSON_EXPORT(imported_output, 10000, 500, true, &imported_keystore, header_and_message_keystore_json_export);
 	if (imported_output == NULL) {
-		buffer_destroy_from_heap_and_null(output);
+		buffer_destroy_from_heap_and_null_if_valid(output);
 		header_and_message_keystore_clear(&keystore);
 		header_and_message_keystore_clear(&imported_keystore);
 		throw(EXPORT_ERROR, "Failed to export from imported JSON.");
@@ -112,13 +112,13 @@ int main(void) {
 	//compare with original JSON
 	if (buffer_compare(imported_output, output) != 0) {
 		header_and_message_keystore_clear(&imported_keystore);
-		buffer_destroy_from_heap_and_null(output);
-		buffer_destroy_from_heap_and_null(imported_output);
+		buffer_destroy_from_heap_and_null_if_valid(output);
+		buffer_destroy_from_heap_and_null_if_valid(imported_output);
 		throw(INCORRECT_DATA, "Imported header and message keystore is incorrect.");
 	}
 	printf("Successfully imported header and message keystore from JSON.\n");
-	buffer_destroy_from_heap_and_null(imported_output);
-	buffer_destroy_from_heap_and_null(output);
+	buffer_destroy_from_heap_and_null_if_valid(imported_output);
+	buffer_destroy_from_heap_and_null_if_valid(output);
 
 	//remove key from the head
 	printf("Remove head!\n");
@@ -139,8 +139,8 @@ int main(void) {
 	print_header_and_message_keystore(&keystore);
 
 cleanup:
-	buffer_destroy_from_heap_and_null(header_key);
-	buffer_destroy_from_heap_and_null(message_key);
+	buffer_destroy_from_heap_and_null_if_valid(header_key);
+	buffer_destroy_from_heap_and_null_if_valid(message_key);
 
 	header_and_message_keystore_clear(&keystore);
 
@@ -154,7 +154,7 @@ cleanup:
 
 	on_error(
 		print_errors(&status);
-	);
+	)
 	return_status_destroy_errors(&status);
 
 	return status.status;

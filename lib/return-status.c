@@ -67,7 +67,7 @@ void return_status_destroy_errors(return_status * const status) {
 
 	while (status->error != NULL) {
 		error_message *next_error = status->error->next;
-		free_and_null(status->error);
+		free_and_null_if_valid(status->error);
 		status->error = next_error;
 	}
 }
@@ -329,16 +329,13 @@ cleanup:
 	; // C programming language, I really really love you (not)
 	char *output_string = NULL;
 	if (status.status != SUCCESS) {
-		if (output != NULL) {
-			buffer_destroy_from_heap_and_null(output);
-			output = NULL;
-		}
+		buffer_destroy_from_heap_and_null_if_valid(output);
 	} else {
 		output_string = (char*) output->content;
 		if (length != NULL) {
 			*length = output->content_length;
 		}
-		free_and_null(output);
+		free_and_null_if_valid(output);
 	}
 
 	return_status_destroy_errors(&status);

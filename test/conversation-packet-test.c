@@ -225,7 +225,7 @@ int main(void) {
 	throw_on_error(GENERIC_ERROR, "Failed to get Alice' prekey list.");
 
 	//destroy the old packet
-	buffer_destroy_from_heap_and_null(packet);
+	buffer_destroy_from_heap_and_null_if_valid(packet);
 	status = conversation_start_send_conversation(
 			&bob_send_conversation,
 			send_message,
@@ -242,7 +242,7 @@ int main(void) {
 	putchar('\n');
 
 	//let alice receive the packet
-	buffer_destroy_from_heap_and_null(received_message);
+	buffer_destroy_from_heap_and_null_if_valid(received_message);
 	received_message = NULL;
 	status = conversation_start_receive_conversation(
 			&alice_receive_conversation,
@@ -341,36 +341,16 @@ cleanup:
 	if (bob_prekeys != NULL) {
 		prekey_store_destroy(bob_prekeys);
 	}
-	if (packet != NULL) {
-		buffer_destroy_from_heap_and_null(packet);
-	}
-	if (received_message != NULL) {
-		buffer_destroy_from_heap_and_null(received_message);
-	}
-	if (alice_send_packet2 != NULL) {
-		buffer_destroy_from_heap_and_null(alice_send_packet2);
-	}
-	if (bob_receive_message2 != NULL) {
-		buffer_destroy_from_heap_and_null(bob_receive_message2);
-	}
-	if (bob_send_packet2 != NULL) {
-		buffer_destroy_from_heap_and_null(bob_send_packet2);
-	}
-	if (alice_receive_message2 != NULL) {
-		buffer_destroy_from_heap_and_null(alice_receive_message2);
-	}
-	if (bob_response_packet != NULL) {
-		buffer_destroy_from_heap_and_null(bob_response_packet);
-	}
-	if (alice_received_response != NULL) {
-		buffer_destroy_from_heap_and_null(alice_received_response);
-	}
-	if (alice_response_packet != NULL) {
-		buffer_destroy_from_heap_and_null(alice_response_packet);
-	}
-	if (bob_received_response != NULL) {
-		buffer_destroy_from_heap_and_null(bob_received_response);
-	}
+	buffer_destroy_from_heap_and_null_if_valid(packet);
+	buffer_destroy_from_heap_and_null_if_valid(received_message);
+	buffer_destroy_from_heap_and_null_if_valid(alice_send_packet2);
+	buffer_destroy_from_heap_and_null_if_valid(bob_receive_message2);
+	buffer_destroy_from_heap_and_null_if_valid(bob_send_packet2);
+	buffer_destroy_from_heap_and_null_if_valid(alice_receive_message2);
+	buffer_destroy_from_heap_and_null_if_valid(bob_response_packet);
+	buffer_destroy_from_heap_and_null_if_valid(alice_received_response);
+	buffer_destroy_from_heap_and_null_if_valid(alice_response_packet);
+	buffer_destroy_from_heap_and_null_if_valid(bob_received_response);
 	if (alice_send_conversation != NULL) {
 		conversation_destroy(alice_send_conversation);
 	}
@@ -383,16 +363,16 @@ cleanup:
 	if (bob_receive_conversation != NULL) {
 		conversation_destroy(bob_receive_conversation);
 	}
-	buffer_destroy_from_heap_and_null(alice_private_identity);
-	buffer_destroy_from_heap_and_null(alice_public_identity);
-	buffer_destroy_from_heap_and_null(bob_private_identity);
-	buffer_destroy_from_heap_and_null(bob_public_identity);
-	buffer_destroy_from_heap_and_null(prekey_list);
+	buffer_destroy_from_heap_and_null_if_valid(alice_private_identity);
+	buffer_destroy_from_heap_and_null_if_valid(alice_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(bob_private_identity);
+	buffer_destroy_from_heap_and_null_if_valid(bob_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(prekey_list);
 
-	if (status.status != SUCCESS) {
+	on_error(
 		print_errors(&status);
 		return_status_destroy_errors(&status);
-	}
+	)
 
 	return status.status;
 }

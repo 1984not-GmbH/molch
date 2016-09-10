@@ -180,11 +180,9 @@ return_status ratchet_create(
 cleanup:
 	on_error(
 		if (ratchet != NULL) {
-			if (*ratchet != NULL) {
-				sodium_free_and_null(*ratchet);
-			}
+				sodium_free_and_null_if_valid(*ratchet);
 		}
-	);
+	)
 
 	return status;
 }
@@ -318,10 +316,10 @@ cleanup:
 			buffer_clear(message_key);
 			message_key->content_length = 0;
 		}
-	);
+	)
 
-	buffer_destroy_from_heap_and_null(root_key_backup);
-	buffer_destroy_from_heap_and_null(chain_key_backup);
+	buffer_destroy_from_heap_and_null_if_valid(root_key_backup);
+	buffer_destroy_from_heap_and_null_if_valid(chain_key_backup);
 
 	return status;
 }
@@ -359,7 +357,7 @@ cleanup:
 			buffer_clear(next_receive_header_key);
 			next_receive_header_key->content_length = 0;
 		}
-	);
+	)
 
 	return status;
 }
@@ -486,11 +484,11 @@ cleanup:
 		if (staging_area != NULL) {
 			header_and_message_keystore_clear(staging_area);
 		}
-	);
+	)
 
-	buffer_destroy_from_heap_and_null(current_chain_key);
-	buffer_destroy_from_heap_and_null(next_chain_key);
-	buffer_destroy_from_heap_and_null(current_message_key);
+	buffer_destroy_from_heap_and_null_if_valid(current_chain_key);
+	buffer_destroy_from_heap_and_null_if_valid(next_chain_key);
+	buffer_destroy_from_heap_and_null_if_valid(current_message_key);
 
 	return status;
 }
@@ -650,11 +648,11 @@ cleanup:
 			buffer_clear(message_key);
 			message_key->content_length = 0;
 		}
-	);
+	)
 
-	buffer_destroy_from_heap_and_null(throwaway_chain_key);
-	buffer_destroy_from_heap_and_null(throwaway_message_key);
-	buffer_destroy_from_heap_and_null(purported_chain_key_backup);
+	buffer_destroy_from_heap_and_null_if_valid(throwaway_chain_key);
+	buffer_destroy_from_heap_and_null_if_valid(throwaway_message_key);
+	buffer_destroy_from_heap_and_null_if_valid(purported_chain_key_backup);
 
 	return status;
 }
@@ -735,7 +733,7 @@ void ratchet_destroy(ratchet_state *state) {
 	header_and_message_keystore_clear(state->skipped_header_and_message_keys);
 	header_and_message_keystore_clear(state->staged_header_and_message_keys);
 
-	sodium_free_and_null(state); //this also overwrites all the keys with zeroes
+	sodium_free_and_null_if_valid(state); //this also overwrites all the keys with zeroes
 }
 
 /*
@@ -1171,7 +1169,7 @@ cleanup:
 			ratchet_destroy(state);
 			state = NULL;
 		}
-	);
+	)
 
 	return_status_destroy_errors(&status);
 
