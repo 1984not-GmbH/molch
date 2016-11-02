@@ -53,6 +53,10 @@ header_and_message_keystore_node *create_node() {
  * add a new header_and_message_key_node to a keystore
  */
 void add_node(header_and_message_keystore * const keystore, header_and_message_keystore_node * const node) {
+	if (node == NULL) {
+		return;
+	}
+
 	if (keystore->length == 0) { //first node in the list
 		node->previous = NULL;
 		node->next = NULL;
