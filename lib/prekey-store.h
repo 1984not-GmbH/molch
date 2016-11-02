@@ -20,6 +20,7 @@
  */
 
 #include <time.h>
+#include <prekey.pb-c.h>
 
 #include "constants.h"
 #include "common.h"
@@ -77,6 +78,21 @@ return_status prekey_store_list(
 return_status prekey_store_rotate(prekey_store * const store) __attribute__((warn_unused_result));
 
 void prekey_store_destroy(prekey_store * const store);
+
+/*! Serialise a prekey store as protobuf-c struct.
+ * \param prekey_store The prekey store to serialize.
+ * \param keypairs An array of keypairs, allocated by the function.
+ * \param keypairs_length The length of the array of keypairs.
+ * \param deprecated_keypairs An array of deprecated keypairs, allocated by the function.
+ * \param deprecated_keypairs_length The length of the array of deprecated keypairs.
+ * \returns The status.
+ */
+return_status prekey_store_export(
+		const prekey_store * const store,
+		Prekey *** const keypairs,
+		size_t * const keypairs_length,
+		Prekey *** const deprecated_keypairs,
+		size_t * const deprecated_keypairs_length) __attribute__((warn_unused_result));
 
 /*
  * Serialise a prekey store into JSON. It get's a mempool_t buffer and stores a tree of

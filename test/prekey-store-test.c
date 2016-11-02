@@ -22,12 +22,68 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sodium.h>
+#include <string.h>
 
 #include "../lib/prekey-store.h"
 #include "../lib/json.h"
 #include "../lib/constants.h"
 #include "utils.h"
 #include "tracing.h"
+
+return_status protobuf_export(
+		prekey_store * const store,
+		Prekey *** const keypairs,
+		size_t * const keypairs_size,
+		buffer_t *** const key_buffers,
+		Prekey *** const deprecated_keypairs,
+		size_t * const deprecated_keypairs_size,
+		buffer_t *** const deprecated_key_buffers) {
+	return_status status = return_status_init();
+
+	status = prekey_store_export(
+		store,
+		keypairs,
+		keypairs_size,
+		deprecated_keypairs,
+		deprecated_keypairs_size);
+	throw_on_error(EXPORT_ERROR, "Failed to export prekeys.");
+
+	*key_buffers = zeroed_malloc((*keypairs_size) * sizeof(buffer_t*));
+	throw_on_failed_alloc(*key_buffers);
+
+	//initialize pointers with NULL
+	memset(*key_buffers, '\0', (*keypairs_size) * sizeof(buffer_t*));
+
+	*deprecated_key_buffers = zeroed_malloc((*deprecated_keypairs_size) * sizeof(buffer_t*));
+	throw_on_failed_alloc(*deprecated_key_buffers);
+
+	//initialize pointers with NULL
+	memset(*deprecated_key_buffers, '\0', (*deprecated_keypairs_size) * sizeof(buffer_t*));
+
+	//export all the keypairs
+	for (size_t i = 0; i < (*keypairs_size); i++) {
+		size_t export_size = prekey__get_packed_size((*keypairs)[i]);
+		(*key_buffers)[i] = buffer_create_on_heap(export_size, 0);
+		throw_on_failed_alloc((*key_buffers)[i]);
+
+		size_t packed_size = prekey__pack((*keypairs)[i], (*key_buffers)[i]->content);
+		(*key_buffers)[i]->content_length = packed_size;
+	}
+
+	//export all the deprecated keypairs
+	for (size_t i = 0; i < (*deprecated_keypairs_size); i++) {
+		size_t export_size = prekey__get_packed_size((*deprecated_keypairs)[i]);
+		(*deprecated_key_buffers)[i] = buffer_create_on_heap(export_size, 0);
+		throw_on_failed_alloc((*deprecated_key_buffers)[i]);
+
+		size_t packed_size = prekey__pack((*deprecated_keypairs)[i], (*deprecated_key_buffers)[i]->content);
+		(*deprecated_key_buffers)[i]->content_length = packed_size;
+	}
+cleanup:
+	//cleanup is done in the main function
+
+	return status;
+}
 
 int main(void) {
 	if (sodium_init() == -1) {
@@ -40,6 +96,13 @@ int main(void) {
 	buffer_t *private_prekey1 = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	buffer_t *private_prekey2 = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	buffer_t *prekey_list = buffer_create_on_heap(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
+
+	Prekey **protobuf_export_prekeys = NULL;
+	buffer_t **protobuf_export_prekeys_buffers = NULL;
+	size_t protobuf_export_prekeys_size = 0;
+	Prekey **protobuf_export_deprecated_prekeys = NULL;
+	buffer_t **protobuf_export_deprecated_prekeys_buffers = NULL;
+	size_t protobuf_export_deprecated_prekeys_size = 0;
 
 	prekey_store *store = NULL;
 	status = prekey_store_create(&store);
@@ -109,6 +172,34 @@ int main(void) {
 	//reset return status
 	return_status_destroy_errors(&status);
 	status.status = SUCCESS;
+
+	//Protobuf-C export
+	printf("Protobuf-C export\n");
+	status = protobuf_export(
+		store,
+		&protobuf_export_prekeys,
+		&protobuf_export_prekeys_size,
+		&protobuf_export_prekeys_buffers,
+		&protobuf_export_deprecated_prekeys,
+		&protobuf_export_deprecated_prekeys_size,
+		&protobuf_export_deprecated_prekeys_buffers);
+	throw_on_error(EXPORT_ERROR, "Failed to export prekey store to protobuf.");
+
+	printf("Prekeys:\n");
+	puts("[\n");
+	for (size_t i = 0; i < protobuf_export_prekeys_size; i++) {
+		print_hex(protobuf_export_prekeys_buffers[i]);
+		puts(",\n");
+	}
+	puts("]\n\n");
+
+	printf("Deprecated Prekeys:\n");
+	puts("[\n");
+	for (size_t i = 0; i < protobuf_export_deprecated_prekeys_size; i++) {
+		print_hex(protobuf_export_deprecated_prekeys_buffers[i]);
+		puts(",\n");
+	}
+	puts("]\n\n");
 
 	//Test JSON Export!
 	JSON_EXPORT(json_string, 100000, 10000, true, store, prekey_store_json_export);
@@ -180,6 +271,45 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(private_prekey2);
 	buffer_destroy_from_heap_and_null_if_valid(prekey_list);
 	prekey_store_destroy(store);
+
+
+	if (protobuf_export_prekeys != NULL) {
+		for (size_t i = 0; i < protobuf_export_prekeys_size; i++) {
+			if (protobuf_export_prekeys[i] != NULL) {
+				prekey__free_unpacked(protobuf_export_prekeys[i], &protobuf_c_allocators);
+				protobuf_export_prekeys[i] = NULL;
+			}
+
+		}
+		zeroed_free_and_null_if_valid(protobuf_export_prekeys);
+	}
+
+	if (protobuf_export_deprecated_prekeys != NULL) {
+		for (size_t i = 0; i < protobuf_export_deprecated_prekeys_size; i++) {
+			if (protobuf_export_deprecated_prekeys[i] != NULL) {
+				prekey__free_unpacked(protobuf_export_deprecated_prekeys[i], &protobuf_c_allocators);
+				protobuf_export_deprecated_prekeys[i] = NULL;
+			}
+		}
+
+		zeroed_free_and_null_if_valid(protobuf_export_deprecated_prekeys);
+	}
+
+	if (protobuf_export_prekeys_buffers != NULL) {
+		for (size_t i = 0; i < protobuf_export_prekeys_size; i++) {
+			buffer_destroy_from_heap_and_null_if_valid(protobuf_export_prekeys_buffers[i]);
+		}
+
+		zeroed_free_and_null_if_valid(protobuf_export_prekeys_buffers);
+	}
+
+	if (protobuf_export_deprecated_prekeys_buffers != NULL) {
+		for (size_t i = 0; i < protobuf_export_deprecated_prekeys_size; i++) {
+			buffer_destroy_from_heap_and_null_if_valid(protobuf_export_deprecated_prekeys_buffers[i]);
+		}
+
+		zeroed_free_and_null_if_valid(protobuf_export_deprecated_prekeys_buffers);
+	}
 
 	on_error(
 		print_errors(&status);

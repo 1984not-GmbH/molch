@@ -21,7 +21,9 @@
 
 #include <sodium.h>
 #include <limits.h>
+#include <string.h>
 #include "prekey-store.h"
+#include "common.h"
 
 static const time_t PREKEY_EXPIRATION_TIME = 3600 * 24 * 31; //one month
 static const time_t DEPRECATED_PREKEY_EXPIRATION_TIME = 3600; //one hour
@@ -479,6 +481,168 @@ int prekey_store_node_json_import(prekey_store_node * const node, const mcJSON *
 	}
 
 	return 0;
+}
+
+/*!
+ * Calculate the number of deprecated prekeys
+ * \param store Prekey store in which to count.
+ * \return Number of deprecated prekeys.
+ */
+size_t count_deprecated_prekeys(const prekey_store * const store) {
+	size_t length = 0;
+	for (prekey_store_node *node = store->deprecated_prekeys; node != NULL; node = node->next, length++) {}
+
+	return length;
+}
+
+return_status prekey_store_export_key(const prekey_store_node* node, Prekey ** const keypair) __attribute__((warn_unused_result));
+return_status prekey_store_export_key(const prekey_store_node* node, Prekey ** const keypair) {
+	return_status status = return_status_init();
+
+	Key *private_prekey = NULL;
+	Key *public_prekey = NULL;
+
+	//check input
+	if ((node == NULL) || (keypair == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to prekey_store_export_key.");
+	}
+
+	//allocate and init the prekey protobuf struct
+	*keypair = zeroed_malloc(sizeof(Prekey));
+	throw_on_failed_alloc(*keypair);
+
+	prekey__init(*keypair);
+
+	//allocate and init the key structs
+	private_prekey = zeroed_malloc(sizeof(Key));
+	throw_on_failed_alloc(private_prekey);
+	key__init(private_prekey);
+	public_prekey = zeroed_malloc(sizeof(Key));
+	throw_on_failed_alloc(public_prekey);
+	key__init(public_prekey);
+
+	//create the key buffers
+	private_prekey->key.data = zeroed_malloc(PRIVATE_KEY_SIZE);
+	throw_on_failed_alloc(private_prekey->key.data);
+	private_prekey->key.len = PRIVATE_KEY_SIZE;
+
+	public_prekey->key.data = zeroed_malloc(PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(private_prekey->key.data);
+	public_prekey->key.len = PUBLIC_KEY_SIZE;
+
+	//fill the buffers
+	if (buffer_clone_to_raw(private_prekey->key.data, private_prekey->key.len, node->private_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to clone private prekey.");
+	}
+	if (buffer_clone_to_raw(public_prekey->key.data, public_prekey->key.len, node->public_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to clone public prekey.");
+	}
+
+	//set the expiration date
+	(*keypair)->has_expiration_time = true;
+	(*keypair)->expiration_time = node->expiration_date;
+
+	//set the keys
+	(*keypair)->public_key = public_prekey;
+	public_prekey = NULL;
+	(*keypair)->private_key = private_prekey;
+	private_prekey = NULL;
+
+cleanup:
+	on_error(
+		if (keypair != NULL) {
+			prekey__free_unpacked(*keypair, &protobuf_c_allocators);
+			zeroed_free_and_null_if_valid(*keypair);
+		}
+
+		zeroed_free_and_null_if_valid(private_prekey);
+		zeroed_free_and_null_if_valid(public_prekey);
+	)
+
+	return status;
+}
+
+return_status prekey_store_export(
+		const prekey_store * const store,
+		Prekey *** const keypairs,
+		size_t * const keypairs_length,
+		Prekey *** const deprecated_keypairs,
+		size_t * const deprecated_keypairs_length) {
+	return_status status = return_status_init();
+
+	size_t deprecated_prekey_count = 0;
+
+	//check input
+	if ((store == NULL) || (keypairs == NULL) || (deprecated_keypairs == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to prekey_store_export.");
+	}
+
+	//allocate the prekey array
+	*keypairs = zeroed_malloc(PREKEY_AMOUNT * sizeof(Prekey*));
+	throw_on_failed_alloc(*keypairs);
+
+	//initialize pointers with zero
+	memset(*keypairs, '\0', PREKEY_AMOUNT * sizeof(Prekey*));
+
+	deprecated_prekey_count = count_deprecated_prekeys(store);
+	if (deprecated_prekey_count > 0) {
+		//allocate and init the deprecated prekey array
+		*deprecated_keypairs = zeroed_malloc(deprecated_prekey_count * sizeof(Prekey*));
+		throw_on_failed_alloc(*deprecated_keypairs);
+	} else {
+		*deprecated_keypairs = NULL;
+	}
+
+	//normal keys
+	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
+		status = prekey_store_export_key(&(store->prekeys[i]), &(*keypairs)[i]);
+		throw_on_error(EXPORT_ERROR, "Failed to export prekey pair.");
+	}
+
+	//deprecated keys
+	prekey_store_node *node = store->deprecated_prekeys;
+	for (size_t i = 0; (i < deprecated_prekey_count) && (node != NULL); i++, node = node->next) {
+		status = prekey_store_export_key(node, &(*deprecated_keypairs)[i]);
+		throw_on_error(EXPORT_ERROR, "Failed to export deprecated prekey pair.");
+	}
+
+	*keypairs_length = PREKEY_AMOUNT;
+	*deprecated_keypairs_length = deprecated_prekey_count;
+
+cleanup:
+	on_error(
+		if ((keypairs != NULL) && (*keypairs != NULL)) {
+			for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
+				if ((*keypairs)[i] != NULL) {
+					prekey__free_unpacked((*keypairs)[i], &protobuf_c_allocators);
+					(*keypairs)[i] = NULL;
+				}
+			}
+
+			zeroed_free_and_null_if_valid(*keypairs);
+		}
+
+		if ((deprecated_keypairs != NULL) && (*deprecated_keypairs != NULL)) {
+			for (size_t i = 0; i < deprecated_prekey_count; i++) {
+				if ((*deprecated_keypairs)[i] != NULL) {
+					prekey__free_unpacked((*deprecated_keypairs)[i], &protobuf_c_allocators);
+					(*deprecated_keypairs)[i] = NULL;
+				}
+			}
+
+			zeroed_free_and_null_if_valid(*deprecated_keypairs);
+		}
+
+		if (keypairs_length != NULL) {
+			*keypairs_length = 0;
+		}
+
+		if (deprecated_keypairs_length != NULL) {
+			*deprecated_keypairs_length = 0;
+		}
+	)
+
+	return status;
 }
 
 /*
