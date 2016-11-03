@@ -1,7 +1,6 @@
 #!/bin/bash
 [ ! -e build ] && mkdir build
-RETURN_VALUE=0
-cd build
+cd build || exit 1
 if cmake .. -DGENERATE_LUA_BINDINGS=ON -DRUN_TESTS=ON; then
     # This has to be done with else because with '!' it won't work on Mac OS X
     echo

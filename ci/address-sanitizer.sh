@@ -1,6 +1,6 @@
 #!/bin/bash
 [ ! -e address-sanitizer ] && mkdir address-sanitizer
-cd address-sanitizer
+cd address-sanitizer || exit 1
 #check if address sanitizer is available
 echo "int main(void) {return 0;}" > test.c
 if ! clang -fsanitize=address test.c -o /dev/null > /dev/null; then

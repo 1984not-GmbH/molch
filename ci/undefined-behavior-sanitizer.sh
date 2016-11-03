@@ -1,6 +1,6 @@
 #!/bin/bash
 [ ! -e undefined-behavior-sanitizer ] && mkdir undefined-behavior-sanitizer
-cd undefined-behavior-sanitizer
+cd undefined-behavior-sanitizer || exit 1
 #check if undefined-behavior sanitizer is available
 echo "int main(void) {return 0;}" > test.c
 if ! clang -fsanitize="undefined,integer" test.c -o /dev/null > /dev/null; then

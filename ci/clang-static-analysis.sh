@@ -4,7 +4,7 @@ if ! hash scan-build; then
     exit 0
 fi
 [ ! -e static-analysis ] && mkdir static-analysis
-cd static-analysis
+cd static-analysis || exit 1
 if scan-build --status-bugs cmake .. -DRUN_TESTS=ON; then
     # This has to be done with else because with '!' it won't work on Mac OS X
     echo
