@@ -26,6 +26,18 @@
 static const time_t PREKEY_EXPIRATION_TIME = 3600 * 24 * 31; //one month
 static const time_t DEPRECATED_PREKEY_EXPIRATION_TIME = 3600; //one hour
 
+void node_init(prekey_store_node * const node) {
+	if (node == NULL) {
+		return;
+	}
+
+	buffer_init_with_pointer(node->private_key, node->private_key_storage, PRIVATE_KEY_SIZE, 0);
+	buffer_init_with_pointer(node->public_key, node->public_key_storage, PUBLIC_KEY_SIZE, 0);
+	node->next = NULL;
+	node->expiration_date = 0;
+}
+
+
 /*
  * Initialise a new keystore. Generates all the keys.
  */
@@ -46,24 +58,12 @@ return_status prekey_store_create(prekey_store ** const store) {
 	(*store)->deprecated_prekeys = NULL;
 
 	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
+		node_init(&((*store)->prekeys[i]));
+
 		(*store)->prekeys[i].expiration_date = time(NULL) + PREKEY_EXPIRATION_TIME;
 		if (((*store)->oldest_expiration_date == 0) || ((*store)->prekeys[i].expiration_date < (*store)->oldest_expiration_date)) {
 			(*store)->oldest_expiration_date = (*store)->prekeys[i].expiration_date;
 		}
-
-		(*store)->prekeys[i].next = NULL;
-
-		//initialize the key buffers
-		buffer_init_with_pointer(
-				(*store)->prekeys[i].public_key,
-				(*store)->prekeys[i].public_key_storage,
-				PUBLIC_KEY_SIZE,
-				PUBLIC_KEY_SIZE);
-		buffer_init_with_pointer(
-				(*store)->prekeys[i].private_key,
-				(*store)->prekeys[i].private_key_storage,
-				PRIVATE_KEY_SIZE,
-				PRIVATE_KEY_SIZE);
 
 		//generate the keys
 		int status_int = 0;
@@ -73,6 +73,10 @@ return_status prekey_store_create(prekey_store ** const store) {
 		if (status_int != 0) {
 			throw(KEYGENERATION_FAILED, "Failed to generate prekey pair.");
 		}
+
+		//set the key sizes
+		(*store)->prekeys[i].public_key->content_length = PUBLIC_KEY_SIZE;
+		(*store)->prekeys[i].private_key->content_length = PRIVATE_KEY_SIZE;
 	}
 
 cleanup:
@@ -83,6 +87,15 @@ cleanup:
 	)
 
 	return status;
+}
+
+void node_add(prekey_store * const store, prekey_store_node * const node) {
+	if ((node == NULL) || (store == NULL)) {
+		return;
+	}
+
+	node->next = store->deprecated_prekeys;
+	store->deprecated_prekeys = node;
 }
 
 /*
@@ -98,18 +111,8 @@ int deprecate(prekey_store * const store, size_t index) {
 	}
 
 	//initialise the deprecated node
-	deprecated_node->next =store->deprecated_prekeys;
+	node_init(deprecated_node);
 	deprecated_node->expiration_date = time(NULL) + DEPRECATED_PREKEY_EXPIRATION_TIME;
-	buffer_init_with_pointer(
-			deprecated_node->public_key,
-			deprecated_node->public_key_storage,
-			PUBLIC_KEY_SIZE,
-			PUBLIC_KEY_SIZE);
-	buffer_init_with_pointer(
-			deprecated_node->private_key,
-			deprecated_node->private_key_storage,
-			PRIVATE_KEY_SIZE,
-			PRIVATE_KEY_SIZE);
 
 	//copy the node over
 	status = buffer_clone(deprecated_node->public_key, store->prekeys[index].public_key);
@@ -125,7 +128,7 @@ int deprecate(prekey_store * const store, size_t index) {
 	if ((store->oldest_deprecated_expiration_date == 0) || (store->oldest_deprecated_expiration_date > deprecated_node->expiration_date)) {
 		store->oldest_deprecated_expiration_date = deprecated_node->expiration_date;
 	}
-	store->deprecated_prekeys = deprecated_node;
+	node_add(store, deprecated_node);
 
 	//generate a new key
 	status = crypto_box_keypair(
