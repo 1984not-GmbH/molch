@@ -85,6 +85,78 @@ cleanup:
 	return status;
 }
 
+return_status protobuf_import(
+		prekey_store ** const store,
+		buffer_t ** const keypair_buffers,
+		const size_t keypair_buffers_size,
+		buffer_t ** const deprecated_keypair_buffers,
+		const size_t deprecated_keypair_buffers_size) {
+	return_status status = return_status_init();
+
+	Prekey ** keypairs = NULL;
+	Prekey ** deprecated_keypairs = NULL;
+
+	keypairs = zeroed_malloc(keypair_buffers_size * sizeof(Prekey*));
+	throw_on_failed_alloc(keypairs);
+	memset(keypairs, '\0', keypair_buffers_size * sizeof(Prekey*));
+
+	deprecated_keypairs = zeroed_malloc(deprecated_keypair_buffers_size * sizeof(Prekey*));
+	memset(deprecated_keypairs, '\0', deprecated_keypair_buffers_size * sizeof(Prekey*));
+	throw_on_failed_alloc(deprecated_keypairs);
+
+	//parse the normal prekey protobufs
+	for (size_t i = 0; i < keypair_buffers_size; i++) {
+		keypairs[i] = prekey__unpack(
+			&protobuf_c_allocators,
+			keypair_buffers[i]->content_length,
+			keypair_buffers[i]->content);
+		if (keypairs[i] == NULL) {
+			throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack prekey from protobuf.");
+		}
+	}
+
+	//parse the deprecated prekey protobufs
+	for (size_t i = 0; i < deprecated_keypair_buffers_size; i++) {
+		deprecated_keypairs[i] = prekey__unpack(
+			&protobuf_c_allocators,
+			deprecated_keypair_buffers[i]->content_length,
+			deprecated_keypair_buffers[i]->content);
+		if (deprecated_keypairs[i] == NULL) {
+			throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack deprecated prekey from protobuf.");
+		}
+	}
+
+	//now do the import
+	status = prekey_store_import(
+		store,
+		keypairs,
+		keypair_buffers_size,
+		deprecated_keypairs,
+		deprecated_keypair_buffers_size);
+	throw_on_error(IMPORT_ERROR, "Failed to import prekeys.");
+
+cleanup:
+	if (keypairs != NULL) {
+		for (size_t i = 0; i < keypair_buffers_size; i++) {
+			prekey__free_unpacked(keypairs[i], &protobuf_c_allocators);
+			keypairs[i] = NULL;
+		}
+
+		zeroed_free_and_null_if_valid(keypairs);
+	}
+
+	if (deprecated_keypairs != NULL) {
+		for (size_t i = 0; i < deprecated_keypair_buffers_size; i++) {
+			prekey__free_unpacked(deprecated_keypairs[i], &protobuf_c_allocators);
+			deprecated_keypairs[i] = NULL;
+		}
+
+		zeroed_free_and_null_if_valid(deprecated_keypairs);
+	}
+
+	return status;
+}
+
 int main(void) {
 	if (sodium_init() == -1) {
 		return -1;
@@ -103,6 +175,13 @@ int main(void) {
 	Prekey **protobuf_export_deprecated_prekeys = NULL;
 	buffer_t **protobuf_export_deprecated_prekeys_buffers = NULL;
 	size_t protobuf_export_deprecated_prekeys_size = 0;
+
+	Prekey **protobuf_second_export_prekeys = NULL;
+	buffer_t **protobuf_second_export_prekeys_buffers = NULL;
+	size_t protobuf_second_export_prekeys_size = 0;
+	Prekey **protobuf_second_export_deprecated_prekeys = NULL;
+	buffer_t **protobuf_second_export_deprecated_prekeys_buffers = NULL;
+	size_t protobuf_second_export_deprecated_prekeys_size = 0;
 
 	prekey_store *store = NULL;
 	status = prekey_store_create(&store);
@@ -201,6 +280,51 @@ int main(void) {
 	}
 	puts("]\n\n");
 
+	prekey_store_destroy(store);
+	store = NULL;
+
+	printf("Import from Protobuf-C\n");
+	status = protobuf_import(
+		&store,
+		protobuf_export_prekeys_buffers,
+		protobuf_export_prekeys_size,
+		protobuf_export_deprecated_prekeys_buffers,
+		protobuf_export_deprecated_prekeys_size);
+	throw_on_error(IMPORT_ERROR, "Failed to import from protobuf.");
+
+	printf("Protobuf-C export again\n");
+	status = protobuf_export(
+		store,
+		&protobuf_second_export_prekeys,
+		&protobuf_second_export_prekeys_size,
+		&protobuf_second_export_prekeys_buffers,
+		&protobuf_second_export_deprecated_prekeys,
+		&protobuf_second_export_deprecated_prekeys_size,
+		&protobuf_second_export_deprecated_prekeys_buffers);
+	throw_on_error(EXPORT_ERROR, "Failed to export prekey store to protobuf.");
+
+	//compare both prekey lists
+	printf("Compare normal prekeys\n");
+	if (protobuf_export_prekeys_size != protobuf_second_export_prekeys_size) {
+		throw(INCORRECT_DATA, "Both prekey exports contain different amounts of keys.");
+	}
+	for (size_t i = 0; i < protobuf_export_prekeys_size; i++) {
+		if (buffer_compare(protobuf_export_prekeys_buffers[i], protobuf_second_export_prekeys_buffers[i]) != 0) {
+			throw(INCORRECT_DATA, "First and second prekey export are not identical.");
+		}
+	}
+
+	//compare both deprecated prekey lists
+	printf("Compare deprecated prekeys\n");
+	if (protobuf_export_deprecated_prekeys_size != protobuf_second_export_deprecated_prekeys_size) {
+		throw(INCORRECT_DATA, "Both depcated prekey exports contain different amounts of keys.");
+	}
+	for (size_t i = 0; i < protobuf_export_deprecated_prekeys_size; i++) {
+		if (buffer_compare(protobuf_export_deprecated_prekeys_buffers[i], protobuf_second_export_deprecated_prekeys_buffers[i]) != 0) {
+			throw(INCORRECT_DATA, "First and second deprecated prekey export are not identical.");
+		}
+	}
+
 	//Test JSON Export!
 	JSON_EXPORT(json_string, 100000, 10000, true, store, prekey_store_json_export);
 	if (json_string == NULL) {
@@ -272,7 +396,6 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(prekey_list);
 	prekey_store_destroy(store);
 
-
 	if (protobuf_export_prekeys != NULL) {
 		for (size_t i = 0; i < protobuf_export_prekeys_size; i++) {
 			if (protobuf_export_prekeys[i] != NULL) {
@@ -309,6 +432,44 @@ cleanup:
 		}
 
 		zeroed_free_and_null_if_valid(protobuf_export_deprecated_prekeys_buffers);
+	}
+
+	if (protobuf_second_export_prekeys != NULL) {
+		for (size_t i = 0; i < protobuf_second_export_prekeys_size; i++) {
+			if (protobuf_second_export_prekeys[i] != NULL) {
+				prekey__free_unpacked(protobuf_second_export_prekeys[i], &protobuf_c_allocators);
+				protobuf_second_export_prekeys[i] = NULL;
+			}
+
+		}
+		zeroed_free_and_null_if_valid(protobuf_second_export_prekeys);
+	}
+
+	if (protobuf_second_export_deprecated_prekeys != NULL) {
+		for (size_t i = 0; i < protobuf_second_export_deprecated_prekeys_size; i++) {
+			if (protobuf_second_export_deprecated_prekeys[i] != NULL) {
+				prekey__free_unpacked(protobuf_second_export_deprecated_prekeys[i], &protobuf_c_allocators);
+				protobuf_second_export_deprecated_prekeys[i] = NULL;
+			}
+		}
+
+		zeroed_free_and_null_if_valid(protobuf_second_export_deprecated_prekeys);
+	}
+
+	if (protobuf_second_export_prekeys_buffers != NULL) {
+		for (size_t i = 0; i < protobuf_second_export_prekeys_size; i++) {
+			buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_prekeys_buffers[i]);
+		}
+
+		zeroed_free_and_null_if_valid(protobuf_second_export_prekeys_buffers);
+	}
+
+	if (protobuf_second_export_deprecated_prekeys_buffers != NULL) {
+		for (size_t i = 0; i < protobuf_second_export_deprecated_prekeys_size; i++) {
+			buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_deprecated_prekeys_buffers[i]);
+		}
+
+		zeroed_free_and_null_if_valid(protobuf_second_export_deprecated_prekeys_buffers);
 	}
 
 	on_error(

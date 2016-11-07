@@ -94,6 +94,21 @@ return_status prekey_store_export(
 		Prekey *** const deprecated_keypairs,
 		size_t * const deprecated_keypairs_length) __attribute__((warn_unused_result));
 
+/*! Import a prekey store from a protobuf-c struct.
+ * \param store The prekey store to import to.__a
+ * \param keypairs An array of prekeys pairs.
+ * \param keypais_length The length of the array of prekey pairs.
+ * \param deprecated_keypairs An array of deprecated prekey pairs.
+ * \param deprecated_keypairs_length The length of the array of deprecated prekey pairs.
+ * \returns The status.
+ */
+return_status prekey_store_import(
+		prekey_store ** const store,
+		Prekey ** const keypairs,
+		const size_t keypairs_length,
+		Prekey ** const deprecated_keypairs,
+		const size_t deprecated_keypairs_length) __attribute__((warn_unused_result));
+
 /*
  * Serialise a prekey store into JSON. It get's a mempool_t buffer and stores a tree of
  * mcJSON objects into the buffer starting at pool->position.

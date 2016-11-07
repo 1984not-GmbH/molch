@@ -645,6 +645,129 @@ cleanup:
 	return status;
 }
 
+return_status prekey_store_node_import(prekey_store_node * const node, const Prekey * const keypair) {
+	return_status status = return_status_init();
+
+	//check input
+	if ((node == NULL) || (keypair == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to prekey_store_node_import.");
+	}
+
+	node_init(node);
+
+	//check if all necessary values are contained in the keypair
+	if ((keypair->private_key  == NULL)
+			|| (keypair->private_key->key.len != PRIVATE_KEY_SIZE)
+			|| !keypair->has_expiration_time) {
+		throw(PROTOBUF_MISSING_ERROR, "Protobuf is missing some data.");
+	}
+
+	//check if a public key has been stored, if yes, check the size
+	if ((keypair->public_key != NULL)
+			&& (keypair->public_key->key.len != PUBLIC_KEY_SIZE)) {
+		throw(INCORRECT_BUFFER_SIZE, "Public key has an incorrect length.");
+	}
+
+	//copy the private key
+	if (buffer_clone_from_raw(node->private_key, keypair->private_key->key.data, keypair->private_key->key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to import private key.");
+	}
+
+	//does the public key exist, if yes: copy, if not: create it from private key
+	if (keypair->public_key != NULL) {
+		if (buffer_clone_from_raw(node->public_key, keypair->public_key->key.data, keypair->public_key->key.len) != 0) {
+			throw(BUFFER_ERROR, "Failed to import public key.");
+		}
+	} else {
+		if (crypto_scalarmult_base(node->public_key->content, node->private_key->content) != 0) {
+			throw(KEYDERIVATION_FAILED, "Failed to derive public prekey from private one.");
+		}
+		node->public_key->content_length = PUBLIC_KEY_SIZE;
+		node->private_key->content_length = PRIVATE_KEY_SIZE;
+	}
+
+	node->expiration_date = keypair->expiration_time;
+
+cleanup:
+	on_error(
+		if (node != NULL) {
+			node->public_key->content_length = 0;
+			node->private_key->content_length = 0;
+			node->expiration_date = 0;
+		}
+	)
+
+	return status;
+}
+
+return_status prekey_store_import(
+		prekey_store ** const store,
+		Prekey ** const keypairs,
+		const size_t keypairs_length,
+		Prekey ** const deprecated_keypairs,
+		const size_t deprecated_keypairs_length) {
+	return_status status = return_status_init();
+
+	prekey_store_node *deprecated_keypair = NULL;
+
+	//check input
+	if ((store == NULL) || (keypairs == NULL)
+			|| (keypairs_length != PREKEY_AMOUNT)
+			|| ((deprecated_keypairs_length == 0) && (deprecated_keypairs != NULL))
+			|| ((deprecated_keypairs_length > 0) && (deprecated_keypairs == NULL))) {
+		throw(INVALID_INPUT, "Invalid input to prekey_store_import");
+	}
+
+	*store = sodium_malloc(sizeof(prekey_store));
+	throw_on_failed_alloc(*store);
+
+	//init the store
+	(*store)->deprecated_prekeys = NULL;
+	(*store)->oldest_deprecated_expiration_date = 0;
+	(*store)->oldest_expiration_date = 0;
+
+	//copy the prekeys
+	for (size_t i = 0; i < keypairs_length; i++) {
+		status = prekey_store_node_import(&((*store)->prekeys[i]), keypairs[i]);
+		throw_on_error(IMPORT_ERROR, "Failed to import prekey.");
+
+		//update expiration date
+		if (((*store)->oldest_expiration_date == 0)
+				|| ((*store)->prekeys[i].expiration_date < (*store)->oldest_expiration_date)) {
+			(*store)->oldest_expiration_date = (*store)->prekeys[i].expiration_date;
+		}
+	}
+
+	//add the deprecated prekeys
+	for (size_t i = 1; i <= deprecated_keypairs_length; i++) {
+		deprecated_keypair = sodium_malloc(sizeof(prekey_store_node));
+		throw_on_failed_alloc(deprecated_keypair);
+
+		status = prekey_store_node_import(deprecated_keypair, deprecated_keypairs[deprecated_keypairs_length - i]);
+		throw_on_error(IMPORT_ERROR, "Failed to import deprecated prekey.");
+
+		//update expiration date
+		if (((*store)->oldest_deprecated_expiration_date == 0)
+				|| (deprecated_keypair->expiration_date < (*store)->oldest_deprecated_expiration_date)) {
+			(*store)->oldest_deprecated_expiration_date = deprecated_keypair->expiration_date;
+		}
+
+		node_add(*store, deprecated_keypair);
+		deprecated_keypair = NULL;
+	}
+
+cleanup:
+	on_error(
+		if ((store != NULL) && (*store != NULL)) {
+			prekey_store_destroy(*store);
+		}
+
+		sodium_free_and_null_if_valid(deprecated_keypair);
+	)
+
+	return status;
+}
+
 /*
  * Deserialise a prekey store (import from JSON).
  */
