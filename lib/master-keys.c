@@ -245,6 +245,97 @@ cleanup:
 	return status;
 }
 
+return_status master_keys_export(
+		master_keys * const keys,
+		Key ** const public_signing_key,
+		Key ** const private_signing_key,
+		Key ** const public_identity_key,
+		Key ** const private_identity_key) {
+	return_status status = return_status_init();
+
+	//check input
+	if ((keys == NULL)
+			|| (public_signing_key == NULL) || (private_signing_key == NULL)
+			|| (public_identity_key == NULL) || (private_identity_key == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to keys_export");
+	}
+
+	//allocate the structs
+	*public_signing_key = zeroed_malloc(sizeof(Key));
+	throw_on_failed_alloc(*public_signing_key);
+	key__init(*public_signing_key);
+	*private_signing_key = zeroed_malloc(sizeof(Key));
+	throw_on_failed_alloc(*private_signing_key);
+	key__init(*private_signing_key);
+	*public_identity_key = zeroed_malloc(sizeof(Key));
+	throw_on_failed_alloc(*public_identity_key);
+	key__init(*public_identity_key);
+	*private_identity_key = zeroed_malloc(sizeof(Key));
+	throw_on_failed_alloc(*private_identity_key);
+	key__init(*private_identity_key);
+
+	//allocate the key buffers
+	(*public_signing_key)->key.data = zeroed_malloc(PUBLIC_MASTER_KEY_SIZE);
+	throw_on_failed_alloc((*public_signing_key)->key.data);
+	(*public_signing_key)->key.len = PUBLIC_MASTER_KEY_SIZE;
+	(*private_signing_key)->key.data = zeroed_malloc(PRIVATE_MASTER_KEY_SIZE);
+	throw_on_failed_alloc((*private_signing_key)->key.data);
+	(*private_signing_key)->key.len = PRIVATE_MASTER_KEY_SIZE;
+	(*public_identity_key)->key.data = zeroed_malloc(PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc((*public_identity_key)->key.data);
+	(*public_identity_key)->key.len = PUBLIC_KEY_SIZE;
+	(*private_identity_key)->key.data = zeroed_malloc(PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc((*private_identity_key)->key.data);
+	(*private_identity_key)->key.len = PUBLIC_KEY_SIZE;
+
+	//unlock the master keys
+	sodium_mprotect_readonly(keys);
+
+	//copy the keys
+	if (buffer_clone_to_raw((*public_signing_key)->key.data, (*public_signing_key)->key.len, keys->public_signing_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to export public signing key.");
+	}
+	if (buffer_clone_to_raw((*private_signing_key)->key.data, (*private_signing_key)->key.len, keys->private_signing_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to export private signing key.");
+	}
+	if (buffer_clone_to_raw((*public_identity_key)->key.data, (*public_identity_key)->key.len, keys->public_identity_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to export public identity key.");
+	}
+	if (buffer_clone_to_raw((*private_identity_key)->key.data, (*private_identity_key)->key.len, keys->private_identity_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to export private identity key.");
+	}
+
+cleanup:
+	on_error(
+		if ((public_signing_key != NULL) && (*public_signing_key != NULL)) {
+			key__free_unpacked(*public_signing_key, &protobuf_c_allocators);
+			*public_signing_key = NULL;
+		}
+
+		if ((private_signing_key != NULL) && (*private_signing_key != NULL)) {
+			key__free_unpacked(*private_signing_key, &protobuf_c_allocators);
+			*private_signing_key = NULL;
+		}
+
+		if ((public_identity_key != NULL) && (*public_identity_key != NULL)) {
+			key__free_unpacked(*public_identity_key, &protobuf_c_allocators);
+			*public_identity_key = NULL;
+		}
+
+		if ((private_identity_key != NULL) && (*private_identity_key != NULL)) {
+			key__free_unpacked(*private_identity_key, &protobuf_c_allocators);
+			*private_identity_key = NULL;
+		}
+
+	)
+
+	if (keys != NULL) {
+		sodium_mprotect_noaccess(keys);
+	}
+
+	return status;
+}
+
 /*
  * Serialise the master keys into JSON. It get's a mempool_t buffer and stores mcJSON
  * Objects into it starting at pool->position.

@@ -19,6 +19,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <user.pb-c.h>
+
 #include "constants.h"
 #include "common.h"
 #include "../buffer/buffer.h"
@@ -78,6 +80,20 @@ return_status master_keys_sign(
 		const buffer_t * const data,
 		buffer_t * const signed_data //output, length of data + SIGNATURE_SIZE
 		) __attribute__((warn_unused_result));
+
+/*! Export a set of master keys into a user Protobuf-C struct
+ * \param master_keys A set of master keys to export.
+ * \param public_signing_key Public pasrt of the signing keypair.
+ * \param private_signing_key Private part of the signing keypair.
+ * \param public_identity_key Public part of the identity keypair.
+ * \param private_identity_key Private part of the idenity keypair.
+ */
+return_status master_keys_export(
+		master_keys * const keys,
+		Key ** const public_signing_key,
+		Key ** const private_signing_key,
+		Key ** const public_identity_key,
+		Key ** const private_identity_key) __attribute__((warn_unused_result));
 
 /*
  * Serialise the master keys into JSON. It get's a mempool_t buffer and stores mcJSON
