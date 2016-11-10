@@ -35,9 +35,7 @@ return_status user_store_create(user_store ** const store) {
 	}
 
 	*store = sodium_malloc(sizeof(user_store));
-	if (*store == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate user store.");
-	}
+	throw_on_failed_alloc(*store);
 
 	//initialise
 	(*store)->length = 0;
@@ -45,11 +43,11 @@ return_status user_store_create(user_store ** const store) {
 	(*store)->tail = NULL;
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (store != NULL) {
 			*store = NULL;
 		}
-	}
+	)
 
 	return status;
 }
@@ -58,7 +56,7 @@ cleanup:
 void user_store_destroy(user_store* store) {
 	if (store != NULL) {
 		user_store_clear(store);
-		sodium_free(store);
+		sodium_free_and_null_if_valid(store);
 	}
 }
 
@@ -99,9 +97,7 @@ return_status create_user_store_node(user_store_node ** const node) {
 	}
 
 	*node = sodium_malloc(sizeof(user_store_node));
-	if (*node == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate user store node.");
-	}
+	throw_on_failed_alloc(*node);
 
 	//initialise pointers
 	(*node)->previous = NULL;
@@ -115,11 +111,11 @@ return_status create_user_store_node(user_store_node ** const node) {
 	conversation_store_init((*node)->conversations);
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (node != NULL) {
 			*node = NULL;
 		}
-	}
+	)
 
 	return status;
 }
@@ -169,18 +165,18 @@ return_status user_store_create_user(
 	add_user_store_node(store, new_node);
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (new_node != NULL) {
 			if (new_node->prekeys != NULL) {
 				prekey_store_destroy(new_node->prekeys);
 			}
 			if (new_node->master_keys != NULL) {
-				sodium_free(new_node->master_keys);
+				sodium_free_and_null_if_valid(new_node->master_keys);
 			}
 
-			sodium_free(new_node);
+			sodium_free_and_null_if_valid(new_node);
 		}
-	}
+	)
 
 	return status;
 }
@@ -212,11 +208,11 @@ return_status user_store_find_node(user_store_node ** const node, user_store * c
 	}
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (node != NULL) {
 			*node = NULL;
 		}
-	}
+	)
 
 	return status;
 }
@@ -237,9 +233,7 @@ return_status user_store_list(buffer_t ** const list, user_store * const store) 
 	}
 
 	*list = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE * store->length, PUBLIC_MASTER_KEY_SIZE * store->length);
-	if (*list == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate user list buffer.");
-	}
+	throw_on_failed_alloc(*list);
 
 	user_store_node *current_node = store->head;
 	for (size_t i = 0; (i < store->length) && (current_node != NULL); i++) {
@@ -258,13 +252,11 @@ return_status user_store_list(buffer_t ** const list, user_store * const store) 
 	}
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (list != NULL) {
-			if (*list != NULL) {
-				buffer_destroy_from_heap(*list);
-			}
+				buffer_destroy_from_heap_and_null_if_valid(*list);
 		}
-	}
+	)
 
 	return status;
 }
@@ -307,7 +299,7 @@ void user_store_remove(user_store *store, user_store_node *node) {
 		store->head = node->next;
 	}
 
-	sodium_free(node);
+	sodium_free_and_null_if_valid(node);
 
 	//update length
 	store->length--;
@@ -457,7 +449,7 @@ user_store *user_store_json_import(const mcJSON * const json) {
 	}
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (store != NULL) {
 			user_store_destroy(store);
 		}
@@ -466,14 +458,12 @@ cleanup:
 			if (node->prekeys != NULL) {
 				prekey_store_destroy(node->prekeys);
 			}
-			if (node->master_keys != NULL) {
-				sodium_free(node->master_keys);
-			}
-			sodium_free(node);
+			sodium_free_and_null_if_valid(node->master_keys);
+			sodium_free_and_null_if_valid(node);
 		}
 
 		return_status_destroy_errors(&status);
-	}
+	)
 
 	return store;
 }

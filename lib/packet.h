@@ -19,123 +19,176 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIB_PACKET_H
+#define LIB_PACKET_H
+
 #include "../buffer/buffer.h"
-#include "return-status.h"
+#include "common.h"
+#include "molch.h"
 
-#ifndef LIB_MESSAGE_H
-#define LIB_MESSAGE_H
+/*! \file
+ * Theses functions create a packet from a packet header, encryption keys, an azolotl header and a
+ * message. Also the other way around extracting data from a packet and decrypting its contents.
+ */
 
-/*
- * Encrypt a message and header with a symmetric key and a nonce.
+/*!
+ * Construct and encrypt a packet given the keys and metadata.
  *
- * For the header, AEAD is used (authenticated encryption with
- * additional data) to authenticate the header length, version
- * and packet type.
+ * \param packet
+ *   The encrypted packet.
+ * \param packet_type
+ *   The type of the packet (prekey message, normal message ...)
+ * \param axolotl_header
+ *   The axolotl header containing all the necessary information for the ratchet.
+ * \param axolotl_header_key
+ *   The header key with which the axolotl header is encrypted.
+ * \param message
+ *   The message that should be sent.
+ * \param message_key
+ *   The key to encrypt the message with.
+ * \param public_identity_key
+ *   The public identity key of the sender in case of prekey messages. Optional for normal messages.
+ * \param public_ephemeral_key
+ *   The public ephemeral key of the sender in case of prekey messages. Optional for normal messages.
+ * \param public_prekey
+ *   The prekey of the receiver that has been selected by the sender in case of prekey messages. Optional for normal messages.
  *
- * packet has to have at least the following length:
- *
- * The packet has the following format:
- * packet = {
- *   protocol_version(1), //4MSB: current version; 4LSB: highest supported version
- *   packet_type(1),
- *   header_length(1),
- *   our_public_identity_key(PUBLIC_KEY_SIZE), //optional, only prekey messages
- *   our_public_ephemeral_key(PUBLIC_KEY_SIZE), //optional, only prekey messages
- *   public_prekey(PUBLIC_KEY_SIZE), //optional, only prekey messages
- *   header_nonce(HEADER_NONCE_SIZE),
- *   header {
- *       axolotl_header(?),
- *       message_nonce(MESSAGE_NONCE_SIZE)
- *   },
- *   header_and_additional_data_MAC(crypto_aead_chacha20poly1305_ABYTES),
- *   authenticated_encrypted_message {
- *       message(?),
- *       MAC(crypto_secretbox_MACBYTES)
- *   }
- * }
- *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
+ * \return
+ *   Error status, destroy with return_status_destroy_errors if an error occurs.
  */
 return_status packet_encrypt(
-		buffer_t * const packet, //output, has to be long enough, see format above
-		const unsigned char packet_type,
-		const unsigned char current_protocol_version, //this can't be larger than 0xF = 15
-		const unsigned char highest_supported_protocol_version, //this can't be larger than 0xF = 15
-		const buffer_t * const header,
-		const buffer_t * const header_key, //HEADER_KEY_SIZE
+		//output
+		buffer_t ** const packet,
+		//inputs
+		const molch_message_type packet_type,
+		const buffer_t * const axolotl_header,
+		const buffer_t * const axolotl_header_key, //HEADER_KEY_SIZE
 		const buffer_t * const message,
 		const buffer_t * const message_key, //MESSAGE_KEY_SIZE
-		const buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages only
-		const buffer_t * const public_ephemeral_key, //otpional, can be NULL, for prekey messages only
-		const buffer_t * const public_prekey //optional, can be NULL, for prekey messages only
-		) __attribute__((warn_unused_result));
+		//optional inputs (prekey messages only)
+		const buffer_t * const public_identity_key,
+		const buffer_t * const public_ephemeral_key,
+		const buffer_t * const public_prekey) __attribute__((warn_unused_result));
 
-/*
- * Decrypt and authenticate a packet.
+/*!
+ * Extract and decrypt a packet and the metadata inside of it.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
+ * \param current_protocol_version
+ *   The protocol version currently used.
+ * \param highest_supported_protocol_version
+ *   The highest protocol version the client supports.
+ * \param packet_type
+ *   The type of the packet (prekey message, normal message ...)
+ * \param axolotl_header
+ *   The axolotl header containing all the necessary information for the ratchet.
+ * \param message
+ *   The message that should be sent.
+ * \param packet
+ *   The encrypted packet.
+ * \param axolotl_header_key
+ *   The header key with which the axolotl header is encrypted.
+ * \param message_key
+ *   The key to encrypt the message with.
+ * \param public_identity_key
+ *   The public identity key of the sender in case of prekey messages. Optional for normal messages.
+ * \param public_ephemeral_key
+ *   The public ephemeral key of the sender in case of prekey messages. Optional for normal messages.
+ * \param public_prekey
+ *   The prekey of the receiver that has been selected by the sender in case of prekey messages. Optional for normal messages.
+ *
+ * \return
+ *   Error status, destroy with return_status_destroy_errors if an error occurs.
  */
 return_status packet_decrypt(
+		//outputs
+		uint32_t * const current_protocol_version,
+		uint32_t * const highest_supported_protocol_version,
+		molch_message_type * const packet_type,
+		buffer_t ** const axolotl_header,
+		buffer_t ** const message,
+		//inputs
 		const buffer_t * const packet,
-		unsigned char * const packet_type, //1 Byte, no array
-		unsigned char * const current_protocol_version, //1 Byte, no array
-		unsigned char * const highest_supported_protocol_version, //1 Byte, no array
-		buffer_t * const header, //output, As long as the packet or at most 255 bytes
-		const buffer_t * const header_key, //HEADER_KEY_SIZE
-		buffer_t * const message, //output, should be as long as the packet
+		const buffer_t * const axolotl_header_key, //HEADER_KEY_SIZE
 		const buffer_t * const message_key, //MESSAGE_KEY_SIZE
-		buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages only
-		buffer_t * const public_ephemeral_key, //optional, can be NULL, for prekey messages only
-		buffer_t * const public_prekey //optional, can be NULL, for prekey messages only
-		) __attribute__((warn_unused_result));
+		//optional outputs (prekey messages only)
+		buffer_t * const public_identity_key,
+		buffer_t * const public_ephemeral_key,
+		buffer_t * const public_prekey) __attribute__((warn_unused_result));
 
-/*
- * Get the metadata of a packet (without verifying it's authenticity).
+/*!
+ * Extracts the metadata from a packet without actually decrypting or verifying anything.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
+ * \param current_protocol_version
+ *   The protocol version currently used.
+ * \param highest_supported_protocol_version
+ *   The highest protocol version the client supports.
+ * \param packet_type
+ *   The type of the packet (prekey message, normal message ...)
+ * \param packet
+ *   The entire packet.
+ * \param public_identity_key
+ *   The public identity key of the sender in case of prekey messages. Optional for normal messages.
+ * \param public_ephemeral_key
+ *   The public ephemeral key of the sender in case of prekey messages. Optional for normal messages.
+ * \param public_prekey
+ *   The prekey of the receiver that has been selected by the sender in case of prekey messages. Optional for normal messages.
+ *
+ * \return
+ *   Error status, destroy with return_status_destroy_errors if an error occurs.
  */
 return_status packet_get_metadata_without_verification(
+		//outputs
+		uint32_t * const current_protocol_version,
+		uint32_t * const highest_supported_protocol_version,
+		molch_message_type * const packet_type,
+		//input
 		const buffer_t * const packet,
-		unsigned char * const packet_type, //1 Byte, no array
-		unsigned char * const current_protocol_version, //1 Byte, no array
-		unsigned char * const highest_supported_protocol_version, //1 Byte, no array
-		unsigned char * const header_length, //this is the raw header length, without the authenticator
-		buffer_t * const public_identity_key, //output, optional, can be NULL, only works with prekey messages
-		buffer_t * const public_ephemeral_key, //output, optional, can be NULL, only works with prekey messages
-		buffer_t * const public_prekey //output, optional, can be NULL, only works with prekey messages
+		//optional outputs (prekey messages only)
+		buffer_t * const public_identity_key, //PUBLIC_KEY_SIZE
+		buffer_t * const public_ephemeral_key, //PUBLIC_KEY_SIZE
+		buffer_t * const public_prekey //PUBLIC_KEY_SIZE
 		) __attribute__((warn_unused_result));
 
-/*
- * Decrypt the header of a packet. (This also authenticates the metadata!)
+/*!
+ * Decrypt the axolotl header part of a packet and thereby authenticate other metadata.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
+ * \param axolotl_header
+ *   A buffer for the decrypted axolotl header.
+ * \param packet
+ *   The entire packet.
+ * \param axolotl_header_key
+ *   The key to decrypt the axolotl header with.
+ *
+ * \return
+ *   Error status, destroy with return_status_destroy_errors if an error occurs.
  */
 return_status packet_decrypt_header(
+		//output
+		buffer_t ** const axolotl_header,
+		//inputs
 		const buffer_t * const packet,
-		buffer_t * const header, //As long as the packet or at most 255 bytes
-		buffer_t * const message_nonce, //output, MESSAGE_KEY_SIZE
-		const buffer_t * const header_key, //HEADER_KEY_SIZE
-		buffer_t * const public_identity_key, //output, optional, can be NULL, for prekey messages only
-		buffer_t * const public_ephemeral_key, //output, optional, can be NULL, for prekey messages only
-		buffer_t * const public_prekey //output, optional, can be NULL, for prekey messages only
+		const buffer_t * const axolotl_header_key //HEADER_KEY_SIZE
 		) __attribute__((warn_unused_result));
 
-/*
- * Decrypt the message inside a packet.
- * (only do this if the packet metadata is already
- * verified)
+/*!
+ * Decrypt the message part of a packet.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
+ * \param message
+ *   A buffer for the decrypted message.
+ * \param packet
+ *   The entire packet.
+ * \message_key
+ *   The key to decrypt the message with.
+ *
+ * \return
+ *   Error status, destroy with return_status_destroy_errors if an error occurs.
  */
 return_status packet_decrypt_message(
+		//output
+		buffer_t ** const message,
+		//inputs
 		const buffer_t * const packet,
-		buffer_t * const message, //This buffer should be as large as the packet
-		const buffer_t * const message_nonce,
-		const buffer_t * const message_key) __attribute__((warn_unused_result)); //MESSAGE_KEY_SIZE
+		const buffer_t * const message_key
+		) __attribute__((warn_unused_result));
 
 #endif

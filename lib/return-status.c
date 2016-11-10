@@ -67,7 +67,7 @@ void return_status_destroy_errors(return_status * const status) {
 
 	while (status->error != NULL) {
 		error_message *next_error = status->error->next;
-		free(status->error);
+		free_and_null_if_valid(status->error);
 		status->error = next_error;
 	}
 }
@@ -167,6 +167,18 @@ const char *return_status_get_name(status_type status) {
 		case OUTDATED:
 			return "OUTDATED";
 
+		case PROTOBUF_PACK_ERROR:
+			return "PROTOBUF_PACK_ERROR";
+
+		case PROTOBUF_UNPACK_ERROR:
+			return "PROTOBUF_UNPACK_ERROR";
+
+		case PROTOBUF_MISSING_ERROR:
+			return "PROTOBUF_MISSING_ERROR";
+
+		case UNSUPPORTED_PROTOCOL_VERSION:
+			return "UNSUPPORTED_PROTOCOL_VERSION";
+
 		default:
 			return "(NULL)";
 	}
@@ -219,6 +231,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 	}
 
 	output = buffer_create_on_heap(output_size, 0);
+	throw_on_failed_alloc(output);
 
 	int status_int = 0;
 	// now fill the output
@@ -316,16 +329,13 @@ cleanup:
 	; // C programming language, I really really love you (not)
 	char *output_string = NULL;
 	if (status.status != SUCCESS) {
-		if (output != NULL) {
-			buffer_destroy_from_heap(output);
-			output = NULL;
-		}
+		buffer_destroy_from_heap_and_null_if_valid(output);
 	} else {
 		output_string = (char*) output->content;
 		if (length != NULL) {
 			*length = output->content_length;
 		}
-		free(output);
+		free_and_null_if_valid(output);
 	}
 
 	return_status_destroy_errors(&status);

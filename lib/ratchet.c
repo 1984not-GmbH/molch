@@ -48,9 +48,7 @@ return_status create_ratchet_state(ratchet_state ** const ratchet) {
 	}
 
 	*ratchet = sodium_malloc(sizeof(ratchet_state));
-	if (*ratchet == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate ratchet state.");
-	}
+	throw_on_failed_alloc(*ratchet);
 
 	//initialize the buffers with the storage arrays
 	buffer_init_with_pointer((*ratchet)->root_key, (unsigned char*)(*ratchet)->root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
@@ -182,11 +180,9 @@ return_status ratchet_create(
 cleanup:
 	on_error(
 		if (ratchet != NULL) {
-			if (*ratchet != NULL) {
-				sodium_free(*ratchet);
-			}
+				sodium_free_and_null_if_valid(*ratchet);
 		}
-	);
+	)
 
 	return status;
 }
@@ -204,8 +200,12 @@ return_status ratchet_send(
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *root_key_backup = buffer_create_on_heap(ROOT_KEY_SIZE, 0);
-	buffer_t *chain_key_backup = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	buffer_t *root_key_backup = NULL;
+	buffer_t *chain_key_backup = NULL;
+	root_key_backup = buffer_create_on_heap(ROOT_KEY_SIZE, 0);
+	throw_on_failed_alloc(root_key_backup);
+	chain_key_backup = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	throw_on_failed_alloc(chain_key_backup);
 
 	//check input
 	if ((ratchet == NULL)
@@ -316,10 +316,10 @@ cleanup:
 			buffer_clear(message_key);
 			message_key->content_length = 0;
 		}
-	);
+	)
 
-	buffer_destroy_from_heap(root_key_backup);
-	buffer_destroy_from_heap(chain_key_backup);
+	buffer_destroy_from_heap_and_null_if_valid(root_key_backup);
+	buffer_destroy_from_heap_and_null_if_valid(chain_key_backup);
 
 	return status;
 }
@@ -357,7 +357,7 @@ cleanup:
 			buffer_clear(next_receive_header_key);
 			next_receive_header_key->content_length = 0;
 		}
-	);
+	)
 
 	return status;
 }
@@ -405,9 +405,15 @@ return_status stage_skipped_header_and_message_keys(
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *current_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
-	buffer_t *next_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
-	buffer_t *current_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, 0);
+	buffer_t *current_chain_key = NULL;
+	buffer_t *next_chain_key = NULL;
+	buffer_t *current_message_key = NULL;
+	current_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	throw_on_failed_alloc(current_chain_key);
+	next_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	throw_on_failed_alloc(next_chain_key);
+	current_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, 0);
+	throw_on_failed_alloc(current_message_key);
 
 	//check input
 	if ((staging_area == NULL)
@@ -478,11 +484,11 @@ cleanup:
 		if (staging_area != NULL) {
 			header_and_message_keystore_clear(staging_area);
 		}
-	);
+	)
 
-	buffer_destroy_from_heap(current_chain_key);
-	buffer_destroy_from_heap(next_chain_key);
-	buffer_destroy_from_heap(current_message_key);
+	buffer_destroy_from_heap_and_null_if_valid(current_chain_key);
+	buffer_destroy_from_heap_and_null_if_valid(next_chain_key);
+	buffer_destroy_from_heap_and_null_if_valid(current_message_key);
 
 	return status;
 }
@@ -533,9 +539,15 @@ return_status ratchet_receive(
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *throwaway_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
-	buffer_t *throwaway_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, 0);
-	buffer_t *purported_chain_key_backup = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	buffer_t *throwaway_chain_key = NULL;
+	buffer_t *throwaway_message_key = NULL;
+	buffer_t *purported_chain_key_backup = NULL;
+	throwaway_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	throw_on_failed_alloc(throwaway_chain_key);
+	throwaway_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, 0);
+	throw_on_failed_alloc(throwaway_message_key);
+	purported_chain_key_backup = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	throw_on_failed_alloc(purported_chain_key_backup);
 
 	//check input
 	if ((ratchet == NULL)
@@ -636,11 +648,11 @@ cleanup:
 			buffer_clear(message_key);
 			message_key->content_length = 0;
 		}
-	);
+	)
 
-	buffer_destroy_from_heap(throwaway_chain_key);
-	buffer_destroy_from_heap(throwaway_message_key);
-	buffer_destroy_from_heap(purported_chain_key_backup);
+	buffer_destroy_from_heap_and_null_if_valid(throwaway_chain_key);
+	buffer_destroy_from_heap_and_null_if_valid(throwaway_message_key);
+	buffer_destroy_from_heap_and_null_if_valid(purported_chain_key_backup);
 
 	return status;
 }
@@ -721,7 +733,7 @@ void ratchet_destroy(ratchet_state *state) {
 	header_and_message_keystore_clear(state->skipped_header_and_message_keys);
 	header_and_message_keystore_clear(state->staged_header_and_message_keys);
 
-	sodium_free(state); //this also overwrites all the keys with zeroes
+	sodium_free_and_null_if_valid(state); //this also overwrites all the keys with zeroes
 }
 
 /*
@@ -1157,7 +1169,7 @@ cleanup:
 			ratchet_destroy(state);
 			state = NULL;
 		}
-	);
+	)
 
 	return_status_destroy_errors(&status);
 

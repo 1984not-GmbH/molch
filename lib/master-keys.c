@@ -49,9 +49,7 @@ return_status master_keys_create(
 	}
 
 	*keys = sodium_malloc(sizeof(master_keys));
-	if (*keys == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate master keys.");
-	}
+	throw_on_failed_alloc(*keys);
 
 	//initialize the buffers
 	buffer_init_with_pointer((*keys)->public_signing_key, (*keys)->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
@@ -66,9 +64,7 @@ return_status master_keys_create(
 				crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES,
 				sodium_malloc,
 				sodium_free);
-		if (crypto_seeds == NULL) {
-			throw(ALLOCATION_FAILED, "Failed to allocate cyrpto_seeds buffer.");
-		}
+		throw_on_failed_alloc(crypto_seeds);
 
 		status = spiced_random(crypto_seeds, seed, crypto_seeds->buffer_length);
 		throw_on_error(GENERIC_ERROR, "Failed to create spiced random data.");
@@ -133,20 +129,15 @@ return_status master_keys_create(
 	}
 
 cleanup:
-	if (crypto_seeds != NULL) {
-		buffer_destroy_with_custom_deallocator(crypto_seeds, sodium_free);
-	}
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(crypto_seeds, sodium_free);
 
-	if (status.status != SUCCESS) {
+	on_error(
 		if (keys != NULL) {
-			if (*keys != NULL) {
-				sodium_free(keys);
-				*keys = NULL;
-			}
+			sodium_free_and_null_if_valid(*keys);
 		}
 
 		return status;
-	}
+	)
 
 	if ((keys != NULL) && (*keys != NULL)) {
 		sodium_mprotect_noaccess(*keys);
@@ -245,11 +236,11 @@ cleanup:
 		sodium_mprotect_noaccess(keys);
 	}
 
-	if (status.status != SUCCESS) {
+	on_error(
 		if (signed_data != NULL) {
 			signed_data->content_length = 0;
 		}
-	}
+	)
 
 	return status;
 }
@@ -375,7 +366,7 @@ master_keys *master_keys_json_import(const mcJSON * const json) {
 	goto cleanup;
 
 fail:
-	sodium_free(keys);
+	sodium_free_and_null_if_valid(keys);
 
 	return NULL;
 

@@ -72,9 +72,7 @@ return_status conversation_create(
 	}
 
 	*conversation = malloc(sizeof(conversation_t));
-	if (conversation == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate memory for conversation.");
-	}
+	throw_on_failed_alloc(*conversation);
 
 	init_struct(*conversation);
 
@@ -94,12 +92,11 @@ return_status conversation_create(
 	throw_on_error(CREATION_ERROR, "Failed to create ratchet.");
 
 cleanup:
-	if (status.status != 0) {
-		if ((conversation != NULL) && (*conversation != NULL)) {
-			free(*conversation);
-			*conversation = NULL;
+	on_error(
+		if (conversation != NULL) {
+			free_and_null_if_valid(*conversation);
 		}
-	}
+	)
 
 	return status;
 }
@@ -193,7 +190,7 @@ cleanup:
 			ratchet_destroy(conversation->ratchet);
 		}
 
-		free(conversation);
+		free_and_null_if_valid(conversation);
 
 		return NULL;
 	}
@@ -219,8 +216,13 @@ return_status conversation_start_send_conversation(
 
 	return_status status = return_status_init();
 
-	buffer_t *sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_t *sender_private_ephemeral = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	buffer_t *sender_public_ephemeral = NULL;
+	buffer_t *sender_private_ephemeral = NULL;
+
+	sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(sender_public_ephemeral);
+	sender_private_ephemeral = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	throw_on_failed_alloc(sender_private_ephemeral);
 
 	//check many error conditions
 	if ((conversation == NULL)
@@ -270,17 +272,17 @@ return_status conversation_start_send_conversation(
 	throw_on_error(SEND_ERROR, "Failed to send message using newly created conversation.");
 
 cleanup:
-	buffer_destroy_from_heap(sender_public_ephemeral);
-	buffer_destroy_from_heap(sender_private_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(sender_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(sender_private_ephemeral);
 
-	if (status.status != SUCCESS) {
+	on_error(
 		if (conversation != NULL) {
 			if (*conversation != NULL) {
 				conversation_destroy(*conversation);
 			}
 			*conversation = NULL;
 		}
-	}
+	)
 
 	return status;
 }
@@ -302,13 +304,22 @@ return_status conversation_start_receive_conversation(
 	uint32_t receive_message_number = 0;
 	uint32_t previous_receive_message_number = 0;
 
-	//key buffers
-	buffer_t *receiver_public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_t *receiver_private_prekey = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	buffer_t *sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_t *sender_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-
 	return_status status = return_status_init();
+
+	//key buffers
+	buffer_t *receiver_public_prekey = NULL;
+	buffer_t *receiver_private_prekey = NULL;
+	buffer_t *sender_public_ephemeral = NULL;
+	buffer_t *sender_public_identity = NULL;
+
+	receiver_public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(receiver_public_prekey);
+	receiver_private_prekey = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	throw_on_failed_alloc(receiver_private_prekey);
+	sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(sender_public_ephemeral);
+	sender_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(sender_public_identity);
 
 	if ((conversation == NULL)
 			|| (packet ==NULL)
@@ -322,16 +333,14 @@ return_status conversation_start_receive_conversation(
 	*conversation = NULL;
 
 	//get the senders keys and our public prekey from the packet
-	unsigned char packet_type;
-	unsigned char current_protocol_version;
-	unsigned char highest_supported_protocol_version;
-	unsigned char header_length;
+	molch_message_type packet_type;
+	uint32_t current_protocol_version;
+	uint32_t highest_supported_protocol_version;
 	status = packet_get_metadata_without_verification(
-			packet,
-			&packet_type,
 			&current_protocol_version,
 			&highest_supported_protocol_version,
-			&header_length,
+			&packet_type,
+			packet,
 			sender_public_identity,
 			sender_public_ephemeral,
 			receiver_public_prekey);
@@ -367,19 +376,19 @@ return_status conversation_start_receive_conversation(
 	throw_on_error(RECEIVE_ERROR, "Failed to receive message.");
 
 cleanup:
-	buffer_destroy_from_heap(receiver_public_prekey);
-	buffer_destroy_from_heap(receiver_private_prekey);
-	buffer_destroy_from_heap(sender_public_ephemeral);
-	buffer_destroy_from_heap(sender_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(receiver_public_prekey);
+	buffer_destroy_from_heap_and_null_if_valid(receiver_private_prekey);
+	buffer_destroy_from_heap_and_null_if_valid(sender_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(sender_public_identity);
 
-	if (status.status != SUCCESS) {
+	on_error(
 		if (conversation != NULL) {
 			if (*conversation != NULL) {
 				conversation_destroy(*conversation);
 			}
 			*conversation = NULL;
 		}
-	}
+	)
 
 	return status;
 }
@@ -398,14 +407,21 @@ return_status conversation_send(
 		const buffer_t * const public_ephemeral_key, //can be NULL, if not NULL, this will be a prekey message
 		const buffer_t * const public_prekey //can be NULL, if not NULL, this will be a prekey message
 		) {
+	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *send_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_t *send_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-	buffer_t *send_ephemeral_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
-	buffer_t *header = buffer_create_on_heap(PUBLIC_KEY_SIZE + 8, PUBLIC_KEY_SIZE + 8);
+	buffer_t *send_header_key = NULL;
+	buffer_t *send_message_key = NULL;
+	buffer_t *send_ephemeral_key = NULL;
+	buffer_t *header = NULL;
 
-	return_status status = return_status_init();
+	send_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	throw_on_failed_alloc(send_header_key);
+	send_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	throw_on_failed_alloc(send_message_key);
+	send_ephemeral_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
+	throw_on_failed_alloc(send_ephemeral_key);
+
 
 	//check input
 	if ((conversation == NULL)
@@ -424,7 +440,7 @@ return_status conversation_send(
 		throw(INCORRECT_BUFFER_SIZE, "Public key output has incorrect size.");
 	}
 
-	unsigned char packet_type = NORMAL_MESSAGE;
+	molch_message_type packet_type = NORMAL_MESSAGE;
 	//check if this is a prekey message
 	if (public_identity_key != NULL) {
 		packet_type = PREKEY_MESSAGE;
@@ -445,19 +461,15 @@ return_status conversation_send(
 
 	//create the header
 	status = header_construct(
-			header,
+			&header,
 			send_ephemeral_key,
 			send_message_number,
 			previous_send_message_number);
 	throw_on_error(CREATION_ERROR, "Failed to construct header.");
 
-	const size_t packet_length = header->content_length + 3 + HEADER_NONCE_SIZE + MESSAGE_NONCE_SIZE + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_MACBYTES + message->content_length + 255 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
-	*packet = buffer_create_on_heap(packet_length, 0);
 	status = packet_encrypt(
-			*packet,
+			packet,
 			packet_type,
-			0, //current protocol version
-			0, //highest supported protocol version
 			header,
 			send_header_key,
 			message,
@@ -468,18 +480,15 @@ return_status conversation_send(
 	throw_on_error(ENCRYPT_ERROR, "Failed to encrypt packet.");
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (packet != NULL) {
-			if (*packet != NULL) {
-				buffer_destroy_from_heap(*packet);
-			}
-			*packet = NULL;
+			buffer_destroy_from_heap_and_null_if_valid(*packet);
 		}
-	}
-	buffer_destroy_from_heap(send_header_key);
-	buffer_destroy_from_heap(send_message_key);
-	buffer_destroy_from_heap(send_ephemeral_key);
-	buffer_destroy_from_heap(header);
+	)
+	buffer_destroy_from_heap_and_null_if_valid(send_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(send_message_key);
+	buffer_destroy_from_heap_and_null_if_valid(send_ephemeral_key);
+	buffer_destroy_from_heap_and_null_if_valid(header);
 
 	return status;
 }
@@ -497,36 +506,33 @@ int try_skipped_header_and_message_keys(
 		buffer_t ** const message,
 		uint32_t * const receive_message_number,
 		uint32_t * const previous_receive_message_number) {
-	//create buffers
-	buffer_t *message_nonce = buffer_create_on_heap(MESSAGE_NONCE_SIZE, MESSAGE_NONCE_SIZE);
-	buffer_t *header = buffer_create_on_heap(255, 0);
-	buffer_t *their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-
 	return_status status = return_status_init();
+
+	//create buffers
+	buffer_t *header = NULL;
+	buffer_t *their_signed_public_ephemeral = NULL;
+	their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(their_signed_public_ephemeral);
+
 	header_and_message_keystore_node* node = skipped_keys->head;
 	for (size_t i = 0; (i < skipped_keys->length) && (node != NULL); i++, node = node->next) {
 		status = packet_decrypt_header(
+				&header,
 				packet,
-				header,
-				message_nonce,
-				node->header_key,
-				NULL,
-				NULL,
-				NULL);
+				node->header_key);
 		if (status.status == SUCCESS) {
 			status = packet_decrypt_message(
+					message,
 					packet,
-					*message,
-					message_nonce,
 					node->message_key);
 			if (status.status == SUCCESS) {
 				header_and_message_keystore_remove(skipped_keys, node);
 
 				status = header_extract(
-						header,
 						their_signed_public_ephemeral,
 						receive_message_number,
-						previous_receive_message_number);
+						previous_receive_message_number,
+						header);
 				throw_on_error(GENERIC_ERROR, "Failed to extract data from header.");
 
 				goto cleanup;
@@ -538,9 +544,14 @@ int try_skipped_header_and_message_keys(
 	status.status = NOT_FOUND;
 
 cleanup:
-	buffer_destroy_from_heap(message_nonce);
-	buffer_destroy_from_heap(header);
-	buffer_destroy_from_heap(their_signed_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(header);
+
+	on_error(
+		if (message != NULL) {
+			buffer_destroy_from_heap_and_null_if_valid(*message);
+		}
+	)
+	buffer_destroy_from_heap_and_null_if_valid(their_signed_public_ephemeral);
 
 	return_status_destroy_errors(&status);
 
@@ -559,16 +570,23 @@ return_status conversation_receive(
 	uint32_t * const receive_message_number,
 	uint32_t * const previous_receive_message_number,
 	buffer_t ** const message) { //output, free after use!
+	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *current_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_t *next_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_t *header = buffer_create_on_heap(255, 255);
-	buffer_t *message_nonce = buffer_create_on_heap(MESSAGE_NONCE_SIZE, MESSAGE_NONCE_SIZE);
-	buffer_t *their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_t *message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	buffer_t *current_receive_header_key = NULL;
+	buffer_t *next_receive_header_key = NULL;
+	buffer_t *header = NULL;
+	buffer_t *message_key = NULL;
+	buffer_t *their_signed_public_ephemeral = NULL;
 
-	return_status status = return_status_init();
+	current_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	throw_on_failed_alloc(current_receive_header_key);
+	next_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	throw_on_failed_alloc(next_receive_header_key);
+	their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(their_signed_public_ephemeral);
+	message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	throw_on_failed_alloc(message_key);
 
 	if ((conversation == NULL)
 			|| (packet == NULL)
@@ -579,6 +597,7 @@ return_status conversation_receive(
 	}
 
 	*message = buffer_create_on_heap(packet->content_length, 0);
+	throw_on_failed_alloc(*message);
 
 	int status_int = 0;
 	status_int = try_skipped_header_and_message_keys(
@@ -600,13 +619,9 @@ return_status conversation_receive(
 
 	//try to decrypt the packet header with the current receive header key
 	status = packet_decrypt_header(
+			&header,
 			packet,
-			header,
-			message_nonce,
-			current_receive_header_key,
-			NULL,
-			NULL,
-			NULL);
+			current_receive_header_key);
 	if (status.status == SUCCESS) {
 		status = ratchet_set_header_decryptability(
 				conversation->ratchet,
@@ -617,13 +632,9 @@ return_status conversation_receive(
 
 		//since this failed, try to decrypt it with the next receive header key
 		status = packet_decrypt_header(
+				&header,
 				packet,
-				header,
-				message_nonce,
-				next_receive_header_key,
-				NULL,
-				NULL,
-				NULL);
+				next_receive_header_key);
 		if (status.status == SUCCESS) {
 			status = ratchet_set_header_decryptability(
 					conversation->ratchet,
@@ -643,10 +654,10 @@ return_status conversation_receive(
 	uint32_t local_receive_message_number;
 	uint32_t local_previous_receive_message_number;
 	status = header_extract(
-			header,
 			their_signed_public_ephemeral,
 			&local_receive_message_number,
-			&local_previous_receive_message_number);
+			&local_previous_receive_message_number,
+			header);
 	throw_on_error(GENERIC_ERROR, "Failed to extract data from header.");
 
 	//and now decrypt the message with the message key
@@ -661,16 +672,15 @@ return_status conversation_receive(
 	throw_on_error(DECRYPT_ERROR, "Failed to get decryption keys.");
 
 	status = packet_decrypt_message(
+			message,
 			packet,
-			*message,
-			message_nonce,
 			message_key);
 	on_error(
 		return_status authenticity_status = return_status_init();
 		authenticity_status = ratchet_set_last_message_authenticity(conversation->ratchet, false);
 		return_status_destroy_errors(&authenticity_status);
 		throw(DECRYPT_ERROR, "Failed to decrypt message.");
-	);
+	)
 
 	status = ratchet_set_last_message_authenticity(conversation->ratchet, true);
 	throw_on_error(DATA_SET_ERROR, "Failed to set message authenticity.");
@@ -686,19 +696,15 @@ cleanup:
 			return_status_destroy_errors(&authenticity_status);
 		}
 		if (message != NULL) {
-			if (*message != NULL) {
-				buffer_destroy_from_heap(*message);
-			}
-			*message = NULL;
+			buffer_destroy_from_heap_and_null_if_valid(*message);
 		}
-	);
+	)
 
-	buffer_destroy_from_heap(current_receive_header_key);
-	buffer_destroy_from_heap(next_receive_header_key);
-	buffer_destroy_from_heap(header);
-	buffer_destroy_from_heap(message_nonce);
-	buffer_destroy_from_heap(their_signed_public_ephemeral);
-	buffer_destroy_from_heap(message_key);
+	buffer_destroy_from_heap_and_null_if_valid(current_receive_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(next_receive_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(header);
+	buffer_destroy_from_heap_and_null_if_valid(their_signed_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(message_key);
 
 	return status;
 }

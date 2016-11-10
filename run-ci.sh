@@ -1,11 +1,10 @@
 #!/bin/bash
-TESTS=("ci/test.sh" "ci/clang-static-analysis.sh" "ci/address-sanitizer.sh" "ci/undefined-behavior-sanitizer.sh")
+TESTS=("ci/test.sh" "ci/clang-static-analysis.sh" "ci/address-sanitizer.sh" "ci/undefined-behavior-sanitizer.sh" "ci/doxygen.sh")
 STATUS="OK"
 
-for TEST in ${TESTS[@]}; do
-    echo $TEST
-    "$TEST"
-    if [ ! $? -eq 0 ]; then
+for TEST in "${TESTS[@]}"; do
+    echo "$TEST"
+    if ! "$TEST"; then
         STATUS="FAILED"
     fi
 done

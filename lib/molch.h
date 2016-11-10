@@ -19,7 +19,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "return-status.h"
+#include "common.h"
 
 #ifndef LIB_MOLCH_H
 #define LIB_MOLCH_H
@@ -231,8 +231,7 @@ void molch_end_conversation(
 		const size_t conversation_id_length,
 		//optional output (can be NULL)
 		unsigned char ** const backup, //exports the entire library state, free after use, check if NULL before use!
-		size_t * const backup_length
-		);
+		size_t * const backup_length);
 
 /*
  * List the conversations of a user.

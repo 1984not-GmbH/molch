@@ -53,6 +53,10 @@ header_and_message_keystore_node *create_node() {
  * add a new header_and_message_key_node to a keystore
  */
 void add_node(header_and_message_keystore * const keystore, header_and_message_keystore_node * const node) {
+	if (node == NULL) {
+		return;
+	}
+
 	if (keystore->length == 0) { //first node in the list
 		node->previous = NULL;
 		node->next = NULL;
@@ -98,12 +102,12 @@ return_status header_and_message_keystore_add(
 	new_node->expiration_date = time(NULL) + EXPIRATION_TIME;
 	status_int = buffer_clone(new_node->message_key, message_key);
 	if (status_int != 0) {
-		sodium_free(new_node);
+		sodium_free_and_null_if_valid(new_node);
 		throw(BUFFER_ERROR, "Failed to copy message key.");
 	}
 	status_int = buffer_clone(new_node->header_key, header_key);
 	if (status_int != 0) {
-		sodium_free(new_node);
+		sodium_free_and_null_if_valid(new_node);
 		throw(BUFFER_ERROR, "Failed to copy header key.");
 	}
 
@@ -131,7 +135,7 @@ void header_and_message_keystore_remove(header_and_message_keystore *keystore, h
 	}
 
 	//free node and overwrite with zero
-	sodium_free(node);
+	sodium_free_and_null_if_valid(node);
 
 	//update length
 	keystore->length--;
@@ -251,7 +255,7 @@ int header_and_message_keystore_json_import(
 		//copy the mesage key
 		int status = buffer_clone_from_hex(node->message_key, message_key->valuestring);
 		if (status != 0) {
-			sodium_free(node);
+			sodium_free_and_null_if_valid(node);
 			header_and_message_keystore_clear(keystore);
 			return status;
 		}
@@ -259,7 +263,7 @@ int header_and_message_keystore_json_import(
 		//copy the header key
 		status = buffer_clone_from_hex(node->header_key, header_key->valuestring);
 		if (status != 0) {
-			sodium_free(node);
+			sodium_free_and_null_if_valid(node);
 			header_and_message_keystore_clear(keystore);
 			return status;
 		}

@@ -1,0 +1,6 @@
+message Header {
+	optional bytes public_ephemeral_key = 1;
+	//fixed32 in order to not leak data from the length
+	optional fixed32 message_number = 2;
+	optional fixed32 previous_message_number = 3;
+}

@@ -41,9 +41,14 @@ return_status spiced_random(
 	return_status status = return_status_init();
 
 	//buffer to put the random data derived from the random spice into
-	buffer_t *spice = buffer_create_with_custom_allocator(output_length, output_length, sodium_malloc, sodium_free);
+	buffer_t *spice = NULL;
 	//buffer that contains the random data from the OS
-	buffer_t *os_random = buffer_create_with_custom_allocator(output_length, output_length, sodium_malloc, sodium_free);
+	buffer_t *os_random = NULL;
+	//allocate them
+	spice = buffer_create_with_custom_allocator(output_length, output_length, sodium_malloc, sodium_free);
+	throw_on_failed_alloc(spice);
+	os_random = buffer_create_with_custom_allocator(output_length, output_length, sodium_malloc, sodium_free);
+	throw_on_failed_alloc(os_random);
 
 	//check buffer length
 	if (random_output->buffer_length < output_length) {
@@ -82,14 +87,14 @@ return_status spiced_random(
 	}
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (random_output != NULL) {
 			buffer_clear(random_output);
 			random_output->content_length = 0;
 		}
-	}
-	buffer_destroy_with_custom_deallocator(spice, sodium_free);
-	buffer_destroy_with_custom_deallocator(os_random, sodium_free);
+	)
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(spice, sodium_free);
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(os_random, sodium_free);
 
 	return status;
 }

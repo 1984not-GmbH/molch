@@ -74,14 +74,14 @@ int main(void) {
 	}
 
 cleanup:
-	buffer_destroy_from_heap(master_key);
-	buffer_destroy_from_heap(subkey1);
-	buffer_destroy_from_heap(subkey2);
-	buffer_destroy_from_heap(subkey1_copy);
+	buffer_destroy_from_heap_and_null_if_valid(master_key);
+	buffer_destroy_from_heap_and_null_if_valid(subkey1);
+	buffer_destroy_from_heap_and_null_if_valid(subkey2);
+	buffer_destroy_from_heap_and_null_if_valid(subkey1_copy);
 
 	on_error(
 		print_errors(&status);
-	);
+	)
 	return_status_destroy_errors(&status);
 
 	return status.status;

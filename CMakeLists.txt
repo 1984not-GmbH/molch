@@ -35,9 +35,11 @@ else()
 endif()
 
 find_package(Sodium REQUIRED)
+find_package(Protobuf-C REQUIRED)
+find_package(Protoc-C REQUIRED)
 
-include_directories(${SODIUM_INCLUDE_DIR})
-SET(libs ${libs} ${SODIUM_LIBRARY})
+include_directories(${SODIUM_INCLUDE_DIR} ${PROTOBUFC_INCLUDE_DIR})
+SET(libs ${libs} ${SODIUM_LIBRARY} ${PROTOBUFC_LIBRARY})
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -pedantic -Wall -Wextra -Werror -fPIC ${SECURITY_C_FLAGS}")
 set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${SECURITY_LINK_FLAGS}")
@@ -52,3 +54,20 @@ endif("${MEMORYCHECK_COMMAND}" MATCHES "MEMORYCHECK_COMMAND-NOTFOUND")
 if("${DISABLE_MEMORYCHECK_COMMAND}" MATCHES "TRUE")
     set(MEMORYCHECK_COMMAND "MEMORYCHECK_COMMAND-NOTFOUND")
 endif("${DISABLE_MEMORYCHECK_COMMAND}" MATCHES "TRUE")
+
+#Doxygen
+option(GENERATE_DOC "Generate documentation with Doxygen." OFF)
+
+if (GENERATE_DOC)
+    find_package(Doxygen)
+    if (NOT DOXYGEN_FOUND)
+        message(FATAL_ERROR "Doxygen wasn't found.")
+    endif()
+
+    if (NOT DOXYGEN_DOT_FOUND)
+        message(FATAL_ERROR "Graphviz' 'dot' wasn't found.")
+    endif()
+
+    execute_process(COMMAND ${DOXYGEN_EXECUTABLE}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+endif()

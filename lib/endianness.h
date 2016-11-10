@@ -28,7 +28,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#include "return-status.h"
+#include "common.h"
 #include "../buffer/buffer.h"
 
 #ifndef LIB_ENDIANNESS_H

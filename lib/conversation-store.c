@@ -134,11 +134,11 @@ return_status conversation_store_find_node(
 	*conversation = NULL;
 
 	conversation_store_foreach(store,
-			if (buffer_compare(value->id, id) == 0) {
-				*conversation = node;
-				break;
-			}
-		);
+		if (buffer_compare(value->id, id) == 0) {
+			*conversation = node;
+			break;
+		}
+	)
 
 cleanup:
 
@@ -176,6 +176,7 @@ return_status conversation_store_list(buffer_t ** const list, conversation_store
 	}
 
 	*list = buffer_create_on_heap(store->length * CONVERSATION_ID_SIZE, 0);
+	throw_on_failed_alloc(*list);
 	//copy all the id's
 	conversation_store_foreach(
 			store,
@@ -188,17 +189,14 @@ return_status conversation_store_list(buffer_t ** const list, conversation_store
 			if (status_int != 0) {
 				throw(BUFFER_ERROR, "Failed to copy conversation id.");
 			}
-	);
+	)
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error(
 		if (list != NULL) {
-			if (*list != NULL) {
-				buffer_destroy_from_heap(*list);
-				*list = NULL;
-			}
+				buffer_destroy_from_heap_and_null_if_valid(*list);
 		}
-	}
+	)
 
 	return status;
 }
@@ -226,7 +224,7 @@ mcJSON *conversation_store_json_export(const conversation_store * const store, m
 			return NULL;
 		}
 		mcJSON_AddItemToArray(json, conversation, pool);
-	);
+	)
 
 	return json;
 }
@@ -266,7 +264,7 @@ int conversation_store_json_import(
 	}
 
 cleanup:
-	if (status.status != 0) {
+	on_error(
 		if (node != NULL) {
 			conversation_destroy(node);
 		}
@@ -274,7 +272,7 @@ cleanup:
 		if (store != NULL) {
 			conversation_store_clear(store);
 		}
-	}
+	)
 
 	return_status_destroy_errors(&status);
 

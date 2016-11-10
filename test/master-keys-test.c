@@ -154,7 +154,7 @@ int main(void) {
 	//import it again
 	JSON_IMPORT(imported_master_keys, 10000, json_string1, master_keys_json_import);
 	if (imported_master_keys == NULL) {
-		buffer_destroy_from_heap(json_string1);
+		buffer_destroy_from_heap_and_null_if_valid(json_string1);
 		throw(IMPORT_ERROR, "Failed to import from JSON.")
 	}
 	printf("Successfully imported from JSON!\n");
@@ -162,41 +162,35 @@ int main(void) {
 	//export it again
 	JSON_EXPORT(exported_json_string, 10000, 500, true, imported_master_keys, master_keys_json_export);
 	if (exported_json_string == NULL) {
-		buffer_destroy_from_heap(json_string1);
+		buffer_destroy_from_heap_and_null_if_valid(json_string1);
 		throw(EXPORT_ERROR, "Failed to export imported back to JSON.");
 	}
 	printf("Successfully exported back to JSON!\n");
 
 	//compare them
 	if (buffer_compare(json_string1, exported_json_string) != 0) {
-		buffer_destroy_from_heap(json_string1);
-		buffer_destroy_from_heap(exported_json_string);
+		buffer_destroy_from_heap_and_null_if_valid(json_string1);
+		buffer_destroy_from_heap_and_null_if_valid(exported_json_string);
 		throw(INCORRECT_DATA, "Object imported from JSON was incorrect.");
 	}
 	printf("Imported Object matches!\n");
 
-	buffer_destroy_from_heap(json_string1);
-	buffer_destroy_from_heap(exported_json_string);
+	buffer_destroy_from_heap_and_null_if_valid(json_string1);
+	buffer_destroy_from_heap_and_null_if_valid(exported_json_string);
 
 cleanup:
-	if (unspiced_master_keys != NULL) {
-		sodium_free(unspiced_master_keys);
-	}
-	if (spiced_master_keys != NULL) {
-		sodium_free(spiced_master_keys);
-	}
-	if (imported_master_keys != NULL) {
-		sodium_free(imported_master_keys);
-	}
+	sodium_free_and_null_if_valid(unspiced_master_keys);
+	sodium_free_and_null_if_valid(spiced_master_keys);
+	sodium_free_and_null_if_valid(imported_master_keys);
 
-	buffer_destroy_from_heap(public_signing_key);
-	buffer_destroy_from_heap(public_identity_key);
-	buffer_destroy_from_heap(signed_data);
-	buffer_destroy_from_heap(unwrapped_data);
+	buffer_destroy_from_heap_and_null_if_valid(public_signing_key);
+	buffer_destroy_from_heap_and_null_if_valid(public_identity_key);
+	buffer_destroy_from_heap_and_null_if_valid(signed_data);
+	buffer_destroy_from_heap_and_null_if_valid(unwrapped_data);
 
-	if (status.status != SUCCESS) {
+	on_error(
 		print_errors(&status);
-	}
+	)
 	return_status_destroy_errors(&status);
 
 	if (status_int != 0) {
