@@ -77,7 +77,7 @@ void header_and_message_keystore_clear(header_and_message_keystore *keystore);
  * \return The status.
  */
 return_status header_and_message_keystore_export(
-		header_and_message_keystore * const store,
+		const header_and_message_keystore * const store,
 		KeyBundle *** const key_bundles,
 		size_t * const bundles_size) __attribute__((warn_unused_result));
 

@@ -21,6 +21,7 @@
 
 #include <stdbool.h>
 
+#include <conversation.pb-c.h>
 #include "constants.h"
 #include "header-and-message-keystore.h"
 #include "common.h"
@@ -167,6 +168,16 @@ return_status ratchet_set_last_message_authenticity(
  * End the ratchet chain and free the memory.
  */
 void ratchet_destroy(ratchet_state *state);
+
+/*! Export a ratchet state to Protobuf-C
+ * NOTE: This doesn't fill the Id field of the struct.
+ * \param ratchet The ratchet_state to export.
+ * \param conversation The Conversation Protobuf-C struct.
+ * \return The status.
+ */
+return_status ratchet_export(
+	const ratchet_state * const ratchet,
+	Conversation ** const conversation) __attribute__((warn_unused_result));
 
 /*
  * Serialise a ratchet into JSON. It get's a mempool_t buffer and stores a tree of

@@ -744,6 +744,302 @@ void ratchet_destroy(ratchet_state *state) {
 	sodium_free_and_null_if_valid(state); //this also overwrites all the keys with zeroes
 }
 
+return_status ratchet_export(
+		const ratchet_state * const ratchet,
+		Conversation ** const conversation) {
+	return_status status = return_status_init();
+
+	//root keys
+	unsigned char *root_key = NULL;
+	unsigned char *purported_root_key = NULL;
+	//header keys
+	unsigned char *send_header_key = NULL;
+	unsigned char *receive_header_key = NULL;
+	unsigned char *next_send_header_key = NULL;
+	unsigned char *next_receive_header_key = NULL;
+	unsigned char *purported_receive_header_key = NULL;
+	unsigned char *purported_next_receive_header_key = NULL;
+	//chain key
+	unsigned char *send_chain_key = NULL;
+	unsigned char *receive_chain_key = NULL;
+	unsigned char *purported_receive_chain_key = NULL;
+	//identity key
+	unsigned char *our_public_identity_key = NULL;
+	unsigned char *their_public_identity_key = NULL;
+	//ephemeral keys
+	unsigned char *our_private_ephemeral_key = NULL;
+	unsigned char *our_public_ephemeral_key = NULL;
+	unsigned char *their_public_ephemeral_key = NULL;
+	unsigned char *their_purported_public_ephemeral_key = NULL;
+
+	//check input
+	if ((ratchet == NULL) || (conversation == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to ratchet_export.");
+	}
+
+	*conversation = zeroed_malloc(sizeof(Conversation));
+	throw_on_failed_alloc(*conversation);
+	conversation__init(*conversation);
+
+	//root keys
+	//root key
+	root_key = zeroed_malloc(ROOT_KEY_SIZE);
+	throw_on_failed_alloc(root_key);
+	if (buffer_clone_to_raw(root_key, ROOT_KEY_SIZE, ratchet->root_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy root key.");
+	}
+	(*conversation)->root_key.data = root_key;
+	(*conversation)->root_key.len = ratchet->root_key->content_length;
+	(*conversation)->has_root_key = true;
+	//purported root key
+	purported_root_key = zeroed_malloc(ROOT_KEY_SIZE);
+	throw_on_failed_alloc(purported_root_key);
+	if (buffer_clone_to_raw(purported_root_key, ROOT_KEY_SIZE, ratchet->purported_root_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy purported root key.");
+	}
+	(*conversation)->purported_root_key.data = purported_root_key;
+	(*conversation)->purported_root_key.len = ratchet->purported_root_key->content_length;
+	(*conversation)->has_purported_root_key = true;
+
+	//header keys
+	//send header key
+	send_header_key = zeroed_malloc(HEADER_KEY_SIZE);
+	throw_on_failed_alloc(send_header_key);
+	if (buffer_clone_to_raw(send_header_key, HEADER_KEY_SIZE, ratchet->send_header_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy send header key.");
+	}
+	(*conversation)->send_header_key.data = send_header_key;
+	(*conversation)->send_header_key.len = ratchet->send_header_key->content_length;
+	(*conversation)->has_send_header_key = true;
+	//receive header key
+	receive_header_key = zeroed_malloc(HEADER_KEY_SIZE);
+	throw_on_failed_alloc(receive_header_key);
+	if (buffer_clone_to_raw(receive_header_key, HEADER_KEY_SIZE, ratchet->receive_header_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy receive header key.");
+	}
+	(*conversation)->receive_header_key.data = receive_header_key;
+	(*conversation)->receive_header_key.len = ratchet->receive_header_key->content_length;
+	(*conversation)->has_receive_header_key = true;
+	//next send header key
+	next_send_header_key = zeroed_malloc(HEADER_KEY_SIZE);
+	throw_on_failed_alloc(next_send_header_key);
+	if (buffer_clone_to_raw(next_send_header_key, HEADER_KEY_SIZE, ratchet->next_send_header_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy next send header key.");
+	}
+	(*conversation)->next_send_header_key.data = next_send_header_key;
+	(*conversation)->next_send_header_key.len = ratchet->next_send_header_key->content_length;
+	(*conversation)->has_next_send_header_key = true;
+	//next receive header key
+	next_receive_header_key = zeroed_malloc(HEADER_KEY_SIZE);
+	throw_on_failed_alloc(next_receive_header_key);
+	if (buffer_clone_to_raw(next_receive_header_key, HEADER_KEY_SIZE, ratchet->next_receive_header_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy next receive header key.");
+	}
+	(*conversation)->next_receive_header_key.data = next_receive_header_key;
+	(*conversation)->next_receive_header_key.len = ratchet->next_receive_header_key->content_length;
+	(*conversation)->has_next_receive_header_key = true;
+	//purported receive header key
+	purported_receive_header_key = zeroed_malloc(HEADER_KEY_SIZE);
+	throw_on_failed_alloc(purported_receive_header_key);
+	if (buffer_clone_to_raw(purported_receive_header_key, HEADER_KEY_SIZE, ratchet->purported_receive_header_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy purported receive header key.");
+	}
+	(*conversation)->purported_receive_header_key.data = purported_receive_header_key;
+	(*conversation)->purported_receive_header_key.len = ratchet->purported_receive_header_key->content_length;
+	(*conversation)->has_purported_receive_header_key = true;
+	//purported next receive header key
+	purported_next_receive_header_key = zeroed_malloc(HEADER_KEY_SIZE);
+	throw_on_failed_alloc(purported_next_receive_header_key);
+	if (buffer_clone_to_raw(purported_next_receive_header_key, HEADER_KEY_SIZE, ratchet->purported_next_receive_header_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy purported next receive header key.");
+	}
+	(*conversation)->purported_next_receive_header_key.data = purported_next_receive_header_key;
+	(*conversation)->purported_next_receive_header_key.len = ratchet->purported_next_receive_header_key->content_length;
+	(*conversation)->has_purported_next_receive_header_key = true;
+
+	//chain keys
+	//send chain key
+	send_chain_key = zeroed_malloc(CHAIN_KEY_SIZE);
+	throw_on_failed_alloc(send_chain_key);
+	if (buffer_clone_to_raw(send_chain_key, CHAIN_KEY_SIZE, ratchet->send_chain_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy send chain key.");
+	}
+	(*conversation)->send_chain_key.data = send_chain_key;
+	(*conversation)->send_chain_key.len = ratchet->send_chain_key->content_length;
+	(*conversation)->has_send_chain_key = true;
+	//receive chain key
+	receive_chain_key = zeroed_malloc(CHAIN_KEY_SIZE);
+	throw_on_failed_alloc(receive_chain_key);
+	if (buffer_clone_to_raw(receive_chain_key, CHAIN_KEY_SIZE, ratchet->receive_chain_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy receive chain key.");
+	}
+	(*conversation)->receive_chain_key.data = receive_chain_key;
+	(*conversation)->receive_chain_key.len = ratchet->receive_chain_key->content_length;
+	(*conversation)->has_receive_chain_key = true;
+	//purported receive chain key
+	purported_receive_chain_key = zeroed_malloc(CHAIN_KEY_SIZE);
+	throw_on_failed_alloc(purported_receive_chain_key);
+	if (buffer_clone_to_raw(purported_receive_chain_key, CHAIN_KEY_SIZE, ratchet->purported_receive_chain_key) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy purported receive chain key.");
+	}
+	(*conversation)->purported_receive_chain_key.data = purported_receive_chain_key;
+	(*conversation)->purported_receive_chain_key.len = ratchet->purported_receive_chain_key->content_length;
+	(*conversation)->has_purported_receive_chain_key = true;
+
+	//identity key
+	//our public identity key
+	our_public_identity_key = zeroed_malloc(PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(our_public_identity_key);
+	if (buffer_clone_to_raw(our_public_identity_key, PUBLIC_KEY_SIZE, ratchet->our_public_identity) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy our public identity key.");
+	}
+	(*conversation)->our_public_identity_key.data = our_public_identity_key;
+	(*conversation)->our_public_identity_key.len = ratchet->our_public_identity->content_length;
+	(*conversation)->has_our_public_identity_key = true;
+	//their public identity key
+	their_public_identity_key = zeroed_malloc(PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(their_public_identity_key);
+	if (buffer_clone_to_raw(their_public_identity_key, PUBLIC_KEY_SIZE, ratchet->their_public_identity) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy their public identity key.");
+	}
+	(*conversation)->their_public_identity_key.data = their_public_identity_key;
+	(*conversation)->their_public_identity_key.len = ratchet->their_public_identity->content_length;
+	(*conversation)->has_their_public_identity_key = true;
+
+	//ephemeral keys
+	//our private ephemeral key
+	our_private_ephemeral_key = zeroed_malloc(PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(our_private_ephemeral_key);
+	if (buffer_clone_to_raw(our_private_ephemeral_key, PUBLIC_KEY_SIZE, ratchet->our_private_ephemeral) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy our private ephemeral key.");
+	}
+	(*conversation)->our_private_ephemeral_key.data = our_private_ephemeral_key;
+	(*conversation)->our_private_ephemeral_key.len = ratchet->our_private_ephemeral->content_length;
+	(*conversation)->has_our_private_ephemeral_key = true;
+	//our public ephemeral key
+	our_public_ephemeral_key = zeroed_malloc(PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(our_public_ephemeral_key);
+	if (buffer_clone_to_raw(our_public_ephemeral_key, PUBLIC_KEY_SIZE, ratchet->our_public_ephemeral) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy our public ephemeral key.");
+	}
+	(*conversation)->our_public_ephemeral_key.data = our_public_ephemeral_key;
+	(*conversation)->our_public_ephemeral_key.len = ratchet->our_public_ephemeral->content_length;
+	(*conversation)->has_our_public_ephemeral_key = true;
+	//their public ephemeral key
+	their_public_ephemeral_key = zeroed_malloc(PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(their_public_ephemeral_key);
+	if (buffer_clone_to_raw(their_public_ephemeral_key, PUBLIC_KEY_SIZE, ratchet->their_public_ephemeral) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy their public ephemeral key.");
+	}
+	(*conversation)->their_public_ephemeral_key.data = their_public_ephemeral_key;
+	(*conversation)->their_public_ephemeral_key.len = ratchet->their_public_ephemeral->content_length;
+	(*conversation)->has_their_public_ephemeral_key = true;
+	//their purported public ephemeral key
+	their_purported_public_ephemeral_key = zeroed_malloc(PUBLIC_KEY_SIZE);
+	throw_on_failed_alloc(their_purported_public_ephemeral_key);
+	if (buffer_clone_to_raw(their_purported_public_ephemeral_key, PUBLIC_KEY_SIZE, ratchet->their_purported_public_ephemeral) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy their purported public ephemeral key.");
+	}
+	(*conversation)->their_purported_public_ephemeral.data = their_purported_public_ephemeral_key;
+	(*conversation)->their_purported_public_ephemeral.len = ratchet->their_purported_public_ephemeral->content_length;
+	(*conversation)->has_their_purported_public_ephemeral = true;
+
+	//message numbers
+	//send message number
+	(*conversation)->has_send_message_number = true;
+	(*conversation)->send_message_number = ratchet->send_message_number;
+	//receive message number
+	(*conversation)->has_receive_message_number = true;
+	(*conversation)->receive_message_number = ratchet->receive_message_number;
+	//purported message number
+	(*conversation)->has_purported_message_number = true;
+	(*conversation)->purported_message_number = ratchet->purported_message_number;
+	//previous message number
+	(*conversation)->has_previous_message_number = true;
+	(*conversation)->previous_message_number = ratchet->previous_message_number;
+	//purported previous message number
+	(*conversation)->has_purported_previous_message_number = true;
+	(*conversation)->purported_previous_message_number = ratchet->purported_previous_message_number;
+
+	//flags
+	//ratchet flag
+	(*conversation)->has_ratchet_flag = true;
+	(*conversation)->ratchet_flag = ratchet->ratchet_flag;
+	//am I Alice
+	(*conversation)->has_am_i_alice = true;
+	(*conversation)->am_i_alice = ratchet->am_i_alice;
+	//received valid
+	(*conversation)->has_received_valid = true;
+	(*conversation)->received_valid = ratchet->received_valid;
+
+	//header decryptability
+	switch (ratchet->header_decryptable) {
+		case CURRENT_DECRYPTABLE:
+			(*conversation)->has_header_decryptable = true;
+			(*conversation)->header_decryptable = CONVERSATION__HEADER_DECRYPTABILITY__CURRENT_DECRYPTABLE;
+			break;
+		case NEXT_DECRYPTABLE:
+			(*conversation)->has_header_decryptable = true;
+			(*conversation)->header_decryptable = CONVERSATION__HEADER_DECRYPTABILITY__NEXT_DECRYPTABLE;
+			break;
+		case UNDECRYPTABLE:
+			(*conversation)->has_header_decryptable = true;
+			(*conversation)->header_decryptable = CONVERSATION__HEADER_DECRYPTABILITY__UNDECRYPTABLE;
+			break;
+		case NOT_TRIED:
+			(*conversation)->has_header_decryptable = true;
+			(*conversation)->header_decryptable = CONVERSATION__HEADER_DECRYPTABILITY__NOT_TRIED;
+			break;
+		default:
+			(*conversation)->has_header_decryptable = false;
+			throw(INVALID_VALUE, "Invalid value of ratchet->header_decryptable.");
+	}
+
+	//keystores
+	//skipped header and message keystore
+	status = header_and_message_keystore_export(
+		ratchet->skipped_header_and_message_keys,
+		&((*conversation)->skipped_header_and_message_keys),
+		&((*conversation)->n_skipped_header_and_message_keys));
+	throw_on_error(EXPORT_ERROR, "Failed to export skipped header and message keystore.");
+	//staged header and message keystore
+	status = header_and_message_keystore_export(
+		ratchet->staged_header_and_message_keys,
+		&((*conversation)->staged_header_and_message_keys),
+		&((*conversation)->n_staged_header_and_message_keys));
+	throw_on_error(EXPORT_ERROR, "Failed to export staged header and message keystore.");
+
+cleanup:
+	on_error(
+		if (conversation != NULL) {
+			zeroed_free_and_null_if_valid(*conversation);
+		}
+		//root keys
+		zeroed_free_and_null_if_valid(root_key);
+		zeroed_free_and_null_if_valid(purported_root_key);
+		//header keys
+		zeroed_free_and_null_if_valid(send_header_key);
+		zeroed_free_and_null_if_valid(receive_header_key);
+		zeroed_free_and_null_if_valid(next_send_header_key);
+		zeroed_free_and_null_if_valid(next_receive_header_key);
+		zeroed_free_and_null_if_valid(purported_receive_header_key);
+		zeroed_free_and_null_if_valid(purported_next_receive_header_key);
+		//chain keys
+		zeroed_free_and_null_if_valid(send_chain_key);
+		zeroed_free_and_null_if_valid(receive_chain_key);
+		zeroed_free_and_null_if_valid(purported_receive_chain_key);
+		//identity key
+		zeroed_free_and_null_if_valid(their_public_identity_key);
+		//ephemeral key
+		zeroed_free_and_null_if_valid(our_private_ephemeral_key);
+		zeroed_free_and_null_if_valid(our_public_ephemeral_key);
+		zeroed_free_and_null_if_valid(their_public_ephemeral_key);
+		zeroed_free_and_null_if_valid(their_purported_public_ephemeral_key);
+	)
+
+	return status;
+}
+
 /*
  * Serialise a ratchet into JSON. It get's a mempool_t buffer and stores a tree of
  * mcJSON objects into the buffer starting at pool->position.

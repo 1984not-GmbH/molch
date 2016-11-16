@@ -263,7 +263,7 @@ cleanup:
 }
 
 return_status header_and_message_keystore_export(
-		header_and_message_keystore * const store,
+		const header_and_message_keystore * const store,
 		KeyBundle *** const key_bundles,
 		size_t * const bundle_size) {
 	return_status status = return_status_init();
