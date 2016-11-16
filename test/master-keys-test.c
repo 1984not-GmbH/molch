@@ -122,6 +122,102 @@ cleanup:
 }
 
 
+return_status protobuf_import(
+		master_keys ** const keys,
+		const buffer_t * const public_signing_key_buffer,
+		const buffer_t * const private_signing_key_buffer,
+		const buffer_t * const public_identity_key_buffer,
+		const buffer_t * const private_identity_key_buffer) __attribute__((warn_unused_result));
+return_status protobuf_import(
+		master_keys ** const keys,
+		const buffer_t * const public_signing_key_buffer,
+		const buffer_t * const private_signing_key_buffer,
+		const buffer_t * const public_identity_key_buffer,
+		const buffer_t * const private_identity_key_buffer) {
+	return_status status = return_status_init();
+
+	Key *public_signing_key = NULL;
+	Key *private_signing_key = NULL;
+	Key *public_identity_key = NULL;
+	Key *private_identity_key = NULL;
+
+	//check inputs
+	if ((keys == NULL)
+			|| (public_signing_key_buffer == NULL)
+			|| (private_signing_key_buffer == NULL)
+			|| (public_identity_key_buffer == NULL)
+			|| (private_identity_key_buffer == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to protobuf_import.");
+	}
+
+	//unpack the protobuf-c buffers
+	public_signing_key = key__unpack(
+		&protobuf_c_allocators,
+		public_signing_key_buffer->content_length,
+		public_signing_key_buffer->content);
+	if (public_signing_key == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack public signing key from protobuf.");
+	}
+	private_signing_key = key__unpack(
+		&protobuf_c_allocators,
+		private_signing_key_buffer->content_length,
+		private_signing_key_buffer->content);
+	if (private_signing_key == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack private signing key from protobuf.");
+	}
+	public_identity_key = key__unpack(
+		&protobuf_c_allocators,
+		public_identity_key_buffer->content_length,
+		public_identity_key_buffer->content);
+	if (public_identity_key == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack public identity key from protobuf.");
+	}
+	private_identity_key = key__unpack(
+		&protobuf_c_allocators,
+		private_identity_key_buffer->content_length,
+		private_identity_key_buffer->content);
+	if (private_identity_key == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack private identity key from protobuf.");
+	}
+
+	status = master_keys_import(
+		keys,
+		public_signing_key,
+		private_signing_key,
+		public_identity_key,
+		private_identity_key);
+	throw_on_error(IMPORT_ERROR, "Failed to import master keys.")
+cleanup:
+	on_error(
+		if (keys != NULL) {
+			sodium_free_and_null_if_valid(*keys);
+		}
+	)
+
+	//free the protobuf-c structs
+	if (public_signing_key != NULL) {
+		key__free_unpacked(public_signing_key, &protobuf_c_allocators);
+		public_signing_key = NULL;
+	}
+	if (private_signing_key != NULL) {
+		key__free_unpacked(private_signing_key, &protobuf_c_allocators);
+		private_signing_key = NULL;
+	}
+	if (public_identity_key != NULL) {
+		key__free_unpacked(public_identity_key, &protobuf_c_allocators);
+		public_identity_key = NULL;
+	}
+	if (private_identity_key != NULL) {
+		key__free_unpacked(private_identity_key, &protobuf_c_allocators);
+		private_identity_key = NULL;
+	}
+
+	//buffers will be freed in main
+
+	return status;
+}
+
+
 int main(void) {
 	if (sodium_init() == -1) {
 		return -1;
@@ -145,6 +241,11 @@ int main(void) {
 	buffer_t *protobuf_export_private_signing_key = NULL;
 	buffer_t *protobuf_export_public_identity_key = NULL;
 	buffer_t *protobuf_export_private_identity_key = NULL;
+	//second export
+	buffer_t *protobuf_second_export_public_signing_key = NULL;
+	buffer_t *protobuf_second_export_private_signing_key = NULL;
+	buffer_t *protobuf_second_export_public_identity_key = NULL;
+	buffer_t *protobuf_second_export_private_identity_key = NULL;
 
 	int status_int = 0;
 
@@ -269,6 +370,43 @@ int main(void) {
 	print_hex(protobuf_export_private_identity_key);
 	puts("\n\n");
 
+	sodium_free_and_null_if_valid(spiced_master_keys);
+
+	//import again
+	printf("Import from Protobuf-C:\n");
+	status = protobuf_import(
+		&spiced_master_keys,
+		protobuf_export_public_signing_key,
+		protobuf_export_private_signing_key,
+		protobuf_export_public_identity_key,
+		protobuf_export_private_identity_key);
+	throw_on_error(IMPORT_ERROR, "Failed to import from Protobuf-C.");
+
+	//export again
+	status = protobuf_export(
+		spiced_master_keys,
+		&protobuf_second_export_public_signing_key,
+		&protobuf_second_export_private_signing_key,
+		&protobuf_second_export_public_identity_key,
+		&protobuf_second_export_private_identity_key);
+	throw_on_error(EXPORT_ERROR, "Failed to export spiced master keys.");
+
+	//now compare
+	if (buffer_compare(protobuf_export_public_signing_key, protobuf_second_export_public_signing_key) != 0) {
+		throw(INCORRECT_DATA, "The public signing keys do not match.");
+	}
+	if (buffer_compare(protobuf_export_private_signing_key, protobuf_second_export_private_signing_key) != 0) {
+		throw(INCORRECT_DATA, "The private signing keys do not match.");
+	}
+	if (buffer_compare(protobuf_export_public_identity_key, protobuf_second_export_public_identity_key) != 0) {
+		throw(INCORRECT_DATA, "The public identity keys do not match.");
+	}
+	if (buffer_compare(protobuf_export_private_identity_key, protobuf_second_export_private_identity_key) != 0) {
+		throw(INCORRECT_DATA, "The private identity keys do not match.");
+	}
+
+	printf("Successfully exported to Protobuf-C and imported again.");
+
 	//Test JSON export
 	JSON_EXPORT(json_string1, 10000, 500, true, spiced_master_keys, master_keys_json_export);
 	if (json_string1 == NULL) {
@@ -319,6 +457,10 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(protobuf_export_private_signing_key);
 	buffer_destroy_from_heap_and_null_if_valid(protobuf_export_public_identity_key);
 	buffer_destroy_from_heap_and_null_if_valid(protobuf_export_private_identity_key);
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_public_signing_key);
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_private_signing_key);
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_public_identity_key);
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_private_identity_key);
 
 	on_error(
 		print_errors(&status);

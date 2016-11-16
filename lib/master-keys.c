@@ -336,6 +336,56 @@ cleanup:
 	return status;
 }
 
+return_status master_keys_import(
+		master_keys ** const keys,
+		const Key * const public_signing_key,
+		const Key * const private_signing_key,
+		const Key * const public_identity_key,
+		const Key * const private_identity_key) {
+	return_status status = return_status_init();
+
+	//check inputs
+	if ((keys == NULL)
+			|| (public_signing_key == NULL) || (private_signing_key == NULL)
+			|| (public_identity_key == NULL) || (private_identity_key == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to master_keys_import.");
+	}
+
+	*keys = sodium_malloc(sizeof(master_keys));
+	throw_on_failed_alloc(*keys);
+
+	//initialize the buffers
+	buffer_init_with_pointer((*keys)->public_signing_key, (*keys)->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, 0);
+	buffer_init_with_pointer((*keys)->private_signing_key, (*keys)->private_signing_key_storage, PRIVATE_MASTER_KEY_SIZE, 0);
+	buffer_init_with_pointer((*keys)->public_identity_key, (*keys)->public_identity_key_storage, PUBLIC_KEY_SIZE, 0);
+	buffer_init_with_pointer((*keys)->private_identity_key, (*keys)->private_identity_key_storage, PRIVATE_KEY_SIZE, 0);
+
+	//copy the keys
+	if (buffer_clone_from_raw((*keys)->public_signing_key, public_signing_key->key.data, public_signing_key->key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy public signing key.");
+	}
+	if (buffer_clone_from_raw((*keys)->private_signing_key, private_signing_key->key.data, private_signing_key->key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy private signing key.");
+	}
+	if (buffer_clone_from_raw((*keys)->public_identity_key, public_identity_key->key.data, public_identity_key->key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy public identity key.");
+	}
+	if (buffer_clone_from_raw((*keys)->private_identity_key, private_identity_key->key.data, private_identity_key->key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy private identity key.");
+	}
+
+	sodium_mprotect_noaccess(*keys);
+
+cleanup:
+	on_error(
+		if (keys != NULL) {
+			sodium_free_and_null_if_valid(*keys);
+		}
+	)
+
+	return status;
+}
+
 /*
  * Serialise the master keys into JSON. It get's a mempool_t buffer and stores mcJSON
  * Objects into it starting at pool->position.

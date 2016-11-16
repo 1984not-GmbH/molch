@@ -95,6 +95,20 @@ return_status master_keys_export(
 		Key ** const public_identity_key,
 		Key ** const private_identity_key) __attribute__((warn_unused_result));
 
+/*! Import a set of master keys from Protobuf-C structs
+ * \param keys A set of master keys to import to.
+ * \param public_signing_key Public part of the signing keypair (protobuf-c).
+ * \param private_signing_key Private part of the signing keypair (protobuf-c).
+ * \param public_identity_key Public part of the signing keypair (protobuf-c).
+ * \param private_identity_key Private part of the signing keypair (protobuf-c).
+ */
+return_status master_keys_import(
+	master_keys ** const keys,
+	const Key * const public_signing_key,
+	const Key * const private_signing_key,
+	const Key * const public_identity_key,
+	const Key * const private_identity_key) __attribute__((warn_unused_result));
+
 /*
  * Serialise the master keys into JSON. It get's a mempool_t buffer and stores mcJSON
  * Objects into it starting at pool->position.
