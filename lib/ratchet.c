@@ -37,19 +37,7 @@ bool is_none(const buffer_t * const buffer) {
 	return (buffer->content_length == 0) || sodium_is_zero(buffer->content, buffer->content_length);
 }
 
-/*
- * Create a new ratchet_state and initialise the pointers.
- */
-return_status create_ratchet_state(ratchet_state ** const ratchet) {
-	return_status status = return_status_init();
-
-	if (ratchet == NULL) {
-		throw(INVALID_INPUT, "Invalid input to create_ratchet_state.");
-	}
-
-	*ratchet = sodium_malloc(sizeof(ratchet_state));
-	throw_on_failed_alloc(*ratchet);
-
+void init_ratchet_state(ratchet_state ** const ratchet) {
 	//initialize the buffers with the storage arrays
 	buffer_init_with_pointer((*ratchet)->root_key, (unsigned char*)(*ratchet)->root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
 	buffer_init_with_pointer((*ratchet)->purported_root_key, (unsigned char*)(*ratchet)->purported_root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
@@ -72,6 +60,26 @@ return_status create_ratchet_state(ratchet_state ** const ratchet) {
 	buffer_init_with_pointer((*ratchet)->our_public_ephemeral, (unsigned char*)(*ratchet)->our_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_init_with_pointer((*ratchet)->their_public_ephemeral, (unsigned char*)(*ratchet)->their_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_init_with_pointer((*ratchet)->their_purported_public_ephemeral, (unsigned char*)(*ratchet)->their_purported_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+
+	header_and_message_keystore_init((*ratchet)->skipped_header_and_message_keys);
+	header_and_message_keystore_init((*ratchet)->staged_header_and_message_keys);
+}
+
+/*
+ * Create a new ratchet_state and initialise the pointers.
+ */
+return_status create_ratchet_state(ratchet_state ** const ratchet) {
+	return_status status = return_status_init();
+
+	if (ratchet == NULL) {
+		throw(INVALID_INPUT, "Invalid input to create_ratchet_state.");
+	}
+
+	*ratchet = sodium_malloc(sizeof(ratchet_state));
+	throw_on_failed_alloc(*ratchet);
+
+	//initialize the buffers with the storage arrays
+	init_ratchet_state(ratchet);
 
 	//initialise message keystore for skipped messages
 	header_and_message_keystore_init((*ratchet)->skipped_header_and_message_keys);
