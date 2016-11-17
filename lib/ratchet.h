@@ -179,6 +179,18 @@ return_status ratchet_export(
 	const ratchet_state * const ratchet,
 	Conversation ** const conversation) __attribute__((warn_unused_result));
 
+/*! Import a ratchet from Protobuf-C
+ * NOTE: The public identity key is needed separately,
+ * because it is not contained in the Conversation
+ * Protobuf-C struct
+ * \param ratchet The ratchet_state to imports
+ * \param conversation The Protobuf-C buffer.
+ * \return The status.
+ */
+return_status ratchet_import(
+	ratchet_state ** const ratchet,
+	const Conversation * const conversation) __attribute__((warn_unused_result));
+
 /*
  * Serialise a ratchet into JSON. It get's a mempool_t buffer and stores a tree of
  * mcJSON objects into the buffer starting at pool->position.

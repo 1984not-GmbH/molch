@@ -67,6 +67,43 @@ cleanup:
 	return status;
 }
 
+return_status protobuf_import(
+		ratchet_state ** const ratchet,
+		const buffer_t * const export_buffer) __attribute__((warn_unused_result));
+return_status protobuf_import(
+		ratchet_state ** const ratchet,
+		const buffer_t * const export_buffer) {
+	return_status status = return_status_init();
+
+	Conversation *conversation = NULL;
+
+	//check input
+	if ((ratchet == NULL) || (export_buffer == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to protobuf_import.");
+	}
+
+	//unpack the buffer
+	conversation = conversation__unpack(
+		&protobuf_c_allocators,
+		export_buffer->content_length,
+		export_buffer->content);
+	if (conversation == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
+	}
+
+	//now do the import
+	status = ratchet_import(
+		ratchet,
+		conversation);
+	throw_on_error(IMPORT_ERROR, "Failed to import from Protobuf-C.");
+
+cleanup:
+	if (conversation != NULL) {
+		conversation__free_unpacked(conversation, &protobuf_c_allocators);
+	}
+	return status;
+}
+
 int main(void) {
 	if (sodium_init() == -1) {
 		return -1;
@@ -76,6 +113,7 @@ int main(void) {
 
 	//protobuf buffers
 	buffer_t *protobuf_export_buffer = NULL;
+	buffer_t *protobuf_second_export_buffer = NULL;
 
 	int status_int;
 
@@ -807,6 +845,27 @@ int main(void) {
 	print_hex(protobuf_export_buffer);
 	puts("\n\n");
 
+	ratchet_destroy(alice_state);
+	alice_state = NULL;
+
+	//import again
+	printf("Import from Protobuf-C!\n");
+	status = protobuf_import(
+		&alice_state,
+		protobuf_export_buffer);
+	throw_on_error(IMPORT_ERROR, "Failed to import Alice' ratchet from Protobuf-C.");
+
+	//export again
+	status = protobuf_export(alice_state, &protobuf_second_export_buffer);
+	throw_on_error(EXPORT_ERROR, "Failed to export Alice' ratchet to protobuf-c the second time.");
+
+	//compare both exports
+	if (buffer_compare(protobuf_export_buffer, protobuf_second_export_buffer) != 0) {
+		print_hex(protobuf_second_export_buffer);
+		throw(INCORRECT_DATA, "Both exports don't match!");
+	}
+	printf("Exported Protobuf-C buffers match!\n");
+
 	//export Alice's ratchet to json
 	printf("Test JSON export!\n");
 	JSON_EXPORT(output, 100000, 1000, true, alice_state, ratchet_json_export);
@@ -857,6 +916,7 @@ int main(void) {
 cleanup:
 	//export buffers
 	buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffer);
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_buffer);
 
 	//create all the buffers
 	//alice keys

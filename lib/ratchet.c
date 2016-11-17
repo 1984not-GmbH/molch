@@ -1040,6 +1040,245 @@ cleanup:
 	return status;
 }
 
+return_status ratchet_import(
+		ratchet_state ** const ratchet,
+		const Conversation * const conversation) {
+	return_status status = return_status_init();
+
+	//check input
+	if ((ratchet == NULL) || (conversation == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to ratchet_import.");
+	}
+
+	*ratchet= sodium_malloc(sizeof(ratchet_state));
+	throw_on_failed_alloc(*ratchet);
+
+	init_ratchet_state(ratchet);
+
+	//import all the stuff
+	//root keys
+	//root key
+	if (!conversation->has_root_key || (conversation->root_key.len != ROOT_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No root key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->root_key, conversation->root_key.data, conversation->root_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy root key.");
+	}
+	//purported root key
+	if (!conversation->has_purported_root_key || (conversation->purported_root_key.len != ROOT_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No purported root key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->purported_root_key, conversation->purported_root_key.data, conversation->purported_root_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy purported root key.");
+	}
+
+	//header key
+	//send header key
+	if (!conversation->has_send_header_key || (conversation->send_header_key.len != HEADER_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No send header key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->send_header_key, conversation->send_header_key.data, conversation->send_header_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy send header key.");
+	}
+	//receive header key
+	if (!conversation->has_receive_header_key || (conversation->receive_header_key.len != HEADER_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No receive header key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->receive_header_key, conversation->receive_header_key.data, conversation->receive_header_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy receive header key.");
+	}
+	//next send header key
+	if (!conversation->has_next_send_header_key || (conversation->next_send_header_key.len != HEADER_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No next send header key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->next_send_header_key, conversation->next_send_header_key.data, conversation->next_send_header_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy next send header key.");
+	}
+	//next receive header key
+	if (!conversation->has_next_receive_header_key || (conversation->next_receive_header_key.len != HEADER_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No next receive header key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->next_receive_header_key, conversation->next_receive_header_key.data, conversation->next_receive_header_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy next receive header key.");
+	}
+	//purported receive header key
+	if (!conversation->has_purported_receive_header_key || (conversation->purported_receive_header_key.len != HEADER_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No purported receive header key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->purported_receive_header_key, conversation->purported_receive_header_key.data, conversation->purported_receive_header_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy purported receive header key.");
+	}
+	//purported next receive header key
+	if (!conversation->has_purported_next_receive_header_key || (conversation->purported_next_receive_header_key.len != HEADER_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No purported next receive header key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->purported_next_receive_header_key, conversation->purported_next_receive_header_key.data, conversation->purported_next_receive_header_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy purported next receive header key.");
+	}
+
+	//chain keys
+	//send chain key
+	if (!conversation->has_send_chain_key || (conversation->send_chain_key.len != CHAIN_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No send chain key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->send_chain_key, conversation->send_chain_key.data, conversation->send_chain_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy send chain key.");
+	}
+	//receive chain key
+	if (!conversation->has_receive_chain_key || (conversation->receive_chain_key.len != CHAIN_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No receive chain key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->receive_chain_key, conversation->receive_chain_key.data, conversation->receive_chain_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy receive chain key.");
+	}
+	//purported receive chain key
+	if (!conversation->has_purported_receive_chain_key || (conversation->purported_receive_chain_key.len != CHAIN_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No purported receive chain key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->purported_receive_chain_key, conversation->purported_receive_chain_key.data, conversation->purported_receive_chain_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy purported receive chain key.");
+	}
+
+	//identity key
+	//our public identity key
+	if (!conversation->has_our_public_identity_key || (conversation->our_public_identity_key.len != PUBLIC_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No our public identity key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->our_public_identity, conversation->our_public_identity_key.data, conversation->our_public_identity_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy our public identity key.");
+	}
+	//their public identity key
+	if (!conversation->has_their_public_identity_key || (conversation->their_public_identity_key.len != PUBLIC_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No their public identity key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->their_public_identity, conversation->their_public_identity_key.data, conversation->their_public_identity_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy their public identity key.");
+	}
+
+	//ephemeral keys
+	//our private ephemeral key
+	if (!conversation->has_our_private_ephemeral_key || (conversation->our_private_ephemeral_key.len != PRIVATE_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No our private ephemeral key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->our_private_ephemeral, conversation->our_private_ephemeral_key.data, conversation->our_private_ephemeral_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy our private ephemeral key.");
+	}
+	//our public ephemeral key
+	if (!conversation->has_our_public_ephemeral_key || (conversation->our_public_ephemeral_key.len != PUBLIC_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No our public ephemeral key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->our_public_ephemeral, conversation->our_public_ephemeral_key.data, conversation->our_public_ephemeral_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy our public ephemeral key.");
+	}
+	//their public ephemeral key
+	if (!conversation->has_their_public_ephemeral_key || (conversation->their_public_ephemeral_key.len != PUBLIC_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No their public ephemeral key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->their_public_ephemeral, conversation->their_public_ephemeral_key.data, conversation->their_public_ephemeral_key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy their public ephemeral key.");
+	}
+	//their purported public ephemeral key
+	if (!conversation->has_their_purported_public_ephemeral || (conversation->their_purported_public_ephemeral.len != PUBLIC_KEY_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "No their purported public ephemeral key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*ratchet)->their_purported_public_ephemeral, conversation->their_purported_public_ephemeral.data, conversation->their_purported_public_ephemeral.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy their purported public ephemeral key.");
+	}
+
+	//message numbers
+	//send message number
+	if (!conversation->has_send_message_number) {
+		throw(PROTOBUF_MISSING_ERROR, "No send message number in Protobuf-C struct.");
+	}
+	(*ratchet)->send_message_number = conversation->send_message_number;
+	//receive message number
+	if (!conversation->has_receive_message_number) {
+		throw(PROTOBUF_MISSING_ERROR, "No receive message number in Protobuf-C struct.");
+	}
+	(*ratchet)->receive_message_number = conversation->receive_message_number;
+	//purported message number
+	if (!conversation->has_purported_message_number) {
+		throw(PROTOBUF_MISSING_ERROR, "No purported message number in Protobuf-C struct.");
+	}
+	(*ratchet)->purported_message_number = conversation->purported_message_number;
+	//previous message number
+	if (!conversation->has_previous_message_number) {
+		throw(PROTOBUF_MISSING_ERROR, "No previous message number in Protobuf-C struct.");
+	}
+	(*ratchet)->previous_message_number = conversation->previous_message_number;
+	//purported previous message number
+	if (!conversation->has_purported_previous_message_number) {
+		throw(PROTOBUF_MISSING_ERROR, "No purported previous message number in Protobuf-C struct.");
+	}
+	(*ratchet)->purported_previous_message_number = conversation->purported_previous_message_number;
+
+
+	//flags
+	//ratchet flag
+	if (!conversation->has_ratchet_flag) {
+		throw(PROTOBUF_MISSING_ERROR, "No ratchet flag in Protobuf-C struct.");
+	}
+	(*ratchet)->ratchet_flag = conversation->ratchet_flag;
+	//am I Alice
+	if (!conversation->has_am_i_alice) {
+		throw(PROTOBUF_MISSING_ERROR, "No am I Alice flag in Protobuf-C struct.");
+	}
+	(*ratchet)->am_i_alice = conversation->am_i_alice;
+	//received valid
+	if (!conversation->has_received_valid) {
+		throw(PROTOBUF_MISSING_ERROR, "No received valid flag in Protobuf-C struct.");
+	}
+	(*ratchet)->received_valid = conversation->received_valid;
+
+
+	//header decryptable
+	if (!conversation->has_header_decryptable) {
+		throw(PROTOBUF_MISSING_ERROR, "No header decryptable enum in Protobuf-C struct.");
+	}
+	switch (conversation->header_decryptable) {
+		case CONVERSATION__HEADER_DECRYPTABILITY__CURRENT_DECRYPTABLE:
+			(*ratchet)->header_decryptable = CURRENT_DECRYPTABLE;
+			break;
+
+		case CONVERSATION__HEADER_DECRYPTABILITY__NEXT_DECRYPTABLE:
+			(*ratchet)->header_decryptable = NEXT_DECRYPTABLE;
+			break;
+
+		case CONVERSATION__HEADER_DECRYPTABILITY__UNDECRYPTABLE:
+			(*ratchet)->header_decryptable = UNDECRYPTABLE;
+			break;
+
+		case CONVERSATION__HEADER_DECRYPTABILITY__NOT_TRIED:
+			(*ratchet)->header_decryptable = NOT_TRIED;
+			break;
+
+		default:
+			throw(INVALID_VALUE, "header_decryptable has an invalid value.");
+	}
+
+	//header and message keystores
+	//skipped heeader and message keys
+	status = header_and_message_keystore_import(
+		(*ratchet)->skipped_header_and_message_keys,
+		conversation->skipped_header_and_message_keys,
+		conversation->n_skipped_header_and_message_keys);
+	throw_on_error(IMPORT_ERROR, "Failed to import skipped header and message keys.");
+	//staged heeader and message keys
+	status = header_and_message_keystore_import(
+		(*ratchet)->staged_header_and_message_keys,
+		conversation->staged_header_and_message_keys,
+		conversation->n_staged_header_and_message_keys);
+	throw_on_error(IMPORT_ERROR, "Failed to import staged header and message keys.");
+
+cleanup:
+	on_error(
+		if (ratchet != NULL) {
+			sodium_free_and_null_if_valid(*ratchet);
+		}
+	)
+	return status;
+}
+
 /*
  * Serialise a ratchet into JSON. It get's a mempool_t buffer and stores a tree of
  * mcJSON objects into the buffer starting at pool->position.
