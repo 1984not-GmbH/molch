@@ -62,6 +62,42 @@ cleanup:
 	return status;
 }
 
+return_status protobuf_import(
+		conversation_t ** const conversation,
+		const buffer_t * const import_buffer) __attribute__((warn_unused_result));
+return_status protobuf_import(
+		conversation_t ** const conversation,
+		const buffer_t * const import_buffer) {
+	return_status status = return_status_init();
+
+	Conversation *conversation_protobuf = NULL;
+
+	//check input
+	if ((conversation == NULL) || (import_buffer == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to protobuf_import.");
+	}
+
+	conversation_protobuf = conversation__unpack(
+		&protobuf_c_allocators,
+		import_buffer->content_length,
+		import_buffer->content);
+	if (conversation_protobuf == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
+	}
+	throw_on_failed_alloc(conversation_protobuf);
+
+	status = conversation_import(conversation, conversation_protobuf);
+	throw_on_error(IMPORT_ERROR, "Failed to import conversation.");
+
+cleanup:
+	if (conversation_protobuf != NULL) {
+		conversation__free_unpacked(conversation_protobuf, &protobuf_c_allocators);
+		conversation_protobuf = NULL;
+	}
+
+	return status;
+}
+
 /*
  * Create a new conversation.
  *
@@ -144,6 +180,7 @@ int main(void) {
 
 	//Protobuf export buffers
 	buffer_t *protobuf_export_buffer = NULL;
+	buffer_t *protobuf_second_export_buffer = NULL;
 
 	//conversations
 	conversation_t *charlie_conversation = NULL;
@@ -226,7 +263,26 @@ int main(void) {
 	throw_on_error(EXPORT_ERROR, "Failed to export charlie's conversation to protobuf-c.");
 
 	print_hex(protobuf_export_buffer);
-	puts("\n\n");
+	puts("\n");
+
+	conversation_destroy(charlie_conversation);
+	charlie_conversation = NULL;
+
+	//import
+	printf("Import from Protobuf-C\n");
+	status = protobuf_import(&charlie_conversation, protobuf_export_buffer);
+	throw_on_error(IMPORT_ERROR, "Failed to imoport Charlie's conversation from Protobuf-C.");
+
+	//export again
+	printf("Export again\n");
+	status = protobuf_export(charlie_conversation, &protobuf_second_export_buffer);
+	throw_on_error(EXPORT_ERROR, "Failed to export charlie's conversation to protobuf-c.");
+
+	//compare
+	if (buffer_compare(protobuf_export_buffer, protobuf_second_export_buffer) != 0) {
+		throw(EXPORT_ERROR, "Both exported buffers are not the same.");
+	}
+	printf("Both exported buffers are identitcal.\n\n");
 
 	//test JSON export
 	printf("Test JSON export!\n");
@@ -280,6 +336,7 @@ cleanup:
 	}
 
 	buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffer);
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_buffer);
 
 	buffer_destroy_from_heap_and_null_if_valid(charlie_private_identity);
 	buffer_destroy_from_heap_and_null_if_valid(charlie_public_identity);

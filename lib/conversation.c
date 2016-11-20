@@ -744,3 +744,35 @@ cleanup:
 	return status;
 }
 
+return_status conversation_import(
+		conversation_t ** const conversation,
+		const Conversation * const conversation_protobuf) {
+	return_status status = return_status_init();
+
+	//check input
+	if ((conversation == NULL) || (conversation_protobuf == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to conversation_import.");
+	}
+
+	//create the conversation
+	*conversation = malloc(sizeof(conversation_t));
+	throw_on_failed_alloc(*conversation);
+	init_struct(*conversation);
+
+	//copy the id
+	if (buffer_clone_from_raw((*conversation)->id, conversation_protobuf->id.data, conversation_protobuf->id.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy id.");
+	}
+
+	//import the ratchet
+	status = ratchet_import(&((*conversation)->ratchet), conversation_protobuf);
+	throw_on_error(IMPORT_ERROR, "Failed to import ratchet.");
+cleanup:
+	on_error(
+		if (conversation != NULL) {
+			free_and_null_if_valid(*conversation);
+		}
+	)
+	return status;
+}
+

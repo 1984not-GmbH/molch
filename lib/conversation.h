@@ -121,5 +121,15 @@ return_status conversation_receive(
 return_status conversation_export(
 	const conversation_t * const conversation,
 	Conversation ** const exported_conversation) __attribute__((warn_unused_result));
+
+/*! Import a conversatoin from a Protobuf-C struct
+ * \param conversation The conversation to import to.
+ * \param conversation_protobuf The protobuf-c struct to import from.
+ * \param public_identity_key The public identity key of the owner of the conversation.
+ * \return The status.
+ */
+return_status conversation_import(
+	conversation_t ** const conversation,
+	const Conversation * const conversation_protobuf) __attribute__((warn_unused_result));
 #endif
 
