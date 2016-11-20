@@ -31,6 +31,37 @@
 #include "../lib/json.h"
 #include "tracing.h"
 
+return_status protobuf_export(const conversation_t * const conversation, buffer_t ** const export_buffer) __attribute__((warn_unused_result));
+return_status protobuf_export(const conversation_t * const conversation, buffer_t ** const export_buffer) {
+	return_status status = return_status_init();
+
+	Conversation *exported_conversation = NULL;
+
+	//check input
+	if ((conversation == NULL) || (export_buffer == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to protobuf_export.");
+	}
+
+	//export the conversation
+	status = conversation_export(conversation, &exported_conversation);
+	throw_on_error(EXPORT_ERROR, "Failed to export conversation.");
+
+	size_t export_size = conversation__get_packed_size(exported_conversation);
+	*export_buffer = buffer_create_on_heap(export_size, 0);
+	(*export_buffer)->content_length = conversation__pack(exported_conversation, (*export_buffer)->content);
+	if (export_size != (*export_buffer)->content_length) {
+		throw(PROTOBUF_PACK_ERROR, "Failed to pack protobuf-c struct into buffer.");
+	}
+
+cleanup:
+	if (exported_conversation != NULL) {
+		conversation__free_unpacked(exported_conversation, &protobuf_c_allocators);
+	}
+
+	//rest will be freed in main
+	return status;
+}
+
 /*
  * Create a new conversation.
  *
@@ -111,6 +142,9 @@ int main(void) {
 	buffer_t *dora_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	buffer_t *dora_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 
+	//Protobuf export buffers
+	buffer_t *protobuf_export_buffer = NULL;
+
 	//conversations
 	conversation_t *charlie_conversation = NULL;
 	conversation_t *dora_conversation = NULL;
@@ -186,6 +220,14 @@ int main(void) {
 		throw(INCORRECT_DATA, "Dora's conversation has an incorrect ID length.");
 	}
 
+	//test protobuf-c export
+	printf("Export to Protobuf-C\n");
+	status = protobuf_export(charlie_conversation, &protobuf_export_buffer);
+	throw_on_error(EXPORT_ERROR, "Failed to export charlie's conversation to protobuf-c.");
+
+	print_hex(protobuf_export_buffer);
+	puts("\n\n");
+
 	//test JSON export
 	printf("Test JSON export!\n");
 	mempool_t *pool = buffer_create_on_heap(10000, 0);
@@ -236,6 +278,8 @@ cleanup:
 	if (imported_charlies_conversation != NULL) {
 		conversation_destroy(imported_charlies_conversation);
 	}
+
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffer);
 
 	buffer_destroy_from_heap_and_null_if_valid(charlie_private_identity);
 	buffer_destroy_from_heap_and_null_if_valid(charlie_public_identity);

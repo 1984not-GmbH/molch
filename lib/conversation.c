@@ -708,3 +708,39 @@ cleanup:
 
 	return status;
 }
+
+return_status conversation_export(
+		const conversation_t * const conversation,
+		Conversation ** const exported_conversation) {
+	return_status status = return_status_init();
+
+	unsigned char *id = NULL;
+
+	//check input
+	if ((conversation == NULL) || (exported_conversation == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to conversation_export.");
+	}
+
+	//export the ratchet
+	status = ratchet_export(conversation->ratchet, exported_conversation);
+	throw_on_error(EXPORT_ERROR, "Failed to export ratchet.");
+
+	//export the conversation id
+	id = zeroed_malloc(CONVERSATION_ID_SIZE);
+	throw_on_failed_alloc(id);
+	if (buffer_clone_to_raw(id, CONVERSATION_ID_SIZE, conversation->id) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy conversation id.");
+	}
+	(*exported_conversation)->id.data = id;
+	(*exported_conversation)->id.len = CONVERSATION_ID_SIZE;
+cleanup:
+	on_error(
+		zeroed_free_and_null_if_valid(id);
+		if ((exported_conversation != NULL) && (*exported_conversation != NULL)) {
+			conversation__free_unpacked(*exported_conversation, &protobuf_c_allocators);
+		}
+	)
+
+	return status;
+}
+

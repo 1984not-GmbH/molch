@@ -113,4 +113,13 @@ return_status conversation_receive(
 	uint32_t * const previous_receive_message_number,
 	buffer_t ** const message //output, free after use!
 		) __attribute__((warn_unused_result));
+
+/*! Export a conversation to a Protobuf-C struct.
+ * \param conversation The conversation to export
+ * \param exported_conversation The exported conversation protobuf-c struct.
+ */
+return_status conversation_export(
+	const conversation_t * const conversation,
+	Conversation ** const exported_conversation) __attribute__((warn_unused_result));
 #endif
+
