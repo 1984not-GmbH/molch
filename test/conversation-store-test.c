@@ -30,6 +30,61 @@
 #include "utils.h"
 #include "tracing.h"
 
+return_status protobuf_export(
+		const conversation_store * const store,
+		buffer_t *** const export_buffers,
+		size_t * const buffer_count) __attribute__((warn_unused_result));
+return_status protobuf_export(
+		const conversation_store * const store,
+		buffer_t *** const export_buffers,
+		size_t * const buffer_count) {
+	return_status status = return_status_init();
+
+	Conversation ** conversations = NULL;
+	size_t length = 0;
+
+	if (export_buffers != NULL) {
+		*export_buffers = NULL;
+	}
+	if (buffer_count != NULL) {
+		*buffer_count = 0;
+	}
+
+	//check input
+	if ((store == NULL) || (export_buffers == NULL) || (buffer_count == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to protobuf_export.");
+	}
+
+	status = conversation_store_export(store, &conversations, &length);
+	throw_on_error(EXPORT_ERROR, "Failed to export conversations.");
+
+	*export_buffers = malloc(length * sizeof(buffer_t*));
+	throw_on_failed_alloc(*export_buffers);
+	*buffer_count = length;
+
+	//unpack all the conversations
+	for (size_t i = 0; i < length; i++) {
+		size_t unpacked_size = conversation__get_packed_size(conversations[i]);
+		(*export_buffers)[i] = buffer_create_on_heap(unpacked_size, 0);
+		throw_on_failed_alloc((*export_buffers)[i]);
+
+		(*export_buffers)[i]->content_length = conversation__pack(conversations[i], (*export_buffers)[i]->content);
+	}
+
+cleanup:
+	if (conversations != NULL) {
+		for (size_t i = 0; i < length; i++) {
+			if (conversations[i] != NULL) {
+				conversation__free_unpacked(conversations[i], &protobuf_c_allocators);
+				conversations[i] = NULL;
+			}
+		}
+		zeroed_free_and_null_if_valid(conversations);
+	}
+	//buffer will be freed in main
+	return status;
+}
+
 return_status test_add_conversation(conversation_store * const store) {
 	//define key buffers
 	//identity keys
@@ -123,6 +178,10 @@ int main(void) {
 
 	return_status status = return_status_init();
 
+	//protobuf buffers
+	buffer_t ** protobuf_export_buffers = NULL;
+	size_t protobuf_export_buffers_length = 0;
+
 	int status_int = EXIT_SUCCESS;
 	conversation_store *store = malloc(sizeof(conversation_store));
 	if (store == NULL) {
@@ -188,6 +247,20 @@ int main(void) {
 		}
 	}
 	buffer_destroy_from_heap_and_null_if_valid(conversation_list);
+
+	//test protobuf export
+	printf("Export to Protobuf-C\n");
+	status = protobuf_export(store, &protobuf_export_buffers, &protobuf_export_buffers_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export conversation store.");
+
+	printf("protobuf_export_buffers_length = %zu\n", protobuf_export_buffers_length);
+	//print
+	puts("[\n");
+	for (size_t i = 0; i < protobuf_export_buffers_length; i++) {
+		print_hex(protobuf_export_buffers[i]);
+		puts(",\n");
+	}
+	puts("]\n\n");
 
 	//test JSON export
 	printf("Test JSON export!\n");
@@ -265,6 +338,13 @@ int main(void) {
 	printf("Clear the conversation store.\n");
 
 cleanup:
+	if (protobuf_export_buffers != NULL) {
+		for (size_t i =0; i < protobuf_export_buffers_length; i++) {
+			buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffers[i]);
+		}
+		free_and_null_if_valid(protobuf_export_buffers);
+	}
+
 	conversation_store_clear(store);
 	free_and_null_if_valid(store);
 
