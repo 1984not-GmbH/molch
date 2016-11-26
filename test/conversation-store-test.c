@@ -24,6 +24,7 @@
 #include <sodium.h>
 #include <assert.h>
 #include <alloca.h>
+#include <string.h>
 
 #include "../lib/conversation-store.h"
 #include "../lib/json.h"
@@ -82,6 +83,60 @@ cleanup:
 		zeroed_free_and_null_if_valid(conversations);
 	}
 	//buffer will be freed in main
+	return status;
+}
+
+return_status protobuf_import(
+		conversation_store * const store,
+		buffer_t ** const buffers,
+		const size_t length) __attribute__((warn_unused_result));
+return_status protobuf_import(
+		conversation_store * const store,
+		buffer_t ** const buffers,
+		const size_t length) {
+	return_status status = return_status_init();
+
+	Conversation **conversations = NULL;
+
+	//check input
+	if ((store == NULL)
+			|| ((length > 0) && (buffers == NULL))
+			|| ((length == 0) && (buffers != NULL))) {
+		throw(INVALID_INPUT, "Invalid input to protobuf_import.");
+	}
+
+	//allocate the array
+	if (length > 0) {
+		conversations = zeroed_malloc(length * sizeof(Conversation*));
+		throw_on_failed_alloc(conversations);
+		memset(conversations, '\0', length * sizeof(Conversation*));
+	}
+
+	for (size_t i = 0; i < length; i++) {
+		conversations[i] = conversation__unpack(&protobuf_c_allocators, buffers[i]->content_length, buffers[i]->content);
+		if (conversations[i] == NULL) {
+			throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
+		}
+	}
+
+	//import
+	status = conversation_store_import(
+		store,
+		conversations,
+		length);
+	throw_on_error(IMPORT_ERROR, "Failed to import conversation store.");
+
+cleanup:
+	if (conversations != NULL) {
+		for (size_t i = 0; i < length; i++) {
+			if (conversations[i] != NULL) {
+				conversation__free_unpacked(conversations[i], &protobuf_c_allocators);
+				conversations[i] = NULL;
+			}
+		}
+		zeroed_free_and_null_if_valid(conversations);
+	}
+
 	return status;
 }
 
@@ -181,6 +236,8 @@ int main(void) {
 	//protobuf buffers
 	buffer_t ** protobuf_export_buffers = NULL;
 	size_t protobuf_export_buffers_length = 0;
+	buffer_t ** protobuf_second_export_buffers = NULL;
+	size_t protobuf_second_export_buffers_length = 0;
 
 	int status_int = EXIT_SUCCESS;
 	conversation_store *store = malloc(sizeof(conversation_store));
@@ -261,6 +318,27 @@ int main(void) {
 		puts(",\n");
 	}
 	puts("]\n\n");
+
+	conversation_store_clear(store);
+
+	//import again
+	status = protobuf_import(store, protobuf_export_buffers, protobuf_export_buffers_length);
+	throw_on_error(IMPORT_ERROR, "Failed to import conversation store from Protobuf-C.");
+
+	//export the imported
+	status = protobuf_export(store, &protobuf_second_export_buffers, &protobuf_second_export_buffers_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export imported conversation store again to Protobuf-C.");
+
+	//compare to previous export
+	if (protobuf_export_buffers_length != protobuf_second_export_buffers_length) {
+		throw(INCORRECT_DATA, "Both arrays of Protobuf-C strings don't have the same length.");
+	}
+	for (size_t i = 0; i < protobuf_export_buffers_length; i++) {
+		if (buffer_compare(protobuf_export_buffers[i], protobuf_second_export_buffers[i]) != 0) {
+			throw(INCORRECT_DATA, "Exported protobuf-c string doesn't match.");
+		}
+	}
+	printf("Exported Protobuf-C strings match.\n");
 
 	//test JSON export
 	printf("Test JSON export!\n");
@@ -343,6 +421,12 @@ cleanup:
 			buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffers[i]);
 		}
 		free_and_null_if_valid(protobuf_export_buffers);
+	}
+	if (protobuf_second_export_buffers != NULL) {
+		for (size_t i =0; i < protobuf_second_export_buffers_length; i++) {
+			buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_buffers[i]);
+		}
+		free_and_null_if_valid(protobuf_second_export_buffers);
 	}
 
 	conversation_store_clear(store);

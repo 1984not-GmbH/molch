@@ -247,6 +247,49 @@ cleanup:
 	return status;
 }
 
+return_status conversation_store_import(
+		conversation_store * const store,
+		Conversation ** const conversations,
+		const size_t length) {
+	return_status status = return_status_init();
+
+	conversation_t *conversation = NULL;
+
+	//check input
+	if ((store == NULL)
+			|| ((length > 0) && (conversations == NULL))
+			|| ((length == 0) && (conversations != NULL))) {
+		throw(INVALID_INPUT, "Invalid input to conversation_store_import");
+	}
+
+	conversation_store_init(store);
+
+	//import all the conversations
+	for (size_t i = 0; i < length; i++) {
+		status = conversation_import(
+			&conversation,
+			conversations[i]);
+		throw_on_error(IMPORT_ERROR, "Failed to import conversation.");
+
+		status = conversation_store_add(store, conversation);
+		throw_on_error(ADDITION_ERROR, "Failed to add conversation to conversation store.");
+		conversation = NULL;
+	}
+
+cleanup:
+	on_error(
+		if (conversation != NULL) {
+			conversation_destroy(conversation);
+			conversation = NULL;
+		}
+
+		if (store != NULL) {
+			conversation_store_clear(store);
+		}
+	)
+	return status;
+}
+
 /*
  * Serialise a conversation store into JSON. It gets a mempool_t buffer and stre a tree of
  * mcJSON objects into the buffer starting at pool->position.

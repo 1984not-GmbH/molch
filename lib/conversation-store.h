@@ -102,6 +102,18 @@ return_status conversation_store_export(
 	Conversation *** const conversations,
 	size_t * const length) __attribute__((warn_unused_result));
 
+/*! Import a conversation store from a Protobuf-C struct.
+ * \param conversation_store The conversation store to import to.
+ * \param conversations An array of Protobuf-C structs to import from.
+ * \param length The number of array elements.
+ * \param public_identity_key The public identity key of the user.
+ * \return The status.
+ */
+return_status conversation_store_import(
+	conversation_store * const store,
+	Conversation ** const conversations,
+	const size_t length) __attribute__((warn_unused_result));
+
 /*
  * Serialise a conversation store into JSON. It gets a mempool_t buffer and stre a tree of
  * mcJSON objects into the buffer starting at pool->position.
