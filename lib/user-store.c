@@ -64,6 +64,10 @@ void user_store_destroy(user_store* store) {
  * add a new user node to a user store.
  */
 void add_user_store_node(user_store * const store, user_store_node * const node) {
+	if ((store == NULL) || (node == NULL)) {
+		return;
+	}
+
 	if (store->length == 0) { //first node in the list
 		node->previous = NULL;
 		node->next = NULL;
@@ -417,15 +421,15 @@ return_status user_store_export(
 		*users = zeroed_malloc(store->length * sizeof(User*));
 		throw_on_failed_alloc(*users);
 		memset(*users, '\0', store->length * sizeof(User*));
+
+		size_t i = 0;
+		user_store_node *node = NULL;
+		for (i = 0, node = store->head; (i < store->length) && (node != NULL); i++, node = node->next) {
+			status = user_store_node_export(node, &((*users)[i]));
+			throw_on_error(EXPORT_ERROR, "Failed to export user store node.");
+		}
 	} else {
 		*users = NULL;
-	}
-
-	size_t i = 0;
-	user_store_node *node = NULL;
-	for (i = 0, node = store->head; (i < store->length) && (node != NULL); i++, node = node->next) {
-		status = user_store_node_export(node, &((*users)[i]));
-		throw_on_error(EXPORT_ERROR, "Failed to export user store node.");
 	}
 
 	*users_length = store->length;
@@ -439,6 +443,87 @@ cleanup:
 			zeroed_free_and_null_if_valid(*users);
 		}
 	)
+	return status;
+}
+
+return_status user_store_node_import(user_store_node ** const node, const User * const user) {
+	return_status status = return_status_init();
+
+	//check input
+	if ((node == NULL) || (user == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to user_store_node_import.");
+	}
+
+	status = create_user_store_node(node);
+	throw_on_error(CREATION_ERROR, "Failed to create user store node.");
+
+	//master keys
+	status = master_keys_import(
+		&((*node)->master_keys),
+		user->public_signing_key,
+		user->private_signing_key,
+		user->public_identity_key,
+		user->private_identity_key);
+	throw_on_error(IMPORT_ERROR, "Failed to import master keys.");
+
+	//public signing key
+	if (user->public_signing_key == NULL) {
+		throw(PROTOBUF_MISSING_ERROR, "Missing public signing key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*node)->public_signing_key, user->public_signing_key->key.data, user->public_signing_key->key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy public signing key.");
+	}
+
+	status = conversation_store_import(
+		(*node)->conversations,
+		user->conversations,
+		user->n_conversations);
+	throw_on_error(IMPORT_ERROR, "Failed to import conversations.");
+
+	status = prekey_store_import(
+		&((*node)->prekeys),
+		user->prekeys,
+		user->n_prekeys,
+		user->deprecated_prekeys,
+		user->n_deprecated_prekeys);
+	throw_on_error(IMPORT_ERROR, "Failed to import prekeys.");
+
+cleanup:
+	return status;
+}
+
+return_status user_store_import(
+		user_store ** const store,
+		User ** users,
+		const size_t users_length) {
+	return_status status = return_status_init();
+
+	//check input
+	if ((store == NULL)
+			|| ((users_length == 0) && (users != NULL))
+			|| ((users_length > 0) && (users == NULL))) {
+		throw(INVALID_INPUT, "Invalid input to user_store_import.");
+	}
+
+	status = user_store_create(store);
+	throw_on_error(CREATION_ERROR, "Failed to create user store.");
+
+	size_t i = 0;
+	user_store_node *node = NULL;
+	for (i = 0; i < users_length; i++) {
+		status = user_store_node_import(&node, users[i]);
+		throw_on_error(IMPORT_ERROR, "Failed to import user store node.");
+
+		add_user_store_node(*store, node);
+	}
+
+cleanup:
+	on_error(
+		if (store != NULL) {
+			user_store_destroy(*store);
+		}
+	)
+
 	return status;
 }
 

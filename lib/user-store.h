@@ -116,6 +116,17 @@ return_status user_store_export(
 	User *** const users,
 	size_t * const users_length) __attribute__((warn_unused_result));
 
+/*! Import a user store from an array of Protobuf-C structs
+ * \param store The user store to import.
+ * \param users The array to import from.
+ * \param users_length The length of the array.
+ * \return The status.
+ */
+return_status user_store_import(
+	user_store ** const store,
+	User ** users,
+	const size_t users_length) __attribute__((warn_unused_result));
+
 /*
  * Serialise a user store into JSON. It get's a mempool_t buffer and stores a tree of
  * mcJSON objects into the buffer starting at pool->position.
