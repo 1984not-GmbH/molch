@@ -23,12 +23,72 @@
 #include <stdlib.h>
 #include <sodium.h>
 #include <assert.h>
+#include <string.h>
 
 #include "../lib/user-store.h"
 #include "../lib/json.h"
 #include "utils.h"
 #include "common.h"
 #include "tracing.h"
+
+return_status protobuf_export(
+		const user_store * const store,
+		buffer_t *** const export_buffers,
+		size_t * const buffer_count) __attribute__((warn_unused_result));
+return_status protobuf_export(
+		const user_store * const store,
+		buffer_t *** const export_buffers,
+		size_t * const buffer_count) {
+	return_status status = return_status_init();
+
+	User ** users = NULL;
+	size_t length = 0;
+
+	if (export_buffers != NULL) {
+		*export_buffers = NULL;
+	}
+	if (buffer_count != NULL) {
+		*buffer_count = 0;
+	}
+
+	//check input
+	if ((store == NULL) || (export_buffers == NULL) || (buffer_count == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to protobuf_export.");
+	}
+
+	status = user_store_export(store, &users, &length);
+	throw_on_error(EXPORT_ERROR, "Failed to export conversations.");
+
+	*export_buffers = malloc(length * sizeof(buffer_t*));
+	throw_on_failed_alloc(*export_buffers);
+
+	//initialize pointers with NULL
+	memset(*export_buffers, '\0', length * sizeof(buffer_t*));
+	*buffer_count = length;
+
+	//unpack all the conversations
+	for (size_t i = 0; i < length; i++) {
+		size_t unpacked_size = user__get_packed_size(users[i]);
+		(*export_buffers)[i] = buffer_create_on_heap(unpacked_size, 0);
+		throw_on_failed_alloc((*export_buffers)[i]);
+
+		(*export_buffers)[i]->content_length = user__pack(users[i], (*export_buffers)[i]->content);
+	}
+
+cleanup:
+	if (users != NULL) {
+		for (size_t i = 0; i < length; i++) {
+			if (users[i] != NULL) {
+				user__free_unpacked(users[i], &protobuf_c_allocators);
+				users[i] = NULL;
+			}
+		}
+		zeroed_free_and_null_if_valid(users);
+	}
+
+	//buffer will be freed in main
+	return status;
+}
 
 int main(void) {
 	if (sodium_init() == -1) {
@@ -42,6 +102,10 @@ int main(void) {
 	buffer_t *alice_public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
 	buffer_t *bob_public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
 	buffer_t *charlie_public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+
+	//protobuf-c export buffers
+	buffer_t **protobuf_export_buffers = NULL;
+	size_t protobuf_export_length = 0;
 
 	buffer_t *list = NULL;
 
@@ -197,6 +261,20 @@ int main(void) {
 	}
 	printf("Length of the user store matches.");
 
+
+	//test Protobuf-C export
+	printf("Export to Protobuf-C\n");
+	status = protobuf_export(store, &protobuf_export_buffers, &protobuf_export_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export user store to Protobuf-C.");
+
+	//print the exported data
+	puts("[\n");
+	for (size_t i = 0; i < protobuf_export_length; i++) {
+		print_hex(protobuf_export_buffers[i]);
+		puts(",\n");
+	}
+	puts("]\n\n");
+
 	//test JSON export
 	printf("Test JSON export!\n");
 	mempool_t *pool = buffer_create_on_heap(200000, 0);
@@ -272,6 +350,13 @@ cleanup:
 		user_store_destroy(store);
 	}
 	buffer_destroy_from_heap_and_null_if_valid(list);
+
+	if (protobuf_export_buffers != NULL) {
+		for (size_t i =0; i < protobuf_export_length; i++) {
+			buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffers[i]);
+		}
+		free_and_null_if_valid(protobuf_export_buffers);
+	}
 
 	buffer_destroy_from_heap_and_null_if_valid(alice_public_signing_key);
 	buffer_destroy_from_heap_and_null_if_valid(bob_public_signing_key);

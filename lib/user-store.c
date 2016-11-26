@@ -317,6 +317,131 @@ void user_store_clear(user_store *store){
 
 }
 
+return_status user_store_node_export(user_store_node * const node, User ** const user) __attribute__((warn_unused_result));
+return_status user_store_node_export(user_store_node * const node, User ** const user) {
+	return_status status = return_status_init();
+
+	//master keys
+	Key *public_signing_key = NULL;
+	Key *private_signing_key = NULL;
+	Key *public_identity_key = NULL;
+	Key *private_identity_key = NULL;
+
+	//conversation store
+	Conversation **conversations = NULL;
+	size_t conversations_length = 0;
+
+	//prekeys
+	Prekey **prekeys = NULL;
+	size_t prekeys_length = 0;
+	Prekey **deprecated_prekeys = NULL;
+	size_t deprecated_prekeys_length = 0;
+
+	//check input
+	if ((node == NULL) || (user == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to user_store_node_export.");
+	}
+
+	*user = zeroed_malloc(sizeof(User));
+	throw_on_failed_alloc(*user);
+	user__init(*user);
+
+	//export master keys
+	status = master_keys_export(
+		node->master_keys,
+		&public_signing_key,
+		&private_signing_key,
+		&public_identity_key,
+		&private_identity_key);
+	throw_on_error(EXPORT_ERROR, "Failed to export masters keys.");
+
+	(*user)->public_signing_key = public_signing_key;
+	public_signing_key = NULL;
+	(*user)->private_signing_key = private_signing_key;
+	private_signing_key = NULL;
+	(*user)->public_identity_key = public_identity_key;
+	public_identity_key = NULL;
+	(*user)->private_identity_key = private_identity_key;
+	private_identity_key = NULL;
+
+	//export the conversation store
+	status = conversation_store_export(node->conversations, &conversations, &conversations_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export conversation store.");
+
+	(*user)->conversations = conversations;
+	conversations = NULL;
+	(*user)->n_conversations = conversations_length;
+	conversations_length = 0;
+
+	//export the prekeys
+	status = prekey_store_export(
+		node->prekeys,
+		&prekeys,
+		&prekeys_length,
+		&deprecated_prekeys,
+		&deprecated_prekeys_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export prekeys.");
+
+	(*user)->prekeys = prekeys;
+	prekeys = NULL;
+	(*user)->n_prekeys = prekeys_length;
+	prekeys_length = 0;
+	(*user)->deprecated_prekeys = deprecated_prekeys;
+	deprecated_prekeys = NULL;
+	(*user)->n_deprecated_prekeys = deprecated_prekeys_length;
+	deprecated_prekeys_length = 0;
+
+cleanup:
+	on_error(
+		if (user != NULL) {
+			user__free_unpacked(*user, &protobuf_c_allocators);
+			*user = NULL;
+		}
+	)
+
+	return status;
+}
+
+return_status user_store_export(
+		const user_store * const store,
+		User *** const users,
+		size_t * const users_length) {
+	return_status status = return_status_init();
+
+	//check input
+	if ((users == NULL) || (users == NULL) || (users_length == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to user_store_export.");
+	}
+
+	if (store->length > 0) {
+		*users = zeroed_malloc(store->length * sizeof(User*));
+		throw_on_failed_alloc(*users);
+		memset(*users, '\0', store->length * sizeof(User*));
+	} else {
+		*users = NULL;
+	}
+
+	size_t i = 0;
+	user_store_node *node = NULL;
+	for (i = 0, node = store->head; (i < store->length) && (node != NULL); i++, node = node->next) {
+		status = user_store_node_export(node, &((*users)[i]));
+		throw_on_error(EXPORT_ERROR, "Failed to export user store node.");
+	}
+
+	*users_length = store->length;
+cleanup:
+	on_error(
+		if ((users != NULL) && (*users != NULL) && (users_length != 0)) {
+			for (size_t i = 0; i < *users_length; i++) {
+				user__free_unpacked((*users)[i], &protobuf_c_allocators);
+				(*users)[i] = NULL;
+			}
+			zeroed_free_and_null_if_valid(*users);
+		}
+	)
+	return status;
+}
+
 mcJSON *user_store_node_json_export(user_store_node * const node, mempool_t * const pool) {
 	mcJSON *json = mcJSON_CreateObject(pool);
 	if (json == NULL) {

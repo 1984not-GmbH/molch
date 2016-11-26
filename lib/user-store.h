@@ -105,6 +105,17 @@ void user_store_remove(user_store * const store, user_store_node *node);
 //clear the entire user store
 void user_store_clear(user_store *keystore);
 
+/*! Export a user store to an array of Protobuf-C structs
+ * \param store The user store to export
+ * \param users The array to export to.
+ * \param users_length The length of the exported array.
+ * \return The status.
+ */
+return_status user_store_export(
+	const user_store * const store,
+	User *** const users,
+	size_t * const users_length) __attribute__((warn_unused_result));
+
 /*
  * Serialise a user store into JSON. It get's a mempool_t buffer and stores a tree of
  * mcJSON objects into the buffer starting at pool->position.
