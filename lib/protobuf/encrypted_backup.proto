@@ -1,6 +1,11 @@
 syntax = "proto2";
 message EncryptedBackup {
 	required uint32 backup_version = 1;
-	optional bytes encrypted_backup_nonce = 2;
-	optional bytes encrypted_backup = 3;
+	enum BackupType {
+		FULL_BACKUP = 0;
+		CONVERSATION_BACKUP = 1;
+	}
+	optional BackupType backup_type = 2;
+	optional bytes encrypted_backup_nonce = 3;
+	optional bytes encrypted_backup = 4;
 }
