@@ -24,6 +24,7 @@
 #include <sodium.h>
 
 #include "utils.h"
+#include "../lib/common.h"
 
 void print_hex(const buffer_t * const data) {
 	static const int WIDTH = 30;
@@ -74,16 +75,21 @@ void print_errors(return_status * const status) {
 	}
 }
 
-void read_file(buffer_t ** const data, const char * const filename) {
-	if (data == NULL) {
-		return;
+
+return_status read_file(buffer_t ** const data, const char * const filename) {
+	return_status status = return_status_init();
+
+	FILE *file = NULL;
+
+	//check input
+	if ((data == NULL) || (filename == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to read_file.");
 	}
 
 	*data = NULL;
 
-	FILE *file = NULL;
-
 	file = fopen(filename, "r");
+	throw_on_failed_alloc(file);
 
 	//get the filesize
 	fseek(file, 0, SEEK_END);
@@ -91,7 +97,23 @@ void read_file(buffer_t ** const data, const char * const filename) {
 	fseek(file, 0, SEEK_SET);
 
 	*data = buffer_create_on_heap(filesize, filesize);
+	throw_on_failed_alloc(*data);
 	(*data)->content_length = fread((*data)->content, 1, filesize, file);
+	if ((*data)->content_length != (size_t)filesize) {
+		throw(INCORRECT_DATA, "Read less data from file than filesize.");
+	}
 
-	fclose(file);
+cleanup:
+	on_error(
+		if (data != NULL) {
+			buffer_destroy_from_heap_and_null_if_valid(*data);
+		}
+	)
+
+	if (file != NULL) {
+		fclose(file);
+		file = NULL;
+	}
+
+	return status;
 }

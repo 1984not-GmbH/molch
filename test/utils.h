@@ -30,5 +30,5 @@ void print_to_file(const buffer_t * const data, const char * const filename);
 
 void print_errors(return_status * const status);
 
-void read_file(buffer_t ** const data, const char * const filename);
+return_status read_file(buffer_t ** const data, const char * const filename) __attribute__((warn_unused_result));
 #endif

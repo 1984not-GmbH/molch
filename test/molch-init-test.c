@@ -45,16 +45,12 @@ int main(void) {
 	}
 
 	//load the backup from a file
-	read_file(&backup_file, "test-data/molch-init.backup");
-	if (backup_file == NULL) {
-		throw(DATA_FETCH_ERROR, "Failed to read backup from a file.");
-	}
+	status = read_file(&backup_file, "test-data/molch-init.backup");
+	throw_on_error(DATA_FETCH_ERROR, "Failed to read backup from a file.");
 
 	//load the backup key from a file
-	read_file(&backup_key_file, "test-data/molch-init-backup.key");
-	if (backup_key_file == NULL) {
-		throw(DATA_FETCH_ERROR, "Failed to read backup key from a file.");
-	}
+	status = read_file(&backup_key_file, "test-data/molch-init-backup.key");
+	throw_on_error(DATA_FETCH_ERROR, "Failed to read backup key from a file.");
 	if (backup_key_file->content_length != BACKUP_KEY_SIZE) {
 		throw(INCORRECT_BUFFER_SIZE, "Backup key from file has an incorrect length.");
 	}
