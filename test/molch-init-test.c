@@ -22,13 +22,20 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sodium.h>
+#include <string.h>
 
 #include "utils.h"
 #include "tracing.h"
 #include "../lib/molch.h"
 #include "../lib/constants.h"
 
-int main(void) {
+int main(int argc, char *args[]) {
+	bool recreate = false;
+	if (argc == 2) {
+		if (strcmp(args[1], "--recreate") == 0) {
+			recreate = true;
+		}
+	}
 	/* don't initialize libsodium here */
 	buffer_t *user_id = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
 	buffer_t *backup_file = NULL; //backup to import from
@@ -44,29 +51,31 @@ int main(void) {
 		throw(INIT_ERROR, "Failed to initialize libsodium.");
 	}
 
-	//load the backup from a file
-	status = read_file(&backup_file, "test-data/molch-init.backup");
-	throw_on_error(DATA_FETCH_ERROR, "Failed to read backup from a file.");
+	if (!recreate) {
+		//load the backup from a file
+		status = read_file(&backup_file, "test-data/molch-init.backup");
+		throw_on_error(DATA_FETCH_ERROR, "Failed to read backup from a file.");
 
-	//load the backup key from a file
-	status = read_file(&backup_key_file, "test-data/molch-init-backup.key");
-	throw_on_error(DATA_FETCH_ERROR, "Failed to read backup key from a file.");
-	if (backup_key_file->content_length != BACKUP_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Backup key from file has an incorrect length.");
+		//load the backup key from a file
+		status = read_file(&backup_key_file, "test-data/molch-init-backup.key");
+		throw_on_error(DATA_FETCH_ERROR, "Failed to read backup key from a file.");
+		if (backup_key_file->content_length != BACKUP_KEY_SIZE) {
+			throw(INCORRECT_BUFFER_SIZE, "Backup key from file has an incorrect length.");
+		}
+
+		//try to import the backup
+		status = molch_import(
+				backup_key,
+				BACKUP_KEY_SIZE,
+				backup_file->content,
+				backup_file->content_length,
+				backup_key_file->content,
+				backup_key_file->content_length);
+		throw_on_error(IMPORT_ERROR, "Failed to import backup from backup.");
+
+		//destroy again
+		molch_destroy_all_users();
 	}
-
-	//try to import the backup
-	status = molch_import(
-			backup_key,
-			BACKUP_KEY_SIZE,
-			backup_file->content,
-			backup_file->content_length,
-			backup_key_file->content,
-			backup_key_file->content_length);
-	throw_on_error(IMPORT_ERROR, "Failed to import backup from backup.");
-
-	//destroy again
-	molch_destroy_all_users();
 
 	//create a new user
 	size_t backup_length;
@@ -104,6 +113,7 @@ cleanup:
 
 	on_error(
 		print_errors(&status);
+		printf("NOTE: Did you change the backup format and forgot to create new molch-init.backup and molch-init-backup.key files?\n To recreate them run with --recreate. Then just copy them to the appropriate place.\n");
 	)
 	return_status_destroy_errors(&status);
 
