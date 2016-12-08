@@ -1,0 +1,6 @@
+syntax = "proto2";
+message EncryptedBackup {
+	required uint32 backup_version = 1;
+	optional bytes encrypted_backup_nonce = 2;
+	optional bytes encrypted_backup = 3;
+}

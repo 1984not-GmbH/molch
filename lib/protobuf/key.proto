@@ -1,0 +1,5 @@
+syntax = "proto2";
+message Key {
+	required bytes key = 1;
+	optional uint64 expiration_time = 2;
+}
