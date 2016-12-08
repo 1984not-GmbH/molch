@@ -112,6 +112,35 @@ cleanup:
 	return status;
 }
 
+return_status protobuf_empty_store() __attribute__((warn_unused_result));
+return_status protobuf_empty_store() {
+	return_status status = return_status_init();
+
+	printf("Testing im-/export of empty header and message keystore.\n");
+
+	header_and_message_keystore store;
+	header_and_message_keystore_init(&store);
+
+	KeyBundle **exported = NULL;
+	size_t exported_length = 0;
+
+	//export it
+	status = header_and_message_keystore_export(&store, &exported, &exported_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export empty header and message keystore.");
+
+	if ((exported != NULL) || (exported_length != 0)) {
+		throw(INCORRECT_DATA, "Exported data is not empty.");
+	}
+
+	//import it
+	status = header_and_message_keystore_import(&store, exported, exported_length);
+	throw_on_error(IMPORT_ERROR, "Failed to import empty header and message keystore.");
+
+	printf("Successful.\n");
+
+cleanup:
+	return status;
+}
 
 int main(void) {
 	if (sodium_init() == -1) {
@@ -271,6 +300,9 @@ int main(void) {
 	header_and_message_keystore_remove(&keystore, keystore.head->next);
 	assert(keystore.length == (i - 3));
 	print_header_and_message_keystore(&keystore);
+
+	status = protobuf_empty_store();
+	throw_on_error(GENERIC_ERROR, "Testing im-/export of empty stores failed.");
 
 cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(header_key);
