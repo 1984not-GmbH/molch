@@ -1,3 +1,4 @@
+syntax = "proto2";
 message PacketHeader {
 	required uint32 current_protocol_version = 1;
 	required uint32 highest_supported_protocol_version = 2;
