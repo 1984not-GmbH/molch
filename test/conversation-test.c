@@ -28,7 +28,6 @@
 #include "common.h"
 #include "utils.h"
 #include "../lib/conversation.h"
-#include "../lib/json.h"
 #include "tracing.h"
 
 return_status protobuf_export(const conversation_t * const conversation, buffer_t ** const export_buffer) __attribute__((warn_unused_result));
@@ -283,46 +282,6 @@ int main(void) {
 		throw(EXPORT_ERROR, "Both exported buffers are not the same.");
 	}
 	printf("Both exported buffers are identitcal.\n\n");
-
-	//test JSON export
-	printf("Test JSON export!\n");
-	mempool_t *pool = buffer_create_on_heap(10000, 0);
-	mcJSON *json = conversation_json_export(charlie_conversation, pool);
-	if (json == NULL) {
-		buffer_destroy_from_heap_and_null_if_valid(pool);
-		throw(EXPORT_ERROR, "Failed to export as JSON.");
-	}
-	if (json->length != 2) {
-		buffer_destroy_from_heap_and_null_if_valid(pool);
-		throw(INCORRECT_DATA, "JSON for Charlie's conversation is invalid.");
-	}
-	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
-	buffer_destroy_from_heap_and_null_if_valid(pool);
-	if (output == NULL) {
-		throw(GENERIC_ERROR, "Failed to print JSON.");
-	}
-	printf("%.*s\n", (int)output->content_length, (char*)output->content);
-
-	//test JSON import
-	JSON_IMPORT(imported_charlies_conversation, 10000, output, conversation_json_import);
-	if (imported_charlies_conversation == NULL) {
-		buffer_destroy_from_heap_and_null_if_valid(output);
-		throw(IMPORT_ERROR, "Failed to import Charlie's conversation from JSON.");
-	}
-	//export the imported to JSON again
-	JSON_EXPORT(imported_output, 10000, 4000, true, imported_charlies_conversation, conversation_json_export);
-	if (imported_output == NULL) {
-		buffer_destroy_from_heap_and_null_if_valid(output);
-		throw(EXPORT_ERROR, "Failed to export Charlie's imported conversation as JSON.");
-	}
-	//compare with original JSON
-	if (buffer_compare(imported_output, output) != 0) {
-		buffer_destroy_from_heap_and_null_if_valid(imported_output);
-		buffer_destroy_from_heap_and_null_if_valid(output);
-		throw(INCORRECT_DATA, "Imported conversation is incorrect.");
-	}
-	buffer_destroy_from_heap_and_null_if_valid(imported_output);
-	buffer_destroy_from_heap_and_null_if_valid(output);
 
 cleanup:
 	if (charlie_conversation != NULL) {

@@ -42,19 +42,6 @@ struct conversation_t {
 void conversation_destroy(conversation_t * const conversation);
 
 /*
- * Serialise a conversation into JSON. It get#s a mempool_t buffer and stores a tree of
- * mcJSON objects into the buffer starting at pool->position.
- *
- * Returns NULL in case of failure.
- */
-mcJSON *conversation_json_export(const conversation_t * const conversation, mempool_t * const pool) __attribute__((warn_unused_result));
-
-/*
- * Deserialize a conversation (import from JSON)
- */
-conversation_t *conversation_json_import(const mcJSON * const json) __attribute__((warn_unused_result));
-
-/*
  * Start a new conversation where we are the sender.
  *
  * Don't forget to destroy the return status with return_status_destroy_errors()

@@ -815,7 +815,7 @@ return_status molch_encrypt_message(
 			*conversation_backup = NULL;
 		} else {
 			status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id->content, conversation->id->content_length);
-			throw_on_error(EXPORT_ERROR, "Failed to export conversation as JSON.");
+			throw_on_error(EXPORT_ERROR, "Failed to export conversation as protocol buffer.");
 		}
 	}
 
@@ -896,7 +896,7 @@ return_status molch_decrypt_message(
 			*conversation_backup = NULL;
 		} else {
 			status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id->content, conversation->id->content_length);
-			throw_on_error(EXPORT_ERROR, "Failed to export conversation as JSON.");
+			throw_on_error(EXPORT_ERROR, "Failed to export conversation as protocol buffer.");
 		}
 	}
 

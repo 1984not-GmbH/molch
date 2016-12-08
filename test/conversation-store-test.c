@@ -27,7 +27,6 @@
 #include <string.h>
 
 #include "../lib/conversation-store.h"
-#include "../lib/json.h"
 #include "utils.h"
 #include "tracing.h"
 
@@ -269,7 +268,6 @@ int main(void) {
 	buffer_t ** protobuf_second_export_buffers = NULL;
 	size_t protobuf_second_export_buffers_length = 0;
 
-	int status_int = EXIT_SUCCESS;
 	conversation_store *store = malloc(sizeof(conversation_store));
 	if (store == NULL) {
 		throw(ALLOCATION_FAILED, "Failed to allocate conversation store.");
@@ -369,59 +367,6 @@ int main(void) {
 		}
 	}
 	printf("Exported Protobuf-C strings match.\n");
-
-	//test JSON export
-	printf("Test JSON export!\n");
-	mempool_t *pool = buffer_create_on_heap(100000, 0);
-	mcJSON *json = conversation_store_json_export(store, pool);
-	if (json == NULL) {
-		buffer_destroy_from_heap_and_null_if_valid(pool);
-		throw(EXPORT_ERROR, "Failed to export JSON.");
-	}
-	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
-	if (output == NULL) {
-		buffer_destroy_from_heap_and_null_if_valid(pool);
-		buffer_destroy_from_heap_and_null_if_valid(output);
-		throw(GENERIC_ERROR, "Failed to print json.");
-	}
-	printf("%.*s\n", (int)output->content_length, output->content);
-	if (json->length != 5) {
-		buffer_destroy_from_heap_and_null_if_valid(pool);
-		buffer_destroy_from_heap_and_null_if_valid(output);
-		throw(INCORRECT_DATA, "Exported JSON doesn't contain all conversations.");
-	}
-	buffer_destroy_from_heap_and_null_if_valid(pool);
-
-	//test JSON import
-	conversation_store *imported_store = malloc(sizeof(conversation_store));
-	if (imported_store == NULL) {
-		buffer_destroy_from_heap_and_null_if_valid(output);
-		throw(ALLOCATION_FAILED, "Failed to allocate conversation store.");
-	}
-	JSON_INITIALIZE(imported_store, 100000, output, conversation_store_json_import, status_int);
-	if (status_int != 0) {
-		free_and_null_if_valid(imported_store);
-		buffer_destroy_from_heap_and_null_if_valid(output);
-		throw(IMPORT_ERROR, "Failed to import from JSON.");
-	}
-	//export the imported to json again
-	JSON_EXPORT(imported_output, 100000, 4000, true, imported_store, conversation_store_json_export);
-	if (imported_output == NULL) {
-		conversation_store_clear(imported_store);
-		free_and_null_if_valid(imported_store);
-		buffer_destroy_from_heap_and_null_if_valid(output);
-		throw(GENERIC_ERROR, "Failed to print imported output.");
-	}
-	conversation_store_clear(imported_store);
-	free_and_null_if_valid(imported_store);
-	//compare both JSON strings
-	if (buffer_compare(imported_output, output) != 0) {
-		buffer_destroy_from_heap_and_null_if_valid(output);
-		buffer_destroy_from_heap_and_null_if_valid(imported_output);
-		throw(INCORRECT_DATA, "Imported conversation store is incorrect.");
-	}
-	buffer_destroy_from_heap_and_null_if_valid(output);
-	buffer_destroy_from_heap_and_null_if_valid(imported_output);
 
 	//remove nodes
 	conversation_store_remove(store, store->head);

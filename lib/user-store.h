@@ -24,7 +24,6 @@
 
 #include "constants.h"
 #include "../buffer/buffer.h"
-#include "../mcJSON/mcJSON.h"
 #include "conversation-store.h"
 #include "prekey-store.h"
 #include "master-keys.h"
@@ -127,16 +126,4 @@ return_status user_store_import(
 	User ** users,
 	const size_t users_length) __attribute__((warn_unused_result));
 
-/*
- * Serialise a user store into JSON. It get's a mempool_t buffer and stores a tree of
- * mcJSON objects into the buffer starting at pool->position.
- *
- * Returns NULL in case of Failure.
- */
-mcJSON *user_store_json_export(user_store * const store, mempool_t * const pool) __attribute__((warn_unused_result));
-
-/*
- * Deserialise a user store (import from JSON).
- */
-user_store *user_store_json_import(const mcJSON * const json) __attribute__((warn_unused_result));
 #endif

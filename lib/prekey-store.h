@@ -25,7 +25,6 @@
 #include "constants.h"
 #include "common.h"
 #include "../buffer/buffer.h"
-#include "../mcJSON/mcJSON.h"
 
 #ifndef LIB_PREKEY_STORE
 #define LIB_PREKEY_STORE
@@ -108,17 +107,4 @@ return_status prekey_store_import(
 		const size_t keypairs_length,
 		Prekey ** const deprecated_keypairs,
 		const size_t deprecated_keypairs_length) __attribute__((warn_unused_result));
-
-/*
- * Serialise a prekey store into JSON. It get's a mempool_t buffer and stores a tree of
- * mcJSON objects into the buffer starting at pool->position.
- *
- * Returns NULL in case of Failure.
- */
-mcJSON *prekey_store_json_export(const prekey_store * const store, mempool_t * const pool) __attribute__((warn_unused_result));
-
-/*
- * Deserialise a prekey store (import from JSON).
- */
-prekey_store *prekey_store_json_import(const mcJSON * const json) __attribute__((warn_unused_result));
 #endif

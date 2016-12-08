@@ -25,7 +25,6 @@
 
 #include "../lib/master-keys.h"
 #include "../lib/constants.h"
-#include "../lib/json.h"
 #include "utils.h"
 #include "tracing.h"
 
@@ -406,41 +405,6 @@ int main(void) {
 	}
 
 	printf("Successfully exported to Protobuf-C and imported again.");
-
-	//Test JSON export
-	JSON_EXPORT(json_string1, 10000, 500, true, spiced_master_keys, master_keys_json_export);
-	if (json_string1 == NULL) {
-		throw(EXPORT_ERROR, "Failed to export to JSON.");
-	}
-	printf("JSON:\n");
-	printf("%.*s\n", (int)json_string1->content_length, (char*)json_string1->content);
-
-	//import it again
-	JSON_IMPORT(imported_master_keys, 10000, json_string1, master_keys_json_import);
-	if (imported_master_keys == NULL) {
-		buffer_destroy_from_heap_and_null_if_valid(json_string1);
-		throw(IMPORT_ERROR, "Failed to import from JSON.")
-	}
-	printf("Successfully imported from JSON!\n");
-
-	//export it again
-	JSON_EXPORT(exported_json_string, 10000, 500, true, imported_master_keys, master_keys_json_export);
-	if (exported_json_string == NULL) {
-		buffer_destroy_from_heap_and_null_if_valid(json_string1);
-		throw(EXPORT_ERROR, "Failed to export imported back to JSON.");
-	}
-	printf("Successfully exported back to JSON!\n");
-
-	//compare them
-	if (buffer_compare(json_string1, exported_json_string) != 0) {
-		buffer_destroy_from_heap_and_null_if_valid(json_string1);
-		buffer_destroy_from_heap_and_null_if_valid(exported_json_string);
-		throw(INCORRECT_DATA, "Object imported from JSON was incorrect.");
-	}
-	printf("Imported Object matches!\n");
-
-	buffer_destroy_from_heap_and_null_if_valid(json_string1);
-	buffer_destroy_from_heap_and_null_if_valid(exported_json_string);
 
 cleanup:
 	sodium_free_and_null_if_valid(unspiced_master_keys);

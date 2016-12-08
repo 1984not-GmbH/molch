@@ -25,7 +25,6 @@
 #include <string.h>
 
 #include "../lib/prekey-store.h"
-#include "../lib/json.h"
 #include "../lib/constants.h"
 #include "utils.h"
 #include "tracing.h"
@@ -380,38 +379,6 @@ int main(void) {
 			throw(INCORRECT_DATA, "First and second deprecated prekey export are not identical.");
 		}
 	}
-
-	//Test JSON Export!
-	JSON_EXPORT(json_string, 100000, 10000, true, store, prekey_store_json_export);
-	if (json_string == NULL) {
-		throw(EXPORT_ERROR, "Failed to export to JSON.");
-	}
-	printf("%.*s\n", (int)json_string->content_length, (char*)json_string->content);
-	prekey_store_destroy(store);
-
-	//Import it again
-	JSON_IMPORT(store, 100000, json_string, prekey_store_json_import);
-	if (store == NULL) {
-		buffer_destroy_from_heap_and_null_if_valid(json_string);
-		throw(IMPORT_ERROR, "Failed to import from JSON.");
-	}
-
-	//Export it again
-	JSON_EXPORT(json_string2, 100000, 10000, true, store, prekey_store_json_export);
-	if (json_string2 == NULL) {
-		buffer_destroy_from_heap_and_null_if_valid(json_string);
-		throw(EXPORT_ERROR, "Failed to export imported JSON.");
-	}
-
-	//compare both
-	if (buffer_compare(json_string, json_string2) != 0) {
-		buffer_destroy_from_heap_and_null_if_valid(json_string);
-		buffer_destroy_from_heap_and_null_if_valid(json_string2);
-		throw(INCORRECT_DATA, "Imported JSON is incorrect.");
-	}
-
-	buffer_destroy_from_heap_and_null_if_valid(json_string);
-	buffer_destroy_from_heap_and_null_if_valid(json_string2);
 
 	//test the automatic deprecation of old keys
 	if (buffer_clone(public_prekey, store->prekeys[PREKEY_AMOUNT-1].public_key) != 0) {

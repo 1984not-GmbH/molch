@@ -26,7 +26,6 @@
 #include <assert.h>
 
 #include "../lib/ratchet.h"
-#include "../lib/json.h"
 #include "utils.h"
 #include "common.h"
 #include "tracing.h"
@@ -865,47 +864,6 @@ int main(void) {
 		throw(INCORRECT_DATA, "Both exports don't match!");
 	}
 	printf("Exported Protobuf-C buffers match!\n");
-
-	//export Alice's ratchet to json
-	printf("Test JSON export!\n");
-	JSON_EXPORT(output, 100000, 1000, true, alice_state, ratchet_json_export);
-	if (output == NULL) {
-		ratchet_destroy(alice_state);
-		ratchet_destroy(bob_state);
-		throw(EXPORT_ERROR, "Failed to export to JSON.");
-	}
-	printf("%.*s\n", (int)output->content_length, (char*)output->content);
-
-	//test json import
-	ratchet_state *imported_alice_state;
-	JSON_IMPORT(imported_alice_state, 100000, output, ratchet_json_import);
-	if (imported_alice_state == NULL) {
-		ratchet_destroy(alice_state);
-		ratchet_destroy(bob_state);
-		buffer_destroy_from_heap_and_null_if_valid(output);
-		throw(IMPORT_ERROR, "Failed to import from JSON.");
-	}
-	//export the imported to JSON again
-	JSON_EXPORT(imported_output, 100000, 1000, true, imported_alice_state, ratchet_json_export);
-	if (imported_output == NULL) {
-		ratchet_destroy(alice_state);
-		ratchet_destroy(bob_state);
-		ratchet_destroy(imported_alice_state);
-		buffer_destroy_from_heap_and_null_if_valid(output);
-		throw(EXPORT_ERROR, "Failed to export imported to JSON again.");
-	}
-	ratchet_destroy(imported_alice_state);
-	//compare with original JSON
-	if (buffer_compare(imported_output, output) != 0) {
-		ratchet_destroy(alice_state);
-		ratchet_destroy(bob_state);
-		buffer_destroy_from_heap_and_null_if_valid(output);
-		buffer_destroy_from_heap_and_null_if_valid(imported_output);
-		throw(INCORRECT_DATA, "Imported user store is incorrect.");
-	}
-	buffer_destroy_from_heap_and_null_if_valid(imported_output);
-	buffer_destroy_from_heap_and_null_if_valid(output);
-
 
 	//destroy the ratchets again
 	printf("Destroying Alice's ratchet ...\n");

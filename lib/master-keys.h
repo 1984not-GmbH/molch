@@ -24,7 +24,6 @@
 #include "constants.h"
 #include "common.h"
 #include "../buffer/buffer.h"
-#include "../mcJSON/mcJSON.h"
 
 #ifndef LIB_MASTER_KEYS
 #define LIB_MASTER_KEYS
@@ -108,16 +107,4 @@ return_status master_keys_import(
 	const Key * const private_signing_key,
 	const Key * const public_identity_key,
 	const Key * const private_identity_key) __attribute__((warn_unused_result));
-
-/*
- * Serialise the master keys into JSON. It get's a mempool_t buffer and stores mcJSON
- * Objects into it starting at pool->position.
- */
-mcJSON *master_keys_json_export(master_keys * const keys, mempool_t * const pool) __attribute__((warn_unused_result));
-
-/*
- * Deserialize a set of master keys (import from JSON).
- */
-master_keys *master_keys_json_import(const mcJSON * const json) __attribute__((warn_unused_result));
-
 #endif

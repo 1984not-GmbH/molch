@@ -21,4 +21,4 @@ add_library(molch
 	alignment
 	zeroed_malloc
 )
-target_link_libraries(molch ${libs} molch-buffer mcjson protocol-buffers)
+target_link_libraries(molch ${libs} molch-buffer protocol-buffers)

@@ -27,7 +27,6 @@
 #include "constants.h"
 #include "common.h"
 #include "../buffer/buffer.h"
-#include "../mcJSON/mcJSON.h"
 
 #ifndef LIB_HEADER_AND_MESSAGE_KEY_STORE_H
 #define LIB_HEADER_AND_MESSAGE_KEY_STORE_H
@@ -92,19 +91,4 @@ return_status header_and_message_keystore_import(
 		header_and_message_keystore * const store,
 		KeyBundle ** const key_bundles,
 		const size_t bundles_size) __attribute__((warn_unused_result));
-
-/*
- * Serialise a header_and_message_keystore into JSON. It get's a mempool_t buffer and stores a
- * tree of mcJSON objects into the buffer starting at pool->position
- */
-mcJSON *header_and_message_keystore_json_export(
-		header_and_message_keystore * const keystore,
-		mempool_t * const pool) __attribute__((warn_unused_result));
-
-/*
- * Deserialise a heade_and_message_keystore (import from JSON).
- */
-int header_and_message_keystore_json_import(
-		const mcJSON * const json,
-		header_and_message_keystore * const keystore) __attribute__((warn_unused_result));
 #endif

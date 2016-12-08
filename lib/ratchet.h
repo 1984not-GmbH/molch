@@ -190,17 +190,4 @@ return_status ratchet_export(
 return_status ratchet_import(
 	ratchet_state ** const ratchet,
 	const Conversation * const conversation) __attribute__((warn_unused_result));
-
-/*
- * Serialise a ratchet into JSON. It get's a mempool_t buffer and stores a tree of
- * mcJSON objects into the buffer starting at pool->position.
- *
- * Returns NULL in case of Failure.
- */
-mcJSON *ratchet_json_export(const ratchet_state * const state, mempool_t * const pool) __attribute__((warn_unused_result));
-
-/*
- * Deserialise a ratchet (import from JSON).
- */
-ratchet_state *ratchet_json_import(const mcJSON * const json) __attribute__((warn_unused_result));
 #endif

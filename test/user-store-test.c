@@ -26,7 +26,6 @@
 #include <string.h>
 
 #include "../lib/user-store.h"
-#include "../lib/json.h"
 #include "utils.h"
 #include "common.h"
 #include "tracing.h"
@@ -357,6 +356,10 @@ int main(void) {
 	status = protobuf_import(&store, protobuf_export_buffers, protobuf_export_length);
 	throw_on_error(IMPORT_ERROR, "Failed to import users from Protobuf-C.");
 
+	if (store == NULL) {
+		throw(SHOULDNT_HAPPEN, "Seems like this wasn't a false positive by clang static analyser!");
+	}
+
 	//export again
 	printf("Export to Protobuf-C\n");
 	status = protobuf_export(store, &protobuf_second_export_buffers, &protobuf_second_export_length);
@@ -372,51 +375,6 @@ int main(void) {
 		}
 	}
 	printf("Both exports match.\n");
-
-	//test JSON export
-	printf("Test JSON export!\n");
-	mempool_t *pool = buffer_create_on_heap(200000, 0);
-	mcJSON *json = user_store_json_export(store, pool);
-	if (json == NULL) {
-		buffer_destroy_from_heap_and_null_if_valid(pool);
-		throw(EXPORT_ERROR, "Failed to export to JSON.");
-	}
-	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
-	if (output == NULL) {
-		buffer_destroy_from_heap_and_null_if_valid(pool);
-		throw(EXPORT_ERROR, "Failed to print exported JSON.");
-	}
-	printf("%.*s\n", (int) output->content_length, (char*)output->content);
-	if (json->length != 2) {
-		buffer_destroy_from_heap_and_null_if_valid(output);
-		buffer_destroy_from_heap_and_null_if_valid(pool);
-		throw(INCORRECT_DATA, "Exported JSON doesn't contain all users.");
-	}
-	buffer_destroy_from_heap_and_null_if_valid(pool);
-
-	//test JSON import
-	user_store *imported_store;
-	JSON_IMPORT(imported_store, 200000, output, user_store_json_import);
-	if (imported_store == NULL) {
-		buffer_destroy_from_heap_and_null_if_valid(output);
-		throw(IMPORT_ERROR, "Failed to import from JSON.");
-	}
-
-	//export the imported to JSON again
-	JSON_EXPORT(imported_output, 200000, 4000, true, imported_store, user_store_json_export);
-	user_store_destroy(imported_store);
-	if (imported_output == NULL) {
-		buffer_destroy_from_heap_and_null_if_valid(output);
-		throw(EXPORT_ERROR, "Failed to export the imported JSON again.");
-	}
-	//compare with original JSON
-	if (buffer_compare(imported_output, output) != 0) {
-		buffer_destroy_from_heap_and_null_if_valid(output);
-		buffer_destroy_from_heap_and_null_if_valid(imported_output);
-		throw(INCORRECT_DATA, "Imported user store is incorrect.");
-	}
-	buffer_destroy_from_heap_and_null_if_valid(output);
-	buffer_destroy_from_heap_and_null_if_valid(imported_output);
 
 	//check the user list
 	status = user_store_list(&list, store);

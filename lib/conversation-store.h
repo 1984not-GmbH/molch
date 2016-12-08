@@ -113,19 +113,4 @@ return_status conversation_store_import(
 	conversation_store * const store,
 	Conversation ** const conversations,
 	const size_t length) __attribute__((warn_unused_result));
-
-/*
- * Serialise a conversation store into JSON. It gets a mempool_t buffer and stre a tree of
- * mcJSON objects into the buffer starting at pool->position.
- *
- * Returns NULL in case of failure.
- */
-mcJSON *conversation_store_json_export(const conversation_store * const store, mempool_t * const pool) __attribute__((warn_unused_result));
-
-/*
- * Deserialise a conversation store (import from JSON).
- */
-int conversation_store_json_import(
-		const mcJSON * const json,
-		conversation_store * const store) __attribute__((warn_unused_result));
 #endif
