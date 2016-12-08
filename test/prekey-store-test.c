@@ -157,6 +157,62 @@ cleanup:
 	return status;
 }
 
+return_status protobuf_no_deprecated_keys() __attribute__((warn_unused_result));
+return_status protobuf_no_deprecated_keys() {
+	return_status status = return_status_init();
+
+	printf("Testing im-/export of prekey store without deprecated keys.\n");
+
+	prekey_store *store = NULL;
+
+	Prekey **exported = NULL;
+	size_t exported_length = 0;
+	Prekey **deprecated = NULL;
+	size_t deprecated_length = 0;
+
+	status = prekey_store_create(&store);
+	throw_on_error(CREATION_ERROR, "Failed to create prekey store.");
+
+	//export it
+	status = prekey_store_export(
+		store,
+		&exported,
+		&exported_length,
+		&deprecated,
+		&deprecated_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export prekey store without deprecated keys.");
+
+	if ((deprecated != NULL) || (deprecated_length != 0)) {
+		throw(INCORRECT_DATA, "Exported deprecated prekeys are not empty.");
+	}
+
+	//import it
+	status = prekey_store_import(
+		&store,
+		exported,
+		exported_length,
+		deprecated,
+		deprecated_length);
+	throw_on_error(IMPORT_ERROR, "Failed to import prekey store without deprecated prekeys.");
+
+	printf("Successful.\n");
+
+cleanup:
+	if (exported != NULL) {
+		for (size_t i = 0; i < exported_length; i++) {
+			prekey__free_unpacked(exported[i], &protobuf_c_allocators);
+			exported[i] = 0;
+		}
+		zeroed_free_and_null_if_valid(exported);
+	}
+
+	if (store != NULL) {
+		prekey_store_destroy(store);
+	}
+
+	return status;
+}
+
 int main(void) {
 	if (sodium_init() == -1) {
 		return -1;
@@ -388,6 +444,9 @@ int main(void) {
 		throw(GENERIC_ERROR, "Failed to remove outdated key.");
 	}
 	printf("Successfully removed outdated deprecated key!\n");
+
+	status = protobuf_no_deprecated_keys();
+	throw_on_error(GENERIC_ERROR, "Failed to im-/export a prekey store without deprecated prekeys.");
 
 cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(public_prekey);
