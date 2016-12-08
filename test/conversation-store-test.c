@@ -226,6 +226,36 @@ cleanup:
 	return status;
 }
 
+return_status protobuf_empty_store() __attribute__((warn_unused_result));
+return_status protobuf_empty_store() {
+	return_status status = return_status_init();
+
+	printf("Testing im-/export of empty conversation store.\n");
+
+	Conversation **exported = NULL;
+	size_t exported_length = 0;
+
+	conversation_store store;
+	conversation_store_init(&store);
+
+	//export it
+	status = conversation_store_export(&store, &exported, &exported_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export empty conversation store.");
+
+	if ((exported != NULL) || (exported_length != 0)) {
+		throw(INCORRECT_DATA, "Exported data is not empty.");
+	}
+
+	//import it
+	status = conversation_store_import(&store, exported, exported_length);
+	throw_on_error(IMPORT_ERROR, "Failed to import empty conversation store.");
+
+	printf("Successful.\n");
+
+cleanup:
+	return status;
+}
+
 int main(void) {
 	if (sodium_init() == -1) {
 		return -1;
@@ -414,6 +444,9 @@ int main(void) {
 
 	//clear the conversation store
 	printf("Clear the conversation store.\n");
+
+	status = protobuf_empty_store();
+	throw_on_error(GENERIC_ERROR, "Failed to im-/export empty conversation store.");
 
 cleanup:
 	if (protobuf_export_buffers != NULL) {
