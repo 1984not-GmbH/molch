@@ -485,10 +485,10 @@ function molch.user:start_receive_conversation(packet, sender_id)
 	local status = molch_interface.molch_start_receive_conversation(
 		raw_conversation_id,
 		molch_interface.CONVERSATION_ID_SIZE,
-		raw_message,
-		raw_message_length,
 		raw_prekey_list,
 		raw_prekey_list_length,
+		raw_message,
+		raw_message_length,
 		convert_to_c_string(self.id),
 		#self.id,
 		convert_to_c_string(sender_id),
