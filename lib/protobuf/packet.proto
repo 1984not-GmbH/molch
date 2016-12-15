@@ -1,3 +1,4 @@
+syntax = "proto2";
 import "packet_header.proto";
 
 message Packet {

@@ -19,10 +19,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <user.pb-c.h>
+
 #include "constants.h"
 #include "common.h"
 #include "../buffer/buffer.h"
-#include "../mcJSON/mcJSON.h"
 
 #ifndef LIB_MASTER_KEYS
 #define LIB_MASTER_KEYS
@@ -79,15 +80,31 @@ return_status master_keys_sign(
 		buffer_t * const signed_data //output, length of data + SIGNATURE_SIZE
 		) __attribute__((warn_unused_result));
 
-/*
- * Serialise the master keys into JSON. It get's a mempool_t buffer and stores mcJSON
- * Objects into it starting at pool->position.
+/*! Export a set of master keys into a user Protobuf-C struct
+ * \param master_keys A set of master keys to export.
+ * \param public_signing_key Public pasrt of the signing keypair.
+ * \param private_signing_key Private part of the signing keypair.
+ * \param public_identity_key Public part of the identity keypair.
+ * \param private_identity_key Private part of the idenity keypair.
  */
-mcJSON *master_keys_json_export(master_keys * const keys, mempool_t * const pool) __attribute__((warn_unused_result));
+return_status master_keys_export(
+		master_keys * const keys,
+		Key ** const public_signing_key,
+		Key ** const private_signing_key,
+		Key ** const public_identity_key,
+		Key ** const private_identity_key) __attribute__((warn_unused_result));
 
-/*
- * Deserialize a set of master keys (import from JSON).
+/*! Import a set of master keys from Protobuf-C structs
+ * \param keys A set of master keys to import to.
+ * \param public_signing_key Public part of the signing keypair (protobuf-c).
+ * \param private_signing_key Private part of the signing keypair (protobuf-c).
+ * \param public_identity_key Public part of the signing keypair (protobuf-c).
+ * \param private_identity_key Private part of the signing keypair (protobuf-c).
  */
-master_keys *master_keys_json_import(const mcJSON * const json) __attribute__((warn_unused_result));
-
+return_status master_keys_import(
+	master_keys ** const keys,
+	const Key * const public_signing_key,
+	const Key * const private_signing_key,
+	const Key * const public_identity_key,
+	const Key * const private_identity_key) __attribute__((warn_unused_result));
 #endif

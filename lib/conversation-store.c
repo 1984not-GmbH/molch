@@ -19,6 +19,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <string.h>
+
 #include "conversation-store.h"
 
 /*
@@ -201,80 +203,90 @@ cleanup:
 	return status;
 }
 
-/*
- * Serialise a conversation store into JSON. It gets a mempool_t buffer and stre a tree of
- * mcJSON objects into the buffer starting at pool->position.
- *
- * Returns NULL in case of failure.
- */
-mcJSON *conversation_store_json_export(const conversation_store * const store, mempool_t * const pool) {
-	if ((store == NULL) || (pool == NULL)) {
-		return NULL;
-	}
-
-	mcJSON *json = mcJSON_CreateArray(pool);
-	if (json == NULL) {
-		return NULL;
-	}
-
-	//add all the conversations to the array
-	conversation_store_foreach(store,
-		mcJSON * conversation = conversation_json_export(node, pool);
-		if (conversation == NULL) {
-			return NULL;
-		}
-		mcJSON_AddItemToArray(json, conversation, pool);
-	)
-
-	return json;
-}
-
-/*
- * Deserialise a conversation store (import from JSON).
- */
-int conversation_store_json_import(
-		const mcJSON * const json,
-		conversation_store * const store) {
-
+return_status conversation_store_export(
+		const conversation_store * const conversation_store,
+		Conversation *** const conversations,
+		size_t * const length) {
 	return_status status = return_status_init();
 
-	conversation_t *node = NULL;
-
-	if ((json == NULL) || (json->type != mcJSON_Array) || (store == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to conversation_store_json_import.");
+	//check input
+	if ((conversation_store == NULL) || (conversations == NULL) || (length == NULL)) {
+		throw(INVALID_INPUT, "Invalid input conversation_store_export.");
 	}
 
-	//initialise the conversation store
+	if (conversation_store->length > 0) {
+		//allocate the array of conversations
+		*conversations = zeroed_malloc(conversation_store->length * sizeof(Conversation*));
+		throw_on_failed_alloc(*conversations);
+		memset(*conversations, '\0', conversation_store->length * sizeof(Conversation*));
+	} else {
+		*conversations = NULL;
+	}
+
+	//export the conversations
+	conversation_t *node = conversation_store->head;
+	for (size_t i = 0; (i < conversation_store->length) && (node != NULL); i++, node = node->next) {
+		status = conversation_export(node, &(*conversations)[i]);
+		throw_on_error(EXPORT_ERROR, "Failed to export conversation.");
+	}
+
+	*length = conversation_store->length;
+
+cleanup:
+	on_error(
+		if ((conversation_store != NULL) && (conversations != NULL) && (*conversations != NULL)) {
+			for (size_t i = 0; i < conversation_store->length; i++) {
+				if ((*conversations)[i] != NULL) {
+					conversation__free_unpacked((*conversations)[i], &protobuf_c_allocators);
+					(*conversations)[i] = NULL;
+				}
+			}
+		}
+	)
+
+	return status;
+}
+
+return_status conversation_store_import(
+		conversation_store * const store,
+		Conversation ** const conversations,
+		const size_t length) {
+	return_status status = return_status_init();
+
+	conversation_t *conversation = NULL;
+
+	//check input
+	if ((store == NULL)
+			|| ((length > 0) && (conversations == NULL))
+			|| ((length == 0) && (conversations != NULL))) {
+		throw(INVALID_INPUT, "Invalid input to conversation_store_import");
+	}
+
 	conversation_store_init(store);
 
-	//iterate through array
-	mcJSON *child = json->child;
-	for (size_t i = 0; (i < json->length) && (child != NULL); i++, child = child->next) {
-		//import the conversation
-		node = conversation_json_import(child);
-		if (node == NULL) {
-			throw(IMPORT_ERROR, "Failed to import conversation from JSON.");
-		}
+	//import all the conversations
+	for (size_t i = 0; i < length; i++) {
+		status = conversation_import(
+			&conversation,
+			conversations[i]);
+		throw_on_error(IMPORT_ERROR, "Failed to import conversation.");
 
-		//add it to the conversation store
-		status = conversation_store_add(store, node);
+		status = conversation_store_add(store, conversation);
 		throw_on_error(ADDITION_ERROR, "Failed to add conversation to conversation store.");
-
-		node = NULL;
+		conversation = NULL;
 	}
 
 cleanup:
 	on_error(
-		if (node != NULL) {
-			conversation_destroy(node);
+		if (conversation != NULL) {
+			conversation_destroy(conversation);
+			conversation = NULL;
 		}
 
 		if (store != NULL) {
 			conversation_store_clear(store);
 		}
 	)
-
-	return_status_destroy_errors(&status);
-
-	return status.status;
+	return status;
 }
+

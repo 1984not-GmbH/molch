@@ -35,6 +35,10 @@
 #include "user-store.h"
 #include "endianness.h"
 #include "return-status.h"
+#include "zeroed_malloc.h"
+
+#include <encrypted_backup.pb-c.h>
+#include <backup.pb-c.h>
 
 //global user store
 static user_store *users = NULL;
@@ -811,7 +815,7 @@ return_status molch_encrypt_message(
 			*conversation_backup = NULL;
 		} else {
 			status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id->content, conversation->id->content_length);
-			throw_on_error(EXPORT_ERROR, "Failed to export conversation as JSON.");
+			throw_on_error(EXPORT_ERROR, "Failed to export conversation as protocol buffer.");
 		}
 	}
 
@@ -892,7 +896,7 @@ return_status molch_decrypt_message(
 			*conversation_backup = NULL;
 		} else {
 			status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id->content, conversation->id->content_length);
-			throw_on_error(EXPORT_ERROR, "Failed to export conversation as JSON.");
+			throw_on_error(EXPORT_ERROR, "Failed to export conversation as protocol buffer.");
 		}
 	}
 
@@ -1063,79 +1067,6 @@ void molch_destroy_return_status(return_status * const status) {
 }
 
 /*
- * Serialize a conversation into JSON.
- *
- * Use sodium_free to free json after use.
- *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
- */
-return_status molch_conversation_json_export(
-		unsigned char ** const json,
-		const unsigned char * const conversation_id, size_t * const length) {
-
-	//set allocation functions of mcJSON to the libsodium allocation functions
-	mcJSON_Hooks allocation_functions = {
-		sodium_malloc,
-		sodium_free
-	};
-	mcJSON_InitHooks(&allocation_functions);
-
-	return_status status = return_status_init();
-
-	mempool_t *json_string = NULL;
-	mempool_t *pool = NULL;
-
-	//check input
-	if ((conversation_id == NULL) || (length == NULL) || (json == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_conversation_json_export");
-	}
-
-	conversation_t *conversation = NULL;
-	status = find_conversation(&conversation, conversation_id, NULL);
-	throw_on_error(GENERIC_ERROR, "Error while searching for conversation.");
-	if (conversation == NULL) {
-		throw(NOT_FOUND, "No conversation found for the given ID.");
-	}
-
-	mcJSON *json_tree = NULL;
-
-	//allocate a memory pool
-	//FIXME: Don't allocate a fixed amount
-	pool = buffer_create_with_custom_allocator(1000000, 0, sodium_malloc, sodium_free);
-	throw_on_failed_alloc(pool);
-
-	json_tree = conversation_json_export(conversation, pool);
-	if (json_tree == NULL) {
-		throw(EXPORT_ERROR, "Failed to export conversation as JSON.");
-	}
-
-	//print to string
-	//FIXME: Don't allocate a fixed amount
-	json_string = mcJSON_PrintBuffered(json_tree, 100000, false);
-	if (json_string == NULL) {
-		throw(GENERIC_ERROR, "Failed to print JSON.");
-	}
-
-	*length = json_string->content_length;
-	*json = json_string->content;
-	sodium_free_and_null_if_valid(json_string);
-
-cleanup:
-	buffer_destroy_with_custom_deallocator_and_null_if_valid(pool, sodium_free);
-
-	on_error(
-		if (length != NULL) {
-			*length = 0;
-		}
-
-		buffer_destroy_with_custom_deallocator_and_null_if_valid(json_string, sodium_free);
-	)
-
-	return status;
-}
-
-/*
  * Serialize a conversation.
  *
  * Don't forget to free the output after use.
@@ -1150,163 +1081,112 @@ return_status molch_conversation_export(
 		//input
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length) {
-	//FIXME: Less duplication
 	return_status status = return_status_init();
 
-	unsigned char *json = NULL;
-	size_t json_length = 0;
-
-	//buffers
+	buffer_t *conversation_buffer = NULL;
+	buffer_t *backup_nonce = NULL;
 	buffer_t *backup_buffer = NULL;
-	buffer_t *backup_nonce = buffer_create_on_heap(BACKUP_NONCE_SIZE, 0);
-	throw_on_failed_alloc(backup_nonce);
 
-	if ((backup == NULL) || (backup_length == NULL) || (conversation_id == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_conversation_export.");
+	EncryptedBackup encrypted_backup_struct;
+	encrypted_backup__init(&encrypted_backup_struct);
+	Conversation *conversation_struct = NULL;
+
+	//check input
+	if ((backup == NULL) || (backup_length == NULL)
+			|| (conversation_id == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to molch_conversation_export");
+	}
+	if ((conversation_id_length != CONVERSATION_ID_SIZE)) {
+		throw(INVALID_INPUT, "Conversation ID has an invalid size.");
 	}
 
-	if (conversation_id_length != CONVERSATION_ID_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect length.");
-	}
-
-	if ((backup_key == NULL) || (backup_key->content_length == 0)) {
+	if ((backup_key == NULL) || (backup_key->content_length != BACKUP_KEY_SIZE)) {
 		throw(INCORRECT_DATA, "No backup key found.");
 	}
 
-	status = molch_conversation_json_export(&json, conversation_id, &json_length);
-	throw_on_error(EXPORT_ERROR, "Failed to export conversation to JSON.");
+	//find the conversation
+	conversation_t *conversation = NULL;
+	status = find_conversation(&conversation, conversation_id, NULL);
+	throw_on_error(NOT_FOUND, "Failed to find the conversation.");
 
-	backup_buffer = buffer_create_on_heap(json_length + BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES, json_length + BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES);
-	throw_on_failed_alloc(backup_buffer);
+	//export the conversation
+	status = conversation_export(conversation, &conversation_struct);
+	conversation = NULL; //remove alias
+	throw_on_error(EXPORT_ERROR, "Failed to export conversation to protobuf-c struct.");
 
-	//generate the nonce
-	if (buffer_fill_random(backup_nonce, BACKUP_NONCE_SIZE) != 0) {
-		throw(GENERIC_ERROR, "Failed to generate backup nonce.");
+	//pack the struct
+	const size_t conversation_size = conversation__get_packed_size(conversation_struct);
+	conversation_buffer = buffer_create_with_custom_allocator(conversation_size, 0, zeroed_malloc, zeroed_free);
+	throw_on_failed_alloc(conversation_buffer);
+
+	conversation_buffer->content_length = conversation__pack(conversation_struct, conversation_buffer->content);
+	if (conversation_buffer->content_length != conversation_size) {
+		throw(PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c.");
 	}
 
-	//encrypt the JSON
+	//generate the nonce
+	backup_nonce = buffer_create_on_heap(BACKUP_NONCE_SIZE, 0);
+	throw_on_failed_alloc(backup_nonce);
+	if (buffer_fill_random(backup_nonce, BACKUP_NONCE_SIZE) != 0) {
+		throw(GENERIC_ERROR, "Failed to generaete backup nonce.");
+	}
+
+	//allocate the output
+	backup_buffer = buffer_create_on_heap(conversation_size + crypto_secretbox_MACBYTES, conversation_size + crypto_secretbox_MACBYTES);
+	throw_on_failed_alloc(backup_buffer);
+
+	//encrypt the backup
 	int status_int = crypto_secretbox_easy(
 			backup_buffer->content,
-			json,
-			json_length,
+			conversation_buffer->content,
+			conversation_buffer->content_length,
 			backup_nonce->content,
 			backup_key->content);
 	if (status_int != 0) {
-		throw(ENCRYPT_ERROR, "Failed to encrypt library state.");
+		backup_buffer->content_length = 0;
+		throw(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
 	}
 
-	//copy the nonce at the end of the output
-	status_int = buffer_copy_to_raw(
-			backup_buffer->content,
-			json_length + crypto_secretbox_MACBYTES,
-			backup_nonce,
-			0,
-			BACKUP_NONCE_SIZE);
-	if (status_int != 0) {
-		throw(BUFFER_ERROR, "Failed to copy nonce to backup.");
+	//fill in the encrypted backup struct
+	//metadata
+	encrypted_backup_struct.backup_version = 0;
+	encrypted_backup_struct.has_backup_type = true;
+	encrypted_backup_struct.backup_type = ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP;
+	//nonce
+	encrypted_backup_struct.has_encrypted_backup_nonce = true;
+	encrypted_backup_struct.encrypted_backup_nonce.data = backup_nonce->content;
+	encrypted_backup_struct.encrypted_backup_nonce.len = backup_nonce->content_length;
+	//encrypted backup
+	encrypted_backup_struct.has_encrypted_backup = true;
+	encrypted_backup_struct.encrypted_backup.data = backup_buffer->content;
+	encrypted_backup_struct.encrypted_backup.len = backup_buffer->content_length;
+
+	//now pack the entire backup
+	const size_t encrypted_backup_size = encrypted_backup__get_packed_size(&encrypted_backup_struct);
+	*backup = malloc(encrypted_backup_size);
+	*backup_length = encrypted_backup__pack(&encrypted_backup_struct, *backup);
+	if (*backup_length != encrypted_backup_size) {
+		throw(PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
 	}
-
-	*backup = backup_buffer->content;
-	*backup_length = backup_buffer->content_length;
-
-	free_and_null_if_valid(backup_buffer);
 
 cleanup:
 	on_error(
-		buffer_destroy_from_heap_and_null_if_valid(backup_buffer);
-	)
-
-	buffer_destroy_from_heap_and_null_if_valid(backup_nonce);
-	sodium_free_and_null_if_valid(json);
-
-	return status;
-}
-/*
- * Import a conversation from JSON (overwrites the current one if it exists).
- *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
- */
-return_status molch_conversation_json_import(const unsigned char * const json, const size_t length) {
-	return_status status = return_status_init();
-
-	//set allocation function of mcJSON to the libsodium allocation functions
-	mcJSON_Hooks allocation_functions = {
-		sodium_malloc,
-		sodium_free
-	};
-	mcJSON_InitHooks(&allocation_functions);
-
-	mcJSON *json_tree = NULL;
-	conversation_t *imported_conversation = NULL;
-	//create a buffer for the conversation id
-	buffer_t *conversation_id = buffer_create_on_heap(CONVERSATION_ID_SIZE, 0);
-	throw_on_failed_alloc(conversation_id);
-
-	if (json == NULL) {
-		throw(INVALID_INPUT, "\"json\" is NULL.");
-	}
-
-	//create a buffer for the JSON string
-	buffer_create_with_existing_array(json_buffer, (unsigned char*)json, length);
-
-
-	int status_int = 0;
-
-	//parse the json
-	json_tree = mcJSON_ParseBuffered(json_buffer, 100000);
-	if (json_tree == NULL) {
-		throw(IMPORT_ERROR, "Failed to parse JSON.");
-	}
-
-	//get the conversation id
-	buffer_create_from_string(id_string, "id");
-	mcJSON *conversation_id_json = mcJSON_GetObjectItem(json_tree, id_string);
-	if ((conversation_id_json == NULL) || (conversation_id_json->type != mcJSON_String) || (conversation_id_json->valuestring->content_length != (2 * CONVERSATION_ID_SIZE + 1))) {
-		throw(IMPORT_ERROR, "Invalid JSON.");
-	}
-
-	status_int = buffer_clone_from_hex(conversation_id, conversation_id_json->valuestring);
-	if (status_int != 0) {
-		throw(BUFFER_ERROR, "Failed to clone conversation ID.");
-	}
-
-	//import the conversation
-	imported_conversation = conversation_json_import(json_tree);
-	if (imported_conversation == NULL) {
-		throw(IMPORT_ERROR, "Failed to import conversation.");
-	}
-
-	//search the conversation in the conversation store
-	conversation_store *store = NULL;
-	conversation_t *old_conversation = NULL;
-	status = find_conversation(&old_conversation, conversation_id->content, &store);
-	on_error(
-		molch_end_conversation(conversation_id->content, conversation_id->content_length, NULL, NULL);
-		throw(GENERIC_ERROR, "Error while searching for conversation.");
-	)
-	if (old_conversation != NULL) { //destroy the old one if it exists
-		molch_end_conversation(conversation_id->content, conversation_id->content_length, NULL, NULL);
-	}
-
-	if (store == NULL) {
-		throw(NOT_FOUND, "No conversation store to put the conversation into.");
-	}
-
-	//now add the conversation to the store
-	status = conversation_store_add(store, imported_conversation);
-	throw_on_error(ADDITION_ERROR, "Failed to add conversation to the conversation store.");
-
-cleanup:
-	on_error(
-		sodium_free_and_null_if_valid(json_tree);
-
-		if (imported_conversation != NULL) {
-			conversation_destroy(imported_conversation);
+		if ((backup != NULL) && (*backup != NULL)) {
+			free(*backup);
+			*backup = NULL;
+		}
+		if (backup_length != NULL) {
+			*backup_length = 0;
 		}
 	)
 
-	buffer_destroy_from_heap_and_null_if_valid(conversation_id);
+	if (conversation_struct != NULL) {
+		conversation__free_unpacked(conversation_struct, &protobuf_c_allocators);
+		conversation_struct = NULL;
+	}
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(conversation_buffer, zeroed_free);
+	buffer_destroy_from_heap_and_null_if_valid(backup_nonce);
+	buffer_destroy_from_heap_and_null_if_valid(backup_buffer);
 
 	return status;
 }
@@ -1319,133 +1199,110 @@ cleanup:
  */
 return_status molch_conversation_import(
 		//output
-		unsigned char * new_backup_key, //BACKUP_KEY_SIZE, can be the same pointer as the backup key
+		unsigned char * new_backup_key,
 		const size_t new_backup_key_length,
 		//inputs
 		const unsigned char * const backup,
 		const size_t backup_length,
-		const unsigned char * local_backup_key, //BACKUP_KEY_SIZE
+		const unsigned char * local_backup_key,
 		const size_t local_backup_key_length) {
 	return_status status = return_status_init();
 
-	buffer_t *json = buffer_create_with_custom_allocator(backup_length, 0, sodium_malloc, sodium_free);
-	throw_on_failed_alloc(json);
+	EncryptedBackup *encrypted_backup_struct = NULL;
+	buffer_t *decrypted_backup = NULL;
+	Conversation *conversation_struct = NULL;
+	conversation_t *conversation = NULL;
 
 	//check input
 	if ((backup == NULL) || (local_backup_key == NULL)) {
 		throw(INVALID_INPUT, "Invalid input to molch_import.");
 	}
-
 	if (local_backup_key_length != BACKUP_KEY_SIZE) {
 		throw(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
 	}
-
 	if (new_backup_key_length != BACKUP_KEY_SIZE) {
 		throw(INCORRECT_BUFFER_SIZE, "New backup key has an incorrect length.");
 	}
 
-	//check the lengths
-	if (backup_length < BACKUP_NONCE_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Backup is too short.");
+	//unpack the encrypted backup
+	encrypted_backup_struct = encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup);
+	if (encrypted_backup_struct == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
 	}
 
-	size_t json_length = backup_length - BACKUP_NONCE_SIZE - crypto_secretbox_MACBYTES;
+	//check the backup
+	if (encrypted_backup_struct->backup_version != 0) {
+		throw(INCORRECT_DATA, "Incompatible backup.");
+	}
+	if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP)) {
+		throw(INCORRECT_DATA, "Backup is not a conversation backup.");
+	}
+	if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
+		throw(PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state.");
+	}
+	if (!encrypted_backup_struct->has_encrypted_backup_nonce || (encrypted_backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
+	}
+
+	decrypted_backup = buffer_create_with_custom_allocator(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
+	throw_on_failed_alloc(decrypted_backup);
 
 	//decrypt the backup
 	int status_int = crypto_secretbox_open_easy(
-			json->content,
-			backup,
-			backup_length - BACKUP_NONCE_SIZE,
-			backup + backup_length - BACKUP_NONCE_SIZE,
+			decrypted_backup->content,
+			encrypted_backup_struct->encrypted_backup.data,
+			encrypted_backup_struct->encrypted_backup.len,
+			encrypted_backup_struct->encrypted_backup_nonce.data,
 			local_backup_key);
 	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt backup.");
+		throw(DECRYPT_ERROR, "Failed to decrypt conversation backup.");
 	}
 
-	json->content_length = json_length;
+	//unpack the struct
+	conversation_struct = conversation__unpack(&protobuf_c_allocators, decrypted_backup->content_length, decrypted_backup->content);
+	if (conversation_struct == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversations protobuf-c.");
+	}
 
+	//import the conversation
+	status = conversation_import(&conversation, conversation_struct);
+	throw_on_error(IMPORT_ERROR, "Failed to import conversation from Protobuf-C struct.");
+
+	conversation_store *containing_store = NULL;
+	conversation_t *existing_conversation = NULL;
+	status = find_conversation(&existing_conversation, conversation->id->content, &containing_store);
+	throw_on_error(NOT_FOUND, "Imported conversation has to exist, but it doesn't.");
+
+	status = conversation_store_add(containing_store, conversation);
+	throw_on_error(ADDITION_ERROR, "Failed to add imported conversation to the conversation store.");
+	conversation = NULL;
+
+
+	//update the backup key
 	status = molch_update_backup_key(new_backup_key, new_backup_key_length);
-	throw_on_error(KEYGENERATION_FAILED, "Faild to generate a new backup key.");
-
-	status = molch_conversation_json_import(
-			json->content,
-			json->content_length);
-	throw_on_error(IMPORT_ERROR, "Failed to import conversation from decrypted JSON.");
-
-cleanup:
-	buffer_destroy_with_custom_deallocator_and_null_if_valid(json, sodium_free);
-
-	return status;
-}
-
-/*
- * Serialise molch's state into JSON.
- *
- * Don't forget to free after use.
- *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
- */
-return_status molch_json_export(
-		unsigned char ** const json,
-		size_t *length) {
-	//set allocation functions of mcJSON to the libsodium allocation functions
-	mcJSON_Hooks allocation_functions = {
-		sodium_malloc,
-		sodium_free
-	};
-	mcJSON_InitHooks(&allocation_functions);
-
-	mempool_t *pool = NULL;
-	buffer_t *json_string = NULL;
-
-	return_status status = return_status_init();
-
-	if ((json == NULL) || (length == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_json_export.");
-	}
-
-	// empty array when there is no content
-	if (users == NULL) {
-		*json = sodium_malloc(sizeof("[]"));
-		throw_on_failed_alloc(*json);
-		strncpy((char*)*json, "[]", sizeof("[]"));
-		*length = sizeof("[]");
-		goto cleanup;
-	}
-
-	//allocate a memory pool
-	//FIXME: Don't allocate a fixed amount
-	pool = buffer_create_with_custom_allocator(5000000, 0, sodium_malloc, sodium_free);
-	throw_on_failed_alloc(pool);
-
-	//serialize state into tree of mcJSON objects
-	mcJSON *json_tree = user_store_json_export(users, pool);
-	if (json_tree == NULL) {
-		throw(EXPORT_ERROR, "Failed to export user store to JSON.");
-	}
-
-	//print to string
-	//FIXME: Don't allocate a fixed amount (that's the only way to do it right now unfortunately)
-	json_string = mcJSON_PrintBuffered(json_tree, 5000000, false);
-	if (json_string == NULL) {
-		throw(GENERIC_ERROR, "Failed to print JSON.");
-	}
-
-	*length = json_string->content_length;
-	*json = json_string->content;
-	sodium_free_and_null_if_valid(json_string); //free the buffer_t struct (leaving content intact)
-
-cleanup:
-	buffer_destroy_with_custom_deallocator_and_null_if_valid(pool, sodium_free);
-
 	on_error(
-		if (length != 0) {
-			*length = 0;
-		}
-
-		buffer_destroy_with_custom_deallocator_and_null_if_valid(json_string, sodium_free);
+		//remove the new imported conversation
+		conversation_store_remove(containing_store, conversation);
+		throw(KEYGENERATION_FAILED, "Failed to update backup key.");
 	)
+
+	//everything worked, the old conversation can now be removed
+	conversation_store_remove(containing_store, existing_conversation);
+
+cleanup:
+	if (encrypted_backup_struct != NULL) {
+		encrypted_backup__free_unpacked(encrypted_backup_struct, &protobuf_c_allocators);
+		encrypted_backup_struct = NULL;
+	}
+	if (conversation_struct != NULL) {
+		conversation__free_unpacked(conversation_struct, &protobuf_c_allocators);
+		conversation_struct = NULL;
+	}
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(decrypted_backup, zeroed_free);
+	if (conversation != NULL) {
+		conversation_destroy(conversation);
+		conversation = NULL;
+	}
 
 	return status;
 }
@@ -1459,130 +1316,108 @@ cleanup:
  * if an error has occured.
  */
 return_status molch_export(
-		unsigned char ** const backup, //output, free after use
+		unsigned char ** const backup,
 		size_t *backup_length) {
 	return_status status = return_status_init();
 
-	unsigned char *json = NULL;
-	size_t json_length = 0;
-
-	//buffers
+	buffer_t *users_buffer = NULL;
+	buffer_t *backup_nonce = NULL;
 	buffer_t *backup_buffer = NULL;
-	buffer_t *backup_nonce = buffer_create_on_heap(BACKUP_NONCE_SIZE, 0);
-	throw_on_failed_alloc(backup_nonce);
 
+	EncryptedBackup encrypted_backup_struct;
+	encrypted_backup__init(&encrypted_backup_struct);
+	Backup *backup_struct = NULL;
+
+	//check input
 	if ((backup == NULL) || (backup_length == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_export.");
+		throw(INVALID_INPUT, "Invalid input to molch_export");
 	}
 
-	if ((backup_key == NULL) || (backup_key->content_length == 0)) {
+	if ((backup_key == NULL) || (backup_key->content_length != BACKUP_KEY_SIZE)) {
 		throw(INCORRECT_DATA, "No backup key found.");
 	}
 
-	status = molch_json_export(&json, &json_length);
-	throw_on_error(EXPORT_ERROR, "Failed to export the library state to JSON.");
+	backup_struct = zeroed_malloc(sizeof(Backup));
+	throw_on_failed_alloc(backup_struct);
+	backup__init(backup_struct);
 
-	backup_buffer = buffer_create_on_heap(json_length + BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES, json_length + BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES);
-	throw_on_failed_alloc(backup_buffer);
+	//export the conversation
+	status = user_store_export(users, &(backup_struct->users), &(backup_struct->n_users));
+	throw_on_error(EXPORT_ERROR, "Failed to export user store to protobuf-c struct.");
 
-	//generate the nonce
-	if (buffer_fill_random(backup_nonce, BACKUP_NONCE_SIZE) != 0) {
-		throw(GENERIC_ERROR, "Failed to generate backup nonce.");
+	//pack the struct
+	const size_t backup_struct_size = backup__get_packed_size(backup_struct);
+	users_buffer = buffer_create_with_custom_allocator(backup_struct_size, 0, zeroed_malloc, zeroed_free);
+	throw_on_failed_alloc(users_buffer);
+
+	users_buffer->content_length = backup__pack(backup_struct, users_buffer->content);
+	if (users_buffer->content_length != backup_struct_size) {
+		throw(PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c.");
 	}
 
-	//encrypt the JSON
+	//generate the nonce
+	backup_nonce = buffer_create_on_heap(BACKUP_NONCE_SIZE, 0);
+	throw_on_failed_alloc(backup_nonce);
+	if (buffer_fill_random(backup_nonce, BACKUP_NONCE_SIZE) != 0) {
+		throw(GENERIC_ERROR, "Failed to generaete backup nonce.");
+	}
+
+	//allocate the output
+	backup_buffer = buffer_create_on_heap(backup_struct_size + crypto_secretbox_MACBYTES, backup_struct_size + crypto_secretbox_MACBYTES);
+	throw_on_failed_alloc(backup_buffer);
+
+	//encrypt the backup
 	int status_int = crypto_secretbox_easy(
 			backup_buffer->content,
-			json,
-			json_length,
+			users_buffer->content,
+			users_buffer->content_length,
 			backup_nonce->content,
 			backup_key->content);
 	if (status_int != 0) {
-		throw(ENCRYPT_ERROR, "Failed to encrypt library state.");
+		backup_buffer->content_length = 0;
+		throw(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
 	}
 
-	//copy the nonce at the end of the output
-	status_int = buffer_copy_to_raw(
-			backup_buffer->content,
-			json_length + crypto_secretbox_MACBYTES,
-			backup_nonce,
-			0,
-			BACKUP_NONCE_SIZE);
-	if (status_int != 0) {
-		throw(BUFFER_ERROR, "Failed to copy nonce to backup.");
+	//fill in the encrypted backup struct
+	//metadata
+	encrypted_backup_struct.backup_version = 0;
+	encrypted_backup_struct.has_backup_type = true;
+	encrypted_backup_struct.backup_type = ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP;
+	//nonce
+	encrypted_backup_struct.has_encrypted_backup_nonce = true;
+	encrypted_backup_struct.encrypted_backup_nonce.data = backup_nonce->content;
+	encrypted_backup_struct.encrypted_backup_nonce.len = backup_nonce->content_length;
+	//encrypted backup
+	encrypted_backup_struct.has_encrypted_backup = true;
+	encrypted_backup_struct.encrypted_backup.data = backup_buffer->content;
+	encrypted_backup_struct.encrypted_backup.len = backup_buffer->content_length;
+
+	//now pack the entire backup
+	const size_t encrypted_backup_size = encrypted_backup__get_packed_size(&encrypted_backup_struct);
+	*backup = malloc(encrypted_backup_size);
+	*backup_length = encrypted_backup__pack(&encrypted_backup_struct, *backup);
+	if (*backup_length != encrypted_backup_size) {
+		throw(PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
 	}
-
-	*backup = backup_buffer->content;
-	*backup_length = backup_buffer->content_length;
-
-	free_and_null_if_valid(backup_buffer);
 
 cleanup:
 	on_error(
-		buffer_destroy_from_heap_and_null_if_valid(backup_buffer);
+		if ((backup != NULL) && (*backup != NULL)) {
+			free(*backup);
+			*backup = NULL;
+		}
+		if (backup_length != NULL) {
+			*backup_length = 0;
+		}
 	)
 
+	if (backup_struct != NULL) {
+		backup__free_unpacked(backup_struct, &protobuf_c_allocators);
+		backup_struct = NULL;
+	}
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(users_buffer, zeroed_free);
 	buffer_destroy_from_heap_and_null_if_valid(backup_nonce);
-	sodium_free_and_null_if_valid(json);
-
-	return status;
-}
-
-/*
- * Import the molch's state from JSON (overwrites the current state!)
- *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
- */
-return_status molch_json_import(const unsigned char *const json, const size_t length){
-	//set allocation functions of mcJSON to the libsodium allocation functions
-	mcJSON_Hooks allocation_functions = {
-		sodium_malloc,
-		sodium_free
-	};
-	mcJSON_InitHooks(&allocation_functions);
-
-	user_store *users_backup = NULL;
-
-	return_status status = return_status_init();
-
-	//initialize libsodium if not done already
-	if (users == NULL) {
-		if (sodium_init() == -1) {
-			throw(INIT_ERROR, "Failed to initialise libsodium.");
-		}
-	}
-
-	//create buffer for the json string
-	buffer_create_with_existing_array(json_buffer, (unsigned char*)json, length);
-
-	//parse the json
-	//FIXME: Don't allocate fixed amount
-	mcJSON *json_tree = mcJSON_ParseBuffered(json_buffer, 5000000);
-	if (json_tree == NULL) {
-		throw(IMPORT_ERROR, "Failed to parse JSON.");
-	}
-
-	//backup the old user_store
-	users_backup = users;
-
-	//import the user store from json
-	users = user_store_json_import(json_tree);
-	if (users == NULL) {
-		throw(IMPORT_ERROR, "Failed to import user store from JSON.");
-	}
-
-	if (users_backup != NULL) {
-		user_store_destroy(users_backup);
-		users_backup = NULL;
-	}
-
-cleanup:
-	on_error(
-		if (users_backup != NULL) {
-			users = users_backup; //roll back backup
-		}
-	)
+	buffer_destroy_from_heap_and_null_if_valid(backup_buffer);
 
 	return status;
 }
@@ -1608,52 +1443,89 @@ return_status molch_import(
 		) {
 	return_status status = return_status_init();
 
-	buffer_t *json = buffer_create_with_custom_allocator(backup_length, 0, sodium_malloc, sodium_free);
-	throw_on_failed_alloc(json);
+	EncryptedBackup *encrypted_backup_struct = NULL;
+	buffer_t *decrypted_backup = NULL;
+	Backup *backup_struct = NULL;
+	user_store *store = NULL;
 
 	//check input
 	if ((backup == NULL) || (local_backup_key == NULL)) {
 		throw(INVALID_INPUT, "Invalid input to molch_import.");
 	}
-
 	if (local_backup_key_length != BACKUP_KEY_SIZE) {
 		throw(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
 	}
-
 	if (new_backup_key_length != BACKUP_KEY_SIZE) {
 		throw(INCORRECT_BUFFER_SIZE, "New backup key has an incorrect length.");
 	}
 
-	//check the lengths
-	if (backup_length < BACKUP_NONCE_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Backup is too short.");
+	//unpack the encrypted backup
+	encrypted_backup_struct = encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup);
+	if (encrypted_backup_struct == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
 	}
 
-	size_t json_length = backup_length - BACKUP_NONCE_SIZE - crypto_secretbox_MACBYTES;
+	//check the backup
+	if (encrypted_backup_struct->backup_version != 0) {
+		throw(INCORRECT_DATA, "Incompatible backup.");
+	}
+	if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP)) {
+		throw(INCORRECT_DATA, "Backup is not a full backup.");
+	}
+	if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
+		throw(PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted state.");
+	}
+	if (!encrypted_backup_struct->has_encrypted_backup_nonce || (encrypted_backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
+	}
+
+	decrypted_backup = buffer_create_with_custom_allocator(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
+	throw_on_failed_alloc(decrypted_backup);
 
 	//decrypt the backup
 	int status_int = crypto_secretbox_open_easy(
-			json->content,
-			backup,
-			backup_length - BACKUP_NONCE_SIZE,
-			backup + backup_length - BACKUP_NONCE_SIZE,
+			decrypted_backup->content,
+			encrypted_backup_struct->encrypted_backup.data,
+			encrypted_backup_struct->encrypted_backup.len,
+			encrypted_backup_struct->encrypted_backup_nonce.data,
 			local_backup_key);
 	if (status_int != 0) {
 		throw(DECRYPT_ERROR, "Failed to decrypt backup.");
 	}
 
-	json->content_length = json_length;
+	//unpack the struct
+	backup_struct = backup__unpack(&protobuf_c_allocators, decrypted_backup->content_length, decrypted_backup->content);
+	if (backup_struct == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack backups protobuf-c.");
+	}
 
+	//import the user store
+	status = user_store_import(&store, backup_struct->users, backup_struct->n_users);
+	throw_on_error(IMPORT_ERROR, "Failed to import user store from Protobuf-C struct.");
+
+	//update the backup key
 	status = molch_update_backup_key(new_backup_key, new_backup_key_length);
-	throw_on_error(KEYGENERATION_FAILED, "Faild to generate a new backup key.");
+	throw_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
 
-	status = molch_json_import(
-			json->content,
-			json->content_length);
-	throw_on_error(IMPORT_ERROR, "Failed to import from decrypted JSON.");
+	//everyting worked, switch to the new user store
+	user_store_destroy(users);
+	users = store;
+	store = NULL;
 
 cleanup:
-	buffer_destroy_with_custom_deallocator_and_null_if_valid(json, sodium_free);
+	if (encrypted_backup_struct != NULL) {
+		encrypted_backup__free_unpacked(encrypted_backup_struct, &protobuf_c_allocators);
+		encrypted_backup_struct = NULL;
+	}
+	if (backup_struct != NULL) {
+		backup__free_unpacked(backup_struct, &protobuf_c_allocators);
+		backup_struct = NULL;
+	}
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(decrypted_backup, zeroed_free);
+	if (store != NULL) {
+		user_store_destroy(store);
+		store = NULL;
+	}
 
 	return status;
 }

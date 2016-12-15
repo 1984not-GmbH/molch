@@ -26,7 +26,139 @@
 #include "utils.h"
 #include "../lib/molch.h"
 #include "../lib/user-store.h" //for PREKEY_AMOUNT
+#include "../lib/zeroed_malloc.h"
 #include "tracing.h"
+
+#include <encrypted_backup.pb-c.h>
+
+
+return_status decrypt_conversation_backup(
+		//output
+		buffer_t ** decrypted_backup,
+		//inputs
+		const unsigned char * const backup,
+		const size_t backup_length,
+		const unsigned char * backup_key,
+		const size_t backup_key_length) {
+	return_status status = return_status_init();
+
+	EncryptedBackup *encrypted_backup_struct = NULL;
+
+	//check input
+	if ((decrypted_backup == NULL) || (backup == NULL) || (backup_key == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to molch_import.");
+	}
+	if (backup_key_length != BACKUP_KEY_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
+	}
+
+	//unpack the encrypted backup
+	encrypted_backup_struct = encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup);
+	if (encrypted_backup_struct == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
+	}
+
+	//check the backup
+	if (encrypted_backup_struct->backup_version != 0) {
+		throw(INCORRECT_DATA, "Incompatible backup.");
+	}
+	if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP)) {
+		throw(INCORRECT_DATA, "Backup is not a conversation backup.");
+	}
+	if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
+		throw(PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state.");
+	}
+	if (!encrypted_backup_struct->has_encrypted_backup_nonce || (encrypted_backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
+	}
+
+	*decrypted_backup = buffer_create_with_custom_allocator(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
+	throw_on_failed_alloc(*decrypted_backup);
+
+	//decrypt the backup
+	int status_int = crypto_secretbox_open_easy(
+			(*decrypted_backup)->content,
+			encrypted_backup_struct->encrypted_backup.data,
+			encrypted_backup_struct->encrypted_backup.len,
+			encrypted_backup_struct->encrypted_backup_nonce.data,
+			backup_key);
+	if (status_int != 0) {
+		throw(DECRYPT_ERROR, "Failed to decrypt conversation backup.");
+	}
+
+cleanup:
+	if (encrypted_backup_struct != NULL) {
+		encrypted_backup__free_unpacked(encrypted_backup_struct, &protobuf_c_allocators);
+		encrypted_backup_struct = NULL;
+	}
+	//decrypted_backup gets freed in main
+
+	return status;
+}
+
+return_status decrypt_full_backup(
+		//output
+		buffer_t ** decrypted_backup,
+		//inputs
+		const unsigned char * const backup,
+		const size_t backup_length,
+		const unsigned char * backup_key,
+		const size_t backup_key_length) {
+	return_status status = return_status_init();
+
+	EncryptedBackup *encrypted_backup_struct = NULL;
+
+	//check input
+	if ((decrypted_backup == NULL) || (backup == NULL) || (backup_key == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to molch_import.");
+	}
+	if (backup_key_length != BACKUP_KEY_SIZE) {
+		throw(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
+	}
+
+	//unpack the encrypted backup
+	encrypted_backup_struct = encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup);
+	if (encrypted_backup_struct == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
+	}
+
+	//check the backup
+	if (encrypted_backup_struct->backup_version != 0) {
+		throw(INCORRECT_DATA, "Incompatible backup.");
+	}
+	if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP)) {
+		throw(INCORRECT_DATA, "Backup is not a conversation backup.");
+	}
+	if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
+		throw(PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state.");
+	}
+	if (!encrypted_backup_struct->has_encrypted_backup_nonce || (encrypted_backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
+		throw(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
+	}
+
+	*decrypted_backup = buffer_create_with_custom_allocator(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
+	throw_on_failed_alloc(*decrypted_backup);
+
+	//decrypt the backup
+	int status_int = crypto_secretbox_open_easy(
+			(*decrypted_backup)->content,
+			encrypted_backup_struct->encrypted_backup.data,
+			encrypted_backup_struct->encrypted_backup.len,
+			encrypted_backup_struct->encrypted_backup_nonce.data,
+			backup_key);
+	if (status_int != 0) {
+		throw(DECRYPT_ERROR, "Failed to decrypt conversation backup.");
+	}
+
+cleanup:
+	if (encrypted_backup_struct != NULL) {
+		encrypted_backup__free_unpacked(encrypted_backup_struct, &protobuf_c_allocators);
+		encrypted_backup_struct = NULL;
+	}
+	//decrypted_backup gets freed in main
+
+	return status;
+}
 
 int main(void) {
 	if (sodium_init() == -1) {
@@ -67,18 +199,18 @@ int main(void) {
 
 	unsigned char *printed_status = NULL;
 
+	// backups
+	unsigned char *backup = NULL;
+	unsigned char *imported_backup = NULL;
+
+	// decrypted backups
+	buffer_t *decrypted_backup = NULL;
+	buffer_t *decrypted_imported_backup = NULL;
+	buffer_t *decrypted_conversation_backup = NULL;
+	buffer_t *decrypted_imported_conversation_backup = NULL;
+
 	status = molch_update_backup_key(backup_key->content, backup_key->content_length);
 	throw_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
-
-	//backup for empty library
-	size_t empty_backup_length;
-	unsigned char *empty_backup= NULL;
-	status = molch_export(&empty_backup, &empty_backup_length);
-	throw_on_error(EXPORT_ERROR, "Failed to export empty library.");
-	free_and_null_if_valid(empty_backup);
-	if (empty_backup_length != (sizeof("[]") + BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES)) {
-		throw(INCORRECT_DATA, "Incorrect output length when there is no user.");
-	}
 
 	//check user count
 	if (molch_user_count() != 0) {
@@ -318,7 +450,6 @@ int main(void) {
 	//test export
 	printf("Test export!\n");
 	size_t backup_length;
-	unsigned char *backup = NULL;
 	status = molch_export(&backup, &backup_length);
 	throw_on_error(EXPORT_ERROR, "Failed to export.");
 
@@ -332,21 +463,11 @@ int main(void) {
 			backup_key->content,
 			backup_key->content_length);
 	on_error(
-		free_and_null_if_valid(backup);
 		throw(IMPORT_ERROR, "Failed to import backup.");
 	)
 
-	//decrypt the first export (for comparison later on)
-	status_int = crypto_secretbox_open_easy(
-			backup,
-			backup,
-			backup_length - BACKUP_NONCE_SIZE,
-			backup + backup_length - BACKUP_NONCE_SIZE,
-			backup_key->content);
-	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt the backup.")
-	}
-	backup_length -= BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES;
+	status = decrypt_full_backup(&decrypted_backup, backup, backup_length, backup_key->content, backup_key->content_length);
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt backup.");
 
 	//compare the keys
 	if (buffer_compare(backup_key, new_backup_key) == 0) {
@@ -360,29 +481,16 @@ int main(void) {
 
 	//now export again
 	size_t imported_backup_length;
-	unsigned char *imported_backup = NULL;
 	status = molch_export(&imported_backup, &imported_backup_length);
 	on_error(
-		free_and_null_if_valid(backup);
 		throw(EXPORT_ERROR, "Failed to export imported backup.");
 	)
 
-	//decrypt the secondt export (for comparison later on)
-	status_int = crypto_secretbox_open_easy(
-			imported_backup,
-			imported_backup,
-			imported_backup_length - BACKUP_NONCE_SIZE,
-			imported_backup + imported_backup_length - BACKUP_NONCE_SIZE,
-			backup_key->content);
-	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt the backup.")
-	}
-	imported_backup_length -= BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES;
+	status = decrypt_full_backup(&decrypted_imported_backup, imported_backup, imported_backup_length, backup_key->content, backup_key->content_length);
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt imported backup.");
 
 	//compare
-	if ((backup_length != imported_backup_length) || (sodium_memcmp(backup, imported_backup, backup_length) != 0)) {
-		free_and_null_if_valid(backup);
-		free_and_null_if_valid(imported_backup);
+	if (buffer_compare(decrypted_backup, decrypted_imported_backup) != 0) {
 		throw(IMPORT_ERROR, "Imported backup is incorrect.");
 	}
 	free_and_null_if_valid(backup);
@@ -396,7 +504,7 @@ int main(void) {
 			alice_conversation->content_length);
 	throw_on_error(EXPORT_ERROR, "Failed to export Alice' conversation.");
 
-	printf("Alice' conversation exported!");
+	printf("Alice' conversation exported!\n");
 
 	//import again
 	status = molch_conversation_import(
@@ -406,22 +514,14 @@ int main(void) {
 			backup_length,
 			backup_key->content,
 			backup_key->content_length);
-	on_error(
-		free_and_null_if_valid(backup);
-		throw(IMPORT_ERROR, "Failed to import Alice' conversation from backup.");
-	)
+	throw_on_error(IMPORT_ERROR, "Failed to import Alice' conversation from backup.");
 
-	//decrypt the backup
-	status_int = crypto_secretbox_open_easy(
-			backup,
-			backup,
-			backup_length - BACKUP_NONCE_SIZE,
-			backup + backup_length - BACKUP_NONCE_SIZE,
-			backup_key->content);
-	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt the backup.")
-	}
-	backup_length -= BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES;
+	status = decrypt_conversation_backup(
+			&decrypted_conversation_backup,
+			backup, backup_length,
+			backup_key->content,
+			backup_key->content_length);
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt the backup.")
 
 	//copy the backup key
 	if (buffer_clone(backup_key, new_backup_key) != 0) {
@@ -435,32 +535,20 @@ int main(void) {
 			&imported_backup_length,
 			alice_conversation->content,
 			alice_conversation->content_length);
-	on_error(
-		free_and_null_if_valid(backup);
-		throw(EXPORT_ERROR, "Failed to export Alice imported conversation.");
-	)
+	throw_on_error(EXPORT_ERROR, "Failed to export Alice imported conversation.");
 
-	//decrypt the first export (for comparison later on)
-	status_int = crypto_secretbox_open_easy(
+	status = decrypt_conversation_backup(
+			&decrypted_imported_conversation_backup,
 			imported_backup,
-			imported_backup,
-			imported_backup_length - BACKUP_NONCE_SIZE,
-			imported_backup + imported_backup_length - BACKUP_NONCE_SIZE,
-			backup_key->content);
-	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt the backup.")
-	}
-	imported_backup_length -= BACKUP_NONCE_SIZE + crypto_secretbox_MACBYTES;
+			imported_backup_length,
+			backup_key->content,
+			backup_key->content_length);
+	throw_on_error(DECRYPT_ERROR, "Failed to decrypt the backup.")
 
 	//compare
-	if ((backup_length != imported_backup_length) || (sodium_memcmp(backup, imported_backup, backup_length) != 0)) {
-		free_and_null_if_valid(backup);
-		free_and_null_if_valid(imported_backup);
-		throw(IMPORT_ERROR, "JSON of imported conversation is incorrect.");
+	if (buffer_compare(decrypted_conversation_backup, decrypted_imported_conversation_backup) != 0) {
+		throw(IMPORT_ERROR, "Protobuf of imported conversation is incorrect.");
 	}
-
-	free_and_null_if_valid(imported_backup);
-	free_and_null_if_valid(backup);
 
 	//destroy the conversations
 	molch_end_conversation(alice_conversation->content, alice_conversation->content_length, NULL, NULL);
@@ -485,10 +573,18 @@ int main(void) {
 
 cleanup:
 	free_and_null_if_valid(alice_public_prekeys);
-		free_and_null_if_valid(bob_public_prekeys);
-		free_and_null_if_valid(alice_send_packet);
-		free_and_null_if_valid(bob_send_packet);
-		free_and_null_if_valid(printed_status);
+	free_and_null_if_valid(bob_public_prekeys);
+	free_and_null_if_valid(alice_send_packet);
+	free_and_null_if_valid(bob_send_packet);
+	free_and_null_if_valid(printed_status);
+	free_and_null_if_valid(backup);
+	free_and_null_if_valid(imported_backup);
+
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(decrypted_backup, zeroed_free);
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(decrypted_imported_backup, zeroed_free);
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(decrypted_conversation_backup, zeroed_free);
+	buffer_destroy_with_custom_deallocator_and_null_if_valid(decrypted_imported_conversation_backup, zeroed_free);
+
 	molch_destroy_all_users();
 	buffer_destroy_from_heap_and_null_if_valid(alice_conversation);
 	buffer_destroy_from_heap_and_null_if_valid(bob_conversation);
@@ -496,6 +592,7 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(bob_public_identity);
 	buffer_destroy_from_heap_and_null_if_valid(backup_key);
 	buffer_destroy_from_heap_and_null_if_valid(new_backup_key);
+
 
 	on_error(
 		print_errors(&status);

@@ -25,6 +25,7 @@
 #define LIB_COMMON_H
 
 #include "return-status.h"
+#include "zeroed_malloc.h"
 
 // execute code if a pointer is not NULL
 #define if_valid(pointer, code)\

@@ -24,7 +24,6 @@
 
 #include "constants.h"
 #include "../buffer/buffer.h"
-#include "../mcJSON/mcJSON.h"
 #include "conversation-store.h"
 #include "prekey-store.h"
 #include "master-keys.h"
@@ -105,16 +104,26 @@ void user_store_remove(user_store * const store, user_store_node *node);
 //clear the entire user store
 void user_store_clear(user_store *keystore);
 
-/*
- * Serialise a user store into JSON. It get's a mempool_t buffer and stores a tree of
- * mcJSON objects into the buffer starting at pool->position.
- *
- * Returns NULL in case of Failure.
+/*! Export a user store to an array of Protobuf-C structs
+ * \param store The user store to export
+ * \param users The array to export to.
+ * \param users_length The length of the exported array.
+ * \return The status.
  */
-mcJSON *user_store_json_export(user_store * const store, mempool_t * const pool) __attribute__((warn_unused_result));
+return_status user_store_export(
+	const user_store * const store,
+	User *** const users,
+	size_t * const users_length) __attribute__((warn_unused_result));
 
-/*
- * Deserialise a user store (import from JSON).
+/*! Import a user store from an array of Protobuf-C structs
+ * \param store The user store to import.
+ * \param users The array to import from.
+ * \param users_length The length of the array.
+ * \return The status.
  */
-user_store *user_store_json_import(const mcJSON * const json) __attribute__((warn_unused_result));
+return_status user_store_import(
+	user_store ** const store,
+	User ** users,
+	const size_t users_length) __attribute__((warn_unused_result));
+
 #endif

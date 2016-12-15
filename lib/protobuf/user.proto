@@ -1,0 +1,14 @@
+syntax = "proto2";
+import "conversation.proto";
+import "prekey.proto";
+import "key.proto";
+
+message User {
+	optional Key private_signing_key = 1;
+	optional Key public_signing_key = 2;
+	optional Key private_identity_key = 3;
+	optional Key public_identity_key = 4;
+	repeated Conversation conversations = 5;
+	repeated Prekey prekeys = 6;
+	repeated Prekey deprecated_prekeys = 7;
+}

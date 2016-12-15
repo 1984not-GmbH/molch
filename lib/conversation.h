@@ -42,19 +42,6 @@ struct conversation_t {
 void conversation_destroy(conversation_t * const conversation);
 
 /*
- * Serialise a conversation into JSON. It get#s a mempool_t buffer and stores a tree of
- * mcJSON objects into the buffer starting at pool->position.
- *
- * Returns NULL in case of failure.
- */
-mcJSON *conversation_json_export(const conversation_t * const conversation, mempool_t * const pool) __attribute__((warn_unused_result));
-
-/*
- * Deserialize a conversation (import from JSON)
- */
-conversation_t *conversation_json_import(const mcJSON * const json) __attribute__((warn_unused_result));
-
-/*
  * Start a new conversation where we are the sender.
  *
  * Don't forget to destroy the return status with return_status_destroy_errors()
@@ -113,4 +100,23 @@ return_status conversation_receive(
 	uint32_t * const previous_receive_message_number,
 	buffer_t ** const message //output, free after use!
 		) __attribute__((warn_unused_result));
+
+/*! Export a conversation to a Protobuf-C struct.
+ * \param conversation The conversation to export
+ * \param exported_conversation The exported conversation protobuf-c struct.
+ */
+return_status conversation_export(
+	const conversation_t * const conversation,
+	Conversation ** const exported_conversation) __attribute__((warn_unused_result));
+
+/*! Import a conversatoin from a Protobuf-C struct
+ * \param conversation The conversation to import to.
+ * \param conversation_protobuf The protobuf-c struct to import from.
+ * \param public_identity_key The public identity key of the owner of the conversation.
+ * \return The status.
+ */
+return_status conversation_import(
+	conversation_t ** const conversation,
+	const Conversation * const conversation_protobuf) __attribute__((warn_unused_result));
 #endif
+

@@ -1,0 +1,47 @@
+syntax = "proto2";
+import "key_bundle.proto";
+
+message Conversation {
+	required bytes id = 1;
+	optional bytes root_key = 2;
+	optional bytes purported_root_key = 3;
+	//header keys
+	optional bytes send_header_key = 4;
+	optional bytes receive_header_key = 5;
+	optional bytes next_send_header_key = 6;
+	optional bytes next_receive_header_key = 7;
+	optional bytes purported_receive_header_key = 8;
+	optional bytes purported_next_receive_header_key = 9;
+	//chain keys
+	optional bytes send_chain_key = 10;
+	optional bytes receive_chain_key = 11;
+	optional bytes purported_receive_chain_key = 12;
+	//identity key
+	optional bytes our_public_identity_key = 13;
+	optional bytes their_public_identity_key = 14;
+	//ephemeral keys
+	optional bytes our_private_ephemeral_key = 15;
+	optional bytes our_public_ephemeral_key = 16;
+	optional bytes their_public_ephemeral_key = 17;
+	optional bytes their_purported_public_ephemeral = 18;
+	//message numbers
+	optional uint32 send_message_number = 19;
+	optional uint32 receive_message_number = 20;
+	optional uint32 purported_message_number = 21;
+	optional uint32 previous_message_number = 22;
+	optional uint32 purported_previous_message_number = 23;
+	//ratchet flag
+	optional bool ratchet_flag = 24;
+	optional bool am_i_alice = 25;
+	optional bool received_valid = 26;
+	enum HeaderDecryptability {
+		CURRENT_DECRYPTABLE = 0;
+		NEXT_DECRYPTABLE = 1;
+		UNDECRYPTABLE = 2;
+		NOT_TRIED = 3;
+	}
+	optional HeaderDecryptability header_decryptable = 27;
+	//keystores
+	repeated KeyBundle skipped_header_and_message_keys = 28;
+	repeated KeyBundle staged_header_and_message_keys = 29;
+}

@@ -112,93 +112,6 @@ void conversation_destroy(conversation_t * const conversation) {
 }
 
 /*
- * Serialise a conversation into JSON. It get#s a mempool_t buffer and stores a tree of
- * mcJSON objects into the buffer starting at pool->position.
- *
- * Returns NULL in case of failure.
- */
-mcJSON *conversation_json_export(const conversation_t * const conversation, mempool_t * const pool) {
-	if ((conversation == NULL) || (pool == NULL)) {
-		return NULL;
-	}
-
-	mcJSON *json = mcJSON_CreateObject(pool);
-	if (json == NULL) {
-		return NULL;
-	}
-
-	mcJSON *id = mcJSON_CreateHexString(conversation->id, pool);
-	if (id == NULL) {
-		return NULL;
-	}
-	mcJSON *ratchet = ratchet_json_export(conversation->ratchet, pool);
-	if (ratchet == NULL) {
-		return NULL;
-	}
-
-	buffer_create_from_string(id_string, "id");
-	mcJSON_AddItemToObject(json, id_string, id, pool);
-	buffer_create_from_string(ratchet_string, "ratchet");
-	mcJSON_AddItemToObject(json, ratchet_string, ratchet, pool);
-
-	return json;
-}
-
-/*
- * Deserialize a conversation (import from JSON)
- */
-conversation_t *conversation_json_import(const mcJSON * const json) {
-	if ((json == NULL) || (json->type != mcJSON_Object)) {
-		return NULL;
-	}
-
-	conversation_t *conversation = malloc(sizeof(conversation_t));
-	if (conversation == NULL) {
-		return NULL;
-	}
-	init_struct(conversation);
-
-	int status = 0;
-
-	//import the json
-	buffer_create_from_string(id_string, "id");
-	mcJSON *id = mcJSON_GetObjectItem(json, id_string);
-	buffer_create_from_string(ratchet_string, "ratchet");
-	mcJSON *ratchet = mcJSON_GetObjectItem(json, ratchet_string);
-	if ((id == NULL) || (id->type != mcJSON_String) || (id->valuestring->content_length != (2 * CONVERSATION_ID_SIZE + 1))
-			|| (ratchet == NULL) || (ratchet->type != mcJSON_Object)) {
-		status = -1;
-		goto cleanup;
-	}
-
-	//copy the id
-	if (buffer_clone_from_hex(conversation->id, id->valuestring) != 0) {
-		status = -1;
-		goto cleanup;
-	}
-
-	//import the ratchet state
-	conversation->ratchet = ratchet_json_import(ratchet);
-	if (conversation->ratchet == NULL) {
-		status = -1;
-		goto cleanup;
-	}
-
-cleanup:
-	if (status != 0) {
-		if (conversation->ratchet != NULL) {
-			ratchet_destroy(conversation->ratchet);
-		}
-
-		free_and_null_if_valid(conversation);
-
-		return NULL;
-	}
-
-	return conversation;
-}
-
-/*
  * Start a new conversation where we are the sender.
  *
  * Don't forget to destroy the return status with return_status_destroy_errors()
@@ -708,3 +621,71 @@ cleanup:
 
 	return status;
 }
+
+return_status conversation_export(
+		const conversation_t * const conversation,
+		Conversation ** const exported_conversation) {
+	return_status status = return_status_init();
+
+	unsigned char *id = NULL;
+
+	//check input
+	if ((conversation == NULL) || (exported_conversation == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to conversation_export.");
+	}
+
+	//export the ratchet
+	status = ratchet_export(conversation->ratchet, exported_conversation);
+	throw_on_error(EXPORT_ERROR, "Failed to export ratchet.");
+
+	//export the conversation id
+	id = zeroed_malloc(CONVERSATION_ID_SIZE);
+	throw_on_failed_alloc(id);
+	if (buffer_clone_to_raw(id, CONVERSATION_ID_SIZE, conversation->id) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy conversation id.");
+	}
+	(*exported_conversation)->id.data = id;
+	(*exported_conversation)->id.len = CONVERSATION_ID_SIZE;
+cleanup:
+	on_error(
+		zeroed_free_and_null_if_valid(id);
+		if ((exported_conversation != NULL) && (*exported_conversation != NULL)) {
+			conversation__free_unpacked(*exported_conversation, &protobuf_c_allocators);
+		}
+	)
+
+	return status;
+}
+
+return_status conversation_import(
+		conversation_t ** const conversation,
+		const Conversation * const conversation_protobuf) {
+	return_status status = return_status_init();
+
+	//check input
+	if ((conversation == NULL) || (conversation_protobuf == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to conversation_import.");
+	}
+
+	//create the conversation
+	*conversation = malloc(sizeof(conversation_t));
+	throw_on_failed_alloc(*conversation);
+	init_struct(*conversation);
+
+	//copy the id
+	if (buffer_clone_from_raw((*conversation)->id, conversation_protobuf->id.data, conversation_protobuf->id.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy id.");
+	}
+
+	//import the ratchet
+	status = ratchet_import(&((*conversation)->ratchet), conversation_protobuf);
+	throw_on_error(IMPORT_ERROR, "Failed to import ratchet.");
+cleanup:
+	on_error(
+		if (conversation != NULL) {
+			free_and_null_if_valid(*conversation);
+		}
+	)
+	return status;
+}
+
