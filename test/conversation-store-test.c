@@ -315,9 +315,9 @@ int main(void) {
 	//test list export feature
 	buffer_t *conversation_list = NULL;
 	status = conversation_store_list(&conversation_list, store);
-	on_error(
+	on_error {
 		throw(DATA_FETCH_ERROR, "Failed to list conversations.");
-	)
+	}
 	if ((conversation_list == NULL) || (conversation_list->content_length != (CONVERSATION_ID_SIZE * store->length))) {
 		throw(DATA_FETCH_ERROR, "Failed to get list of conversations.");
 	}
@@ -410,9 +410,9 @@ cleanup:
 	conversation_store_clear(store);
 	free_and_null_if_valid(store);
 
-	on_error(
+	on_error {
 		print_errors(&status);
-	)
+	}
 	return_status_destroy_errors(&status);
 
 	return status.status;

@@ -96,10 +96,10 @@ return_status create_and_print_message(
 	putchar('\n');
 
 cleanup:
-	on_error(
+	on_error {
 		buffer_clear(header_key);
 		buffer_clear(message_key);
-	)
+	}
 
 	return status;
 }

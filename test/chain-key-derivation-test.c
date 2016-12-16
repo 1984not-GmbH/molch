@@ -75,9 +75,9 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(last_chain_key);
 	buffer_destroy_from_heap_and_null_if_valid(next_chain_key);
 
-	on_error(
+	on_error {
 		print_errors(&status);
-	)
+	}
 	return_status_destroy_errors(&status);
 
 	return status.status;

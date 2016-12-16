@@ -117,11 +117,11 @@ return_status create_and_populate_node(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (new_node != NULL) {
 			sodium_free_and_null_if_valid(*new_node);
 		}
-	)
+	}
 
 	return status;
 }
@@ -144,9 +144,9 @@ return_status header_and_message_keystore_add(
 	add_node(keystore, new_node);
 
 cleanup:
-	on_error(
+	on_error {
 		sodium_free_and_null_if_valid(new_node);
-	)
+	}
 	return status;
 }
 
@@ -242,7 +242,7 @@ return_status header_and_message_keystore_node_export(header_and_message_keystor
 	(*bundle)->message_key = message_key;
 
 cleanup:
-	on_error(
+	on_error {
 		if ((bundle != NULL) && (*bundle != NULL)) {
 			key_bundle__free_unpacked(*bundle, &protobuf_c_allocators);
 			*bundle = NULL;
@@ -257,7 +257,7 @@ cleanup:
 				message_key = NULL;
 			}
 		}
-	);
+	}
 
 	return status;
 }
@@ -294,7 +294,7 @@ return_status header_and_message_keystore_export(
 	*bundle_size = store->length;
 
 cleanup:
-	on_error(
+	on_error {
 		if ((key_bundles != NULL) && (*key_bundles != NULL) && (store != NULL)) {
 			for (size_t i = 0; i < store->length; i++) {
 				if ((*key_bundles)[i] != NULL) {
@@ -309,7 +309,7 @@ cleanup:
 		if (bundle_size != NULL) {
 			*bundle_size = 0;
 		}
-	)
+	}
 
 	return status;
 }
@@ -357,7 +357,7 @@ return_status header_and_message_keystore_import(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (store != NULL) {
 			header_and_message_keystore_clear(store);
 		}
@@ -365,7 +365,7 @@ cleanup:
 		if (current_node != NULL) {
 			sodium_free_and_null_if_valid(current_node);
 		}
-	);
+	}
 
 	return status;
 }

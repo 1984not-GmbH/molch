@@ -83,11 +83,11 @@ return_status derive_key(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (derived_key != NULL) {
 			derived_key->content_length = 0;
 		}
-	)
+	}
 	buffer_destroy_from_heap_and_null_if_valid(salt);
 
 	return status;
@@ -215,7 +215,7 @@ return_status derive_root_next_header_and_chain_keys(
 	throw_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key from derivation key.");
 
 cleanup:
-	on_error(
+	on_error {
 		if (root_key != NULL) {
 			buffer_clear(root_key);
 			root_key->content_length = 0;
@@ -228,7 +228,7 @@ cleanup:
 			buffer_clear(chain_key);
 			chain_key->content_length = 0;
 		}
-	)
+	}
 
 	buffer_destroy_from_heap_and_null_if_valid(diffie_hellman_secret);
 	buffer_destroy_from_heap_and_null_if_valid(derivation_key);
@@ -388,7 +388,7 @@ return_status derive_initial_root_chain_and_header_keys(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		//clear all keys to prevent misuse
 		buffer_clear(root_key);
 		root_key->content_length = 0;
@@ -404,7 +404,7 @@ cleanup:
 		next_send_header_key->content_length = 0;
 		buffer_clear(next_receive_header_key);
 		next_receive_header_key->content_length = 0;
-	)
+	}
 
 	buffer_destroy_from_heap_and_null_if_valid(master_key);
 

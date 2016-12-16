@@ -55,9 +55,9 @@ int main(void) {
 	protobuf_c_free(NULL, new_pointer);
 
 cleanup:
-	on_error(
+	on_error {
 		print_errors(&status);
-	)
+	}
 	return_status_destroy_errors(&status);
 
 	return status.status;

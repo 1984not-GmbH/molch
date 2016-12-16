@@ -170,9 +170,9 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(public_ephemeral_key);
 	buffer_destroy_from_heap_and_null_if_valid(public_prekey);
 
-	on_error(
+	on_error {
 		print_errors(&status);
-	)
+	}
 	return_status_destroy_errors(&status);
 
 	return status.status;

@@ -79,9 +79,9 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(subkey2);
 	buffer_destroy_from_heap_and_null_if_valid(subkey1_copy);
 
-	on_error(
+	on_error {
 		print_errors(&status);
-	)
+	}
 	return_status_destroy_errors(&status);
 
 	return status.status;

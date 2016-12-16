@@ -115,11 +115,11 @@ return_status create_prekey_list(
 	*prekey_list_length = prekey_list_buffer->content_length;
 
 cleanup:
-	on_error(
+	on_error {
 		if (prekey_list_buffer != NULL) {
 			free(prekey_list_buffer->content);
 		}
-	)
+	}
 
 	buffer_destroy_from_heap_and_null_if_valid(public_identity_key);
 	buffer_destroy_from_heap_and_null_if_valid(unsigned_prekey_list);
@@ -220,12 +220,12 @@ return_status molch_create_user(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (user_store_created) {
 			return_status new_status = molch_destroy_user(public_master_key, public_master_key_length, NULL, NULL);
 			return_status_destroy_errors(&new_status);
 		}
-	)
+	}
 
 	return status;
 }
@@ -352,10 +352,10 @@ molch_message_type molch_get_message_type(
 		NULL,
 		NULL,
 		NULL);
-	on_error(
+	on_error {
 		return_status_destroy_errors(&status);
 		return INVALID;
-	)
+	}
 
 	return packet_type;
 }
@@ -558,12 +558,12 @@ cleanup:
 		sodium_mprotect_noaccess(user->master_keys);
 	}
 
-	on_error(
+	on_error {
 		if (packet_buffer != NULL) {
 			//not using free_and_null_if_valid because content is const
 			free(packet_buffer->content);
 		}
-	)
+	}
 
 	free_and_null_if_valid(packet_buffer);
 
@@ -683,11 +683,11 @@ return_status molch_start_receive_conversation(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (message_buffer != NULL) {
 			free(message_buffer->content);
 		}
-	)
+	}
 
 	free_and_null_if_valid(message_buffer);
 
@@ -820,12 +820,12 @@ return_status molch_encrypt_message(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (packet_buffer != NULL) {
 			// not using free_and_null_if_valid because content is const
 			free(packet_buffer->content);
 		}
-	)
+	}
 
 	free_and_null_if_valid(packet_buffer);
 
@@ -901,12 +901,12 @@ return_status molch_decrypt_message(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (message_buffer != NULL) {
 			// not using free_and_null_if_valid because content is const
 			free(message_buffer->content);
 		}
-	)
+	}
 
 	free_and_null_if_valid(message_buffer);
 
@@ -947,10 +947,10 @@ void molch_end_conversation(
 	//find the corresponding user
 	user_store_node *user = NULL;
 	status = user_store_find_node(&user, users, conversation->ratchet->our_public_identity);
-	on_error(
+	on_error {
 		return_status_destroy_errors(&status);
 		return;
-	)
+	}
 	conversation_store_remove_by_id(user->conversations, conversation->id);
 
 	if (backup != NULL) {
@@ -958,9 +958,9 @@ void molch_end_conversation(
 			*backup = NULL;
 		} else {
 			return_status status = molch_export(backup, backup_length);
-			on_error(
+			on_error {
 				*backup = NULL;
-			)
+			}
 		}
 	}
 
@@ -1009,9 +1009,9 @@ return_status molch_list_conversations(
 	throw_on_error(NOT_FOUND, "No user found for the given public identity.")
 
 	status = conversation_store_list(&conversation_list_buffer, user->conversations);
-	on_error(
+	on_error {
 		throw(DATA_FETCH_ERROR, "Failed to list conversations.");
-	)
+	}
 	if (conversation_list_buffer == NULL) {
 		// list is empty
 		*conversation_list = NULL;
@@ -1030,13 +1030,13 @@ return_status molch_list_conversations(
 	conversation_list_buffer = NULL;
 
 cleanup:
-	on_error(
+	on_error {
 		if (number != NULL) {
 			*number = 0;
 		}
 
 		buffer_destroy_from_heap_and_null_if_valid(conversation_list_buffer);
-	)
+	}
 
 	return status;
 }
@@ -1170,7 +1170,7 @@ return_status molch_conversation_export(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if ((backup != NULL) && (*backup != NULL)) {
 			free(*backup);
 			*backup = NULL;
@@ -1178,7 +1178,7 @@ cleanup:
 		if (backup_length != NULL) {
 			*backup_length = 0;
 		}
-	)
+	}
 
 	if (conversation_struct != NULL) {
 		conversation__free_unpacked(conversation_struct, &protobuf_c_allocators);
@@ -1280,11 +1280,11 @@ return_status molch_conversation_import(
 
 	//update the backup key
 	status = molch_update_backup_key(new_backup_key, new_backup_key_length);
-	on_error(
+	on_error {
 		//remove the new imported conversation
 		conversation_store_remove(containing_store, conversation);
 		throw(KEYGENERATION_FAILED, "Failed to update backup key.");
-	)
+	}
 
 	//everything worked, the old conversation can now be removed
 	conversation_store_remove(containing_store, existing_conversation);
@@ -1401,7 +1401,7 @@ return_status molch_export(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if ((backup != NULL) && (*backup != NULL)) {
 			free(*backup);
 			*backup = NULL;
@@ -1409,7 +1409,7 @@ cleanup:
 		if (backup_length != NULL) {
 			*backup_length = 0;
 		}
-	)
+	}
 
 	if (backup_struct != NULL) {
 		backup__free_unpacked(backup_struct, &protobuf_c_allocators);

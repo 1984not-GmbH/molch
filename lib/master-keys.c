@@ -131,13 +131,13 @@ return_status master_keys_create(
 cleanup:
 	buffer_destroy_with_custom_deallocator_and_null_if_valid(crypto_seeds, sodium_free);
 
-	on_error(
+	on_error {
 		if (keys != NULL) {
 			sodium_free_and_null_if_valid(*keys);
 		}
 
 		return status;
-	)
+	}
 
 	if ((keys != NULL) && (*keys != NULL)) {
 		sodium_mprotect_noaccess(*keys);
@@ -236,11 +236,11 @@ cleanup:
 		sodium_mprotect_noaccess(keys);
 	}
 
-	on_error(
+	on_error {
 		if (signed_data != NULL) {
 			signed_data->content_length = 0;
 		}
-	)
+	}
 
 	return status;
 }
@@ -306,7 +306,7 @@ return_status master_keys_export(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if ((public_signing_key != NULL) && (*public_signing_key != NULL)) {
 			key__free_unpacked(*public_signing_key, &protobuf_c_allocators);
 			*public_signing_key = NULL;
@@ -327,7 +327,7 @@ cleanup:
 			*private_identity_key = NULL;
 		}
 
-	)
+	}
 
 	if (keys != NULL) {
 		sodium_mprotect_noaccess(keys);
@@ -377,11 +377,11 @@ return_status master_keys_import(
 	sodium_mprotect_noaccess(*keys);
 
 cleanup:
-	on_error(
+	on_error {
 		if (keys != NULL) {
 			sodium_free_and_null_if_valid(*keys);
 		}
-	)
+	}
 
 	return status;
 }

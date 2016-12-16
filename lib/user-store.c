@@ -43,11 +43,11 @@ return_status user_store_create(user_store ** const store) {
 	(*store)->tail = NULL;
 
 cleanup:
-	on_error(
+	on_error {
 		if (store != NULL) {
 			*store = NULL;
 		}
-	)
+	}
 
 	return status;
 }
@@ -115,11 +115,11 @@ return_status create_user_store_node(user_store_node ** const node) {
 	conversation_store_init((*node)->conversations);
 
 cleanup:
-	on_error(
+	on_error {
 		if (node != NULL) {
 			*node = NULL;
 		}
-	)
+	}
 
 	return status;
 }
@@ -169,7 +169,7 @@ return_status user_store_create_user(
 	add_user_store_node(store, new_node);
 
 cleanup:
-	on_error(
+	on_error {
 		if (new_node != NULL) {
 			if (new_node->prekeys != NULL) {
 				prekey_store_destroy(new_node->prekeys);
@@ -180,7 +180,7 @@ cleanup:
 
 			sodium_free_and_null_if_valid(new_node);
 		}
-	)
+	}
 
 	return status;
 }
@@ -212,11 +212,11 @@ return_status user_store_find_node(user_store_node ** const node, user_store * c
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (node != NULL) {
 			*node = NULL;
 		}
-	)
+	}
 
 	return status;
 }
@@ -256,11 +256,11 @@ return_status user_store_list(buffer_t ** const list, user_store * const store) 
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (list != NULL) {
 				buffer_destroy_from_heap_and_null_if_valid(*list);
 		}
-	)
+	}
 
 	return status;
 }
@@ -396,12 +396,12 @@ return_status user_store_node_export(user_store_node * const node, User ** const
 	deprecated_prekeys_length = 0;
 
 cleanup:
-	on_error(
+	on_error {
 		if (user != NULL) {
 			user__free_unpacked(*user, &protobuf_c_allocators);
 			*user = NULL;
 		}
-	)
+	}
 
 	return status;
 }
@@ -434,7 +434,7 @@ return_status user_store_export(
 
 	*users_length = store->length;
 cleanup:
-	on_error(
+	on_error {
 		if ((users != NULL) && (*users != NULL) && (users_length != 0)) {
 			for (size_t i = 0; i < *users_length; i++) {
 				user__free_unpacked((*users)[i], &protobuf_c_allocators);
@@ -442,7 +442,8 @@ cleanup:
 			}
 			zeroed_free_and_null_if_valid(*users);
 		}
-	)
+	}
+
 	return status;
 }
 
@@ -518,11 +519,11 @@ return_status user_store_import(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (store != NULL) {
 			user_store_destroy(*store);
 		}
-	)
+	}
 
 	return status;
 }

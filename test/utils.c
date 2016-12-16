@@ -104,11 +104,11 @@ return_status read_file(buffer_t ** const data, const char * const filename) {
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (data != NULL) {
 			buffer_destroy_from_heap_and_null_if_valid(*data);
 		}
-	)
+	}
 
 	if (file != NULL) {
 		fclose(file);

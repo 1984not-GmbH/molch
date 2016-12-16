@@ -427,9 +427,9 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(bob_public_signing_key);
 	buffer_destroy_from_heap_and_null_if_valid(charlie_public_signing_key);
 
-	on_error(
+	on_error {
 		print_errors(&status);
-	)
+	}
 	return_status_destroy_errors(&status);
 
 	if (status_int != 0) {

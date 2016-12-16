@@ -117,12 +117,12 @@ return_status packet_unpack(Packet ** const packet_struct, const buffer_t * cons
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if ((packet_struct != NULL) && (*packet_struct != NULL)) {
 			packet__free_unpacked(*packet_struct, &protobuf_c_allocators);
 			*packet_struct = NULL;
 		}
-	)
+	}
 
 	return status;
 }
@@ -280,11 +280,11 @@ return_status packet_encrypt(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (packet != NULL) {
 			buffer_destroy_from_heap_and_null_if_valid(*packet);
 		}
-	)
+	}
 
 	buffer_destroy_from_heap_and_null_if_valid(header_nonce);
 	buffer_destroy_from_heap_and_null_if_valid(message_nonce);
@@ -346,7 +346,7 @@ return_status packet_decrypt(
 	throw_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
 
 cleanup:
-	on_error(
+	on_error {
 		if (packet_type != NULL) {
 			*packet_type = INVALID;
 		}
@@ -370,7 +370,7 @@ cleanup:
 		if (public_prekey != NULL) {
 			buffer_clear(public_prekey);
 		}
-	)
+	}
 
 	return status;
 }
@@ -429,7 +429,7 @@ cleanup:
 		packet__free_unpacked(packet_struct, &protobuf_c_allocators);
 	}
 
-	on_error(
+	on_error {
 		//make sure that incomplete data can't be accidentally used
 		if (public_identity_key != NULL) {
 			buffer_clear(public_identity_key);
@@ -446,7 +446,7 @@ cleanup:
 		if (packet_type != NULL) {
 			*packet_type = INVALID;
 		}
-	)
+	}
 
 	return status;
 }
@@ -495,11 +495,11 @@ cleanup:
 		packet__free_unpacked(packet_struct, &protobuf_c_allocators);
 	}
 
-	on_error(
+	on_error {
 		if (axolotl_header != NULL) {
 			buffer_destroy_from_heap_and_null_if_valid(*axolotl_header);
 		}
-	)
+	}
 
 	return status;
 }
@@ -570,11 +570,11 @@ cleanup:
 
 	buffer_destroy_from_heap_and_null_if_valid(padded_message);
 
-	on_error(
+	on_error {
 		if (message != NULL) {
 			buffer_destroy_from_heap_and_null_if_valid(*message);
 		}
-	)
+	}
 
 	return status;
 }

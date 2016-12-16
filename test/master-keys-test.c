@@ -187,11 +187,11 @@ return_status protobuf_import(
 		private_identity_key);
 	throw_on_error(IMPORT_ERROR, "Failed to import master keys.")
 cleanup:
-	on_error(
+	on_error {
 		if (keys != NULL) {
 			sodium_free_and_null_if_valid(*keys);
 		}
-	)
+	}
 
 	//free the protobuf-c structs
 	if (public_signing_key != NULL) {
@@ -426,9 +426,9 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_public_identity_key);
 	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_private_identity_key);
 
-	on_error(
+	on_error {
 		print_errors(&status);
-	)
+	}
 	return_status_destroy_errors(&status);
 
 	if (status_int != 0) {

@@ -186,11 +186,11 @@ return_status ratchet_create(
 	(*ratchet)->previous_message_number = 0;
 
 cleanup:
-	on_error(
+	on_error {
 		if (ratchet != NULL) {
 				sodium_free_and_null_if_valid(*ratchet);
 		}
-	)
+	}
 
 	return status;
 }
@@ -311,7 +311,7 @@ return_status ratchet_send(
 	throw_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key.");
 
 cleanup:
-	on_error(
+	on_error {
 		if (send_header_key != NULL) {
 			buffer_clear(send_header_key);
 			send_header_key->content_length = 0;
@@ -324,7 +324,7 @@ cleanup:
 			buffer_clear(message_key);
 			message_key->content_length = 0;
 		}
-	)
+	}
 
 	buffer_destroy_from_heap_and_null_if_valid(root_key_backup);
 	buffer_destroy_from_heap_and_null_if_valid(chain_key_backup);
@@ -356,7 +356,7 @@ return_status ratchet_get_receive_header_keys(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (current_receive_header_key != NULL) {
 			buffer_clear(current_receive_header_key);
 			current_receive_header_key->content_length = 0;
@@ -365,7 +365,7 @@ cleanup:
 			buffer_clear(next_receive_header_key);
 			next_receive_header_key->content_length = 0;
 		}
-	)
+	}
 
 	return status;
 }
@@ -479,7 +479,7 @@ return_status stage_skipped_header_and_message_keys(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (output_chain_key != NULL) {
 			buffer_clear(output_chain_key);
 			output_chain_key->content_length = 0;
@@ -492,7 +492,7 @@ cleanup:
 		if (staging_area != NULL) {
 			header_and_message_keystore_clear(staging_area);
 		}
-	)
+	}
 
 	buffer_destroy_from_heap_and_null_if_valid(current_chain_key);
 	buffer_destroy_from_heap_and_null_if_valid(next_chain_key);
@@ -651,12 +651,12 @@ return_status ratchet_receive(
 	ratchet->received_valid = false; //waiting for validation (feedback, if the message could actually be decrypted)
 
 cleanup:
-	on_error(
+	on_error {
 		if (message_key != NULL) {
 			buffer_clear(message_key);
 			message_key->content_length = 0;
 		}
-	)
+	}
 
 	buffer_destroy_from_heap_and_null_if_valid(throwaway_chain_key);
 	buffer_destroy_from_heap_and_null_if_valid(throwaway_message_key);
@@ -1010,7 +1010,7 @@ return_status ratchet_export(
 	throw_on_error(EXPORT_ERROR, "Failed to export staged header and message keystore.");
 
 cleanup:
-	on_error(
+	on_error {
 		if (conversation != NULL) {
 			zeroed_free_and_null_if_valid(*conversation);
 		}
@@ -1035,7 +1035,7 @@ cleanup:
 		zeroed_free_and_null_if_valid(our_public_ephemeral_key);
 		zeroed_free_and_null_if_valid(their_public_ephemeral_key);
 		zeroed_free_and_null_if_valid(their_purported_public_ephemeral_key);
-	)
+	}
 
 	return status;
 }
@@ -1271,11 +1271,12 @@ return_status ratchet_import(
 	throw_on_error(IMPORT_ERROR, "Failed to import staged header and message keys.");
 
 cleanup:
-	on_error(
+	on_error {
 		if (ratchet != NULL) {
 			sodium_free_and_null_if_valid(*ratchet);
 		}
-	)
+	}
+
 	return status;
 }
 

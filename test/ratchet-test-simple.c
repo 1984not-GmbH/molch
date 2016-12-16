@@ -346,9 +346,9 @@ cleanup:
 		ratchet_destroy(bob_receive_ratchet);
 	}
 
-	on_error(
+	on_error {
 		print_errors(&status);
-	)
+	}
 	return_status_destroy_errors(&status);
 
 	return status.status;

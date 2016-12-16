@@ -498,9 +498,9 @@ cleanup:
 		zeroed_free_and_null_if_valid(protobuf_second_export_deprecated_prekeys_buffers);
 	}
 
-	on_error(
+	on_error {
 		print_errors(&status);
-	)
+	}
 	return_status_destroy_errors(&status);
 
 	return status.status;

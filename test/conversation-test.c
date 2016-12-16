@@ -152,11 +152,11 @@ return_status create_conversation(
 	throw_on_error(CREATION_ERROR, "Failed to create ratchet.");
 
 cleanup:
-	on_error(
+	on_error {
 		if (conversation != NULL) {
 			free_and_null_if_valid(*conversation);
 		}
-	)
+	}
 
 	return status;
 }
@@ -306,9 +306,9 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(dora_private_ephemeral);
 	buffer_destroy_from_heap_and_null_if_valid(dora_public_ephemeral);
 
-	on_error(
+	on_error {
 		print_errors(&status);
-	)
+	}
 	return_status_destroy_errors(&status);
 
 	return status.status;

@@ -82,11 +82,11 @@ return_status prekey_store_create(prekey_store ** const store) {
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (store != NULL) {
 				sodium_free_and_null_if_valid(*store);
 		}
-	)
+	}
 
 	return status;
 }
@@ -405,7 +405,7 @@ return_status prekey_store_export_key(const prekey_store_node* node, Prekey ** c
 	private_prekey = NULL;
 
 cleanup:
-	on_error(
+	on_error {
 		if (keypair != NULL) {
 			prekey__free_unpacked(*keypair, &protobuf_c_allocators);
 			zeroed_free_and_null_if_valid(*keypair);
@@ -413,7 +413,7 @@ cleanup:
 
 		zeroed_free_and_null_if_valid(private_prekey);
 		zeroed_free_and_null_if_valid(public_prekey);
-	)
+	}
 
 	return status;
 }
@@ -466,7 +466,7 @@ return_status prekey_store_export(
 	*deprecated_keypairs_length = deprecated_prekey_count;
 
 cleanup:
-	on_error(
+	on_error {
 		if ((keypairs != NULL) && (*keypairs != NULL)) {
 			for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
 				if ((*keypairs)[i] != NULL) {
@@ -496,7 +496,7 @@ cleanup:
 		if (deprecated_keypairs_length != NULL) {
 			*deprecated_keypairs_length = 0;
 		}
-	)
+	}
 
 	return status;
 }
@@ -545,13 +545,13 @@ return_status prekey_store_node_import(prekey_store_node * const node, const Pre
 	node->expiration_date = keypair->expiration_time;
 
 cleanup:
-	on_error(
+	on_error {
 		if (node != NULL) {
 			node->public_key->content_length = 0;
 			node->private_key->content_length = 0;
 			node->expiration_date = 0;
 		}
-	)
+	}
 
 	return status;
 }
@@ -613,13 +613,13 @@ return_status prekey_store_import(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if ((store != NULL) && (*store != NULL)) {
 			prekey_store_destroy(*store);
 		}
 
 		sodium_free_and_null_if_valid(deprecated_keypair);
-	)
+	}
 
 	return status;
 }

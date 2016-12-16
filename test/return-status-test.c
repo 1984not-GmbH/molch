@@ -100,9 +100,9 @@ int main(void) {
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		print_errors(&status);
-	)
+	}
 	free_and_null_if_valid(printed_status);
 	return_status_destroy_errors(&status);
 

@@ -92,11 +92,11 @@ return_status conversation_create(
 	throw_on_error(CREATION_ERROR, "Failed to create ratchet.");
 
 cleanup:
-	on_error(
+	on_error {
 		if (conversation != NULL) {
 			free_and_null_if_valid(*conversation);
 		}
-	)
+	}
 
 	return status;
 }
@@ -188,14 +188,14 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(sender_public_ephemeral);
 	buffer_destroy_from_heap_and_null_if_valid(sender_private_ephemeral);
 
-	on_error(
+	on_error {
 		if (conversation != NULL) {
 			if (*conversation != NULL) {
 				conversation_destroy(*conversation);
 			}
 			*conversation = NULL;
 		}
-	)
+	}
 
 	return status;
 }
@@ -294,14 +294,14 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(sender_public_ephemeral);
 	buffer_destroy_from_heap_and_null_if_valid(sender_public_identity);
 
-	on_error(
+	on_error {
 		if (conversation != NULL) {
 			if (*conversation != NULL) {
 				conversation_destroy(*conversation);
 			}
 			*conversation = NULL;
 		}
-	)
+	}
 
 	return status;
 }
@@ -393,11 +393,11 @@ return_status conversation_send(
 	throw_on_error(ENCRYPT_ERROR, "Failed to encrypt packet.");
 
 cleanup:
-	on_error(
+	on_error {
 		if (packet != NULL) {
 			buffer_destroy_from_heap_and_null_if_valid(*packet);
 		}
-	)
+	}
 	buffer_destroy_from_heap_and_null_if_valid(send_header_key);
 	buffer_destroy_from_heap_and_null_if_valid(send_message_key);
 	buffer_destroy_from_heap_and_null_if_valid(send_ephemeral_key);
@@ -459,11 +459,11 @@ int try_skipped_header_and_message_keys(
 cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(header);
 
-	on_error(
+	on_error {
 		if (message != NULL) {
 			buffer_destroy_from_heap_and_null_if_valid(*message);
 		}
-	)
+	}
 	buffer_destroy_from_heap_and_null_if_valid(their_signed_public_ephemeral);
 
 	return_status_destroy_errors(&status);
@@ -588,12 +588,12 @@ return_status conversation_receive(
 			message,
 			packet,
 			message_key);
-	on_error(
+	on_error {
 		return_status authenticity_status = return_status_init();
 		authenticity_status = ratchet_set_last_message_authenticity(conversation->ratchet, false);
 		return_status_destroy_errors(&authenticity_status);
 		throw(DECRYPT_ERROR, "Failed to decrypt message.");
-	)
+	}
 
 	status = ratchet_set_last_message_authenticity(conversation->ratchet, true);
 	throw_on_error(DATA_SET_ERROR, "Failed to set message authenticity.");
@@ -602,7 +602,7 @@ return_status conversation_receive(
 	*previous_receive_message_number = local_previous_receive_message_number;
 
 cleanup:
-	on_error(
+	on_error {
 		return_status authenticity_status = return_status_init();
 		if (conversation != NULL) {
 			authenticity_status = ratchet_set_last_message_authenticity(conversation->ratchet, false);
@@ -611,7 +611,7 @@ cleanup:
 		if (message != NULL) {
 			buffer_destroy_from_heap_and_null_if_valid(*message);
 		}
-	)
+	}
 
 	buffer_destroy_from_heap_and_null_if_valid(current_receive_header_key);
 	buffer_destroy_from_heap_and_null_if_valid(next_receive_header_key);
@@ -647,12 +647,12 @@ return_status conversation_export(
 	(*exported_conversation)->id.data = id;
 	(*exported_conversation)->id.len = CONVERSATION_ID_SIZE;
 cleanup:
-	on_error(
+	on_error {
 		zeroed_free_and_null_if_valid(id);
 		if ((exported_conversation != NULL) && (*exported_conversation != NULL)) {
 			conversation__free_unpacked(*exported_conversation, &protobuf_c_allocators);
 		}
-	)
+	}
 
 	return status;
 }
@@ -681,11 +681,11 @@ return_status conversation_import(
 	status = ratchet_import(&((*conversation)->ratchet), conversation_protobuf);
 	throw_on_error(IMPORT_ERROR, "Failed to import ratchet.");
 cleanup:
-	on_error(
+	on_error {
 		if (conversation != NULL) {
 			free_and_null_if_valid(*conversation);
 		}
-	)
+	}
 	return status;
 }
 

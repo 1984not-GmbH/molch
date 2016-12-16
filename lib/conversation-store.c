@@ -107,10 +107,10 @@ void conversation_store_remove_by_id(conversation_store * const store, const buf
 
 	conversation_t *node = NULL;
 	status = conversation_store_find_node(&node, store, id);
-	on_error(
+	on_error {
 		return_status_destroy_errors(&status);
 		return;
-	)
+	}
 	if (node == NULL) {
 		return;
 	}
@@ -194,11 +194,11 @@ return_status conversation_store_list(buffer_t ** const list, conversation_store
 	)
 
 cleanup:
-	on_error(
+	on_error {
 		if (list != NULL) {
 				buffer_destroy_from_heap_and_null_if_valid(*list);
 		}
-	)
+	}
 
 	return status;
 }
@@ -233,7 +233,7 @@ return_status conversation_store_export(
 	*length = conversation_store->length;
 
 cleanup:
-	on_error(
+	on_error {
 		if ((conversation_store != NULL) && (conversations != NULL) && (*conversations != NULL)) {
 			for (size_t i = 0; i < conversation_store->length; i++) {
 				if ((*conversations)[i] != NULL) {
@@ -242,7 +242,7 @@ cleanup:
 				}
 			}
 		}
-	)
+	}
 
 	return status;
 }
@@ -277,7 +277,7 @@ return_status conversation_store_import(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (conversation != NULL) {
 			conversation_destroy(conversation);
 			conversation = NULL;
@@ -286,7 +286,8 @@ cleanup:
 		if (store != NULL) {
 			conversation_store_clear(store);
 		}
-	)
+	}
+
 	return status;
 }
 

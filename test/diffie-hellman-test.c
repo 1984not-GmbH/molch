@@ -111,9 +111,9 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(bob_private_key);
 	buffer_destroy_from_heap_and_null_if_valid(bob_shared_secret);
 
-	on_error(
+	on_error {
 		print_errors(&status);
-	)
+	}
 	return_status_destroy_errors(&status);
 
 	return status.status;

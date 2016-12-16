@@ -427,10 +427,10 @@ int main(void) {
 			bob_send_packet_length,
 			NULL,
 			NULL);
-	on_error(
+	on_error {
 		free_and_null_if_valid(alice_receive_message);
 		throw(GENERIC_ERROR, "Incorrect message received.");
-	)
+	}
 
 	if ((alice_receive_message_number != 0) || (alice_previous_receive_message_number != 0)) {
 		free_and_null_if_valid(alice_receive_message);
@@ -462,9 +462,9 @@ int main(void) {
 			backup_length,
 			backup_key->content,
 			backup_key->content_length);
-	on_error(
+	on_error {
 		throw(IMPORT_ERROR, "Failed to import backup.");
-	)
+	}
 
 	status = decrypt_full_backup(&decrypted_backup, backup, backup_length, backup_key->content, backup_key->content_length);
 	throw_on_error(DECRYPT_ERROR, "Failed to decrypt backup.");
@@ -482,9 +482,9 @@ int main(void) {
 	//now export again
 	size_t imported_backup_length;
 	status = molch_export(&imported_backup, &imported_backup_length);
-	on_error(
+	on_error {
 		throw(EXPORT_ERROR, "Failed to export imported backup.");
-	)
+	}
 
 	status = decrypt_full_backup(&decrypted_imported_backup, imported_backup, imported_backup_length, backup_key->content, backup_key->content_length);
 	throw_on_error(DECRYPT_ERROR, "Failed to decrypt imported backup.");
@@ -594,9 +594,9 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(new_backup_key);
 
 
-	on_error(
+	on_error {
 		print_errors(&status);
-	)
+	}
 	return_status_destroy_errors(&status);
 
 	if (status_int != 0) {

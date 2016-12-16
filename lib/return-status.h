@@ -112,12 +112,9 @@ char *return_status_print(const return_status * const status, size_t *length) __
 }
 
 //Execute code on error
-#define on_error(code) \
-if (status.status != SUCCESS) {\
-	code\
-}
+#define on_error if (status.status != SUCCESS)
 
-#define throw_on_error(status_type_value, message) on_error(throw(status_type_value, message))
+#define throw_on_error(status_type_value, message) on_error{throw(status_type_value, message)}
 
 #define throw_on_failed_alloc(pointer) \
 	if (pointer == NULL) {\
