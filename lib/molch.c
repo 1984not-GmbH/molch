@@ -1459,6 +1459,12 @@ return_status molch_import(
 		throw(INCORRECT_BUFFER_SIZE, "New backup key has an incorrect length.");
 	}
 
+	if (users == NULL) {
+		if (sodium_init() == -1) {
+			throw(INIT_ERROR, "Failed to init libsodium.");
+		}
+	}
+
 	//unpack the encrypted backup
 	encrypted_backup_struct = encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup);
 	if (encrypted_backup_struct == NULL) {
