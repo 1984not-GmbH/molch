@@ -24,30 +24,11 @@
 #include <sodium.h>
 
 #include "../lib/ratchet.h"
-#include "../lib/json.h"
 #include "utils.h"
 #include "tracing.h"
 
 int keypair(buffer_t *private_key, buffer_t *public_key) {
 	return crypto_box_keypair(public_key->content, private_key->content);
-}
-
-void export_ratchet(const ratchet_state *const ratchet, const char * const filename) {
-	FILE *file = fopen(filename, "w");
-	if (file == NULL) {
-		return;
-	}
-
-	JSON_EXPORT(json, 100000, 4000, true, ratchet, ratchet_json_export);
-	if (json == NULL) {
-		fclose(file);
-		return;
-	}
-
-	fprintf(file, "%.*s", (int)json->content_length, json->content);
-	fclose(file);
-
-	buffer_destroy_from_heap(json);
 }
 
 int main(void) {
@@ -128,7 +109,6 @@ int main(void) {
 			alice_public_ephemeral,
 			bob_public_ephemeral);
 	throw_on_error(CREATION_ERROR, "Failed to create Alice' send ratchet.");
-	export_ratchet(alice_send_ratchet, "alice-send-ratchet-initial.json");
 	status = ratchet_create(
 			&alice_receive_ratchet,
 			alice_private_identity,
@@ -138,7 +118,6 @@ int main(void) {
 			alice_public_ephemeral,
 			bob_public_ephemeral);
 	throw_on_error(CREATION_ERROR, "Failed to create Alice' receive ratchet.");
-	export_ratchet(alice_send_ratchet, "alice-receive-ratchet-initial.json");
 	//Bob
 	status = ratchet_create(
 			&bob_send_ratchet,
@@ -149,7 +128,6 @@ int main(void) {
 			bob_public_ephemeral,
 			alice_public_ephemeral);
 	throw_on_error(CREATION_ERROR, "Failed to create Bobs send ratchet.");
-	export_ratchet(bob_send_ratchet, "bob-send-ratchet-initial.json");
 	status = ratchet_create(
 			&bob_receive_ratchet,
 			bob_private_identity,
@@ -159,7 +137,6 @@ int main(void) {
 			bob_public_ephemeral,
 			alice_public_ephemeral);
 	throw_on_error(CREATION_ERROR, "Failed to create Bobs receive ratchet.");
-	export_ratchet(bob_send_ratchet, "bob-receive-ratchet-initial.json");
 
 	// FIRST SCENARIO: ALICE SENDS A MESSAGE TO BOB
 	uint32_t send_message_number;
@@ -172,7 +149,6 @@ int main(void) {
 			public_send_ephemeral,
 			send_message_key);
 	throw_on_error(DATA_FETCH_ERROR, "Failed to get send keys.");
-	export_ratchet(alice_send_ratchet, "alice-send-ratchet-after-sending.json");
 
 	//bob receives
 	status = ratchet_get_receive_header_keys(
@@ -199,7 +175,6 @@ int main(void) {
 			send_message_number,
 			previous_send_message_number);
 	throw_on_error(DATA_FETCH_ERROR, "Failed to get receive message key.");
-	export_ratchet(bob_receive_ratchet, "bob-receive-ratchet-after-receiving.json");
 
 	//now check if the message key is the same
 	if (buffer_compare(send_message_key, receive_message_key) != 0) {
@@ -220,7 +195,6 @@ int main(void) {
 			public_send_ephemeral,
 			send_message_key);
 	throw_on_error(DATA_FETCH_ERROR, "Bob-Send: Failed to get send keys.");
-	export_ratchet(bob_send_ratchet, "bob-send-ratchet-after-sending.json");
 
 	//alice receives
 	status = ratchet_get_receive_header_keys(
@@ -244,7 +218,6 @@ int main(void) {
 			send_message_number,
 			previous_send_message_number);
 	throw_on_error(RECEIVE_ERROR, "Alice-Receive: Failed to get receive message key.");
-	export_ratchet(alice_receive_ratchet, "alice-receive-ratchet-after-receiving.json");
 
 	//now check if the message key is the same
 	if (buffer_compare(send_message_key, receive_message_key) != 0) {
@@ -264,7 +237,6 @@ int main(void) {
 			public_send_ephemeral,
 			send_message_key);
 	throw_on_error(DATA_FETCH_ERROR, "Bob-Response: Failed to get send keys.");
-	export_ratchet(bob_receive_ratchet, "bob-receive-ratchet-after-responding.json");
 
 	//alice receives
 	status = ratchet_get_receive_header_keys(
@@ -290,7 +262,6 @@ int main(void) {
 			send_message_number,
 			previous_send_message_number);
 	throw_on_error(RECEIVE_ERROR, "Alice-Roundtrip: Failed to get receive message key.");
-	export_ratchet(alice_send_ratchet, "alice-send-ratchet-after-receiving.json");
 
 	//now check if the message key is the same
 	if (buffer_compare(send_message_key, receive_message_key) != 0) {
@@ -310,7 +281,6 @@ int main(void) {
 			public_send_ephemeral,
 			send_message_key);
 	throw_on_error(DATA_FETCH_ERROR, "Bob-Roundtrip: Failed to get send-keys.");
-	export_ratchet(alice_receive_ratchet, "alice-receive-ratchet-after-responding.json");
 
 	//bob receives
 	status = ratchet_get_receive_header_keys(
@@ -336,7 +306,6 @@ int main(void) {
 			send_message_number,
 			previous_send_message_number);
 	throw_on_error(RECEIVE_ERROR, "Bob-Roundtrip: Failed to get receive message key.");
-	export_ratchet(bob_send_ratchet, "bob-send-ratchet-after-receiving.json");
 
 	//now check if the message key is the same
 	if (buffer_compare(send_message_key, receive_message_key) != 0) {
@@ -348,21 +317,21 @@ int main(void) {
 	throw_on_error(DATA_SET_ERROR, "Bob-Roundtrip: Failed to set message authenticity.");
 
 cleanup:
-	buffer_destroy_from_heap(alice_private_identity);
-	buffer_destroy_from_heap(alice_public_identity);
-	buffer_destroy_from_heap(alice_private_ephemeral);
-	buffer_destroy_from_heap(alice_public_ephemeral);
-	buffer_destroy_from_heap(bob_private_identity);
-	buffer_destroy_from_heap(bob_public_identity);
-	buffer_destroy_from_heap(bob_private_ephemeral);
-	buffer_destroy_from_heap(bob_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(alice_private_identity);
+	buffer_destroy_from_heap_and_null_if_valid(alice_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(alice_private_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(alice_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(bob_private_identity);
+	buffer_destroy_from_heap_and_null_if_valid(bob_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(bob_private_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(bob_public_ephemeral);
 
-	buffer_destroy_from_heap(send_header_key);
-	buffer_destroy_from_heap(send_message_key);
-	buffer_destroy_from_heap(public_send_ephemeral);
-	buffer_destroy_from_heap(current_receive_header_key);
-	buffer_destroy_from_heap(next_receive_header_key);
-	buffer_destroy_from_heap(receive_message_key);
+	buffer_destroy_from_heap_and_null_if_valid(send_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(send_message_key);
+	buffer_destroy_from_heap_and_null_if_valid(public_send_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(current_receive_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(next_receive_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(receive_message_key);
 
 	if (alice_send_ratchet != NULL) {
 		ratchet_destroy(alice_send_ratchet);
@@ -377,9 +346,9 @@ cleanup:
 		ratchet_destroy(bob_receive_ratchet);
 	}
 
-	on_error(
+	on_error {
 		print_errors(&status);
-	);
+	}
 	return_status_destroy_errors(&status);
 
 	return status.status;

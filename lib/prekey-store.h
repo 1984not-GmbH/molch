@@ -20,11 +20,11 @@
  */
 
 #include <time.h>
+#include <prekey.pb-c.h>
 
 #include "constants.h"
-#include "return-status.h"
+#include "common.h"
 #include "../buffer/buffer.h"
-#include "../mcJSON/mcJSON.h"
 
 #ifndef LIB_PREKEY_STORE
 #define LIB_PREKEY_STORE
@@ -78,16 +78,33 @@ return_status prekey_store_rotate(prekey_store * const store) __attribute__((war
 
 void prekey_store_destroy(prekey_store * const store);
 
-/*
- * Serialise a prekey store into JSON. It get's a mempool_t buffer and stores a tree of
- * mcJSON objects into the buffer starting at pool->position.
- *
- * Returns NULL in case of Failure.
+/*! Serialise a prekey store as protobuf-c struct.
+ * \param prekey_store The prekey store to serialize.
+ * \param keypairs An array of keypairs, allocated by the function.
+ * \param keypairs_length The length of the array of keypairs.
+ * \param deprecated_keypairs An array of deprecated keypairs, allocated by the function.
+ * \param deprecated_keypairs_length The length of the array of deprecated keypairs.
+ * \returns The status.
  */
-mcJSON *prekey_store_json_export(const prekey_store * const store, mempool_t * const pool) __attribute__((warn_unused_result));
+return_status prekey_store_export(
+		const prekey_store * const store,
+		Prekey *** const keypairs,
+		size_t * const keypairs_length,
+		Prekey *** const deprecated_keypairs,
+		size_t * const deprecated_keypairs_length) __attribute__((warn_unused_result));
 
-/*
- * Deserialise a prekey store (import from JSON).
+/*! Import a prekey store from a protobuf-c struct.
+ * \param store The prekey store to import to.__a
+ * \param keypairs An array of prekeys pairs.
+ * \param keypais_length The length of the array of prekey pairs.
+ * \param deprecated_keypairs An array of deprecated prekey pairs.
+ * \param deprecated_keypairs_length The length of the array of deprecated prekey pairs.
+ * \returns The status.
  */
-prekey_store *prekey_store_json_import(const mcJSON * const json) __attribute__((warn_unused_result));
+return_status prekey_store_import(
+		prekey_store ** const store,
+		Prekey ** const keypairs,
+		const size_t keypairs_length,
+		Prekey ** const deprecated_keypairs,
+		const size_t deprecated_keypairs_length) __attribute__((warn_unused_result));
 #endif

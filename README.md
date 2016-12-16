@@ -19,35 +19,54 @@ $ git submodule update --init --recursive
 
 You might also have to run `git submodule update` when changing branches or after pulling in new changes.
 
+dependencies
+--------------------
+Molch depends on the following:
+* [libsodium](https://github.com/jedisct1/libsodium)
+* [protobuf-c](https://github.com/protobuf-c/protobuf-c)
+* CMake (build and tests)
+* C-Compiler (build)
+* Clang Static Analyzer (tests)
+* Address Sanitizer (tests)
+* Undefined Behavior Sanitizer (tests)
+* [Valgrind](http://valgrind.org/)
+* [Lua](https://www.lua.org/) (optional, for Lua-Bindings)
+* [Swig](http://swig.org/) (optional, for Lua-Bindings)
+* [Doxygen](https://www.stack.nl/~dimitri/doxygen/) (optional, documentation)
+* [Graphviz](http://graphviz.org/) (optional, documentation)
+
+On Ubuntu:
+```
+sudo apt-get install libsodium18 libsodium-dev libprotobuf-c-dev libprotobuf-c1 libprotobuf-c1-dbg libprotobuf9v5:armhf protobuf-c-compiler cmake clang libubsan0 libasan0 libasan1 libasan2 valgrind liblua5.3 lua5.3 liblua5.3-dev swig doxygen graphviz
+```
+
+On Arch:
+```
+sudo pacman -S cmake clang-analyzer libsodium valgrind swig lua doxygen graphviz protobuf-c
+```
+
+On Max OS X (via homebrew):
+```
+brew install libsodium valgrind swig lua graphviz doxygen protobuf-c
+```
+
+supported platforms
+-------------------
+Molch is constantly tested on the following platforms:
+
+| processor        | os                          |
+|:-----------------|:----------------------------|
+| x86_64           | Archlinux                   |
+| i686             | Archlinux                   |
+| ARMv7hf          | Ubuntu 16.04 (Xenial Xerus) |
+| PowerPC Apple G4 | Debian Stretch (Testing)    |
+| x86_64           | Mac OS X 10.9 Mavericks     |
+
 how to build
 ------------
-This has been tested on GNU/Linux and Mac OS X.
+Run the script `ci/test.sh` from the project root to build Molch and run the tests.
 
-First make sure `libsodium` and `cmake` are installed.
-
-Then do the following:
-```
-$ mkdir build #make build directory
-$ cd build    #change into it
-$ cmake ..    #run cmake (only required once)
-$ make        #finally compile the software
-```
-or run the script `ci/build.sh`.
-
-Run the tests (you need to have valgrind installed):
-```
-$ cd build
-$ make test
-```
-
-Run the static analysis (you need clang and clangs static analyzer):
-```
-$ mkdir static-analysis
-$ cd static-analysis
-$ scan-build cmake ..
-$ scan-build make
-```
-or run the script `ci/clang-static-analysis.sh`.
+Run the script `ci/clang-static-analysis.sh` from the project root to run static analysis.
 
 how to generate traces for debugging
 ------------------------------------
@@ -62,37 +81,24 @@ Now, when you run one of the tests (those are located at `tracing/test/`), it wi
 
 You can postprocess this tracing output with `test/trace.lua`, pass it the path of `trace.out`, or the path to a saved output of the test and it will pretty-print the trace. It can also filter out function calls to make things easier to read, see it's source code for more details.
 
-size of a packet
+format of a packet
 ----------------
-NOTE: This may be subject to change.
+Molch uses [Googles Protocol Buffers](https://developers.google.com/protocol-buffers/) via the [Protobuf-C](https://github.com/protobuf-c/protobuf-c) library. You can find the protocol descriptions in `lib/protobuf`.
 
-```
-packet (>=362) = {
-  protocol_version(1),
-  packet_type(1),
-  header_length(1),
-  header_nonce(crypto_aead_chacha20poly1305_NPUBBYTES = 8),
-  header (64) {
-      axolotl_header(crypto_box_PUBLICKEYBYTES + 8 = 40) {
-        sender_public_ephemeral (crypto_box_PUBLICKEYBYTES = 32),
-        message_number (4),
-        previous_message_number (4)
-      }
-      message_nonce(crypto_secretbox_NONCEBYTES = 24)
-  },
-  header_and_additional_data_MAC(crypto_aead_chacha20poly1305_ABYTES = 16),
-  authenticated_encrypted_message (>=271) {
-      message(>=255),
-      MAC(crypto_secretbox_MACBYTES = 16)
-  }
-}
+cryptography
+------------
+This is a brief non-complete overview of the cryptographic primitives used by molch. A detailed description of what molch does cryptographically is only provided by its source code at the moment.
 
-To be precise: 362 + n*255 with n = 0, 1, 2, ...
-```
+Molch uses only primitives implemented by [libsodium](https://github.com/jedisct1/libsodium).
 
-If the message length exceeds 254 Bytes, you have to add another 255 bytes because of the padding. The length of the padded message is always the following:
+**Key derivation:** Blake2b
+**Header encryption:** Xsalsa20 with Poly1305 MAC
+**Message encryption:** XSalsa20 with Poly1305 MAC
+**Signing keys (used to sign prekeys and the identity key):** Ed25519
+**Other keypairs:** X25519
+**Key exchange:** ECDH with X25519
 
-`ceil(raw_message_length / 255) * 255`
+Molch allows you to mix in a low entropy random source to the creation of signing and identity keypairs. In this case, the low entropy random source is used as input to Argon2i and the output xored with high entropy random numbers provided by the operating system.
 
 Want to help?
 -------------------

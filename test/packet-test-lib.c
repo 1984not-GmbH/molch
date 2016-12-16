@@ -24,36 +24,37 @@
 #include <sodium.h>
 
 #include "../lib/packet.h"
+#include "../lib/constants.h"
 #include "utils.h"
 #include "packet-test-lib.h"
 #include "tracing.h"
 
-/*
- * Create message and header keys, encrypt header and message
- * and print them.
- *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
- */
 return_status create_and_print_message(
-		buffer_t * const packet, //needs to be 3 + crypto_aead_chacha20poly1305_NPUBBYTES + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_NONCEBYTES + message_length + header_length + crypto_secretbox_MACBYTES + 255
-		const unsigned char packet_type,
-		const unsigned char current_protocol_version,
-		const unsigned char highest_supported_protocol_version,
-		const buffer_t * const message,
-		buffer_t * const message_key, //output, crypto_secretbox_KEYBYTES
+		//output
+		buffer_t ** const packet,
+		buffer_t * const header_key, //HEADER_KEY_SIZE
+		buffer_t * const message_key, //MESSAGE_KEY_SIZE
+		//inputs
+		const molch_message_type packet_type,
 		const buffer_t * const header,
-		buffer_t * const header_key, //output, crypto_aead_chacha20poly1305_KEYBYTES
-		const buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages
-		const buffer_t * const public_ephemeral_key, //optional, can be NULL, for prekey messages
-		const buffer_t * const public_prekey) { //optional, can be NULL, for prekey messages
-
+		const buffer_t * const message,
+		//optional inputs (prekey messages only)
+		const buffer_t * const public_identity_key,
+		const buffer_t * const public_ephemeral_key,
+		const buffer_t * const public_prekey) {
 	return_status status = return_status_init();
-	int status_int;
+
+	//check input
+	if ((packet == NULL)
+		|| (header_key == NULL) || (header_key->buffer_length < HEADER_KEY_SIZE)
+		|| (message_key == NULL) || (message_key->buffer_length < MESSAGE_KEY_SIZE)
+		|| (packet_type == INVALID)
+		|| (header == NULL) || (message == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to create_and_print_message.");
+	}
 
 	//create header key
-	status_int = buffer_fill_random(header_key, crypto_aead_chacha20poly1305_KEYBYTES);
-	if (status_int != 0) {
+	if (buffer_fill_random(header_key, HEADER_KEY_SIZE) != 0) {
 		throw(KEYGENERATION_FAILED, "Failed to generate header key.");
 	}
 	printf("Header key (%zu Bytes):\n", header_key->content_length);
@@ -61,8 +62,7 @@ return_status create_and_print_message(
 	putchar('\n');
 
 	//create message key
-	status_int = buffer_fill_random(message_key, crypto_secretbox_KEYBYTES);
-	if (status_int != 0) {
+	if (buffer_fill_random(message_key, MESSAGE_KEY_SIZE) != 0) {
 		throw(KEYGENERATION_FAILED, "Failed to generate message key.");
 	}
 	printf("Message key (%zu Bytes):\n", message_key->content_length);
@@ -81,8 +81,6 @@ return_status create_and_print_message(
 	status = packet_encrypt(
 			packet,
 			packet_type,
-			current_protocol_version,
-			highest_supported_protocol_version,
 			header,
 			header_key,
 			message,
@@ -92,19 +90,13 @@ return_status create_and_print_message(
 			public_prekey);
 	throw_on_error(ENCRYPT_ERROR, "Failed to encrypt message and header.");
 
-	//print header nonce
-	buffer_create_with_existing_array(header_nonce, packet->content + 3, crypto_aead_chacha20poly1305_NPUBBYTES);
-	printf("Header Nonce (%zu Bytes):\n", header_nonce->content_length);
-	print_hex(header_nonce);
-	putchar('\n');
-
 	//print encrypted packet
-	printf("Encrypted Packet (%zu Bytes):\n", packet->content_length);
-	print_hex(packet);
+	printf("Encrypted Packet (%zu Bytes):\n", (*packet)->content_length);
+	print_hex(*packet);
 	putchar('\n');
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error {
 		buffer_clear(header_key);
 		buffer_clear(message_key);
 	}

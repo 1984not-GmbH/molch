@@ -22,7 +22,7 @@
 #include <stdbool.h>
 
 #include "../buffer/buffer.h"
-#include "return-status.h"
+#include "common.h"
 
 #ifndef LIB_DIFFIE_HELLMAN_H
 #define LIB_DIFFIE_HELLMAN_H

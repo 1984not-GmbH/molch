@@ -20,7 +20,7 @@
  */
 
 #include "conversation.h"
-#include "return-status.h"
+#include "common.h"
 
 #ifndef LIB_CONVERSATION_STORE_H
 #define LIB_CONVERSATION_STORE_H
@@ -92,18 +92,25 @@ void conversation_store_clear(conversation_store * const store);
  */
 return_status conversation_store_list(buffer_t ** const list, conversation_store * const store) __attribute__((warn_unused_result));
 
-/*
- * Serialise a conversation store into JSON. It gets a mempool_t buffer and stre a tree of
- * mcJSON objects into the buffer starting at pool->position.
- *
- * Returns NULL in case of failure.
+/*! Export a conversation store to Protobuf-C
+ * \param conversation_store The conversation store to export.
+ * \param conversations An array of Protobuf-C structs to export it to.
+ * \return The status.
  */
-mcJSON *conversation_store_json_export(const conversation_store * const store, mempool_t * const pool) __attribute__((warn_unused_result));
+return_status conversation_store_export(
+	const conversation_store * const conversation_store,
+	Conversation *** const conversations,
+	size_t * const length) __attribute__((warn_unused_result));
 
-/*
- * Deserialise a conversation store (import from JSON).
+/*! Import a conversation store from a Protobuf-C struct.
+ * \param conversation_store The conversation store to import to.
+ * \param conversations An array of Protobuf-C structs to import from.
+ * \param length The number of array elements.
+ * \param public_identity_key The public identity key of the user.
+ * \return The status.
  */
-int conversation_store_json_import(
-		const mcJSON * const json,
-		conversation_store * const store) __attribute__((warn_unused_result));
+return_status conversation_store_import(
+	conversation_store * const store,
+	Conversation ** const conversations,
+	const size_t length) __attribute__((warn_unused_result));
 #endif

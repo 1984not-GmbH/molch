@@ -35,9 +35,7 @@ return_status user_store_create(user_store ** const store) {
 	}
 
 	*store = sodium_malloc(sizeof(user_store));
-	if (*store == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate user store.");
-	}
+	throw_on_failed_alloc(*store);
 
 	//initialise
 	(*store)->length = 0;
@@ -45,7 +43,7 @@ return_status user_store_create(user_store ** const store) {
 	(*store)->tail = NULL;
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error {
 		if (store != NULL) {
 			*store = NULL;
 		}
@@ -58,7 +56,7 @@ cleanup:
 void user_store_destroy(user_store* store) {
 	if (store != NULL) {
 		user_store_clear(store);
-		sodium_free(store);
+		sodium_free_and_null_if_valid(store);
 	}
 }
 
@@ -66,6 +64,10 @@ void user_store_destroy(user_store* store) {
  * add a new user node to a user store.
  */
 void add_user_store_node(user_store * const store, user_store_node * const node) {
+	if ((store == NULL) || (node == NULL)) {
+		return;
+	}
+
 	if (store->length == 0) { //first node in the list
 		node->previous = NULL;
 		node->next = NULL;
@@ -99,9 +101,7 @@ return_status create_user_store_node(user_store_node ** const node) {
 	}
 
 	*node = sodium_malloc(sizeof(user_store_node));
-	if (*node == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate user store node.");
-	}
+	throw_on_failed_alloc(*node);
 
 	//initialise pointers
 	(*node)->previous = NULL;
@@ -115,7 +115,7 @@ return_status create_user_store_node(user_store_node ** const node) {
 	conversation_store_init((*node)->conversations);
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error {
 		if (node != NULL) {
 			*node = NULL;
 		}
@@ -169,16 +169,16 @@ return_status user_store_create_user(
 	add_user_store_node(store, new_node);
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error {
 		if (new_node != NULL) {
 			if (new_node->prekeys != NULL) {
 				prekey_store_destroy(new_node->prekeys);
 			}
 			if (new_node->master_keys != NULL) {
-				sodium_free(new_node->master_keys);
+				sodium_free_and_null_if_valid(new_node->master_keys);
 			}
 
-			sodium_free(new_node);
+			sodium_free_and_null_if_valid(new_node);
 		}
 	}
 
@@ -212,7 +212,7 @@ return_status user_store_find_node(user_store_node ** const node, user_store * c
 	}
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error {
 		if (node != NULL) {
 			*node = NULL;
 		}
@@ -237,9 +237,7 @@ return_status user_store_list(buffer_t ** const list, user_store * const store) 
 	}
 
 	*list = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE * store->length, PUBLIC_MASTER_KEY_SIZE * store->length);
-	if (*list == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate user list buffer.");
-	}
+	throw_on_failed_alloc(*list);
 
 	user_store_node *current_node = store->head;
 	for (size_t i = 0; (i < store->length) && (current_node != NULL); i++) {
@@ -258,11 +256,9 @@ return_status user_store_list(buffer_t ** const list, user_store * const store) 
 	}
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error {
 		if (list != NULL) {
-			if (*list != NULL) {
-				buffer_destroy_from_heap(*list);
-			}
+				buffer_destroy_from_heap_and_null_if_valid(*list);
 		}
 	}
 
@@ -307,7 +303,7 @@ void user_store_remove(user_store *store, user_store_node *node) {
 		store->head = node->next;
 	}
 
-	sodium_free(node);
+	sodium_free_and_null_if_valid(node);
 
 	//update length
 	store->length--;
@@ -325,155 +321,210 @@ void user_store_clear(user_store *store){
 
 }
 
-mcJSON *user_store_node_json_export(user_store_node * const node, mempool_t * const pool) {
-	mcJSON *json = mcJSON_CreateObject(pool);
-	if (json == NULL) {
-		return NULL;
-	}
-
-	//add master keys
-	mcJSON *master_keys = master_keys_json_export(node->master_keys, pool);
-	if (master_keys == NULL) {
-		return NULL;
-	}
-	buffer_create_from_string(master_keys_string, "master_keys");
-	mcJSON_AddItemToObject(json, master_keys_string, master_keys, pool);
-
-	//add prekeys
-	mcJSON *prekeys = prekey_store_json_export(node->prekeys, pool);
-	if (prekeys == NULL) {
-		return NULL;
-	}
-	buffer_create_from_string(prekeys_string, "prekeys");
-	mcJSON_AddItemToObject(json, prekeys_string, prekeys, pool);
-
-	//add conversation store
-	mcJSON *conversations = conversation_store_json_export(node->conversations, pool);
-	if (conversations == NULL) {
-		return NULL;
-	}
-
-	buffer_create_from_string(conversations_string, "conversations");
-	mcJSON_AddItemToObject(json, conversations_string, conversations, pool);
-
-	return json;
-}
-
-/*
- * Serialise a user store into JSON. It get's a mempool_t buffer and stores a tree of
- * mcJSON objects into the buffer starting at pool->position.
- *
- * Returns NULL in case of Failure.
- */
-mcJSON *user_store_json_export(user_store * const store, mempool_t * const pool) {
-	if ((store == NULL) || (pool == NULL)) {
-		return NULL;
-	}
-
-	mcJSON *json = mcJSON_CreateArray(pool);
-	if (json == NULL) {
-		return NULL;
-	}
-
-	//go through all the user_store_nodes
-	user_store_node *node = store->head;
-	for (size_t i = 0; (i < store->length) && (node != NULL); i++) {
-		mcJSON *json_node = user_store_node_json_export(node, pool);
-		if (json_node == NULL) {
-			return NULL;
-		}
-		mcJSON_AddItemToArray(json, json_node, pool);
-
-		// has to be done here because of the access permissions
-		user_store_node *next_node = node->next;
-		node = next_node;
-	}
-
-	return json;
-}
-
-/*
- * Deserialise a user store (import from JSON).
- */
-user_store *user_store_json_import(const mcJSON * const json) {
+return_status user_store_node_export(user_store_node * const node, User ** const user) __attribute__((warn_unused_result));
+return_status user_store_node_export(user_store_node * const node, User ** const user) {
 	return_status status = return_status_init();
 
-	user_store *store = NULL;
-	user_store_node *node = NULL;
+	//master keys
+	Key *public_signing_key = NULL;
+	Key *private_signing_key = NULL;
+	Key *public_identity_key = NULL;
+	Key *private_identity_key = NULL;
 
-	if ((json == NULL) || (json->type != mcJSON_Array)) {
-		throw(INVALID_INPUT, "Invalid input for user_store_json_import.");
+	//conversation store
+	Conversation **conversations = NULL;
+	size_t conversations_length = 0;
+
+	//prekeys
+	Prekey **prekeys = NULL;
+	size_t prekeys_length = 0;
+	Prekey **deprecated_prekeys = NULL;
+	size_t deprecated_prekeys_length = 0;
+
+	//check input
+	if ((node == NULL) || (user == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to user_store_node_export.");
 	}
 
-	status = user_store_create(&store);
+	*user = zeroed_malloc(sizeof(User));
+	throw_on_failed_alloc(*user);
+	user__init(*user);
+
+	//export master keys
+	status = master_keys_export(
+		node->master_keys,
+		&public_signing_key,
+		&private_signing_key,
+		&public_identity_key,
+		&private_identity_key);
+	throw_on_error(EXPORT_ERROR, "Failed to export masters keys.");
+
+	(*user)->public_signing_key = public_signing_key;
+	public_signing_key = NULL;
+	(*user)->private_signing_key = private_signing_key;
+	private_signing_key = NULL;
+	(*user)->public_identity_key = public_identity_key;
+	public_identity_key = NULL;
+	(*user)->private_identity_key = private_identity_key;
+	private_identity_key = NULL;
+
+	//export the conversation store
+	status = conversation_store_export(node->conversations, &conversations, &conversations_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export conversation store.");
+
+	(*user)->conversations = conversations;
+	conversations = NULL;
+	(*user)->n_conversations = conversations_length;
+	conversations_length = 0;
+
+	//export the prekeys
+	status = prekey_store_export(
+		node->prekeys,
+		&prekeys,
+		&prekeys_length,
+		&deprecated_prekeys,
+		&deprecated_prekeys_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export prekeys.");
+
+	(*user)->prekeys = prekeys;
+	prekeys = NULL;
+	(*user)->n_prekeys = prekeys_length;
+	prekeys_length = 0;
+	(*user)->deprecated_prekeys = deprecated_prekeys;
+	deprecated_prekeys = NULL;
+	(*user)->n_deprecated_prekeys = deprecated_prekeys_length;
+	deprecated_prekeys_length = 0;
+
+cleanup:
+	on_error {
+		if (user != NULL) {
+			user__free_unpacked(*user, &protobuf_c_allocators);
+			*user = NULL;
+		}
+	}
+
+	return status;
+}
+
+return_status user_store_export(
+		const user_store * const store,
+		User *** const users,
+		size_t * const users_length) {
+	return_status status = return_status_init();
+
+	//check input
+	if ((users == NULL) || (users == NULL) || (users_length == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to user_store_export.");
+	}
+
+	if (store->length > 0) {
+		*users = zeroed_malloc(store->length * sizeof(User*));
+		throw_on_failed_alloc(*users);
+		memset(*users, '\0', store->length * sizeof(User*));
+
+		size_t i = 0;
+		user_store_node *node = NULL;
+		for (i = 0, node = store->head; (i < store->length) && (node != NULL); i++, node = node->next) {
+			status = user_store_node_export(node, &((*users)[i]));
+			throw_on_error(EXPORT_ERROR, "Failed to export user store node.");
+		}
+	} else {
+		*users = NULL;
+	}
+
+	*users_length = store->length;
+cleanup:
+	on_error {
+		if ((users != NULL) && (*users != NULL) && (users_length != 0)) {
+			for (size_t i = 0; i < *users_length; i++) {
+				user__free_unpacked((*users)[i], &protobuf_c_allocators);
+				(*users)[i] = NULL;
+			}
+			zeroed_free_and_null_if_valid(*users);
+		}
+	}
+
+	return status;
+}
+
+return_status user_store_node_import(user_store_node ** const node, const User * const user) {
+	return_status status = return_status_init();
+
+	//check input
+	if ((node == NULL) || (user == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to user_store_node_import.");
+	}
+
+	status = create_user_store_node(node);
+	throw_on_error(CREATION_ERROR, "Failed to create user store node.");
+
+	//master keys
+	status = master_keys_import(
+		&((*node)->master_keys),
+		user->public_signing_key,
+		user->private_signing_key,
+		user->public_identity_key,
+		user->private_identity_key);
+	throw_on_error(IMPORT_ERROR, "Failed to import master keys.");
+
+	//public signing key
+	if (user->public_signing_key == NULL) {
+		throw(PROTOBUF_MISSING_ERROR, "Missing public signing key in Protobuf-C struct.");
+	}
+	if (buffer_clone_from_raw((*node)->public_signing_key, user->public_signing_key->key.data, user->public_signing_key->key.len) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy public signing key.");
+	}
+
+	status = conversation_store_import(
+		(*node)->conversations,
+		user->conversations,
+		user->n_conversations);
+	throw_on_error(IMPORT_ERROR, "Failed to import conversations.");
+
+	status = prekey_store_import(
+		&((*node)->prekeys),
+		user->prekeys,
+		user->n_prekeys,
+		user->deprecated_prekeys,
+		user->n_deprecated_prekeys);
+	throw_on_error(IMPORT_ERROR, "Failed to import prekeys.");
+
+cleanup:
+	return status;
+}
+
+return_status user_store_import(
+		user_store ** const store,
+		User ** users,
+		const size_t users_length) {
+	return_status status = return_status_init();
+
+	//check input
+	if ((store == NULL)
+			|| ((users_length == 0) && (users != NULL))
+			|| ((users_length > 0) && (users == NULL))) {
+		throw(INVALID_INPUT, "Invalid input to user_store_import.");
+	}
+
+	status = user_store_create(store);
 	throw_on_error(CREATION_ERROR, "Failed to create user store.");
 
-	//add all the users
-	mcJSON *user = json->child;
-	for (size_t i = 0; (i < json->length) && (user != NULL); i++, user = user->next) {
-		//create new user_store_node
-		node = NULL;
-		status = create_user_store_node(&node);
-		throw_on_error(CREATION_ERROR, "Failed to create user store node.");
+	size_t i = 0;
+	user_store_node *node = NULL;
+	for (i = 0; i < users_length; i++) {
+		status = user_store_node_import(&node, users[i]);
+		throw_on_error(IMPORT_ERROR, "Failed to import user store node.");
 
-		//master keys
-		buffer_create_from_string(master_keys_string, "master_keys");
-		mcJSON *master_keys = mcJSON_GetObjectItem(user, master_keys_string);
-		if ((master_keys == NULL) || (master_keys->type != mcJSON_Object)) {
-			throw(DATA_FETCH_ERROR, "Failed to get master keys from JSON tree.");
-		}
-		node->master_keys = master_keys_json_import(master_keys);
-		if (node->master_keys == NULL) {
-			throw(IMPORT_ERROR, "Failed to import master keys from JSON.");
-		}
-		//copy the public signing key
-		status = master_keys_get_signing_key(node->master_keys, node->public_signing_key);
-		throw_on_error(DATA_FETCH_ERROR, "Failed to get signing key from master keys.");
-
-		//prekeys
-		buffer_create_from_string(prekeys_string, "prekeys");
-		mcJSON *prekeys = mcJSON_GetObjectItem(user, prekeys_string);
-		if ((prekeys == NULL) || (prekeys->type != mcJSON_Object)) {
-			throw(DATA_FETCH_ERROR, "Failed to get prekeys from JSON tree.");
-		}
-		node->prekeys = prekey_store_json_import(prekeys);
-		if (node->prekeys == NULL) {
-			throw(IMPORT_ERROR, "Failed to import prekeys from JSON.");
-		}
-
-		//conversations
-		buffer_create_from_string(conversations_string, "conversations");
-		mcJSON *conversations = mcJSON_GetObjectItem(user, conversations_string);
-		if ((conversations == NULL) || (conversations->type != mcJSON_Array)) {
-			throw(DATA_FETCH_ERROR, "Failed to get conversations from JSON tree.");
-		}
-		if (conversation_store_json_import(conversations, node->conversations) != 0) {
-			throw(IMPORT_ERROR, "Failed to import conversations from JSON.");
-		}
-
-		//now add the imported node to the user store
-		add_user_store_node(store, node);
-		node = NULL;
+		add_user_store_node(*store, node);
 	}
 
 cleanup:
-	if (status.status != SUCCESS) {
+	on_error {
 		if (store != NULL) {
-			user_store_destroy(store);
+			user_store_destroy(*store);
 		}
-
-		if (node != NULL) {
-			if (node->prekeys != NULL) {
-				prekey_store_destroy(node->prekeys);
-			}
-			if (node->master_keys != NULL) {
-				sodium_free(node->master_keys);
-			}
-			sodium_free(node);
-		}
-
-		return_status_destroy_errors(&status);
 	}
 
-	return store;
+	return status;
 }
+

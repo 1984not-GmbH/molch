@@ -56,6 +56,7 @@ return_status diffie_hellman(
 
 	//buffer for diffie hellman shared secret
 	buffer_t *dh_secret = buffer_create_on_heap(crypto_scalarmult_SCALARBYTES, crypto_scalarmult_SCALARBYTES);
+	throw_on_failed_alloc(dh_secret);
 
 	crypto_generichash_state hash_state[1];
 
@@ -122,7 +123,7 @@ return_status diffie_hellman(
 	derived_key->content_length = DIFFIE_HELLMAN_SIZE;
 
 cleanup:
-	buffer_destroy_from_heap(dh_secret);
+	buffer_destroy_from_heap_and_null_if_valid(dh_secret);
 	sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 
 	return status;
@@ -159,9 +160,15 @@ return_status triple_diffie_hellman(
 	derived_key->content_length = 0;
 
 	//buffers for all 3 Diffie Hellman exchanges
-	buffer_t *dh1 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-	buffer_t *dh2 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-	buffer_t *dh3 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+	buffer_t *dh1 = NULL;
+	buffer_t *dh2 = NULL;
+	buffer_t *dh3 = NULL;
+	dh1 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+	throw_on_failed_alloc(dh1);
+	dh2 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+	throw_on_failed_alloc(dh2);
+	dh3 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+	throw_on_failed_alloc(dh3);
 
 	//check buffer sizes
 	if ((derived_key->buffer_length < DIFFIE_HELLMAN_SIZE)
@@ -267,9 +274,9 @@ return_status triple_diffie_hellman(
 	sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 
 cleanup:
-	buffer_destroy_from_heap(dh1);
-	buffer_destroy_from_heap(dh2);
-	buffer_destroy_from_heap(dh3);
+	buffer_destroy_from_heap_and_null_if_valid(dh1);
+	buffer_destroy_from_heap_and_null_if_valid(dh2);
+	buffer_destroy_from_heap_and_null_if_valid(dh3);
 
 	return status;
 }

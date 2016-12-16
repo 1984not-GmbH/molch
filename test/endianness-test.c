@@ -135,12 +135,12 @@ int main(void) {
 	printf("Successfully converted back!\n\n");
 
 cleanup:
-	buffer_destroy_from_heap(buffer64);
-	buffer_destroy_from_heap(buffer32);
+	buffer_destroy_from_heap_and_null_if_valid(buffer64);
+	buffer_destroy_from_heap_and_null_if_valid(buffer32);
 
-	on_error(
+	on_error {
 		print_errors(&status);
-	);
+	}
 	return_status_destroy_errors(&status);
 
 	return status.status;

@@ -24,11 +24,120 @@
 #include <sodium.h>
 #include <assert.h>
 #include <alloca.h>
+#include <string.h>
 
 #include "../lib/conversation-store.h"
-#include "../lib/json.h"
 #include "utils.h"
 #include "tracing.h"
+
+return_status protobuf_export(
+		const conversation_store * const store,
+		buffer_t *** const export_buffers,
+		size_t * const buffer_count) __attribute__((warn_unused_result));
+return_status protobuf_export(
+		const conversation_store * const store,
+		buffer_t *** const export_buffers,
+		size_t * const buffer_count) {
+	return_status status = return_status_init();
+
+	Conversation ** conversations = NULL;
+	size_t length = 0;
+
+	if (export_buffers != NULL) {
+		*export_buffers = NULL;
+	}
+	if (buffer_count != NULL) {
+		*buffer_count = 0;
+	}
+
+	//check input
+	if ((store == NULL) || (export_buffers == NULL) || (buffer_count == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to protobuf_export.");
+	}
+
+	status = conversation_store_export(store, &conversations, &length);
+	throw_on_error(EXPORT_ERROR, "Failed to export conversations.");
+
+	*export_buffers = malloc(length * sizeof(buffer_t*));
+	throw_on_failed_alloc(*export_buffers);
+	*buffer_count = length;
+
+	//unpack all the conversations
+	for (size_t i = 0; i < length; i++) {
+		size_t unpacked_size = conversation__get_packed_size(conversations[i]);
+		(*export_buffers)[i] = buffer_create_on_heap(unpacked_size, 0);
+		throw_on_failed_alloc((*export_buffers)[i]);
+
+		(*export_buffers)[i]->content_length = conversation__pack(conversations[i], (*export_buffers)[i]->content);
+	}
+
+cleanup:
+	if (conversations != NULL) {
+		for (size_t i = 0; i < length; i++) {
+			if (conversations[i] != NULL) {
+				conversation__free_unpacked(conversations[i], &protobuf_c_allocators);
+				conversations[i] = NULL;
+			}
+		}
+		zeroed_free_and_null_if_valid(conversations);
+	}
+	//buffer will be freed in main
+	return status;
+}
+
+return_status protobuf_import(
+		conversation_store * const store,
+		buffer_t ** const buffers,
+		const size_t length) __attribute__((warn_unused_result));
+return_status protobuf_import(
+		conversation_store * const store,
+		buffer_t ** const buffers,
+		const size_t length) {
+	return_status status = return_status_init();
+
+	Conversation **conversations = NULL;
+
+	//check input
+	if ((store == NULL)
+			|| ((length > 0) && (buffers == NULL))
+			|| ((length == 0) && (buffers != NULL))) {
+		throw(INVALID_INPUT, "Invalid input to protobuf_import.");
+	}
+
+	//allocate the array
+	if (length > 0) {
+		conversations = zeroed_malloc(length * sizeof(Conversation*));
+		throw_on_failed_alloc(conversations);
+		memset(conversations, '\0', length * sizeof(Conversation*));
+	}
+
+	for (size_t i = 0; i < length; i++) {
+		conversations[i] = conversation__unpack(&protobuf_c_allocators, buffers[i]->content_length, buffers[i]->content);
+		if (conversations[i] == NULL) {
+			throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
+		}
+	}
+
+	//import
+	status = conversation_store_import(
+		store,
+		conversations,
+		length);
+	throw_on_error(IMPORT_ERROR, "Failed to import conversation store.");
+
+cleanup:
+	if (conversations != NULL) {
+		for (size_t i = 0; i < length; i++) {
+			if (conversations[i] != NULL) {
+				conversation__free_unpacked(conversations[i], &protobuf_c_allocators);
+				conversations[i] = NULL;
+			}
+		}
+		zeroed_free_and_null_if_valid(conversations);
+	}
+
+	return status;
+}
 
 return_status test_add_conversation(conversation_store * const store) {
 	//define key buffers
@@ -106,13 +215,43 @@ cleanup:
 		conversation_destroy(conversation);
 	}
 	//destroy all the buffers
-	buffer_destroy_from_heap(our_private_identity);
-	buffer_destroy_from_heap(our_public_identity);
-	buffer_destroy_from_heap(their_public_identity);
-	buffer_destroy_from_heap(our_private_ephemeral);
-	buffer_destroy_from_heap(our_public_ephemeral);
-	buffer_destroy_from_heap(their_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(our_private_identity);
+	buffer_destroy_from_heap_and_null_if_valid(our_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(their_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(our_private_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(our_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(their_public_ephemeral);
 
+	return status;
+}
+
+return_status protobuf_empty_store() __attribute__((warn_unused_result));
+return_status protobuf_empty_store() {
+	return_status status = return_status_init();
+
+	printf("Testing im-/export of empty conversation store.\n");
+
+	Conversation **exported = NULL;
+	size_t exported_length = 0;
+
+	conversation_store store;
+	conversation_store_init(&store);
+
+	//export it
+	status = conversation_store_export(&store, &exported, &exported_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export empty conversation store.");
+
+	if ((exported != NULL) || (exported_length != 0)) {
+		throw(INCORRECT_DATA, "Exported data is not empty.");
+	}
+
+	//import it
+	status = conversation_store_import(&store, exported, exported_length);
+	throw_on_error(IMPORT_ERROR, "Failed to import empty conversation store.");
+
+	printf("Successful.\n");
+
+cleanup:
 	return status;
 }
 
@@ -123,7 +262,12 @@ int main(void) {
 
 	return_status status = return_status_init();
 
-	int status_int = EXIT_SUCCESS;
+	//protobuf buffers
+	buffer_t ** protobuf_export_buffers = NULL;
+	size_t protobuf_export_buffers_length = 0;
+	buffer_t ** protobuf_second_export_buffers = NULL;
+	size_t protobuf_second_export_buffers_length = 0;
+
 	conversation_store *store = malloc(sizeof(conversation_store));
 	if (store == NULL) {
 		throw(ALLOCATION_FAILED, "Failed to allocate conversation store.");
@@ -157,7 +301,7 @@ int main(void) {
 		printf("ID of the conversation No. %zu:\n", index);
 		print_hex(value->id);
 		putchar('\n');
-	);
+	)
 
 	//find node by id
 	conversation_t *found_node = NULL;
@@ -171,9 +315,9 @@ int main(void) {
 	//test list export feature
 	buffer_t *conversation_list = NULL;
 	status = conversation_store_list(&conversation_list, store);
-	on_error(
+	on_error {
 		throw(DATA_FETCH_ERROR, "Failed to list conversations.");
-	);
+	}
 	if ((conversation_list == NULL) || (conversation_list->content_length != (CONVERSATION_ID_SIZE * store->length))) {
 		throw(DATA_FETCH_ERROR, "Failed to get list of conversations.");
 	}
@@ -183,64 +327,46 @@ int main(void) {
 		buffer_create_with_existing_array(current_id, conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
 		status = conversation_store_find_node(&found_node, store, current_id);
 		if ((status.status != SUCCESS) || (found_node == NULL)) {
-			buffer_destroy_from_heap(conversation_list);
+			buffer_destroy_from_heap_and_null_if_valid(conversation_list);
 			throw(INCORRECT_DATA, "Exported list of conversations was incorrect.");
 		}
 	}
-	buffer_destroy_from_heap(conversation_list);
+	buffer_destroy_from_heap_and_null_if_valid(conversation_list);
 
-	//test JSON export
-	printf("Test JSON export!\n");
-	mempool_t *pool = buffer_create_on_heap(100000, 0);
-	mcJSON *json = conversation_store_json_export(store, pool);
-	if (json == NULL) {
-		buffer_destroy_from_heap(pool);
-		throw(EXPORT_ERROR, "Failed to export JSON.");
-	}
-	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
-	if (output == NULL) {
-		buffer_destroy_from_heap(pool);
-		buffer_destroy_from_heap(output);
-		throw(GENERIC_ERROR, "Failed to print json.");
-	}
-	printf("%.*s\n", (int)output->content_length, output->content);
-	if (json->length != 5) {
-		buffer_destroy_from_heap(pool);
-		buffer_destroy_from_heap(output);
-		throw(INCORRECT_DATA, "Exported JSON doesn't contain all conversations.");
-	}
-	buffer_destroy_from_heap(pool);
+	//test protobuf export
+	printf("Export to Protobuf-C\n");
+	status = protobuf_export(store, &protobuf_export_buffers, &protobuf_export_buffers_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export conversation store.");
 
-	//test JSON import
-	conversation_store *imported_store = malloc(sizeof(conversation_store));
-	if (imported_store == NULL) {
-		buffer_destroy_from_heap(output);
-		throw(ALLOCATION_FAILED, "Failed to allocate conversation store.");
+	printf("protobuf_export_buffers_length = %zu\n", protobuf_export_buffers_length);
+	//print
+	puts("[\n");
+	for (size_t i = 0; i < protobuf_export_buffers_length; i++) {
+		print_hex(protobuf_export_buffers[i]);
+		puts(",\n");
 	}
-	JSON_INITIALIZE(imported_store, 100000, output, conversation_store_json_import, status_int);
-	if (status_int != 0) {
-		free(imported_store);
-		buffer_destroy_from_heap(output);
-		throw(IMPORT_ERROR, "Failed to import from JSON.");
+	puts("]\n\n");
+
+	conversation_store_clear(store);
+
+	//import again
+	status = protobuf_import(store, protobuf_export_buffers, protobuf_export_buffers_length);
+	throw_on_error(IMPORT_ERROR, "Failed to import conversation store from Protobuf-C.");
+
+	//export the imported
+	status = protobuf_export(store, &protobuf_second_export_buffers, &protobuf_second_export_buffers_length);
+	throw_on_error(EXPORT_ERROR, "Failed to export imported conversation store again to Protobuf-C.");
+
+	//compare to previous export
+	if (protobuf_export_buffers_length != protobuf_second_export_buffers_length) {
+		throw(INCORRECT_DATA, "Both arrays of Protobuf-C strings don't have the same length.");
 	}
-	//export the imported to json again
-	JSON_EXPORT(imported_output, 100000, 4000, true, imported_store, conversation_store_json_export);
-	if (imported_output == NULL) {
-		conversation_store_clear(imported_store);
-		free(imported_store);
-		buffer_destroy_from_heap(output);
-		throw(GENERIC_ERROR, "Failed to print imported output.");
+	for (size_t i = 0; i < protobuf_export_buffers_length; i++) {
+		if (buffer_compare(protobuf_export_buffers[i], protobuf_second_export_buffers[i]) != 0) {
+			throw(INCORRECT_DATA, "Exported protobuf-c string doesn't match.");
+		}
 	}
-	conversation_store_clear(imported_store);
-	free(imported_store);
-	//compare both JSON strings
-	if (buffer_compare(imported_output, output) != 0) {
-		buffer_destroy_from_heap(output);
-		buffer_destroy_from_heap(imported_output);
-		throw(INCORRECT_DATA, "Imported conversation store is incorrect.");
-	}
-	buffer_destroy_from_heap(output);
-	buffer_destroy_from_heap(imported_output);
+	printf("Exported Protobuf-C strings match.\n");
 
 	//remove nodes
 	conversation_store_remove(store, store->head);
@@ -264,11 +390,27 @@ int main(void) {
 	//clear the conversation store
 	printf("Clear the conversation store.\n");
 
-cleanup:
-	conversation_store_clear(store);
-	free(store);
+	status = protobuf_empty_store();
+	throw_on_error(GENERIC_ERROR, "Failed to im-/export empty conversation store.");
 
-	if (status.status != SUCCESS) {
+cleanup:
+	if (protobuf_export_buffers != NULL) {
+		for (size_t i =0; i < protobuf_export_buffers_length; i++) {
+			buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffers[i]);
+		}
+		free_and_null_if_valid(protobuf_export_buffers);
+	}
+	if (protobuf_second_export_buffers != NULL) {
+		for (size_t i =0; i < protobuf_second_export_buffers_length; i++) {
+			buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_buffers[i]);
+		}
+		free_and_null_if_valid(protobuf_second_export_buffers);
+	}
+
+	conversation_store_clear(store);
+	free_and_null_if_valid(store);
+
+	on_error {
 		print_errors(&status);
 	}
 	return_status_destroy_errors(&status);

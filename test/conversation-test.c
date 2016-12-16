@@ -28,8 +28,74 @@
 #include "common.h"
 #include "utils.h"
 #include "../lib/conversation.h"
-#include "../lib/json.h"
 #include "tracing.h"
+
+return_status protobuf_export(const conversation_t * const conversation, buffer_t ** const export_buffer) __attribute__((warn_unused_result));
+return_status protobuf_export(const conversation_t * const conversation, buffer_t ** const export_buffer) {
+	return_status status = return_status_init();
+
+	Conversation *exported_conversation = NULL;
+
+	//check input
+	if ((conversation == NULL) || (export_buffer == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to protobuf_export.");
+	}
+
+	//export the conversation
+	status = conversation_export(conversation, &exported_conversation);
+	throw_on_error(EXPORT_ERROR, "Failed to export conversation.");
+
+	size_t export_size = conversation__get_packed_size(exported_conversation);
+	*export_buffer = buffer_create_on_heap(export_size, 0);
+	(*export_buffer)->content_length = conversation__pack(exported_conversation, (*export_buffer)->content);
+	if (export_size != (*export_buffer)->content_length) {
+		throw(PROTOBUF_PACK_ERROR, "Failed to pack protobuf-c struct into buffer.");
+	}
+
+cleanup:
+	if (exported_conversation != NULL) {
+		conversation__free_unpacked(exported_conversation, &protobuf_c_allocators);
+	}
+
+	//rest will be freed in main
+	return status;
+}
+
+return_status protobuf_import(
+		conversation_t ** const conversation,
+		const buffer_t * const import_buffer) __attribute__((warn_unused_result));
+return_status protobuf_import(
+		conversation_t ** const conversation,
+		const buffer_t * const import_buffer) {
+	return_status status = return_status_init();
+
+	Conversation *conversation_protobuf = NULL;
+
+	//check input
+	if ((conversation == NULL) || (import_buffer == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to protobuf_import.");
+	}
+
+	conversation_protobuf = conversation__unpack(
+		&protobuf_c_allocators,
+		import_buffer->content_length,
+		import_buffer->content);
+	if (conversation_protobuf == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
+	}
+	throw_on_failed_alloc(conversation_protobuf);
+
+	status = conversation_import(conversation, conversation_protobuf);
+	throw_on_error(IMPORT_ERROR, "Failed to import conversation.");
+
+cleanup:
+	if (conversation_protobuf != NULL) {
+		conversation__free_unpacked(conversation_protobuf, &protobuf_c_allocators);
+		conversation_protobuf = NULL;
+	}
+
+	return status;
+}
 
 /*
  * Create a new conversation.
@@ -86,10 +152,9 @@ return_status create_conversation(
 	throw_on_error(CREATION_ERROR, "Failed to create ratchet.");
 
 cleanup:
-	if (status.status != 0) {
-		if ((conversation != NULL) && (*conversation != NULL)) {
-			free(*conversation);
-			*conversation = NULL;
+	on_error {
+		if (conversation != NULL) {
+			free_and_null_if_valid(*conversation);
 		}
 	}
 
@@ -111,6 +176,10 @@ int main(void) {
 	buffer_t *dora_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_t *dora_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 	buffer_t *dora_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+
+	//Protobuf export buffers
+	buffer_t *protobuf_export_buffer = NULL;
+	buffer_t *protobuf_second_export_buffer = NULL;
 
 	//conversations
 	conversation_t *charlie_conversation = NULL;
@@ -187,45 +256,32 @@ int main(void) {
 		throw(INCORRECT_DATA, "Dora's conversation has an incorrect ID length.");
 	}
 
-	//test JSON export
-	printf("Test JSON export!\n");
-	mempool_t *pool = buffer_create_on_heap(10000, 0);
-	mcJSON *json = conversation_json_export(charlie_conversation, pool);
-	if (json == NULL) {
-		buffer_destroy_from_heap(pool);
-		throw(EXPORT_ERROR, "Failed to export as JSON.");
-	}
-	if (json->length != 2) {
-		buffer_destroy_from_heap(pool);
-		throw(INCORRECT_DATA, "JSON for Charlie's conversation is invalid.");
-	}
-	buffer_t *output = mcJSON_PrintBuffered(json, 4000, true);
-	buffer_destroy_from_heap(pool);
-	if (output == NULL) {
-		throw(GENERIC_ERROR, "Failed to print JSON.");
-	}
-	printf("%.*s\n", (int)output->content_length, (char*)output->content);
+	//test protobuf-c export
+	printf("Export to Protobuf-C\n");
+	status = protobuf_export(charlie_conversation, &protobuf_export_buffer);
+	throw_on_error(EXPORT_ERROR, "Failed to export charlie's conversation to protobuf-c.");
 
-	//test JSON import
-	JSON_IMPORT(imported_charlies_conversation, 10000, output, conversation_json_import);
-	if (imported_charlies_conversation == NULL) {
-		buffer_destroy_from_heap(output);
-		throw(IMPORT_ERROR, "Failed to import Charlie's conversation from JSON.");
+	print_hex(protobuf_export_buffer);
+	puts("\n");
+
+	conversation_destroy(charlie_conversation);
+	charlie_conversation = NULL;
+
+	//import
+	printf("Import from Protobuf-C\n");
+	status = protobuf_import(&charlie_conversation, protobuf_export_buffer);
+	throw_on_error(IMPORT_ERROR, "Failed to imoport Charlie's conversation from Protobuf-C.");
+
+	//export again
+	printf("Export again\n");
+	status = protobuf_export(charlie_conversation, &protobuf_second_export_buffer);
+	throw_on_error(EXPORT_ERROR, "Failed to export charlie's conversation to protobuf-c.");
+
+	//compare
+	if (buffer_compare(protobuf_export_buffer, protobuf_second_export_buffer) != 0) {
+		throw(EXPORT_ERROR, "Both exported buffers are not the same.");
 	}
-	//export the imported to JSON again
-	JSON_EXPORT(imported_output, 10000, 4000, true, imported_charlies_conversation, conversation_json_export);
-	if (imported_output == NULL) {
-		buffer_destroy_from_heap(output);
-		throw(EXPORT_ERROR, "Failed to export Charlie's imported conversation as JSON.");
-	}
-	//compare with original JSON
-	if (buffer_compare(imported_output, output) != 0) {
-		buffer_destroy_from_heap(imported_output);
-		buffer_destroy_from_heap(output);
-		throw(INCORRECT_DATA, "Imported conversation is incorrect.");
-	}
-	buffer_destroy_from_heap(imported_output);
-	buffer_destroy_from_heap(output);
+	printf("Both exported buffers are identitcal.\n\n");
 
 cleanup:
 	if (charlie_conversation != NULL) {
@@ -238,18 +294,21 @@ cleanup:
 		conversation_destroy(imported_charlies_conversation);
 	}
 
-	buffer_destroy_from_heap(charlie_private_identity);
-	buffer_destroy_from_heap(charlie_public_identity);
-	buffer_destroy_from_heap(charlie_private_ephemeral);
-	buffer_destroy_from_heap(charlie_public_ephemeral);
-	buffer_destroy_from_heap(dora_private_identity);
-	buffer_destroy_from_heap(dora_public_identity);
-	buffer_destroy_from_heap(dora_private_ephemeral);
-	buffer_destroy_from_heap(dora_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffer);
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_buffer);
 
-	on_error(
+	buffer_destroy_from_heap_and_null_if_valid(charlie_private_identity);
+	buffer_destroy_from_heap_and_null_if_valid(charlie_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(charlie_private_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(charlie_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(dora_private_identity);
+	buffer_destroy_from_heap_and_null_if_valid(dora_public_identity);
+	buffer_destroy_from_heap_and_null_if_valid(dora_private_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(dora_public_ephemeral);
+
+	on_error {
 		print_errors(&status);
-	);
+	}
 	return_status_destroy_errors(&status);
 
 	return status.status;

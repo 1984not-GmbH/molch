@@ -35,7 +35,7 @@
 //key sizes
 #define CHAIN_KEY_SIZE crypto_secretbox_KEYBYTES
 #define MESSAGE_KEY_SIZE crypto_secretbox_KEYBYTES
-#define HEADER_KEY_SIZE crypto_aead_chacha20poly1305_KEYBYTES
+#define HEADER_KEY_SIZE crypto_secretbox_KEYBYTES
 #define ROOT_KEY_SIZE crypto_secretbox_KEYBYTES
 #define PRIVATE_KEY_SIZE crypto_box_SECRETKEYBYTES
 #define PUBLIC_KEY_SIZE crypto_box_PUBLICKEYBYTES
@@ -45,6 +45,6 @@
 
 //nonce sizes
 #define MESSAGE_NONCE_SIZE crypto_secretbox_NONCEBYTES
-#define HEADER_NONCE_SIZE crypto_aead_chacha20poly1305_NPUBBYTES
+#define HEADER_NONCE_SIZE crypto_secretbox_NONCEBYTES
 #define BACKUP_NONCE_SIZE crypto_secretbox_NONCEBYTES
 #endif

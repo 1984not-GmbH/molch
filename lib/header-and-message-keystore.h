@@ -22,10 +22,11 @@
 #include <sodium.h>
 #include <time.h>
 
+#include <key_bundle.pb-c.h>
+
 #include "constants.h"
-#include "return-status.h"
+#include "common.h"
 #include "../buffer/buffer.h"
-#include "../mcJSON/mcJSON.h"
 
 #ifndef LIB_HEADER_AND_MESSAGE_KEY_STORE_H
 #define LIB_HEADER_AND_MESSAGE_KEY_STORE_H
@@ -67,18 +68,27 @@ void header_and_message_keystore_remove(header_and_message_keystore *keystore, h
 //clear the entire keystore
 void header_and_message_keystore_clear(header_and_message_keystore *keystore);
 
-/*
- * Serialise a header_and_message_keystore into JSON. It get's a mempool_t buffer and stores a
- * tree of mcJSON objects into the buffer starting at pool->position
+//! Export a header_and_message_keystore as Protobuf-C struct.
+/*!
+ * \param store The keystore to export.
+ * \param key_bundles Pointer to a pointer of protobuf-c key bundle structs, it will be allocated in this function.
+ * \param bundle_size Size of the outputted array.
+ * \return The status.
  */
-mcJSON *header_and_message_keystore_json_export(
-		header_and_message_keystore * const keystore,
-		mempool_t * const pool) __attribute__((warn_unused_result));
+return_status header_and_message_keystore_export(
+		const header_and_message_keystore * const store,
+		KeyBundle *** const key_bundles,
+		size_t * const bundles_size) __attribute__((warn_unused_result));
 
+//! Import a header_and_message_keystore form a Protobuf-C struct.
 /*
- * Deserialise a heade_and_message_keystore (import from JSON).
+ * \param store The keystore to import to.
+ * \param key_bundles An array of Protobuf-C key-bundles to import from.
+ * \param bundles_size Size of the array.
+ * \return The status.
  */
-int header_and_message_keystore_json_import(
-		const mcJSON * const json,
-		header_and_message_keystore * const keystore) __attribute__((warn_unused_result));
+return_status header_and_message_keystore_import(
+		header_and_message_keystore * const store,
+		KeyBundle ** const key_bundles,
+		const size_t bundles_size) __attribute__((warn_unused_result));
 #endif

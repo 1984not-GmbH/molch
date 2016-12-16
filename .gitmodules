@@ -1,9 +1,3 @@
 [submodule "axolotl-specification"]
 	path = axolotl-specification
 	url = https://github.com/trevp/axolotl.wiki.git
-[submodule "buffer"]
-	path = buffer
-	url = https://github.com/FSMaxB/molch-buffer
-[submodule "mcJSON"]
-	path = mcJSON
-	url = https://github.com/FSMaxB/mcJSON

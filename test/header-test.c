@@ -30,7 +30,7 @@
 int main(void) {
 	//create buffers
 	buffer_t *our_public_ephemeral_key = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *header = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES + 8, crypto_box_PUBLICKEYBYTES + 8);
+	buffer_t *header = NULL;
 	buffer_t *extracted_public_ephemeral_key = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 
 	return_status status = return_status_init();
@@ -57,7 +57,7 @@ int main(void) {
 
 	//create the header
 	status = header_construct(
-			header,
+			&header,
 			our_public_ephemeral_key,
 			message_number,
 			previous_message_number);
@@ -72,10 +72,10 @@ int main(void) {
 	uint32_t extracted_message_number;
 	uint32_t extracted_previous_message_number;
 	status = header_extract(
-			header,
 			extracted_public_ephemeral_key,
 			&extracted_message_number,
-			&extracted_previous_message_number);
+			&extracted_previous_message_number,
+			header);
 	throw_on_error(DATA_FETCH_ERROR, "Failed to extract data from header.");
 
 	printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key->content_length);
@@ -101,11 +101,11 @@ int main(void) {
 	printf("Previous message numbers match.\n");
 
 cleanup:
-	buffer_destroy_from_heap(our_public_ephemeral_key);
-	buffer_destroy_from_heap(header);
-	buffer_destroy_from_heap(extracted_public_ephemeral_key);
+	buffer_destroy_from_heap_and_null_if_valid(our_public_ephemeral_key);
+	buffer_destroy_from_heap_and_null_if_valid(extracted_public_ephemeral_key);
+	buffer_destroy_from_heap_and_null_if_valid(header);
 
-	if (status.status != SUCCESS) {
+	on_error {
 		print_errors(&status);
 		return_status_destroy_errors(&status);
 	}

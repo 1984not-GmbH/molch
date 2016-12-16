@@ -1,3 +1,4 @@
+#!/usr/bin/env lua
 -- Molch, an implementation of the axolotl ratchet based on libsodium
 --
 -- ISC License
@@ -27,8 +28,8 @@ local alice = molch.user.new()
 local bob = molch.user.new()
 
 -- stacks for sent packets
-local alice_sent = {}
-local bob_sent = {}
+alice_sent = {}
+bob_sent = {}
 
 local alice_conversation = nil
 local bob_conversation = nil
@@ -272,3 +273,5 @@ function errors_off()
 		_G[name] = func
 	end
 end
+
+dofile(arg[1])

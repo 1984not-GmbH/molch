@@ -19,391 +19,346 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sodium.h>
+#include <packet.pb-c.h>
 #include <string.h>
-#include <stdlib.h>
-#include <assert.h>
-
-#include "constants.h"
 #include "packet.h"
-#include "molch.h"
+#include "constants.h"
+#include "zeroed_malloc.h"
 
-/*
- * Encrypt a message and header with a symmetric key and a nonce.
- *
- * For the header, AEAD is used (authenticated encryption with
- * additional data) to authenticate the header length, version
- * and packet type.
- *
- * packet has to have at least the following length:
- *
- * The packet has the following format:
- * packet = {
- *   protocol_version(1), //4MSB: current version; 4LSB: highest supported version
- *   packet_type(1),
- *   header_length(1),
- *   our_public_identity_key(PUBLIC_KEY_SIZE), //optional, only prekey messages
- *   our_public_ephemeral_key(PUBLIC_KEY_SIZE, //optional, only prekey messages
- *   public_prekey(PUBLIC_KEY_SIZE), //optional, only prekey messages
- *   header_nonce(HEADER_NONCE_SIZE),
- *   header {
- *       axolotl_header(?),
- *       message_nonce(MESSAGE_NONCE_SIZE)
- *   },
- *   header_and_additional_data_MAC(crypto_aead_chacha20poly1305_ABYTES),
- *   authenticated_encrypted_message {
- *       message(?),
- *       MAC(crypto_secretbox_MACBYTES)
- *   }
- * }
- *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
+/*!
+ * Convert molch_message_type to PacketHeader__PacketType.
  */
-return_status packet_encrypt(
-		buffer_t * const packet, //output, has to be long enough, see format above TODO: Be more specific
-		const unsigned char packet_type,
-		const unsigned char current_protocol_version, //this can't be larger than 0xF = 15
-		const unsigned char highest_supported_protocol_version, //this can't be larger than 0xF = 15
-		const buffer_t * const header,
-		const buffer_t * const header_key, //HEADER_KEY_SIZE
-		const buffer_t * const message,
-		const buffer_t * const message_key, //MESSAGE_KEY_SIZE
-		const buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages only
-		const buffer_t * const public_ephemeral_key, //optional, can be NULL, for prekey messages only
-		const buffer_t * const public_prekey) { //optional, can be NULL, for prekey messages only
+PacketHeader__PacketType to_packet_header_packet_type(const molch_message_type packet_type) {
+	switch (packet_type) {
+		case PREKEY_MESSAGE:
+			return PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE;
+		case NORMAL_MESSAGE:
+			return PACKET_HEADER__PACKET_TYPE__NORMAL_MESSAGE;
+		default:
+			//fallback to normal message
+			return PACKET_HEADER__PACKET_TYPE__NORMAL_MESSAGE;
+	}
+}
 
+/*!
+ * Convert PacketHeader__PacketType to molch_message_type.
+ */
+molch_message_type to_molch_message_type(const PacketHeader__PacketType packet_type) {
+	switch (packet_type) {
+		case PACKET_HEADER__PACKET_TYPE__NORMAL_MESSAGE:
+			return NORMAL_MESSAGE;
+		case PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE:
+			return PREKEY_MESSAGE;
+		default:
+			return INVALID;
+	}
+}
+
+/*!
+ * Unpacks a packet via Protobuf-C into a struct and verifies that all the necessary
+ * fields exist.
+ *
+ * \param packet_struct
+ *   The unpacket struct.
+ * \param packet
+ *   The binary packet.
+ *
+ * \return
+ *   Error status, destroy with return_status_destroy_errors if an error occurs.
+ */
+return_status packet_unpack(Packet ** const packet_struct, const buffer_t * const packet) __attribute__((warn_unused_result));
+return_status packet_unpack(Packet ** const packet_struct, const buffer_t * const packet) {
 	return_status status = return_status_init();
 
-	//check buffer sizes
-	if ((header_key->content_length != HEADER_KEY_SIZE)
-			|| (message_key->content_length != MESSAGE_KEY_SIZE)
-			|| (packet == NULL) || (packet->buffer_length < 3 + HEADER_NONCE_SIZE + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE + MESSAGE_NONCE_SIZE + header->content_length + crypto_aead_chacha20poly1305_ABYTES + crypto_secretbox_MACBYTES + message->content_length + 255)) {
-		throw(INVALID_INPUT, "Invalid input for packet_encrypt.");
+	//check input
+	if ((packet_struct == NULL) || (packet == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to packet_unpack.");
 	}
 
-	if ((packet_type == PREKEY_MESSAGE) && (
-				(public_identity_key == NULL) || (public_identity_key->content_length != PUBLIC_KEY_SIZE)
-				|| (public_ephemeral_key == NULL) || (public_ephemeral_key->content_length != PUBLIC_KEY_SIZE)
-				|| (public_prekey == NULL) || (public_prekey->content_length != PUBLIC_KEY_SIZE))) {
-		throw(INVALID_INPUT, "Invalid input for prekey messages.");
+	//unpack the packet
+	*packet_struct = packet__unpack(&protobuf_c_allocators, packet->content_length, packet->content);
+	if (*packet_struct == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
 	}
 
-	if ((packet_type != PREKEY_MESSAGE) && ((public_identity_key != NULL) || (public_prekey != NULL) || (public_ephemeral_key != NULL))) {
-		throw(INVALID_INPUT, "Invalid input for non prekey messages.");
+	if ((*packet_struct)->packet_header->current_protocol_version != 0) {
+		throw(UNSUPPORTED_PROTOCOL_VERSION, "The packet has an unsuported protocol version.");
 	}
 
-	//make sure that the length assumptions are correct
-	assert(crypto_onetimeauth_KEYBYTES == crypto_secretbox_KEYBYTES);
-
-	//protocol version has to be equal or less than 0xF
-	if ((current_protocol_version > 0x0f)
-			|| (highest_supported_protocol_version > 0x0f)) {
-		throw(INVALID_VALUE, "Incorrect protocol version.");
+	//check if the packet contains the necessary fields
+	if (!(*packet_struct)->has_encrypted_axolotl_header
+		|| !(*packet_struct)->has_encrypted_message
+		|| !(*packet_struct)->packet_header->has_packet_type
+		|| !(*packet_struct)->packet_header->has_header_nonce
+		|| !(*packet_struct)->packet_header->has_message_nonce) {
+		throw(PROTOBUF_MISSING_ERROR, "Some fields are missing in the packet.");
 	}
 
-	//make sure the header length fits into one byte
-	if (header->content_length > (0xff - crypto_aead_chacha20poly1305_ABYTES - MESSAGE_NONCE_SIZE)) {
-		throw(INVALID_VALUE, "Header length doesn't fit into one byte.");
+	//check the size of the nonces
+	if (((*packet_struct)->packet_header->header_nonce.len != HEADER_NONCE_SIZE)
+		|| ((*packet_struct)->packet_header->message_nonce.len != MESSAGE_NONCE_SIZE)) {
+		throw(INCORRECT_BUFFER_SIZE, "At least one of the nonces has an incorrect length.");
 	}
 
-	//check if the packet buffer is long enough (only roughly) FIXME correct numbers here!
-	if (packet->buffer_length < (3 + crypto_aead_chacha20poly1305_ABYTES + MESSAGE_NONCE_SIZE + HEADER_NONCE_SIZE + message->content_length + crypto_secretbox_MACBYTES + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE)) {
-		throw(INCORRECT_BUFFER_SIZE, "Packet buffer isn't long enough.");
-	}
-
-	//put packet type and protocol version into the packet
-	packet->content[0] = packet_type;
-	packet->content[1] = 0xf0 & (current_protocol_version << 4); //put current version into 4MSB
-	packet->content[1] |= (0x0f & highest_supported_protocol_version); //put highest version into 4LSB
-	packet->content[2] = header->content_length + crypto_aead_chacha20poly1305_ABYTES + MESSAGE_NONCE_SIZE + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE; //header length with authenticator and message nonce
-	packet->content_length = 3;
-
-	int status_int;
-
-	off_t header_nonce_offset = 3 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
-	if (packet_type == PREKEY_MESSAGE) {
-		//copy our public identity key
-		status_int = buffer_copy(
-				packet,
-				3,
-				public_identity_key,
-				0,
-				PUBLIC_KEY_SIZE);
-		if (status_int != 0) {
-			throw(BUFFER_ERROR, "Failed to copy public identity to packet.");
+	if ((*packet_struct)->packet_header->packet_type == PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
+		//check if the public keys for prekey messages are there
+		if (!(*packet_struct)->packet_header->has_public_identity_key
+			|| !(*packet_struct)->packet_header->has_public_ephemeral_key
+			|| !(*packet_struct)->packet_header->has_public_prekey) {
+			throw(PROTOBUF_MISSING_ERROR, "The prekey packet misses at least one public key.");
 		}
 
-		//copy our public ephemeral key
-		status_int = buffer_copy(
-				packet,
-				3 + PUBLIC_KEY_SIZE,
-				public_ephemeral_key,
-				0,
-				PUBLIC_KEY_SIZE);
-		if (status_int != 0) {
-			throw(BUFFER_ERROR, "Failed to copy public ephemeral to packet.");
-		}
-
-		//copy the public prekey of the receiver
-		status_int = buffer_copy(
-				packet,
-				3 + 2 * PUBLIC_KEY_SIZE,
-				public_prekey,
-				0,
-				PUBLIC_KEY_SIZE);
-		if (status_int != 0) {
-			throw(BUFFER_ERROR, "Failed to copy prekey to packet.");
+		//check the sizes of the public keys
+		if (((*packet_struct)->packet_header->public_identity_key.len != PUBLIC_KEY_SIZE)
+			|| ((*packet_struct)->packet_header->public_ephemeral_key.len != PUBLIC_KEY_SIZE)
+			|| ((*packet_struct)->packet_header->public_prekey.len != PUBLIC_KEY_SIZE)) {
+			throw(INCORRECT_BUFFER_SIZE, "At least one of the public keys of the prekey packet has an incorrect length.");
 		}
 	}
-
-	//create the header nonce
-	buffer_create_with_existing_array(header_nonce, packet->content + header_nonce_offset, HEADER_NONCE_SIZE);
-	status_int = buffer_fill_random(header_nonce, header_nonce->buffer_length);
-	if (status_int != 0) {
-		throw(GENERIC_ERROR, "Failed to generate random header nonce.")
-	}
-
-	//create buffer for the encrypted part of the header
-	buffer_t *header_buffer = buffer_create_on_heap(header->content_length + MESSAGE_NONCE_SIZE, header->content_length + MESSAGE_NONCE_SIZE);
-	//copy header
-	status_int = buffer_copy(header_buffer, 0, header, 0, header->content_length);
-	if (status_int != 0) {
-		buffer_destroy_from_heap(header_buffer);
-		throw(BUFFER_ERROR, "Failed to copy header to the header buffer.");
-	}
-	//create message nonce
-	buffer_create_with_existing_array(message_nonce, header_buffer->content + header->content_length, MESSAGE_NONCE_SIZE);
-	status_int = buffer_fill_random(message_nonce, message_nonce->buffer_length);
-	if (status_int != 0) {
-		buffer_destroy_from_heap(header_buffer);
-		throw(GENERIC_ERROR, "Failed to generate random message nonce.");
-	}
-
-	//buffer that points to the part of the packet where the header ciphertext will be stored
-	buffer_create_with_existing_array(header_ciphertext, packet->content + header_nonce_offset + header_nonce->content_length, header_buffer->content_length + crypto_aead_chacha20poly1305_ABYTES);
-	//same for the additional data
-	buffer_create_with_existing_array(additional_data, packet->content, 3 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE + HEADER_NONCE_SIZE);
-
-	//encrypt the header and authenticate the additional data (1st 3 Bytes)
-	unsigned long long header_ciphertext_length;
-	status_int = crypto_aead_chacha20poly1305_encrypt(
-			header_ciphertext->content, //ciphertext
-			&header_ciphertext_length, //ciphertext length
-			header_buffer->content, //plaintext
-			header_buffer->content_length, //message length
-			additional_data->content,
-			additional_data->content_length,
-			NULL,
-			header_nonce->content,
-			header_key->content);
-	assert(header_ciphertext->content_length == header_ciphertext_length);
-	if (status_int != 0) {
-		buffer_destroy_from_heap(header_buffer);
-		throw(ENCRYPT_ERROR, "Failed to encrypt header.");
-	}
-
-	//make sure the header_length property in the packet is correct
-	assert((header->content_length + crypto_aead_chacha20poly1305_ABYTES + MESSAGE_NONCE_SIZE) == header_ciphertext_length);
-
-	//now encrypt the message
-
-	//calculate amount of padding (PKCS7 padding to 255 byte blocks, see RFC5652 section 6.3)
-	unsigned char padding = 255 - (message->content_length % 255);
-
-	//allocate buffer for the message + padding
-	buffer_t *plaintext_buffer = buffer_create_on_heap(message->content_length + padding, message->content_length + padding);
-
-	//copy message to plaintext buffer
-	status_int = buffer_copy(plaintext_buffer, 0, message, 0, message->content_length);
-	if (status_int != 0) {
-		buffer_destroy_from_heap(plaintext_buffer);
-		buffer_destroy_from_heap(header_buffer);
-		throw(BUFFER_ERROR, "Failed to copy plaintext message.");
-	}
-	assert(plaintext_buffer->content_length == (message->content_length + padding));
-
-	//add padding to the end of the buffer
-	memset(plaintext_buffer->content + message->content_length, padding, padding);
-
-	//length of everything in front of the ciphertext
-	const size_t PRE_CIPHERTEXT_LENGTH = additional_data->content_length + header_ciphertext_length;
-
-	//buffer that points to the message ciphertext position in the packet
-	buffer_create_with_existing_array(message_ciphertext, packet->content + PRE_CIPHERTEXT_LENGTH, message->content_length + padding + crypto_secretbox_MACBYTES);
-	//encrypt the message
-	status_int = crypto_secretbox_easy(
-			message_ciphertext->content, //ciphertext
-			plaintext_buffer->content, //message
-			plaintext_buffer->content_length, //message length
-			message_nonce->content,
-			message_key->content);
-	buffer_destroy_from_heap(plaintext_buffer);
-	buffer_destroy_from_heap(header_buffer);
-	if (status_int != 0) {
-		buffer_clear(packet);
-		throw(ENCRYPT_ERROR, "Failed to encrypt message.");
-	}
-
-	//set length of entire encrypted message
-	packet->content_length = PRE_CIPHERTEXT_LENGTH + message->content_length + padding + crypto_secretbox_MACBYTES;
 
 cleanup:
+	on_error {
+		if ((packet_struct != NULL) && (*packet_struct != NULL)) {
+			packet__free_unpacked(*packet_struct, &protobuf_c_allocators);
+			*packet_struct = NULL;
+		}
+	}
+
 	return status;
 }
 
-/*
- * Decrypt and authenticate a packet.
- *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
- */
-return_status packet_decrypt(
-		const buffer_t * const packet,
-		unsigned char * const packet_type, //1 Byte, no array
-		unsigned char * const current_protocol_version, //1 Byte, no array
-		unsigned char * const highest_supported_protocol_version, //1 Byte, no array
-		buffer_t * const header, //output, As long as the packet or at most 255 bytes
-		const buffer_t * const header_key, //HEADER_KEY_SIZE
-		buffer_t * const message, //output, should be as long as the packet
+return_status packet_encrypt(
+		//output
+		buffer_t ** const packet,
+		//inputs
+		const molch_message_type packet_type,
+		const buffer_t * const axolotl_header,
+		const buffer_t * const axolotl_header_key, //HEADER_KEY_SIZE
+		const buffer_t * const message,
 		const buffer_t * const message_key, //MESSAGE_KEY_SIZE
-		buffer_t * const public_identity_key, //optional, can be NULL, for prekey messages only
-		buffer_t * const public_ephemeral_key, //optional, can be NULL, for prekey messages only
-		buffer_t * const public_prekey) { //optional, can be NULL, for prekey messages only
-
+		//optional inputs (prekey messages only)
+		const buffer_t * const public_identity_key,
+		const buffer_t * const public_ephemeral_key,
+		const buffer_t * const public_prekey) {
 	return_status status = return_status_init();
 
-	buffer_t *message_nonce = buffer_create_on_heap(MESSAGE_NONCE_SIZE, MESSAGE_NONCE_SIZE);
+	//initialize the protobuf structs
+	Packet packet_struct = PACKET__INIT;
+	PacketHeader packet_header_struct = PACKET_HEADER__INIT;
+	packet_struct.packet_header = &packet_header_struct;
 
-	//check the buffer sizes
-	if ((header_key->content_length != HEADER_KEY_SIZE)
-			|| (message_key->content_length != MESSAGE_KEY_SIZE)) {
-		throw(INVALID_INPUT, "Invalid input for packet_decrypt.");
+	//buffers
+	buffer_t *header_nonce = NULL;
+	buffer_t *message_nonce = NULL;
+	buffer_t *encrypted_axolotl_header = NULL;
+	buffer_t *padded_message = NULL;
+	buffer_t *encrypted_message = NULL;
+
+	//check the input
+	if ((packet == NULL)
+		|| (packet_type == INVALID)
+		|| (axolotl_header == NULL)
+		|| (axolotl_header_key == NULL) || (axolotl_header_key->content_length != HEADER_KEY_SIZE)
+		|| (message == NULL)
+		|| (message_key == NULL) || (message_key->content_length != MESSAGE_KEY_SIZE)) {
+		throw(INVALID_INPUT, "Invalid input to packet_encrypt.");
 	}
 
-	//get the packet metadata
-	unsigned char purported_header_length;
+	//set the protocol version
+	packet_header_struct.current_protocol_version = 0;
+	packet_header_struct.highest_supported_protocol_version = 0;
+
+	//set the packet type
+	packet_header_struct.has_packet_type = true;
+	packet_header_struct.packet_type = to_packet_header_packet_type(packet_type);
+
+	if (packet_type == PREKEY_MESSAGE) {
+		//check input
+		if ((public_identity_key == NULL) || (public_identity_key->content_length != PUBLIC_KEY_SIZE)
+			|| (public_ephemeral_key == NULL) || (public_ephemeral_key->content_length != PUBLIC_KEY_SIZE )
+			|| (public_prekey == NULL) || (public_prekey->content_length != PUBLIC_KEY_SIZE)) {
+			throw(INVALID_INPUT, "Invalid public key to packet_encrypt for prekey message.");
+		}
+
+		//set the public identity key
+		packet_header_struct.has_public_identity_key = true;
+		packet_header_struct.public_identity_key.data = public_identity_key->content;
+		packet_header_struct.public_identity_key.len = public_identity_key->content_length;
+
+		//set the public ephemeral key
+		packet_header_struct.has_public_ephemeral_key = true;
+		packet_header_struct.public_ephemeral_key.data = public_ephemeral_key->content;
+		packet_header_struct.public_ephemeral_key.len = public_ephemeral_key->content_length;
+
+		//set the public prekey
+		packet_header_struct.has_public_prekey = true;
+		packet_header_struct.public_prekey.data = public_prekey->content;
+		packet_header_struct.public_prekey.len = public_prekey->content_length;
+	}
+
+	//generate the header nonce and add it to the packet header
+	header_nonce = buffer_create_on_heap(HEADER_NONCE_SIZE, 0);
+	throw_on_failed_alloc(header_nonce);
+	if (buffer_fill_random(header_nonce, HEADER_NONCE_SIZE) != 0) {
+		throw(BUFFER_ERROR, "Failed to generate header nonce.");
+	}
+	packet_header_struct.has_header_nonce = true;
+	packet_header_struct.header_nonce.data = header_nonce->content;
+	packet_header_struct.header_nonce.len = header_nonce->content_length;
+
+	//encrypt the header
+	encrypted_axolotl_header = buffer_create_on_heap(
+			axolotl_header->content_length + crypto_secretbox_MACBYTES,
+			axolotl_header->content_length + crypto_secretbox_MACBYTES);
+	throw_on_failed_alloc(encrypted_axolotl_header);
+	int status_int = crypto_secretbox_easy(
+			encrypted_axolotl_header->content,
+			axolotl_header->content,
+			axolotl_header->content_length,
+			header_nonce->content,
+			axolotl_header_key->content);
+	if (status_int != 0) {
+		throw(ENCRYPT_ERROR, "Failed to encrypt header.");
+	}
+
+	//add the encrypted header to the protobuf struct
+	packet_struct.has_encrypted_axolotl_header = true;
+	packet_struct.encrypted_axolotl_header.data = encrypted_axolotl_header->content;
+	packet_struct.encrypted_axolotl_header.len = encrypted_axolotl_header->content_length;
+
+	//generate the message nonce and add it to the packet header
+	message_nonce = buffer_create_on_heap(MESSAGE_NONCE_SIZE, 0);
+	throw_on_failed_alloc(message_nonce);
+	if (buffer_fill_random(message_nonce, MESSAGE_NONCE_SIZE) != 0) {
+		throw(BUFFER_ERROR, "Failed to generate message nonce.");
+	}
+	packet_header_struct.has_message_nonce = true;
+	packet_header_struct.message_nonce.data = message_nonce->content;
+	packet_header_struct.message_nonce.len = message_nonce->content_length;
+
+	//pad the message (PKCS7 padding to 255 byte blocks, see RFC5652 section 6.3)
+	unsigned char padding = 255 - (message->content_length % 255);
+	padded_message = buffer_create_on_heap(message->content_length + padding, 0);
+	throw_on_failed_alloc(padded_message);
+	//copy the message
+	if (buffer_clone(padded_message, message) != 0) {
+		throw(BUFFER_ERROR, "Failed to clone message.");
+	}
+	//pad it
+	memset(padded_message->content + padded_message->content_length, padding, padding);
+	padded_message->content_length += padding;
+
+	//encrypt the message
+	encrypted_message = buffer_create_on_heap(
+			padded_message->content_length + crypto_secretbox_MACBYTES,
+			padded_message->content_length + crypto_secretbox_MACBYTES);
+	throw_on_failed_alloc(encrypted_message);
+	status_int = crypto_secretbox_easy(
+			encrypted_message->content,
+			padded_message->content,
+			padded_message->content_length,
+			message_nonce->content,
+			message_key->content);
+	if (status_int != 0) {
+		throw(ENCRYPT_ERROR, "Failed to encrypt message.");
+	}
+
+	//add the encrypted message to the protobuf struct
+	packet_struct.has_encrypted_message = true;
+	packet_struct.encrypted_message.data = encrypted_message->content;
+	packet_struct.encrypted_message.len = encrypted_message->content_length;
+
+	//calculate the required length
+	const size_t packed_length = packet__get_packed_size(&packet_struct);
+
+	//pack the packet
+	*packet = buffer_create_on_heap(packed_length, 0);
+	throw_on_failed_alloc(*packet);
+	(*packet)->content_length = packet__pack(&packet_struct, (*packet)->content);
+	if ((*packet)->content_length != packed_length) {
+		throw(PROTOBUF_PACK_ERROR, "Packet packet has incorrect length.");
+	}
+
+cleanup:
+	on_error {
+		if (packet != NULL) {
+			buffer_destroy_from_heap_and_null_if_valid(*packet);
+		}
+	}
+
+	buffer_destroy_from_heap_and_null_if_valid(header_nonce);
+	buffer_destroy_from_heap_and_null_if_valid(message_nonce);
+	buffer_destroy_from_heap_and_null_if_valid(encrypted_axolotl_header);
+	buffer_destroy_from_heap_and_null_if_valid(padded_message);
+	buffer_destroy_from_heap_and_null_if_valid(encrypted_message);
+
+	return status;
+}
+
+return_status packet_decrypt(
+		//outputs
+		uint32_t * const current_protocol_version,
+		uint32_t * const highest_supported_protocol_version,
+		molch_message_type * const packet_type,
+		buffer_t ** const axolotl_header,
+		buffer_t ** const message,
+		//inputs
+		const buffer_t * const packet,
+		const buffer_t * const axolotl_header_key, //HEADER_KEY_SIZE
+		const buffer_t * const message_key, //MESSAGE_KEY_SIZE
+		//optional outputs (prekey messages only)
+		buffer_t * const public_identity_key,
+		buffer_t * const public_ephemeral_key,
+		buffer_t * const public_prekey) {
+	return_status status = return_status_init();
+
+	//initialize outputs that have to be allocated
+	if (axolotl_header != NULL) {
+		*axolotl_header = NULL;
+	}
+	if (message != NULL) {
+		*message = NULL;
+	}
+
+	//get metadata
 	status = packet_get_metadata_without_verification(
-			packet,
-			packet_type,
 			current_protocol_version,
 			highest_supported_protocol_version,
-			&purported_header_length,
+			packet_type,
+			packet,
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	throw_on_error(DATA_FETCH_ERROR, "Failed to get metadata.");
+	throw_on_error(DATA_FETCH_ERROR, "Failed to get metadata from the packet.");
 
 	//decrypt the header
 	status = packet_decrypt_header(
+			axolotl_header,
 			packet,
-			header,
-			message_nonce,
-			header_key,
-			public_identity_key,
-			public_ephemeral_key,
-			public_prekey);
+			axolotl_header_key);
 	throw_on_error(DECRYPT_ERROR, "Failed to decrypt header.");
 
 	//decrypt the message
 	status = packet_decrypt_message(
-			packet,
 			message,
-			message_nonce,
+			packet,
 			message_key);
 	throw_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
 
 cleanup:
-	buffer_destroy_from_heap(message_nonce);
-
-	return status;
-}
-
-/*
- * Get the metadata of a packet (without verifying it's authenticity).
- *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
- */
-return_status packet_get_metadata_without_verification(
-		const buffer_t * const packet,
-		unsigned char * const packet_type,
-		unsigned char * const current_protocol_version,
-		unsigned char * const highest_supported_protocol_version,
-		unsigned char * const header_length, //this is the raw header length, without the authenticator
-		buffer_t * const public_identity_key, //output, optional, can be NULL, only works with prekey messages
-		buffer_t * const public_ephemeral_key, //output, optional, can be NULL, only works with prekey messages
-		buffer_t * const public_prekey) { //output, optional, can be NULL, only works with prekey messages
-
-	return_status status = return_status_init();
-
-	//check if packet_length is long enough to get the header length
-	if (packet->content_length < 3) {
-		throw(INVALID_INPUT, "Packet isn't long enough to get the header length.");
-	}
-
-	//check if the additional prekey data fulfills the length requirements
-	if ((public_identity_key != NULL) && (public_identity_key->buffer_length < PUBLIC_KEY_SIZE)) {
-		throw(INCORRECT_BUFFER_SIZE, "Public identity key has incorrect length.");
-	}
-
-	if ((public_prekey != NULL) && (public_prekey->buffer_length < PUBLIC_KEY_SIZE)) {
-		throw(INCORRECT_BUFFER_SIZE, "Public prekey has incorrect length.");
-	}
-
-	unsigned char local_packet_type = packet->content[0];
-	*packet_type = local_packet_type;
-
-	//check if packet is long enough to get the rest of the metadata
-	if (packet->content_length < (3 + packet->content[2] +  HEADER_NONCE_SIZE)) {
-		throw(INVALID_INPUT, "Packet isn't long enough to get the rest of the metadata.");
-	}
-
-	*current_protocol_version = (0xf0 & packet->content[1]) >> 4;
-	*highest_supported_protocol_version = 0x0f & packet->content[1];
-	*header_length = packet->content[2] - crypto_aead_chacha20poly1305_ABYTES - MESSAGE_NONCE_SIZE - (local_packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
-
-	if (local_packet_type == PREKEY_MESSAGE) {
-		int status_int;
-		if (public_identity_key != NULL) {
-			status_int = buffer_copy(
-					public_identity_key,
-					0,
-					packet,
-					3,
-					PUBLIC_KEY_SIZE);
-			if (status_int != 0) {
-				throw(BUFFER_ERROR, "Failed to copy public identity key.");
-			}
+	on_error {
+		if (packet_type != NULL) {
+			*packet_type = INVALID;
 		}
 
-		if (public_ephemeral_key != NULL) {
-			status_int = buffer_copy(
-					public_ephemeral_key,
-					0,
-					packet,
-					3 + PUBLIC_KEY_SIZE,
-					PUBLIC_KEY_SIZE);
-			if (status_int != 0) {
-				throw(BUFFER_ERROR, "Failed to copy public ephemeral key.");
-			}
+		if (axolotl_header != NULL) {
+			buffer_destroy_from_heap_and_null_if_valid(*axolotl_header);
 		}
 
-		if (public_prekey != NULL) {
-			status_int = buffer_copy(
-					public_prekey,
-					0,
-					packet,
-					3 + 2 * PUBLIC_KEY_SIZE,
-					PUBLIC_KEY_SIZE);
-			if (status_int != 0) {
-				throw(BUFFER_ERROR, "Failed to copy public prekey.");
-			}
+		if (message != NULL) {
+			buffer_destroy_from_heap_and_null_if_valid(*message);
 		}
-	}
 
-cleanup:
-	if (status.status != SUCCESS) {
 		if (public_identity_key != NULL) {
 			buffer_clear(public_identity_key);
 		}
@@ -416,188 +371,210 @@ cleanup:
 			buffer_clear(public_prekey);
 		}
 	}
+
 	return status;
 }
 
-/*
- * Decrypt the header of a packet. (This also authenticates the metadata)
- *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
- */
-return_status packet_decrypt_header(
+return_status packet_get_metadata_without_verification(
+		//outputs
+		uint32_t * const current_protocol_version,
+		uint32_t * const highest_supported_protocol_version,
+		molch_message_type * const packet_type,
+		//input
 		const buffer_t * const packet,
-		buffer_t * const header, //As long as the packet or at most 255 bytes
-		buffer_t * const message_nonce, //output, MESSAGE_KEY_SIZE
-		const buffer_t * const header_key, //HEADER_KEY_SIZE
-		buffer_t * const public_identity_key, //output, optional, can be NULL, for prekey messages only
-		buffer_t * const public_ephemeral_key, //output, optional, can be NULL, for prekey messages only
-		buffer_t * const public_prekey) { //output, optional, can be NULL, for prekey messages only
-
+		//optional outputs (prekey messages only)
+		buffer_t * const public_identity_key, //PUBLIC_KEY_SIZE
+		buffer_t * const public_ephemeral_key, //PUBLIC_KEY_SIZE
+		buffer_t * const public_prekey //PUBLIC_KEY_SIZE
+		) {
 	return_status status = return_status_init();
 
-	buffer_t *header_buffer = NULL;
+	Packet *packet_struct = NULL;
 
-	//check sizes of the buffers
-	if ((message_nonce->buffer_length < MESSAGE_NONCE_SIZE)
-			|| (header_key->content_length != HEADER_KEY_SIZE)) {
+	//check input
+	if ((current_protocol_version == NULL) || (highest_supported_protocol_version == NULL)
+			|| (packet_type == NULL)
+			|| (packet == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to packet_get_metadata_without_verification.");
+	}
+
+	status = packet_unpack(&packet_struct, packet);
+	throw_on_error(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
+
+	if (packet_struct->packet_header->packet_type == PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
+		//copy the public keys
+		if (public_identity_key != NULL) {
+			if (buffer_clone_from_raw(public_identity_key, packet_struct->packet_header->public_identity_key.data, packet_struct->packet_header->public_identity_key.len) != 0) {
+				throw(BUFFER_ERROR, "Failed to copy public identity key.");
+			}
+		}
+		if (public_ephemeral_key != NULL) {
+			if (buffer_clone_from_raw(public_ephemeral_key, packet_struct->packet_header->public_ephemeral_key.data, packet_struct->packet_header->public_ephemeral_key.len) != 0) {
+				throw(BUFFER_ERROR, "Failed to copy public ephemeral key.");
+			}
+		}
+		if (public_prekey != NULL) {
+			if (buffer_clone_from_raw(public_prekey, packet_struct->packet_header->public_prekey.data, packet_struct->packet_header->public_prekey.len) != 0) {
+				throw(BUFFER_ERROR, "Failed to copy public prekey.");
+			}
+		}
+	}
+
+	*current_protocol_version = packet_struct->packet_header->current_protocol_version;
+	*highest_supported_protocol_version = packet_struct->packet_header->highest_supported_protocol_version;
+	*packet_type = to_molch_message_type(packet_struct->packet_header->packet_type);
+
+cleanup:
+	if (packet_struct != NULL) {
+		packet__free_unpacked(packet_struct, &protobuf_c_allocators);
+	}
+
+	on_error {
+		//make sure that incomplete data can't be accidentally used
+		if (public_identity_key != NULL) {
+			buffer_clear(public_identity_key);
+		}
+
+		if (public_ephemeral_key != NULL) {
+			buffer_clear(public_ephemeral_key);
+		}
+
+		if (public_prekey != NULL) {
+			buffer_clear(public_prekey);
+		}
+
+		if (packet_type != NULL) {
+			*packet_type = INVALID;
+		}
+	}
+
+	return status;
+}
+
+return_status packet_decrypt_header(
+		//output
+		buffer_t ** const axolotl_header,
+		//inputs
+		const buffer_t * const packet,
+		const buffer_t * const axolotl_header_key //HEADER_KEY_SIZE
+		) {
+	return_status status = return_status_init();
+
+	Packet *packet_struct = NULL;
+
+	//check input
+	if ((axolotl_header == NULL)
+			|| (packet == NULL)
+			|| (axolotl_header_key == NULL) || (axolotl_header_key->content_length != HEADER_KEY_SIZE)) {
 		throw(INVALID_INPUT, "Invalid input to packet_decrypt_header.");
 	}
 
-	//extract the purported header length from the packet
-	unsigned char packet_type;
-	unsigned char current_protocol_version;
-	unsigned char highest_supported_protocol_version;
-	unsigned char purported_header_length;
-	int status_int = 0;
-	status = packet_get_metadata_without_verification(
-			packet,
-			&packet_type,
-			&current_protocol_version,
-			&highest_supported_protocol_version,
-			&purported_header_length,
-			public_identity_key,
-			public_ephemeral_key,
-			public_prekey);
-	throw_on_error(DATA_FETCH_ERROR, "Failed to get metadata.");
+	status = packet_unpack(&packet_struct, packet);
+	throw_on_error(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
 
-	off_t header_nonce_offset = 3 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
-	//check if the packet is long enough
-	if (packet->content_length < ((size_t)header_nonce_offset + HEADER_NONCE_SIZE + purported_header_length + crypto_aead_chacha20poly1305_ABYTES)) {
-		throw(INCORRECT_BUFFER_SIZE, "Packet isn't long enough.");
+	if (packet_struct->encrypted_axolotl_header.len < crypto_secretbox_MACBYTES) {
+		throw(INCORRECT_BUFFER_SIZE, "The ciphertext of the axolotl header is too short.")
 	}
 
-	//buffer that points to different parts of the header
-	buffer_create_with_existing_array(header_nonce, packet->content + header_nonce_offset, HEADER_NONCE_SIZE);
-	buffer_create_with_existing_array(additional_data, packet->content, header_nonce_offset + header_nonce->content_length);
-	buffer_create_with_existing_array(header_ciphertext, packet->content + additional_data->content_length, purported_header_length + MESSAGE_NONCE_SIZE + crypto_aead_chacha20poly1305_ABYTES);
-	//encrypt the header
-	header_buffer = buffer_create_on_heap(purported_header_length + MESSAGE_NONCE_SIZE, purported_header_length + MESSAGE_NONCE_SIZE);
-	unsigned long long decrypted_length;
-	status_int = crypto_aead_chacha20poly1305_decrypt(
-			header_buffer->content,
-			&decrypted_length,
-			NULL,
-			header_ciphertext->content, //ciphertext of header
-			header_ciphertext->content_length, //ciphertext length
-			additional_data->content,
-			additional_data->content_length,
-			header_nonce->content, //nonce
-			header_key->content);
+	const size_t axolotl_header_length = packet_struct->encrypted_axolotl_header.len - crypto_secretbox_MACBYTES;
+	*axolotl_header = buffer_create_on_heap(axolotl_header_length, axolotl_header_length);
+	throw_on_failed_alloc(*axolotl_header);
+
+	int status_int = crypto_secretbox_open_easy(
+			(*axolotl_header)->content,
+			packet_struct->encrypted_axolotl_header.data,
+			packet_struct->encrypted_axolotl_header.len,
+			packet_struct->packet_header->header_nonce.data,
+			axolotl_header_key->content);
 	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt header.");
+		throw(DECRYPT_ERROR, "Failed to decrypt axolotl header.");
 	}
-
-	assert(purported_header_length == decrypted_length - MESSAGE_NONCE_SIZE);
-
-	//copy the header
-	status_int = buffer_copy(header, 0, header_buffer, 0, purported_header_length);
-	if (status_int != 0) {
-		throw(BUFFER_ERROR, "Failed too copy header.");
-	}
-	//copy the message nonce
-	status_int = buffer_copy(message_nonce, 0, header_buffer, purported_header_length, MESSAGE_NONCE_SIZE);
-	if (status_int != 0) {
-		throw(BUFFER_ERROR, "Failed to copy message nonce.");
-	}
-	header->content_length = purported_header_length;
 
 cleanup:
-	if (header_buffer != NULL) {
-		buffer_destroy_from_heap(header_buffer);
+	if (packet_struct != NULL) {
+		packet__free_unpacked(packet_struct, &protobuf_c_allocators);
 	}
 
-	if (status.status != SUCCESS) {
-		buffer_clear(header);
-		buffer_clear(message_nonce);
+	on_error {
+		if (axolotl_header != NULL) {
+			buffer_destroy_from_heap_and_null_if_valid(*axolotl_header);
+		}
 	}
 
 	return status;
 }
 
-/*
- * Decrypt the message inside a packet.
- * (only do this if the packet metadata is already
- * verified)
- *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
- */
 return_status packet_decrypt_message(
+		//output
+		buffer_t ** const message,
+		//inputs
 		const buffer_t * const packet,
-		buffer_t * const message, //This buffer should be as large as the packet
-		const buffer_t * const message_nonce,
-		const buffer_t * const message_key) { //MESSAGE_KEY_SIZE
-
+		const buffer_t * const message_key
+		) {
 	return_status status = return_status_init();
 
-	//check buffer sizes
-	if ((message_nonce->content_length != MESSAGE_NONCE_SIZE)
-			|| (message_key->content_length != MESSAGE_KEY_SIZE)) {
-		throw(INCORRECT_BUFFER_SIZE, "Incorrect message key size or message nonce size.");
-	}
-	//set message length to 0
-	message->content_length = 0;
+	Packet *packet_struct = NULL;
 
-	//get the header length
-	unsigned char packet_type;
-	unsigned char current_protocol_version;
-	unsigned char highest_supported_protocol_version;
-	unsigned char purported_header_length;
-	int status_int = 0;
-	status = packet_get_metadata_without_verification(
-			packet,
-			&packet_type,
-			&current_protocol_version,
-			&highest_supported_protocol_version,
-			&purported_header_length,
-			NULL,
-			NULL,
-			NULL);
-	throw_on_error(DATA_FETCH_ERROR, "Failed to get metadata.");
+	buffer_t *padded_message = NULL;
 
-	off_t header_nonce_offset = 3 + (packet_type == PREKEY_MESSAGE) * 3 * PUBLIC_KEY_SIZE;
-	//length of message and padding
-	const size_t purported_plaintext_length = packet->content_length - header_nonce_offset - purported_header_length - HEADER_NONCE_SIZE - MESSAGE_NONCE_SIZE- crypto_secretbox_MACBYTES - crypto_aead_chacha20poly1305_ABYTES;
-	if (purported_plaintext_length >= packet->content_length) {
-		throw(INVALID_VALUE, "Purported plaintext length is longer than the packet length.");
+	//check input
+	if ((message == NULL)
+		|| (packet == NULL)
+		|| (message_key == NULL) || (message_key->content_length != MESSAGE_KEY_SIZE)) {
+		throw(INVALID_INPUT, "Invalid input to packet_decrypt_message.")
 	}
 
-	if (purported_plaintext_length > message->buffer_length) {
-		throw(INVALID_VALUE, "Purported plaintext length is longer than the message buffer length.");
+	status = packet_unpack(&packet_struct, packet);
+	throw_on_error(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
+
+	if (packet_struct->encrypted_message.len < crypto_secretbox_MACBYTES) {
+		throw(INCORRECT_BUFFER_SIZE, "The ciphertext of the message is too short.");
 	}
 
-	//buffer pointing to the message ciphertext
-	buffer_create_with_existing_array(message_ciphertext, packet->content + (packet->content_length - purported_plaintext_length) - crypto_secretbox_MACBYTES, purported_plaintext_length + crypto_secretbox_MACBYTES);
+	const size_t padded_message_length = packet_struct->encrypted_message.len - crypto_secretbox_MACBYTES;
+	if (padded_message_length < 255) {
+		throw(INCORRECT_BUFFER_SIZE, "The padded message is too short.")
+	}
+	padded_message = buffer_create_on_heap(padded_message_length, padded_message_length);
+	throw_on_failed_alloc(padded_message);
 
-	//decrypt the message (padding included)
-	buffer_t *plaintext = buffer_create_on_heap(purported_plaintext_length, purported_plaintext_length);
-	status_int = crypto_secretbox_open_easy(
-			plaintext->content,
-			message_ciphertext->content,
-			message_ciphertext->content_length,
-			message_nonce->content,
+	int status_int = crypto_secretbox_open_easy(
+			padded_message->content,
+			packet_struct->encrypted_message.data,
+			packet_struct->encrypted_message.len,
+			packet_struct->packet_header->message_nonce.data,
 			message_key->content);
 	if (status_int != 0) {
-		buffer_destroy_from_heap(plaintext);
 		throw(DECRYPT_ERROR, "Failed to decrypt message.");
 	}
 
-	//get amount of padding from last byte (pkcs7)
-	const unsigned char padding = plaintext->content[purported_plaintext_length - 1];
-	if (padding > purported_plaintext_length) { //check if padding is valid
-		buffer_destroy_from_heap(plaintext);
-		throw(INVALID_VALUE, "Padding length is longer than the purported plaintext length.");
+	//get the padding (last byte)
+	unsigned char padding = padded_message->content[padded_message->content_length - 1];
+	if (padding > padded_message->content_length) {
+		throw(INCORRECT_BUFFER_SIZE, "The padded message is too short.")
 	}
 
-	//copy the message from the plaintext
-	status_int = buffer_copy(message, 0, plaintext, 0, purported_plaintext_length - padding);
-	buffer_destroy_from_heap(plaintext);
-	if (status_int != 0) {
-		buffer_clear(message);
-		throw(BUFFER_ERROR, "Failed to copy message from the plaintext.");
+	//extract the message
+	const size_t message_length = padded_message->content_length - padding;
+	*message = buffer_create_on_heap(message_length, 0);
+	throw_on_failed_alloc(*message);
+	//TODO this doesn't need to be copied, setting the length should be enough
+	if (buffer_copy(*message, 0, padded_message, 0, message_length) != 0) {
+		throw(BUFFER_ERROR, "Failed to copy message from padded message.");
 	}
 
 cleanup:
+	if (packet_struct != NULL) {
+		packet__free_unpacked(packet_struct, &protobuf_c_allocators);
+	}
+
+	buffer_destroy_from_heap_and_null_if_valid(padded_message);
+
+	on_error {
+		if (message != NULL) {
+			buffer_destroy_from_heap_and_null_if_valid(*message);
+		}
+	}
+
 	return status;
 }

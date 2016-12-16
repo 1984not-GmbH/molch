@@ -24,6 +24,7 @@
 #include <sodium.h>
 
 #include "../lib/key-derivation.h"
+#include "../lib/constants.h"
 #include "utils.h"
 #include "common.h"
 #include "tracing.h"
@@ -43,10 +44,10 @@ int main(void) {
 	buffer_t *previous_root_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *alice_root_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *alice_chain_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	buffer_t *alice_header_key = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *alice_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	buffer_t *bob_root_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	buffer_t *bob_chain_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	buffer_t *bob_header_key = buffer_create_on_heap(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
+	buffer_t *bob_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 
 	//create Alice's keypair
 	buffer_create_from_string(alice_string, "Alice");
@@ -143,21 +144,21 @@ int main(void) {
 	}
 
 cleanup:
-	buffer_destroy_from_heap(alice_public_ephemeral);
-	buffer_destroy_from_heap(alice_private_ephemeral);
-	buffer_destroy_from_heap(bob_public_ephemeral);
-	buffer_destroy_from_heap(bob_private_ephemeral);
-	buffer_destroy_from_heap(previous_root_key);
-	buffer_destroy_from_heap(alice_root_key);
-	buffer_destroy_from_heap(alice_chain_key);
-	buffer_destroy_from_heap(alice_header_key);
-	buffer_destroy_from_heap(bob_root_key);
-	buffer_destroy_from_heap(bob_chain_key);
-	buffer_destroy_from_heap(bob_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(alice_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(alice_private_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(bob_public_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(bob_private_ephemeral);
+	buffer_destroy_from_heap_and_null_if_valid(previous_root_key);
+	buffer_destroy_from_heap_and_null_if_valid(alice_root_key);
+	buffer_destroy_from_heap_and_null_if_valid(alice_chain_key);
+	buffer_destroy_from_heap_and_null_if_valid(alice_header_key);
+	buffer_destroy_from_heap_and_null_if_valid(bob_root_key);
+	buffer_destroy_from_heap_and_null_if_valid(bob_chain_key);
+	buffer_destroy_from_heap_and_null_if_valid(bob_header_key);
 
-	on_error(
+	on_error {
 		print_errors(&status);
-	);
+	}
 	return_status_destroy_errors(&status);
 
 	return status.status;

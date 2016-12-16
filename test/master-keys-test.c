@@ -25,9 +25,197 @@
 
 #include "../lib/master-keys.h"
 #include "../lib/constants.h"
-#include "../lib/json.h"
 #include "utils.h"
 #include "tracing.h"
+
+return_status protobuf_export(
+		master_keys * const keys,
+		buffer_t ** const public_signing_key_buffer,
+		buffer_t ** const private_signing_key_buffer,
+		buffer_t ** const public_identity_key_buffer,
+		buffer_t ** const private_identity_key_buffer) __attribute__((warn_unused_result));
+return_status protobuf_export(
+		master_keys * const keys,
+		buffer_t ** const public_signing_key_buffer,
+		buffer_t ** const private_signing_key_buffer,
+		buffer_t ** const public_identity_key_buffer,
+		buffer_t ** const private_identity_key_buffer) {
+	return_status status = return_status_init();
+
+	Key * public_signing_key = NULL;
+	Key * private_signing_key = NULL;
+	Key * public_identity_key = NULL;
+	Key * private_identity_key = NULL;
+
+	//check input
+	if ((keys == NULL)
+			|| (public_signing_key_buffer == NULL) || (private_signing_key_buffer == NULL)
+			|| (public_identity_key_buffer == NULL) || (private_identity_key_buffer == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to protobuf_export.");
+	}
+
+	status = master_keys_export(
+			keys,
+			&public_signing_key,
+			&private_signing_key,
+			&public_identity_key,
+			&private_identity_key);
+	throw_on_error(EXPORT_ERROR, "Failed to export master keys.");
+
+	//export the keys
+	//public signing key
+	size_t public_signing_key_proto_size = key__get_packed_size(public_signing_key);
+	*public_signing_key_buffer = buffer_create_on_heap(public_signing_key_proto_size, 0);
+	(*public_signing_key_buffer)->content_length = key__pack(public_signing_key, (*public_signing_key_buffer)->content);
+	if ((*public_signing_key_buffer)->content_length != public_signing_key_proto_size) {
+		throw(EXPORT_ERROR, "Failed to export public signing key.");
+	}
+
+	//private signing key
+	size_t private_signing_key_proto_size = key__get_packed_size(private_signing_key);
+	*private_signing_key_buffer = buffer_create_on_heap(private_signing_key_proto_size, 0);
+	(*private_signing_key_buffer)->content_length = key__pack(private_signing_key, (*private_signing_key_buffer)->content);
+	if ((*private_signing_key_buffer)->content_length != private_signing_key_proto_size) {
+		throw(EXPORT_ERROR, "Failed to export private signing key.");
+	}
+
+	//public identity key
+	size_t public_identity_key_proto_size = key__get_packed_size(public_identity_key);
+	*public_identity_key_buffer = buffer_create_on_heap(public_identity_key_proto_size, 0);
+	(*public_identity_key_buffer)->content_length = key__pack(public_identity_key, (*public_identity_key_buffer)->content);
+	if ((*public_identity_key_buffer)->content_length != public_identity_key_proto_size) {
+		throw(EXPORT_ERROR, "Failed to export public identity key.");
+	}
+
+	//private identity key
+	size_t private_identity_key_proto_size = key__get_packed_size(private_identity_key);
+	*private_identity_key_buffer = buffer_create_on_heap(private_identity_key_proto_size, 0);
+	(*private_identity_key_buffer)->content_length = key__pack(private_identity_key, (*private_identity_key_buffer)->content);
+	if ((*private_identity_key_buffer)->content_length != private_identity_key_proto_size) {
+		throw(EXPORT_ERROR, "Failed to export private identity key.");
+	}
+
+cleanup:
+	if (public_signing_key != NULL) {
+		key__free_unpacked(public_signing_key, &protobuf_c_allocators);
+		public_signing_key = NULL;
+	}
+
+	if (private_signing_key != NULL) {
+		key__free_unpacked(private_signing_key, &protobuf_c_allocators);
+		private_signing_key = NULL;
+	}
+
+	if (public_identity_key != NULL) {
+		key__free_unpacked(public_identity_key, &protobuf_c_allocators);
+		public_identity_key = NULL;
+	}
+
+	if (private_identity_key != NULL) {
+		key__free_unpacked(private_identity_key, &protobuf_c_allocators);
+		private_identity_key = NULL;
+	}
+
+	//cleanup of buffers is done in the main function
+	return status;
+}
+
+
+return_status protobuf_import(
+		master_keys ** const keys,
+		const buffer_t * const public_signing_key_buffer,
+		const buffer_t * const private_signing_key_buffer,
+		const buffer_t * const public_identity_key_buffer,
+		const buffer_t * const private_identity_key_buffer) __attribute__((warn_unused_result));
+return_status protobuf_import(
+		master_keys ** const keys,
+		const buffer_t * const public_signing_key_buffer,
+		const buffer_t * const private_signing_key_buffer,
+		const buffer_t * const public_identity_key_buffer,
+		const buffer_t * const private_identity_key_buffer) {
+	return_status status = return_status_init();
+
+	Key *public_signing_key = NULL;
+	Key *private_signing_key = NULL;
+	Key *public_identity_key = NULL;
+	Key *private_identity_key = NULL;
+
+	//check inputs
+	if ((keys == NULL)
+			|| (public_signing_key_buffer == NULL)
+			|| (private_signing_key_buffer == NULL)
+			|| (public_identity_key_buffer == NULL)
+			|| (private_identity_key_buffer == NULL)) {
+		throw(INVALID_INPUT, "Invalid input to protobuf_import.");
+	}
+
+	//unpack the protobuf-c buffers
+	public_signing_key = key__unpack(
+		&protobuf_c_allocators,
+		public_signing_key_buffer->content_length,
+		public_signing_key_buffer->content);
+	if (public_signing_key == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack public signing key from protobuf.");
+	}
+	private_signing_key = key__unpack(
+		&protobuf_c_allocators,
+		private_signing_key_buffer->content_length,
+		private_signing_key_buffer->content);
+	if (private_signing_key == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack private signing key from protobuf.");
+	}
+	public_identity_key = key__unpack(
+		&protobuf_c_allocators,
+		public_identity_key_buffer->content_length,
+		public_identity_key_buffer->content);
+	if (public_identity_key == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack public identity key from protobuf.");
+	}
+	private_identity_key = key__unpack(
+		&protobuf_c_allocators,
+		private_identity_key_buffer->content_length,
+		private_identity_key_buffer->content);
+	if (private_identity_key == NULL) {
+		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack private identity key from protobuf.");
+	}
+
+	status = master_keys_import(
+		keys,
+		public_signing_key,
+		private_signing_key,
+		public_identity_key,
+		private_identity_key);
+	throw_on_error(IMPORT_ERROR, "Failed to import master keys.")
+cleanup:
+	on_error {
+		if (keys != NULL) {
+			sodium_free_and_null_if_valid(*keys);
+		}
+	}
+
+	//free the protobuf-c structs
+	if (public_signing_key != NULL) {
+		key__free_unpacked(public_signing_key, &protobuf_c_allocators);
+		public_signing_key = NULL;
+	}
+	if (private_signing_key != NULL) {
+		key__free_unpacked(private_signing_key, &protobuf_c_allocators);
+		private_signing_key = NULL;
+	}
+	if (public_identity_key != NULL) {
+		key__free_unpacked(public_identity_key, &protobuf_c_allocators);
+		public_identity_key = NULL;
+	}
+	if (private_identity_key != NULL) {
+		key__free_unpacked(private_identity_key, &protobuf_c_allocators);
+		private_identity_key = NULL;
+	}
+
+	//buffers will be freed in main
+
+	return status;
+}
+
 
 int main(void) {
 	if (sodium_init() == -1) {
@@ -46,6 +234,17 @@ int main(void) {
 
 	buffer_t *signed_data = buffer_create_on_heap(100, 0);
 	buffer_t *unwrapped_data = buffer_create_on_heap(100, 0);
+
+	//export buffers
+	buffer_t *protobuf_export_public_signing_key = NULL;
+	buffer_t *protobuf_export_private_signing_key = NULL;
+	buffer_t *protobuf_export_public_identity_key = NULL;
+	buffer_t *protobuf_export_private_identity_key = NULL;
+	//second export
+	buffer_t *protobuf_second_export_public_signing_key = NULL;
+	buffer_t *protobuf_second_export_private_signing_key = NULL;
+	buffer_t *protobuf_second_export_public_identity_key = NULL;
+	buffer_t *protobuf_second_export_private_identity_key = NULL;
 
 	int status_int = 0;
 
@@ -143,58 +342,91 @@ int main(void) {
 
 	printf("\nSignature was successfully verified!\n");
 
-	//Test JSON export
-	JSON_EXPORT(json_string1, 10000, 500, true, spiced_master_keys, master_keys_json_export);
-	if (json_string1 == NULL) {
-		throw(EXPORT_ERROR, "Failed to export to JSON.");
-	}
-	printf("JSON:\n");
-	printf("%.*s\n", (int)json_string1->content_length, (char*)json_string1->content);
+	//Test Export to Protobuf-C
+	printf("Export to Protobuf-C:\n");
 
-	//import it again
-	JSON_IMPORT(imported_master_keys, 10000, json_string1, master_keys_json_import);
-	if (imported_master_keys == NULL) {
-		buffer_destroy_from_heap(json_string1);
-		throw(IMPORT_ERROR, "Failed to import from JSON.")
-	}
-	printf("Successfully imported from JSON!\n");
+	status = protobuf_export(
+		spiced_master_keys,
+		&protobuf_export_public_signing_key,
+		&protobuf_export_private_signing_key,
+		&protobuf_export_public_identity_key,
+		&protobuf_export_private_identity_key);
+	throw_on_error(EXPORT_ERROR, "Failed to export spiced master keys.");
 
-	//export it again
-	JSON_EXPORT(exported_json_string, 10000, 500, true, imported_master_keys, master_keys_json_export);
-	if (exported_json_string == NULL) {
-		buffer_destroy_from_heap(json_string1);
-		throw(EXPORT_ERROR, "Failed to export imported back to JSON.");
-	}
-	printf("Successfully exported back to JSON!\n");
+	printf("Public signing key:\n");
+	print_hex(protobuf_export_public_signing_key);
+	puts("\n\n");
 
-	//compare them
-	if (buffer_compare(json_string1, exported_json_string) != 0) {
-		buffer_destroy_from_heap(json_string1);
-		buffer_destroy_from_heap(exported_json_string);
-		throw(INCORRECT_DATA, "Object imported from JSON was incorrect.");
-	}
-	printf("Imported Object matches!\n");
+	printf("Private signing key:\n");
+	print_hex(protobuf_export_private_signing_key);
+	puts("\n\n");
 
-	buffer_destroy_from_heap(json_string1);
-	buffer_destroy_from_heap(exported_json_string);
+	printf("Public identity key:\n");
+	print_hex(protobuf_export_public_identity_key);
+	puts("\n\n");
+
+	printf("Private identity key:\n");
+	print_hex(protobuf_export_private_identity_key);
+	puts("\n\n");
+
+	sodium_free_and_null_if_valid(spiced_master_keys);
+
+	//import again
+	printf("Import from Protobuf-C:\n");
+	status = protobuf_import(
+		&spiced_master_keys,
+		protobuf_export_public_signing_key,
+		protobuf_export_private_signing_key,
+		protobuf_export_public_identity_key,
+		protobuf_export_private_identity_key);
+	throw_on_error(IMPORT_ERROR, "Failed to import from Protobuf-C.");
+
+	//export again
+	status = protobuf_export(
+		spiced_master_keys,
+		&protobuf_second_export_public_signing_key,
+		&protobuf_second_export_private_signing_key,
+		&protobuf_second_export_public_identity_key,
+		&protobuf_second_export_private_identity_key);
+	throw_on_error(EXPORT_ERROR, "Failed to export spiced master keys.");
+
+	//now compare
+	if (buffer_compare(protobuf_export_public_signing_key, protobuf_second_export_public_signing_key) != 0) {
+		throw(INCORRECT_DATA, "The public signing keys do not match.");
+	}
+	if (buffer_compare(protobuf_export_private_signing_key, protobuf_second_export_private_signing_key) != 0) {
+		throw(INCORRECT_DATA, "The private signing keys do not match.");
+	}
+	if (buffer_compare(protobuf_export_public_identity_key, protobuf_second_export_public_identity_key) != 0) {
+		throw(INCORRECT_DATA, "The public identity keys do not match.");
+	}
+	if (buffer_compare(protobuf_export_private_identity_key, protobuf_second_export_private_identity_key) != 0) {
+		throw(INCORRECT_DATA, "The private identity keys do not match.");
+	}
+
+	printf("Successfully exported to Protobuf-C and imported again.");
 
 cleanup:
-	if (unspiced_master_keys != NULL) {
-		sodium_free(unspiced_master_keys);
-	}
-	if (spiced_master_keys != NULL) {
-		sodium_free(spiced_master_keys);
-	}
-	if (imported_master_keys != NULL) {
-		sodium_free(imported_master_keys);
-	}
+	sodium_free_and_null_if_valid(unspiced_master_keys);
+	sodium_free_and_null_if_valid(spiced_master_keys);
+	sodium_free_and_null_if_valid(imported_master_keys);
 
-	buffer_destroy_from_heap(public_signing_key);
-	buffer_destroy_from_heap(public_identity_key);
-	buffer_destroy_from_heap(signed_data);
-	buffer_destroy_from_heap(unwrapped_data);
+	buffer_destroy_from_heap_and_null_if_valid(public_signing_key);
+	buffer_destroy_from_heap_and_null_if_valid(public_identity_key);
+	buffer_destroy_from_heap_and_null_if_valid(signed_data);
+	buffer_destroy_from_heap_and_null_if_valid(unwrapped_data);
 
-	if (status.status != SUCCESS) {
+	//protobuf export buffers
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_export_public_signing_key);
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_export_private_signing_key);
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_export_public_identity_key);
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_export_private_identity_key);
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_public_signing_key);
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_private_signing_key);
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_public_identity_key);
+	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_private_identity_key);
+
+	on_error {
 		print_errors(&status);
 	}
 	return_status_destroy_errors(&status);

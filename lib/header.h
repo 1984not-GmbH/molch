@@ -19,40 +19,64 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "../buffer/buffer.h"
-#include "return-status.h"
+/*! \file
+ * This provides functions for serializing and deserializing Axolotl-Headers.
+ * They contain current and previous message numbers as well as the senders
+ * public ephemeral key.
+ *
+ * The header is constructed as described in header.proto.
+ */
 
 #ifndef LIB_HEADER_H
 #define LIB_HEADER_H
 
-/*
- * Create a new header.
+#include "common.h"
+#include "../buffer/buffer.h"
+
+/*!
+ * Constructs an Axolotl-Header into a buffer.
  *
- * The header looks like follows:
- * header (40) = {
- *   public_ephemeral_key (PUBLIC_KEY_SIZE = 32),
- *   message_counter (4)
- *   previous_message_counter(4)
- * }
+ * \param header
+ *   Output, the constructed header.
+ * \param our_public_ephemeral
+ *   The public ephemeral key of the sender (ours). Length has to be PUBLIC_KEY_SIZE.
+ * \param message_number
+ *   The number of the message in the current message chain.
+ * \param previous_message_number
+ *   The number of messages in the previous message chain.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
+ * \return
+ *   Error status, destroy with return_status_destroy_errors if an error occurs.
  */
 return_status header_construct(
-		buffer_t * const header, //PUBLIC_KEY_SIZE + 8, output
+		//output
+		buffer_t ** const header,
+		//inputs
 		const buffer_t * const our_public_ephemeral, //PUBLIC_KEY_SIZE
-		const uint32_t message_counter,
-		const uint32_t previous_message_counter) __attribute__((warn_unused_result));
+		const uint32_t message_number,
+		const uint32_t previous_message_number) __attribute__((warn_unused_result));
 
-/*
- * Get the content of the header.
+/*!
+ * Extracts the data from an Axolotl-Header.
  *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
+ * \param their_public_ephemeral
+ *   The public ephemeral key of the sender (theirs). Length has to be PUBLIC_KEY_SIZE.
+ * \param message_number
+ *   The number of the message in the current message chain.
+ * \param previous_message_number
+ *   The number of the messages in the previous message chain.
+ * \param header
+ *   A buffer containing the Axolotl-Header.
+ *
+ * \return
+ *   Error status, destroy with return_status_destroy_errors if an error occurs.
  */
 return_status header_extract(
-		const buffer_t * const header, //PUBLIC_KEY_SIZE+ 8, input
-		buffer_t * const their_public_ephemeral, //PUBLIC_KEY_SIZE, output
-		uint32_t * const message_counter,
-		uint32_t * const previous_message_counter) __attribute__((warn_unused_result));
+		//outputs
+		buffer_t * const their_public_ephemeral, //PUBLIC_KEY_SIZE
+		uint32_t * const message_number,
+		uint32_t * const previous_message_number,
+		//intput
+		const buffer_t * const header) __attribute__((warn_unused_result));
+
 #endif

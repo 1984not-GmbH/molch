@@ -20,7 +20,7 @@
  */
 
 #include "../buffer/buffer.h"
-#include "return-status.h"
+#include "common.h"
 
 #ifndef LIB_SPICED_RANDOM_H
 #define LIB_SPICED_RANDOM_H

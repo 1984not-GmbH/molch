@@ -42,7 +42,8 @@ return_status derive_key(
 	return_status status = return_status_init();
 
 	//create a salt that contains the number of the subkey
-	buffer_t * salt = buffer_create_on_heap(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
+	buffer_t *salt = buffer_create_on_heap(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
+	throw_on_failed_alloc(salt);
 	buffer_clear(salt); //fill with zeroes
 	salt->content_length = crypto_generichash_blake2b_SALTBYTES;
 
@@ -82,12 +83,12 @@ return_status derive_key(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		if (derived_key != NULL) {
 			derived_key->content_length = 0;
 		}
-	);
-	buffer_destroy_from_heap(salt);
+	}
+	buffer_destroy_from_heap_and_null_if_valid(salt);
 
 	return status;
 }
@@ -147,8 +148,12 @@ return_status derive_root_next_header_and_chain_keys(
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *diffie_hellman_secret = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, 0);
-	buffer_t *derivation_key = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	buffer_t *diffie_hellman_secret = NULL;
+	buffer_t *derivation_key = NULL;
+	diffie_hellman_secret = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, 0);
+	throw_on_failed_alloc(diffie_hellman_secret);
+	derivation_key = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	throw_on_failed_alloc(derivation_key);
 
 	//check input
 	if ((root_key == NULL) || (root_key->buffer_length < ROOT_KEY_SIZE)
@@ -210,7 +215,7 @@ return_status derive_root_next_header_and_chain_keys(
 	throw_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key from derivation key.");
 
 cleanup:
-	on_error(
+	on_error {
 		if (root_key != NULL) {
 			buffer_clear(root_key);
 			root_key->content_length = 0;
@@ -223,10 +228,10 @@ cleanup:
 			buffer_clear(chain_key);
 			chain_key->content_length = 0;
 		}
-	);
+	}
 
-	buffer_destroy_from_heap(diffie_hellman_secret);
-	buffer_destroy_from_heap(derivation_key);
+	buffer_destroy_from_heap_and_null_if_valid(diffie_hellman_secret);
+	buffer_destroy_from_heap_and_null_if_valid(derivation_key);
 
 	return status;
 }
@@ -254,6 +259,7 @@ return_status derive_initial_root_chain_and_header_keys(
 	return_status status = return_status_init();
 
 	buffer_t *master_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	throw_on_failed_alloc(master_key);
 
 	//check buffer sizes
 	if ((root_key->buffer_length < ROOT_KEY_SIZE)
@@ -382,7 +388,7 @@ return_status derive_initial_root_chain_and_header_keys(
 	}
 
 cleanup:
-	on_error(
+	on_error {
 		//clear all keys to prevent misuse
 		buffer_clear(root_key);
 		root_key->content_length = 0;
@@ -398,9 +404,9 @@ cleanup:
 		next_send_header_key->content_length = 0;
 		buffer_clear(next_receive_header_key);
 		next_receive_header_key->content_length = 0;
-	);
+	}
 
-	buffer_destroy_from_heap(master_key);
+	buffer_destroy_from_heap_and_null_if_valid(master_key);
 
 	return status;
 }

@@ -1,0 +1,9 @@
+syntax = "proto2";
+import "key.proto";
+
+message Prekey {
+	required Key private_key = 1;
+	//optional because it can be calculated from the private key
+	optional Key public_key = 2;
+	optional uint64 expiration_time = 3;
+}

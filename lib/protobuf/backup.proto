@@ -1,0 +1,6 @@
+syntax = "proto2";
+import "user.proto";
+
+message Backup {
+	repeated User users = 1;
+}
