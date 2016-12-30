@@ -944,19 +944,14 @@ void molch_end_conversation(
 
 	//find the conversation
 	conversation_t *conversation = NULL;
-	status = find_conversation(&conversation, conversation_id, NULL, NULL);
+	user_store_node *user = NULL;
+	status = find_conversation(&conversation, conversation_id, NULL, &user);
 	throw_on_error(NOT_FOUND, "Couldn't find converstion.");
 
 	if (conversation == NULL) {
 		return;
 	}
-	//find the corresponding user
-	user_store_node *user = NULL;
-	status = user_store_find_node(&user, users, conversation->ratchet->our_public_identity);
-	on_error {
-		return_status_destroy_errors(&status);
-		return;
-	}
+
 	conversation_store_remove_by_id(user->conversations, conversation->id);
 
 	if (backup != NULL) {
