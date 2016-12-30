@@ -305,6 +305,7 @@ int main(void) {
 	//create a new send conversation (alice sends to bob)
 	buffer_create_from_string(alice_send_message, "Hi Bob. Alice here!");
 	size_t alice_send_packet_length;
+	printf("BEFORE molch_start_send_conversation\n");
 	status = molch_start_send_conversation(
 			alice_conversation->content,
 			alice_conversation->content_length,
@@ -321,9 +322,10 @@ int main(void) {
 			NULL,
 			NULL);
 	throw_on_error(CREATION_ERROR, "Failed to start send conversation.");
+	printf("AFTER molch_start_send_conversation\n");
 
 	//check conversation export
-	size_t number_of_conversations = 0;;
+	size_t number_of_conversations = 0;
 	size_t conversation_list_length = 0;
 	unsigned char *conversation_list = NULL;
 	status = molch_list_conversations(
@@ -551,8 +553,27 @@ int main(void) {
 	}
 
 	//destroy the conversations
-	molch_end_conversation(alice_conversation->content, alice_conversation->content_length, NULL, NULL);
+	status = molch_end_conversation(alice_conversation->content, alice_conversation->content_length, NULL, NULL);
+	throw_on_error(REMOVE_ERROR, "Failed to end Alice' conversation.");
 	molch_end_conversation(bob_conversation->content, bob_conversation->content_length, NULL, NULL);
+	throw_on_error(REMOVE_ERROR, "Failed to end Bob's conversation.");
+
+	//check if conversation has ended
+	number_of_conversations = 0;
+	conversation_list_length = 0;
+	status = molch_list_conversations(
+			&conversation_list,
+			&conversation_list_length,
+			&number_of_conversations,
+			alice_public_identity->content,
+			alice_public_identity->content_length);
+	throw_on_error(GENERIC_ERROR, "Failed to list conversations.");
+	if ((number_of_conversations != 0) || (conversation_list != NULL)) {
+		free_and_null_if_valid(conversation_list);
+		throw(GENERIC_ERROR, "Failed to end conversation.");
+	}
+	free_and_null_if_valid(conversation_list);
+	printf("Alice' conversation has ended successfully.\n");
 
 	//destroy the users again
 	molch_destroy_all_users();

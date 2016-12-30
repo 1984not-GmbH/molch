@@ -631,11 +631,17 @@ function molch.conversation:destroy()
 	local raw_backup = molch_interface.create_ucstring_pointer()
 	local raw_backup_length = molch_interface.size_t()
 
-	molch_interface.molch_end_conversation(
+	local status = molch_interface.molch_end_conversation(
 		convert_to_c_string(self.id),
 		#self.id,
 		raw_backup,
 		raw_backup_length)
+	local status_type = molch_interface.get_status(status)
+	if status_type ~= molch_interface.SUCCESS then
+		molch_interface.free(raw_message)
+		molch_interface.free(raw_backup)
+		error(molch.print_errors(status))
+	end
 
 	raw_backup = copy_callee_allocated_string(raw_backup, raw_backup_length)
 

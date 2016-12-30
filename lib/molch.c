@@ -919,17 +919,12 @@ cleanup:
 	return status;
 }
 
-/*
- * Destroy a conversation.
- *
- * This will almost certainly be changed later on!!!!!!
- */
-void molch_end_conversation(
+return_status molch_end_conversation(
 		//input
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length,
 		//optional output (can be NULL)
-		unsigned char ** const backup, //exports the entire library state, free after use, check if NULL before use!
+		unsigned char ** const backup,
 		size_t * const backup_length
 		) {
 	return_status status = return_status_init();
@@ -949,7 +944,7 @@ void molch_end_conversation(
 	throw_on_error(NOT_FOUND, "Couldn't find converstion.");
 
 	if (conversation == NULL) {
-		return;
+		throw(NOT_FOUND, "Couldn'nt find conversation.");
 	}
 
 	conversation_store_remove_by_id(user->conversations, conversation->id);
@@ -966,9 +961,8 @@ void molch_end_conversation(
 	}
 
 cleanup:
-	return_status_destroy_errors(&status);
 
-	return;
+	return status;
 }
 
 /*
