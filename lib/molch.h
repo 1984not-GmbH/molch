@@ -223,14 +223,17 @@ return_status molch_decrypt_message(
 /*
  * End a conversation.
  *
- * This will almost certainly be changed later on!!!!!!
+ * \param conversation_id Id of the conversation to end.After
+ * \param conversation_id_length Length of the buffer containing the conversation id.After
+ * \param backup Backup of the entire library state. Free after use. Check if NULL before use.
+ * \param backup_length Length of the exported backup.
  */
-void molch_end_conversation(
+return_status molch_end_conversation(
 		//input
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length,
 		//optional output (can be NULL)
-		unsigned char ** const backup, //exports the entire library state, free after use, check if NULL before use!
+		unsigned char ** const backup,
 		size_t * const backup_length);
 
 /*
