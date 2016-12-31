@@ -708,7 +708,8 @@ cleanup:
 return_status find_conversation(
 		conversation_t ** const conversation, //output
 		const unsigned char * const conversation_id,
-		conversation_store ** const conversation_store //optional, can be NULL, the conversation store where the conversation is in
+		conversation_store ** const conversation_store, //optional, can be NULL, the conversation store where the conversation is in
+		user_store_node ** const user //optional, can be NULL, the user that the conversation belongs to
 		) {
 	return_status status = return_status_init();
 
@@ -726,7 +727,7 @@ return_status find_conversation(
 		status = conversation_store_find_node(&conversation_node, node->conversations, conversation_id_buffer);
 		throw_on_error(GENERIC_ERROR, "Failure while searching for node.");
 		if (conversation_node != NULL) {
-			//found the conversation where searching for
+			//found the conversation we're searching for
 			break;
 		}
 		user_store_node *next = node->next;
@@ -735,6 +736,11 @@ return_status find_conversation(
 
 	if (conversation_node == NULL) {
 		goto cleanup;
+	}
+
+	//return the containing user
+	if ((user != NULL) && (node != NULL)) {
+		*user = node;
 	}
 
 	if (conversation_store != NULL) {
@@ -792,7 +798,7 @@ return_status molch_encrypt_message(
 	}
 
 	//find the conversation
-	status = find_conversation(&conversation, conversation_id, NULL);
+	status = find_conversation(&conversation, conversation_id, NULL, NULL);
 	throw_on_error(GENERIC_ERROR, "Error while searching for conversation.");
 	if (conversation == NULL) {
 		throw(NOT_FOUND, "Failed to find a conversation for the given ID.");
@@ -874,7 +880,7 @@ return_status molch_decrypt_message(
 	}
 
 	//find the conversation
-	status = find_conversation(&conversation, conversation_id, NULL);
+	status = find_conversation(&conversation, conversation_id, NULL, NULL);
 	throw_on_error(GENERIC_ERROR, "Error while searching for conversation.");
 	if (conversation == NULL) {
 		throw(NOT_FOUND, "Failed to find conversation with the given ID.");
@@ -913,17 +919,12 @@ cleanup:
 	return status;
 }
 
-/*
- * Destroy a conversation.
- *
- * This will almost certainly be changed later on!!!!!!
- */
-void molch_end_conversation(
+return_status molch_end_conversation(
 		//input
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length,
 		//optional output (can be NULL)
-		unsigned char ** const backup, //exports the entire library state, free after use, check if NULL before use!
+		unsigned char ** const backup,
 		size_t * const backup_length
 		) {
 	return_status status = return_status_init();
@@ -938,19 +939,14 @@ void molch_end_conversation(
 
 	//find the conversation
 	conversation_t *conversation = NULL;
-	status = find_conversation(&conversation, conversation_id, NULL);
+	user_store_node *user = NULL;
+	status = find_conversation(&conversation, conversation_id, NULL, &user);
 	throw_on_error(NOT_FOUND, "Couldn't find converstion.");
 
 	if (conversation == NULL) {
-		return;
+		throw(NOT_FOUND, "Couldn'nt find conversation.");
 	}
-	//find the corresponding user
-	user_store_node *user = NULL;
-	status = user_store_find_node(&user, users, conversation->ratchet->our_public_identity);
-	on_error {
-		return_status_destroy_errors(&status);
-		return;
-	}
+
 	conversation_store_remove_by_id(user->conversations, conversation->id);
 
 	if (backup != NULL) {
@@ -965,9 +961,8 @@ void molch_end_conversation(
 	}
 
 cleanup:
-	return_status_destroy_errors(&status);
 
-	return;
+	return status;
 }
 
 /*
@@ -1106,7 +1101,7 @@ return_status molch_conversation_export(
 
 	//find the conversation
 	conversation_t *conversation = NULL;
-	status = find_conversation(&conversation, conversation_id, NULL);
+	status = find_conversation(&conversation, conversation_id, NULL, NULL);
 	throw_on_error(NOT_FOUND, "Failed to find the conversation.");
 
 	//export the conversation
@@ -1270,7 +1265,7 @@ return_status molch_conversation_import(
 
 	conversation_store *containing_store = NULL;
 	conversation_t *existing_conversation = NULL;
-	status = find_conversation(&existing_conversation, conversation->id->content, &containing_store);
+	status = find_conversation(&existing_conversation, conversation->id->content, &containing_store, NULL);
 	throw_on_error(NOT_FOUND, "Imported conversation has to exist, but it doesn't.");
 
 	status = conversation_store_add(containing_store, conversation);
