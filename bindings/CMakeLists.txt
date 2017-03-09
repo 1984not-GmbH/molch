@@ -23,6 +23,11 @@ if(GENERATE_LUA_BINDINGS AND (NOT APPLE))
     if (werror_found)
         target_compile_options(molch-interface PRIVATE "-Wno-error")
     endif()
+    # Disable -Wcast-qual for lua-bindings
+    list(FIND custom_compiler_flags "-Wcast-qual" wcast_qual_found)
+    if (wcast_qual_found)
+        target_compile_options(molch-interface PRIVATE "-Wno-cast-qual")
+    endif()
 
     set(BINDING_FILES "${CMAKE_CURRENT_BINARY_DIR}/molch.lua")
 

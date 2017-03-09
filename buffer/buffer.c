@@ -74,6 +74,23 @@ buffer_t* buffer_init_with_pointer(
 	return buffer;
 }
 
+buffer_t* buffer_init_with_pointer_to_const(
+		buffer_t * const buffer,
+		const unsigned char * const content,
+		const size_t buffer_length,
+		const size_t content_length) {
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+	buffer_t *result = buffer_init_with_pointer(buffer, (unsigned char*)content, buffer_length, content_length);
+#pragma GCC diagnostic pop
+	if (result != NULL) {
+		result->readonly = true;
+	}
+
+	return result;
+}
+
+
 /*
  * Create a new buffer on the heap.
  */
@@ -175,16 +192,7 @@ void buffer_destroy_with_custom_deallocator(
 	deallocator(buffer);
 }
 
-/*
- * Copy a raw array to a buffer and return the
- * buffer.
- *
- * This should not be used directly, it is intended for the use
- * with the macro buffer_create_from_string.
- *
- * Returns NULL on error.
- */
-buffer_t* buffer_create_from_string_helper(
+buffer_t* buffer_create_from_string_on_heap_helper(
 		buffer_t * const buffer,
 		const unsigned char * const content,
 		const size_t content_length) {

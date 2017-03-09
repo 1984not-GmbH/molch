@@ -26,13 +26,13 @@
 #define LIB_BUFFER_H
 
 typedef struct buffer_t {
-	const size_t buffer_length;
+	size_t buffer_length;
 	size_t content_length;
 	/*This position can be used by parsers etc. to keep track of the position
 	it is initialized with a value of 0.*/
 	size_t position;
 	bool readonly; //if set, this buffer shouldn't be written to.
-	unsigned char * const content;
+	unsigned char *content;
 } buffer_t;
 
 /*
@@ -52,6 +52,15 @@ buffer_t* buffer_init(
 buffer_t* buffer_init_with_pointer(
 		buffer_t * const buffer,
 		unsigned char * const content,
+		const size_t buffer_length,
+		const size_t content_length);
+
+/*
+ * initialize a buffer with a pointer to an array of const characters.
+ */
+buffer_t* buffer_init_with_pointer_to_const(
+		buffer_t * const buffer,
+		const unsigned char * const content,
 		const size_t buffer_length,
 		const size_t content_length);
 
@@ -78,28 +87,27 @@ buffer_t *buffer_create_with_custom_allocator(
 		) __attribute__((warn_unused_result));
 
 /*
+ * Create a new buffer from a string literal.
+ */
+#define buffer_create_from_string(name, string) buffer_t name[1]; buffer_init_with_pointer_to_const(name, (const unsigned char*) (string), sizeof(string), sizeof(string))
+
+/*
  * Copy a raw array to a buffer and return the
  * buffer.
  *
  * This should not be used directly, it is intended for the use
- * with the macro buffer_create_from_string.
+ * with the macro buffer_create_from_string_on_heap.
  *
  * Returns NULL on error.
  */
-buffer_t* buffer_create_from_string_helper(
+buffer_t* buffer_create_from_string_on_heap_helper(
 		buffer_t * const buffer,
 		const unsigned char * const content,
 		const size_t content_length) __attribute__((warn_unused_result));
-
-/*
- * Create a new buffer from a string literal.
- */
-#define buffer_create_from_string(name, string) buffer_t name[1]; buffer_init_with_pointer(name, (unsigned char*) (string), sizeof(string), sizeof(string)); name->readonly = true
-
 /*
  * Create a new buffer from a string literal on heap.
  */
-#define buffer_create_from_string_on_heap(string) buffer_create_from_string_helper(buffer_create_on_heap(sizeof(string), sizeof(string)), (unsigned char*) string, sizeof(string))
+#define buffer_create_from_string_on_heap(string) buffer_create_from_string_on_heap_helper(buffer_create_on_heap(sizeof(string), sizeof(string)), (const unsigned char*) string, sizeof(string))
 
 /*
  * Clear a buffer.
@@ -133,6 +141,11 @@ void buffer_destroy_with_custom_deallocator(
  * Macro to create a buffer with already existing data without cloning it.
  */
 #define buffer_create_with_existing_array(name, array, length) buffer_t name[1]; buffer_init_with_pointer(name, array, length, length)
+
+/*
+ * Macro to create a buffer with already existing const data.
+ */
+#define buffer_create_with_existing_const_array(name, array, length) buffer_t name[1]; buffer_init_with_pointer_to_const(name, array, length, length)
 
 /*
  * Concatenate a buffer to the first.
@@ -264,7 +277,7 @@ int buffer_compare_to_raw(
 /*
  * Macro to compare a buffer to a string.
  */
-#define buffer_compare_to_string(buffer, string) buffer_compare_to_raw(buffer, (unsigned char*)string, sizeof(string))
+#define buffer_compare_to_string(buffer, string) buffer_compare_to_raw(buffer, (const unsigned char*)string, sizeof(string))
 
 /*
  * Compare parts of two buffers.

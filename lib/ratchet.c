@@ -39,27 +39,27 @@ static bool is_none(const buffer_t * const buffer) {
 
 static void init_ratchet_state(ratchet_state ** const ratchet) {
 	//initialize the buffers with the storage arrays
-	buffer_init_with_pointer((*ratchet)->root_key, (unsigned char*)(*ratchet)->root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->purported_root_key, (unsigned char*)(*ratchet)->purported_root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->root_key, (*ratchet)->root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->purported_root_key, (*ratchet)->purported_root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
 	//header keys
-	buffer_init_with_pointer((*ratchet)->send_header_key, (unsigned char*)(*ratchet)->send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->receive_header_key, (unsigned char*)(*ratchet)->receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->next_send_header_key, (unsigned char*)(*ratchet)->next_send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->next_receive_header_key, (unsigned char*)(*ratchet)->next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->purported_receive_header_key, (unsigned char*)(*ratchet)->purported_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->purported_next_receive_header_key, (unsigned char*)(*ratchet)->purported_next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->send_header_key, (*ratchet)->send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->receive_header_key, (*ratchet)->receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->next_send_header_key, (*ratchet)->next_send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->next_receive_header_key, (*ratchet)->next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->purported_receive_header_key, (*ratchet)->purported_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->purported_next_receive_header_key, (*ratchet)->purported_next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	//chain keys
-	buffer_init_with_pointer((*ratchet)->send_chain_key, (unsigned char*)(*ratchet)->send_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->receive_chain_key, (unsigned char*)(*ratchet)->receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->purported_receive_chain_key, (unsigned char*)(*ratchet)->purported_receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->send_chain_key, (*ratchet)->send_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->receive_chain_key, (*ratchet)->receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->purported_receive_chain_key, (*ratchet)->purported_receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
 	//identity keys
-	buffer_init_with_pointer((*ratchet)->our_public_identity, (unsigned char*)(*ratchet)->our_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->their_public_identity, (unsigned char*)(*ratchet)->their_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->our_public_identity, (*ratchet)->our_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->their_public_identity, (*ratchet)->their_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	//ephemeral keys (ratchet keys)
-	buffer_init_with_pointer((*ratchet)->our_private_ephemeral, (unsigned char*)(*ratchet)->our_private_ephemeral_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->our_public_ephemeral, (unsigned char*)(*ratchet)->our_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->their_public_ephemeral, (unsigned char*)(*ratchet)->their_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->their_purported_public_ephemeral, (unsigned char*)(*ratchet)->their_purported_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->our_private_ephemeral, (*ratchet)->our_private_ephemeral_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->our_public_ephemeral, (*ratchet)->our_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->their_public_ephemeral, (*ratchet)->their_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	buffer_init_with_pointer((*ratchet)->their_purported_public_ephemeral, (*ratchet)->their_purported_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
 	header_and_message_keystore_init((*ratchet)->skipped_header_and_message_keys);
 	header_and_message_keystore_init((*ratchet)->staged_header_and_message_keys);

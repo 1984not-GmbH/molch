@@ -264,7 +264,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 			status_int = buffer_copy_from_raw(
 					output,
 					output->content_length,
-					(unsigned char*)return_status_get_name(current_error->status),
+					(const unsigned char*)return_status_get_name(current_error->status),
 					0,
 					strlen(return_status_get_name(current_error->status)));
 			if (status_int != 0) {
@@ -274,7 +274,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 			status_int = buffer_copy_from_raw(
 					output,
 					output->content_length,
-					(unsigned char*) ", ",
+					(const unsigned char*) ", ",
 					0,
 					sizeof(", ") - 1);
 			if (status_int != 0) {
@@ -295,7 +295,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 				status_int = buffer_copy_from_raw(
 						output,
 						output->content_length,
-						(unsigned char*) current_error->message,
+						(const unsigned char*) current_error->message,
 						0,
 						strlen(current_error->message));
 				if (status_int != 0) {
@@ -306,7 +306,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 			status_int = buffer_copy_from_raw(
 					output,
 					output->content_length,
-					(unsigned char*) "\n",
+					(const unsigned char*) "\n",
 					0,
 					1);
 			if (status_int != 0) {
@@ -318,7 +318,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 	status_int = buffer_copy_from_raw(
 			output,
 			output->content_length,
-			(unsigned char*) "",
+			(const unsigned char*) "",
 			0,
 			sizeof(""));
 	if (status_int != 0) {

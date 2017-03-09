@@ -32,6 +32,7 @@ list(APPEND custom_compiler_flags
     -Wformat=2
     -Wmissing-prototypes
     -Wstrict-overflow=2
+    -Wcast-qual
     -Wundef
     -Wswitch-default
     -fstack-protector-strong
