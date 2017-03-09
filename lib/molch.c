@@ -42,7 +42,7 @@
 
 //global user store
 static user_store *users = NULL;
-static buffer_t *backup_key = NULL;
+static buffer_t *global_backup_key = NULL;
 
 /*
  * Create a prekey list.
@@ -708,7 +708,7 @@ cleanup:
 static return_status find_conversation(
 		conversation_t ** const conversation, //output
 		const unsigned char * const conversation_id,
-		conversation_store ** const conversation_store, //optional, can be NULL, the conversation store where the conversation is in
+		conversation_store ** const conversations, //optional, can be NULL, the conversation store where the conversation is in
 		user_store_node ** const user //optional, can be NULL, the user that the conversation belongs to
 		) {
 	return_status status = return_status_init();
@@ -743,8 +743,8 @@ static return_status find_conversation(
 		*user = node;
 	}
 
-	if (conversation_store != NULL) {
-		*conversation_store = node->conversations;
+	if (conversations != NULL) {
+		*conversations = node->conversations;
 	}
 
 cleanup:
@@ -953,8 +953,8 @@ return_status molch_end_conversation(
 		if (backup_length == 0) {
 			*backup = NULL;
 		} else {
-			return_status status = molch_export(backup, backup_length);
-			on_error {
+			return_status local_status = molch_export(backup, backup_length);
+			if (local_status.status != SUCCESS) {
 				*backup = NULL;
 			}
 		}
@@ -1095,7 +1095,7 @@ return_status molch_conversation_export(
 		throw(INVALID_INPUT, "Conversation ID has an invalid size.");
 	}
 
-	if ((backup_key == NULL) || (backup_key->content_length != BACKUP_KEY_SIZE)) {
+	if ((global_backup_key == NULL) || (global_backup_key->content_length != BACKUP_KEY_SIZE)) {
 		throw(INCORRECT_DATA, "No backup key found.");
 	}
 
@@ -1136,7 +1136,7 @@ return_status molch_conversation_export(
 			conversation_buffer->content,
 			conversation_buffer->content_length,
 			backup_nonce->content,
-			backup_key->content);
+			global_backup_key->content);
 	if (status_int != 0) {
 		backup_buffer->content_length = 0;
 		throw(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
@@ -1199,8 +1199,8 @@ return_status molch_conversation_import(
 		//inputs
 		const unsigned char * const backup,
 		const size_t backup_length,
-		const unsigned char * local_backup_key,
-		const size_t local_backup_key_length) {
+		const unsigned char * backup_key,
+		const size_t backup_key_length) {
 	return_status status = return_status_init();
 
 	EncryptedBackup *encrypted_backup_struct = NULL;
@@ -1209,10 +1209,10 @@ return_status molch_conversation_import(
 	conversation_t *conversation = NULL;
 
 	//check input
-	if ((backup == NULL) || (local_backup_key == NULL)) {
+	if ((backup == NULL) || (backup_key == NULL)) {
 		throw(INVALID_INPUT, "Invalid input to molch_import.");
 	}
-	if (local_backup_key_length != BACKUP_KEY_SIZE) {
+	if (backup_key_length != BACKUP_KEY_SIZE) {
 		throw(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
 	}
 	if (new_backup_key_length != BACKUP_KEY_SIZE) {
@@ -1248,7 +1248,7 @@ return_status molch_conversation_import(
 			encrypted_backup_struct->encrypted_backup.data,
 			encrypted_backup_struct->encrypted_backup.len,
 			encrypted_backup_struct->encrypted_backup_nonce.data,
-			local_backup_key);
+			backup_key);
 	if (status_int != 0) {
 		throw(DECRYPT_ERROR, "Failed to decrypt conversation backup.");
 	}
@@ -1328,7 +1328,7 @@ return_status molch_export(
 		throw(INVALID_INPUT, "Invalid input to molch_export");
 	}
 
-	if ((backup_key == NULL) || (backup_key->content_length != BACKUP_KEY_SIZE)) {
+	if ((global_backup_key == NULL) || (global_backup_key->content_length != BACKUP_KEY_SIZE)) {
 		throw(INCORRECT_DATA, "No backup key found.");
 	}
 
@@ -1367,7 +1367,7 @@ return_status molch_export(
 			users_buffer->content,
 			users_buffer->content_length,
 			backup_nonce->content,
-			backup_key->content);
+			global_backup_key->content);
 	if (status_int != 0) {
 		backup_buffer->content_length = 0;
 		throw(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
@@ -1433,8 +1433,8 @@ return_status molch_import(
 		//inputs
 		unsigned char * const backup,
 		const size_t backup_length,
-		const unsigned char * const local_backup_key, //BACKUP_KEY_SIZE
-		const size_t local_backup_key_length
+		const unsigned char * const backup_key, //BACKUP_KEY_SIZE
+		const size_t backup_key_length
 		) {
 	return_status status = return_status_init();
 
@@ -1444,10 +1444,10 @@ return_status molch_import(
 	user_store *store = NULL;
 
 	//check input
-	if ((backup == NULL) || (local_backup_key == NULL)) {
+	if ((backup == NULL) || (backup_key == NULL)) {
 		throw(INVALID_INPUT, "Invalid input to molch_import.");
 	}
-	if (local_backup_key_length != BACKUP_KEY_SIZE) {
+	if (backup_key_length != BACKUP_KEY_SIZE) {
 		throw(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
 	}
 	if (new_backup_key_length != BACKUP_KEY_SIZE) {
@@ -1489,7 +1489,7 @@ return_status molch_import(
 			encrypted_backup_struct->encrypted_backup.data,
 			encrypted_backup_struct->encrypted_backup.len,
 			encrypted_backup_struct->encrypted_backup_nonce.data,
-			local_backup_key);
+			backup_key);
 	if (status_int != 0) {
 		throw(DECRYPT_ERROR, "Failed to decrypt backup.");
 	}
@@ -1595,32 +1595,32 @@ return_status molch_update_backup_key(
 	}
 
 	// create a backup key buffer if it doesnt exist already
-	if (backup_key == NULL) {
-		backup_key = buffer_create_with_custom_allocator(BACKUP_KEY_SIZE, 0, sodium_malloc, sodium_free);
-		throw_on_failed_alloc(backup_key);
+	if (global_backup_key == NULL) {
+		global_backup_key = buffer_create_with_custom_allocator(BACKUP_KEY_SIZE, 0, sodium_malloc, sodium_free);
+		throw_on_failed_alloc(global_backup_key);
 	}
 
 	//make backup key buffer writable
-	if (sodium_mprotect_readwrite(backup_key) != 0) {
+	if (sodium_mprotect_readwrite(global_backup_key) != 0) {
 		throw(GENERIC_ERROR, "Failed to make backup key readwrite.");
 	}
 	//make the content of the backup key writable
-	if (sodium_mprotect_readwrite(backup_key->content) != 0) {
+	if (sodium_mprotect_readwrite(global_backup_key->content) != 0) {
 		throw(GENERIC_ERROR, "Failed to make backup key content readwrite.");
 	}
 
-	if (buffer_fill_random(backup_key, BACKUP_KEY_SIZE) != 0) {
+	if (buffer_fill_random(global_backup_key, BACKUP_KEY_SIZE) != 0) {
 		throw(KEYGENERATION_FAILED, "Failed to generate new backup key.");
 	}
 
-	if (buffer_clone(new_key_buffer, backup_key) != 0) {
+	if (buffer_clone(new_key_buffer, global_backup_key) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy new backup key.");
 	}
 
 cleanup:
-	if (backup_key != NULL) {
-		sodium_mprotect_readonly(backup_key);
-		sodium_mprotect_readonly(backup_key->content);
+	if (global_backup_key != NULL) {
+		sodium_mprotect_readonly(global_backup_key);
+		sodium_mprotect_readonly(global_backup_key->content);
 	}
 
 	return status;

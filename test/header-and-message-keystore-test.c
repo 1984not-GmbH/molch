@@ -169,8 +169,7 @@ int main(void) {
 
 	int status_int = 0;
 	//add keys to the keystore
-	size_t i;
-	for (i = 0; i < 6; i++) {
+	for (size_t i = 0; i < 6; i++) {
 		//create new keys
 		status_int = buffer_fill_random(header_key, header_key->buffer_length);
 		if (status_int != 0) {
@@ -240,8 +239,9 @@ int main(void) {
 	if (protobuf_export_bundles_size != protobuf_second_export_bundles_size) {
 		throw(INCORRECT_DATA, "Both exports contain different amounts of keys.");
 	}
-	for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
-		if (buffer_compare(protobuf_export_buffers[i], protobuf_second_export_buffers[i]) != 0) {
+	size_t store_length;
+	for (store_length = 0; store_length < protobuf_export_bundles_size; store_length++) {
+		if (buffer_compare(protobuf_export_buffers[store_length], protobuf_second_export_buffers[store_length]) != 0) {
 			throw(INCORRECT_DATA, "First and second export are not identical.");
 		}
 	}
@@ -249,19 +249,19 @@ int main(void) {
 	//remove key from the head
 	printf("Remove head!\n");
 	header_and_message_keystore_remove(&keystore, keystore.head);
-	assert(keystore.length == (i - 1));
+	assert(keystore.length == (store_length - 1));
 	print_header_and_message_keystore(&keystore);
 
 	//remove key from the tail
 	printf("Remove Tail:\n");
 	header_and_message_keystore_remove(&keystore, keystore.tail);
-	assert(keystore.length == (i - 2));
+	assert(keystore.length == (store_length - 2));
 	print_header_and_message_keystore(&keystore);
 
 	//remove from inside
 	printf("Remove from inside:\n");
 	header_and_message_keystore_remove(&keystore, keystore.head->next);
-	assert(keystore.length == (i - 3));
+	assert(keystore.length == (store_length - 3));
 	print_header_and_message_keystore(&keystore);
 
 	status = protobuf_empty_store();

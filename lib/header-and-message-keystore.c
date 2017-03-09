@@ -282,12 +282,12 @@ return_status header_and_message_keystore_export(
 		*key_bundles = NULL;
 	}
 
-	size_t i;
+	size_t position;
 	header_and_message_keystore_node *node = NULL;
-	for (i = 0, node = store->head;
-		 	(i < store->length) && (node != NULL);
-			i++, node = node->next) {
-		status = header_and_message_keystore_node_export(node, &(*key_bundles)[i]);
+	for (position = 0, node = store->head;
+		 	(position < store->length) && (node != NULL);
+			position++, node = node->next) {
+		status = header_and_message_keystore_node_export(node, &(*key_bundles)[position]);
 		throw_on_error(EXPORT_ERROR, "Failed to export header and message keystore node.");
 	}
 
