@@ -17,22 +17,53 @@ if (TRACING)
     set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -ldl")
 endif()
 
-#check if running debug build
-if ("${CMAKE_BUILD_TYPE}" MATCHES "Debug")
-    if ("${CMAKE_C_COMPILER_ID}" MATCHES "Clang")
-        set(SECURITY_C_FLAGS "-O0")
-    else()
-        set(SECURITY_C_FLAGS "-Og")
-    endif()
+#Setup compiler flags
+list(APPEND custom_compiler_flags
+    -std=c99
+    -pedantic
+    -Wall
+    -Wextra
+    -Werror
+    -Wwrite-strings
+    -Winit-self
+    -Wcast-align
+    -Wformat=2
+    -Wstrict-overflow=2
+    -Wundef
+    -Wswitch-default
+    -fstack-protector-strong
+    -Wcomma
+    -Wdouble-promotion
+    -Wparentheses
+    -fPIC
+    )
+
+if(NOT ${CMAKE_BUILD_TYPE} MATCHES "Debug")
+    list(APPEND custom_compiler_flags
+        -O2
+        -U_FORTIFY_SOURCE
+        -D_FORTIFY_SOURCE=2)
 else()
-    if(APPLE)
-        set(SECURITY_C_FLAGS "-O1 -Wformat -Wformat-security")
-        #TODO: Find secure Linker flags that work on Mac OS X
-    else()
-        set(SECURITY_C_FLAGS "-fstack-protector-strong -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -O1 -Wformat -Wformat-security")
-        set(SECURITY_LINK_FLAGS "-z relro -z now -z noexecstack -z noexecheap -pie")
-    endif()
+    list(APPEND custom_compiler_flags -O0 -Og)
 endif()
+
+# apply custom compiler flags
+include(CheckCCompilerFlag)
+foreach(compiler_flag ${custom_compiler_flags})
+    #remove problematic characters
+    string(REGEX REPLACE "[^a-zA-Z0-9]" "" current_variable ${compiler_flag})
+
+    CHECK_C_COMPILER_FLAG(${compiler_flag} "FLAG_SUPPORTED_${current_variable}")
+    if (FLAG_SUPPORTED_${current_variable})
+        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${compiler_flag}")
+    endif()
+endforeach()
+
+#Set linker flags
+if(NOT APPLE)
+    set(SECURITY_LINK_FLAGS "-z relro -z now -z noexecstack -z noexecheap -pie")
+endif()
+set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${SECURITY_LINK_FLAGS}")
 
 find_package(Sodium REQUIRED)
 find_package(Protobuf-C REQUIRED)
@@ -41,8 +72,6 @@ find_package(Protoc-C REQUIRED)
 include_directories(${SODIUM_INCLUDE_DIR} ${PROTOBUFC_INCLUDE_DIR})
 SET(libs ${libs} ${SODIUM_LIBRARY} ${PROTOBUFC_LIBRARY})
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -pedantic -Wall -Wextra -Werror -fPIC ${SECURITY_C_FLAGS}")
-set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${SECURITY_LINK_FLAGS}")
 
 find_program(MEMORYCHECK_COMMAND valgrind)
 set(MEMORYCHECK_COMMAND_OPTIONS --trace-children=yes --leak-check=full --error-exitcode=10)
@@ -71,3 +100,4 @@ if (GENERATE_DOC)
     execute_process(COMMAND ${DOXYGEN_EXECUTABLE}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 endif()
+
