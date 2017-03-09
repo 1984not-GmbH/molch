@@ -26,7 +26,7 @@
 
 #include "buffer.h"
 
-void print_hex(buffer_t *data) {
+static void print_hex(buffer_t *data) {
 	buffer_t *hex = buffer_create(2 * data->content_length + 1, 2 * data->content_length + 1);
 	int status = buffer_to_hex(hex, data);
 	if (status != 0) {

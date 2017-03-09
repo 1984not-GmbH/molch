@@ -29,6 +29,7 @@ list(APPEND custom_compiler_flags
     -Winit-self
     -Wcast-align
     -Wformat=2
+    -Wmissing-prototypes
     -Wstrict-overflow=2
     -Wundef
     -Wswitch-default

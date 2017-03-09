@@ -27,7 +27,7 @@
 #include "utils.h"
 #include "tracing.h"
 
-return_status second_level(void) {
+static return_status second_level(void) {
 	return_status status = return_status_init();
 
 	throw(GENERIC_ERROR, "Error on the second level!");
@@ -36,7 +36,7 @@ cleanup:
 	return status;
 }
 
-return_status first_level(void) {
+static return_status first_level(void) {
 	return_status status = return_status_init();
 
 	status = second_level();

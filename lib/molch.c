@@ -47,7 +47,7 @@ static buffer_t *backup_key = NULL;
 /*
  * Create a prekey list.
  */
-return_status create_prekey_list(
+static return_status create_prekey_list(
 		const buffer_t * const public_signing_key,
 		unsigned char ** const prekey_list, //output, needs to be freed
 		size_t * const prekey_list_length) {
@@ -364,7 +364,7 @@ molch_message_type molch_get_message_type(
  * Verify prekey list and extract the public identity
  * and choose a prekey.
  */
-return_status verify_prekey_list(
+static return_status verify_prekey_list(
 		const unsigned char * const prekey_list,
 		const size_t prekey_list_length,
 		buffer_t * const public_identity_key, //output, PUBLIC_KEY_SIZE
@@ -705,7 +705,7 @@ cleanup:
 /*
  * Find a conversation based on it's conversation id.
  */
-return_status find_conversation(
+static return_status find_conversation(
 		conversation_t ** const conversation, //output
 		const unsigned char * const conversation_id,
 		conversation_store ** const conversation_store, //optional, can be NULL, the conversation store where the conversation is in

@@ -32,7 +32,7 @@
 #include <encrypted_backup.pb-c.h>
 
 
-return_status decrypt_conversation_backup(
+static return_status decrypt_conversation_backup(
 		//output
 		buffer_t ** decrypted_backup,
 		//inputs
@@ -96,7 +96,7 @@ cleanup:
 	return status;
 }
 
-return_status decrypt_full_backup(
+static return_status decrypt_full_backup(
 		//output
 		buffer_t ** decrypted_backup,
 		//inputs

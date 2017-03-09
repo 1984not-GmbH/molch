@@ -33,7 +33,7 @@
 #include "common.h"
 #include "tracing.h"
 
-return_status protobuf_export(
+static return_status protobuf_export(
 			header_and_message_keystore * const keystore,
 			KeyBundle *** const key_bundles,
 			size_t * const bundles_size,
@@ -67,7 +67,7 @@ cleanup:
 	return status;
 }
 
-return_status protobuf_import(
+static return_status protobuf_import(
 		header_and_message_keystore * const keystore,
 		buffer_t ** const exported_buffers,
 		size_t const buffers_size) {

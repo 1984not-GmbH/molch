@@ -63,7 +63,7 @@ void user_store_destroy(user_store* store) {
 /*
  * add a new user node to a user store.
  */
-void add_user_store_node(user_store * const store, user_store_node * const node) {
+static void add_user_store_node(user_store * const store, user_store_node * const node) {
 	if ((store == NULL) || (node == NULL)) {
 		return;
 	}
@@ -93,7 +93,7 @@ void add_user_store_node(user_store * const store, user_store_node * const node)
 /*
  * create an empty user_store_node and set up all the pointers.
  */
-return_status create_user_store_node(user_store_node ** const node) {
+static return_status create_user_store_node(user_store_node ** const node) {
 	return_status status = return_status_init();
 
 	if (node == NULL) {
@@ -447,7 +447,7 @@ cleanup:
 	return status;
 }
 
-return_status user_store_node_import(user_store_node ** const node, const User * const user) {
+static return_status user_store_node_import(user_store_node ** const node, const User * const user) {
 	return_status status = return_status_init();
 
 	//check input

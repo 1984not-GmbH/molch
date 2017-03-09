@@ -42,19 +42,19 @@ typedef unsigned int uint32_t;
 %include <carrays.i>
 %array_class(unsigned char, ucstring_array);
 %inline %{
-	unsigned char **create_ucstring_pointer(void) {
+	static unsigned char **create_ucstring_pointer(void) {
 		return malloc(sizeof(unsigned char*));
 	}
 
-	unsigned char *dereference_ucstring_pointer(unsigned char ** pointer) {
+	static unsigned char *dereference_ucstring_pointer(unsigned char ** pointer) {
 		return *pointer;
 	}
 
-	void ucstring_copy(unsigned char* destination, unsigned char* source, size_t length) {
+	static void ucstring_copy(unsigned char* destination, unsigned char* source, size_t length) {
 		memcpy(destination, source, length);
 	}
 
-	status_type get_status(return_status *status) {
+	static status_type get_status(return_status *status) {
 		return status->status;
 	}
 %}

@@ -28,7 +28,7 @@
 /*!
  * Convert molch_message_type to PacketHeader__PacketType.
  */
-PacketHeader__PacketType to_packet_header_packet_type(const molch_message_type packet_type) {
+static PacketHeader__PacketType to_packet_header_packet_type(const molch_message_type packet_type) {
 	switch (packet_type) {
 		case PREKEY_MESSAGE:
 			return PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE;
@@ -43,7 +43,7 @@ PacketHeader__PacketType to_packet_header_packet_type(const molch_message_type p
 /*!
  * Convert PacketHeader__PacketType to molch_message_type.
  */
-molch_message_type to_molch_message_type(const PacketHeader__PacketType packet_type) {
+static molch_message_type to_molch_message_type(const PacketHeader__PacketType packet_type) {
 	switch (packet_type) {
 		case PACKET_HEADER__PACKET_TYPE__NORMAL_MESSAGE:
 			return NORMAL_MESSAGE;

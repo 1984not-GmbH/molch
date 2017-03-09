@@ -18,6 +18,11 @@ if(GENERATE_LUA_BINDINGS AND (NOT APPLE))
 
     swig_add_module(molch-interface lua molch.i)
     swig_link_libraries(molch-interface molch ${LUA_LIBRARIES})
+    # Disable -Werror for lua-bindings
+    list(FIND custom_compiler_flags "-Werror" werror_found)
+    if (werror_found)
+        target_compile_options(molch-interface PRIVATE "-Wno-error")
+    endif()
 
     set(BINDING_FILES "${CMAKE_CURRENT_BINARY_DIR}/molch.lua")
 

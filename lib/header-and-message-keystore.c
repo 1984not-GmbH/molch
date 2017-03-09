@@ -41,7 +41,7 @@ void header_and_message_keystore_init(header_and_message_keystore * const keysto
 /*
  * create an empty header_and_message_keystore_node and set up all the pointers.
  */
-header_and_message_keystore_node *create_node(void) {
+static header_and_message_keystore_node *create_node(void) {
 	header_and_message_keystore_node *node = sodium_malloc(sizeof(header_and_message_keystore_node));
 	if (node == NULL) {
 		return NULL;
@@ -57,7 +57,7 @@ header_and_message_keystore_node *create_node(void) {
 /*
  * add a new header_and_message_key_node to a keystore
  */
-void add_node(header_and_message_keystore * const keystore, header_and_message_keystore_node * const node) {
+static void add_node(header_and_message_keystore * const keystore, header_and_message_keystore_node * const node) {
 	if (node == NULL) {
 		return;
 	}
@@ -181,7 +181,7 @@ void header_and_message_keystore_clear(header_and_message_keystore *keystore){
 	}
 }
 
-return_status header_and_message_keystore_node_export(header_and_message_keystore_node * const node, KeyBundle ** const bundle) {
+static return_status header_and_message_keystore_node_export(header_and_message_keystore_node * const node, KeyBundle ** const bundle) {
 	return_status status = return_status_init();
 
 	Key *header_key = NULL;

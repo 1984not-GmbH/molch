@@ -103,7 +103,7 @@ cleanup:
  * Don't forget to destroy the return status with return_status_destroy_errors()
  * if an error has occurred.
  */
-return_status create_conversation(
+static return_status create_conversation(
 		conversation_t **const conversation,
 		const buffer_t * const our_private_identity,
 		const buffer_t * const our_public_identity,

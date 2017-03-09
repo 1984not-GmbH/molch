@@ -89,7 +89,7 @@ cleanup:
 	return status;
 }
 
-return_status protobuf_import(
+static return_status protobuf_import(
 		user_store ** const store,
 		buffer_t ** const buffers,
 		const size_t buffers_length) {
