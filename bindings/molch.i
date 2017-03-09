@@ -42,7 +42,7 @@ typedef unsigned int uint32_t;
 %include <carrays.i>
 %array_class(unsigned char, ucstring_array);
 %inline %{
-	unsigned char **create_ucstring_pointer() {
+	unsigned char **create_ucstring_pointer(void) {
 		return malloc(sizeof(unsigned char*));
 	}
 
@@ -114,14 +114,14 @@ extern return_status molch_destroy_user(
 		size_t *const backup_length
 );
 
-extern size_t molch_user_count();
+extern size_t molch_user_count(void);
 
 extern return_status molch_list_users(
 	unsigned char **const user_list,
 	size_t * const user_list_length,
 	size_t * count);
 
-extern void molch_destroy_all_users();
+extern void molch_destroy_all_users(void);
 
 typedef enum molch_message_type { PREKEY_MESSAGE, NORMAL_MESSAGE, INVALID } molch_message_type;
 

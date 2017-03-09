@@ -74,7 +74,7 @@ typedef struct return_status {
 	error_message *error;
 } return_status;
 
-return_status return_status_init();
+return_status return_status_init(void);
 
 status_type return_status_add_error_message(
 		return_status *const status_object,

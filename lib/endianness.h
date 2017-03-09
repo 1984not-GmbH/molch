@@ -37,7 +37,7 @@
 /*
  * Determine the current endianness at runtime.
  */
-bool endianness_is_little_endian();
+bool endianness_is_little_endian(void);
 
 /*
  * Copy a 32 bit unsigned integer to a buffer in big endian format.

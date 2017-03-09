@@ -156,8 +156,8 @@ cleanup:
 	return status;
 }
 
-return_status protobuf_no_deprecated_keys() __attribute__((warn_unused_result));
-return_status protobuf_no_deprecated_keys() {
+return_status protobuf_no_deprecated_keys(void) __attribute__((warn_unused_result));
+return_status protobuf_no_deprecated_keys(void) {
 	return_status status = return_status_init();
 
 	printf("Testing im-/export of prekey store without deprecated keys.\n");

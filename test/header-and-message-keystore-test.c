@@ -111,8 +111,8 @@ cleanup:
 	return status;
 }
 
-return_status protobuf_empty_store() __attribute__((warn_unused_result));
-return_status protobuf_empty_store() {
+return_status protobuf_empty_store(void) __attribute__((warn_unused_result));
+return_status protobuf_empty_store(void) {
 	return_status status = return_status_init();
 
 	printf("Testing im-/export of empty header and message keystore.\n");

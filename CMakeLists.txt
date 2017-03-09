@@ -24,6 +24,7 @@ list(APPEND custom_compiler_flags
     -Wall
     -Wextra
     -Werror
+    -Wstrict-prototypes
     -Wwrite-strings
     -Winit-self
     -Wcast-align

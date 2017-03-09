@@ -41,7 +41,7 @@ void header_and_message_keystore_init(header_and_message_keystore * const keysto
 /*
  * create an empty header_and_message_keystore_node and set up all the pointers.
  */
-header_and_message_keystore_node *create_node() {
+header_and_message_keystore_node *create_node(void) {
 	header_and_message_keystore_node *node = sodium_malloc(sizeof(header_and_message_keystore_node));
 	if (node == NULL) {
 		return NULL;
