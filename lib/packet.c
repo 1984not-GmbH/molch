@@ -237,7 +237,7 @@ return_status packet_encrypt(
 	packet_header_struct.message_nonce.len = message_nonce->content_length;
 
 	//pad the message (PKCS7 padding to 255 byte blocks, see RFC5652 section 6.3)
-	unsigned char padding = 255 - (message->content_length % 255);
+	unsigned char padding = (unsigned char)(255 - (message->content_length % 255));
 	padded_message = buffer_create_on_heap(message->content_length + padding, 0);
 	throw_on_failed_alloc(padded_message);
 	//copy the message

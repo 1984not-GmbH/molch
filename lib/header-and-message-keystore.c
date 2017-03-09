@@ -234,7 +234,7 @@ static return_status header_and_message_keystore_node_export(header_and_message_
 	message_key->key.len = node->message_key->content_length;
 
 	//set expiration time
-	(*bundle)->expiration_time = node->expiration_date;
+	(*bundle)->expiration_time = (uint64_t) node->expiration_date;
 	(*bundle)->has_expiration_time = true;
 
 	//fill key bundle
@@ -349,7 +349,7 @@ return_status header_and_message_keystore_import(
 		buffer_create_with_existing_array(message_key, current_key_bundle->message_key->key.data, current_key_bundle->message_key->key.len);
 
 		//create new node
-		status = create_and_populate_node(&current_node, current_key_bundle->expiration_time, header_key, message_key);
+		status = create_and_populate_node(&current_node, (time_t)current_key_bundle->expiration_time, header_key, message_key);
 		throw_on_error(CREATION_ERROR, "Failed to create header_and_message_keystore_node.");
 
 		add_node(store, current_node);

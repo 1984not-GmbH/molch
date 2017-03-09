@@ -256,10 +256,10 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 				output->buffer_length - output->content_length, //remaining length of output
 				"%.3zu: ",
 				i);
-			output->content_length += written;
 			if (written != (sizeof("XXX: ") - 1)) {
 				throw(INCORRECT_BUFFER_SIZE, "Failed to write to output buffer, probably too short.");
 			}
+			output->content_length += (unsigned int)written;
 
 			status_int = buffer_copy_from_raw(
 					output,

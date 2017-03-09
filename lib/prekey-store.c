@@ -396,7 +396,7 @@ return_status prekey_store_export_key(const prekey_store_node* node, Prekey ** c
 
 	//set the expiration date
 	(*keypair)->has_expiration_time = true;
-	(*keypair)->expiration_time = node->expiration_date;
+	(*keypair)->expiration_time = (uint64_t)node->expiration_date;
 
 	//set the keys
 	(*keypair)->public_key = public_prekey;
@@ -542,7 +542,7 @@ static return_status prekey_store_node_import(prekey_store_node * const node, co
 		node->private_key->content_length = PRIVATE_KEY_SIZE;
 	}
 
-	node->expiration_date = keypair->expiration_time;
+	node->expiration_date = (time_t)keypair->expiration_time;
 
 cleanup:
 	on_error {

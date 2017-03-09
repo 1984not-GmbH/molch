@@ -35,6 +35,7 @@ list(APPEND custom_compiler_flags
     -Wcast-qual
     -Wundef
     -Wswitch-default
+    -Wconversion
     -fstack-protector-strong
     -Wcomma
     -Wdouble-promotion

@@ -27,7 +27,7 @@
 #include "../lib/common.h"
 
 void print_hex(const buffer_t * const data) {
-	static const int WIDTH = 30;
+	static const size_t WIDTH = 30;
 	//buffer for hex string
 	buffer_t *hex = buffer_create_on_heap(2 * data->content_length + 1, 2 * data->content_length + 1);
 
@@ -38,7 +38,7 @@ void print_hex(const buffer_t * const data) {
 	}
 
 	for (size_t i = 0; i < 2 * data->content_length; i++) {
-		if ((WIDTH != 0) && (i % WIDTH == 0) && (i != 0)) {
+		if ((WIDTH != 0) && ((i % WIDTH) == 0) && (i != 0)) {
 			putchar('\n');
 		} else if ((i % 2 == 0) && (i != 0)) {
 			putchar(' ');
@@ -93,7 +93,7 @@ return_status read_file(buffer_t ** const data, const char * const filename) {
 
 	//get the filesize
 	fseek(file, 0, SEEK_END);
-	long filesize = ftell(file);
+	size_t filesize = (size_t)ftell(file);
 	fseek(file, 0, SEEK_SET);
 
 	*data = buffer_create_on_heap(filesize, filesize);
