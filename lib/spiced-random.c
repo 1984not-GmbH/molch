@@ -36,7 +36,7 @@
  */
 return_status spiced_random(
 		buffer_t * const random_output,
-		const buffer_t * const random_spice,
+		const buffer_t * const low_entropy_spice,
 		const size_t output_length) {
 	return_status status = return_status_init();
 
@@ -44,11 +44,15 @@ return_status spiced_random(
 	buffer_t *spice = NULL;
 	//buffer that contains the random data from the OS
 	buffer_t *os_random = NULL;
+	//buffer that contains a random salt
+	buffer_t *salt = NULL;
 	//allocate them
 	spice = buffer_create_with_custom_allocator(output_length, output_length, sodium_malloc, sodium_free);
 	throw_on_failed_alloc(spice);
 	os_random = buffer_create_with_custom_allocator(output_length, output_length, sodium_malloc, sodium_free);
 	throw_on_failed_alloc(os_random);
+	salt = buffer_create_on_heap(crypto_pwhash_SALTBYTES, 0);
+	throw_on_failed_alloc(salt);
 
 	//check buffer length
 	if (random_output->buffer_length < output_length) {
@@ -59,19 +63,21 @@ return_status spiced_random(
 		throw(GENERIC_ERROR, "Failed to fill buffer with random data.");
 	}
 
-	buffer_create_from_string(salt, " molch: an axolotl ratchet lib ");
-	assert(salt->content_length == crypto_pwhash_scryptsalsa208sha256_SALTBYTES);
+	if (buffer_fill_random(salt, crypto_pwhash_SALTBYTES) != 0) {
+		throw(GENERIC_ERROR, "Failed to fill salt with random data.");
+	}
 
 	//derive random data from the random spice
 	int status_int = 0;
-	status_int = crypto_pwhash_scryptsalsa208sha256(
+	status_int = crypto_pwhash(
 			spice->content,
 			spice->content_length,
-			(const char*)random_spice->content,
-			random_spice->content_length,
+			(const char*)low_entropy_spice->content,
+			low_entropy_spice->content_length,
 			salt->content,
-			crypto_pwhash_scryptsalsa208sha256_OPSLIMIT_INTERACTIVE,
-			crypto_pwhash_scryptsalsa208sha256_MEMLIMIT_INTERACTIVE);
+			crypto_pwhash_OPSLIMIT_INTERACTIVE,
+			crypto_pwhash_MEMLIMIT_INTERACTIVE,
+			crypto_pwhash_ALG_DEFAULT);
 	if (status_int != 0) {
 		throw(GENERIC_ERROR, "Failed to derive random data from spice.");
 	}
@@ -95,6 +101,7 @@ cleanup:
 	}
 	buffer_destroy_with_custom_deallocator_and_null_if_valid(spice, sodium_free);
 	buffer_destroy_with_custom_deallocator_and_null_if_valid(os_random, sodium_free);
+	buffer_destroy_from_heap_and_null_if_valid(salt);
 
 	return status;
 }
