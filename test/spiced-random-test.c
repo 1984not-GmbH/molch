@@ -70,7 +70,11 @@ int main(void) {
 
 	//don't crash with output length 0
 	status = spiced_random(output1, spice, 0);
-	throw_on_error(GENERIC_ERROR, "Failed to generate spiced random data of length 0.");
+	on_error {
+		//on newer libsodium versions, output lengths of zero aren't supported
+		return_status_destroy_errors(&status);
+		status.status = SUCCESS;
+	}
 
 cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(output1);
