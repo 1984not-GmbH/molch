@@ -204,38 +204,38 @@ cleanup:
 }
 
 return_status conversation_store_export(
-		const conversation_store * const conversation_store,
+		const conversation_store * const store,
 		Conversation *** const conversations,
 		size_t * const length) {
 	return_status status = return_status_init();
 
 	//check input
-	if ((conversation_store == NULL) || (conversations == NULL) || (length == NULL)) {
+	if ((store == NULL) || (conversations == NULL) || (length == NULL)) {
 		throw(INVALID_INPUT, "Invalid input conversation_store_export.");
 	}
 
-	if (conversation_store->length > 0) {
+	if (store->length > 0) {
 		//allocate the array of conversations
-		*conversations = zeroed_malloc(conversation_store->length * sizeof(Conversation*));
+		*conversations = zeroed_malloc(store->length * sizeof(Conversation*));
 		throw_on_failed_alloc(*conversations);
-		memset(*conversations, '\0', conversation_store->length * sizeof(Conversation*));
+		memset(*conversations, '\0', store->length * sizeof(Conversation*));
 	} else {
 		*conversations = NULL;
 	}
 
 	//export the conversations
-	conversation_t *node = conversation_store->head;
-	for (size_t i = 0; (i < conversation_store->length) && (node != NULL); i++, node = node->next) {
+	conversation_t *node = store->head;
+	for (size_t i = 0; (i < store->length) && (node != NULL); i++, node = node->next) {
 		status = conversation_export(node, &(*conversations)[i]);
 		throw_on_error(EXPORT_ERROR, "Failed to export conversation.");
 	}
 
-	*length = conversation_store->length;
+	*length = store->length;
 
 cleanup:
 	on_error {
-		if ((conversation_store != NULL) && (conversations != NULL) && (*conversations != NULL)) {
-			for (size_t i = 0; i < conversation_store->length; i++) {
+		if ((store != NULL) && (conversations != NULL) && (*conversations != NULL)) {
+			for (size_t i = 0; i < store->length; i++) {
 				if ((*conversations)[i] != NULL) {
 					conversation__free_unpacked((*conversations)[i], &protobuf_c_allocators);
 					(*conversations)[i] = NULL;

@@ -83,7 +83,7 @@ return_status molch_destroy_user(
 /*
  * Get the number of users.
  */
-size_t molch_user_count();
+size_t molch_user_count(void);
 
 /*
  * List all of the users (list of the public keys),
@@ -102,7 +102,7 @@ return_status molch_list_users(
 /*
  * Delete all users.
  */
-void molch_destroy_all_users();
+void molch_destroy_all_users(void);
 
 typedef enum molch_message_type { PREKEY_MESSAGE, NORMAL_MESSAGE, INVALID } molch_message_type;
 

@@ -74,7 +74,7 @@ typedef struct return_status {
 	error_message *error;
 } return_status;
 
-return_status return_status_init();
+return_status return_status_init(void);
 
 status_type return_status_add_error_message(
 		return_status *const status_object,
@@ -100,9 +100,9 @@ char *return_status_print(const return_status * const status, size_t *length) __
 #define throw(status_type_value, message) {\
 	status.status = status_type_value;\
 	if (message != NULL) {\
-		status_type type = return_status_add_error_message(&status, message, status_type_value);\
-		if (type != SUCCESS) {\
-			status.status = type;\
+		status_type throw_type = return_status_add_error_message(&status, message, status_type_value);\
+		if (throw_type != SUCCESS) {\
+			status.status = throw_type;\
 		}\
 	} else {\
 		status.error = NULL;\

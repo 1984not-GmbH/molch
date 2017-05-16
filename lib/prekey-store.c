@@ -28,7 +28,7 @@
 static const time_t PREKEY_EXPIRATION_TIME = 3600 * 24 * 31; //one month
 static const time_t DEPRECATED_PREKEY_EXPIRATION_TIME = 3600; //one hour
 
-void node_init(prekey_store_node * const node) {
+static void node_init(prekey_store_node * const node) {
 	if (node == NULL) {
 		return;
 	}
@@ -91,7 +91,7 @@ cleanup:
 	return status;
 }
 
-void node_add(prekey_store * const store, prekey_store_node * const node) {
+static void node_add(prekey_store * const store, prekey_store_node * const node) {
 	if ((node == NULL) || (store == NULL)) {
 		return;
 	}
@@ -103,7 +103,7 @@ void node_add(prekey_store * const store, prekey_store_node * const node) {
 /*
  * Helper that puts a prekey pair in the deprecated list and generates a new one.
  */
-int deprecate(prekey_store * const store, size_t index) {
+static int deprecate(prekey_store * const store, size_t index) {
 	int status = 0;
 	//create a new node
 	prekey_store_node *deprecated_node = sodium_malloc(sizeof(prekey_store_node));
@@ -344,7 +344,7 @@ void prekey_store_destroy(prekey_store * const store) {
  * \param store Prekey store in which to count.
  * \return Number of deprecated prekeys.
  */
-size_t count_deprecated_prekeys(const prekey_store * const store) {
+static size_t count_deprecated_prekeys(const prekey_store * const store) {
 	size_t length = 0;
 	for (prekey_store_node *node = store->deprecated_prekeys; node != NULL; node = node->next, length++) {}
 
@@ -396,7 +396,7 @@ return_status prekey_store_export_key(const prekey_store_node* node, Prekey ** c
 
 	//set the expiration date
 	(*keypair)->has_expiration_time = true;
-	(*keypair)->expiration_time = node->expiration_date;
+	(*keypair)->expiration_time = (uint64_t)node->expiration_date;
 
 	//set the keys
 	(*keypair)->public_key = public_prekey;
@@ -501,7 +501,7 @@ cleanup:
 	return status;
 }
 
-return_status prekey_store_node_import(prekey_store_node * const node, const Prekey * const keypair) {
+static return_status prekey_store_node_import(prekey_store_node * const node, const Prekey * const keypair) {
 	return_status status = return_status_init();
 
 	//check input
@@ -542,7 +542,7 @@ return_status prekey_store_node_import(prekey_store_node * const node, const Pre
 		node->private_key->content_length = PRIVATE_KEY_SIZE;
 	}
 
-	node->expiration_date = keypair->expiration_time;
+	node->expiration_date = (time_t)keypair->expiration_time;
 
 cleanup:
 	on_error {

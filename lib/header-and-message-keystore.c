@@ -41,7 +41,7 @@ void header_and_message_keystore_init(header_and_message_keystore * const keysto
 /*
  * create an empty header_and_message_keystore_node and set up all the pointers.
  */
-header_and_message_keystore_node *create_node() {
+static header_and_message_keystore_node *create_node(void) {
 	header_and_message_keystore_node *node = sodium_malloc(sizeof(header_and_message_keystore_node));
 	if (node == NULL) {
 		return NULL;
@@ -57,7 +57,7 @@ header_and_message_keystore_node *create_node() {
 /*
  * add a new header_and_message_key_node to a keystore
  */
-void add_node(header_and_message_keystore * const keystore, header_and_message_keystore_node * const node) {
+static void add_node(header_and_message_keystore * const keystore, header_and_message_keystore_node * const node) {
 	if (node == NULL) {
 		return;
 	}
@@ -181,7 +181,7 @@ void header_and_message_keystore_clear(header_and_message_keystore *keystore){
 	}
 }
 
-return_status header_and_message_keystore_node_export(header_and_message_keystore_node * const node, KeyBundle ** const bundle) {
+static return_status header_and_message_keystore_node_export(header_and_message_keystore_node * const node, KeyBundle ** const bundle) {
 	return_status status = return_status_init();
 
 	Key *header_key = NULL;
@@ -234,7 +234,7 @@ return_status header_and_message_keystore_node_export(header_and_message_keystor
 	message_key->key.len = node->message_key->content_length;
 
 	//set expiration time
-	(*bundle)->expiration_time = node->expiration_date;
+	(*bundle)->expiration_time = (uint64_t) node->expiration_date;
 	(*bundle)->has_expiration_time = true;
 
 	//fill key bundle
@@ -282,12 +282,12 @@ return_status header_and_message_keystore_export(
 		*key_bundles = NULL;
 	}
 
-	size_t i;
+	size_t position;
 	header_and_message_keystore_node *node = NULL;
-	for (i = 0, node = store->head;
-		 	(i < store->length) && (node != NULL);
-			i++, node = node->next) {
-		status = header_and_message_keystore_node_export(node, &(*key_bundles)[i]);
+	for (position = 0, node = store->head;
+		 	(position < store->length) && (node != NULL);
+			position++, node = node->next) {
+		status = header_and_message_keystore_node_export(node, &(*key_bundles)[position]);
 		throw_on_error(EXPORT_ERROR, "Failed to export header and message keystore node.");
 	}
 
@@ -349,7 +349,7 @@ return_status header_and_message_keystore_import(
 		buffer_create_with_existing_array(message_key, current_key_bundle->message_key->key.data, current_key_bundle->message_key->key.len);
 
 		//create new node
-		status = create_and_populate_node(&current_node, current_key_bundle->expiration_time, header_key, message_key);
+		status = create_and_populate_node(&current_node, (time_t)current_key_bundle->expiration_time, header_key, message_key);
 		throw_on_error(CREATION_ERROR, "Failed to create header_and_message_keystore_node.");
 
 		add_node(store, current_node);

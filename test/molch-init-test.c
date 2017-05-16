@@ -89,7 +89,7 @@ int main(int argc, char *args[]) {
 			BACKUP_KEY_SIZE,
 			&backup,
 			&backup_length,
-			(unsigned char*)"random",
+			(const unsigned char*)"random",
 			sizeof("random"));
 	throw_on_error(CREATION_ERROR, "Failed to create user.");
 	if (backup == NULL) {

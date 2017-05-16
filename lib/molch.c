@@ -42,12 +42,12 @@
 
 //global user store
 static user_store *users = NULL;
-static buffer_t *backup_key = NULL;
+static buffer_t *global_backup_key = NULL;
 
 /*
  * Create a prekey list.
  */
-return_status create_prekey_list(
+static return_status create_prekey_list(
 		const buffer_t * const public_signing_key,
 		unsigned char ** const prekey_list, //output, needs to be freed
 		size_t * const prekey_list_length) {
@@ -178,7 +178,7 @@ return_status molch_create_user(
 	}
 
 	//create buffers wrapping the raw arrays
-	buffer_create_with_existing_array(random_data_buffer, (unsigned char*)random_data, random_data_length);
+	buffer_create_with_existing_const_array(random_data_buffer, random_data, random_data_length);
 	buffer_create_with_existing_array(public_master_key_buffer, public_master_key, PUBLIC_MASTER_KEY_SIZE);
 
 	//create user store if it doesn't exist already
@@ -255,7 +255,7 @@ return_status molch_destroy_user(
 
 	//TODO maybe check beforehand if the user exists and return nonzero if not
 
-	buffer_create_with_existing_array(public_signing_key_buffer, (unsigned char*)public_master_key, PUBLIC_KEY_SIZE);
+	buffer_create_with_existing_const_array(public_signing_key_buffer, public_master_key, PUBLIC_KEY_SIZE);
 	status = user_store_remove_by_key(users, public_signing_key_buffer);
 	throw_on_error(REMOVE_ERROR, "Failed to remoe user from user store by key.");
 
@@ -339,7 +339,7 @@ molch_message_type molch_get_message_type(
 		const size_t packet_length) {
 
 	//create a buffer for the packet
-	buffer_create_with_existing_array(packet_buffer, (unsigned char*)packet, packet_length);
+	buffer_create_with_existing_const_array(packet_buffer, packet, packet_length);
 
 	molch_message_type packet_type;
 	uint32_t current_protocol_version;
@@ -364,7 +364,7 @@ molch_message_type molch_get_message_type(
  * Verify prekey list and extract the public identity
  * and choose a prekey.
  */
-return_status verify_prekey_list(
+static return_status verify_prekey_list(
 		const unsigned char * const prekey_list,
 		const size_t prekey_list_length,
 		buffer_t * const public_identity_key, //output, PUBLIC_KEY_SIZE
@@ -388,7 +388,11 @@ return_status verify_prekey_list(
 	if (status_int != 0) {
 		throw(VERIFICATION_FAILED, "Failed to verify prekey list signature.");
 	}
-	verified_prekey_list->content_length = verified_length;
+	if (verified_length > SIZE_MAX)
+	{
+		throw(CONVERSION_ERROR, "Length is bigger than size_t.");
+	}
+	verified_prekey_list->content_length = (size_t)verified_length;
 
 	//get the expiration date
 	time_t expiration_date;
@@ -450,11 +454,11 @@ return_status molch_start_send_conversation(
 		size_t *const backup_length
 ) {
 	//create buffers wrapping the raw input
-	buffer_create_with_existing_array(conversation_id_buffer, (unsigned char*)conversation_id, CONVERSATION_ID_SIZE);
-	buffer_create_with_existing_array(message_buffer, (unsigned char*)message, message_length);
-	buffer_create_with_existing_array(sender_public_master_key_buffer, (unsigned char*)sender_public_master_key, PUBLIC_MASTER_KEY_SIZE);
-	buffer_create_with_existing_array(receiver_public_master_key_buffer, (unsigned char*)receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
-	buffer_create_with_existing_array(prekeys, (unsigned char*)prekey_list + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t));
+	buffer_create_with_existing_array(conversation_id_buffer, conversation_id, CONVERSATION_ID_SIZE);
+	buffer_create_with_existing_const_array(message_buffer, message, message_length);
+	buffer_create_with_existing_const_array(sender_public_master_key_buffer, sender_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+	buffer_create_with_existing_const_array(receiver_public_master_key_buffer, receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+	buffer_create_with_existing_const_array(prekeys, prekey_list + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t));
 
 	conversation_t *conversation = NULL;
 	buffer_t *packet_buffer = NULL;
@@ -603,10 +607,10 @@ return_status molch_start_receive_conversation(
 	return_status status = return_status_init();
 
 	//create buffers to wrap the raw arrays
-	buffer_create_with_existing_array(conversation_id_buffer, (unsigned char*)conversation_id, CONVERSATION_ID_SIZE);
-	buffer_create_with_existing_array(packet_buffer, (unsigned char*)packet, packet_length);
-	buffer_create_with_existing_array(sender_public_master_key_buffer, (unsigned char*) sender_public_master_key, PUBLIC_MASTER_KEY_SIZE);
-	buffer_create_with_existing_array(receiver_public_master_key_buffer, (unsigned char*)receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+	buffer_create_with_existing_array(conversation_id_buffer, conversation_id, CONVERSATION_ID_SIZE);
+	buffer_create_with_existing_const_array(packet_buffer, packet, packet_length);
+	buffer_create_with_existing_const_array(sender_public_master_key_buffer, sender_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+	buffer_create_with_existing_const_array(receiver_public_master_key_buffer, receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
 
 	conversation_t *conversation = NULL;
 	buffer_t *message_buffer = NULL;
@@ -705,10 +709,10 @@ cleanup:
 /*
  * Find a conversation based on it's conversation id.
  */
-return_status find_conversation(
+static return_status find_conversation(
 		conversation_t ** const conversation, //output
 		const unsigned char * const conversation_id,
-		conversation_store ** const conversation_store, //optional, can be NULL, the conversation store where the conversation is in
+		conversation_store ** const conversations, //optional, can be NULL, the conversation store where the conversation is in
 		user_store_node ** const user //optional, can be NULL, the user that the conversation belongs to
 		) {
 	return_status status = return_status_init();
@@ -719,7 +723,7 @@ return_status find_conversation(
 		throw(INVALID_INPUT, "Invalid input for find_conversation.");
 	}
 
-	buffer_create_with_existing_array(conversation_id_buffer, (unsigned char*)conversation_id, CONVERSATION_ID_SIZE);
+	buffer_create_with_existing_const_array(conversation_id_buffer, conversation_id, CONVERSATION_ID_SIZE);
 
 	//go through all the users
 	user_store_node *node = users->head;
@@ -743,8 +747,8 @@ return_status find_conversation(
 		*user = node;
 	}
 
-	if (conversation_store != NULL) {
-		*conversation_store = node->conversations;
+	if (conversations != NULL) {
+		*conversations = node->conversations;
 	}
 
 cleanup:
@@ -780,7 +784,7 @@ return_status molch_encrypt_message(
 		) {
 
 	//create buffer for message array
-	buffer_create_with_existing_array(message_buffer, (unsigned char*) message, message_length);
+	buffer_create_with_existing_const_array(message_buffer, message, message_length);
 
 	buffer_t *packet_buffer = NULL;
 	conversation_t *conversation = NULL;
@@ -860,7 +864,7 @@ return_status molch_decrypt_message(
 		size_t * const conversation_backup_length
 	) {
 	//create buffer for the packet
-	buffer_create_with_existing_array(packet_buffer, (unsigned char*)packet, packet_length);
+	buffer_create_with_existing_const_array(packet_buffer, packet, packet_length);
 
 	return_status status = return_status_init();
 
@@ -953,8 +957,8 @@ return_status molch_end_conversation(
 		if (backup_length == 0) {
 			*backup = NULL;
 		} else {
-			return_status status = molch_export(backup, backup_length);
-			on_error {
+			return_status local_status = molch_export(backup, backup_length);
+			if (local_status.status != SUCCESS) {
 				*backup = NULL;
 			}
 		}
@@ -984,7 +988,7 @@ return_status molch_list_conversations(
 		//inputs
 		const unsigned char * const user_public_master_key,
 		const size_t user_public_master_key_length) {
-	buffer_create_with_existing_array(user_public_master_key_buffer, (unsigned char*)user_public_master_key, PUBLIC_KEY_SIZE);
+	buffer_create_with_existing_const_array(user_public_master_key_buffer, user_public_master_key, PUBLIC_KEY_SIZE);
 	buffer_t *conversation_list_buffer = NULL;
 
 	return_status status = return_status_init();
@@ -1095,7 +1099,7 @@ return_status molch_conversation_export(
 		throw(INVALID_INPUT, "Conversation ID has an invalid size.");
 	}
 
-	if ((backup_key == NULL) || (backup_key->content_length != BACKUP_KEY_SIZE)) {
+	if ((global_backup_key == NULL) || (global_backup_key->content_length != BACKUP_KEY_SIZE)) {
 		throw(INCORRECT_DATA, "No backup key found.");
 	}
 
@@ -1136,7 +1140,7 @@ return_status molch_conversation_export(
 			conversation_buffer->content,
 			conversation_buffer->content_length,
 			backup_nonce->content,
-			backup_key->content);
+			global_backup_key->content);
 	if (status_int != 0) {
 		backup_buffer->content_length = 0;
 		throw(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
@@ -1199,8 +1203,8 @@ return_status molch_conversation_import(
 		//inputs
 		const unsigned char * const backup,
 		const size_t backup_length,
-		const unsigned char * local_backup_key,
-		const size_t local_backup_key_length) {
+		const unsigned char * backup_key,
+		const size_t backup_key_length) {
 	return_status status = return_status_init();
 
 	EncryptedBackup *encrypted_backup_struct = NULL;
@@ -1209,10 +1213,10 @@ return_status molch_conversation_import(
 	conversation_t *conversation = NULL;
 
 	//check input
-	if ((backup == NULL) || (local_backup_key == NULL)) {
+	if ((backup == NULL) || (backup_key == NULL)) {
 		throw(INVALID_INPUT, "Invalid input to molch_import.");
 	}
-	if (local_backup_key_length != BACKUP_KEY_SIZE) {
+	if (backup_key_length != BACKUP_KEY_SIZE) {
 		throw(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
 	}
 	if (new_backup_key_length != BACKUP_KEY_SIZE) {
@@ -1248,7 +1252,7 @@ return_status molch_conversation_import(
 			encrypted_backup_struct->encrypted_backup.data,
 			encrypted_backup_struct->encrypted_backup.len,
 			encrypted_backup_struct->encrypted_backup_nonce.data,
-			local_backup_key);
+			backup_key);
 	if (status_int != 0) {
 		throw(DECRYPT_ERROR, "Failed to decrypt conversation backup.");
 	}
@@ -1328,7 +1332,7 @@ return_status molch_export(
 		throw(INVALID_INPUT, "Invalid input to molch_export");
 	}
 
-	if ((backup_key == NULL) || (backup_key->content_length != BACKUP_KEY_SIZE)) {
+	if ((global_backup_key == NULL) || (global_backup_key->content_length != BACKUP_KEY_SIZE)) {
 		throw(INCORRECT_DATA, "No backup key found.");
 	}
 
@@ -1367,7 +1371,7 @@ return_status molch_export(
 			users_buffer->content,
 			users_buffer->content_length,
 			backup_nonce->content,
-			backup_key->content);
+			global_backup_key->content);
 	if (status_int != 0) {
 		backup_buffer->content_length = 0;
 		throw(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
@@ -1433,8 +1437,8 @@ return_status molch_import(
 		//inputs
 		unsigned char * const backup,
 		const size_t backup_length,
-		const unsigned char * const local_backup_key, //BACKUP_KEY_SIZE
-		const size_t local_backup_key_length
+		const unsigned char * const backup_key, //BACKUP_KEY_SIZE
+		const size_t backup_key_length
 		) {
 	return_status status = return_status_init();
 
@@ -1444,10 +1448,10 @@ return_status molch_import(
 	user_store *store = NULL;
 
 	//check input
-	if ((backup == NULL) || (local_backup_key == NULL)) {
+	if ((backup == NULL) || (backup_key == NULL)) {
 		throw(INVALID_INPUT, "Invalid input to molch_import.");
 	}
-	if (local_backup_key_length != BACKUP_KEY_SIZE) {
+	if (backup_key_length != BACKUP_KEY_SIZE) {
 		throw(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
 	}
 	if (new_backup_key_length != BACKUP_KEY_SIZE) {
@@ -1489,7 +1493,7 @@ return_status molch_import(
 			encrypted_backup_struct->encrypted_backup.data,
 			encrypted_backup_struct->encrypted_backup.len,
 			encrypted_backup_struct->encrypted_backup_nonce.data,
-			local_backup_key);
+			backup_key);
 	if (status_int != 0) {
 		throw(DECRYPT_ERROR, "Failed to decrypt backup.");
 	}
@@ -1595,32 +1599,32 @@ return_status molch_update_backup_key(
 	}
 
 	// create a backup key buffer if it doesnt exist already
-	if (backup_key == NULL) {
-		backup_key = buffer_create_with_custom_allocator(BACKUP_KEY_SIZE, 0, sodium_malloc, sodium_free);
-		throw_on_failed_alloc(backup_key);
+	if (global_backup_key == NULL) {
+		global_backup_key = buffer_create_with_custom_allocator(BACKUP_KEY_SIZE, 0, sodium_malloc, sodium_free);
+		throw_on_failed_alloc(global_backup_key);
 	}
 
 	//make backup key buffer writable
-	if (sodium_mprotect_readwrite(backup_key) != 0) {
+	if (sodium_mprotect_readwrite(global_backup_key) != 0) {
 		throw(GENERIC_ERROR, "Failed to make backup key readwrite.");
 	}
 	//make the content of the backup key writable
-	if (sodium_mprotect_readwrite(backup_key->content) != 0) {
+	if (sodium_mprotect_readwrite(global_backup_key->content) != 0) {
 		throw(GENERIC_ERROR, "Failed to make backup key content readwrite.");
 	}
 
-	if (buffer_fill_random(backup_key, BACKUP_KEY_SIZE) != 0) {
+	if (buffer_fill_random(global_backup_key, BACKUP_KEY_SIZE) != 0) {
 		throw(KEYGENERATION_FAILED, "Failed to generate new backup key.");
 	}
 
-	if (buffer_clone(new_key_buffer, backup_key) != 0) {
+	if (buffer_clone(new_key_buffer, global_backup_key) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy new backup key.");
 	}
 
 cleanup:
-	if (backup_key != NULL) {
-		sodium_mprotect_readonly(backup_key);
-		sodium_mprotect_readonly(backup_key->content);
+	if (global_backup_key != NULL) {
+		sodium_mprotect_readonly(global_backup_key);
+		sodium_mprotect_readonly(global_backup_key->content);
 	}
 
 	return status;

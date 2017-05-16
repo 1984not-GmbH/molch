@@ -26,7 +26,7 @@
 
 #include "buffer.h"
 
-void print_hex(buffer_t *data) {
+static void print_hex(buffer_t *data) {
 	buffer_t *hex = buffer_create(2 * data->content_length + 1, 2 * data->content_length + 1);
 	int status = buffer_to_hex(hex, data);
 	if (status != 0) {
@@ -464,7 +464,7 @@ int main(void) {
 
 	//growing heap buffer
 	buffer_t *resize_buffer = buffer_create_on_heap(1, 1);
-	status = buffer_clone_from_raw(resize_buffer, (unsigned char*)"", 1);
+	status = buffer_clone_from_raw(resize_buffer, (const unsigned char*)"", 1);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to clone raw buffer. (%i)\n", status);
 		buffer_destroy_from_heap(resize_buffer);
@@ -508,17 +508,17 @@ int main(void) {
 
 	//compare buffer to an array
 	buffer_create_from_string(true_buffer, "true");
-	status = buffer_compare_to_raw(true_buffer, (unsigned char*)"true", sizeof("true"));
+	status = buffer_compare_to_raw(true_buffer, (const unsigned char*)"true", sizeof("true"));
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to compare buffer to array! (%i)\n", status);
 		return status;
 	}
-	status = buffer_compare_to_raw(true_buffer, (unsigned char*)"fals", sizeof("fals"));
+	status = buffer_compare_to_raw(true_buffer, (const unsigned char*)"fals", sizeof("fals"));
 	if (status != -1) {
 		fprintf(stderr, "ERROR: Failed to detect difference in buffer and array.\n");
 		return EXIT_FAILURE;
 	}
-	status = buffer_compare_to_raw(true_buffer, (unsigned char*)"false", sizeof("false"));
+	status = buffer_compare_to_raw(true_buffer, (const unsigned char*)"false", sizeof("false"));
 	if (status != -1) {
 		fprintf(stderr, "ERROR: Failed to detect difference in buffer and array.\n");
 		return EXIT_FAILURE;
@@ -528,7 +528,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to use macro to compare buffer to string! (%i)\n", status);
 		return status;
 	}
-	status = buffer_compare_to_raw_partial(true_buffer, 3, (unsigned char*)"true", sizeof("true"), 0, 3);
+	status = buffer_compare_to_raw_partial(true_buffer, 3, (const unsigned char*)"true", sizeof("true"), 0, 3);
 	if (status == 0) {
 		fprintf(stderr, "ERROR: Failed to detect out of bounds read when comparing buffers!\n");
 		return EXIT_FAILURE;

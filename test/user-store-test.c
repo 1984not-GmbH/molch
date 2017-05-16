@@ -89,7 +89,7 @@ cleanup:
 	return status;
 }
 
-return_status protobuf_import(
+static return_status protobuf_import(
 		user_store ** const store,
 		buffer_t ** const buffers,
 		const size_t buffers_length) {
@@ -130,8 +130,8 @@ cleanup:
 	return status;
 }
 
-return_status protobuf_empty_store() __attribute__((warn_unused_result));
-return_status protobuf_empty_store() {
+return_status protobuf_empty_store(void) __attribute__((warn_unused_result));
+return_status protobuf_empty_store(void) {
 	return_status status = return_status_init();
 
 	printf("Testing im-/export of empty user store.\n");

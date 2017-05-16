@@ -29,7 +29,7 @@
 #include "utils.h"
 #include "tracing.h"
 
-return_status protobuf_export(
+static return_status protobuf_export(
 		prekey_store * const store,
 		Prekey *** const keypairs,
 		size_t * const keypairs_size,
@@ -84,7 +84,7 @@ cleanup:
 	return status;
 }
 
-return_status protobuf_import(
+static return_status protobuf_import(
 		prekey_store ** const store,
 		buffer_t ** const keypair_buffers,
 		const size_t keypair_buffers_size,
@@ -156,8 +156,8 @@ cleanup:
 	return status;
 }
 
-return_status protobuf_no_deprecated_keys() __attribute__((warn_unused_result));
-return_status protobuf_no_deprecated_keys() {
+return_status protobuf_no_deprecated_keys(void) __attribute__((warn_unused_result));
+return_status protobuf_no_deprecated_keys(void) {
 	return_status status = return_status_init();
 
 	printf("Testing im-/export of prekey store without deprecated keys.\n");

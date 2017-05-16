@@ -30,11 +30,11 @@
 #include "utils.h"
 #include "tracing.h"
 
-return_status protobuf_export(
+static return_status protobuf_export(
 		const conversation_store * const store,
 		buffer_t *** const export_buffers,
 		size_t * const buffer_count) __attribute__((warn_unused_result));
-return_status protobuf_export(
+static return_status protobuf_export(
 		const conversation_store * const store,
 		buffer_t *** const export_buffers,
 		size_t * const buffer_count) {
@@ -139,7 +139,7 @@ cleanup:
 	return status;
 }
 
-return_status test_add_conversation(conversation_store * const store) {
+static return_status test_add_conversation(conversation_store * const store) {
 	//define key buffers
 	//identity keys
 	buffer_t *our_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
@@ -225,8 +225,8 @@ cleanup:
 	return status;
 }
 
-return_status protobuf_empty_store() __attribute__((warn_unused_result));
-return_status protobuf_empty_store() {
+return_status protobuf_empty_store(void) __attribute__((warn_unused_result));
+return_status protobuf_empty_store(void) {
 	return_status status = return_status_init();
 
 	printf("Testing im-/export of empty conversation store.\n");

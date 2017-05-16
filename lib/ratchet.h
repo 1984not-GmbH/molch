@@ -39,43 +39,43 @@ typedef enum ratchet_header_decryptability {
 //struct that represents the state of a conversation
 typedef struct ratchet_state {
 	buffer_t root_key[1]; //RK
-	const unsigned char root_key_storage[ROOT_KEY_SIZE];
+	unsigned char root_key_storage[ROOT_KEY_SIZE];
 	buffer_t purported_root_key[1]; //RKp
-	const unsigned char purported_root_key_storage[ROOT_KEY_SIZE];
+	unsigned char purported_root_key_storage[ROOT_KEY_SIZE];
 	//header keys
 	buffer_t send_header_key[1];
-	const unsigned char send_header_key_storage[HEADER_KEY_SIZE];
+	unsigned char send_header_key_storage[HEADER_KEY_SIZE];
 	buffer_t receive_header_key[1];
-	const unsigned char receive_header_key_storage[HEADER_KEY_SIZE];
+	unsigned char receive_header_key_storage[HEADER_KEY_SIZE];
 	buffer_t next_send_header_key[1];
-	const unsigned char next_send_header_key_storage[HEADER_KEY_SIZE];
+	unsigned char next_send_header_key_storage[HEADER_KEY_SIZE];
 	buffer_t next_receive_header_key[1];
-	const unsigned char next_receive_header_key_storage[HEADER_KEY_SIZE];
+	unsigned char next_receive_header_key_storage[HEADER_KEY_SIZE];
 	buffer_t purported_receive_header_key[1];
-	const unsigned char purported_receive_header_key_storage[HEADER_KEY_SIZE];
+	unsigned char purported_receive_header_key_storage[HEADER_KEY_SIZE];
 	buffer_t purported_next_receive_header_key[1];
-	const unsigned char purported_next_receive_header_key_storage[HEADER_KEY_SIZE];
+	unsigned char purported_next_receive_header_key_storage[HEADER_KEY_SIZE];
 	//chain keys
 	buffer_t send_chain_key[1]; //CKs
-	const unsigned char send_chain_key_storage[CHAIN_KEY_SIZE];
+	unsigned char send_chain_key_storage[CHAIN_KEY_SIZE];
 	buffer_t receive_chain_key[1]; //CKr
-	const unsigned char receive_chain_key_storage[CHAIN_KEY_SIZE];
+	unsigned char receive_chain_key_storage[CHAIN_KEY_SIZE];
 	buffer_t purported_receive_chain_key[1]; //CKp
-	const unsigned char purported_receive_chain_key_storage[CHAIN_KEY_SIZE];
+	unsigned char purported_receive_chain_key_storage[CHAIN_KEY_SIZE];
 	//identity keys
 	buffer_t our_public_identity[1]; //DHIs
-	const unsigned char our_public_identity_storage[PUBLIC_KEY_SIZE];
+	unsigned char our_public_identity_storage[PUBLIC_KEY_SIZE];
 	buffer_t their_public_identity[1]; //DHIr
-	const unsigned char their_public_identity_storage[PUBLIC_KEY_SIZE];
+	unsigned char their_public_identity_storage[PUBLIC_KEY_SIZE];
 	//ephemeral keys (ratchet keys)
 	buffer_t our_private_ephemeral[1]; //DHRs
-	const unsigned char our_private_ephemeral_storage[PRIVATE_KEY_SIZE];
+	unsigned char our_private_ephemeral_storage[PRIVATE_KEY_SIZE];
 	buffer_t our_public_ephemeral[1]; //DHRs
-	const unsigned char our_public_ephemeral_storage[PUBLIC_KEY_SIZE];
+	unsigned char our_public_ephemeral_storage[PUBLIC_KEY_SIZE];
 	buffer_t their_public_ephemeral[1]; //DHRr
-	const unsigned char their_public_ephemeral_storage[PUBLIC_KEY_SIZE];
+	unsigned char their_public_ephemeral_storage[PUBLIC_KEY_SIZE];
 	buffer_t their_purported_public_ephemeral[1]; //DHp
-	const unsigned char their_purported_public_ephemeral_storage[PUBLIC_KEY_SIZE];
+	unsigned char their_purported_public_ephemeral_storage[PUBLIC_KEY_SIZE];
 	//message numbers
 	uint32_t send_message_number; //Ns
 	uint32_t receive_message_number; //Nr

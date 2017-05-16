@@ -45,7 +45,7 @@ int main(void) {
 	printf("uint32_t %llu to big endian:\n", (unsigned long long) uint32);
 	print_hex(buffer32);
 
-	if (buffer_compare_to_raw(buffer32, (unsigned char*)"\x04\x03\x02\x01", sizeof(uint32_t)) != 0) {
+	if (buffer_compare_to_raw(buffer32, (const unsigned char*)"\x04\x03\x02\x01", sizeof(uint32_t)) != 0) {
 		throw(INCORRECT_DATA, "Big endian of uint32_t is incorrect.");
 	}
 
@@ -65,7 +65,7 @@ int main(void) {
 	printf("int32_t %lli to big endian:\n", (signed long long) int32);
 	print_hex(buffer32);
 
-	if (buffer_compare_to_raw(buffer32, (unsigned char*)"\xFF\xFE\xFD\xFC", sizeof(int32_t)) != 0) {
+	if (buffer_compare_to_raw(buffer32, (const unsigned char*)"\xFF\xFE\xFD\xFC", sizeof(int32_t)) != 0) {
 		throw(INCORRECT_DATA, "Big endian of int32_t is incorrect.");
 	}
 
@@ -85,7 +85,7 @@ int main(void) {
 	printf("uint64_t %llu to big endian:\n", (unsigned long long) uint64);
 	print_hex(buffer64);
 
-	if (buffer_compare_to_raw(buffer64, (unsigned char*)"\x08\x07\x06\x05\x04\x03\x02\x01", sizeof(uint64_t)) != 0) {
+	if (buffer_compare_to_raw(buffer64, (const unsigned char*)"\x08\x07\x06\x05\x04\x03\x02\x01", sizeof(uint64_t)) != 0) {
 		throw(INCORRECT_DATA, "Big endian of uint64_t is incorrect.");
 	}
 
@@ -105,7 +105,7 @@ int main(void) {
 	printf("int64_t %lli to big endian:\n", (signed long long) int64);
 	print_hex(buffer64);
 
-	if (buffer_compare_to_raw(buffer64, (unsigned char*)"\xFF\xFE\xFD\xFC\xFB\xFA\xF9\xF8", sizeof(int64_t)) != 0) {
+	if (buffer_compare_to_raw(buffer64, (const unsigned char*)"\xFF\xFE\xFD\xFC\xFB\xFA\xF9\xF8", sizeof(int64_t)) != 0) {
 		throw(INCORRECT_DATA, "Big endian of int64_t is incorrect.");
 	}
 

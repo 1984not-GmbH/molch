@@ -28,7 +28,7 @@
 /*
  * Create a new conversation struct and initialise the buffer pointer.
  */
-void init_struct(conversation_t *conversation) {
+static void init_struct(conversation_t *conversation) {
 	buffer_init_with_pointer(conversation->id, conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 	conversation->ratchet = NULL;
 	conversation->previous = NULL;
@@ -413,7 +413,7 @@ cleanup:
  *
  * Returns 0, if it was able to decrypt the packet.
  */
-int try_skipped_header_and_message_keys(
+static int try_skipped_header_and_message_keys(
 		header_and_message_keystore * const skipped_keys,
 		const buffer_t * const packet,
 		buffer_t ** const message,
