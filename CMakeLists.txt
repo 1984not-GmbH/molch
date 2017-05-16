@@ -42,6 +42,7 @@ list(APPEND custom_compiler_flags
     -Wparentheses
     -fPIC
     -Wunused-macros
+    -Wmissing-variable-declarations
     )
 
 if(NOT ${CMAKE_BUILD_TYPE} MATCHES "Debug")
