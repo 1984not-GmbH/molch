@@ -59,13 +59,13 @@ if (UNIX)
     endif()
 
     find_path(sodium_INCLUDE_DIR sodium.h
-        HINTS ${${XPREFIX}_INCLUDE_DIRS}
+        HINTS ${SODIUM_ROOT_DIR}/include ${${XPREFIX}_INCLUDE_DIRS}
     )
     find_library(sodium_LIBRARY_DEBUG NAMES ${${XPREFIX}_LIBRARIES} sodium
-        HINTS ${${XPREFIX}_LIBRARY_DIRS}
+        HINTS ${SODIUM_ROOT_DIR}/lib ${${XPREFIX}_LIBRARY_DIRS}
     )
     find_library(sodium_LIBRARY_RELEASE NAMES ${${XPREFIX}_LIBRARIES} sodium
-        HINTS ${${XPREFIX}_LIBRARY_DIRS}
+        HINTS ${SODIUM_ROOT_DIR}/lib ${${XPREFIX}_LIBRARY_DIRS}
     )
 
 
@@ -76,7 +76,7 @@ elseif (WIN32)
     mark_as_advanced(sodium_DIR)
 
     find_path(sodium_INCLUDE_DIR sodium.h
-        HINTS ${sodium_DIR}
+        HINTS ${SODIUM_ROOT_DIR} ${sodium_DIR}
         PATH_SUFFIXES include
     )
 
@@ -122,21 +122,21 @@ elseif (WIN32)
         string(REPLACE "$$CONFIG$$" "Release" _RELEASE_PATH_SUFFIX "${_PLATFORM_PATH}")
 
         find_library(sodium_LIBRARY_DEBUG libsodium.lib
-            HINTS ${sodium_DIR}
+            HINTS ${SODIUM_ROOT_DIR} ${sodium_DIR}
             PATH_SUFFIXES ${_DEBUG_PATH_SUFFIX}
         )
         find_library(sodium_LIBRARY_RELEASE libsodium.lib
-            HINTS ${sodium_DIR}
+            HINTS ${SODIUM_ROOT_DIR} ${sodium_DIR}
             PATH_SUFFIXES ${_RELEASE_PATH_SUFFIX}
         )
         if (NOT sodium_USE_STATIC_LIBS)
             set(CMAKE_FIND_LIBRARY_SUFFIXES ".dll")
             find_library(sodium_DLL_DEBUG libsodium
-                HINTS ${sodium_DIR}
+                HINTS ${SODIUM_ROOT_DIR} ${sodium_DIR}
                 PATH_SUFFIXES ${_DEBUG_PATH_SUFFIX}
             )
             find_library(sodium_DLL_RELEASE libsodium
-                HINTS ${sodium_DIR}
+                HINTS ${SODIUM_ROOT_DIR} ${sodium_DIR}
                 PATH_SUFFIXES ${_RELEASE_PATH_SUFFIX}
             )
         endif()
@@ -144,20 +144,20 @@ elseif (WIN32)
     elseif(_GCC_COMPATIBLE)
         if (sodium_USE_STATIC_LIBS)
             find_library(sodium_LIBRARY_DEBUG libsodium.a
-                HINTS ${sodium_DIR}
+                HINTS ${SODIUM_ROOT_DIR} ${sodium_DIR}
                 PATH_SUFFIXES lib
             )
             find_library(sodium_LIBRARY_RELEASE libsodium.a
-                HINTS ${sodium_DIR}
+                HINTS ${SODIUM_ROOT_DIR} ${sodium_DIR}
                 PATH_SUFFIXES lib
             )
         else()
             find_library(sodium_LIBRARY_DEBUG libsodium.dll.a
-                HINTS ${sodium_DIR}
+                HINTS ${SODIUM_ROOT_DIR} ${sodium_DIR}
                 PATH_SUFFIXES lib
             )
             find_library(sodium_LIBRARY_RELEASE libsodium.dll.a
-                HINTS ${sodium_DIR}
+                HINTS ${SODIUM_ROOT_DIR} ${sodium_DIR}
                 PATH_SUFFIXES lib
             )
 
@@ -167,11 +167,11 @@ elseif (WIN32)
                 "${sodium_DIR}/bin/libsodium*.dll"
             )
             find_library(sodium_DLL_DEBUG ${_DLL} libsodium
-                HINTS ${sodium_DIR}
+                HINTS ${SODIUM_ROOT_DIR} ${sodium_DIR}
                 PATH_SUFFIXES bin
             )
             find_library(sodium_DLL_RELEASE ${_DLL} libsodium
-                HINTS ${sodium_DIR}
+                HINTS ${SODIUM_ROOT_DIR} ${sodium_DIR}
                 PATH_SUFFIXES bin
             )
         endif()
