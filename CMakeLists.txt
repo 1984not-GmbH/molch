@@ -41,6 +41,7 @@ list(APPEND custom_compiler_flags
     -Wdouble-promotion
     -Wparentheses
     -fPIC
+    -Wunused-macros
     )
 
 if(NOT ${CMAKE_BUILD_TYPE} MATCHES "Debug")
