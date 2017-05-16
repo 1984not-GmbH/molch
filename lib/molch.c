@@ -388,7 +388,11 @@ static return_status verify_prekey_list(
 	if (status_int != 0) {
 		throw(VERIFICATION_FAILED, "Failed to verify prekey list signature.");
 	}
-	verified_prekey_list->content_length = verified_length;
+	if (verified_length > SIZE_MAX)
+	{
+		throw(CONVERSION_ERROR, "Length is bigger than size_t.");
+	}
+	verified_prekey_list->content_length = (size_t)verified_length;
 
 	//get the expiration date
 	time_t expiration_date;
