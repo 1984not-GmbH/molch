@@ -16,7 +16,11 @@ if(GENERATE_LUA_BINDINGS AND (NOT APPLE))
 
     find_program(LUA_INTERPRETER NAMES lua lua53 lua5.3 lua52 lua5.2 lua51 lua5.1 luajit)
 
-    swig_add_module(molch-interface lua molch.i)
+    if ("${CMAKE_VERSION}" VERSION_LESS "3.8.0")
+        swig_add_module(molch-interface lua molch.i)
+    else()
+        swig_add_library(molch-interface LANGUAGE "lua" SOURCES molch.i)
+    endif()
     swig_link_libraries(molch-interface molch ${LUA_LIBRARIES})
     # Disable -Werror for lua-bindings
     list(FIND custom_compiler_flags "-Werror" werror_found)
