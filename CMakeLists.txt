@@ -72,7 +72,7 @@ if(NOT APPLE)
 endif()
 set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${SECURITY_LINK_FLAGS}")
 
-find_package(sodium REQUIRED)
+find_package(sodium 1.0.12 REQUIRED)
 find_package(Protobuf-C REQUIRED)
 find_package(Protoc-C REQUIRED)
 
