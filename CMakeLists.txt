@@ -72,12 +72,12 @@ if(NOT APPLE)
 endif()
 set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${SECURITY_LINK_FLAGS}")
 
-find_package(Sodium REQUIRED)
+find_package(sodium REQUIRED)
 find_package(Protobuf-C REQUIRED)
 find_package(Protoc-C REQUIRED)
 
 include_directories(${SODIUM_INCLUDE_DIR} ${PROTOBUFC_INCLUDE_DIR})
-SET(libs ${libs} ${SODIUM_LIBRARY} ${PROTOBUFC_LIBRARY})
+SET(libs ${libs} sodium ${PROTOBUFC_LIBRARY})
 
 
 find_program(MEMORYCHECK_COMMAND valgrind)
