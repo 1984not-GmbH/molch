@@ -23,7 +23,7 @@
 #include <time.h>
 
 #include "constants.h"
-#include "../buffer/buffer.h"
+#include "buffer.h"
 #include "conversation-store.h"
 #include "prekey-store.h"
 #include "master-keys.h"

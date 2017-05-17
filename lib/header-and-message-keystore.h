@@ -26,7 +26,7 @@
 
 #include "constants.h"
 #include "common.h"
-#include "../buffer/buffer.h"
+#include "buffer.h"
 
 #ifndef LIB_HEADER_AND_MESSAGE_KEY_STORE_H
 #define LIB_HEADER_AND_MESSAGE_KEY_STORE_H

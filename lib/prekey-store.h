@@ -24,7 +24,7 @@
 
 #include "constants.h"
 #include "common.h"
-#include "../buffer/buffer.h"
+#include "buffer.h"
 
 #ifndef LIB_PREKEY_STORE
 #define LIB_PREKEY_STORE

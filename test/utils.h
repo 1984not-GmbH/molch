@@ -19,7 +19,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "../buffer/buffer.h"
+#include "../lib/buffer.h"
 #include "../lib/return-status.h"
 
 #ifndef TEST_UTILS_H

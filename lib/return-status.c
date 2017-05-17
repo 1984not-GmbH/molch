@@ -24,7 +24,7 @@
 #include <stdio.h>
 
 #include "return-status.h"
-#include "../buffer/buffer.h"
+#include "buffer.h"
 
 inline return_status return_status_init() {
 	return_status status = {

@@ -7,7 +7,6 @@ if (RUN_TESTS)
     add_subdirectory(test-data)
 
     add_library(utils utils)
-    target_link_libraries(utils molch-buffer)
     if (TRACING)
         target_link_libraries(utils tracing)
     endif()
@@ -16,7 +15,7 @@ if (RUN_TESTS)
     target_link_libraries(common utils)
 
     add_library(packet-test-lib packet-test-lib)
-    target_link_libraries(packet-test-lib molch molch-buffer utils)
+    target_link_libraries(packet-test-lib molch utils)
 
     set(tests diffie-hellman-test
               triple-diffie-hellman-test
@@ -46,11 +45,12 @@ if (RUN_TESTS)
               molch-init-test
               alignment-test
               zeroed_malloc-test
+              buffer-test
     )
 
     foreach(test ${tests})
         add_executable(${test} ${test})
-        target_link_libraries(${test} molch molch-buffer utils common packet-test-lib)
+        target_link_libraries(${test} molch utils common packet-test-lib)
         add_test(${test} "./${test}")
         if((NOT APPLE) AND (NOT ("${MEMORYCHECK_COMMAND}" MATCHES "MEMORYCHECK_COMMAND-NOTFOUND")))
             add_test("${test}-valgrind" ${MEMORYCHECK_COMMAND} ${MEMORYCHECK_COMMAND_OPTIONS} "./${test}")

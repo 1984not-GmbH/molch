@@ -29,7 +29,7 @@
 #include <time.h>
 
 #include "common.h"
-#include "../buffer/buffer.h"
+#include "buffer.h"
 
 #ifndef LIB_ENDIANNESS_H
 #define LIB_ENDIANNESS_H

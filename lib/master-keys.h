@@ -23,7 +23,7 @@
 
 #include "constants.h"
 #include "common.h"
-#include "../buffer/buffer.h"
+#include "buffer.h"
 
 #ifndef LIB_MASTER_KEYS
 #define LIB_MASTER_KEYS

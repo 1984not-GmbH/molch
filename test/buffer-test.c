@@ -24,7 +24,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "buffer.h"
+#include "../lib/buffer.h"
 
 static void print_hex(buffer_t *data) {
 	buffer_t *hex = buffer_create(2 * data->content_length + 1, 2 * data->content_length + 1);

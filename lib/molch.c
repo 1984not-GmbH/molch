@@ -31,7 +31,7 @@
 #include "constants.h"
 #include "molch.h"
 #include "packet.h"
-#include "../buffer/buffer.h"
+#include "buffer.h"
 #include "user-store.h"
 #include "endianness.h"
 #include "return-status.h"

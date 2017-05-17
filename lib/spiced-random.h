@@ -19,7 +19,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "../buffer/buffer.h"
+#include "buffer.h"
 #include "common.h"
 
 #ifndef LIB_SPICED_RANDOM_H

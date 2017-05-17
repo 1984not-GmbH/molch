@@ -31,7 +31,7 @@
 #define LIB_HEADER_H
 
 #include "common.h"
-#include "../buffer/buffer.h"
+#include "buffer.h"
 
 /*!
  * Constructs an Axolotl-Header into a buffer.
