@@ -1,5 +1,3 @@
-cmake_minimum_required (VERSION 2.6)
-
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 set(proto-files
@@ -33,7 +31,6 @@ set_source_files_properties(${proto-sources} ${proto-headers} PROPERTIES GENERAT
 add_library(protocol-buffers ${proto-sources})
 target_link_libraries(protocol-buffers ${PROTOBUFC_LIBRARY})
 # Disable -Wcast-align for protocol-buffers
-list(FIND custom_compiler_flags "-Wcast-align" wcast_align_found)
-if (wcast_align_found)
+if (FLAG_SUPPORTED_Wcastalign)
 	target_compile_options(protocol-buffers PRIVATE "-Wno-cast-align")
 endif()

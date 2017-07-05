@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 2.8.12)
 
 project (molch C)
 
@@ -9,7 +9,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 enable_testing()
 
 #Setup compiler flags
-list(APPEND custom_compiler_flags
+list(APPEND custom_compiler_flag_candidates
     -std=c99
     -pedantic
     -Wall
@@ -37,25 +37,27 @@ list(APPEND custom_compiler_flags
     )
 
 if(NOT ${CMAKE_BUILD_TYPE} MATCHES "Debug")
-    list(APPEND custom_compiler_flags
+    list(APPEND custom_compiler_flag_candidates
         -O2
         -U_FORTIFY_SOURCE
         -D_FORTIFY_SOURCE=2)
 else()
-    list(APPEND custom_compiler_flags -O0 -Og)
+    list(APPEND custom_compiler_flag_candidates -O0 -Og)
 endif()
 
 # apply custom compiler flags
 include(CheckCCompilerFlag)
-foreach(compiler_flag ${custom_compiler_flags})
+foreach(compiler_flag ${custom_compiler_flag_candidates})
     #remove problematic characters
     string(REGEX REPLACE "[^a-zA-Z0-9]" "" current_variable ${compiler_flag})
 
     CHECK_C_COMPILER_FLAG(${compiler_flag} "FLAG_SUPPORTED_${current_variable}")
     if (FLAG_SUPPORTED_${current_variable})
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${compiler_flag}")
+        set(custom_compiler_flags "${custom_compiler_flags} ${compiler_flag}")
     endif()
 endforeach()
+
+set(CMAKE_C_FLAGS "${custom_compiler_flags} ${CMAKE_C_FLAGS}")
 
 #Set linker flags
 if(NOT APPLE)

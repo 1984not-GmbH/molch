@@ -23,13 +23,11 @@ if(GENERATE_LUA_BINDINGS AND (NOT APPLE))
     endif()
     swig_link_libraries(molch-interface molch ${LUA_LIBRARIES})
     # Disable -Werror for lua-bindings
-    list(FIND custom_compiler_flags "-Werror" werror_found)
-    if (werror_found)
-        target_compile_options(molch-interface PRIVATE "-Wno-error")
+    if (FLAG_SUPPORTED_Werror)
+            target_compile_options(molch-interface PRIVATE "-Wno-error")
     endif()
     # Disable -Wcast-qual for lua-bindings
-    list(FIND custom_compiler_flags "-Wcast-qual" wcast_qual_found)
-    if (wcast_qual_found)
+    if (FLAG_SUPPORTED_Wcastqual)
         target_compile_options(molch-interface PRIVATE "-Wno-cast-qual")
     endif()
 
