@@ -28,7 +28,6 @@
 #include "../lib/constants.h"
 #include "utils.h"
 #include "packet-test-lib.h"
-#include "tracing.h"
 
 int main(void) {
 	return_status status = return_status_init();

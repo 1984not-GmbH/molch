@@ -27,7 +27,6 @@
 #include "../lib/molch.h"
 #include "../lib/user-store.h" //for PREKEY_AMOUNT
 #include "../lib/zeroed_malloc.h"
-#include "tracing.h"
 
 #include <encrypted_backup.pb-c.h>
 

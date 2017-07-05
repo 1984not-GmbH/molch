@@ -8,15 +8,6 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
 
 enable_testing()
 
-option(TRACING "Enable tracing." OFF)
-if (TRACING)
-    message("TRACING ENABLED")
-    add_definitions(-DTRACING)
-    add_library(tracing "test/tracing")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -finstrument-functions -finstrument-functions-exclude-function-list=printf,dladdr,putchar")
-    set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} -ldl")
-endif()
-
 #Setup compiler flags
 list(APPEND custom_compiler_flags
     -std=c99

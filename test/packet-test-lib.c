@@ -27,7 +27,6 @@
 #include "../lib/constants.h"
 #include "utils.h"
 #include "packet-test-lib.h"
-#include "tracing.h"
 
 return_status create_and_print_message(
 		//output

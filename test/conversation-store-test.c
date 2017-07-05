@@ -28,7 +28,6 @@
 
 #include "../lib/conversation-store.h"
 #include "utils.h"
-#include "tracing.h"
 
 static return_status protobuf_export(
 		const conversation_store * const store,

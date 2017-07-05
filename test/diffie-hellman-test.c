@@ -26,7 +26,6 @@
 #include "../lib/diffie-hellman.h"
 #include "utils.h"
 #include "common.h"
-#include "tracing.h"
 
 int main(void) {
 	if (sodium_init() == -1) {

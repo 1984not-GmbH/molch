@@ -26,7 +26,6 @@
 #include "../lib/master-keys.h"
 #include "../lib/constants.h"
 #include "utils.h"
-#include "tracing.h"
 
 return_status protobuf_export(
 		master_keys * const keys,

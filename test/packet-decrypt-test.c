@@ -28,7 +28,6 @@
 #include "../lib/molch.h"
 #include "utils.h"
 #include "packet-test-lib.h"
-#include "tracing.h"
 
 int main(void) {
 

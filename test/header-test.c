@@ -25,7 +25,6 @@
 
 #include "../lib/header.h"
 #include "utils.h"
-#include "tracing.h"
 
 int main(void) {
 	//create buffers

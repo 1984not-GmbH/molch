@@ -26,7 +26,6 @@
 
 #include "../lib/zeroed_malloc.h"
 #include "utils.h"
-#include "tracing.h"
 
 int main(void) {
 	return_status status = return_status_init();

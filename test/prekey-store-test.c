@@ -27,7 +27,6 @@
 #include "../lib/prekey-store.h"
 #include "../lib/constants.h"
 #include "utils.h"
-#include "tracing.h"
 
 static return_status protobuf_export(
 		prekey_store * const store,

@@ -28,7 +28,6 @@
 #include "../lib/user-store.h"
 #include "utils.h"
 #include "common.h"
-#include "tracing.h"
 
 return_status protobuf_export(
 		const user_store * const store,

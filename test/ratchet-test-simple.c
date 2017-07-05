@@ -25,7 +25,6 @@
 
 #include "../lib/ratchet.h"
 #include "utils.h"
-#include "tracing.h"
 
 static int keypair(buffer_t *private_key, buffer_t *public_key) {
 	return crypto_box_keypair(public_key->content, private_key->content);

@@ -25,7 +25,6 @@
 #include <string.h>
 
 #include "utils.h"
-#include "tracing.h"
 #include "../lib/molch.h"
 #include "../lib/constants.h"
 

@@ -25,7 +25,6 @@
 
 #include "../lib/return-status.h"
 #include "utils.h"
-#include "tracing.h"
 
 static return_status second_level(void) {
 	return_status status = return_status_init();

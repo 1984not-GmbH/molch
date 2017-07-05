@@ -7,9 +7,6 @@ if (RUN_TESTS)
     add_subdirectory(test-data)
 
     add_library(utils utils)
-    if (TRACING)
-        target_link_libraries(utils tracing)
-    endif()
 
     add_library(common common)
     target_link_libraries(common utils)

@@ -28,7 +28,6 @@
 #include "../lib/constants.h"
 #include "utils.h"
 #include "packet-test-lib.h"
-#include "tracing.h"
 
 int main(void) {
 	buffer_create_from_string(message, "Hello world!\n");

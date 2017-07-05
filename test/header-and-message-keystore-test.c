@@ -31,7 +31,6 @@
 #include "../lib/zeroed_malloc.h"
 #include "utils.h"
 #include "common.h"
-#include "tracing.h"
 
 static return_status protobuf_export(
 			header_and_message_keystore * const keystore,

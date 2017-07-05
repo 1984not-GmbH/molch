@@ -28,7 +28,6 @@
 #include "common.h"
 #include "utils.h"
 #include "../lib/conversation.h"
-#include "tracing.h"
 
 return_status protobuf_export(const conversation_t * const conversation, buffer_t ** const export_buffer) __attribute__((warn_unused_result));
 return_status protobuf_export(const conversation_t * const conversation, buffer_t ** const export_buffer) {

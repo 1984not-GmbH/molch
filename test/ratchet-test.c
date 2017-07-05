@@ -28,7 +28,6 @@
 #include "../lib/ratchet.h"
 #include "utils.h"
 #include "common.h"
-#include "tracing.h"
 
 return_status protobuf_export(
 		const ratchet_state * const ratchet,
