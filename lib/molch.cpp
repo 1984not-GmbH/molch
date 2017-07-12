@@ -768,7 +768,9 @@ cleanup:
 			*conversation = NULL;
 		}
 	} else {
-		*conversation = conversation_node;
+		if (conversation != NULL) { /* clang analyzer was complaining *shrug* */
+			*conversation = conversation_node;
+		}
 	}
 
 	return status;

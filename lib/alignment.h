@@ -28,9 +28,6 @@
 
 #include <cstddef>
 
-//! Get the required memory alignment of a type.
-#define ALIGNMENT_OF(type) offsetof( struct { char c; type t;}, t)
-
 /*!
  * Calculate the next pointer that is aligned to the given
  * alignment.

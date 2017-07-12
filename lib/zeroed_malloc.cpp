@@ -39,14 +39,14 @@ void *zeroed_malloc(size_t size) {
 	// the size is needed in order to overwrite it with zeroes later
 	// the start_pointer has to be passed to free later
 
-	size_t amount_to_allocate = size + sizeof(void*) + sizeof(size_t) + (ALIGNMENT_OF(intmax_t) - 1);
+	size_t amount_to_allocate = size + sizeof(void*) + sizeof(size_t) + (alignof(max_align_t) - 1);
 
 	char * const malloced_address = (char*)malloc(amount_to_allocate);
 	if (malloced_address == NULL) {
 		return NULL;
 	}
 
-	char *aligned_address = (char*)next_aligned_address(malloced_address + sizeof(size_t) + sizeof(void*), ALIGNMENT_OF(intmax_t));
+	char *aligned_address = (char*)next_aligned_address(malloced_address + sizeof(size_t) + sizeof(void*), alignof(intmax_t));
 
 	//write the size in front of the algined address
 	memcpy(aligned_address - sizeof(size_t), &size, sizeof(size_t));

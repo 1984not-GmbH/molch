@@ -29,8 +29,6 @@
 int main(void) {
 	return_status status = return_status_init();
 
-	printf("Alignment of intmax_t: %zu\n", ALIGNMENT_OF(intmax_t));
-
 	printf("Testing next_aligned_address.\n");
 	if ((next_aligned_address((void*)3, 4) != (void*)4) || (next_aligned_address((void*)8, 4) != (void*)8)) {
 		THROW(INCORRECT_DATA, "Didn't calculate the correct next aligned address.");
