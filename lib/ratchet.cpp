@@ -71,7 +71,7 @@ static void init_ratchet_state(ratchet_state ** const ratchet) {
 static return_status create_ratchet_state(ratchet_state ** const ratchet) {
 	return_status status = return_status_init();
 
-	if (ratchet == NULL) {
+	if (ratchet == nullptr) {
 		THROW(INVALID_INPUT, "Invalid input to create_ratchet_state.");
 	}
 
@@ -95,7 +95,7 @@ cleanup:
  * All the keys will be copied so you can free the buffers afterwards. (private identity get's
  * immediately deleted after deriving the initial root key though!)
  *
- * The return value is a valid ratchet state or NULL if an error occured.
+ * The return value is a valid ratchet state or nullptr if an error occured.
  */
 return_status ratchet_create(
 		ratchet_state ** const ratchet,
@@ -117,11 +117,11 @@ return_status ratchet_create(
 		THROW(INVALID_INPUT, "Invalid input to ratchet_create.");
 	}
 
-	*ratchet = NULL;
+	*ratchet = nullptr;
 
 	status = create_ratchet_state(ratchet);
 	THROW_on_error(CREATION_ERROR, "Failed to create ratchet.");
-	if ((ratchet == NULL) || (*ratchet == NULL)) {
+	if ((ratchet == nullptr) || (*ratchet == nullptr)) {
 		//FIXME: I'm quite sure this case won't happen, but the static analyzer
 		//complains anyway.
 		assert(false && "This isn't supposed to happen.");
@@ -189,7 +189,7 @@ return_status ratchet_create(
 
 cleanup:
 	on_error {
-		if (ratchet != NULL) {
+		if (ratchet != nullptr) {
 				sodium_free_and_null_if_valid(*ratchet);
 		}
 	}
@@ -210,20 +210,20 @@ return_status ratchet_send(
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *root_key_backup = NULL;
-	buffer_t *chain_key_backup = NULL;
+	buffer_t *root_key_backup = nullptr;
+	buffer_t *chain_key_backup = nullptr;
 	root_key_backup = buffer_create_on_heap(ROOT_KEY_SIZE, 0);
 	THROW_on_failed_alloc(root_key_backup);
 	chain_key_backup = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
 	THROW_on_failed_alloc(chain_key_backup);
 
 	//check input
-	if ((ratchet == NULL)
-			|| (send_header_key == NULL) || (send_header_key->buffer_length < HEADER_KEY_SIZE)
-			|| (send_message_number == NULL)
-			|| (previous_send_message_number == NULL)
-			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)
-			|| (message_key == NULL) || (message_key->buffer_length < MESSAGE_KEY_SIZE)) {
+	if ((ratchet == nullptr)
+			|| (send_header_key == nullptr) || (send_header_key->buffer_length < HEADER_KEY_SIZE)
+			|| (send_message_number == nullptr)
+			|| (previous_send_message_number == nullptr)
+			|| (our_public_ephemeral == nullptr) || (our_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)
+			|| (message_key == nullptr) || (message_key->buffer_length < MESSAGE_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to ratchet_send.");
 	}
 
@@ -324,15 +324,15 @@ return_status ratchet_send(
 
 cleanup:
 	on_error {
-		if (send_header_key != NULL) {
+		if (send_header_key != nullptr) {
 			buffer_clear(send_header_key);
 			send_header_key->content_length = 0;
 		}
-		if (our_public_ephemeral != NULL) {
+		if (our_public_ephemeral != nullptr) {
 			buffer_clear(our_public_ephemeral);
 			our_public_ephemeral->content_length = 0;
 		}
-		if (message_key != NULL) {
+		if (message_key != nullptr) {
 			buffer_clear(message_key);
 			message_key->content_length = 0;
 		}
@@ -354,8 +354,8 @@ return_status ratchet_get_receive_header_keys(
 	return_status status = return_status_init();
 
 	//check input
-	if ((current_receive_header_key == NULL) || (current_receive_header_key->buffer_length < HEADER_KEY_SIZE)
-			|| (next_receive_header_key == NULL) || (next_receive_header_key->buffer_length < HEADER_KEY_SIZE)) {
+	if ((current_receive_header_key == nullptr) || (current_receive_header_key->buffer_length < HEADER_KEY_SIZE)
+			|| (next_receive_header_key == nullptr) || (next_receive_header_key->buffer_length < HEADER_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to ratchet_get_receive_header_keys.");
 	}
 
@@ -369,11 +369,11 @@ return_status ratchet_get_receive_header_keys(
 
 cleanup:
 	on_error {
-		if (current_receive_header_key != NULL) {
+		if (current_receive_header_key != nullptr) {
 			buffer_clear(current_receive_header_key);
 			current_receive_header_key->content_length = 0;
 		}
-		if (next_receive_header_key != NULL) {
+		if (next_receive_header_key != nullptr) {
 			buffer_clear(next_receive_header_key);
 			next_receive_header_key->content_length = 0;
 		}
@@ -425,9 +425,9 @@ static return_status stage_skipped_header_and_message_keys(
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *current_chain_key = NULL;
-	buffer_t *next_chain_key = NULL;
-	buffer_t *current_message_key = NULL;
+	buffer_t *current_chain_key = nullptr;
+	buffer_t *next_chain_key = nullptr;
+	buffer_t *current_message_key = nullptr;
 	current_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
 	THROW_on_failed_alloc(current_chain_key);
 	next_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
@@ -436,11 +436,11 @@ static return_status stage_skipped_header_and_message_keys(
 	THROW_on_failed_alloc(current_message_key);
 
 	//check input
-	if ((staging_area == NULL)
-			|| ((output_chain_key != NULL) && (output_chain_key->buffer_length < CHAIN_KEY_SIZE))
-			|| ((output_message_key != NULL) && (output_message_key->buffer_length < MESSAGE_KEY_SIZE))
-			|| (current_header_key == NULL) || (current_header_key->content_length != HEADER_KEY_SIZE)
-			|| (chain_key == NULL) || (chain_key->content_length != CHAIN_KEY_SIZE)) {
+	if ((staging_area == nullptr)
+			|| ((output_chain_key != nullptr) && (output_chain_key->buffer_length < CHAIN_KEY_SIZE))
+			|| ((output_message_key != nullptr) && (output_message_key->buffer_length < MESSAGE_KEY_SIZE))
+			|| (current_header_key == nullptr) || (current_header_key->content_length != HEADER_KEY_SIZE)
+			|| (chain_key == nullptr) || (chain_key->content_length != CHAIN_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to stage_skipped_header_and_message_keys.");
 	}
 
@@ -478,30 +478,30 @@ static return_status stage_skipped_header_and_message_keys(
 	}
 
 	//derive the message key that will be returned
-	if (output_message_key != NULL) {
+	if (output_message_key != nullptr) {
 		status = derive_message_key(output_message_key, current_chain_key);
 		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive message key.");
 	}
 
 	//derive the chain key that will be returned
 	//TODO: not sure if this additional derivation is needed!
-	if (output_chain_key != NULL) {
+	if (output_chain_key != nullptr) {
 		status = derive_chain_key(output_chain_key, current_chain_key);
 		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key.");
 	}
 
 cleanup:
 	on_error {
-		if (output_chain_key != NULL) {
+		if (output_chain_key != nullptr) {
 			buffer_clear(output_chain_key);
 			output_chain_key->content_length = 0;
 		}
-		if (output_message_key != NULL) {
+		if (output_message_key != nullptr) {
 			buffer_clear(output_message_key);
 			output_message_key->content_length = 0;
 		}
 
-		if (staging_area != NULL) {
+		if (staging_area != nullptr) {
 			header_and_message_keystore_clear(staging_area);
 		}
 	}
@@ -559,9 +559,9 @@ return_status ratchet_receive(
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *THROWaway_chain_key = NULL;
-	buffer_t *THROWaway_message_key = NULL;
-	buffer_t *purported_chain_key_backup = NULL;
+	buffer_t *THROWaway_chain_key = nullptr;
+	buffer_t *THROWaway_message_key = nullptr;
+	buffer_t *purported_chain_key_backup = nullptr;
 	THROWaway_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
 	THROW_on_failed_alloc(THROWaway_chain_key);
 	THROWaway_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, 0);
@@ -570,9 +570,9 @@ return_status ratchet_receive(
 	THROW_on_failed_alloc(purported_chain_key_backup);
 
 	//check input
-	if ((ratchet == NULL)
-			|| (message_key == NULL) || (message_key->buffer_length < MESSAGE_KEY_SIZE)
-			|| (their_purported_public_ephemeral == NULL) || (their_purported_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
+	if ((ratchet == nullptr)
+			|| (message_key == nullptr) || (message_key->buffer_length < MESSAGE_KEY_SIZE)
+			|| (their_purported_public_ephemeral == nullptr) || (their_purported_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to ratchet_receive.");
 	}
 
@@ -618,8 +618,8 @@ return_status ratchet_receive(
 		//stage_skipped_header_and_message_keys(HKr, Nr, PNp, CKr)
 		status = stage_skipped_header_and_message_keys(
 				ratchet->staged_header_and_message_keys,
-				NULL, //output_chain_key
-				NULL, //output_message_key
+				nullptr, //output_chain_key
+				nullptr, //output_message_key
 				ratchet->receive_header_key,
 				ratchet->receive_message_number,
 				purported_previous_message_number,
@@ -664,7 +664,7 @@ return_status ratchet_receive(
 
 cleanup:
 	on_error {
-		if (message_key != NULL) {
+		if (message_key != nullptr) {
 			buffer_clear(message_key);
 			message_key->content_length = 0;
 		}
@@ -762,30 +762,30 @@ return_status ratchet_export(
 	return_status status = return_status_init();
 
 	//root keys
-	unsigned char *root_key = NULL;
-	unsigned char *purported_root_key = NULL;
+	unsigned char *root_key = nullptr;
+	unsigned char *purported_root_key = nullptr;
 	//header keys
-	unsigned char *send_header_key = NULL;
-	unsigned char *receive_header_key = NULL;
-	unsigned char *next_send_header_key = NULL;
-	unsigned char *next_receive_header_key = NULL;
-	unsigned char *purported_receive_header_key = NULL;
-	unsigned char *purported_next_receive_header_key = NULL;
+	unsigned char *send_header_key = nullptr;
+	unsigned char *receive_header_key = nullptr;
+	unsigned char *next_send_header_key = nullptr;
+	unsigned char *next_receive_header_key = nullptr;
+	unsigned char *purported_receive_header_key = nullptr;
+	unsigned char *purported_next_receive_header_key = nullptr;
 	//chain key
-	unsigned char *send_chain_key = NULL;
-	unsigned char *receive_chain_key = NULL;
-	unsigned char *purported_receive_chain_key = NULL;
+	unsigned char *send_chain_key = nullptr;
+	unsigned char *receive_chain_key = nullptr;
+	unsigned char *purported_receive_chain_key = nullptr;
 	//identity key
-	unsigned char *our_public_identity_key = NULL;
-	unsigned char *their_public_identity_key = NULL;
+	unsigned char *our_public_identity_key = nullptr;
+	unsigned char *their_public_identity_key = nullptr;
 	//ephemeral keys
-	unsigned char *our_private_ephemeral_key = NULL;
-	unsigned char *our_public_ephemeral_key = NULL;
-	unsigned char *their_public_ephemeral_key = NULL;
-	unsigned char *their_purported_public_ephemeral_key = NULL;
+	unsigned char *our_private_ephemeral_key = nullptr;
+	unsigned char *our_public_ephemeral_key = nullptr;
+	unsigned char *their_public_ephemeral_key = nullptr;
+	unsigned char *their_purported_public_ephemeral_key = nullptr;
 
 	//check input
-	if ((ratchet == NULL) || (conversation == NULL)) {
+	if ((ratchet == nullptr) || (conversation == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to ratchet_export.");
 	}
 
@@ -1023,7 +1023,7 @@ return_status ratchet_export(
 
 cleanup:
 	on_error {
-		if (conversation != NULL) {
+		if (conversation != nullptr) {
 			zeroed_free_and_null_if_valid(*conversation);
 		}
 		//root keys
@@ -1058,7 +1058,7 @@ return_status ratchet_import(
 	return_status status = return_status_init();
 
 	//check input
-	if ((ratchet == NULL) || (conversation == NULL)) {
+	if ((ratchet == nullptr) || (conversation == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to ratchet_import.");
 	}
 
@@ -1284,7 +1284,7 @@ return_status ratchet_import(
 
 cleanup:
 	on_error {
-		if (ratchet != NULL) {
+		if (ratchet != nullptr) {
 			sodium_free_and_null_if_valid(*ratchet);
 		}
 	}

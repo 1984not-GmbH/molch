@@ -37,11 +37,11 @@ int main(int argc, char *args[]) {
 	}
 	/* don't initialize libsodium here */
 	buffer_t *user_id = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	buffer_t *backup_file = NULL; //backup to import from
-	buffer_t *backup_key_file = NULL;
+	buffer_t *backup_file = nullptr; //backup to import from
+	buffer_t *backup_key_file = nullptr;
 
-	unsigned char *backup = NULL;
-	unsigned char *prekey_list = NULL;
+	unsigned char *backup = nullptr;
+	unsigned char *prekey_list = nullptr;
 	unsigned char *backup_key = (unsigned char*)malloc(BACKUP_KEY_SIZE);
 
 	return_status status = return_status_init();
@@ -91,7 +91,7 @@ int main(int argc, char *args[]) {
 			(const unsigned char*)"random",
 			sizeof("random"));
 	THROW_on_error(CREATION_ERROR, "Failed to create user.");
-	if (backup == NULL) {
+	if (backup == nullptr) {
 		THROW(EXPORT_ERROR, "Failed to export backup.");
 	}
 

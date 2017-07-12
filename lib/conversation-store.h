@@ -58,7 +58,7 @@ void conversation_store_remove_by_id(conversation_store * const store, const buf
 /*
  * Find a conversation for a given conversation ID.
  *
- * Returns NULL if no conversation was found.
+ * Returns nullptr if no conversation was found.
  */
 return_status conversation_store_find_node(
 		conversation_t ** const conversation,
@@ -75,9 +75,9 @@ void conversation_store_clear(conversation_store * const store);
  * 'index', 'node' and 'value' are available.
  */
 #define conversation_store_foreach(store, code) {\
-	if (store != NULL) {\
+	if (store != nullptr) {\
 		conversation_t *node = store->head;\
-		for (size_t index = 0; (index < store->length) && (node != NULL); index++, node = node->next) {\
+		for (size_t index = 0; (index < store->length) && (node != nullptr); index++, node = node->next) {\
 			conversation_t *value __attribute__((unused));\
 			value = node;\
 			code\
@@ -88,7 +88,7 @@ void conversation_store_clear(conversation_store * const store);
 /*
  * Create a list of conversations (one buffer filled with the conversation ids.
  *
- * Returns NULL if empty.
+ * Returns nullptr if empty.
  */
 return_status conversation_store_list(buffer_t ** const list, conversation_store * const store) __attribute__((warn_unused_result));
 

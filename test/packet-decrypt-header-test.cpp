@@ -42,8 +42,8 @@ int main(void) {
 	buffer_t *header = buffer_create_on_heap(4, 4);
 	buffer_create_from_string(message, "Hello world!\n");
 
-	buffer_t *packet = NULL;
-	buffer_t *decrypted_header = NULL;
+	buffer_t *packet = nullptr;
+	buffer_t *decrypted_header = nullptr;
 
 	molch_message_type packet_type = NORMAL_MESSAGE;
 
@@ -68,9 +68,9 @@ int main(void) {
 			packet_type,
 			header,
 			message,
-			NULL,
-			NULL,
-			NULL);
+			nullptr,
+			nullptr,
+			nullptr);
 	THROW_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now decrypt the header

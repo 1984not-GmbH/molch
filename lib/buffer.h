@@ -97,7 +97,7 @@ buffer_t *buffer_create_with_custom_allocator(
  * This should not be used directly, it is intended for the use
  * with the macro buffer_create_from_string_on_heap.
  *
- * Returns NULL on error.
+ * Returns nullptr on error.
  */
 buffer_t* buffer_create_from_string_on_heap_helper(
 		buffer_t * const buffer,

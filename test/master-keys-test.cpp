@@ -41,15 +41,15 @@ return_status protobuf_export(
 		buffer_t ** const private_identity_key_buffer) {
 	return_status status = return_status_init();
 
-	Key * public_signing_key = NULL;
-	Key * private_signing_key = NULL;
-	Key * public_identity_key = NULL;
-	Key * private_identity_key = NULL;
+	Key * public_signing_key = nullptr;
+	Key * private_signing_key = nullptr;
+	Key * public_identity_key = nullptr;
+	Key * private_identity_key = nullptr;
 
 	//check input
-	if ((keys == NULL)
-			|| (public_signing_key_buffer == NULL) || (private_signing_key_buffer == NULL)
-			|| (public_identity_key_buffer == NULL) || (private_identity_key_buffer == NULL)) {
+	if ((keys == nullptr)
+			|| (public_signing_key_buffer == nullptr) || (private_signing_key_buffer == nullptr)
+			|| (public_identity_key_buffer == nullptr) || (private_identity_key_buffer == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to protobuf_export.");
 	}
 
@@ -103,24 +103,24 @@ return_status protobuf_export(
 	}
 
 cleanup:
-	if (public_signing_key != NULL) {
+	if (public_signing_key != nullptr) {
 		key__free_unpacked(public_signing_key, &protobuf_c_allocators);
-		public_signing_key = NULL;
+		public_signing_key = nullptr;
 	}
 
-	if (private_signing_key != NULL) {
+	if (private_signing_key != nullptr) {
 		key__free_unpacked(private_signing_key, &protobuf_c_allocators);
-		private_signing_key = NULL;
+		private_signing_key = nullptr;
 	}
 
-	if (public_identity_key != NULL) {
+	if (public_identity_key != nullptr) {
 		key__free_unpacked(public_identity_key, &protobuf_c_allocators);
-		public_identity_key = NULL;
+		public_identity_key = nullptr;
 	}
 
-	if (private_identity_key != NULL) {
+	if (private_identity_key != nullptr) {
 		key__free_unpacked(private_identity_key, &protobuf_c_allocators);
-		private_identity_key = NULL;
+		private_identity_key = nullptr;
 	}
 
 	//cleanup of buffers is done in the main function
@@ -142,17 +142,17 @@ return_status protobuf_import(
 		const buffer_t * const private_identity_key_buffer) {
 	return_status status = return_status_init();
 
-	Key *public_signing_key = NULL;
-	Key *private_signing_key = NULL;
-	Key *public_identity_key = NULL;
-	Key *private_identity_key = NULL;
+	Key *public_signing_key = nullptr;
+	Key *private_signing_key = nullptr;
+	Key *public_identity_key = nullptr;
+	Key *private_identity_key = nullptr;
 
 	//check inputs
-	if ((keys == NULL)
-			|| (public_signing_key_buffer == NULL)
-			|| (private_signing_key_buffer == NULL)
-			|| (public_identity_key_buffer == NULL)
-			|| (private_identity_key_buffer == NULL)) {
+	if ((keys == nullptr)
+			|| (public_signing_key_buffer == nullptr)
+			|| (private_signing_key_buffer == nullptr)
+			|| (public_identity_key_buffer == nullptr)
+			|| (private_identity_key_buffer == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to protobuf_import.");
 	}
 
@@ -161,28 +161,28 @@ return_status protobuf_import(
 		&protobuf_c_allocators,
 		public_signing_key_buffer->content_length,
 		public_signing_key_buffer->content);
-	if (public_signing_key == NULL) {
+	if (public_signing_key == nullptr) {
 		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack public signing key from protobuf.");
 	}
 	private_signing_key = key__unpack(
 		&protobuf_c_allocators,
 		private_signing_key_buffer->content_length,
 		private_signing_key_buffer->content);
-	if (private_signing_key == NULL) {
+	if (private_signing_key == nullptr) {
 		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack private signing key from protobuf.");
 	}
 	public_identity_key = key__unpack(
 		&protobuf_c_allocators,
 		public_identity_key_buffer->content_length,
 		public_identity_key_buffer->content);
-	if (public_identity_key == NULL) {
+	if (public_identity_key == nullptr) {
 		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack public identity key from protobuf.");
 	}
 	private_identity_key = key__unpack(
 		&protobuf_c_allocators,
 		private_identity_key_buffer->content_length,
 		private_identity_key_buffer->content);
-	if (private_identity_key == NULL) {
+	if (private_identity_key == nullptr) {
 		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack private identity key from protobuf.");
 	}
 
@@ -195,27 +195,27 @@ return_status protobuf_import(
 	THROW_on_error(IMPORT_ERROR, "Failed to import master keys.")
 cleanup:
 	on_error {
-		if (keys != NULL) {
+		if (keys != nullptr) {
 			sodium_free_and_null_if_valid(*keys);
 		}
 	}
 
 	//free the protobuf-c structs
-	if (public_signing_key != NULL) {
+	if (public_signing_key != nullptr) {
 		key__free_unpacked(public_signing_key, &protobuf_c_allocators);
-		public_signing_key = NULL;
+		public_signing_key = nullptr;
 	}
-	if (private_signing_key != NULL) {
+	if (private_signing_key != nullptr) {
 		key__free_unpacked(private_signing_key, &protobuf_c_allocators);
-		private_signing_key = NULL;
+		private_signing_key = nullptr;
 	}
-	if (public_identity_key != NULL) {
+	if (public_identity_key != nullptr) {
 		key__free_unpacked(public_identity_key, &protobuf_c_allocators);
-		public_identity_key = NULL;
+		public_identity_key = nullptr;
 	}
-	if (private_identity_key != NULL) {
+	if (private_identity_key != nullptr) {
 		key__free_unpacked(private_identity_key, &protobuf_c_allocators);
-		private_identity_key = NULL;
+		private_identity_key = nullptr;
 	}
 
 	//buffers will be freed in main
@@ -231,9 +231,9 @@ int main(void) {
 
 	return_status status = return_status_init();
 
-	master_keys_t *unspiced_master_keys = NULL;
-	master_keys_t *spiced_master_keys = NULL;
-	master_keys_t *imported_master_keys = NULL;
+	master_keys_t *unspiced_master_keys = nullptr;
+	master_keys_t *spiced_master_keys = nullptr;
+	master_keys_t *imported_master_keys = nullptr;
 
 	//public key buffers
 	buffer_t *public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
@@ -243,20 +243,20 @@ int main(void) {
 	buffer_t *unwrapped_data = buffer_create_on_heap(100, 0);
 
 	//export buffers
-	buffer_t *protobuf_export_public_signing_key = NULL;
-	buffer_t *protobuf_export_private_signing_key = NULL;
-	buffer_t *protobuf_export_public_identity_key = NULL;
-	buffer_t *protobuf_export_private_identity_key = NULL;
+	buffer_t *protobuf_export_public_signing_key = nullptr;
+	buffer_t *protobuf_export_private_signing_key = nullptr;
+	buffer_t *protobuf_export_public_identity_key = nullptr;
+	buffer_t *protobuf_export_private_identity_key = nullptr;
 	//second export
-	buffer_t *protobuf_second_export_public_signing_key = NULL;
-	buffer_t *protobuf_second_export_private_signing_key = NULL;
-	buffer_t *protobuf_second_export_public_identity_key = NULL;
-	buffer_t *protobuf_second_export_private_identity_key = NULL;
+	buffer_t *protobuf_second_export_public_signing_key = nullptr;
+	buffer_t *protobuf_second_export_private_signing_key = nullptr;
+	buffer_t *protobuf_second_export_public_identity_key = nullptr;
+	buffer_t *protobuf_second_export_private_identity_key = nullptr;
 
 	int status_int = 0;
 
 	//create the unspiced master keys
-	status = master_keys_create(&unspiced_master_keys, NULL, NULL, NULL);
+	status = master_keys_create(&unspiced_master_keys, nullptr, nullptr, nullptr);
 	THROW_on_error(CREATION_ERROR, "Failed to create unspiced master keys.");
 
 	//get the public keys

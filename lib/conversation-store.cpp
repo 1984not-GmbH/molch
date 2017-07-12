@@ -28,8 +28,8 @@
  */
 void conversation_store_init(conversation_store * const store) {
 	store->length = 0;
-	store->head = NULL;
-	store->tail = NULL;
+	store->head = nullptr;
+	store->tail = nullptr;
 }
 
 /*
@@ -41,13 +41,13 @@ return_status conversation_store_add(
 
 	return_status status = return_status_init();
 
-	if ((store == NULL) || (conversation == NULL)) {
+	if ((store == nullptr) || (conversation == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to conversation_store_add");
 	}
 
-	if (store->head == NULL) { //first conversation in the list
-		conversation->previous = NULL;
-		conversation->next = NULL;
+	if (store->head == nullptr) { //first conversation in the list
+		conversation->previous = nullptr;
+		conversation->next = nullptr;
 		store->head = conversation;
 		store->tail = conversation;
 
@@ -60,7 +60,7 @@ return_status conversation_store_add(
 	//add the new conversation to the tail of the list
 	store->tail->next = conversation;
 	conversation->previous = store->tail;
-	conversation->next = NULL;
+	conversation->next = nullptr;
 	store->tail = conversation;
 
 	//update length
@@ -75,18 +75,18 @@ cleanup:
  * Remove a conversation from the conversation_store.
  */
 void conversation_store_remove(conversation_store * const store, conversation_t * const node) {
-	if ((store == NULL) || (node == NULL)) {
+	if ((store == nullptr) || (node == nullptr)) {
 		return;
 	}
 
 
-	if ((node->next != NULL) && (node != store->tail)) { //node is not the tail
+	if ((node->next != nullptr) && (node != store->tail)) { //node is not the tail
 		node->next->previous = node->previous;
 	} else {
 		store->tail = node->previous;
 	}
 
-	if ((node->previous != NULL) && (node != store->head)) { //node is not the head
+	if ((node->previous != nullptr) && (node != store->head)) { //node is not the head
 		node->previous->next = node->next;
 	} else {
 		store->head = node->next;
@@ -105,13 +105,13 @@ void conversation_store_remove(conversation_store * const store, conversation_t 
 void conversation_store_remove_by_id(conversation_store * const store, const buffer_t * const id) {
 	return_status status = return_status_init();
 
-	conversation_t *node = NULL;
+	conversation_t *node = nullptr;
 	status = conversation_store_find_node(&node, store, id);
 	on_error {
 		return_status_destroy_errors(&status);
 		return;
 	}
-	if (node == NULL) {
+	if (node == nullptr) {
 		return;
 	}
 
@@ -121,7 +121,7 @@ void conversation_store_remove_by_id(conversation_store * const store, const buf
 /*
  * Find a conversation for a given conversation ID.
  *
- * Returns NULL if no conversation was found.
+ * Returns nullptr if no conversation was found.
  */
 return_status conversation_store_find_node(
 		conversation_t ** const conversation,
@@ -129,11 +129,11 @@ return_status conversation_store_find_node(
 		const buffer_t * const id) {
 	return_status status = return_status_init();
 
-	if ((conversation == NULL) || (store == NULL) || (id == NULL)) {
+	if ((conversation == nullptr) || (store == nullptr) || (id == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to conversation_store_find.");
 	}
 
-	*conversation = NULL;
+	*conversation = nullptr;
 
 	conversation_store_foreach(store,
 		if (buffer_compare(value->id, id) == 0) {
@@ -151,7 +151,7 @@ cleanup:
  * Remove all entries from a conversation store.
  */
 void conversation_store_clear(conversation_store * const store) {
-	if (store == NULL) {
+	if (store == nullptr) {
 		return;
 	}
 
@@ -163,17 +163,17 @@ void conversation_store_clear(conversation_store * const store) {
 /*
  * Create a list of conversations (one buffer filled with the conversation ids.
  *
- * Returns NULL if empty.
+ * Returns nullptr if empty.
  */
 return_status conversation_store_list(buffer_t ** const list, conversation_store * const store) {
 	return_status status = return_status_init();
 
-	if ((list == NULL) || (store == NULL)) {
+	if ((list == nullptr) || (store == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to conversation_store_list.");
 	}
 
 	if (store->length == 0) {
-		*list = NULL;
+		*list = nullptr;
 		goto cleanup;
 	}
 
@@ -195,7 +195,7 @@ return_status conversation_store_list(buffer_t ** const list, conversation_store
 
 cleanup:
 	on_error {
-		if (list != NULL) {
+		if (list != nullptr) {
 				buffer_destroy_from_heap_and_null_if_valid(*list);
 		}
 	}
@@ -210,7 +210,7 @@ return_status conversation_store_export(
 	return_status status = return_status_init();
 
 	//check input
-	if ((store == NULL) || (conversations == NULL) || (length == NULL)) {
+	if ((store == nullptr) || (conversations == nullptr) || (length == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input conversation_store_export.");
 	}
 
@@ -220,13 +220,13 @@ return_status conversation_store_export(
 		THROW_on_failed_alloc(*conversations);
 		memset(*conversations, '\0', store->length * sizeof(Conversation*));
 	} else {
-		*conversations = NULL;
+		*conversations = nullptr;
 	}
 
 	//export the conversations
 	{
 		conversation_t *node = store->head;
-		for (size_t i = 0; (i < store->length) && (node != NULL); i++, node = node->next) {
+		for (size_t i = 0; (i < store->length) && (node != nullptr); i++, node = node->next) {
 			status = conversation_export(node, &(*conversations)[i]);
 			THROW_on_error(EXPORT_ERROR, "Failed to export conversation.");
 		}
@@ -236,11 +236,11 @@ return_status conversation_store_export(
 
 cleanup:
 	on_error {
-		if ((store != NULL) && (conversations != NULL) && (*conversations != NULL)) {
+		if ((store != nullptr) && (conversations != nullptr) && (*conversations != nullptr)) {
 			for (size_t i = 0; i < store->length; i++) {
-				if ((*conversations)[i] != NULL) {
+				if ((*conversations)[i] != nullptr) {
 					conversation__free_unpacked((*conversations)[i], &protobuf_c_allocators);
-					(*conversations)[i] = NULL;
+					(*conversations)[i] = nullptr;
 				}
 			}
 		}
@@ -255,12 +255,12 @@ return_status conversation_store_import(
 		const size_t length) {
 	return_status status = return_status_init();
 
-	conversation_t *conversation = NULL;
+	conversation_t *conversation = nullptr;
 
 	//check input
-	if ((store == NULL)
-			|| ((length > 0) && (conversations == NULL))
-			|| ((length == 0) && (conversations != NULL))) {
+	if ((store == nullptr)
+			|| ((length > 0) && (conversations == nullptr))
+			|| ((length == 0) && (conversations != nullptr))) {
 		THROW(INVALID_INPUT, "Invalid input to conversation_store_import");
 	}
 
@@ -275,17 +275,17 @@ return_status conversation_store_import(
 
 		status = conversation_store_add(store, conversation);
 		THROW_on_error(ADDITION_ERROR, "Failed to add conversation to conversation store.");
-		conversation = NULL;
+		conversation = nullptr;
 	}
 
 cleanup:
 	on_error {
-		if (conversation != NULL) {
+		if (conversation != nullptr) {
 			conversation_destroy(conversation);
-			conversation = NULL;
+			conversation = nullptr;
 		}
 
-		if (store != NULL) {
+		if (store != nullptr) {
 			conversation_store_clear(store);
 		}
 	}

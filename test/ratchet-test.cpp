@@ -37,10 +37,10 @@ return_status protobuf_export(
 		buffer_t ** const export_buffer) {
 	return_status status = return_status_init();
 
-	Conversation * conversation = NULL;
+	Conversation * conversation = nullptr;
 
 	//check input
-	if ((ratchet == NULL) || (export_buffer == NULL)) {
+	if ((ratchet == nullptr) || (export_buffer == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to protobuf_export.");
 	}
 
@@ -58,7 +58,7 @@ return_status protobuf_export(
 	}
 
 cleanup:
-	if (conversation != NULL) {
+	if (conversation != nullptr) {
 		conversation__free_unpacked(conversation, &protobuf_c_allocators);
 	}
 
@@ -75,10 +75,10 @@ return_status protobuf_import(
 		const buffer_t * const export_buffer) {
 	return_status status = return_status_init();
 
-	Conversation *conversation = NULL;
+	Conversation *conversation = nullptr;
 
 	//check input
-	if ((ratchet == NULL) || (export_buffer == NULL)) {
+	if ((ratchet == nullptr) || (export_buffer == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to protobuf_import.");
 	}
 
@@ -87,7 +87,7 @@ return_status protobuf_import(
 		&protobuf_c_allocators,
 		export_buffer->content_length,
 		export_buffer->content);
-	if (conversation == NULL) {
+	if (conversation == nullptr) {
 		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
 	}
 
@@ -98,7 +98,7 @@ return_status protobuf_import(
 	THROW_on_error(IMPORT_ERROR, "Failed to import from Protobuf-C.");
 
 cleanup:
-	if (conversation != NULL) {
+	if (conversation != nullptr) {
 		conversation__free_unpacked(conversation, &protobuf_c_allocators);
 	}
 	return status;
@@ -112,11 +112,11 @@ int main(void) {
 	return_status status = return_status_init();
 
 	//protobuf buffers
-	buffer_t *protobuf_export_buffer = NULL;
-	buffer_t *protobuf_second_export_buffer = NULL;
+	buffer_t *protobuf_export_buffer = nullptr;
+	buffer_t *protobuf_second_export_buffer = nullptr;
 
-	ratchet_state *alice_state = NULL;
-	ratchet_state *bob_state = NULL;
+	ratchet_state *alice_state = nullptr;
+	ratchet_state *bob_state = nullptr;
 	ratchet_header_decryptability decryptable = NOT_TRIED;
 
 	int status_int;
@@ -847,7 +847,7 @@ int main(void) {
 	puts("\n\n");
 
 	ratchet_destroy(alice_state);
-	alice_state = NULL;
+	alice_state = nullptr;
 
 	//import again
 	printf("Import from Protobuf-C!\n");

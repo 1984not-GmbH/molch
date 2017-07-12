@@ -44,11 +44,11 @@ return_status create_and_print_message(
 	return_status status = return_status_init();
 
 	//check input
-	if ((packet == NULL)
-		|| (header_key == NULL) || (header_key->buffer_length < HEADER_KEY_SIZE)
-		|| (message_key == NULL) || (message_key->buffer_length < MESSAGE_KEY_SIZE)
+	if ((packet == nullptr)
+		|| (header_key == nullptr) || (header_key->buffer_length < HEADER_KEY_SIZE)
+		|| (message_key == nullptr) || (message_key->buffer_length < MESSAGE_KEY_SIZE)
 		|| (packet_type == INVALID)
-		|| (header == NULL) || (message == NULL)) {
+		|| (header == nullptr) || (message == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to create_and_print_message.");
 	}
 

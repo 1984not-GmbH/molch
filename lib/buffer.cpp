@@ -64,7 +64,7 @@ buffer_t* buffer_init_with_pointer(
 	//while still being able to set it here
 	unsigned char **writable_content_pointer = (unsigned char**) &buffer->content;
 	if (buffer_length == 0) {
-		*writable_content_pointer = NULL;
+		*writable_content_pointer = nullptr;
 	} else {
 		*writable_content_pointer = content;
 	}
@@ -83,7 +83,7 @@ buffer_t* buffer_init_with_pointer_to_const(
 #pragma GCC diagnostic ignored "-Wcast-qual"
 	buffer_t *result = buffer_init_with_pointer(buffer, (unsigned char*)content, buffer_length, content_length);
 #pragma GCC diagnostic pop
-	if (result != NULL) {
+	if (result != nullptr) {
 		result->readonly = true;
 	}
 
@@ -98,16 +98,16 @@ buffer_t *buffer_create_on_heap(
 		const size_t buffer_length,
 		const size_t content_length) {
 	buffer_t *buffer = (buffer_t*)malloc(sizeof(buffer_t));
-	if (buffer == NULL) {
-		return NULL;
+	if (buffer == nullptr) {
+		return nullptr;
 	}
 
-	unsigned char *content = NULL;
+	unsigned char *content = nullptr;
 	if (buffer_length != 0) {
 		content = (unsigned char*)malloc(buffer_length);
-		if (content == NULL) {
+		if (content == nullptr) {
 			free(buffer);
-			return NULL;
+			return nullptr;
 		}
 	}
 
@@ -127,18 +127,18 @@ buffer_t *buffer_create_with_custom_allocator(
 		void *(*allocator)(size_t size),
 		void (*deallocator)(void *pointer)
 		) {
-	unsigned char *content = NULL;
+	unsigned char *content = nullptr;
 	if (buffer_length != 0) {
 		content = (unsigned char*)allocator(buffer_length);
-		if (content == NULL) {
-			return NULL;
+		if (content == nullptr) {
+			return nullptr;
 		}
 	}
 
 	buffer_t *buffer = (buffer_t*)allocator(sizeof(buffer_t));
-	if (buffer == NULL) {
+	if (buffer == nullptr) {
 		deallocator(content);
-		return NULL;
+		return nullptr;
 	}
 
 	return buffer_init_with_pointer(buffer, content, buffer_length, content_length);
@@ -156,7 +156,7 @@ int buffer_to_hex(buffer_t * const hex, const buffer_t * const data) {
 		return -6;
 	}
 
-	if (sodium_bin2hex((char*)hex->content, hex->buffer_length, data->content, data->content_length) == NULL) {
+	if (sodium_bin2hex((char*)hex->content, hex->buffer_length, data->content, data->content_length) == nullptr) {
 		sodium_memzero(hex->content, hex->buffer_length);
 		hex->content_length = 0;
 		return -10;
@@ -181,11 +181,11 @@ void buffer_destroy_from_heap(buffer_t * const buffer) {
 void buffer_destroy_with_custom_deallocator(
 		buffer_t * buffer,
 		void (*deallocator)(void *pointer)) {
-	if (buffer == NULL) {
+	if (buffer == nullptr) {
 		return;
 	}
 
-	if (buffer->content != NULL) {
+	if (buffer->content != nullptr) {
 		sodium_memzero(buffer->content, buffer->content_length);
 		deallocator(buffer->content);
 	}
@@ -197,11 +197,11 @@ buffer_t* buffer_create_from_string_on_heap_helper(
 		const unsigned char * const content,
 		const size_t content_length) {
 	if (buffer->buffer_length < content_length) {
-		return NULL;
+		return nullptr;
 	}
 
 	if (buffer_clone_from_raw(buffer, content, content_length) != 0) {
-		return NULL;
+		return nullptr;
 	}
 
 	return buffer;
@@ -214,7 +214,7 @@ buffer_t* buffer_create_from_string_on_heap_helper(
  * resets the content size.
  */
 void buffer_clear(buffer_t *buffer) {
-	if ((buffer == NULL) || (buffer->buffer_length == 0)) {
+	if ((buffer == nullptr) || (buffer->buffer_length == 0)) {
 		return;
 	}
 	sodium_memzero(buffer->content, buffer->buffer_length);
@@ -276,7 +276,7 @@ int buffer_copy(
 		return 0;
 	}
 
-	if ((destination->content == NULL) || (source->content == NULL)) {
+	if ((destination->content == nullptr) || (source->content == nullptr)) {
 		return -11;
 	}
 
@@ -298,7 +298,7 @@ int buffer_copy(
 int buffer_clone(
 		buffer_t * const destination,
 		const buffer_t * const source) {
-	if ((destination == NULL) || (source == NULL)) {
+	if ((destination == nullptr) || (source == nullptr)) {
 		return -1;
 	}
 
@@ -402,7 +402,7 @@ int buffer_clone_from_raw(
 int buffer_clone_from_hex(
 		buffer_t * const destination,
 		const buffer_t * const source) {
-	if ((destination == NULL) || (source == NULL)) {
+	if ((destination == nullptr) || (source == nullptr)) {
 		return -1;
 	}
 
@@ -420,9 +420,9 @@ int buffer_clone_from_hex(
 	int status = sodium_hex2bin(
 				destination->content, destination->buffer_length,
 				(const char*) source->content, source->content_length,
-				NULL,
+				nullptr,
 				&length,
-				NULL);
+				nullptr);
 	if (status != 0) {
 		buffer_clear(destination);
 		return -7;
@@ -445,7 +445,7 @@ int buffer_clone_from_hex(
 int buffer_clone_as_hex(
 		buffer_t * const destination,
 		const buffer_t * const source) {
-	if ((destination == NULL) || (source == NULL)) {
+	if ((destination == nullptr) || (source == nullptr)) {
 		return -1;
 	}
 
@@ -459,7 +459,7 @@ int buffer_clone_as_hex(
 		return -6;
 	}
 
-	if (sodium_bin2hex((char*)destination->content, destination->buffer_length, (const unsigned char*)source->content, source->content_length) == NULL) {
+	if (sodium_bin2hex((char*)destination->content, destination->buffer_length, (const unsigned char*)source->content, source->content_length) == nullptr) {
 		buffer_clear(destination);
 		return -7;
 	}
@@ -712,7 +712,7 @@ int buffer_grow_on_heap(
 
 	//allocate new content
 	unsigned char *content = (unsigned char*)malloc(new_size);
-	if (content == NULL) {
+	if (content == nullptr) {
 		return -11;
 	}
 

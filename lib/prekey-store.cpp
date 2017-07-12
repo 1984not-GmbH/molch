@@ -29,13 +29,13 @@ static const time_t PREKEY_EXPIRATION_TIME = 3600 * 24 * 31; //one month
 static const time_t DEPRECATED_PREKEY_EXPIRATION_TIME = 3600; //one hour
 
 static void node_init(prekey_store_node * const node) {
-	if (node == NULL) {
+	if (node == nullptr) {
 		return;
 	}
 
 	buffer_init_with_pointer(node->private_key, node->private_key_storage, PRIVATE_KEY_SIZE, 0);
 	buffer_init_with_pointer(node->public_key, node->public_key_storage, PUBLIC_KEY_SIZE, 0);
-	node->next = NULL;
+	node->next = nullptr;
 	node->expiration_date = 0;
 }
 
@@ -46,7 +46,7 @@ static void node_init(prekey_store_node * const node) {
 return_status prekey_store_create(prekey_store ** const store) {
 	return_status status = return_status_init();
 
-	if (store == NULL) {
+	if (store == nullptr) {
 		THROW(INVALID_INPUT, "Invalid input to prekey_store_create.");
 	}
 
@@ -57,12 +57,12 @@ return_status prekey_store_create(prekey_store ** const store) {
 	(*store)->oldest_expiration_date = 0;
 	(*store)->oldest_deprecated_expiration_date = 0;
 
-	(*store)->deprecated_prekeys = NULL;
+	(*store)->deprecated_prekeys = nullptr;
 
 	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
 		node_init(&((*store)->prekeys[i]));
 
-		(*store)->prekeys[i].expiration_date = time(NULL) + PREKEY_EXPIRATION_TIME;
+		(*store)->prekeys[i].expiration_date = time(nullptr) + PREKEY_EXPIRATION_TIME;
 		if (((*store)->oldest_expiration_date == 0) || ((*store)->prekeys[i].expiration_date < (*store)->oldest_expiration_date)) {
 			(*store)->oldest_expiration_date = (*store)->prekeys[i].expiration_date;
 		}
@@ -83,7 +83,7 @@ return_status prekey_store_create(prekey_store ** const store) {
 
 cleanup:
 	on_error {
-		if (store != NULL) {
+		if (store != nullptr) {
 				sodium_free_and_null_if_valid(*store);
 		}
 	}
@@ -92,7 +92,7 @@ cleanup:
 }
 
 static void node_add(prekey_store * const store, prekey_store_node * const node) {
-	if ((node == NULL) || (store == NULL)) {
+	if ((node == nullptr) || (store == nullptr)) {
 		return;
 	}
 
@@ -107,14 +107,14 @@ static int deprecate(prekey_store * const store, size_t index) {
 	int status = 0;
 	//create a new node
 	prekey_store_node *deprecated_node = (prekey_store_node*)sodium_malloc(sizeof(prekey_store_node));
-	if (deprecated_node == NULL) {
+	if (deprecated_node == nullptr) {
 		status = -1;
 		goto cleanup;
 	}
 
 	//initialise the deprecated node
 	node_init(deprecated_node);
-	deprecated_node->expiration_date = time(NULL) + DEPRECATED_PREKEY_EXPIRATION_TIME;
+	deprecated_node->expiration_date = time(nullptr) + DEPRECATED_PREKEY_EXPIRATION_TIME;
 
 	//copy the node over
 	status = buffer_clone(deprecated_node->public_key, store->prekeys[index].public_key);
@@ -139,7 +139,7 @@ static int deprecate(prekey_store * const store, size_t index) {
 	if (status != 0) {
 		goto cleanup;
 	}
-	store->prekeys[index].expiration_date = time(NULL) + PREKEY_EXPIRATION_TIME;
+	store->prekeys[index].expiration_date = time(nullptr) + PREKEY_EXPIRATION_TIME;
 
 cleanup:
 	if (status != 0) {
@@ -161,11 +161,11 @@ return_status prekey_store_get_prekey(
 
 	return_status status = return_status_init();
 
-	prekey_store_node *found_prekey = NULL;
+	prekey_store_node *found_prekey = nullptr;
 	bool deprecated = false;
 
 	//check buffers sizes
-	if ((store == NULL) || (public_key->content_length != PUBLIC_KEY_SIZE) || (private_key->buffer_length < PRIVATE_KEY_SIZE)) {
+	if ((store == nullptr) || (public_key->content_length != PUBLIC_KEY_SIZE) || (private_key->buffer_length < PRIVATE_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input for prekey_store_get_prekey.");
 	}
 
@@ -179,10 +179,10 @@ return_status prekey_store_get_prekey(
 	}
 
 	//if not found, search in the list of deprecated keys.
-	if (found_prekey == NULL) {
+	if (found_prekey == nullptr) {
 		deprecated = true;
 		prekey_store_node *next = store->deprecated_prekeys;
-		while (next != NULL) {
+		while (next != nullptr) {
 			if (buffer_compare(public_key, next->public_key) == 0) {
 				found_prekey = next;
 				break;
@@ -191,7 +191,7 @@ return_status prekey_store_get_prekey(
 		}
 	}
 
-	if (found_prekey == NULL) {
+	if (found_prekey == nullptr) {
 		private_key->content_length = 0;
 		THROW(NOT_FOUND, "No matching prekey found.");
 	}
@@ -223,7 +223,7 @@ return_status prekey_store_list(
 	return_status status = return_status_init();
 
 	//check input
-	if ((store == NULL) || (list->buffer_length < (PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
+	if ((store == nullptr) || (list->buffer_length < (PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
 		THROW(INVALID_INPUT, "Invalid input to prekey_store_list.");
 	}
 
@@ -252,10 +252,10 @@ cleanup:
 return_status prekey_store_rotate(prekey_store * const store) {
 	return_status status = return_status_init();
 
-	time_t current_time = time(NULL);
+	time_t current_time = time(nullptr);
 
-	if (store == NULL) {
-		THROW(INVALID_INPUT, "Invalid input to prekey_store_rotate: store is NULL.");
+	if (store == nullptr) {
+		THROW(INVALID_INPUT, "Invalid input to prekey_store_rotate: store is nullptr.");
 	}
 
 	//Is the expiration date too far into the future?
@@ -267,7 +267,7 @@ return_status prekey_store_rotate(prekey_store * const store) {
 		}
 
 		prekey_store_node *next = store->deprecated_prekeys;
-		while (next != NULL) {
+		while (next != nullptr) {
 			next->expiration_date = current_time + DEPRECATED_PREKEY_EXPIRATION_TIME;
 			next = next->next;
 		}
@@ -297,7 +297,7 @@ return_status prekey_store_rotate(prekey_store * const store) {
 		//TODO: Is this correct behavior?
 		//Set the expiration date of everything to the current time + DEPRECATED_PREKEY_EXPIRATION_TIME
 		prekey_store_node *next = store->deprecated_prekeys;
-		while (next != NULL) {
+		while (next != nullptr) {
 			next->expiration_date = current_time + DEPRECATED_PREKEY_EXPIRATION_TIME;
 			next = next->next;
 		}
@@ -308,10 +308,10 @@ return_status prekey_store_rotate(prekey_store * const store) {
 	//At least one key to be removed
 	{
 		time_t new_oldest_deprecated_expiration_date = current_time + DEPRECATED_PREKEY_EXPIRATION_TIME;
-		if ((store->deprecated_prekeys != NULL) && (store->oldest_deprecated_expiration_date < current_time)) {
+		if ((store->deprecated_prekeys != nullptr) && (store->oldest_deprecated_expiration_date < current_time)) {
 			prekey_store_node **last_pointer = &(store->deprecated_prekeys);
 			prekey_store_node *next = store->deprecated_prekeys;
-			while(next != NULL) {
+			while(next != nullptr) {
 				if (next->expiration_date < current_time) {
 					*last_pointer = next->next;
 					sodium_free_and_null_if_valid(next);
@@ -332,11 +332,11 @@ cleanup:
 }
 
 void prekey_store_destroy(prekey_store * const store) {
-	if (store == NULL) {
+	if (store == nullptr) {
 		return;
 	}
 
-	while (store->deprecated_prekeys != NULL) {
+	while (store->deprecated_prekeys != nullptr) {
 		prekey_store_node *node = store->deprecated_prekeys;
 		store->deprecated_prekeys = node->next;
 		sodium_free_and_null_if_valid(node);
@@ -350,7 +350,7 @@ void prekey_store_destroy(prekey_store * const store) {
  */
 static size_t count_deprecated_prekeys(const prekey_store * const store) {
 	size_t length = 0;
-	for (prekey_store_node *node = store->deprecated_prekeys; node != NULL; node = node->next, length++) {}
+	for (prekey_store_node *node = store->deprecated_prekeys; node != nullptr; node = node->next, length++) {}
 
 	return length;
 }
@@ -359,11 +359,11 @@ return_status prekey_store_export_key(const prekey_store_node* node, Prekey ** c
 return_status prekey_store_export_key(const prekey_store_node* node, Prekey ** const keypair) {
 	return_status status = return_status_init();
 
-	Key *private_prekey = NULL;
-	Key *public_prekey = NULL;
+	Key *private_prekey = nullptr;
+	Key *public_prekey = nullptr;
 
 	//check input
-	if ((node == NULL) || (keypair == NULL)) {
+	if ((node == nullptr) || (keypair == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to prekey_store_export_key.");
 	}
 
@@ -404,13 +404,13 @@ return_status prekey_store_export_key(const prekey_store_node* node, Prekey ** c
 
 	//set the keys
 	(*keypair)->public_key = public_prekey;
-	public_prekey = NULL;
+	public_prekey = nullptr;
 	(*keypair)->private_key = private_prekey;
-	private_prekey = NULL;
+	private_prekey = nullptr;
 
 cleanup:
 	on_error {
-		if (keypair != NULL) {
+		if (keypair != nullptr) {
 			prekey__free_unpacked(*keypair, &protobuf_c_allocators);
 			zeroed_free_and_null_if_valid(*keypair);
 		}
@@ -433,7 +433,7 @@ return_status prekey_store_export(
 	size_t deprecated_prekey_count = 0;
 
 	//check input
-	if ((store == NULL) || (keypairs == NULL) || (deprecated_keypairs == NULL)) {
+	if ((store == nullptr) || (keypairs == nullptr) || (deprecated_keypairs == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to prekey_store_export.");
 	}
 
@@ -450,7 +450,7 @@ return_status prekey_store_export(
 		*deprecated_keypairs = (Prekey**)zeroed_malloc(deprecated_prekey_count * sizeof(Prekey*));
 		THROW_on_failed_alloc(*deprecated_keypairs);
 	} else {
-		*deprecated_keypairs = NULL;
+		*deprecated_keypairs = nullptr;
 	}
 
 	//normal keys
@@ -462,7 +462,7 @@ return_status prekey_store_export(
 	//deprecated keys
 	{
 		prekey_store_node *node = store->deprecated_prekeys;
-		for (size_t i = 0; (i < deprecated_prekey_count) && (node != NULL); i++, node = node->next) {
+		for (size_t i = 0; (i < deprecated_prekey_count) && (node != nullptr); i++, node = node->next) {
 			status = prekey_store_export_key(node, &(*deprecated_keypairs)[i]);
 			THROW_on_error(EXPORT_ERROR, "Failed to export deprecated prekey pair.");
 		}
@@ -473,33 +473,33 @@ return_status prekey_store_export(
 
 cleanup:
 	on_error {
-		if ((keypairs != NULL) && (*keypairs != NULL)) {
+		if ((keypairs != nullptr) && (*keypairs != nullptr)) {
 			for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-				if ((*keypairs)[i] != NULL) {
+				if ((*keypairs)[i] != nullptr) {
 					prekey__free_unpacked((*keypairs)[i], &protobuf_c_allocators);
-					(*keypairs)[i] = NULL;
+					(*keypairs)[i] = nullptr;
 				}
 			}
 
 			zeroed_free_and_null_if_valid(*keypairs);
 		}
 
-		if ((deprecated_keypairs != NULL) && (*deprecated_keypairs != NULL)) {
+		if ((deprecated_keypairs != nullptr) && (*deprecated_keypairs != nullptr)) {
 			for (size_t i = 0; i < deprecated_prekey_count; i++) {
-				if ((*deprecated_keypairs)[i] != NULL) {
+				if ((*deprecated_keypairs)[i] != nullptr) {
 					prekey__free_unpacked((*deprecated_keypairs)[i], &protobuf_c_allocators);
-					(*deprecated_keypairs)[i] = NULL;
+					(*deprecated_keypairs)[i] = nullptr;
 				}
 			}
 
 			zeroed_free_and_null_if_valid(*deprecated_keypairs);
 		}
 
-		if (keypairs_length != NULL) {
+		if (keypairs_length != nullptr) {
 			*keypairs_length = 0;
 		}
 
-		if (deprecated_keypairs_length != NULL) {
+		if (deprecated_keypairs_length != nullptr) {
 			*deprecated_keypairs_length = 0;
 		}
 	}
@@ -511,21 +511,21 @@ static return_status prekey_store_node_import(prekey_store_node * const node, co
 	return_status status = return_status_init();
 
 	//check input
-	if ((node == NULL) || (keypair == NULL)) {
+	if ((node == nullptr) || (keypair == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to prekey_store_node_import.");
 	}
 
 	node_init(node);
 
 	//check if all necessary values are contained in the keypair
-	if ((keypair->private_key  == NULL)
+	if ((keypair->private_key  == nullptr)
 			|| (keypair->private_key->key.len != PRIVATE_KEY_SIZE)
 			|| !keypair->has_expiration_time) {
 		THROW(PROTOBUF_MISSING_ERROR, "Protobuf is missing some data.");
 	}
 
 	//check if a public key has been stored, if yes, check the size
-	if ((keypair->public_key != NULL)
+	if ((keypair->public_key != nullptr)
 			&& (keypair->public_key->key.len != PUBLIC_KEY_SIZE)) {
 		THROW(INCORRECT_BUFFER_SIZE, "Public key has an incorrect length.");
 	}
@@ -536,7 +536,7 @@ static return_status prekey_store_node_import(prekey_store_node * const node, co
 	}
 
 	//does the public key exist, if yes: copy, if not: create it from private key
-	if (keypair->public_key != NULL) {
+	if (keypair->public_key != nullptr) {
 		if (buffer_clone_from_raw(node->public_key, keypair->public_key->key.data, keypair->public_key->key.len) != 0) {
 			THROW(BUFFER_ERROR, "Failed to import public key.");
 		}
@@ -552,7 +552,7 @@ static return_status prekey_store_node_import(prekey_store_node * const node, co
 
 cleanup:
 	on_error {
-		if (node != NULL) {
+		if (node != nullptr) {
 			node->public_key->content_length = 0;
 			node->private_key->content_length = 0;
 			node->expiration_date = 0;
@@ -570,13 +570,13 @@ return_status prekey_store_import(
 		const size_t deprecated_keypairs_length) {
 	return_status status = return_status_init();
 
-	prekey_store_node *deprecated_keypair = NULL;
+	prekey_store_node *deprecated_keypair = nullptr;
 
 	//check input
-	if ((store == NULL) || (keypairs == NULL)
+	if ((store == nullptr) || (keypairs == nullptr)
 			|| (keypairs_length != PREKEY_AMOUNT)
-			|| ((deprecated_keypairs_length == 0) && (deprecated_keypairs != NULL))
-			|| ((deprecated_keypairs_length > 0) && (deprecated_keypairs == NULL))) {
+			|| ((deprecated_keypairs_length == 0) && (deprecated_keypairs != nullptr))
+			|| ((deprecated_keypairs_length > 0) && (deprecated_keypairs == nullptr))) {
 		THROW(INVALID_INPUT, "Invalid input to prekey_store_import");
 	}
 
@@ -584,7 +584,7 @@ return_status prekey_store_import(
 	THROW_on_failed_alloc(*store);
 
 	//init the store
-	(*store)->deprecated_prekeys = NULL;
+	(*store)->deprecated_prekeys = nullptr;
 	(*store)->oldest_deprecated_expiration_date = 0;
 	(*store)->oldest_expiration_date = 0;
 
@@ -615,12 +615,12 @@ return_status prekey_store_import(
 		}
 
 		node_add(*store, deprecated_keypair);
-		deprecated_keypair = NULL;
+		deprecated_keypair = nullptr;
 	}
 
 cleanup:
 	on_error {
-		if ((store != NULL) && (*store != NULL)) {
+		if ((store != nullptr) && (*store != nullptr)) {
 			prekey_store_destroy(*store);
 		}
 

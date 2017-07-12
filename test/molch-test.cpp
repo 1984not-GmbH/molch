@@ -43,10 +43,10 @@ static return_status decrypt_conversation_backup(
 		const size_t backup_key_length) {
 	return_status status = return_status_init();
 
-	EncryptedBackup *encrypted_backup_struct = NULL;
+	EncryptedBackup *encrypted_backup_struct = nullptr;
 
 	//check input
-	if ((decrypted_backup == NULL) || (backup == NULL) || (backup_key == NULL)) {
+	if ((decrypted_backup == nullptr) || (backup == nullptr) || (backup_key == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to molch_import.");
 	}
 	if (backup_key_length != BACKUP_KEY_SIZE) {
@@ -55,7 +55,7 @@ static return_status decrypt_conversation_backup(
 
 	//unpack the encrypted backup
 	encrypted_backup_struct = encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup);
-	if (encrypted_backup_struct == NULL) {
+	if (encrypted_backup_struct == nullptr) {
 		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
 	}
 
@@ -90,9 +90,9 @@ static return_status decrypt_conversation_backup(
 	}
 
 cleanup:
-	if (encrypted_backup_struct != NULL) {
+	if (encrypted_backup_struct != nullptr) {
 		encrypted_backup__free_unpacked(encrypted_backup_struct, &protobuf_c_allocators);
-		encrypted_backup_struct = NULL;
+		encrypted_backup_struct = nullptr;
 	}
 	//decrypted_backup gets freed in main
 
@@ -109,10 +109,10 @@ static return_status decrypt_full_backup(
 		const size_t backup_key_length) {
 	return_status status = return_status_init();
 
-	EncryptedBackup *encrypted_backup_struct = NULL;
+	EncryptedBackup *encrypted_backup_struct = nullptr;
 
 	//check input
-	if ((decrypted_backup == NULL) || (backup == NULL) || (backup_key == NULL)) {
+	if ((decrypted_backup == nullptr) || (backup == nullptr) || (backup_key == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to molch_import.");
 	}
 	if (backup_key_length != BACKUP_KEY_SIZE) {
@@ -121,7 +121,7 @@ static return_status decrypt_full_backup(
 
 	//unpack the encrypted backup
 	encrypted_backup_struct = encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup);
-	if (encrypted_backup_struct == NULL) {
+	if (encrypted_backup_struct == nullptr) {
 		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
 	}
 
@@ -156,9 +156,9 @@ static return_status decrypt_full_backup(
 	}
 
 cleanup:
-	if (encrypted_backup_struct != NULL) {
+	if (encrypted_backup_struct != nullptr) {
 		encrypted_backup__free_unpacked(encrypted_backup_struct, &protobuf_c_allocators);
-		encrypted_backup_struct = NULL;
+		encrypted_backup_struct = nullptr;
 	}
 	//decrypted_backup gets freed in main
 
@@ -190,33 +190,33 @@ int main(void) {
 
 	//alice key buffers
 	buffer_t *alice_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	unsigned char *alice_public_prekeys = NULL;
+	unsigned char *alice_public_prekeys = nullptr;
 	size_t alice_public_prekeys_length = 0;
 
 	//bobs key buffers
 	buffer_t *bob_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	unsigned char *bob_public_prekeys = NULL;
+	unsigned char *bob_public_prekeys = nullptr;
 	size_t bob_public_prekeys_length = 0;
 
 	//packet pointers
-	unsigned char * alice_send_packet = NULL;
-	unsigned char * bob_send_packet = NULL;
+	unsigned char * alice_send_packet = nullptr;
+	unsigned char * bob_send_packet = nullptr;
 
-	unsigned char *printed_status = NULL;
+	unsigned char *printed_status = nullptr;
 
 	// backups
-	unsigned char *backup = NULL;
-	unsigned char *imported_backup = NULL;
+	unsigned char *backup = nullptr;
+	unsigned char *imported_backup = nullptr;
 
 	// decrypted backups
-	buffer_t *decrypted_backup = NULL;
-	buffer_t *decrypted_imported_backup = NULL;
-	buffer_t *decrypted_conversation_backup = NULL;
-	buffer_t *decrypted_imported_conversation_backup = NULL;
+	buffer_t *decrypted_backup = nullptr;
+	buffer_t *decrypted_imported_backup = nullptr;
+	buffer_t *decrypted_conversation_backup = nullptr;
+	buffer_t *decrypted_imported_conversation_backup = nullptr;
 
 	size_t number_of_conversations = 0;
 	size_t conversation_list_length = 0;
-	unsigned char *conversation_list = NULL;
+	unsigned char *conversation_list = nullptr;
 
 	status = molch_update_backup_key(backup_key->content, backup_key->content_length);
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
@@ -229,7 +229,7 @@ int main(void) {
 	//create a new user
 	{
 		buffer_create_from_string(alice_head_on_keyboard, "mn ujkhuzn7b7bzh6ujg7j8hn");
-		unsigned char *complete_export = NULL;
+		unsigned char *complete_export = nullptr;
 		size_t complete_export_length = 0;
 		status = molch_create_user(
 				alice_public_identity->content,
@@ -255,7 +255,7 @@ int main(void) {
 		printf("Alice public identity (%zu Bytes):\n", alice_public_identity->content_length);
 		print_hex(alice_public_identity);
 		putchar('\n');
-		if (complete_export == NULL) {
+		if (complete_export == nullptr) {
 			THROW(EXPORT_ERROR, "Failed to export the librarys state as JSON after creating alice.");
 		}
 		free_and_null_if_valid(complete_export);
@@ -284,8 +284,8 @@ int main(void) {
 			&bob_public_prekeys_length,
 			backup_key->content,
 			backup_key->content_length,
-			NULL,
-			NULL,
+			nullptr,
+			nullptr,
 			bob_head_on_keyboard->content,
 			bob_head_on_keyboard->content_length);
 	THROW_on_error(status.status, "Failed to create Bob!");
@@ -303,7 +303,7 @@ int main(void) {
 	{
 		size_t user_count = 0;
 		size_t user_list_length = 0;
-		unsigned char *user_list = NULL;
+		unsigned char *user_list = nullptr;
 		status = molch_list_users(&user_list, &user_list_length, &user_count);
 		THROW_on_error(CREATION_ERROR, "Failed to list users.");
 		if ((user_count != 2)
@@ -332,8 +332,8 @@ int main(void) {
 			bob_public_prekeys_length,
 			alice_send_message->content,
 			alice_send_message->content_length,
-			NULL,
-			NULL);
+			nullptr,
+			nullptr);
 	THROW_on_error(CREATION_ERROR, "Failed to start send conversation.");
 	printf("AFTER molch_start_send_conversation\n");
 
@@ -385,8 +385,8 @@ int main(void) {
 			alice_public_identity->content_length,
 			alice_send_packet,
 			alice_send_packet_length,
-			NULL,
-			NULL);
+			nullptr,
+			nullptr);
 	THROW_on_error(CREATION_ERROR, "Failed to start receive conversation.");
 
 	//compare sent and received messages
@@ -403,7 +403,7 @@ int main(void) {
 	{
 		buffer_create_from_string(bob_send_message, "Welcome Alice!");
 		size_t bob_send_packet_length;
-		unsigned char * conversation_json_export = NULL;
+		unsigned char * conversation_json_export = nullptr;
 		size_t conversation_json_export_length = 0;
 		status = molch_encrypt_message(
 				&bob_send_packet,
@@ -416,7 +416,7 @@ int main(void) {
 				&conversation_json_export_length);
 		THROW_on_error(GENERIC_ERROR, "Couldn't send bobs message.");
 
-		if (conversation_json_export == NULL) {
+		if (conversation_json_export == nullptr) {
 			THROW(EXPORT_ERROR, "Failed to export the conversation after encrypting a message.");
 		}
 		free_and_null_if_valid(conversation_json_export);
@@ -427,7 +427,7 @@ int main(void) {
 		}
 
 		//alice receives reply
-		unsigned char *alice_receive_message = NULL;
+		unsigned char *alice_receive_message = nullptr;
 		size_t alice_receive_message_length;
 		status = molch_decrypt_message(
 				&alice_receive_message,
@@ -438,8 +438,8 @@ int main(void) {
 				alice_conversation->content_length,
 				bob_send_packet,
 				bob_send_packet_length,
-				NULL,
-				NULL);
+				nullptr,
+				nullptr);
 		on_error {
 			free_and_null_if_valid(alice_receive_message);
 			THROW(GENERIC_ERROR, "Incorrect message received.");
@@ -565,9 +565,9 @@ int main(void) {
 	}
 
 	//destroy the conversations
-	status = molch_end_conversation(alice_conversation->content, alice_conversation->content_length, NULL, NULL);
+	status = molch_end_conversation(alice_conversation->content, alice_conversation->content_length, nullptr, nullptr);
 	THROW_on_error(REMOVE_ERROR, "Failed to end Alice' conversation.");
-	molch_end_conversation(bob_conversation->content, bob_conversation->content_length, NULL, NULL);
+	molch_end_conversation(bob_conversation->content, bob_conversation->content_length, nullptr, nullptr);
 	THROW_on_error(REMOVE_ERROR, "Failed to end Bob's conversation.");
 
 	//check if conversation has ended
@@ -580,7 +580,7 @@ int main(void) {
 			alice_public_identity->content,
 			alice_public_identity->content_length);
 	THROW_on_error(GENERIC_ERROR, "Failed to list conversations.");
-	if ((number_of_conversations != 0) || (conversation_list != NULL)) {
+	if ((number_of_conversations != 0) || (conversation_list != nullptr)) {
 		free_and_null_if_valid(conversation_list);
 		THROW(GENERIC_ERROR, "Failed to end conversation.");
 	}

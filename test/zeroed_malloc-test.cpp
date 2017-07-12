@@ -31,7 +31,7 @@ int main(void) {
 	return_status status = return_status_init();
 
 	char * const pointer = (char*)zeroed_malloc(100);
-	if (pointer == NULL) {
+	if (pointer == nullptr) {
 		THROW(ALLOCATION_FAILED, "Failed to allocate with zeroed_malloc.");
 	}
 
@@ -47,7 +47,7 @@ int main(void) {
 
 	printf("Checking pointer.\n");
 	{
-		char *pointer_copy = NULL;
+		char *pointer_copy = nullptr;
 		memcpy(&pointer_copy, pointer - sizeof(size_t) - sizeof(void*), sizeof(void*));
 		printf("pointer_copy = %p\n", (void*)pointer_copy);
 	}
@@ -55,8 +55,8 @@ int main(void) {
 	zeroed_free(pointer);
 
 	{
-		void *new_pointer = protobuf_c_allocator(NULL, 20);
-		protobuf_c_free(NULL, new_pointer);
+		void *new_pointer = protobuf_c_allocator(nullptr, 20);
+		protobuf_c_free(nullptr, new_pointer);
 	}
 
 cleanup:

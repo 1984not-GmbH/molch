@@ -33,10 +33,10 @@ return_status protobuf_export(const conversation_t * const conversation, buffer_
 return_status protobuf_export(const conversation_t * const conversation, buffer_t ** const export_buffer) {
 	return_status status = return_status_init();
 
-	Conversation *exported_conversation = NULL;
+	Conversation *exported_conversation = nullptr;
 
 	//check input
-	if ((conversation == NULL) || (export_buffer == NULL)) {
+	if ((conversation == nullptr) || (export_buffer == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to protobuf_export.");
 	}
 
@@ -54,7 +54,7 @@ return_status protobuf_export(const conversation_t * const conversation, buffer_
 	}
 
 cleanup:
-	if (exported_conversation != NULL) {
+	if (exported_conversation != nullptr) {
 		conversation__free_unpacked(exported_conversation, &protobuf_c_allocators);
 	}
 
@@ -70,10 +70,10 @@ return_status protobuf_import(
 		const buffer_t * const import_buffer) {
 	return_status status = return_status_init();
 
-	Conversation *conversation_protobuf = NULL;
+	Conversation *conversation_protobuf = nullptr;
 
 	//check input
-	if ((conversation == NULL) || (import_buffer == NULL)) {
+	if ((conversation == nullptr) || (import_buffer == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to protobuf_import.");
 	}
 
@@ -81,7 +81,7 @@ return_status protobuf_import(
 		&protobuf_c_allocators,
 		import_buffer->content_length,
 		import_buffer->content);
-	if (conversation_protobuf == NULL) {
+	if (conversation_protobuf == nullptr) {
 		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
 	}
 	THROW_on_failed_alloc(conversation_protobuf);
@@ -90,9 +90,9 @@ return_status protobuf_import(
 	THROW_on_error(IMPORT_ERROR, "Failed to import conversation.");
 
 cleanup:
-	if (conversation_protobuf != NULL) {
+	if (conversation_protobuf != nullptr) {
 		conversation__free_unpacked(conversation_protobuf, &protobuf_c_allocators);
-		conversation_protobuf = NULL;
+		conversation_protobuf = nullptr;
 	}
 
 	return status;
@@ -116,26 +116,26 @@ static return_status create_conversation(
 	return_status status = return_status_init();
 
 	//check input
-	if ((conversation == NULL)
-			|| (our_private_identity == NULL) || (our_private_identity->content_length != PRIVATE_KEY_SIZE)
-			|| (our_public_identity == NULL) || (our_public_identity->content_length != PUBLIC_KEY_SIZE)
-			|| (their_public_identity == NULL) || (their_public_identity->content_length != PUBLIC_KEY_SIZE)
-			|| (our_private_ephemeral == NULL) || (our_public_ephemeral->content_length != PRIVATE_KEY_SIZE)
-			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
-			|| (their_public_ephemeral == NULL) || (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
+	if ((conversation == nullptr)
+			|| (our_private_identity == nullptr) || (our_private_identity->content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_identity == nullptr) || (our_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_identity == nullptr) || (their_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (our_private_ephemeral == nullptr) || (our_public_ephemeral->content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_ephemeral == nullptr) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_ephemeral == nullptr) || (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input for conversation_create.");
 	}
 
 	*conversation = (conversation_t*)malloc(sizeof(conversation_t));
-	if (conversation == NULL) {
+	if (conversation == nullptr) {
 		THROW(ALLOCATION_FAILED, "Failed to allocate memory for conversation.");
 	}
 
 	//init_struct()
 	buffer_init_with_pointer((*conversation)->id, (*conversation)->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
-	(*conversation)->ratchet = NULL;
-	(*conversation)->previous = NULL;
-	(*conversation)->next = NULL;
+	(*conversation)->ratchet = nullptr;
+	(*conversation)->previous = nullptr;
+	(*conversation)->next = nullptr;
 
 	//create random id
 	if (buffer_fill_random((*conversation)->id, CONVERSATION_ID_SIZE) != 0) {
@@ -154,7 +154,7 @@ static return_status create_conversation(
 
 cleanup:
 	on_error {
-		if (conversation != NULL) {
+		if (conversation != nullptr) {
 			free_and_null_if_valid(*conversation);
 		}
 	}
@@ -179,13 +179,13 @@ int main(void) {
 	buffer_t *dora_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 
 	//Protobuf export buffers
-	buffer_t *protobuf_export_buffer = NULL;
-	buffer_t *protobuf_second_export_buffer = NULL;
+	buffer_t *protobuf_export_buffer = nullptr;
+	buffer_t *protobuf_second_export_buffer = nullptr;
 
 	//conversations
-	conversation_t *charlie_conversation = NULL;
-	conversation_t *dora_conversation = NULL;
-	conversation_t *imported_charlies_conversation = NULL;
+	conversation_t *charlie_conversation = nullptr;
+	conversation_t *dora_conversation = nullptr;
+	conversation_t *imported_charlies_conversation = nullptr;
 
 	return_status status = return_status_init();
 
@@ -266,7 +266,7 @@ int main(void) {
 	puts("\n");
 
 	conversation_destroy(charlie_conversation);
-	charlie_conversation = NULL;
+	charlie_conversation = nullptr;
 
 	//import
 	printf("Import from Protobuf-C\n");
@@ -285,13 +285,13 @@ int main(void) {
 	printf("Both exported buffers are identitcal.\n\n");
 
 cleanup:
-	if (charlie_conversation != NULL) {
+	if (charlie_conversation != nullptr) {
 		conversation_destroy(charlie_conversation);
 	}
-	if (dora_conversation != NULL) {
+	if (dora_conversation != nullptr) {
 		conversation_destroy(dora_conversation);
 	}
-	if (imported_charlies_conversation != NULL) {
+	if (imported_charlies_conversation != nullptr) {
 		conversation_destroy(imported_charlies_conversation);
 	}
 

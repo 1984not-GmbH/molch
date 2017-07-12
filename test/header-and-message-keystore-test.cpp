@@ -50,7 +50,7 @@ static return_status protobuf_export(
 	*export_buffers = (buffer_t**)zeroed_malloc((*bundles_size) * sizeof(buffer_t*));
 	THROW_on_failed_alloc(*export_buffers);
 
-	//initialize pointers with NULL
+	//initialize pointers with nullptr
 	memset(*export_buffers, '\0', (*bundles_size) * sizeof(buffer_t *));
 
 	//create all the export buffers
@@ -77,7 +77,7 @@ static return_status protobuf_import(
 	KeyBundle ** key_bundles = (KeyBundle**)zeroed_malloc(buffers_size * sizeof(KeyBundle*));
 	THROW_on_failed_alloc(key_bundles);
 
-	//set all pointers to NULL
+	//set all pointers to nullptr
 	memset(key_bundles, '\n', buffers_size * sizeof(KeyBundle*));
 
 	//parse all the exported protobuf buffers
@@ -86,7 +86,7 @@ static return_status protobuf_import(
 			&protobuf_c_allocators,
 			exported_buffers[i]->content_length,
 			exported_buffers[i]->content);
-		if (key_bundles[i] == NULL) {
+		if (key_bundles[i] == nullptr) {
 			THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack key bundle from protobuf.");
 		}
 	}
@@ -99,11 +99,11 @@ static return_status protobuf_import(
 	THROW_on_error(IMPORT_ERROR, "Failed to import header_and_message_keystore from Protobuf-C.");
 
 cleanup:
-	if (key_bundles != NULL) {
+	if (key_bundles != nullptr) {
 		for (size_t i = 0; i < buffers_size; i++) {
-			if (key_bundles[i] != NULL) {
+			if (key_bundles[i] != nullptr) {
 				key_bundle__free_unpacked(key_bundles[i], &protobuf_c_allocators);
-				key_bundles[i] = NULL;
+				key_bundles[i] = nullptr;
 			}
 		}
 		zeroed_free_and_null_if_valid(key_bundles);
@@ -121,14 +121,14 @@ return_status protobuf_empty_store(void) {
 	header_and_message_keystore store;
 	header_and_message_keystore_init(&store);
 
-	KeyBundle **exported = NULL;
+	KeyBundle **exported = nullptr;
 	size_t exported_length = 0;
 
 	//export it
 	status = header_and_message_keystore_export(&store, &exported, &exported_length);
 	THROW_on_error(EXPORT_ERROR, "Failed to export empty header and message keystore.");
 
-	if ((exported != NULL) || (exported_length != 0)) {
+	if ((exported != nullptr) || (exported_length != 0)) {
 		THROW(INCORRECT_DATA, "Exported data is not empty.");
 	}
 
@@ -154,19 +154,19 @@ int main(void) {
 	buffer_t *message_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 
 	// buffers for exporting protobuf-c
-	buffer_t **protobuf_export_buffers = NULL;
-	buffer_t **protobuf_second_export_buffers = NULL;
-	KeyBundle ** protobuf_export_bundles = NULL;
+	buffer_t **protobuf_export_buffers = nullptr;
+	buffer_t **protobuf_second_export_buffers = nullptr;
+	KeyBundle ** protobuf_export_bundles = nullptr;
 	size_t protobuf_export_bundles_size = 0;
-	KeyBundle ** protobuf_second_export_bundles = NULL;
+	KeyBundle ** protobuf_second_export_bundles = nullptr;
 	size_t protobuf_second_export_bundles_size = 0;
 
 	//initialise message keystore
 	header_and_message_keystore keystore;
 	header_and_message_keystore_init(&keystore);
 	assert(keystore.length == 0);
-	assert(keystore.head == NULL);
-	assert(keystore.tail == NULL);
+	assert(keystore.head == nullptr);
+	assert(keystore.tail == nullptr);
 
 	int status_int = 0;
 	//add keys to the keystore
@@ -272,38 +272,38 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(header_key);
 	buffer_destroy_from_heap_and_null_if_valid(message_key);
 
-	if (protobuf_export_bundles != NULL) {
+	if (protobuf_export_bundles != nullptr) {
 		for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
-			if (protobuf_export_bundles[i] != NULL) {
+			if (protobuf_export_bundles[i] != nullptr) {
 				key_bundle__free_unpacked(protobuf_export_bundles[i], &protobuf_c_allocators);
-				protobuf_export_bundles[i] = NULL;
+				protobuf_export_bundles[i] = nullptr;
 			}
 		}
 		zeroed_free_and_null_if_valid(protobuf_export_bundles);
 	}
 
-	if (protobuf_export_buffers != NULL) {
+	if (protobuf_export_buffers != nullptr) {
 		for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
-			if (protobuf_export_buffers[i] != NULL) {
+			if (protobuf_export_buffers[i] != nullptr) {
 				buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffers[i]);
 			}
 		}
 		zeroed_free_and_null_if_valid(protobuf_export_buffers);
 	}
 
-	if (protobuf_second_export_bundles != NULL) {
+	if (protobuf_second_export_bundles != nullptr) {
 		for (size_t i = 0; i < protobuf_second_export_bundles_size; i++) {
-			if (protobuf_second_export_bundles[i] != NULL) {
+			if (protobuf_second_export_bundles[i] != nullptr) {
 				key_bundle__free_unpacked(protobuf_second_export_bundles[i], &protobuf_c_allocators);
-				protobuf_second_export_bundles[i] = NULL;
+				protobuf_second_export_bundles[i] = nullptr;
 			}
 		}
 		zeroed_free_and_null_if_valid(protobuf_second_export_bundles);
 	}
 
-	if (protobuf_second_export_buffers != NULL) {
+	if (protobuf_second_export_buffers != nullptr) {
 		for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
-			if (protobuf_second_export_buffers[i] != NULL) {
+			if (protobuf_second_export_buffers[i] != nullptr) {
 				buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_buffers[i]);
 			}
 		}
@@ -316,8 +316,8 @@ cleanup:
 	printf("Clear the keystore:\n");
 	header_and_message_keystore_clear(&keystore);
 	assert(keystore.length == 0);
-	assert(keystore.head == NULL);
-	assert(keystore.tail == NULL);
+	assert(keystore.head == nullptr);
+	assert(keystore.tail == nullptr);
 	print_header_and_message_keystore(&keystore);
 
 	on_error {

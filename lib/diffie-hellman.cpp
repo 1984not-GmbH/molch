@@ -81,7 +81,7 @@ return_status diffie_hellman(
 	{
 		int status_int = crypto_generichash_init(
 				hash_state,
-				NULL, //key
+				nullptr, //key
 				0, //key_length
 				DIFFIE_HELLMAN_SIZE); //output length
 		if (status_int != 0) {
@@ -161,9 +161,9 @@ return_status triple_diffie_hellman(
 	derived_key->content_length = 0;
 
 	//buffers for all 3 Diffie Hellman exchanges
-	buffer_t *dh1 = NULL;
-	buffer_t *dh2 = NULL;
-	buffer_t *dh3 = NULL;
+	buffer_t *dh1 = nullptr;
+	buffer_t *dh2 = nullptr;
+	buffer_t *dh3 = nullptr;
 	dh1 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
 	THROW_on_failed_alloc(dh1);
 	dh2 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
@@ -244,7 +244,7 @@ return_status triple_diffie_hellman(
 	{
 		int status_int = crypto_generichash_init(
 				hash_state,
-				NULL, //key
+				nullptr, //key
 				0, //key_length
 				DIFFIE_HELLMAN_SIZE); //output_length
 		if (status_int != 0) {

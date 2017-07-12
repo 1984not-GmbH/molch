@@ -41,7 +41,7 @@ int main(void) {
 	buffer_t *extracted_public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_create_from_string(message, "Hello world!\n");
 	buffer_t *header = buffer_create_on_heap(4, 4);
-	buffer_t *packet = NULL;
+	buffer_t *packet = nullptr;
 
 	return_status status = return_status_init();
 
@@ -67,9 +67,9 @@ int main(void) {
 			packet_type,
 			header,
 			message,
-			NULL,
-			NULL,
-			NULL);
+			nullptr,
+			nullptr,
+			nullptr);
 	THROW_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now extract the metadata
@@ -81,9 +81,9 @@ int main(void) {
 			&extracted_highest_supported_protocol_version,
 			&extracted_packet_type,
 			packet,
-			NULL,
-			NULL,
-			NULL);
+			nullptr,
+			nullptr,
+			nullptr);
 	THROW_on_error(DATA_FETCH_ERROR, "Couldn't extract metadata from the packet.");
 
 	printf("extracted_packet_type = %u\n", extracted_packet_type);

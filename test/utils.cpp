@@ -54,7 +54,7 @@ void print_hex(const buffer_t * const data) {
 
 void print_to_file(const buffer_t * const data, const char * const filename) {
 	FILE *file = fopen(filename, "w");
-	if (file == NULL) {
+	if (file == nullptr) {
 		return;
 	}
 
@@ -64,13 +64,13 @@ void print_to_file(const buffer_t * const data, const char * const filename) {
 }
 
 void print_errors(return_status * const status) {
-	if (status == NULL) {
+	if (status == nullptr) {
 		return;
 	}
 
 	fprintf(stderr, "ERROR STACK:\n");
 	error_message *error = status->error;
-	for (size_t i = 1; error != NULL; i++, error = error->next) {
+	for (size_t i = 1; error != nullptr; i++, error = error->next) {
 		fprintf(stderr, "%zu: %s\n", i, error->message);
 	}
 }
@@ -79,14 +79,14 @@ void print_errors(return_status * const status) {
 return_status read_file(buffer_t ** const data, const char * const filename) {
 	return_status status = return_status_init();
 
-	FILE *file = NULL;
+	FILE *file = nullptr;
 
 	//check input
-	if ((data == NULL) || (filename == NULL)) {
+	if ((data == nullptr) || (filename == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to read_file.");
 	}
 
-	*data = NULL;
+	*data = nullptr;
 
 	file = fopen(filename, "r");
 	THROW_on_failed_alloc(file);
@@ -107,14 +107,14 @@ return_status read_file(buffer_t ** const data, const char * const filename) {
 
 cleanup:
 	on_error {
-		if (data != NULL) {
+		if (data != nullptr) {
 			buffer_destroy_from_heap_and_null_if_valid(*data);
 		}
 	}
 
-	if (file != NULL) {
+	if (file != nullptr) {
 		fclose(file);
-		file = NULL;
+		file = nullptr;
 	}
 
 	return status;

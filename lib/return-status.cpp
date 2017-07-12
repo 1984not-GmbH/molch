@@ -29,7 +29,7 @@
 extern return_status return_status_init() {
 	return_status status = {
 		SUCCESS,
-		NULL
+		nullptr
 	};
 	return status;
 }
@@ -38,16 +38,16 @@ status_type return_status_add_error_message(
 		return_status *const status_object,
 		const char *const message,
 		const status_type status) {
-	if (status_object == NULL) {
+	if (status_object == nullptr) {
 		return INVALID_INPUT;
 	}
 
-	if (message == NULL) {
+	if (message == nullptr) {
 		return SUCCESS;
 	}
 
 	error_message *error = (error_message*)malloc(sizeof(error_message));
-	if (error == NULL) {
+	if (error == nullptr) {
 		return ALLOCATION_FAILED;
 	}
 
@@ -61,11 +61,11 @@ status_type return_status_add_error_message(
 }
 
 void return_status_destroy_errors(return_status * const status) {
-	if (status == NULL) {
+	if (status == nullptr) {
 		return;
 	}
 
-	while (status->error != NULL) {
+	while (status->error != nullptr) {
 		error_message *next_error = status->error->next;
 		free_and_null_if_valid(status->error);
 		status->error = next_error;
@@ -180,7 +180,7 @@ const char *return_status_get_name(status_type status) {
 			return "UNSUPPORTED_PROTOCOL_VERSION";
 
 		default:
-			return "(NULL)";
+			return "(nullptr)";
 	}
 }
 
@@ -192,18 +192,18 @@ const char *return_status_get_name(status_type status) {
 char *return_status_print(const return_status * const status_to_print, size_t *length) {
 	return_status status = return_status_init();
 
-	buffer_t *output = NULL;
+	buffer_t *output = nullptr;
 
 	size_t output_size = 1; // 1 because of '\0';
 
 	//check input
-	if (status_to_print == NULL) {
+	if (status_to_print == nullptr) {
 		THROW(INVALID_INPUT, "Invalid input return_status_print.");
 	}
 
 	static const unsigned char success_string[] = "SUCCESS";
 	static const unsigned char error_string[] = "ERROR\nerror stack trace:\n";
-	static const unsigned char null_string[] = "(NULL)";
+	static const unsigned char null_string[] = "(nullptr)";
 
 	// count how much space needs to be allocated
 	if (status_to_print->status == SUCCESS) {
@@ -213,14 +213,14 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 
 		// iterate over error stack
 		for (error_message *current_error = status_to_print->error;
-				current_error != NULL;
+				current_error != nullptr;
 				current_error = current_error->next) {
 
 			output_size += sizeof("XXX: ");
 			output_size += strlen(return_status_get_name(current_error->status));
 			output_size += sizeof(", ");
 
-			if (current_error->message == NULL) {
+			if (current_error->message == nullptr) {
 				output_size += sizeof(null_string);
 			} else {
 				output_size += strlen(current_error->message);
@@ -248,7 +248,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 			// iterate over error stack
 			size_t i = 0;
 			for (error_message *current_error = status_to_print->error;
-					current_error != NULL;
+					current_error != nullptr;
 					current_error = current_error->next, i++) {
 
 				int written = 0;
@@ -282,7 +282,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 					THROW(BUFFER_ERROR, "Failed to copy \", \" to stack trace.");
 				}
 
-				if (current_error->message == NULL) {
+				if (current_error->message == nullptr) {
 					status_int = buffer_copy_from_raw(
 							output,
 							output->content_length,
@@ -290,7 +290,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 							0,
 							sizeof(null_string) - 1);
 					if (status_int != 0) {
-						THROW(BUFFER_ERROR, "Failed to copy \"(NULL)\" to stack trace.");
+						THROW(BUFFER_ERROR, "Failed to copy \"(nullptr)\" to stack trace.");
 					}
 				} else {
 					status_int = buffer_copy_from_raw(
@@ -331,12 +331,12 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 
 cleanup:
 	; // C programming language, I really really love you (not)
-	char *output_string = NULL;
+	char *output_string = nullptr;
 	if (status.status != SUCCESS) {
 		buffer_destroy_from_heap_and_null_if_valid(output);
 	} else {
 		output_string = (char*) output->content;
-		if (length != NULL) {
+		if (length != nullptr) {
 			*length = output->content_length;
 		}
 		free_and_null_if_valid(output);

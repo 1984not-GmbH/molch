@@ -62,10 +62,10 @@ int main(void) {
 	buffer_t *receive_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 
 	//ratchets
-	ratchet_state *alice_send_ratchet = NULL;
-	ratchet_state *alice_receive_ratchet = NULL;
-	ratchet_state *bob_send_ratchet = NULL;
-	ratchet_state *bob_receive_ratchet = NULL;
+	ratchet_state *alice_send_ratchet = nullptr;
+	ratchet_state *alice_receive_ratchet = nullptr;
+	ratchet_state *bob_send_ratchet = nullptr;
+	ratchet_state *bob_receive_ratchet = nullptr;
 
 	//generate the keys
 	if (keypair(alice_private_identity, alice_public_identity) != 0) {
@@ -332,16 +332,16 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(next_receive_header_key);
 	buffer_destroy_from_heap_and_null_if_valid(receive_message_key);
 
-	if (alice_send_ratchet != NULL) {
+	if (alice_send_ratchet != nullptr) {
 		ratchet_destroy(alice_send_ratchet);
 	}
-	if (alice_receive_ratchet != NULL) {
+	if (alice_receive_ratchet != nullptr) {
 		ratchet_destroy(alice_receive_ratchet);
 	}
-	if (bob_send_ratchet != NULL) {
+	if (bob_send_ratchet != nullptr) {
 		ratchet_destroy(bob_send_ratchet);
 	}
-	if (bob_receive_ratchet != NULL) {
+	if (bob_receive_ratchet != nullptr) {
 		ratchet_destroy(bob_receive_ratchet);
 	}
 

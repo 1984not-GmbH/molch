@@ -567,7 +567,7 @@ int main(void) {
 
 	//test custom allocator
 	buffer_t *custom_allocated = buffer_create_with_custom_allocator(10, 10, sodium_malloc, sodium_free);
-	if (custom_allocated == NULL) {
+	if (custom_allocated == nullptr) {
 		fprintf(stderr, "ERROR: Failed to create buffer with custom allocator!\n");
 		return EXIT_FAILURE;
 	}
@@ -615,11 +615,11 @@ int main(void) {
 	buffer_destroy_from_heap(buffer_to_be_filled);
 
 	buffer_t *custom_allocated_empty_buffer = buffer_create_with_custom_allocator(0, 0, malloc, free);
-	if (custom_allocated_empty_buffer == NULL) {
+	if (custom_allocated_empty_buffer == nullptr) {
 		fprintf(stderr, "ERROR: Failed to customly allocate empty buffer.\n");
 		return EXIT_FAILURE;
 	}
-	if (custom_allocated_empty_buffer->content != NULL) {
+	if (custom_allocated_empty_buffer->content != nullptr) {
 		buffer_destroy_with_custom_deallocator(custom_allocated_empty_buffer, free);
 		fprintf(stderr, "ERROR: Customly allocated empty buffer has content.\n");
 		return EXIT_FAILURE;

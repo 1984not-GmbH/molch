@@ -127,7 +127,7 @@ int main(void) {
 
 	//time_t -> big endian
 	{
-		time_t timestamp = time(NULL);
+		time_t timestamp = time(nullptr);
 		status = endianness_time_to_big_endian(timestamp, buffer64);
 		THROW_on_error(CONVERSION_ERROR, "Failed to convert time_t to big endian.");
 		printf("time_t %llu to big endian:\n", (unsigned long long) timestamp);

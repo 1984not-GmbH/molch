@@ -29,7 +29,7 @@
 int main(void) {
 	//create buffers
 	buffer_t *our_public_ephemeral_key = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *header = NULL;
+	buffer_t *header = nullptr;
 	buffer_t *extracted_public_ephemeral_key = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 
 	return_status status = return_status_init();

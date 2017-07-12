@@ -69,15 +69,15 @@ void user_store_destroy(user_store * const store);
  */
 return_status user_store_create_user(
 		user_store * const keystore,
-		const buffer_t * const seed, //optional, can be NULL
-		buffer_t * const public_signing_key, //output, optional, can be NULL
-		buffer_t * const public_identity_key //output, optional, can be NULL
+		const buffer_t * const seed, //optional, can be nullptr
+		buffer_t * const public_signing_key, //output, optional, can be nullptr
+		buffer_t * const public_identity_key //output, optional, can be nullptr
 		) __attribute__((warn_unused_result));
 
 /*
  * Find a user for a given public signing key.
  *
- * Returns NULL if no user was found.
+ * Returns nullptr if no user was found.
  */
 return_status user_store_find_node(user_store_node ** const node, user_store * const store, const buffer_t * const public_signing_key) __attribute__((warn_unused_result));
 

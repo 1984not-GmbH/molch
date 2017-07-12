@@ -26,7 +26,7 @@
 /*
  * Create a new set of master keys.
  *
- * Seed is optional, can be NULL. It can be of any length and doesn't
+ * Seed is optional, can be nullptr. It can be of any length and doesn't
  * require to have high entropy. It will be used as entropy source
  * in addition to the OSs CPRNG.
  *
@@ -35,16 +35,16 @@
 return_status master_keys_create(
 		master_keys_t ** const keys, //output
 		const buffer_t * const seed,
-		buffer_t * const public_signing_key, //output, optional, can be NULL
-		buffer_t * const public_identity_key //output, optional, can be NULL
+		buffer_t * const public_signing_key, //output, optional, can be nullptr
+		buffer_t * const public_identity_key //output, optional, can be nullptr
 		) {
 	return_status status = return_status_init();
 
 
 	//seeds
-	buffer_t *crypto_seeds = NULL;
+	buffer_t *crypto_seeds = nullptr;
 
-	if (keys == NULL) {
+	if (keys == nullptr) {
 		THROW(INVALID_INPUT, "Invalid input for master_keys_create.");
 	}
 
@@ -57,7 +57,7 @@ return_status master_keys_create(
 	buffer_init_with_pointer((*keys)->public_identity_key, (*keys)->public_identity_key_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_init_with_pointer((*keys)->private_identity_key, (*keys)->private_identity_key_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 
-	if (seed != NULL) { //use external seed
+	if (seed != nullptr) { //use external seed
 		//create the seed buffer
 		crypto_seeds = buffer_create_with_custom_allocator(
 				crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES,
@@ -107,7 +107,7 @@ return_status master_keys_create(
 	}
 
 	//copy the public keys if requested
-	if (public_signing_key != NULL) {
+	if (public_signing_key != nullptr) {
 		if (public_signing_key->buffer_length < PUBLIC_MASTER_KEY_SIZE) {
 			public_signing_key->content_length = 0;
 			THROW(INCORRECT_BUFFER_SIZE, "Public master key buffer is too short.");
@@ -117,7 +117,7 @@ return_status master_keys_create(
 			THROW(BUFFER_ERROR, "Failed to copy public signing key.");
 		}
 	}
-	if (public_identity_key != NULL) {
+	if (public_identity_key != nullptr) {
 		if (public_identity_key->buffer_length < PUBLIC_KEY_SIZE) {
 			public_identity_key->content_length = 0;
 			THROW(INCORRECT_BUFFER_SIZE, "Public encryption key buffer is too short.");
@@ -132,14 +132,14 @@ cleanup:
 	buffer_destroy_with_custom_deallocator_and_null_if_valid(crypto_seeds, sodium_free);
 
 	on_error {
-		if (keys != NULL) {
+		if (keys != nullptr) {
 			sodium_free_and_null_if_valid(*keys);
 		}
 
 		return status;
 	}
 
-	if ((keys != NULL) && (*keys != NULL)) {
+	if ((keys != nullptr) && (*keys != nullptr)) {
 		sodium_mprotect_noaccess(*keys);
 	}
 	return status;
@@ -154,7 +154,7 @@ return_status master_keys_get_signing_key(
 	return_status status = return_status_init();
 
 	//check input
-	if ((keys == NULL) || (public_signing_key == NULL) || (public_signing_key->buffer_length < PUBLIC_MASTER_KEY_SIZE)) {
+	if ((keys == nullptr) || (public_signing_key == nullptr) || (public_signing_key->buffer_length < PUBLIC_MASTER_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to master_keys_get_signing_key.");
 	}
 
@@ -165,7 +165,7 @@ return_status master_keys_get_signing_key(
 	}
 
 cleanup:
-	if (keys != NULL) {
+	if (keys != nullptr) {
 		sodium_mprotect_noaccess(keys);
 	}
 
@@ -181,7 +181,7 @@ return_status master_keys_get_identity_key(
 	return_status status = return_status_init();
 
 	//check input
-	if ((keys == NULL) || (public_identity_key == NULL) || (public_identity_key->buffer_length < PUBLIC_KEY_SIZE)) {
+	if ((keys == nullptr) || (public_identity_key == nullptr) || (public_identity_key->buffer_length < PUBLIC_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to master_keys_get_identity_key.");
 	}
 
@@ -192,7 +192,7 @@ return_status master_keys_get_identity_key(
 	}
 
 cleanup:
-	if (keys != NULL) {
+	if (keys != nullptr) {
 		sodium_mprotect_noaccess(keys);
 	}
 
@@ -208,9 +208,9 @@ return_status master_keys_sign(
 		buffer_t * const signed_data) { //output, length of data + SIGNATURE_SIZE
 	return_status status = return_status_init();
 
-	if ((keys == NULL)
-			|| (data == NULL)
-			|| (signed_data == NULL)
+	if ((keys == nullptr)
+			|| (data == nullptr)
+			|| (signed_data == nullptr)
 			|| (signed_data->buffer_length < (data->content_length + SIGNATURE_SIZE))) {
 		THROW(INVALID_INPUT, "Invalid input to master_keys_sign.");
 	}
@@ -234,12 +234,12 @@ return_status master_keys_sign(
 	}
 
 cleanup:
-	if (keys != NULL) {
+	if (keys != nullptr) {
 		sodium_mprotect_noaccess(keys);
 	}
 
 	on_error {
-		if (signed_data != NULL) {
+		if (signed_data != nullptr) {
 			signed_data->content_length = 0;
 		}
 	}
@@ -256,9 +256,9 @@ return_status master_keys_export(
 	return_status status = return_status_init();
 
 	//check input
-	if ((keys == NULL)
-			|| (public_signing_key == NULL) || (private_signing_key == NULL)
-			|| (public_identity_key == NULL) || (private_identity_key == NULL)) {
+	if ((keys == nullptr)
+			|| (public_signing_key == nullptr) || (private_signing_key == nullptr)
+			|| (public_identity_key == nullptr) || (private_identity_key == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to keys_export");
 	}
 
@@ -309,29 +309,29 @@ return_status master_keys_export(
 
 cleanup:
 	on_error {
-		if ((public_signing_key != NULL) && (*public_signing_key != NULL)) {
+		if ((public_signing_key != nullptr) && (*public_signing_key != nullptr)) {
 			key__free_unpacked(*public_signing_key, &protobuf_c_allocators);
-			*public_signing_key = NULL;
+			*public_signing_key = nullptr;
 		}
 
-		if ((private_signing_key != NULL) && (*private_signing_key != NULL)) {
+		if ((private_signing_key != nullptr) && (*private_signing_key != nullptr)) {
 			key__free_unpacked(*private_signing_key, &protobuf_c_allocators);
-			*private_signing_key = NULL;
+			*private_signing_key = nullptr;
 		}
 
-		if ((public_identity_key != NULL) && (*public_identity_key != NULL)) {
+		if ((public_identity_key != nullptr) && (*public_identity_key != nullptr)) {
 			key__free_unpacked(*public_identity_key, &protobuf_c_allocators);
-			*public_identity_key = NULL;
+			*public_identity_key = nullptr;
 		}
 
-		if ((private_identity_key != NULL) && (*private_identity_key != NULL)) {
+		if ((private_identity_key != nullptr) && (*private_identity_key != nullptr)) {
 			key__free_unpacked(*private_identity_key, &protobuf_c_allocators);
-			*private_identity_key = NULL;
+			*private_identity_key = nullptr;
 		}
 
 	}
 
-	if (keys != NULL) {
+	if (keys != nullptr) {
 		sodium_mprotect_noaccess(keys);
 	}
 
@@ -347,9 +347,9 @@ return_status master_keys_import(
 	return_status status = return_status_init();
 
 	//check inputs
-	if ((keys == NULL)
-			|| (public_signing_key == NULL) || (private_signing_key == NULL)
-			|| (public_identity_key == NULL) || (private_identity_key == NULL)) {
+	if ((keys == nullptr)
+			|| (public_signing_key == nullptr) || (private_signing_key == nullptr)
+			|| (public_identity_key == nullptr) || (private_identity_key == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to master_keys_import.");
 	}
 
@@ -380,7 +380,7 @@ return_status master_keys_import(
 
 cleanup:
 	on_error {
-		if (keys != NULL) {
+		if (keys != nullptr) {
 			sodium_free_and_null_if_valid(*keys);
 		}
 	}

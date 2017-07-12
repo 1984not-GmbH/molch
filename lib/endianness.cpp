@@ -43,7 +43,7 @@ return_status endianness_uint32_to_big_endian(
 		buffer_t * const output) {
 	return_status status = return_status_init();
 
-	if ((output == NULL) || (output->buffer_length < sizeof(uint32_t))) {
+	if ((output == nullptr) || (output->buffer_length < sizeof(uint32_t))) {
 		THROW(INVALID_INPUT, "Invalid input to endianness_uint32_to_big_endian.");
 	}
 
@@ -73,7 +73,7 @@ return_status endianness_uint32_from_big_endian(
 		const buffer_t * const buffer) {
 	return_status status = return_status_init();
 
-	if ((integer == NULL) || (buffer == NULL) || (buffer->content_length != sizeof(uint32_t))) {
+	if ((integer == nullptr) || (buffer == nullptr) || (buffer->content_length != sizeof(uint32_t))) {
 		THROW(INVALID_INPUT, "Invalid input to endianness_uint32_from_big_endian.");
 	}
 
@@ -120,7 +120,7 @@ return_status endianness_uint64_to_big_endian(
 		buffer_t * const output) {
 	return_status status = return_status_init();
 
-	if ((output == NULL) || (output->buffer_length < sizeof(uint64_t))) {
+	if ((output == nullptr) || (output->buffer_length < sizeof(uint64_t))) {
 		THROW(INVALID_INPUT, "Invalid input to endianness_uint64_to_big_endian.");
 	}
 
@@ -154,7 +154,7 @@ return_status endianness_uint64_from_big_endian(
 		const buffer_t * const buffer) {
 	return_status status = return_status_init();
 
-	if ((integer == NULL) || (buffer == NULL) || (buffer->content_length != sizeof(uint64_t))) {
+	if ((integer == nullptr) || (buffer == nullptr) || (buffer->content_length != sizeof(uint64_t))) {
 		THROW(INVALID_INPUT, "Invalid input to endianness_uint64_from_big_endian.");
 	}
 

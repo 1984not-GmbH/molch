@@ -49,13 +49,13 @@ static return_status protobuf_export(
 	*key_buffers = (buffer_t**)zeroed_malloc((*keypairs_size) * sizeof(buffer_t*));
 	THROW_on_failed_alloc(*key_buffers);
 
-	//initialize pointers with NULL
+	//initialize pointers with nullptr
 	memset(*key_buffers, '\0', (*keypairs_size) * sizeof(buffer_t*));
 
 	*deprecated_key_buffers = (buffer_t**)zeroed_malloc((*deprecated_keypairs_size) * sizeof(buffer_t*));
 	THROW_on_failed_alloc(*deprecated_key_buffers);
 
-	//initialize pointers with NULL
+	//initialize pointers with nullptr
 	memset(*deprecated_key_buffers, '\0', (*deprecated_keypairs_size) * sizeof(buffer_t*));
 
 	//export all the keypairs
@@ -91,8 +91,8 @@ static return_status protobuf_import(
 		const size_t deprecated_keypair_buffers_size) {
 	return_status status = return_status_init();
 
-	Prekey ** keypairs = NULL;
-	Prekey ** deprecated_keypairs = NULL;
+	Prekey ** keypairs = nullptr;
+	Prekey ** deprecated_keypairs = nullptr;
 
 	keypairs = (Prekey**)zeroed_malloc(keypair_buffers_size * sizeof(Prekey*));
 	THROW_on_failed_alloc(keypairs);
@@ -108,7 +108,7 @@ static return_status protobuf_import(
 			&protobuf_c_allocators,
 			keypair_buffers[i]->content_length,
 			keypair_buffers[i]->content);
-		if (keypairs[i] == NULL) {
+		if (keypairs[i] == nullptr) {
 			THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack prekey from protobuf.");
 		}
 	}
@@ -119,7 +119,7 @@ static return_status protobuf_import(
 			&protobuf_c_allocators,
 			deprecated_keypair_buffers[i]->content_length,
 			deprecated_keypair_buffers[i]->content);
-		if (deprecated_keypairs[i] == NULL) {
+		if (deprecated_keypairs[i] == nullptr) {
 			THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack deprecated prekey from protobuf.");
 		}
 	}
@@ -134,19 +134,19 @@ static return_status protobuf_import(
 	THROW_on_error(IMPORT_ERROR, "Failed to import prekeys.");
 
 cleanup:
-	if (keypairs != NULL) {
+	if (keypairs != nullptr) {
 		for (size_t i = 0; i < keypair_buffers_size; i++) {
 			prekey__free_unpacked(keypairs[i], &protobuf_c_allocators);
-			keypairs[i] = NULL;
+			keypairs[i] = nullptr;
 		}
 
 		zeroed_free_and_null_if_valid(keypairs);
 	}
 
-	if (deprecated_keypairs != NULL) {
+	if (deprecated_keypairs != nullptr) {
 		for (size_t i = 0; i < deprecated_keypair_buffers_size; i++) {
 			prekey__free_unpacked(deprecated_keypairs[i], &protobuf_c_allocators);
-			deprecated_keypairs[i] = NULL;
+			deprecated_keypairs[i] = nullptr;
 		}
 
 		zeroed_free_and_null_if_valid(deprecated_keypairs);
@@ -161,11 +161,11 @@ return_status protobuf_no_deprecated_keys(void) {
 
 	printf("Testing im-/export of prekey store without deprecated keys.\n");
 
-	prekey_store *store = NULL;
+	prekey_store *store = nullptr;
 
-	Prekey **exported = NULL;
+	Prekey **exported = nullptr;
 	size_t exported_length = 0;
-	Prekey **deprecated = NULL;
+	Prekey **deprecated = nullptr;
 	size_t deprecated_length = 0;
 
 	status = prekey_store_create(&store);
@@ -180,7 +180,7 @@ return_status protobuf_no_deprecated_keys(void) {
 		&deprecated_length);
 	THROW_on_error(EXPORT_ERROR, "Failed to export prekey store without deprecated keys.");
 
-	if ((deprecated != NULL) || (deprecated_length != 0)) {
+	if ((deprecated != nullptr) || (deprecated_length != 0)) {
 		THROW(INCORRECT_DATA, "Exported deprecated prekeys are not empty.");
 	}
 
@@ -196,7 +196,7 @@ return_status protobuf_no_deprecated_keys(void) {
 	printf("Successful.\n");
 
 cleanup:
-	if (exported != NULL) {
+	if (exported != nullptr) {
 		for (size_t i = 0; i < exported_length; i++) {
 			prekey__free_unpacked(exported[i], &protobuf_c_allocators);
 			exported[i] = 0;
@@ -204,7 +204,7 @@ cleanup:
 		zeroed_free_and_null_if_valid(exported);
 	}
 
-	if (store != NULL) {
+	if (store != nullptr) {
 		prekey_store_destroy(store);
 	}
 
@@ -223,21 +223,21 @@ int main(void) {
 	buffer_t *private_prekey2 = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	buffer_t *prekey_list = buffer_create_on_heap(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
-	Prekey **protobuf_export_prekeys = NULL;
-	buffer_t **protobuf_export_prekeys_buffers = NULL;
+	Prekey **protobuf_export_prekeys = nullptr;
+	buffer_t **protobuf_export_prekeys_buffers = nullptr;
 	size_t protobuf_export_prekeys_size = 0;
-	Prekey **protobuf_export_deprecated_prekeys = NULL;
-	buffer_t **protobuf_export_deprecated_prekeys_buffers = NULL;
+	Prekey **protobuf_export_deprecated_prekeys = nullptr;
+	buffer_t **protobuf_export_deprecated_prekeys_buffers = nullptr;
 	size_t protobuf_export_deprecated_prekeys_size = 0;
 
-	Prekey **protobuf_second_export_prekeys = NULL;
-	buffer_t **protobuf_second_export_prekeys_buffers = NULL;
+	Prekey **protobuf_second_export_prekeys = nullptr;
+	buffer_t **protobuf_second_export_prekeys_buffers = nullptr;
 	size_t protobuf_second_export_prekeys_size = 0;
-	Prekey **protobuf_second_export_deprecated_prekeys = NULL;
-	buffer_t **protobuf_second_export_deprecated_prekeys_buffers = NULL;
+	Prekey **protobuf_second_export_deprecated_prekeys = nullptr;
+	buffer_t **protobuf_second_export_deprecated_prekeys_buffers = nullptr;
 	size_t protobuf_second_export_deprecated_prekeys_size = 0;
 
-	prekey_store *store = NULL;
+	prekey_store *store = nullptr;
 	status = prekey_store_create(&store);
 	THROW_on_error(CREATION_ERROR, "Failed to create a prekey store.");
 
@@ -271,7 +271,7 @@ int main(void) {
 		print_hex(private_prekey1);
 		putchar('\n');
 
-		if (store->deprecated_prekeys == NULL) {
+		if (store->deprecated_prekeys == nullptr) {
 			THROW(GENERIC_ERROR, "Failed to deprecate requested key.");
 		}
 
@@ -337,7 +337,7 @@ int main(void) {
 	puts("]\n\n");
 
 	prekey_store_destroy(store);
-	store = NULL;
+	store = nullptr;
 
 	printf("Import from Protobuf-C\n");
 	status = protobuf_import(
@@ -408,7 +408,7 @@ int main(void) {
 	status = prekey_store_rotate(store);
 	THROW_on_error(GENERIC_ERROR, "Failed to rotate the prekeys.");
 
-	if (store->deprecated_prekeys->next != NULL) {
+	if (store->deprecated_prekeys->next != nullptr) {
 		THROW(GENERIC_ERROR, "Failed to remove outdated key.");
 	}
 	printf("Successfully removed outdated deprecated key!\n");
@@ -423,29 +423,29 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(prekey_list);
 	prekey_store_destroy(store);
 
-	if (protobuf_export_prekeys != NULL) {
+	if (protobuf_export_prekeys != nullptr) {
 		for (size_t i = 0; i < protobuf_export_prekeys_size; i++) {
-			if (protobuf_export_prekeys[i] != NULL) {
+			if (protobuf_export_prekeys[i] != nullptr) {
 				prekey__free_unpacked(protobuf_export_prekeys[i], &protobuf_c_allocators);
-				protobuf_export_prekeys[i] = NULL;
+				protobuf_export_prekeys[i] = nullptr;
 			}
 
 		}
 		zeroed_free_and_null_if_valid(protobuf_export_prekeys);
 	}
 
-	if (protobuf_export_deprecated_prekeys != NULL) {
+	if (protobuf_export_deprecated_prekeys != nullptr) {
 		for (size_t i = 0; i < protobuf_export_deprecated_prekeys_size; i++) {
-			if (protobuf_export_deprecated_prekeys[i] != NULL) {
+			if (protobuf_export_deprecated_prekeys[i] != nullptr) {
 				prekey__free_unpacked(protobuf_export_deprecated_prekeys[i], &protobuf_c_allocators);
-				protobuf_export_deprecated_prekeys[i] = NULL;
+				protobuf_export_deprecated_prekeys[i] = nullptr;
 			}
 		}
 
 		zeroed_free_and_null_if_valid(protobuf_export_deprecated_prekeys);
 	}
 
-	if (protobuf_export_prekeys_buffers != NULL) {
+	if (protobuf_export_prekeys_buffers != nullptr) {
 		for (size_t i = 0; i < protobuf_export_prekeys_size; i++) {
 			buffer_destroy_from_heap_and_null_if_valid(protobuf_export_prekeys_buffers[i]);
 		}
@@ -453,7 +453,7 @@ cleanup:
 		zeroed_free_and_null_if_valid(protobuf_export_prekeys_buffers);
 	}
 
-	if (protobuf_export_deprecated_prekeys_buffers != NULL) {
+	if (protobuf_export_deprecated_prekeys_buffers != nullptr) {
 		for (size_t i = 0; i < protobuf_export_deprecated_prekeys_size; i++) {
 			buffer_destroy_from_heap_and_null_if_valid(protobuf_export_deprecated_prekeys_buffers[i]);
 		}
@@ -461,29 +461,29 @@ cleanup:
 		zeroed_free_and_null_if_valid(protobuf_export_deprecated_prekeys_buffers);
 	}
 
-	if (protobuf_second_export_prekeys != NULL) {
+	if (protobuf_second_export_prekeys != nullptr) {
 		for (size_t i = 0; i < protobuf_second_export_prekeys_size; i++) {
-			if (protobuf_second_export_prekeys[i] != NULL) {
+			if (protobuf_second_export_prekeys[i] != nullptr) {
 				prekey__free_unpacked(protobuf_second_export_prekeys[i], &protobuf_c_allocators);
-				protobuf_second_export_prekeys[i] = NULL;
+				protobuf_second_export_prekeys[i] = nullptr;
 			}
 
 		}
 		zeroed_free_and_null_if_valid(protobuf_second_export_prekeys);
 	}
 
-	if (protobuf_second_export_deprecated_prekeys != NULL) {
+	if (protobuf_second_export_deprecated_prekeys != nullptr) {
 		for (size_t i = 0; i < protobuf_second_export_deprecated_prekeys_size; i++) {
-			if (protobuf_second_export_deprecated_prekeys[i] != NULL) {
+			if (protobuf_second_export_deprecated_prekeys[i] != nullptr) {
 				prekey__free_unpacked(protobuf_second_export_deprecated_prekeys[i], &protobuf_c_allocators);
-				protobuf_second_export_deprecated_prekeys[i] = NULL;
+				protobuf_second_export_deprecated_prekeys[i] = nullptr;
 			}
 		}
 
 		zeroed_free_and_null_if_valid(protobuf_second_export_deprecated_prekeys);
 	}
 
-	if (protobuf_second_export_prekeys_buffers != NULL) {
+	if (protobuf_second_export_prekeys_buffers != nullptr) {
 		for (size_t i = 0; i < protobuf_second_export_prekeys_size; i++) {
 			buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_prekeys_buffers[i]);
 		}
@@ -491,7 +491,7 @@ cleanup:
 		zeroed_free_and_null_if_valid(protobuf_second_export_prekeys_buffers);
 	}
 
-	if (protobuf_second_export_deprecated_prekeys_buffers != NULL) {
+	if (protobuf_second_export_deprecated_prekeys_buffers != nullptr) {
 		for (size_t i = 0; i < protobuf_second_export_deprecated_prekeys_size; i++) {
 			buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_deprecated_prekeys_buffers[i]);
 		}

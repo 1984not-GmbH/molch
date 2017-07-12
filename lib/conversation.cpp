@@ -30,9 +30,9 @@
  */
 static void init_struct(conversation_t *conversation) {
 	buffer_init_with_pointer(conversation->id, conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
-	conversation->ratchet = NULL;
-	conversation->previous = NULL;
-	conversation->next = NULL;
+	conversation->ratchet = nullptr;
+	conversation->previous = nullptr;
+	conversation->next = nullptr;
 }
 
 /*
@@ -61,13 +61,13 @@ return_status conversation_create(
 	return_status status = return_status_init();
 
 	//check input
-	if ((conversation == NULL)
-			|| (our_private_identity == NULL) || (our_private_identity->content_length != PRIVATE_KEY_SIZE)
-			|| (our_public_identity == NULL) || (our_public_identity->content_length != PUBLIC_KEY_SIZE)
-			|| (their_public_identity == NULL) || (their_public_identity->content_length != PUBLIC_KEY_SIZE)
-			|| (our_private_ephemeral == NULL) || (our_public_ephemeral->content_length != PRIVATE_KEY_SIZE)
-			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
-			|| (their_public_ephemeral == NULL) || (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
+	if ((conversation == nullptr)
+			|| (our_private_identity == nullptr) || (our_private_identity->content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_identity == nullptr) || (our_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_identity == nullptr) || (their_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (our_private_ephemeral == nullptr) || (our_public_ephemeral->content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_ephemeral == nullptr) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_ephemeral == nullptr) || (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input for conversation_create.");
 	}
 
@@ -93,7 +93,7 @@ return_status conversation_create(
 
 cleanup:
 	on_error {
-		if (conversation != NULL) {
+		if (conversation != nullptr) {
 			free_and_null_if_valid(*conversation);
 		}
 	}
@@ -105,7 +105,7 @@ cleanup:
  * Destroy a conversation.
  */
 void conversation_destroy(conversation_t * const conversation) {
-	if (conversation->ratchet != NULL) {
+	if (conversation->ratchet != nullptr) {
 		ratchet_destroy(conversation->ratchet);
 	}
 	free(conversation);
@@ -129,8 +129,8 @@ return_status conversation_start_send_conversation(
 
 	return_status status = return_status_init();
 
-	buffer_t *sender_public_ephemeral = NULL;
-	buffer_t *sender_private_ephemeral = NULL;
+	buffer_t *sender_public_ephemeral = nullptr;
+	buffer_t *sender_private_ephemeral = nullptr;
 
 	uint32_t prekey_number;
 
@@ -140,17 +140,17 @@ return_status conversation_start_send_conversation(
 	THROW_on_failed_alloc(sender_private_ephemeral);
 
 	//check many error conditions
-	if ((conversation == NULL)
-			|| (message == NULL)
-			|| (packet == NULL)
-			|| (receiver_public_identity == NULL) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
-			|| (sender_public_identity == NULL) || (sender_public_identity->content_length != PUBLIC_KEY_SIZE)
-			|| (sender_private_identity == NULL) || (sender_private_identity->content_length != PRIVATE_KEY_SIZE)
-			|| (receiver_prekey_list == NULL) || (receiver_prekey_list->content_length != (PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
+	if ((conversation == nullptr)
+			|| (message == nullptr)
+			|| (packet == nullptr)
+			|| (receiver_public_identity == nullptr) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (sender_public_identity == nullptr) || (sender_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (sender_private_identity == nullptr) || (sender_private_identity->content_length != PRIVATE_KEY_SIZE)
+			|| (receiver_prekey_list == nullptr) || (receiver_prekey_list->content_length != (PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
 		THROW(INVALID_INPUT, "Invalid input to conversation_start_send_conversation.");
 	}
 
-	*conversation = NULL;
+	*conversation = nullptr;
 
 	{
 		int status_int = 0;
@@ -193,11 +193,11 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(sender_private_ephemeral);
 
 	on_error {
-		if (conversation != NULL) {
-			if (*conversation != NULL) {
+		if (conversation != nullptr) {
+			if (*conversation != nullptr) {
 				conversation_destroy(*conversation);
 			}
-			*conversation = NULL;
+			*conversation = nullptr;
 		}
 	}
 
@@ -224,10 +224,10 @@ return_status conversation_start_receive_conversation(
 	return_status status = return_status_init();
 
 	//key buffers
-	buffer_t *receiver_public_prekey = NULL;
-	buffer_t *receiver_private_prekey = NULL;
-	buffer_t *sender_public_ephemeral = NULL;
-	buffer_t *sender_public_identity = NULL;
+	buffer_t *receiver_public_prekey = nullptr;
+	buffer_t *receiver_private_prekey = nullptr;
+	buffer_t *sender_public_ephemeral = nullptr;
+	buffer_t *sender_public_identity = nullptr;
 
 	receiver_public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(receiver_public_prekey);
@@ -238,16 +238,16 @@ return_status conversation_start_receive_conversation(
 	sender_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(sender_public_identity);
 
-	if ((conversation == NULL)
-			|| (packet ==NULL)
-			|| (message == NULL)
-			|| (receiver_public_identity == NULL) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
-			|| (receiver_private_identity == NULL) || (receiver_private_identity->content_length != PRIVATE_KEY_SIZE)
-			|| (receiver_prekeys == NULL)) {
+	if ((conversation == nullptr)
+			|| (packet ==nullptr)
+			|| (message == nullptr)
+			|| (receiver_public_identity == nullptr) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
+			|| (receiver_private_identity == nullptr) || (receiver_private_identity->content_length != PRIVATE_KEY_SIZE)
+			|| (receiver_prekeys == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to conversation_start_receive_conversation.");
 	}
 
-	*conversation = NULL;
+	*conversation = nullptr;
 
 	//get the senders keys and our public prekey from the packet
 	molch_message_type packet_type;
@@ -299,11 +299,11 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(sender_public_identity);
 
 	on_error {
-		if (conversation != NULL) {
-			if (*conversation != NULL) {
+		if (conversation != nullptr) {
+			if (*conversation != nullptr) {
 				conversation_destroy(*conversation);
 			}
-			*conversation = NULL;
+			*conversation = nullptr;
 		}
 	}
 
@@ -320,17 +320,17 @@ return_status conversation_send(
 		conversation_t * const conversation,
 		const buffer_t * const message,
 		buffer_t **packet, //output, free after use!
-		const buffer_t * const public_identity_key, //can be NULL, if not NULL, this will be a prekey message
-		const buffer_t * const public_ephemeral_key, //can be NULL, if not NULL, this will be a prekey message
-		const buffer_t * const public_prekey //can be NULL, if not NULL, this will be a prekey message
+		const buffer_t * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
+		const buffer_t * const public_ephemeral_key, //can be nullptr, if not nullptr, this will be a prekey message
+		const buffer_t * const public_prekey //can be nullptr, if not nullptr, this will be a prekey message
 		) {
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *send_header_key = NULL;
-	buffer_t *send_message_key = NULL;
-	buffer_t *send_ephemeral_key = NULL;
-	buffer_t *header = NULL;
+	buffer_t *send_header_key = nullptr;
+	buffer_t *send_message_key = nullptr;
+	buffer_t *send_ephemeral_key = nullptr;
+	buffer_t *header = nullptr;
 
 	molch_message_type packet_type;
 
@@ -343,29 +343,29 @@ return_status conversation_send(
 
 
 	//check input
-	if ((conversation == NULL)
-			|| (message == NULL)
-			|| (packet == NULL)) {
+	if ((conversation == nullptr)
+			|| (message == nullptr)
+			|| (packet == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to conversation_send.");
 	}
 
-	//ensure that either both public keys are NULL or set
-	if (((public_identity_key == NULL) && (public_prekey != NULL)) || ((public_prekey == NULL) && (public_identity_key != NULL))) {
+	//ensure that either both public keys are nullptr or set
+	if (((public_identity_key == nullptr) && (public_prekey != nullptr)) || ((public_prekey == nullptr) && (public_identity_key != nullptr))) {
 		THROW(INVALID_INPUT, "Invalid combination of provided key buffers.");
 	}
 
 	//check the size of the public keys
-	if (((public_identity_key != NULL) && (public_identity_key->content_length != PUBLIC_KEY_SIZE)) || ((public_prekey != NULL) && (public_prekey->content_length != PUBLIC_KEY_SIZE))) {
+	if (((public_identity_key != nullptr) && (public_identity_key->content_length != PUBLIC_KEY_SIZE)) || ((public_prekey != nullptr) && (public_prekey->content_length != PUBLIC_KEY_SIZE))) {
 		THROW(INCORRECT_BUFFER_SIZE, "Public key output has incorrect size.");
 	}
 
 	packet_type = NORMAL_MESSAGE;
 	//check if this is a prekey message
-	if (public_identity_key != NULL) {
+	if (public_identity_key != nullptr) {
 		packet_type = PREKEY_MESSAGE;
 	}
 
-	*packet = NULL;
+	*packet = nullptr;
 
 	uint32_t send_message_number;
 	uint32_t previous_send_message_number;
@@ -400,7 +400,7 @@ return_status conversation_send(
 
 cleanup:
 	on_error {
-		if (packet != NULL) {
+		if (packet != nullptr) {
 			buffer_destroy_from_heap_and_null_if_valid(*packet);
 		}
 	}
@@ -428,14 +428,14 @@ static int try_skipped_header_and_message_keys(
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *header = NULL;
-	buffer_t *their_signed_public_ephemeral = NULL;
+	buffer_t *header = nullptr;
+	buffer_t *their_signed_public_ephemeral = nullptr;
 	their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(their_signed_public_ephemeral);
 
 	{
 		header_and_message_keystore_node* node = skipped_keys->head;
-		for (size_t i = 0; (i < skipped_keys->length) && (node != NULL); i++, node = node->next) {
+		for (size_t i = 0; (i < skipped_keys->length) && (node != nullptr); i++, node = node->next) {
 			status = packet_decrypt_header(
 					&header,
 					packet,
@@ -468,7 +468,7 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(header);
 
 	on_error {
-		if (message != NULL) {
+		if (message != nullptr) {
 			buffer_destroy_from_heap_and_null_if_valid(*message);
 		}
 	}
@@ -494,11 +494,11 @@ return_status conversation_receive(
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *current_receive_header_key = NULL;
-	buffer_t *next_receive_header_key = NULL;
-	buffer_t *header = NULL;
-	buffer_t *message_key = NULL;
-	buffer_t *their_signed_public_ephemeral = NULL;
+	buffer_t *current_receive_header_key = nullptr;
+	buffer_t *next_receive_header_key = nullptr;
+	buffer_t *header = nullptr;
+	buffer_t *message_key = nullptr;
+	buffer_t *their_signed_public_ephemeral = nullptr;
 
 	current_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	THROW_on_failed_alloc(current_receive_header_key);
@@ -509,11 +509,11 @@ return_status conversation_receive(
 	message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 	THROW_on_failed_alloc(message_key);
 
-	if ((conversation == NULL)
-			|| (packet == NULL)
-			|| (message == NULL)
-			|| (receive_message_number == NULL)
-			|| (previous_receive_message_number == NULL)) {
+	if ((conversation == nullptr)
+			|| (packet == nullptr)
+			|| (message == nullptr)
+			|| (receive_message_number == nullptr)
+			|| (previous_receive_message_number == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to conversation_receive.");
 	}
 
@@ -613,11 +613,11 @@ return_status conversation_receive(
 cleanup:
 	on_error {
 		return_status authenticity_status = return_status_init();
-		if (conversation != NULL) {
+		if (conversation != nullptr) {
 			authenticity_status = ratchet_set_last_message_authenticity(conversation->ratchet, false);
 			return_status_destroy_errors(&authenticity_status);
 		}
-		if (message != NULL) {
+		if (message != nullptr) {
 			buffer_destroy_from_heap_and_null_if_valid(*message);
 		}
 	}
@@ -636,10 +636,10 @@ return_status conversation_export(
 		Conversation ** const exported_conversation) {
 	return_status status = return_status_init();
 
-	unsigned char *id = NULL;
+	unsigned char *id = nullptr;
 
 	//check input
-	if ((conversation == NULL) || (exported_conversation == NULL)) {
+	if ((conversation == nullptr) || (exported_conversation == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to conversation_export.");
 	}
 
@@ -658,7 +658,7 @@ return_status conversation_export(
 cleanup:
 	on_error {
 		zeroed_free_and_null_if_valid(id);
-		if ((exported_conversation != NULL) && (*exported_conversation != NULL)) {
+		if ((exported_conversation != nullptr) && (*exported_conversation != nullptr)) {
 			conversation__free_unpacked(*exported_conversation, &protobuf_c_allocators);
 		}
 	}
@@ -672,7 +672,7 @@ return_status conversation_import(
 	return_status status = return_status_init();
 
 	//check input
-	if ((conversation == NULL) || (conversation_protobuf == NULL)) {
+	if ((conversation == nullptr) || (conversation_protobuf == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to conversation_import.");
 	}
 
@@ -691,7 +691,7 @@ return_status conversation_import(
 	THROW_on_error(IMPORT_ERROR, "Failed to import ratchet.");
 cleanup:
 	on_error {
-		if (conversation != NULL) {
+		if (conversation != nullptr) {
 			free_and_null_if_valid(*conversation);
 		}
 	}

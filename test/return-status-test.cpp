@@ -48,11 +48,11 @@ cleanup:
 int main(void) {
 	return_status status = return_status_init();
 
-	char *error_stack = NULL;
-	unsigned char *printed_status = NULL;
+	char *error_stack = nullptr;
+	unsigned char *printed_status = nullptr;
 
 	//check if it was correctly initialized
-	if ((status.status != SUCCESS) || (status.error != NULL)) {
+	if ((status.status != SUCCESS) || (status.error != nullptr)) {
 		fprintf(stderr, "ERROR: Failed to initialize return statu!\n");
 		return EXIT_FAILURE;
 	}
@@ -75,7 +75,7 @@ int main(void) {
 	{
 		size_t stack_print_length = 0;
 		error_stack = return_status_print(&status, &stack_print_length);
-		if (error_stack == NULL) {
+		if (error_stack == nullptr) {
 			fprintf(stderr, "ERROR: Failed to print error stack.\n");
 			status.status = GENERIC_ERROR;
 			goto cleanup;

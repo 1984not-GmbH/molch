@@ -38,13 +38,13 @@ return_status header_construct(
 	Header header_struct = HEADER__INIT;
 
 	//check input
-	if ((header == NULL)
-			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
+	if ((header == nullptr)
+			|| (our_public_ephemeral == nullptr) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to header_construct.");
 	}
 
 	//initialize the output buffer
-	*header = NULL;
+	*header = nullptr;
 
 	//create buffer for our public ephemeral
 	ProtobufCBinaryData protobuf_our_public_ephemeral;
@@ -74,7 +74,7 @@ return_status header_construct(
 
 cleanup:
 	on_error {
-		if ((header != NULL) && (*header != NULL)) {
+		if ((header != nullptr) && (*header != nullptr)) {
 			buffer_destroy_from_heap_and_null_if_valid(*header);
 		}
 	}
@@ -91,18 +91,18 @@ return_status header_extract(
 		const buffer_t * const header) {
 	return_status status = return_status_init();
 
-	Header *header_struct = NULL;
+	Header *header_struct = nullptr;
 
 	//check input
-	if ((their_public_ephemeral == NULL) || (their_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)
-			|| (message_number == NULL) || (previous_message_number == NULL)
-			|| (header == NULL)) {
+	if ((their_public_ephemeral == nullptr) || (their_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)
+			|| (message_number == nullptr) || (previous_message_number == nullptr)
+			|| (header == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to header_extract.");
 	}
 
 	//unpack the message
 	header_struct = header__unpack(&protobuf_c_allocators, header->content_length, header->content);
-	if (header_struct == NULL) {
+	if (header_struct == nullptr) {
 		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack header.");
 	}
 
@@ -122,7 +122,7 @@ return_status header_extract(
 	}
 
 cleanup:
-	if (header_struct != NULL) {
+	if (header_struct != nullptr) {
 		header__free_unpacked(header_struct, &protobuf_c_allocators);
 	}
 

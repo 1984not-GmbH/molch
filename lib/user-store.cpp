@@ -30,8 +30,8 @@ return_status user_store_create(user_store ** const store) {
 	return_status status = return_status_init();
 
 	//check input
-	if (store == NULL) {
-		THROW(INVALID_INPUT, "Pointer to put new user store into is NULL.");
+	if (store == nullptr) {
+		THROW(INVALID_INPUT, "Pointer to put new user store into is nullptr.");
 	}
 
 	*store = (user_store*)sodium_malloc(sizeof(user_store));
@@ -39,13 +39,13 @@ return_status user_store_create(user_store ** const store) {
 
 	//initialise
 	(*store)->length = 0;
-	(*store)->head = NULL;
-	(*store)->tail = NULL;
+	(*store)->head = nullptr;
+	(*store)->tail = nullptr;
 
 cleanup:
 	on_error {
-		if (store != NULL) {
-			*store = NULL;
+		if (store != nullptr) {
+			*store = nullptr;
 		}
 	}
 
@@ -54,7 +54,7 @@ cleanup:
 
 //destroy a user store
 void user_store_destroy(user_store* store) {
-	if (store != NULL) {
+	if (store != nullptr) {
 		user_store_clear(store);
 		sodium_free_and_null_if_valid(store);
 	}
@@ -64,13 +64,13 @@ void user_store_destroy(user_store* store) {
  * add a new user node to a user store.
  */
 static void add_user_store_node(user_store * const store, user_store_node * const node) {
-	if ((store == NULL) || (node == NULL)) {
+	if ((store == nullptr) || (node == nullptr)) {
 		return;
 	}
 
 	if (store->length == 0) { //first node in the list
-		node->previous = NULL;
-		node->next = NULL;
+		node->previous = nullptr;
+		node->next = nullptr;
 		store->head = node;
 		store->tail = node;
 
@@ -83,7 +83,7 @@ static void add_user_store_node(user_store * const store, user_store_node * cons
 	//add the new node to the tail of the list
 	store->tail->next = node;
 	node->previous = store->tail;
-	node->next = NULL;
+	node->next = nullptr;
 	store->tail = node;
 
 	//update length
@@ -96,18 +96,18 @@ static void add_user_store_node(user_store * const store, user_store_node * cons
 static return_status create_user_store_node(user_store_node ** const node) {
 	return_status status = return_status_init();
 
-	if (node == NULL) {
-		THROW(INVALID_INPUT, "Pointer to put new user store node into is NULL.");
+	if (node == nullptr) {
+		THROW(INVALID_INPUT, "Pointer to put new user store node into is nullptr.");
 	}
 
 	*node = (user_store_node*)sodium_malloc(sizeof(user_store_node));
 	THROW_on_failed_alloc(*node);
 
 	//initialise pointers
-	(*node)->previous = NULL;
-	(*node)->next = NULL;
-	(*node)->prekeys = NULL;
-	(*node)->master_keys = NULL;
+	(*node)->previous = nullptr;
+	(*node)->next = nullptr;
+	(*node)->prekeys = nullptr;
+	(*node)->master_keys = nullptr;
 
 	//initialise the public_signing key buffer
 	buffer_init_with_pointer((*node)->public_signing_key, (*node)->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
@@ -116,8 +116,8 @@ static return_status create_user_store_node(user_store_node ** const node) {
 
 cleanup:
 	on_error {
-		if (node != NULL) {
-			*node = NULL;
+		if (node != nullptr) {
+			*node = nullptr;
 		}
 	}
 
@@ -133,13 +133,13 @@ cleanup:
  */
 return_status user_store_create_user(
 		user_store *store,
-		const buffer_t * const seed, //optional, can be NULL
-		buffer_t * const public_signing_key, //output, optional, can be NULL
-		buffer_t * const public_identity_key) { //output, optional, can be NULL
+		const buffer_t * const seed, //optional, can be nullptr
+		buffer_t * const public_signing_key, //output, optional, can be nullptr
+		buffer_t * const public_identity_key) { //output, optional, can be nullptr
 
 	return_status status = return_status_init();
 
-	user_store_node *new_node = NULL;
+	user_store_node *new_node = nullptr;
 	status = create_user_store_node(&new_node);
 	THROW_on_error(CREATION_ERROR, "Failed to create new user store node.");
 
@@ -156,7 +156,7 @@ return_status user_store_create_user(
 	THROW_on_error(CREATION_ERROR, "Failed to create prekey store.")
 
 	//copy the public signing key, if requested
-	if (public_signing_key != NULL) {
+	if (public_signing_key != nullptr) {
 		if (public_signing_key->buffer_length < PUBLIC_MASTER_KEY_SIZE) {
 			THROW(INCORRECT_BUFFER_SIZE, "Invalidly sized buffer for public signing key.");
 		}
@@ -170,11 +170,11 @@ return_status user_store_create_user(
 
 cleanup:
 	on_error {
-		if (new_node != NULL) {
-			if (new_node->prekeys != NULL) {
+		if (new_node != nullptr) {
+			if (new_node->prekeys != nullptr) {
 				prekey_store_destroy(new_node->prekeys);
 			}
-			if (new_node->master_keys != NULL) {
+			if (new_node->master_keys != nullptr) {
 				sodium_free_and_null_if_valid(new_node->master_keys);
 			}
 
@@ -188,33 +188,33 @@ cleanup:
 /*
  * Find a user for a given public signing key.
  *
- * Returns NULL if no user was found.
+ * Returns nullptr if no user was found.
  */
 return_status user_store_find_node(user_store_node ** const node, user_store * const store, const buffer_t * const public_signing_key) {
 	return_status status = return_status_init();
 
-	if ((node == NULL) || (public_signing_key == NULL) || (public_signing_key->content_length != PUBLIC_MASTER_KEY_SIZE)) {
+	if ((node == nullptr) || (public_signing_key == nullptr) || (public_signing_key->content_length != PUBLIC_MASTER_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input for user_store_find_node.");
 	}
 
 	*node = store->head;
 
 	//search for the matching public identity key
-	while (*node != NULL) {
+	while (*node != nullptr) {
 		if (buffer_compare((*node)->public_signing_key, public_signing_key) == 0) {
 			//match found
 			break;
 		}
 		*node = (*node)->next; //go on through the list
 	}
-	if (*node == NULL) {
+	if (*node == nullptr) {
 		THROW(NOT_FOUND, "Couldn't find the user store node.");
 	}
 
 cleanup:
 	on_error {
-		if (node != NULL) {
-			*node = NULL;
+		if (node != nullptr) {
+			*node = nullptr;
 		}
 	}
 
@@ -232,7 +232,7 @@ cleanup:
 return_status user_store_list(buffer_t ** const list, user_store * const store) {
 	return_status status = return_status_init();
 
-	if ((list == NULL) || (store == NULL)) {
+	if ((list == nullptr) || (store == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to user_store_list.");
 	}
 
@@ -241,7 +241,7 @@ return_status user_store_list(buffer_t ** const list, user_store * const store) 
 
 	{
 		user_store_node *current_node = store->head;
-		for (size_t i = 0; (i < store->length) && (current_node != NULL); i++) {
+		for (size_t i = 0; (i < store->length) && (current_node != nullptr); i++) {
 			int status_int = buffer_copy(
 					*list,
 					i * PUBLIC_MASTER_KEY_SIZE,
@@ -259,7 +259,7 @@ return_status user_store_list(buffer_t ** const list, user_store * const store) 
 
 cleanup:
 	on_error {
-		if (list != NULL) {
+		if (list != nullptr) {
 				buffer_destroy_from_heap_and_null_if_valid(*list);
 		}
 	}
@@ -275,7 +275,7 @@ cleanup:
 return_status user_store_remove_by_key(user_store * const store, const buffer_t * const public_signing_key) {
 	return_status status = return_status_init();
 
-	user_store_node *node = NULL;
+	user_store_node *node = nullptr;
 	status = user_store_find_node(&node, store, public_signing_key);
 	THROW_on_error(NOT_FOUND, "Failed to find user to remove.");
 
@@ -287,19 +287,19 @@ cleanup:
 
 //remove a user form the user store
 void user_store_remove(user_store *store, user_store_node *node) {
-	if (node == NULL) {
+	if (node == nullptr) {
 		return;
 	}
 
 	//clear the conversation store
 	conversation_store_clear(node->conversations);
 
-	if (node->next != NULL) { //node is not the tail
+	if (node->next != nullptr) { //node is not the tail
 		node->next->previous = node->previous;
 	} else { //node ist the tail
 		store->tail = node->previous;
 	}
-	if (node->previous != NULL) { //node ist not the head
+	if (node->previous != nullptr) { //node ist not the head
 		node->previous->next = node->next;
 	} else { //node is the head
 		store->head = node->next;
@@ -313,7 +313,7 @@ void user_store_remove(user_store *store, user_store_node *node) {
 
 //clear the entire user store
 void user_store_clear(user_store *store){
-	if (store == NULL) {
+	if (store == nullptr) {
 		return;
 	}
 
@@ -328,23 +328,23 @@ return_status user_store_node_export(user_store_node * const node, User ** const
 	return_status status = return_status_init();
 
 	//master keys
-	Key *public_signing_key = NULL;
-	Key *private_signing_key = NULL;
-	Key *public_identity_key = NULL;
-	Key *private_identity_key = NULL;
+	Key *public_signing_key = nullptr;
+	Key *private_signing_key = nullptr;
+	Key *public_identity_key = nullptr;
+	Key *private_identity_key = nullptr;
 
 	//conversation store
-	Conversation **conversations = NULL;
+	Conversation **conversations = nullptr;
 	size_t conversations_length = 0;
 
 	//prekeys
-	Prekey **prekeys = NULL;
+	Prekey **prekeys = nullptr;
 	size_t prekeys_length = 0;
-	Prekey **deprecated_prekeys = NULL;
+	Prekey **deprecated_prekeys = nullptr;
 	size_t deprecated_prekeys_length = 0;
 
 	//check input
-	if ((node == NULL) || (user == NULL)) {
+	if ((node == nullptr) || (user == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to user_store_node_export.");
 	}
 
@@ -362,20 +362,20 @@ return_status user_store_node_export(user_store_node * const node, User ** const
 	THROW_on_error(EXPORT_ERROR, "Failed to export masters keys.");
 
 	(*user)->public_signing_key = public_signing_key;
-	public_signing_key = NULL;
+	public_signing_key = nullptr;
 	(*user)->private_signing_key = private_signing_key;
-	private_signing_key = NULL;
+	private_signing_key = nullptr;
 	(*user)->public_identity_key = public_identity_key;
-	public_identity_key = NULL;
+	public_identity_key = nullptr;
 	(*user)->private_identity_key = private_identity_key;
-	private_identity_key = NULL;
+	private_identity_key = nullptr;
 
 	//export the conversation store
 	status = conversation_store_export(node->conversations, &conversations, &conversations_length);
 	THROW_on_error(EXPORT_ERROR, "Failed to export conversation store.");
 
 	(*user)->conversations = conversations;
-	conversations = NULL;
+	conversations = nullptr;
 	(*user)->n_conversations = conversations_length;
 	conversations_length = 0;
 
@@ -389,19 +389,19 @@ return_status user_store_node_export(user_store_node * const node, User ** const
 	THROW_on_error(EXPORT_ERROR, "Failed to export prekeys.");
 
 	(*user)->prekeys = prekeys;
-	prekeys = NULL;
+	prekeys = nullptr;
 	(*user)->n_prekeys = prekeys_length;
 	prekeys_length = 0;
 	(*user)->deprecated_prekeys = deprecated_prekeys;
-	deprecated_prekeys = NULL;
+	deprecated_prekeys = nullptr;
 	(*user)->n_deprecated_prekeys = deprecated_prekeys_length;
 	deprecated_prekeys_length = 0;
 
 cleanup:
 	on_error {
-		if (user != NULL) {
+		if (user != nullptr) {
 			user__free_unpacked(*user, &protobuf_c_allocators);
-			*user = NULL;
+			*user = nullptr;
 		}
 	}
 
@@ -415,7 +415,7 @@ return_status user_store_export(
 	return_status status = return_status_init();
 
 	//check input
-	if ((users == NULL) || (users == NULL) || (users_length == NULL)) {
+	if ((users == nullptr) || (users == nullptr) || (users_length == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to user_store_export.");
 	}
 
@@ -425,22 +425,22 @@ return_status user_store_export(
 		memset(*users, '\0', store->length * sizeof(User*));
 
 		size_t i = 0;
-		user_store_node *node = NULL;
-		for (i = 0, node = store->head; (i < store->length) && (node != NULL); i++, node = node->next) {
+		user_store_node *node = nullptr;
+		for (i = 0, node = store->head; (i < store->length) && (node != nullptr); i++, node = node->next) {
 			status = user_store_node_export(node, &((*users)[i]));
 			THROW_on_error(EXPORT_ERROR, "Failed to export user store node.");
 		}
 	} else {
-		*users = NULL;
+		*users = nullptr;
 	}
 
 	*users_length = store->length;
 cleanup:
 	on_error {
-		if ((users != NULL) && (*users != NULL) && (users_length != 0)) {
+		if ((users != nullptr) && (*users != nullptr) && (users_length != 0)) {
 			for (size_t i = 0; i < *users_length; i++) {
 				user__free_unpacked((*users)[i], &protobuf_c_allocators);
-				(*users)[i] = NULL;
+				(*users)[i] = nullptr;
 			}
 			zeroed_free_and_null_if_valid(*users);
 		}
@@ -453,7 +453,7 @@ static return_status user_store_node_import(user_store_node ** const node, const
 	return_status status = return_status_init();
 
 	//check input
-	if ((node == NULL) || (user == NULL)) {
+	if ((node == nullptr) || (user == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to user_store_node_import.");
 	}
 
@@ -470,7 +470,7 @@ static return_status user_store_node_import(user_store_node ** const node, const
 	THROW_on_error(IMPORT_ERROR, "Failed to import master keys.");
 
 	//public signing key
-	if (user->public_signing_key == NULL) {
+	if (user->public_signing_key == nullptr) {
 		THROW(PROTOBUF_MISSING_ERROR, "Missing public signing key in Protobuf-C struct.");
 	}
 	if (buffer_clone_from_raw((*node)->public_signing_key, user->public_signing_key->key.data, user->public_signing_key->key.len) != 0) {
@@ -502,9 +502,9 @@ return_status user_store_import(
 	return_status status = return_status_init();
 
 	//check input
-	if ((store == NULL)
-			|| ((users_length == 0) && (users != NULL))
-			|| ((users_length > 0) && (users == NULL))) {
+	if ((store == nullptr)
+			|| ((users_length == 0) && (users != nullptr))
+			|| ((users_length > 0) && (users == nullptr))) {
 		THROW(INVALID_INPUT, "Invalid input to user_store_import.");
 	}
 
@@ -513,7 +513,7 @@ return_status user_store_import(
 
 	{
 		size_t i = 0;
-		user_store_node *node = NULL;
+		user_store_node *node = nullptr;
 		for (i = 0; i < users_length; i++) {
 			status = user_store_node_import(&node, users[i]);
 			THROW_on_error(IMPORT_ERROR, "Failed to import user store node.");
@@ -524,7 +524,7 @@ return_status user_store_import(
 
 cleanup:
 	on_error {
-		if (store != NULL) {
+		if (store != nullptr) {
 			user_store_destroy(*store);
 		}
 	}

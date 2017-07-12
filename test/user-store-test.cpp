@@ -39,18 +39,18 @@ return_status protobuf_export(
 		size_t * const buffer_count) {
 	return_status status = return_status_init();
 
-	User ** users = NULL;
+	User ** users = nullptr;
 	size_t length = 0;
 
-	if (export_buffers != NULL) {
-		*export_buffers = NULL;
+	if (export_buffers != nullptr) {
+		*export_buffers = nullptr;
 	}
-	if (buffer_count != NULL) {
+	if (buffer_count != nullptr) {
 		*buffer_count = 0;
 	}
 
 	//check input
-	if ((store == NULL) || (export_buffers == NULL) || (buffer_count == NULL)) {
+	if ((store == nullptr) || (export_buffers == nullptr) || (buffer_count == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to protobuf_export.");
 	}
 
@@ -60,7 +60,7 @@ return_status protobuf_export(
 	*export_buffers = (buffer_t**)malloc(length * sizeof(buffer_t*));
 	THROW_on_failed_alloc(*export_buffers);
 
-	//initialize pointers with NULL
+	//initialize pointers with nullptr
 	memset(*export_buffers, '\0', length * sizeof(buffer_t*));
 	*buffer_count = length;
 
@@ -74,11 +74,11 @@ return_status protobuf_export(
 	}
 
 cleanup:
-	if (users != NULL) {
+	if (users != nullptr) {
 		for (size_t i = 0; i < length; i++) {
-			if (users[i] != NULL) {
+			if (users[i] != nullptr) {
 				user__free_unpacked(users[i], &protobuf_c_allocators);
-				users[i] = NULL;
+				users[i] = nullptr;
 			}
 		}
 		zeroed_free_and_null_if_valid(users);
@@ -94,10 +94,10 @@ static return_status protobuf_import(
 		const size_t buffers_length) {
 	return_status status = return_status_init();
 
-	User **users = NULL;
+	User **users = nullptr;
 
 	//check input
-	if ((store == NULL) || (buffers == NULL)) {
+	if ((store == nullptr) || (buffers == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to protobuf_import.");
 	}
 
@@ -107,7 +107,7 @@ static return_status protobuf_import(
 	//unpack the buffers
 	for (size_t i = 0; i < buffers_length; i++) {
 		users[i] = user__unpack(&protobuf_c_allocators, buffers[i]->content_length, buffers[i]->content);
-		if (users[i] == NULL) {
+		if (users[i] == nullptr) {
 			THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack user from protobuf.");
 		}
 	}
@@ -117,12 +117,12 @@ static return_status protobuf_import(
 	THROW_on_error(IMPORT_ERROR, "Failed to import users.");
 
 cleanup:
-	if (users != NULL) {
+	if (users != nullptr) {
 		for (size_t i = 0; i < buffers_length; i++) {
-			if (users[i] != NULL) {
+			if (users[i] != nullptr) {
 				user__free_unpacked(users[i], &protobuf_c_allocators);
 			}
-			users[i] = NULL;
+			users[i] = nullptr;
 		}
 		zeroed_free_and_null_if_valid(users);
 	}
@@ -135,10 +135,10 @@ return_status protobuf_empty_store(void) {
 
 	printf("Testing im-/export of empty user store.\n");
 
-	User **exported = NULL;
+	User **exported = nullptr;
 	size_t exported_length = 0;
 
-	user_store *store = NULL;
+	user_store *store = nullptr;
 	status = user_store_create(&store);
 	THROW_on_error(CREATION_ERROR, "Failed to create user store.");
 
@@ -146,7 +146,7 @@ return_status protobuf_empty_store(void) {
 	status = user_store_export(store, &exported, &exported_length);
 	THROW_on_error(EXPORT_ERROR, "Failed to export empty user store.");
 
-	if ((exported != NULL) || (exported_length != 0)) {
+	if ((exported != nullptr) || (exported_length != 0)) {
 		THROW(INCORRECT_DATA, "Exported data is not empty.");
 	}
 
@@ -174,15 +174,15 @@ int main(void) {
 	buffer_t *charlie_public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
 
 	//protobuf-c export buffers
-	buffer_t **protobuf_export_buffers = NULL;
+	buffer_t **protobuf_export_buffers = nullptr;
 	size_t protobuf_export_length = 0;
-	buffer_t **protobuf_second_export_buffers = NULL;
+	buffer_t **protobuf_second_export_buffers = nullptr;
 	size_t protobuf_second_export_length = 0;
 
-	buffer_t *list = NULL;
+	buffer_t *list = nullptr;
 
 	//create a user_store
-	user_store *store = NULL;
+	user_store *store = nullptr;
 	status = user_store_create(&store);
 	THROW_on_error(CREATION_ERROR, "Failed to create user store.");
 
@@ -197,9 +197,9 @@ int main(void) {
 	//create alice
 	status = user_store_create_user(
 			store,
-			NULL,
+			nullptr,
 			alice_public_signing_key,
-			NULL);
+			nullptr);
 	THROW_on_error(CREATION_ERROR, "Failed to create Alice.");
 	printf("Successfully created Alice to the user store.\n");
 
@@ -212,8 +212,8 @@ int main(void) {
 	//list user store
 	status = user_store_list(&list, store);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.");
-	if (list == NULL) {
-		THROW(INCORRECT_DATA, "Failed to list users, user list is NULL.");
+	if (list == nullptr) {
+		THROW(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 	}
 	if (buffer_compare(list, alice_public_signing_key) != 0) {
 		THROW(INCORRECT_DATA, "Failed to list users.");
@@ -224,9 +224,9 @@ int main(void) {
 	//create bob
 	status = user_store_create_user(
 			store,
-			NULL,
+			nullptr,
 			bob_public_signing_key,
-			NULL);
+			nullptr);
 	THROW_on_error(CREATION_ERROR, "Failed to create Bob.");
 	printf("Successfully created Bob.\n");
 
@@ -240,8 +240,8 @@ int main(void) {
 	//list user store
 	status = user_store_list(&list, store);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.");
-	if (list == NULL) {
-		THROW(INCORRECT_DATA, "Failed to list users, user list is NULL.");
+	if (list == nullptr) {
+		THROW(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 	}
 	if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
 			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
@@ -253,9 +253,9 @@ int main(void) {
 	//create charlie
 	status = user_store_create_user(
 			store,
-			NULL,
+			nullptr,
 			charlie_public_signing_key,
-			NULL);
+			nullptr);
 	THROW_on_error(CREATION_ERROR, "Failed to add Charlie to the user store.");
 	printf("Successfully added Charlie to the user store.\n");
 
@@ -268,8 +268,8 @@ int main(void) {
 	//list user store
 	status = user_store_list(&list, store);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.")
-	if (list == NULL) {
-		THROW(INCORRECT_DATA, "Failed to list users, user list is NULL.");
+	if (list == nullptr) {
+		THROW(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 	}
 	if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
 			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
@@ -281,7 +281,7 @@ int main(void) {
 
 	//find node
 	{
-		user_store_node *bob_node = NULL;
+		user_store_node *bob_node = nullptr;
 		status = user_store_find_node(&bob_node, store, bob_public_signing_key);
 		THROW_on_error(NOT_FOUND, "Failed to find Bob's node.");
 		printf("Node found.\n");
@@ -302,8 +302,8 @@ int main(void) {
 		//check the user list
 		status = user_store_list(&list, store);
 		THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.");
-		if (list == NULL) {
-			THROW(INCORRECT_DATA, "Failed to list users, user list is NULL.");
+		if (list == nullptr) {
+			THROW(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 		}
 		if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
 				|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
@@ -315,9 +315,9 @@ int main(void) {
 		//recreate bob
 		status = user_store_create_user(
 				store,
-				NULL,
+				nullptr,
 				bob_public_signing_key,
-				NULL);
+				nullptr);
 		THROW_on_error(CREATION_ERROR, "Failed to recreate.");
 		printf("Successfully recreated Bob.\n");
 
@@ -350,14 +350,14 @@ int main(void) {
 	puts("]\n\n");
 
 	user_store_destroy(store);
-	store = NULL;
+	store = nullptr;
 
 	//import from Protobuf-C
 	printf("Import from Protobuf-C\n");
 	status = protobuf_import(&store, protobuf_export_buffers, protobuf_export_length);
 	THROW_on_error(IMPORT_ERROR, "Failed to import users from Protobuf-C.");
 
-	if (store == NULL) {
+	if (store == nullptr) {
 		THROW(SHOULDNT_HAPPEN, "Seems like this wasn't a false positive by clang static analyser!");
 	}
 
@@ -395,7 +395,7 @@ int main(void) {
 		goto cleanup;
 	}
 	//check head and tail pointers
-	if ((store->head != NULL) || (store->tail != NULL)) {
+	if ((store->head != nullptr) || (store->tail != nullptr)) {
 		THROW(INCORRECT_DATA, "Clearing the user store didn't reset head and tail pointers.");
 		status_int = EXIT_FAILURE;
 		goto cleanup;
@@ -406,18 +406,18 @@ int main(void) {
 	THROW_on_error(GENERIC_ERROR, "Failed im-/export with empty user store.");
 
 cleanup:
-	if (store != NULL) {
+	if (store != nullptr) {
 		user_store_destroy(store);
 	}
 	buffer_destroy_from_heap_and_null_if_valid(list);
 
-	if (protobuf_export_buffers != NULL) {
+	if (protobuf_export_buffers != nullptr) {
 		for (size_t i =0; i < protobuf_export_length; i++) {
 			buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffers[i]);
 		}
 		free_and_null_if_valid(protobuf_export_buffers);
 	}
-	if (protobuf_second_export_buffers != NULL) {
+	if (protobuf_second_export_buffers != nullptr) {
 		for (size_t i =0; i < protobuf_second_export_length; i++) {
 			buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_buffers[i]);
 		}

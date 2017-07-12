@@ -38,18 +38,18 @@ static return_status protobuf_export(
 		size_t * const buffer_count) {
 	return_status status = return_status_init();
 
-	Conversation ** conversations = NULL;
+	Conversation ** conversations = nullptr;
 	size_t length = 0;
 
-	if (export_buffers != NULL) {
-		*export_buffers = NULL;
+	if (export_buffers != nullptr) {
+		*export_buffers = nullptr;
 	}
-	if (buffer_count != NULL) {
+	if (buffer_count != nullptr) {
 		*buffer_count = 0;
 	}
 
 	//check input
-	if ((store == NULL) || (export_buffers == NULL) || (buffer_count == NULL)) {
+	if ((store == nullptr) || (export_buffers == nullptr) || (buffer_count == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to protobuf_export.");
 	}
 
@@ -70,11 +70,11 @@ static return_status protobuf_export(
 	}
 
 cleanup:
-	if (conversations != NULL) {
+	if (conversations != nullptr) {
 		for (size_t i = 0; i < length; i++) {
-			if (conversations[i] != NULL) {
+			if (conversations[i] != nullptr) {
 				conversation__free_unpacked(conversations[i], &protobuf_c_allocators);
-				conversations[i] = NULL;
+				conversations[i] = nullptr;
 			}
 		}
 		zeroed_free_and_null_if_valid(conversations);
@@ -93,12 +93,12 @@ return_status protobuf_import(
 		const size_t length) {
 	return_status status = return_status_init();
 
-	Conversation **conversations = NULL;
+	Conversation **conversations = nullptr;
 
 	//check input
-	if ((store == NULL)
-			|| ((length > 0) && (buffers == NULL))
-			|| ((length == 0) && (buffers != NULL))) {
+	if ((store == nullptr)
+			|| ((length > 0) && (buffers == nullptr))
+			|| ((length == 0) && (buffers != nullptr))) {
 		THROW(INVALID_INPUT, "Invalid input to protobuf_import.");
 	}
 
@@ -111,7 +111,7 @@ return_status protobuf_import(
 
 	for (size_t i = 0; i < length; i++) {
 		conversations[i] = conversation__unpack(&protobuf_c_allocators, buffers[i]->content_length, buffers[i]->content);
-		if (conversations[i] == NULL) {
+		if (conversations[i] == nullptr) {
 			THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
 		}
 	}
@@ -124,11 +124,11 @@ return_status protobuf_import(
 	THROW_on_error(IMPORT_ERROR, "Failed to import conversation store.");
 
 cleanup:
-	if (conversations != NULL) {
+	if (conversations != nullptr) {
 		for (size_t i = 0; i < length; i++) {
-			if (conversations[i] != NULL) {
+			if (conversations[i] != nullptr) {
 				conversation__free_unpacked(conversations[i], &protobuf_c_allocators);
-				conversations[i] = NULL;
+				conversations[i] = nullptr;
 			}
 		}
 		zeroed_free_and_null_if_valid(conversations);
@@ -148,7 +148,7 @@ static return_status test_add_conversation(conversation_store * const store) {
 	buffer_t *our_public_ephemeral= buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	buffer_t *their_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 
-	conversation_t *conversation = NULL;
+	conversation_t *conversation = nullptr;
 
 	return_status status = return_status_init();
 
@@ -174,13 +174,13 @@ static return_status test_add_conversation(conversation_store * const store) {
 
 	//create the conversation manually
 	conversation = (conversation_t*)malloc(sizeof(conversation_t));
-	if (conversation == NULL) {
+	if (conversation == nullptr) {
 		THROW(ALLOCATION_FAILED, "Failed to allocate conversation.");
 	}
 
-	conversation->next = NULL;
-	conversation->previous = NULL;
-	conversation->ratchet = NULL;
+	conversation->next = nullptr;
+	conversation->previous = nullptr;
+	conversation->ratchet = nullptr;
 
 	//create the conversation id
 	buffer_init_with_pointer(conversation->id, conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
@@ -198,18 +198,18 @@ static return_status test_add_conversation(conversation_store * const store) {
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral);
-	if (conversation->ratchet == NULL) {
+	if (conversation->ratchet == nullptr) {
 		THROW(CREATION_ERROR, "Failed to creat ratchet.");
 	}
 
 	status = conversation_store_add(store, conversation);
 	THROW_on_error(ADDITION_ERROR, "Failed to add conversation to store.");
-	conversation = NULL;
+	conversation = nullptr;
 
 	goto cleanup;
 
 cleanup:
-	if (conversation != NULL) {
+	if (conversation != nullptr) {
 		conversation_destroy(conversation);
 	}
 	//destroy all the buffers
@@ -229,7 +229,7 @@ return_status protobuf_empty_store(void) {
 
 	printf("Testing im-/export of empty conversation store.\n");
 
-	Conversation **exported = NULL;
+	Conversation **exported = nullptr;
 	size_t exported_length = 0;
 
 	conversation_store store;
@@ -239,7 +239,7 @@ return_status protobuf_empty_store(void) {
 	status = conversation_store_export(&store, &exported, &exported_length);
 	THROW_on_error(EXPORT_ERROR, "Failed to export empty conversation store.");
 
-	if ((exported != NULL) || (exported_length != 0)) {
+	if ((exported != nullptr) || (exported_length != 0)) {
 		THROW(INCORRECT_DATA, "Exported data is not empty.");
 	}
 
@@ -261,13 +261,13 @@ int main(void) {
 	return_status status = return_status_init();
 
 	//protobuf buffers
-	buffer_t ** protobuf_export_buffers = NULL;
+	buffer_t ** protobuf_export_buffers = nullptr;
 	size_t protobuf_export_buffers_length = 0;
-	buffer_t ** protobuf_second_export_buffers = NULL;
+	buffer_t ** protobuf_second_export_buffers = nullptr;
 	size_t protobuf_second_export_buffers_length = 0;
 
 	conversation_store *store = (conversation_store*)malloc(sizeof(conversation_store));
-	if (store == NULL) {
+	if (store == nullptr) {
 		THROW(ALLOCATION_FAILED, "Failed to allocate conversation store.");
 	}
 
@@ -278,8 +278,8 @@ int main(void) {
 	buffer_t *empty_list;
 	status = conversation_store_list(&empty_list, store);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to list empty conversation store.");
-	if (empty_list != NULL) {
-		THROW(INCORRECT_DATA, "List of empty conversation store is not NULL.");
+	if (empty_list != nullptr) {
+		THROW(INCORRECT_DATA, "List of empty conversation store is not nullptr.");
 	}
 
 	// add five conversations
@@ -303,7 +303,7 @@ int main(void) {
 
 	//find node by id
 	{
-		conversation_t *found_node = NULL;
+		conversation_t *found_node = nullptr;
 		status = conversation_store_find_node(&found_node, store, store->head->next->next->id);
 		THROW_on_error(NOT_FOUND, "Failed to find conversation.");
 		if (found_node != store->head->next->next) {
@@ -312,12 +312,12 @@ int main(void) {
 		printf("Found node by ID.\n");
 
 		//test list export feature
-		buffer_t *conversation_list = NULL;
+		buffer_t *conversation_list = nullptr;
 		status = conversation_store_list(&conversation_list, store);
 		on_error {
 			THROW(DATA_FETCH_ERROR, "Failed to list conversations.");
 		}
-		if ((conversation_list == NULL) || (conversation_list->content_length != (CONVERSATION_ID_SIZE * store->length))) {
+		if ((conversation_list == nullptr) || (conversation_list->content_length != (CONVERSATION_ID_SIZE * store->length))) {
 			THROW(DATA_FETCH_ERROR, "Failed to get list of conversations.");
 		}
 
@@ -325,7 +325,7 @@ int main(void) {
 		for (size_t i = 0; i < (conversation_list->content_length / CONVERSATION_ID_SIZE); i++) {
 			buffer_create_with_existing_array(current_id, conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
 			status = conversation_store_find_node(&found_node, store, current_id);
-			if ((status.status != SUCCESS) || (found_node == NULL)) {
+			if ((status.status != SUCCESS) || (found_node == nullptr)) {
 				buffer_destroy_from_heap_and_null_if_valid(conversation_list);
 				THROW(INCORRECT_DATA, "Exported list of conversations was incorrect.");
 			}
@@ -394,13 +394,13 @@ int main(void) {
 	THROW_on_error(GENERIC_ERROR, "Failed to im-/export empty conversation store.");
 
 cleanup:
-	if (protobuf_export_buffers != NULL) {
+	if (protobuf_export_buffers != nullptr) {
 		for (size_t i =0; i < protobuf_export_buffers_length; i++) {
 			buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffers[i]);
 		}
 		free_and_null_if_valid(protobuf_export_buffers);
 	}
-	if (protobuf_second_export_buffers != NULL) {
+	if (protobuf_second_export_buffers != nullptr) {
 		for (size_t i =0; i < protobuf_second_export_buffers_length; i++) {
 			buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_buffers[i]);
 		}

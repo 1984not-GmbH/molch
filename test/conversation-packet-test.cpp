@@ -38,32 +38,32 @@ int main(void) {
 	buffer_t *bob_private_identity = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	buffer_t *bob_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
-	buffer_t *packet = NULL;
-	buffer_t *received_message = NULL;
+	buffer_t *packet = nullptr;
+	buffer_t *received_message = nullptr;
 
 	//packets
-	buffer_t *alice_send_packet2 = NULL;
-	buffer_t *bob_send_packet2 = NULL;
-	buffer_t *bob_response_packet = NULL;
-	buffer_t *alice_response_packet = NULL;
+	buffer_t *alice_send_packet2 = nullptr;
+	buffer_t *bob_send_packet2 = nullptr;
+	buffer_t *bob_response_packet = nullptr;
+	buffer_t *alice_response_packet = nullptr;
 
 	//receive messages
-	buffer_t *alice_receive_message2 = NULL;
-	buffer_t *bob_receive_message2 = NULL;
-	buffer_t *alice_received_response = NULL;
-	buffer_t *bob_received_response = NULL;
+	buffer_t *alice_receive_message2 = nullptr;
+	buffer_t *bob_receive_message2 = nullptr;
+	buffer_t *alice_received_response = nullptr;
+	buffer_t *bob_received_response = nullptr;
 
 	//create prekey stores
-	prekey_store *alice_prekeys = NULL;
-	prekey_store *bob_prekeys = NULL;
+	prekey_store *alice_prekeys = nullptr;
+	prekey_store *bob_prekeys = nullptr;
 
 	buffer_t *prekey_list = buffer_create_on_heap(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
 	//conversations
-	conversation_t *alice_send_conversation = NULL;
-	conversation_t *alice_receive_conversation = NULL;
-	conversation_t *bob_send_conversation = NULL;
-	conversation_t *bob_receive_conversation = NULL;
+	conversation_t *alice_send_conversation = nullptr;
+	conversation_t *alice_receive_conversation = nullptr;
+	conversation_t *bob_send_conversation = nullptr;
+	conversation_t *bob_receive_conversation = nullptr;
 
 	//message numbers
 	uint32_t alice_receive_message_number = UINT32_MAX;
@@ -148,9 +148,9 @@ int main(void) {
 			alice_send_conversation,
 			alice_send_message2,
 			&alice_send_packet2,
-			NULL,
-			NULL,
-			NULL);
+			nullptr,
+			nullptr,
+			nullptr);
 	THROW_on_error(SEND_ERROR, "Failed to send Alice' second message.");
 
 	printf("Sent message: %.*s\n", (int)alice_send_message2->content_length, (const char*)alice_send_message2->content);
@@ -185,9 +185,9 @@ int main(void) {
 			bob_receive_conversation,
 			bob_response_message,
 			&bob_response_packet,
-			NULL,
-			NULL,
-			NULL);
+			nullptr,
+			nullptr,
+			nullptr);
 	THROW_on_error(SEND_ERROR, "Failed to send Bob's response message.");
 
 	printf("Sent message: %.*s\n", (int)bob_response_message->content_length, (const char*)bob_response_message->content);
@@ -243,7 +243,7 @@ int main(void) {
 
 	//let alice receive the packet
 	buffer_destroy_from_heap_and_null_if_valid(received_message);
-	received_message = NULL;
+	received_message = nullptr;
 	status = conversation_start_receive_conversation(
 			&alice_receive_conversation,
 			packet,
@@ -266,9 +266,9 @@ int main(void) {
 			bob_send_conversation,
 			bob_send_message2,
 			&bob_send_packet2,
-			NULL,
-			NULL,
-			NULL);
+			nullptr,
+			nullptr,
+			nullptr);
 	THROW_on_error(SEND_ERROR, "Failed to send Bob's second message.");
 
 	printf("Sent message: %.*s\n", (int)bob_send_message2->content_length, (const char*)bob_send_message2->content);
@@ -303,9 +303,9 @@ int main(void) {
 			alice_receive_conversation,
 			alice_response_message,
 			&alice_response_packet,
-			NULL,
-			NULL,
-			NULL);
+			nullptr,
+			nullptr,
+			nullptr);
 	THROW_on_error(SEND_ERROR, "Failed to send Alice' response message.");
 
 	printf("Sent message: %.*s\n", (int)alice_response_message->content_length, (const char*)alice_response_message->content);
@@ -335,10 +335,10 @@ int main(void) {
 	printf("Successfully received Alice' response!\n");
 
 cleanup:
-	if (alice_prekeys != NULL) {
+	if (alice_prekeys != nullptr) {
 		prekey_store_destroy(alice_prekeys);
 	}
-	if (bob_prekeys != NULL) {
+	if (bob_prekeys != nullptr) {
 		prekey_store_destroy(bob_prekeys);
 	}
 	buffer_destroy_from_heap_and_null_if_valid(packet);
@@ -351,16 +351,16 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(alice_received_response);
 	buffer_destroy_from_heap_and_null_if_valid(alice_response_packet);
 	buffer_destroy_from_heap_and_null_if_valid(bob_received_response);
-	if (alice_send_conversation != NULL) {
+	if (alice_send_conversation != nullptr) {
 		conversation_destroy(alice_send_conversation);
 	}
-	if (alice_receive_conversation != NULL) {
+	if (alice_receive_conversation != nullptr) {
 		conversation_destroy(alice_receive_conversation);
 	}
-	if (bob_send_conversation != NULL) {
+	if (bob_send_conversation != nullptr) {
 		conversation_destroy(bob_send_conversation);
 	}
-	if (bob_receive_conversation != NULL) {
+	if (bob_receive_conversation != nullptr) {
 		conversation_destroy(bob_receive_conversation);
 	}
 	buffer_destroy_from_heap_and_null_if_valid(alice_private_identity);

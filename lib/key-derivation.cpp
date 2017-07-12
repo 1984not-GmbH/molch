@@ -50,8 +50,8 @@ return_status derive_key(
 	//check if inputs are valid
 	if ((derived_size > crypto_generichash_blake2b_BYTES_MAX)
 			|| (derived_size < crypto_generichash_blake2b_BYTES_MIN)
-			|| (derived_key == NULL) || (derived_key->buffer_length < derived_size)
-			|| (input_key == NULL)
+			|| (derived_key == nullptr) || (derived_key->buffer_length < derived_size)
+			|| (input_key == nullptr)
 			|| (input_key->content_length > crypto_generichash_blake2b_KEYBYTES_MAX)
 			|| (input_key->content_length < crypto_generichash_blake2b_KEYBYTES_MIN)) {
 		THROW(INVALID_INPUT, "Invalid input to derive_key.");
@@ -72,7 +72,7 @@ return_status derive_key(
 		int status_int = crypto_generichash_blake2b_salt_personal(
 				derived_key->content,
 				derived_key->content_length,
-				NULL, //input
+				nullptr, //input
 				0, //input length
 				input_key->content,
 				input_key->content_length,
@@ -85,7 +85,7 @@ return_status derive_key(
 
 cleanup:
 	on_error {
-		if (derived_key != NULL) {
+		if (derived_key != nullptr) {
 			derived_key->content_length = 0;
 		}
 	}
@@ -149,21 +149,21 @@ return_status derive_root_next_header_and_chain_keys(
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *diffie_hellman_secret = NULL;
-	buffer_t *derivation_key = NULL;
+	buffer_t *diffie_hellman_secret = nullptr;
+	buffer_t *derivation_key = nullptr;
 	diffie_hellman_secret = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, 0);
 	THROW_on_failed_alloc(diffie_hellman_secret);
 	derivation_key = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
 	THROW_on_failed_alloc(derivation_key);
 
 	//check input
-	if ((root_key == NULL) || (root_key->buffer_length < ROOT_KEY_SIZE)
-			|| (next_header_key == NULL) || (next_header_key->buffer_length < HEADER_KEY_SIZE)
-			|| (chain_key == NULL) || (chain_key->buffer_length < CHAIN_KEY_SIZE)
-			|| (our_private_ephemeral == NULL) || (our_private_ephemeral->content_length != PRIVATE_KEY_SIZE)
-			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
-			|| (their_public_ephemeral == NULL) || (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
-			|| (previous_root_key == NULL) || (previous_root_key->content_length != ROOT_KEY_SIZE)) {
+	if ((root_key == nullptr) || (root_key->buffer_length < ROOT_KEY_SIZE)
+			|| (next_header_key == nullptr) || (next_header_key->buffer_length < HEADER_KEY_SIZE)
+			|| (chain_key == nullptr) || (chain_key->buffer_length < CHAIN_KEY_SIZE)
+			|| (our_private_ephemeral == nullptr) || (our_private_ephemeral->content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_ephemeral == nullptr) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_ephemeral == nullptr) || (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
+			|| (previous_root_key == nullptr) || (previous_root_key->content_length != ROOT_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to derive_root_next_header_and_chain_keys.");
 	}
 
@@ -218,15 +218,15 @@ return_status derive_root_next_header_and_chain_keys(
 
 cleanup:
 	on_error {
-		if (root_key != NULL) {
+		if (root_key != nullptr) {
 			buffer_clear(root_key);
 			root_key->content_length = 0;
 		}
-		if (next_header_key != NULL) {
+		if (next_header_key != nullptr) {
 			buffer_clear(next_header_key);
 			next_header_key->content_length = 0;
 		}
-		if (chain_key != NULL) {
+		if (chain_key != nullptr) {
 			buffer_clear(chain_key);
 			chain_key->content_length = 0;
 		}

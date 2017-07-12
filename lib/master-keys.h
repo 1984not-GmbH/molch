@@ -46,7 +46,7 @@ typedef struct master_keys {
 /*
  * Create a new set of master keys.
  *
- * Seed is optional, can be NULL. It can be of any length and doesn't
+ * Seed is optional, can be nullptr. It can be of any length and doesn't
  * require to have high entropy. It will be used as entropy source
  * in addition to the OSs CPRNG.
  *
@@ -55,8 +55,8 @@ typedef struct master_keys {
 return_status master_keys_create(
 		master_keys_t ** const keys, //output
 		const buffer_t * const seed,
-		buffer_t * const public_signing_key, //output, optional, can be NULL
-		buffer_t * const public_identity_key //output, optional, can be NULL
+		buffer_t * const public_signing_key, //output, optional, can be nullptr
+		buffer_t * const public_identity_key //output, optional, can be nullptr
 		) __attribute__((warn_unused_result));
 
 /*

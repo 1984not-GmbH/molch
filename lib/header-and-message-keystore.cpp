@@ -36,8 +36,8 @@ static const time_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
 //create new keystore
 void header_and_message_keystore_init(header_and_message_keystore * const keystore) {
 	keystore->length = 0;
-	keystore->head = NULL;
-	keystore->tail = NULL;
+	keystore->head = nullptr;
+	keystore->tail = nullptr;
 }
 
 /*
@@ -45,8 +45,8 @@ void header_and_message_keystore_init(header_and_message_keystore * const keysto
  */
 static header_and_message_keystore_node *create_node(void) {
 	header_and_message_keystore_node *node = (header_and_message_keystore_node*)sodium_malloc(sizeof(header_and_message_keystore_node));
-	if (node == NULL) {
-		return NULL;
+	if (node == nullptr) {
+		return nullptr;
 	}
 
 	//initialise buffers with storage arrays
@@ -60,13 +60,13 @@ static header_and_message_keystore_node *create_node(void) {
  * add a new header_and_message_key_node to a keystore
  */
 static void add_node(header_and_message_keystore * const keystore, header_and_message_keystore_node * const node) {
-	if (node == NULL) {
+	if (node == nullptr) {
 		return;
 	}
 
 	if (keystore->length == 0) { //first node in the list
-		node->previous = NULL;
-		node->next = NULL;
+		node->previous = nullptr;
+		node->next = nullptr;
 		keystore->head = node;
 		keystore->tail = node;
 
@@ -78,7 +78,7 @@ static void add_node(header_and_message_keystore * const keystore, header_and_me
 	//add the new node to the tail of the list
 	keystore->tail->next = node;
 	node->previous = keystore->tail;
-	node->next = NULL;
+	node->next = nullptr;
 	keystore->tail = node;
 
 	//update length
@@ -123,7 +123,7 @@ return_status create_and_populate_node(
 
 cleanup:
 	on_error {
-		if (new_node != NULL) {
+		if (new_node != nullptr) {
 			sodium_free_and_null_if_valid(*new_node);
 		}
 	}
@@ -139,9 +139,9 @@ return_status header_and_message_keystore_add(
 		const buffer_t * const header_key) {
 	return_status status = return_status_init();
 
-	header_and_message_keystore_node *new_node = NULL;
+	header_and_message_keystore_node *new_node = nullptr;
 
-	time_t expiration_date = time(NULL) + EXPIRATION_TIME;
+	time_t expiration_date = time(nullptr) + EXPIRATION_TIME;
 
 	status = create_and_populate_node(&new_node, expiration_date, header_key, message_key);
 	THROW_on_error(INIT_ERROR, "Failed to populate node.")
@@ -157,16 +157,16 @@ cleanup:
 
 //remove a set of header and message keys from the keystore
 void header_and_message_keystore_remove(header_and_message_keystore *keystore, header_and_message_keystore_node *node) {
-	if (node == NULL) {
+	if (node == nullptr) {
 		return;
 	}
 
-	if (node->next != NULL) { //node is not the tail
+	if (node->next != nullptr) { //node is not the tail
 		node->next->previous = node->previous;
 	} else { //node ist the tail
 		keystore->tail = node->previous;
 	}
-	if (node->previous != NULL) { //node ist not the head
+	if (node->previous != nullptr) { //node ist not the head
 		node->previous->next = node->next;
 	} else { //node is the head
 		keystore->head = node->next;
@@ -189,11 +189,11 @@ void header_and_message_keystore_clear(header_and_message_keystore *keystore){
 static return_status header_and_message_keystore_node_export(header_and_message_keystore_node * const node, KeyBundle ** const bundle) {
 	return_status status = return_status_init();
 
-	Key *header_key = NULL;
-	Key *message_key = NULL;
+	Key *header_key = nullptr;
+	Key *message_key = nullptr;
 
 	//check input
-	if ((node == NULL) || (bundle == NULL)) {
+	if ((node == nullptr) || (bundle == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to header_and_message_keystore_node_export.");
 	}
 
@@ -248,18 +248,18 @@ static return_status header_and_message_keystore_node_export(header_and_message_
 
 cleanup:
 	on_error {
-		if ((bundle != NULL) && (*bundle != NULL)) {
+		if ((bundle != nullptr) && (*bundle != nullptr)) {
 			key_bundle__free_unpacked(*bundle, &protobuf_c_allocators);
-			*bundle = NULL;
+			*bundle = nullptr;
 		} else {
-			if (header_key != NULL) {
+			if (header_key != nullptr) {
 				key__free_unpacked(header_key, &protobuf_c_allocators);
-				header_key = NULL;
+				header_key = nullptr;
 			}
 
-			if (message_key != NULL) {
+			if (message_key != nullptr) {
 				key__free_unpacked(message_key, &protobuf_c_allocators);
-				message_key = NULL;
+				message_key = nullptr;
 			}
 		}
 	}
@@ -274,24 +274,24 @@ return_status header_and_message_keystore_export(
 	return_status status = return_status_init();
 
 	//check input
-	if ((store == NULL) || (key_bundles == NULL) || (bundle_size == NULL)) {
+	if ((store == nullptr) || (key_bundles == nullptr) || (bundle_size == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to header_and_message_keystore_export.");
 	}
 
 	if (store->length != 0) {
 		*key_bundles = (KeyBundle**)zeroed_malloc(store->length * sizeof(KeyBundle));
 		THROW_on_failed_alloc(*key_bundles);
-		//initialize with NULL pointers
+		//initialize with nullptr pointers
 		memset(*key_bundles, '\0', store->length * sizeof(KeyBundle));
 	} else {
-		*key_bundles = NULL;
+		*key_bundles = nullptr;
 	}
 
 	{
 		size_t position;
-		header_and_message_keystore_node *node = NULL;
+		header_and_message_keystore_node *node = nullptr;
 		for (position = 0, node = store->head;
-				(position < store->length) && (node != NULL);
+				(position < store->length) && (node != nullptr);
 				position++, node = node->next) {
 			status = header_and_message_keystore_node_export(node, &(*key_bundles)[position]);
 			THROW_on_error(EXPORT_ERROR, "Failed to export header and message keystore node.");
@@ -302,18 +302,18 @@ return_status header_and_message_keystore_export(
 
 cleanup:
 	on_error {
-		if ((key_bundles != NULL) && (*key_bundles != NULL) && (store != NULL)) {
+		if ((key_bundles != nullptr) && (*key_bundles != nullptr) && (store != nullptr)) {
 			for (size_t i = 0; i < store->length; i++) {
-				if ((*key_bundles)[i] != NULL) {
+				if ((*key_bundles)[i] != nullptr) {
 					key_bundle__free_unpacked((*key_bundles)[i], &protobuf_c_allocators);
-					(*key_bundles)[i] = NULL;
+					(*key_bundles)[i] = nullptr;
 				}
 			}
 
 			zeroed_free_and_null_if_valid(*key_bundles);
 		}
 
-		if (bundle_size != NULL) {
+		if (bundle_size != nullptr) {
 			*bundle_size = 0;
 		}
 	}
@@ -327,17 +327,17 @@ return_status header_and_message_keystore_import(
 		const size_t bundles_size) {
 	return_status status =  return_status_init();
 
-	header_and_message_keystore_node *current_node = NULL;
+	header_and_message_keystore_node *current_node = nullptr;
 
-	if ((store != NULL) && (bundles_size == 0) && (key_bundles == NULL)) {
+	if ((store != nullptr) && (bundles_size == 0) && (key_bundles == nullptr)) {
 		//valid empty keystore
 		goto cleanup;
 	}
 
 	//check input
-	if ((store == NULL)
-			|| ((bundles_size == 0) && (key_bundles != NULL))
-			|| ((bundles_size > 0) && (key_bundles == NULL))) {
+	if ((store == nullptr)
+			|| ((bundles_size == 0) && (key_bundles != nullptr))
+			|| ((bundles_size > 0) && (key_bundles == nullptr))) {
 		THROW(INVALID_INPUT, "Invalid input to header_and_message_keystore_import.");
 	}
 
@@ -360,16 +360,16 @@ return_status header_and_message_keystore_import(
 		THROW_on_error(CREATION_ERROR, "Failed to create header_and_message_keystore_node.");
 
 		add_node(store, current_node);
-		current_node = NULL; //set to NULL because we don't have the ownership anymore
+		current_node = nullptr; //set to nullptr because we don't have the ownership anymore
 	}
 
 cleanup:
 	on_error {
-		if (store != NULL) {
+		if (store != nullptr) {
 			header_and_message_keystore_clear(store);
 		}
 
-		if (current_node != NULL) {
+		if (current_node != nullptr) {
 			sodium_free_and_null_if_valid(current_node);
 		}
 	}

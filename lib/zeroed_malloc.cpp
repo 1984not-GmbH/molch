@@ -42,8 +42,8 @@ void *zeroed_malloc(size_t size) {
 	size_t amount_to_allocate = size + sizeof(void*) + sizeof(size_t) + (alignof(max_align_t) - 1);
 
 	char * const malloced_address = (char*)malloc(amount_to_allocate);
-	if (malloced_address == NULL) {
-		return NULL;
+	if (malloced_address == nullptr) {
+		return nullptr;
 	}
 
 	char *aligned_address = (char*)next_aligned_address(malloced_address + sizeof(size_t) + sizeof(void*), alignof(intmax_t));
@@ -57,7 +57,7 @@ void *zeroed_malloc(size_t size) {
 }
 
 void zeroed_free(void *pointer) {
-	if (pointer == NULL) {
+	if (pointer == nullptr) {
 		return;
 	}
 

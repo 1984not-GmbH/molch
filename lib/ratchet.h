@@ -100,7 +100,7 @@ typedef struct ratchet_state {
  * All the keys will be copied so you can free the buffers afterwards. (private identity get's
  * immediately deleted after deriving the initial root key though!)
  *
- * The return value is a valid ratchet state or NULL if an error occured.
+ * The return value is a valid ratchet state or nullptr if an error occured.
  */
 return_status ratchet_create(
 		ratchet_state ** const ratchet,

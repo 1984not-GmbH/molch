@@ -41,11 +41,11 @@ return_status spiced_random(
 	return_status status = return_status_init();
 
 	//buffer to put the random data derived from the random spice into
-	buffer_t *spice = NULL;
+	buffer_t *spice = nullptr;
 	//buffer that contains the random data from the OS
-	buffer_t *os_random = NULL;
+	buffer_t *os_random = nullptr;
 	//buffer that contains a random salt
-	buffer_t *salt = NULL;
+	buffer_t *salt = nullptr;
 	//allocate them
 	spice = buffer_create_with_custom_allocator(output_length, output_length, sodium_malloc, sodium_free);
 	THROW_on_failed_alloc(spice);
@@ -95,7 +95,7 @@ return_status spiced_random(
 
 cleanup:
 	on_error {
-		if (random_output != NULL) {
+		if (random_output != nullptr) {
 			buffer_clear(random_output);
 			random_output->content_length = 0;
 		}

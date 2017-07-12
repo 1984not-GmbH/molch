@@ -43,9 +43,9 @@ int main(void) {
 	buffer_t *extracted_public_ephemeral_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_t *extracted_public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	buffer_t *header = buffer_create_on_heap(4, 4);
-	buffer_t *packet = NULL;
-	buffer_t *decrypted_header = NULL;
-	buffer_t *decrypted_message = NULL;
+	buffer_t *packet = nullptr;
+	buffer_t *decrypted_header = nullptr;
+	buffer_t *decrypted_message = nullptr;
 
 	return_status status = return_status_init();
 
@@ -72,9 +72,9 @@ int main(void) {
 			packet_type,
 			header,
 			message,
-			NULL,
-			NULL,
-			NULL);
+			nullptr,
+			nullptr,
+			nullptr);
 	THROW_on_error(CREATION_ERROR, "Failed to create and print normal message.");
 
 	//now decrypt the packet
@@ -90,9 +90,9 @@ int main(void) {
 			packet,
 			header_key,
 			message_key,
-			NULL,
-			NULL,
-			NULL);
+			nullptr,
+			nullptr,
+			nullptr);
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt the packet.");
 
 	if ((packet_type != extracted_packet_type)
