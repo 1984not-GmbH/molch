@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.8.12)
 
-project (molch C)
+project (molch C CXX)
 
 subdirs(test lib bindings)
 
@@ -10,7 +10,7 @@ enable_testing()
 
 #Setup compiler flags
 list(APPEND custom_compiler_flag_candidates
-    -std=c99
+    -std=c++11
     -pedantic
     -Wall
     -Wextra
@@ -47,24 +47,24 @@ else()
 endif()
 
 # apply custom compiler flags
-include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
 foreach(compiler_flag ${custom_compiler_flag_candidates})
     #remove problematic characters
     string(REGEX REPLACE "[^a-zA-Z0-9]" "" current_variable ${compiler_flag})
 
-    CHECK_C_COMPILER_FLAG(${compiler_flag} "FLAG_SUPPORTED_${current_variable}")
+    CHECK_CXX_COMPILER_FLAG(${compiler_flag} "FLAG_SUPPORTED_${current_variable}")
     if (FLAG_SUPPORTED_${current_variable})
         set(custom_compiler_flags "${custom_compiler_flags} ${compiler_flag}")
     endif()
 endforeach()
 
-set(CMAKE_C_FLAGS "${custom_compiler_flags} ${CMAKE_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "${custom_compiler_flags} ${CMAKE_CXX_FLAGS}")
 
 #Set linker flags
 if(NOT APPLE)
     set(SECURITY_LINK_FLAGS "-z relro -z now -z noexecstack -z noexecheap -pie")
 endif()
-set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${SECURITY_LINK_FLAGS}")
+set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} ${SECURITY_LINK_FLAGS}")
 
 find_package(sodium 1.0.12 REQUIRED)
 find_package(Protobuf-C REQUIRED)
