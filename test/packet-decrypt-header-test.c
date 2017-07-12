@@ -55,7 +55,7 @@ int main(void) {
 	header->content[1] = 0x02;
 	header->content[2] = 0x03;
 	header->content[3] = 0x04;
-	molch_message_type packet_type = 1;
+	molch_message_type packet_type = NORMAL_MESSAGE;
 	printf("Packet type: %02x\n", packet_type);
 	putchar('\n');
 

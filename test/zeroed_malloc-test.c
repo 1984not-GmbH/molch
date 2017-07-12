@@ -30,7 +30,7 @@
 int main(void) {
 	return_status status = return_status_init();
 
-	char * const pointer = zeroed_malloc(100);
+	char * const pointer = (char*)zeroed_malloc(100);
 	if (pointer == NULL) {
 		throw(ALLOCATION_FAILED, "Failed to allocate with zeroed_malloc.");
 	}

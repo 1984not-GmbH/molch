@@ -93,7 +93,7 @@ int main(void) {
 	putchar('\n');
 
 	//make second buffer (from pointer)
-	buffer_t *buffer2 = buffer_init_with_pointer(alloca(sizeof(buffer_t)), malloc(5), 5, 4);
+	buffer_t *buffer2 = buffer_init_with_pointer((buffer_t*)alloca(sizeof(buffer_t)), (unsigned char*)malloc(5), 5, 4);
 	buffer2->content[0] = 0xde;
 	buffer2->content[1] = 0xad;
 	buffer2->content[2] = 0xbe;
@@ -340,8 +340,8 @@ int main(void) {
 
 	//test xor
 	buffer_create_from_string(text, "Hello World!");
-	buffer_t *xor = buffer_create(text->content_length, text->content_length);
-	status = buffer_clone(xor, text);
+	buffer_t *to_xor = buffer_create(text->content_length, text->content_length);
+	status = buffer_clone(to_xor, text);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to clone buffer.\n");
 		return status;
@@ -355,27 +355,27 @@ int main(void) {
 	}
 
 	//xor random data to xor-buffer
-	status = buffer_xor(xor, random2);
+	status = buffer_xor(to_xor, random2);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to xor buffers. (%i)\n", status);
 		return status;
 	}
 
 	//make sure that xor doesn't contain either 'text' or 'random2'
-	if ((buffer_compare(xor, text) == 0) || (buffer_compare(xor, random2) == 0)) {
+	if ((buffer_compare(to_xor, text) == 0) || (buffer_compare(to_xor, random2) == 0)) {
 		fprintf(stderr, "ERROR: xor buffer contains 'text' or 'random2'\n");
 		return EXIT_FAILURE;
 	}
 
 	//xor the buffer with text again to get out the random data
-	status = buffer_xor(xor, text);
+	status = buffer_xor(to_xor, text);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to xor buffers. (%i)\n", status);
 		return status;
 	}
 
 	//xor should now contain the same as random2
-	if (buffer_compare(xor, random2) != 0) {
+	if (buffer_compare(to_xor, random2) != 0) {
 		fprintf(stderr, "ERROR: Failed to xor buffers properly.\n");
 		return EXIT_FAILURE;
 	}

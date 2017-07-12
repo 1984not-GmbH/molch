@@ -41,12 +41,12 @@ void *zeroed_malloc(size_t size) {
 
 	size_t amount_to_allocate = size + sizeof(void*) + sizeof(size_t) + (ALIGNMENT_OF(intmax_t) - 1);
 
-	char * const malloced_address = malloc(amount_to_allocate);
+	char * const malloced_address = (char*)malloc(amount_to_allocate);
 	if (malloced_address == NULL) {
 		return NULL;
 	}
 
-	char *aligned_address = next_aligned_address(malloced_address + sizeof(size_t) + sizeof(void*), ALIGNMENT_OF(intmax_t));
+	char *aligned_address = (char*)next_aligned_address(malloced_address + sizeof(size_t) + sizeof(void*), ALIGNMENT_OF(intmax_t));
 
 	//write the size in front of the algined address
 	memcpy(aligned_address - sizeof(size_t), &size, sizeof(size_t));

@@ -39,7 +39,7 @@ typedef struct master_keys {
 	unsigned char public_identity_key_storage[PUBLIC_KEY_SIZE];
 	buffer_t private_identity_key[1];
 	unsigned char private_identity_key_storage[PRIVATE_KEY_SIZE];
-} master_keys;
+} master_keys_t;
 
 /*
  * Create a new set of master keys.
@@ -51,7 +51,7 @@ typedef struct master_keys {
  * WARNING: Don't use Entropy from the OSs CPRNG as seed!
  */
 return_status master_keys_create(
-		master_keys ** const keys, //output
+		master_keys_t ** const keys, //output
 		const buffer_t * const seed,
 		buffer_t * const public_signing_key, //output, optional, can be NULL
 		buffer_t * const public_identity_key //output, optional, can be NULL
@@ -61,21 +61,21 @@ return_status master_keys_create(
  * Get the public signing key.
  */
 return_status master_keys_get_signing_key(
-		master_keys * const keys,
+		master_keys_t * const keys,
 		buffer_t * const public_signing_key) __attribute__((warn_unused_result));
 
 /*
  * Get the public identity key.
  */
 return_status master_keys_get_identity_key(
-		master_keys * const keys,
+		master_keys_t * const keys,
 		buffer_t * const public_identity_key) __attribute__((warn_unused_result));
 
 /*
  * Sign a piece of data. Returns the data and signature in one output buffer.
  */
 return_status master_keys_sign(
-		master_keys * const keys,
+		master_keys_t * const keys,
 		const buffer_t * const data,
 		buffer_t * const signed_data //output, length of data + SIGNATURE_SIZE
 		) __attribute__((warn_unused_result));
@@ -88,7 +88,7 @@ return_status master_keys_sign(
  * \param private_identity_key Private part of the idenity keypair.
  */
 return_status master_keys_export(
-		master_keys * const keys,
+		master_keys_t * const keys,
 		Key ** const public_signing_key,
 		Key ** const private_signing_key,
 		Key ** const public_identity_key,
@@ -102,7 +102,7 @@ return_status master_keys_export(
  * \param private_identity_key Private part of the signing keypair (protobuf-c).
  */
 return_status master_keys_import(
-	master_keys ** const keys,
+	master_keys_t ** const keys,
 	const Key * const public_signing_key,
 	const Key * const private_signing_key,
 	const Key * const public_identity_key,

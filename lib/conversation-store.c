@@ -216,7 +216,7 @@ return_status conversation_store_export(
 
 	if (store->length > 0) {
 		//allocate the array of conversations
-		*conversations = zeroed_malloc(store->length * sizeof(Conversation*));
+		*conversations = (Conversation**)zeroed_malloc(store->length * sizeof(Conversation*));
 		throw_on_failed_alloc(*conversations);
 		memset(*conversations, '\0', store->length * sizeof(Conversation*));
 	} else {

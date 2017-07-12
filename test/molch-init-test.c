@@ -42,7 +42,7 @@ int main(int argc, char *args[]) {
 
 	unsigned char *backup = NULL;
 	unsigned char *prekey_list = NULL;
-	unsigned char *backup_key = malloc(BACKUP_KEY_SIZE);
+	unsigned char *backup_key = (unsigned char*)malloc(BACKUP_KEY_SIZE);
 
 	return_status status = return_status_init();
 

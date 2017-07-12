@@ -33,7 +33,7 @@
  * WARNING: Don't use Entropy from the OSs CPRNG as seed!
  */
 return_status master_keys_create(
-		master_keys ** const keys, //output
+		master_keys_t ** const keys, //output
 		const buffer_t * const seed,
 		buffer_t * const public_signing_key, //output, optional, can be NULL
 		buffer_t * const public_identity_key //output, optional, can be NULL
@@ -48,7 +48,7 @@ return_status master_keys_create(
 		throw(INVALID_INPUT, "Invalid input for master_keys_create.");
 	}
 
-	*keys = sodium_malloc(sizeof(master_keys));
+	*keys = (master_keys_t*)sodium_malloc(sizeof(master_keys_t));
 	throw_on_failed_alloc(*keys);
 
 	//initialize the buffers
@@ -149,7 +149,7 @@ cleanup:
  * Get the public signing key.
  */
 return_status master_keys_get_signing_key(
-		master_keys * const keys,
+		master_keys_t * const keys,
 		buffer_t * const public_signing_key) {
 	return_status status = return_status_init();
 
@@ -176,7 +176,7 @@ cleanup:
  * Get the public identity key.
  */
 return_status master_keys_get_identity_key(
-		master_keys * const keys,
+		master_keys_t * const keys,
 		buffer_t * const public_identity_key) {
 	return_status status = return_status_init();
 
@@ -203,7 +203,7 @@ cleanup:
  * Sign a piece of data. Returns the data and signature in one output buffer.
  */
 return_status master_keys_sign(
-		master_keys * const keys,
+		master_keys_t * const keys,
 		const buffer_t * const data,
 		buffer_t * const signed_data) { //output, length of data + SIGNATURE_SIZE
 	return_status status = return_status_init();
@@ -246,7 +246,7 @@ cleanup:
 }
 
 return_status master_keys_export(
-		master_keys * const keys,
+		master_keys_t * const keys,
 		Key ** const public_signing_key,
 		Key ** const private_signing_key,
 		Key ** const public_identity_key,
@@ -261,30 +261,30 @@ return_status master_keys_export(
 	}
 
 	//allocate the structs
-	*public_signing_key = zeroed_malloc(sizeof(Key));
+	*public_signing_key = (Key*)zeroed_malloc(sizeof(Key));
 	throw_on_failed_alloc(*public_signing_key);
 	key__init(*public_signing_key);
-	*private_signing_key = zeroed_malloc(sizeof(Key));
+	*private_signing_key = (Key*)zeroed_malloc(sizeof(Key));
 	throw_on_failed_alloc(*private_signing_key);
 	key__init(*private_signing_key);
-	*public_identity_key = zeroed_malloc(sizeof(Key));
+	*public_identity_key = (Key*)zeroed_malloc(sizeof(Key));
 	throw_on_failed_alloc(*public_identity_key);
 	key__init(*public_identity_key);
-	*private_identity_key = zeroed_malloc(sizeof(Key));
+	*private_identity_key = (Key*)zeroed_malloc(sizeof(Key));
 	throw_on_failed_alloc(*private_identity_key);
 	key__init(*private_identity_key);
 
 	//allocate the key buffers
-	(*public_signing_key)->key.data = zeroed_malloc(PUBLIC_MASTER_KEY_SIZE);
+	(*public_signing_key)->key.data = (unsigned char*)zeroed_malloc(PUBLIC_MASTER_KEY_SIZE);
 	throw_on_failed_alloc((*public_signing_key)->key.data);
 	(*public_signing_key)->key.len = PUBLIC_MASTER_KEY_SIZE;
-	(*private_signing_key)->key.data = zeroed_malloc(PRIVATE_MASTER_KEY_SIZE);
+	(*private_signing_key)->key.data = (unsigned char*)zeroed_malloc(PRIVATE_MASTER_KEY_SIZE);
 	throw_on_failed_alloc((*private_signing_key)->key.data);
 	(*private_signing_key)->key.len = PRIVATE_MASTER_KEY_SIZE;
-	(*public_identity_key)->key.data = zeroed_malloc(PUBLIC_KEY_SIZE);
+	(*public_identity_key)->key.data = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
 	throw_on_failed_alloc((*public_identity_key)->key.data);
 	(*public_identity_key)->key.len = PUBLIC_KEY_SIZE;
-	(*private_identity_key)->key.data = zeroed_malloc(PUBLIC_KEY_SIZE);
+	(*private_identity_key)->key.data = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
 	throw_on_failed_alloc((*private_identity_key)->key.data);
 	(*private_identity_key)->key.len = PUBLIC_KEY_SIZE;
 
@@ -337,7 +337,7 @@ cleanup:
 }
 
 return_status master_keys_import(
-		master_keys ** const keys,
+		master_keys_t ** const keys,
 		const Key * const public_signing_key,
 		const Key * const private_signing_key,
 		const Key * const public_identity_key,
@@ -351,7 +351,7 @@ return_status master_keys_import(
 		throw(INVALID_INPUT, "Invalid input to master_keys_import.");
 	}
 
-	*keys = sodium_malloc(sizeof(master_keys));
+	*keys = (master_keys_t*)sodium_malloc(sizeof(master_keys_t));
 	throw_on_failed_alloc(*keys);
 
 	//initialize the buffers

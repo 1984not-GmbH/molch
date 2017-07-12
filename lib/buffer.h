@@ -67,7 +67,7 @@ buffer_t* buffer_init_with_pointer_to_const(
 /*
  * Macro to create a new buffer of a given length.
  */
-#define buffer_create(buffer_length, content_length) buffer_init(alloca(sizeof(buffer_t) + buffer_length), buffer_length, content_length)
+#define buffer_create(buffer_length, content_length) buffer_init((buffer_t*)alloca(sizeof(buffer_t) + buffer_length), buffer_length, content_length)
 
 /*
  * Create a new buffer on the heap.

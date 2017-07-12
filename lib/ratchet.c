@@ -75,7 +75,7 @@ static return_status create_ratchet_state(ratchet_state ** const ratchet) {
 		throw(INVALID_INPUT, "Invalid input to create_ratchet_state.");
 	}
 
-	*ratchet = sodium_malloc(sizeof(ratchet_state));
+	*ratchet = (ratchet_state*)sodium_malloc(sizeof(ratchet_state));
 	throw_on_failed_alloc(*ratchet);
 
 	//initialize the buffers with the storage arrays
@@ -777,13 +777,13 @@ return_status ratchet_export(
 		throw(INVALID_INPUT, "Invalid input to ratchet_export.");
 	}
 
-	*conversation = zeroed_malloc(sizeof(Conversation));
+	*conversation = (Conversation*)zeroed_malloc(sizeof(Conversation));
 	throw_on_failed_alloc(*conversation);
 	conversation__init(*conversation);
 
 	//root keys
 	//root key
-	root_key = zeroed_malloc(ROOT_KEY_SIZE);
+	root_key = (unsigned char*)zeroed_malloc(ROOT_KEY_SIZE);
 	throw_on_failed_alloc(root_key);
 	if (buffer_clone_to_raw(root_key, ROOT_KEY_SIZE, ratchet->root_key) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy root key.");
@@ -792,7 +792,7 @@ return_status ratchet_export(
 	(*conversation)->root_key.len = ratchet->root_key->content_length;
 	(*conversation)->has_root_key = true;
 	//purported root key
-	purported_root_key = zeroed_malloc(ROOT_KEY_SIZE);
+	purported_root_key = (unsigned char*)zeroed_malloc(ROOT_KEY_SIZE);
 	throw_on_failed_alloc(purported_root_key);
 	if (buffer_clone_to_raw(purported_root_key, ROOT_KEY_SIZE, ratchet->purported_root_key) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy purported root key.");
@@ -803,7 +803,7 @@ return_status ratchet_export(
 
 	//header keys
 	//send header key
-	send_header_key = zeroed_malloc(HEADER_KEY_SIZE);
+	send_header_key = (unsigned char*)zeroed_malloc(HEADER_KEY_SIZE);
 	throw_on_failed_alloc(send_header_key);
 	if (buffer_clone_to_raw(send_header_key, HEADER_KEY_SIZE, ratchet->send_header_key) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy send header key.");
@@ -812,7 +812,7 @@ return_status ratchet_export(
 	(*conversation)->send_header_key.len = ratchet->send_header_key->content_length;
 	(*conversation)->has_send_header_key = true;
 	//receive header key
-	receive_header_key = zeroed_malloc(HEADER_KEY_SIZE);
+	receive_header_key = (unsigned char*)zeroed_malloc(HEADER_KEY_SIZE);
 	throw_on_failed_alloc(receive_header_key);
 	if (buffer_clone_to_raw(receive_header_key, HEADER_KEY_SIZE, ratchet->receive_header_key) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy receive header key.");
@@ -821,7 +821,7 @@ return_status ratchet_export(
 	(*conversation)->receive_header_key.len = ratchet->receive_header_key->content_length;
 	(*conversation)->has_receive_header_key = true;
 	//next send header key
-	next_send_header_key = zeroed_malloc(HEADER_KEY_SIZE);
+	next_send_header_key = (unsigned char*)zeroed_malloc(HEADER_KEY_SIZE);
 	throw_on_failed_alloc(next_send_header_key);
 	if (buffer_clone_to_raw(next_send_header_key, HEADER_KEY_SIZE, ratchet->next_send_header_key) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy next send header key.");
@@ -830,7 +830,7 @@ return_status ratchet_export(
 	(*conversation)->next_send_header_key.len = ratchet->next_send_header_key->content_length;
 	(*conversation)->has_next_send_header_key = true;
 	//next receive header key
-	next_receive_header_key = zeroed_malloc(HEADER_KEY_SIZE);
+	next_receive_header_key = (unsigned char*)zeroed_malloc(HEADER_KEY_SIZE);
 	throw_on_failed_alloc(next_receive_header_key);
 	if (buffer_clone_to_raw(next_receive_header_key, HEADER_KEY_SIZE, ratchet->next_receive_header_key) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy next receive header key.");
@@ -839,7 +839,7 @@ return_status ratchet_export(
 	(*conversation)->next_receive_header_key.len = ratchet->next_receive_header_key->content_length;
 	(*conversation)->has_next_receive_header_key = true;
 	//purported receive header key
-	purported_receive_header_key = zeroed_malloc(HEADER_KEY_SIZE);
+	purported_receive_header_key = (unsigned char*)zeroed_malloc(HEADER_KEY_SIZE);
 	throw_on_failed_alloc(purported_receive_header_key);
 	if (buffer_clone_to_raw(purported_receive_header_key, HEADER_KEY_SIZE, ratchet->purported_receive_header_key) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy purported receive header key.");
@@ -848,7 +848,7 @@ return_status ratchet_export(
 	(*conversation)->purported_receive_header_key.len = ratchet->purported_receive_header_key->content_length;
 	(*conversation)->has_purported_receive_header_key = true;
 	//purported next receive header key
-	purported_next_receive_header_key = zeroed_malloc(HEADER_KEY_SIZE);
+	purported_next_receive_header_key = (unsigned char*)zeroed_malloc(HEADER_KEY_SIZE);
 	throw_on_failed_alloc(purported_next_receive_header_key);
 	if (buffer_clone_to_raw(purported_next_receive_header_key, HEADER_KEY_SIZE, ratchet->purported_next_receive_header_key) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy purported next receive header key.");
@@ -859,7 +859,7 @@ return_status ratchet_export(
 
 	//chain keys
 	//send chain key
-	send_chain_key = zeroed_malloc(CHAIN_KEY_SIZE);
+	send_chain_key = (unsigned char*)zeroed_malloc(CHAIN_KEY_SIZE);
 	throw_on_failed_alloc(send_chain_key);
 	if (buffer_clone_to_raw(send_chain_key, CHAIN_KEY_SIZE, ratchet->send_chain_key) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy send chain key.");
@@ -868,7 +868,7 @@ return_status ratchet_export(
 	(*conversation)->send_chain_key.len = ratchet->send_chain_key->content_length;
 	(*conversation)->has_send_chain_key = true;
 	//receive chain key
-	receive_chain_key = zeroed_malloc(CHAIN_KEY_SIZE);
+	receive_chain_key = (unsigned char*)zeroed_malloc(CHAIN_KEY_SIZE);
 	throw_on_failed_alloc(receive_chain_key);
 	if (buffer_clone_to_raw(receive_chain_key, CHAIN_KEY_SIZE, ratchet->receive_chain_key) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy receive chain key.");
@@ -877,7 +877,7 @@ return_status ratchet_export(
 	(*conversation)->receive_chain_key.len = ratchet->receive_chain_key->content_length;
 	(*conversation)->has_receive_chain_key = true;
 	//purported receive chain key
-	purported_receive_chain_key = zeroed_malloc(CHAIN_KEY_SIZE);
+	purported_receive_chain_key = (unsigned char*)zeroed_malloc(CHAIN_KEY_SIZE);
 	throw_on_failed_alloc(purported_receive_chain_key);
 	if (buffer_clone_to_raw(purported_receive_chain_key, CHAIN_KEY_SIZE, ratchet->purported_receive_chain_key) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy purported receive chain key.");
@@ -888,7 +888,7 @@ return_status ratchet_export(
 
 	//identity key
 	//our public identity key
-	our_public_identity_key = zeroed_malloc(PUBLIC_KEY_SIZE);
+	our_public_identity_key = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
 	throw_on_failed_alloc(our_public_identity_key);
 	if (buffer_clone_to_raw(our_public_identity_key, PUBLIC_KEY_SIZE, ratchet->our_public_identity) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy our public identity key.");
@@ -897,7 +897,7 @@ return_status ratchet_export(
 	(*conversation)->our_public_identity_key.len = ratchet->our_public_identity->content_length;
 	(*conversation)->has_our_public_identity_key = true;
 	//their public identity key
-	their_public_identity_key = zeroed_malloc(PUBLIC_KEY_SIZE);
+	their_public_identity_key = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
 	throw_on_failed_alloc(their_public_identity_key);
 	if (buffer_clone_to_raw(their_public_identity_key, PUBLIC_KEY_SIZE, ratchet->their_public_identity) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy their public identity key.");
@@ -908,7 +908,7 @@ return_status ratchet_export(
 
 	//ephemeral keys
 	//our private ephemeral key
-	our_private_ephemeral_key = zeroed_malloc(PUBLIC_KEY_SIZE);
+	our_private_ephemeral_key = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
 	throw_on_failed_alloc(our_private_ephemeral_key);
 	if (buffer_clone_to_raw(our_private_ephemeral_key, PUBLIC_KEY_SIZE, ratchet->our_private_ephemeral) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy our private ephemeral key.");
@@ -917,7 +917,7 @@ return_status ratchet_export(
 	(*conversation)->our_private_ephemeral_key.len = ratchet->our_private_ephemeral->content_length;
 	(*conversation)->has_our_private_ephemeral_key = true;
 	//our public ephemeral key
-	our_public_ephemeral_key = zeroed_malloc(PUBLIC_KEY_SIZE);
+	our_public_ephemeral_key = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
 	throw_on_failed_alloc(our_public_ephemeral_key);
 	if (buffer_clone_to_raw(our_public_ephemeral_key, PUBLIC_KEY_SIZE, ratchet->our_public_ephemeral) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy our public ephemeral key.");
@@ -926,7 +926,7 @@ return_status ratchet_export(
 	(*conversation)->our_public_ephemeral_key.len = ratchet->our_public_ephemeral->content_length;
 	(*conversation)->has_our_public_ephemeral_key = true;
 	//their public ephemeral key
-	their_public_ephemeral_key = zeroed_malloc(PUBLIC_KEY_SIZE);
+	their_public_ephemeral_key = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
 	throw_on_failed_alloc(their_public_ephemeral_key);
 	if (buffer_clone_to_raw(their_public_ephemeral_key, PUBLIC_KEY_SIZE, ratchet->their_public_ephemeral) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy their public ephemeral key.");
@@ -935,7 +935,7 @@ return_status ratchet_export(
 	(*conversation)->their_public_ephemeral_key.len = ratchet->their_public_ephemeral->content_length;
 	(*conversation)->has_their_public_ephemeral_key = true;
 	//their purported public ephemeral key
-	their_purported_public_ephemeral_key = zeroed_malloc(PUBLIC_KEY_SIZE);
+	their_purported_public_ephemeral_key = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
 	throw_on_failed_alloc(their_purported_public_ephemeral_key);
 	if (buffer_clone_to_raw(their_purported_public_ephemeral_key, PUBLIC_KEY_SIZE, ratchet->their_purported_public_ephemeral) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy their purported public ephemeral key.");
@@ -1050,7 +1050,7 @@ return_status ratchet_import(
 		throw(INVALID_INPUT, "Invalid input to ratchet_import.");
 	}
 
-	*ratchet= sodium_malloc(sizeof(ratchet_state));
+	*ratchet = (ratchet_state*)sodium_malloc(sizeof(ratchet_state));
 	throw_on_failed_alloc(*ratchet);
 
 	init_ratchet_state(ratchet);

@@ -34,7 +34,7 @@ return_status user_store_create(user_store ** const store) {
 		throw(INVALID_INPUT, "Pointer to put new user store into is NULL.");
 	}
 
-	*store = sodium_malloc(sizeof(user_store));
+	*store = (user_store*)sodium_malloc(sizeof(user_store));
 	throw_on_failed_alloc(*store);
 
 	//initialise
@@ -100,7 +100,7 @@ static return_status create_user_store_node(user_store_node ** const node) {
 		throw(INVALID_INPUT, "Pointer to put new user store node into is NULL.");
 	}
 
-	*node = sodium_malloc(sizeof(user_store_node));
+	*node = (user_store_node*)sodium_malloc(sizeof(user_store_node));
 	throw_on_failed_alloc(*node);
 
 	//initialise pointers
@@ -346,7 +346,7 @@ return_status user_store_node_export(user_store_node * const node, User ** const
 		throw(INVALID_INPUT, "Invalid input to user_store_node_export.");
 	}
 
-	*user = zeroed_malloc(sizeof(User));
+	*user = (User*)zeroed_malloc(sizeof(User));
 	throw_on_failed_alloc(*user);
 	user__init(*user);
 
@@ -418,7 +418,7 @@ return_status user_store_export(
 	}
 
 	if (store->length > 0) {
-		*users = zeroed_malloc(store->length * sizeof(User*));
+		*users = (User**)zeroed_malloc(store->length * sizeof(User*));
 		throw_on_failed_alloc(*users);
 		memset(*users, '\0', store->length * sizeof(User*));
 

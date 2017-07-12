@@ -28,13 +28,13 @@
 #include "utils.h"
 
 return_status protobuf_export(
-		master_keys * const keys,
+		master_keys_t * const keys,
 		buffer_t ** const public_signing_key_buffer,
 		buffer_t ** const private_signing_key_buffer,
 		buffer_t ** const public_identity_key_buffer,
 		buffer_t ** const private_identity_key_buffer) __attribute__((warn_unused_result));
 return_status protobuf_export(
-		master_keys * const keys,
+		master_keys_t * const keys,
 		buffer_t ** const public_signing_key_buffer,
 		buffer_t ** const private_signing_key_buffer,
 		buffer_t ** const public_identity_key_buffer,
@@ -121,13 +121,13 @@ cleanup:
 
 
 return_status protobuf_import(
-		master_keys ** const keys,
+		master_keys_t ** const keys,
 		const buffer_t * const public_signing_key_buffer,
 		const buffer_t * const private_signing_key_buffer,
 		const buffer_t * const public_identity_key_buffer,
 		const buffer_t * const private_identity_key_buffer) __attribute__((warn_unused_result));
 return_status protobuf_import(
-		master_keys ** const keys,
+		master_keys_t ** const keys,
 		const buffer_t * const public_signing_key_buffer,
 		const buffer_t * const private_signing_key_buffer,
 		const buffer_t * const public_identity_key_buffer,
@@ -223,9 +223,9 @@ int main(void) {
 
 	return_status status = return_status_init();
 
-	master_keys *unspiced_master_keys = NULL;
-	master_keys *spiced_master_keys = NULL;
-	master_keys *imported_master_keys = NULL;
+	master_keys_t *unspiced_master_keys = NULL;
+	master_keys_t *spiced_master_keys = NULL;
+	master_keys_t *imported_master_keys = NULL;
 
 	//public key buffers
 	buffer_t *public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);

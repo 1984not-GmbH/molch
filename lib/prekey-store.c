@@ -50,7 +50,7 @@ return_status prekey_store_create(prekey_store ** const store) {
 		throw(INVALID_INPUT, "Invalid input to prekey_store_create.");
 	}
 
-	*store = sodium_malloc(sizeof(prekey_store));
+	*store = (prekey_store*)sodium_malloc(sizeof(prekey_store));
 	throw_on_failed_alloc(*store);
 
 	//set expiration date to the past --> rotate will create new keys
@@ -106,7 +106,7 @@ static void node_add(prekey_store * const store, prekey_store_node * const node)
 static int deprecate(prekey_store * const store, size_t index) {
 	int status = 0;
 	//create a new node
-	prekey_store_node *deprecated_node = sodium_malloc(sizeof(prekey_store_node));
+	prekey_store_node *deprecated_node = (prekey_store_node*)sodium_malloc(sizeof(prekey_store_node));
 	if (deprecated_node == NULL) {
 		status = -1;
 		goto cleanup;
@@ -364,25 +364,25 @@ return_status prekey_store_export_key(const prekey_store_node* node, Prekey ** c
 	}
 
 	//allocate and init the prekey protobuf struct
-	*keypair = zeroed_malloc(sizeof(Prekey));
+	*keypair = (Prekey*)zeroed_malloc(sizeof(Prekey));
 	throw_on_failed_alloc(*keypair);
 
 	prekey__init(*keypair);
 
 	//allocate and init the key structs
-	private_prekey = zeroed_malloc(sizeof(Key));
+	private_prekey = (Key*)zeroed_malloc(sizeof(Key));
 	throw_on_failed_alloc(private_prekey);
 	key__init(private_prekey);
-	public_prekey = zeroed_malloc(sizeof(Key));
+	public_prekey = (Key*)zeroed_malloc(sizeof(Key));
 	throw_on_failed_alloc(public_prekey);
 	key__init(public_prekey);
 
 	//create the key buffers
-	private_prekey->key.data = zeroed_malloc(PRIVATE_KEY_SIZE);
+	private_prekey->key.data = (unsigned char*)zeroed_malloc(PRIVATE_KEY_SIZE);
 	throw_on_failed_alloc(private_prekey->key.data);
 	private_prekey->key.len = PRIVATE_KEY_SIZE;
 
-	public_prekey->key.data = zeroed_malloc(PUBLIC_KEY_SIZE);
+	public_prekey->key.data = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
 	throw_on_failed_alloc(private_prekey->key.data);
 	public_prekey->key.len = PUBLIC_KEY_SIZE;
 
@@ -434,7 +434,7 @@ return_status prekey_store_export(
 	}
 
 	//allocate the prekey array
-	*keypairs = zeroed_malloc(PREKEY_AMOUNT * sizeof(Prekey*));
+	*keypairs = (Prekey**)zeroed_malloc(PREKEY_AMOUNT * sizeof(Prekey*));
 	throw_on_failed_alloc(*keypairs);
 
 	//initialize pointers with zero
@@ -443,7 +443,7 @@ return_status prekey_store_export(
 	deprecated_prekey_count = count_deprecated_prekeys(store);
 	if (deprecated_prekey_count > 0) {
 		//allocate and init the deprecated prekey array
-		*deprecated_keypairs = zeroed_malloc(deprecated_prekey_count * sizeof(Prekey*));
+		*deprecated_keypairs = (Prekey**)zeroed_malloc(deprecated_prekey_count * sizeof(Prekey*));
 		throw_on_failed_alloc(*deprecated_keypairs);
 	} else {
 		*deprecated_keypairs = NULL;
@@ -574,7 +574,7 @@ return_status prekey_store_import(
 		throw(INVALID_INPUT, "Invalid input to prekey_store_import");
 	}
 
-	*store = sodium_malloc(sizeof(prekey_store));
+	*store = (prekey_store*)sodium_malloc(sizeof(prekey_store));
 	throw_on_failed_alloc(*store);
 
 	//init the store
@@ -596,7 +596,7 @@ return_status prekey_store_import(
 
 	//add the deprecated prekeys
 	for (size_t i = 1; i <= deprecated_keypairs_length; i++) {
-		deprecated_keypair = sodium_malloc(sizeof(prekey_store_node));
+		deprecated_keypair = (prekey_store_node*)sodium_malloc(sizeof(prekey_store_node));
 		throw_on_failed_alloc(deprecated_keypair);
 
 		status = prekey_store_node_import(deprecated_keypair, deprecated_keypairs[deprecated_keypairs_length - i]);

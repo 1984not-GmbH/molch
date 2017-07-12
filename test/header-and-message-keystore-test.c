@@ -45,7 +45,7 @@ static return_status protobuf_export(
 			bundles_size);
 	throw_on_error(EXPORT_ERROR, "Failed to export keystore as protobuf struct.");
 
-	*export_buffers = zeroed_malloc((*bundles_size) * sizeof(buffer_t*));
+	*export_buffers = (buffer_t**)zeroed_malloc((*bundles_size) * sizeof(buffer_t*));
 	throw_on_failed_alloc(*export_buffers);
 
 	//initialize pointers with NULL
@@ -72,7 +72,7 @@ static return_status protobuf_import(
 		size_t const buffers_size) {
 	return_status status = return_status_init();
 
-	KeyBundle ** key_bundles = zeroed_malloc(buffers_size * sizeof(KeyBundle*));
+	KeyBundle ** key_bundles = (KeyBundle**)zeroed_malloc(buffers_size * sizeof(KeyBundle*));
 	throw_on_failed_alloc(key_bundles);
 
 	//set all pointers to NULL

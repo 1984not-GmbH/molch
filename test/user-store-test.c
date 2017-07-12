@@ -57,7 +57,7 @@ return_status protobuf_export(
 	status = user_store_export(store, &users, &length);
 	throw_on_error(EXPORT_ERROR, "Failed to export conversations.");
 
-	*export_buffers = malloc(length * sizeof(buffer_t*));
+	*export_buffers = (buffer_t**)malloc(length * sizeof(buffer_t*));
 	throw_on_failed_alloc(*export_buffers);
 
 	//initialize pointers with NULL
@@ -101,7 +101,7 @@ static return_status protobuf_import(
 		throw(INVALID_INPUT, "Invalid input to protobuf_import.");
 	}
 
-	users = zeroed_malloc(buffers_length * sizeof(User*));
+	users = (User**)zeroed_malloc(buffers_length * sizeof(User*));
 	throw_on_failed_alloc(users);
 
 	//unpack the buffers

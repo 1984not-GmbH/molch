@@ -42,7 +42,7 @@ void header_and_message_keystore_init(header_and_message_keystore * const keysto
  * create an empty header_and_message_keystore_node and set up all the pointers.
  */
 static header_and_message_keystore_node *create_node(void) {
-	header_and_message_keystore_node *node = sodium_malloc(sizeof(header_and_message_keystore_node));
+	header_and_message_keystore_node *node = (header_and_message_keystore_node*)sodium_malloc(sizeof(header_and_message_keystore_node));
 	if (node == NULL) {
 		return NULL;
 	}
@@ -194,22 +194,22 @@ static return_status header_and_message_keystore_node_export(header_and_message_
 
 	//allocate the buffers
 	//key bundle
-	*bundle = zeroed_malloc(sizeof(KeyBundle));
+	*bundle = (KeyBundle*)zeroed_malloc(sizeof(KeyBundle));
 	throw_on_failed_alloc(*bundle);
 	key_bundle__init(*bundle);
 
 	//header key
-	header_key = zeroed_malloc(sizeof(Key));
+	header_key = (Key*)zeroed_malloc(sizeof(Key));
 	throw_on_failed_alloc(header_key);
 	key__init(header_key);
-	header_key->key.data = zeroed_malloc(HEADER_KEY_SIZE);
+	header_key->key.data = (unsigned char*)zeroed_malloc(HEADER_KEY_SIZE);
 	throw_on_failed_alloc(header_key->key.data);
 
 	//message key
-	message_key = zeroed_malloc(sizeof(Key));
+	message_key = (Key*)zeroed_malloc(sizeof(Key));
 	throw_on_failed_alloc(message_key);
 	key__init(message_key);
-	message_key->key.data = zeroed_malloc(MESSAGE_KEY_SIZE);
+	message_key->key.data = (unsigned char*)zeroed_malloc(MESSAGE_KEY_SIZE);
 	throw_on_failed_alloc(message_key->key.data);
 
 	//backup header key
@@ -274,7 +274,7 @@ return_status header_and_message_keystore_export(
 	}
 
 	if (store->length != 0) {
-		*key_bundles = zeroed_malloc(store->length * sizeof(KeyBundle));
+		*key_bundles = (KeyBundle**)zeroed_malloc(store->length * sizeof(KeyBundle));
 		throw_on_failed_alloc(*key_bundles);
 		//initialize with NULL pointers
 		memset(*key_bundles, '\0', store->length * sizeof(KeyBundle));

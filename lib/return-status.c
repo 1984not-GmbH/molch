@@ -46,7 +46,7 @@ status_type return_status_add_error_message(
 		return SUCCESS;
 	}
 
-	error_message *error = malloc(sizeof(error_message));
+	error_message *error = (error_message*)malloc(sizeof(error_message));
 	if (error == NULL) {
 		return ALLOCATION_FAILED;
 	}

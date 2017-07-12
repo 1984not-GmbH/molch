@@ -97,14 +97,14 @@ buffer_t* buffer_init_with_pointer_to_const(
 buffer_t *buffer_create_on_heap(
 		const size_t buffer_length,
 		const size_t content_length) {
-	buffer_t *buffer = malloc(sizeof(buffer_t));
+	buffer_t *buffer = (buffer_t*)malloc(sizeof(buffer_t));
 	if (buffer == NULL) {
 		return NULL;
 	}
 
 	unsigned char *content = NULL;
 	if (buffer_length != 0) {
-		content = malloc(buffer_length);
+		content = (unsigned char*)malloc(buffer_length);
 		if (content == NULL) {
 			free(buffer);
 			return NULL;
@@ -129,13 +129,13 @@ buffer_t *buffer_create_with_custom_allocator(
 		) {
 	unsigned char *content = NULL;
 	if (buffer_length != 0) {
-		content = allocator(buffer_length);
+		content = (unsigned char*)allocator(buffer_length);
 		if (content == NULL) {
 			return NULL;
 		}
 	}
 
-	buffer_t *buffer = allocator(sizeof(buffer_t));
+	buffer_t *buffer = (buffer_t*)allocator(sizeof(buffer_t));
 	if (buffer == NULL) {
 		deallocator(content);
 		return NULL;
@@ -711,7 +711,7 @@ int buffer_grow_on_heap(
 	}
 
 	//allocate new content
-	unsigned char *content = malloc(new_size);
+	unsigned char *content = (unsigned char*)malloc(new_size);
 	if (content == NULL) {
 		return -11;
 	}

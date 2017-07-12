@@ -34,6 +34,7 @@ list(APPEND custom_compiler_flag_candidates
     -fPIC
     -Wunused-macros
     -Wmissing-variable-declarations
+    -Wc++-compat
     )
 
 if(NOT ${CMAKE_BUILD_TYPE} MATCHES "Debug")

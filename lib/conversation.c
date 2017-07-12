@@ -71,7 +71,7 @@ return_status conversation_create(
 		throw(INVALID_INPUT, "Invalid input for conversation_create.");
 	}
 
-	*conversation = malloc(sizeof(conversation_t));
+	*conversation = (conversation_t*)malloc(sizeof(conversation_t));
 	throw_on_failed_alloc(*conversation);
 
 	init_struct(*conversation);
@@ -639,7 +639,7 @@ return_status conversation_export(
 	throw_on_error(EXPORT_ERROR, "Failed to export ratchet.");
 
 	//export the conversation id
-	id = zeroed_malloc(CONVERSATION_ID_SIZE);
+	id = (unsigned char*)zeroed_malloc(CONVERSATION_ID_SIZE);
 	throw_on_failed_alloc(id);
 	if (buffer_clone_to_raw(id, CONVERSATION_ID_SIZE, conversation->id) != 0) {
 		throw(BUFFER_ERROR, "Failed to copy conversation id.");
@@ -668,7 +668,7 @@ return_status conversation_import(
 	}
 
 	//create the conversation
-	*conversation = malloc(sizeof(conversation_t));
+	*conversation = (conversation_t*)malloc(sizeof(conversation_t));
 	throw_on_failed_alloc(*conversation);
 	init_struct(*conversation);
 

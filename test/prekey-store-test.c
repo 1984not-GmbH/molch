@@ -46,13 +46,13 @@ static return_status protobuf_export(
 		deprecated_keypairs_size);
 	throw_on_error(EXPORT_ERROR, "Failed to export prekeys.");
 
-	*key_buffers = zeroed_malloc((*keypairs_size) * sizeof(buffer_t*));
+	*key_buffers = (buffer_t**)zeroed_malloc((*keypairs_size) * sizeof(buffer_t*));
 	throw_on_failed_alloc(*key_buffers);
 
 	//initialize pointers with NULL
 	memset(*key_buffers, '\0', (*keypairs_size) * sizeof(buffer_t*));
 
-	*deprecated_key_buffers = zeroed_malloc((*deprecated_keypairs_size) * sizeof(buffer_t*));
+	*deprecated_key_buffers = (buffer_t**)zeroed_malloc((*deprecated_keypairs_size) * sizeof(buffer_t*));
 	throw_on_failed_alloc(*deprecated_key_buffers);
 
 	//initialize pointers with NULL
@@ -94,11 +94,11 @@ static return_status protobuf_import(
 	Prekey ** keypairs = NULL;
 	Prekey ** deprecated_keypairs = NULL;
 
-	keypairs = zeroed_malloc(keypair_buffers_size * sizeof(Prekey*));
+	keypairs = (Prekey**)zeroed_malloc(keypair_buffers_size * sizeof(Prekey*));
 	throw_on_failed_alloc(keypairs);
 	memset(keypairs, '\0', keypair_buffers_size * sizeof(Prekey*));
 
-	deprecated_keypairs = zeroed_malloc(deprecated_keypair_buffers_size * sizeof(Prekey*));
+	deprecated_keypairs = (Prekey**)zeroed_malloc(deprecated_keypair_buffers_size * sizeof(Prekey*));
 	memset(deprecated_keypairs, '\0', deprecated_keypair_buffers_size * sizeof(Prekey*));
 	throw_on_failed_alloc(deprecated_keypairs);
 

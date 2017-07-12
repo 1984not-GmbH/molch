@@ -1162,7 +1162,7 @@ return_status molch_conversation_export(
 
 	//now pack the entire backup
 	const size_t encrypted_backup_size = encrypted_backup__get_packed_size(&encrypted_backup_struct);
-	*backup = malloc(encrypted_backup_size);
+	*backup = (unsigned char*)malloc(encrypted_backup_size);
 	*backup_length = encrypted_backup__pack(&encrypted_backup_struct, *backup);
 	if (*backup_length != encrypted_backup_size) {
 		throw(PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
@@ -1336,7 +1336,7 @@ return_status molch_export(
 		throw(INCORRECT_DATA, "No backup key found.");
 	}
 
-	backup_struct = zeroed_malloc(sizeof(Backup));
+	backup_struct = (Backup*)zeroed_malloc(sizeof(Backup));
 	throw_on_failed_alloc(backup_struct);
 	backup__init(backup_struct);
 
@@ -1393,7 +1393,7 @@ return_status molch_export(
 
 	//now pack the entire backup
 	const size_t encrypted_backup_size = encrypted_backup__get_packed_size(&encrypted_backup_struct);
-	*backup = malloc(encrypted_backup_size);
+	*backup = (unsigned char*)malloc(encrypted_backup_size);
 	*backup_length = encrypted_backup__pack(&encrypted_backup_struct, *backup);
 	if (*backup_length != encrypted_backup_size) {
 		throw(PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");

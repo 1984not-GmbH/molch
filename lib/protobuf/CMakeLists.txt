@@ -34,3 +34,7 @@ target_link_libraries(protocol-buffers ${PROTOBUFC_LIBRARY})
 if (FLAG_SUPPORTED_Wcastalign)
 	target_compile_options(protocol-buffers PRIVATE "-Wno-cast-align")
 endif()
+# Disable -Wc++-compat for protobuf files
+if (FLAG_SUPPORTED_Wccompat)
+	target_compile_options(protocol-buffers PRIVATE "-Wno-c++-compat")
+endif()
