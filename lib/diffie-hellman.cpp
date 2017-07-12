@@ -73,19 +73,20 @@ return_status diffie_hellman(
 
 
 	//do the diffie hellman key exchange
-	int status_int = 0;
 	if (crypto_scalarmult(dh_secret->content, our_private_key->content, their_public_key->content) != 0) {
 		THROW(KEYDERIVATION_FAILED, "Failed to do crypto_scalarmult.");
 	}
 
 	//initialize hashing
-	status_int = crypto_generichash_init(
-			hash_state,
-			NULL, //key
-			0, //key_length
-			DIFFIE_HELLMAN_SIZE); //output length
-	if (status_int != 0) {
-		THROW(GENERIC_ERROR, "Failed to initialize hash.");
+	{
+		int status_int = crypto_generichash_init(
+				hash_state,
+				NULL, //key
+				0, //key_length
+				DIFFIE_HELLMAN_SIZE); //output length
+		if (status_int != 0) {
+			THROW(GENERIC_ERROR, "Failed to initialize hash.");
+		}
 	}
 
 	//start input to hash with diffie hellman secret
@@ -187,7 +188,6 @@ return_status triple_diffie_hellman(
 		THROW(INVALID_INPUT, "Invalid input to triple_diffie_hellman.");
 	}
 
-	int status_int = 0;
 	if (am_i_alice) {
 		//DH(our_identity, their_ephemeral)
 		status = diffie_hellman(
@@ -241,13 +241,15 @@ return_status triple_diffie_hellman(
 
 	//initialize hashing
 	crypto_generichash_state hash_state[1];
-	status_int = crypto_generichash_init(
-			hash_state,
-			NULL, //key
-			0, //key_length
-			DIFFIE_HELLMAN_SIZE); //output_length
-	if (status_int != 0) {
-		THROW(GENERIC_ERROR, "Failed to initialize hash.");
+	{
+		int status_int = crypto_generichash_init(
+				hash_state,
+				NULL, //key
+				0, //key_length
+				DIFFIE_HELLMAN_SIZE); //output_length
+		if (status_int != 0) {
+			THROW(GENERIC_ERROR, "Failed to initialize hash.");
+		}
 	}
 
 	//add dh1 to hash input

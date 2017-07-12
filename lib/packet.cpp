@@ -213,14 +213,16 @@ return_status packet_encrypt(
 			axolotl_header->content_length + crypto_secretbox_MACBYTES,
 			axolotl_header->content_length + crypto_secretbox_MACBYTES);
 	THROW_on_failed_alloc(encrypted_axolotl_header);
-	int status_int = crypto_secretbox_easy(
-			encrypted_axolotl_header->content,
-			axolotl_header->content,
-			axolotl_header->content_length,
-			header_nonce->content,
-			axolotl_header_key->content);
-	if (status_int != 0) {
-		THROW(ENCRYPT_ERROR, "Failed to encrypt header.");
+	{
+		int status_int = crypto_secretbox_easy(
+				encrypted_axolotl_header->content,
+				axolotl_header->content,
+				axolotl_header->content_length,
+				header_nonce->content,
+				axolotl_header_key->content);
+		if (status_int != 0) {
+			THROW(ENCRYPT_ERROR, "Failed to encrypt header.");
+		}
 	}
 
 	//add the encrypted header to the protobuf struct
@@ -239,30 +241,34 @@ return_status packet_encrypt(
 	packet_header_struct.message_nonce.len = message_nonce->content_length;
 
 	//pad the message (PKCS7 padding to 255 byte blocks, see RFC5652 section 6.3)
-	unsigned char padding = (unsigned char)(255 - (message->content_length % 255));
-	padded_message = buffer_create_on_heap(message->content_length + padding, 0);
-	THROW_on_failed_alloc(padded_message);
-	//copy the message
-	if (buffer_clone(padded_message, message) != 0) {
-		THROW(BUFFER_ERROR, "Failed to clone message.");
+	{
+		unsigned char padding = (unsigned char)(255 - (message->content_length % 255));
+		padded_message = buffer_create_on_heap(message->content_length + padding, 0);
+		THROW_on_failed_alloc(padded_message);
+		//copy the message
+		if (buffer_clone(padded_message, message) != 0) {
+			THROW(BUFFER_ERROR, "Failed to clone message.");
+		}
+		//pad it
+		memset(padded_message->content + padded_message->content_length, padding, padding);
+		padded_message->content_length += padding;
 	}
-	//pad it
-	memset(padded_message->content + padded_message->content_length, padding, padding);
-	padded_message->content_length += padding;
 
 	//encrypt the message
 	encrypted_message = buffer_create_on_heap(
 			padded_message->content_length + crypto_secretbox_MACBYTES,
 			padded_message->content_length + crypto_secretbox_MACBYTES);
 	THROW_on_failed_alloc(encrypted_message);
-	status_int = crypto_secretbox_easy(
-			encrypted_message->content,
-			padded_message->content,
-			padded_message->content_length,
-			message_nonce->content,
-			message_key->content);
-	if (status_int != 0) {
-		THROW(ENCRYPT_ERROR, "Failed to encrypt message.");
+	{
+		int status_int = crypto_secretbox_easy(
+				encrypted_message->content,
+				padded_message->content,
+				padded_message->content_length,
+				message_nonce->content,
+				message_key->content);
+		if (status_int != 0) {
+			THROW(ENCRYPT_ERROR, "Failed to encrypt message.");
+		}
 	}
 
 	//add the encrypted message to the protobuf struct
@@ -271,14 +277,16 @@ return_status packet_encrypt(
 	packet_struct.encrypted_message.len = encrypted_message->content_length;
 
 	//calculate the required length
-	const size_t packed_length = packet__get_packed_size(&packet_struct);
+	{
+		const size_t packed_length = packet__get_packed_size(&packet_struct);
 
-	//pack the packet
-	*packet = buffer_create_on_heap(packed_length, 0);
-	THROW_on_failed_alloc(*packet);
-	(*packet)->content_length = packet__pack(&packet_struct, (*packet)->content);
-	if ((*packet)->content_length != packed_length) {
-		THROW(PROTOBUF_PACK_ERROR, "Packet packet has incorrect length.");
+		//pack the packet
+		*packet = buffer_create_on_heap(packed_length, 0);
+		THROW_on_failed_alloc(*packet);
+		(*packet)->content_length = packet__pack(&packet_struct, (*packet)->content);
+		if ((*packet)->content_length != packed_length) {
+			THROW(PROTOBUF_PACK_ERROR, "Packet packet has incorrect length.");
+		}
 	}
 
 cleanup:
@@ -478,18 +486,22 @@ return_status packet_decrypt_header(
 		THROW(INCORRECT_BUFFER_SIZE, "The ciphertext of the axolotl header is too short.")
 	}
 
-	const size_t axolotl_header_length = packet_struct->encrypted_axolotl_header.len - crypto_secretbox_MACBYTES;
-	*axolotl_header = buffer_create_on_heap(axolotl_header_length, axolotl_header_length);
-	THROW_on_failed_alloc(*axolotl_header);
+	{
+		const size_t axolotl_header_length = packet_struct->encrypted_axolotl_header.len - crypto_secretbox_MACBYTES;
+		*axolotl_header = buffer_create_on_heap(axolotl_header_length, axolotl_header_length);
+		THROW_on_failed_alloc(*axolotl_header);
+	}
 
-	int status_int = crypto_secretbox_open_easy(
-			(*axolotl_header)->content,
-			packet_struct->encrypted_axolotl_header.data,
-			packet_struct->encrypted_axolotl_header.len,
-			packet_struct->packet_header->header_nonce.data,
-			axolotl_header_key->content);
-	if (status_int != 0) {
-		THROW(DECRYPT_ERROR, "Failed to decrypt axolotl header.");
+	{
+		int status_int = crypto_secretbox_open_easy(
+				(*axolotl_header)->content,
+				packet_struct->encrypted_axolotl_header.data,
+				packet_struct->encrypted_axolotl_header.len,
+				packet_struct->packet_header->header_nonce.data,
+				axolotl_header_key->content);
+		if (status_int != 0) {
+			THROW(DECRYPT_ERROR, "Failed to decrypt axolotl header.");
+		}
 	}
 
 cleanup:
@@ -514,6 +526,7 @@ return_status packet_decrypt_message(
 		const buffer_t * const message_key
 		) {
 	return_status status = return_status_init();
+	unsigned char padding;
 
 	Packet *packet_struct = NULL;
 
@@ -533,36 +546,42 @@ return_status packet_decrypt_message(
 		THROW(INCORRECT_BUFFER_SIZE, "The ciphertext of the message is too short.");
 	}
 
-	const size_t padded_message_length = packet_struct->encrypted_message.len - crypto_secretbox_MACBYTES;
-	if (padded_message_length < 255) {
-		THROW(INCORRECT_BUFFER_SIZE, "The padded message is too short.")
+	{
+		const size_t padded_message_length = packet_struct->encrypted_message.len - crypto_secretbox_MACBYTES;
+		if (padded_message_length < 255) {
+			THROW(INCORRECT_BUFFER_SIZE, "The padded message is too short.")
+		}
+		padded_message = buffer_create_on_heap(padded_message_length, padded_message_length);
+		THROW_on_failed_alloc(padded_message);
 	}
-	padded_message = buffer_create_on_heap(padded_message_length, padded_message_length);
-	THROW_on_failed_alloc(padded_message);
 
-	int status_int = crypto_secretbox_open_easy(
-			padded_message->content,
-			packet_struct->encrypted_message.data,
-			packet_struct->encrypted_message.len,
-			packet_struct->packet_header->message_nonce.data,
-			message_key->content);
-	if (status_int != 0) {
-		THROW(DECRYPT_ERROR, "Failed to decrypt message.");
+	{
+		int status_int = crypto_secretbox_open_easy(
+				padded_message->content,
+				packet_struct->encrypted_message.data,
+				packet_struct->encrypted_message.len,
+				packet_struct->packet_header->message_nonce.data,
+				message_key->content);
+		if (status_int != 0) {
+			THROW(DECRYPT_ERROR, "Failed to decrypt message.");
+		}
 	}
 
 	//get the padding (last byte)
-	unsigned char padding = padded_message->content[padded_message->content_length - 1];
+	padding = padded_message->content[padded_message->content_length - 1];
 	if (padding > padded_message->content_length) {
 		THROW(INCORRECT_BUFFER_SIZE, "The padded message is too short.")
 	}
 
 	//extract the message
-	const size_t message_length = padded_message->content_length - padding;
-	*message = buffer_create_on_heap(message_length, 0);
-	THROW_on_failed_alloc(*message);
-	//TODO this doesn't need to be copied, setting the length should be enough
-	if (buffer_copy(*message, 0, padded_message, 0, message_length) != 0) {
-		THROW(BUFFER_ERROR, "Failed to copy message from padded message.");
+	{
+		const size_t message_length = padded_message->content_length - padding;
+		*message = buffer_create_on_heap(message_length, 0);
+		THROW_on_failed_alloc(*message);
+		//TODO this doesn't need to be copied, setting the length should be enough
+		if (buffer_copy(*message, 0, padded_message, 0, message_length) != 0) {
+			THROW(BUFFER_ERROR, "Failed to copy message from padded message.");
+		}
 	}
 
 cleanup:

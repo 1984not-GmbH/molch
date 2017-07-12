@@ -58,13 +58,15 @@ foreach(compiler_flag ${custom_compiler_flag_candidates})
     endif()
 endforeach()
 
+set(CMAKE_C_FLAGS "-fPIC ${CMAKE_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "${custom_compiler_flags} ${CMAKE_CXX_FLAGS}")
 
 #Set linker flags
 if(NOT APPLE)
     set(SECURITY_LINK_FLAGS "-z relro -z now -z noexecstack -z noexecheap -pie")
 endif()
-set(CMAKE_CXX_LINK_FLAGS "${CMAKE_CXX_LINK_FLAGS} ${SECURITY_LINK_FLAGS}")
+set(CMAKE_CXX_LINK_FLAGS "${SECURITY_LINK_FLAGS} ${CMAKE_CXX_LINK_FLAGS}")
+set(CMAKE_C_LINK_FLAGS "${SECURITY_LINK_FLAGS} ${CMAKE_C_LINK_FLAGS}")
 
 find_package(sodium 1.0.12 REQUIRED)
 find_package(Protobuf-C REQUIRED)

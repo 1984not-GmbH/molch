@@ -24,6 +24,11 @@
 #ifndef LIB_MOLCH_H
 #define LIB_MOLCH_H
 
+/* although molch is C++, it exports a C interface */
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * THIS HEADER IS ONLY AN EARLY PREVIEW. IT WILL MOST CERTAINLY CHANGE IN THE FUTURE.
  */
@@ -363,4 +368,9 @@ return_status molch_get_prekey_list(
 return_status molch_update_backup_key(
 		unsigned char * const new_key, //output, BACKUP_KEY_SIZE
 		const size_t new_key_length) __attribute__((warn_unused_result));
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

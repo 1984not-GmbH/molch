@@ -132,6 +132,8 @@ return_status conversation_start_send_conversation(
 	buffer_t *sender_public_ephemeral = NULL;
 	buffer_t *sender_private_ephemeral = NULL;
 
+	uint32_t prekey_number;
+
 	sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(sender_public_ephemeral);
 	sender_private_ephemeral = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
@@ -150,15 +152,17 @@ return_status conversation_start_send_conversation(
 
 	*conversation = NULL;
 
-	int status_int = 0;
-	//create an ephemeral keypair
-	status_int = crypto_box_keypair(sender_public_ephemeral->content, sender_private_ephemeral->content);
-	if (status_int != 0) {
-		THROW(KEYGENERATION_FAILED, "Failed to generate ephemeral keypair.");
+	{
+		int status_int = 0;
+		//create an ephemeral keypair
+		status_int = crypto_box_keypair(sender_public_ephemeral->content, sender_private_ephemeral->content);
+		if (status_int != 0) {
+			THROW(KEYGENERATION_FAILED, "Failed to generate ephemeral keypair.");
+		}
 	}
 
 	//choose a prekey
-	uint32_t prekey_number = randombytes_uniform(PREKEY_AMOUNT);
+	prekey_number = randombytes_uniform(PREKEY_AMOUNT);
 	buffer_create_with_existing_array(
 			receiver_public_prekey,
 			&(receiver_prekey_list->content[prekey_number * PUBLIC_KEY_SIZE]),
@@ -328,6 +332,8 @@ return_status conversation_send(
 	buffer_t *send_ephemeral_key = NULL;
 	buffer_t *header = NULL;
 
+	molch_message_type packet_type;
+
 	send_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	THROW_on_failed_alloc(send_header_key);
 	send_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
@@ -353,7 +359,7 @@ return_status conversation_send(
 		THROW(INCORRECT_BUFFER_SIZE, "Public key output has incorrect size.");
 	}
 
-	molch_message_type packet_type = NORMAL_MESSAGE;
+	packet_type = NORMAL_MESSAGE;
 	//check if this is a prekey message
 	if (public_identity_key != NULL) {
 		packet_type = PREKEY_MESSAGE;
@@ -427,31 +433,33 @@ static int try_skipped_header_and_message_keys(
 	their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(their_signed_public_ephemeral);
 
-	header_and_message_keystore_node* node = skipped_keys->head;
-	for (size_t i = 0; (i < skipped_keys->length) && (node != NULL); i++, node = node->next) {
-		status = packet_decrypt_header(
-				&header,
-				packet,
-				node->header_key);
-		if (status.status == SUCCESS) {
-			status = packet_decrypt_message(
-					message,
+	{
+		header_and_message_keystore_node* node = skipped_keys->head;
+		for (size_t i = 0; (i < skipped_keys->length) && (node != NULL); i++, node = node->next) {
+			status = packet_decrypt_header(
+					&header,
 					packet,
-					node->message_key);
+					node->header_key);
 			if (status.status == SUCCESS) {
-				header_and_message_keystore_remove(skipped_keys, node);
+				status = packet_decrypt_message(
+						message,
+						packet,
+						node->message_key);
+				if (status.status == SUCCESS) {
+					header_and_message_keystore_remove(skipped_keys, node);
 
-				status = header_extract(
-						their_signed_public_ephemeral,
-						receive_message_number,
-						previous_receive_message_number,
-						header);
-				THROW_on_error(GENERIC_ERROR, "Failed to extract data from header.");
+					status = header_extract(
+							their_signed_public_ephemeral,
+							receive_message_number,
+							previous_receive_message_number,
+							header);
+					THROW_on_error(GENERIC_ERROR, "Failed to extract data from header.");
 
-				goto cleanup;
+					goto cleanup;
+				}
 			}
+			return_status_destroy_errors(&status);
 		}
-		return_status_destroy_errors(&status);
 	}
 
 	status.status = NOT_FOUND;
@@ -512,16 +520,17 @@ return_status conversation_receive(
 	*message = buffer_create_on_heap(packet->content_length, 0);
 	THROW_on_failed_alloc(*message);
 
-	int status_int = 0;
-	status_int = try_skipped_header_and_message_keys(
-			conversation->ratchet->skipped_header_and_message_keys,
-			packet,
-			message,
-			receive_message_number,
-			previous_receive_message_number);
-	if (status_int == 0) {
-		// found a key and successfully decrypted the message
-		goto cleanup;
+	{
+		int status_int = try_skipped_header_and_message_keys(
+				conversation->ratchet->skipped_header_and_message_keys,
+				packet,
+				message,
+				receive_message_number,
+				previous_receive_message_number);
+		if (status_int == 0) {
+			// found a key and successfully decrypted the message
+			goto cleanup;
+		}
 	}
 
 	status = ratchet_get_receive_header_keys(

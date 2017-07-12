@@ -217,19 +217,21 @@ return_status master_keys_sign(
 
 	sodium_mprotect_readonly(keys);
 
-	int status_int = 0;
-	unsigned long long signed_message_length;
-	status_int = crypto_sign(
-			signed_data->content,
-			&signed_message_length,
-			data->content,
-			data->content_length,
-			keys->private_signing_key->content);
-	if (status_int != 0) {
-		THROW(SIGN_ERROR, "Failed to sign message.");
-	}
+	{
+		int status_int = 0;
+		unsigned long long signed_message_length;
+		status_int = crypto_sign(
+				signed_data->content,
+				&signed_message_length,
+				data->content,
+				data->content_length,
+				keys->private_signing_key->content);
+		if (status_int != 0) {
+			THROW(SIGN_ERROR, "Failed to sign message.");
+		}
 
-	signed_data->content_length = (size_t) signed_message_length;
+		signed_data->content_length = (size_t) signed_message_length;
+	}
 
 cleanup:
 	if (keys != NULL) {

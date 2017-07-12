@@ -54,6 +54,7 @@ static return_status create_prekey_list(
 		size_t * const prekey_list_length) {
 
 	return_status status = return_status_init();
+	user_store_node *user = NULL;
 
 	//create buffers
 	buffer_t *unsigned_prekey_list = NULL;
@@ -75,7 +76,6 @@ static return_status create_prekey_list(
 
 
 	//get the user
-	user_store_node *user = NULL;
 	status = user_store_find_node(&user, users, public_signing_key);
 	THROW_on_error(NOT_FOUND, "Failed to find user.");
 
@@ -99,11 +99,13 @@ static return_status create_prekey_list(
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get prekeys.");
 
 	//add the expiration date
-	time_t expiration_date = time(NULL) + 3600 * 24 * 31 * 3; //the prekey list will expire in 3 months
-	buffer_create_with_existing_array(big_endian_expiration_date, unsigned_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
-	status = endianness_time_to_big_endian(expiration_date, big_endian_expiration_date);
-	THROW_on_error(CONVERSION_ERROR, "Failed to convert expiration date to big endian.");
-	unsigned_prekey_list->content_length = unsigned_prekey_list->buffer_length;
+	{
+		time_t expiration_date = time(NULL) + 3600 * 24 * 31 * 3; //the prekey list will expire in 3 months
+		buffer_create_with_existing_array(big_endian_expiration_date, unsigned_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
+		status = endianness_time_to_big_endian(expiration_date, big_endian_expiration_date);
+		THROW_on_error(CONVERSION_ERROR, "Failed to convert expiration date to big endian.");
+		unsigned_prekey_list->content_length = unsigned_prekey_list->buffer_length;
+	}
 
 	//sign the prekey list with the current identity key
 	status = master_keys_sign(
@@ -315,15 +317,17 @@ return_status molch_list_users(
 	}
 
 	//get the list of users and copy it
-	buffer_t *user_list_buffer = NULL;
-	status = user_store_list(&user_list_buffer, users);
-	THROW_on_error(CREATION_ERROR, "Failed to create user list.");
+	{
+		buffer_t *user_list_buffer = NULL;
+		status = user_store_list(&user_list_buffer, users);
+		THROW_on_error(CREATION_ERROR, "Failed to create user list.");
 
-	*count = molch_user_count();
+		*count = molch_user_count();
 
-	*user_list = user_list_buffer->content;
-	*user_list_length = user_list_buffer->content_length;
-	free_and_null_if_valid(user_list_buffer); //free the buffer_t struct while leaving content intact
+		*user_list = user_list_buffer->content;
+		*user_list_length = user_list_buffer->content_length;
+		free_and_null_if_valid(user_list_buffer); //free the buffer_t struct while leaving content intact
+	}
 
 cleanup:
 	return status;
@@ -376,24 +380,24 @@ static return_status verify_prekey_list(
 	buffer_t *verified_prekey_list = buffer_create_on_heap(prekey_list_length - SIGNATURE_SIZE, prekey_list_length - SIGNATURE_SIZE);
 	THROW_on_failed_alloc(verified_prekey_list);
 
-	int status_int = 0;
-
 	//verify the signature
-	unsigned long long verified_length;
-	status_int = crypto_sign_open(
-			verified_prekey_list->content,
-			&verified_length,
-			prekey_list,
-			(unsigned long long)prekey_list_length,
-			public_signing_key->content);
-	if (status_int != 0) {
-		THROW(VERIFICATION_FAILED, "Failed to verify prekey list signature.");
-	}
-	if (verified_length > SIZE_MAX)
 	{
-		THROW(CONVERSION_ERROR, "Length is bigger than size_t.");
+		unsigned long long verified_length;
+		int status_int = crypto_sign_open(
+				verified_prekey_list->content,
+				&verified_length,
+				prekey_list,
+				(unsigned long long)prekey_list_length,
+				public_signing_key->content);
+		if (status_int != 0) {
+			THROW(VERIFICATION_FAILED, "Failed to verify prekey list signature.");
+		}
+		if (verified_length > SIZE_MAX)
+		{
+			THROW(CONVERSION_ERROR, "Length is bigger than size_t.");
+		}
+		verified_prekey_list->content_length = (size_t)verified_length;
 	}
-	verified_prekey_list->content_length = (size_t)verified_length;
 
 	//get the expiration date
 	time_t expiration_date;
@@ -402,20 +406,24 @@ static return_status verify_prekey_list(
 	THROW_on_error(CONVERSION_ERROR, "Failed to convert expiration date to big endian.");
 
 	//make sure the prekey list isn't too old
-	time_t current_time = time(NULL);
-	if (expiration_date < current_time) {
-		THROW(OUTDATED, "Prekey list has expired (older than 3 months).");
+	{
+		time_t current_time = time(NULL);
+		if (expiration_date < current_time) {
+			THROW(OUTDATED, "Prekey list has expired (older than 3 months).");
+		}
 	}
 
 	//copy the public identity key
-	status_int = buffer_copy(
-			public_identity_key,
-			0,
-			verified_prekey_list,
-			0,
-			PUBLIC_KEY_SIZE);
-	if (status_int != 0) {
-		THROW(BUFFER_ERROR, "Failed to copy public identity.");
+	{
+		int status_int = buffer_copy(
+				public_identity_key,
+				0,
+				verified_prekey_list,
+				0,
+				PUBLIC_KEY_SIZE);
+		if (status_int != 0) {
+			THROW(BUFFER_ERROR, "Failed to copy public identity.");
+		}
 	}
 
 cleanup:
@@ -504,8 +512,6 @@ return_status molch_start_send_conversation(
 	status = user_store_find_node(&user, users, sender_public_master_key_buffer);
 	THROW_on_error(NOT_FOUND, "User not found.");
 
-	int status_int = 0;
-
 	//get the receivers public ephemeral and identity
 	status = verify_prekey_list(
 			prekey_list,
@@ -529,9 +535,11 @@ return_status molch_start_send_conversation(
 	THROW_on_error(CREATION_ERROR, "Failed to start send converstion.");
 
 	//copy the conversation id
-	status_int = buffer_clone(conversation_id_buffer, conversation->id);
-	if (status_int != 0) {
-		THROW(BUFFER_ERROR, "Failed to clone conversation id.");
+	{
+		int status_int = buffer_clone(conversation_id_buffer, conversation->id);
+		if (status_int != 0) {
+			THROW(BUFFER_ERROR, "Failed to clone conversation id.");
+		}
 	}
 
 	status = conversation_store_add(user->conversations, conversation);
@@ -645,8 +653,6 @@ return_status molch_start_receive_conversation(
 	//unlock the master keys
 	sodium_mprotect_readonly(user->master_keys);
 
-	int status_int = 0;
-
 	//create the conversation
 	status = conversation_start_receive_conversation(
 			&conversation,
@@ -658,9 +664,11 @@ return_status molch_start_receive_conversation(
 	THROW_on_error(CREATION_ERROR, "Failed to start receive conversation.");
 
 	//copy the conversation id
-	status_int = buffer_clone(conversation_id_buffer, conversation->id);
-	if (status_int != 0) {
-		THROW(BUFFER_ERROR, "Failed to clone conversation id.");
+	{
+		int status_int = buffer_clone(conversation_id_buffer, conversation->id);
+		if (status_int != 0) {
+			THROW(BUFFER_ERROR, "Failed to clone conversation id.");
+		}
 	}
 
 	//create the prekey list
@@ -727,29 +735,31 @@ static return_status find_conversation(
 	buffer_create_with_existing_const_array(conversation_id_buffer, conversation_id, CONVERSATION_ID_SIZE);
 
 	//go through all the users
-	user_store_node *node = users->head;
-	while (node != NULL) {
-		status = conversation_store_find_node(&conversation_node, node->conversations, conversation_id_buffer);
-		THROW_on_error(GENERIC_ERROR, "Failure while searching for node.");
-		if (conversation_node != NULL) {
-			//found the conversation we're searching for
-			break;
+	{
+		user_store_node *node = users->head;
+		while (node != NULL) {
+			status = conversation_store_find_node(&conversation_node, node->conversations, conversation_id_buffer);
+			THROW_on_error(GENERIC_ERROR, "Failure while searching for node.");
+			if (conversation_node != NULL) {
+				//found the conversation we're searching for
+				break;
+			}
+			user_store_node *next = node->next;
+			node = next;
 		}
-		user_store_node *next = node->next;
-		node = next;
-	}
 
-	if (conversation_node == NULL) {
-		goto cleanup;
-	}
+		if (conversation_node == NULL) {
+			goto cleanup;
+		}
 
-	//return the containing user
-	if ((user != NULL) && (node != NULL)) {
-		*user = node;
-	}
+		//return the containing user
+		if ((user != NULL) && (node != NULL)) {
+			*user = node;
+		}
 
-	if (conversations != NULL) {
-		*conversations = node->conversations;
+		if (conversations != NULL) {
+			*conversations = node->conversations;
+		}
 	}
 
 cleanup:
@@ -943,16 +953,18 @@ return_status molch_end_conversation(
 	}
 
 	//find the conversation
-	conversation_t *conversation = NULL;
-	user_store_node *user = NULL;
-	status = find_conversation(&conversation, conversation_id, NULL, &user);
-	THROW_on_error(NOT_FOUND, "Couldn't find converstion.");
+	{
+		conversation_t *conversation = NULL;
+		user_store_node *user = NULL;
+		status = find_conversation(&conversation, conversation_id, NULL, &user);
+		THROW_on_error(NOT_FOUND, "Couldn't find converstion.");
 
-	if (conversation == NULL) {
-		THROW(NOT_FOUND, "Couldn'nt find conversation.");
+		if (conversation == NULL) {
+			THROW(NOT_FOUND, "Couldn'nt find conversation.");
+		}
+
+		conversation_store_remove_by_id(user->conversations, conversation->id);
 	}
-
-	conversation_store_remove_by_id(user->conversations, conversation->id);
 
 	if (backup != NULL) {
 		if (backup_length == 0) {
@@ -1004,19 +1016,21 @@ return_status molch_list_conversations(
 
 	*conversation_list = NULL;
 
-	user_store_node *user = NULL;
-	status = user_store_find_node(&user, users, user_public_master_key_buffer);
-	THROW_on_error(NOT_FOUND, "No user found for the given public identity.")
+	{
+		user_store_node *user = NULL;
+		status = user_store_find_node(&user, users, user_public_master_key_buffer);
+		THROW_on_error(NOT_FOUND, "No user found for the given public identity.")
 
-	status = conversation_store_list(&conversation_list_buffer, user->conversations);
-	on_error {
-		THROW(DATA_FETCH_ERROR, "Failed to list conversations.");
-	}
-	if (conversation_list_buffer == NULL) {
-		// list is empty
-		*conversation_list = NULL;
-		*number = 0;
-		goto cleanup;
+		status = conversation_store_list(&conversation_list_buffer, user->conversations);
+		on_error {
+			THROW(DATA_FETCH_ERROR, "Failed to list conversations.");
+		}
+		if (conversation_list_buffer == NULL) {
+			// list is empty
+			*conversation_list = NULL;
+			*number = 0;
+			goto cleanup;
+		}
 	}
 
 	if ((conversation_list_buffer->content_length % CONVERSATION_ID_SIZE) != 0) {
@@ -1087,6 +1101,8 @@ return_status molch_conversation_export(
 	buffer_t *backup_nonce = NULL;
 	buffer_t *backup_buffer = NULL;
 
+	size_t conversation_size;
+
 	EncryptedBackup encrypted_backup_struct;
 	encrypted_backup__init(&encrypted_backup_struct);
 	Conversation *conversation_struct = NULL;
@@ -1105,17 +1121,19 @@ return_status molch_conversation_export(
 	}
 
 	//find the conversation
-	conversation_t *conversation = NULL;
-	status = find_conversation(&conversation, conversation_id, NULL, NULL);
-	THROW_on_error(NOT_FOUND, "Failed to find the conversation.");
+	{
+		conversation_t *conversation = NULL;
+		status = find_conversation(&conversation, conversation_id, NULL, NULL);
+		THROW_on_error(NOT_FOUND, "Failed to find the conversation.");
 
-	//export the conversation
-	status = conversation_export(conversation, &conversation_struct);
-	conversation = NULL; //remove alias
-	THROW_on_error(EXPORT_ERROR, "Failed to export conversation to protobuf-c struct.");
+		//export the conversation
+		status = conversation_export(conversation, &conversation_struct);
+		conversation = NULL; //remove alias
+		THROW_on_error(EXPORT_ERROR, "Failed to export conversation to protobuf-c struct.");
+	}
 
 	//pack the struct
-	const size_t conversation_size = conversation__get_packed_size(conversation_struct);
+	conversation_size = conversation__get_packed_size(conversation_struct);
 	conversation_buffer = buffer_create_with_custom_allocator(conversation_size, 0, zeroed_malloc, zeroed_free);
 	THROW_on_failed_alloc(conversation_buffer);
 
@@ -1136,15 +1154,17 @@ return_status molch_conversation_export(
 	THROW_on_failed_alloc(backup_buffer);
 
 	//encrypt the backup
-	int status_int = crypto_secretbox_easy(
-			backup_buffer->content,
-			conversation_buffer->content,
-			conversation_buffer->content_length,
-			backup_nonce->content,
-			global_backup_key->content);
-	if (status_int != 0) {
-		backup_buffer->content_length = 0;
-		THROW(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
+	{
+		int status_int = crypto_secretbox_easy(
+				backup_buffer->content,
+				conversation_buffer->content,
+				conversation_buffer->content_length,
+				backup_nonce->content,
+				global_backup_key->content);
+		if (status_int != 0) {
+			backup_buffer->content_length = 0;
+			THROW(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
+		}
 	}
 
 	//fill in the encrypted backup struct
@@ -1162,11 +1182,13 @@ return_status molch_conversation_export(
 	encrypted_backup_struct.encrypted_backup.len = backup_buffer->content_length;
 
 	//now pack the entire backup
-	const size_t encrypted_backup_size = encrypted_backup__get_packed_size(&encrypted_backup_struct);
-	*backup = (unsigned char*)malloc(encrypted_backup_size);
-	*backup_length = encrypted_backup__pack(&encrypted_backup_struct, *backup);
-	if (*backup_length != encrypted_backup_size) {
-		THROW(PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
+	{
+		const size_t encrypted_backup_size = encrypted_backup__get_packed_size(&encrypted_backup_struct);
+		*backup = (unsigned char*)malloc(encrypted_backup_size);
+		*backup_length = encrypted_backup__pack(&encrypted_backup_struct, *backup);
+		if (*backup_length != encrypted_backup_size) {
+			THROW(PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
+		}
 	}
 
 cleanup:
@@ -1212,6 +1234,8 @@ return_status molch_conversation_import(
 	buffer_t *decrypted_backup = NULL;
 	Conversation *conversation_struct = NULL;
 	conversation_t *conversation = NULL;
+	conversation_store *containing_store = NULL;
+	conversation_t *existing_conversation = NULL;
 
 	//check input
 	if ((backup == NULL) || (backup_key == NULL)) {
@@ -1248,14 +1272,16 @@ return_status molch_conversation_import(
 	THROW_on_failed_alloc(decrypted_backup);
 
 	//decrypt the backup
-	int status_int = crypto_secretbox_open_easy(
-			decrypted_backup->content,
-			encrypted_backup_struct->encrypted_backup.data,
-			encrypted_backup_struct->encrypted_backup.len,
-			encrypted_backup_struct->encrypted_backup_nonce.data,
-			backup_key);
-	if (status_int != 0) {
-		THROW(DECRYPT_ERROR, "Failed to decrypt conversation backup.");
+	{
+		int status_int = crypto_secretbox_open_easy(
+				decrypted_backup->content,
+				encrypted_backup_struct->encrypted_backup.data,
+				encrypted_backup_struct->encrypted_backup.len,
+				encrypted_backup_struct->encrypted_backup_nonce.data,
+				backup_key);
+		if (status_int != 0) {
+			THROW(DECRYPT_ERROR, "Failed to decrypt conversation backup.");
+		}
 	}
 
 	//unpack the struct
@@ -1268,8 +1294,6 @@ return_status molch_conversation_import(
 	status = conversation_import(&conversation, conversation_struct);
 	THROW_on_error(IMPORT_ERROR, "Failed to import conversation from Protobuf-C struct.");
 
-	conversation_store *containing_store = NULL;
-	conversation_t *existing_conversation = NULL;
 	status = find_conversation(&existing_conversation, conversation->id->content, &containing_store, NULL);
 	THROW_on_error(NOT_FOUND, "Imported conversation has to exist, but it doesn't.");
 
@@ -1323,6 +1347,7 @@ return_status molch_export(
 	buffer_t *users_buffer = NULL;
 	buffer_t *backup_nonce = NULL;
 	buffer_t *backup_buffer = NULL;
+	size_t backup_struct_size;
 
 	EncryptedBackup encrypted_backup_struct;
 	encrypted_backup__init(&encrypted_backup_struct);
@@ -1346,7 +1371,7 @@ return_status molch_export(
 	THROW_on_error(EXPORT_ERROR, "Failed to export user store to protobuf-c struct.");
 
 	//pack the struct
-	const size_t backup_struct_size = backup__get_packed_size(backup_struct);
+	backup_struct_size = backup__get_packed_size(backup_struct);
 	users_buffer = buffer_create_with_custom_allocator(backup_struct_size, 0, zeroed_malloc, zeroed_free);
 	THROW_on_failed_alloc(users_buffer);
 
@@ -1367,15 +1392,17 @@ return_status molch_export(
 	THROW_on_failed_alloc(backup_buffer);
 
 	//encrypt the backup
-	int status_int = crypto_secretbox_easy(
-			backup_buffer->content,
-			users_buffer->content,
-			users_buffer->content_length,
-			backup_nonce->content,
-			global_backup_key->content);
-	if (status_int != 0) {
-		backup_buffer->content_length = 0;
-		THROW(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
+	{
+		int status_int = crypto_secretbox_easy(
+				backup_buffer->content,
+				users_buffer->content,
+				users_buffer->content_length,
+				backup_nonce->content,
+				global_backup_key->content);
+		if (status_int != 0) {
+			backup_buffer->content_length = 0;
+			THROW(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
+		}
 	}
 
 	//fill in the encrypted backup struct
@@ -1393,11 +1420,13 @@ return_status molch_export(
 	encrypted_backup_struct.encrypted_backup.len = backup_buffer->content_length;
 
 	//now pack the entire backup
-	const size_t encrypted_backup_size = encrypted_backup__get_packed_size(&encrypted_backup_struct);
-	*backup = (unsigned char*)malloc(encrypted_backup_size);
-	*backup_length = encrypted_backup__pack(&encrypted_backup_struct, *backup);
-	if (*backup_length != encrypted_backup_size) {
-		THROW(PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
+	{
+		const size_t encrypted_backup_size = encrypted_backup__get_packed_size(&encrypted_backup_struct);
+		*backup = (unsigned char*)malloc(encrypted_backup_size);
+		*backup_length = encrypted_backup__pack(&encrypted_backup_struct, *backup);
+		if (*backup_length != encrypted_backup_size) {
+			THROW(PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
+		}
 	}
 
 cleanup:
@@ -1489,14 +1518,16 @@ return_status molch_import(
 	THROW_on_failed_alloc(decrypted_backup);
 
 	//decrypt the backup
-	int status_int = crypto_secretbox_open_easy(
-			decrypted_backup->content,
-			encrypted_backup_struct->encrypted_backup.data,
-			encrypted_backup_struct->encrypted_backup.len,
-			encrypted_backup_struct->encrypted_backup_nonce.data,
-			backup_key);
-	if (status_int != 0) {
-		THROW(DECRYPT_ERROR, "Failed to decrypt backup.");
+	{
+		int status_int = crypto_secretbox_open_easy(
+				decrypted_backup->content,
+				encrypted_backup_struct->encrypted_backup.data,
+				encrypted_backup_struct->encrypted_backup.len,
+				encrypted_backup_struct->encrypted_backup_nonce.data,
+				backup_key);
+		if (status_int != 0) {
+			THROW(DECRYPT_ERROR, "Failed to decrypt backup.");
+		}
 	}
 
 	//unpack the struct

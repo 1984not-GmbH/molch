@@ -72,30 +72,34 @@ int main(void) {
 	}
 	printf("Successfully created error stack.\n");
 
-	size_t stack_print_length = 0;
-	error_stack = return_status_print(&status, &stack_print_length);
-	if (error_stack == NULL) {
-		fprintf(stderr, "ERROR: Failed to print error stack.\n");
-		status.status = GENERIC_ERROR;
-		goto cleanup;
-	}
-	printf("%s\n", error_stack);
+	{
+		size_t stack_print_length = 0;
+		error_stack = return_status_print(&status, &stack_print_length);
+		if (error_stack == NULL) {
+			fprintf(stderr, "ERROR: Failed to print error stack.\n");
+			status.status = GENERIC_ERROR;
+			goto cleanup;
+		}
+		printf("%s\n", error_stack);
 
-	buffer_create_from_string(stack_trace, "ERROR\nerror stack trace:\n000: GENERIC_ERROR, Error on the first level!\n001: GENERIC_ERROR, Error on the second level!\n");
-	if (buffer_compare_to_raw(stack_trace, (unsigned char*)error_stack, stack_print_length) != 0) {
-		THROW(INCORRECT_DATA, "Stack trace looks differently than expected.");
+		buffer_create_from_string(stack_trace, "ERROR\nerror stack trace:\n000: GENERIC_ERROR, Error on the first level!\n001: GENERIC_ERROR, Error on the second level!\n");
+		if (buffer_compare_to_raw(stack_trace, (unsigned char*)error_stack, stack_print_length) != 0) {
+			THROW(INCORRECT_DATA, "Stack trace looks differently than expected.");
+		}
 	}
 
 	status.status = SUCCESS;
 	return_status_destroy_errors(&status);
 
 	//more tests for return_status_print()
-	return_status successful_status = return_status_init();
-	buffer_create_from_string(success_buffer, "SUCCESS");
-	size_t printed_status_length = 0;
-	printed_status = (unsigned char*) return_status_print(&successful_status, &printed_status_length);
-	if (buffer_compare_to_raw(success_buffer, printed_status, printed_status_length) != 0) {
-		THROW(INCORRECT_DATA, "molch_print_status produces incorrect output.");
+	{
+		return_status successful_status = return_status_init();
+		buffer_create_from_string(success_buffer, "SUCCESS");
+		size_t printed_status_length = 0;
+		printed_status = (unsigned char*) return_status_print(&successful_status, &printed_status_length);
+		if (buffer_compare_to_raw(success_buffer, printed_status, printed_status_length) != 0) {
+			THROW(INCORRECT_DATA, "molch_print_status produces incorrect output.");
+		}
 	}
 
 cleanup:

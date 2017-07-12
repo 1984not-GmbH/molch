@@ -49,6 +49,8 @@ int main(void) {
 
 	return_status status = return_status_init();
 
+	molch_message_type packet_type = NORMAL_MESSAGE;
+
 	if (sodium_init() == -1) {
 		THROW(INIT_ERROR, "Failed to initialize libsodium.");
 	}
@@ -58,13 +60,11 @@ int main(void) {
 	header->content[1] = 0x02;
 	header->content[2] = 0x03;
 	header->content[3] = 0x04;
-	molch_message_type packet_type = NORMAL_MESSAGE;
 	printf("Packet type: %02x\n", packet_type);
 	putchar('\n');
 
 	//NORMAL MESSAGE
 	printf("NORMAL MESSAGE\n");
-	int status_int = 0;
 	status = create_and_print_message(
 			&packet,
 			header_key,
@@ -127,17 +127,23 @@ int main(void) {
 	//PREKEY MESSAGE
 	printf("PREKEY MESSAGE\n");
 	//create the public keys
-	status_int = buffer_fill_random(public_identity_key, PUBLIC_KEY_SIZE);
-	if (status_int != 0) {
-		THROW(KEYGENERATION_FAILED, "Failed to generate public identity key.");
+	{
+		int status_int = buffer_fill_random(public_identity_key, PUBLIC_KEY_SIZE);
+		if (status_int != 0) {
+			THROW(KEYGENERATION_FAILED, "Failed to generate public identity key.");
+		}
 	}
-	status_int = buffer_fill_random(public_ephemeral_key, PUBLIC_KEY_SIZE);
-	if (status_int != 0) {
-		THROW(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
+	{
+		int status_int = buffer_fill_random(public_ephemeral_key, PUBLIC_KEY_SIZE);
+		if (status_int != 0) {
+			THROW(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
+		}
 	}
-	status_int = buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE);
-	if (status_int != 0) {
-		THROW(KEYGENERATION_FAILED, "Failed to generate public prekey.");
+	{
+		int status_int = buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE);
+		if (status_int != 0) {
+			THROW(KEYGENERATION_FAILED, "Failed to generate public prekey.");
+		}
 	}
 
 	buffer_destroy_from_heap_and_null_if_valid(decrypted_header);

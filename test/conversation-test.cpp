@@ -44,11 +44,13 @@ return_status protobuf_export(const conversation_t * const conversation, buffer_
 	status = conversation_export(conversation, &exported_conversation);
 	THROW_on_error(EXPORT_ERROR, "Failed to export conversation.");
 
-	size_t export_size = conversation__get_packed_size(exported_conversation);
-	*export_buffer = buffer_create_on_heap(export_size, 0);
-	(*export_buffer)->content_length = conversation__pack(exported_conversation, (*export_buffer)->content);
-	if (export_size != (*export_buffer)->content_length) {
-		THROW(PROTOBUF_PACK_ERROR, "Failed to pack protobuf-c struct into buffer.");
+	{
+		size_t export_size = conversation__get_packed_size(exported_conversation);
+		*export_buffer = buffer_create_on_heap(export_size, 0);
+		(*export_buffer)->content_length = conversation__pack(exported_conversation, (*export_buffer)->content);
+		if (export_size != (*export_buffer)->content_length) {
+			THROW(PROTOBUF_PACK_ERROR, "Failed to pack protobuf-c struct into buffer.");
+		}
 	}
 
 cleanup:

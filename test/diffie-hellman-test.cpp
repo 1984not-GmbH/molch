@@ -20,7 +20,7 @@
  */
 #include <cstdio>
 #include <cstdlib>
-#include <csodium>
+#include <sodium.h>
 
 #include "../lib/diffie-hellman.h"
 #include "utils.h"

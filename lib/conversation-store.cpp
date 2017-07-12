@@ -224,10 +224,12 @@ return_status conversation_store_export(
 	}
 
 	//export the conversations
-	conversation_t *node = store->head;
-	for (size_t i = 0; (i < store->length) && (node != NULL); i++, node = node->next) {
-		status = conversation_export(node, &(*conversations)[i]);
-		THROW_on_error(EXPORT_ERROR, "Failed to export conversation.");
+	{
+		conversation_t *node = store->head;
+		for (size_t i = 0; (i < store->length) && (node != NULL); i++, node = node->next) {
+			status = conversation_export(node, &(*conversations)[i]);
+			THROW_on_error(EXPORT_ERROR, "Failed to export conversation.");
+		}
 	}
 
 	*length = store->length;

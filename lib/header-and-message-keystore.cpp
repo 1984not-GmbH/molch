@@ -106,16 +106,19 @@ return_status create_and_populate_node(
 	*new_node = create_node();
 	THROW_on_failed_alloc(*new_node);
 
-	int status_int = 0;
 	//set keys and expiration date
 	(*new_node)->expiration_date = expiration_date;
-	status_int = buffer_clone((*new_node)->message_key, message_key);
-	if (status_int != 0) {
-		THROW(BUFFER_ERROR, "Failed to copy message key.");
+	{
+		int status_int = buffer_clone((*new_node)->message_key, message_key);
+		if (status_int != 0) {
+			THROW(BUFFER_ERROR, "Failed to copy message key.");
+		}
 	}
-	status_int = buffer_clone((*new_node)->header_key, header_key);
-	if (status_int != 0) {
-		THROW(BUFFER_ERROR, "Failed to copy header key.");
+	{
+		int status_int = buffer_clone((*new_node)->header_key, header_key);
+		if (status_int != 0) {
+			THROW(BUFFER_ERROR, "Failed to copy header key.");
+		}
 	}
 
 cleanup:
@@ -284,13 +287,15 @@ return_status header_and_message_keystore_export(
 		*key_bundles = NULL;
 	}
 
-	size_t position;
-	header_and_message_keystore_node *node = NULL;
-	for (position = 0, node = store->head;
-		 	(position < store->length) && (node != NULL);
-			position++, node = node->next) {
-		status = header_and_message_keystore_node_export(node, &(*key_bundles)[position]);
-		THROW_on_error(EXPORT_ERROR, "Failed to export header and message keystore node.");
+	{
+		size_t position;
+		header_and_message_keystore_node *node = NULL;
+		for (position = 0, node = store->head;
+				(position < store->length) && (node != NULL);
+				position++, node = node->next) {
+			status = header_and_message_keystore_node_export(node, &(*key_bundles)[position]);
+			THROW_on_error(EXPORT_ERROR, "Failed to export header and message keystore node.");
+		}
 	}
 
 	*bundle_size = store->length;

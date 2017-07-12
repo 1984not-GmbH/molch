@@ -48,11 +48,13 @@ return_status protobuf_export(
 	status = ratchet_export(ratchet, &conversation);
 	THROW_on_error(EXPORT_ERROR, "Failed to export ratchet.");
 
-	size_t export_size = conversation__get_packed_size(conversation);
-	*export_buffer = buffer_create_on_heap(export_size, 0);
-	(*export_buffer)->content_length = conversation__pack(conversation, (*export_buffer)->content);
-	if (export_size != (*export_buffer)->content_length) {
-		THROW(EXPORT_ERROR, "Failed to export ratchet.");
+	{
+		size_t export_size = conversation__get_packed_size(conversation);
+		*export_buffer = buffer_create_on_heap(export_size, 0);
+		(*export_buffer)->content_length = conversation__pack(conversation, (*export_buffer)->content);
+		if (export_size != (*export_buffer)->content_length) {
+			THROW(EXPORT_ERROR, "Failed to export ratchet.");
+		}
 	}
 
 cleanup:
@@ -112,6 +114,10 @@ int main(void) {
 	//protobuf buffers
 	buffer_t *protobuf_export_buffer = NULL;
 	buffer_t *protobuf_second_export_buffer = NULL;
+
+	ratchet_state *alice_state = NULL;
+	ratchet_state *bob_state = NULL;
+	ratchet_header_decryptability decryptable = NOT_TRIED;
 
 	int status_int;
 
@@ -198,7 +204,6 @@ int main(void) {
 
 	//start new ratchet for alice
 	printf("Creating new ratchet for Alice ...\n");
-	ratchet_state *alice_state = NULL;
 	status = ratchet_create(
 			&alice_state,
 			alice_private_identity,
@@ -220,7 +225,6 @@ int main(void) {
 
 	//start new ratchet for bob
 	printf("Creating new ratchet for Bob ...\n");
-	ratchet_state *bob_state = NULL;
 	status = ratchet_create(
 			&bob_state,
 			bob_private_identity,
@@ -346,7 +350,6 @@ int main(void) {
 	putchar('\n');
 
 	//check header decryptability
-	ratchet_header_decryptability decryptable = NOT_TRIED;
 	if (buffer_compare(bob_current_receive_header_key, alice_send_header_key1) == 0) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");

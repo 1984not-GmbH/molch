@@ -302,34 +302,36 @@ int main(void) {
 	)
 
 	//find node by id
-	conversation_t *found_node = NULL;
-	status = conversation_store_find_node(&found_node, store, store->head->next->next->id);
-	THROW_on_error(NOT_FOUND, "Failed to find conversation.");
-	if (found_node != store->head->next->next) {
-		THROW(NOT_FOUND, "Failed to find node by ID.");
-	}
-	printf("Found node by ID.\n");
-
-	//test list export feature
-	buffer_t *conversation_list = NULL;
-	status = conversation_store_list(&conversation_list, store);
-	on_error {
-		THROW(DATA_FETCH_ERROR, "Failed to list conversations.");
-	}
-	if ((conversation_list == NULL) || (conversation_list->content_length != (CONVERSATION_ID_SIZE * store->length))) {
-		THROW(DATA_FETCH_ERROR, "Failed to get list of conversations.");
-	}
-
-	//check for all conversations that they exist
-	for (size_t i = 0; i < (conversation_list->content_length / CONVERSATION_ID_SIZE); i++) {
-		buffer_create_with_existing_array(current_id, conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
-		status = conversation_store_find_node(&found_node, store, current_id);
-		if ((status.status != SUCCESS) || (found_node == NULL)) {
-			buffer_destroy_from_heap_and_null_if_valid(conversation_list);
-			THROW(INCORRECT_DATA, "Exported list of conversations was incorrect.");
+	{
+		conversation_t *found_node = NULL;
+		status = conversation_store_find_node(&found_node, store, store->head->next->next->id);
+		THROW_on_error(NOT_FOUND, "Failed to find conversation.");
+		if (found_node != store->head->next->next) {
+			THROW(NOT_FOUND, "Failed to find node by ID.");
 		}
+		printf("Found node by ID.\n");
+
+		//test list export feature
+		buffer_t *conversation_list = NULL;
+		status = conversation_store_list(&conversation_list, store);
+		on_error {
+			THROW(DATA_FETCH_ERROR, "Failed to list conversations.");
+		}
+		if ((conversation_list == NULL) || (conversation_list->content_length != (CONVERSATION_ID_SIZE * store->length))) {
+			THROW(DATA_FETCH_ERROR, "Failed to get list of conversations.");
+		}
+
+		//check for all conversations that they exist
+		for (size_t i = 0; i < (conversation_list->content_length / CONVERSATION_ID_SIZE); i++) {
+			buffer_create_with_existing_array(current_id, conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
+			status = conversation_store_find_node(&found_node, store, current_id);
+			if ((status.status != SUCCESS) || (found_node == NULL)) {
+				buffer_destroy_from_heap_and_null_if_valid(conversation_list);
+				THROW(INCORRECT_DATA, "Exported list of conversations was incorrect.");
+			}
+		}
+		buffer_destroy_from_heap_and_null_if_valid(conversation_list);
 	}
-	buffer_destroy_from_heap_and_null_if_valid(conversation_list);
 
 	//test protobuf export
 	printf("Export to Protobuf-C\n");

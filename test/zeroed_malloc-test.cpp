@@ -36,22 +36,28 @@ int main(void) {
 	}
 
 	printf("Checking size.\n");
-	size_t size = 0;
-	memcpy(&size, pointer - sizeof(size_t), sizeof(size_t));
-	if (size != 100) {
-		THROW(INCORRECT_DATA, "Size stored in the memory location is incorrect.");
+	{
+		size_t size = 0;
+		memcpy(&size, pointer - sizeof(size_t), sizeof(size_t));
+		if (size != 100) {
+			THROW(INCORRECT_DATA, "Size stored in the memory location is incorrect.");
+		}
+		printf("size = %zu\n", size);
 	}
-	printf("size = %zu\n", size);
 
 	printf("Checking pointer.\n");
-	char *pointer_copy = NULL;
-	memcpy(&pointer_copy, pointer - sizeof(size_t) - sizeof(void*), sizeof(void*));
-	printf("pointer_copy = %p\n", (void*)pointer_copy);
+	{
+		char *pointer_copy = NULL;
+		memcpy(&pointer_copy, pointer - sizeof(size_t) - sizeof(void*), sizeof(void*));
+		printf("pointer_copy = %p\n", (void*)pointer_copy);
+	}
 
 	zeroed_free(pointer);
 
-	void *new_pointer = protobuf_c_allocator(NULL, 20);
-	protobuf_c_free(NULL, new_pointer);
+	{
+		void *new_pointer = protobuf_c_allocator(NULL, 20);
+		protobuf_c_free(NULL, new_pointer);
+	}
 
 cleanup:
 	on_error {

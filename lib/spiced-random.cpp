@@ -68,18 +68,19 @@ return_status spiced_random(
 	}
 
 	//derive random data from the random spice
-	int status_int = 0;
-	status_int = crypto_pwhash(
-			spice->content,
-			spice->content_length,
-			(const char*)low_entropy_spice->content,
-			low_entropy_spice->content_length,
-			salt->content,
-			crypto_pwhash_OPSLIMIT_INTERACTIVE,
-			crypto_pwhash_MEMLIMIT_INTERACTIVE,
-			crypto_pwhash_ALG_DEFAULT);
-	if (status_int != 0) {
-		THROW(GENERIC_ERROR, "Failed to derive random data from spice.");
+	{
+		int status_int = crypto_pwhash(
+				spice->content,
+				spice->content_length,
+				(const char*)low_entropy_spice->content,
+				low_entropy_spice->content_length,
+				salt->content,
+				crypto_pwhash_OPSLIMIT_INTERACTIVE,
+				crypto_pwhash_MEMLIMIT_INTERACTIVE,
+				crypto_pwhash_ALG_DEFAULT);
+		if (status_int != 0) {
+			THROW(GENERIC_ERROR, "Failed to derive random data from spice.");
+		}
 	}
 
 	//now combine the spice with the OS provided random data.

@@ -280,58 +280,60 @@ int main(void) {
 	printf("Successfully listed users.\n");
 
 	//find node
-	user_store_node *bob_node = NULL;
-	status = user_store_find_node(&bob_node, store, bob_public_signing_key);
-	THROW_on_error(NOT_FOUND, "Failed to find Bob's node.");
-	printf("Node found.\n");
+	{
+		user_store_node *bob_node = NULL;
+		status = user_store_find_node(&bob_node, store, bob_public_signing_key);
+		THROW_on_error(NOT_FOUND, "Failed to find Bob's node.");
+		printf("Node found.\n");
 
-	if (buffer_compare(bob_node->public_signing_key, bob_public_signing_key) != 0) {
-		THROW(INCORRECT_DATA, "Bob's data from the user store doesn't match.");
-	}
-	printf("Data from the node matches.\n");
+		if (buffer_compare(bob_node->public_signing_key, bob_public_signing_key) != 0) {
+			THROW(INCORRECT_DATA, "Bob's data from the user store doesn't match.");
+		}
+		printf("Data from the node matches.\n");
 
-	//remove a user identified by it's key
-	status = user_store_remove_by_key(store, bob_public_signing_key);
-	THROW_on_error(REMOVE_ERROR, "Failed to remvoe user from user store by key.");
-	//check the length
-	if (store->length != 2) {
-		THROW(INCORRECT_DATA, "User store has incorrect length.");
-	}
-	printf("Length of the user store matches.");
-	//check the user list
-	status = user_store_list(&list, store);
-	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.");
-	if (list == NULL) {
-		THROW(INCORRECT_DATA, "Failed to list users, user list is NULL.");
-	}
-	if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
-		THROW(INCORRECT_DATA, "Removing user failed.");
-	}
-	buffer_destroy_from_heap_and_null_if_valid(list);
-	printf("Successfully removed user.\n");
+		//remove a user identified by it's key
+		status = user_store_remove_by_key(store, bob_public_signing_key);
+		THROW_on_error(REMOVE_ERROR, "Failed to remvoe user from user store by key.");
+		//check the length
+		if (store->length != 2) {
+			THROW(INCORRECT_DATA, "User store has incorrect length.");
+		}
+		printf("Length of the user store matches.");
+		//check the user list
+		status = user_store_list(&list, store);
+		THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.");
+		if (list == NULL) {
+			THROW(INCORRECT_DATA, "Failed to list users, user list is NULL.");
+		}
+		if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+			THROW(INCORRECT_DATA, "Removing user failed.");
+		}
+		buffer_destroy_from_heap_and_null_if_valid(list);
+		printf("Successfully removed user.\n");
 
-	//recreate bob
-	status = user_store_create_user(
-			store,
-			NULL,
-			bob_public_signing_key,
-			NULL);
-	THROW_on_error(CREATION_ERROR, "Failed to recreate.");
-	printf("Successfully recreated Bob.\n");
+		//recreate bob
+		status = user_store_create_user(
+				store,
+				NULL,
+				bob_public_signing_key,
+				NULL);
+		THROW_on_error(CREATION_ERROR, "Failed to recreate.");
+		printf("Successfully recreated Bob.\n");
 
-	//now find bob again
-	status = user_store_find_node(&bob_node, store, bob_public_signing_key);
-	THROW_on_error(NOT_FOUND, "Failed to find Bob's node.");
-	printf("Bob's node found again.\n");
+		//now find bob again
+		status = user_store_find_node(&bob_node, store, bob_public_signing_key);
+		THROW_on_error(NOT_FOUND, "Failed to find Bob's node.");
+		printf("Bob's node found again.\n");
 
-	//remove bob by it's node
-	user_store_remove(store, bob_node);
-	//check the length
-	if (store->length != 2) {
-		THROW(INCORRECT_DATA, "User store has incorrect length.");
+		//remove bob by it's node
+		user_store_remove(store, bob_node);
+		//check the length
+		if (store->length != 2) {
+			THROW(INCORRECT_DATA, "User store has incorrect length.");
+		}
+		printf("Length of the user store matches.");
 	}
-	printf("Length of the user store matches.");
 
 
 	//test Protobuf-C export

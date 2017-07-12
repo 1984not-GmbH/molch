@@ -256,33 +256,35 @@ int main(void) {
 	printf("Prekey list matches the prekey store!\n");
 
 	//get a private key
-	const size_t prekey_index = 10;
-	if (buffer_clone(public_prekey, store->prekeys[prekey_index].public_key) != 0) {
-		THROW(BUFFER_ERROR, "Failed to clone public key.");
-	}
+	{
+		const size_t prekey_index = 10;
+		if (buffer_clone(public_prekey, store->prekeys[prekey_index].public_key) != 0) {
+			THROW(BUFFER_ERROR, "Failed to clone public key.");
+		}
 
-	status = prekey_store_get_prekey(store, public_prekey, private_prekey1);
-	THROW_on_error(DATA_FETCH_ERROR, "Failed to get prekey.")
-	printf("Get a Prekey:\n");
-	printf("Public key:\n");
-	print_hex(public_prekey);
-	printf("Private key:\n");
-	print_hex(private_prekey1);
-	putchar('\n');
+		status = prekey_store_get_prekey(store, public_prekey, private_prekey1);
+		THROW_on_error(DATA_FETCH_ERROR, "Failed to get prekey.")
+		printf("Get a Prekey:\n");
+		printf("Public key:\n");
+		print_hex(public_prekey);
+		printf("Private key:\n");
+		print_hex(private_prekey1);
+		putchar('\n');
 
-	if (store->deprecated_prekeys == NULL) {
-		THROW(GENERIC_ERROR, "Failed to deprecate requested key.");
-	}
+		if (store->deprecated_prekeys == NULL) {
+			THROW(GENERIC_ERROR, "Failed to deprecate requested key.");
+		}
 
-	if ((buffer_compare(public_prekey, store->deprecated_prekeys->public_key) != 0)
-			|| (buffer_compare(private_prekey1, store->deprecated_prekeys->private_key) != 0)) {
-		THROW(INCORRECT_DATA, "Deprecated key is incorrect.");
-	}
+		if ((buffer_compare(public_prekey, store->deprecated_prekeys->public_key) != 0)
+				|| (buffer_compare(private_prekey1, store->deprecated_prekeys->private_key) != 0)) {
+			THROW(INCORRECT_DATA, "Deprecated key is incorrect.");
+		}
 
-	if (buffer_compare(store->prekeys[prekey_index].public_key, public_prekey) == 0) {
-		THROW(KEYGENERATION_FAILED, "Failed to generate new key for deprecated one.");
+		if (buffer_compare(store->prekeys[prekey_index].public_key, public_prekey) == 0) {
+			THROW(KEYGENERATION_FAILED, "Failed to generate new key for deprecated one.");
+		}
+		printf("Successfully deprecated requested key!\n");
 	}
-	printf("Successfully deprecated requested key!\n");
 
 	//check if the prekey can be obtained from the deprecated keys
 	status = prekey_store_get_prekey(store, public_prekey, private_prekey2);

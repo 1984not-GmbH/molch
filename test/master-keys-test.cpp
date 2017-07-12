@@ -63,35 +63,43 @@ return_status protobuf_export(
 
 	//export the keys
 	//public signing key
-	size_t public_signing_key_proto_size = key__get_packed_size(public_signing_key);
-	*public_signing_key_buffer = buffer_create_on_heap(public_signing_key_proto_size, 0);
-	(*public_signing_key_buffer)->content_length = key__pack(public_signing_key, (*public_signing_key_buffer)->content);
-	if ((*public_signing_key_buffer)->content_length != public_signing_key_proto_size) {
-		THROW(EXPORT_ERROR, "Failed to export public signing key.");
+	{
+		size_t public_signing_key_proto_size = key__get_packed_size(public_signing_key);
+		*public_signing_key_buffer = buffer_create_on_heap(public_signing_key_proto_size, 0);
+		(*public_signing_key_buffer)->content_length = key__pack(public_signing_key, (*public_signing_key_buffer)->content);
+		if ((*public_signing_key_buffer)->content_length != public_signing_key_proto_size) {
+			THROW(EXPORT_ERROR, "Failed to export public signing key.");
+		}
 	}
 
 	//private signing key
-	size_t private_signing_key_proto_size = key__get_packed_size(private_signing_key);
-	*private_signing_key_buffer = buffer_create_on_heap(private_signing_key_proto_size, 0);
-	(*private_signing_key_buffer)->content_length = key__pack(private_signing_key, (*private_signing_key_buffer)->content);
-	if ((*private_signing_key_buffer)->content_length != private_signing_key_proto_size) {
-		THROW(EXPORT_ERROR, "Failed to export private signing key.");
+	{
+		size_t private_signing_key_proto_size = key__get_packed_size(private_signing_key);
+		*private_signing_key_buffer = buffer_create_on_heap(private_signing_key_proto_size, 0);
+		(*private_signing_key_buffer)->content_length = key__pack(private_signing_key, (*private_signing_key_buffer)->content);
+		if ((*private_signing_key_buffer)->content_length != private_signing_key_proto_size) {
+			THROW(EXPORT_ERROR, "Failed to export private signing key.");
+		}
 	}
 
 	//public identity key
-	size_t public_identity_key_proto_size = key__get_packed_size(public_identity_key);
-	*public_identity_key_buffer = buffer_create_on_heap(public_identity_key_proto_size, 0);
-	(*public_identity_key_buffer)->content_length = key__pack(public_identity_key, (*public_identity_key_buffer)->content);
-	if ((*public_identity_key_buffer)->content_length != public_identity_key_proto_size) {
-		THROW(EXPORT_ERROR, "Failed to export public identity key.");
+	{
+		size_t public_identity_key_proto_size = key__get_packed_size(public_identity_key);
+		*public_identity_key_buffer = buffer_create_on_heap(public_identity_key_proto_size, 0);
+		(*public_identity_key_buffer)->content_length = key__pack(public_identity_key, (*public_identity_key_buffer)->content);
+		if ((*public_identity_key_buffer)->content_length != public_identity_key_proto_size) {
+			THROW(EXPORT_ERROR, "Failed to export public identity key.");
+		}
 	}
 
 	//private identity key
-	size_t private_identity_key_proto_size = key__get_packed_size(private_identity_key);
-	*private_identity_key_buffer = buffer_create_on_heap(private_identity_key_proto_size, 0);
-	(*private_identity_key_buffer)->content_length = key__pack(private_identity_key, (*private_identity_key_buffer)->content);
-	if ((*private_identity_key_buffer)->content_length != private_identity_key_proto_size) {
-		THROW(EXPORT_ERROR, "Failed to export private identity key.");
+	{
+		size_t private_identity_key_proto_size = key__get_packed_size(private_identity_key);
+		*private_identity_key_buffer = buffer_create_on_heap(private_identity_key_proto_size, 0);
+		(*private_identity_key_buffer)->content_length = key__pack(private_identity_key, (*private_identity_key_buffer)->content);
+		if ((*private_identity_key_buffer)->content_length != private_identity_key_proto_size) {
+			THROW(EXPORT_ERROR, "Failed to export private identity key.");
+		}
 	}
 
 cleanup:

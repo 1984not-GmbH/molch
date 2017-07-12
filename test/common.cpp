@@ -68,10 +68,12 @@ return_status generate_and_print_keypair(
 		THROW(INCORRECT_BUFFER_SIZE, "Public key buffer is too short.");
 	}
 	//generate keypair
-	int status_int = 0;
-	status_int = crypto_box_keypair(public_key->content, private_key->content);
-	if (status_int != 0) {
-		THROW(KEYGENERATION_FAILED, "Failed to generate keypair.");
+	{
+		int status_int = 0;
+		status_int = crypto_box_keypair(public_key->content, private_key->content);
+		if (status_int != 0) {
+			THROW(KEYGENERATION_FAILED, "Failed to generate keypair.");
+		}
 	}
 	public_key->content_length = crypto_box_PUBLICKEYBYTES;
 	private_key->content_length = crypto_box_SECRETKEYBYTES;

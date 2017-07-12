@@ -24,6 +24,10 @@
 
 #include "common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // possible status types, either SUCCESS or a variety of error types.
 typedef enum status_type { //TODO add more error types
 	SUCCESS = 0,
@@ -120,5 +124,9 @@ char *return_status_print(const return_status * const status, size_t *length) __
 	if (pointer == NULL) {\
 		THROW(ALLOCATION_FAILED, "Failed to allocate memory.");\
 	}
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

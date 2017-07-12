@@ -68,18 +68,19 @@ return_status derive_key(
 	status = endianness_uint32_to_big_endian(subkey_counter, big_endian_subkey_counter);
 	THROW_on_error(CONVERSION_ERROR, "Failed to convert subkey counter to big endian.");
 
-	int status_int = 0;
-	status_int = crypto_generichash_blake2b_salt_personal(
-			derived_key->content,
-			derived_key->content_length,
-			NULL, //input
-			0, //input length
-			input_key->content,
-			input_key->content_length,
-			salt->content,
-			personal->content);
-	if (status_int != 0) {
-		THROW(KEYDERIVATION_FAILED, "Failed to derive key via crypto_generichash_blake2b_salt_personal");
+	{
+		int status_int = crypto_generichash_blake2b_salt_personal(
+				derived_key->content,
+				derived_key->content_length,
+				NULL, //input
+				0, //input length
+				input_key->content,
+				input_key->content_length,
+				salt->content,
+				personal->content);
+		if (status_int != 0) {
+			THROW(KEYDERIVATION_FAILED, "Failed to derive key via crypto_generichash_blake2b_salt_personal");
+		}
 	}
 
 cleanup:
@@ -166,7 +167,6 @@ return_status derive_root_next_header_and_chain_keys(
 		THROW(INVALID_INPUT, "Invalid input to derive_root_next_header_and_chain_keys.");
 	}
 
-	int status_int = 0;
 	//DH(DHRs, DHRr) or DH(DHRp, DHRs)
 	status = diffie_hellman(
 			diffie_hellman_secret,
@@ -178,15 +178,17 @@ return_status derive_root_next_header_and_chain_keys(
 
 	//key to derive from
 	//HMAC-HASH(RK, DH(..., ...))
-	status_int = crypto_generichash(
-			derivation_key->content,
-			derivation_key->content_length,
-			diffie_hellman_secret->content,
-			diffie_hellman_secret->content_length,
-			previous_root_key->content,
-			previous_root_key->content_length);
-	if (status_int != 0) {
-		THROW(GENERIC_ERROR, "Failed to hash diffie hellman and previous root key.");
+	{
+		int status_int = crypto_generichash(
+				derivation_key->content,
+				derivation_key->content_length,
+				diffie_hellman_secret->content,
+				diffie_hellman_secret->content_length,
+				previous_root_key->content,
+				previous_root_key->content_length);
+		if (status_int != 0) {
+			THROW(GENERIC_ERROR, "Failed to hash diffie hellman and previous root key.");
+		}
 	}
 
 	//now derive the different keys from the derivation key

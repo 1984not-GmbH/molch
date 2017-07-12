@@ -34,6 +34,9 @@ int main(void) {
 
 	return_status status = return_status_init();
 
+	uint32_t message_number;
+	uint32_t previous_message_number;
+
 	if (sodium_init() == -1) {
 		THROW(INIT_ERROR, "Failed to initialize libsodium.");
 	}
@@ -48,8 +51,8 @@ int main(void) {
 	print_hex(our_public_ephemeral_key);
 
 	//message numbers
-	uint32_t message_number = 2;
-	uint32_t previous_message_number = 10;
+	message_number = 2;
+	previous_message_number = 10;
 	printf("Message number: %u\n", message_number);
 	printf("Previous message number: %u\n", previous_message_number);
 	putchar('\n');

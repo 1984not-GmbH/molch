@@ -60,14 +60,16 @@ return_status header_construct(
 	header_struct.has_public_ephemeral_key = true;
 
 	//allocate the header buffer
-	size_t header_length = header__get_packed_size(&header_struct);
-	*header = buffer_create_on_heap(header_length, header_length);
-	THROW_on_failed_alloc(*header);
+	{
+		size_t header_length = header__get_packed_size(&header_struct);
+		*header = buffer_create_on_heap(header_length, header_length);
+		THROW_on_failed_alloc(*header);
 
-	//pack it
-	size_t packed_length = header__pack(&header_struct, (*header)->content);
-	if (packed_length != header_length) {
-		THROW(PROTOBUF_PACK_ERROR, "Packed header has incorrect length.");
+		//pack it
+		size_t packed_length = header__pack(&header_struct, (*header)->content);
+		if (packed_length != header_length) {
+			THROW(PROTOBUF_PACK_ERROR, "Packed header has incorrect length.");
+		}
 	}
 
 cleanup:

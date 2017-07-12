@@ -31,6 +31,10 @@
 #include <protobuf-c/protobuf-c.h>
 #include "common.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*!
  * Allocates a buffer of 'size' and stores it's size.
  *
@@ -77,5 +81,9 @@ static ProtobufCAllocator protobuf_c_allocators __attribute__((unused)) = {
 	&protobuf_c_free,
 	NULL
 };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

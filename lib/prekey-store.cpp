@@ -161,12 +161,13 @@ return_status prekey_store_get_prekey(
 
 	return_status status = return_status_init();
 
+	prekey_store_node *found_prekey = NULL;
+	bool deprecated = false;
+
 	//check buffers sizes
 	if ((store == NULL) || (public_key->content_length != PUBLIC_KEY_SIZE) || (private_key->buffer_length < PRIVATE_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input for prekey_store_get_prekey.");
 	}
-
-	prekey_store_node *found_prekey = NULL;
 
 	//search for the prekey
 	size_t i;
@@ -178,7 +179,6 @@ return_status prekey_store_get_prekey(
 	}
 
 	//if not found, search in the list of deprecated keys.
-	bool deprecated = false;
 	if (found_prekey == NULL) {
 		deprecated = true;
 		prekey_store_node *next = store->deprecated_prekeys;
@@ -252,11 +252,11 @@ cleanup:
 return_status prekey_store_rotate(prekey_store * const store) {
 	return_status status = return_status_init();
 
+	time_t current_time = time(NULL);
+
 	if (store == NULL) {
 		THROW(INVALID_INPUT, "Invalid input to prekey_store_rotate: store is NULL.");
 	}
-
-	time_t current_time = time(NULL);
 
 	//Is the expiration date too far into the future?
 	if ((current_time + PREKEY_EXPIRATION_TIME) < store->oldest_expiration_date) {
@@ -276,19 +276,21 @@ return_status prekey_store_rotate(prekey_store * const store) {
 	}
 
 	//At least one outdated prekey
-	time_t new_oldest_expiration_date = current_time + PREKEY_EXPIRATION_TIME;
-	if (store->oldest_expiration_date < current_time) {
-		for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-			if (store->prekeys[i].expiration_date < current_time) {
-				if (deprecate(store, i) != 0) {
-					THROW(GENERIC_ERROR, "Failed to deprecate key.");
+	{
+		time_t new_oldest_expiration_date = current_time + PREKEY_EXPIRATION_TIME;
+		if (store->oldest_expiration_date < current_time) {
+			for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
+				if (store->prekeys[i].expiration_date < current_time) {
+					if (deprecate(store, i) != 0) {
+						THROW(GENERIC_ERROR, "Failed to deprecate key.");
+					}
+				} else if (store->prekeys[i].expiration_date < new_oldest_expiration_date) {
+					new_oldest_expiration_date = store->prekeys[i].expiration_date;
 				}
-			} else if (store->prekeys[i].expiration_date < new_oldest_expiration_date) {
-				new_oldest_expiration_date = store->prekeys[i].expiration_date;
 			}
 		}
+		store->oldest_expiration_date = new_oldest_expiration_date;
 	}
-	store->oldest_expiration_date = new_oldest_expiration_date;
 
 	//Is the deprecated oldest expiration date too far into the future?
 	if ((current_time + DEPRECATED_PREKEY_EXPIRATION_TIME) < store->oldest_deprecated_expiration_date) {
@@ -304,22 +306,24 @@ return_status prekey_store_rotate(prekey_store * const store) {
 	}
 
 	//At least one key to be removed
-	time_t new_oldest_deprecated_expiration_date = current_time + DEPRECATED_PREKEY_EXPIRATION_TIME;
-	if ((store->deprecated_prekeys != NULL) && (store->oldest_deprecated_expiration_date < current_time)) {
-		prekey_store_node **last_pointer = &(store->deprecated_prekeys);
-		prekey_store_node *next = store->deprecated_prekeys;
-		while(next != NULL) {
-			if (next->expiration_date < current_time) {
-				*last_pointer = next->next;
-				sodium_free_and_null_if_valid(next);
-				next = *last_pointer;
-				continue;
-			} else if (next->expiration_date < new_oldest_deprecated_expiration_date) {
-				new_oldest_deprecated_expiration_date = next->expiration_date;
-			}
+	{
+		time_t new_oldest_deprecated_expiration_date = current_time + DEPRECATED_PREKEY_EXPIRATION_TIME;
+		if ((store->deprecated_prekeys != NULL) && (store->oldest_deprecated_expiration_date < current_time)) {
+			prekey_store_node **last_pointer = &(store->deprecated_prekeys);
+			prekey_store_node *next = store->deprecated_prekeys;
+			while(next != NULL) {
+				if (next->expiration_date < current_time) {
+					*last_pointer = next->next;
+					sodium_free_and_null_if_valid(next);
+					next = *last_pointer;
+					continue;
+				} else if (next->expiration_date < new_oldest_deprecated_expiration_date) {
+					new_oldest_deprecated_expiration_date = next->expiration_date;
+				}
 
-			last_pointer = &(next->next);
-			next = next->next;
+				last_pointer = &(next->next);
+				next = next->next;
+			}
 		}
 	}
 
@@ -456,10 +460,12 @@ return_status prekey_store_export(
 	}
 
 	//deprecated keys
-	prekey_store_node *node = store->deprecated_prekeys;
-	for (size_t i = 0; (i < deprecated_prekey_count) && (node != NULL); i++, node = node->next) {
-		status = prekey_store_export_key(node, &(*deprecated_keypairs)[i]);
-		THROW_on_error(EXPORT_ERROR, "Failed to export deprecated prekey pair.");
+	{
+		prekey_store_node *node = store->deprecated_prekeys;
+		for (size_t i = 0; (i < deprecated_prekey_count) && (node != NULL); i++, node = node->next) {
+			status = prekey_store_export_key(node, &(*deprecated_keypairs)[i]);
+			THROW_on_error(EXPORT_ERROR, "Failed to export deprecated prekey pair.");
+		}
 	}
 
 	*keypairs_length = PREKEY_AMOUNT;

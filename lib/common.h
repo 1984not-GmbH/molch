@@ -27,6 +27,10 @@
 #include "return-status.h"
 #include "zeroed_malloc.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // execute code if a pointer is not NULL
 #define if_valid(pointer, code)\
 	if (pointer != NULL) {\
@@ -58,5 +62,9 @@
 		buffer_destroy_with_custom_deallocator(buffer, deallocator);\
 		buffer = NULL;\
 	)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

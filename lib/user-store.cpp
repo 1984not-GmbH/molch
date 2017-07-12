@@ -239,20 +239,22 @@ return_status user_store_list(buffer_t ** const list, user_store * const store) 
 	*list = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE * store->length, PUBLIC_MASTER_KEY_SIZE * store->length);
 	THROW_on_failed_alloc(*list);
 
-	user_store_node *current_node = store->head;
-	for (size_t i = 0; (i < store->length) && (current_node != NULL); i++) {
-		int status_int = buffer_copy(
-				*list,
-				i * PUBLIC_MASTER_KEY_SIZE,
-				current_node->public_signing_key,
-				0,
-				current_node->public_signing_key->content_length);
-		if (status_int != 0) { //copying went wrong
-			THROW(BUFFER_ERROR, "Failed to copy public master key to user list.");
-		}
+	{
+		user_store_node *current_node = store->head;
+		for (size_t i = 0; (i < store->length) && (current_node != NULL); i++) {
+			int status_int = buffer_copy(
+					*list,
+					i * PUBLIC_MASTER_KEY_SIZE,
+					current_node->public_signing_key,
+					0,
+					current_node->public_signing_key->content_length);
+			if (status_int != 0) { //copying went wrong
+				THROW(BUFFER_ERROR, "Failed to copy public master key to user list.");
+			}
 
-		user_store_node *next_node = current_node->next;
-		current_node = next_node;
+			user_store_node *next_node = current_node->next;
+			current_node = next_node;
+		}
 	}
 
 cleanup:
@@ -509,13 +511,15 @@ return_status user_store_import(
 	status = user_store_create(store);
 	THROW_on_error(CREATION_ERROR, "Failed to create user store.");
 
-	size_t i = 0;
-	user_store_node *node = NULL;
-	for (i = 0; i < users_length; i++) {
-		status = user_store_node_import(&node, users[i]);
-		THROW_on_error(IMPORT_ERROR, "Failed to import user store node.");
+	{
+		size_t i = 0;
+		user_store_node *node = NULL;
+		for (i = 0; i < users_length; i++) {
+			status = user_store_node_import(&node, users[i]);
+			THROW_on_error(IMPORT_ERROR, "Failed to import user store node.");
 
-		add_user_store_node(*store, node);
+			add_user_store_node(*store, node);
+		}
 	}
 
 cleanup:
