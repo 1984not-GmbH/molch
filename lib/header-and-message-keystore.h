@@ -20,9 +20,11 @@
  */
 
 #include <sodium.h>
-#include <time.h>
+#include <ctime>
 
-#include <key_bundle.pb-c.h>
+extern "C" {
+	#include <key_bundle.pb-c.h>
+}
 
 #include "constants.h"
 #include "common.h"

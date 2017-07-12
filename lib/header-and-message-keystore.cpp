@@ -19,15 +19,17 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <string.h>
+#include <cstring>
 
 #include "common.h"
 #include "constants.h"
 #include "header-and-message-keystore.h"
 #include "zeroed_malloc.h"
 
-#include <key.pb-c.h>
-#include <key_bundle.pb-c.h>
+extern "C" {
+	#include <key.pb-c.h>
+	#include <key_bundle.pb-c.h>
+}
 
 static const time_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
 

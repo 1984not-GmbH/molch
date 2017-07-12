@@ -19,8 +19,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 #include <sodium.h>
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 
 #include "constants.h"
 #include "key-derivation.h"

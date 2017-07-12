@@ -19,7 +19,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 #include <sodium.h>
-#include <assert.h>
+#include <cassert>
 
 #include "constants.h"
 #include "diffie-hellman.h"

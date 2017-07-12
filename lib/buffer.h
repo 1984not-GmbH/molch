@@ -18,9 +18,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <alloca.h>
-#include <stdbool.h>
-#include <stdlib.h>
+#include <cstdbool>
+#include <cstdlib>
 
 #ifndef LIB_BUFFER_H
 #define LIB_BUFFER_H

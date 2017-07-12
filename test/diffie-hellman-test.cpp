@@ -18,10 +18,9 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <sodium.h>
+#include <cstdio>
+#include <cstdlib>
+#include <csodium>
 
 #include "../lib/diffie-hellman.h"
 #include "utils.h"

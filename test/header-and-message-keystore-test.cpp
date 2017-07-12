@@ -19,13 +19,15 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <sodium.h>
-#include <assert.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 
-#include <key_bundle.pb-c.h>
+extern "C" {
+	#include <key_bundle.pb-c.h>
+}
 
 #include "../lib/header-and-message-keystore.h"
 #include "../lib/zeroed_malloc.h"

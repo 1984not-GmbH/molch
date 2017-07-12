@@ -19,8 +19,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <sodium.h>
 
 #include "utils.h"
@@ -28,7 +28,9 @@
 #include "../lib/user-store.h" //for PREKEY_AMOUNT
 #include "../lib/zeroed_malloc.h"
 
-#include <encrypted_backup.pb-c.h>
+extern "C" {
+	#include <encrypted_backup.pb-c.h>
+}
 
 
 static return_status decrypt_conversation_backup(

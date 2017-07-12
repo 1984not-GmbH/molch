@@ -19,8 +19,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <packet.pb-c.h>
-#include <string.h>
+extern "C" {
+	#include <packet.pb-c.h>
+}
+#include <cstring>
 #include "packet.h"
 #include "constants.h"
 #include "zeroed_malloc.h"

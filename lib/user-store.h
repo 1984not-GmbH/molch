@@ -20,7 +20,7 @@
  */
 
 #include <sodium.h>
-#include <time.h>
+#include <ctime>
 
 #include "constants.h"
 #include "buffer.h"

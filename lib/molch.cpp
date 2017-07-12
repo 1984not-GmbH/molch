@@ -23,10 +23,9 @@
  * WARNING: ALTHOUGH THIS IMPLEMENTS THE AXOLOTL PROTOCOL, IT ISN't CONSIDERED SECURE ENOUGH TO USE AT THIS POINT
  */
 
-#include <string.h>
-#include <assert.h>
-#include <alloca.h>
-#include <stdint.h>
+#include <cstring>
+#include <cassert>
+#include <cstdint>
 
 #include "constants.h"
 #include "molch.h"
@@ -37,8 +36,10 @@
 #include "return-status.h"
 #include "zeroed_malloc.h"
 
-#include <encrypted_backup.pb-c.h>
-#include <backup.pb-c.h>
+extern "C" {
+	#include <encrypted_backup.pb-c.h>
+	#include <backup.pb-c.h>
+}
 
 //global user store
 static user_store *users = NULL;

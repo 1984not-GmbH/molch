@@ -20,9 +20,9 @@
  */
 
 #include <sodium.h>
-#include <string.h>
-#include <assert.h>
-#include <stdint.h>
+#include <cstring>
+#include <cassert>
+#include <cstdint>
 
 #include "constants.h"
 #include "ratchet.h"

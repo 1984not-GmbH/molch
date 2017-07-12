@@ -20,8 +20,8 @@
  */
 
 #include <sodium.h>
-#include <limits.h>
-#include <string.h>
+#include <climits>
+#include <cstring>
 #include "prekey-store.h"
 #include "common.h"
 

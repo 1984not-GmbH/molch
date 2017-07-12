@@ -19,7 +19,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <user.pb-c.h>
+extern "C" {
+	#include <user.pb-c.h>
+}
 
 #include "constants.h"
 #include "common.h"

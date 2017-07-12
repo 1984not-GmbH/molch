@@ -19,7 +19,7 @@
  */
 
 #include <sodium.h>
-#include <string.h>
+#include <cstring>
 
 #include "buffer.h"
 

@@ -19,12 +19,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <sodium.h>
-#include <assert.h>
-#include <alloca.h>
-#include <string.h>
+#include <cassert>
+#include <cstring>
 
 #include "../lib/conversation-store.h"
 #include "utils.h"

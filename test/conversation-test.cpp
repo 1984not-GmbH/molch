@@ -19,11 +19,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <sodium.h>
-#include <string.h>
-#include <assert.h>
+#include <cstring>
+#include <cassert>
 
 #include "common.h"
 #include "utils.h"

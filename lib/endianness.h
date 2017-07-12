@@ -24,9 +24,9 @@
  * packet creation.
  */
 
-#include <stdbool.h>
-#include <stdint.h>
-#include <time.h>
+#include <cstdbool>
+#include <cstdint>
+#include <ctime>
 
 #include "common.h"
 #include "buffer.h"

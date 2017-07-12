@@ -19,8 +19,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <time.h>
-#include <prekey.pb-c.h>
+#include <ctime>
+extern "C" {
+	#include <prekey.pb-c.h>
+}
 
 #include "constants.h"
 #include "common.h"

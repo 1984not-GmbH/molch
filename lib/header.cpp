@@ -19,7 +19,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <header.pb-c.h>
+extern "C" {
+	#include <header.pb-c.h>
+}
 #include "header.h"
 #include "constants.h"
 #include "zeroed_malloc.h"

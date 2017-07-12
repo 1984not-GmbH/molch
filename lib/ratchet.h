@@ -19,9 +19,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <stdbool.h>
-
-#include <conversation.pb-c.h>
+extern "C" {
+	#include <conversation.pb-c.h>
+}
 #include "constants.h"
 #include "header-and-message-keystore.h"
 #include "common.h"

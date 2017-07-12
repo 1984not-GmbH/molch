@@ -19,7 +19,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <stdbool.h>
+#include <cstdbool>
 
 #include "buffer.h"
 #include "common.h"

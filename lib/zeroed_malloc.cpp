@@ -19,9 +19,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <stdlib.h>
+#include <cstdlib>
 #include <sodium.h>
-#include <string.h>
+#include <cstring>
 
 #include "zeroed_malloc.h"
 #include "alignment.h"
