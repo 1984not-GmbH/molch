@@ -49,12 +49,12 @@ return_status create_and_print_message(
 		|| (message_key == NULL) || (message_key->buffer_length < MESSAGE_KEY_SIZE)
 		|| (packet_type == INVALID)
 		|| (header == NULL) || (message == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to create_and_print_message.");
+		THROW(INVALID_INPUT, "Invalid input to create_and_print_message.");
 	}
 
 	//create header key
 	if (buffer_fill_random(header_key, HEADER_KEY_SIZE) != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate header key.");
+		THROW(KEYGENERATION_FAILED, "Failed to generate header key.");
 	}
 	printf("Header key (%zu Bytes):\n", header_key->content_length);
 	print_hex(header_key);
@@ -62,7 +62,7 @@ return_status create_and_print_message(
 
 	//create message key
 	if (buffer_fill_random(message_key, MESSAGE_KEY_SIZE) != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate message key.");
+		THROW(KEYGENERATION_FAILED, "Failed to generate message key.");
 	}
 	printf("Message key (%zu Bytes):\n", message_key->content_length);
 	print_hex(message_key);
@@ -87,7 +87,7 @@ return_status create_and_print_message(
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	throw_on_error(ENCRYPT_ERROR, "Failed to encrypt message and header.");
+	THROW_on_error(ENCRYPT_ERROR, "Failed to encrypt message and header.");
 
 	//print encrypted packet
 	printf("Encrypted Packet (%zu Bytes):\n", (*packet)->content_length);

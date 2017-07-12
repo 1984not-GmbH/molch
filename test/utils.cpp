@@ -83,13 +83,13 @@ return_status read_file(buffer_t ** const data, const char * const filename) {
 
 	//check input
 	if ((data == NULL) || (filename == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to read_file.");
+		THROW(INVALID_INPUT, "Invalid input to read_file.");
 	}
 
 	*data = NULL;
 
 	file = fopen(filename, "r");
-	throw_on_failed_alloc(file);
+	THROW_on_failed_alloc(file);
 
 	//get the filesize
 	fseek(file, 0, SEEK_END);
@@ -97,10 +97,10 @@ return_status read_file(buffer_t ** const data, const char * const filename) {
 	fseek(file, 0, SEEK_SET);
 
 	*data = buffer_create_on_heap(filesize, filesize);
-	throw_on_failed_alloc(*data);
+	THROW_on_failed_alloc(*data);
 	(*data)->content_length = fread((*data)->content, 1, filesize, file);
 	if ((*data)->content_length != (size_t)filesize) {
-		throw(INCORRECT_DATA, "Read less data from file than filesize.");
+		THROW(INCORRECT_DATA, "Read less data from file than filesize.");
 	}
 
 cleanup:

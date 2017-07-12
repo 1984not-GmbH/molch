@@ -40,7 +40,7 @@ return_status header_construct(
 	//check input
 	if ((header == NULL)
 			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
-		throw(INVALID_INPUT, "Invalid input to header_construct.");
+		THROW(INVALID_INPUT, "Invalid input to header_construct.");
 	}
 
 	//initialize the output buffer
@@ -62,12 +62,12 @@ return_status header_construct(
 	//allocate the header buffer
 	size_t header_length = header__get_packed_size(&header_struct);
 	*header = buffer_create_on_heap(header_length, header_length);
-	throw_on_failed_alloc(*header);
+	THROW_on_failed_alloc(*header);
 
 	//pack it
 	size_t packed_length = header__pack(&header_struct, (*header)->content);
 	if (packed_length != header_length) {
-		throw(PROTOBUF_PACK_ERROR, "Packed header has incorrect length.");
+		THROW(PROTOBUF_PACK_ERROR, "Packed header has incorrect length.");
 	}
 
 cleanup:
@@ -95,28 +95,28 @@ return_status header_extract(
 	if ((their_public_ephemeral == NULL) || (their_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)
 			|| (message_number == NULL) || (previous_message_number == NULL)
 			|| (header == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to header_extract.");
+		THROW(INVALID_INPUT, "Invalid input to header_extract.");
 	}
 
 	//unpack the message
 	header_struct = header__unpack(&protobuf_c_allocators, header->content_length, header->content);
 	if (header_struct == NULL) {
-		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack header.");
+		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack header.");
 	}
 
 	if (!header_struct->has_message_number || !header_struct->has_previous_message_number || !header_struct->has_public_ephemeral_key) {
-		throw(PROTOBUF_MISSING_ERROR, "Missing fields in header.");
+		THROW(PROTOBUF_MISSING_ERROR, "Missing fields in header.");
 	}
 
 	if (header_struct->public_ephemeral_key.len != PUBLIC_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "The public ephemeral key in the header has an incorrect size.");
+		THROW(INCORRECT_BUFFER_SIZE, "The public ephemeral key in the header has an incorrect size.");
 	}
 
 	*message_number = header_struct->message_number;
 	*previous_message_number = header_struct->previous_message_number;
 
 	if (buffer_clone_from_raw(their_public_ephemeral, header_struct->public_ephemeral_key.data, header_struct->public_ephemeral_key.len) != 0) {
-		throw(BUFFER_ERROR, "Failed to copy public ephemeral key.")
+		THROW(BUFFER_ERROR, "Failed to copy public ephemeral key.")
 	}
 
 cleanup:

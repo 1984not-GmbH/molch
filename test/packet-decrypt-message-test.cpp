@@ -45,7 +45,7 @@ int main(void) {
 	return_status status = return_status_init();
 
 	if (sodium_init() == -1) {
-		throw(INIT_ERROR, "Failed to initialize libsodium.");
+		THROW(INIT_ERROR, "Failed to initialize libsodium.");
 	}
 
 	//generate keys and message
@@ -70,24 +70,24 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	throw_on_error(GENERIC_ERROR, "Failed to create and print message.");
+	THROW_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now decrypt the message
 	status = packet_decrypt_message(
 			&decrypted_message,
 			packet,
 			message_key);
-	throw_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
+	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
 
 	//check the message size
 	if (decrypted_message->content_length != message->content_length) {
-		throw(INVALID_VALUE, "Decrypted message length isn't the same.");
+		THROW(INVALID_VALUE, "Decrypted message length isn't the same.");
 	}
 	printf("Decrypted message length is the same.\n");
 
 	//compare the message
 	if (buffer_compare(message, decrypted_message) != 0) {
-		throw(INVALID_VALUE, "Decrypted message doesn't match.");
+		THROW(INVALID_VALUE, "Decrypted message doesn't match.");
 	}
 	printf("Decrypted message is the same.\n\n");
 
@@ -103,7 +103,7 @@ int main(void) {
 			packet,
 			message_key);
 	if (status.status == SUCCESS) { //message was decrypted although it shouldn't
-		throw(GENERIC_ERROR, "Decrypted manipulated message.");
+		THROW(GENERIC_ERROR, "Decrypted manipulated message.");
 	} else {
 		return_status_destroy_errors(&status);
 	}
@@ -114,15 +114,15 @@ int main(void) {
 	//create the public keys
 	status_int = buffer_fill_random(public_identity_key, PUBLIC_KEY_SIZE);
 	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate public identity key.");
+		THROW(KEYGENERATION_FAILED, "Failed to generate public identity key.");
 	}
 	status_int = buffer_fill_random(public_ephemeral_key, PUBLIC_KEY_SIZE);
 	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
+		THROW(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
 	}
 	status_int = buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE);
 	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate public prekey.");
+		THROW(KEYGENERATION_FAILED, "Failed to generate public prekey.");
 	}
 
 	buffer_destroy_from_heap_and_null_if_valid(packet);
@@ -138,24 +138,24 @@ int main(void) {
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	throw_on_error(GENERIC_ERROR, "Failed to create and print message.");
+	THROW_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now decrypt the message
 	status = packet_decrypt_message(
 			&decrypted_message,
 			packet,
 			message_key);
-	throw_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
+	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
 
 	//check the message size
 	if (decrypted_message->content_length != message->content_length) {
-		throw(INVALID_VALUE, "Decrypted message length isn't the same.");
+		THROW(INVALID_VALUE, "Decrypted message length isn't the same.");
 	}
 	printf("Decrypted message length is the same.\n");
 
 	//compare the message
 	if (buffer_compare(message, decrypted_message) != 0) {
-		throw(INVALID_VALUE, "Decrypted message doesn't match.");
+		THROW(INVALID_VALUE, "Decrypted message doesn't match.");
 	}
 	printf("Decrypted message is the same.\n");
 

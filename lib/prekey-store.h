@@ -74,7 +74,7 @@ return_status prekey_store_list(
 
 /*
  * Automatically deprecate old keys and generate new ones
- * and throw away deprecated ones that are too old.
+ * and THROW away deprecated ones that are too old.
  */
 return_status prekey_store_rotate(prekey_store * const store) __attribute__((warn_unused_result));
 

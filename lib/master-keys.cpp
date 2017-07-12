@@ -45,11 +45,11 @@ return_status master_keys_create(
 	buffer_t *crypto_seeds = NULL;
 
 	if (keys == NULL) {
-		throw(INVALID_INPUT, "Invalid input for master_keys_create.");
+		THROW(INVALID_INPUT, "Invalid input for master_keys_create.");
 	}
 
-	*keys = (master_keys_t*)sodium_malloc(sizeof(master_keys_t));
-	throw_on_failed_alloc(*keys);
+	*keys = (master_keys_t*)sodium_malloc(sizeof(master_keys));
+	THROW_on_failed_alloc(*keys);
 
 	//initialize the buffers
 	buffer_init_with_pointer((*keys)->public_signing_key, (*keys)->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
@@ -64,10 +64,10 @@ return_status master_keys_create(
 				crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES,
 				sodium_malloc,
 				sodium_free);
-		throw_on_failed_alloc(crypto_seeds);
+		THROW_on_failed_alloc(crypto_seeds);
 
 		status = spiced_random(crypto_seeds, seed, crypto_seeds->buffer_length);
-		throw_on_error(GENERIC_ERROR, "Failed to create spiced random data.");
+		THROW_on_error(GENERIC_ERROR, "Failed to create spiced random data.");
 
 		//generate the signing keypair
 		int status_int = 0;
@@ -76,7 +76,7 @@ return_status master_keys_create(
 				(*keys)->private_signing_key_storage,
 				crypto_seeds->content);
 		if (status_int != 0) {
-			throw(KEYGENERATION_FAILED, "Failed to generate signing keypair.");
+			THROW(KEYGENERATION_FAILED, "Failed to generate signing keypair.");
 		}
 
 		//generate the identity keypair
@@ -85,7 +85,7 @@ return_status master_keys_create(
 				(*keys)->private_identity_key->content,
 				crypto_seeds->content + crypto_sign_SEEDBYTES);
 		if (status_int != 0) {
-			throw(KEYGENERATION_FAILED, "Failed to generate encryption keypair.");
+			THROW(KEYGENERATION_FAILED, "Failed to generate encryption keypair.");
 		}
 	} else { //don't use external seed
 		//generate the signing keypair
@@ -94,7 +94,7 @@ return_status master_keys_create(
 				(*keys)->public_signing_key->content,
 				(*keys)->private_signing_key->content);
 		if (status_int != 0) {
-			throw(KEYGENERATION_FAILED, "Failed to generate signing keypair.");
+			THROW(KEYGENERATION_FAILED, "Failed to generate signing keypair.");
 		}
 
 		//generate the identity keypair
@@ -102,7 +102,7 @@ return_status master_keys_create(
 				(*keys)->public_identity_key->content,
 				(*keys)->private_identity_key->content);
 		if (status_int != 0) {
-			throw(KEYGENERATION_FAILED, "Failed to generate encryption keypair.");
+			THROW(KEYGENERATION_FAILED, "Failed to generate encryption keypair.");
 		}
 	}
 
@@ -110,21 +110,21 @@ return_status master_keys_create(
 	if (public_signing_key != NULL) {
 		if (public_signing_key->buffer_length < PUBLIC_MASTER_KEY_SIZE) {
 			public_signing_key->content_length = 0;
-			throw(INCORRECT_BUFFER_SIZE, "Public master key buffer is too short.");
+			THROW(INCORRECT_BUFFER_SIZE, "Public master key buffer is too short.");
 		}
 
 		if (buffer_clone(public_signing_key, (*keys)->public_signing_key) != 0) {
-			throw(BUFFER_ERROR, "Failed to copy public signing key.");
+			THROW(BUFFER_ERROR, "Failed to copy public signing key.");
 		}
 	}
 	if (public_identity_key != NULL) {
 		if (public_identity_key->buffer_length < PUBLIC_KEY_SIZE) {
 			public_identity_key->content_length = 0;
-			throw(INCORRECT_BUFFER_SIZE, "Public encryption key buffer is too short.");
+			THROW(INCORRECT_BUFFER_SIZE, "Public encryption key buffer is too short.");
 		}
 
 		if (buffer_clone(public_identity_key, (*keys)->public_identity_key) != 0) {
-			throw(BUFFER_ERROR, "Failed to copy public encryption key.");
+			THROW(BUFFER_ERROR, "Failed to copy public encryption key.");
 		}
 	}
 
@@ -155,13 +155,13 @@ return_status master_keys_get_signing_key(
 
 	//check input
 	if ((keys == NULL) || (public_signing_key == NULL) || (public_signing_key->buffer_length < PUBLIC_MASTER_KEY_SIZE)) {
-		throw(INVALID_INPUT, "Invalid input to master_keys_get_signing_key.");
+		THROW(INVALID_INPUT, "Invalid input to master_keys_get_signing_key.");
 	}
 
 	sodium_mprotect_readonly(keys);
 
 	if (buffer_clone(public_signing_key, keys->public_signing_key) != 0) {
-		throw(BUFFER_ERROR, "Failed to copy public signing key.");
+		THROW(BUFFER_ERROR, "Failed to copy public signing key.");
 	}
 
 cleanup:
@@ -182,7 +182,7 @@ return_status master_keys_get_identity_key(
 
 	//check input
 	if ((keys == NULL) || (public_identity_key == NULL) || (public_identity_key->buffer_length < PUBLIC_KEY_SIZE)) {
-		throw(INVALID_INPUT, "Invalid input to master_keys_get_identity_key.");
+		THROW(INVALID_INPUT, "Invalid input to master_keys_get_identity_key.");
 	}
 
 	sodium_mprotect_readonly(keys);
@@ -212,7 +212,7 @@ return_status master_keys_sign(
 			|| (data == NULL)
 			|| (signed_data == NULL)
 			|| (signed_data->buffer_length < (data->content_length + SIGNATURE_SIZE))) {
-		throw(INVALID_INPUT, "Invalid input to master_keys_sign.");
+		THROW(INVALID_INPUT, "Invalid input to master_keys_sign.");
 	}
 
 	sodium_mprotect_readonly(keys);
@@ -226,7 +226,7 @@ return_status master_keys_sign(
 			data->content_length,
 			keys->private_signing_key->content);
 	if (status_int != 0) {
-		throw(SIGN_ERROR, "Failed to sign message.");
+		THROW(SIGN_ERROR, "Failed to sign message.");
 	}
 
 	signed_data->content_length = (size_t) signed_message_length;
@@ -257,35 +257,35 @@ return_status master_keys_export(
 	if ((keys == NULL)
 			|| (public_signing_key == NULL) || (private_signing_key == NULL)
 			|| (public_identity_key == NULL) || (private_identity_key == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to keys_export");
+		THROW(INVALID_INPUT, "Invalid input to keys_export");
 	}
 
 	//allocate the structs
 	*public_signing_key = (Key*)zeroed_malloc(sizeof(Key));
-	throw_on_failed_alloc(*public_signing_key);
+	THROW_on_failed_alloc(*public_signing_key);
 	key__init(*public_signing_key);
 	*private_signing_key = (Key*)zeroed_malloc(sizeof(Key));
-	throw_on_failed_alloc(*private_signing_key);
+	THROW_on_failed_alloc(*private_signing_key);
 	key__init(*private_signing_key);
 	*public_identity_key = (Key*)zeroed_malloc(sizeof(Key));
-	throw_on_failed_alloc(*public_identity_key);
+	THROW_on_failed_alloc(*public_identity_key);
 	key__init(*public_identity_key);
 	*private_identity_key = (Key*)zeroed_malloc(sizeof(Key));
-	throw_on_failed_alloc(*private_identity_key);
+	THROW_on_failed_alloc(*private_identity_key);
 	key__init(*private_identity_key);
 
 	//allocate the key buffers
 	(*public_signing_key)->key.data = (unsigned char*)zeroed_malloc(PUBLIC_MASTER_KEY_SIZE);
-	throw_on_failed_alloc((*public_signing_key)->key.data);
+	THROW_on_failed_alloc((*public_signing_key)->key.data);
 	(*public_signing_key)->key.len = PUBLIC_MASTER_KEY_SIZE;
 	(*private_signing_key)->key.data = (unsigned char*)zeroed_malloc(PRIVATE_MASTER_KEY_SIZE);
-	throw_on_failed_alloc((*private_signing_key)->key.data);
+	THROW_on_failed_alloc((*private_signing_key)->key.data);
 	(*private_signing_key)->key.len = PRIVATE_MASTER_KEY_SIZE;
 	(*public_identity_key)->key.data = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
-	throw_on_failed_alloc((*public_identity_key)->key.data);
+	THROW_on_failed_alloc((*public_identity_key)->key.data);
 	(*public_identity_key)->key.len = PUBLIC_KEY_SIZE;
 	(*private_identity_key)->key.data = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
-	throw_on_failed_alloc((*private_identity_key)->key.data);
+	THROW_on_failed_alloc((*private_identity_key)->key.data);
 	(*private_identity_key)->key.len = PUBLIC_KEY_SIZE;
 
 	//unlock the master keys
@@ -293,16 +293,16 @@ return_status master_keys_export(
 
 	//copy the keys
 	if (buffer_clone_to_raw((*public_signing_key)->key.data, (*public_signing_key)->key.len, keys->public_signing_key) != 0) {
-		throw(BUFFER_ERROR, "Failed to export public signing key.");
+		THROW(BUFFER_ERROR, "Failed to export public signing key.");
 	}
 	if (buffer_clone_to_raw((*private_signing_key)->key.data, (*private_signing_key)->key.len, keys->private_signing_key) != 0) {
-		throw(BUFFER_ERROR, "Failed to export private signing key.");
+		THROW(BUFFER_ERROR, "Failed to export private signing key.");
 	}
 	if (buffer_clone_to_raw((*public_identity_key)->key.data, (*public_identity_key)->key.len, keys->public_identity_key) != 0) {
-		throw(BUFFER_ERROR, "Failed to export public identity key.");
+		THROW(BUFFER_ERROR, "Failed to export public identity key.");
 	}
 	if (buffer_clone_to_raw((*private_identity_key)->key.data, (*private_identity_key)->key.len, keys->private_identity_key) != 0) {
-		throw(BUFFER_ERROR, "Failed to export private identity key.");
+		THROW(BUFFER_ERROR, "Failed to export private identity key.");
 	}
 
 cleanup:
@@ -348,11 +348,11 @@ return_status master_keys_import(
 	if ((keys == NULL)
 			|| (public_signing_key == NULL) || (private_signing_key == NULL)
 			|| (public_identity_key == NULL) || (private_identity_key == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to master_keys_import.");
+		THROW(INVALID_INPUT, "Invalid input to master_keys_import.");
 	}
 
 	*keys = (master_keys_t*)sodium_malloc(sizeof(master_keys_t));
-	throw_on_failed_alloc(*keys);
+	THROW_on_failed_alloc(*keys);
 
 	//initialize the buffers
 	buffer_init_with_pointer((*keys)->public_signing_key, (*keys)->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, 0);
@@ -362,16 +362,16 @@ return_status master_keys_import(
 
 	//copy the keys
 	if (buffer_clone_from_raw((*keys)->public_signing_key, public_signing_key->key.data, public_signing_key->key.len) != 0) {
-		throw(BUFFER_ERROR, "Failed to copy public signing key.");
+		THROW(BUFFER_ERROR, "Failed to copy public signing key.");
 	}
 	if (buffer_clone_from_raw((*keys)->private_signing_key, private_signing_key->key.data, private_signing_key->key.len) != 0) {
-		throw(BUFFER_ERROR, "Failed to copy private signing key.");
+		THROW(BUFFER_ERROR, "Failed to copy private signing key.");
 	}
 	if (buffer_clone_from_raw((*keys)->public_identity_key, public_identity_key->key.data, public_identity_key->key.len) != 0) {
-		throw(BUFFER_ERROR, "Failed to copy public identity key.");
+		THROW(BUFFER_ERROR, "Failed to copy public identity key.");
 	}
 	if (buffer_clone_from_raw((*keys)->private_identity_key, private_identity_key->key.data, private_identity_key->key.len) != 0) {
-		throw(BUFFER_ERROR, "Failed to copy private identity key.");
+		THROW(BUFFER_ERROR, "Failed to copy private identity key.");
 	}
 
 	sodium_mprotect_noaccess(*keys);

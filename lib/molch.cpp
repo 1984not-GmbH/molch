@@ -62,13 +62,13 @@ static return_status create_prekey_list(
 	unsigned_prekey_list = buffer_create_on_heap(
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t),
 			0);
-	throw_on_failed_alloc(unsigned_prekey_list);
+	THROW_on_failed_alloc(unsigned_prekey_list);
 	prekey_list_buffer = buffer_create_on_heap(
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t) + SIGNATURE_SIZE,
 			0);
-	throw_on_failed_alloc(prekey_list_buffer);
+	THROW_on_failed_alloc(prekey_list_buffer);
 	public_identity_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	throw_on_failed_alloc(public_identity_key);
+	THROW_on_failed_alloc(public_identity_key);
 
 	//buffer for the prekey part of unsigned_prekey_list
 	buffer_create_with_existing_array(prekeys, unsigned_prekey_list->content + PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
@@ -77,32 +77,32 @@ static return_status create_prekey_list(
 	//get the user
 	user_store_node *user = NULL;
 	status = user_store_find_node(&user, users, public_signing_key);
-	throw_on_error(NOT_FOUND, "Failed to find user.");
+	THROW_on_error(NOT_FOUND, "Failed to find user.");
 
 	//rotate the prekeys
 	status = prekey_store_rotate(user->prekeys);
-	throw_on_error(GENERIC_ERROR, "Failed to rotate prekeys.");
+	THROW_on_error(GENERIC_ERROR, "Failed to rotate prekeys.");
 
 	//get the public identity key
 	status = master_keys_get_identity_key(
 			user->master_keys,
 			public_identity_key);
-	throw_on_error(DATA_FETCH_ERROR, "Failed to get public identity key from master keys.");
+	THROW_on_error(DATA_FETCH_ERROR, "Failed to get public identity key from master keys.");
 
 	//copy the public identity to the prekey list
 	if (buffer_copy(unsigned_prekey_list, 0, public_identity_key, 0, PUBLIC_KEY_SIZE) != 0) {
-		throw(BUFFER_ERROR, "Failed to copy public identity to prekey list.");
+		THROW(BUFFER_ERROR, "Failed to copy public identity to prekey list.");
 	}
 
 	//get the prekeys
 	status = prekey_store_list(user->prekeys, prekeys);
-	throw_on_error(DATA_FETCH_ERROR, "Failed to get prekeys.");
+	THROW_on_error(DATA_FETCH_ERROR, "Failed to get prekeys.");
 
 	//add the expiration date
 	time_t expiration_date = time(NULL) + 3600 * 24 * 31 * 3; //the prekey list will expire in 3 months
 	buffer_create_with_existing_array(big_endian_expiration_date, unsigned_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
 	status = endianness_time_to_big_endian(expiration_date, big_endian_expiration_date);
-	throw_on_error(CONVERSION_ERROR, "Failed to convert expiration date to big endian.");
+	THROW_on_error(CONVERSION_ERROR, "Failed to convert expiration date to big endian.");
 	unsigned_prekey_list->content_length = unsigned_prekey_list->buffer_length;
 
 	//sign the prekey list with the current identity key
@@ -110,7 +110,7 @@ static return_status create_prekey_list(
 			user->master_keys,
 			unsigned_prekey_list,
 			prekey_list_buffer);
-	throw_on_error(SIGN_ERROR, "Failed to sign prekey list.");
+	THROW_on_error(SIGN_ERROR, "Failed to sign prekey list.");
 
 	*prekey_list = prekey_list_buffer->content;
 	*prekey_list_length = prekey_list_buffer->content_length;
@@ -167,15 +167,15 @@ return_status molch_create_user(
 
 	if ((public_master_key == NULL)
 		|| (prekey_list == NULL) || (prekey_list_length == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_create_user.");
+		THROW(INVALID_INPUT, "Invalid input to molch_create_user.");
 	}
 
 	if (backup_key_length != BACKUP_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Backup key has incorrect length.");
+		THROW(INCORRECT_BUFFER_SIZE, "Backup key has incorrect length.");
 	}
 
 	if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Public master key has incorrect length.");
+		THROW(INCORRECT_BUFFER_SIZE, "Public master key has incorrect length.");
 	}
 
 	//create buffers wrapping the raw arrays
@@ -185,15 +185,15 @@ return_status molch_create_user(
 	//create user store if it doesn't exist already
 	if (users == NULL) {
 		if (sodium_init() == -1) {
-			throw(INIT_ERROR, "Failed to init libsodium.");
+			THROW(INIT_ERROR, "Failed to init libsodium.");
 		}
 		status = user_store_create(&users);
-		throw_on_error(CREATION_ERROR, "Failed to create user store.")
+		THROW_on_error(CREATION_ERROR, "Failed to create user store.")
 	}
 
 	//create a new backup key
 	status = molch_update_backup_key(backup_key, backup_key_length);
-	throw_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
+	THROW_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
 
 	//create the user
 	status = user_store_create_user(
@@ -201,7 +201,7 @@ return_status molch_create_user(
 			random_data_buffer,
 			public_master_key_buffer,
 			NULL);
-	throw_on_error(CREATION_ERROR, "Failed to create user.");
+	THROW_on_error(CREATION_ERROR, "Failed to create user.");
 
 	user_store_created = true;
 
@@ -209,14 +209,14 @@ return_status molch_create_user(
 			public_master_key_buffer,
 			prekey_list,
 			prekey_list_length);
-	throw_on_error(CREATION_ERROR, "Failed to create prekey list.");
+	THROW_on_error(CREATION_ERROR, "Failed to create prekey list.");
 
 	if (backup != NULL) {
 		if (backup_length == 0) {
 			*backup = NULL;
 		} else {
 			status = molch_export(backup, backup_length);
-			throw_on_error(EXPORT_ERROR, "Failed to export.");
+			THROW_on_error(EXPORT_ERROR, "Failed to export.");
 		}
 	}
 
@@ -247,25 +247,25 @@ return_status molch_destroy_user(
 	return_status status = return_status_init();
 
 	if (users == NULL) {
-		throw(INVALID_INPUT, "\"users\" is NULL.")
+		THROW(INVALID_INPUT, "\"users\" is NULL.")
 	}
 
 	if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Public master key has incorrect size.");
+		THROW(INCORRECT_BUFFER_SIZE, "Public master key has incorrect size.");
 	}
 
 	//TODO maybe check beforehand if the user exists and return nonzero if not
 
 	buffer_create_with_existing_const_array(public_signing_key_buffer, public_master_key, PUBLIC_KEY_SIZE);
 	status = user_store_remove_by_key(users, public_signing_key_buffer);
-	throw_on_error(REMOVE_ERROR, "Failed to remoe user from user store by key.");
+	THROW_on_error(REMOVE_ERROR, "Failed to remoe user from user store by key.");
 
 	if (backup != NULL) {
 		if (backup_length == 0) {
 			*backup = NULL;
 		} else {
 			status = molch_export(backup, backup_length);
-			throw_on_error(EXPORT_ERROR, "Failed to export.");
+			THROW_on_error(EXPORT_ERROR, "Failed to export.");
 		}
 	}
 
@@ -311,13 +311,13 @@ return_status molch_list_users(
 	return_status status = return_status_init();
 
 	if ((users == NULL) || (user_list_length == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_list_users.");
+		THROW(INVALID_INPUT, "Invalid input to molch_list_users.");
 	}
 
 	//get the list of users and copy it
 	buffer_t *user_list_buffer = NULL;
 	status = user_store_list(&user_list_buffer, users);
-	throw_on_error(CREATION_ERROR, "Failed to create user list.");
+	THROW_on_error(CREATION_ERROR, "Failed to create user list.");
 
 	*count = molch_user_count();
 
@@ -374,7 +374,7 @@ static return_status verify_prekey_list(
 	return_status status = return_status_init();
 
 	buffer_t *verified_prekey_list = buffer_create_on_heap(prekey_list_length - SIGNATURE_SIZE, prekey_list_length - SIGNATURE_SIZE);
-	throw_on_failed_alloc(verified_prekey_list);
+	THROW_on_failed_alloc(verified_prekey_list);
 
 	int status_int = 0;
 
@@ -387,11 +387,11 @@ static return_status verify_prekey_list(
 			(unsigned long long)prekey_list_length,
 			public_signing_key->content);
 	if (status_int != 0) {
-		throw(VERIFICATION_FAILED, "Failed to verify prekey list signature.");
+		THROW(VERIFICATION_FAILED, "Failed to verify prekey list signature.");
 	}
 	if (verified_length > SIZE_MAX)
 	{
-		throw(CONVERSION_ERROR, "Length is bigger than size_t.");
+		THROW(CONVERSION_ERROR, "Length is bigger than size_t.");
 	}
 	verified_prekey_list->content_length = (size_t)verified_length;
 
@@ -399,12 +399,12 @@ static return_status verify_prekey_list(
 	time_t expiration_date;
 	buffer_create_with_existing_array(big_endian_expiration_date, verified_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
 	status = endianness_time_from_big_endian(&expiration_date, big_endian_expiration_date);
-	throw_on_error(CONVERSION_ERROR, "Failed to convert expiration date to big endian.");
+	THROW_on_error(CONVERSION_ERROR, "Failed to convert expiration date to big endian.");
 
 	//make sure the prekey list isn't too old
 	time_t current_time = time(NULL);
 	if (expiration_date < current_time) {
-		throw(OUTDATED, "Prekey list has expired (older than 3 months).");
+		THROW(OUTDATED, "Prekey list has expired (older than 3 months).");
 	}
 
 	//copy the public identity key
@@ -415,7 +415,7 @@ static return_status verify_prekey_list(
 			0,
 			PUBLIC_KEY_SIZE);
 	if (status_int != 0) {
-		throw(BUFFER_ERROR, "Failed to copy public identity.");
+		THROW(BUFFER_ERROR, "Failed to copy public identity.");
 	}
 
 cleanup:
@@ -472,11 +472,11 @@ return_status molch_start_send_conversation(
 	buffer_t *receiver_public_identity = NULL;
 	buffer_t *receiver_public_ephemeral = NULL;
 	sender_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	throw_on_failed_alloc(sender_public_identity);
+	THROW_on_failed_alloc(sender_public_identity);
 	receiver_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	throw_on_failed_alloc(receiver_public_identity);
+	THROW_on_failed_alloc(receiver_public_identity);
 	receiver_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	throw_on_failed_alloc(receiver_public_ephemeral);
+	THROW_on_failed_alloc(receiver_public_ephemeral);
 
 	//check input
 	if ((conversation_id == NULL)
@@ -485,24 +485,24 @@ return_status molch_start_send_conversation(
 			|| (prekey_list == NULL)
 			|| (sender_public_master_key == NULL)
 			|| (receiver_public_master_key == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_start_send_conversation.");
+		THROW(INVALID_INPUT, "Invalid input to molch_start_send_conversation.");
 	}
 
 	if (conversation_id_length != CONVERSATION_ID_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "conversation id has incorrect size.");
+		THROW(INCORRECT_BUFFER_SIZE, "conversation id has incorrect size.");
 	}
 
 	if (sender_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "sender public master key has incorrect size.");
+		THROW(INCORRECT_BUFFER_SIZE, "sender public master key has incorrect size.");
 	}
 
 	if (receiver_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "receiver public master key has incorrect size.");
+		THROW(INCORRECT_BUFFER_SIZE, "receiver public master key has incorrect size.");
 	}
 
 	//get the user that matches the public signing key of the sender
 	status = user_store_find_node(&user, users, sender_public_master_key_buffer);
-	throw_on_error(NOT_FOUND, "User not found.");
+	THROW_on_error(NOT_FOUND, "User not found.");
 
 	int status_int = 0;
 
@@ -512,7 +512,7 @@ return_status molch_start_send_conversation(
 			prekey_list_length,
 			receiver_public_identity,
 			receiver_public_master_key_buffer);
-	throw_on_error(VERIFICATION_FAILED, "Failed to verify prekey list.");
+	THROW_on_error(VERIFICATION_FAILED, "Failed to verify prekey list.");
 
 	//unlock the master keys
 	sodium_mprotect_readonly(user->master_keys);
@@ -526,16 +526,16 @@ return_status molch_start_send_conversation(
 			user->master_keys->private_identity_key,
 			receiver_public_identity,
 			prekeys);
-	throw_on_error(CREATION_ERROR, "Failed to start send converstion.");
+	THROW_on_error(CREATION_ERROR, "Failed to start send converstion.");
 
 	//copy the conversation id
 	status_int = buffer_clone(conversation_id_buffer, conversation->id);
 	if (status_int != 0) {
-		throw(BUFFER_ERROR, "Failed to clone conversation id.");
+		THROW(BUFFER_ERROR, "Failed to clone conversation id.");
 	}
 
 	status = conversation_store_add(user->conversations, conversation);
-	throw_on_error(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
+	THROW_on_error(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
 	conversation = NULL;
 
 	*packet = packet_buffer->content;
@@ -546,7 +546,7 @@ return_status molch_start_send_conversation(
 			*backup = NULL;
 		} else {
 			status = molch_export(backup, backup_length);
-			throw_on_error(EXPORT_ERROR, "Failed to export.");
+			THROW_on_error(EXPORT_ERROR, "Failed to export.");
 		}
 	}
 
@@ -623,24 +623,24 @@ return_status molch_start_receive_conversation(
 		|| (prekey_list == NULL) || (prekey_list_length == NULL)
 		|| (sender_public_master_key == NULL)
 		|| (receiver_public_master_key == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_start_receive_conversation.");
+		THROW(INVALID_INPUT, "Invalid input to molch_start_receive_conversation.");
 	}
 
 	if (conversation_id_length != CONVERSATION_ID_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size.");
+		THROW(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size.");
 	}
 
 	if (sender_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Senders public master key has an incorrect size.");
+		THROW(INCORRECT_BUFFER_SIZE, "Senders public master key has an incorrect size.");
 	}
 
 	if (receiver_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Receivers public master key has an incorrect size.");
+		THROW(INCORRECT_BUFFER_SIZE, "Receivers public master key has an incorrect size.");
 	}
 
 	//get the user that matches the public signing key of the receiver
 	status = user_store_find_node(&user, users, receiver_public_master_key_buffer);
-	throw_on_error(NOT_FOUND, "User not found in the user store.");
+	THROW_on_error(NOT_FOUND, "User not found in the user store.");
 
 	//unlock the master keys
 	sodium_mprotect_readonly(user->master_keys);
@@ -655,12 +655,12 @@ return_status molch_start_receive_conversation(
 			user->master_keys->public_identity_key,
 			user->master_keys->private_identity_key,
 			user->prekeys);
-	throw_on_error(CREATION_ERROR, "Failed to start receive conversation.");
+	THROW_on_error(CREATION_ERROR, "Failed to start receive conversation.");
 
 	//copy the conversation id
 	status_int = buffer_clone(conversation_id_buffer, conversation->id);
 	if (status_int != 0) {
-		throw(BUFFER_ERROR, "Failed to clone conversation id.");
+		THROW(BUFFER_ERROR, "Failed to clone conversation id.");
 	}
 
 	//create the prekey list
@@ -668,11 +668,11 @@ return_status molch_start_receive_conversation(
 			receiver_public_master_key_buffer,
 			prekey_list,
 			prekey_list_length);
-	throw_on_error(CREATION_ERROR, "Failed to create prekey list.");
+	THROW_on_error(CREATION_ERROR, "Failed to create prekey list.");
 
 	//add the conversation to the conversation store
 	status = conversation_store_add(user->conversations, conversation);
-	throw_on_error(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
+	THROW_on_error(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
 	conversation = NULL;
 
 	*message = message_buffer->content;
@@ -683,7 +683,7 @@ return_status molch_start_receive_conversation(
 			*backup = NULL;
 		} else {
 			status = molch_export(backup, backup_length);
-			throw_on_error(EXPORT_ERROR, "Failed to export.");
+			THROW_on_error(EXPORT_ERROR, "Failed to export.");
 		}
 	}
 
@@ -721,7 +721,7 @@ static return_status find_conversation(
 	conversation_t *conversation_node = NULL;
 
 	if ((conversation == NULL) || (conversation_id == NULL)) {
-		throw(INVALID_INPUT, "Invalid input for find_conversation.");
+		THROW(INVALID_INPUT, "Invalid input for find_conversation.");
 	}
 
 	buffer_create_with_existing_const_array(conversation_id_buffer, conversation_id, CONVERSATION_ID_SIZE);
@@ -730,7 +730,7 @@ static return_status find_conversation(
 	user_store_node *node = users->head;
 	while (node != NULL) {
 		status = conversation_store_find_node(&conversation_node, node->conversations, conversation_id_buffer);
-		throw_on_error(GENERIC_ERROR, "Failure while searching for node.");
+		THROW_on_error(GENERIC_ERROR, "Failure while searching for node.");
 		if (conversation_node != NULL) {
 			//found the conversation we're searching for
 			break;
@@ -795,18 +795,18 @@ return_status molch_encrypt_message(
 	if ((packet == NULL) || (packet_length == NULL)
 		|| (message == NULL)
 		|| (conversation_id == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_encrypt_message.");
+		THROW(INVALID_INPUT, "Invalid input to molch_encrypt_message.");
 	}
 
 	if (conversation_id_length != CONVERSATION_ID_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size.");
+		THROW(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size.");
 	}
 
 	//find the conversation
 	status = find_conversation(&conversation, conversation_id, NULL, NULL);
-	throw_on_error(GENERIC_ERROR, "Error while searching for conversation.");
+	THROW_on_error(GENERIC_ERROR, "Error while searching for conversation.");
 	if (conversation == NULL) {
-		throw(NOT_FOUND, "Failed to find a conversation for the given ID.");
+		THROW(NOT_FOUND, "Failed to find a conversation for the given ID.");
 	}
 
 	status = conversation_send(
@@ -816,7 +816,7 @@ return_status molch_encrypt_message(
 			NULL,
 			NULL,
 			NULL);
-	throw_on_error(GENERIC_ERROR, "Failed to send message.");
+	THROW_on_error(GENERIC_ERROR, "Failed to send message.");
 
 	*packet = packet_buffer->content;
 	*packet_length = packet_buffer->content_length;
@@ -826,7 +826,7 @@ return_status molch_encrypt_message(
 			*conversation_backup = NULL;
 		} else {
 			status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id->content, conversation->id->content_length);
-			throw_on_error(EXPORT_ERROR, "Failed to export conversation as protocol buffer.");
+			THROW_on_error(EXPORT_ERROR, "Failed to export conversation as protocol buffer.");
 		}
 	}
 
@@ -877,18 +877,18 @@ return_status molch_decrypt_message(
 		|| (conversation_id == NULL)
 		|| (receive_message_number == NULL)
 		|| (previous_receive_message_number == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_decrypt_message.");
+		THROW(INVALID_INPUT, "Invalid input to molch_decrypt_message.");
 	}
 
 	if (conversation_id_length != CONVERSATION_ID_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size.");
+		THROW(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size.");
 	}
 
 	//find the conversation
 	status = find_conversation(&conversation, conversation_id, NULL, NULL);
-	throw_on_error(GENERIC_ERROR, "Error while searching for conversation.");
+	THROW_on_error(GENERIC_ERROR, "Error while searching for conversation.");
 	if (conversation == NULL) {
-		throw(NOT_FOUND, "Failed to find conversation with the given ID.");
+		THROW(NOT_FOUND, "Failed to find conversation with the given ID.");
 	}
 
 	status = conversation_receive(
@@ -897,7 +897,7 @@ return_status molch_decrypt_message(
 			receive_message_number,
 			previous_receive_message_number,
 			&message_buffer);
-	throw_on_error(GENERIC_ERROR, "Failed to receive message.");
+	THROW_on_error(GENERIC_ERROR, "Failed to receive message.");
 
 	*message = message_buffer->content;
 	*message_length = message_buffer->content_length;
@@ -907,7 +907,7 @@ return_status molch_decrypt_message(
 			*conversation_backup = NULL;
 		} else {
 			status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id->content, conversation->id->content_length);
-			throw_on_error(EXPORT_ERROR, "Failed to export conversation as protocol buffer.");
+			THROW_on_error(EXPORT_ERROR, "Failed to export conversation as protocol buffer.");
 		}
 	}
 
@@ -935,21 +935,21 @@ return_status molch_end_conversation(
 	return_status status = return_status_init();
 
 	if (conversation_id == NULL) {
-		throw(INVALID_INPUT, "Invalid input to molch_end_conversation.");
+		THROW(INVALID_INPUT, "Invalid input to molch_end_conversation.");
 	}
 
 	if (conversation_id_length != CONVERSATION_ID_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect length.");
+		THROW(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect length.");
 	}
 
 	//find the conversation
 	conversation_t *conversation = NULL;
 	user_store_node *user = NULL;
 	status = find_conversation(&conversation, conversation_id, NULL, &user);
-	throw_on_error(NOT_FOUND, "Couldn't find converstion.");
+	THROW_on_error(NOT_FOUND, "Couldn't find converstion.");
 
 	if (conversation == NULL) {
-		throw(NOT_FOUND, "Couldn'nt find conversation.");
+		THROW(NOT_FOUND, "Couldn'nt find conversation.");
 	}
 
 	conversation_store_remove_by_id(user->conversations, conversation->id);
@@ -995,22 +995,22 @@ return_status molch_list_conversations(
 	return_status status = return_status_init();
 
 	if ((user_public_master_key == NULL) || (conversation_list == NULL) || (conversation_list_length == NULL) || (number == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_list_conversations.");
+		THROW(INVALID_INPUT, "Invalid input to molch_list_conversations.");
 	}
 
 	if (user_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Public master key has an incorrect length.");
+		THROW(INCORRECT_BUFFER_SIZE, "Public master key has an incorrect length.");
 	}
 
 	*conversation_list = NULL;
 
 	user_store_node *user = NULL;
 	status = user_store_find_node(&user, users, user_public_master_key_buffer);
-	throw_on_error(NOT_FOUND, "No user found for the given public identity.")
+	THROW_on_error(NOT_FOUND, "No user found for the given public identity.")
 
 	status = conversation_store_list(&conversation_list_buffer, user->conversations);
 	on_error {
-		throw(DATA_FETCH_ERROR, "Failed to list conversations.");
+		THROW(DATA_FETCH_ERROR, "Failed to list conversations.");
 	}
 	if (conversation_list_buffer == NULL) {
 		// list is empty
@@ -1020,7 +1020,7 @@ return_status molch_list_conversations(
 	}
 
 	if ((conversation_list_buffer->content_length % CONVERSATION_ID_SIZE) != 0) {
-		throw(INCORRECT_BUFFER_SIZE, "The conversation ID buffer has an incorrect length.");
+		THROW(INCORRECT_BUFFER_SIZE, "The conversation ID buffer has an incorrect length.");
 	}
 	*number = conversation_list_buffer->content_length / CONVERSATION_ID_SIZE;
 
@@ -1094,46 +1094,46 @@ return_status molch_conversation_export(
 	//check input
 	if ((backup == NULL) || (backup_length == NULL)
 			|| (conversation_id == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_conversation_export");
+		THROW(INVALID_INPUT, "Invalid input to molch_conversation_export");
 	}
 	if ((conversation_id_length != CONVERSATION_ID_SIZE)) {
-		throw(INVALID_INPUT, "Conversation ID has an invalid size.");
+		THROW(INVALID_INPUT, "Conversation ID has an invalid size.");
 	}
 
 	if ((global_backup_key == NULL) || (global_backup_key->content_length != BACKUP_KEY_SIZE)) {
-		throw(INCORRECT_DATA, "No backup key found.");
+		THROW(INCORRECT_DATA, "No backup key found.");
 	}
 
 	//find the conversation
 	conversation_t *conversation = NULL;
 	status = find_conversation(&conversation, conversation_id, NULL, NULL);
-	throw_on_error(NOT_FOUND, "Failed to find the conversation.");
+	THROW_on_error(NOT_FOUND, "Failed to find the conversation.");
 
 	//export the conversation
 	status = conversation_export(conversation, &conversation_struct);
 	conversation = NULL; //remove alias
-	throw_on_error(EXPORT_ERROR, "Failed to export conversation to protobuf-c struct.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export conversation to protobuf-c struct.");
 
 	//pack the struct
 	const size_t conversation_size = conversation__get_packed_size(conversation_struct);
 	conversation_buffer = buffer_create_with_custom_allocator(conversation_size, 0, zeroed_malloc, zeroed_free);
-	throw_on_failed_alloc(conversation_buffer);
+	THROW_on_failed_alloc(conversation_buffer);
 
 	conversation_buffer->content_length = conversation__pack(conversation_struct, conversation_buffer->content);
 	if (conversation_buffer->content_length != conversation_size) {
-		throw(PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c.");
+		THROW(PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c.");
 	}
 
 	//generate the nonce
 	backup_nonce = buffer_create_on_heap(BACKUP_NONCE_SIZE, 0);
-	throw_on_failed_alloc(backup_nonce);
+	THROW_on_failed_alloc(backup_nonce);
 	if (buffer_fill_random(backup_nonce, BACKUP_NONCE_SIZE) != 0) {
-		throw(GENERIC_ERROR, "Failed to generaete backup nonce.");
+		THROW(GENERIC_ERROR, "Failed to generaete backup nonce.");
 	}
 
 	//allocate the output
 	backup_buffer = buffer_create_on_heap(conversation_size + crypto_secretbox_MACBYTES, conversation_size + crypto_secretbox_MACBYTES);
-	throw_on_failed_alloc(backup_buffer);
+	THROW_on_failed_alloc(backup_buffer);
 
 	//encrypt the backup
 	int status_int = crypto_secretbox_easy(
@@ -1144,7 +1144,7 @@ return_status molch_conversation_export(
 			global_backup_key->content);
 	if (status_int != 0) {
 		backup_buffer->content_length = 0;
-		throw(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
+		THROW(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
 	}
 
 	//fill in the encrypted backup struct
@@ -1166,7 +1166,7 @@ return_status molch_conversation_export(
 	*backup = (unsigned char*)malloc(encrypted_backup_size);
 	*backup_length = encrypted_backup__pack(&encrypted_backup_struct, *backup);
 	if (*backup_length != encrypted_backup_size) {
-		throw(PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
+		THROW(PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
 	}
 
 cleanup:
@@ -1215,37 +1215,37 @@ return_status molch_conversation_import(
 
 	//check input
 	if ((backup == NULL) || (backup_key == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_import.");
+		THROW(INVALID_INPUT, "Invalid input to molch_import.");
 	}
 	if (backup_key_length != BACKUP_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
+		THROW(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
 	}
 	if (new_backup_key_length != BACKUP_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "New backup key has an incorrect length.");
+		THROW(INCORRECT_BUFFER_SIZE, "New backup key has an incorrect length.");
 	}
 
 	//unpack the encrypted backup
 	encrypted_backup_struct = encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup);
 	if (encrypted_backup_struct == NULL) {
-		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
+		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
 	}
 
 	//check the backup
 	if (encrypted_backup_struct->backup_version != 0) {
-		throw(INCORRECT_DATA, "Incompatible backup.");
+		THROW(INCORRECT_DATA, "Incompatible backup.");
 	}
 	if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP)) {
-		throw(INCORRECT_DATA, "Backup is not a conversation backup.");
+		THROW(INCORRECT_DATA, "Backup is not a conversation backup.");
 	}
 	if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
-		throw(PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state.");
+		THROW(PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state.");
 	}
 	if (!encrypted_backup_struct->has_encrypted_backup_nonce || (encrypted_backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
-		throw(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
+		THROW(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
 	}
 
 	decrypted_backup = buffer_create_with_custom_allocator(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
-	throw_on_failed_alloc(decrypted_backup);
+	THROW_on_failed_alloc(decrypted_backup);
 
 	//decrypt the backup
 	int status_int = crypto_secretbox_open_easy(
@@ -1255,26 +1255,26 @@ return_status molch_conversation_import(
 			encrypted_backup_struct->encrypted_backup_nonce.data,
 			backup_key);
 	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt conversation backup.");
+		THROW(DECRYPT_ERROR, "Failed to decrypt conversation backup.");
 	}
 
 	//unpack the struct
 	conversation_struct = conversation__unpack(&protobuf_c_allocators, decrypted_backup->content_length, decrypted_backup->content);
 	if (conversation_struct == NULL) {
-		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversations protobuf-c.");
+		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversations protobuf-c.");
 	}
 
 	//import the conversation
 	status = conversation_import(&conversation, conversation_struct);
-	throw_on_error(IMPORT_ERROR, "Failed to import conversation from Protobuf-C struct.");
+	THROW_on_error(IMPORT_ERROR, "Failed to import conversation from Protobuf-C struct.");
 
 	conversation_store *containing_store = NULL;
 	conversation_t *existing_conversation = NULL;
 	status = find_conversation(&existing_conversation, conversation->id->content, &containing_store, NULL);
-	throw_on_error(NOT_FOUND, "Imported conversation has to exist, but it doesn't.");
+	THROW_on_error(NOT_FOUND, "Imported conversation has to exist, but it doesn't.");
 
 	status = conversation_store_add(containing_store, conversation);
-	throw_on_error(ADDITION_ERROR, "Failed to add imported conversation to the conversation store.");
+	THROW_on_error(ADDITION_ERROR, "Failed to add imported conversation to the conversation store.");
 	conversation = NULL;
 
 
@@ -1283,7 +1283,7 @@ return_status molch_conversation_import(
 	on_error {
 		//remove the new imported conversation
 		conversation_store_remove(containing_store, conversation);
-		throw(KEYGENERATION_FAILED, "Failed to update backup key.");
+		THROW(KEYGENERATION_FAILED, "Failed to update backup key.");
 	}
 
 	//everything worked, the old conversation can now be removed
@@ -1330,41 +1330,41 @@ return_status molch_export(
 
 	//check input
 	if ((backup == NULL) || (backup_length == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_export");
+		THROW(INVALID_INPUT, "Invalid input to molch_export");
 	}
 
 	if ((global_backup_key == NULL) || (global_backup_key->content_length != BACKUP_KEY_SIZE)) {
-		throw(INCORRECT_DATA, "No backup key found.");
+		THROW(INCORRECT_DATA, "No backup key found.");
 	}
 
 	backup_struct = (Backup*)zeroed_malloc(sizeof(Backup));
-	throw_on_failed_alloc(backup_struct);
+	THROW_on_failed_alloc(backup_struct);
 	backup__init(backup_struct);
 
 	//export the conversation
 	status = user_store_export(users, &(backup_struct->users), &(backup_struct->n_users));
-	throw_on_error(EXPORT_ERROR, "Failed to export user store to protobuf-c struct.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export user store to protobuf-c struct.");
 
 	//pack the struct
 	const size_t backup_struct_size = backup__get_packed_size(backup_struct);
 	users_buffer = buffer_create_with_custom_allocator(backup_struct_size, 0, zeroed_malloc, zeroed_free);
-	throw_on_failed_alloc(users_buffer);
+	THROW_on_failed_alloc(users_buffer);
 
 	users_buffer->content_length = backup__pack(backup_struct, users_buffer->content);
 	if (users_buffer->content_length != backup_struct_size) {
-		throw(PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c.");
+		THROW(PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c.");
 	}
 
 	//generate the nonce
 	backup_nonce = buffer_create_on_heap(BACKUP_NONCE_SIZE, 0);
-	throw_on_failed_alloc(backup_nonce);
+	THROW_on_failed_alloc(backup_nonce);
 	if (buffer_fill_random(backup_nonce, BACKUP_NONCE_SIZE) != 0) {
-		throw(GENERIC_ERROR, "Failed to generaete backup nonce.");
+		THROW(GENERIC_ERROR, "Failed to generaete backup nonce.");
 	}
 
 	//allocate the output
 	backup_buffer = buffer_create_on_heap(backup_struct_size + crypto_secretbox_MACBYTES, backup_struct_size + crypto_secretbox_MACBYTES);
-	throw_on_failed_alloc(backup_buffer);
+	THROW_on_failed_alloc(backup_buffer);
 
 	//encrypt the backup
 	int status_int = crypto_secretbox_easy(
@@ -1375,7 +1375,7 @@ return_status molch_export(
 			global_backup_key->content);
 	if (status_int != 0) {
 		backup_buffer->content_length = 0;
-		throw(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
+		THROW(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
 	}
 
 	//fill in the encrypted backup struct
@@ -1397,7 +1397,7 @@ return_status molch_export(
 	*backup = (unsigned char*)malloc(encrypted_backup_size);
 	*backup_length = encrypted_backup__pack(&encrypted_backup_struct, *backup);
 	if (*backup_length != encrypted_backup_size) {
-		throw(PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
+		THROW(PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
 	}
 
 cleanup:
@@ -1450,43 +1450,43 @@ return_status molch_import(
 
 	//check input
 	if ((backup == NULL) || (backup_key == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_import.");
+		THROW(INVALID_INPUT, "Invalid input to molch_import.");
 	}
 	if (backup_key_length != BACKUP_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
+		THROW(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
 	}
 	if (new_backup_key_length != BACKUP_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "New backup key has an incorrect length.");
+		THROW(INCORRECT_BUFFER_SIZE, "New backup key has an incorrect length.");
 	}
 
 	if (users == NULL) {
 		if (sodium_init() == -1) {
-			throw(INIT_ERROR, "Failed to init libsodium.");
+			THROW(INIT_ERROR, "Failed to init libsodium.");
 		}
 	}
 
 	//unpack the encrypted backup
 	encrypted_backup_struct = encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup);
 	if (encrypted_backup_struct == NULL) {
-		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
+		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
 	}
 
 	//check the backup
 	if (encrypted_backup_struct->backup_version != 0) {
-		throw(INCORRECT_DATA, "Incompatible backup.");
+		THROW(INCORRECT_DATA, "Incompatible backup.");
 	}
 	if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP)) {
-		throw(INCORRECT_DATA, "Backup is not a full backup.");
+		THROW(INCORRECT_DATA, "Backup is not a full backup.");
 	}
 	if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
-		throw(PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted state.");
+		THROW(PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted state.");
 	}
 	if (!encrypted_backup_struct->has_encrypted_backup_nonce || (encrypted_backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
-		throw(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
+		THROW(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
 	}
 
 	decrypted_backup = buffer_create_with_custom_allocator(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
-	throw_on_failed_alloc(decrypted_backup);
+	THROW_on_failed_alloc(decrypted_backup);
 
 	//decrypt the backup
 	int status_int = crypto_secretbox_open_easy(
@@ -1496,22 +1496,22 @@ return_status molch_import(
 			encrypted_backup_struct->encrypted_backup_nonce.data,
 			backup_key);
 	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt backup.");
+		THROW(DECRYPT_ERROR, "Failed to decrypt backup.");
 	}
 
 	//unpack the struct
 	backup_struct = backup__unpack(&protobuf_c_allocators, decrypted_backup->content_length, decrypted_backup->content);
 	if (backup_struct == NULL) {
-		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack backups protobuf-c.");
+		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack backups protobuf-c.");
 	}
 
 	//import the user store
 	status = user_store_import(&store, backup_struct->users, backup_struct->n_users);
-	throw_on_error(IMPORT_ERROR, "Failed to import user store from Protobuf-C struct.");
+	THROW_on_error(IMPORT_ERROR, "Failed to import user store from Protobuf-C struct.");
 
 	//update the backup key
 	status = molch_update_backup_key(new_backup_key, new_backup_key_length);
-	throw_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
+	THROW_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
 
 	//everyting worked, switch to the new user store
 	user_store_destroy(users);
@@ -1553,11 +1553,11 @@ return_status molch_get_prekey_list(
 
 	// check input
 	if ((public_master_key == NULL) || (prekey_list == NULL) || (prekey_list_length == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_get_prekey_list.");
+		THROW(INVALID_INPUT, "Invalid input to molch_get_prekey_list.");
 	}
 
 	if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Public master key has an incorrect length.");
+		THROW(INCORRECT_BUFFER_SIZE, "Public master key has an incorrect length.");
 	}
 
 	buffer_create_with_existing_array(public_signing_key_buffer, public_master_key, PUBLIC_MASTER_KEY_SIZE);
@@ -1566,7 +1566,7 @@ return_status molch_get_prekey_list(
 			public_signing_key_buffer,
 			prekey_list,
 			prekey_list_length);
-	throw_on_error(CREATION_ERROR, "Failed to create prekey list.");
+	THROW_on_error(CREATION_ERROR, "Failed to create prekey list.");
 
 cleanup:
 	return status;
@@ -1587,39 +1587,39 @@ return_status molch_update_backup_key(
 
 	if (users == NULL) {
 		if (sodium_init() == -1) {
-			throw(INIT_ERROR, "Failed to initialize libsodium.");
+			THROW(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 	}
 
 	if (new_key == NULL) {
-		throw(INVALID_INPUT, "Invalid input to molch_update_backup_key.");
+		THROW(INVALID_INPUT, "Invalid input to molch_update_backup_key.");
 	}
 
 	if (new_key_length != BACKUP_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "New key has an incorrect length.");
+		THROW(INCORRECT_BUFFER_SIZE, "New key has an incorrect length.");
 	}
 
 	// create a backup key buffer if it doesnt exist already
 	if (global_backup_key == NULL) {
 		global_backup_key = buffer_create_with_custom_allocator(BACKUP_KEY_SIZE, 0, sodium_malloc, sodium_free);
-		throw_on_failed_alloc(global_backup_key);
+		THROW_on_failed_alloc(global_backup_key);
 	}
 
 	//make backup key buffer writable
 	if (sodium_mprotect_readwrite(global_backup_key) != 0) {
-		throw(GENERIC_ERROR, "Failed to make backup key readwrite.");
+		THROW(GENERIC_ERROR, "Failed to make backup key readwrite.");
 	}
 	//make the content of the backup key writable
 	if (sodium_mprotect_readwrite(global_backup_key->content) != 0) {
-		throw(GENERIC_ERROR, "Failed to make backup key content readwrite.");
+		THROW(GENERIC_ERROR, "Failed to make backup key content readwrite.");
 	}
 
 	if (buffer_fill_random(global_backup_key, BACKUP_KEY_SIZE) != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate new backup key.");
+		THROW(KEYGENERATION_FAILED, "Failed to generate new backup key.");
 	}
 
 	if (buffer_clone(new_key_buffer, global_backup_key) != 0) {
-		throw(BUFFER_ERROR, "Failed to copy new backup key.");
+		THROW(BUFFER_ERROR, "Failed to copy new backup key.");
 	}
 
 cleanup:

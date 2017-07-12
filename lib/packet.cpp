@@ -74,17 +74,17 @@ return_status packet_unpack(Packet ** const packet_struct, const buffer_t * cons
 
 	//check input
 	if ((packet_struct == NULL) || (packet == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to packet_unpack.");
+		THROW(INVALID_INPUT, "Invalid input to packet_unpack.");
 	}
 
 	//unpack the packet
 	*packet_struct = packet__unpack(&protobuf_c_allocators, packet->content_length, packet->content);
 	if (*packet_struct == NULL) {
-		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
+		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
 	}
 
 	if ((*packet_struct)->packet_header->current_protocol_version != 0) {
-		throw(UNSUPPORTED_PROTOCOL_VERSION, "The packet has an unsuported protocol version.");
+		THROW(UNSUPPORTED_PROTOCOL_VERSION, "The packet has an unsuported protocol version.");
 	}
 
 	//check if the packet contains the necessary fields
@@ -93,13 +93,13 @@ return_status packet_unpack(Packet ** const packet_struct, const buffer_t * cons
 		|| !(*packet_struct)->packet_header->has_packet_type
 		|| !(*packet_struct)->packet_header->has_header_nonce
 		|| !(*packet_struct)->packet_header->has_message_nonce) {
-		throw(PROTOBUF_MISSING_ERROR, "Some fields are missing in the packet.");
+		THROW(PROTOBUF_MISSING_ERROR, "Some fields are missing in the packet.");
 	}
 
 	//check the size of the nonces
 	if (((*packet_struct)->packet_header->header_nonce.len != HEADER_NONCE_SIZE)
 		|| ((*packet_struct)->packet_header->message_nonce.len != MESSAGE_NONCE_SIZE)) {
-		throw(INCORRECT_BUFFER_SIZE, "At least one of the nonces has an incorrect length.");
+		THROW(INCORRECT_BUFFER_SIZE, "At least one of the nonces has an incorrect length.");
 	}
 
 	if ((*packet_struct)->packet_header->packet_type == PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
@@ -107,14 +107,14 @@ return_status packet_unpack(Packet ** const packet_struct, const buffer_t * cons
 		if (!(*packet_struct)->packet_header->has_public_identity_key
 			|| !(*packet_struct)->packet_header->has_public_ephemeral_key
 			|| !(*packet_struct)->packet_header->has_public_prekey) {
-			throw(PROTOBUF_MISSING_ERROR, "The prekey packet misses at least one public key.");
+			THROW(PROTOBUF_MISSING_ERROR, "The prekey packet misses at least one public key.");
 		}
 
 		//check the sizes of the public keys
 		if (((*packet_struct)->packet_header->public_identity_key.len != PUBLIC_KEY_SIZE)
 			|| ((*packet_struct)->packet_header->public_ephemeral_key.len != PUBLIC_KEY_SIZE)
 			|| ((*packet_struct)->packet_header->public_prekey.len != PUBLIC_KEY_SIZE)) {
-			throw(INCORRECT_BUFFER_SIZE, "At least one of the public keys of the prekey packet has an incorrect length.");
+			THROW(INCORRECT_BUFFER_SIZE, "At least one of the public keys of the prekey packet has an incorrect length.");
 		}
 	}
 
@@ -163,7 +163,7 @@ return_status packet_encrypt(
 		|| (axolotl_header_key == NULL) || (axolotl_header_key->content_length != HEADER_KEY_SIZE)
 		|| (message == NULL)
 		|| (message_key == NULL) || (message_key->content_length != MESSAGE_KEY_SIZE)) {
-		throw(INVALID_INPUT, "Invalid input to packet_encrypt.");
+		THROW(INVALID_INPUT, "Invalid input to packet_encrypt.");
 	}
 
 	//set the protocol version
@@ -179,7 +179,7 @@ return_status packet_encrypt(
 		if ((public_identity_key == NULL) || (public_identity_key->content_length != PUBLIC_KEY_SIZE)
 			|| (public_ephemeral_key == NULL) || (public_ephemeral_key->content_length != PUBLIC_KEY_SIZE )
 			|| (public_prekey == NULL) || (public_prekey->content_length != PUBLIC_KEY_SIZE)) {
-			throw(INVALID_INPUT, "Invalid public key to packet_encrypt for prekey message.");
+			THROW(INVALID_INPUT, "Invalid public key to packet_encrypt for prekey message.");
 		}
 
 		//set the public identity key
@@ -200,9 +200,9 @@ return_status packet_encrypt(
 
 	//generate the header nonce and add it to the packet header
 	header_nonce = buffer_create_on_heap(HEADER_NONCE_SIZE, 0);
-	throw_on_failed_alloc(header_nonce);
+	THROW_on_failed_alloc(header_nonce);
 	if (buffer_fill_random(header_nonce, HEADER_NONCE_SIZE) != 0) {
-		throw(BUFFER_ERROR, "Failed to generate header nonce.");
+		THROW(BUFFER_ERROR, "Failed to generate header nonce.");
 	}
 	packet_header_struct.has_header_nonce = true;
 	packet_header_struct.header_nonce.data = header_nonce->content;
@@ -212,7 +212,7 @@ return_status packet_encrypt(
 	encrypted_axolotl_header = buffer_create_on_heap(
 			axolotl_header->content_length + crypto_secretbox_MACBYTES,
 			axolotl_header->content_length + crypto_secretbox_MACBYTES);
-	throw_on_failed_alloc(encrypted_axolotl_header);
+	THROW_on_failed_alloc(encrypted_axolotl_header);
 	int status_int = crypto_secretbox_easy(
 			encrypted_axolotl_header->content,
 			axolotl_header->content,
@@ -220,7 +220,7 @@ return_status packet_encrypt(
 			header_nonce->content,
 			axolotl_header_key->content);
 	if (status_int != 0) {
-		throw(ENCRYPT_ERROR, "Failed to encrypt header.");
+		THROW(ENCRYPT_ERROR, "Failed to encrypt header.");
 	}
 
 	//add the encrypted header to the protobuf struct
@@ -230,9 +230,9 @@ return_status packet_encrypt(
 
 	//generate the message nonce and add it to the packet header
 	message_nonce = buffer_create_on_heap(MESSAGE_NONCE_SIZE, 0);
-	throw_on_failed_alloc(message_nonce);
+	THROW_on_failed_alloc(message_nonce);
 	if (buffer_fill_random(message_nonce, MESSAGE_NONCE_SIZE) != 0) {
-		throw(BUFFER_ERROR, "Failed to generate message nonce.");
+		THROW(BUFFER_ERROR, "Failed to generate message nonce.");
 	}
 	packet_header_struct.has_message_nonce = true;
 	packet_header_struct.message_nonce.data = message_nonce->content;
@@ -241,10 +241,10 @@ return_status packet_encrypt(
 	//pad the message (PKCS7 padding to 255 byte blocks, see RFC5652 section 6.3)
 	unsigned char padding = (unsigned char)(255 - (message->content_length % 255));
 	padded_message = buffer_create_on_heap(message->content_length + padding, 0);
-	throw_on_failed_alloc(padded_message);
+	THROW_on_failed_alloc(padded_message);
 	//copy the message
 	if (buffer_clone(padded_message, message) != 0) {
-		throw(BUFFER_ERROR, "Failed to clone message.");
+		THROW(BUFFER_ERROR, "Failed to clone message.");
 	}
 	//pad it
 	memset(padded_message->content + padded_message->content_length, padding, padding);
@@ -254,7 +254,7 @@ return_status packet_encrypt(
 	encrypted_message = buffer_create_on_heap(
 			padded_message->content_length + crypto_secretbox_MACBYTES,
 			padded_message->content_length + crypto_secretbox_MACBYTES);
-	throw_on_failed_alloc(encrypted_message);
+	THROW_on_failed_alloc(encrypted_message);
 	status_int = crypto_secretbox_easy(
 			encrypted_message->content,
 			padded_message->content,
@@ -262,7 +262,7 @@ return_status packet_encrypt(
 			message_nonce->content,
 			message_key->content);
 	if (status_int != 0) {
-		throw(ENCRYPT_ERROR, "Failed to encrypt message.");
+		THROW(ENCRYPT_ERROR, "Failed to encrypt message.");
 	}
 
 	//add the encrypted message to the protobuf struct
@@ -275,10 +275,10 @@ return_status packet_encrypt(
 
 	//pack the packet
 	*packet = buffer_create_on_heap(packed_length, 0);
-	throw_on_failed_alloc(*packet);
+	THROW_on_failed_alloc(*packet);
 	(*packet)->content_length = packet__pack(&packet_struct, (*packet)->content);
 	if ((*packet)->content_length != packed_length) {
-		throw(PROTOBUF_PACK_ERROR, "Packet packet has incorrect length.");
+		THROW(PROTOBUF_PACK_ERROR, "Packet packet has incorrect length.");
 	}
 
 cleanup:
@@ -331,21 +331,21 @@ return_status packet_decrypt(
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	throw_on_error(DATA_FETCH_ERROR, "Failed to get metadata from the packet.");
+	THROW_on_error(DATA_FETCH_ERROR, "Failed to get metadata from the packet.");
 
 	//decrypt the header
 	status = packet_decrypt_header(
 			axolotl_header,
 			packet,
 			axolotl_header_key);
-	throw_on_error(DECRYPT_ERROR, "Failed to decrypt header.");
+	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt header.");
 
 	//decrypt the message
 	status = packet_decrypt_message(
 			message,
 			packet,
 			message_key);
-	throw_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
+	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
 
 cleanup:
 	on_error {
@@ -397,27 +397,27 @@ return_status packet_get_metadata_without_verification(
 	if ((current_protocol_version == NULL) || (highest_supported_protocol_version == NULL)
 			|| (packet_type == NULL)
 			|| (packet == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to packet_get_metadata_without_verification.");
+		THROW(INVALID_INPUT, "Invalid input to packet_get_metadata_without_verification.");
 	}
 
 	status = packet_unpack(&packet_struct, packet);
-	throw_on_error(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
+	THROW_on_error(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
 
 	if (packet_struct->packet_header->packet_type == PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
 		//copy the public keys
 		if (public_identity_key != NULL) {
 			if (buffer_clone_from_raw(public_identity_key, packet_struct->packet_header->public_identity_key.data, packet_struct->packet_header->public_identity_key.len) != 0) {
-				throw(BUFFER_ERROR, "Failed to copy public identity key.");
+				THROW(BUFFER_ERROR, "Failed to copy public identity key.");
 			}
 		}
 		if (public_ephemeral_key != NULL) {
 			if (buffer_clone_from_raw(public_ephemeral_key, packet_struct->packet_header->public_ephemeral_key.data, packet_struct->packet_header->public_ephemeral_key.len) != 0) {
-				throw(BUFFER_ERROR, "Failed to copy public ephemeral key.");
+				THROW(BUFFER_ERROR, "Failed to copy public ephemeral key.");
 			}
 		}
 		if (public_prekey != NULL) {
 			if (buffer_clone_from_raw(public_prekey, packet_struct->packet_header->public_prekey.data, packet_struct->packet_header->public_prekey.len) != 0) {
-				throw(BUFFER_ERROR, "Failed to copy public prekey.");
+				THROW(BUFFER_ERROR, "Failed to copy public prekey.");
 			}
 		}
 	}
@@ -468,19 +468,19 @@ return_status packet_decrypt_header(
 	if ((axolotl_header == NULL)
 			|| (packet == NULL)
 			|| (axolotl_header_key == NULL) || (axolotl_header_key->content_length != HEADER_KEY_SIZE)) {
-		throw(INVALID_INPUT, "Invalid input to packet_decrypt_header.");
+		THROW(INVALID_INPUT, "Invalid input to packet_decrypt_header.");
 	}
 
 	status = packet_unpack(&packet_struct, packet);
-	throw_on_error(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
+	THROW_on_error(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
 
 	if (packet_struct->encrypted_axolotl_header.len < crypto_secretbox_MACBYTES) {
-		throw(INCORRECT_BUFFER_SIZE, "The ciphertext of the axolotl header is too short.")
+		THROW(INCORRECT_BUFFER_SIZE, "The ciphertext of the axolotl header is too short.")
 	}
 
 	const size_t axolotl_header_length = packet_struct->encrypted_axolotl_header.len - crypto_secretbox_MACBYTES;
 	*axolotl_header = buffer_create_on_heap(axolotl_header_length, axolotl_header_length);
-	throw_on_failed_alloc(*axolotl_header);
+	THROW_on_failed_alloc(*axolotl_header);
 
 	int status_int = crypto_secretbox_open_easy(
 			(*axolotl_header)->content,
@@ -489,7 +489,7 @@ return_status packet_decrypt_header(
 			packet_struct->packet_header->header_nonce.data,
 			axolotl_header_key->content);
 	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt axolotl header.");
+		THROW(DECRYPT_ERROR, "Failed to decrypt axolotl header.");
 	}
 
 cleanup:
@@ -523,22 +523,22 @@ return_status packet_decrypt_message(
 	if ((message == NULL)
 		|| (packet == NULL)
 		|| (message_key == NULL) || (message_key->content_length != MESSAGE_KEY_SIZE)) {
-		throw(INVALID_INPUT, "Invalid input to packet_decrypt_message.")
+		THROW(INVALID_INPUT, "Invalid input to packet_decrypt_message.")
 	}
 
 	status = packet_unpack(&packet_struct, packet);
-	throw_on_error(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
+	THROW_on_error(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
 
 	if (packet_struct->encrypted_message.len < crypto_secretbox_MACBYTES) {
-		throw(INCORRECT_BUFFER_SIZE, "The ciphertext of the message is too short.");
+		THROW(INCORRECT_BUFFER_SIZE, "The ciphertext of the message is too short.");
 	}
 
 	const size_t padded_message_length = packet_struct->encrypted_message.len - crypto_secretbox_MACBYTES;
 	if (padded_message_length < 255) {
-		throw(INCORRECT_BUFFER_SIZE, "The padded message is too short.")
+		THROW(INCORRECT_BUFFER_SIZE, "The padded message is too short.")
 	}
 	padded_message = buffer_create_on_heap(padded_message_length, padded_message_length);
-	throw_on_failed_alloc(padded_message);
+	THROW_on_failed_alloc(padded_message);
 
 	int status_int = crypto_secretbox_open_easy(
 			padded_message->content,
@@ -547,22 +547,22 @@ return_status packet_decrypt_message(
 			packet_struct->packet_header->message_nonce.data,
 			message_key->content);
 	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt message.");
+		THROW(DECRYPT_ERROR, "Failed to decrypt message.");
 	}
 
 	//get the padding (last byte)
 	unsigned char padding = padded_message->content[padded_message->content_length - 1];
 	if (padding > padded_message->content_length) {
-		throw(INCORRECT_BUFFER_SIZE, "The padded message is too short.")
+		THROW(INCORRECT_BUFFER_SIZE, "The padded message is too short.")
 	}
 
 	//extract the message
 	const size_t message_length = padded_message->content_length - padding;
 	*message = buffer_create_on_heap(message_length, 0);
-	throw_on_failed_alloc(*message);
+	THROW_on_failed_alloc(*message);
 	//TODO this doesn't need to be copied, setting the length should be enough
 	if (buffer_copy(*message, 0, padded_message, 0, message_length) != 0) {
-		throw(BUFFER_ERROR, "Failed to copy message from padded message.");
+		THROW(BUFFER_ERROR, "Failed to copy message from padded message.");
 	}
 
 cleanup:

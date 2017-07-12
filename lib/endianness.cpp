@@ -44,7 +44,7 @@ return_status endianness_uint32_to_big_endian(
 	return_status status = return_status_init();
 
 	if ((output == NULL) || (output->buffer_length < sizeof(uint32_t))) {
-		throw(INVALID_INPUT, "Invalid input to endianness_uint32_to_big_endian.");
+		THROW(INVALID_INPUT, "Invalid input to endianness_uint32_to_big_endian.");
 	}
 
 	if (endianness_is_little_endian()) {
@@ -57,7 +57,7 @@ return_status endianness_uint32_to_big_endian(
 	} else {
 		//if already big endian, just copy
 		if (buffer_clone_from_raw(output, (unsigned char*) &integer, sizeof(int32_t)) != 0) {
-			throw(BUFFER_ERROR, "Failed to copy number.");
+			THROW(BUFFER_ERROR, "Failed to copy number.");
 		}
 	}
 
@@ -74,7 +74,7 @@ return_status endianness_uint32_from_big_endian(
 	return_status status = return_status_init();
 
 	if ((integer == NULL) || (buffer == NULL) || (buffer->content_length != sizeof(uint32_t))) {
-		throw(INVALID_INPUT, "Invalid input to endianness_uint32_from_big_endian.");
+		THROW(INVALID_INPUT, "Invalid input to endianness_uint32_from_big_endian.");
 	}
 
 	if (endianness_is_little_endian()) {
@@ -86,7 +86,7 @@ return_status endianness_uint32_from_big_endian(
 	} else {
 		//if already big endian, just copy
 		if (buffer_clone_to_raw((unsigned char*) integer, sizeof(uint32_t), buffer) != 0) {
-			throw(BUFFER_ERROR, "Failed to copy number.");
+			THROW(BUFFER_ERROR, "Failed to copy number.");
 		}
 	}
 
@@ -121,7 +121,7 @@ return_status endianness_uint64_to_big_endian(
 	return_status status = return_status_init();
 
 	if ((output == NULL) || (output->buffer_length < sizeof(uint64_t))) {
-		throw(INVALID_INPUT, "Invalid input to endianness_uint64_to_big_endian.");
+		THROW(INVALID_INPUT, "Invalid input to endianness_uint64_to_big_endian.");
 	}
 
 	if (endianness_is_little_endian()) {
@@ -138,7 +138,7 @@ return_status endianness_uint64_to_big_endian(
 	} else {
 		//if already big endian, just copy
 		if (buffer_clone_from_raw(output, (unsigned char*) &integer, sizeof(uint64_t)) != 0) {
-			throw(BUFFER_ERROR, "Failed to copy number.");
+			THROW(BUFFER_ERROR, "Failed to copy number.");
 		}
 	}
 
@@ -155,7 +155,7 @@ return_status endianness_uint64_from_big_endian(
 	return_status status = return_status_init();
 
 	if ((integer == NULL) || (buffer == NULL) || (buffer->content_length != sizeof(uint64_t))) {
-		throw(INVALID_INPUT, "Invalid input to endianness_uint64_from_big_endian.");
+		THROW(INVALID_INPUT, "Invalid input to endianness_uint64_from_big_endian.");
 	}
 
 	if (endianness_is_little_endian()) {
@@ -171,7 +171,7 @@ return_status endianness_uint64_from_big_endian(
 	} else {
 		//if already big endian, just copy
 		if (buffer_clone_to_raw((unsigned char*) integer, sizeof(uint64_t), buffer) != 0) {
-			throw(BUFFER_ERROR, "Failed to copy number.");
+			THROW(BUFFER_ERROR, "Failed to copy number.");
 		}
 	}
 
@@ -218,7 +218,7 @@ return_status endianness_time_from_big_endian(
 
 	int64_t timestamp = 0;
 	status = endianness_int64_from_big_endian(&timestamp, buffer);
-	throw_on_error(CONVERSION_ERROR, "Failed to convert int64 from big endian.");
+	THROW_on_error(CONVERSION_ERROR, "Failed to convert int64 from big endian.");
 
 	*time = (time_t) timestamp;
 

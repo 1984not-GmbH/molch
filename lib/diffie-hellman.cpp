@@ -56,7 +56,7 @@ return_status diffie_hellman(
 
 	//buffer for diffie hellman shared secret
 	buffer_t *dh_secret = buffer_create_on_heap(crypto_scalarmult_SCALARBYTES, crypto_scalarmult_SCALARBYTES);
-	throw_on_failed_alloc(dh_secret);
+	THROW_on_failed_alloc(dh_secret);
 
 	crypto_generichash_state hash_state[1];
 
@@ -68,14 +68,14 @@ return_status diffie_hellman(
 			|| (our_private_key->buffer_length < PRIVATE_KEY_SIZE)
 			|| (our_public_key->buffer_length < PUBLIC_KEY_SIZE)
 			|| (their_public_key->buffer_length < PUBLIC_KEY_SIZE)) {
-		throw(INVALID_INPUT, "Invalid input to diffie_hellman.");
+		THROW(INVALID_INPUT, "Invalid input to diffie_hellman.");
 	}
 
 
 	//do the diffie hellman key exchange
 	int status_int = 0;
 	if (crypto_scalarmult(dh_secret->content, our_private_key->content, their_public_key->content) != 0) {
-		throw(KEYDERIVATION_FAILED, "Failed to do crypto_scalarmult.");
+		THROW(KEYDERIVATION_FAILED, "Failed to do crypto_scalarmult.");
 	}
 
 	//initialize hashing
@@ -85,40 +85,40 @@ return_status diffie_hellman(
 			0, //key_length
 			DIFFIE_HELLMAN_SIZE); //output length
 	if (status_int != 0) {
-		throw(GENERIC_ERROR, "Failed to initialize hash.");
+		THROW(GENERIC_ERROR, "Failed to initialize hash.");
 	}
 
 	//start input to hash with diffie hellman secret
 	if (crypto_generichash_update(hash_state, dh_secret->content, dh_secret->content_length) != 0) {
-		throw(GENERIC_ERROR, "Failed to add the diffie hellman secret to the hash input.");
+		THROW(GENERIC_ERROR, "Failed to add the diffie hellman secret to the hash input.");
 	}
 
 	//add public keys to the input of the hash
 	if (am_i_alice) { //Alice (our_public_key|their_public_key)
 		//add our_public_key to the input of the hash
 		if (crypto_generichash_update(hash_state, our_public_key->content, our_public_key->content_length) != 0) {
-			throw(GENERIC_ERROR, "Failed to add Alice' public key to the hash input.");
+			THROW(GENERIC_ERROR, "Failed to add Alice' public key to the hash input.");
 		}
 
 		//add their_public_key to the input of the hash
 		if (crypto_generichash_update(hash_state, their_public_key->content, their_public_key->content_length) != 0) {
-			throw(GENERIC_ERROR, "Failed to add Bob's public key to the hash input.");
+			THROW(GENERIC_ERROR, "Failed to add Bob's public key to the hash input.");
 		}
 	} else { //Bob (their_public_key|our_public_key)
 		//add their_public_key to the input of the hash
 		if (crypto_generichash_update(hash_state, their_public_key->content, their_public_key->content_length) != 0) {
-			throw(GENERIC_ERROR, "Failed to add Alice's public key to the hash input.");
+			THROW(GENERIC_ERROR, "Failed to add Alice's public key to the hash input.");
 		}
 
 		//add our_public_key to the input of the hash
 		if (crypto_generichash_update(hash_state, our_public_key->content, our_public_key->content_length) != 0) {
-			throw(GENERIC_ERROR, "Failed to add Bob's public key to the hash input.");
+			THROW(GENERIC_ERROR, "Failed to add Bob's public key to the hash input.");
 		}
 	}
 
 	//finally write the hash to derived_key
 	if (crypto_generichash_final(hash_state, derived_key->content, DIFFIE_HELLMAN_SIZE) != 0) {
-		throw(GENERIC_ERROR, "Failed to finalize hash.");
+		THROW(GENERIC_ERROR, "Failed to finalize hash.");
 	}
 	derived_key->content_length = DIFFIE_HELLMAN_SIZE;
 
@@ -164,11 +164,11 @@ return_status triple_diffie_hellman(
 	buffer_t *dh2 = NULL;
 	buffer_t *dh3 = NULL;
 	dh1 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-	throw_on_failed_alloc(dh1);
+	THROW_on_failed_alloc(dh1);
 	dh2 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-	throw_on_failed_alloc(dh2);
+	THROW_on_failed_alloc(dh2);
 	dh3 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-	throw_on_failed_alloc(dh3);
+	THROW_on_failed_alloc(dh3);
 
 	//check buffer sizes
 	if ((derived_key->buffer_length < DIFFIE_HELLMAN_SIZE)
@@ -184,7 +184,7 @@ return_status triple_diffie_hellman(
 			|| (our_private_ephemeral->buffer_length < PRIVATE_KEY_SIZE)
 			|| (our_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)
 			|| (their_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)) {
-		throw(INVALID_INPUT, "Invalid input to triple_diffie_hellman.");
+		THROW(INVALID_INPUT, "Invalid input to triple_diffie_hellman.");
 	}
 
 	int status_int = 0;
@@ -196,7 +196,7 @@ return_status triple_diffie_hellman(
 				our_public_identity,
 				their_public_ephemeral,
 				am_i_alice);
-		throw_on_error(KEYDERIVATION_FAILED, "Failed to perform diffie hellman on our identity and their ephemeral.");
+		THROW_on_error(KEYDERIVATION_FAILED, "Failed to perform diffie hellman on our identity and their ephemeral.");
 
 		//DH(our_ephemeral, their_identity)
 		status = diffie_hellman(
@@ -205,7 +205,7 @@ return_status triple_diffie_hellman(
 				our_public_ephemeral,
 				their_public_identity,
 				am_i_alice);
-		throw_on_error(KEYDERIVATION_FAILED, "Failed to perform diffie hellman on our ephemeral and their identity.");
+		THROW_on_error(KEYDERIVATION_FAILED, "Failed to perform diffie hellman on our ephemeral and their identity.");
 	} else {
 		//DH(our_ephemeral, their_identity)
 		status = diffie_hellman(
@@ -214,7 +214,7 @@ return_status triple_diffie_hellman(
 				our_public_ephemeral,
 				their_public_identity,
 				am_i_alice);
-		throw_on_error(KEYDERIVATION_FAILED, "Failed to perform diffie hellman on our ephemeral and their identy.");
+		THROW_on_error(KEYDERIVATION_FAILED, "Failed to perform diffie hellman on our ephemeral and their identy.");
 
 		//DH(our_identity, their_ephemeral)
 		status = diffie_hellman(
@@ -223,7 +223,7 @@ return_status triple_diffie_hellman(
 				our_public_identity,
 				their_public_ephemeral,
 				am_i_alice);
-		throw_on_error(KEYDERIVATION_FAILED, "Failed to perform diffie hellman on our identity and their ephemeral.");
+		THROW_on_error(KEYDERIVATION_FAILED, "Failed to perform diffie hellman on our identity and their ephemeral.");
 	}
 
 	//DH(our_ephemeral, their_ephemeral)
@@ -234,7 +234,7 @@ return_status triple_diffie_hellman(
 			our_public_ephemeral,
 			their_public_ephemeral,
 			am_i_alice);
-	throw_on_error(KEYDERIVATION_FAILED, "Failed to perform diffie hellman on our ephemeral and their ephemeral.");
+	THROW_on_error(KEYDERIVATION_FAILED, "Failed to perform diffie hellman on our ephemeral and their ephemeral.");
 
 	//now calculate HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0))
 	//( HASH(dh1|| dh2 || dh3) )
@@ -247,28 +247,28 @@ return_status triple_diffie_hellman(
 			0, //key_length
 			DIFFIE_HELLMAN_SIZE); //output_length
 	if (status_int != 0) {
-		throw(GENERIC_ERROR, "Failed to initialize hash.");
+		THROW(GENERIC_ERROR, "Failed to initialize hash.");
 	}
 
 	//add dh1 to hash input
 	if (crypto_generichash_update(hash_state, dh1->content, DIFFIE_HELLMAN_SIZE) != 0) {
-		throw(GENERIC_ERROR, "Failed to add dh1 to the hash input.");
+		THROW(GENERIC_ERROR, "Failed to add dh1 to the hash input.");
 	}
 
 	//add dh2 to hash input
 	if (crypto_generichash_update(hash_state, dh2->content, DIFFIE_HELLMAN_SIZE) != 0) {
-		throw(GENERIC_ERROR, "Failed to add dh2 to the hash input.");
+		THROW(GENERIC_ERROR, "Failed to add dh2 to the hash input.");
 	}
 
 	//add dh3 to hash input
 	if (crypto_generichash_update(hash_state, dh3->content, DIFFIE_HELLMAN_SIZE) != 0) {
-		throw(GENERIC_ERROR, "Failed to add dh3 to the hash input.");
+		THROW(GENERIC_ERROR, "Failed to add dh3 to the hash input.");
 	}
 
 	//write final hash to output (derived_key)
 	if (crypto_generichash_final(hash_state, derived_key->content, DIFFIE_HELLMAN_SIZE) != 0) {
 		sodium_memzero(hash_state, sizeof(crypto_generichash_state));
-		throw(GENERIC_ERROR, "Failed to finalize hash");
+		THROW(GENERIC_ERROR, "Failed to finalize hash");
 	}
 	derived_key->content_length = DIFFIE_HELLMAN_SIZE;
 	sodium_memzero(hash_state, sizeof(crypto_generichash_state));

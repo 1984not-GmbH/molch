@@ -29,7 +29,7 @@
 static return_status second_level(void) {
 	return_status status = return_status_init();
 
-	throw(GENERIC_ERROR, "Error on the second level!");
+	THROW(GENERIC_ERROR, "Error on the second level!");
 
 cleanup:
 	return status;
@@ -39,7 +39,7 @@ static return_status first_level(void) {
 	return_status status = return_status_init();
 
 	status = second_level();
-	throw_on_error(GENERIC_ERROR, "Error on the first level!");
+	THROW_on_error(GENERIC_ERROR, "Error on the first level!");
 
 cleanup:
 	return status;
@@ -83,7 +83,7 @@ int main(void) {
 
 	buffer_create_from_string(stack_trace, "ERROR\nerror stack trace:\n000: GENERIC_ERROR, Error on the first level!\n001: GENERIC_ERROR, Error on the second level!\n");
 	if (buffer_compare_to_raw(stack_trace, (unsigned char*)error_stack, stack_print_length) != 0) {
-		throw(INCORRECT_DATA, "Stack trace looks differently than expected.");
+		THROW(INCORRECT_DATA, "Stack trace looks differently than expected.");
 	}
 
 	status.status = SUCCESS;
@@ -95,7 +95,7 @@ int main(void) {
 	size_t printed_status_length = 0;
 	printed_status = (unsigned char*) return_status_print(&successful_status, &printed_status_length);
 	if (buffer_compare_to_raw(success_buffer, printed_status, printed_status_length) != 0) {
-		throw(INCORRECT_DATA, "molch_print_status produces incorrect output.");
+		THROW(INCORRECT_DATA, "molch_print_status produces incorrect output.");
 	}
 
 cleanup:

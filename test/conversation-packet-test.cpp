@@ -74,14 +74,14 @@ int main(void) {
 	return_status status = return_status_init();
 	int status_int = sodium_init();
 	if (status_int != 0) {
-		throw(INIT_ERROR, "Failed to initialize libsodium!");
+		THROW(INIT_ERROR, "Failed to initialize libsodium!");
 	}
 
 	//create prekey stores
 	status = prekey_store_create(&alice_prekeys);
-	throw_on_error(CREATION_ERROR, "Failed to create Alice' prekey store.");
+	THROW_on_error(CREATION_ERROR, "Failed to create Alice' prekey store.");
 	status = prekey_store_create(&bob_prekeys);
-	throw_on_error(CREATION_ERROR, "Failed to create Bobs prekey store.");
+	THROW_on_error(CREATION_ERROR, "Failed to create Bobs prekey store.");
 
 	//create keys
 	//alice
@@ -93,7 +93,7 @@ int main(void) {
 			alice_private_identity,
 			alice_string,
 			identity_string);
-	throw_on_error(KEYGENERATION_FAILED, "Failed to generate Alice' identity keys.");
+	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate Alice' identity keys.");
 
 	//bob
 	buffer_create_from_string(bob_string, "Bob");
@@ -103,11 +103,11 @@ int main(void) {
 			bob_private_identity,
 			bob_string,
 			identity_string);
-	throw_on_error(KEYGENERATION_FAILED, "Failed to generate Bob's identity keys.");
+	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate Bob's identity keys.");
 
 	//get the prekey list
 	status = prekey_store_list(bob_prekeys, prekey_list);
-	throw_on_error(GENERIC_ERROR, "Failed to get Bob's prekey list.");
+	THROW_on_error(GENERIC_ERROR, "Failed to get Bob's prekey list.");
 
 	//start a send conversation
 	buffer_create_from_string(send_message, "Hello there!");
@@ -119,7 +119,7 @@ int main(void) {
 			alice_private_identity,
 			bob_public_identity,
 			prekey_list);
-	throw_on_error(SEND_ERROR, "Failed to send message.");
+	THROW_on_error(SEND_ERROR, "Failed to send message.");
 
 	printf("Packet:\n");
 	print_hex(packet);
@@ -133,11 +133,11 @@ int main(void) {
 			bob_public_identity,
 			bob_private_identity,
 			bob_prekeys);
-	throw_on_error(RECEIVE_ERROR, "Failed to decrypt received message.");
+	THROW_on_error(RECEIVE_ERROR, "Failed to decrypt received message.");
 
 	status_int = buffer_compare(send_message, received_message);
 	if (status_int != 0) {
-		throw(INVALID_VALUE, "Message was decrypted incorrectly.");
+		THROW(INVALID_VALUE, "Message was decrypted incorrectly.");
 	}
 	printf("Decrypted message matches with the original message.\n");
 
@@ -151,7 +151,7 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	throw_on_error(SEND_ERROR, "Failed to send Alice' second message.");
+	THROW_on_error(SEND_ERROR, "Failed to send Alice' second message.");
 
 	printf("Sent message: %.*s\n", (int)alice_send_message2->content_length, (const char*)alice_send_message2->content);
 	printf("Packet:\n");
@@ -165,17 +165,17 @@ int main(void) {
 			&bob_receive_message_number,
 			&bob_previous_receive_message_number,
 			&bob_receive_message2);
-	throw_on_error(RECEIVE_ERROR, "Second message from Alice failed to decrypt.");
+	THROW_on_error(RECEIVE_ERROR, "Second message from Alice failed to decrypt.");
 
 	// check the message numbers
 	if ((bob_receive_message_number != 1) || (bob_previous_receive_message_number != 0)) {
-		throw(INCORRECT_DATA, "Incorrect receive message number for Bob.");
+		THROW(INCORRECT_DATA, "Incorrect receive message number for Bob.");
 	}
 
 	//now check if the received message was correctly decrypted
 	status_int = buffer_compare(bob_receive_message2, alice_send_message2);
 	if (status_int != 0) {
-		throw(INVALID_VALUE, "Received message doesn't match.");
+		THROW(INVALID_VALUE, "Received message doesn't match.");
 	}
 	printf("Alice' second message has been sent correctly!\n");
 
@@ -188,7 +188,7 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	throw_on_error(SEND_ERROR, "Failed to send Bob's response message.");
+	THROW_on_error(SEND_ERROR, "Failed to send Bob's response message.");
 
 	printf("Sent message: %.*s\n", (int)bob_response_message->content_length, (const char*)bob_response_message->content);
 	printf("Packet:\n");
@@ -202,17 +202,17 @@ int main(void) {
 			&alice_receive_message_number,
 			&alice_previous_receive_message_number,
 			&alice_received_response);
-	throw_on_error(RECEIVE_ERROR, "Response from Bob failed to decrypt.");
+	THROW_on_error(RECEIVE_ERROR, "Response from Bob failed to decrypt.");
 
 	// check the message numbers
 	if ((alice_receive_message_number != 0) || (alice_previous_receive_message_number != 0)) {
-		throw(INCORRECT_DATA, "Incorrect receive message number for Alice.");
+		THROW(INCORRECT_DATA, "Incorrect receive message number for Alice.");
 	}
 
 	//compare sent and received messages
 	status_int = buffer_compare(bob_response_message, alice_received_response);
 	if (status_int != 0) {
-		throw(INVALID_VALUE, "Received response doesn't match.");
+		THROW(INVALID_VALUE, "Received response doesn't match.");
 	}
 	printf("Successfully received Bob's response!\n");
 
@@ -222,7 +222,7 @@ int main(void) {
 
 	//get alice prekey list
 	status = prekey_store_list(alice_prekeys, prekey_list);
-	throw_on_error(GENERIC_ERROR, "Failed to get Alice' prekey list.");
+	THROW_on_error(GENERIC_ERROR, "Failed to get Alice' prekey list.");
 
 	//destroy the old packet
 	buffer_destroy_from_heap_and_null_if_valid(packet);
@@ -234,7 +234,7 @@ int main(void) {
 			bob_private_identity,
 			alice_public_identity,
 			prekey_list);
-	throw_on_error(SEND_ERROR, "Failed to send message.");
+	THROW_on_error(SEND_ERROR, "Failed to send message.");
 
 	printf("Sent message: %.*s\n", (int)send_message->content_length, (const char*)send_message->content);
 	printf("Packet:\n");
@@ -251,11 +251,11 @@ int main(void) {
 			alice_public_identity,
 			alice_private_identity,
 			alice_prekeys);
-	throw_on_error(RECEIVE_ERROR, "Failed to decrypt received message.");
+	THROW_on_error(RECEIVE_ERROR, "Failed to decrypt received message.");
 
 	status_int = buffer_compare(send_message, received_message);
 	if (status_int != 0) {
-		throw(INVALID_VALUE, "Message incorrectly decrypted.");
+		THROW(INVALID_VALUE, "Message incorrectly decrypted.");
 	}
 	printf("Decrypted message matched with the original message.\n");
 
@@ -269,7 +269,7 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	throw_on_error(SEND_ERROR, "Failed to send Bob's second message.");
+	THROW_on_error(SEND_ERROR, "Failed to send Bob's second message.");
 
 	printf("Sent message: %.*s\n", (int)bob_send_message2->content_length, (const char*)bob_send_message2->content);
 	printf("Packet:\n");
@@ -283,17 +283,17 @@ int main(void) {
 			&alice_receive_message_number,
 			&alice_previous_receive_message_number,
 			&alice_receive_message2);
-	throw_on_error(RECEIVE_ERROR, "Second message from Bob failed to decrypt.");
+	THROW_on_error(RECEIVE_ERROR, "Second message from Bob failed to decrypt.");
 
 	// check message numbers
 	if ((alice_receive_message_number != 1) || (alice_previous_receive_message_number != 0)) {
-		throw(INCORRECT_DATA, "Incorrect receive message numbers for Alice.");
+		THROW(INCORRECT_DATA, "Incorrect receive message numbers for Alice.");
 	}
 
 	//now check if the received message was correctly decrypted
 	status_int = buffer_compare(alice_receive_message2, bob_send_message2);
 	if (status_int != 0) {
-		throw(INVALID_VALUE, "Received message doesn't match.");
+		THROW(INVALID_VALUE, "Received message doesn't match.");
 	}
 	printf("Bobs second message has been sent correctly!.\n");
 
@@ -306,7 +306,7 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	throw_on_error(SEND_ERROR, "Failed to send Alice' response message.");
+	THROW_on_error(SEND_ERROR, "Failed to send Alice' response message.");
 
 	printf("Sent message: %.*s\n", (int)alice_response_message->content_length, (const char*)alice_response_message->content);
 	printf("Packet:\n");
@@ -320,17 +320,17 @@ int main(void) {
 			&bob_receive_message_number,
 			&bob_previous_receive_message_number,
 			&bob_received_response);
-	throw_on_error(RECEIVE_ERROR, "Response from Alice failed to decrypt.");
+	THROW_on_error(RECEIVE_ERROR, "Response from Alice failed to decrypt.");
 
 	// check message numbers
 	if ((bob_receive_message_number != 0) || (bob_previous_receive_message_number != 0)) {
-		throw(INCORRECT_DATA, "Incorrect receive message numbers for Alice.");
+		THROW(INCORRECT_DATA, "Incorrect receive message numbers for Alice.");
 	}
 
 	//compare sent and received messages
 	status_int = buffer_compare(alice_response_message, bob_received_response);
 	if (status_int != 0) {
-		throw(INVALID_VALUE, "Received response doesn't match.");
+		THROW(INVALID_VALUE, "Received response doesn't match.");
 	}
 	printf("Successfully received Alice' response!\n");
 

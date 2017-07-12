@@ -40,7 +40,7 @@ int main(void) {
 
 	//create random chain key
 	if (buffer_fill_random(chain_key, chain_key->buffer_length) != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to create chain key.");
+		THROW(KEYGENERATION_FAILED, "Failed to create chain key.");
 	}
 
 	//print first chain key
@@ -51,7 +51,7 @@ int main(void) {
 	//derive message key from chain key
 	status = derive_message_key(message_key, chain_key);
 	buffer_clear(chain_key);
-	throw_on_error(KEYGENERATION_FAILED, "Failed to derive message key.");
+	THROW_on_error(KEYGENERATION_FAILED, "Failed to derive message key.");
 
 	//print message key
 	printf("Message key (%zu Bytes):\n", message_key->content_length);

@@ -51,14 +51,14 @@ return_status protobuf_export(
 
 	//check input
 	if ((store == NULL) || (export_buffers == NULL) || (buffer_count == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to protobuf_export.");
+		THROW(INVALID_INPUT, "Invalid input to protobuf_export.");
 	}
 
 	status = user_store_export(store, &users, &length);
-	throw_on_error(EXPORT_ERROR, "Failed to export conversations.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export conversations.");
 
 	*export_buffers = (buffer_t**)malloc(length * sizeof(buffer_t*));
-	throw_on_failed_alloc(*export_buffers);
+	THROW_on_failed_alloc(*export_buffers);
 
 	//initialize pointers with NULL
 	memset(*export_buffers, '\0', length * sizeof(buffer_t*));
@@ -68,7 +68,7 @@ return_status protobuf_export(
 	for (size_t i = 0; i < length; i++) {
 		size_t unpacked_size = user__get_packed_size(users[i]);
 		(*export_buffers)[i] = buffer_create_on_heap(unpacked_size, 0);
-		throw_on_failed_alloc((*export_buffers)[i]);
+		THROW_on_failed_alloc((*export_buffers)[i]);
 
 		(*export_buffers)[i]->content_length = user__pack(users[i], (*export_buffers)[i]->content);
 	}
@@ -98,23 +98,23 @@ static return_status protobuf_import(
 
 	//check input
 	if ((store == NULL) || (buffers == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to protobuf_import.");
+		THROW(INVALID_INPUT, "Invalid input to protobuf_import.");
 	}
 
 	users = (User**)zeroed_malloc(buffers_length * sizeof(User*));
-	throw_on_failed_alloc(users);
+	THROW_on_failed_alloc(users);
 
 	//unpack the buffers
 	for (size_t i = 0; i < buffers_length; i++) {
 		users[i] = user__unpack(&protobuf_c_allocators, buffers[i]->content_length, buffers[i]->content);
 		if (users[i] == NULL) {
-			throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack user from protobuf.");
+			THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack user from protobuf.");
 		}
 	}
 
 	//import the user store
 	status = user_store_import(store, users, buffers_length);
-	throw_on_error(IMPORT_ERROR, "Failed to import users.");
+	THROW_on_error(IMPORT_ERROR, "Failed to import users.");
 
 cleanup:
 	if (users != NULL) {
@@ -140,19 +140,19 @@ return_status protobuf_empty_store(void) {
 
 	user_store *store = NULL;
 	status = user_store_create(&store);
-	throw_on_error(CREATION_ERROR, "Failed to create user store.");
+	THROW_on_error(CREATION_ERROR, "Failed to create user store.");
 
 	//export it
 	status = user_store_export(store, &exported, &exported_length);
-	throw_on_error(EXPORT_ERROR, "Failed to export empty user store.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export empty user store.");
 
 	if ((exported != NULL) || (exported_length != 0)) {
-		throw(INCORRECT_DATA, "Exported data is not empty.");
+		THROW(INCORRECT_DATA, "Exported data is not empty.");
 	}
 
 	//import it
 	status = user_store_import(&store, exported, exported_length);
-	throw_on_error(IMPORT_ERROR, "Failed to import empty user store.");
+	THROW_on_error(IMPORT_ERROR, "Failed to import empty user store.");
 
 	printf("Successful.\n");
 
@@ -184,13 +184,13 @@ int main(void) {
 	//create a user_store
 	user_store *store = NULL;
 	status = user_store_create(&store);
-	throw_on_error(CREATION_ERROR, "Failed to create user store.");
+	THROW_on_error(CREATION_ERROR, "Failed to create user store.");
 
 	//check the content
 	status = user_store_list(&list, store);
-	throw_on_error(DATA_FETCH_ERROR, "Failed to list users in the user store.");
+	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users in the user store.");
 	if (list->content_length != 0) {
-		throw(INCORRECT_DATA, "List of users is not empty.");
+		THROW(INCORRECT_DATA, "List of users is not empty.");
 	}
 	buffer_destroy_from_heap_and_null_if_valid(list);
 
@@ -200,23 +200,23 @@ int main(void) {
 			NULL,
 			alice_public_signing_key,
 			NULL);
-	throw_on_error(CREATION_ERROR, "Failed to create Alice.");
+	THROW_on_error(CREATION_ERROR, "Failed to create Alice.");
 	printf("Successfully created Alice to the user store.\n");
 
 	//check length of the user store
 	if (store->length != 1) {
-		throw(INCORRECT_DATA, "User store has incorrect length.");
+		THROW(INCORRECT_DATA, "User store has incorrect length.");
 	}
 	printf("Length of the user store matches.");
 
 	//list user store
 	status = user_store_list(&list, store);
-	throw_on_error(DATA_FETCH_ERROR, "Failed to list users.");
+	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.");
 	if (list == NULL) {
-		throw(INCORRECT_DATA, "Failed to list users, user list is NULL.");
+		THROW(INCORRECT_DATA, "Failed to list users, user list is NULL.");
 	}
 	if (buffer_compare(list, alice_public_signing_key) != 0) {
-		throw(INCORRECT_DATA, "Failed to list users.");
+		THROW(INCORRECT_DATA, "Failed to list users.");
 	}
 	buffer_destroy_from_heap_and_null_if_valid(list);
 	printf("Successfully listed users.\n");
@@ -227,25 +227,25 @@ int main(void) {
 			NULL,
 			bob_public_signing_key,
 			NULL);
-	throw_on_error(CREATION_ERROR, "Failed to create Bob.");
+	THROW_on_error(CREATION_ERROR, "Failed to create Bob.");
 	printf("Successfully created Bob.\n");
 
 	//check length of the user store
 	if (store->length != 2) {
 		fprintf(stderr, "ERROR: User store has incorrect length.\n");
-		throw(INCORRECT_DATA, "User store has incorrect length.");
+		THROW(INCORRECT_DATA, "User store has incorrect length.");
 	}
 	printf("Length of the user store matches.");
 
 	//list user store
 	status = user_store_list(&list, store);
-	throw_on_error(DATA_FETCH_ERROR, "Failed to list users.");
+	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.");
 	if (list == NULL) {
-		throw(INCORRECT_DATA, "Failed to list users, user list is NULL.");
+		THROW(INCORRECT_DATA, "Failed to list users, user list is NULL.");
 	}
 	if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
 			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
-		throw(INCORRECT_DATA, "Failed to list users.");
+		THROW(INCORRECT_DATA, "Failed to list users.");
 	}
 	buffer_destroy_from_heap_and_null_if_valid(list);
 	printf("Successfully listed users.\n");
@@ -256,25 +256,25 @@ int main(void) {
 			NULL,
 			charlie_public_signing_key,
 			NULL);
-	throw_on_error(CREATION_ERROR, "Failed to add Charlie to the user store.");
+	THROW_on_error(CREATION_ERROR, "Failed to add Charlie to the user store.");
 	printf("Successfully added Charlie to the user store.\n");
 
 	//check length of the user store
 	if (store->length != 3) {
-		throw(INCORRECT_DATA, "User store has incorrect length.");
+		THROW(INCORRECT_DATA, "User store has incorrect length.");
 	}
 	printf("Length of the user store matches.");
 
 	//list user store
 	status = user_store_list(&list, store);
-	throw_on_error(DATA_FETCH_ERROR, "Failed to list users.")
+	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.")
 	if (list == NULL) {
-		throw(INCORRECT_DATA, "Failed to list users, user list is NULL.");
+		THROW(INCORRECT_DATA, "Failed to list users, user list is NULL.");
 	}
 	if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
 			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
 			|| (buffer_compare_partial(list, 2 * PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
-		throw(INCORRECT_DATA, "Failed to list users.");
+		THROW(INCORRECT_DATA, "Failed to list users.");
 	}
 	buffer_destroy_from_heap_and_null_if_valid(list);
 	printf("Successfully listed users.\n");
@@ -282,31 +282,31 @@ int main(void) {
 	//find node
 	user_store_node *bob_node = NULL;
 	status = user_store_find_node(&bob_node, store, bob_public_signing_key);
-	throw_on_error(NOT_FOUND, "Failed to find Bob's node.");
+	THROW_on_error(NOT_FOUND, "Failed to find Bob's node.");
 	printf("Node found.\n");
 
 	if (buffer_compare(bob_node->public_signing_key, bob_public_signing_key) != 0) {
-		throw(INCORRECT_DATA, "Bob's data from the user store doesn't match.");
+		THROW(INCORRECT_DATA, "Bob's data from the user store doesn't match.");
 	}
 	printf("Data from the node matches.\n");
 
 	//remove a user identified by it's key
 	status = user_store_remove_by_key(store, bob_public_signing_key);
-	throw_on_error(REMOVE_ERROR, "Failed to remvoe user from user store by key.");
+	THROW_on_error(REMOVE_ERROR, "Failed to remvoe user from user store by key.");
 	//check the length
 	if (store->length != 2) {
-		throw(INCORRECT_DATA, "User store has incorrect length.");
+		THROW(INCORRECT_DATA, "User store has incorrect length.");
 	}
 	printf("Length of the user store matches.");
 	//check the user list
 	status = user_store_list(&list, store);
-	throw_on_error(DATA_FETCH_ERROR, "Failed to list users.");
+	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.");
 	if (list == NULL) {
-		throw(INCORRECT_DATA, "Failed to list users, user list is NULL.");
+		THROW(INCORRECT_DATA, "Failed to list users, user list is NULL.");
 	}
 	if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
 			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
-		throw(INCORRECT_DATA, "Removing user failed.");
+		THROW(INCORRECT_DATA, "Removing user failed.");
 	}
 	buffer_destroy_from_heap_and_null_if_valid(list);
 	printf("Successfully removed user.\n");
@@ -317,19 +317,19 @@ int main(void) {
 			NULL,
 			bob_public_signing_key,
 			NULL);
-	throw_on_error(CREATION_ERROR, "Failed to recreate.");
+	THROW_on_error(CREATION_ERROR, "Failed to recreate.");
 	printf("Successfully recreated Bob.\n");
 
 	//now find bob again
 	status = user_store_find_node(&bob_node, store, bob_public_signing_key);
-	throw_on_error(NOT_FOUND, "Failed to find Bob's node.");
+	THROW_on_error(NOT_FOUND, "Failed to find Bob's node.");
 	printf("Bob's node found again.\n");
 
 	//remove bob by it's node
 	user_store_remove(store, bob_node);
 	//check the length
 	if (store->length != 2) {
-		throw(INCORRECT_DATA, "User store has incorrect length.");
+		THROW(INCORRECT_DATA, "User store has incorrect length.");
 	}
 	printf("Length of the user store matches.");
 
@@ -337,7 +337,7 @@ int main(void) {
 	//test Protobuf-C export
 	printf("Export to Protobuf-C\n");
 	status = protobuf_export(store, &protobuf_export_buffers, &protobuf_export_length);
-	throw_on_error(EXPORT_ERROR, "Failed to export user store to Protobuf-C.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export user store to Protobuf-C.");
 
 	//print the exported data
 	puts("[\n");
@@ -353,34 +353,34 @@ int main(void) {
 	//import from Protobuf-C
 	printf("Import from Protobuf-C\n");
 	status = protobuf_import(&store, protobuf_export_buffers, protobuf_export_length);
-	throw_on_error(IMPORT_ERROR, "Failed to import users from Protobuf-C.");
+	THROW_on_error(IMPORT_ERROR, "Failed to import users from Protobuf-C.");
 
 	if (store == NULL) {
-		throw(SHOULDNT_HAPPEN, "Seems like this wasn't a false positive by clang static analyser!");
+		THROW(SHOULDNT_HAPPEN, "Seems like this wasn't a false positive by clang static analyser!");
 	}
 
 	//export again
 	printf("Export to Protobuf-C\n");
 	status = protobuf_export(store, &protobuf_second_export_buffers, &protobuf_second_export_length);
-	throw_on_error(EXPORT_ERROR, "Failed to export user store to Protobuf-C again.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export user store to Protobuf-C again.");
 
 	//compare
 	if (protobuf_export_length != protobuf_second_export_length) {
-		throw_on_error(INCORRECT_DATA, "Both exports have different sizes.");
+		THROW_on_error(INCORRECT_DATA, "Both exports have different sizes.");
 	}
 	for (size_t i = 0; i < protobuf_export_length; i++) {
 		if (buffer_compare(protobuf_export_buffers[i], protobuf_second_export_buffers[i]) != 0) {
-			throw_on_error(INCORRECT_DATA, "Buffers don't match.");
+			THROW_on_error(INCORRECT_DATA, "Buffers don't match.");
 		}
 	}
 	printf("Both exports match.\n");
 
 	//check the user list
 	status = user_store_list(&list, store);
-	throw_on_error(DATA_FETCH_ERROR, "Failed to list users.");
+	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.");
 	if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
 			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
-		throw(REMOVE_ERROR, "Removing user failed.");
+		THROW(REMOVE_ERROR, "Removing user failed.");
 	}
 	buffer_destroy_from_heap_and_null_if_valid(list);
 	printf("Successfully removed user.\n");
@@ -389,19 +389,19 @@ int main(void) {
 	user_store_clear(store);
 	//check the length
 	if (store->length != 0) {
-		throw(INCORRECT_DATA, "User store has incorrect length.");
+		THROW(INCORRECT_DATA, "User store has incorrect length.");
 		goto cleanup;
 	}
 	//check head and tail pointers
 	if ((store->head != NULL) || (store->tail != NULL)) {
-		throw(INCORRECT_DATA, "Clearing the user store didn't reset head and tail pointers.");
+		THROW(INCORRECT_DATA, "Clearing the user store didn't reset head and tail pointers.");
 		status_int = EXIT_FAILURE;
 		goto cleanup;
 	}
 	printf("Successfully cleared user store.\n");
 
 	status = protobuf_empty_store();
-	throw_on_error(GENERIC_ERROR, "Failed im-/export with empty user store.");
+	THROW_on_error(GENERIC_ERROR, "Failed im-/export with empty user store.");
 
 cleanup:
 	if (store != NULL) {

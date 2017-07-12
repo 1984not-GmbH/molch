@@ -32,14 +32,14 @@ int main(void) {
 
 	char * const pointer = (char*)zeroed_malloc(100);
 	if (pointer == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate with zeroed_malloc.");
+		THROW(ALLOCATION_FAILED, "Failed to allocate with zeroed_malloc.");
 	}
 
 	printf("Checking size.\n");
 	size_t size = 0;
 	memcpy(&size, pointer - sizeof(size_t), sizeof(size_t));
 	if (size != 100) {
-		throw(INCORRECT_DATA, "Size stored in the memory location is incorrect.");
+		THROW(INCORRECT_DATA, "Size stored in the memory location is incorrect.");
 	}
 	printf("size = %zu\n", size);
 

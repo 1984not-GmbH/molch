@@ -68,17 +68,17 @@ return_status conversation_create(
 			|| (our_private_ephemeral == NULL) || (our_public_ephemeral->content_length != PRIVATE_KEY_SIZE)
 			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
 			|| (their_public_ephemeral == NULL) || (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
-		throw(INVALID_INPUT, "Invalid input for conversation_create.");
+		THROW(INVALID_INPUT, "Invalid input for conversation_create.");
 	}
 
 	*conversation = (conversation_t*)malloc(sizeof(conversation_t));
-	throw_on_failed_alloc(*conversation);
+	THROW_on_failed_alloc(*conversation);
 
 	init_struct(*conversation);
 
 	//create random id
 	if (buffer_fill_random((*conversation)->id, CONVERSATION_ID_SIZE) != 0) {
-		throw(BUFFER_ERROR, "Failed to create random conversation id.");
+		THROW(BUFFER_ERROR, "Failed to create random conversation id.");
 	}
 
 	status = ratchet_create(
@@ -89,7 +89,7 @@ return_status conversation_create(
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral);
-	throw_on_error(CREATION_ERROR, "Failed to create ratchet.");
+	THROW_on_error(CREATION_ERROR, "Failed to create ratchet.");
 
 cleanup:
 	on_error {
@@ -133,9 +133,9 @@ return_status conversation_start_send_conversation(
 	buffer_t *sender_private_ephemeral = NULL;
 
 	sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	throw_on_failed_alloc(sender_public_ephemeral);
+	THROW_on_failed_alloc(sender_public_ephemeral);
 	sender_private_ephemeral = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	throw_on_failed_alloc(sender_private_ephemeral);
+	THROW_on_failed_alloc(sender_private_ephemeral);
 
 	//check many error conditions
 	if ((conversation == NULL)
@@ -145,7 +145,7 @@ return_status conversation_start_send_conversation(
 			|| (sender_public_identity == NULL) || (sender_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (sender_private_identity == NULL) || (sender_private_identity->content_length != PRIVATE_KEY_SIZE)
 			|| (receiver_prekey_list == NULL) || (receiver_prekey_list->content_length != (PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
-		throw(INVALID_INPUT, "Invalid input to conversation_start_send_conversation.");
+		THROW(INVALID_INPUT, "Invalid input to conversation_start_send_conversation.");
 	}
 
 	*conversation = NULL;
@@ -154,7 +154,7 @@ return_status conversation_start_send_conversation(
 	//create an ephemeral keypair
 	status_int = crypto_box_keypair(sender_public_ephemeral->content, sender_private_ephemeral->content);
 	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate ephemeral keypair.");
+		THROW(KEYGENERATION_FAILED, "Failed to generate ephemeral keypair.");
 	}
 
 	//choose a prekey
@@ -173,7 +173,7 @@ return_status conversation_start_send_conversation(
 			sender_private_ephemeral,
 			sender_public_ephemeral,
 			receiver_public_prekey);
-	throw_on_error(CREATION_ERROR, "Failed to create conversation.");
+	THROW_on_error(CREATION_ERROR, "Failed to create conversation.");
 
 	status = conversation_send(
 			*conversation,
@@ -182,7 +182,7 @@ return_status conversation_start_send_conversation(
 			sender_public_identity,
 			sender_public_ephemeral,
 			receiver_public_prekey);
-	throw_on_error(SEND_ERROR, "Failed to send message using newly created conversation.");
+	THROW_on_error(SEND_ERROR, "Failed to send message using newly created conversation.");
 
 cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(sender_public_ephemeral);
@@ -226,13 +226,13 @@ return_status conversation_start_receive_conversation(
 	buffer_t *sender_public_identity = NULL;
 
 	receiver_public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	throw_on_failed_alloc(receiver_public_prekey);
+	THROW_on_failed_alloc(receiver_public_prekey);
 	receiver_private_prekey = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	throw_on_failed_alloc(receiver_private_prekey);
+	THROW_on_failed_alloc(receiver_private_prekey);
 	sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	throw_on_failed_alloc(sender_public_ephemeral);
+	THROW_on_failed_alloc(sender_public_ephemeral);
 	sender_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	throw_on_failed_alloc(sender_public_identity);
+	THROW_on_failed_alloc(sender_public_identity);
 
 	if ((conversation == NULL)
 			|| (packet ==NULL)
@@ -240,7 +240,7 @@ return_status conversation_start_receive_conversation(
 			|| (receiver_public_identity == NULL) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (receiver_private_identity == NULL) || (receiver_private_identity->content_length != PRIVATE_KEY_SIZE)
 			|| (receiver_prekeys == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to conversation_start_receive_conversation.");
+		THROW(INVALID_INPUT, "Invalid input to conversation_start_receive_conversation.");
 	}
 
 	*conversation = NULL;
@@ -257,10 +257,10 @@ return_status conversation_start_receive_conversation(
 			sender_public_identity,
 			sender_public_ephemeral,
 			receiver_public_prekey);
-	throw_on_error(GENERIC_ERROR, "Failed to get packet metadata.");
+	THROW_on_error(GENERIC_ERROR, "Failed to get packet metadata.");
 
 	if (packet_type != PREKEY_MESSAGE) {
-		throw(INVALID_VALUE, "Packet is not a prekey message.");
+		THROW(INVALID_VALUE, "Packet is not a prekey message.");
 	}
 
 	//get the private prekey that corresponds to the public prekey used in the message
@@ -268,7 +268,7 @@ return_status conversation_start_receive_conversation(
 			receiver_prekeys,
 			receiver_public_prekey,
 			receiver_private_prekey);
-	throw_on_error(DATA_FETCH_ERROR, "Failed to get public prekey.");
+	THROW_on_error(DATA_FETCH_ERROR, "Failed to get public prekey.");
 
 	status = conversation_create(
 			conversation,
@@ -278,7 +278,7 @@ return_status conversation_start_receive_conversation(
 			receiver_private_prekey,
 			receiver_public_prekey,
 			sender_public_ephemeral);
-	throw_on_error(CREATION_ERROR, "Failed to create conversation.");
+	THROW_on_error(CREATION_ERROR, "Failed to create conversation.");
 
 	status = conversation_receive(
 			*conversation,
@@ -286,7 +286,7 @@ return_status conversation_start_receive_conversation(
 			&receive_message_number,
 			&previous_receive_message_number,
 			message);
-	throw_on_error(RECEIVE_ERROR, "Failed to receive message.");
+	THROW_on_error(RECEIVE_ERROR, "Failed to receive message.");
 
 cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(receiver_public_prekey);
@@ -329,28 +329,28 @@ return_status conversation_send(
 	buffer_t *header = NULL;
 
 	send_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	throw_on_failed_alloc(send_header_key);
+	THROW_on_failed_alloc(send_header_key);
 	send_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-	throw_on_failed_alloc(send_message_key);
+	THROW_on_failed_alloc(send_message_key);
 	send_ephemeral_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
-	throw_on_failed_alloc(send_ephemeral_key);
+	THROW_on_failed_alloc(send_ephemeral_key);
 
 
 	//check input
 	if ((conversation == NULL)
 			|| (message == NULL)
 			|| (packet == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to conversation_send.");
+		THROW(INVALID_INPUT, "Invalid input to conversation_send.");
 	}
 
 	//ensure that either both public keys are NULL or set
 	if (((public_identity_key == NULL) && (public_prekey != NULL)) || ((public_prekey == NULL) && (public_identity_key != NULL))) {
-		throw(INVALID_INPUT, "Invalid combination of provided key buffers.");
+		THROW(INVALID_INPUT, "Invalid combination of provided key buffers.");
 	}
 
 	//check the size of the public keys
 	if (((public_identity_key != NULL) && (public_identity_key->content_length != PUBLIC_KEY_SIZE)) || ((public_prekey != NULL) && (public_prekey->content_length != PUBLIC_KEY_SIZE))) {
-		throw(INCORRECT_BUFFER_SIZE, "Public key output has incorrect size.");
+		THROW(INCORRECT_BUFFER_SIZE, "Public key output has incorrect size.");
 	}
 
 	molch_message_type packet_type = NORMAL_MESSAGE;
@@ -370,7 +370,7 @@ return_status conversation_send(
 			&previous_send_message_number,
 			send_ephemeral_key,
 			send_message_key);
-	throw_on_error(SEND_ERROR, "Failed to get send keys.");
+	THROW_on_error(SEND_ERROR, "Failed to get send keys.");
 
 	//create the header
 	status = header_construct(
@@ -378,7 +378,7 @@ return_status conversation_send(
 			send_ephemeral_key,
 			send_message_number,
 			previous_send_message_number);
-	throw_on_error(CREATION_ERROR, "Failed to construct header.");
+	THROW_on_error(CREATION_ERROR, "Failed to construct header.");
 
 	status = packet_encrypt(
 			packet,
@@ -390,7 +390,7 @@ return_status conversation_send(
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	throw_on_error(ENCRYPT_ERROR, "Failed to encrypt packet.");
+	THROW_on_error(ENCRYPT_ERROR, "Failed to encrypt packet.");
 
 cleanup:
 	on_error {
@@ -425,7 +425,7 @@ static int try_skipped_header_and_message_keys(
 	buffer_t *header = NULL;
 	buffer_t *their_signed_public_ephemeral = NULL;
 	their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	throw_on_failed_alloc(their_signed_public_ephemeral);
+	THROW_on_failed_alloc(their_signed_public_ephemeral);
 
 	header_and_message_keystore_node* node = skipped_keys->head;
 	for (size_t i = 0; (i < skipped_keys->length) && (node != NULL); i++, node = node->next) {
@@ -446,7 +446,7 @@ static int try_skipped_header_and_message_keys(
 						receive_message_number,
 						previous_receive_message_number,
 						header);
-				throw_on_error(GENERIC_ERROR, "Failed to extract data from header.");
+				THROW_on_error(GENERIC_ERROR, "Failed to extract data from header.");
 
 				goto cleanup;
 			}
@@ -493,24 +493,24 @@ return_status conversation_receive(
 	buffer_t *their_signed_public_ephemeral = NULL;
 
 	current_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	throw_on_failed_alloc(current_receive_header_key);
+	THROW_on_failed_alloc(current_receive_header_key);
 	next_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	throw_on_failed_alloc(next_receive_header_key);
+	THROW_on_failed_alloc(next_receive_header_key);
 	their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	throw_on_failed_alloc(their_signed_public_ephemeral);
+	THROW_on_failed_alloc(their_signed_public_ephemeral);
 	message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-	throw_on_failed_alloc(message_key);
+	THROW_on_failed_alloc(message_key);
 
 	if ((conversation == NULL)
 			|| (packet == NULL)
 			|| (message == NULL)
 			|| (receive_message_number == NULL)
 			|| (previous_receive_message_number == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to conversation_receive.");
+		THROW(INVALID_INPUT, "Invalid input to conversation_receive.");
 	}
 
 	*message = buffer_create_on_heap(packet->content_length, 0);
-	throw_on_failed_alloc(*message);
+	THROW_on_failed_alloc(*message);
 
 	int status_int = 0;
 	status_int = try_skipped_header_and_message_keys(
@@ -528,7 +528,7 @@ return_status conversation_receive(
 			current_receive_header_key,
 			next_receive_header_key,
 			conversation->ratchet);
-	throw_on_error(DATA_FETCH_ERROR, "Failed to get receive header keys.");
+	THROW_on_error(DATA_FETCH_ERROR, "Failed to get receive header keys.");
 
 	//try to decrypt the packet header with the current receive header key
 	status = packet_decrypt_header(
@@ -539,7 +539,7 @@ return_status conversation_receive(
 		status = ratchet_set_header_decryptability(
 				conversation->ratchet,
 				CURRENT_DECRYPTABLE);
-		throw_on_error(DATA_SET_ERROR, "Failed to set decryptability to CURRENT_DECRYPTABLE.");
+		THROW_on_error(DATA_SET_ERROR, "Failed to set decryptability to CURRENT_DECRYPTABLE.");
 	} else {
 		return_status_destroy_errors(&status); //free the error stack to avoid memory leak.
 
@@ -552,14 +552,14 @@ return_status conversation_receive(
 			status = ratchet_set_header_decryptability(
 					conversation->ratchet,
 					NEXT_DECRYPTABLE);
-			throw_on_error(DATA_SET_ERROR, "Failed to set decryptability to NEXT_DECRYPTABLE.");
+			THROW_on_error(DATA_SET_ERROR, "Failed to set decryptability to NEXT_DECRYPTABLE.");
 		} else {
 			return_status decryptability_status = return_status_init();
 			decryptability_status = ratchet_set_header_decryptability(
 					conversation->ratchet,
 					UNDECRYPTABLE);
 			return_status_destroy_errors(&decryptability_status);
-			throw(DECRYPT_ERROR, "Header undecryptable.");
+			THROW(DECRYPT_ERROR, "Header undecryptable.");
 		}
 	}
 
@@ -571,7 +571,7 @@ return_status conversation_receive(
 			&local_receive_message_number,
 			&local_previous_receive_message_number,
 			header);
-	throw_on_error(GENERIC_ERROR, "Failed to extract data from header.");
+	THROW_on_error(GENERIC_ERROR, "Failed to extract data from header.");
 
 	//and now decrypt the message with the message key
 	//now we have all the data we need to advance the ratchet
@@ -582,7 +582,7 @@ return_status conversation_receive(
 			their_signed_public_ephemeral,
 			local_receive_message_number,
 			local_previous_receive_message_number);
-	throw_on_error(DECRYPT_ERROR, "Failed to get decryption keys.");
+	THROW_on_error(DECRYPT_ERROR, "Failed to get decryption keys.");
 
 	status = packet_decrypt_message(
 			message,
@@ -592,11 +592,11 @@ return_status conversation_receive(
 		return_status authenticity_status = return_status_init();
 		authenticity_status = ratchet_set_last_message_authenticity(conversation->ratchet, false);
 		return_status_destroy_errors(&authenticity_status);
-		throw(DECRYPT_ERROR, "Failed to decrypt message.");
+		THROW(DECRYPT_ERROR, "Failed to decrypt message.");
 	}
 
 	status = ratchet_set_last_message_authenticity(conversation->ratchet, true);
-	throw_on_error(DATA_SET_ERROR, "Failed to set message authenticity.");
+	THROW_on_error(DATA_SET_ERROR, "Failed to set message authenticity.");
 
 	*receive_message_number = local_receive_message_number;
 	*previous_receive_message_number = local_previous_receive_message_number;
@@ -631,18 +631,18 @@ return_status conversation_export(
 
 	//check input
 	if ((conversation == NULL) || (exported_conversation == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to conversation_export.");
+		THROW(INVALID_INPUT, "Invalid input to conversation_export.");
 	}
 
 	//export the ratchet
 	status = ratchet_export(conversation->ratchet, exported_conversation);
-	throw_on_error(EXPORT_ERROR, "Failed to export ratchet.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export ratchet.");
 
 	//export the conversation id
 	id = (unsigned char*)zeroed_malloc(CONVERSATION_ID_SIZE);
-	throw_on_failed_alloc(id);
+	THROW_on_failed_alloc(id);
 	if (buffer_clone_to_raw(id, CONVERSATION_ID_SIZE, conversation->id) != 0) {
-		throw(BUFFER_ERROR, "Failed to copy conversation id.");
+		THROW(BUFFER_ERROR, "Failed to copy conversation id.");
 	}
 	(*exported_conversation)->id.data = id;
 	(*exported_conversation)->id.len = CONVERSATION_ID_SIZE;
@@ -664,22 +664,22 @@ return_status conversation_import(
 
 	//check input
 	if ((conversation == NULL) || (conversation_protobuf == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to conversation_import.");
+		THROW(INVALID_INPUT, "Invalid input to conversation_import.");
 	}
 
 	//create the conversation
 	*conversation = (conversation_t*)malloc(sizeof(conversation_t));
-	throw_on_failed_alloc(*conversation);
+	THROW_on_failed_alloc(*conversation);
 	init_struct(*conversation);
 
 	//copy the id
 	if (buffer_clone_from_raw((*conversation)->id, conversation_protobuf->id.data, conversation_protobuf->id.len) != 0) {
-		throw(BUFFER_ERROR, "Failed to copy id.");
+		THROW(BUFFER_ERROR, "Failed to copy id.");
 	}
 
 	//import the ratchet
 	status = ratchet_import(&((*conversation)->ratchet), conversation_protobuf);
-	throw_on_error(IMPORT_ERROR, "Failed to import ratchet.");
+	THROW_on_error(IMPORT_ERROR, "Failed to import ratchet.");
 cleanup:
 	on_error {
 		if (conversation != NULL) {

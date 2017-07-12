@@ -100,22 +100,22 @@ return_status create_and_populate_node(
 	//check buffer sizes
 	if ((message_key->content_length != MESSAGE_KEY_SIZE)
 			|| (header_key->content_length != HEADER_KEY_SIZE)) {
-		throw(INVALID_INPUT, "Invalid input to populate_node.");
+		THROW(INVALID_INPUT, "Invalid input to populate_node.");
 	}
 
 	*new_node = create_node();
-	throw_on_failed_alloc(*new_node);
+	THROW_on_failed_alloc(*new_node);
 
 	int status_int = 0;
 	//set keys and expiration date
 	(*new_node)->expiration_date = expiration_date;
 	status_int = buffer_clone((*new_node)->message_key, message_key);
 	if (status_int != 0) {
-		throw(BUFFER_ERROR, "Failed to copy message key.");
+		THROW(BUFFER_ERROR, "Failed to copy message key.");
 	}
 	status_int = buffer_clone((*new_node)->header_key, header_key);
 	if (status_int != 0) {
-		throw(BUFFER_ERROR, "Failed to copy header key.");
+		THROW(BUFFER_ERROR, "Failed to copy header key.");
 	}
 
 cleanup:
@@ -141,7 +141,7 @@ return_status header_and_message_keystore_add(
 	time_t expiration_date = time(NULL) + EXPIRATION_TIME;
 
 	status = create_and_populate_node(&new_node, expiration_date, header_key, message_key);
-	throw_on_error(INIT_ERROR, "Failed to populate node.")
+	THROW_on_error(INIT_ERROR, "Failed to populate node.")
 
 	add_node(keystore, new_node);
 
@@ -191,28 +191,28 @@ static return_status header_and_message_keystore_node_export(header_and_message_
 
 	//check input
 	if ((node == NULL) || (bundle == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to header_and_message_keystore_node_export.");
+		THROW(INVALID_INPUT, "Invalid input to header_and_message_keystore_node_export.");
 	}
 
 	//allocate the buffers
 	//key bundle
 	*bundle = (KeyBundle*)zeroed_malloc(sizeof(KeyBundle));
-	throw_on_failed_alloc(*bundle);
+	THROW_on_failed_alloc(*bundle);
 	key_bundle__init(*bundle);
 
 	//header key
 	header_key = (Key*)zeroed_malloc(sizeof(Key));
-	throw_on_failed_alloc(header_key);
+	THROW_on_failed_alloc(header_key);
 	key__init(header_key);
 	header_key->key.data = (unsigned char*)zeroed_malloc(HEADER_KEY_SIZE);
-	throw_on_failed_alloc(header_key->key.data);
+	THROW_on_failed_alloc(header_key->key.data);
 
 	//message key
 	message_key = (Key*)zeroed_malloc(sizeof(Key));
-	throw_on_failed_alloc(message_key);
+	THROW_on_failed_alloc(message_key);
 	key__init(message_key);
 	message_key->key.data = (unsigned char*)zeroed_malloc(MESSAGE_KEY_SIZE);
-	throw_on_failed_alloc(message_key->key.data);
+	THROW_on_failed_alloc(message_key->key.data);
 
 	//backup header key
 	int status_int;
@@ -221,7 +221,7 @@ static return_status header_and_message_keystore_node_export(header_and_message_
 		HEADER_KEY_SIZE,
 		node->header_key);
 	if (status_int != 0) {
-		throw(BUFFER_ERROR, "Failed to copy header_key to backup.");
+		THROW(BUFFER_ERROR, "Failed to copy header_key to backup.");
 	}
 	header_key->key.len = node->header_key->content_length;
 
@@ -231,7 +231,7 @@ static return_status header_and_message_keystore_node_export(header_and_message_
 		HEADER_KEY_SIZE,
 		node->message_key);
 	if (status_int != 0) {
-		throw(BUFFER_ERROR, "Failed to copy message_key to backup.");
+		THROW(BUFFER_ERROR, "Failed to copy message_key to backup.");
 	}
 	message_key->key.len = node->message_key->content_length;
 
@@ -272,12 +272,12 @@ return_status header_and_message_keystore_export(
 
 	//check input
 	if ((store == NULL) || (key_bundles == NULL) || (bundle_size == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to header_and_message_keystore_export.");
+		THROW(INVALID_INPUT, "Invalid input to header_and_message_keystore_export.");
 	}
 
 	if (store->length != 0) {
 		*key_bundles = (KeyBundle**)zeroed_malloc(store->length * sizeof(KeyBundle));
-		throw_on_failed_alloc(*key_bundles);
+		THROW_on_failed_alloc(*key_bundles);
 		//initialize with NULL pointers
 		memset(*key_bundles, '\0', store->length * sizeof(KeyBundle));
 	} else {
@@ -290,7 +290,7 @@ return_status header_and_message_keystore_export(
 		 	(position < store->length) && (node != NULL);
 			position++, node = node->next) {
 		status = header_and_message_keystore_node_export(node, &(*key_bundles)[position]);
-		throw_on_error(EXPORT_ERROR, "Failed to export header and message keystore node.");
+		THROW_on_error(EXPORT_ERROR, "Failed to export header and message keystore node.");
 	}
 
 	*bundle_size = store->length;
@@ -333,7 +333,7 @@ return_status header_and_message_keystore_import(
 	if ((store == NULL)
 			|| ((bundles_size == 0) && (key_bundles != NULL))
 			|| ((bundles_size > 0) && (key_bundles == NULL))) {
-		throw(INVALID_INPUT, "Invalid input to header_and_message_keystore_import.");
+		THROW(INVALID_INPUT, "Invalid input to header_and_message_keystore_import.");
 	}
 
 	header_and_message_keystore_init(store);
@@ -343,7 +343,7 @@ return_status header_and_message_keystore_import(
 		KeyBundle *current_key_bundle = key_bundles[i];
 
 		if (!current_key_bundle->has_expiration_time) {
-			throw(PROTOBUF_MISSING_ERROR, "Key bundle has no expiration time.");
+			THROW(PROTOBUF_MISSING_ERROR, "Key bundle has no expiration time.");
 		}
 
 		//create buffers that point to the data in the protobuf struct
@@ -352,7 +352,7 @@ return_status header_and_message_keystore_import(
 
 		//create new node
 		status = create_and_populate_node(&current_node, (time_t)current_key_bundle->expiration_time, header_key, message_key);
-		throw_on_error(CREATION_ERROR, "Failed to create header_and_message_keystore_node.");
+		THROW_on_error(CREATION_ERROR, "Failed to create header_and_message_keystore_node.");
 
 		add_node(store, current_node);
 		current_node = NULL; //set to NULL because we don't have the ownership anymore

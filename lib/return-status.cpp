@@ -196,7 +196,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 
 	//check input
 	if (status_to_print == NULL) {
-		throw(INVALID_INPUT, "Invalid input return_status_print.");
+		THROW(INVALID_INPUT, "Invalid input return_status_print.");
 	}
 
 	size_t output_size = 1; // 1 because of '\0';
@@ -231,17 +231,17 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 	}
 
 	output = buffer_create_on_heap(output_size, 0);
-	throw_on_failed_alloc(output);
+	THROW_on_failed_alloc(output);
 
 	int status_int = 0;
 	// now fill the output
 	if (status_to_print->status == SUCCESS) {
 		if (buffer_clone_from_raw(output, success_string, sizeof(success_string) - 1) != 0) {
-			throw(BUFFER_ERROR, "Failed to copy success_string.");
+			THROW(BUFFER_ERROR, "Failed to copy success_string.");
 		}
 	} else {
 		if (buffer_clone_from_raw(output, error_string, sizeof(error_string) - 1) != 0) {
-			throw(BUFFER_ERROR, "Failed to copy error_string.");
+			THROW(BUFFER_ERROR, "Failed to copy error_string.");
 		}
 
 		// iterate over error stack
@@ -257,7 +257,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 				"%.3zu: ",
 				i);
 			if (written != (sizeof("XXX: ") - 1)) {
-				throw(INCORRECT_BUFFER_SIZE, "Failed to write to output buffer, probably too short.");
+				THROW(INCORRECT_BUFFER_SIZE, "Failed to write to output buffer, probably too short.");
 			}
 			output->content_length += (unsigned int)written;
 
@@ -268,7 +268,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 					0,
 					strlen(return_status_get_name(current_error->status)));
 			if (status_int != 0) {
-				throw(BUFFER_ERROR, "Failed to copy status name to stack trace.");
+				THROW(BUFFER_ERROR, "Failed to copy status name to stack trace.");
 			}
 
 			status_int = buffer_copy_from_raw(
@@ -278,7 +278,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 					0,
 					sizeof(", ") - 1);
 			if (status_int != 0) {
-				throw(BUFFER_ERROR, "Failed to copy \", \" to stack trace.");
+				THROW(BUFFER_ERROR, "Failed to copy \", \" to stack trace.");
 			}
 
 			if (current_error->message == NULL) {
@@ -289,7 +289,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 						0,
 						sizeof(null_string) - 1);
 				if (status_int != 0) {
-					throw(BUFFER_ERROR, "Failed to copy \"(NULL)\" to stack trace.");
+					THROW(BUFFER_ERROR, "Failed to copy \"(NULL)\" to stack trace.");
 				}
 			} else {
 				status_int = buffer_copy_from_raw(
@@ -299,7 +299,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 						0,
 						strlen(current_error->message));
 				if (status_int != 0) {
-					throw(BUFFER_ERROR, "Failed to copy error message to stack trace.");
+					THROW(BUFFER_ERROR, "Failed to copy error message to stack trace.");
 				}
 			}
 
@@ -310,7 +310,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 					0,
 					1);
 			if (status_int != 0) {
-				throw(BUFFER_ERROR, "Failed to copy newline to stack trace.");
+				THROW(BUFFER_ERROR, "Failed to copy newline to stack trace.");
 			}
 		}
 	}
@@ -322,7 +322,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 			0,
 			sizeof(""));
 	if (status_int != 0) {
-		throw(BUFFER_ERROR, "Failed to copy null terminator to stack trace.");
+		THROW(BUFFER_ERROR, "Failed to copy null terminator to stack trace.");
 	}
 
 cleanup:

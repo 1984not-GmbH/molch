@@ -47,34 +47,34 @@ static return_status decrypt_conversation_backup(
 
 	//check input
 	if ((decrypted_backup == NULL) || (backup == NULL) || (backup_key == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_import.");
+		THROW(INVALID_INPUT, "Invalid input to molch_import.");
 	}
 	if (backup_key_length != BACKUP_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
+		THROW(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
 	}
 
 	//unpack the encrypted backup
 	encrypted_backup_struct = encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup);
 	if (encrypted_backup_struct == NULL) {
-		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
+		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
 	}
 
 	//check the backup
 	if (encrypted_backup_struct->backup_version != 0) {
-		throw(INCORRECT_DATA, "Incompatible backup.");
+		THROW(INCORRECT_DATA, "Incompatible backup.");
 	}
 	if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP)) {
-		throw(INCORRECT_DATA, "Backup is not a conversation backup.");
+		THROW(INCORRECT_DATA, "Backup is not a conversation backup.");
 	}
 	if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
-		throw(PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state.");
+		THROW(PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state.");
 	}
 	if (!encrypted_backup_struct->has_encrypted_backup_nonce || (encrypted_backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
-		throw(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
+		THROW(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
 	}
 
 	*decrypted_backup = buffer_create_with_custom_allocator(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
-	throw_on_failed_alloc(*decrypted_backup);
+	THROW_on_failed_alloc(*decrypted_backup);
 
 	//decrypt the backup
 	int status_int = crypto_secretbox_open_easy(
@@ -84,7 +84,7 @@ static return_status decrypt_conversation_backup(
 			encrypted_backup_struct->encrypted_backup_nonce.data,
 			backup_key);
 	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt conversation backup.");
+		THROW(DECRYPT_ERROR, "Failed to decrypt conversation backup.");
 	}
 
 cleanup:
@@ -111,34 +111,34 @@ static return_status decrypt_full_backup(
 
 	//check input
 	if ((decrypted_backup == NULL) || (backup == NULL) || (backup_key == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to molch_import.");
+		THROW(INVALID_INPUT, "Invalid input to molch_import.");
 	}
 	if (backup_key_length != BACKUP_KEY_SIZE) {
-		throw(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
+		THROW(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
 	}
 
 	//unpack the encrypted backup
 	encrypted_backup_struct = encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup);
 	if (encrypted_backup_struct == NULL) {
-		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
+		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
 	}
 
 	//check the backup
 	if (encrypted_backup_struct->backup_version != 0) {
-		throw(INCORRECT_DATA, "Incompatible backup.");
+		THROW(INCORRECT_DATA, "Incompatible backup.");
 	}
 	if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP)) {
-		throw(INCORRECT_DATA, "Backup is not a conversation backup.");
+		THROW(INCORRECT_DATA, "Backup is not a conversation backup.");
 	}
 	if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
-		throw(PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state.");
+		THROW(PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state.");
 	}
 	if (!encrypted_backup_struct->has_encrypted_backup_nonce || (encrypted_backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
-		throw(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
+		THROW(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
 	}
 
 	*decrypted_backup = buffer_create_with_custom_allocator(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
-	throw_on_failed_alloc(*decrypted_backup);
+	THROW_on_failed_alloc(*decrypted_backup);
 
 	//decrypt the backup
 	int status_int = crypto_secretbox_open_easy(
@@ -148,7 +148,7 @@ static return_status decrypt_full_backup(
 			encrypted_backup_struct->encrypted_backup_nonce.data,
 			backup_key);
 	if (status_int != 0) {
-		throw(DECRYPT_ERROR, "Failed to decrypt conversation backup.");
+		THROW(DECRYPT_ERROR, "Failed to decrypt conversation backup.");
 	}
 
 cleanup:
@@ -211,11 +211,11 @@ int main(void) {
 	buffer_t *decrypted_imported_conversation_backup = NULL;
 
 	status = molch_update_backup_key(backup_key->content, backup_key->content_length);
-	throw_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
+	THROW_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
 
 	//check user count
 	if (molch_user_count() != 0) {
-		throw(INVALID_VALUE, "Wrong user count.");
+		THROW(INVALID_VALUE, "Wrong user count.");
 	}
 
 	//create a new user
@@ -233,33 +233,33 @@ int main(void) {
 			&complete_export_length,
 			alice_head_on_keyboard->content,
 			alice_head_on_keyboard->content_length);
-	throw_on_error(status.status, "Failed to create Alice!");
+	THROW_on_error(status.status, "Failed to create Alice!");
 
 	if (buffer_compare(backup_key, new_backup_key) == 0) {
-		throw(INCORRECT_DATA, "New backup key is the same as the old one.");
+		THROW(INCORRECT_DATA, "New backup key is the same as the old one.");
 	}
 
 	if (buffer_clone(backup_key, new_backup_key) != 0) {
-		throw(BUFFER_ERROR, "Failed to copy backup key.");
+		THROW(BUFFER_ERROR, "Failed to copy backup key.");
 	}
 
 	printf("Alice public identity (%zu Bytes):\n", alice_public_identity->content_length);
 	print_hex(alice_public_identity);
 	putchar('\n');
 	if (complete_export == NULL) {
-		throw(EXPORT_ERROR, "Failed to export the librarys state as JSON after creating alice.");
+		THROW(EXPORT_ERROR, "Failed to export the librarys state as JSON after creating alice.");
 	}
 	free_and_null_if_valid(complete_export);
 
 
 	//check user count
 	if (molch_user_count() != 1) {
-		throw(INVALID_VALUE, "Wrong user count.");
+		THROW(INVALID_VALUE, "Wrong user count.");
 	}
 
 	//create a new backup key
 	status = molch_update_backup_key(backup_key->content, backup_key->content_length);
-	throw_on_error(KEYGENERATION_FAILED, "Failed to update the backup key.");
+	THROW_on_error(KEYGENERATION_FAILED, "Failed to update the backup key.");
 
 	printf("Updated backup key:\n");
 	print_hex(backup_key);
@@ -278,7 +278,7 @@ int main(void) {
 			NULL,
 			bob_head_on_keyboard->content,
 			bob_head_on_keyboard->content_length);
-	throw_on_error(status.status, "Failed to create Bob!");
+	THROW_on_error(status.status, "Failed to create Bob!");
 
 	printf("Bob public identity (%zu Bytes):\n", bob_public_identity->content_length);
 	print_hex(bob_public_identity);
@@ -286,7 +286,7 @@ int main(void) {
 
 	//check user count
 	if (molch_user_count() != 2) {
-		throw(INVALID_VALUE, "Wrong user count.");
+		THROW(INVALID_VALUE, "Wrong user count.");
 	}
 
 	//check user list
@@ -294,12 +294,12 @@ int main(void) {
 	size_t user_list_length = 0;
 	unsigned char *user_list = NULL;
 	status = molch_list_users(&user_list, &user_list_length, &user_count);
-	throw_on_error(CREATION_ERROR, "Failed to list users.");
+	THROW_on_error(CREATION_ERROR, "Failed to list users.");
 	if ((user_count != 2)
 			|| (sodium_memcmp(alice_public_identity->content, user_list, alice_public_identity->content_length) != 0)
 			|| (sodium_memcmp(bob_public_identity->content, user_list + crypto_box_PUBLICKEYBYTES, alice_public_identity->content_length) != 0)) {
 		free_and_null_if_valid(user_list);
-		throw(INCORRECT_DATA, "User list is incorrect.");
+		THROW(INCORRECT_DATA, "User list is incorrect.");
 	}
 	free_and_null_if_valid(user_list);
 
@@ -322,7 +322,7 @@ int main(void) {
 			alice_send_message->content_length,
 			NULL,
 			NULL);
-	throw_on_error(CREATION_ERROR, "Failed to start send conversation.");
+	THROW_on_error(CREATION_ERROR, "Failed to start send conversation.");
 	printf("AFTER molch_start_send_conversation\n");
 
 	//check conversation export
@@ -335,16 +335,16 @@ int main(void) {
 			&number_of_conversations,
 			alice_public_identity->content,
 			alice_public_identity->content_length);
-	throw_on_error(GENERIC_ERROR, "Failed to list conversations.");
+	THROW_on_error(GENERIC_ERROR, "Failed to list conversations.");
 	if ((number_of_conversations != 1) || (buffer_compare_to_raw(alice_conversation, conversation_list, alice_conversation->content_length) != 0)) {
 		free_and_null_if_valid(conversation_list);
-		throw(GENERIC_ERROR, "Failed to list conversations.");
+		THROW(GENERIC_ERROR, "Failed to list conversations.");
 	}
 	free_and_null_if_valid(conversation_list);
 
 	//check the message type
 	if (molch_get_message_type(alice_send_packet, alice_send_packet_length) != PREKEY_MESSAGE) {
-		throw(INVALID_VALUE, "Wrong message type.");
+		THROW(INVALID_VALUE, "Wrong message type.");
 	}
 
 	free_and_null_if_valid(bob_public_prekeys);
@@ -358,7 +358,7 @@ int main(void) {
 			&alice_public_prekeys_length,
 			alice_public_identity->content,
 			alice_public_identity->content_length);
-	throw_on_error(DATA_FETCH_ERROR, "Failed to get Alice' prekey list.");
+	THROW_on_error(DATA_FETCH_ERROR, "Failed to get Alice' prekey list.");
 
 	//create a new receive conversation (bob receives from alice)
 	unsigned char *bob_receive_message;
@@ -378,7 +378,7 @@ int main(void) {
 			alice_send_packet_length,
 			NULL,
 			NULL);
-	throw_on_error(CREATION_ERROR, "Failed to start receive conversation.");
+	THROW_on_error(CREATION_ERROR, "Failed to start receive conversation.");
 
 	//compare sent and received messages
 	printf("sent (Alice): %s\n", alice_send_message->content);
@@ -386,7 +386,7 @@ int main(void) {
 	if ((alice_send_message->content_length != bob_receive_message_length)
 			|| (sodium_memcmp(alice_send_message->content, bob_receive_message, bob_receive_message_length) != 0)) {
 		free_and_null_if_valid(bob_receive_message);
-		throw(GENERIC_ERROR, "Incorrect message received.");
+		THROW(GENERIC_ERROR, "Incorrect message received.");
 	}
 	free_and_null_if_valid(bob_receive_message);
 
@@ -404,16 +404,16 @@ int main(void) {
 			bob_send_message->content_length,
 			&conversation_json_export,
 			&conversation_json_export_length);
-	throw_on_error(GENERIC_ERROR, "Couldn't send bobs message.");
+	THROW_on_error(GENERIC_ERROR, "Couldn't send bobs message.");
 
 	if (conversation_json_export == NULL) {
-		throw(EXPORT_ERROR, "Failed to export the conversation after encrypting a message.");
+		THROW(EXPORT_ERROR, "Failed to export the conversation after encrypting a message.");
 	}
 	free_and_null_if_valid(conversation_json_export);
 
 	//check the message type
 	if (molch_get_message_type(bob_send_packet, bob_send_packet_length) != NORMAL_MESSAGE) {
-		throw(INVALID_VALUE, "Wrong message type.");
+		THROW(INVALID_VALUE, "Wrong message type.");
 	}
 
 	//alice receives reply
@@ -432,12 +432,12 @@ int main(void) {
 			NULL);
 	on_error {
 		free_and_null_if_valid(alice_receive_message);
-		throw(GENERIC_ERROR, "Incorrect message received.");
+		THROW(GENERIC_ERROR, "Incorrect message received.");
 	}
 
 	if ((alice_receive_message_number != 0) || (alice_previous_receive_message_number != 0)) {
 		free_and_null_if_valid(alice_receive_message);
-		throw(INCORRECT_DATA, "Incorrect receive message number for Alice.");
+		THROW(INCORRECT_DATA, "Incorrect receive message number for Alice.");
 	}
 
 	//compare sent and received messages
@@ -446,7 +446,7 @@ int main(void) {
 	if ((bob_send_message->content_length != alice_receive_message_length)
 			|| (sodium_memcmp(bob_send_message->content, alice_receive_message, alice_receive_message_length) != 0)) {
 		free_and_null_if_valid(alice_receive_message);
-		throw(GENERIC_ERROR, "Incorrect message received.");
+		THROW(GENERIC_ERROR, "Incorrect message received.");
 	}
 	free_and_null_if_valid(alice_receive_message);
 
@@ -454,7 +454,7 @@ int main(void) {
 	printf("Test export!\n");
 	size_t backup_length;
 	status = molch_export(&backup, &backup_length);
-	throw_on_error(EXPORT_ERROR, "Failed to export.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export.");
 
 	//test import
 	printf("Test import!\n");
@@ -466,35 +466,35 @@ int main(void) {
 			backup_key->content,
 			backup_key->content_length);
 	on_error {
-		throw(IMPORT_ERROR, "Failed to import backup.");
+		THROW(IMPORT_ERROR, "Failed to import backup.");
 	}
 
 	status = decrypt_full_backup(&decrypted_backup, backup, backup_length, backup_key->content, backup_key->content_length);
-	throw_on_error(DECRYPT_ERROR, "Failed to decrypt backup.");
+	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt backup.");
 
 	//compare the keys
 	if (buffer_compare(backup_key, new_backup_key) == 0) {
-		throw(INCORRECT_DATA, "New backup key expected.");
+		THROW(INCORRECT_DATA, "New backup key expected.");
 	}
 
 	//copy the backup key
 	if (buffer_clone(backup_key, new_backup_key) != 0) {
-		throw(BUFFER_ERROR, "Failed to copy backup key.");
+		THROW(BUFFER_ERROR, "Failed to copy backup key.");
 	}
 
 	//now export again
 	size_t imported_backup_length;
 	status = molch_export(&imported_backup, &imported_backup_length);
 	on_error {
-		throw(EXPORT_ERROR, "Failed to export imported backup.");
+		THROW(EXPORT_ERROR, "Failed to export imported backup.");
 	}
 
 	status = decrypt_full_backup(&decrypted_imported_backup, imported_backup, imported_backup_length, backup_key->content, backup_key->content_length);
-	throw_on_error(DECRYPT_ERROR, "Failed to decrypt imported backup.");
+	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt imported backup.");
 
 	//compare
 	if (buffer_compare(decrypted_backup, decrypted_imported_backup) != 0) {
-		throw(IMPORT_ERROR, "Imported backup is incorrect.");
+		THROW(IMPORT_ERROR, "Imported backup is incorrect.");
 	}
 	free_and_null_if_valid(backup);
 	free_and_null_if_valid(imported_backup);
@@ -505,7 +505,7 @@ int main(void) {
 			&backup_length,
 			alice_conversation->content,
 			alice_conversation->content_length);
-	throw_on_error(EXPORT_ERROR, "Failed to export Alice' conversation.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export Alice' conversation.");
 
 	printf("Alice' conversation exported!\n");
 
@@ -517,18 +517,18 @@ int main(void) {
 			backup_length,
 			backup_key->content,
 			backup_key->content_length);
-	throw_on_error(IMPORT_ERROR, "Failed to import Alice' conversation from backup.");
+	THROW_on_error(IMPORT_ERROR, "Failed to import Alice' conversation from backup.");
 
 	status = decrypt_conversation_backup(
 			&decrypted_conversation_backup,
 			backup, backup_length,
 			backup_key->content,
 			backup_key->content_length);
-	throw_on_error(DECRYPT_ERROR, "Failed to decrypt the backup.")
+	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt the backup.")
 
 	//copy the backup key
 	if (buffer_clone(backup_key, new_backup_key) != 0) {
-		throw(BUFFER_ERROR, "Failed to copy backup key.");
+		THROW(BUFFER_ERROR, "Failed to copy backup key.");
 	}
 
 
@@ -538,7 +538,7 @@ int main(void) {
 			&imported_backup_length,
 			alice_conversation->content,
 			alice_conversation->content_length);
-	throw_on_error(EXPORT_ERROR, "Failed to export Alice imported conversation.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export Alice imported conversation.");
 
 	status = decrypt_conversation_backup(
 			&decrypted_imported_conversation_backup,
@@ -546,18 +546,18 @@ int main(void) {
 			imported_backup_length,
 			backup_key->content,
 			backup_key->content_length);
-	throw_on_error(DECRYPT_ERROR, "Failed to decrypt the backup.")
+	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt the backup.")
 
 	//compare
 	if (buffer_compare(decrypted_conversation_backup, decrypted_imported_conversation_backup) != 0) {
-		throw(IMPORT_ERROR, "Protobuf of imported conversation is incorrect.");
+		THROW(IMPORT_ERROR, "Protobuf of imported conversation is incorrect.");
 	}
 
 	//destroy the conversations
 	status = molch_end_conversation(alice_conversation->content, alice_conversation->content_length, NULL, NULL);
-	throw_on_error(REMOVE_ERROR, "Failed to end Alice' conversation.");
+	THROW_on_error(REMOVE_ERROR, "Failed to end Alice' conversation.");
 	molch_end_conversation(bob_conversation->content, bob_conversation->content_length, NULL, NULL);
-	throw_on_error(REMOVE_ERROR, "Failed to end Bob's conversation.");
+	THROW_on_error(REMOVE_ERROR, "Failed to end Bob's conversation.");
 
 	//check if conversation has ended
 	number_of_conversations = 0;
@@ -568,10 +568,10 @@ int main(void) {
 			&number_of_conversations,
 			alice_public_identity->content,
 			alice_public_identity->content_length);
-	throw_on_error(GENERIC_ERROR, "Failed to list conversations.");
+	THROW_on_error(GENERIC_ERROR, "Failed to list conversations.");
 	if ((number_of_conversations != 0) || (conversation_list != NULL)) {
 		free_and_null_if_valid(conversation_list);
-		throw(GENERIC_ERROR, "Failed to end conversation.");
+		THROW(GENERIC_ERROR, "Failed to end conversation.");
 	}
 	free_and_null_if_valid(conversation_list);
 	printf("Alice' conversation has ended successfully.\n");
@@ -581,7 +581,7 @@ int main(void) {
 
 	//check user count
 	if (molch_user_count() != 0) {
-		throw(INVALID_VALUE, "Wrong user count.");
+		THROW(INVALID_VALUE, "Wrong user count.");
 	}
 
 	//TODO check detection of invalid prekey list signatures and old timestamps + more scenarios
@@ -590,7 +590,7 @@ int main(void) {
 	size_t printed_status_length = 0;
 	printed_status = (unsigned char*) molch_print_status(&printed_status_length, return_status_init());
 	if (buffer_compare_to_raw(success_buffer, printed_status, printed_status_length) != 0) {
-		throw(INCORRECT_DATA, "molch_print_status produces incorrect output.");
+		THROW(INCORRECT_DATA, "molch_print_status produces incorrect output.");
 	}
 
 cleanup:

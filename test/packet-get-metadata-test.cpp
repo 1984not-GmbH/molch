@@ -46,7 +46,7 @@ int main(void) {
 	return_status status = return_status_init();
 
 	if (sodium_init() == -1) {
-		throw(INIT_ERROR, "Failed to initialize libsodium.");
+		THROW(INIT_ERROR, "Failed to initialize libsodium.");
 	}
 
 	header->content[0] = 0x01;
@@ -70,7 +70,7 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	throw_on_error(GENERIC_ERROR, "Failed to create and print message.");
+	THROW_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now extract the metadata
 	molch_message_type extracted_packet_type;
@@ -84,21 +84,21 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	throw_on_error(DATA_FETCH_ERROR, "Couldn't extract metadata from the packet.");
+	THROW_on_error(DATA_FETCH_ERROR, "Couldn't extract metadata from the packet.");
 
 	printf("extracted_packet_type = %u\n", extracted_packet_type);
 	if (packet_type != extracted_packet_type) {
-		throw(INVALID_VALUE, "Extracted packet type doesn't match.");
+		THROW(INVALID_VALUE, "Extracted packet type doesn't match.");
 	}
 	printf("Packet type matches!\n");
 
 	if (extracted_current_protocol_version != 0) {
-		throw(INVALID_VALUE, "Extracted current protocol version doesn't match.");
+		THROW(INVALID_VALUE, "Extracted current protocol version doesn't match.");
 	}
 	printf("Current protocol version matches!\n");
 
 	if (extracted_highest_supported_protocol_version != 0) {
-		throw(INVALID_VALUE, "Extracted highest supported protocol version doesn't match.");
+		THROW(INVALID_VALUE, "Extracted highest supported protocol version doesn't match.");
 	}
 	printf("Highest supoorted protocol version matches (%i)!\n", extracted_highest_supported_protocol_version);
 
@@ -107,15 +107,15 @@ int main(void) {
 	//create the keys
 	status_int = buffer_fill_random(public_identity_key, PUBLIC_KEY_SIZE);
 	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate public identity key.");
+		THROW(KEYGENERATION_FAILED, "Failed to generate public identity key.");
 	}
 	status_int = buffer_fill_random(public_ephemeral_key, PUBLIC_KEY_SIZE);
 	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
+		THROW(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
 	}
 	status_int = buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE);
 	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate public prekey.");
+		THROW(KEYGENERATION_FAILED, "Failed to generate public prekey.");
 	}
 
 	buffer_destroy_from_heap_and_null_if_valid(packet);
@@ -131,7 +131,7 @@ int main(void) {
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	throw_on_error(GENERIC_ERROR, "Failed to create and print message.");
+	THROW_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now extract the metadata
 	status = packet_get_metadata_without_verification(
@@ -142,36 +142,36 @@ int main(void) {
 			extracted_public_identity_key,
 			extracted_public_ephemeral_key,
 			extracted_public_prekey);
-	throw_on_error(DATA_FETCH_ERROR, "Couldn't extract metadata from the packet.");
+	THROW_on_error(DATA_FETCH_ERROR, "Couldn't extract metadata from the packet.");
 
 	printf("extracted_type = %u\n", extracted_packet_type);
 	if (packet_type != extracted_packet_type) {
-		throw(INVALID_VALUE, "Extracted packet type doesn't match.");
+		THROW(INVALID_VALUE, "Extracted packet type doesn't match.");
 	}
 	printf("Packet type matches!\n");
 
 	if (extracted_current_protocol_version != 0) {
-		throw(INVALID_VALUE, "Extracted current protocol version doesn't match.");
+		THROW(INVALID_VALUE, "Extracted current protocol version doesn't match.");
 	}
 	printf("Current protocol version matches!\n");
 
 	if (extracted_highest_supported_protocol_version != 0) {
-		throw(INVALID_VALUE, "Extracted highest supported protocl version doesn't match.");
+		THROW(INVALID_VALUE, "Extracted highest supported protocl version doesn't match.");
 	}
 	printf("Highest supoorted protocol version matches (%i)!\n", extracted_highest_supported_protocol_version);
 
 	if (buffer_compare(public_identity_key, extracted_public_identity_key) != 0) {
-		throw(INVALID_VALUE, "Extracted public identity key doesn't match.");
+		THROW(INVALID_VALUE, "Extracted public identity key doesn't match.");
 	}
 	printf("Extracted public identity key matches!\n");
 
 	if (buffer_compare(public_ephemeral_key, extracted_public_ephemeral_key) != 0) {
-		throw(INVALID_VALUE, "Extratec public ephemeral key doesn't match.");
+		THROW(INVALID_VALUE, "Extratec public ephemeral key doesn't match.");
 	}
 	printf("Extracted public ephemeral key matches!\n");
 
 	if (buffer_compare(public_prekey, extracted_public_prekey) != 0) {
-		throw(INVALID_VALUE, "Extracted public prekey doesn't match.");
+		THROW(INVALID_VALUE, "Extracted public prekey doesn't match.");
 	}
 	printf("Extracted public prekey matches!\n");
 

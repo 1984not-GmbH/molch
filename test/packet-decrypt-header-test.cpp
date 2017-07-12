@@ -47,7 +47,7 @@ int main(void) {
 
 
 	if(sodium_init() == -1) {
-		throw(INIT_ERROR, "Failed to initialize libsodium.");
+		THROW(INIT_ERROR, "Failed to initialize libsodium.");
 	}
 
 	//generate message
@@ -72,24 +72,24 @@ int main(void) {
 			NULL,
 			NULL,
 			NULL);
-	throw_on_error(GENERIC_ERROR, "Failed to create and print message.");
+	THROW_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now decrypt the header
 	status = packet_decrypt_header(
 			&decrypted_header,
 			packet,
 			header_key);
-	throw_on_error(DECRYPT_ERROR, "Failed to decrypt the header.");
+	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt the header.");
 
 
 	if (decrypted_header->content_length != header->content_length) {
-		throw(INVALID_VALUE, "Decrypted header isn't of the same length.");
+		THROW(INVALID_VALUE, "Decrypted header isn't of the same length.");
 	}
 	printf("Decrypted header has the same length.\n\n");
 
 	//compare headers
 	if (buffer_compare(header, decrypted_header) != 0) {
-		throw(INVALID_VALUE, "Decrypted header doesn't match.");
+		THROW(INVALID_VALUE, "Decrypted header doesn't match.");
 	}
 	printf("Decrypted header matches.\n\n");
 
@@ -101,7 +101,7 @@ int main(void) {
 			packet,
 			header_key);
 	if (status.status == SUCCESS) {
-		throw(GENERIC_ERROR, "Manipulated packet was accepted.");
+		THROW(GENERIC_ERROR, "Manipulated packet was accepted.");
 	} else {
 		return_status_destroy_errors(&status);
 	}
@@ -118,7 +118,7 @@ int main(void) {
 			packet,
 			header_key);
 	if (status.status == SUCCESS) {
-		throw(GENERIC_ERROR, "Manipulated packet was accepted.");
+		THROW(GENERIC_ERROR, "Manipulated packet was accepted.");
 	} else {
 		return_status_destroy_errors(&status);
 	}
@@ -133,15 +133,15 @@ int main(void) {
 	//create the public keys
 	status_int = buffer_fill_random(public_identity_key, PUBLIC_KEY_SIZE);
 	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate public identity key.");
+		THROW(KEYGENERATION_FAILED, "Failed to generate public identity key.");
 	}
 	status_int = buffer_fill_random(public_ephemeral_key, PUBLIC_KEY_SIZE);
 	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
+		THROW(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
 	}
 	status_int = buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE);
 	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate public prekey.");
+		THROW(KEYGENERATION_FAILED, "Failed to generate public prekey.");
 	}
 
 	buffer_destroy_from_heap_and_null_if_valid(packet);
@@ -157,23 +157,23 @@ int main(void) {
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	throw_on_error(GENERIC_ERROR, "Failed to crate and print message.");
+	THROW_on_error(GENERIC_ERROR, "Failed to crate and print message.");
 
 	//now decrypt the header
 	status = packet_decrypt_header(
 			&decrypted_header,
 			packet,
 			header_key);
-	throw_on_error(DECRYPT_ERROR, "Failed to decrypt the header.");
+	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt the header.");
 
 	if (decrypted_header->content_length != header->content_length) {
-		throw(INVALID_VALUE, "Decrypted header isn't of the same length.");
+		THROW(INVALID_VALUE, "Decrypted header isn't of the same length.");
 	}
 	printf("Decrypted header has the same length.\n\n");
 
 	//compare headers
 	if (buffer_compare(header, decrypted_header) != 0) {
-		throw(INVALID_VALUE, "Decrypted header doesn't match.");
+		THROW(INVALID_VALUE, "Decrypted header doesn't match.");
 	}
 	printf("Decrypted header matches.\n");
 

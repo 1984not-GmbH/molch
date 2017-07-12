@@ -42,7 +42,7 @@ return_status conversation_store_add(
 	return_status status = return_status_init();
 
 	if ((store == NULL) || (conversation == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to conversation_store_add");
+		THROW(INVALID_INPUT, "Invalid input to conversation_store_add");
 	}
 
 	if (store->head == NULL) { //first conversation in the list
@@ -130,7 +130,7 @@ return_status conversation_store_find_node(
 	return_status status = return_status_init();
 
 	if ((conversation == NULL) || (store == NULL) || (id == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to conversation_store_find.");
+		THROW(INVALID_INPUT, "Invalid input to conversation_store_find.");
 	}
 
 	*conversation = NULL;
@@ -169,7 +169,7 @@ return_status conversation_store_list(buffer_t ** const list, conversation_store
 	return_status status = return_status_init();
 
 	if ((list == NULL) || (store == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to conversation_store_list.");
+		THROW(INVALID_INPUT, "Invalid input to conversation_store_list.");
 	}
 
 	if (store->length == 0) {
@@ -178,7 +178,7 @@ return_status conversation_store_list(buffer_t ** const list, conversation_store
 	}
 
 	*list = buffer_create_on_heap(store->length * CONVERSATION_ID_SIZE, 0);
-	throw_on_failed_alloc(*list);
+	THROW_on_failed_alloc(*list);
 	//copy all the id's
 	conversation_store_foreach(
 			store,
@@ -189,7 +189,7 @@ return_status conversation_store_list(buffer_t ** const list, conversation_store
 				0,
 				value->id->content_length);
 			if (status_int != 0) {
-				throw(BUFFER_ERROR, "Failed to copy conversation id.");
+				THROW(BUFFER_ERROR, "Failed to copy conversation id.");
 			}
 	)
 
@@ -211,13 +211,13 @@ return_status conversation_store_export(
 
 	//check input
 	if ((store == NULL) || (conversations == NULL) || (length == NULL)) {
-		throw(INVALID_INPUT, "Invalid input conversation_store_export.");
+		THROW(INVALID_INPUT, "Invalid input conversation_store_export.");
 	}
 
 	if (store->length > 0) {
 		//allocate the array of conversations
 		*conversations = (Conversation**)zeroed_malloc(store->length * sizeof(Conversation*));
-		throw_on_failed_alloc(*conversations);
+		THROW_on_failed_alloc(*conversations);
 		memset(*conversations, '\0', store->length * sizeof(Conversation*));
 	} else {
 		*conversations = NULL;
@@ -227,7 +227,7 @@ return_status conversation_store_export(
 	conversation_t *node = store->head;
 	for (size_t i = 0; (i < store->length) && (node != NULL); i++, node = node->next) {
 		status = conversation_export(node, &(*conversations)[i]);
-		throw_on_error(EXPORT_ERROR, "Failed to export conversation.");
+		THROW_on_error(EXPORT_ERROR, "Failed to export conversation.");
 	}
 
 	*length = store->length;
@@ -259,7 +259,7 @@ return_status conversation_store_import(
 	if ((store == NULL)
 			|| ((length > 0) && (conversations == NULL))
 			|| ((length == 0) && (conversations != NULL))) {
-		throw(INVALID_INPUT, "Invalid input to conversation_store_import");
+		THROW(INVALID_INPUT, "Invalid input to conversation_store_import");
 	}
 
 	conversation_store_init(store);
@@ -269,10 +269,10 @@ return_status conversation_store_import(
 		status = conversation_import(
 			&conversation,
 			conversations[i]);
-		throw_on_error(IMPORT_ERROR, "Failed to import conversation.");
+		THROW_on_error(IMPORT_ERROR, "Failed to import conversation.");
 
 		status = conversation_store_add(store, conversation);
-		throw_on_error(ADDITION_ERROR, "Failed to add conversation to conversation store.");
+		THROW_on_error(ADDITION_ERROR, "Failed to add conversation to conversation store.");
 		conversation = NULL;
 	}
 

@@ -47,19 +47,19 @@ int main(int argc, char *args[]) {
 	return_status status = return_status_init();
 
 	if (sodium_init() != 0) {
-		throw(INIT_ERROR, "Failed to initialize libsodium.");
+		THROW(INIT_ERROR, "Failed to initialize libsodium.");
 	}
 
 	if (!recreate) {
 		//load the backup from a file
 		status = read_file(&backup_file, "test-data/molch-init.backup");
-		throw_on_error(DATA_FETCH_ERROR, "Failed to read backup from a file.");
+		THROW_on_error(DATA_FETCH_ERROR, "Failed to read backup from a file.");
 
 		//load the backup key from a file
 		status = read_file(&backup_key_file, "test-data/molch-init-backup.key");
-		throw_on_error(DATA_FETCH_ERROR, "Failed to read backup key from a file.");
+		THROW_on_error(DATA_FETCH_ERROR, "Failed to read backup key from a file.");
 		if (backup_key_file->content_length != BACKUP_KEY_SIZE) {
-			throw(INCORRECT_BUFFER_SIZE, "Backup key from file has an incorrect length.");
+			THROW(INCORRECT_BUFFER_SIZE, "Backup key from file has an incorrect length.");
 		}
 
 		//try to import the backup
@@ -70,7 +70,7 @@ int main(int argc, char *args[]) {
 				backup_file->content_length,
 				backup_key_file->content,
 				backup_key_file->content_length);
-		throw_on_error(IMPORT_ERROR, "Failed to import backup from backup.");
+		THROW_on_error(IMPORT_ERROR, "Failed to import backup from backup.");
 
 		//destroy again
 		molch_destroy_all_users();
@@ -90,9 +90,9 @@ int main(int argc, char *args[]) {
 			&backup_length,
 			(const unsigned char*)"random",
 			sizeof("random"));
-	throw_on_error(CREATION_ERROR, "Failed to create user.");
+	THROW_on_error(CREATION_ERROR, "Failed to create user.");
 	if (backup == NULL) {
-		throw(EXPORT_ERROR, "Failed to export backup.");
+		THROW(EXPORT_ERROR, "Failed to export backup.");
 	}
 
 	//print the backup to a file

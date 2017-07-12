@@ -97,12 +97,12 @@ char *return_status_print(const return_status * const status, size_t *length) __
 
 
 //This assumes that there is a return_status struct and there is a "cleanup" label to jump to.
-#define throw(status_type_value, message) {\
+#define THROW(status_type_value, message) {\
 	status.status = status_type_value;\
 	if (message != NULL) {\
-		status_type throw_type = return_status_add_error_message(&status, message, status_type_value);\
-		if (throw_type != SUCCESS) {\
-			status.status = throw_type;\
+		status_type THROW_type = return_status_add_error_message(&status, message, status_type_value);\
+		if (THROW_type != SUCCESS) {\
+			status.status = THROW_type;\
 		}\
 	} else {\
 		status.error = NULL;\
@@ -114,11 +114,11 @@ char *return_status_print(const return_status * const status, size_t *length) __
 //Execute code on error
 #define on_error if (status.status != SUCCESS)
 
-#define throw_on_error(status_type_value, message) on_error{throw(status_type_value, message)}
+#define THROW_on_error(status_type_value, message) on_error{THROW(status_type_value, message)}
 
-#define throw_on_failed_alloc(pointer) \
+#define THROW_on_failed_alloc(pointer) \
 	if (pointer == NULL) {\
-		throw(ALLOCATION_FAILED, "Failed to allocate memory.");\
+		THROW(ALLOCATION_FAILED, "Failed to allocate memory.");\
 	}
 
 #endif

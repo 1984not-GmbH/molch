@@ -43,33 +43,33 @@ int main(void) {
 	int status_int = 0;
 	status_int = buffer_fill_random(master_key, master_key->buffer_length);
 	if (status_int != 0) {
-		throw(KEYDERIVATION_FAILED, "Failed to generate master key.");
+		THROW(KEYDERIVATION_FAILED, "Failed to generate master key.");
 	}
 	printf("Master key:\n");
 	print_hex(master_key);
 	putchar('\n');
 
 	status = derive_key(subkey1, subkey1->buffer_length, master_key, 0);
-	throw_on_error(KEYDERIVATION_FAILED, "Failed to derive first subkey.");
+	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive first subkey.");
 	printf("First subkey:\n");
 	print_hex(subkey1);
 	putchar('\n');
 
 	status = derive_key(subkey2, subkey2->buffer_length, master_key, 1);
-	throw_on_error(KEYDERIVATION_FAILED, "Failed to derive the second subkey.");
+	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive the second subkey.");
 	printf("Second subkey:\n");
 	print_hex(subkey2);
 	putchar('\n');
 
 	if (buffer_compare(subkey1, subkey2) == 0) {
-		throw(KEYGENERATION_FAILED, "Both subkeys are the same.");
+		THROW(KEYGENERATION_FAILED, "Both subkeys are the same.");
 	}
 
 	status = derive_key(subkey1_copy, subkey1_copy->buffer_length, master_key, 0);
-	throw_on_error(KEYDERIVATION_FAILED, "Failed to derive copy of the first subkey.");
+	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive copy of the first subkey.");
 
 	if (buffer_compare(subkey1, subkey1_copy) != 0) {
-		throw(INCORRECT_DATA, "Failed to reproduce subkey.");
+		THROW(INCORRECT_DATA, "Failed to reproduce subkey.");
 	}
 
 cleanup:

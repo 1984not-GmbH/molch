@@ -48,23 +48,23 @@ return_status spiced_random(
 	buffer_t *salt = NULL;
 	//allocate them
 	spice = buffer_create_with_custom_allocator(output_length, output_length, sodium_malloc, sodium_free);
-	throw_on_failed_alloc(spice);
+	THROW_on_failed_alloc(spice);
 	os_random = buffer_create_with_custom_allocator(output_length, output_length, sodium_malloc, sodium_free);
-	throw_on_failed_alloc(os_random);
+	THROW_on_failed_alloc(os_random);
 	salt = buffer_create_on_heap(crypto_pwhash_SALTBYTES, 0);
-	throw_on_failed_alloc(salt);
+	THROW_on_failed_alloc(salt);
 
 	//check buffer length
 	if (random_output->buffer_length < output_length) {
-		throw(INCORRECT_BUFFER_SIZE, "Output buffers is too short.");
+		THROW(INCORRECT_BUFFER_SIZE, "Output buffers is too short.");
 	}
 
 	if (buffer_fill_random(os_random, output_length) != 0) {
-		throw(GENERIC_ERROR, "Failed to fill buffer with random data.");
+		THROW(GENERIC_ERROR, "Failed to fill buffer with random data.");
 	}
 
 	if (buffer_fill_random(salt, crypto_pwhash_SALTBYTES) != 0) {
-		throw(GENERIC_ERROR, "Failed to fill salt with random data.");
+		THROW(GENERIC_ERROR, "Failed to fill salt with random data.");
 	}
 
 	//derive random data from the random spice
@@ -79,17 +79,17 @@ return_status spiced_random(
 			crypto_pwhash_MEMLIMIT_INTERACTIVE,
 			crypto_pwhash_ALG_DEFAULT);
 	if (status_int != 0) {
-		throw(GENERIC_ERROR, "Failed to derive random data from spice.");
+		THROW(GENERIC_ERROR, "Failed to derive random data from spice.");
 	}
 
 	//now combine the spice with the OS provided random data.
 	if (buffer_xor(os_random, spice) != 0) {
-		throw(GENERIC_ERROR, "Failed to xor os random data and random data derived from spice.");
+		THROW(GENERIC_ERROR, "Failed to xor os random data and random data derived from spice.");
 	}
 
 	//copy the random data to the output
 	if (buffer_clone(random_output, os_random) != 0) {
-		throw(BUFFER_ERROR, "Failed to copy random data.");
+		THROW(BUFFER_ERROR, "Failed to copy random data.");
 	}
 
 cleanup:

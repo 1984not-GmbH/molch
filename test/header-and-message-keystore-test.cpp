@@ -45,10 +45,10 @@ static return_status protobuf_export(
 			keystore,
 			key_bundles,
 			bundles_size);
-	throw_on_error(EXPORT_ERROR, "Failed to export keystore as protobuf struct.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export keystore as protobuf struct.");
 
 	*export_buffers = (buffer_t**)zeroed_malloc((*bundles_size) * sizeof(buffer_t*));
-	throw_on_failed_alloc(*export_buffers);
+	THROW_on_failed_alloc(*export_buffers);
 
 	//initialize pointers with NULL
 	memset(*export_buffers, '\0', (*bundles_size) * sizeof(buffer_t *));
@@ -57,7 +57,7 @@ static return_status protobuf_export(
 	for (size_t i = 0; i < (*bundles_size); i++) {
 		size_t export_size = key_bundle__get_packed_size((*key_bundles)[i]);
 		(*export_buffers)[i] = buffer_create_on_heap(export_size, 0);
-		throw_on_failed_alloc((*export_buffers)[i]);
+		THROW_on_failed_alloc((*export_buffers)[i]);
 
 		size_t packed_size = key_bundle__pack((*key_bundles)[i], (*export_buffers)[i]->content);
 		(*export_buffers)[i]->content_length = packed_size;
@@ -75,7 +75,7 @@ static return_status protobuf_import(
 	return_status status = return_status_init();
 
 	KeyBundle ** key_bundles = (KeyBundle**)zeroed_malloc(buffers_size * sizeof(KeyBundle*));
-	throw_on_failed_alloc(key_bundles);
+	THROW_on_failed_alloc(key_bundles);
 
 	//set all pointers to NULL
 	memset(key_bundles, '\n', buffers_size * sizeof(KeyBundle*));
@@ -87,7 +87,7 @@ static return_status protobuf_import(
 			exported_buffers[i]->content_length,
 			exported_buffers[i]->content);
 		if (key_bundles[i] == NULL) {
-			throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack key bundle from protobuf.");
+			THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack key bundle from protobuf.");
 		}
 	}
 
@@ -96,7 +96,7 @@ static return_status protobuf_import(
 		keystore,
 		key_bundles,
 		buffers_size);
-	throw_on_error(IMPORT_ERROR, "Failed to import header_and_message_keystore from Protobuf-C.");
+	THROW_on_error(IMPORT_ERROR, "Failed to import header_and_message_keystore from Protobuf-C.");
 
 cleanup:
 	if (key_bundles != NULL) {
@@ -126,15 +126,15 @@ return_status protobuf_empty_store(void) {
 
 	//export it
 	status = header_and_message_keystore_export(&store, &exported, &exported_length);
-	throw_on_error(EXPORT_ERROR, "Failed to export empty header and message keystore.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export empty header and message keystore.");
 
 	if ((exported != NULL) || (exported_length != 0)) {
-		throw(INCORRECT_DATA, "Exported data is not empty.");
+		THROW(INCORRECT_DATA, "Exported data is not empty.");
 	}
 
 	//import it
 	status = header_and_message_keystore_import(&store, exported, exported_length);
-	throw_on_error(IMPORT_ERROR, "Failed to import empty header and message keystore.");
+	THROW_on_error(IMPORT_ERROR, "Failed to import empty header and message keystore.");
 
 	printf("Successful.\n");
 
@@ -174,11 +174,11 @@ int main(void) {
 		//create new keys
 		status_int = buffer_fill_random(header_key, header_key->buffer_length);
 		if (status_int != 0) {
-			throw(KEYGENERATION_FAILED, "Failed to create header key.");
+			THROW(KEYGENERATION_FAILED, "Failed to create header key.");
 		}
 		status_int = buffer_fill_random(message_key, message_key->buffer_length);
 		if (status_int != 0) {
-			throw(KEYGENERATION_FAILED, "Failed to create header key.");
+			THROW(KEYGENERATION_FAILED, "Failed to create header key.");
 		}
 
 		//print the new header key
@@ -195,7 +195,7 @@ int main(void) {
 		status = header_and_message_keystore_add(&keystore, message_key, header_key);
 		buffer_clear(message_key);
 		buffer_clear(header_key);
-		throw_on_error(ADDITION_ERROR, "Failed to add key to keystore.");
+		THROW_on_error(ADDITION_ERROR, "Failed to add key to keystore.");
 
 		print_header_and_message_keystore(&keystore);
 
@@ -209,7 +209,7 @@ int main(void) {
 			&protobuf_export_bundles,
 			&protobuf_export_bundles_size,
 			&protobuf_export_buffers);
-	throw_on_error(EXPORT_ERROR, "Failed to export keystore via protobuf-c.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export keystore via protobuf-c.");
 
 	puts("[\n");
 	for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
@@ -224,7 +224,7 @@ int main(void) {
 		&keystore,
 		protobuf_export_buffers,
 		protobuf_export_bundles_size);
-	throw_on_error(IMPORT_ERROR, "Failed to import from protobuf-c.");
+	THROW_on_error(IMPORT_ERROR, "Failed to import from protobuf-c.");
 
 	//now export again
 	printf("Export imported as Protobuf-C\n");
@@ -233,17 +233,17 @@ int main(void) {
 		&protobuf_second_export_bundles,
 		&protobuf_second_export_bundles_size,
 		&protobuf_second_export_buffers);
-	throw_on_error(EXPORT_ERROR, "Failed to export imported data via protobuf-c.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export imported data via protobuf-c.");
 
 	//compare both exports
 	printf("Compare\n");
 	if (protobuf_export_bundles_size != protobuf_second_export_bundles_size) {
-		throw(INCORRECT_DATA, "Both exports contain different amounts of keys.");
+		THROW(INCORRECT_DATA, "Both exports contain different amounts of keys.");
 	}
 	size_t store_length;
 	for (store_length = 0; store_length < protobuf_export_bundles_size; store_length++) {
 		if (buffer_compare(protobuf_export_buffers[store_length], protobuf_second_export_buffers[store_length]) != 0) {
-			throw(INCORRECT_DATA, "First and second export are not identical.");
+			THROW(INCORRECT_DATA, "First and second export are not identical.");
 		}
 	}
 
@@ -266,7 +266,7 @@ int main(void) {
 	print_header_and_message_keystore(&keystore);
 
 	status = protobuf_empty_store();
-	throw_on_error(GENERIC_ERROR, "Testing im-/export of empty stores failed.");
+	THROW_on_error(GENERIC_ERROR, "Testing im-/export of empty stores failed.");
 
 cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(header_key);

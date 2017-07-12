@@ -33,7 +33,7 @@ int main(void) {
 
 	printf("Testing next_aligned_address.\n");
 	if ((next_aligned_address((void*)3, 4) != (void*)4) || (next_aligned_address((void*)8, 4) != (void*)8)) {
-		throw(INCORRECT_DATA, "Didn't calculate the correct next aligned address.");
+		THROW(INCORRECT_DATA, "Didn't calculate the correct next aligned address.");
 	}
 
 cleanup:

@@ -35,14 +35,14 @@ int main(void) {
 	return_status status = return_status_init();
 
 	if (sodium_init() == -1) {
-		throw(INIT_ERROR, "Failed to initialize libsodium.");
+		THROW(INIT_ERROR, "Failed to initialize libsodium.");
 	}
 
 	int status_int;
 	//create ephemeral key
 	status_int = buffer_fill_random(our_public_ephemeral_key, our_public_ephemeral_key->content_length);
 	if (status_int != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to create our public ephemeral.");
+		THROW(KEYGENERATION_FAILED, "Failed to create our public ephemeral.");
 	}
 	printf("Our public ephemeral key (%zu Bytes):\n", our_public_ephemeral_key->content_length);
 	print_hex(our_public_ephemeral_key);
@@ -60,7 +60,7 @@ int main(void) {
 			our_public_ephemeral_key,
 			message_number,
 			previous_message_number);
-	throw_on_error(CREATION_ERROR, "Failed to create header.");
+	THROW_on_error(CREATION_ERROR, "Failed to create header.");
 
 	//print the header
 	printf("Header (%zu Bytes):\n", header->content_length);
@@ -75,7 +75,7 @@ int main(void) {
 			&extracted_message_number,
 			&extracted_previous_message_number,
 			header);
-	throw_on_error(DATA_FETCH_ERROR, "Failed to extract data from header.");
+	THROW_on_error(DATA_FETCH_ERROR, "Failed to extract data from header.");
 
 	printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key->content_length);
 	print_hex(extracted_public_ephemeral_key);
@@ -85,17 +85,17 @@ int main(void) {
 
 	//compare them
 	if (buffer_compare(our_public_ephemeral_key, extracted_public_ephemeral_key) != 0) {
-		throw(INVALID_VALUE, "Public ephemeral keys don't match.");
+		THROW(INVALID_VALUE, "Public ephemeral keys don't match.");
 	}
 	printf("Public ephemeral keys match.\n");
 
 	if (message_number != extracted_message_number) {
-		throw(INVALID_VALUE, "Message number doesn't match.");
+		THROW(INVALID_VALUE, "Message number doesn't match.");
 	}
 	printf("Message numbers match.\n");
 
 	if (previous_message_number != extracted_previous_message_number) {
-		throw(INVALID_VALUE, "Previous message number doesn't match.");
+		THROW(INVALID_VALUE, "Previous message number doesn't match.");
 	}
 	printf("Previous message numbers match.\n");
 

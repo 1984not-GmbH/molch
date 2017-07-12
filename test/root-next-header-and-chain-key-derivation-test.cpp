@@ -56,7 +56,7 @@ int main(void) {
 			alice_private_ephemeral,
 			alice_string,
 			ephemeral_string);
-	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice's ephemeral keypair.");
+	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice's ephemeral keypair.");
 
 	//create Bob's keypair
 	buffer_create_from_string(bob_string, "Bob");
@@ -65,11 +65,11 @@ int main(void) {
 			bob_private_ephemeral,
 			bob_string,
 			ephemeral_string);
-	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's ephemeral keypair.");
+	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's ephemeral keypair.");
 
 	//create previous root key
 	if (buffer_fill_random(previous_root_key, crypto_secretbox_KEYBYTES) != 0) {
-		throw(KEYGENERATION_FAILED, "Failed to generate previous root key.");
+		THROW(KEYGENERATION_FAILED, "Failed to generate previous root key.");
 	}
 
 	//print previous root key
@@ -87,7 +87,7 @@ int main(void) {
 			bob_public_ephemeral,
 			previous_root_key,
 			true);
-	throw_on_error(KEYDERIVATION_FAILED, "Failed to derive root, next header and chain key for Alice.");
+	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive root, next header and chain key for Alice.");
 
 	//print Alice's root and chain key
 	printf("Alice's root key (%zu Bytes):\n", alice_root_key->content_length);
@@ -108,7 +108,7 @@ int main(void) {
 			alice_public_ephemeral,
 			previous_root_key,
 			false);
-	throw_on_error(KEYDERIVATION_FAILED, "Failed to derive root, next header and chain key for Bob.");
+	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive root, next header and chain key for Bob.");
 
 	//print Bob's root and chain key
 	printf("Bob's root key (%zu Bytes):\n", bob_root_key->content_length);
@@ -123,7 +123,7 @@ int main(void) {
 	if (buffer_compare(alice_root_key, bob_root_key) == 0) {
 		printf("Alice's and Bob's root keys match.\n");
 	} else {
-		throw(INCORRECT_DATA, "Alice's and Bob's root keys don't match.");
+		THROW(INCORRECT_DATA, "Alice's and Bob's root keys don't match.");
 	}
 	buffer_clear(alice_root_key);
 	buffer_clear(bob_root_key);
@@ -132,14 +132,14 @@ int main(void) {
 	if (buffer_compare(alice_chain_key, bob_chain_key) == 0) {
 		printf("Alice's and Bob's chain keys match.\n");
 	} else {
-		throw(INCORRECT_DATA, "Alice's and Bob's chain keys don't match.");
+		THROW(INCORRECT_DATA, "Alice's and Bob's chain keys don't match.");
 	}
 
 	//compare Alice's and Bob's header keys
 	if (buffer_compare(alice_header_key, bob_header_key) == 0) {
 		printf("Alice's and Bob's header keys match.\n");
 	} else {
-		throw(INCORRECT_DATA, "Alice's and Bob's header keys don't match.");
+		THROW(INCORRECT_DATA, "Alice's and Bob's header keys don't match.");
 	}
 
 cleanup:

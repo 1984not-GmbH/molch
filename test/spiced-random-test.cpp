@@ -47,7 +47,7 @@ int main(void) {
 
 	//fill buffer with spiced random data
 	status = spiced_random(output1, spice, output1->buffer_length);
-	throw_on_error(GENERIC_ERROR, "Failed to generate spiced random data.");
+	THROW_on_error(GENERIC_ERROR, "Failed to generate spiced random data.");
 
 	printf("Spiced random data 1 (%zu Bytes):\n", output1->content_length);
 	print_hex(output1);
@@ -56,7 +56,7 @@ int main(void) {
 
 	//fill buffer with spiced random data
 	status = spiced_random(output2, spice, output2->buffer_length);
-	throw_on_error(GENERIC_ERROR, "Failed to generate spiced random data.");
+	THROW_on_error(GENERIC_ERROR, "Failed to generate spiced random data.");
 
 	printf("Spiced random data 2 (%zu Bytes):\n", output2->content_length);
 	print_hex(output2);
@@ -64,7 +64,7 @@ int main(void) {
 
 	//compare the two (mustn't be identical!)
 	if (buffer_compare(output1, output2) == 0) {
-		throw(INCORRECT_DATA, "Random numbers aren't random.");
+		THROW(INCORRECT_DATA, "Random numbers aren't random.");
 	}
 
 	//don't crash with output length 0

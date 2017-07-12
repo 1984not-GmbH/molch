@@ -37,18 +37,18 @@ return_status protobuf_export(const conversation_t * const conversation, buffer_
 
 	//check input
 	if ((conversation == NULL) || (export_buffer == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to protobuf_export.");
+		THROW(INVALID_INPUT, "Invalid input to protobuf_export.");
 	}
 
 	//export the conversation
 	status = conversation_export(conversation, &exported_conversation);
-	throw_on_error(EXPORT_ERROR, "Failed to export conversation.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export conversation.");
 
 	size_t export_size = conversation__get_packed_size(exported_conversation);
 	*export_buffer = buffer_create_on_heap(export_size, 0);
 	(*export_buffer)->content_length = conversation__pack(exported_conversation, (*export_buffer)->content);
 	if (export_size != (*export_buffer)->content_length) {
-		throw(PROTOBUF_PACK_ERROR, "Failed to pack protobuf-c struct into buffer.");
+		THROW(PROTOBUF_PACK_ERROR, "Failed to pack protobuf-c struct into buffer.");
 	}
 
 cleanup:
@@ -72,7 +72,7 @@ return_status protobuf_import(
 
 	//check input
 	if ((conversation == NULL) || (import_buffer == NULL)) {
-		throw(INVALID_INPUT, "Invalid input to protobuf_import.");
+		THROW(INVALID_INPUT, "Invalid input to protobuf_import.");
 	}
 
 	conversation_protobuf = conversation__unpack(
@@ -80,12 +80,12 @@ return_status protobuf_import(
 		import_buffer->content_length,
 		import_buffer->content);
 	if (conversation_protobuf == NULL) {
-		throw(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
+		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
 	}
-	throw_on_failed_alloc(conversation_protobuf);
+	THROW_on_failed_alloc(conversation_protobuf);
 
 	status = conversation_import(conversation, conversation_protobuf);
-	throw_on_error(IMPORT_ERROR, "Failed to import conversation.");
+	THROW_on_error(IMPORT_ERROR, "Failed to import conversation.");
 
 cleanup:
 	if (conversation_protobuf != NULL) {
@@ -121,12 +121,12 @@ static return_status create_conversation(
 			|| (our_private_ephemeral == NULL) || (our_public_ephemeral->content_length != PRIVATE_KEY_SIZE)
 			|| (our_public_ephemeral == NULL) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
 			|| (their_public_ephemeral == NULL) || (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
-		throw(INVALID_INPUT, "Invalid input for conversation_create.");
+		THROW(INVALID_INPUT, "Invalid input for conversation_create.");
 	}
 
 	*conversation = (conversation_t*)malloc(sizeof(conversation_t));
 	if (conversation == NULL) {
-		throw(ALLOCATION_FAILED, "Failed to allocate memory for conversation.");
+		THROW(ALLOCATION_FAILED, "Failed to allocate memory for conversation.");
 	}
 
 	//init_struct()
@@ -137,7 +137,7 @@ static return_status create_conversation(
 
 	//create random id
 	if (buffer_fill_random((*conversation)->id, CONVERSATION_ID_SIZE) != 0) {
-		throw(BUFFER_ERROR, "Failed to create random conversation id.");
+		THROW(BUFFER_ERROR, "Failed to create random conversation id.");
 	}
 
 	status = ratchet_create(
@@ -148,7 +148,7 @@ static return_status create_conversation(
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral);
-	throw_on_error(CREATION_ERROR, "Failed to create ratchet.");
+	THROW_on_error(CREATION_ERROR, "Failed to create ratchet.");
 
 cleanup:
 	on_error {
@@ -195,7 +195,7 @@ int main(void) {
 			charlie_private_identity,
 			charlie_string,
 			identity_string);
-	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Charlie's identity keypair.");
+	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Charlie's identity keypair.");
 
 	//creating charlie's ephemeral keypair
 	buffer_create_from_string(ephemeral_string, "ephemeral");
@@ -204,7 +204,7 @@ int main(void) {
 			charlie_private_ephemeral,
 			charlie_string,
 			ephemeral_string);
-	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Charlie's ephemeral keypair.");
+	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Charlie's ephemeral keypair.");
 
 	//creating dora's identity keypair
 	buffer_create_from_string(dora_string, "dora");
@@ -213,7 +213,7 @@ int main(void) {
 			dora_private_identity,
 			dora_string,
 			identity_string);
-	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Dora's identity keypair.");
+	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Dora's identity keypair.");
 
 	//creating dora's ephemeral keypair
 	status = generate_and_print_keypair(
@@ -221,7 +221,7 @@ int main(void) {
 			dora_private_ephemeral,
 			dora_string,
 			ephemeral_string);
-	throw_on_error(KEYGENERATION_FAILED, "Failed to generate and print Dora's ephemeral keypair.");
+	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Dora's ephemeral keypair.");
 
 	//create charlie's conversation
 	status = create_conversation(
@@ -234,9 +234,9 @@ int main(void) {
 			dora_public_ephemeral);
 	buffer_clear(charlie_private_identity);
 	buffer_clear(charlie_private_ephemeral);
-	throw_on_error(INIT_ERROR, "Failed to init Chalie's conversation.");
+	THROW_on_error(INIT_ERROR, "Failed to init Chalie's conversation.");
 	if (charlie_conversation->id->content_length != CONVERSATION_ID_SIZE) {
-		throw(INCORRECT_DATA, "Charlie's conversation has an incorrect ID length.");
+		THROW(INCORRECT_DATA, "Charlie's conversation has an incorrect ID length.");
 	}
 
 	//create Dora's conversation
@@ -250,15 +250,15 @@ int main(void) {
 			charlie_public_ephemeral);
 	buffer_clear(dora_private_identity);
 	buffer_clear(dora_private_ephemeral);
-	throw_on_error(INIT_ERROR, "Failed to init Dora's conversation.");
+	THROW_on_error(INIT_ERROR, "Failed to init Dora's conversation.");
 	if (dora_conversation->id->content_length != CONVERSATION_ID_SIZE) {
-		throw(INCORRECT_DATA, "Dora's conversation has an incorrect ID length.");
+		THROW(INCORRECT_DATA, "Dora's conversation has an incorrect ID length.");
 	}
 
 	//test protobuf-c export
 	printf("Export to Protobuf-C\n");
 	status = protobuf_export(charlie_conversation, &protobuf_export_buffer);
-	throw_on_error(EXPORT_ERROR, "Failed to export charlie's conversation to protobuf-c.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export charlie's conversation to protobuf-c.");
 
 	print_hex(protobuf_export_buffer);
 	puts("\n");
@@ -269,16 +269,16 @@ int main(void) {
 	//import
 	printf("Import from Protobuf-C\n");
 	status = protobuf_import(&charlie_conversation, protobuf_export_buffer);
-	throw_on_error(IMPORT_ERROR, "Failed to imoport Charlie's conversation from Protobuf-C.");
+	THROW_on_error(IMPORT_ERROR, "Failed to imoport Charlie's conversation from Protobuf-C.");
 
 	//export again
 	printf("Export again\n");
 	status = protobuf_export(charlie_conversation, &protobuf_second_export_buffer);
-	throw_on_error(EXPORT_ERROR, "Failed to export charlie's conversation to protobuf-c.");
+	THROW_on_error(EXPORT_ERROR, "Failed to export charlie's conversation to protobuf-c.");
 
 	//compare
 	if (buffer_compare(protobuf_export_buffer, protobuf_second_export_buffer) != 0) {
-		throw(EXPORT_ERROR, "Both exported buffers are not the same.");
+		THROW(EXPORT_ERROR, "Both exported buffers are not the same.");
 	}
 	printf("Both exported buffers are identitcal.\n\n");
 
