@@ -37,7 +37,7 @@
 return_status derive_key(
 		Buffer * const derived_key,
 		size_t derived_size,
-		const Buffer * const input_key,
+		Buffer * const input_key,
 		uint32_t subkey_counter) { //number of the current subkey, used to derive multiple keys from the same input key
 	return_status status = return_status_init();
 
@@ -50,7 +50,7 @@ return_status derive_key(
 	//check if inputs are valid
 	if ((derived_size > crypto_generichash_blake2b_BYTES_MAX)
 			|| (derived_size < crypto_generichash_blake2b_BYTES_MIN)
-			|| (derived_key == nullptr) || (derived_key->buffer_length < derived_size)
+			|| (derived_key == nullptr) || (derived_key->getBufferLength() < derived_size)
 			|| (input_key == nullptr)
 			|| (input_key->content_length > crypto_generichash_blake2b_KEYBYTES_MAX)
 			|| (input_key->content_length < crypto_generichash_blake2b_KEYBYTES_MIN)) {
@@ -104,7 +104,7 @@ cleanup:
  */
 return_status derive_chain_key(
 		Buffer * const new_chain_key,
-		const Buffer * const previous_chain_key) {
+		Buffer * const previous_chain_key) {
 	return derive_key(
 			new_chain_key,
 			CHAIN_KEY_SIZE,
@@ -122,7 +122,7 @@ return_status derive_chain_key(
  */
 return_status derive_message_key(
 		Buffer * const message_key,
-		const Buffer * const chain_key) {
+		Buffer * const chain_key) {
 	return derive_key(
 			message_key,
 			MESSAGE_KEY_SIZE,
@@ -141,10 +141,10 @@ return_status derive_root_next_header_and_chain_keys(
 		Buffer * const root_key, //ROOT_KEY_SIZE
 		Buffer * const next_header_key, //HEADER_KEY_SIZE
 		Buffer * const chain_key, //CHAIN_KEY_SIZE
-		const Buffer * const our_private_ephemeral,
-		const Buffer * const our_public_ephemeral,
-		const Buffer * const their_public_ephemeral,
-		const Buffer * const previous_root_key,
+		Buffer * const our_private_ephemeral,
+		Buffer * const our_public_ephemeral,
+		Buffer * const their_public_ephemeral,
+		Buffer * const previous_root_key,
 		bool am_i_alice) {
 	return_status status = return_status_init();
 
@@ -157,9 +157,9 @@ return_status derive_root_next_header_and_chain_keys(
 	THROW_on_failed_alloc(derivation_key);
 
 	//check input
-	if ((root_key == nullptr) || (root_key->buffer_length < ROOT_KEY_SIZE)
-			|| (next_header_key == nullptr) || (next_header_key->buffer_length < HEADER_KEY_SIZE)
-			|| (chain_key == nullptr) || (chain_key->buffer_length < CHAIN_KEY_SIZE)
+	if ((root_key == nullptr) || (root_key->getBufferLength() < ROOT_KEY_SIZE)
+			|| (next_header_key == nullptr) || (next_header_key->getBufferLength() < HEADER_KEY_SIZE)
+			|| (chain_key == nullptr) || (chain_key->getBufferLength() < CHAIN_KEY_SIZE)
 			|| (our_private_ephemeral == nullptr) || (our_private_ephemeral->content_length != PRIVATE_KEY_SIZE)
 			|| (our_public_ephemeral == nullptr) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
 			|| (their_public_ephemeral == nullptr) || (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
@@ -251,12 +251,12 @@ return_status derive_initial_root_chain_and_header_keys(
 		Buffer * const receive_header_key, //HEADER_KEY_SIZE
 		Buffer * const next_send_header_key, //HEADER_KEY_SIZE
 		Buffer * const next_receive_header_key, //HEADER_KEY_SIZE
-		const Buffer * const our_private_identity,
-		const Buffer * const our_public_identity,
-		const Buffer * const their_public_identity,
-		const Buffer * const our_private_ephemeral,
-		const Buffer * const our_public_ephemeral,
-		const Buffer * const their_public_ephemeral,
+		Buffer * const our_private_identity,
+		Buffer * const our_public_identity,
+		Buffer * const their_public_identity,
+		Buffer * const our_private_ephemeral,
+		Buffer * const our_public_ephemeral,
+		Buffer * const their_public_ephemeral,
 		bool am_i_alice) {
 	return_status status = return_status_init();
 
@@ -264,13 +264,13 @@ return_status derive_initial_root_chain_and_header_keys(
 	THROW_on_failed_alloc(master_key);
 
 	//check buffer sizes
-	if ((root_key->buffer_length < ROOT_KEY_SIZE)
-			|| (send_chain_key->buffer_length < CHAIN_KEY_SIZE)
-			|| (receive_chain_key->buffer_length < CHAIN_KEY_SIZE)
-			|| (send_header_key->buffer_length < HEADER_KEY_SIZE)
-			|| (receive_header_key->buffer_length < HEADER_KEY_SIZE)
-			|| (next_send_header_key->buffer_length < HEADER_KEY_SIZE)
-			|| (next_receive_header_key->buffer_length < HEADER_KEY_SIZE)
+	if ((root_key->getBufferLength() < ROOT_KEY_SIZE)
+			|| (send_chain_key->getBufferLength() < CHAIN_KEY_SIZE)
+			|| (receive_chain_key->getBufferLength() < CHAIN_KEY_SIZE)
+			|| (send_header_key->getBufferLength() < HEADER_KEY_SIZE)
+			|| (receive_header_key->getBufferLength() < HEADER_KEY_SIZE)
+			|| (next_send_header_key->getBufferLength() < HEADER_KEY_SIZE)
+			|| (next_receive_header_key->getBufferLength() < HEADER_KEY_SIZE)
 			|| (our_private_identity->content_length != PRIVATE_KEY_SIZE)
 			|| (our_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (their_public_identity->content_length != PUBLIC_KEY_SIZE)

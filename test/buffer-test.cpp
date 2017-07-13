@@ -48,7 +48,7 @@ int main(void) {
 	buffer_create_from_string(string3, "2234");
 	buffer_create_from_string(string4, "12345");
 
-	if (!string1->readonly) {
+	if (!string1->isReadOnly()) {
 		fprintf(stderr, "ERROR: buffer_create_from_string doesn't create readonly buffers.\n");
 		return EXIT_FAILURE;
 	}
@@ -287,7 +287,7 @@ int main(void) {
 
 	//check if the buffer was properly cleared
 	size_t i;
-	for (i = 0; i < buffer1->buffer_length; i++) {
+	for (i = 0; i < buffer1->getBufferLength(); i++) {
 		if (buffer1->content[i] != '\0') {
 			fprintf(stderr, "ERROR: Byte %zu of the buffer hasn't been erased.\n", i);
 			buffer1->clear();
@@ -331,7 +331,7 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
-	random->readonly = true;
+	random->setReadOnly(true);
 	if (buffer_fill_random(random, 4) == 0) {
 		fprintf(stderr, "ERROR: Failed to prevent write to readonly buffer.\n");
 		random->clear();
@@ -348,7 +348,7 @@ int main(void) {
 	}
 
 	Buffer *random2 = buffer_create(text->content_length, text->content_length);
-	status = buffer_fill_random(random2, random2->buffer_length);
+	status = buffer_fill_random(random2, random2->getBufferLength());
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to fill buffer with random data. (%i)\n", status);
 		return status;
@@ -386,7 +386,7 @@ int main(void) {
 	buffer_create_with_existing_array(buffer_with_array, array, sizeof(array));
 	if ((buffer_with_array->content != array)
 			|| (buffer_with_array->content_length != sizeof(array))
-			|| (buffer_with_array->buffer_length != sizeof(array))) {
+			|| (buffer_with_array->getBufferLength() != sizeof(array))) {
 		fprintf(stderr, "ERROR: Failed to create buffer with existing array.\n");
 		return EXIT_FAILURE;
 	}
@@ -461,42 +461,6 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to partially memset buffer.\n");
 		return EXIT_FAILURE;
 	}
-
-	//growing heap buffer
-	Buffer *resize_buffer = buffer_create_on_heap(1, 1);
-	status = buffer_clone_from_raw(resize_buffer, (const unsigned char*)"", 1);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to clone raw buffer. (%i)\n", status);
-		resize_buffer->destroy_from_heap();
-		return status;
-	}
-
-	//grow
-	status = buffer_grow_on_heap(resize_buffer, 4);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to grow buffer. (%i)\n", status);
-		resize_buffer->destroy_from_heap();
-		return status;
-	}
-	if ((resize_buffer->buffer_length != 4) || (resize_buffer->content_length != 1)) {
-		fprintf(stderr, "ERROR: Grown buffer has incorrect lengths!\n");
-		resize_buffer->destroy_from_heap();
-		return EXIT_FAILURE;
-	}
-
-	//grow again
-	status = buffer_grow_on_heap(resize_buffer, 10);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to grow buffer. (%i)\n", status);
-		resize_buffer->destroy_from_heap();
-		return status;
-	}
-	if ((resize_buffer->buffer_length != 10) || (resize_buffer->content_length != 1)) {
-		fprintf(stderr, "ERROR: Grown buffer has incorrect lengths!\n");
-		resize_buffer->destroy_from_heap();
-		return EXIT_FAILURE;
-	}
-	resize_buffer->destroy_from_heap();
 
 	//create buffer from string on heap
 	Buffer *string_on_heap = buffer_create_from_string_on_heap("Hello world!");
@@ -574,45 +538,45 @@ int main(void) {
 	custom_allocated->destroy_with_custom_deallocator(sodium_free);
 
 	//test buffer_fill
-	Buffer *Buffero_be_filled = buffer_create_on_heap(10, 0);
+	Buffer *buffer_to_be_filled = buffer_create_on_heap(10, 0);
 
-	Buffero_be_filled->readonly = true;
-	status = buffer_fill(Buffero_be_filled, 'c', Buffero_be_filled->buffer_length);
+	buffer_to_be_filled->setReadOnly(true);
+	status = buffer_fill(buffer_to_be_filled, 'c', buffer_to_be_filled->getBufferLength());
 	if (status != -1) {
 		fprintf(stderr, "ERROR: buffer_fill() did not respect the read-only attribute of the buffer. (%i)\n", status);
 		return EXIT_FAILURE;
 	}
-	Buffero_be_filled->readonly = false;
+	buffer_to_be_filled->setReadOnly(false);
 
-	status = buffer_fill(Buffero_be_filled, 'c', Buffero_be_filled->buffer_length + 1);
+	status = buffer_fill(buffer_to_be_filled, 'c', buffer_to_be_filled->getBufferLength() + 1);
 	if (status != -1) {
 		fprintf(stderr, "ERROR: buffer_fill() overflowed the buffer. (%i)\n", status);
 		return EXIT_FAILURE;
 	}
 
-	status = buffer_fill(Buffero_be_filled, 'c', Buffero_be_filled->buffer_length);
+	status = buffer_fill(buffer_to_be_filled, 'c', buffer_to_be_filled->getBufferLength());
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Buffer couldn't be filled with character. (%i)\n", status);
 		return EXIT_FAILURE;
 	}
 
 	unsigned char raw_value[] = {'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c'};
-	if (buffer_compare_to_raw(Buffero_be_filled, raw_value, sizeof(raw_value)) != 0) {
+	if (buffer_compare_to_raw(buffer_to_be_filled, raw_value, sizeof(raw_value)) != 0) {
 		fprintf(stderr, "ERROR: Buffer didn't contain the correct value after filling.\n");
 		return EXIT_FAILURE;
 	}
 
-	status = buffer_fill(Buffero_be_filled, 'c', Buffero_be_filled->buffer_length - 1);
+	status = buffer_fill(buffer_to_be_filled, 'c', buffer_to_be_filled->getBufferLength() - 1);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Buffer couldn't be filled with character. (%i)\n", status);
 		return EXIT_FAILURE;
 	}
-	if (Buffero_be_filled->content_length != (Buffero_be_filled->buffer_length - 1)) {
+	if (buffer_to_be_filled->content_length != (buffer_to_be_filled->getBufferLength() - 1)) {
 		fprintf(stderr, "ERROR: Content length wasn't set correctly.\n");
 		return EXIT_FAILURE;
 	}
 
-	Buffero_be_filled->destroy_from_heap();
+	buffer_to_be_filled->destroy_from_heap();
 
 	Buffer *custom_allocated_empty_buffer = buffer_create_with_custom_allocator(0, 0, malloc, free);
 	if (custom_allocated_empty_buffer == nullptr) {

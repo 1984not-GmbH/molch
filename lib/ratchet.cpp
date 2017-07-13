@@ -33,36 +33,36 @@
  * (filled with zeroes), and does so without introducing
  * side channels, especially timing side channels.
  */
-static bool is_none(const Buffer * const buffer) {
+static bool is_none(Buffer * const buffer) {
 	return (buffer->content_length == 0) || sodium_is_zero(buffer->content, buffer->content_length);
 }
 
 static void init_ratchet_state(ratchet_state ** const ratchet) {
 	//initialize the buffers with the storage arrays
-	(*ratchet)->root_key->init_with_pointer((*ratchet)->root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
-	(*ratchet)->purported_root_key->init_with_pointer((*ratchet)->purported_root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
+	(*ratchet)->root_key.init_with_pointer((*ratchet)->root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
+	(*ratchet)->purported_root_key.init_with_pointer((*ratchet)->purported_root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
 	//header keys
-	(*ratchet)->send_header_key->init_with_pointer((*ratchet)->send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	(*ratchet)->receive_header_key->init_with_pointer((*ratchet)->receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	(*ratchet)->next_send_header_key->init_with_pointer((*ratchet)->next_send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	(*ratchet)->next_receive_header_key->init_with_pointer((*ratchet)->next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	(*ratchet)->purported_receive_header_key->init_with_pointer((*ratchet)->purported_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	(*ratchet)->purported_next_receive_header_key->init_with_pointer((*ratchet)->purported_next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->send_header_key.init_with_pointer((*ratchet)->send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->receive_header_key.init_with_pointer((*ratchet)->receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->next_send_header_key.init_with_pointer((*ratchet)->next_send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->next_receive_header_key.init_with_pointer((*ratchet)->next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->purported_receive_header_key.init_with_pointer((*ratchet)->purported_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->purported_next_receive_header_key.init_with_pointer((*ratchet)->purported_next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	//chain keys
-	(*ratchet)->send_chain_key->init_with_pointer((*ratchet)->send_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-	(*ratchet)->receive_chain_key->init_with_pointer((*ratchet)->receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-	(*ratchet)->purported_receive_chain_key->init_with_pointer((*ratchet)->purported_receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	(*ratchet)->send_chain_key.init_with_pointer((*ratchet)->send_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	(*ratchet)->receive_chain_key.init_with_pointer((*ratchet)->receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	(*ratchet)->purported_receive_chain_key.init_with_pointer((*ratchet)->purported_receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
 	//identity keys
-	(*ratchet)->our_public_identity->init_with_pointer((*ratchet)->our_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	(*ratchet)->their_public_identity->init_with_pointer((*ratchet)->their_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	(*ratchet)->our_public_identity.init_with_pointer((*ratchet)->our_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	(*ratchet)->their_public_identity.init_with_pointer((*ratchet)->their_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	//ephemeral keys (ratchet keys)
-	(*ratchet)->our_private_ephemeral->init_with_pointer((*ratchet)->our_private_ephemeral_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	(*ratchet)->our_public_ephemeral->init_with_pointer((*ratchet)->our_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	(*ratchet)->their_public_ephemeral->init_with_pointer((*ratchet)->their_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	(*ratchet)->their_purported_public_ephemeral->init_with_pointer((*ratchet)->their_purported_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	(*ratchet)->our_private_ephemeral.init_with_pointer((*ratchet)->our_private_ephemeral_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	(*ratchet)->our_public_ephemeral.init_with_pointer((*ratchet)->our_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	(*ratchet)->their_public_ephemeral.init_with_pointer((*ratchet)->their_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	(*ratchet)->their_purported_public_ephemeral.init_with_pointer((*ratchet)->their_purported_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
-	header_and_message_keystore_init((*ratchet)->skipped_header_and_message_keys);
-	header_and_message_keystore_init((*ratchet)->staged_header_and_message_keys);
+	header_and_message_keystore_init(&(*ratchet)->skipped_header_and_message_keys);
+	header_and_message_keystore_init(&(*ratchet)->staged_header_and_message_keys);
 }
 
 /*
@@ -82,8 +82,8 @@ static return_status create_ratchet_state(ratchet_state ** const ratchet) {
 	init_ratchet_state(ratchet);
 
 	//initialise message keystore for skipped messages
-	header_and_message_keystore_init((*ratchet)->skipped_header_and_message_keys);
-	header_and_message_keystore_init((*ratchet)->staged_header_and_message_keys);
+	header_and_message_keystore_init(&(*ratchet)->skipped_header_and_message_keys);
+	header_and_message_keystore_init(&(*ratchet)->staged_header_and_message_keys);
 
 cleanup:
 	return status;
@@ -99,12 +99,12 @@ cleanup:
  */
 return_status ratchet_create(
 		ratchet_state ** const ratchet,
-		const Buffer * const our_private_identity,
-		const Buffer * const our_public_identity,
-		const Buffer * const their_public_identity,
-		const Buffer * const our_private_ephemeral,
-		const Buffer * const our_public_ephemeral,
-		const Buffer * const their_public_ephemeral) {
+		Buffer * const our_private_identity,
+		Buffer * const our_public_identity,
+		Buffer * const their_public_identity,
+		Buffer * const our_private_ephemeral,
+		Buffer * const our_public_ephemeral,
+		Buffer * const their_public_ephemeral) {
 	return_status status = return_status_init();
 
 	//check buffer sizes
@@ -142,13 +142,13 @@ return_status ratchet_create(
 
 	//derive initial chain, root and header keys
 	status = derive_initial_root_chain_and_header_keys(
-			(*ratchet)->root_key,
-			(*ratchet)->send_chain_key,
-			(*ratchet)->receive_chain_key,
-			(*ratchet)->send_header_key,
-			(*ratchet)->receive_header_key,
-			(*ratchet)->next_send_header_key,
-			(*ratchet)->next_receive_header_key,
+			&(*ratchet)->root_key,
+			&(*ratchet)->send_chain_key,
+			&(*ratchet)->receive_chain_key,
+			&(*ratchet)->send_header_key,
+			&(*ratchet)->receive_header_key,
+			&(*ratchet)->next_send_header_key,
+			&(*ratchet)->next_receive_header_key,
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,
@@ -159,23 +159,23 @@ return_status ratchet_create(
 	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive initial root chain and header keys.");
 	//copy keys into state
 	//our public identity
-	if (buffer_clone((*ratchet)->our_public_identity, our_public_identity) != 0) {
+	if (buffer_clone(&(*ratchet)->our_public_identity, our_public_identity) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy our public identity key.");
 	}
 	//their_public_identity
-	if (buffer_clone((*ratchet)->their_public_identity, their_public_identity) != 0) {
+	if (buffer_clone(&(*ratchet)->their_public_identity, their_public_identity) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy their public identity key.");
 	}
 	//our_private_ephemeral
-	if (buffer_clone((*ratchet)->our_private_ephemeral, our_private_ephemeral) != 0) {
+	if (buffer_clone(&(*ratchet)->our_private_ephemeral, our_private_ephemeral) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy our private ephemeral key.");
 	}
 	//our_public_ephemeral
-	if (buffer_clone((*ratchet)->our_public_ephemeral, our_public_ephemeral) != 0) {
+	if (buffer_clone(&(*ratchet)->our_public_ephemeral, our_public_ephemeral) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy our public ephemeral key.");
 	}
 	//their_public_ephemeral
-	if (buffer_clone((*ratchet)->their_public_ephemeral, their_public_ephemeral) != 0) {
+	if (buffer_clone(&(*ratchet)->their_public_ephemeral, their_public_ephemeral) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy their public ephemeral.");
 	}
 
@@ -219,11 +219,11 @@ return_status ratchet_send(
 
 	//check input
 	if ((ratchet == nullptr)
-			|| (send_header_key == nullptr) || (send_header_key->buffer_length < HEADER_KEY_SIZE)
+			|| (send_header_key == nullptr) || (send_header_key->getBufferLength() < HEADER_KEY_SIZE)
 			|| (send_message_number == nullptr)
 			|| (previous_send_message_number == nullptr)
-			|| (our_public_ephemeral == nullptr) || (our_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)
-			|| (message_key == nullptr) || (message_key->buffer_length < MESSAGE_KEY_SIZE)) {
+			|| (our_public_ephemeral == nullptr) || (our_public_ephemeral->getBufferLength() < PUBLIC_KEY_SIZE)
+			|| (message_key == nullptr) || (message_key->getBufferLength() < MESSAGE_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to ratchet_send.");
 	}
 
@@ -231,10 +231,10 @@ return_status ratchet_send(
 		//DHRs = generateECDH()
 		{
 			int status_int = crypto_box_keypair(
-					ratchet->our_public_ephemeral->content,
-					ratchet->our_private_ephemeral->content);
-			ratchet->our_public_ephemeral->content_length = PUBLIC_KEY_SIZE;
-			ratchet->our_private_ephemeral->content_length = PRIVATE_KEY_SIZE;
+					ratchet->our_public_ephemeral.content,
+					ratchet->our_private_ephemeral.content);
+			ratchet->our_public_ephemeral.content_length = PUBLIC_KEY_SIZE;
+			ratchet->our_private_ephemeral.content_length = PRIVATE_KEY_SIZE;
 			if (status_int != 0) {
 				THROW(KEYGENERATION_FAILED, "Failed to generate new ephemeral keypair.");
 			}
@@ -242,7 +242,7 @@ return_status ratchet_send(
 
 		//HKs = NHKs
 		{
-			int status_int = buffer_clone(ratchet->send_header_key, ratchet->next_send_header_key);
+			int status_int = buffer_clone(&ratchet->send_header_key, &ratchet->next_send_header_key);
 			if (status_int != 0) {
 				THROW(BUFFER_ERROR, "Failed to copy send header key to next send header key.");
 			}
@@ -250,7 +250,7 @@ return_status ratchet_send(
 
 		//clone the root key for it to not be overwritten in the next step
 		{
-			int status_int = buffer_clone(root_key_backup, ratchet->root_key);
+			int status_int = buffer_clone(root_key_backup, &ratchet->root_key);
 			if (status_int != 0) {
 				THROW(BUFFER_ERROR, "Failed to backup root key.");
 			}
@@ -258,12 +258,12 @@ return_status ratchet_send(
 
 		//RK, NHKs, CKs = KDF(HMAC-HASH(RK, DH(DHRs, DHRr)))
 		status = derive_root_next_header_and_chain_keys(
-				ratchet->root_key,
-				ratchet->next_send_header_key,
-				ratchet->send_chain_key,
-				ratchet->our_private_ephemeral,
-				ratchet->our_public_ephemeral,
-				ratchet->their_public_ephemeral,
+				&ratchet->root_key,
+				&ratchet->next_send_header_key,
+				&ratchet->send_chain_key,
+				&ratchet->our_private_ephemeral,
+				&ratchet->our_public_ephemeral,
+				&ratchet->their_public_ephemeral,
 				root_key_backup,
 				ratchet->am_i_alice);
 		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive root next header and chain keys.");
@@ -279,7 +279,7 @@ return_status ratchet_send(
 	}
 
 	//MK = HMAC-HASH(CKs, "0")
-	status = derive_message_key(message_key, ratchet->send_chain_key);
+	status = derive_message_key(message_key, &ratchet->send_chain_key);
 	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive message key.");
 
 	//copy the other data to the output
@@ -288,7 +288,7 @@ return_status ratchet_send(
 	//  in the axolotl specification)
 	//HKs:
 	{
-		int status_int = buffer_clone(send_header_key, ratchet->send_header_key);
+		int status_int = buffer_clone(send_header_key, &ratchet->send_header_key);
 		if (status_int != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy send header key.");
 		}
@@ -299,7 +299,7 @@ return_status ratchet_send(
 	*previous_send_message_number = ratchet->previous_message_number;
 	//DHRs
 	{
-		int status_int = buffer_clone(our_public_ephemeral, ratchet->our_public_ephemeral);
+		int status_int = buffer_clone(our_public_ephemeral, &ratchet->our_public_ephemeral);
 		if (status_int != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy public ephemeral.");
 		}
@@ -310,7 +310,7 @@ return_status ratchet_send(
 
 	//clone the chain key for it to not be overwritten in the next step
 	{
-		int status_int = buffer_clone(chain_key_backup, ratchet->send_chain_key);
+		int status_int = buffer_clone(chain_key_backup, &ratchet->send_chain_key);
 		if (status_int != 0) {
 			THROW(BUFFER_ERROR, "Failed to backup send chain key.");
 		}
@@ -318,7 +318,7 @@ return_status ratchet_send(
 
 	//CKs = HMAC-HASH(CKs, "1")
 	status = derive_chain_key(
-			ratchet->send_chain_key,
+			&ratchet->send_chain_key,
 			chain_key_backup);
 	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key.");
 
@@ -354,16 +354,16 @@ return_status ratchet_get_receive_header_keys(
 	return_status status = return_status_init();
 
 	//check input
-	if ((current_receive_header_key == nullptr) || (current_receive_header_key->buffer_length < HEADER_KEY_SIZE)
-			|| (next_receive_header_key == nullptr) || (next_receive_header_key->buffer_length < HEADER_KEY_SIZE)) {
+	if ((current_receive_header_key == nullptr) || (current_receive_header_key->getBufferLength() < HEADER_KEY_SIZE)
+			|| (next_receive_header_key == nullptr) || (next_receive_header_key->getBufferLength() < HEADER_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to ratchet_get_receive_header_keys.");
 	}
 
 	//clone the header keys
-	if (buffer_clone(current_receive_header_key, state->receive_header_key) != 0) {
+	if (buffer_clone(current_receive_header_key, &state->receive_header_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy current receive header key.");
 	}
-	if (buffer_clone(next_receive_header_key, state->next_receive_header_key) != 0) {
+	if (buffer_clone(next_receive_header_key, &state->next_receive_header_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy next receive header key.");
 	}
 
@@ -418,10 +418,10 @@ static return_status stage_skipped_header_and_message_keys(
 		header_and_message_keystore * const staging_area,
 		Buffer * const output_chain_key, //output, CHAIN_KEY_SIZE
 		Buffer * const output_message_key, //output, MESSAGE_KEY_SIZE
-		const Buffer * const current_header_key,
+		Buffer * const current_header_key,
 		const uint32_t current_message_number,
 		const uint32_t future_message_number,
-		const Buffer * const chain_key) {
+		Buffer * const chain_key) {
 	return_status status = return_status_init();
 
 	//create buffers
@@ -437,8 +437,8 @@ static return_status stage_skipped_header_and_message_keys(
 
 	//check input
 	if ((staging_area == nullptr)
-			|| ((output_chain_key != nullptr) && (output_chain_key->buffer_length < CHAIN_KEY_SIZE))
-			|| ((output_message_key != nullptr) && (output_message_key->buffer_length < MESSAGE_KEY_SIZE))
+			|| ((output_chain_key != nullptr) && (output_chain_key->getBufferLength() < CHAIN_KEY_SIZE))
+			|| ((output_message_key != nullptr) && (output_message_key->getBufferLength() < MESSAGE_KEY_SIZE))
 			|| (current_header_key == nullptr) || (current_header_key->content_length != HEADER_KEY_SIZE)
 			|| (chain_key == nullptr) || (chain_key->content_length != CHAIN_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to stage_skipped_header_and_message_keys.");
@@ -525,15 +525,15 @@ static return_status commit_skipped_header_and_message_keys(ratchet_state *state
 
 	//as long as the list of purported message keys isn't empty,
 	//add them to the list of skipped message keys
-	while (state->staged_header_and_message_keys->length != 0) {
+	while (state->staged_header_and_message_keys.length != 0) {
 		status = header_and_message_keystore_add(
-				state->skipped_header_and_message_keys,
-				state->staged_header_and_message_keys->head->message_key,
-				state->staged_header_and_message_keys->head->header_key);
+				&state->skipped_header_and_message_keys,
+				state->staged_header_and_message_keys.head->message_key,
+				state->staged_header_and_message_keys.head->header_key);
 		THROW_on_error(ADDITION_ERROR, "Failed to add keys to skipped header and message keys.");
 		header_and_message_keystore_remove(
-				state->staged_header_and_message_keys,
-				state->staged_header_and_message_keys->head);
+				&state->staged_header_and_message_keys,
+				state->staged_header_and_message_keys.head);
 	}
 
 cleanup:
@@ -553,7 +553,7 @@ cleanup:
 return_status ratchet_receive(
 		ratchet_state * const ratchet,
 		Buffer * const message_key,
-		const Buffer * const their_purported_public_ephemeral,
+		Buffer * const their_purported_public_ephemeral,
 		const uint32_t purported_message_number,
 		const uint32_t purported_previous_message_number) {
 	return_status status = return_status_init();
@@ -571,7 +571,7 @@ return_status ratchet_receive(
 
 	//check input
 	if ((ratchet == nullptr)
-			|| (message_key == nullptr) || (message_key->buffer_length < MESSAGE_KEY_SIZE)
+			|| (message_key == nullptr) || (message_key->getBufferLength() < MESSAGE_KEY_SIZE)
 			|| (their_purported_public_ephemeral == nullptr) || (their_purported_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to ratchet_receive.");
 	}
@@ -586,19 +586,19 @@ return_status ratchet_receive(
 		THROW(INVALID_STATE, "Header decryption hasn't been tried yet.");
 	}
 
-	if (!is_none(ratchet->receive_header_key) && (ratchet->header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
+	if (!is_none(&ratchet->receive_header_key) && (ratchet->header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
 		//Np = read(): get the purported message number from the input
 		ratchet->purported_message_number = purported_message_number;
 
 		//CKp, MK = stage_skipped_header_and_message_keys(HKr, Nr, Np, CKr)
 		status = stage_skipped_header_and_message_keys(
-				ratchet->staged_header_and_message_keys,
-				ratchet->purported_receive_chain_key,
+				&ratchet->staged_header_and_message_keys,
+				&ratchet->purported_receive_chain_key,
 				message_key,
-				ratchet->receive_header_key,
+				&ratchet->receive_header_key,
 				ratchet->receive_message_number,
 				purported_message_number,
-				ratchet->receive_chain_key);
+				&ratchet->receive_chain_key);
 		THROW_on_error(GENERIC_ERROR, "Failed to stage skipped header and message keys.");
 	} else { //new message chain
 		//if ratchet_flag or not Dec(NHKr, header)
@@ -611,49 +611,49 @@ return_status ratchet_receive(
 		//PNp = read(): get the purported previous message number from the input
 		ratchet->purported_previous_message_number = purported_previous_message_number;
 		//DHRp = read(): get the purported ephemeral from the input
-		if (buffer_clone(ratchet->their_purported_public_ephemeral, their_purported_public_ephemeral) != 0) {
+		if (buffer_clone(&ratchet->their_purported_public_ephemeral, their_purported_public_ephemeral) != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy their purported public ephemeral.");
 		}
 
 		//stage_skipped_header_and_message_keys(HKr, Nr, PNp, CKr)
 		status = stage_skipped_header_and_message_keys(
-				ratchet->staged_header_and_message_keys,
+				&ratchet->staged_header_and_message_keys,
 				nullptr, //output_chain_key
 				nullptr, //output_message_key
-				ratchet->receive_header_key,
+				&ratchet->receive_header_key,
 				ratchet->receive_message_number,
 				purported_previous_message_number,
-				ratchet->receive_chain_key);
+				&ratchet->receive_chain_key);
 		THROW_on_error(GENERIC_ERROR, "Failed to stage skipped header and message keys.");
 
 		//HKp = NHKr
-		if (buffer_clone(ratchet->purported_receive_header_key, ratchet->next_receive_header_key) != 0) {
+		if (buffer_clone(&ratchet->purported_receive_header_key, &ratchet->next_receive_header_key) != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy next receive header key to purported receive header key.");
 		}
 
 		//RKp, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
 		status = derive_root_next_header_and_chain_keys(
-				ratchet->purported_root_key,
-				ratchet->purported_next_receive_header_key,
-				ratchet->purported_receive_chain_key,
-				ratchet->our_private_ephemeral,
-				ratchet->our_public_ephemeral,
+				&ratchet->purported_root_key,
+				&ratchet->purported_next_receive_header_key,
+				&ratchet->purported_receive_chain_key,
+				&ratchet->our_private_ephemeral,
+				&ratchet->our_public_ephemeral,
 				their_purported_public_ephemeral,
-				ratchet->root_key,
+				&ratchet->root_key,
 				ratchet->am_i_alice);
 		THROW_on_error(KEYDERIVATION_FAILED, "Faield to derive root next header and chain keys.");
 
 		//backup the purported chain key because it will get overwritten in the next step
-		if (buffer_clone(purported_chain_key_backup, ratchet->purported_receive_chain_key) != 0) {
+		if (buffer_clone(purported_chain_key_backup, &ratchet->purported_receive_chain_key) != 0) {
 			THROW(BUFFER_ERROR, "Failed to backup purported receive chain key.");
 		}
 
 		//CKp, MK = staged_header_and_message_keys(HKp, 0, Np, CKp)
 		status = stage_skipped_header_and_message_keys(
-				ratchet->staged_header_and_message_keys,
-				ratchet->purported_receive_chain_key,
+				&ratchet->staged_header_and_message_keys,
+				&ratchet->purported_receive_chain_key,
 				message_key,
-				ratchet->purported_receive_header_key,
+				&ratchet->purported_receive_header_key,
 				0,
 				purported_message_number,
 				purported_chain_key_backup);
@@ -694,39 +694,39 @@ return_status ratchet_set_last_message_authenticity(
 	ratchet->header_decryptable = NOT_TRIED;
 
 	if (!valid) { //message couldn't be decrypted
-		header_and_message_keystore_clear(ratchet->staged_header_and_message_keys);
+		header_and_message_keystore_clear(&ratchet->staged_header_and_message_keys);
 		goto cleanup;
 	}
 
-	if (is_none(ratchet->receive_header_key) || (header_decryptable != CURRENT_DECRYPTABLE)) { //new message chain
+	if (is_none(&ratchet->receive_header_key) || (header_decryptable != CURRENT_DECRYPTABLE)) { //new message chain
 		if (ratchet->ratchet_flag || (header_decryptable != NEXT_DECRYPTABLE)) {
 			//if ratchet_flag or not Dec(NHKr, header)
 			//clear purported message and header keys
-			header_and_message_keystore_clear(ratchet->staged_header_and_message_keys);
+			header_and_message_keystore_clear(&ratchet->staged_header_and_message_keys);
 			goto cleanup;
 		}
 
 		//otherwise, received message was valid
 		//accept purported values
 		//RK = RKp
-		if (buffer_clone(ratchet->root_key, ratchet->purported_root_key) != 0) {
+		if (buffer_clone(&ratchet->root_key, &ratchet->purported_root_key) != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy purported root key to root key.");
 		}
 		//HKr = HKp
-		if (buffer_clone(ratchet->receive_header_key, ratchet->purported_receive_header_key) != 0) {
+		if (buffer_clone(&ratchet->receive_header_key, &ratchet->purported_receive_header_key) != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy purported receive header key to receive header key.");
 		}
 		//NHKr = NHKp
-		if (buffer_clone(ratchet->next_receive_header_key, ratchet->purported_next_receive_header_key) != 0) {
+		if (buffer_clone(&ratchet->next_receive_header_key, &ratchet->purported_next_receive_header_key) != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy purported next receive header key to next receive header key.");
 		}
 		//DHRr = DHRp
-		if (buffer_clone(ratchet->their_public_ephemeral, ratchet->their_purported_public_ephemeral) != 0) {
+		if (buffer_clone(&ratchet->their_public_ephemeral, &ratchet->their_purported_public_ephemeral) != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy their purported public ephemeral to their public ephemeral.");
 		}
 		//erase(DHRs)
-		ratchet->our_private_ephemeral->clear();
-		ratchet->our_private_ephemeral->content_length = PRIVATE_KEY_SIZE;
+		ratchet->our_private_ephemeral.clear();
+		ratchet->our_private_ephemeral.content_length = PRIVATE_KEY_SIZE;
 		//ratchet_flag = True
 		ratchet->ratchet_flag = true;
 	}
@@ -737,7 +737,7 @@ return_status ratchet_set_last_message_authenticity(
 	//Nr = Np + 1
 	ratchet->receive_message_number = ratchet->purported_message_number + 1;
 	//CKr = CKp
-	if (buffer_clone(ratchet->receive_chain_key, ratchet->purported_receive_chain_key) != 0) {
+	if (buffer_clone(&ratchet->receive_chain_key, &ratchet->purported_receive_chain_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy purported receive chain key to receive chain key.");
 	}
 
@@ -750,14 +750,14 @@ cleanup:
  */
 void ratchet_destroy(ratchet_state *state) {
 	//empty message keystores
-	header_and_message_keystore_clear(state->skipped_header_and_message_keys);
-	header_and_message_keystore_clear(state->staged_header_and_message_keys);
+	header_and_message_keystore_clear(&state->skipped_header_and_message_keys);
+	header_and_message_keystore_clear(&state->staged_header_and_message_keys);
 
 	sodium_free_and_null_if_valid(state); //this also overwrites all the keys with zeroes
 }
 
 return_status ratchet_export(
-		const ratchet_state * const ratchet,
+		ratchet_state * const ratchet,
 		Conversation ** const conversation) {
 	return_status status = return_status_init();
 
@@ -797,163 +797,163 @@ return_status ratchet_export(
 	//root key
 	root_key = (unsigned char*)zeroed_malloc(ROOT_KEY_SIZE);
 	THROW_on_failed_alloc(root_key);
-	if (buffer_clone_to_raw(root_key, ROOT_KEY_SIZE, ratchet->root_key) != 0) {
+	if (buffer_clone_to_raw(root_key, ROOT_KEY_SIZE, &ratchet->root_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy root key.");
 	}
 	(*conversation)->root_key.data = root_key;
-	(*conversation)->root_key.len = ratchet->root_key->content_length;
+	(*conversation)->root_key.len = ratchet->root_key.content_length;
 	(*conversation)->has_root_key = true;
 	//purported root key
 	purported_root_key = (unsigned char*)zeroed_malloc(ROOT_KEY_SIZE);
 	THROW_on_failed_alloc(purported_root_key);
-	if (buffer_clone_to_raw(purported_root_key, ROOT_KEY_SIZE, ratchet->purported_root_key) != 0) {
+	if (buffer_clone_to_raw(purported_root_key, ROOT_KEY_SIZE, &ratchet->purported_root_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy purported root key.");
 	}
 	(*conversation)->purported_root_key.data = purported_root_key;
-	(*conversation)->purported_root_key.len = ratchet->purported_root_key->content_length;
+	(*conversation)->purported_root_key.len = ratchet->purported_root_key.content_length;
 	(*conversation)->has_purported_root_key = true;
 
 	//header keys
 	//send header key
 	send_header_key = (unsigned char*)zeroed_malloc(HEADER_KEY_SIZE);
 	THROW_on_failed_alloc(send_header_key);
-	if (buffer_clone_to_raw(send_header_key, HEADER_KEY_SIZE, ratchet->send_header_key) != 0) {
+	if (buffer_clone_to_raw(send_header_key, HEADER_KEY_SIZE, &ratchet->send_header_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy send header key.");
 	}
 	(*conversation)->send_header_key.data = send_header_key;
-	(*conversation)->send_header_key.len = ratchet->send_header_key->content_length;
+	(*conversation)->send_header_key.len = ratchet->send_header_key.content_length;
 	(*conversation)->has_send_header_key = true;
 	//receive header key
 	receive_header_key = (unsigned char*)zeroed_malloc(HEADER_KEY_SIZE);
 	THROW_on_failed_alloc(receive_header_key);
-	if (buffer_clone_to_raw(receive_header_key, HEADER_KEY_SIZE, ratchet->receive_header_key) != 0) {
+	if (buffer_clone_to_raw(receive_header_key, HEADER_KEY_SIZE, &ratchet->receive_header_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy receive header key.");
 	}
 	(*conversation)->receive_header_key.data = receive_header_key;
-	(*conversation)->receive_header_key.len = ratchet->receive_header_key->content_length;
+	(*conversation)->receive_header_key.len = ratchet->receive_header_key.content_length;
 	(*conversation)->has_receive_header_key = true;
 	//next send header key
 	next_send_header_key = (unsigned char*)zeroed_malloc(HEADER_KEY_SIZE);
 	THROW_on_failed_alloc(next_send_header_key);
-	if (buffer_clone_to_raw(next_send_header_key, HEADER_KEY_SIZE, ratchet->next_send_header_key) != 0) {
+	if (buffer_clone_to_raw(next_send_header_key, HEADER_KEY_SIZE, &ratchet->next_send_header_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy next send header key.");
 	}
 	(*conversation)->next_send_header_key.data = next_send_header_key;
-	(*conversation)->next_send_header_key.len = ratchet->next_send_header_key->content_length;
+	(*conversation)->next_send_header_key.len = ratchet->next_send_header_key.content_length;
 	(*conversation)->has_next_send_header_key = true;
 	//next receive header key
 	next_receive_header_key = (unsigned char*)zeroed_malloc(HEADER_KEY_SIZE);
 	THROW_on_failed_alloc(next_receive_header_key);
-	if (buffer_clone_to_raw(next_receive_header_key, HEADER_KEY_SIZE, ratchet->next_receive_header_key) != 0) {
+	if (buffer_clone_to_raw(next_receive_header_key, HEADER_KEY_SIZE, &ratchet->next_receive_header_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy next receive header key.");
 	}
 	(*conversation)->next_receive_header_key.data = next_receive_header_key;
-	(*conversation)->next_receive_header_key.len = ratchet->next_receive_header_key->content_length;
+	(*conversation)->next_receive_header_key.len = ratchet->next_receive_header_key.content_length;
 	(*conversation)->has_next_receive_header_key = true;
 	//purported receive header key
 	purported_receive_header_key = (unsigned char*)zeroed_malloc(HEADER_KEY_SIZE);
 	THROW_on_failed_alloc(purported_receive_header_key);
-	if (buffer_clone_to_raw(purported_receive_header_key, HEADER_KEY_SIZE, ratchet->purported_receive_header_key) != 0) {
+	if (buffer_clone_to_raw(purported_receive_header_key, HEADER_KEY_SIZE, &ratchet->purported_receive_header_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy purported receive header key.");
 	}
 	(*conversation)->purported_receive_header_key.data = purported_receive_header_key;
-	(*conversation)->purported_receive_header_key.len = ratchet->purported_receive_header_key->content_length;
+	(*conversation)->purported_receive_header_key.len = ratchet->purported_receive_header_key.content_length;
 	(*conversation)->has_purported_receive_header_key = true;
 	//purported next receive header key
 	purported_next_receive_header_key = (unsigned char*)zeroed_malloc(HEADER_KEY_SIZE);
 	THROW_on_failed_alloc(purported_next_receive_header_key);
-	if (buffer_clone_to_raw(purported_next_receive_header_key, HEADER_KEY_SIZE, ratchet->purported_next_receive_header_key) != 0) {
+	if (buffer_clone_to_raw(purported_next_receive_header_key, HEADER_KEY_SIZE, &ratchet->purported_next_receive_header_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy purported next receive header key.");
 	}
 	(*conversation)->purported_next_receive_header_key.data = purported_next_receive_header_key;
-	(*conversation)->purported_next_receive_header_key.len = ratchet->purported_next_receive_header_key->content_length;
+	(*conversation)->purported_next_receive_header_key.len = ratchet->purported_next_receive_header_key.content_length;
 	(*conversation)->has_purported_next_receive_header_key = true;
 
 	//chain keys
 	//send chain key
 	send_chain_key = (unsigned char*)zeroed_malloc(CHAIN_KEY_SIZE);
 	THROW_on_failed_alloc(send_chain_key);
-	if (buffer_clone_to_raw(send_chain_key, CHAIN_KEY_SIZE, ratchet->send_chain_key) != 0) {
+	if (buffer_clone_to_raw(send_chain_key, CHAIN_KEY_SIZE, &ratchet->send_chain_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy send chain key.");
 	}
 	(*conversation)->send_chain_key.data = send_chain_key;
-	(*conversation)->send_chain_key.len = ratchet->send_chain_key->content_length;
+	(*conversation)->send_chain_key.len = ratchet->send_chain_key.content_length;
 	(*conversation)->has_send_chain_key = true;
 	//receive chain key
 	receive_chain_key = (unsigned char*)zeroed_malloc(CHAIN_KEY_SIZE);
 	THROW_on_failed_alloc(receive_chain_key);
-	if (buffer_clone_to_raw(receive_chain_key, CHAIN_KEY_SIZE, ratchet->receive_chain_key) != 0) {
+	if (buffer_clone_to_raw(receive_chain_key, CHAIN_KEY_SIZE, &ratchet->receive_chain_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy receive chain key.");
 	}
 	(*conversation)->receive_chain_key.data = receive_chain_key;
-	(*conversation)->receive_chain_key.len = ratchet->receive_chain_key->content_length;
+	(*conversation)->receive_chain_key.len = ratchet->receive_chain_key.content_length;
 	(*conversation)->has_receive_chain_key = true;
 	//purported receive chain key
 	purported_receive_chain_key = (unsigned char*)zeroed_malloc(CHAIN_KEY_SIZE);
 	THROW_on_failed_alloc(purported_receive_chain_key);
-	if (buffer_clone_to_raw(purported_receive_chain_key, CHAIN_KEY_SIZE, ratchet->purported_receive_chain_key) != 0) {
+	if (buffer_clone_to_raw(purported_receive_chain_key, CHAIN_KEY_SIZE, &ratchet->purported_receive_chain_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy purported receive chain key.");
 	}
 	(*conversation)->purported_receive_chain_key.data = purported_receive_chain_key;
-	(*conversation)->purported_receive_chain_key.len = ratchet->purported_receive_chain_key->content_length;
+	(*conversation)->purported_receive_chain_key.len = ratchet->purported_receive_chain_key.content_length;
 	(*conversation)->has_purported_receive_chain_key = true;
 
 	//identity key
 	//our public identity key
 	our_public_identity_key = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(our_public_identity_key);
-	if (buffer_clone_to_raw(our_public_identity_key, PUBLIC_KEY_SIZE, ratchet->our_public_identity) != 0) {
+	if (buffer_clone_to_raw(our_public_identity_key, PUBLIC_KEY_SIZE, &ratchet->our_public_identity) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy our public identity key.");
 	}
 	(*conversation)->our_public_identity_key.data = our_public_identity_key;
-	(*conversation)->our_public_identity_key.len = ratchet->our_public_identity->content_length;
+	(*conversation)->our_public_identity_key.len = ratchet->our_public_identity.content_length;
 	(*conversation)->has_our_public_identity_key = true;
 	//their public identity key
 	their_public_identity_key = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(their_public_identity_key);
-	if (buffer_clone_to_raw(their_public_identity_key, PUBLIC_KEY_SIZE, ratchet->their_public_identity) != 0) {
+	if (buffer_clone_to_raw(their_public_identity_key, PUBLIC_KEY_SIZE, &ratchet->their_public_identity) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy their public identity key.");
 	}
 	(*conversation)->their_public_identity_key.data = their_public_identity_key;
-	(*conversation)->their_public_identity_key.len = ratchet->their_public_identity->content_length;
+	(*conversation)->their_public_identity_key.len = ratchet->their_public_identity.content_length;
 	(*conversation)->has_their_public_identity_key = true;
 
 	//ephemeral keys
 	//our private ephemeral key
 	our_private_ephemeral_key = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(our_private_ephemeral_key);
-	if (buffer_clone_to_raw(our_private_ephemeral_key, PUBLIC_KEY_SIZE, ratchet->our_private_ephemeral) != 0) {
+	if (buffer_clone_to_raw(our_private_ephemeral_key, PUBLIC_KEY_SIZE, &ratchet->our_private_ephemeral) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy our private ephemeral key.");
 	}
 	(*conversation)->our_private_ephemeral_key.data = our_private_ephemeral_key;
-	(*conversation)->our_private_ephemeral_key.len = ratchet->our_private_ephemeral->content_length;
+	(*conversation)->our_private_ephemeral_key.len = ratchet->our_private_ephemeral.content_length;
 	(*conversation)->has_our_private_ephemeral_key = true;
 	//our public ephemeral key
 	our_public_ephemeral_key = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(our_public_ephemeral_key);
-	if (buffer_clone_to_raw(our_public_ephemeral_key, PUBLIC_KEY_SIZE, ratchet->our_public_ephemeral) != 0) {
+	if (buffer_clone_to_raw(our_public_ephemeral_key, PUBLIC_KEY_SIZE, &ratchet->our_public_ephemeral) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy our public ephemeral key.");
 	}
 	(*conversation)->our_public_ephemeral_key.data = our_public_ephemeral_key;
-	(*conversation)->our_public_ephemeral_key.len = ratchet->our_public_ephemeral->content_length;
+	(*conversation)->our_public_ephemeral_key.len = ratchet->our_public_ephemeral.content_length;
 	(*conversation)->has_our_public_ephemeral_key = true;
 	//their public ephemeral key
 	their_public_ephemeral_key = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(their_public_ephemeral_key);
-	if (buffer_clone_to_raw(their_public_ephemeral_key, PUBLIC_KEY_SIZE, ratchet->their_public_ephemeral) != 0) {
+	if (buffer_clone_to_raw(their_public_ephemeral_key, PUBLIC_KEY_SIZE, &ratchet->their_public_ephemeral) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy their public ephemeral key.");
 	}
 	(*conversation)->their_public_ephemeral_key.data = their_public_ephemeral_key;
-	(*conversation)->their_public_ephemeral_key.len = ratchet->their_public_ephemeral->content_length;
+	(*conversation)->their_public_ephemeral_key.len = ratchet->their_public_ephemeral.content_length;
 	(*conversation)->has_their_public_ephemeral_key = true;
 	//their purported public ephemeral key
 	their_purported_public_ephemeral_key = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(their_purported_public_ephemeral_key);
-	if (buffer_clone_to_raw(their_purported_public_ephemeral_key, PUBLIC_KEY_SIZE, ratchet->their_purported_public_ephemeral) != 0) {
+	if (buffer_clone_to_raw(their_purported_public_ephemeral_key, PUBLIC_KEY_SIZE, &ratchet->their_purported_public_ephemeral) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy their purported public ephemeral key.");
 	}
 	(*conversation)->their_purported_public_ephemeral.data = their_purported_public_ephemeral_key;
-	(*conversation)->their_purported_public_ephemeral.len = ratchet->their_purported_public_ephemeral->content_length;
+	(*conversation)->their_purported_public_ephemeral.len = ratchet->their_purported_public_ephemeral.content_length;
 	(*conversation)->has_their_purported_public_ephemeral = true;
 
 	//message numbers
@@ -1010,13 +1010,13 @@ return_status ratchet_export(
 	//keystores
 	//skipped header and message keystore
 	status = header_and_message_keystore_export(
-		ratchet->skipped_header_and_message_keys,
+		&ratchet->skipped_header_and_message_keys,
 		&((*conversation)->skipped_header_and_message_keys),
 		&((*conversation)->n_skipped_header_and_message_keys));
 	THROW_on_error(EXPORT_ERROR, "Failed to export skipped header and message keystore.");
 	//staged header and message keystore
 	status = header_and_message_keystore_export(
-		ratchet->staged_header_and_message_keys,
+		&ratchet->staged_header_and_message_keys,
 		&((*conversation)->staged_header_and_message_keys),
 		&((*conversation)->n_staged_header_and_message_keys));
 	THROW_on_error(EXPORT_ERROR, "Failed to export staged header and message keystore.");
@@ -1073,14 +1073,14 @@ return_status ratchet_import(
 	if (!conversation->has_root_key || (conversation->root_key.len != ROOT_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No root key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->root_key, conversation->root_key.data, conversation->root_key.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->root_key, conversation->root_key.data, conversation->root_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy root key.");
 	}
 	//purported root key
 	if (!conversation->has_purported_root_key || (conversation->purported_root_key.len != ROOT_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No purported root key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->purported_root_key, conversation->purported_root_key.data, conversation->purported_root_key.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->purported_root_key, conversation->purported_root_key.data, conversation->purported_root_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy purported root key.");
 	}
 
@@ -1089,42 +1089,42 @@ return_status ratchet_import(
 	if (!conversation->has_send_header_key || (conversation->send_header_key.len != HEADER_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No send header key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->send_header_key, conversation->send_header_key.data, conversation->send_header_key.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->send_header_key, conversation->send_header_key.data, conversation->send_header_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy send header key.");
 	}
 	//receive header key
 	if (!conversation->has_receive_header_key || (conversation->receive_header_key.len != HEADER_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No receive header key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->receive_header_key, conversation->receive_header_key.data, conversation->receive_header_key.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->receive_header_key, conversation->receive_header_key.data, conversation->receive_header_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy receive header key.");
 	}
 	//next send header key
 	if (!conversation->has_next_send_header_key || (conversation->next_send_header_key.len != HEADER_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No next send header key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->next_send_header_key, conversation->next_send_header_key.data, conversation->next_send_header_key.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->next_send_header_key, conversation->next_send_header_key.data, conversation->next_send_header_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy next send header key.");
 	}
 	//next receive header key
 	if (!conversation->has_next_receive_header_key || (conversation->next_receive_header_key.len != HEADER_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No next receive header key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->next_receive_header_key, conversation->next_receive_header_key.data, conversation->next_receive_header_key.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->next_receive_header_key, conversation->next_receive_header_key.data, conversation->next_receive_header_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy next receive header key.");
 	}
 	//purported receive header key
 	if (!conversation->has_purported_receive_header_key || (conversation->purported_receive_header_key.len != HEADER_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No purported receive header key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->purported_receive_header_key, conversation->purported_receive_header_key.data, conversation->purported_receive_header_key.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->purported_receive_header_key, conversation->purported_receive_header_key.data, conversation->purported_receive_header_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy purported receive header key.");
 	}
 	//purported next receive header key
 	if (!conversation->has_purported_next_receive_header_key || (conversation->purported_next_receive_header_key.len != HEADER_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No purported next receive header key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->purported_next_receive_header_key, conversation->purported_next_receive_header_key.data, conversation->purported_next_receive_header_key.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->purported_next_receive_header_key, conversation->purported_next_receive_header_key.data, conversation->purported_next_receive_header_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy purported next receive header key.");
 	}
 
@@ -1133,21 +1133,21 @@ return_status ratchet_import(
 	if (!conversation->has_send_chain_key || (conversation->send_chain_key.len != CHAIN_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No send chain key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->send_chain_key, conversation->send_chain_key.data, conversation->send_chain_key.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->send_chain_key, conversation->send_chain_key.data, conversation->send_chain_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy send chain key.");
 	}
 	//receive chain key
 	if (!conversation->has_receive_chain_key || (conversation->receive_chain_key.len != CHAIN_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No receive chain key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->receive_chain_key, conversation->receive_chain_key.data, conversation->receive_chain_key.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->receive_chain_key, conversation->receive_chain_key.data, conversation->receive_chain_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy receive chain key.");
 	}
 	//purported receive chain key
 	if (!conversation->has_purported_receive_chain_key || (conversation->purported_receive_chain_key.len != CHAIN_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No purported receive chain key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->purported_receive_chain_key, conversation->purported_receive_chain_key.data, conversation->purported_receive_chain_key.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->purported_receive_chain_key, conversation->purported_receive_chain_key.data, conversation->purported_receive_chain_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy purported receive chain key.");
 	}
 
@@ -1156,14 +1156,14 @@ return_status ratchet_import(
 	if (!conversation->has_our_public_identity_key || (conversation->our_public_identity_key.len != PUBLIC_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No our public identity key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->our_public_identity, conversation->our_public_identity_key.data, conversation->our_public_identity_key.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->our_public_identity, conversation->our_public_identity_key.data, conversation->our_public_identity_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy our public identity key.");
 	}
 	//their public identity key
 	if (!conversation->has_their_public_identity_key || (conversation->their_public_identity_key.len != PUBLIC_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No their public identity key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->their_public_identity, conversation->their_public_identity_key.data, conversation->their_public_identity_key.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->their_public_identity, conversation->their_public_identity_key.data, conversation->their_public_identity_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy their public identity key.");
 	}
 
@@ -1172,28 +1172,28 @@ return_status ratchet_import(
 	if (!conversation->has_our_private_ephemeral_key || (conversation->our_private_ephemeral_key.len != PRIVATE_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No our private ephemeral key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->our_private_ephemeral, conversation->our_private_ephemeral_key.data, conversation->our_private_ephemeral_key.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->our_private_ephemeral, conversation->our_private_ephemeral_key.data, conversation->our_private_ephemeral_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy our private ephemeral key.");
 	}
 	//our public ephemeral key
 	if (!conversation->has_our_public_ephemeral_key || (conversation->our_public_ephemeral_key.len != PUBLIC_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No our public ephemeral key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->our_public_ephemeral, conversation->our_public_ephemeral_key.data, conversation->our_public_ephemeral_key.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->our_public_ephemeral, conversation->our_public_ephemeral_key.data, conversation->our_public_ephemeral_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy our public ephemeral key.");
 	}
 	//their public ephemeral key
 	if (!conversation->has_their_public_ephemeral_key || (conversation->their_public_ephemeral_key.len != PUBLIC_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No their public ephemeral key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->their_public_ephemeral, conversation->their_public_ephemeral_key.data, conversation->their_public_ephemeral_key.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->their_public_ephemeral, conversation->their_public_ephemeral_key.data, conversation->their_public_ephemeral_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy their public ephemeral key.");
 	}
 	//their purported public ephemeral key
 	if (!conversation->has_their_purported_public_ephemeral || (conversation->their_purported_public_ephemeral.len != PUBLIC_KEY_SIZE)) {
 		THROW(PROTOBUF_MISSING_ERROR, "No their purported public ephemeral key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*ratchet)->their_purported_public_ephemeral, conversation->their_purported_public_ephemeral.data, conversation->their_purported_public_ephemeral.len) != 0) {
+	if (buffer_clone_from_raw(&(*ratchet)->their_purported_public_ephemeral, conversation->their_purported_public_ephemeral.data, conversation->their_purported_public_ephemeral.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy their purported public ephemeral key.");
 	}
 
@@ -1271,13 +1271,13 @@ return_status ratchet_import(
 	//header and message keystores
 	//skipped heeader and message keys
 	status = header_and_message_keystore_import(
-		(*ratchet)->skipped_header_and_message_keys,
+		&(*ratchet)->skipped_header_and_message_keys,
 		conversation->skipped_header_and_message_keys,
 		conversation->n_skipped_header_and_message_keys);
 	THROW_on_error(IMPORT_ERROR, "Failed to import skipped header and message keys.");
 	//staged heeader and message keys
 	status = header_and_message_keystore_import(
-		(*ratchet)->staged_header_and_message_keys,
+		&(*ratchet)->staged_header_and_message_keys,
 		conversation->staged_header_and_message_keys,
 		conversation->n_staged_header_and_message_keys);
 	THROW_on_error(IMPORT_ERROR, "Failed to import staged header and message keys.");

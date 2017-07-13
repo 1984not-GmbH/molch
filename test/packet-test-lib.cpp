@@ -35,18 +35,18 @@ return_status create_and_print_message(
 		Buffer * const message_key, //MESSAGE_KEY_SIZE
 		//inputs
 		const molch_message_type packet_type,
-		const Buffer * const header,
-		const Buffer * const message,
+		Buffer * const header,
+		Buffer * const message,
 		//optional inputs (prekey messages only)
-		const Buffer * const public_identity_key,
-		const Buffer * const public_ephemeral_key,
-		const Buffer * const public_prekey) {
+		Buffer * const public_identity_key,
+		Buffer * const public_ephemeral_key,
+		Buffer * const public_prekey) {
 	return_status status = return_status_init();
 
 	//check input
 	if ((packet == nullptr)
-		|| (header_key == nullptr) || (header_key->buffer_length < HEADER_KEY_SIZE)
-		|| (message_key == nullptr) || (message_key->buffer_length < MESSAGE_KEY_SIZE)
+		|| (header_key == nullptr) || (header_key->getBufferLength() < HEADER_KEY_SIZE)
+		|| (message_key == nullptr) || (message_key->getBufferLength() < MESSAGE_KEY_SIZE)
 		|| (packet_type == INVALID)
 		|| (header == nullptr) || (message == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to create_and_print_message.");

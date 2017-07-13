@@ -88,13 +88,13 @@ static void add_node(header_and_message_keystore * const keystore, header_and_me
 return_status create_and_populate_node(
 		header_and_message_keystore_node ** const new_node,
 		const time_t expiration_date,
-		const Buffer * const header_key,
-		const Buffer * const message_key) __attribute__((warn_unused_result));
+		Buffer * const header_key,
+		Buffer * const message_key) __attribute__((warn_unused_result));
 return_status create_and_populate_node(
 		header_and_message_keystore_node ** const new_node,
 		const time_t expiration_date,
-		const Buffer * const header_key,
-		const Buffer * const message_key) {
+		Buffer * const header_key,
+		Buffer * const message_key) {
 	return_status status = return_status_init();
 
 	//check buffer sizes
@@ -135,8 +135,8 @@ cleanup:
 //NOTE: The entire keys are copied, not only the pointer
 return_status header_and_message_keystore_add(
 		header_and_message_keystore *keystore,
-		const Buffer * const message_key,
-		const Buffer * const header_key) {
+		Buffer * const message_key,
+		Buffer * const header_key) {
 	return_status status = return_status_init();
 
 	header_and_message_keystore_node *new_node = nullptr;

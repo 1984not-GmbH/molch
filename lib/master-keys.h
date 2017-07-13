@@ -54,7 +54,7 @@ typedef struct master_keys {
  */
 return_status master_keys_create(
 		master_keys_t ** const keys, //output
-		const Buffer * const seed,
+		Buffer * const seed,
 		Buffer * const public_signing_key, //output, optional, can be nullptr
 		Buffer * const public_identity_key //output, optional, can be nullptr
 		) __attribute__((warn_unused_result));
@@ -78,7 +78,7 @@ return_status master_keys_get_identity_key(
  */
 return_status master_keys_sign(
 		master_keys_t * const keys,
-		const Buffer * const data,
+		Buffer * const data,
 		Buffer * const signed_data //output, length of data + SIGNATURE_SIZE
 		) __attribute__((warn_unused_result));
 

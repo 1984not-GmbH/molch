@@ -133,7 +133,7 @@ cleanup:
  */
 return_status user_store_create_user(
 		user_store *store,
-		const Buffer * const seed, //optional, can be nullptr
+		Buffer * const seed, //optional, can be nullptr
 		Buffer * const public_signing_key, //output, optional, can be nullptr
 		Buffer * const public_identity_key) { //output, optional, can be nullptr
 
@@ -157,7 +157,7 @@ return_status user_store_create_user(
 
 	//copy the public signing key, if requested
 	if (public_signing_key != nullptr) {
-		if (public_signing_key->buffer_length < PUBLIC_MASTER_KEY_SIZE) {
+		if (public_signing_key->getBufferLength() < PUBLIC_MASTER_KEY_SIZE) {
 			THROW(INCORRECT_BUFFER_SIZE, "Invalidly sized buffer for public signing key.");
 		}
 
@@ -190,7 +190,7 @@ cleanup:
  *
  * Returns nullptr if no user was found.
  */
-return_status user_store_find_node(user_store_node ** const node, user_store * const store, const Buffer * const public_signing_key) {
+return_status user_store_find_node(user_store_node ** const node, user_store * const store, Buffer * const public_signing_key) {
 	return_status status = return_status_init();
 
 	if ((node == nullptr) || (public_signing_key == nullptr) || (public_signing_key->content_length != PUBLIC_MASTER_KEY_SIZE)) {
@@ -272,7 +272,7 @@ cleanup:
  *
  * The user is identified by it's public signing key.
  */
-return_status user_store_remove_by_key(user_store * const store, const Buffer * const public_signing_key) {
+return_status user_store_remove_by_key(user_store * const store, Buffer * const public_signing_key) {
 	return_status status = return_status_init();
 
 	user_store_node *node = nullptr;

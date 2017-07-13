@@ -39,9 +39,9 @@
  */
 return_status diffie_hellman(
 		Buffer * const derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
-		const Buffer * const our_private_key, //needs to be PRIVATE_KEY_SIZE long
-		const Buffer * const our_public_key, //needs to be PUBLIC_KEY_SIZE long
-		const Buffer * const their_public_key, //needs to be PUBLIC_KEY_SIZE long
+		Buffer * const our_private_key, //needs to be PRIVATE_KEY_SIZE long
+		Buffer * const our_public_key, //needs to be PUBLIC_KEY_SIZE long
+		Buffer * const their_public_key, //needs to be PUBLIC_KEY_SIZE long
 		const bool am_i_alice) {
 
 	return_status status = return_status_init();
@@ -61,13 +61,13 @@ return_status diffie_hellman(
 	crypto_generichash_state hash_state[1];
 
 	//check buffer sizes
-	if ((derived_key->buffer_length < DIFFIE_HELLMAN_SIZE)
+	if ((derived_key->getBufferLength() < DIFFIE_HELLMAN_SIZE)
 			|| (our_private_key->content_length != PRIVATE_KEY_SIZE)
 			|| (our_public_key->content_length != PUBLIC_KEY_SIZE)
 			|| (their_public_key->content_length != PUBLIC_KEY_SIZE)
-			|| (our_private_key->buffer_length < PRIVATE_KEY_SIZE)
-			|| (our_public_key->buffer_length < PUBLIC_KEY_SIZE)
-			|| (their_public_key->buffer_length < PUBLIC_KEY_SIZE)) {
+			|| (our_private_key->getBufferLength() < PRIVATE_KEY_SIZE)
+			|| (our_public_key->getBufferLength() < PUBLIC_KEY_SIZE)
+			|| (their_public_key->getBufferLength() < PUBLIC_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to diffie_hellman.");
 	}
 
@@ -148,12 +148,12 @@ cleanup:
  */
 return_status triple_diffie_hellman(
 		Buffer * const derived_key,
-		const Buffer * const our_private_identity,
-		const Buffer * const our_public_identity,
-		const Buffer * const our_private_ephemeral,
-		const Buffer * const our_public_ephemeral,
-		const Buffer * const their_public_identity,
-		const Buffer * const their_public_ephemeral,
+		Buffer * const our_private_identity,
+		Buffer * const our_public_identity,
+		Buffer * const our_private_ephemeral,
+		Buffer * const our_public_ephemeral,
+		Buffer * const their_public_identity,
+		Buffer * const their_public_ephemeral,
 		const bool am_i_alice) {
 	return_status status = return_status_init();
 
@@ -172,19 +172,19 @@ return_status triple_diffie_hellman(
 	THROW_on_failed_alloc(dh3);
 
 	//check buffer sizes
-	if ((derived_key->buffer_length < DIFFIE_HELLMAN_SIZE)
+	if ((derived_key->getBufferLength() < DIFFIE_HELLMAN_SIZE)
 			|| (our_private_identity->content_length != PRIVATE_KEY_SIZE)
 			|| (our_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (their_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (our_private_ephemeral->content_length != PRIVATE_KEY_SIZE)
 			|| (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
 			|| (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
-			|| (our_private_identity->buffer_length < PRIVATE_KEY_SIZE)
-			|| (our_public_identity->buffer_length < PUBLIC_KEY_SIZE)
-			|| (their_public_identity->buffer_length < PUBLIC_KEY_SIZE)
-			|| (our_private_ephemeral->buffer_length < PRIVATE_KEY_SIZE)
-			|| (our_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)
-			|| (their_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)) {
+			|| (our_private_identity->getBufferLength() < PRIVATE_KEY_SIZE)
+			|| (our_public_identity->getBufferLength() < PUBLIC_KEY_SIZE)
+			|| (their_public_identity->getBufferLength() < PUBLIC_KEY_SIZE)
+			|| (our_private_ephemeral->getBufferLength() < PRIVATE_KEY_SIZE)
+			|| (our_public_ephemeral->getBufferLength() < PUBLIC_KEY_SIZE)
+			|| (their_public_ephemeral->getBufferLength() < PUBLIC_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to triple_diffie_hellman.");
 	}
 

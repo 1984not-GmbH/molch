@@ -30,7 +30,7 @@ return_status header_construct(
 		//output
 		Buffer ** const header,
 		//inputs
-		const Buffer * const our_public_ephemeral, //PUBLIC_KEY_SIZE
+		Buffer * const our_public_ephemeral, //PUBLIC_KEY_SIZE
 		const uint32_t message_number,
 		const uint32_t previous_message_number) {
 	return_status status = return_status_init();
@@ -94,7 +94,7 @@ return_status header_extract(
 	Header *header_struct = nullptr;
 
 	//check input
-	if ((their_public_ephemeral == nullptr) || (their_public_ephemeral->buffer_length < PUBLIC_KEY_SIZE)
+	if ((their_public_ephemeral == nullptr) || (their_public_ephemeral->getBufferLength() < PUBLIC_KEY_SIZE)
 			|| (message_number == nullptr) || (previous_message_number == nullptr)
 			|| (header == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to header_extract.");

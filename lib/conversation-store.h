@@ -53,7 +53,7 @@ void conversation_store_remove(conversation_store * const store, conversation_t 
  *
  * The conversation is identified by it's id.
  */
-void conversation_store_remove_by_id(conversation_store * const store, const Buffer * const id);
+void conversation_store_remove_by_id(conversation_store * const store, Buffer * const id);
 
 /*
  * Find a conversation for a given conversation ID.
@@ -63,7 +63,7 @@ void conversation_store_remove_by_id(conversation_store * const store, const Buf
 return_status conversation_store_find_node(
 		conversation_t ** const conversation,
 		conversation_store * const store,
-		const Buffer * const id) __attribute__((warn_unused_result));
+		Buffer * const id) __attribute__((warn_unused_result));
 
 /*
  * Remove all entries from a conversation store.

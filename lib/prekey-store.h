@@ -61,7 +61,7 @@ return_status prekey_store_create(prekey_store ** const store) __attribute__((wa
  */
 return_status prekey_store_get_prekey(
 		prekey_store * const store,
-		const Buffer * const public_key, //input
+		Buffer * const public_key, //input
 		Buffer * const private_key) __attribute__((warn_unused_result)); //output
 
 /*
@@ -89,7 +89,7 @@ void prekey_store_destroy(prekey_store * const store);
  * \returns The status.
  */
 return_status prekey_store_export(
-		const prekey_store * const store,
+		prekey_store * const store,
 		Prekey *** const keypairs,
 		size_t * const keypairs_length,
 		Prekey *** const deprecated_keypairs,

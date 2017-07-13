@@ -156,7 +156,7 @@ cleanup:
  */
 return_status prekey_store_get_prekey(
 		prekey_store * const store,
-		const Buffer * const public_key, //input
+		Buffer * const public_key, //input
 		Buffer * const private_key) { //output
 
 	return_status status = return_status_init();
@@ -165,7 +165,7 @@ return_status prekey_store_get_prekey(
 	bool deprecated = false;
 
 	//check buffers sizes
-	if ((store == nullptr) || (public_key->content_length != PUBLIC_KEY_SIZE) || (private_key->buffer_length < PRIVATE_KEY_SIZE)) {
+	if ((store == nullptr) || (public_key->content_length != PUBLIC_KEY_SIZE) || (private_key->getBufferLength() < PRIVATE_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input for prekey_store_get_prekey.");
 	}
 
@@ -223,7 +223,7 @@ return_status prekey_store_list(
 	return_status status = return_status_init();
 
 	//check input
-	if ((store == nullptr) || (list->buffer_length < (PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
+	if ((store == nullptr) || (list->getBufferLength() < (PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
 		THROW(INVALID_INPUT, "Invalid input to prekey_store_list.");
 	}
 
@@ -348,15 +348,15 @@ void prekey_store_destroy(prekey_store * const store) {
  * \param store Prekey store in which to count.
  * \return Number of deprecated prekeys.
  */
-static size_t count_deprecated_prekeys(const prekey_store * const store) {
+static size_t count_deprecated_prekeys(prekey_store * const store) {
 	size_t length = 0;
 	for (prekey_store_node *node = store->deprecated_prekeys; node != nullptr; node = node->next, length++) {}
 
 	return length;
 }
 
-return_status prekey_store_export_key(const prekey_store_node* node, Prekey ** const keypair) __attribute__((warn_unused_result));
-return_status prekey_store_export_key(const prekey_store_node* node, Prekey ** const keypair) {
+return_status prekey_store_export_key(prekey_store_node* node, Prekey ** const keypair) __attribute__((warn_unused_result));
+return_status prekey_store_export_key(prekey_store_node* node, Prekey ** const keypair) {
 	return_status status = return_status_init();
 
 	Key *private_prekey = nullptr;
@@ -391,10 +391,10 @@ return_status prekey_store_export_key(const prekey_store_node* node, Prekey ** c
 	public_prekey->key.len = PUBLIC_KEY_SIZE;
 
 	//fill the buffers
-	if (buffer_clone_to_raw(private_prekey->key.data, private_prekey->key.len, node->private_key) != 0) {
+	if (buffer_clone_to_raw(private_prekey->key.data, private_prekey->key.len, (Buffer*)node->private_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to clone private prekey.");
 	}
-	if (buffer_clone_to_raw(public_prekey->key.data, public_prekey->key.len, node->public_key) != 0) {
+	if (buffer_clone_to_raw(public_prekey->key.data, public_prekey->key.len, (Buffer*)node->public_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to clone public prekey.");
 	}
 
@@ -423,7 +423,7 @@ cleanup:
 }
 
 return_status prekey_store_export(
-		const prekey_store * const store,
+		prekey_store * const store,
 		Prekey *** const keypairs,
 		size_t * const keypairs_length,
 		Prekey *** const deprecated_keypairs,

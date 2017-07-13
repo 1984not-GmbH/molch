@@ -26,7 +26,7 @@
 #include "utils.h"
 #include "../lib/common.h"
 
-void print_hex(const Buffer * const data) {
+void print_hex(Buffer * const data) {
 	static const size_t WIDTH = 30;
 	//buffer for hex string
 	Buffer *hex = buffer_create_on_heap(2 * data->content_length + 1, 2 * data->content_length + 1);
@@ -52,7 +52,7 @@ void print_hex(const Buffer * const data) {
 	buffer_destroy_from_heap_and_null_if_valid(hex);
 }
 
-void print_to_file(const Buffer * const data, const char * const filename) {
+void print_to_file(Buffer * const data, const char * const filename) {
 	FILE *file = fopen(filename, "w");
 	if (file == nullptr) {
 		return;

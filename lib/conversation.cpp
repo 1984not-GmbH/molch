@@ -29,7 +29,7 @@
  * Create a new conversation struct and initialise the buffer pointer.
  */
 static void init_struct(conversation_t *conversation) {
-	conversation->id->init_with_pointer(conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	conversation->id.init_with_pointer(conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 	conversation->ratchet = nullptr;
 	conversation->previous = nullptr;
 	conversation->next = nullptr;
@@ -43,20 +43,20 @@ static void init_struct(conversation_t *conversation) {
  */
 return_status conversation_create(
 		conversation_t **const conversation,
-		const Buffer * const,
-		const Buffer * const,
-		const Buffer * const,
-		const Buffer * const,
-		const Buffer * const,
-		const Buffer * const) __attribute__((warn_unused_result));
+		Buffer * const,
+		Buffer * const,
+		Buffer * const,
+		Buffer * const,
+		Buffer * const,
+		Buffer * const) __attribute__((warn_unused_result));
 return_status conversation_create(
 		conversation_t **const conversation,
-		const Buffer * const our_private_identity,
-		const Buffer * const our_public_identity,
-		const Buffer * const their_public_identity,
-		const Buffer * const our_private_ephemeral,
-		const Buffer * const our_public_ephemeral,
-		const Buffer * const their_public_ephemeral) {
+		Buffer * const our_private_identity,
+		Buffer * const our_public_identity,
+		Buffer * const their_public_identity,
+		Buffer * const our_private_ephemeral,
+		Buffer * const our_public_ephemeral,
+		Buffer * const their_public_ephemeral) {
 
 	return_status status = return_status_init();
 
@@ -77,7 +77,7 @@ return_status conversation_create(
 	init_struct(*conversation);
 
 	//create random id
-	if (buffer_fill_random((*conversation)->id, CONVERSATION_ID_SIZE) != 0) {
+	if (buffer_fill_random(&(*conversation)->id, CONVERSATION_ID_SIZE) != 0) {
 		THROW(BUFFER_ERROR, "Failed to create random conversation id.");
 	}
 
@@ -119,12 +119,12 @@ void conversation_destroy(conversation_t * const conversation) {
  */
 return_status conversation_start_send_conversation(
 		conversation_t ** const conversation, //output, newly created conversation
-		const Buffer *const message, //message we want to send to the receiver
+		Buffer * const message, //message we want to send to the receiver
 		Buffer ** packet, //output, free after use!
-		const Buffer * const sender_public_identity, //who is sending this message?
-		const Buffer * const sender_private_identity,
-		const Buffer * const receiver_public_identity,
-		const Buffer * const receiver_prekey_list //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+		Buffer * const sender_public_identity, //who is sending this message?
+		Buffer * const sender_private_identity,
+		Buffer * const receiver_public_identity,
+		Buffer * const receiver_prekey_list //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 		) {
 
 	return_status status = return_status_init();
@@ -212,10 +212,10 @@ cleanup:
  */
 return_status conversation_start_receive_conversation(
 		conversation_t ** const conversation, //output, newly created conversation
-		const Buffer * const packet, //received packet
+		Buffer * const packet, //received packet
 		Buffer ** message, //output, free after use!
-		const Buffer * const receiver_public_identity,
-		const Buffer * const receiver_private_identity,
+		Buffer * const receiver_public_identity,
+		Buffer * const receiver_private_identity,
 		prekey_store * const receiver_prekeys //prekeys of the receiver
 		) {
 	uint32_t receive_message_number = 0;
@@ -318,11 +318,11 @@ cleanup:
  */
 return_status conversation_send(
 		conversation_t * const conversation,
-		const Buffer * const message,
+		Buffer * const message,
 		Buffer **packet, //output, free after use!
-		const Buffer * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
-		const Buffer * const public_ephemeral_key, //can be nullptr, if not nullptr, this will be a prekey message
-		const Buffer * const public_prekey //can be nullptr, if not nullptr, this will be a prekey message
+		Buffer * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
+		Buffer * const public_ephemeral_key, //can be nullptr, if not nullptr, this will be a prekey message
+		Buffer * const public_prekey //can be nullptr, if not nullptr, this will be a prekey message
 		) {
 	return_status status = return_status_init();
 
@@ -421,7 +421,7 @@ cleanup:
  */
 static int try_skipped_header_and_message_keys(
 		header_and_message_keystore * const skipped_keys,
-		const Buffer * const packet,
+		Buffer * const packet,
 		Buffer ** const message,
 		uint32_t * const receive_message_number,
 		uint32_t * const previous_receive_message_number) {
@@ -487,7 +487,7 @@ cleanup:
  */
 return_status conversation_receive(
 	conversation_t * const conversation,
-	const Buffer * const packet, //received packet
+	Buffer * const packet, //received packet
 	uint32_t * const receive_message_number,
 	uint32_t * const previous_receive_message_number,
 	Buffer ** const message) { //output, free after use!
@@ -522,7 +522,7 @@ return_status conversation_receive(
 
 	{
 		int status_int = try_skipped_header_and_message_keys(
-				conversation->ratchet->skipped_header_and_message_keys,
+				&conversation->ratchet->skipped_header_and_message_keys,
 				packet,
 				message,
 				receive_message_number,
@@ -632,7 +632,7 @@ cleanup:
 }
 
 return_status conversation_export(
-		const conversation_t * const conversation,
+		conversation_t * const conversation,
 		Conversation ** const exported_conversation) {
 	return_status status = return_status_init();
 
@@ -650,7 +650,7 @@ return_status conversation_export(
 	//export the conversation id
 	id = (unsigned char*)zeroed_malloc(CONVERSATION_ID_SIZE);
 	THROW_on_failed_alloc(id);
-	if (buffer_clone_to_raw(id, CONVERSATION_ID_SIZE, conversation->id) != 0) {
+	if (buffer_clone_to_raw(id, CONVERSATION_ID_SIZE, &conversation->id) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy conversation id.");
 	}
 	(*exported_conversation)->id.data = id;
@@ -682,7 +682,7 @@ return_status conversation_import(
 	init_struct(*conversation);
 
 	//copy the id
-	if (buffer_clone_from_raw((*conversation)->id, conversation_protobuf->id.data, conversation_protobuf->id.len) != 0) {
+	if (buffer_clone_from_raw(&(*conversation)->id, conversation_protobuf->id.data, conversation_protobuf->id.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy id.");
 	}
 

@@ -254,7 +254,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 				int written = 0;
 				written = snprintf(
 					(char*) output->content + output->content_length, //current position in output
-					output->buffer_length - output->content_length, //remaining length of output
+					output->getBufferLength() - output->content_length, //remaining length of output
 					"%.3zu: ",
 					i);
 				if (written != (sizeof("XXX: ") - 1)) {

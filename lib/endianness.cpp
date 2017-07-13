@@ -43,7 +43,7 @@ return_status endianness_uint32_to_big_endian(
 		Buffer * const output) {
 	return_status status = return_status_init();
 
-	if ((output == nullptr) || (output->buffer_length < sizeof(uint32_t))) {
+	if ((output == nullptr) || (output->getBufferLength() < sizeof(uint32_t))) {
 		THROW(INVALID_INPUT, "Invalid input to endianness_uint32_to_big_endian.");
 	}
 
@@ -70,7 +70,7 @@ cleanup:
  */
 return_status endianness_uint32_from_big_endian(
 		uint32_t *integer,
-		const Buffer * const buffer) {
+		Buffer * const buffer) {
 	return_status status = return_status_init();
 
 	if ((integer == nullptr) || (buffer == nullptr) || (buffer->content_length != sizeof(uint32_t))) {
@@ -108,7 +108,7 @@ return_status endianness_int32_to_big_endian(
  */
 return_status endianness_int32_from_big_endian(
 		int32_t *integer,
-		const Buffer * const buffer) {
+		Buffer * const buffer) {
 	return endianness_uint32_from_big_endian((uint32_t*) integer, buffer);
 }
 
@@ -120,7 +120,7 @@ return_status endianness_uint64_to_big_endian(
 		Buffer * const output) {
 	return_status status = return_status_init();
 
-	if ((output == nullptr) || (output->buffer_length < sizeof(uint64_t))) {
+	if ((output == nullptr) || (output->getBufferLength() < sizeof(uint64_t))) {
 		THROW(INVALID_INPUT, "Invalid input to endianness_uint64_to_big_endian.");
 	}
 
@@ -151,7 +151,7 @@ cleanup:
  */
 return_status endianness_uint64_from_big_endian(
 		uint64_t *integer,
-		const Buffer * const buffer) {
+		Buffer * const buffer) {
 	return_status status = return_status_init();
 
 	if ((integer == nullptr) || (buffer == nullptr) || (buffer->content_length != sizeof(uint64_t))) {
@@ -193,7 +193,7 @@ return_status endianness_int64_to_big_endian(
  */
 return_status endianness_int64_from_big_endian(
 		int64_t *integer,
-		const Buffer * const buffer) {
+		Buffer * const buffer) {
 	return endianness_uint64_from_big_endian((uint64_t*)integer, buffer);
 }
 
@@ -213,7 +213,7 @@ return_status endianness_time_to_big_endian(
  */
 return_status endianness_time_from_big_endian(
 		time_t *time,
-		const Buffer * const buffer) {
+		Buffer * const buffer) {
 	return_status status = return_status_init();
 
 	int64_t timestamp = 0;

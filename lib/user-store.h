@@ -69,7 +69,7 @@ void user_store_destroy(user_store * const store);
  */
 return_status user_store_create_user(
 		user_store * const keystore,
-		const Buffer * const seed, //optional, can be nullptr
+		Buffer * const seed, //optional, can be nullptr
 		Buffer * const public_signing_key, //output, optional, can be nullptr
 		Buffer * const public_identity_key //output, optional, can be nullptr
 		) __attribute__((warn_unused_result));
@@ -79,7 +79,7 @@ return_status user_store_create_user(
  *
  * Returns nullptr if no user was found.
  */
-return_status user_store_find_node(user_store_node ** const node, user_store * const store, const Buffer * const public_signing_key) __attribute__((warn_unused_result));
+return_status user_store_find_node(user_store_node ** const node, user_store * const store, Buffer * const public_signing_key) __attribute__((warn_unused_result));
 
 /*
  * List all of the users.
@@ -96,7 +96,7 @@ return_status user_store_list(Buffer ** const list, user_store * const store) __
  *
  * The user is identified by it's public signing key.
  */
-return_status user_store_remove_by_key(user_store * const store, const Buffer * const public_signing_key);
+return_status user_store_remove_by_key(user_store * const store, Buffer * const public_signing_key);
 
 //remove a user from the user store
 void user_store_remove(user_store * const store, user_store_node *node);

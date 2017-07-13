@@ -23,6 +23,14 @@
 
 #include "buffer.h"
 
+size_t Buffer::getBufferLength() {
+	return this->buffer_length;
+}
+
+bool Buffer::isReadOnly() {
+	return this->readonly;
+}
+
 /*
  * Initialize a molch buffer with a given length.
  *
@@ -37,6 +45,10 @@ Buffer* Buffer::init(const size_t buffer_length_,
 			content_length_);
 }
 
+void Buffer::setReadOnly(bool readonly_) {
+	this->readonly = readonly_;
+}
+
 /*
  * initialize a buffer with a pointer to the character array.
  */
@@ -44,25 +56,17 @@ Buffer* Buffer::init_with_pointer(
 		unsigned char * const content_,
 		const size_t buffer_length_,
 		const size_t content_length_) {
-	//write to constant buffer length value (HACK)
-	//This allows restricting access to the buffer length
-	//while still being able to set it here
-	size_t *writable_buffer_length = (size_t*) &(this->buffer_length);
-	*writable_buffer_length = buffer_length_;
+	this->buffer_length = buffer_length_;
 
 	this->content_length = (content_length_ > buffer_length_)
 		? buffer_length_
 		: content_length_;
 	this->readonly = false;
 
-	//write to constant content pointer (HACK)
-	//This allows restricting access to the pointer
-	//while still being able to set it here
-	unsigned char **writable_content_pointer = (unsigned char**) &this->content;
 	if (buffer_length_ == 0) {
-		*writable_content_pointer = nullptr;
+		this->content = nullptr;
 	} else {
-		*writable_content_pointer = content_;
+		this->content = content_;
 	}
 
 	this->position = 0;
@@ -141,14 +145,14 @@ Buffer *buffer_create_with_custom_allocator(
  * The output buffer has to be at least twice
  * as large as the input data plus one.
  */
-int Buffero_hex(Buffer * const hex, const Buffer * const data) {
+int Buffero_hex(Buffer * const hex, Buffer * const data) {
 	//check size
-	if (hex->buffer_length < (data->content_length * 2 + 1)) {
+	if (hex->getBufferLength() < (data->content_length * 2 + 1)) {
 		return -6;
 	}
 
-	if (sodium_bin2hex((char*)hex->content, hex->buffer_length, data->content, data->content_length) == nullptr) {
-		sodium_memzero(hex->content, hex->buffer_length);
+	if (sodium_bin2hex((char*)hex->content, hex->getBufferLength(), data->content, data->content_length) == nullptr) {
+		sodium_memzero(hex->content, hex->getBufferLength());
 		hex->content_length = 0;
 		return -10;
 	}
@@ -213,8 +217,8 @@ void Buffer::clear() {
  */
 int buffer_concat(
 		Buffer * const destination,
-		const Buffer * const source) {
-	if (destination->readonly) {
+		Buffer * const source) {
+	if (destination->isReadOnly()) {
 		return -5;
 	}
 
@@ -234,19 +238,19 @@ int buffer_concat(
 int buffer_copy(
 		Buffer * const destination,
 		const size_t destination_offset,
-		const Buffer * const source,
+		Buffer * const source,
 		const size_t source_offset,
 		const size_t copy_length) {
-	if (destination->readonly) {
+	if (destination->isReadOnly()) {
 		return -5;
 	}
 
-	if ((destination->buffer_length < destination->content_length) || (source->buffer_length < source->content_length)) {
+	if ((destination->getBufferLength() < destination->content_length) || (source->getBufferLength() < source->content_length)) {
 		//the content length should never be longer than the buffer length
 		return -7;
 	}
 
-	if ((destination_offset > destination->content_length) || (copy_length > (destination->buffer_length - destination_offset))) {
+	if ((destination_offset > destination->content_length) || (copy_length > (destination->getBufferLength() - destination_offset))) {
 		//destination buffer isn't long enough
 		return -6;
 	}
@@ -256,7 +260,7 @@ int buffer_copy(
 		return -6;
 	}
 
-	if (source->buffer_length == 0) {
+	if (source->getBufferLength() == 0) {
 		return 0;
 	}
 
@@ -281,16 +285,16 @@ int buffer_copy(
  */
 int buffer_clone(
 		Buffer * const destination,
-		const Buffer * const source) {
+		Buffer * const source) {
 	if ((destination == nullptr) || (source == nullptr)) {
 		return -1;
 	}
 
-	if (destination->readonly) {
+	if (destination->isReadOnly()) {
 		return -5;
 	}
 
-	if (destination->buffer_length < source->content_length) {
+	if (destination->getBufferLength() < source->content_length) {
 		return -6;
 	}
 
@@ -323,16 +327,16 @@ int buffer_copy_from_raw(
 		const unsigned char * const source,
 		const size_t source_offset,
 		const size_t copy_length) {
-	if (destination->readonly) {
+	if (destination->isReadOnly()) {
 		return -5;
 	}
 
-	if (destination->buffer_length < destination->content_length) {
+	if (destination->getBufferLength() < destination->content_length) {
 		//the content length should never be longer than the buffer length
 		return -7;
 	}
 
-	if ((destination->buffer_length < destination_offset) || (copy_length > (destination->buffer_length - destination_offset))) {
+	if ((destination->getBufferLength() < destination_offset) || (copy_length > (destination->getBufferLength() - destination_offset))) {
 		//destination buffer isn't long enough
 		return -6;
 	}
@@ -360,11 +364,11 @@ int buffer_clone_from_raw(
 		Buffer * const destination,
 		const unsigned char * const source,
 		const size_t length) {
-	if (destination->readonly) {
+	if (destination->isReadOnly()) {
 		return -5;
 	}
 
-	if (destination->buffer_length < length) {
+	if (destination->getBufferLength() < length) {
 		return -6;
 	}
 
@@ -385,24 +389,24 @@ int buffer_clone_from_raw(
  */
 int buffer_clone_from_hex(
 		Buffer * const destination,
-		const Buffer * const source) {
+		Buffer * const source) {
 	if ((destination == nullptr) || (source == nullptr)) {
 		return -1;
 	}
 
-	if (destination->readonly) {
+	if (destination->isReadOnly()) {
 		return -5;
 	}
 
 	destination->content_length = 0;
 
-	if (destination->buffer_length < (source->content_length / 2)) {
+	if (destination->getBufferLength() < (source->content_length / 2)) {
 		return -6;
 	}
 
 	size_t length; //number of bytes written
 	int status = sodium_hex2bin(
-				destination->content, destination->buffer_length,
+				destination->content, destination->getBufferLength(),
 				(const char*) source->content, source->content_length,
 				nullptr,
 				&length,
@@ -428,22 +432,22 @@ int buffer_clone_from_hex(
  */
 int buffer_clone_as_hex(
 		Buffer * const destination,
-		const Buffer * const source) {
+		Buffer * const source) {
 	if ((destination == nullptr) || (source == nullptr)) {
 		return -1;
 	}
 
-	if (destination->readonly) {
+	if (destination->isReadOnly()) {
 		return -5;
 	}
 
 	destination->content_length = 0;
 
-	if (destination->buffer_length < (2 * source->content_length + 1)) {
+	if (destination->getBufferLength() < (2 * source->content_length + 1)) {
 		return -6;
 	}
 
-	if (sodium_bin2hex((char*)destination->content, destination->buffer_length, (const unsigned char*)source->content, source->content_length) == nullptr) {
+	if (sodium_bin2hex((char*)destination->content, destination->getBufferLength(), (const unsigned char*)source->content, source->content_length) == nullptr) {
 		destination->clear();
 		return -7;
 	}
@@ -461,7 +465,7 @@ int buffer_clone_as_hex(
 int buffer_copy_to_raw(
 		unsigned char * const destination,
 		const size_t destination_offset,
-		const Buffer * const source,
+		Buffer * const source,
 		const size_t source_offset,
 		const size_t copy_length) {
 	if ((source_offset > source->content_length) || (copy_length > (source->content_length - source_offset))) {
@@ -469,12 +473,12 @@ int buffer_copy_to_raw(
 		return -6;
 	}
 
-	if (source->buffer_length < source->content_length) {
+	if (source->getBufferLength() < source->content_length) {
 		//the content length should never be longer than the buffer length
 		return -7;
 	}
 
-	if (source->buffer_length == 0) {
+	if (source->getBufferLength() == 0) {
 		return 0;
 	}
 
@@ -492,7 +496,7 @@ int buffer_copy_to_raw(
 int buffer_clone_to_raw(
 		unsigned char * const destination,
 		const size_t destination_length,
-		const Buffer *source) {
+		Buffer *source) {
 	if (destination_length < source->content_length) {
 		return -6;
 	}
@@ -511,8 +515,8 @@ int buffer_clone_to_raw(
  * Returns 0 if both buffers match.
  */
 int buffer_compare(
-		const Buffer * const buffer1,
-		const Buffer * const buffer2) {
+		Buffer * const buffer1,
+		Buffer * const buffer2) {
 	return buffer_compare_to_raw(buffer1, buffer2->content, buffer2->content_length);
 }
 
@@ -522,7 +526,7 @@ int buffer_compare(
  * Returns 0 if both buffers match.
  */
 int buffer_compare_to_raw(
-		const Buffer * const buffer,
+		Buffer * const buffer,
 		const unsigned char * const array,
 		const size_t array_length) {
 	return buffer_compare_to_raw_partial(buffer, 0, array, array_length, 0, buffer->content_length);
@@ -534,9 +538,9 @@ int buffer_compare_to_raw(
  * Returns 0 if both buffers match.
  */
 int buffer_compare_partial(
-		const Buffer * const buffer1,
+		Buffer * const buffer1,
 		const size_t position1,
-		const Buffer * const buffer2,
+		Buffer * const buffer2,
 		const size_t position2,
 		const size_t length) {
 	return buffer_compare_to_raw_partial(buffer1, position1, buffer2->content, buffer2->content_length, position2, length);
@@ -548,7 +552,7 @@ int buffer_compare_partial(
  * Returns 0 if both buffers match.
  */
 int buffer_compare_to_raw_partial(
-		const Buffer * const buffer,
+		Buffer * const buffer,
 		const size_t position1,
 		const unsigned char * const array,
 		const size_t array_length,
@@ -560,7 +564,7 @@ int buffer_compare_to_raw_partial(
 		return -6;
 	}
 
-	if ((buffer->buffer_length == 0) || (array_length == 0)) {
+	if ((buffer->getBufferLength() == 0) || (array_length == 0)) {
 		if (comparison_length == 0) {
 			return 0;
 		} else {
@@ -577,15 +581,15 @@ int buffer_compare_to_raw_partial(
 int buffer_fill_random(
 		Buffer * const buffer,
 		const size_t length) {
-	if (length > buffer->buffer_length) {
+	if (length > buffer->getBufferLength()) {
 		return -6;
 	}
 
-	if (buffer->readonly) {
+	if (buffer->isReadOnly()) {
 		return -5;
 	}
 
-	if (buffer->buffer_length == 0) {
+	if (buffer->getBufferLength() == 0) {
 		return 0;
 	}
 
@@ -601,14 +605,14 @@ int buffer_fill_random(
 //FIXME: Make sure this doesn't introduce any sidechannels
 int buffer_xor(
 		Buffer * const destination,
-		const Buffer * const source) {
-	if (destination->readonly) {
+		Buffer * const source) {
+	if (destination->isReadOnly()) {
 		return -5;
 	}
 
 	if ((destination->content_length != source->content_length)
-			|| (destination->buffer_length < destination->content_length)
-			|| (source->buffer_length < source->content_length)) {
+			|| (destination->getBufferLength() < destination->content_length)
+			|| (source->getBufferLength() < source->content_length)) {
 		return -6;
 	}
 
@@ -624,10 +628,10 @@ int buffer_xor(
  * Set a single character in a buffer.
  */
 int buffer_set_at(
-		const Buffer * const buffer,
+		Buffer * const buffer,
 		const size_t pos,
 		const unsigned char character) {
-	if (buffer->readonly) {
+	if (buffer->isReadOnly()) {
 		return -5;
 	}
 	if (pos >= buffer->content_length) {
@@ -646,15 +650,15 @@ int buffer_memset_partial(
 		Buffer * const buffer,
 		const unsigned char character,
 		const size_t length) {
-	if (buffer->readonly) {
+	if (buffer->isReadOnly()) {
 		return -5;
 	}
 
-	if ((length == 0) || (buffer->buffer_length == 0)) {
+	if ((length == 0) || (buffer->getBufferLength() == 0)) {
 		return 0;
 	}
 
-	if (length > buffer->buffer_length) {
+	if (length > buffer->getBufferLength()) {
 		return -6;
 	}
 
@@ -682,52 +686,12 @@ void buffer_memset(
 }
 
 /*
- * Grow a heap allocated buffer to a new length.
- *
- * Does nothing if the new size is smaller than the buffer.
- */
-int buffer_grow_on_heap(
-		Buffer * const buffer,
-		const size_t new_size) {
-	if (new_size <= buffer->buffer_length) {
-		//nothing to do
-		return 0;
-	}
-
-	//allocate new content
-	unsigned char *content = (unsigned char*)malloc(new_size);
-	if (content == nullptr) {
-		return -11;
-	}
-
-	//copy the content
-	int status = buffer_copy_to_raw(content, 0, buffer, 0, buffer->content_length);
-	if (status != 0) {
-		sodium_memzero(content, buffer->content_length);
-		free(content);
-		return status;
-	}
-
-	//replace content pointer
-	sodium_memzero(buffer->content, buffer->buffer_length);
-	free(buffer->content);
-	unsigned char **writable_content_pointer = (unsigned char**) &buffer->content;
-	*writable_content_pointer = content;
-
-	//update buffer length
-	size_t *writable_buffer_length = (size_t*) &buffer->buffer_length;
-	*writable_buffer_length = new_size;
-
-	return 0;
-}
-
-/*
  * Get the content of a buffer at buffer->position.
  *
  * Returns '\0' when out of bounds.
  */
-unsigned char buffer_get_at_pos(const Buffer * const buffer) {
-	if ((buffer->position > buffer->content_length) || (buffer->position > buffer->buffer_length)) {
+unsigned char buffer_get_at_pos(Buffer * const buffer) {
+	if ((buffer->position > buffer->content_length) || (buffer->position > buffer->getBufferLength())) {
 		return '\0';
 	}
 
@@ -740,7 +704,7 @@ unsigned char buffer_get_at_pos(const Buffer * const buffer) {
  * Returns 0 if not out of bounds.
  */
 int buffer_set_at_pos(Buffer * const buffer, const unsigned char character) {
-	if ((buffer->position > buffer->buffer_length) || (buffer->position > buffer->content_length)) {
+	if ((buffer->position > buffer->getBufferLength()) || (buffer->position > buffer->content_length)) {
 		return -6;
 	}
 	buffer->content[buffer->position] = character;
@@ -753,7 +717,7 @@ int buffer_set_at_pos(Buffer * const buffer, const unsigned char character) {
  * Returns 0 on success
  */
 int buffer_fill(Buffer * const buffer, const unsigned char character, size_t length) {
-	if ((buffer->readonly) || (length > buffer->buffer_length)) {
+	if ((buffer->isReadOnly()) || (length > buffer->getBufferLength())) {
 		return -1;
 	}
 

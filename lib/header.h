@@ -52,7 +52,7 @@ return_status header_construct(
 		//output
 		Buffer ** const header,
 		//inputs
-		const Buffer * const our_public_ephemeral, //PUBLIC_KEY_SIZE
+		Buffer * const our_public_ephemeral, //PUBLIC_KEY_SIZE
 		const uint32_t message_number,
 		const uint32_t previous_message_number) __attribute__((warn_unused_result));
 

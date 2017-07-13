@@ -61,14 +61,14 @@ return_status packet_encrypt(
 		Buffer ** const packet,
 		//inputs
 		const molch_message_type packet_type,
-		const Buffer * const axolotl_header,
-		const Buffer * const axolotl_header_key, //HEADER_KEY_SIZE
-		const Buffer * const message,
-		const Buffer * const message_key, //MESSAGE_KEY_SIZE
+		Buffer * const axolotl_header,
+		Buffer * const axolotl_header_key, //HEADER_KEY_SIZE
+		Buffer * const message,
+		Buffer * const message_key, //MESSAGE_KEY_SIZE
 		//optional inputs (prekey messages only)
-		const Buffer * const public_identity_key,
-		const Buffer * const public_ephemeral_key,
-		const Buffer * const public_prekey) __attribute__((warn_unused_result));
+		Buffer * const public_identity_key,
+		Buffer * const public_ephemeral_key,
+		Buffer * const public_prekey) __attribute__((warn_unused_result));
 
 /*!
  * Extract and decrypt a packet and the metadata inside of it.
@@ -107,9 +107,9 @@ return_status packet_decrypt(
 		Buffer ** const axolotl_header,
 		Buffer ** const message,
 		//inputs
-		const Buffer * const packet,
-		const Buffer * const axolotl_header_key, //HEADER_KEY_SIZE
-		const Buffer * const message_key, //MESSAGE_KEY_SIZE
+		Buffer * const packet,
+		Buffer * const axolotl_header_key, //HEADER_KEY_SIZE
+		Buffer * const message_key, //MESSAGE_KEY_SIZE
 		//optional outputs (prekey messages only)
 		Buffer * const public_identity_key,
 		Buffer * const public_ephemeral_key,
@@ -142,7 +142,7 @@ return_status packet_get_metadata_without_verification(
 		uint32_t * const highest_supported_protocol_version,
 		molch_message_type * const packet_type,
 		//input
-		const Buffer * const packet,
+		Buffer * const packet,
 		//optional outputs (prekey messages only)
 		Buffer * const public_identity_key, //PUBLIC_KEY_SIZE
 		Buffer * const public_ephemeral_key, //PUBLIC_KEY_SIZE
@@ -166,8 +166,8 @@ return_status packet_decrypt_header(
 		//output
 		Buffer ** const axolotl_header,
 		//inputs
-		const Buffer * const packet,
-		const Buffer * const axolotl_header_key //HEADER_KEY_SIZE
+		Buffer * const packet,
+		Buffer * const axolotl_header_key //HEADER_KEY_SIZE
 		) __attribute__((warn_unused_result));
 
 /*!
@@ -187,8 +187,8 @@ return_status packet_decrypt_message(
 		//output
 		Buffer ** const message,
 		//inputs
-		const Buffer * const packet,
-		const Buffer * const message_key
+		Buffer * const packet,
+		Buffer * const message_key
 		) __attribute__((warn_unused_result));
 
 #endif

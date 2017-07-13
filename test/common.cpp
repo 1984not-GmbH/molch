@@ -58,13 +58,13 @@ void print_header_and_message_keystore(header_and_message_keystore *keystore) {
 return_status generate_and_print_keypair(
 		Buffer * const public_key, //crypto_box_PUBLICKEYBYTES
 		Buffer * const private_key, //crypto_box_SECRETKEYBYTES
-		const Buffer * name, //Name of the key owner (e.g. "Alice")
-		const Buffer * type) { //type of the key (e.g. "ephemeral")
+		Buffer * name, //Name of the key owner (e.g. "Alice")
+		Buffer * type) { //type of the key (e.g. "ephemeral")
 	return_status status = return_status_init();
 
 	//check buffer sizes
-	if ((public_key->buffer_length < crypto_box_PUBLICKEYBYTES)
-			|| (private_key->buffer_length < crypto_box_SECRETKEYBYTES)) {
+	if ((public_key->getBufferLength() < crypto_box_PUBLICKEYBYTES)
+			|| (private_key->getBufferLength() < crypto_box_SECRETKEYBYTES)) {
 		THROW(INCORRECT_BUFFER_SIZE, "Public key buffer is too short.");
 	}
 	//generate keypair

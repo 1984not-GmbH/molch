@@ -34,7 +34,7 @@
  */
 return_status master_keys_create(
 		master_keys_t ** const keys, //output
-		const Buffer * const seed,
+		Buffer * const seed,
 		Buffer * const public_signing_key, //output, optional, can be nullptr
 		Buffer * const public_identity_key //output, optional, can be nullptr
 		) {
@@ -66,7 +66,7 @@ return_status master_keys_create(
 				sodium_free);
 		THROW_on_failed_alloc(crypto_seeds);
 
-		status = spiced_random(crypto_seeds, seed, crypto_seeds->buffer_length);
+		status = spiced_random(crypto_seeds, seed, crypto_seeds->getBufferLength());
 		THROW_on_error(GENERIC_ERROR, "Failed to create spiced random data.");
 
 		//generate the signing keypair
@@ -108,7 +108,7 @@ return_status master_keys_create(
 
 	//copy the public keys if requested
 	if (public_signing_key != nullptr) {
-		if (public_signing_key->buffer_length < PUBLIC_MASTER_KEY_SIZE) {
+		if (public_signing_key->getBufferLength() < PUBLIC_MASTER_KEY_SIZE) {
 			public_signing_key->content_length = 0;
 			THROW(INCORRECT_BUFFER_SIZE, "Public master key buffer is too short.");
 		}
@@ -118,7 +118,7 @@ return_status master_keys_create(
 		}
 	}
 	if (public_identity_key != nullptr) {
-		if (public_identity_key->buffer_length < PUBLIC_KEY_SIZE) {
+		if (public_identity_key->getBufferLength() < PUBLIC_KEY_SIZE) {
 			public_identity_key->content_length = 0;
 			THROW(INCORRECT_BUFFER_SIZE, "Public encryption key buffer is too short.");
 		}
@@ -154,7 +154,7 @@ return_status master_keys_get_signing_key(
 	return_status status = return_status_init();
 
 	//check input
-	if ((keys == nullptr) || (public_signing_key == nullptr) || (public_signing_key->buffer_length < PUBLIC_MASTER_KEY_SIZE)) {
+	if ((keys == nullptr) || (public_signing_key == nullptr) || (public_signing_key->getBufferLength() < PUBLIC_MASTER_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to master_keys_get_signing_key.");
 	}
 
@@ -181,7 +181,7 @@ return_status master_keys_get_identity_key(
 	return_status status = return_status_init();
 
 	//check input
-	if ((keys == nullptr) || (public_identity_key == nullptr) || (public_identity_key->buffer_length < PUBLIC_KEY_SIZE)) {
+	if ((keys == nullptr) || (public_identity_key == nullptr) || (public_identity_key->getBufferLength() < PUBLIC_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to master_keys_get_identity_key.");
 	}
 
@@ -204,14 +204,14 @@ cleanup:
  */
 return_status master_keys_sign(
 		master_keys_t * const keys,
-		const Buffer * const data,
+		Buffer * const data,
 		Buffer * const signed_data) { //output, length of data + SIGNATURE_SIZE
 	return_status status = return_status_init();
 
 	if ((keys == nullptr)
 			|| (data == nullptr)
 			|| (signed_data == nullptr)
-			|| (signed_data->buffer_length < (data->content_length + SIGNATURE_SIZE))) {
+			|| (signed_data->getBufferLength() < (data->content_length + SIGNATURE_SIZE))) {
 		THROW(INVALID_INPUT, "Invalid input to master_keys_sign.");
 	}
 

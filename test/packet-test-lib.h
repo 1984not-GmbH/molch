@@ -57,11 +57,11 @@ return_status create_and_print_message(
 		Buffer * const message_key, //MESSAGE_KEY_SIZE
 		//inputs
 		const molch_message_type packet_type,
-		const Buffer * const header,
-		const Buffer * const message,
+		Buffer * const header,
+		Buffer * const message,
 		//optional inputs (prekey messages only)
-		const Buffer * const public_identity_key,
-		const Buffer * const public_epehemeral_key,
-		const Buffer * const public_prekey) __attribute__((warn_unused_result));
+		Buffer * const public_identity_key,
+		Buffer * const public_epehemeral_key,
+		Buffer * const public_prekey) __attribute__((warn_unused_result));
 
 #endif

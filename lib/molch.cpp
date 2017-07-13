@@ -49,7 +49,7 @@ static Buffer *global_backup_key = nullptr;
  * Create a prekey list.
  */
 static return_status create_prekey_list(
-		const Buffer * const public_signing_key,
+		Buffer * const public_signing_key,
 		unsigned char ** const prekey_list, //output, needs to be freed
 		size_t * const prekey_list_length) {
 
@@ -104,7 +104,7 @@ static return_status create_prekey_list(
 		buffer_create_with_existing_array(big_endian_expiration_date, unsigned_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
 		status = endianness_time_to_big_endian(expiration_date, big_endian_expiration_date);
 		THROW_on_error(CONVERSION_ERROR, "Failed to convert expiration date to big endian.");
-		unsigned_prekey_list->content_length = unsigned_prekey_list->buffer_length;
+		unsigned_prekey_list->content_length = unsigned_prekey_list->getBufferLength();
 	}
 
 	//sign the prekey list with the current identity key
@@ -373,7 +373,7 @@ static return_status verify_prekey_list(
 		const unsigned char * const prekey_list,
 		const size_t prekey_list_length,
 		Buffer * const public_identity_key, //output, PUBLIC_KEY_SIZE
-		const Buffer * const public_signing_key
+		Buffer * const public_signing_key
 		) {
 	return_status status = return_status_init();
 
@@ -536,7 +536,7 @@ return_status molch_start_send_conversation(
 
 	//copy the conversation id
 	{
-		int status_int = buffer_clone(conversation_id_buffer, conversation->id);
+		int status_int = buffer_clone(conversation_id_buffer, &conversation->id);
 		if (status_int != 0) {
 			THROW(BUFFER_ERROR, "Failed to clone conversation id.");
 		}
@@ -665,7 +665,7 @@ return_status molch_start_receive_conversation(
 
 	//copy the conversation id
 	{
-		int status_int = buffer_clone(conversation_id_buffer, conversation->id);
+		int status_int = buffer_clone(conversation_id_buffer, &conversation->id);
 		if (status_int != 0) {
 			THROW(BUFFER_ERROR, "Failed to clone conversation id.");
 		}
@@ -837,7 +837,7 @@ return_status molch_encrypt_message(
 		if (conversation_backup_length == 0) {
 			*conversation_backup = nullptr;
 		} else {
-			status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id->content, conversation->id->content_length);
+			status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id.content, conversation->id.content_length);
 			THROW_on_error(EXPORT_ERROR, "Failed to export conversation as protocol buffer.");
 		}
 	}
@@ -918,7 +918,7 @@ return_status molch_decrypt_message(
 		if (conversation_backup_length == 0) {
 			*conversation_backup = nullptr;
 		} else {
-			status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id->content, conversation->id->content_length);
+			status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id.content, conversation->id.content_length);
 			THROW_on_error(EXPORT_ERROR, "Failed to export conversation as protocol buffer.");
 		}
 	}
@@ -965,7 +965,7 @@ return_status molch_end_conversation(
 			THROW(NOT_FOUND, "Couldn'nt find conversation.");
 		}
 
-		conversation_store_remove_by_id(user->conversations, conversation->id);
+		conversation_store_remove_by_id(user->conversations, &conversation->id);
 	}
 
 	if (backup != nullptr) {
@@ -1296,7 +1296,7 @@ return_status molch_conversation_import(
 	status = conversation_import(&conversation, conversation_struct);
 	THROW_on_error(IMPORT_ERROR, "Failed to import conversation from Protobuf-C struct.");
 
-	status = find_conversation(&existing_conversation, conversation->id->content, &containing_store, nullptr);
+	status = find_conversation(&existing_conversation, conversation->id.content, &containing_store, nullptr);
 	THROW_on_error(NOT_FOUND, "Imported conversation has to exist, but it doesn't.");
 
 	status = conversation_store_add(containing_store, conversation);

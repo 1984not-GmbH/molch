@@ -30,10 +30,10 @@
 #include "common.h"
 
 return_status protobuf_export(
-		const ratchet_state * const ratchet,
+		ratchet_state * const ratchet,
 		Buffer ** const export_buffer) __attribute__((warn_unused_result));
 return_status protobuf_export(
-		const ratchet_state * const ratchet,
+		ratchet_state * const ratchet,
 		Buffer ** const export_buffer) {
 	return_status status = return_status_init();
 
@@ -217,10 +217,10 @@ int main(void) {
 	THROW_on_error(CREATION_ERROR, "Failed to create Alice' ratchet.");
 	putchar('\n');
 	//print Alice's initial root and chain keys
-	printf("Alice's initial root key (%zu Bytes):\n", alice_state->root_key->content_length);
-	print_hex(alice_state->root_key);
-	printf("Alice's initial chain key (%zu Bytes):\n", alice_state->send_chain_key->content_length);
-	print_hex(alice_state->send_chain_key);
+	printf("Alice's initial root key (%zu Bytes):\n", alice_state->root_key.content_length);
+	print_hex(&alice_state->root_key);
+	printf("Alice's initial chain key (%zu Bytes):\n", alice_state->send_chain_key.content_length);
+	print_hex(&alice_state->send_chain_key);
 	putchar('\n');
 
 	//start new ratchet for bob
@@ -238,14 +238,14 @@ int main(void) {
 	THROW_on_error(CREATION_ERROR, "Failed to create Bob's ratchet.");
 	putchar('\n');
 	//print Bob's initial root and chain keys
-	printf("Bob's initial root key (%zu Bytes):\n", bob_state->root_key->content_length);
-	print_hex(bob_state->root_key);
-	printf("Bob's initial chain key (%zu Bytes):\n", bob_state->send_chain_key->content_length);
-	print_hex(bob_state->send_chain_key);
+	printf("Bob's initial root key (%zu Bytes):\n", bob_state->root_key.content_length);
+	print_hex(&bob_state->root_key);
+	printf("Bob's initial chain key (%zu Bytes):\n", bob_state->send_chain_key.content_length);
+	print_hex(&bob_state->send_chain_key);
 	putchar('\n');
 
 	//compare Alice's and Bob's initial root and chain keys
-	status_int = buffer_compare(alice_state->root_key, bob_state->root_key);
+	status_int = buffer_compare(&alice_state->root_key, &bob_state->root_key);
 	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
@@ -254,7 +254,7 @@ int main(void) {
 	printf("Alice's and Bob's initial root keys match!\n");
 
 	//initial chain key
-	status_int = buffer_compare(alice_state->receive_chain_key, bob_state->send_chain_key);
+	status_int = buffer_compare(&alice_state->receive_chain_key, &bob_state->send_chain_key);
 	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
@@ -762,7 +762,7 @@ int main(void) {
 	print_hex(alice_receive_message_key3);
 	putchar('\n');
 
-	assert(alice_state->staged_header_and_message_keys->length == 1);
+	assert(alice_state->staged_header_and_message_keys.length == 1);
 
 	//confirm validity of the message key
 	status = ratchet_set_last_message_authenticity(alice_state, true);
@@ -772,11 +772,11 @@ int main(void) {
 		THROW(DATA_SET_ERROR, "Failed to set authenticity state.");
 	}
 
-	assert(alice_state->staged_header_and_message_keys->length == 0);
-	assert(alice_state->skipped_header_and_message_keys->length == 1);
+	assert(alice_state->staged_header_and_message_keys.length == 0);
+	assert(alice_state->skipped_header_and_message_keys.length == 1);
 
 	//get the second receive message key from the message and header keystore
-	status_int = buffer_clone(alice_receive_message_key2, alice_state->skipped_header_and_message_keys->tail->message_key);
+	status_int = buffer_clone(alice_receive_message_key2, alice_state->skipped_header_and_message_keys.tail->message_key);
 	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
@@ -787,7 +787,7 @@ int main(void) {
 	putchar('\n');
 
 	//get the second receive header key from the message and header keystore
-	status_int = buffer_clone(alice_receive_header_key2, alice_state->skipped_header_and_message_keys->tail->header_key);
+	status_int = buffer_clone(alice_receive_header_key2, alice_state->skipped_header_and_message_keys.tail->header_key);
 	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);

@@ -42,9 +42,9 @@
  */
 return_status diffie_hellman(
 		Buffer * const derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
-		const Buffer * const our_private_key, //needs to be PRIVATE_KEY_SIZE long
-		const Buffer * const our_public_key, //needs to be PUBLIC_KEY_SIZE long
-		const Buffer * const their_public_key, //needs to be PUBLIC_KEY_SIZE long
+		Buffer * const our_private_key, //needs to be PRIVATE_KEY_SIZE long
+		Buffer * const our_public_key, //needs to be PUBLIC_KEY_SIZE long
+		Buffer * const their_public_key, //needs to be PUBLIC_KEY_SIZE long
 		const bool am_i_alice) __attribute__((warn_unused_result));
 
 /*
@@ -65,11 +65,11 @@ return_status diffie_hellman(
  */
 return_status triple_diffie_hellman(
 		Buffer * const derived_key,
-		const Buffer * const our_private_identity,
-		const Buffer * const our_public_identity,
-		const Buffer * const our_private_ephemeral,
-		const Buffer * const our_public_ephemeral,
-		const Buffer * const their_public_identity,
-		const Buffer * const their_public_ephemeral,
+		Buffer * const our_private_identity,
+		Buffer * const our_public_identity,
+		Buffer * const our_private_ephemeral,
+		Buffer * const our_public_ephemeral,
+		Buffer * const their_public_identity,
+		Buffer * const their_public_ephemeral,
 		const bool am_i_alice) __attribute__((warn_unused_result));
 #endif

@@ -29,8 +29,8 @@
 #include "utils.h"
 #include "../lib/conversation.h"
 
-return_status protobuf_export(const conversation_t * const conversation, Buffer ** const export_buffer) __attribute__((warn_unused_result));
-return_status protobuf_export(const conversation_t * const conversation, Buffer ** const export_buffer) {
+return_status protobuf_export(conversation_t * const conversation, Buffer ** const export_buffer) __attribute__((warn_unused_result));
+return_status protobuf_export(conversation_t * const conversation, Buffer ** const export_buffer) {
 	return_status status = return_status_init();
 
 	Conversation *exported_conversation = nullptr;
@@ -64,10 +64,10 @@ cleanup:
 
 return_status protobuf_import(
 		conversation_t ** const conversation,
-		const Buffer * const import_buffer) __attribute__((warn_unused_result));
+		Buffer * const import_buffer) __attribute__((warn_unused_result));
 return_status protobuf_import(
 		conversation_t ** const conversation,
-		const Buffer * const import_buffer) {
+		Buffer * const import_buffer) {
 	return_status status = return_status_init();
 
 	Conversation *conversation_protobuf = nullptr;
@@ -106,12 +106,12 @@ cleanup:
  */
 static return_status create_conversation(
 		conversation_t **const conversation,
-		const Buffer * const our_private_identity,
-		const Buffer * const our_public_identity,
-		const Buffer * const their_public_identity,
-		const Buffer * const our_private_ephemeral,
-		const Buffer * const our_public_ephemeral,
-		const Buffer * const their_public_ephemeral) {
+		Buffer * const our_private_identity,
+		Buffer * const our_public_identity,
+		Buffer * const their_public_identity,
+		Buffer * const our_private_ephemeral,
+		Buffer * const our_public_ephemeral,
+		Buffer * const their_public_ephemeral) {
 
 	return_status status = return_status_init();
 
@@ -132,13 +132,13 @@ static return_status create_conversation(
 	}
 
 	//init_struct()
-	(*conversation)->id->init_with_pointer((*conversation)->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	(*conversation)->id.init_with_pointer((*conversation)->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 	(*conversation)->ratchet = nullptr;
 	(*conversation)->previous = nullptr;
 	(*conversation)->next = nullptr;
 
 	//create random id
-	if (buffer_fill_random((*conversation)->id, CONVERSATION_ID_SIZE) != 0) {
+	if (buffer_fill_random(&(*conversation)->id, CONVERSATION_ID_SIZE) != 0) {
 		THROW(BUFFER_ERROR, "Failed to create random conversation id.");
 	}
 
@@ -237,7 +237,7 @@ int main(void) {
 	charlie_private_identity->clear();
 	charlie_private_ephemeral->clear();
 	THROW_on_error(INIT_ERROR, "Failed to init Chalie's conversation.");
-	if (charlie_conversation->id->content_length != CONVERSATION_ID_SIZE) {
+	if ((charlie_conversation == NULL) || (charlie_conversation->id.content_length != CONVERSATION_ID_SIZE)) {
 		THROW(INCORRECT_DATA, "Charlie's conversation has an incorrect ID length.");
 	}
 
@@ -253,7 +253,7 @@ int main(void) {
 	dora_private_identity->clear();
 	dora_private_ephemeral->clear();
 	THROW_on_error(INIT_ERROR, "Failed to init Dora's conversation.");
-	if (dora_conversation->id->content_length != CONVERSATION_ID_SIZE) {
+	if ((dora_conversation == NULL) || (dora_conversation->id.content_length != CONVERSATION_ID_SIZE)) {
 		THROW(INCORRECT_DATA, "Dora's conversation has an incorrect ID length.");
 	}
 

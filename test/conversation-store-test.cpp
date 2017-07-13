@@ -163,11 +163,11 @@ static return_status test_add_conversation(conversation_store * const store) {
 	if (status_int != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to generate our ephemeral keys.");
 	}
-	status_int = buffer_fill_random(their_public_identity, their_public_identity->buffer_length);
+	status_int = buffer_fill_random(their_public_identity, their_public_identity->getBufferLength());
 	if (status_int != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to generate their public identity keys.");
 	}
-	status_int = buffer_fill_random(their_public_ephemeral, their_public_ephemeral->buffer_length);
+	status_int = buffer_fill_random(their_public_ephemeral, their_public_ephemeral->getBufferLength());
 	if (status_int != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to generate their public ephemeral keys.");
 	}
@@ -183,9 +183,9 @@ static return_status test_add_conversation(conversation_store * const store) {
 	conversation->ratchet = nullptr;
 
 	//create the conversation id
-	conversation->id->init_with_pointer(conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	conversation->id.init_with_pointer(conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 
-	status_int = buffer_fill_random(conversation->id, CONVERSATION_ID_SIZE);
+	status_int = buffer_fill_random(&conversation->id, CONVERSATION_ID_SIZE);
 	if (status_int != 0) {
 		THROW(GENERIC_ERROR, "Failed to fill buffer with random data.");
 	}
@@ -297,14 +297,14 @@ int main(void) {
 	printf("Conversation IDs (test of foreach):\n");
 	conversation_store_foreach(store,
 		printf("ID of the conversation No. %zu:\n", index);
-		print_hex(value->id);
+		print_hex(&value->id);
 		putchar('\n');
 	)
 
 	//find node by id
 	{
 		conversation_t *found_node = nullptr;
-		status = conversation_store_find_node(&found_node, store, store->head->next->next->id);
+		status = conversation_store_find_node(&found_node, store, &store->head->next->next->id);
 		THROW_on_error(NOT_FOUND, "Failed to find conversation.");
 		if (found_node != store->head->next->next) {
 			THROW(NOT_FOUND, "Failed to find node by ID.");
@@ -381,7 +381,7 @@ int main(void) {
 	printf("Successfully removed nodes.\n");
 
 	//remove node by id
-	conversation_store_remove_by_id(store, store->tail->id);
+	conversation_store_remove_by_id(store, &store->tail->id);
 	if (store->length != 1) {
 		THROW(REMOVE_ERROR, "Failed to remove node by id.");
 	}

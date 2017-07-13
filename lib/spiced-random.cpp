@@ -36,7 +36,7 @@
  */
 return_status spiced_random(
 		Buffer * const random_output,
-		const Buffer * const low_entropy_spice,
+		Buffer * const low_entropy_spice,
 		const size_t output_length) {
 	return_status status = return_status_init();
 
@@ -55,7 +55,7 @@ return_status spiced_random(
 	THROW_on_failed_alloc(salt);
 
 	//check buffer length
-	if (random_output->buffer_length < output_length) {
+	if (random_output->getBufferLength() < output_length) {
 		THROW(INCORRECT_BUFFER_SIZE, "Output buffers is too short.");
 	}
 

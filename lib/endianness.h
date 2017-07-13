@@ -51,7 +51,7 @@ return_status endianness_uint32_to_big_endian(
  */
 return_status endianness_uint32_from_big_endian(
 		uint32_t *integer,
-		const Buffer * const buffer) __attribute__((warn_unused_result));
+		Buffer * const buffer) __attribute__((warn_unused_result));
 
 /*
  * Copy a 32 bit signed integer to a buffer in big endian format.
@@ -65,7 +65,7 @@ return_status endianness_int32_to_big_endian(
  */
 return_status endianness_int32_from_big_endian(
 		int32_t *integer,
-		const Buffer * const buffer) __attribute__((warn_unused_result));
+		Buffer * const buffer) __attribute__((warn_unused_result));
 
 /*
  * Copy a 64 bit unsigned integer to a buffer in big endian format.
@@ -79,7 +79,7 @@ return_status endianness_uint64_to_big_endian(
  */
 return_status endianness_uint64_from_big_endian(
 		uint64_t *integer,
-		const Buffer * const buffer) __attribute__((warn_unused_result));
+		Buffer * const buffer) __attribute__((warn_unused_result));
 
 /*
  * Copy a 64 bit unsigned integer to a buffer in big endian format.
@@ -93,7 +93,7 @@ return_status endianness_int64_to_big_endian(
  */
 return_status endianness_int64_from_big_endian(
 		int64_t *integer,
-		const Buffer * const buffer) __attribute__((warn_unused_result));
+		Buffer * const buffer) __attribute__((warn_unused_result));
 
 /*
  * Copy a time_t value to a 64 bit signed integer in a buffer in big endian format
@@ -107,6 +107,6 @@ return_status endianness_time_to_big_endian(
  */
 return_status endianness_time_from_big_endian(
 		time_t *time,
-		const Buffer * const buffer) __attribute__((warn_unused_result));
+		Buffer * const buffer) __attribute__((warn_unused_result));
 
 #endif

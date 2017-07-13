@@ -35,7 +35,7 @@
 return_status derive_key(
 		Buffer * const derived_key,
 		size_t derived_size,
-		const Buffer * const input_key,
+		Buffer * const input_key,
 		uint32_t subkey_counter) __attribute__((warn_unused_result)); //number of the current subkey, used to derive multiple keys from the same input key
 
 /*
@@ -48,7 +48,7 @@ return_status derive_key(
  */
 return_status derive_chain_key(
 		Buffer * const new_chain_key,
-		const Buffer * const previous_chain_key) __attribute__((warn_unused_result));
+		Buffer * const previous_chain_key) __attribute__((warn_unused_result));
 
 /*
  * Derive a message key from a chain key.
@@ -60,7 +60,7 @@ return_status derive_chain_key(
  */
 return_status derive_message_key(
 		Buffer * const message_key,
-		const Buffer * const chain_key) __attribute__((warn_unused_result));
+		Buffer * const chain_key) __attribute__((warn_unused_result));
 
 /*
  * Derive a root, next header and initial chain key for a new ratchet.
@@ -73,10 +73,10 @@ return_status derive_root_next_header_and_chain_keys(
 		Buffer * const root_key, //ROOT_KEY_SIZE
 		Buffer * const next_header_key, //HEADER_KEY_SIZE
 		Buffer * const chain_key, //CHAIN_KEY_SIZE
-		const Buffer * const our_private_ephemeral,
-		const Buffer * const our_public_ephemeral,
-		const Buffer * const their_public_ephemeral,
-		const Buffer * const previous_root_key,
+		Buffer * const our_private_ephemeral,
+		Buffer * const our_public_ephemeral,
+		Buffer * const their_public_ephemeral,
+		Buffer * const previous_root_key,
 		bool am_i_alice) __attribute__((warn_unused_result));
 
 /*
@@ -92,12 +92,12 @@ return_status derive_initial_root_chain_and_header_keys(
 		Buffer * const receive_header_key, //HEADER_KEY_SIZE
 		Buffer * const next_send_header_key, //HEADER_KEY_SIZE
 		Buffer * const next_receive_header_key, //HEADER_KEY_SIZE
-		const Buffer * const our_private_identity,
-		const Buffer * const our_public_identity,
-		const Buffer * const their_public_identity,
-		const Buffer * const our_private_ephemeral,
-		const Buffer * const our_public_ephemeral,
-		const Buffer * const their_public_ephemeral,
+		Buffer * const our_private_identity,
+		Buffer * const our_public_identity,
+		Buffer * const their_public_identity,
+		Buffer * const our_private_ephemeral,
+		Buffer * const our_public_ephemeral,
+		Buffer * const their_public_ephemeral,
 		bool am_i_alice) __attribute__((warn_unused_result));
 
 #endif

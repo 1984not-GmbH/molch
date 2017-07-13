@@ -68,8 +68,8 @@ static molch_message_type to_molch_message_type(const PacketHeader__PacketType p
  * \return
  *   Error status, destroy with return_status_destroy_errors if an error occurs.
  */
-return_status packet_unpack(Packet ** const packet_struct, const Buffer * const packet) __attribute__((warn_unused_result));
-return_status packet_unpack(Packet ** const packet_struct, const Buffer * const packet) {
+return_status packet_unpack(Packet ** const packet_struct, Buffer * const packet) __attribute__((warn_unused_result));
+return_status packet_unpack(Packet ** const packet_struct, Buffer * const packet) {
 	return_status status = return_status_init();
 
 	//check input
@@ -134,14 +134,14 @@ return_status packet_encrypt(
 		Buffer ** const packet,
 		//inputs
 		const molch_message_type packet_type,
-		const Buffer * const axolotl_header,
-		const Buffer * const axolotl_header_key, //HEADER_KEY_SIZE
-		const Buffer * const message,
-		const Buffer * const message_key, //MESSAGE_KEY_SIZE
+		Buffer * const axolotl_header,
+		Buffer * const axolotl_header_key, //HEADER_KEY_SIZE
+		Buffer * const message,
+		Buffer * const message_key, //MESSAGE_KEY_SIZE
 		//optional inputs (prekey messages only)
-		const Buffer * const public_identity_key,
-		const Buffer * const public_ephemeral_key,
-		const Buffer * const public_prekey) {
+		Buffer * const public_identity_key,
+		Buffer * const public_ephemeral_key,
+		Buffer * const public_prekey) {
 	return_status status = return_status_init();
 
 	//initialize the protobuf structs
@@ -313,9 +313,9 @@ return_status packet_decrypt(
 		Buffer ** const axolotl_header,
 		Buffer ** const message,
 		//inputs
-		const Buffer * const packet,
-		const Buffer * const axolotl_header_key, //HEADER_KEY_SIZE
-		const Buffer * const message_key, //MESSAGE_KEY_SIZE
+		Buffer * const packet,
+		Buffer * const axolotl_header_key, //HEADER_KEY_SIZE
+		Buffer * const message_key, //MESSAGE_KEY_SIZE
 		//optional outputs (prekey messages only)
 		Buffer * const public_identity_key,
 		Buffer * const public_ephemeral_key,
@@ -391,7 +391,7 @@ return_status packet_get_metadata_without_verification(
 		uint32_t * const highest_supported_protocol_version,
 		molch_message_type * const packet_type,
 		//input
-		const Buffer * const packet,
+		Buffer * const packet,
 		//optional outputs (prekey messages only)
 		Buffer * const public_identity_key, //PUBLIC_KEY_SIZE
 		Buffer * const public_ephemeral_key, //PUBLIC_KEY_SIZE
@@ -465,8 +465,8 @@ return_status packet_decrypt_header(
 		//output
 		Buffer ** const axolotl_header,
 		//inputs
-		const Buffer * const packet,
-		const Buffer * const axolotl_header_key //HEADER_KEY_SIZE
+		Buffer * const packet,
+		Buffer * const axolotl_header_key //HEADER_KEY_SIZE
 		) {
 	return_status status = return_status_init();
 
@@ -522,8 +522,8 @@ return_status packet_decrypt_message(
 		//output
 		Buffer ** const message,
 		//inputs
-		const Buffer * const packet,
-		const Buffer * const message_key
+		Buffer * const packet,
+		Buffer * const message_key
 		) {
 	return_status status = return_status_init();
 	unsigned char padding;

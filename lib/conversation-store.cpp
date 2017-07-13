@@ -102,7 +102,7 @@ void conversation_store_remove(conversation_store * const store, conversation_t 
  *
  * The conversation is identified by it's id.
  */
-void conversation_store_remove_by_id(conversation_store * const store, const Buffer * const id) {
+void conversation_store_remove_by_id(conversation_store * const store, Buffer * const id) {
 	return_status status = return_status_init();
 
 	conversation_t *node = nullptr;
@@ -126,7 +126,7 @@ void conversation_store_remove_by_id(conversation_store * const store, const Buf
 return_status conversation_store_find_node(
 		conversation_t ** const conversation,
 		conversation_store * const store,
-		const Buffer * const id) {
+		Buffer * const id) {
 	return_status status = return_status_init();
 
 	if ((conversation == nullptr) || (store == nullptr) || (id == nullptr)) {
@@ -136,7 +136,7 @@ return_status conversation_store_find_node(
 	*conversation = nullptr;
 
 	conversation_store_foreach(store,
-		if (buffer_compare(value->id, id) == 0) {
+		if (buffer_compare(&value->id, id) == 0) {
 			*conversation = node;
 			break;
 		}
@@ -185,9 +185,9 @@ return_status conversation_store_list(Buffer ** const list, conversation_store *
 			int status_int = buffer_copy(
 				*list,
 				CONVERSATION_ID_SIZE * index,
-				value->id,
+				&value->id,
 				0,
-				value->id->content_length);
+				value->id.content_length);
 			if (status_int != 0) {
 				THROW(BUFFER_ERROR, "Failed to copy conversation id.");
 			}

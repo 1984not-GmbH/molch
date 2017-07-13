@@ -25,13 +25,15 @@
 #define LIB_BUFFER_H
 
 class Buffer {
-public:
+private:
 	size_t buffer_length;
+	bool readonly; //if set, this buffer shouldn't be written to.
+
+public:
 	size_t content_length;
 	/*This position can be used by parsers etc. to keep track of the position
 	it is initialized with a value of 0.*/
 	size_t position;
-	bool readonly; //if set, this buffer shouldn't be written to.
 	unsigned char *content;
 
 	/*
@@ -40,7 +42,7 @@ public:
 	 * This is normally not called directly but via
 	 * the buffer_create macro.
 	 */
-	Buffer* init(const size_t buffer_length, const size_t content_length) __attribute__((warn_unused_result));
+	Buffer* init(const size_t buffer_length, const size_t content_length);
 
 	/*
 	 * initialize a buffer with a pointer to the character array.
@@ -88,6 +90,11 @@ public:
 	 * Destroy a buffer that was created using a custom allocator.
 	 */
 	void destroy_with_custom_deallocator(void (*deallocator)(void *pointer));
+
+	size_t getBufferLength();
+	bool isReadOnly();
+	void setReadOnly(bool readonly);
+
 };
 
 /*
@@ -128,7 +135,7 @@ Buffer *buffer_create_with_custom_allocator(
  * The output buffer has to be at least twice
  * as large as the input data plus one.
  */
-int Buffero_hex(Buffer * const hex, const Buffer * const data) __attribute__((warn_unused_result));
+int Buffero_hex(Buffer * const hex, Buffer * const data) __attribute__((warn_unused_result));
 
 /*
  * Macro to create a buffer with already existing data without cloning it.
@@ -147,7 +154,7 @@ int Buffero_hex(Buffer * const hex, const Buffer * const data) __attribute__((wa
  */
 int buffer_concat(
 		Buffer * const destination,
-		const Buffer * const source) __attribute__((warn_unused_result));
+		Buffer * const source) __attribute__((warn_unused_result));
 
 /*
  * Copy parts of a buffer to another buffer.
@@ -157,7 +164,7 @@ int buffer_concat(
 int buffer_copy(
 		Buffer * const destination,
 		const size_t destination_offset,
-		const Buffer * const source,
+		Buffer * const source,
 		const size_t source_offset,
 		const size_t copy_length) __attribute__((warn_unused_result));
 
@@ -170,7 +177,7 @@ int buffer_copy(
  */
 int buffer_clone(
 		Buffer * const destination,
-		const Buffer * const source) __attribute__((warn_unused_result));
+		Buffer * const source) __attribute__((warn_unused_result));
 
 /*
  * Copy from a raw array to a buffer.
@@ -215,7 +222,7 @@ int buffer_clone_from_raw(
  */
 int buffer_clone_from_hex(
 		Buffer * const destination,
-		const Buffer * const source) __attribute((warn_unused_result));
+		Buffer * const source) __attribute((warn_unused_result));
 
 /*
  * Write the contents of a buffer into another buffer as hexadecimal digits.
@@ -223,7 +230,7 @@ int buffer_clone_from_hex(
  */
 int buffer_clone_as_hex(
 		Buffer * const destination,
-		const Buffer * const source) __attribute((warn_unused_result));
+		Buffer * const source) __attribute((warn_unused_result));
 
 /*
  * Copy from a buffer to a raw array.
@@ -233,7 +240,7 @@ int buffer_clone_as_hex(
 int buffer_copy_to_raw(
 		unsigned char * const destination,
 		const size_t destination_offset,
-		const Buffer * const source,
+		Buffer * const source,
 		const size_t source_offset,
 		const size_t copy_length) __attribute__((warn_unused_result));
 
@@ -246,7 +253,7 @@ int buffer_copy_to_raw(
 int buffer_clone_to_raw(
 		unsigned char * const destination,
 		const size_t destination_length,
-		const Buffer *source) __attribute__((warn_unused_result));
+		Buffer *source) __attribute__((warn_unused_result));
 
 /*
  * Compare two buffers.
@@ -254,8 +261,8 @@ int buffer_clone_to_raw(
  * Returns 0 if both buffers match.
  */
 int buffer_compare(
-		const Buffer * const buffer1,
-		const Buffer * const buffer2) __attribute__((warn_unused_result));
+		Buffer * const buffer1,
+		Buffer * const buffer2) __attribute__((warn_unused_result));
 
 /*
  * Compare a buffer to a raw array.
@@ -263,7 +270,7 @@ int buffer_compare(
  * Returns 0 if both buffers match.
  */
 int buffer_compare_to_raw(
-		const Buffer * const buffer,
+		Buffer * const buffer,
 		const unsigned char * const array,
 		const size_t array_length) __attribute__((warn_unused_result));
 
@@ -278,9 +285,9 @@ int buffer_compare_to_raw(
  * Returns 0 if both buffers match.
  */
 int buffer_compare_partial(
-		const Buffer * const buffer1,
+		Buffer * const buffer1,
 		const size_t position1,
-		const Buffer * const buffer2,
+		Buffer * const buffer2,
 		const size_t position2,
 		const size_t length) __attribute__((warn_unused_result));
 
@@ -290,7 +297,7 @@ int buffer_compare_partial(
  * Returns 0 if both buffers match.
  */
 int buffer_compare_to_raw_partial(
-		const Buffer * const buffer,
+		Buffer * const buffer,
 		const size_t position1,
 		const unsigned char * const array,
 		const size_t array_length,
@@ -309,13 +316,13 @@ int buffer_fill_random(
  */
 int buffer_xor(
 		Buffer * const destination,
-		const Buffer * const source) __attribute__((warn_unused_result));
+		Buffer * const source) __attribute__((warn_unused_result));
 
 /*
  * Set a single character in a buffer.
  */
 int buffer_set_at(
-		const Buffer * const buffer,
+		Buffer * const buffer,
 		const size_t pos,
 		const unsigned char character) __attribute__((warn_unused_result));
 
@@ -337,20 +344,11 @@ void buffer_memset(
 		const unsigned char character);
 
 /*
- * Grow a heap allocated buffer to a new length.
- *
- * Does nothing if the new size is smaller than the buffer.
- */
-int buffer_grow_on_heap(
-		Buffer * buffer,
-		const size_t new_size) __attribute__((warn_unused_result));
-
-/*
  * Get the content of a buffer at buffer->position.
  *
  * Returns '\0' when out of bounds.
  */
-unsigned char buffer_get_at_pos(const Buffer * const buffer);
+unsigned char buffer_get_at_pos(Buffer * const buffer);
 
 /*
  * Set a character at buffer->position.
