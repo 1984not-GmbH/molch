@@ -52,10 +52,10 @@ return_status master_keys_create(
 	THROW_on_failed_alloc(*keys);
 
 	//initialize the buffers
-	buffer_init_with_pointer((*keys)->public_signing_key, (*keys)->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	buffer_init_with_pointer((*keys)->private_signing_key, (*keys)->private_signing_key_storage, PRIVATE_MASTER_KEY_SIZE, PRIVATE_MASTER_KEY_SIZE);
-	buffer_init_with_pointer((*keys)->public_identity_key, (*keys)->public_identity_key_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_init_with_pointer((*keys)->private_identity_key, (*keys)->private_identity_key_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	(*keys)->public_signing_key->init_with_pointer((*keys)->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	(*keys)->private_signing_key->init_with_pointer((*keys)->private_signing_key_storage, PRIVATE_MASTER_KEY_SIZE, PRIVATE_MASTER_KEY_SIZE);
+	(*keys)->public_identity_key->init_with_pointer((*keys)->public_identity_key_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	(*keys)->private_identity_key->init_with_pointer((*keys)->private_identity_key_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 
 	if (seed != nullptr) { //use external seed
 		//create the seed buffer
@@ -357,10 +357,10 @@ return_status master_keys_import(
 	THROW_on_failed_alloc(*keys);
 
 	//initialize the buffers
-	buffer_init_with_pointer((*keys)->public_signing_key, (*keys)->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, 0);
-	buffer_init_with_pointer((*keys)->private_signing_key, (*keys)->private_signing_key_storage, PRIVATE_MASTER_KEY_SIZE, 0);
-	buffer_init_with_pointer((*keys)->public_identity_key, (*keys)->public_identity_key_storage, PUBLIC_KEY_SIZE, 0);
-	buffer_init_with_pointer((*keys)->private_identity_key, (*keys)->private_identity_key_storage, PRIVATE_KEY_SIZE, 0);
+	(*keys)->public_signing_key->init_with_pointer((*keys)->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, 0);
+	(*keys)->private_signing_key->init_with_pointer((*keys)->private_signing_key_storage, PRIVATE_MASTER_KEY_SIZE, 0);
+	(*keys)->public_identity_key->init_with_pointer((*keys)->public_identity_key_storage, PUBLIC_KEY_SIZE, 0);
+	(*keys)->private_identity_key->init_with_pointer((*keys)->private_identity_key_storage, PRIVATE_KEY_SIZE, 0);
 
 	//copy the keys
 	if (buffer_clone_from_raw((*keys)->public_signing_key, public_signing_key->key.data, public_signing_key->key.len) != 0) {

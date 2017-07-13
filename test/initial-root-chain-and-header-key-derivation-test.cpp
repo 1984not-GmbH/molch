@@ -113,8 +113,8 @@ int main(void) {
 			alice_public_ephemeral,
 			bob_public_ephemeral,
 			true);
-	buffer_clear(alice_private_identity);
-	buffer_clear(alice_private_ephemeral);
+	alice_private_identity->clear();
+	alice_private_ephemeral->clear();
 	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive Alice's initial root and chain key.");
 
 	//print Alice's initial root and chain key
@@ -155,8 +155,8 @@ int main(void) {
 			bob_public_ephemeral,
 			alice_public_ephemeral,
 			false);
-	buffer_clear(bob_private_identity);
-	buffer_clear(bob_private_ephemeral);
+	bob_private_identity->clear();
+	bob_private_ephemeral->clear();
 	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive Bob's initial root and chain key.");
 
 	//print Bob's initial root and chain key
@@ -187,8 +187,8 @@ int main(void) {
 	}
 	printf("Alice's and Bob's initial root keys match.\n");
 
-	buffer_clear(alice_root_key);
-	buffer_clear(bob_root_key);
+	alice_root_key->clear();
+	bob_root_key->clear();
 
 	//compare Alice's and Bob's initial chain keys
 	if (buffer_compare(alice_send_chain_key, bob_receive_chain_key) != 0) {
@@ -196,8 +196,8 @@ int main(void) {
 	}
 	printf("Alice's and Bob's initial chain keys match.\n");
 
-	buffer_clear(alice_send_chain_key);
-	buffer_clear(bob_receive_chain_key);
+	alice_send_chain_key->clear();
+	bob_receive_chain_key->clear();
 
 	if (buffer_compare(alice_receive_chain_key, bob_send_chain_key) != 0) {
 		THROW(INCORRECT_DATA, "Alice's and Bob's initial chain keys don't match.");
@@ -210,8 +210,8 @@ int main(void) {
 	}
 	printf("Alice's initial send and Bob's initial receive header keys match.\n");
 
-	buffer_clear(alice_send_header_key);
-	buffer_clear(bob_receive_header_key);
+	alice_send_header_key->clear();
+	bob_receive_header_key->clear();
 
 	//compare Alice's and Bob's initial header keys 2/2
 	if (buffer_compare(alice_receive_header_key, bob_send_header_key) != 0) {
@@ -219,16 +219,16 @@ int main(void) {
 	}
 	printf("Alice's initial receive and Bob's initial send header keys match.\n");
 
-	buffer_clear(alice_receive_header_key);
-	buffer_clear(bob_send_header_key);
+	alice_receive_header_key->clear();
+	bob_send_header_key->clear();
 
 	//compare Alice's and Bob's initial next header keys 1/2
 	if (buffer_compare(alice_next_send_header_key, bob_next_receive_header_key) != 0) {
 		THROW(INCORRECT_DATA, "Alice's initial next send and Bob's initial next receive header keys don't match.");
 	}
 	printf("Alice's initial next send and Bob's initial next receive header keys match.\n");
-	buffer_clear(alice_next_send_header_key);
-	buffer_clear(bob_next_receive_header_key);
+	alice_next_send_header_key->clear();
+	bob_next_receive_header_key->clear();
 
 	//compare Alice's and Bob's initial next header keys 2/2
 	if (buffer_compare(alice_next_receive_header_key, bob_next_send_header_key) != 0) {

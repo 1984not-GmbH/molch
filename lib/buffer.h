@@ -33,41 +33,67 @@ public:
 	size_t position;
 	bool readonly; //if set, this buffer shouldn't be written to.
 	unsigned char *content;
+
+	/*
+	 * Initialize a buffer with a given length.
+	 *
+	 * This is normally not called directly but via
+	 * the buffer_create macro.
+	 */
+	Buffer* init(const size_t buffer_length, const size_t content_length) __attribute__((warn_unused_result));
+
+	/*
+	 * initialize a buffer with a pointer to the character array.
+	 */
+	Buffer* init_with_pointer(
+			unsigned char * const content,
+			const size_t buffer_length,
+			const size_t content_length);
+
+	/*
+	 * initialize a buffer with a pointer to an array of const characters.
+	 */
+	Buffer* init_with_pointer_to_const(
+			const unsigned char * const content,
+			const size_t buffer_length,
+			const size_t content_length);
+
+	/*
+	 * Copy a raw array to a buffer and return the
+	 * buffer.
+	 *
+	 * This should not be used directly, it is intended for the use
+	 * with the macro buffer_create_from_string_on_heap.
+	 *
+	 * Returns nullptr on error.
+	 */
+	Buffer* create_from_string_on_heap_helper(
+			const unsigned char * const content,
+			const size_t content_length) __attribute__((warn_unused_result));
+
+	/*
+	 * Clear a buffer.
+	 *
+	 * Overwrites the buffer with zeroes and
+	 * resets the content size.
+	 */
+	void clear();
+
+	/*
+	 * Free and clear a heap allocated buffer.
+	 */
+	void destroy_from_heap();
+
+	/*
+	 * Destroy a buffer that was created using a custom allocator.
+	 */
+	void destroy_with_custom_deallocator(void (*deallocator)(void *pointer));
 };
-
-/*
- * Initialize a buffer with a given length.
- *
- * This is normally not called directly but via
- * the buffer_create macro.
- */
-Buffer* buffer_init(
-		Buffer * const buffer,
-		const size_t buffer_length,
-		const size_t content_length) __attribute__((warn_unused_result));
-
-/*
- * initialize a buffer with a pointer to the character array.
- */
-Buffer* buffer_init_with_pointer(
-		Buffer * const buffer,
-		unsigned char * const content,
-		const size_t buffer_length,
-		const size_t content_length);
-
-/*
- * initialize a buffer with a pointer to an array of const characters.
- */
-Buffer* buffer_init_with_pointer_to_const(
-		Buffer * const buffer,
-		const unsigned char * const content,
-		const size_t buffer_length,
-		const size_t content_length);
 
 /*
  * Macro to create a new buffer of a given length.
  */
-#define buffer_create(buffer_length, content_length) buffer_init((Buffer*)alloca(sizeof(Buffer) + buffer_length), buffer_length, content_length)
+#define buffer_create(buffer_length, content_length) ((Buffer*)alloca(sizeof(Buffer) + buffer_length))->init(buffer_length, content_length)
 
 /*
  * Create a new buffer on the heap.
@@ -89,33 +115,12 @@ Buffer *buffer_create_with_custom_allocator(
 /*
  * Create a new buffer from a string literal.
  */
-#define buffer_create_from_string(name, string) Buffer name[1]; buffer_init_with_pointer_to_const(name, (const unsigned char*) (string), sizeof(string), sizeof(string))
+#define buffer_create_from_string(name, string) Buffer name[1]; name->init_with_pointer_to_const((const unsigned char*) (string), sizeof(string), sizeof(string))
 
-/*
- * Copy a raw array to a buffer and return the
- * buffer.
- *
- * This should not be used directly, it is intended for the use
- * with the macro buffer_create_from_string_on_heap.
- *
- * Returns nullptr on error.
- */
-Buffer* buffer_create_from_string_on_heap_helper(
-		Buffer * const buffer,
-		const unsigned char * const content,
-		const size_t content_length) __attribute__((warn_unused_result));
 /*
  * Create a new buffer from a string literal on heap.
  */
-#define buffer_create_from_string_on_heap(string) buffer_create_from_string_on_heap_helper(buffer_create_on_heap(sizeof(string), sizeof(string)), (const unsigned char*) string, sizeof(string))
-
-/*
- * Clear a buffer.
- *
- * Overwrites the buffer with zeroes and
- * resets the content size.
- */
-void buffer_clear(Buffer *buffer);
+#define buffer_create_from_string_on_heap(string) buffer_create_on_heap(sizeof(string), sizeof(string))->create_from_string_on_heap_helper((const unsigned char*) string, sizeof(string))
 
 /*
  * Create hexadecimal string from a buffer.
@@ -126,26 +131,14 @@ void buffer_clear(Buffer *buffer);
 int Buffero_hex(Buffer * const hex, const Buffer * const data) __attribute__((warn_unused_result));
 
 /*
- * Free and clear a heap allocated buffer.
- */
-void buffer_destroy_from_heap(Buffer *buffer);
-
-/*
- * Destroy a buffer that was created using a custom allocator.
- */
-void buffer_destroy_with_custom_deallocator(
-		Buffer * buffer,
-		void (*deallocator)(void *pointer));
-
-/*
  * Macro to create a buffer with already existing data without cloning it.
  */
-#define buffer_create_with_existing_array(name, array, length) Buffer name[1]; buffer_init_with_pointer(name, array, length, length)
+#define buffer_create_with_existing_array(name, array, length) Buffer name[1]; name->init_with_pointer(array, length, length)
 
 /*
  * Macro to create a buffer with already existing const data.
  */
-#define buffer_create_with_existing_const_array(name, array, length) Buffer name[1]; buffer_init_with_pointer_to_const(name, array, length, length)
+#define buffer_create_with_existing_const_array(name, array, length) Buffer name[1]; name->init_with_pointer_to_const(array, length, length)
 
 /*
  * Concatenate a buffer to the first.

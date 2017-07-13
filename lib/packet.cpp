@@ -370,15 +370,15 @@ cleanup:
 		}
 
 		if (public_identity_key != nullptr) {
-			buffer_clear(public_identity_key);
+			public_identity_key->clear();
 		}
 
 		if (public_ephemeral_key != nullptr) {
-			buffer_clear(public_ephemeral_key);
+			public_ephemeral_key->clear();
 		}
 
 		if (public_prekey != nullptr) {
-			buffer_clear(public_prekey);
+			public_prekey->clear();
 		}
 	}
 
@@ -442,15 +442,15 @@ cleanup:
 	on_error {
 		//make sure that incomplete data can't be accidentally used
 		if (public_identity_key != nullptr) {
-			buffer_clear(public_identity_key);
+			public_identity_key->clear();
 		}
 
 		if (public_ephemeral_key != nullptr) {
-			buffer_clear(public_ephemeral_key);
+			public_ephemeral_key->clear();
 		}
 
 		if (public_prekey != nullptr) {
-			buffer_clear(public_prekey);
+			public_prekey->clear();
 		}
 
 		if (packet_type != nullptr) {

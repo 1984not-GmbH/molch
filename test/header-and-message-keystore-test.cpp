@@ -193,8 +193,8 @@ int main(void) {
 
 		//add keys to the keystore
 		status = header_and_message_keystore_add(&keystore, message_key, header_key);
-		buffer_clear(message_key);
-		buffer_clear(header_key);
+		message_key->clear();
+		header_key->clear();
 		THROW_on_error(ADDITION_ERROR, "Failed to add key to keystore.");
 
 		print_header_and_message_keystore(&keystore);

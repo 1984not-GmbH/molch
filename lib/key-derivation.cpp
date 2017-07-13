@@ -44,7 +44,7 @@ return_status derive_key(
 	//create a salt that contains the number of the subkey
 	Buffer *salt = buffer_create_on_heap(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
 	THROW_on_failed_alloc(salt);
-	buffer_clear(salt); //fill with zeroes
+	salt->clear(); //fill with zeroes
 	salt->content_length = crypto_generichash_blake2b_SALTBYTES;
 
 	//check if inputs are valid
@@ -219,15 +219,15 @@ return_status derive_root_next_header_and_chain_keys(
 cleanup:
 	on_error {
 		if (root_key != nullptr) {
-			buffer_clear(root_key);
+			root_key->clear();
 			root_key->content_length = 0;
 		}
 		if (next_header_key != nullptr) {
-			buffer_clear(next_header_key);
+			next_header_key->clear();
 			next_header_key->content_length = 0;
 		}
 		if (chain_key != nullptr) {
-			buffer_clear(chain_key);
+			chain_key->clear();
 			chain_key->content_length = 0;
 		}
 	}
@@ -308,7 +308,7 @@ return_status derive_initial_root_chain_and_header_keys(
 	if (am_i_alice) {
 		//HKs=<none>, HKr=KDF
 		//HKs=<none>
-		buffer_clear(send_header_key);
+		send_header_key->clear();
 		send_header_key->content_length = HEADER_KEY_SIZE;
 		//HKr = KDF(master_key, 0x01)
 		status = derive_key(
@@ -337,7 +337,7 @@ return_status derive_initial_root_chain_and_header_keys(
 
 		//CKs=<none>, CKr=KDF
 		//CKs=<none>
-		buffer_clear(send_chain_key);
+		send_chain_key->clear();
 		send_chain_key->content_length = CHAIN_KEY_SIZE;
 		//CKr = KDF(master_key, 0x04)
 		status = derive_key(
@@ -350,7 +350,7 @@ return_status derive_initial_root_chain_and_header_keys(
 	} else {
 		//HKs=HKDF, HKr=<none>
 		//HKr = <none>
-		buffer_clear(receive_header_key);
+		receive_header_key->clear();
 		receive_header_key->content_length = HEADER_KEY_SIZE;
 		//HKs = KDF(master_key, 0x01)
 		status = derive_key(
@@ -378,7 +378,7 @@ return_status derive_initial_root_chain_and_header_keys(
 
 		//CKs=KDF, CKr=<none>
 		//CKr = <none>
-		buffer_clear(receive_chain_key);
+		receive_chain_key->clear();
 		receive_chain_key->content_length = CHAIN_KEY_SIZE;
 		//CKs = KDF(master_key, 0x04)
 		status = derive_key(
@@ -392,19 +392,19 @@ return_status derive_initial_root_chain_and_header_keys(
 cleanup:
 	on_error {
 		//clear all keys to prevent misuse
-		buffer_clear(root_key);
+		root_key->clear();
 		root_key->content_length = 0;
-		buffer_clear(send_chain_key);
+		send_chain_key->clear();
 		send_chain_key->content_length = 0;
-		buffer_clear(receive_chain_key);
+		receive_chain_key->clear();
 		receive_chain_key->content_length = 0;
-		buffer_clear(send_header_key);
+		send_header_key->clear();
 		send_header_key->content_length = 0;
-		buffer_clear(receive_header_key);
+		receive_header_key->clear();
 		receive_header_key->content_length = 0;
-		buffer_clear(next_send_header_key);
+		next_send_header_key->clear();
 		next_send_header_key->content_length = 0;
-		buffer_clear(next_receive_header_key);
+		next_receive_header_key->clear();
 		next_receive_header_key->content_length = 0;
 	}
 

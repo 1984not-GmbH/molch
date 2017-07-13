@@ -212,8 +212,8 @@ int main(void) {
 			alice_private_ephemeral,
 			alice_public_ephemeral,
 			bob_public_ephemeral);
-	buffer_clear(alice_private_ephemeral);
-	buffer_clear(alice_private_identity);
+	alice_private_ephemeral->clear();
+	alice_private_identity->clear();
 	THROW_on_error(CREATION_ERROR, "Failed to create Alice' ratchet.");
 	putchar('\n');
 	//print Alice's initial root and chain keys
@@ -233,8 +233,8 @@ int main(void) {
 			bob_private_ephemeral,
 			bob_public_ephemeral,
 			alice_public_ephemeral);
-	buffer_clear(bob_private_identity);
-	buffer_clear(bob_private_ephemeral);
+	bob_private_identity->clear();
+	bob_private_ephemeral->clear();
 	THROW_on_error(CREATION_ERROR, "Failed to create Bob's ratchet.");
 	putchar('\n');
 	//print Bob's initial root and chain keys
@@ -360,9 +360,9 @@ int main(void) {
 		decryptable = UNDECRYPTABLE;
 		fprintf(stderr, "Failed to decrypt header.");
 	}
-	buffer_clear(alice_send_header_key1);
-	buffer_clear(bob_current_receive_header_key);
-	buffer_clear(bob_next_receive_header_key);
+	alice_send_header_key1->clear();
+	bob_current_receive_header_key->clear();
+	bob_next_receive_header_key->clear();
 
 	//now the receive end, Bob recreates the message keys
 
@@ -428,9 +428,9 @@ int main(void) {
 		decryptable = UNDECRYPTABLE;
 		fprintf(stderr, "Failed to decrypt header.");
 	}
-	buffer_clear(alice_send_header_key2);
-	buffer_clear(bob_current_receive_header_key);
-	buffer_clear(bob_next_receive_header_key);
+	alice_send_header_key2->clear();
+	bob_current_receive_header_key->clear();
+	bob_next_receive_header_key->clear();
 
 	//set the header decryptability
 	status = ratchet_set_header_decryptability(
@@ -495,9 +495,9 @@ int main(void) {
 		decryptable = UNDECRYPTABLE;
 		fprintf(stderr, "Failed to decrypt header.");
 	}
-	buffer_clear(alice_send_header_key3);
-	buffer_clear(bob_current_receive_header_key);
-	buffer_clear(bob_next_receive_header_key);
+	alice_send_header_key3->clear();
+	bob_current_receive_header_key->clear();
+	bob_next_receive_header_key->clear();
 
 	//set the header decryptability
 	status = ratchet_set_header_decryptability(
@@ -541,8 +541,8 @@ int main(void) {
 		ratchet_destroy(bob_state);
 		THROW(INCORRECT_DATA, "Alice's first send key and Bob's first receive key aren't the same.");
 	}
-	buffer_clear(alice_send_message_key1);
-	buffer_clear(bob_receive_key1);
+	alice_send_message_key1->clear();
+	bob_receive_key1->clear();
 	printf("Alice's first send key and Bob's first receive key match.\n");
 
 	//second key
@@ -551,8 +551,8 @@ int main(void) {
 		ratchet_destroy(bob_state);
 		THROW(INCORRECT_DATA, "Alice's second send key and Bob's second receive key aren't the same.");
 	}
-	buffer_clear(alice_send_message_key2);
-	buffer_clear(bob_receive_key2);
+	alice_send_message_key2->clear();
+	bob_receive_key2->clear();
 	printf("Alice's second send key and Bob's second receive key match.\n");
 
 	//third key
@@ -561,8 +561,8 @@ int main(void) {
 		ratchet_destroy(bob_state);
 		THROW(INCORRECT_DATA, "Alice's third send key and Bob's third receive key aren't the same.");
 	}
-	buffer_clear(alice_send_message_key3);
-	buffer_clear(bob_receive_key3);
+	alice_send_message_key3->clear();
+	bob_receive_key3->clear();
 	printf("Alice's third send key and Bob's third receive key match.\n");
 	putchar('\n');
 
@@ -664,9 +664,9 @@ int main(void) {
 		decryptable = UNDECRYPTABLE;
 		fprintf(stderr, "Failed to decrypt header.");
 	}
-	buffer_clear(bob_send_header_key1);
-	buffer_clear(alice_current_receive_header_key);
-	buffer_clear(alice_next_receive_header_key);
+	bob_send_header_key1->clear();
+	alice_current_receive_header_key->clear();
+	alice_next_receive_header_key->clear();
 
 	//now alice receives the first, then the third message (second message skipped)
 
@@ -731,9 +731,9 @@ int main(void) {
 		decryptable = UNDECRYPTABLE;
 		fprintf(stderr, "Failed to decrypt header.");
 	}
-	buffer_clear(bob_send_header_key3);
-	buffer_clear(alice_current_receive_header_key);
-	buffer_clear(alice_next_receive_header_key);
+	bob_send_header_key3->clear();
+	alice_current_receive_header_key->clear();
+	alice_next_receive_header_key->clear();
 
 	//set the header decryptability
 	status = ratchet_set_header_decryptability(
@@ -804,8 +804,8 @@ int main(void) {
 		THROW(INCORRECT_DATA, "Bob's second send header key and Alice's receive header key aren't the same.");
 	}
 	printf("Bob's second send header key and Alice's receive header keys match.\n");
-	buffer_clear(alice_receive_header_key2);
-	buffer_clear(bob_send_header_key2);
+	alice_receive_header_key2->clear();
+	bob_send_header_key2->clear();
 
 	//compare the keys
 	if (buffer_compare(bob_send_message_key1, alice_receive_message_key1) != 0) {
@@ -813,8 +813,8 @@ int main(void) {
 		ratchet_destroy(bob_state);
 		THROW(INCORRECT_DATA, "Bob's first send key and Alice's first receive key aren't the same.");
 	}
-	buffer_clear(bob_send_message_key1);
-	buffer_clear(bob_send_message_key1);
+	bob_send_message_key1->clear();
+	bob_send_message_key1->clear();
 	printf("Bob's first send key and Alice's first receive key match.\n");
 
 	//second key
@@ -823,8 +823,8 @@ int main(void) {
 		ratchet_destroy(bob_state);
 		THROW(INCORRECT_DATA, "Bob's second send key and Alice's second receive key aren't the same.");
 	}
-	buffer_clear(bob_send_message_key2);
-	buffer_clear(alice_receive_message_key2);
+	bob_send_message_key2->clear();
+	alice_receive_message_key2->clear();
 	printf("Bob's second send key and Alice's second receive key match.\n");
 
 	//third key
@@ -833,8 +833,8 @@ int main(void) {
 		ratchet_destroy(bob_state);
 		THROW(INCORRECT_DATA, "Bob's third send key and Alice's third receive key aren't the same.");
 	}
-	buffer_clear(bob_send_message_key3);
-	buffer_clear(alice_receive_message_key3);
+	bob_send_message_key3->clear();
+	alice_receive_message_key3->clear();
 	printf("Bob's third send key and Alice's third receive key match.\n\n");
 
 

@@ -33,8 +33,8 @@ static void node_init(prekey_store_node * const node) {
 		return;
 	}
 
-	buffer_init_with_pointer(node->private_key, node->private_key_storage, PRIVATE_KEY_SIZE, 0);
-	buffer_init_with_pointer(node->public_key, node->public_key_storage, PUBLIC_KEY_SIZE, 0);
+	node->private_key->init_with_pointer(node->private_key_storage, PRIVATE_KEY_SIZE, 0);
+	node->public_key->init_with_pointer(node->public_key_storage, PUBLIC_KEY_SIZE, 0);
 	node->next = nullptr;
 	node->expiration_date = 0;
 }

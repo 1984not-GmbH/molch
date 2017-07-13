@@ -132,7 +132,7 @@ static return_status create_conversation(
 	}
 
 	//init_struct()
-	buffer_init_with_pointer((*conversation)->id, (*conversation)->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	(*conversation)->id->init_with_pointer((*conversation)->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 	(*conversation)->ratchet = nullptr;
 	(*conversation)->previous = nullptr;
 	(*conversation)->next = nullptr;
@@ -234,8 +234,8 @@ int main(void) {
 			charlie_private_ephemeral,
 			charlie_public_ephemeral,
 			dora_public_ephemeral);
-	buffer_clear(charlie_private_identity);
-	buffer_clear(charlie_private_ephemeral);
+	charlie_private_identity->clear();
+	charlie_private_ephemeral->clear();
 	THROW_on_error(INIT_ERROR, "Failed to init Chalie's conversation.");
 	if (charlie_conversation->id->content_length != CONVERSATION_ID_SIZE) {
 		THROW(INCORRECT_DATA, "Charlie's conversation has an incorrect ID length.");
@@ -250,8 +250,8 @@ int main(void) {
 			dora_private_ephemeral,
 			dora_public_ephemeral,
 			charlie_public_ephemeral);
-	buffer_clear(dora_private_identity);
-	buffer_clear(dora_private_ephemeral);
+	dora_private_identity->clear();
+	dora_private_ephemeral->clear();
 	THROW_on_error(INIT_ERROR, "Failed to init Dora's conversation.");
 	if (dora_conversation->id->content_length != CONVERSATION_ID_SIZE) {
 		THROW(INCORRECT_DATA, "Dora's conversation has an incorrect ID length.");

@@ -75,11 +75,11 @@ int main(void) {
 
 	//test heap allocated buffers
 	Buffer *heap_buffer = buffer_create_on_heap(10, 0);
-	buffer_destroy_from_heap(heap_buffer);
+	heap_buffer->destroy_from_heap();
 
 	//zero length heap buffer
 	heap_buffer = buffer_create_on_heap(0, 0);
-	buffer_destroy_from_heap(heap_buffer);
+	heap_buffer->destroy_from_heap();
 
 	//create a new buffer
 	Buffer *buffer1 = buffer_create(14, 10);
@@ -93,7 +93,7 @@ int main(void) {
 	putchar('\n');
 
 	//make second buffer (from pointer)
-	Buffer *buffer2 = buffer_init_with_pointer((Buffer*)alloca(sizeof(Buffer)), (unsigned char*)malloc(5), 5, 4);
+	Buffer *buffer2 = ((Buffer*)alloca(sizeof(Buffer)))->init_with_pointer((unsigned char*)malloc(5), 5, 4);
 	buffer2->content[0] = 0xde;
 	buffer2->content[1] = 0xad;
 	buffer2->content[2] = 0xbe;
@@ -108,8 +108,8 @@ int main(void) {
 	int status = buffer_concat(buffer1, buffer2);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to concatenate both buffers. (%i)\n", status);
-		buffer_clear(buffer1);
-		buffer_clear(buffer2);
+		buffer1->clear();
+		buffer2->clear();
 		free(buffer2->content);
 		return status;
 	}
@@ -121,8 +121,8 @@ int main(void) {
 	if ((sodium_memcmp(buffer1->content, buffer1_content, sizeof(buffer1_content)) != 0)
 			|| (sodium_memcmp(buffer1->content + sizeof(buffer1_content), buffer2->content, buffer2->content_length) !=0)) {
 		fprintf(stderr, "ERROR: Failed to concatenate buffers.\n");
-		buffer_clear(buffer1);
-		buffer_clear(buffer2);
+		buffer1->clear();
+		buffer2->clear();
 		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
@@ -132,8 +132,8 @@ int main(void) {
 	status = buffer_concat(buffer1, buffer2);
 	if (status == 0) {
 		fprintf(stderr, "ERROR: Concatenated buffers that go over the bounds.\n");
-		buffer_clear(buffer1);
-		buffer_clear(buffer2);
+		buffer1->clear();
+		buffer2->clear();
 		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
@@ -144,8 +144,8 @@ int main(void) {
 	status = buffer_concat(buffer1, empty);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to concatenate empty buffer to buffer.\n");
-		buffer_clear(buffer1);
-		buffer_clear(buffer2);
+		buffer1->clear();
+		buffer2->clear();
 		free(buffer2->content);
 		return status;
 	}
@@ -153,13 +153,13 @@ int main(void) {
 	status = buffer_clone(empty2, empty);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to clone empty buffer.\n");
-		buffer_clear(buffer1);
-		buffer_clear(buffer2);
+		buffer1->clear();
+		buffer2->clear();
 		free(buffer2->content);
 		return status;
 	}
-	buffer_clear(empty);
-	buffer_clear(empty2);
+	empty->clear();
+	empty2->clear();
 	//TODO more tests with empty buffers
 	//FIXME Yeah this needs to be done ASAP!!!!!!!!!!!!!
 
@@ -172,8 +172,8 @@ int main(void) {
 	status = buffer_copy(buffer3, 0, buffer2, 0, buffer2->content_length);
 	if ((status != 0) || (buffer_compare(buffer2, buffer3) != 0)) {
 		fprintf(stderr, "ERROR: Failed to copy buffer. (%i)\n", status);
-		buffer_clear(buffer1);
-		buffer_clear(buffer2);
+		buffer1->clear();
+		buffer2->clear();
 		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
@@ -182,8 +182,8 @@ int main(void) {
 	status = buffer_copy(buffer3, buffer2->content_length, buffer2, 0, buffer2->content_length);
 	if (status == 0) {
 		fprintf(stderr, "ERROR: Copied buffer that out of bounds.\n");
-		buffer_clear(buffer1);
-		buffer_clear(buffer2);
+		buffer1->clear();
+		buffer2->clear();
 		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
@@ -192,8 +192,8 @@ int main(void) {
 	status = buffer_copy(buffer3, 1, buffer2, 0, buffer2->content_length);
 	if ((status != 0) || (buffer3->content[0] != buffer2->content[0]) || (sodium_memcmp(buffer2->content, buffer3->content + 1, buffer2->content_length) != 0)) {
 		fprintf(stderr, "ERROR: Failed to copy buffer. (%i)\n", status);
-		buffer_clear(buffer1);
-		buffer_clear(buffer2);
+		buffer1->clear();
+		buffer2->clear();
 		free(buffer2);
 		return EXIT_FAILURE;
 	}
@@ -209,8 +209,8 @@ int main(void) {
 			4); //length
 	if ((status != 0) || (sodium_memcmp(raw_array, buffer1->content + 1, 4) != 0)) {
 		fprintf(stderr, "ERROR: Failed to copy buffer to raw array. (%i)\n", status);
-		buffer_clear(buffer1);
-		buffer_clear(buffer2);
+		buffer1->clear();
+		buffer2->clear();
 		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
@@ -224,8 +224,8 @@ int main(void) {
 			4);
 	if (status == 0) {
 		fprintf(stderr, "ERROR: Failed to detect out of bounds read!\n");
-		buffer_clear(buffer1);
-		buffer_clear(buffer2);
+		buffer1->clear();
+		buffer2->clear();
 		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
@@ -241,8 +241,8 @@ int main(void) {
 			sizeof(heeelo)); //length
 	if ((status != 0) || (sodium_memcmp(heeelo, buffer1->content, sizeof(heeelo)))) {
 		fprintf(stderr, "ERROR: Failed to copy from raw array to buffer. (%i)\n", status);
-		buffer_clear(buffer1);
-		buffer_clear(buffer2);
+		buffer1->clear();
+		buffer2->clear();
 		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
@@ -256,8 +256,8 @@ int main(void) {
 			sizeof(heeelo));
 	if (status == 0) {
 		fprintf(stderr, "ERROR: Failed to detect out of bounds read.\n");
-		buffer_clear(buffer1);
-		buffer_clear(buffer2);
+		buffer1->clear();
+		buffer2->clear();
 		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
@@ -267,15 +267,15 @@ int main(void) {
 	buffer_create_from_string(string, "This is a string!");
 	if (string->content_length != sizeof("This is a string!")) {
 		fprintf(stderr, "ERROR: Buffer created from string has incorrect length.\n");
-		buffer_clear(buffer1);
-		buffer_clear(buffer2);
+		buffer1->clear();
+		buffer2->clear();
 		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
 	if (sodium_memcmp(string->content, "This is a string!", string->content_length) != 0) {
 		fprintf(stderr, "ERROR: Failed to create buffer from string.\n");
-		buffer_clear(buffer1);
-		buffer_clear(buffer2);
+		buffer1->clear();
+		buffer2->clear();
 		free(buffer2->content);
 		return EXIT_FAILURE;
 	}
@@ -283,15 +283,15 @@ int main(void) {
 
 	//erase the buffer
 	printf("Erasing buffer.\n");
-	buffer_clear(buffer1);
+	buffer1->clear();
 
 	//check if the buffer was properly cleared
 	size_t i;
 	for (i = 0; i < buffer1->buffer_length; i++) {
 		if (buffer1->content[i] != '\0') {
 			fprintf(stderr, "ERROR: Byte %zu of the buffer hasn't been erased.\n", i);
-			buffer_clear(buffer1);
-			buffer_clear(buffer2);
+			buffer1->clear();
+			buffer2->clear();
 			free(buffer2->content);
 			return EXIT_FAILURE;
 		}
@@ -299,13 +299,13 @@ int main(void) {
 
 	if (buffer1->content_length != 0) {
 		fprintf(stderr, "ERROR: The content length of the buffer hasn't been set to zero.\n");
-		buffer_clear(buffer1);
-		buffer_clear(buffer2);
+		buffer1->clear();
+		buffer2->clear();
 		return EXIT_FAILURE;
 	}
 	printf("Buffer successfully erased.\n");
 
-	buffer_clear(buffer2);
+	buffer2->clear();
 	free(buffer2->content);
 
 	//fill a buffer with random numbers
@@ -313,13 +313,13 @@ int main(void) {
 	status = buffer_fill_random(random, 5);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to fill buffer with random numbers. (%i)\n", status);
-		buffer_clear(random);
+		random->clear();
 		return status;
 	}
 
 	if (random->content_length != 5) {
 		fprintf(stderr, "ERROR: Wrong content length.\n");
-		buffer_clear(random);
+		random->clear();
 		return EXIT_FAILURE;
 	}
 	printf("Buffer with %zu random bytes:\n", random->content_length);
@@ -327,14 +327,14 @@ int main(void) {
 
 	if (buffer_fill_random(random, 20) == 0) {
 		fprintf(stderr, "ERROR: Failed to detect too long write to buffer.\n");
-		buffer_clear(random);
+		random->clear();
 		return EXIT_FAILURE;
 	}
 
 	random->readonly = true;
 	if (buffer_fill_random(random, 4) == 0) {
 		fprintf(stderr, "ERROR: Failed to prevent write to readonly buffer.\n");
-		buffer_clear(random);
+		random->clear();
 		return EXIT_FAILURE;
 	}
 
@@ -467,7 +467,7 @@ int main(void) {
 	status = buffer_clone_from_raw(resize_buffer, (const unsigned char*)"", 1);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to clone raw buffer. (%i)\n", status);
-		buffer_destroy_from_heap(resize_buffer);
+		resize_buffer->destroy_from_heap();
 		return status;
 	}
 
@@ -475,12 +475,12 @@ int main(void) {
 	status = buffer_grow_on_heap(resize_buffer, 4);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to grow buffer. (%i)\n", status);
-		buffer_destroy_from_heap(resize_buffer);
+		resize_buffer->destroy_from_heap();
 		return status;
 	}
 	if ((resize_buffer->buffer_length != 4) || (resize_buffer->content_length != 1)) {
 		fprintf(stderr, "ERROR: Grown buffer has incorrect lengths!\n");
-		buffer_destroy_from_heap(resize_buffer);
+		resize_buffer->destroy_from_heap();
 		return EXIT_FAILURE;
 	}
 
@@ -488,15 +488,15 @@ int main(void) {
 	status = buffer_grow_on_heap(resize_buffer, 10);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to grow buffer. (%i)\n", status);
-		buffer_destroy_from_heap(resize_buffer);
+		resize_buffer->destroy_from_heap();
 		return status;
 	}
 	if ((resize_buffer->buffer_length != 10) || (resize_buffer->content_length != 1)) {
 		fprintf(stderr, "ERROR: Grown buffer has incorrect lengths!\n");
-		buffer_destroy_from_heap(resize_buffer);
+		resize_buffer->destroy_from_heap();
 		return EXIT_FAILURE;
 	}
-	buffer_destroy_from_heap(resize_buffer);
+	resize_buffer->destroy_from_heap();
 
 	//create buffer from string on heap
 	Buffer *string_on_heap = buffer_create_from_string_on_heap("Hello world!");
@@ -504,7 +504,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to create buffer from string on heap!\n");
 		return EXIT_FAILURE;
 	}
-	buffer_destroy_from_heap(string_on_heap);
+	string_on_heap->destroy_from_heap();
 
 	//compare buffer to an array
 	buffer_create_from_string(true_buffer, "true");
@@ -571,7 +571,7 @@ int main(void) {
 		fprintf(stderr, "ERROR: Failed to create buffer with custom allocator!\n");
 		return EXIT_FAILURE;
 	}
-	buffer_destroy_with_custom_deallocator(custom_allocated, sodium_free);
+	custom_allocated->destroy_with_custom_deallocator(sodium_free);
 
 	//test buffer_fill
 	Buffer *Buffero_be_filled = buffer_create_on_heap(10, 0);
@@ -612,7 +612,7 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 
-	buffer_destroy_from_heap(Buffero_be_filled);
+	Buffero_be_filled->destroy_from_heap();
 
 	Buffer *custom_allocated_empty_buffer = buffer_create_with_custom_allocator(0, 0, malloc, free);
 	if (custom_allocated_empty_buffer == nullptr) {
@@ -620,12 +620,12 @@ int main(void) {
 		return EXIT_FAILURE;
 	}
 	if (custom_allocated_empty_buffer->content != nullptr) {
-		buffer_destroy_with_custom_deallocator(custom_allocated_empty_buffer, free);
+		custom_allocated_empty_buffer->destroy_with_custom_deallocator(free);
 		fprintf(stderr, "ERROR: Customly allocated empty buffer has content.\n");
 		return EXIT_FAILURE;
 	}
 
-	buffer_destroy_with_custom_deallocator(custom_allocated_empty_buffer, free);
+	custom_allocated_empty_buffer->destroy_with_custom_deallocator(free);
 
 	return EXIT_SUCCESS;
 }

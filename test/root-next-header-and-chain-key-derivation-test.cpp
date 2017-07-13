@@ -125,8 +125,8 @@ int main(void) {
 	} else {
 		THROW(INCORRECT_DATA, "Alice's and Bob's root keys don't match.");
 	}
-	buffer_clear(alice_root_key);
-	buffer_clear(bob_root_key);
+	alice_root_key->clear();
+	bob_root_key->clear();
 
 	//compare Alice's and Bob's chain keys
 	if (buffer_compare(alice_chain_key, bob_chain_key) == 0) {

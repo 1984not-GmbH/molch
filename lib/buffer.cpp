@@ -29,59 +29,54 @@
  * This is normally not called directly but via
  * the molch_buffer_create macro.
  */
-Buffer* buffer_init(
-		Buffer * const buffer,
-		const size_t buffer_length,
-		const size_t content_length) {
-	return buffer_init_with_pointer(
-			buffer,
-			(unsigned char*) buffer + sizeof(Buffer), //address after Buffer struct
-			buffer_length,
-			content_length);
+Buffer* Buffer::init(const size_t buffer_length_,
+		const size_t content_length_) {
+	return this->init_with_pointer(
+			(unsigned char*) this + sizeof(Buffer), //address after Buffer struct
+			buffer_length_,
+			content_length_);
 }
 
 /*
  * initialize a buffer with a pointer to the character array.
  */
-Buffer* buffer_init_with_pointer(
-		Buffer * const buffer,
-		unsigned char * const content,
-		const size_t buffer_length,
-		const size_t content_length) {
+Buffer* Buffer::init_with_pointer(
+		unsigned char * const content_,
+		const size_t buffer_length_,
+		const size_t content_length_) {
 	//write to constant buffer length value (HACK)
 	//This allows restricting access to the buffer length
 	//while still being able to set it here
-	size_t *writable_buffer_length = (size_t*) &(buffer->buffer_length);
-	*writable_buffer_length = buffer_length;
+	size_t *writable_buffer_length = (size_t*) &(this->buffer_length);
+	*writable_buffer_length = buffer_length_;
 
-	buffer->content_length = (content_length > buffer_length)
-		? buffer_length
-		: content_length;
-	buffer->readonly = false;
+	this->content_length = (content_length_ > buffer_length_)
+		? buffer_length_
+		: content_length_;
+	this->readonly = false;
 
 	//write to constant content pointer (HACK)
 	//This allows restricting access to the pointer
 	//while still being able to set it here
-	unsigned char **writable_content_pointer = (unsigned char**) &buffer->content;
-	if (buffer_length == 0) {
+	unsigned char **writable_content_pointer = (unsigned char**) &this->content;
+	if (buffer_length_ == 0) {
 		*writable_content_pointer = nullptr;
 	} else {
-		*writable_content_pointer = content;
+		*writable_content_pointer = content_;
 	}
 
-	buffer->position = 0;
+	this->position = 0;
 
-	return buffer;
+	return this;
 }
 
-Buffer* buffer_init_with_pointer_to_const(
-		Buffer * const buffer,
-		const unsigned char * const content,
-		const size_t buffer_length,
-		const size_t content_length) {
+Buffer* Buffer::init_with_pointer_to_const(
+		const unsigned char * const content_,
+		const size_t buffer_length_,
+		const size_t content_length_) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
-	Buffer *result = buffer_init_with_pointer(buffer, (unsigned char*)content, buffer_length, content_length);
+	Buffer *result = this->init_with_pointer((unsigned char*)content_, buffer_length_, content_length_);
 #pragma GCC diagnostic pop
 	if (result != nullptr) {
 		result->readonly = true;
@@ -111,11 +106,7 @@ Buffer *buffer_create_on_heap(
 		}
 	}
 
-	return buffer_init_with_pointer(
-			buffer,
-			content,
-			buffer_length,
-			content_length);
+	return buffer->init_with_pointer(content, buffer_length, content_length);
 }
 
 /*
@@ -141,7 +132,7 @@ Buffer *buffer_create_with_custom_allocator(
 		return nullptr;
 	}
 
-	return buffer_init_with_pointer(buffer, content, buffer_length, content_length);
+	return buffer->init_with_pointer(content, buffer_length, content_length);
 }
 
 /*
@@ -169,42 +160,35 @@ int Buffero_hex(Buffer * const hex, const Buffer * const data) {
 /*
  * Free and clear a heap allocated buffer.
  */
-void buffer_destroy_from_heap(Buffer * const buffer) {
-	buffer_clear(buffer);
-	free(buffer->content);
-	free(buffer);
+void Buffer::destroy_from_heap() {
+	this->clear();
+	free(this->content);
+	free(this);
 }
 
 /*
  * Destroy a buffer that was created using a custom allocator.
  */
-void buffer_destroy_with_custom_deallocator(
-		Buffer * buffer,
-		void (*deallocator)(void *pointer)) {
-	if (buffer == nullptr) {
-		return;
+void Buffer::destroy_with_custom_deallocator(void (*deallocator)(void *pointer)) {
+	if (this->content != nullptr) {
+		sodium_memzero(this->content, this->content_length);
+		deallocator(this->content);
 	}
-
-	if (buffer->content != nullptr) {
-		sodium_memzero(buffer->content, buffer->content_length);
-		deallocator(buffer->content);
-	}
-	deallocator(buffer);
+	deallocator(this);
 }
 
-Buffer* buffer_create_from_string_on_heap_helper(
-		Buffer * const buffer,
-		const unsigned char * const content,
-		const size_t content_length) {
-	if (buffer->buffer_length < content_length) {
+Buffer* Buffer::create_from_string_on_heap_helper(
+		const unsigned char * const content_,
+		const size_t content_length_) {
+	if (this->buffer_length < content_length_) {
 		return nullptr;
 	}
 
-	if (buffer_clone_from_raw(buffer, content, content_length) != 0) {
+	if (buffer_clone_from_raw(this, content_, content_length_) != 0) {
 		return nullptr;
 	}
 
-	return buffer;
+	return this;
 }
 
 /*
@@ -213,13 +197,13 @@ Buffer* buffer_create_from_string_on_heap_helper(
  * Overwrites the buffer with zeroes and
  * resets the content size.
  */
-void buffer_clear(Buffer *buffer) {
-	if ((buffer == nullptr) || (buffer->buffer_length == 0)) {
+void Buffer::clear() {
+	if (this->buffer_length == 0) {
 		return;
 	}
-	sodium_memzero(buffer->content, buffer->buffer_length);
-	buffer->content_length = 0;
-	buffer->position = 0;
+	sodium_memzero(this->content, this->buffer_length);
+	this->content_length = 0;
+	this->position = 0;
 }
 
 /*
@@ -319,7 +303,7 @@ int buffer_clone(
 			0,
 			source->content_length);
 	if (status != 0) {
-		buffer_clear(destination);
+		destination->clear();
 		return status;
 	}
 
@@ -424,12 +408,12 @@ int buffer_clone_from_hex(
 				&length,
 				nullptr);
 	if (status != 0) {
-		buffer_clear(destination);
+		destination->clear();
 		return -7;
 	}
 
 	if (length != (source->content_length / 2)) {
-		buffer_clear(destination);
+		destination->clear();
 		return -8;
 	}
 
@@ -460,7 +444,7 @@ int buffer_clone_as_hex(
 	}
 
 	if (sodium_bin2hex((char*)destination->content, destination->buffer_length, (const unsigned char*)source->content, source->content_length) == nullptr) {
-		buffer_clear(destination);
+		destination->clear();
 		return -7;
 	}
 

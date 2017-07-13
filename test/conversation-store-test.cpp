@@ -183,7 +183,7 @@ static return_status test_add_conversation(conversation_store * const store) {
 	conversation->ratchet = nullptr;
 
 	//create the conversation id
-	buffer_init_with_pointer(conversation->id, conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	conversation->id->init_with_pointer(conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 
 	status_int = buffer_fill_random(conversation->id, CONVERSATION_ID_SIZE);
 	if (status_int != 0) {

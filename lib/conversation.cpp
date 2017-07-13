@@ -29,7 +29,7 @@
  * Create a new conversation struct and initialise the buffer pointer.
  */
 static void init_struct(conversation_t *conversation) {
-	buffer_init_with_pointer(conversation->id, conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	conversation->id->init_with_pointer(conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 	conversation->ratchet = nullptr;
 	conversation->previous = nullptr;
 	conversation->next = nullptr;

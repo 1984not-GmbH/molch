@@ -39,27 +39,27 @@ static bool is_none(const Buffer * const buffer) {
 
 static void init_ratchet_state(ratchet_state ** const ratchet) {
 	//initialize the buffers with the storage arrays
-	buffer_init_with_pointer((*ratchet)->root_key, (*ratchet)->root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->purported_root_key, (*ratchet)->purported_root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
+	(*ratchet)->root_key->init_with_pointer((*ratchet)->root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
+	(*ratchet)->purported_root_key->init_with_pointer((*ratchet)->purported_root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
 	//header keys
-	buffer_init_with_pointer((*ratchet)->send_header_key, (*ratchet)->send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->receive_header_key, (*ratchet)->receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->next_send_header_key, (*ratchet)->next_send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->next_receive_header_key, (*ratchet)->next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->purported_receive_header_key, (*ratchet)->purported_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->purported_next_receive_header_key, (*ratchet)->purported_next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->send_header_key->init_with_pointer((*ratchet)->send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->receive_header_key->init_with_pointer((*ratchet)->receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->next_send_header_key->init_with_pointer((*ratchet)->next_send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->next_receive_header_key->init_with_pointer((*ratchet)->next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->purported_receive_header_key->init_with_pointer((*ratchet)->purported_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->purported_next_receive_header_key->init_with_pointer((*ratchet)->purported_next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	//chain keys
-	buffer_init_with_pointer((*ratchet)->send_chain_key, (*ratchet)->send_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->receive_chain_key, (*ratchet)->receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->purported_receive_chain_key, (*ratchet)->purported_receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	(*ratchet)->send_chain_key->init_with_pointer((*ratchet)->send_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	(*ratchet)->receive_chain_key->init_with_pointer((*ratchet)->receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	(*ratchet)->purported_receive_chain_key->init_with_pointer((*ratchet)->purported_receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
 	//identity keys
-	buffer_init_with_pointer((*ratchet)->our_public_identity, (*ratchet)->our_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->their_public_identity, (*ratchet)->their_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	(*ratchet)->our_public_identity->init_with_pointer((*ratchet)->our_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	(*ratchet)->their_public_identity->init_with_pointer((*ratchet)->their_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	//ephemeral keys (ratchet keys)
-	buffer_init_with_pointer((*ratchet)->our_private_ephemeral, (*ratchet)->our_private_ephemeral_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->our_public_ephemeral, (*ratchet)->our_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->their_public_ephemeral, (*ratchet)->their_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_init_with_pointer((*ratchet)->their_purported_public_ephemeral, (*ratchet)->their_purported_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	(*ratchet)->our_private_ephemeral->init_with_pointer((*ratchet)->our_private_ephemeral_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	(*ratchet)->our_public_ephemeral->init_with_pointer((*ratchet)->our_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	(*ratchet)->their_public_ephemeral->init_with_pointer((*ratchet)->their_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	(*ratchet)->their_purported_public_ephemeral->init_with_pointer((*ratchet)->their_purported_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
 	header_and_message_keystore_init((*ratchet)->skipped_header_and_message_keys);
 	header_and_message_keystore_init((*ratchet)->staged_header_and_message_keys);
@@ -325,15 +325,15 @@ return_status ratchet_send(
 cleanup:
 	on_error {
 		if (send_header_key != nullptr) {
-			buffer_clear(send_header_key);
+			send_header_key->clear();
 			send_header_key->content_length = 0;
 		}
 		if (our_public_ephemeral != nullptr) {
-			buffer_clear(our_public_ephemeral);
+			our_public_ephemeral->clear();
 			our_public_ephemeral->content_length = 0;
 		}
 		if (message_key != nullptr) {
-			buffer_clear(message_key);
+			message_key->clear();
 			message_key->content_length = 0;
 		}
 	}
@@ -370,11 +370,11 @@ return_status ratchet_get_receive_header_keys(
 cleanup:
 	on_error {
 		if (current_receive_header_key != nullptr) {
-			buffer_clear(current_receive_header_key);
+			current_receive_header_key->clear();
 			current_receive_header_key->content_length = 0;
 		}
 		if (next_receive_header_key != nullptr) {
-			buffer_clear(next_receive_header_key);
+			next_receive_header_key->clear();
 			next_receive_header_key->content_length = 0;
 		}
 	}
@@ -493,11 +493,11 @@ static return_status stage_skipped_header_and_message_keys(
 cleanup:
 	on_error {
 		if (output_chain_key != nullptr) {
-			buffer_clear(output_chain_key);
+			output_chain_key->clear();
 			output_chain_key->content_length = 0;
 		}
 		if (output_message_key != nullptr) {
-			buffer_clear(output_message_key);
+			output_message_key->clear();
 			output_message_key->content_length = 0;
 		}
 
@@ -665,7 +665,7 @@ return_status ratchet_receive(
 cleanup:
 	on_error {
 		if (message_key != nullptr) {
-			buffer_clear(message_key);
+			message_key->clear();
 			message_key->content_length = 0;
 		}
 	}
@@ -725,7 +725,7 @@ return_status ratchet_set_last_message_authenticity(
 			THROW(BUFFER_ERROR, "Failed to copy their purported public ephemeral to their public ephemeral.");
 		}
 		//erase(DHRs)
-		buffer_clear(ratchet->our_private_ephemeral);
+		ratchet->our_private_ephemeral->clear();
 		ratchet->our_private_ephemeral->content_length = PRIVATE_KEY_SIZE;
 		//ratchet_flag = True
 		ratchet->ratchet_flag = true;

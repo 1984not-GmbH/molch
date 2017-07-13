@@ -101,8 +101,8 @@ int main(void) {
 			bob_public_identity,
 			bob_public_ephemeral,
 			true);
-	buffer_clear(alice_private_identity);
-	buffer_clear(alice_private_ephemeral);
+	alice_private_identity->clear();
+	alice_private_ephemeral->clear();
 	THROW_on_error(KEYGENERATION_FAILED, "Triple Diffie Hellman for Alice failed.");
 	//print Alice's shared secret
 	printf("Alice's shared secret H(DH(A_priv,B0_pub)||DH(A0_priv,B_pub)||DH(A0_priv,B0_pub)):\n");
@@ -119,8 +119,8 @@ int main(void) {
 			alice_public_identity,
 			alice_public_ephemeral,
 			false);
-	buffer_clear(bob_private_identity);
-	buffer_clear(bob_private_ephemeral);
+	bob_private_identity->clear();
+	bob_private_ephemeral->clear();
 	THROW_on_error(KEYGENERATION_FAILED, "Triple Diffie Hellnan for Bob failed.");
 	//print Bob's shared secret
 	printf("Bob's shared secret H(DH(B0_priv, A_pub)||DH(B_priv, A0_pub)||DH(B0_priv, A0_pub)):\n");
@@ -129,8 +129,8 @@ int main(void) {
 
 	//compare both shared secrets
 	status_int = buffer_compare(alice_shared_secret, bob_shared_secret);
-	buffer_clear(alice_shared_secret);
-	buffer_clear(bob_shared_secret);
+	alice_shared_secret->clear();
+	bob_shared_secret->clear();
 	if (status_int != 0) {
 		THROW(INCORRECT_DATA, "Triple Diffie Hellman didn't produce the same shared secret.");
 	}
@@ -139,17 +139,17 @@ int main(void) {
 
 cleanup:
 	//alice keys
-	buffer_destroy_from_heap(alice_public_identity);
-	buffer_destroy_from_heap(alice_private_identity);
-	buffer_destroy_from_heap(alice_public_ephemeral);
-	buffer_destroy_from_heap(alice_private_ephemeral);
-	buffer_destroy_from_heap(alice_shared_secret);
+	alice_public_identity->destroy_from_heap();
+	alice_private_identity->destroy_from_heap();
+	alice_public_ephemeral->destroy_from_heap();
+	alice_private_ephemeral->destroy_from_heap();
+	alice_shared_secret->destroy_from_heap();
 	//bobs keys
-	buffer_destroy_from_heap(bob_public_identity);
-	buffer_destroy_from_heap(bob_private_identity);
-	buffer_destroy_from_heap(bob_public_ephemeral);
-	buffer_destroy_from_heap(bob_private_ephemeral);
-	buffer_destroy_from_heap(bob_shared_secret);
+	bob_public_identity->destroy_from_heap();
+	bob_private_identity->destroy_from_heap();
+	bob_public_ephemeral->destroy_from_heap();
+	bob_private_ephemeral->destroy_from_heap();
+	bob_shared_secret->destroy_from_heap();
 
 	on_error {
 		print_errors(&status);

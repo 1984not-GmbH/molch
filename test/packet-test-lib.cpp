@@ -96,8 +96,12 @@ return_status create_and_print_message(
 
 cleanup:
 	on_error {
-		buffer_clear(header_key);
-		buffer_clear(message_key);
+		if (header_key != nullptr) {
+			header_key->clear();
+		}
+		if (message_key != nullptr) {
+			message_key->clear();
+		}
 	}
 
 	return status;

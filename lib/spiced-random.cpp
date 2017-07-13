@@ -96,7 +96,7 @@ return_status spiced_random(
 cleanup:
 	on_error {
 		if (random_output != nullptr) {
-			buffer_clear(random_output);
+			random_output->clear();
 			random_output->content_length = 0;
 		}
 	}

@@ -68,7 +68,7 @@ int main(void) {
 			alice_public_key,
 			bob_public_key,
 			true);
-	buffer_clear(alice_private_key);
+	alice_private_key->clear();
 	THROW_on_error(KEYGENERATION_FAILED, "Diffie Hellman with Alice's private key failed.");
 
 	//print Alice's shared secret
@@ -83,7 +83,7 @@ int main(void) {
 			bob_public_key,
 			alice_public_key,
 			false);
-	buffer_clear(bob_private_key);
+	bob_private_key->clear();
 	THROW_on_error(KEYGENERATION_FAILED, "Diffie Hellman with Bob's private key failed.");
 
 	//print Bob's shared secret
@@ -93,8 +93,8 @@ int main(void) {
 
 	//compare both shared secrets
 	status_int = buffer_compare(alice_shared_secret, bob_shared_secret);
-	buffer_clear(alice_shared_secret);
-	buffer_clear(bob_shared_secret);
+	alice_shared_secret->clear();
+	bob_shared_secret->clear();
 	if (status_int != 0) {
 		THROW(INCORRECT_DATA, "Diffie Hellman didn't produce the same shared secret.");
 	}
