@@ -28,8 +28,8 @@
 int main(void) {
 	return_status status = return_status_init();
 
-	buffer_t *buffer64 = buffer_create_on_heap(8, 8);
-	buffer_t *buffer32 = buffer_create_on_heap(4, 4);
+	Buffer *buffer64 = buffer_create_on_heap(8, 8);
+	Buffer *buffer32 = buffer_create_on_heap(4, 4);
 
 	if (endianness_is_little_endian()) {
 		printf("Current byte order: Little Endian!\n");

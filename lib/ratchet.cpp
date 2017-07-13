@@ -33,7 +33,7 @@
  * (filled with zeroes), and does so without introducing
  * side channels, especially timing side channels.
  */
-static bool is_none(const buffer_t * const buffer) {
+static bool is_none(const Buffer * const buffer) {
 	return (buffer->content_length == 0) || sodium_is_zero(buffer->content, buffer->content_length);
 }
 
@@ -99,12 +99,12 @@ cleanup:
  */
 return_status ratchet_create(
 		ratchet_state ** const ratchet,
-		const buffer_t * const our_private_identity,
-		const buffer_t * const our_public_identity,
-		const buffer_t * const their_public_identity,
-		const buffer_t * const our_private_ephemeral,
-		const buffer_t * const our_public_ephemeral,
-		const buffer_t * const their_public_ephemeral) {
+		const Buffer * const our_private_identity,
+		const Buffer * const our_public_identity,
+		const Buffer * const their_public_identity,
+		const Buffer * const our_private_ephemeral,
+		const Buffer * const our_public_ephemeral,
+		const Buffer * const their_public_ephemeral) {
 	return_status status = return_status_init();
 
 	//check buffer sizes
@@ -202,16 +202,16 @@ cleanup:
  */
 return_status ratchet_send(
 		ratchet_state *ratchet,
-		buffer_t * const send_header_key, //HEADER_KEY_SIZE, HKs
+		Buffer * const send_header_key, //HEADER_KEY_SIZE, HKs
 		uint32_t * const send_message_number, //Ns
 		uint32_t * const previous_send_message_number, //PNs
-		buffer_t * const our_public_ephemeral, //PUBLIC_KEY_SIZE, DHRs
-		buffer_t * const message_key) { //MESSAGE_KEY_SIZE, MK
+		Buffer * const our_public_ephemeral, //PUBLIC_KEY_SIZE, DHRs
+		Buffer * const message_key) { //MESSAGE_KEY_SIZE, MK
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *root_key_backup = nullptr;
-	buffer_t *chain_key_backup = nullptr;
+	Buffer *root_key_backup = nullptr;
+	Buffer *chain_key_backup = nullptr;
 	root_key_backup = buffer_create_on_heap(ROOT_KEY_SIZE, 0);
 	THROW_on_failed_alloc(root_key_backup);
 	chain_key_backup = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
@@ -348,8 +348,8 @@ cleanup:
  * Get a copy of the current and the next receive header key.
  */
 return_status ratchet_get_receive_header_keys(
-		buffer_t * const current_receive_header_key,
-		buffer_t * const next_receive_header_key,
+		Buffer * const current_receive_header_key,
+		Buffer * const next_receive_header_key,
 		ratchet_state *state) {
 	return_status status = return_status_init();
 
@@ -416,18 +416,18 @@ cleanup:
  */
 static return_status stage_skipped_header_and_message_keys(
 		header_and_message_keystore * const staging_area,
-		buffer_t * const output_chain_key, //output, CHAIN_KEY_SIZE
-		buffer_t * const output_message_key, //output, MESSAGE_KEY_SIZE
-		const buffer_t * const current_header_key,
+		Buffer * const output_chain_key, //output, CHAIN_KEY_SIZE
+		Buffer * const output_message_key, //output, MESSAGE_KEY_SIZE
+		const Buffer * const current_header_key,
 		const uint32_t current_message_number,
 		const uint32_t future_message_number,
-		const buffer_t * const chain_key) {
+		const Buffer * const chain_key) {
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *current_chain_key = nullptr;
-	buffer_t *next_chain_key = nullptr;
-	buffer_t *current_message_key = nullptr;
+	Buffer *current_chain_key = nullptr;
+	Buffer *next_chain_key = nullptr;
+	Buffer *current_message_key = nullptr;
 	current_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
 	THROW_on_failed_alloc(current_chain_key);
 	next_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
@@ -552,16 +552,16 @@ cleanup:
  */
 return_status ratchet_receive(
 		ratchet_state * const ratchet,
-		buffer_t * const message_key,
-		const buffer_t * const their_purported_public_ephemeral,
+		Buffer * const message_key,
+		const Buffer * const their_purported_public_ephemeral,
 		const uint32_t purported_message_number,
 		const uint32_t purported_previous_message_number) {
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *THROWaway_chain_key = nullptr;
-	buffer_t *THROWaway_message_key = nullptr;
-	buffer_t *purported_chain_key_backup = nullptr;
+	Buffer *THROWaway_chain_key = nullptr;
+	Buffer *THROWaway_message_key = nullptr;
+	Buffer *purported_chain_key_backup = nullptr;
 	THROWaway_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
 	THROW_on_failed_alloc(THROWaway_chain_key);
 	THROWaway_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, 0);

@@ -32,32 +32,32 @@
 int main(void) {
 	//create buffers
 	//alice' keys
-	buffer_t *alice_private_identity = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	buffer_t *alice_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer *alice_private_identity = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer *alice_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	//bobs keys
-	buffer_t *bob_private_identity = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	buffer_t *bob_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer *bob_private_identity = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer *bob_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
-	buffer_t *packet = nullptr;
-	buffer_t *received_message = nullptr;
+	Buffer *packet = nullptr;
+	Buffer *received_message = nullptr;
 
 	//packets
-	buffer_t *alice_send_packet2 = nullptr;
-	buffer_t *bob_send_packet2 = nullptr;
-	buffer_t *bob_response_packet = nullptr;
-	buffer_t *alice_response_packet = nullptr;
+	Buffer *alice_send_packet2 = nullptr;
+	Buffer *bob_send_packet2 = nullptr;
+	Buffer *bob_response_packet = nullptr;
+	Buffer *alice_response_packet = nullptr;
 
 	//receive messages
-	buffer_t *alice_receive_message2 = nullptr;
-	buffer_t *bob_receive_message2 = nullptr;
-	buffer_t *alice_received_response = nullptr;
-	buffer_t *bob_received_response = nullptr;
+	Buffer *alice_receive_message2 = nullptr;
+	Buffer *bob_receive_message2 = nullptr;
+	Buffer *alice_received_response = nullptr;
+	Buffer *bob_received_response = nullptr;
 
 	//create prekey stores
 	prekey_store *alice_prekeys = nullptr;
 	prekey_store *bob_prekeys = nullptr;
 
-	buffer_t *prekey_list = buffer_create_on_heap(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
+	Buffer *prekey_list = buffer_create_on_heap(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
 	//conversations
 	conversation_t *alice_send_conversation = nullptr;

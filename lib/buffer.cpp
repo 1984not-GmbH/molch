@@ -29,13 +29,13 @@
  * This is normally not called directly but via
  * the molch_buffer_create macro.
  */
-buffer_t* buffer_init(
-		buffer_t * const buffer,
+Buffer* buffer_init(
+		Buffer * const buffer,
 		const size_t buffer_length,
 		const size_t content_length) {
 	return buffer_init_with_pointer(
 			buffer,
-			(unsigned char*) buffer + sizeof(buffer_t), //address after buffer_t struct
+			(unsigned char*) buffer + sizeof(Buffer), //address after Buffer struct
 			buffer_length,
 			content_length);
 }
@@ -43,8 +43,8 @@ buffer_t* buffer_init(
 /*
  * initialize a buffer with a pointer to the character array.
  */
-buffer_t* buffer_init_with_pointer(
-		buffer_t * const buffer,
+Buffer* buffer_init_with_pointer(
+		Buffer * const buffer,
 		unsigned char * const content,
 		const size_t buffer_length,
 		const size_t content_length) {
@@ -74,14 +74,14 @@ buffer_t* buffer_init_with_pointer(
 	return buffer;
 }
 
-buffer_t* buffer_init_with_pointer_to_const(
-		buffer_t * const buffer,
+Buffer* buffer_init_with_pointer_to_const(
+		Buffer * const buffer,
 		const unsigned char * const content,
 		const size_t buffer_length,
 		const size_t content_length) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
-	buffer_t *result = buffer_init_with_pointer(buffer, (unsigned char*)content, buffer_length, content_length);
+	Buffer *result = buffer_init_with_pointer(buffer, (unsigned char*)content, buffer_length, content_length);
 #pragma GCC diagnostic pop
 	if (result != nullptr) {
 		result->readonly = true;
@@ -94,10 +94,10 @@ buffer_t* buffer_init_with_pointer_to_const(
 /*
  * Create a new buffer on the heap.
  */
-buffer_t *buffer_create_on_heap(
+Buffer *buffer_create_on_heap(
 		const size_t buffer_length,
 		const size_t content_length) {
-	buffer_t *buffer = (buffer_t*)malloc(sizeof(buffer_t));
+	Buffer *buffer = (Buffer*)malloc(sizeof(Buffer));
 	if (buffer == nullptr) {
 		return nullptr;
 	}
@@ -121,7 +121,7 @@ buffer_t *buffer_create_on_heap(
 /*
  * Create a new buffer with a custom allocator.
  */
-buffer_t *buffer_create_with_custom_allocator(
+Buffer *buffer_create_with_custom_allocator(
 		const size_t buffer_length,
 		const size_t content_length,
 		void *(*allocator)(size_t size),
@@ -135,7 +135,7 @@ buffer_t *buffer_create_with_custom_allocator(
 		}
 	}
 
-	buffer_t *buffer = (buffer_t*)allocator(sizeof(buffer_t));
+	Buffer *buffer = (Buffer*)allocator(sizeof(Buffer));
 	if (buffer == nullptr) {
 		deallocator(content);
 		return nullptr;
@@ -150,7 +150,7 @@ buffer_t *buffer_create_with_custom_allocator(
  * The output buffer has to be at least twice
  * as large as the input data plus one.
  */
-int buffer_to_hex(buffer_t * const hex, const buffer_t * const data) {
+int Buffero_hex(Buffer * const hex, const Buffer * const data) {
 	//check size
 	if (hex->buffer_length < (data->content_length * 2 + 1)) {
 		return -6;
@@ -169,7 +169,7 @@ int buffer_to_hex(buffer_t * const hex, const buffer_t * const data) {
 /*
  * Free and clear a heap allocated buffer.
  */
-void buffer_destroy_from_heap(buffer_t * const buffer) {
+void buffer_destroy_from_heap(Buffer * const buffer) {
 	buffer_clear(buffer);
 	free(buffer->content);
 	free(buffer);
@@ -179,7 +179,7 @@ void buffer_destroy_from_heap(buffer_t * const buffer) {
  * Destroy a buffer that was created using a custom allocator.
  */
 void buffer_destroy_with_custom_deallocator(
-		buffer_t * buffer,
+		Buffer * buffer,
 		void (*deallocator)(void *pointer)) {
 	if (buffer == nullptr) {
 		return;
@@ -192,8 +192,8 @@ void buffer_destroy_with_custom_deallocator(
 	deallocator(buffer);
 }
 
-buffer_t* buffer_create_from_string_on_heap_helper(
-		buffer_t * const buffer,
+Buffer* buffer_create_from_string_on_heap_helper(
+		Buffer * const buffer,
 		const unsigned char * const content,
 		const size_t content_length) {
 	if (buffer->buffer_length < content_length) {
@@ -213,7 +213,7 @@ buffer_t* buffer_create_from_string_on_heap_helper(
  * Overwrites the buffer with zeroes and
  * resets the content size.
  */
-void buffer_clear(buffer_t *buffer) {
+void buffer_clear(Buffer *buffer) {
 	if ((buffer == nullptr) || (buffer->buffer_length == 0)) {
 		return;
 	}
@@ -228,8 +228,8 @@ void buffer_clear(buffer_t *buffer) {
  * Return 0 on success.
  */
 int buffer_concat(
-		buffer_t * const destination,
-		const buffer_t * const source) {
+		Buffer * const destination,
+		const Buffer * const source) {
 	if (destination->readonly) {
 		return -5;
 	}
@@ -248,9 +248,9 @@ int buffer_concat(
  * Returns 0 on success.
  */
 int buffer_copy(
-		buffer_t * const destination,
+		Buffer * const destination,
 		const size_t destination_offset,
-		const buffer_t * const source,
+		const Buffer * const source,
 		const size_t source_offset,
 		const size_t copy_length) {
 	if (destination->readonly) {
@@ -296,8 +296,8 @@ int buffer_copy(
  * Returns 0 on success.
  */
 int buffer_clone(
-		buffer_t * const destination,
-		const buffer_t * const source) {
+		Buffer * const destination,
+		const Buffer * const source) {
 	if ((destination == nullptr) || (source == nullptr)) {
 		return -1;
 	}
@@ -334,7 +334,7 @@ int buffer_clone(
  * Returns 0 on success.
  */
 int buffer_copy_from_raw(
-		buffer_t * const destination,
+		Buffer * const destination,
 		const size_t destination_offset,
 		const unsigned char * const source,
 		const size_t source_offset,
@@ -373,7 +373,7 @@ int buffer_copy_from_raw(
  * Returns 0 on success.
  */
 int buffer_clone_from_raw(
-		buffer_t * const destination,
+		Buffer * const destination,
 		const unsigned char * const source,
 		const size_t length) {
 	if (destination->readonly) {
@@ -400,8 +400,8 @@ int buffer_clone_from_raw(
  * The destination buffer size needs to be at least half the size of the input.
  */
 int buffer_clone_from_hex(
-		buffer_t * const destination,
-		const buffer_t * const source) {
+		Buffer * const destination,
+		const Buffer * const source) {
 	if ((destination == nullptr) || (source == nullptr)) {
 		return -1;
 	}
@@ -443,8 +443,8 @@ int buffer_clone_from_hex(
  * Note that the destination buffer needs to be twice the size of the source buffers content plus one.
  */
 int buffer_clone_as_hex(
-		buffer_t * const destination,
-		const buffer_t * const source) {
+		Buffer * const destination,
+		const Buffer * const source) {
 	if ((destination == nullptr) || (source == nullptr)) {
 		return -1;
 	}
@@ -477,7 +477,7 @@ int buffer_clone_as_hex(
 int buffer_copy_to_raw(
 		unsigned char * const destination,
 		const size_t destination_offset,
-		const buffer_t * const source,
+		const Buffer * const source,
 		const size_t source_offset,
 		const size_t copy_length) {
 	if ((source_offset > source->content_length) || (copy_length > (source->content_length - source_offset))) {
@@ -508,7 +508,7 @@ int buffer_copy_to_raw(
 int buffer_clone_to_raw(
 		unsigned char * const destination,
 		const size_t destination_length,
-		const buffer_t *source) {
+		const Buffer *source) {
 	if (destination_length < source->content_length) {
 		return -6;
 	}
@@ -527,8 +527,8 @@ int buffer_clone_to_raw(
  * Returns 0 if both buffers match.
  */
 int buffer_compare(
-		const buffer_t * const buffer1,
-		const buffer_t * const buffer2) {
+		const Buffer * const buffer1,
+		const Buffer * const buffer2) {
 	return buffer_compare_to_raw(buffer1, buffer2->content, buffer2->content_length);
 }
 
@@ -538,7 +538,7 @@ int buffer_compare(
  * Returns 0 if both buffers match.
  */
 int buffer_compare_to_raw(
-		const buffer_t * const buffer,
+		const Buffer * const buffer,
 		const unsigned char * const array,
 		const size_t array_length) {
 	return buffer_compare_to_raw_partial(buffer, 0, array, array_length, 0, buffer->content_length);
@@ -550,9 +550,9 @@ int buffer_compare_to_raw(
  * Returns 0 if both buffers match.
  */
 int buffer_compare_partial(
-		const buffer_t * const buffer1,
+		const Buffer * const buffer1,
 		const size_t position1,
-		const buffer_t * const buffer2,
+		const Buffer * const buffer2,
 		const size_t position2,
 		const size_t length) {
 	return buffer_compare_to_raw_partial(buffer1, position1, buffer2->content, buffer2->content_length, position2, length);
@@ -564,7 +564,7 @@ int buffer_compare_partial(
  * Returns 0 if both buffers match.
  */
 int buffer_compare_to_raw_partial(
-		const buffer_t * const buffer,
+		const Buffer * const buffer,
 		const size_t position1,
 		const unsigned char * const array,
 		const size_t array_length,
@@ -591,7 +591,7 @@ int buffer_compare_to_raw_partial(
  * Fill a buffer with random numbers.
  */
 int buffer_fill_random(
-		buffer_t * const buffer,
+		Buffer * const buffer,
 		const size_t length) {
 	if (length > buffer->buffer_length) {
 		return -6;
@@ -616,8 +616,8 @@ int buffer_fill_random(
  */
 //FIXME: Make sure this doesn't introduce any sidechannels
 int buffer_xor(
-		buffer_t * const destination,
-		const buffer_t * const source) {
+		Buffer * const destination,
+		const Buffer * const source) {
 	if (destination->readonly) {
 		return -5;
 	}
@@ -640,7 +640,7 @@ int buffer_xor(
  * Set a single character in a buffer.
  */
 int buffer_set_at(
-		const buffer_t * const buffer,
+		const Buffer * const buffer,
 		const size_t pos,
 		const unsigned char character) {
 	if (buffer->readonly) {
@@ -659,7 +659,7 @@ int buffer_set_at(
  * Set parts of a buffer to a given character.
  */
 int buffer_memset_partial(
-		buffer_t * const buffer,
+		Buffer * const buffer,
 		const unsigned char character,
 		const size_t length) {
 	if (buffer->readonly) {
@@ -691,7 +691,7 @@ int buffer_memset_partial(
  * (content_length is used as the length, not buffer_length)
  */
 void buffer_memset(
-		buffer_t * const buffer,
+		Buffer * const buffer,
 		const unsigned char character) {
 	int status __attribute__((unused));
 	status = buffer_memset_partial(buffer, character, buffer->content_length);
@@ -703,7 +703,7 @@ void buffer_memset(
  * Does nothing if the new size is smaller than the buffer.
  */
 int buffer_grow_on_heap(
-		buffer_t * const buffer,
+		Buffer * const buffer,
 		const size_t new_size) {
 	if (new_size <= buffer->buffer_length) {
 		//nothing to do
@@ -742,7 +742,7 @@ int buffer_grow_on_heap(
  *
  * Returns '\0' when out of bounds.
  */
-unsigned char buffer_get_at_pos(const buffer_t * const buffer) {
+unsigned char buffer_get_at_pos(const Buffer * const buffer) {
 	if ((buffer->position > buffer->content_length) || (buffer->position > buffer->buffer_length)) {
 		return '\0';
 	}
@@ -755,7 +755,7 @@ unsigned char buffer_get_at_pos(const buffer_t * const buffer) {
  *
  * Returns 0 if not out of bounds.
  */
-int buffer_set_at_pos(buffer_t * const buffer, const unsigned char character) {
+int buffer_set_at_pos(Buffer * const buffer, const unsigned char character) {
 	if ((buffer->position > buffer->buffer_length) || (buffer->position > buffer->content_length)) {
 		return -6;
 	}
@@ -768,7 +768,7 @@ int buffer_set_at_pos(buffer_t * const buffer, const unsigned char character) {
  *
  * Returns 0 on success
  */
-int buffer_fill(buffer_t * const buffer, const unsigned char character, size_t length) {
+int buffer_fill(Buffer * const buffer, const unsigned char character, size_t length) {
 	if ((buffer->readonly) || (length > buffer->buffer_length)) {
 		return -1;
 	}

@@ -34,15 +34,15 @@
  */
 return_status master_keys_create(
 		master_keys_t ** const keys, //output
-		const buffer_t * const seed,
-		buffer_t * const public_signing_key, //output, optional, can be nullptr
-		buffer_t * const public_identity_key //output, optional, can be nullptr
+		const Buffer * const seed,
+		Buffer * const public_signing_key, //output, optional, can be nullptr
+		Buffer * const public_identity_key //output, optional, can be nullptr
 		) {
 	return_status status = return_status_init();
 
 
 	//seeds
-	buffer_t *crypto_seeds = nullptr;
+	Buffer *crypto_seeds = nullptr;
 
 	if (keys == nullptr) {
 		THROW(INVALID_INPUT, "Invalid input for master_keys_create.");
@@ -150,7 +150,7 @@ cleanup:
  */
 return_status master_keys_get_signing_key(
 		master_keys_t * const keys,
-		buffer_t * const public_signing_key) {
+		Buffer * const public_signing_key) {
 	return_status status = return_status_init();
 
 	//check input
@@ -177,7 +177,7 @@ cleanup:
  */
 return_status master_keys_get_identity_key(
 		master_keys_t * const keys,
-		buffer_t * const public_identity_key) {
+		Buffer * const public_identity_key) {
 	return_status status = return_status_init();
 
 	//check input
@@ -204,8 +204,8 @@ cleanup:
  */
 return_status master_keys_sign(
 		master_keys_t * const keys,
-		const buffer_t * const data,
-		buffer_t * const signed_data) { //output, length of data + SIGNATURE_SIZE
+		const Buffer * const data,
+		Buffer * const signed_data) { //output, length of data + SIGNATURE_SIZE
 	return_status status = return_status_init();
 
 	if ((keys == nullptr)

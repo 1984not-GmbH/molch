@@ -26,10 +26,10 @@
 #include "utils.h"
 #include "../lib/common.h"
 
-void print_hex(const buffer_t * const data) {
+void print_hex(const Buffer * const data) {
 	static const size_t WIDTH = 30;
 	//buffer for hex string
-	buffer_t *hex = buffer_create_on_heap(2 * data->content_length + 1, 2 * data->content_length + 1);
+	Buffer *hex = buffer_create_on_heap(2 * data->content_length + 1, 2 * data->content_length + 1);
 
 	if (buffer_clone_as_hex(hex, data) != 0) {
 		fprintf(stderr, "ERROR: Failed printing hex.\n");
@@ -52,7 +52,7 @@ void print_hex(const buffer_t * const data) {
 	buffer_destroy_from_heap_and_null_if_valid(hex);
 }
 
-void print_to_file(const buffer_t * const data, const char * const filename) {
+void print_to_file(const Buffer * const data, const char * const filename) {
 	FILE *file = fopen(filename, "w");
 	if (file == nullptr) {
 		return;
@@ -76,7 +76,7 @@ void print_errors(return_status * const status) {
 }
 
 
-return_status read_file(buffer_t ** const data, const char * const filename) {
+return_status read_file(Buffer ** const data, const char * const filename) {
 	return_status status = return_status_init();
 
 	FILE *file = nullptr;

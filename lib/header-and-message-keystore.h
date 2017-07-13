@@ -40,9 +40,9 @@ typedef struct header_and_message_keystore_node header_and_message_keystore_node
 struct header_and_message_keystore_node {
 	header_and_message_keystore_node *previous;
 	header_and_message_keystore_node *next;
-	buffer_t message_key[1];
+	Buffer message_key[1];
 	unsigned char message_key_storage[MESSAGE_KEY_SIZE];
-	buffer_t header_key[1];
+	Buffer header_key[1];
 	unsigned char header_key_storage[HEADER_KEY_SIZE];
 	time_t expiration_date;
 };
@@ -61,8 +61,8 @@ void header_and_message_keystore_init(header_and_message_keystore * const keysto
 //NOTE: The entire keys are copied, not only the pointer
 return_status header_and_message_keystore_add(
 		header_and_message_keystore *keystore,
-		const buffer_t * const message_key,
-		const buffer_t * const header_key) __attribute__((warn_unused_result));
+		const Buffer * const message_key,
+		const Buffer * const header_key) __attribute__((warn_unused_result));
 
 //remove a message key from the keystore
 void header_and_message_keystore_remove(header_and_message_keystore *keystore, header_and_message_keystore_node *node);

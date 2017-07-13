@@ -192,7 +192,7 @@ const char *return_status_get_name(status_type status) {
 char *return_status_print(const return_status * const status_to_print, size_t *length) {
 	return_status status = return_status_init();
 
-	buffer_t *output = nullptr;
+	Buffer *output = nullptr;
 
 	size_t output_size = 1; // 1 because of '\0';
 

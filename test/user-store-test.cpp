@@ -31,11 +31,11 @@
 
 return_status protobuf_export(
 		const user_store * const store,
-		buffer_t *** const export_buffers,
+		Buffer *** const export_buffers,
 		size_t * const buffer_count) __attribute__((warn_unused_result));
 return_status protobuf_export(
 		const user_store * const store,
-		buffer_t *** const export_buffers,
+		Buffer *** const export_buffers,
 		size_t * const buffer_count) {
 	return_status status = return_status_init();
 
@@ -57,11 +57,11 @@ return_status protobuf_export(
 	status = user_store_export(store, &users, &length);
 	THROW_on_error(EXPORT_ERROR, "Failed to export conversations.");
 
-	*export_buffers = (buffer_t**)malloc(length * sizeof(buffer_t*));
+	*export_buffers = (Buffer**)malloc(length * sizeof(Buffer*));
 	THROW_on_failed_alloc(*export_buffers);
 
 	//initialize pointers with nullptr
-	memset(*export_buffers, '\0', length * sizeof(buffer_t*));
+	memset(*export_buffers, '\0', length * sizeof(Buffer*));
 	*buffer_count = length;
 
 	//unpack all the conversations
@@ -90,7 +90,7 @@ cleanup:
 
 static return_status protobuf_import(
 		user_store ** const store,
-		buffer_t ** const buffers,
+		Buffer ** const buffers,
 		const size_t buffers_length) {
 	return_status status = return_status_init();
 
@@ -169,17 +169,17 @@ int main(void) {
 	return_status status = return_status_init();
 
 	//create public signing key buffers
-	buffer_t *alice_public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	buffer_t *bob_public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	buffer_t *charlie_public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	Buffer *alice_public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	Buffer *bob_public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	Buffer *charlie_public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
 
 	//protobuf-c export buffers
-	buffer_t **protobuf_export_buffers = nullptr;
+	Buffer **protobuf_export_buffers = nullptr;
 	size_t protobuf_export_length = 0;
-	buffer_t **protobuf_second_export_buffers = nullptr;
+	Buffer **protobuf_second_export_buffers = nullptr;
 	size_t protobuf_second_export_length = 0;
 
-	buffer_t *list = nullptr;
+	Buffer *list = nullptr;
 
 	//create a user_store
 	user_store *store = nullptr;

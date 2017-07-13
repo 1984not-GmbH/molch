@@ -68,8 +68,8 @@ static molch_message_type to_molch_message_type(const PacketHeader__PacketType p
  * \return
  *   Error status, destroy with return_status_destroy_errors if an error occurs.
  */
-return_status packet_unpack(Packet ** const packet_struct, const buffer_t * const packet) __attribute__((warn_unused_result));
-return_status packet_unpack(Packet ** const packet_struct, const buffer_t * const packet) {
+return_status packet_unpack(Packet ** const packet_struct, const Buffer * const packet) __attribute__((warn_unused_result));
+return_status packet_unpack(Packet ** const packet_struct, const Buffer * const packet) {
 	return_status status = return_status_init();
 
 	//check input
@@ -131,17 +131,17 @@ cleanup:
 
 return_status packet_encrypt(
 		//output
-		buffer_t ** const packet,
+		Buffer ** const packet,
 		//inputs
 		const molch_message_type packet_type,
-		const buffer_t * const axolotl_header,
-		const buffer_t * const axolotl_header_key, //HEADER_KEY_SIZE
-		const buffer_t * const message,
-		const buffer_t * const message_key, //MESSAGE_KEY_SIZE
+		const Buffer * const axolotl_header,
+		const Buffer * const axolotl_header_key, //HEADER_KEY_SIZE
+		const Buffer * const message,
+		const Buffer * const message_key, //MESSAGE_KEY_SIZE
 		//optional inputs (prekey messages only)
-		const buffer_t * const public_identity_key,
-		const buffer_t * const public_ephemeral_key,
-		const buffer_t * const public_prekey) {
+		const Buffer * const public_identity_key,
+		const Buffer * const public_ephemeral_key,
+		const Buffer * const public_prekey) {
 	return_status status = return_status_init();
 
 	//initialize the protobuf structs
@@ -150,11 +150,11 @@ return_status packet_encrypt(
 	packet_struct.packet_header = &packet_header_struct;
 
 	//buffers
-	buffer_t *header_nonce = nullptr;
-	buffer_t *message_nonce = nullptr;
-	buffer_t *encrypted_axolotl_header = nullptr;
-	buffer_t *padded_message = nullptr;
-	buffer_t *encrypted_message = nullptr;
+	Buffer *header_nonce = nullptr;
+	Buffer *message_nonce = nullptr;
+	Buffer *encrypted_axolotl_header = nullptr;
+	Buffer *padded_message = nullptr;
+	Buffer *encrypted_message = nullptr;
 
 	//check the input
 	if ((packet == nullptr)
@@ -310,16 +310,16 @@ return_status packet_decrypt(
 		uint32_t * const current_protocol_version,
 		uint32_t * const highest_supported_protocol_version,
 		molch_message_type * const packet_type,
-		buffer_t ** const axolotl_header,
-		buffer_t ** const message,
+		Buffer ** const axolotl_header,
+		Buffer ** const message,
 		//inputs
-		const buffer_t * const packet,
-		const buffer_t * const axolotl_header_key, //HEADER_KEY_SIZE
-		const buffer_t * const message_key, //MESSAGE_KEY_SIZE
+		const Buffer * const packet,
+		const Buffer * const axolotl_header_key, //HEADER_KEY_SIZE
+		const Buffer * const message_key, //MESSAGE_KEY_SIZE
 		//optional outputs (prekey messages only)
-		buffer_t * const public_identity_key,
-		buffer_t * const public_ephemeral_key,
-		buffer_t * const public_prekey) {
+		Buffer * const public_identity_key,
+		Buffer * const public_ephemeral_key,
+		Buffer * const public_prekey) {
 	return_status status = return_status_init();
 
 	//initialize outputs that have to be allocated
@@ -391,11 +391,11 @@ return_status packet_get_metadata_without_verification(
 		uint32_t * const highest_supported_protocol_version,
 		molch_message_type * const packet_type,
 		//input
-		const buffer_t * const packet,
+		const Buffer * const packet,
 		//optional outputs (prekey messages only)
-		buffer_t * const public_identity_key, //PUBLIC_KEY_SIZE
-		buffer_t * const public_ephemeral_key, //PUBLIC_KEY_SIZE
-		buffer_t * const public_prekey //PUBLIC_KEY_SIZE
+		Buffer * const public_identity_key, //PUBLIC_KEY_SIZE
+		Buffer * const public_ephemeral_key, //PUBLIC_KEY_SIZE
+		Buffer * const public_prekey //PUBLIC_KEY_SIZE
 		) {
 	return_status status = return_status_init();
 
@@ -463,10 +463,10 @@ cleanup:
 
 return_status packet_decrypt_header(
 		//output
-		buffer_t ** const axolotl_header,
+		Buffer ** const axolotl_header,
 		//inputs
-		const buffer_t * const packet,
-		const buffer_t * const axolotl_header_key //HEADER_KEY_SIZE
+		const Buffer * const packet,
+		const Buffer * const axolotl_header_key //HEADER_KEY_SIZE
 		) {
 	return_status status = return_status_init();
 
@@ -520,17 +520,17 @@ cleanup:
 
 return_status packet_decrypt_message(
 		//output
-		buffer_t ** const message,
+		Buffer ** const message,
 		//inputs
-		const buffer_t * const packet,
-		const buffer_t * const message_key
+		const Buffer * const packet,
+		const Buffer * const message_key
 		) {
 	return_status status = return_status_init();
 	unsigned char padding;
 
 	Packet *packet_struct = nullptr;
 
-	buffer_t *padded_message = nullptr;
+	Buffer *padded_message = nullptr;
 
 	//check input
 	if ((message == nullptr)

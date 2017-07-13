@@ -43,20 +43,20 @@ static void init_struct(conversation_t *conversation) {
  */
 return_status conversation_create(
 		conversation_t **const conversation,
-		const buffer_t * const,
-		const buffer_t * const,
-		const buffer_t * const,
-		const buffer_t * const,
-		const buffer_t * const,
-		const buffer_t * const) __attribute__((warn_unused_result));
+		const Buffer * const,
+		const Buffer * const,
+		const Buffer * const,
+		const Buffer * const,
+		const Buffer * const,
+		const Buffer * const) __attribute__((warn_unused_result));
 return_status conversation_create(
 		conversation_t **const conversation,
-		const buffer_t * const our_private_identity,
-		const buffer_t * const our_public_identity,
-		const buffer_t * const their_public_identity,
-		const buffer_t * const our_private_ephemeral,
-		const buffer_t * const our_public_ephemeral,
-		const buffer_t * const their_public_ephemeral) {
+		const Buffer * const our_private_identity,
+		const Buffer * const our_public_identity,
+		const Buffer * const their_public_identity,
+		const Buffer * const our_private_ephemeral,
+		const Buffer * const our_public_ephemeral,
+		const Buffer * const their_public_ephemeral) {
 
 	return_status status = return_status_init();
 
@@ -119,18 +119,18 @@ void conversation_destroy(conversation_t * const conversation) {
  */
 return_status conversation_start_send_conversation(
 		conversation_t ** const conversation, //output, newly created conversation
-		const buffer_t *const message, //message we want to send to the receiver
-		buffer_t ** packet, //output, free after use!
-		const buffer_t * const sender_public_identity, //who is sending this message?
-		const buffer_t * const sender_private_identity,
-		const buffer_t * const receiver_public_identity,
-		const buffer_t * const receiver_prekey_list //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+		const Buffer *const message, //message we want to send to the receiver
+		Buffer ** packet, //output, free after use!
+		const Buffer * const sender_public_identity, //who is sending this message?
+		const Buffer * const sender_private_identity,
+		const Buffer * const receiver_public_identity,
+		const Buffer * const receiver_prekey_list //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 		) {
 
 	return_status status = return_status_init();
 
-	buffer_t *sender_public_ephemeral = nullptr;
-	buffer_t *sender_private_ephemeral = nullptr;
+	Buffer *sender_public_ephemeral = nullptr;
+	Buffer *sender_private_ephemeral = nullptr;
 
 	uint32_t prekey_number;
 
@@ -212,10 +212,10 @@ cleanup:
  */
 return_status conversation_start_receive_conversation(
 		conversation_t ** const conversation, //output, newly created conversation
-		const buffer_t * const packet, //received packet
-		buffer_t ** message, //output, free after use!
-		const buffer_t * const receiver_public_identity,
-		const buffer_t * const receiver_private_identity,
+		const Buffer * const packet, //received packet
+		Buffer ** message, //output, free after use!
+		const Buffer * const receiver_public_identity,
+		const Buffer * const receiver_private_identity,
 		prekey_store * const receiver_prekeys //prekeys of the receiver
 		) {
 	uint32_t receive_message_number = 0;
@@ -224,10 +224,10 @@ return_status conversation_start_receive_conversation(
 	return_status status = return_status_init();
 
 	//key buffers
-	buffer_t *receiver_public_prekey = nullptr;
-	buffer_t *receiver_private_prekey = nullptr;
-	buffer_t *sender_public_ephemeral = nullptr;
-	buffer_t *sender_public_identity = nullptr;
+	Buffer *receiver_public_prekey = nullptr;
+	Buffer *receiver_private_prekey = nullptr;
+	Buffer *sender_public_ephemeral = nullptr;
+	Buffer *sender_public_identity = nullptr;
 
 	receiver_public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(receiver_public_prekey);
@@ -318,19 +318,19 @@ cleanup:
  */
 return_status conversation_send(
 		conversation_t * const conversation,
-		const buffer_t * const message,
-		buffer_t **packet, //output, free after use!
-		const buffer_t * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
-		const buffer_t * const public_ephemeral_key, //can be nullptr, if not nullptr, this will be a prekey message
-		const buffer_t * const public_prekey //can be nullptr, if not nullptr, this will be a prekey message
+		const Buffer * const message,
+		Buffer **packet, //output, free after use!
+		const Buffer * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
+		const Buffer * const public_ephemeral_key, //can be nullptr, if not nullptr, this will be a prekey message
+		const Buffer * const public_prekey //can be nullptr, if not nullptr, this will be a prekey message
 		) {
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *send_header_key = nullptr;
-	buffer_t *send_message_key = nullptr;
-	buffer_t *send_ephemeral_key = nullptr;
-	buffer_t *header = nullptr;
+	Buffer *send_header_key = nullptr;
+	Buffer *send_message_key = nullptr;
+	Buffer *send_ephemeral_key = nullptr;
+	Buffer *header = nullptr;
 
 	molch_message_type packet_type;
 
@@ -421,15 +421,15 @@ cleanup:
  */
 static int try_skipped_header_and_message_keys(
 		header_and_message_keystore * const skipped_keys,
-		const buffer_t * const packet,
-		buffer_t ** const message,
+		const Buffer * const packet,
+		Buffer ** const message,
 		uint32_t * const receive_message_number,
 		uint32_t * const previous_receive_message_number) {
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *header = nullptr;
-	buffer_t *their_signed_public_ephemeral = nullptr;
+	Buffer *header = nullptr;
+	Buffer *their_signed_public_ephemeral = nullptr;
 	their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(their_signed_public_ephemeral);
 
@@ -487,18 +487,18 @@ cleanup:
  */
 return_status conversation_receive(
 	conversation_t * const conversation,
-	const buffer_t * const packet, //received packet
+	const Buffer * const packet, //received packet
 	uint32_t * const receive_message_number,
 	uint32_t * const previous_receive_message_number,
-	buffer_t ** const message) { //output, free after use!
+	Buffer ** const message) { //output, free after use!
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *current_receive_header_key = nullptr;
-	buffer_t *next_receive_header_key = nullptr;
-	buffer_t *header = nullptr;
-	buffer_t *message_key = nullptr;
-	buffer_t *their_signed_public_ephemeral = nullptr;
+	Buffer *current_receive_header_key = nullptr;
+	Buffer *next_receive_header_key = nullptr;
+	Buffer *header = nullptr;
+	Buffer *message_key = nullptr;
+	Buffer *their_signed_public_ephemeral = nullptr;
 
 	current_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	THROW_on_failed_alloc(current_receive_header_key);

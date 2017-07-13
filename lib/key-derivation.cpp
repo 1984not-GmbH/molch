@@ -35,14 +35,14 @@
  * and crypto_generichash_blake2b_KEYBYTES_MAX (64 Bytes).
  */
 return_status derive_key(
-		buffer_t * const derived_key,
+		Buffer * const derived_key,
 		size_t derived_size,
-		const buffer_t * const input_key,
+		const Buffer * const input_key,
 		uint32_t subkey_counter) { //number of the current subkey, used to derive multiple keys from the same input key
 	return_status status = return_status_init();
 
 	//create a salt that contains the number of the subkey
-	buffer_t *salt = buffer_create_on_heap(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
+	Buffer *salt = buffer_create_on_heap(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
 	THROW_on_failed_alloc(salt);
 	buffer_clear(salt); //fill with zeroes
 	salt->content_length = crypto_generichash_blake2b_SALTBYTES;
@@ -103,8 +103,8 @@ cleanup:
  * (previous chain key as key, 0x01 as message)
  */
 return_status derive_chain_key(
-		buffer_t * const new_chain_key,
-		const buffer_t * const previous_chain_key) {
+		Buffer * const new_chain_key,
+		const Buffer * const previous_chain_key) {
 	return derive_key(
 			new_chain_key,
 			CHAIN_KEY_SIZE,
@@ -121,8 +121,8 @@ return_status derive_chain_key(
  * (chain_key as key, 0x00 as message)
  */
 return_status derive_message_key(
-		buffer_t * const message_key,
-		const buffer_t * const chain_key) {
+		Buffer * const message_key,
+		const Buffer * const chain_key) {
 	return derive_key(
 			message_key,
 			MESSAGE_KEY_SIZE,
@@ -138,19 +138,19 @@ return_status derive_message_key(
  * RK, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
  */
 return_status derive_root_next_header_and_chain_keys(
-		buffer_t * const root_key, //ROOT_KEY_SIZE
-		buffer_t * const next_header_key, //HEADER_KEY_SIZE
-		buffer_t * const chain_key, //CHAIN_KEY_SIZE
-		const buffer_t * const our_private_ephemeral,
-		const buffer_t * const our_public_ephemeral,
-		const buffer_t * const their_public_ephemeral,
-		const buffer_t * const previous_root_key,
+		Buffer * const root_key, //ROOT_KEY_SIZE
+		Buffer * const next_header_key, //HEADER_KEY_SIZE
+		Buffer * const chain_key, //CHAIN_KEY_SIZE
+		const Buffer * const our_private_ephemeral,
+		const Buffer * const our_public_ephemeral,
+		const Buffer * const their_public_ephemeral,
+		const Buffer * const previous_root_key,
 		bool am_i_alice) {
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *diffie_hellman_secret = nullptr;
-	buffer_t *derivation_key = nullptr;
+	Buffer *diffie_hellman_secret = nullptr;
+	Buffer *derivation_key = nullptr;
 	diffie_hellman_secret = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, 0);
 	THROW_on_failed_alloc(diffie_hellman_secret);
 	derivation_key = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
@@ -244,23 +244,23 @@ cleanup:
  * RK, CKs/r, HKs/r, NHKs/r = KDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
  */
 return_status derive_initial_root_chain_and_header_keys(
-		buffer_t * const root_key, //ROOT_KEY_SIZE
-		buffer_t * const send_chain_key, //CHAIN_KEY_SIZE
-		buffer_t * const receive_chain_key, //CHAIN_KEY_SIZE
-		buffer_t * const send_header_key, //HEADER_KEY_SIZE
-		buffer_t * const receive_header_key, //HEADER_KEY_SIZE
-		buffer_t * const next_send_header_key, //HEADER_KEY_SIZE
-		buffer_t * const next_receive_header_key, //HEADER_KEY_SIZE
-		const buffer_t * const our_private_identity,
-		const buffer_t * const our_public_identity,
-		const buffer_t * const their_public_identity,
-		const buffer_t * const our_private_ephemeral,
-		const buffer_t * const our_public_ephemeral,
-		const buffer_t * const their_public_ephemeral,
+		Buffer * const root_key, //ROOT_KEY_SIZE
+		Buffer * const send_chain_key, //CHAIN_KEY_SIZE
+		Buffer * const receive_chain_key, //CHAIN_KEY_SIZE
+		Buffer * const send_header_key, //HEADER_KEY_SIZE
+		Buffer * const receive_header_key, //HEADER_KEY_SIZE
+		Buffer * const next_send_header_key, //HEADER_KEY_SIZE
+		Buffer * const next_receive_header_key, //HEADER_KEY_SIZE
+		const Buffer * const our_private_identity,
+		const Buffer * const our_public_identity,
+		const Buffer * const their_public_identity,
+		const Buffer * const our_private_ephemeral,
+		const Buffer * const our_public_ephemeral,
+		const Buffer * const their_public_ephemeral,
 		bool am_i_alice) {
 	return_status status = return_status_init();
 
-	buffer_t *master_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *master_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	THROW_on_failed_alloc(master_key);
 
 	//check buffer sizes

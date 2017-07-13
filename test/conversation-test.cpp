@@ -29,8 +29,8 @@
 #include "utils.h"
 #include "../lib/conversation.h"
 
-return_status protobuf_export(const conversation_t * const conversation, buffer_t ** const export_buffer) __attribute__((warn_unused_result));
-return_status protobuf_export(const conversation_t * const conversation, buffer_t ** const export_buffer) {
+return_status protobuf_export(const conversation_t * const conversation, Buffer ** const export_buffer) __attribute__((warn_unused_result));
+return_status protobuf_export(const conversation_t * const conversation, Buffer ** const export_buffer) {
 	return_status status = return_status_init();
 
 	Conversation *exported_conversation = nullptr;
@@ -64,10 +64,10 @@ cleanup:
 
 return_status protobuf_import(
 		conversation_t ** const conversation,
-		const buffer_t * const import_buffer) __attribute__((warn_unused_result));
+		const Buffer * const import_buffer) __attribute__((warn_unused_result));
 return_status protobuf_import(
 		conversation_t ** const conversation,
-		const buffer_t * const import_buffer) {
+		const Buffer * const import_buffer) {
 	return_status status = return_status_init();
 
 	Conversation *conversation_protobuf = nullptr;
@@ -106,12 +106,12 @@ cleanup:
  */
 static return_status create_conversation(
 		conversation_t **const conversation,
-		const buffer_t * const our_private_identity,
-		const buffer_t * const our_public_identity,
-		const buffer_t * const their_public_identity,
-		const buffer_t * const our_private_ephemeral,
-		const buffer_t * const our_public_ephemeral,
-		const buffer_t * const their_public_ephemeral) {
+		const Buffer * const our_private_identity,
+		const Buffer * const our_public_identity,
+		const Buffer * const their_public_identity,
+		const Buffer * const our_private_ephemeral,
+		const Buffer * const our_public_ephemeral,
+		const Buffer * const their_public_ephemeral) {
 
 	return_status status = return_status_init();
 
@@ -169,18 +169,18 @@ int main(void) {
 	}
 
 	//create buffers
-	buffer_t *charlie_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *charlie_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *charlie_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *charlie_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *dora_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *dora_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *dora_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *dora_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *charlie_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	Buffer *charlie_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *charlie_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	Buffer *charlie_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *dora_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	Buffer *dora_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *dora_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	Buffer *dora_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 
 	//Protobuf export buffers
-	buffer_t *protobuf_export_buffer = nullptr;
-	buffer_t *protobuf_second_export_buffer = nullptr;
+	Buffer *protobuf_export_buffer = nullptr;
+	Buffer *protobuf_second_export_buffer = nullptr;
 
 	//conversations
 	conversation_t *charlie_conversation = nullptr;

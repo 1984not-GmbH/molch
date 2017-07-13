@@ -31,7 +31,7 @@ typedef struct conversation_t conversation_t;
 struct conversation_t {
 	conversation_t *previous;
 	conversation_t *next;
-	buffer_t id[1]; //unique id of a conversation, generated randomly
+	Buffer id[1]; //unique id of a conversation, generated randomly
 	unsigned char id_storage[CONVERSATION_ID_SIZE];
 	ratchet_state *ratchet;
 };
@@ -49,12 +49,12 @@ void conversation_destroy(conversation_t * const conversation);
  */
 return_status conversation_start_send_conversation(
 		conversation_t ** const conversation, //output, newly created conversation
-		const buffer_t *const message, //message we want to send to the receiver
-		buffer_t ** packet, //output, free after use!
-		const buffer_t * const sender_public_identity, //who is sending this message?
-		const buffer_t * const sender_private_identity,
-		const buffer_t * const receiver_public_identity,
-		const buffer_t * const receiver_prekey_list //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+		const Buffer *const message, //message we want to send to the receiver
+		Buffer ** packet, //output, free after use!
+		const Buffer * const sender_public_identity, //who is sending this message?
+		const Buffer * const sender_private_identity,
+		const Buffer * const receiver_public_identity,
+		const Buffer * const receiver_prekey_list //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 		) __attribute__((warn_unused_result));
 
 /*
@@ -65,10 +65,10 @@ return_status conversation_start_send_conversation(
  */
 return_status conversation_start_receive_conversation(
 		conversation_t ** const conversation, //output, newly created conversation
-		const buffer_t * const packet, //received packet
-		buffer_t ** message, //output, free after use!
-		const buffer_t * const receiver_public_identity,
-		const buffer_t * const receiver_private_identity,
+		const Buffer * const packet, //received packet
+		Buffer ** message, //output, free after use!
+		const Buffer * const receiver_public_identity,
+		const Buffer * const receiver_private_identity,
 		prekey_store * const receiver_prekeys //prekeys of the receiver
 		) __attribute__((warn_unused_result));
 
@@ -80,11 +80,11 @@ return_status conversation_start_receive_conversation(
  */
 return_status conversation_send(
 		conversation_t * const conversation,
-		const buffer_t * const message,
-		buffer_t **packet, //output, free after use!
-		const buffer_t * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
-		const buffer_t * const public_ephemeral_key, //cann be nullptr, if not nullptr, this will be a prekey message
-		const buffer_t * const public_prekey //can be nullptr, if not nullptr, this will be a prekey message
+		const Buffer * const message,
+		Buffer **packet, //output, free after use!
+		const Buffer * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
+		const Buffer * const public_ephemeral_key, //cann be nullptr, if not nullptr, this will be a prekey message
+		const Buffer * const public_prekey //can be nullptr, if not nullptr, this will be a prekey message
 		) __attribute__((warn_unused_result));
 
 /*
@@ -95,10 +95,10 @@ return_status conversation_send(
  */
 return_status conversation_receive(
 	conversation_t * const conversation,
-	const buffer_t * const packet, //received packet
+	const Buffer * const packet, //received packet
 	uint32_t * const receive_message_number,
 	uint32_t * const previous_receive_message_number,
-	buffer_t ** const message //output, free after use!
+	Buffer ** const message //output, free after use!
 		) __attribute__((warn_unused_result));
 
 /*! Export a conversation to a Protobuf-C struct.

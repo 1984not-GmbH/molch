@@ -38,7 +38,7 @@ static return_status protobuf_export(
 			header_and_message_keystore * const keystore,
 			KeyBundle *** const key_bundles,
 			size_t * const bundles_size,
-			buffer_t *** const export_buffers) {
+			Buffer *** const export_buffers) {
 	return_status status = return_status_init();
 
 	status = header_and_message_keystore_export(
@@ -47,11 +47,11 @@ static return_status protobuf_export(
 			bundles_size);
 	THROW_on_error(EXPORT_ERROR, "Failed to export keystore as protobuf struct.");
 
-	*export_buffers = (buffer_t**)zeroed_malloc((*bundles_size) * sizeof(buffer_t*));
+	*export_buffers = (Buffer**)zeroed_malloc((*bundles_size) * sizeof(Buffer*));
 	THROW_on_failed_alloc(*export_buffers);
 
 	//initialize pointers with nullptr
-	memset(*export_buffers, '\0', (*bundles_size) * sizeof(buffer_t *));
+	memset(*export_buffers, '\0', (*bundles_size) * sizeof(Buffer *));
 
 	//create all the export buffers
 	for (size_t i = 0; i < (*bundles_size); i++) {
@@ -70,7 +70,7 @@ cleanup:
 
 static return_status protobuf_import(
 		header_and_message_keystore * const keystore,
-		buffer_t ** const exported_buffers,
+		Buffer ** const exported_buffers,
 		size_t const buffers_size) {
 	return_status status = return_status_init();
 
@@ -150,12 +150,12 @@ int main(void) {
 	return_status status = return_status_init();
 
 	//buffer for message keys
-	buffer_t *header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	buffer_t *message_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer *message_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 
 	// buffers for exporting protobuf-c
-	buffer_t **protobuf_export_buffers = nullptr;
-	buffer_t **protobuf_second_export_buffers = nullptr;
+	Buffer **protobuf_export_buffers = nullptr;
+	Buffer **protobuf_second_export_buffers = nullptr;
 	KeyBundle ** protobuf_export_bundles = nullptr;
 	size_t protobuf_export_bundles_size = 0;
 	KeyBundle ** protobuf_second_export_bundles = nullptr;

@@ -29,16 +29,16 @@
 
 return_status protobuf_export(
 		master_keys_t * const keys,
-		buffer_t ** const public_signing_key_buffer,
-		buffer_t ** const private_signing_key_buffer,
-		buffer_t ** const public_identity_key_buffer,
-		buffer_t ** const private_identity_key_buffer) __attribute__((warn_unused_result));
+		Buffer ** const public_signing_key_buffer,
+		Buffer ** const private_signing_key_buffer,
+		Buffer ** const public_identity_key_buffer,
+		Buffer ** const private_identity_key_buffer) __attribute__((warn_unused_result));
 return_status protobuf_export(
 		master_keys_t * const keys,
-		buffer_t ** const public_signing_key_buffer,
-		buffer_t ** const private_signing_key_buffer,
-		buffer_t ** const public_identity_key_buffer,
-		buffer_t ** const private_identity_key_buffer) {
+		Buffer ** const public_signing_key_buffer,
+		Buffer ** const private_signing_key_buffer,
+		Buffer ** const public_identity_key_buffer,
+		Buffer ** const private_identity_key_buffer) {
 	return_status status = return_status_init();
 
 	Key * public_signing_key = nullptr;
@@ -130,16 +130,16 @@ cleanup:
 
 return_status protobuf_import(
 		master_keys_t ** const keys,
-		const buffer_t * const public_signing_key_buffer,
-		const buffer_t * const private_signing_key_buffer,
-		const buffer_t * const public_identity_key_buffer,
-		const buffer_t * const private_identity_key_buffer) __attribute__((warn_unused_result));
+		const Buffer * const public_signing_key_buffer,
+		const Buffer * const private_signing_key_buffer,
+		const Buffer * const public_identity_key_buffer,
+		const Buffer * const private_identity_key_buffer) __attribute__((warn_unused_result));
 return_status protobuf_import(
 		master_keys_t ** const keys,
-		const buffer_t * const public_signing_key_buffer,
-		const buffer_t * const private_signing_key_buffer,
-		const buffer_t * const public_identity_key_buffer,
-		const buffer_t * const private_identity_key_buffer) {
+		const Buffer * const public_signing_key_buffer,
+		const Buffer * const private_signing_key_buffer,
+		const Buffer * const public_identity_key_buffer,
+		const Buffer * const private_identity_key_buffer) {
 	return_status status = return_status_init();
 
 	Key *public_signing_key = nullptr;
@@ -236,22 +236,22 @@ int main(void) {
 	master_keys_t *imported_master_keys = nullptr;
 
 	//public key buffers
-	buffer_t *public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	buffer_t *public_identity_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer *public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	Buffer *public_identity_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
-	buffer_t *signed_data = buffer_create_on_heap(100, 0);
-	buffer_t *unwrapped_data = buffer_create_on_heap(100, 0);
+	Buffer *signed_data = buffer_create_on_heap(100, 0);
+	Buffer *unwrapped_data = buffer_create_on_heap(100, 0);
 
 	//export buffers
-	buffer_t *protobuf_export_public_signing_key = nullptr;
-	buffer_t *protobuf_export_private_signing_key = nullptr;
-	buffer_t *protobuf_export_public_identity_key = nullptr;
-	buffer_t *protobuf_export_private_identity_key = nullptr;
+	Buffer *protobuf_export_public_signing_key = nullptr;
+	Buffer *protobuf_export_private_signing_key = nullptr;
+	Buffer *protobuf_export_public_identity_key = nullptr;
+	Buffer *protobuf_export_private_identity_key = nullptr;
 	//second export
-	buffer_t *protobuf_second_export_public_signing_key = nullptr;
-	buffer_t *protobuf_second_export_private_signing_key = nullptr;
-	buffer_t *protobuf_second_export_public_identity_key = nullptr;
-	buffer_t *protobuf_second_export_private_identity_key = nullptr;
+	Buffer *protobuf_second_export_public_signing_key = nullptr;
+	Buffer *protobuf_second_export_private_signing_key = nullptr;
+	Buffer *protobuf_second_export_public_identity_key = nullptr;
+	Buffer *protobuf_second_export_private_identity_key = nullptr;
 
 	int status_int = 0;
 

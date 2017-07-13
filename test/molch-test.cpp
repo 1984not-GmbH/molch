@@ -35,7 +35,7 @@ extern "C" {
 
 static return_status decrypt_conversation_backup(
 		//output
-		buffer_t ** decrypted_backup,
+		Buffer ** decrypted_backup,
 		//inputs
 		const unsigned char * const backup,
 		const size_t backup_length,
@@ -101,7 +101,7 @@ cleanup:
 
 static return_status decrypt_full_backup(
 		//output
-		buffer_t ** decrypted_backup,
+		Buffer ** decrypted_backup,
 		//inputs
 		const unsigned char * const backup,
 		const size_t backup_length,
@@ -177,24 +177,24 @@ int main(void) {
 	return_status status = return_status_init();
 
 	//backup key buffer
-	buffer_t *backup_key = buffer_create_on_heap(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
-	buffer_t *new_backup_key = buffer_create_on_heap(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
+	Buffer *backup_key = buffer_create_on_heap(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
+	Buffer *new_backup_key = buffer_create_on_heap(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
 
 	//create conversation buffers
-	buffer_t *alice_conversation = buffer_create_on_heap(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
-	buffer_t *bob_conversation = buffer_create_on_heap(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	Buffer *alice_conversation = buffer_create_on_heap(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	Buffer *bob_conversation = buffer_create_on_heap(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 
 	//message numbers
 	uint32_t alice_receive_message_number = UINT32_MAX;
 	uint32_t alice_previous_receive_message_number = UINT32_MAX;
 
 	//alice key buffers
-	buffer_t *alice_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *alice_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	unsigned char *alice_public_prekeys = nullptr;
 	size_t alice_public_prekeys_length = 0;
 
 	//bobs key buffers
-	buffer_t *bob_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *bob_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	unsigned char *bob_public_prekeys = nullptr;
 	size_t bob_public_prekeys_length = 0;
 
@@ -209,10 +209,10 @@ int main(void) {
 	unsigned char *imported_backup = nullptr;
 
 	// decrypted backups
-	buffer_t *decrypted_backup = nullptr;
-	buffer_t *decrypted_imported_backup = nullptr;
-	buffer_t *decrypted_conversation_backup = nullptr;
-	buffer_t *decrypted_imported_conversation_backup = nullptr;
+	Buffer *decrypted_backup = nullptr;
+	Buffer *decrypted_imported_backup = nullptr;
+	Buffer *decrypted_conversation_backup = nullptr;
+	Buffer *decrypted_imported_conversation_backup = nullptr;
 
 	size_t number_of_conversations = 0;
 	size_t conversation_list_length = 0;

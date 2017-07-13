@@ -156,8 +156,8 @@ cleanup:
  */
 return_status prekey_store_get_prekey(
 		prekey_store * const store,
-		const buffer_t * const public_key, //input
-		buffer_t * const private_key) { //output
+		const Buffer * const public_key, //input
+		Buffer * const private_key) { //output
 
 	return_status status = return_status_init();
 
@@ -219,7 +219,7 @@ cleanup:
  */
 return_status prekey_store_list(
 		prekey_store * const store,
-		buffer_t * const list) { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+		Buffer * const list) { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 	return_status status = return_status_init();
 
 	//check input

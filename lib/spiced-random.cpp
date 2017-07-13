@@ -35,17 +35,17 @@
  * source because it might annihilate the randomness.
  */
 return_status spiced_random(
-		buffer_t * const random_output,
-		const buffer_t * const low_entropy_spice,
+		Buffer * const random_output,
+		const Buffer * const low_entropy_spice,
 		const size_t output_length) {
 	return_status status = return_status_init();
 
 	//buffer to put the random data derived from the random spice into
-	buffer_t *spice = nullptr;
+	Buffer *spice = nullptr;
 	//buffer that contains the random data from the OS
-	buffer_t *os_random = nullptr;
+	Buffer *os_random = nullptr;
 	//buffer that contains a random salt
-	buffer_t *salt = nullptr;
+	Buffer *salt = nullptr;
 	//allocate them
 	spice = buffer_create_with_custom_allocator(output_length, output_length, sodium_malloc, sodium_free);
 	THROW_on_failed_alloc(spice);

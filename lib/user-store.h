@@ -40,7 +40,7 @@ typedef struct user_store_node user_store_node;
 struct user_store_node {
 	user_store_node *previous;
 	user_store_node *next;
-	buffer_t public_signing_key[1];
+	Buffer public_signing_key[1];
 	unsigned char public_signing_key_storage[PUBLIC_MASTER_KEY_SIZE];
 	master_keys_t *master_keys;
 	prekey_store *prekeys;
@@ -69,9 +69,9 @@ void user_store_destroy(user_store * const store);
  */
 return_status user_store_create_user(
 		user_store * const keystore,
-		const buffer_t * const seed, //optional, can be nullptr
-		buffer_t * const public_signing_key, //output, optional, can be nullptr
-		buffer_t * const public_identity_key //output, optional, can be nullptr
+		const Buffer * const seed, //optional, can be nullptr
+		Buffer * const public_signing_key, //output, optional, can be nullptr
+		Buffer * const public_identity_key //output, optional, can be nullptr
 		) __attribute__((warn_unused_result));
 
 /*
@@ -79,7 +79,7 @@ return_status user_store_create_user(
  *
  * Returns nullptr if no user was found.
  */
-return_status user_store_find_node(user_store_node ** const node, user_store * const store, const buffer_t * const public_signing_key) __attribute__((warn_unused_result));
+return_status user_store_find_node(user_store_node ** const node, user_store * const store, const Buffer * const public_signing_key) __attribute__((warn_unused_result));
 
 /*
  * List all of the users.
@@ -89,14 +89,14 @@ return_status user_store_find_node(user_store_node ** const node, user_store * c
  *
  * The buffer is heap allocated, so don't forget to free it!
  */
-return_status user_store_list(buffer_t ** const list, user_store * const store) __attribute__((warn_unused_result));
+return_status user_store_list(Buffer ** const list, user_store * const store) __attribute__((warn_unused_result));
 
 /*
  * Remove a user from the user store.
  *
  * The user is identified by it's public signing key.
  */
-return_status user_store_remove_by_key(user_store * const store, const buffer_t * const public_signing_key);
+return_status user_store_remove_by_key(user_store * const store, const Buffer * const public_signing_key);
 
 //remove a user from the user store
 void user_store_remove(user_store * const store, user_store_node *node);

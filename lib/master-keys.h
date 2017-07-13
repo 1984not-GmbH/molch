@@ -32,14 +32,14 @@ extern "C" {
 
 typedef struct master_keys {
 	//Ed25519 key for signing
-	buffer_t public_signing_key[1];
+	Buffer public_signing_key[1];
 	unsigned char public_signing_key_storage[PUBLIC_MASTER_KEY_SIZE];
-	buffer_t private_signing_key[1];
+	Buffer private_signing_key[1];
 	unsigned char private_signing_key_storage[PRIVATE_MASTER_KEY_SIZE];
 	//X25519 key for deriving axolotl root keys
-	buffer_t public_identity_key[1];
+	Buffer public_identity_key[1];
 	unsigned char public_identity_key_storage[PUBLIC_KEY_SIZE];
-	buffer_t private_identity_key[1];
+	Buffer private_identity_key[1];
 	unsigned char private_identity_key_storage[PRIVATE_KEY_SIZE];
 } master_keys_t;
 
@@ -54,9 +54,9 @@ typedef struct master_keys {
  */
 return_status master_keys_create(
 		master_keys_t ** const keys, //output
-		const buffer_t * const seed,
-		buffer_t * const public_signing_key, //output, optional, can be nullptr
-		buffer_t * const public_identity_key //output, optional, can be nullptr
+		const Buffer * const seed,
+		Buffer * const public_signing_key, //output, optional, can be nullptr
+		Buffer * const public_identity_key //output, optional, can be nullptr
 		) __attribute__((warn_unused_result));
 
 /*
@@ -64,22 +64,22 @@ return_status master_keys_create(
  */
 return_status master_keys_get_signing_key(
 		master_keys_t * const keys,
-		buffer_t * const public_signing_key) __attribute__((warn_unused_result));
+		Buffer * const public_signing_key) __attribute__((warn_unused_result));
 
 /*
  * Get the public identity key.
  */
 return_status master_keys_get_identity_key(
 		master_keys_t * const keys,
-		buffer_t * const public_identity_key) __attribute__((warn_unused_result));
+		Buffer * const public_identity_key) __attribute__((warn_unused_result));
 
 /*
  * Sign a piece of data. Returns the data and signature in one output buffer.
  */
 return_status master_keys_sign(
 		master_keys_t * const keys,
-		const buffer_t * const data,
-		buffer_t * const signed_data //output, length of data + SIGNATURE_SIZE
+		const Buffer * const data,
+		Buffer * const signed_data //output, length of data + SIGNATURE_SIZE
 		) __attribute__((warn_unused_result));
 
 /*! Export a set of master keys into a user Protobuf-C struct

@@ -30,17 +30,17 @@
 
 return_status create_and_print_message(
 		//output
-		buffer_t ** const packet,
-		buffer_t * const header_key, //HEADER_KEY_SIZE
-		buffer_t * const message_key, //MESSAGE_KEY_SIZE
+		Buffer ** const packet,
+		Buffer * const header_key, //HEADER_KEY_SIZE
+		Buffer * const message_key, //MESSAGE_KEY_SIZE
 		//inputs
 		const molch_message_type packet_type,
-		const buffer_t * const header,
-		const buffer_t * const message,
+		const Buffer * const header,
+		const Buffer * const message,
 		//optional inputs (prekey messages only)
-		const buffer_t * const public_identity_key,
-		const buffer_t * const public_ephemeral_key,
-		const buffer_t * const public_prekey) {
+		const Buffer * const public_identity_key,
+		const Buffer * const public_ephemeral_key,
+		const Buffer * const public_prekey) {
 	return_status status = return_status_init();
 
 	//check input

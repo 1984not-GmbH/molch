@@ -43,13 +43,13 @@ extern "C" {
 
 //global user store
 static user_store *users = nullptr;
-static buffer_t *global_backup_key = nullptr;
+static Buffer *global_backup_key = nullptr;
 
 /*
  * Create a prekey list.
  */
 static return_status create_prekey_list(
-		const buffer_t * const public_signing_key,
+		const Buffer * const public_signing_key,
 		unsigned char ** const prekey_list, //output, needs to be freed
 		size_t * const prekey_list_length) {
 
@@ -57,9 +57,9 @@ static return_status create_prekey_list(
 	user_store_node *user = nullptr;
 
 	//create buffers
-	buffer_t *unsigned_prekey_list = nullptr;
-	buffer_t *prekey_list_buffer = nullptr;
-	buffer_t *public_identity_key = nullptr;
+	Buffer *unsigned_prekey_list = nullptr;
+	Buffer *prekey_list_buffer = nullptr;
+	Buffer *public_identity_key = nullptr;
 	unsigned_prekey_list = buffer_create_on_heap(
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t),
 			0);
@@ -318,7 +318,7 @@ return_status molch_list_users(
 
 	//get the list of users and copy it
 	{
-		buffer_t *user_list_buffer = nullptr;
+		Buffer *user_list_buffer = nullptr;
 		status = user_store_list(&user_list_buffer, users);
 		THROW_on_error(CREATION_ERROR, "Failed to create user list.");
 
@@ -326,7 +326,7 @@ return_status molch_list_users(
 
 		*user_list = user_list_buffer->content;
 		*user_list_length = user_list_buffer->content_length;
-		free_and_null_if_valid(user_list_buffer); //free the buffer_t struct while leaving content intact
+		free_and_null_if_valid(user_list_buffer); //free the Buffer struct while leaving content intact
 	}
 
 cleanup:
@@ -372,12 +372,12 @@ molch_message_type molch_get_message_type(
 static return_status verify_prekey_list(
 		const unsigned char * const prekey_list,
 		const size_t prekey_list_length,
-		buffer_t * const public_identity_key, //output, PUBLIC_KEY_SIZE
-		const buffer_t * const public_signing_key
+		Buffer * const public_identity_key, //output, PUBLIC_KEY_SIZE
+		const Buffer * const public_signing_key
 		) {
 	return_status status = return_status_init();
 
-	buffer_t *verified_prekey_list = buffer_create_on_heap(prekey_list_length - SIGNATURE_SIZE, prekey_list_length - SIGNATURE_SIZE);
+	Buffer *verified_prekey_list = buffer_create_on_heap(prekey_list_length - SIGNATURE_SIZE, prekey_list_length - SIGNATURE_SIZE);
 	THROW_on_failed_alloc(verified_prekey_list);
 
 	//verify the signature
@@ -470,15 +470,15 @@ return_status molch_start_send_conversation(
 	buffer_create_with_existing_const_array(prekeys, prekey_list + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t));
 
 	conversation_t *conversation = nullptr;
-	buffer_t *packet_buffer = nullptr;
+	Buffer *packet_buffer = nullptr;
 	user_store_node *user = nullptr;
 
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *sender_public_identity = nullptr;
-	buffer_t *receiver_public_identity = nullptr;
-	buffer_t *receiver_public_ephemeral = nullptr;
+	Buffer *sender_public_identity = nullptr;
+	Buffer *receiver_public_identity = nullptr;
+	Buffer *receiver_public_ephemeral = nullptr;
 	sender_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(sender_public_identity);
 	receiver_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
@@ -622,7 +622,7 @@ return_status molch_start_receive_conversation(
 	buffer_create_with_existing_const_array(receiver_public_master_key_buffer, receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
 
 	conversation_t *conversation = nullptr;
-	buffer_t *message_buffer = nullptr;
+	Buffer *message_buffer = nullptr;
 	user_store_node *user = nullptr;
 
 	if ((conversation_id == nullptr)
@@ -799,7 +799,7 @@ return_status molch_encrypt_message(
 	//create buffer for message array
 	buffer_create_with_existing_const_array(message_buffer, message, message_length);
 
-	buffer_t *packet_buffer = nullptr;
+	Buffer *packet_buffer = nullptr;
 	conversation_t *conversation = nullptr;
 
 	return_status status = return_status_init();
@@ -881,7 +881,7 @@ return_status molch_decrypt_message(
 
 	return_status status = return_status_init();
 
-	buffer_t *message_buffer = nullptr;
+	Buffer *message_buffer = nullptr;
 	conversation_t *conversation = nullptr;
 
 	if ((message == nullptr) || (message_length == nullptr)
@@ -1004,7 +1004,7 @@ return_status molch_list_conversations(
 		const unsigned char * const user_public_master_key,
 		const size_t user_public_master_key_length) {
 	buffer_create_with_existing_const_array(user_public_master_key_buffer, user_public_master_key, PUBLIC_KEY_SIZE);
-	buffer_t *conversation_list_buffer = nullptr;
+	Buffer *conversation_list_buffer = nullptr;
 
 	return_status status = return_status_init();
 
@@ -1042,7 +1042,7 @@ return_status molch_list_conversations(
 
 	*conversation_list = conversation_list_buffer->content;
 	*conversation_list_length = conversation_list_buffer->content_length;
-	free(conversation_list_buffer); //free buffer_t struct
+	free(conversation_list_buffer); //free Buffer struct
 	conversation_list_buffer = nullptr;
 
 cleanup:
@@ -1099,9 +1099,9 @@ return_status molch_conversation_export(
 		const size_t conversation_id_length) {
 	return_status status = return_status_init();
 
-	buffer_t *conversation_buffer = nullptr;
-	buffer_t *backup_nonce = nullptr;
-	buffer_t *backup_buffer = nullptr;
+	Buffer *conversation_buffer = nullptr;
+	Buffer *backup_nonce = nullptr;
+	Buffer *backup_buffer = nullptr;
 
 	size_t conversation_size;
 
@@ -1233,7 +1233,7 @@ return_status molch_conversation_import(
 	return_status status = return_status_init();
 
 	EncryptedBackup *encrypted_backup_struct = nullptr;
-	buffer_t *decrypted_backup = nullptr;
+	Buffer *decrypted_backup = nullptr;
 	Conversation *conversation_struct = nullptr;
 	conversation_t *conversation = nullptr;
 	conversation_store *containing_store = nullptr;
@@ -1346,9 +1346,9 @@ return_status molch_export(
 		size_t *backup_length) {
 	return_status status = return_status_init();
 
-	buffer_t *users_buffer = nullptr;
-	buffer_t *backup_nonce = nullptr;
-	buffer_t *backup_buffer = nullptr;
+	Buffer *users_buffer = nullptr;
+	Buffer *backup_nonce = nullptr;
+	Buffer *backup_buffer = nullptr;
 	size_t backup_struct_size;
 
 	EncryptedBackup encrypted_backup_struct;
@@ -1475,7 +1475,7 @@ return_status molch_import(
 	return_status status = return_status_init();
 
 	EncryptedBackup *encrypted_backup_struct = nullptr;
-	buffer_t *decrypted_backup = nullptr;
+	Buffer *decrypted_backup = nullptr;
 	Backup *backup_struct = nullptr;
 	user_store *store = nullptr;
 

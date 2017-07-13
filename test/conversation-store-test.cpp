@@ -30,11 +30,11 @@
 
 static return_status protobuf_export(
 		const conversation_store * const store,
-		buffer_t *** const export_buffers,
+		Buffer *** const export_buffers,
 		size_t * const buffer_count) __attribute__((warn_unused_result));
 static return_status protobuf_export(
 		const conversation_store * const store,
-		buffer_t *** const export_buffers,
+		Buffer *** const export_buffers,
 		size_t * const buffer_count) {
 	return_status status = return_status_init();
 
@@ -56,7 +56,7 @@ static return_status protobuf_export(
 	status = conversation_store_export(store, &conversations, &length);
 	THROW_on_error(EXPORT_ERROR, "Failed to export conversations.");
 
-	*export_buffers = (buffer_t**)malloc(length * sizeof(buffer_t*));
+	*export_buffers = (Buffer**)malloc(length * sizeof(Buffer*));
 	THROW_on_failed_alloc(*export_buffers);
 	*buffer_count = length;
 
@@ -85,11 +85,11 @@ cleanup:
 
 return_status protobuf_import(
 		conversation_store * const store,
-		buffer_t ** const buffers,
+		Buffer ** const buffers,
 		const size_t length) __attribute__((warn_unused_result));
 return_status protobuf_import(
 		conversation_store * const store,
-		buffer_t ** const buffers,
+		Buffer ** const buffers,
 		const size_t length) {
 	return_status status = return_status_init();
 
@@ -140,13 +140,13 @@ cleanup:
 static return_status test_add_conversation(conversation_store * const store) {
 	//define key buffers
 	//identity keys
-	buffer_t *our_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *our_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *their_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *our_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	Buffer *our_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *their_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	//ephemeral keys
-	buffer_t *our_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	buffer_t *our_public_ephemeral= buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	buffer_t *their_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *our_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	Buffer *our_public_ephemeral= buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *their_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 
 	conversation_t *conversation = nullptr;
 
@@ -261,9 +261,9 @@ int main(void) {
 	return_status status = return_status_init();
 
 	//protobuf buffers
-	buffer_t ** protobuf_export_buffers = nullptr;
+	Buffer ** protobuf_export_buffers = nullptr;
 	size_t protobuf_export_buffers_length = 0;
-	buffer_t ** protobuf_second_export_buffers = nullptr;
+	Buffer ** protobuf_second_export_buffers = nullptr;
 	size_t protobuf_second_export_buffers_length = 0;
 
 	conversation_store *store = (conversation_store*)malloc(sizeof(conversation_store));
@@ -275,7 +275,7 @@ int main(void) {
 	conversation_store_init(store);
 
 	// list an empty conversation store
-	buffer_t *empty_list;
+	Buffer *empty_list;
 	status = conversation_store_list(&empty_list, store);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to list empty conversation store.");
 	if (empty_list != nullptr) {
@@ -312,7 +312,7 @@ int main(void) {
 		printf("Found node by ID.\n");
 
 		//test list export feature
-		buffer_t *conversation_list = nullptr;
+		Buffer *conversation_list = nullptr;
 		status = conversation_store_list(&conversation_list, store);
 		on_error {
 			THROW(DATA_FETCH_ERROR, "Failed to list conversations.");

@@ -133,9 +133,9 @@ cleanup:
  */
 return_status user_store_create_user(
 		user_store *store,
-		const buffer_t * const seed, //optional, can be nullptr
-		buffer_t * const public_signing_key, //output, optional, can be nullptr
-		buffer_t * const public_identity_key) { //output, optional, can be nullptr
+		const Buffer * const seed, //optional, can be nullptr
+		Buffer * const public_signing_key, //output, optional, can be nullptr
+		Buffer * const public_identity_key) { //output, optional, can be nullptr
 
 	return_status status = return_status_init();
 
@@ -190,7 +190,7 @@ cleanup:
  *
  * Returns nullptr if no user was found.
  */
-return_status user_store_find_node(user_store_node ** const node, user_store * const store, const buffer_t * const public_signing_key) {
+return_status user_store_find_node(user_store_node ** const node, user_store * const store, const Buffer * const public_signing_key) {
 	return_status status = return_status_init();
 
 	if ((node == nullptr) || (public_signing_key == nullptr) || (public_signing_key->content_length != PUBLIC_MASTER_KEY_SIZE)) {
@@ -229,7 +229,7 @@ cleanup:
  *
  * The buffer is heap allocated, so don't forget to free it!
  */
-return_status user_store_list(buffer_t ** const list, user_store * const store) {
+return_status user_store_list(Buffer ** const list, user_store * const store) {
 	return_status status = return_status_init();
 
 	if ((list == nullptr) || (store == nullptr)) {
@@ -272,7 +272,7 @@ cleanup:
  *
  * The user is identified by it's public signing key.
  */
-return_status user_store_remove_by_key(user_store * const store, const buffer_t * const public_signing_key) {
+return_status user_store_remove_by_key(user_store * const store, const Buffer * const public_signing_key) {
 	return_status status = return_status_init();
 
 	user_store_node *node = nullptr;

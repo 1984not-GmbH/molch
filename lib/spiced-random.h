@@ -34,8 +34,8 @@
  * source because it might annihilate the randomness.
  */
 return_status spiced_random(
-		buffer_t * const random_output,
-		const buffer_t * const low_entropy_spice,
+		Buffer * const random_output,
+		const Buffer * const low_entropy_spice,
 		const size_t output_length) __attribute__((warn_unused_result));
 
 #endif

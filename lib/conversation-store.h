@@ -53,7 +53,7 @@ void conversation_store_remove(conversation_store * const store, conversation_t 
  *
  * The conversation is identified by it's id.
  */
-void conversation_store_remove_by_id(conversation_store * const store, const buffer_t * const id);
+void conversation_store_remove_by_id(conversation_store * const store, const Buffer * const id);
 
 /*
  * Find a conversation for a given conversation ID.
@@ -63,7 +63,7 @@ void conversation_store_remove_by_id(conversation_store * const store, const buf
 return_status conversation_store_find_node(
 		conversation_t ** const conversation,
 		conversation_store * const store,
-		const buffer_t * const id) __attribute__((warn_unused_result));
+		const Buffer * const id) __attribute__((warn_unused_result));
 
 /*
  * Remove all entries from a conversation store.
@@ -90,7 +90,7 @@ void conversation_store_clear(conversation_store * const store);
  *
  * Returns nullptr if empty.
  */
-return_status conversation_store_list(buffer_t ** const list, conversation_store * const store) __attribute__((warn_unused_result));
+return_status conversation_store_list(Buffer ** const list, conversation_store * const store) __attribute__((warn_unused_result));
 
 /*! Export a conversation store to Protobuf-C
  * \param conversation_store The conversation store to export.

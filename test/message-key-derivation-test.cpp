@@ -35,8 +35,8 @@ int main(void) {
 	return_status status = return_status_init();
 
 	//create buffers;
-	buffer_t *chain_key = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
-	buffer_t *message_key = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
+	Buffer *chain_key = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
+	Buffer *message_key = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
 
 	//create random chain key
 	if (buffer_fill_random(chain_key, chain_key->buffer_length) != 0) {

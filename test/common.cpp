@@ -56,10 +56,10 @@ void print_header_and_message_keystore(header_and_message_keystore *keystore) {
  * Generates and prints a crypto_box keypair.
  */
 return_status generate_and_print_keypair(
-		buffer_t * const public_key, //crypto_box_PUBLICKEYBYTES
-		buffer_t * const private_key, //crypto_box_SECRETKEYBYTES
-		const buffer_t * name, //Name of the key owner (e.g. "Alice")
-		const buffer_t * type) { //type of the key (e.g. "ephemeral")
+		Buffer * const public_key, //crypto_box_PUBLICKEYBYTES
+		Buffer * const private_key, //crypto_box_SECRETKEYBYTES
+		const Buffer * name, //Name of the key owner (e.g. "Alice")
+		const Buffer * type) { //type of the key (e.g. "ephemeral")
 	return_status status = return_status_init();
 
 	//check buffer sizes

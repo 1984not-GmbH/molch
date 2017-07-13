@@ -28,9 +28,9 @@ extern "C" {
 
 return_status header_construct(
 		//output
-		buffer_t ** const header,
+		Buffer ** const header,
 		//inputs
-		const buffer_t * const our_public_ephemeral, //PUBLIC_KEY_SIZE
+		const Buffer * const our_public_ephemeral, //PUBLIC_KEY_SIZE
 		const uint32_t message_number,
 		const uint32_t previous_message_number) {
 	return_status status = return_status_init();
@@ -84,11 +84,11 @@ cleanup:
 
 return_status header_extract(
 		//outputs
-		buffer_t * const their_public_ephemeral, //PUBLIC_KEY_SIZE
+		Buffer * const their_public_ephemeral, //PUBLIC_KEY_SIZE
 		uint32_t * const message_number,
 		uint32_t * const previous_message_number,
 		//intput
-		const buffer_t * const header) {
+		const Buffer * const header) {
 	return_status status = return_status_init();
 
 	Header *header_struct = nullptr;

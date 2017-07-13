@@ -35,10 +35,10 @@ int main(void) {
 	return_status status = return_status_init();
 
 	//create buffers
-	buffer_t *master_key = buffer_create_on_heap(50, 50);
-	buffer_t *subkey1 = buffer_create_on_heap(60, 60);
-	buffer_t *subkey2 = buffer_create_on_heap(60, 60);
-	buffer_t *subkey1_copy = buffer_create_on_heap(60, 60);
+	Buffer *master_key = buffer_create_on_heap(50, 50);
+	Buffer *subkey1 = buffer_create_on_heap(60, 60);
+	Buffer *subkey2 = buffer_create_on_heap(60, 60);
+	Buffer *subkey1_copy = buffer_create_on_heap(60, 60);
 
 	int status_int = 0;
 	status_int = buffer_fill_random(master_key, master_key->buffer_length);

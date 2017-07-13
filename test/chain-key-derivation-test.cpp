@@ -35,9 +35,9 @@ int main(void) {
 	return_status status = return_status_init();
 
 	//buffer for derived chain keys
-	buffer_t *next_chain_key = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
+	Buffer *next_chain_key = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
 	//create random initial chain key
-	buffer_t *last_chain_key = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
+	Buffer *last_chain_key = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
 	if (buffer_fill_random(last_chain_key, last_chain_key->buffer_length) != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to create last chain key.");
 	}

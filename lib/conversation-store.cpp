@@ -102,7 +102,7 @@ void conversation_store_remove(conversation_store * const store, conversation_t 
  *
  * The conversation is identified by it's id.
  */
-void conversation_store_remove_by_id(conversation_store * const store, const buffer_t * const id) {
+void conversation_store_remove_by_id(conversation_store * const store, const Buffer * const id) {
 	return_status status = return_status_init();
 
 	conversation_t *node = nullptr;
@@ -126,7 +126,7 @@ void conversation_store_remove_by_id(conversation_store * const store, const buf
 return_status conversation_store_find_node(
 		conversation_t ** const conversation,
 		conversation_store * const store,
-		const buffer_t * const id) {
+		const Buffer * const id) {
 	return_status status = return_status_init();
 
 	if ((conversation == nullptr) || (store == nullptr) || (id == nullptr)) {
@@ -165,7 +165,7 @@ void conversation_store_clear(conversation_store * const store) {
  *
  * Returns nullptr if empty.
  */
-return_status conversation_store_list(buffer_t ** const list, conversation_store * const store) {
+return_status conversation_store_list(Buffer ** const list, conversation_store * const store) {
 	return_status status = return_status_init();
 
 	if ((list == nullptr) || (store == nullptr)) {

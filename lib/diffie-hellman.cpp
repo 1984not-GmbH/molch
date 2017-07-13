@@ -38,10 +38,10 @@
  * Bob:   H(ECDH(our_private_key,their_public_key)|their_public_key|our_public_key)
  */
 return_status diffie_hellman(
-		buffer_t * const derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
-		const buffer_t * const our_private_key, //needs to be PRIVATE_KEY_SIZE long
-		const buffer_t * const our_public_key, //needs to be PUBLIC_KEY_SIZE long
-		const buffer_t * const their_public_key, //needs to be PUBLIC_KEY_SIZE long
+		Buffer * const derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
+		const Buffer * const our_private_key, //needs to be PRIVATE_KEY_SIZE long
+		const Buffer * const our_public_key, //needs to be PUBLIC_KEY_SIZE long
+		const Buffer * const their_public_key, //needs to be PUBLIC_KEY_SIZE long
 		const bool am_i_alice) {
 
 	return_status status = return_status_init();
@@ -55,7 +55,7 @@ return_status diffie_hellman(
 	derived_key->content_length = 0;
 
 	//buffer for diffie hellman shared secret
-	buffer_t *dh_secret = buffer_create_on_heap(crypto_scalarmult_SCALARBYTES, crypto_scalarmult_SCALARBYTES);
+	Buffer *dh_secret = buffer_create_on_heap(crypto_scalarmult_SCALARBYTES, crypto_scalarmult_SCALARBYTES);
 	THROW_on_failed_alloc(dh_secret);
 
 	crypto_generichash_state hash_state[1];
@@ -147,13 +147,13 @@ cleanup:
  * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
  */
 return_status triple_diffie_hellman(
-		buffer_t * const derived_key,
-		const buffer_t * const our_private_identity,
-		const buffer_t * const our_public_identity,
-		const buffer_t * const our_private_ephemeral,
-		const buffer_t * const our_public_ephemeral,
-		const buffer_t * const their_public_identity,
-		const buffer_t * const their_public_ephemeral,
+		Buffer * const derived_key,
+		const Buffer * const our_private_identity,
+		const Buffer * const our_public_identity,
+		const Buffer * const our_private_ephemeral,
+		const Buffer * const our_public_ephemeral,
+		const Buffer * const their_public_identity,
+		const Buffer * const their_public_ephemeral,
 		const bool am_i_alice) {
 	return_status status = return_status_init();
 
@@ -161,9 +161,9 @@ return_status triple_diffie_hellman(
 	derived_key->content_length = 0;
 
 	//buffers for all 3 Diffie Hellman exchanges
-	buffer_t *dh1 = nullptr;
-	buffer_t *dh2 = nullptr;
-	buffer_t *dh3 = nullptr;
+	Buffer *dh1 = nullptr;
+	Buffer *dh2 = nullptr;
+	Buffer *dh3 = nullptr;
 	dh1 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
 	THROW_on_failed_alloc(dh1);
 	dh2 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);

@@ -32,10 +32,10 @@ static return_status protobuf_export(
 		prekey_store * const store,
 		Prekey *** const keypairs,
 		size_t * const keypairs_size,
-		buffer_t *** const key_buffers,
+		Buffer *** const key_buffers,
 		Prekey *** const deprecated_keypairs,
 		size_t * const deprecated_keypairs_size,
-		buffer_t *** const deprecated_key_buffers) {
+		Buffer *** const deprecated_key_buffers) {
 	return_status status = return_status_init();
 
 	status = prekey_store_export(
@@ -46,17 +46,17 @@ static return_status protobuf_export(
 		deprecated_keypairs_size);
 	THROW_on_error(EXPORT_ERROR, "Failed to export prekeys.");
 
-	*key_buffers = (buffer_t**)zeroed_malloc((*keypairs_size) * sizeof(buffer_t*));
+	*key_buffers = (Buffer**)zeroed_malloc((*keypairs_size) * sizeof(Buffer*));
 	THROW_on_failed_alloc(*key_buffers);
 
 	//initialize pointers with nullptr
-	memset(*key_buffers, '\0', (*keypairs_size) * sizeof(buffer_t*));
+	memset(*key_buffers, '\0', (*keypairs_size) * sizeof(Buffer*));
 
-	*deprecated_key_buffers = (buffer_t**)zeroed_malloc((*deprecated_keypairs_size) * sizeof(buffer_t*));
+	*deprecated_key_buffers = (Buffer**)zeroed_malloc((*deprecated_keypairs_size) * sizeof(Buffer*));
 	THROW_on_failed_alloc(*deprecated_key_buffers);
 
 	//initialize pointers with nullptr
-	memset(*deprecated_key_buffers, '\0', (*deprecated_keypairs_size) * sizeof(buffer_t*));
+	memset(*deprecated_key_buffers, '\0', (*deprecated_keypairs_size) * sizeof(Buffer*));
 
 	//export all the keypairs
 	for (size_t i = 0; i < (*keypairs_size); i++) {
@@ -85,9 +85,9 @@ cleanup:
 
 static return_status protobuf_import(
 		prekey_store ** const store,
-		buffer_t ** const keypair_buffers,
+		Buffer ** const keypair_buffers,
 		const size_t keypair_buffers_size,
-		buffer_t ** const deprecated_keypair_buffers,
+		Buffer ** const deprecated_keypair_buffers,
 		const size_t deprecated_keypair_buffers_size) {
 	return_status status = return_status_init();
 
@@ -218,23 +218,23 @@ int main(void) {
 
 	return_status status = return_status_init();
 
-	buffer_t *public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_t *private_prekey1 = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	buffer_t *private_prekey2 = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	buffer_t *prekey_list = buffer_create_on_heap(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
+	Buffer *public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer *private_prekey1 = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer *private_prekey2 = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer *prekey_list = buffer_create_on_heap(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
 	Prekey **protobuf_export_prekeys = nullptr;
-	buffer_t **protobuf_export_prekeys_buffers = nullptr;
+	Buffer **protobuf_export_prekeys_buffers = nullptr;
 	size_t protobuf_export_prekeys_size = 0;
 	Prekey **protobuf_export_deprecated_prekeys = nullptr;
-	buffer_t **protobuf_export_deprecated_prekeys_buffers = nullptr;
+	Buffer **protobuf_export_deprecated_prekeys_buffers = nullptr;
 	size_t protobuf_export_deprecated_prekeys_size = 0;
 
 	Prekey **protobuf_second_export_prekeys = nullptr;
-	buffer_t **protobuf_second_export_prekeys_buffers = nullptr;
+	Buffer **protobuf_second_export_prekeys_buffers = nullptr;
 	size_t protobuf_second_export_prekeys_size = 0;
 	Prekey **protobuf_second_export_deprecated_prekeys = nullptr;
-	buffer_t **protobuf_second_export_deprecated_prekeys_buffers = nullptr;
+	Buffer **protobuf_second_export_deprecated_prekeys_buffers = nullptr;
 	size_t protobuf_second_export_deprecated_prekeys_size = 0;
 
 	prekey_store *store = nullptr;

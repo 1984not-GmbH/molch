@@ -26,9 +26,9 @@
 
 #include "../lib/buffer.h"
 
-static void print_hex(buffer_t *data) {
-	buffer_t *hex = buffer_create(2 * data->content_length + 1, 2 * data->content_length + 1);
-	int status = buffer_to_hex(hex, data);
+static void print_hex(Buffer *data) {
+	Buffer *hex = buffer_create(2 * data->content_length + 1, 2 * data->content_length + 1);
+	int status = Buffero_hex(hex, data);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to print data as hex! (%i)\n", status);
 		exit(-1);
@@ -74,7 +74,7 @@ int main(void) {
 	printf("Successfully tested buffer comparison ...\n");
 
 	//test heap allocated buffers
-	buffer_t *heap_buffer = buffer_create_on_heap(10, 0);
+	Buffer *heap_buffer = buffer_create_on_heap(10, 0);
 	buffer_destroy_from_heap(heap_buffer);
 
 	//zero length heap buffer
@@ -82,7 +82,7 @@ int main(void) {
 	buffer_destroy_from_heap(heap_buffer);
 
 	//create a new buffer
-	buffer_t *buffer1 = buffer_create(14, 10);
+	Buffer *buffer1 = buffer_create(14, 10);
 	unsigned char buffer1_content[10];
 	randombytes_buf(buffer1_content, sizeof(buffer1_content));
 	memcpy(buffer1->content, buffer1_content, sizeof(buffer1_content));
@@ -93,7 +93,7 @@ int main(void) {
 	putchar('\n');
 
 	//make second buffer (from pointer)
-	buffer_t *buffer2 = buffer_init_with_pointer((buffer_t*)alloca(sizeof(buffer_t)), (unsigned char*)malloc(5), 5, 4);
+	Buffer *buffer2 = buffer_init_with_pointer((Buffer*)alloca(sizeof(Buffer)), (unsigned char*)malloc(5), 5, 4);
 	buffer2->content[0] = 0xde;
 	buffer2->content[1] = 0xad;
 	buffer2->content[2] = 0xbe;
@@ -140,7 +140,7 @@ int main(void) {
 	printf("Detected out of bounds buffer concatenation.\n");
 
 	//test empty buffers
-	buffer_t *empty = buffer_create(0, 0);
+	Buffer *empty = buffer_create(0, 0);
 	status = buffer_concat(buffer1, empty);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to concatenate empty buffer to buffer.\n");
@@ -149,7 +149,7 @@ int main(void) {
 		free(buffer2->content);
 		return status;
 	}
-	buffer_t *empty2 = buffer_create(0, 0);
+	Buffer *empty2 = buffer_create(0, 0);
 	status = buffer_clone(empty2, empty);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to clone empty buffer.\n");
@@ -168,7 +168,7 @@ int main(void) {
 	//TODO test buffer clone functions
 
 	//copy buffer
-	buffer_t *buffer3 = buffer_create(5,0);
+	Buffer *buffer3 = buffer_create(5,0);
 	status = buffer_copy(buffer3, 0, buffer2, 0, buffer2->content_length);
 	if ((status != 0) || (buffer_compare(buffer2, buffer3) != 0)) {
 		fprintf(stderr, "ERROR: Failed to copy buffer. (%i)\n", status);
@@ -309,7 +309,7 @@ int main(void) {
 	free(buffer2->content);
 
 	//fill a buffer with random numbers
-	buffer_t *random = buffer_create(10, 0);
+	Buffer *random = buffer_create(10, 0);
 	status = buffer_fill_random(random, 5);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to fill buffer with random numbers. (%i)\n", status);
@@ -340,14 +340,14 @@ int main(void) {
 
 	//test xor
 	buffer_create_from_string(text, "Hello World!");
-	buffer_t *to_xor = buffer_create(text->content_length, text->content_length);
+	Buffer *to_xor = buffer_create(text->content_length, text->content_length);
 	status = buffer_clone(to_xor, text);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to clone buffer.\n");
 		return status;
 	}
 
-	buffer_t *random2 = buffer_create(text->content_length, text->content_length);
+	Buffer *random2 = buffer_create(text->content_length, text->content_length);
 	status = buffer_fill_random(random2, random2->buffer_length);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to fill buffer with random data. (%i)\n", status);
@@ -421,7 +421,7 @@ int main(void) {
 	}
 
 	//test character access
-	buffer_t *character_buffer = buffer_create(4,3);
+	Buffer *character_buffer = buffer_create(4,3);
 	buffer_create_from_string(test_buffer, "Hi");
 	status = buffer_set_at(character_buffer, 0, 'H');
 	if (status != 0) {
@@ -450,7 +450,7 @@ int main(void) {
 	}
 
 	//test memset functions
-	buffer_t *set_buffer = buffer_create(10, 10);
+	Buffer *set_buffer = buffer_create(10, 10);
 	buffer_memset(set_buffer, 0x01);
 	if (set_buffer->content[3] != 0x01) {
 		fprintf(stderr, "ERROR: Failed to memset buffer.\n");
@@ -463,7 +463,7 @@ int main(void) {
 	}
 
 	//growing heap buffer
-	buffer_t *resize_buffer = buffer_create_on_heap(1, 1);
+	Buffer *resize_buffer = buffer_create_on_heap(1, 1);
 	status = buffer_clone_from_raw(resize_buffer, (const unsigned char*)"", 1);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to clone raw buffer. (%i)\n", status);
@@ -499,7 +499,7 @@ int main(void) {
 	buffer_destroy_from_heap(resize_buffer);
 
 	//create buffer from string on heap
-	buffer_t *string_on_heap = buffer_create_from_string_on_heap("Hello world!");
+	Buffer *string_on_heap = buffer_create_from_string_on_heap("Hello world!");
 	if (sodium_memcmp(string_on_heap->content, "Hello world!", sizeof("Hello world!")) != 0) {
 		fprintf(stderr, "ERROR: Failed to create buffer from string on heap!\n");
 		return EXIT_FAILURE;
@@ -536,7 +536,7 @@ int main(void) {
 
 	//clone buffer to hex
 	buffer_create_from_string(newline, "\r\n");
-	buffer_t *newline_hex = buffer_create(2 * newline->content_length + 1, 0);
+	Buffer *newline_hex = buffer_create(2 * newline->content_length + 1, 0);
 
 	status = buffer_clone_as_hex(newline_hex, newline);
 	if (status != 0) {
@@ -552,7 +552,7 @@ int main(void) {
 	printf("Hex-Buffer: %.*s\n", (int)newline_hex->content_length, (char*)newline_hex->content);
 
 	//clone buffer from hex
-	buffer_t *newline2 = buffer_create(sizeof(newline), sizeof(newline));
+	Buffer *newline2 = buffer_create(sizeof(newline), sizeof(newline));
 	status = buffer_clone_from_hex(newline2, newline_hex);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to clone buffer from hex digits. (%i)\n", status);
@@ -566,7 +566,7 @@ int main(void) {
 	}
 
 	//test custom allocator
-	buffer_t *custom_allocated = buffer_create_with_custom_allocator(10, 10, sodium_malloc, sodium_free);
+	Buffer *custom_allocated = buffer_create_with_custom_allocator(10, 10, sodium_malloc, sodium_free);
 	if (custom_allocated == nullptr) {
 		fprintf(stderr, "ERROR: Failed to create buffer with custom allocator!\n");
 		return EXIT_FAILURE;
@@ -574,47 +574,47 @@ int main(void) {
 	buffer_destroy_with_custom_deallocator(custom_allocated, sodium_free);
 
 	//test buffer_fill
-	buffer_t *buffer_to_be_filled = buffer_create_on_heap(10, 0);
+	Buffer *Buffero_be_filled = buffer_create_on_heap(10, 0);
 
-	buffer_to_be_filled->readonly = true;
-	status = buffer_fill(buffer_to_be_filled, 'c', buffer_to_be_filled->buffer_length);
+	Buffero_be_filled->readonly = true;
+	status = buffer_fill(Buffero_be_filled, 'c', Buffero_be_filled->buffer_length);
 	if (status != -1) {
 		fprintf(stderr, "ERROR: buffer_fill() did not respect the read-only attribute of the buffer. (%i)\n", status);
 		return EXIT_FAILURE;
 	}
-	buffer_to_be_filled->readonly = false;
+	Buffero_be_filled->readonly = false;
 
-	status = buffer_fill(buffer_to_be_filled, 'c', buffer_to_be_filled->buffer_length + 1);
+	status = buffer_fill(Buffero_be_filled, 'c', Buffero_be_filled->buffer_length + 1);
 	if (status != -1) {
 		fprintf(stderr, "ERROR: buffer_fill() overflowed the buffer. (%i)\n", status);
 		return EXIT_FAILURE;
 	}
 
-	status = buffer_fill(buffer_to_be_filled, 'c', buffer_to_be_filled->buffer_length);
+	status = buffer_fill(Buffero_be_filled, 'c', Buffero_be_filled->buffer_length);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Buffer couldn't be filled with character. (%i)\n", status);
 		return EXIT_FAILURE;
 	}
 
 	unsigned char raw_value[] = {'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c'};
-	if (buffer_compare_to_raw(buffer_to_be_filled, raw_value, sizeof(raw_value)) != 0) {
+	if (buffer_compare_to_raw(Buffero_be_filled, raw_value, sizeof(raw_value)) != 0) {
 		fprintf(stderr, "ERROR: Buffer didn't contain the correct value after filling.\n");
 		return EXIT_FAILURE;
 	}
 
-	status = buffer_fill(buffer_to_be_filled, 'c', buffer_to_be_filled->buffer_length - 1);
+	status = buffer_fill(Buffero_be_filled, 'c', Buffero_be_filled->buffer_length - 1);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Buffer couldn't be filled with character. (%i)\n", status);
 		return EXIT_FAILURE;
 	}
-	if (buffer_to_be_filled->content_length != (buffer_to_be_filled->buffer_length - 1)) {
+	if (Buffero_be_filled->content_length != (Buffero_be_filled->buffer_length - 1)) {
 		fprintf(stderr, "ERROR: Content length wasn't set correctly.\n");
 		return EXIT_FAILURE;
 	}
 
-	buffer_destroy_from_heap(buffer_to_be_filled);
+	buffer_destroy_from_heap(Buffero_be_filled);
 
-	buffer_t *custom_allocated_empty_buffer = buffer_create_with_custom_allocator(0, 0, malloc, free);
+	Buffer *custom_allocated_empty_buffer = buffer_create_with_custom_allocator(0, 0, malloc, free);
 	if (custom_allocated_empty_buffer == nullptr) {
 		fprintf(stderr, "ERROR: Failed to customly allocate empty buffer.\n");
 		return EXIT_FAILURE;

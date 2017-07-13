@@ -34,9 +34,9 @@ extern "C" {
 typedef struct prekey_store_node prekey_store_node;
 struct prekey_store_node {
 	prekey_store_node *next;
-	buffer_t public_key[1];
+	Buffer public_key[1];
 	unsigned char public_key_storage[PUBLIC_KEY_SIZE];
-	buffer_t private_key[1];
+	Buffer private_key[1];
 	unsigned char private_key_storage[PRIVATE_KEY_SIZE];
 	time_t expiration_date;
 };
@@ -61,8 +61,8 @@ return_status prekey_store_create(prekey_store ** const store) __attribute__((wa
  */
 return_status prekey_store_get_prekey(
 		prekey_store * const store,
-		const buffer_t * const public_key, //input
-		buffer_t * const private_key) __attribute__((warn_unused_result)); //output
+		const Buffer * const public_key, //input
+		Buffer * const private_key) __attribute__((warn_unused_result)); //output
 
 /*
  * Generate a list containing all public prekeys.
@@ -70,7 +70,7 @@ return_status prekey_store_get_prekey(
  */
 return_status prekey_store_list(
 		prekey_store * const store,
-		buffer_t * const list) __attribute__((warn_unused_result)); //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+		Buffer * const list) __attribute__((warn_unused_result)); //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 
 /*
  * Automatically deprecate old keys and generate new ones
