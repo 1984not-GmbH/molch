@@ -65,7 +65,7 @@ return_status derive_key(
 
 	//fill the salt with a big endian representation of the subkey counter
 	buffer_create_with_existing_array(big_endian_subkey_counter, salt->content + salt->content_length - sizeof(uint32_t), sizeof(uint32_t));
-	status = endianness_uint32_to_big_endian(subkey_counter, big_endian_subkey_counter);
+	status = to_big_endian(subkey_counter, big_endian_subkey_counter);
 	THROW_on_error(CONVERSION_ERROR, "Failed to convert subkey counter to big endian.");
 
 	{

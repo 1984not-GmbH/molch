@@ -25,8 +25,7 @@
  */
 
 #include <cstdbool>
-#include <cstdint>
-#include <ctime>
+#include <algorithm>
 
 #include "common.h"
 #include "buffer.h"
@@ -40,73 +39,54 @@
 bool endianness_is_little_endian(void);
 
 /*
- * Copy a 32 bit unsigned integer to a buffer in big endian format.
+ * Convert any integer type to a buffer in big endian format.
  */
-return_status endianness_uint32_to_big_endian(
-		uint32_t integer,
-		Buffer * const output) __attribute__((warn_unused_result));
+template <typename IntegerType>
+return_status to_big_endian(IntegerType integer, Buffer * const output) {
+	return_status status = return_status_init();
+	unsigned char& reference = reinterpret_cast<unsigned char&>(integer);
+
+	if ((output == nullptr) || (output->getBufferLength() < sizeof(IntegerType))) {
+		THROW(INVALID_INPUT, "Invalid input to endianness to big endian.");
+	}
+
+	if (endianness_is_little_endian()) {
+		std::reverse(&reference, &reference + sizeof(integer));
+	}
+
+	if (buffer_clone_from_raw(output, &reference, sizeof(integer)) != 0) {
+		THROW(BUFFER_ERROR, "Failed to copy number.");
+	}
+
+cleanup:
+	return status;
+}
 
 /*
- * Get a 32 bit unsigned integer from a buffer in big endian format.
+ * Get an integer from a buffer in big endian format.
  */
-return_status endianness_uint32_from_big_endian(
-		uint32_t *integer,
-		Buffer * const buffer) __attribute__((warn_unused_result));
+template <typename IntegerType>
+return_status from_big_endian(IntegerType *integer, Buffer * const buffer) {
+	return_status status = return_status_init();
 
-/*
- * Copy a 32 bit signed integer to a buffer in big endian format.
- */
-return_status endianness_int32_to_big_endian(
-		int32_t integer,
-		Buffer * const output) __attribute__((warn_unused_result));
+	if ((integer == nullptr) || (buffer == nullptr) || (buffer->content_length != sizeof(IntegerType))) {
+		THROW(INVALID_INPUT, "Invalid input to from_big_endian.");
+	}
 
-/*
- * Get a 32 bit signed integer from a buffer in big endian format.
- */
-return_status endianness_int32_from_big_endian(
-		int32_t *integer,
-		Buffer * const buffer) __attribute__((warn_unused_result));
+	{
+		unsigned char& reference = reinterpret_cast<unsigned char&>(*integer);
 
-/*
- * Copy a 64 bit unsigned integer to a buffer in big endian format.
- */
-return_status endianness_uint64_to_big_endian(
-		uint64_t integer,
-		Buffer * const output) __attribute__((warn_unused_result));
+		if (buffer_clone_to_raw(&reference, sizeof(IntegerType), buffer) != 0) {
+			THROW(BUFFER_ERROR, "Failed to copy number.");
+		}
 
-/*
- * Get a 64 bit unsigned integer from a buffer in big endian format.
- */
-return_status endianness_uint64_from_big_endian(
-		uint64_t *integer,
-		Buffer * const buffer) __attribute__((warn_unused_result));
+		if (endianness_is_little_endian()) {
+			std::reverse(&reference, &reference + sizeof(IntegerType));
+		}
+	}
 
-/*
- * Copy a 64 bit unsigned integer to a buffer in big endian format.
- */
-return_status endianness_int64_to_big_endian(
-		int64_t integer,
-		Buffer * const output) __attribute__((warn_unused_result));
-
-/*
- * Get a 64 bit signed integer from a buffer in big endian format.
- */
-return_status endianness_int64_from_big_endian(
-		int64_t *integer,
-		Buffer * const buffer) __attribute__((warn_unused_result));
-
-/*
- * Copy a time_t value to a 64 bit signed integer in a buffer in big endian format
- */
-return_status endianness_time_to_big_endian(
-		time_t time,
-		Buffer * const output) __attribute__((warn_unused_result));
-
-/*
- * Get a time_t from a buffer in big endian format.
- */
-return_status endianness_time_from_big_endian(
-		time_t *time,
-		Buffer * const buffer) __attribute__((warn_unused_result));
+cleanup:
+	return status;
+}
 
 #endif
