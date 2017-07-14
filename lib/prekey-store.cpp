@@ -26,8 +26,8 @@
 #include "prekey-store.h"
 #include "common.h"
 
-static const time_t PREKEY_EXPIRATION_TIME = 3600 * 24 * 31; //one month
-static const time_t DEPRECATED_PREKEY_EXPIRATION_TIME = 3600; //one hour
+static const int64_t PREKEY_EXPIRATION_TIME = 3600 * 24 * 31; //one month
+static const int64_t DEPRECATED_PREKEY_EXPIRATION_TIME = 3600; //one hour
 
 static void node_init(prekey_store_node * const node) {
 	if (node == nullptr) {
@@ -253,7 +253,7 @@ cleanup:
 return_status prekey_store_rotate(prekey_store * const store) {
 	return_status status = return_status_init();
 
-	time_t current_time = time(nullptr);
+	int64_t current_time = time(nullptr);
 
 	if (store == nullptr) {
 		THROW(INVALID_INPUT, "Invalid input to prekey_store_rotate: store is nullptr.");
@@ -278,7 +278,7 @@ return_status prekey_store_rotate(prekey_store * const store) {
 
 	//At least one outdated prekey
 	{
-		time_t new_oldest_expiration_date = current_time + PREKEY_EXPIRATION_TIME;
+		int64_t new_oldest_expiration_date = current_time + PREKEY_EXPIRATION_TIME;
 		if (store->oldest_expiration_date < current_time) {
 			for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
 				if (store->prekeys[i].expiration_date < current_time) {
@@ -308,7 +308,7 @@ return_status prekey_store_rotate(prekey_store * const store) {
 
 	//At least one key to be removed
 	{
-		time_t new_oldest_deprecated_expiration_date = current_time + DEPRECATED_PREKEY_EXPIRATION_TIME;
+		int64_t new_oldest_deprecated_expiration_date = current_time + DEPRECATED_PREKEY_EXPIRATION_TIME;
 		if ((store->deprecated_prekeys != nullptr) && (store->oldest_deprecated_expiration_date < current_time)) {
 			prekey_store_node **last_pointer = &(store->deprecated_prekeys);
 			prekey_store_node *next = store->deprecated_prekeys;
@@ -549,7 +549,7 @@ static return_status prekey_store_node_import(prekey_store_node * const node, co
 		node->private_key->content_length = PRIVATE_KEY_SIZE;
 	}
 
-	node->expiration_date = (time_t)keypair->expiration_time;
+	node->expiration_date = (int64_t)keypair->expiration_time;
 
 cleanup:
 	on_error {

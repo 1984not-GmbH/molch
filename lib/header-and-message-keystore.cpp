@@ -31,7 +31,7 @@ extern "C" {
 	#include <key_bundle.pb-c.h>
 }
 
-static const time_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
+static const int64_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
 
 //create new keystore
 void header_and_message_keystore_init(header_and_message_keystore * const keystore) {
@@ -87,12 +87,12 @@ static void add_node(header_and_message_keystore * const keystore, header_and_me
 
 return_status create_and_populate_node(
 		header_and_message_keystore_node ** const new_node,
-		const time_t expiration_date,
+		const int64_t expiration_date,
 		Buffer * const header_key,
 		Buffer * const message_key) __attribute__((warn_unused_result));
 return_status create_and_populate_node(
 		header_and_message_keystore_node ** const new_node,
-		const time_t expiration_date,
+		const int64_t expiration_date,
 		Buffer * const header_key,
 		Buffer * const message_key) {
 	return_status status = return_status_init();
@@ -141,7 +141,7 @@ return_status header_and_message_keystore_add(
 
 	header_and_message_keystore_node *new_node = nullptr;
 
-	time_t expiration_date = time(nullptr) + EXPIRATION_TIME;
+	int64_t expiration_date = time(nullptr) + EXPIRATION_TIME;
 
 	status = create_and_populate_node(&new_node, expiration_date, header_key, message_key);
 	THROW_on_error(INIT_ERROR, "Failed to populate node.")
@@ -356,7 +356,7 @@ return_status header_and_message_keystore_import(
 		buffer_create_with_existing_array(message_key, current_key_bundle->message_key->key.data, current_key_bundle->message_key->key.len);
 
 		//create new node
-		status = create_and_populate_node(&current_node, (time_t)current_key_bundle->expiration_time, header_key, message_key);
+		status = create_and_populate_node(&current_node, (int64_t)current_key_bundle->expiration_time, header_key, message_key);
 		THROW_on_error(CREATION_ERROR, "Failed to create header_and_message_keystore_node.");
 
 		add_node(store, current_node);

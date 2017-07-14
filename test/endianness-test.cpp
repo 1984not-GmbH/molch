@@ -126,24 +126,6 @@ int main(void) {
 		printf("Successfully converted back!\n\n");
 	}
 
-	//time_t -> big endian
-	{
-		time_t timestamp = time(nullptr);
-		status = to_big_endian(timestamp, buffer64);
-		THROW_on_error(CONVERSION_ERROR, "Failed to convert time_t to big endian.");
-		printf("time_t %llu to big endian:\n", (unsigned long long) timestamp);
-		print_hex(buffer64);
-
-		//time_t <- big endian
-		time_t time_from_big_endian;
-		status = from_big_endian(&time_from_big_endian, buffer64);
-		THROW_on_error(CONVERSION_ERROR, "Failed to convert big endian to time_t.");
-		if (timestamp != time_from_big_endian) {
-			THROW(INCORRECT_DATA, "time_t from big endian is incorrect.");
-		}
-		printf("Successfully converted back!\n\n");
-	}
-
 cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(buffer64);
 	buffer_destroy_from_heap_and_null_if_valid(buffer32);
