@@ -94,7 +94,6 @@ public:
 	size_t getBufferLength();
 	bool isReadOnly();
 	void setReadOnly(bool readonly);
-
 };
 
 /*
@@ -123,14 +122,6 @@ Buffer *buffer_create_with_custom_allocator(
  * Create a new buffer from a string literal on heap.
  */
 #define buffer_create_from_string_on_heap(string) buffer_create_on_heap(sizeof(string), sizeof(string))->create_from_string_on_heap_helper((const unsigned char*) string, sizeof(string))
-
-/*
- * Create hexadecimal string from a buffer.
- *
- * The output buffer has to be at least twice
- * as large as the input data plus one.
- */
-int Buffero_hex(Buffer * const hex, Buffer * const data) __attribute__((warn_unused_result));
 
 /*
  * Macro to create a buffer with already existing data without cloning it.
@@ -209,23 +200,6 @@ int buffer_clone_from_raw(
 		Buffer * const destination,
 		const unsigned char * const source,
 		const size_t length) __attribute__((warn_unused_result));
-
-/*
- * Write the contents of a buffer with hexadecimal digits to a buffer with
- * binary data.
- * The destination buffer size needs to be at least half the size of the input.
- */
-int buffer_clone_from_hex(
-		Buffer * const destination,
-		Buffer * const source) __attribute((warn_unused_result));
-
-/*
- * Write the contents of a buffer into another buffer as hexadecimal digits.
- * Note that the destination buffer needs to be twice the size of the source buffers content.
- */
-int buffer_clone_as_hex(
-		Buffer * const destination,
-		Buffer * const source) __attribute((warn_unused_result));
 
 /*
  * Copy from a buffer to a raw array.

@@ -140,28 +140,6 @@ Buffer *buffer_create_with_custom_allocator(
 }
 
 /*
- * Create hexadecimal string from a buffer.
- *
- * The output buffer has to be at least twice
- * as large as the input data plus one.
- */
-int Buffero_hex(Buffer * const hex, Buffer * const data) {
-	//check size
-	if (hex->getBufferLength() < (data->content_length * 2 + 1)) {
-		return -6;
-	}
-
-	if (sodium_bin2hex((char*)hex->content, hex->getBufferLength(), data->content, data->content_length) == nullptr) {
-		sodium_memzero(hex->content, hex->getBufferLength());
-		hex->content_length = 0;
-		return -10;
-	}
-
-	hex->content_length = 2 * data->content_length + 1;
-	return 0;
-}
-
-/*
  * Free and clear a heap allocated buffer.
  */
 void Buffer::destroy_from_heap() {
@@ -380,81 +358,6 @@ int buffer_clone_from_raw(
 			source,
 			0,
 			length);
-}
-
-/*
- * Write the contents of a buffer with hexadecimal digits to a buffer with
- * binary data.
- * The destination buffer size needs to be at least half the size of the input.
- */
-int buffer_clone_from_hex(
-		Buffer * const destination,
-		Buffer * const source) {
-	if ((destination == nullptr) || (source == nullptr)) {
-		return -1;
-	}
-
-	if (destination->isReadOnly()) {
-		return -5;
-	}
-
-	destination->content_length = 0;
-
-	if (destination->getBufferLength() < (source->content_length / 2)) {
-		return -6;
-	}
-
-	size_t length; //number of bytes written
-	int status = sodium_hex2bin(
-				destination->content, destination->getBufferLength(),
-				(const char*) source->content, source->content_length,
-				nullptr,
-				&length,
-				nullptr);
-	if (status != 0) {
-		destination->clear();
-		return -7;
-	}
-
-	if (length != (source->content_length / 2)) {
-		destination->clear();
-		return -8;
-	}
-
-	destination->content_length = length;
-
-	return 0;
-}
-
-/*
- * Write the contents of a buffer into another buffer as hexadecimal digits.
- * Note that the destination buffer needs to be twice the size of the source buffers content plus one.
- */
-int buffer_clone_as_hex(
-		Buffer * const destination,
-		Buffer * const source) {
-	if ((destination == nullptr) || (source == nullptr)) {
-		return -1;
-	}
-
-	if (destination->isReadOnly()) {
-		return -5;
-	}
-
-	destination->content_length = 0;
-
-	if (destination->getBufferLength() < (2 * source->content_length + 1)) {
-		return -6;
-	}
-
-	if (sodium_bin2hex((char*)destination->content, destination->getBufferLength(), (const unsigned char*)source->content, source->content_length) == nullptr) {
-		destination->clear();
-		return -7;
-	}
-
-	destination->content_length = 2 * source->content_length + 1;
-
-	return 0;
 }
 
 /*

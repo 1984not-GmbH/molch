@@ -29,27 +29,31 @@
 void print_hex(Buffer * const data) {
 	static const size_t WIDTH = 30;
 	//buffer for hex string
-	Buffer *hex = buffer_create_on_heap(2 * data->content_length + 1, 2 * data->content_length + 1);
-
-	if (buffer_clone_as_hex(hex, data) != 0) {
-		fprintf(stderr, "ERROR: Failed printing hex.\n");
-		buffer_destroy_from_heap_and_null_if_valid(hex);
-		return;
+	const size_t hex_length = data->content_length * 2 + sizeof("");
+	char *hex = (char*)malloc(hex_length);
+	if (hex == NULL) {
+		fprintf(stderr, "Failed to print hex data.");
+		exit(EXIT_FAILURE);
 	}
 
-	for (size_t i = 0; i < 2 * data->content_length; i++) {
+	if (sodium_bin2hex(hex, hex_length, data->content, data->content_length) == NULL) {
+		fprintf(stderr, "Failed to print hex data.");
+		exit(EXIT_FAILURE);
+	}
+
+	for (size_t i = 0; i < hex_length; i++) {
 		if ((WIDTH != 0) && ((i % WIDTH) == 0) && (i != 0)) {
 			putchar('\n');
 		} else if ((i % 2 == 0) && (i != 0)) {
 			putchar(' ');
 		}
-		putchar(hex->content[i]);
+		putchar(hex[i]);
 	}
 
 	putchar('\n');
 
 	//cleanup
-	buffer_destroy_from_heap_and_null_if_valid(hex);
+	free(hex);
 }
 
 void print_to_file(Buffer * const data, const char * const filename) {

@@ -26,22 +26,7 @@
 
 #include "../lib/buffer.h"
 #include "../lib/common.h"
-
-static void print_hex(Buffer *data) {
-	Buffer *hex = buffer_create_on_heap(2 * data->content_length + 1, 2 * data->content_length + 1);
-	if (hex == NULL) {
-		fprintf(stderr, "ERROR: Failed to create hex buffer.\n");
-		exit(-1);
-	}
-	int status = Buffero_hex(hex, data);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to print data as hex! (%i)\n", status);
-		exit(-1);
-	}
-	printf("%.*s\n", (int)hex->content_length, hex->content);
-
-	buffer_destroy_from_heap_and_null_if_valid(hex);
-}
+#include "utils.h"
 
 int main(void) {
 	int status = EXIT_SUCCESS;
@@ -62,8 +47,6 @@ int main(void) {
 	Buffer *to_xor = NULL;
 	Buffer *character_buffer = NULL;
 	Buffer *set_buffer = NULL;
-	Buffer *newline_hex = NULL;
-	Buffer *newline2 = NULL;
 	Buffer *heap_buffer = NULL;
 	Buffer *string_on_heap = NULL;
 	Buffer *custom_allocated_empty_buffer = NULL;
@@ -476,37 +459,6 @@ int main(void) {
 		goto fail;
 	}
 
-	//clone buffer to hex
-	buffer_create_from_string(newline, "\r\n");
-	newline_hex = buffer_create_on_heap(2 * newline->content_length + 1, 0);
-
-	status = buffer_clone_as_hex(newline_hex, newline);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to clone buffer as hex digits. (%i)\n", status);
-		goto fail;
-	}
-
-	buffer_create_from_string(cr_newline, "0d0a00");
-	if (buffer_compare(cr_newline, newline_hex) != 0) {
-		fprintf(stderr, "ERROR: Buffer cloned as hex is incorrect.\n");
-		goto fail;
-	}
-	printf("Hex-Buffer: %.*s\n", (int)newline_hex->content_length, (char*)newline_hex->content);
-
-	//clone buffer from hex
-	newline2 = buffer_create_on_heap(sizeof(newline), sizeof(newline));
-	status = buffer_clone_from_hex(newline2, newline_hex);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to clone buffer from hex digits. (%i)\n", status);
-		goto fail;
-	}
-
-	buffer_create_from_string(newline3, "\r\n");
-	if (buffer_compare(newline3, newline2) != 0) {
-		fprintf(stderr, "ERROR: Buffer cloned from hex is incorrect.\n");
-		goto fail;
-	}
-
 	//test custom allocator
 	custom_allocated = buffer_create_with_custom_allocator(10, 10, sodium_malloc, sodium_free);
 	if (custom_allocated == nullptr) {
@@ -581,8 +533,6 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(to_xor);
 	buffer_destroy_from_heap_and_null_if_valid(character_buffer);
 	buffer_destroy_from_heap_and_null_if_valid(set_buffer);
-	buffer_destroy_from_heap_and_null_if_valid(newline_hex);
-	buffer_destroy_from_heap_and_null_if_valid(newline2);
 	buffer_destroy_from_heap_and_null_if_valid(string_on_heap);
 	buffer_destroy_from_heap_and_null_if_valid(buffer_to_be_filled);
 	buffer_destroy_with_custom_deallocator_and_null_if_valid(custom_allocated_empty_buffer, free);
