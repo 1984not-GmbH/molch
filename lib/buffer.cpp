@@ -189,26 +189,6 @@ void Buffer::clear() {
 }
 
 /*
- * Concatenate a buffer to the first.
- *
- * Return 0 on success.
- */
-int buffer_concat(
-		Buffer * const destination,
-		Buffer * const source) {
-	if (destination->isReadOnly()) {
-		return -5;
-	}
-
-	return buffer_copy(
-			destination,
-			destination->content_length,
-			source,
-			0,
-			source->content_length);
-}
-
-/*
  * Copy parts of a buffer to another buffer.
  *
  * Returns 0 on success.
@@ -523,109 +503,6 @@ int buffer_xor(
 	for (size_t i = 0; i < destination->content_length; i++) {
 		destination->content[i] ^= source->content[i];
 	}
-
-	return 0;
-}
-
-/*
- * Set a single character in a buffer.
- */
-int buffer_set_at(
-		Buffer * const buffer,
-		const size_t pos,
-		const unsigned char character) {
-	if (buffer->isReadOnly()) {
-		return -5;
-	}
-	if (pos >= buffer->content_length) {
-		return -6;
-	}
-
-	buffer->content[pos] = character;
-
-	return 0;
-}
-
-/*
- * Set parts of a buffer to a given character.
- */
-int buffer_memset_partial(
-		Buffer * const buffer,
-		const unsigned char character,
-		const size_t length) {
-	if (buffer->isReadOnly()) {
-		return -5;
-	}
-
-	if ((length == 0) || (buffer->getBufferLength() == 0)) {
-		return 0;
-	}
-
-	if (length > buffer->getBufferLength()) {
-		return -6;
-	}
-
-	if (character == 0x00) {
-		sodium_memzero(buffer->content, length);
-		buffer->content_length = length;
-		return 0;
-	}
-
-	buffer->content_length = length;
-	std::fill(buffer->content, buffer->content + buffer->content_length, character);
-
-	return 0;
-}
-
-/*
- * Set the entire buffer to a given character.
- * (content_length is used as the length, not buffer_length)
- */
-void buffer_memset(
-		Buffer * const buffer,
-		const unsigned char character) {
-	int status __attribute__((unused));
-	status = buffer_memset_partial(buffer, character, buffer->content_length);
-}
-
-/*
- * Get the content of a buffer at buffer->position.
- *
- * Returns '\0' when out of bounds.
- */
-unsigned char buffer_get_at_pos(Buffer * const buffer) {
-	if ((buffer->position > buffer->content_length) || (buffer->position > buffer->getBufferLength())) {
-		return '\0';
-	}
-
-	return buffer->content[buffer->position];
-}
-
-/*
- * Set a character at buffer->position.
- *
- * Returns 0 if not out of bounds.
- */
-int buffer_set_at_pos(Buffer * const buffer, const unsigned char character) {
-	if ((buffer->position > buffer->getBufferLength()) || (buffer->position > buffer->content_length)) {
-		return -6;
-	}
-	buffer->content[buffer->position] = character;
-	return 0;
-}
-
-/*
- * Fill a buffer with a specified amount of a given value.
- *
- * Returns 0 on success
- */
-int buffer_fill(Buffer * const buffer, const unsigned char character, size_t length) {
-	if ((buffer->isReadOnly()) || (length > buffer->getBufferLength())) {
-		return -1;
-	}
-
-	std::fill(buffer->content, buffer->content + length, character);
-	buffer->content_length = length;
 
 	return 0;
 }

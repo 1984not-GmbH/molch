@@ -134,15 +134,6 @@ Buffer *buffer_create_with_custom_allocator(
 #define buffer_create_with_existing_const_array(name, array, length) Buffer name[1]; name->init_with_pointer_to_const(array, length, length)
 
 /*
- * Concatenate a buffer to the first.
- *
- * Return 0 on success.
- */
-int buffer_concat(
-		Buffer * const destination,
-		Buffer * const source) __attribute__((warn_unused_result));
-
-/*
  * Copy parts of a buffer to another buffer.
  *
  * Returns 0 on success.
@@ -176,18 +167,6 @@ int buffer_copy_from_raw(
 		const unsigned char * const source,
 		const size_t source_offset,
 		const size_t copy_length) __attribute__((warn_unused_result));
-
-/*
- * Copy the content of a raw array to the
- * beginning of a buffer, setting the buffers
- * content length to the length that was copied.
- *
- * Returns 0 on success.
- */
-int buffer_clone_from_raw(
-		Buffer * const destination,
-		const unsigned char * const source,
-		const size_t length) __attribute__((warn_unused_result));
 
 /*
  * Copy the content of a raw array to the
@@ -244,11 +223,6 @@ int buffer_compare_to_raw(
 		const size_t array_length) __attribute__((warn_unused_result));
 
 /*
- * Macro to compare a buffer to a string.
- */
-#define buffer_compare_to_string(buffer, string) buffer_compare_to_raw(buffer, (const unsigned char*)string, sizeof(string))
-
-/*
  * Compare parts of two buffers.
  *
  * Returns 0 if both buffers match.
@@ -286,50 +260,4 @@ int buffer_fill_random(
 int buffer_xor(
 		Buffer * const destination,
 		Buffer * const source) __attribute__((warn_unused_result));
-
-/*
- * Set a single character in a buffer.
- */
-int buffer_set_at(
-		Buffer * const buffer,
-		const size_t pos,
-		const unsigned char character) __attribute__((warn_unused_result));
-
-/*
- * Set parts of a buffer to a given character.
- * ( sets the content length to the given length! )
- */
-int buffer_memset_partial(
-		Buffer * const buffer,
-		const unsigned char character,
-		const size_t length) __attribute__((warn_unused_result));
-
-/*
- * Set the entire buffer to a given character.
- * (content_length is used as the length, not buffer_length)
- */
-void buffer_memset(
-		Buffer * const buffer,
-		const unsigned char character);
-
-/*
- * Get the content of a buffer at buffer->position.
- *
- * Returns '\0' when out of bounds.
- */
-unsigned char buffer_get_at_pos(Buffer * const buffer);
-
-/*
- * Set a character at buffer->position.
- *
- * Returns 0 if not out of bounds.
- */
-int buffer_set_at_pos(Buffer * const buffer, const unsigned char character);
-
-/*
- * Fill a buffer with a specified amount of a given value.
- *
- * Returns 0 on success
- */
-int buffer_fill(Buffer * const buffer, const unsigned char character, size_t length) __attribute__((warn_unused_result));
 #endif
