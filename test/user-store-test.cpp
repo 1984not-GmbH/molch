@@ -19,11 +19,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
 #include <cassert>
-#include <cstring>
 
 #include "../lib/user-store.h"
 #include "utils.h"
@@ -61,7 +61,7 @@ return_status protobuf_export(
 	THROW_on_failed_alloc(*export_buffers);
 
 	//initialize pointers with nullptr
-	memset(*export_buffers, '\0', length * sizeof(Buffer*));
+	std::fill(*export_buffers, *export_buffers + length, nullptr);
 	*buffer_count = length;
 
 	//unpack all the conversations

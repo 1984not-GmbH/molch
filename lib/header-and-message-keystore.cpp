@@ -19,7 +19,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <cstring>
+#include <algorithm>
 
 #include "common.h"
 #include "constants.h"
@@ -282,7 +282,7 @@ return_status header_and_message_keystore_export(
 		*key_bundles = (KeyBundle**)zeroed_malloc(store->length * sizeof(KeyBundle));
 		THROW_on_failed_alloc(*key_bundles);
 		//initialize with nullptr pointers
-		memset(*key_bundles, '\0', store->length * sizeof(KeyBundle));
+		std::fill(*key_bundles, *key_bundles + store->length, nullptr);
 	} else {
 		*key_bundles = nullptr;
 	}

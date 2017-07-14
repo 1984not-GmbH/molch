@@ -19,7 +19,7 @@
  */
 
 #include <sodium.h>
-#include <cstring>
+#include <algorithm>
 
 #include "buffer.h"
 
@@ -268,7 +268,7 @@ int buffer_copy(
 		return -11;
 	}
 
-	memcpy(destination->content + destination_offset, source->content + source_offset, copy_length);
+	std::copy(source->content + source_offset, source->content + source_offset + copy_length, destination->content + destination_offset);
 	destination->content_length = (destination->content_length > destination_offset + copy_length)
 		? destination->content_length
 		: destination_offset + copy_length;
@@ -345,7 +345,7 @@ int buffer_copy_from_raw(
 		return 0;
 	}
 
-	memcpy(destination->content + destination_offset, source + source_offset, copy_length);
+	std::copy(source + source_offset, source + source_offset + copy_length, destination->content + destination_offset);
 	destination->content_length = (destination->content_length > destination_offset + copy_length)
 		? destination->content_length
 		: destination_offset + copy_length;
@@ -482,7 +482,7 @@ int buffer_copy_to_raw(
 		return 0;
 	}
 
-	memcpy(destination + destination_offset, source->content + source_offset, copy_length);
+	std::copy(source->content + source_offset, source->content + source_offset + copy_length, destination + destination_offset);
 
 	return 0;
 }
@@ -669,7 +669,7 @@ int buffer_memset_partial(
 	}
 
 	buffer->content_length = length;
-	memset(buffer->content, character, buffer->content_length);
+	std::fill(buffer->content, buffer->content + buffer->content_length, character);
 
 	return 0;
 }
@@ -721,7 +721,7 @@ int buffer_fill(Buffer * const buffer, const unsigned char character, size_t len
 		return -1;
 	}
 
-	memset(buffer->content, character, length);
+	std::fill(buffer->content, buffer->content + length, character);
 	buffer->content_length = length;
 
 	return 0;

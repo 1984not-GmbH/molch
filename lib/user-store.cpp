@@ -19,7 +19,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <cstring>
+#include <algorithm>
 #include <cassert>
 
 #include "constants.h"
@@ -422,7 +422,7 @@ return_status user_store_export(
 	if (store->length > 0) {
 		*users = (User**)zeroed_malloc(store->length * sizeof(User*));
 		THROW_on_failed_alloc(*users);
-		memset(*users, '\0', store->length * sizeof(User*));
+		std::fill(*users, *users + store->length, nullptr);
 
 		size_t i = 0;
 		user_store_node *node = nullptr;

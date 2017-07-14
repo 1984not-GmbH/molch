@@ -21,7 +21,6 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <cstring>
 #include <sodium.h>
 
 #include "../lib/key-derivation.h"

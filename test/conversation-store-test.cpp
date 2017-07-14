@@ -19,11 +19,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
 #include <cassert>
-#include <cstring>
 
 #include "../lib/conversation-store.h"
 #include "utils.h"
@@ -106,7 +106,7 @@ return_status protobuf_import(
 	if (length > 0) {
 		conversations = (Conversation**)zeroed_malloc(length * sizeof(Conversation*));
 		THROW_on_failed_alloc(conversations);
-		memset(conversations, '\0', length * sizeof(Conversation*));
+		std::fill(conversations, conversations + length, nullptr);
 	}
 
 	for (size_t i = 0; i < length; i++) {

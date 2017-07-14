@@ -19,7 +19,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <cstring>
+#include <algorithm>
 
 #include "conversation-store.h"
 
@@ -218,7 +218,7 @@ return_status conversation_store_export(
 		//allocate the array of conversations
 		*conversations = (Conversation**)zeroed_malloc(store->length * sizeof(Conversation*));
 		THROW_on_failed_alloc(*conversations);
-		memset(*conversations, '\0', store->length * sizeof(Conversation*));
+		std::fill(*conversations, *conversations + store->length, nullptr);
 	} else {
 		*conversations = nullptr;
 	}

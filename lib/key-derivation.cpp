@@ -20,7 +20,6 @@
  */
 #include <sodium.h>
 #include <cassert>
-#include <cstring>
 
 #include "constants.h"
 #include "key-derivation.h"

@@ -19,9 +19,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <algorithm>
 #include <cstdlib>
 #include <sodium.h>
-#include <cstring>
 
 #include "zeroed_malloc.h"
 #include "alignment.h"
@@ -41,17 +41,18 @@ void *zeroed_malloc(size_t size) {
 
 	size_t amount_to_allocate = size + sizeof(void*) + sizeof(size_t) + (alignof(max_align_t) - 1);
 
-	char * const malloced_address = (char*)malloc(amount_to_allocate);
+	unsigned char * malloced_address = (unsigned char*)malloc(amount_to_allocate);
 	if (malloced_address == nullptr) {
 		return nullptr;
 	}
 
-	char *aligned_address = (char*)next_aligned_address(malloced_address + sizeof(size_t) + sizeof(void*), alignof(intmax_t));
+	unsigned char *aligned_address = (unsigned char*)next_aligned_address(malloced_address + sizeof(size_t) + sizeof(void*), alignof(intmax_t));
 
-	//write the size in front of the algined address
-	memcpy(aligned_address - sizeof(size_t), &size, sizeof(size_t));
+	//NOTE: This has to be copied as bytes because of possible alignment issues
+	//write the size in front of the aligned address
+	std::copy((unsigned char*)&size, (unsigned char*)(&size + 1), aligned_address - sizeof(size_t));
 	//write the pointer from malloc in front of the size
-	memcpy(aligned_address - sizeof(size_t) - sizeof(void*), &malloced_address, sizeof(void*));
+	std::copy((unsigned char*)&malloced_address, (unsigned char*)(&malloced_address + 1), aligned_address - sizeof(size_t) - sizeof(void*));
 
 	return aligned_address;
 }
@@ -64,10 +65,11 @@ void zeroed_free(void *pointer) {
 	size_t size;
 	void *malloced_address;
 
+	//NOTE: This has to be copied as bytes because of possible alignment issues
 	//get the size
-	memcpy(&size, ((char*)pointer) - sizeof(size_t), sizeof(size_t));
+	std::copy(((unsigned char*)pointer) - sizeof(size_t), (unsigned char*)pointer, (unsigned char*)&size);
 	//get the original pointer
-	memcpy(&malloced_address, ((char*)pointer) - sizeof(size_t) - sizeof(void*), sizeof(void*));
+	std::copy(((unsigned char*)pointer) - sizeof(size_t) - sizeof(void*), ((unsigned char*)pointer) - sizeof(size_t), (unsigned char*)&malloced_address);
 
 	sodium_memzero(pointer, size);
 

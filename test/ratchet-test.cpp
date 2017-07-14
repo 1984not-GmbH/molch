@@ -22,7 +22,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
-#include <cstring>
 #include <cassert>
 
 #include "../lib/ratchet.h"

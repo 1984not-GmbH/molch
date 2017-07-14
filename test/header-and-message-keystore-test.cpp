@@ -19,11 +19,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
 #include <cassert>
-#include <cstring>
 
 extern "C" {
 	#include <key_bundle.pb-c.h>
@@ -51,7 +51,7 @@ static return_status protobuf_export(
 	THROW_on_failed_alloc(*export_buffers);
 
 	//initialize pointers with nullptr
-	memset(*export_buffers, '\0', (*bundles_size) * sizeof(Buffer *));
+	std::fill(*export_buffers, *export_buffers + *bundles_size, nullptr);
 
 	//create all the export buffers
 	for (size_t i = 0; i < (*bundles_size); i++) {
@@ -78,7 +78,7 @@ static return_status protobuf_import(
 	THROW_on_failed_alloc(key_bundles);
 
 	//set all pointers to nullptr
-	memset(key_bundles, '\n', buffers_size * sizeof(KeyBundle*));
+	std::fill(key_bundles, key_bundles + buffers_size, nullptr);
 
 	//parse all the exported protobuf buffers
 	for (size_t i = 0; i < buffers_size; i++) {

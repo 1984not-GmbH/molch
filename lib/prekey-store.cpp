@@ -20,8 +20,9 @@
  */
 
 #include <sodium.h>
+#include <algorithm>
 #include <climits>
-#include <cstring>
+
 #include "prekey-store.h"
 #include "common.h"
 
@@ -442,7 +443,7 @@ return_status prekey_store_export(
 	THROW_on_failed_alloc(*keypairs);
 
 	//initialize pointers with zero
-	memset(*keypairs, '\0', PREKEY_AMOUNT * sizeof(Prekey*));
+	std::fill(*keypairs, *keypairs + PREKEY_AMOUNT, nullptr);
 
 	deprecated_prekey_count = count_deprecated_prekeys(store);
 	if (deprecated_prekey_count > 0) {

@@ -19,10 +19,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
-#include <cstring>
 
 #include "../lib/prekey-store.h"
 #include "../lib/constants.h"
@@ -50,13 +50,13 @@ static return_status protobuf_export(
 	THROW_on_failed_alloc(*key_buffers);
 
 	//initialize pointers with nullptr
-	memset(*key_buffers, '\0', (*keypairs_size) * sizeof(Buffer*));
+	std::fill(*key_buffers, *key_buffers + *keypairs_size, nullptr);
 
 	*deprecated_key_buffers = (Buffer**)zeroed_malloc((*deprecated_keypairs_size) * sizeof(Buffer*));
 	THROW_on_failed_alloc(*deprecated_key_buffers);
 
 	//initialize pointers with nullptr
-	memset(*deprecated_key_buffers, '\0', (*deprecated_keypairs_size) * sizeof(Buffer*));
+	std::fill(*deprecated_key_buffers, *deprecated_key_buffers + *deprecated_keypairs_size, nullptr);
 
 	//export all the keypairs
 	for (size_t i = 0; i < (*keypairs_size); i++) {
@@ -96,10 +96,10 @@ static return_status protobuf_import(
 
 	keypairs = (Prekey**)zeroed_malloc(keypair_buffers_size * sizeof(Prekey*));
 	THROW_on_failed_alloc(keypairs);
-	memset(keypairs, '\0', keypair_buffers_size * sizeof(Prekey*));
+	std::fill(keypairs, keypairs + keypair_buffers_size, nullptr);
 
 	deprecated_keypairs = (Prekey**)zeroed_malloc(deprecated_keypair_buffers_size * sizeof(Prekey*));
-	memset(deprecated_keypairs, '\0', deprecated_keypair_buffers_size * sizeof(Prekey*));
+	std::fill(deprecated_keypairs, deprecated_keypairs + deprecated_keypair_buffers_size, nullptr);
 	THROW_on_failed_alloc(deprecated_keypairs);
 
 	//parse the normal prekey protobufs

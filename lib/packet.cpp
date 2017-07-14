@@ -22,7 +22,8 @@
 extern "C" {
 	#include <packet.pb-c.h>
 }
-#include <cstring>
+#include <algorithm>
+
 #include "packet.h"
 #include "constants.h"
 #include "zeroed_malloc.h"
@@ -250,7 +251,7 @@ return_status packet_encrypt(
 			THROW(BUFFER_ERROR, "Failed to clone message.");
 		}
 		//pad it
-		memset(padded_message->content + padded_message->content_length, padding, padding);
+		std::fill(padded_message->content + padded_message->content_length, padded_message->content + padded_message->content_length + padding, padding);
 		padded_message->content_length += padding;
 	}
 

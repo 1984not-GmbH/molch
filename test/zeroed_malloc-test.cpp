@@ -19,10 +19,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstdint>
-#include <cstring>
 
 #include "../lib/zeroed_malloc.h"
 #include "utils.h"
@@ -30,7 +30,7 @@
 int main(void) {
 	return_status status = return_status_init();
 
-	char * const pointer = (char*)zeroed_malloc(100);
+	unsigned char * const pointer = (unsigned char*)zeroed_malloc(100);
 	if (pointer == nullptr) {
 		THROW(ALLOCATION_FAILED, "Failed to allocate with zeroed_malloc.");
 	}
@@ -38,7 +38,7 @@ int main(void) {
 	printf("Checking size.\n");
 	{
 		size_t size = 0;
-		memcpy(&size, pointer - sizeof(size_t), sizeof(size_t));
+		std::copy(pointer - sizeof(size_t), pointer, (unsigned char*)&size);
 		if (size != 100) {
 			THROW(INCORRECT_DATA, "Size stored in the memory location is incorrect.");
 		}
@@ -47,8 +47,8 @@ int main(void) {
 
 	printf("Checking pointer.\n");
 	{
-		char *pointer_copy = nullptr;
-		memcpy(&pointer_copy, pointer - sizeof(size_t) - sizeof(void*), sizeof(void*));
+		unsigned char *pointer_copy = nullptr;
+		std::copy(pointer - sizeof(size_t) - sizeof(void*), pointer - sizeof(size_t), (unsigned char*)&pointer_copy);
 		printf("pointer_copy = %p\n", (void*)pointer_copy);
 	}
 

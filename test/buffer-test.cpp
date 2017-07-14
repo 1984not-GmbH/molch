@@ -18,10 +18,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
-#include <cstring>
 #include <cassert>
 
 #include "../lib/buffer.h"
@@ -85,7 +85,7 @@ int main(void) {
 	Buffer *buffer1 = buffer_create(14, 10);
 	unsigned char buffer1_content[10];
 	randombytes_buf(buffer1_content, sizeof(buffer1_content));
-	memcpy(buffer1->content, buffer1_content, sizeof(buffer1_content));
+	std::copy(buffer1_content, buffer1_content + sizeof(buffer1_content), buffer1->content);
 	printf("Here\n");
 
 	printf("Random buffer (%zu Bytes):\n", buffer1->content_length);
