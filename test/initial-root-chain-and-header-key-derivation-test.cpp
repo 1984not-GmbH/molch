@@ -182,7 +182,7 @@ int main(void) {
 	putchar('\n');
 
 	//compare Alice's and Bob's initial root key
-	if (buffer_compare(alice_root_key, bob_root_key) != 0) {
+	if (alice_root_key->compare(bob_root_key) != 0) {
 		THROW(INCORRECT_DATA, "Alice's and Bob's initial root keys don't match.");
 	}
 	printf("Alice's and Bob's initial root keys match.\n");
@@ -191,7 +191,7 @@ int main(void) {
 	bob_root_key->clear();
 
 	//compare Alice's and Bob's initial chain keys
-	if (buffer_compare(alice_send_chain_key, bob_receive_chain_key) != 0) {
+	if (alice_send_chain_key->compare(bob_receive_chain_key) != 0) {
 		THROW(INCORRECT_DATA, "Alice's and Bob's initial chain keys don't match.");
 	}
 	printf("Alice's and Bob's initial chain keys match.\n");
@@ -199,13 +199,13 @@ int main(void) {
 	alice_send_chain_key->clear();
 	bob_receive_chain_key->clear();
 
-	if (buffer_compare(alice_receive_chain_key, bob_send_chain_key) != 0) {
+	if (alice_receive_chain_key->compare(bob_send_chain_key) != 0) {
 		THROW(INCORRECT_DATA, "Alice's and Bob's initial chain keys don't match.");
 	}
 	printf("Alice's and Bob's initial chain keys match.\n");
 
 	//compare Alice's and Bob's initial header keys 1/2
-	if (buffer_compare(alice_send_header_key, bob_receive_header_key) != 0) {
+	if (alice_send_header_key->compare(bob_receive_header_key) != 0) {
 		THROW(INCORRECT_DATA, "Alice's initial send and Bob's initial receive header keys don't match.");
 	}
 	printf("Alice's initial send and Bob's initial receive header keys match.\n");
@@ -214,7 +214,7 @@ int main(void) {
 	bob_receive_header_key->clear();
 
 	//compare Alice's and Bob's initial header keys 2/2
-	if (buffer_compare(alice_receive_header_key, bob_send_header_key) != 0) {
+	if (alice_receive_header_key->compare(bob_send_header_key) != 0) {
 		THROW(INCORRECT_DATA, "Alice's initial receive and Bob's initial send header keys don't match.");
 	}
 	printf("Alice's initial receive and Bob's initial send header keys match.\n");
@@ -223,7 +223,7 @@ int main(void) {
 	bob_send_header_key->clear();
 
 	//compare Alice's and Bob's initial next header keys 1/2
-	if (buffer_compare(alice_next_send_header_key, bob_next_receive_header_key) != 0) {
+	if (alice_next_send_header_key->compare(bob_next_receive_header_key) != 0) {
 		THROW(INCORRECT_DATA, "Alice's initial next send and Bob's initial next receive header keys don't match.");
 	}
 	printf("Alice's initial next send and Bob's initial next receive header keys match.\n");
@@ -231,7 +231,7 @@ int main(void) {
 	bob_next_receive_header_key->clear();
 
 	//compare Alice's and Bob's initial next header keys 2/2
-	if (buffer_compare(alice_next_receive_header_key, bob_next_send_header_key) != 0) {
+	if (alice_next_receive_header_key->compare(bob_next_send_header_key) != 0) {
 		THROW(INCORRECT_DATA, "Alice's initial next receive and Bob's initial next send header keys don't match.");
 	}
 	printf("Alice's initial next receive and Bob's initial next send header keys match.\n");

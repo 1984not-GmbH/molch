@@ -120,7 +120,7 @@ int main(void) {
 	putchar('\n');
 
 	//compare Alice's and Bob's root keys
-	if (buffer_compare(alice_root_key, bob_root_key) == 0) {
+	if (alice_root_key->compare(bob_root_key) == 0) {
 		printf("Alice's and Bob's root keys match.\n");
 	} else {
 		THROW(INCORRECT_DATA, "Alice's and Bob's root keys don't match.");
@@ -129,14 +129,14 @@ int main(void) {
 	bob_root_key->clear();
 
 	//compare Alice's and Bob's chain keys
-	if (buffer_compare(alice_chain_key, bob_chain_key) == 0) {
+	if (alice_chain_key->compare(bob_chain_key) == 0) {
 		printf("Alice's and Bob's chain keys match.\n");
 	} else {
 		THROW(INCORRECT_DATA, "Alice's and Bob's chain keys don't match.");
 	}
 
 	//compare Alice's and Bob's header keys
-	if (buffer_compare(alice_header_key, bob_header_key) == 0) {
+	if (alice_header_key->compare(bob_header_key) == 0) {
 		printf("Alice's and Bob's header keys match.\n");
 	} else {
 		THROW(INCORRECT_DATA, "Alice's and Bob's header keys don't match.");

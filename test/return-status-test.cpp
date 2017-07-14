@@ -83,7 +83,7 @@ int main(void) {
 		printf("%s\n", error_stack);
 
 		buffer_create_from_string(stack_trace, "ERROR\nerror stack trace:\n000: GENERIC_ERROR, Error on the first level!\n001: GENERIC_ERROR, Error on the second level!\n");
-		if (buffer_compare_to_raw(stack_trace, (unsigned char*)error_stack, stack_print_length) != 0) {
+		if (stack_trace->compareToRaw((unsigned char*)error_stack, stack_print_length) != 0) {
 			THROW(INCORRECT_DATA, "Stack trace looks differently than expected.");
 		}
 	}
@@ -97,7 +97,7 @@ int main(void) {
 		buffer_create_from_string(success_buffer, "SUCCESS");
 		size_t printed_status_length = 0;
 		printed_status = (unsigned char*) return_status_print(&successful_status, &printed_status_length);
-		if (buffer_compare_to_raw(success_buffer, printed_status, printed_status_length) != 0) {
+		if (success_buffer->compareToRaw(printed_status, printed_status_length) != 0) {
 			THROW(INCORRECT_DATA, "molch_print_status produces incorrect output.");
 		}
 	}

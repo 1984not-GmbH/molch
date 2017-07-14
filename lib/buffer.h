@@ -101,6 +101,44 @@ public:
 	 */
 	int fillRandom(const size_t length) __attribute__((warn_unused_result));
 
+	/*
+	 * Compare two buffers.
+	 *
+	 * Returns 0 if both buffers match.
+	 */
+	int compare(Buffer * const buffer) __attribute__((warn_unused_result));
+
+	/*
+	 * Compare parts of two buffers.
+	 *
+	 * Returns 0 if both buffers match.
+	 */
+	int comparePartial(
+			const size_t position1,
+			Buffer * const buffer2,
+			const size_t position2,
+			const size_t length) __attribute__((warn_unused_result));
+
+	/*
+	 * Compare a buffer to a raw array.
+	 *
+	 * Returns 0 if both buffers match.
+	 */
+	int compareToRaw(const unsigned char * const array, const size_t array_length) __attribute__((warn_unused_result));
+
+
+	/*
+	 * Compare parts of a buffer to parts of a raw array.
+	 *
+	 * Returns 0 if both buffers match.
+	 */
+	int compareToRawPartial(
+			const size_t position1,
+			const unsigned char * const array,
+			const size_t array_length,
+			const size_t position2,
+			const size_t comparison_length);
+
 	size_t getBufferLength();
 	bool isReadOnly();
 	void setReadOnly(bool readonly);
@@ -212,48 +250,4 @@ int buffer_clone_to_raw(
 		unsigned char * const destination,
 		const size_t destination_length,
 		Buffer *source) __attribute__((warn_unused_result));
-
-/*
- * Compare two buffers.
- *
- * Returns 0 if both buffers match.
- */
-int buffer_compare(
-		Buffer * const buffer1,
-		Buffer * const buffer2) __attribute__((warn_unused_result));
-
-/*
- * Compare a buffer to a raw array.
- *
- * Returns 0 if both buffers match.
- */
-int buffer_compare_to_raw(
-		Buffer * const buffer,
-		const unsigned char * const array,
-		const size_t array_length) __attribute__((warn_unused_result));
-
-/*
- * Compare parts of two buffers.
- *
- * Returns 0 if both buffers match.
- */
-int buffer_compare_partial(
-		Buffer * const buffer1,
-		const size_t position1,
-		Buffer * const buffer2,
-		const size_t position2,
-		const size_t length) __attribute__((warn_unused_result));
-
-/*
- * Compare parts of a buffer to parts of a raw array.
- *
- * Returns 0 if both buffers match.
- */
-int buffer_compare_to_raw_partial(
-		Buffer * const buffer,
-		const size_t position1,
-		const unsigned char * const array,
-		const size_t array_length,
-		const size_t position2,
-		const size_t comparison_length);
 #endif

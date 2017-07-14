@@ -86,7 +86,7 @@ int main(void) {
 	printf("Decrypted message length is the same.\n");
 
 	//compare the message
-	if (buffer_compare(message, decrypted_message) != 0) {
+	if (message->compare(decrypted_message) != 0) {
 		THROW(INVALID_VALUE, "Decrypted message doesn't match.");
 	}
 	printf("Decrypted message is the same.\n\n");
@@ -160,7 +160,7 @@ int main(void) {
 	printf("Decrypted message length is the same.\n");
 
 	//compare the message
-	if (buffer_compare(message, decrypted_message) != 0) {
+	if (message->compare(decrypted_message) != 0) {
 		THROW(INVALID_VALUE, "Decrypted message doesn't match.");
 	}
 	printf("Decrypted message is the same.\n");

@@ -108,7 +108,7 @@ int main(void) {
 	printf("Decrypted header has the same length.\n");
 
 	//compare headers
-	if (buffer_compare(header, decrypted_header) != 0) {
+	if (header->compare(decrypted_header) != 0) {
 		THROW(INVALID_VALUE, "Decrypted header doesn't match.");
 	}
 	printf("Decrypted header matches.\n\n");
@@ -119,7 +119,7 @@ int main(void) {
 	printf("Decrypted message has the same length.\n");
 
 	//compare messages
-	if (buffer_compare(message, decrypted_message) != 0) {
+	if (message->compare(decrypted_message) != 0) {
 		THROW(INVALID_VALUE, "Decrypted message doesn't match.");
 	}
 	printf("Decrypted message matches.\n");
@@ -191,7 +191,7 @@ int main(void) {
 	printf("Decrypted header has the same length!\n");
 
 	//compare headers
-	if (buffer_compare(header, decrypted_header) != 0) {
+	if (header->compare(decrypted_header) != 0) {
 		THROW(INVALID_VALUE, "Decrypted header doesn't match.");
 	}
 	printf("Decrypted header matches!\n");
@@ -202,23 +202,23 @@ int main(void) {
 	printf("Decrypted message has the same length.\n");
 
 	//compare messages
-	if (buffer_compare(message, decrypted_message) != 0) {
+	if (message->compare(decrypted_message) != 0) {
 		THROW(INVALID_VALUE, "Decrypted message doesn't match.");
 	}
 	printf("Decrypted message matches.\n");
 
 	//compare public keys
-	if (buffer_compare(public_identity_key, extracted_public_identity_key) != 0) {
+	if (public_identity_key->compare(extracted_public_identity_key) != 0) {
 		THROW(INVALID_VALUE, "Extracted public identity key doesn't match.");
 	}
 	printf("Extracted public identity key matches!\n");
 
-	if (buffer_compare(public_ephemeral_key, extracted_public_ephemeral_key) != 0) {
+	if (public_ephemeral_key->compare(extracted_public_ephemeral_key) != 0) {
 		THROW(INVALID_VALUE, "Extracted public ephemeral key doesn't match.");
 	}
 	printf("Extracted public ephemeral key matches!\n");
 
-	if (buffer_compare(public_prekey, extracted_public_prekey) != 0) {
+	if (public_prekey->compare(extracted_public_prekey) != 0) {
 		THROW(INVALID_VALUE, "Extracted public prekey doesn't match.");
 	}
 	printf("Extracted public prekey matches!\n");

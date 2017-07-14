@@ -362,7 +362,7 @@ int main(void) {
 		THROW(INCORRECT_DATA, "Both arrays of Protobuf-C strings don't have the same length.");
 	}
 	for (size_t i = 0; i < protobuf_export_buffers_length; i++) {
-		if (buffer_compare(protobuf_export_buffers[i], protobuf_second_export_buffers[i]) != 0) {
+		if (protobuf_export_buffers[i]->compare(protobuf_second_export_buffers[i]) != 0) {
 			THROW(INCORRECT_DATA, "Exported protobuf-c string doesn't match.");
 		}
 	}

@@ -92,7 +92,7 @@ int main(void) {
 	putchar('\n');
 
 	//compare both shared secrets
-	status_int = buffer_compare(alice_shared_secret, bob_shared_secret);
+	status_int = alice_shared_secret->compare(bob_shared_secret);
 	alice_shared_secret->clear();
 	bob_shared_secret->clear();
 	if (status_int != 0) {

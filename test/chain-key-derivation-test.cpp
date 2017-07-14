@@ -59,7 +59,7 @@ int main(void) {
 		putchar('\n');
 
 		//check that chain keys are different
-		if (buffer_compare(last_chain_key, next_chain_key) == 0) {
+		if (last_chain_key->compare(next_chain_key) == 0) {
 			THROW(INCORRECT_DATA, "Derived chain key is identical.");
 		}
 

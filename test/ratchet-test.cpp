@@ -244,7 +244,7 @@ int main(void) {
 	putchar('\n');
 
 	//compare Alice's and Bob's initial root and chain keys
-	status_int = buffer_compare(&alice_state->root_key, &bob_state->root_key);
+	status_int = alice_state->root_key.compare(&bob_state->root_key);
 	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
@@ -253,7 +253,7 @@ int main(void) {
 	printf("Alice's and Bob's initial root keys match!\n");
 
 	//initial chain key
-	status_int = buffer_compare(&alice_state->receive_chain_key, &bob_state->send_chain_key);
+	status_int = alice_state->receive_chain_key.compare(&bob_state->send_chain_key);
 	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
@@ -349,10 +349,10 @@ int main(void) {
 	putchar('\n');
 
 	//check header decryptability
-	if (buffer_compare(bob_current_receive_header_key, alice_send_header_key1) == 0) {
+	if (bob_current_receive_header_key->compare(alice_send_header_key1) == 0) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (buffer_compare(bob_next_receive_header_key, alice_send_header_key1) == 0) {
+	} else if (bob_next_receive_header_key->compare(alice_send_header_key1) == 0) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
@@ -417,10 +417,10 @@ int main(void) {
 	putchar('\n');
 
 	//check header decryptability
-	if (buffer_compare(bob_current_receive_header_key, alice_send_header_key2) == 0) {
+	if (bob_current_receive_header_key->compare(alice_send_header_key2) == 0) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (buffer_compare(bob_next_receive_header_key, alice_send_header_key2) == 0) {
+	} else if (bob_next_receive_header_key->compare(alice_send_header_key2) == 0) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
@@ -484,10 +484,10 @@ int main(void) {
 	putchar('\n');
 
 	//check header decryptability
-	if (buffer_compare(bob_current_receive_header_key, alice_send_header_key3) == 0) {
+	if (bob_current_receive_header_key->compare(alice_send_header_key3) == 0) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (buffer_compare(bob_next_receive_header_key, alice_send_header_key3) == 0) {
+	} else if (bob_next_receive_header_key->compare(alice_send_header_key3) == 0) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
@@ -535,7 +535,7 @@ int main(void) {
 	}
 
 	//compare the message keys
-	if (buffer_compare(alice_send_message_key1, bob_receive_key1) != 0) {
+	if (alice_send_message_key1->compare(bob_receive_key1) != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		THROW(INCORRECT_DATA, "Alice's first send key and Bob's first receive key aren't the same.");
@@ -545,7 +545,7 @@ int main(void) {
 	printf("Alice's first send key and Bob's first receive key match.\n");
 
 	//second key
-	if (buffer_compare(alice_send_message_key2, bob_receive_key2) != 0) {
+	if (alice_send_message_key2->compare(bob_receive_key2) != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		THROW(INCORRECT_DATA, "Alice's second send key and Bob's second receive key aren't the same.");
@@ -555,7 +555,7 @@ int main(void) {
 	printf("Alice's second send key and Bob's second receive key match.\n");
 
 	//third key
-	if (buffer_compare(alice_send_message_key3, bob_receive_key3) != 0) {
+	if (alice_send_message_key3->compare(bob_receive_key3) != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		THROW(INCORRECT_DATA, "Alice's third send key and Bob's third receive key aren't the same.");
@@ -653,10 +653,10 @@ int main(void) {
 	putchar('\n');
 
 	//check header decryptability
-	if (buffer_compare(alice_current_receive_header_key, bob_send_header_key1) == 0) {
+	if (alice_current_receive_header_key->compare(bob_send_header_key1) == 0) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (buffer_compare(alice_next_receive_header_key, bob_send_header_key1) == 0) {
+	} else if (alice_next_receive_header_key->compare(bob_send_header_key1) == 0) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
@@ -720,10 +720,10 @@ int main(void) {
 	putchar('\n');
 
 	//check header decryptability
-	if (buffer_compare(alice_current_receive_header_key, bob_send_header_key3) == 0) {
+	if (alice_current_receive_header_key->compare(bob_send_header_key3) == 0) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (buffer_compare(alice_next_receive_header_key, bob_send_header_key3) == 0) {
+	} else if (alice_next_receive_header_key->compare(bob_send_header_key3) == 0) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
@@ -797,7 +797,7 @@ int main(void) {
 	putchar('\n');
 
 	//compare header keys
-	if (buffer_compare(alice_receive_header_key2, bob_send_header_key2) != 0) {
+	if (alice_receive_header_key2->compare(bob_send_header_key2) != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		THROW(INCORRECT_DATA, "Bob's second send header key and Alice's receive header key aren't the same.");
@@ -807,7 +807,7 @@ int main(void) {
 	bob_send_header_key2->clear();
 
 	//compare the keys
-	if (buffer_compare(bob_send_message_key1, alice_receive_message_key1) != 0) {
+	if (bob_send_message_key1->compare(alice_receive_message_key1) != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		THROW(INCORRECT_DATA, "Bob's first send key and Alice's first receive key aren't the same.");
@@ -817,7 +817,7 @@ int main(void) {
 	printf("Bob's first send key and Alice's first receive key match.\n");
 
 	//second key
-	if (buffer_compare(bob_send_message_key2, alice_receive_message_key2) != 0) {
+	if (bob_send_message_key2->compare(alice_receive_message_key2) != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		THROW(INCORRECT_DATA, "Bob's second send key and Alice's second receive key aren't the same.");
@@ -827,7 +827,7 @@ int main(void) {
 	printf("Bob's second send key and Alice's second receive key match.\n");
 
 	//third key
-	if (buffer_compare(bob_send_message_key3, alice_receive_message_key3) != 0) {
+	if (bob_send_message_key3->compare(alice_receive_message_key3) != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
 		THROW(INCORRECT_DATA, "Bob's third send key and Alice's third receive key aren't the same.");
@@ -860,7 +860,7 @@ int main(void) {
 	THROW_on_error(EXPORT_ERROR, "Failed to export Alice' ratchet to protobuf-c the second time.");
 
 	//compare both exports
-	if (buffer_compare(protobuf_export_buffer, protobuf_second_export_buffer) != 0) {
+	if (protobuf_export_buffer->compare(protobuf_second_export_buffer) != 0) {
 		print_hex(protobuf_second_export_buffer);
 		THROW(INCORRECT_DATA, "Both exports don't match!");
 	}

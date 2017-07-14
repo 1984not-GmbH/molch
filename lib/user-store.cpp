@@ -201,7 +201,7 @@ return_status user_store_find_node(user_store_node ** const node, user_store * c
 
 	//search for the matching public identity key
 	while (*node != nullptr) {
-		if (buffer_compare((*node)->public_signing_key, public_signing_key) == 0) {
+		if ((*node)->public_signing_key->compare(public_signing_key) == 0) {
 			//match found
 			break;
 		}

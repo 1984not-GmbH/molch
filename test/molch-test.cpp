@@ -244,7 +244,7 @@ int main(void) {
 				alice_head_on_keyboard->content_length);
 		THROW_on_error(status.status, "Failed to create Alice!");
 
-		if (buffer_compare(backup_key, new_backup_key) == 0) {
+		if (backup_key->compare(new_backup_key) == 0) {
 			THROW(INCORRECT_DATA, "New backup key is the same as the old one.");
 		}
 
@@ -345,7 +345,7 @@ int main(void) {
 			alice_public_identity->content,
 			alice_public_identity->content_length);
 	THROW_on_error(GENERIC_ERROR, "Failed to list conversations.");
-	if ((number_of_conversations != 1) || (buffer_compare_to_raw(alice_conversation, conversation_list, alice_conversation->content_length) != 0)) {
+	if ((number_of_conversations != 1) || (alice_conversation->compareToRaw(conversation_list, alice_conversation->content_length) != 0)) {
 		free_and_null_if_valid(conversation_list);
 		THROW(GENERIC_ERROR, "Failed to list conversations.");
 	}
@@ -484,7 +484,7 @@ int main(void) {
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt backup.");
 
 	//compare the keys
-	if (buffer_compare(backup_key, new_backup_key) == 0) {
+	if (backup_key->compare(new_backup_key) == 0) {
 		THROW(INCORRECT_DATA, "New backup key expected.");
 	}
 
@@ -504,7 +504,7 @@ int main(void) {
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt imported backup.");
 
 	//compare
-	if (buffer_compare(decrypted_backup, decrypted_imported_backup) != 0) {
+	if (decrypted_backup->compare(decrypted_imported_backup) != 0) {
 		THROW(IMPORT_ERROR, "Imported backup is incorrect.");
 	}
 	free_and_null_if_valid(backup);
@@ -560,7 +560,7 @@ int main(void) {
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt the backup.")
 
 	//compare
-	if (buffer_compare(decrypted_conversation_backup, decrypted_imported_conversation_backup) != 0) {
+	if (decrypted_conversation_backup->compare(decrypted_imported_conversation_backup) != 0) {
 		THROW(IMPORT_ERROR, "Protobuf of imported conversation is incorrect.");
 	}
 
@@ -601,7 +601,7 @@ int main(void) {
 		buffer_create_from_string(success_buffer, "SUCCESS");
 		size_t printed_status_length = 0;
 		printed_status = (unsigned char*) molch_print_status(&printed_status_length, return_status_init());
-		if (buffer_compare_to_raw(success_buffer, printed_status, printed_status_length) != 0) {
+		if (success_buffer->compareToRaw(printed_status, printed_status_length) != 0) {
 			THROW(INCORRECT_DATA, "molch_print_status produces incorrect output.");
 		}
 	}

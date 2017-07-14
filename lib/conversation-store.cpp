@@ -136,7 +136,7 @@ return_status conversation_store_find_node(
 	*conversation = nullptr;
 
 	conversation_store_foreach(store,
-		if (buffer_compare(&value->id, id) == 0) {
+		if (value->id.compare(id) == 0) {
 			*conversation = node;
 			break;
 		}

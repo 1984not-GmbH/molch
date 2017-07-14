@@ -242,7 +242,7 @@ int main(void) {
 	}
 	size_t store_length;
 	for (store_length = 0; store_length < protobuf_export_bundles_size; store_length++) {
-		if (buffer_compare(protobuf_export_buffers[store_length], protobuf_second_export_buffers[store_length]) != 0) {
+		if (protobuf_export_buffers[store_length]->compare(protobuf_second_export_buffers[store_length]) != 0) {
 			THROW(INCORRECT_DATA, "First and second export are not identical.");
 		}
 	}

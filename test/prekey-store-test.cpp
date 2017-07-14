@@ -249,7 +249,7 @@ int main(void) {
 
 	//compare the public keys with the ones in the prekey store
 	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		if (buffer_compare_partial(prekey_list, PUBLIC_KEY_SIZE * i, store->prekeys[i].public_key, 0, PUBLIC_KEY_SIZE) != 0) {
+		if (prekey_list->comparePartial(PUBLIC_KEY_SIZE * i, store->prekeys[i].public_key, 0, PUBLIC_KEY_SIZE) != 0) {
 			THROW(INCORRECT_DATA, "Key list doesn't match the prekey store.");
 		}
 	}
@@ -275,12 +275,12 @@ int main(void) {
 			THROW(GENERIC_ERROR, "Failed to deprecate requested key.");
 		}
 
-		if ((buffer_compare(public_prekey, store->deprecated_prekeys->public_key) != 0)
-				|| (buffer_compare(private_prekey1, store->deprecated_prekeys->private_key) != 0)) {
+		if ((public_prekey->compare(store->deprecated_prekeys->public_key) != 0)
+				|| (private_prekey1->compare(store->deprecated_prekeys->private_key) != 0)) {
 			THROW(INCORRECT_DATA, "Deprecated key is incorrect.");
 		}
 
-		if (buffer_compare(store->prekeys[prekey_index].public_key, public_prekey) == 0) {
+		if (store->prekeys[prekey_index].public_key->compare(public_prekey) == 0) {
 			THROW(KEYGENERATION_FAILED, "Failed to generate new key for deprecated one.");
 		}
 		printf("Successfully deprecated requested key!\n");
@@ -290,7 +290,7 @@ int main(void) {
 	status = prekey_store_get_prekey(store, public_prekey, private_prekey2);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get key from the deprecated area.");
 
-	if (buffer_compare(private_prekey1, private_prekey2) != 0) {
+	if (private_prekey1->compare(private_prekey2) != 0) {
 		THROW(INCORRECT_DATA, "Prekey from the deprecated area didn't match.");
 	}
 	printf("Successfully got prekey from the deprecated area!\n");
@@ -365,7 +365,7 @@ int main(void) {
 		THROW(INCORRECT_DATA, "Both prekey exports contain different amounts of keys.");
 	}
 	for (size_t i = 0; i < protobuf_export_prekeys_size; i++) {
-		if (buffer_compare(protobuf_export_prekeys_buffers[i], protobuf_second_export_prekeys_buffers[i]) != 0) {
+		if (protobuf_export_prekeys_buffers[i]->compare(protobuf_second_export_prekeys_buffers[i]) != 0) {
 			THROW(INCORRECT_DATA, "First and second prekey export are not identical.");
 		}
 	}
@@ -376,7 +376,7 @@ int main(void) {
 		THROW(INCORRECT_DATA, "Both depcated prekey exports contain different amounts of keys.");
 	}
 	for (size_t i = 0; i < protobuf_export_deprecated_prekeys_size; i++) {
-		if (buffer_compare(protobuf_export_deprecated_prekeys_buffers[i], protobuf_second_export_deprecated_prekeys_buffers[i]) != 0) {
+		if (protobuf_export_deprecated_prekeys_buffers[i]->compare(protobuf_second_export_deprecated_prekeys_buffers[i]) != 0) {
 			THROW(INCORRECT_DATA, "First and second deprecated prekey export are not identical.");
 		}
 	}
@@ -392,7 +392,7 @@ int main(void) {
 	status = prekey_store_rotate(store);
 	THROW_on_error(GENERIC_ERROR, "Failed to rotate the prekeys.");
 
-	if (buffer_compare(store->deprecated_prekeys->public_key, public_prekey) != 0) {
+	if (store->deprecated_prekeys->public_key->compare(public_prekey) != 0) {
 		THROW(GENERIC_ERROR, "Failed to deprecate outdated key.");
 	}
 	printf("Successfully deprecated outdated key!\n");

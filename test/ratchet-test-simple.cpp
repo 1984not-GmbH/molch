@@ -157,9 +157,9 @@ int main(void) {
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get receive header keys.");
 
 	ratchet_header_decryptability decryptability;
-	if (buffer_compare(send_header_key, current_receive_header_key) == 0) {
+	if (send_header_key->compare(current_receive_header_key) == 0) {
 		decryptability = CURRENT_DECRYPTABLE;
-	} else if (buffer_compare(send_header_key, next_receive_header_key) == 0) {
+	} else if (send_header_key->compare(next_receive_header_key) == 0) {
 		decryptability = NEXT_DECRYPTABLE;
 	} else {
 		decryptability = UNDECRYPTABLE;
@@ -176,7 +176,7 @@ int main(void) {
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get receive message key.");
 
 	//now check if the message key is the same
-	if (buffer_compare(send_message_key, receive_message_key) != 0) {
+	if (send_message_key->compare(receive_message_key) != 0) {
 		THROW(INCORRECT_DATA, "Bobs receive message key isn't the same as Alice' send message key.");
 	}
 	printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
@@ -202,9 +202,9 @@ int main(void) {
 			alice_receive_ratchet);
 	THROW_on_error(DATA_FETCH_ERROR, "Alice-Receive: Failed to get receive header keys.");
 
-	if (buffer_compare(send_header_key, current_receive_header_key) == 0) {
+	if (send_header_key->compare(current_receive_header_key) == 0) {
 		decryptability = CURRENT_DECRYPTABLE;
-	} else if (buffer_compare(send_header_key, next_receive_header_key) == 0) {
+	} else if (send_header_key->compare(next_receive_header_key) == 0) {
 		decryptability = UNDECRYPTABLE;
 	}
 	status = ratchet_set_header_decryptability(alice_receive_ratchet, decryptability);
@@ -219,7 +219,7 @@ int main(void) {
 	THROW_on_error(RECEIVE_ERROR, "Alice-Receive: Failed to get receive message key.");
 
 	//now check if the message key is the same
-	if (buffer_compare(send_message_key, receive_message_key) != 0) {
+	if (send_message_key->compare(receive_message_key) != 0) {
 		THROW(INCORRECT_DATA, "Alice' receive message key isn't the same as Bobs send message key.");
 	}
 	printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
@@ -244,9 +244,9 @@ int main(void) {
 			alice_send_ratchet);
 	THROW_on_error(DATA_FETCH_ERROR, "Alice-Roundtrip: Failed to get receive header keys.");
 
-	if (buffer_compare(send_header_key, current_receive_header_key) == 0) {
+	if (send_header_key->compare(current_receive_header_key) == 0) {
 		decryptability = CURRENT_DECRYPTABLE;
-	} else if (buffer_compare(send_header_key, next_receive_header_key) == 0) {
+	} else if (send_header_key->compare(next_receive_header_key) == 0) {
 		decryptability = NEXT_DECRYPTABLE;
 	} else {
 		decryptability = UNDECRYPTABLE;
@@ -263,7 +263,7 @@ int main(void) {
 	THROW_on_error(RECEIVE_ERROR, "Alice-Roundtrip: Failed to get receive message key.");
 
 	//now check if the message key is the same
-	if (buffer_compare(send_message_key, receive_message_key) != 0) {
+	if (send_message_key->compare(receive_message_key) != 0) {
 		THROW(INCORRECT_DATA, "Alice' receive message key isn't the same as Bobs send message key.");
 	}
 	printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
@@ -288,9 +288,9 @@ int main(void) {
 			bob_send_ratchet);
 	THROW_on_error(DATA_FETCH_ERROR, "Bob-Roundtrip: Failed to get receive header keys.");
 
-	if (buffer_compare(send_header_key, current_receive_header_key) == 0) {
+	if (send_header_key->compare(current_receive_header_key) == 0) {
 		decryptability = CURRENT_DECRYPTABLE;
-	} else if (buffer_compare(send_header_key, next_receive_header_key) == 0) {
+	} else if (send_header_key->compare(next_receive_header_key) == 0) {
 		decryptability = NEXT_DECRYPTABLE;
 	} else {
 		decryptability = UNDECRYPTABLE;
@@ -307,7 +307,7 @@ int main(void) {
 	THROW_on_error(RECEIVE_ERROR, "Bob-Roundtrip: Failed to get receive message key.");
 
 	//now check if the message key is the same
-	if (buffer_compare(send_message_key, receive_message_key) != 0) {
+	if (send_message_key->compare(receive_message_key) != 0) {
 		THROW(INCORRECT_DATA, "Bobs receive message key isn't the same as Alice' send message key.");
 	}
 	printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");

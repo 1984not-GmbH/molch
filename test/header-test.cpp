@@ -87,7 +87,7 @@ int main(void) {
 	putchar('\n');
 
 	//compare them
-	if (buffer_compare(our_public_ephemeral_key, extracted_public_ephemeral_key) != 0) {
+	if (our_public_ephemeral_key->compare(extracted_public_ephemeral_key) != 0) {
 		THROW(INVALID_VALUE, "Public ephemeral keys don't match.");
 	}
 	printf("Public ephemeral keys match.\n");

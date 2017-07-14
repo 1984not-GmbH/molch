@@ -87,7 +87,7 @@ int main(void) {
 	printf("Decrypted header has the same length.\n\n");
 
 	//compare headers
-	if (buffer_compare(header, decrypted_header) != 0) {
+	if (header->compare(decrypted_header) != 0) {
 		THROW(INVALID_VALUE, "Decrypted header doesn't match.");
 	}
 	printf("Decrypted header matches.\n\n");
@@ -177,7 +177,7 @@ int main(void) {
 	printf("Decrypted header has the same length.\n\n");
 
 	//compare headers
-	if (buffer_compare(header, decrypted_header) != 0) {
+	if (header->compare(decrypted_header) != 0) {
 		THROW(INVALID_VALUE, "Decrypted header doesn't match.");
 	}
 	printf("Decrypted header matches.\n");

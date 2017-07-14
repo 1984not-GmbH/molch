@@ -166,17 +166,17 @@ int main(void) {
 	}
 	printf("Highest supoorted protocol version matches (%i)!\n", extracted_highest_supported_protocol_version);
 
-	if (buffer_compare(public_identity_key, extracted_public_identity_key) != 0) {
+	if (public_identity_key->compare(extracted_public_identity_key) != 0) {
 		THROW(INVALID_VALUE, "Extracted public identity key doesn't match.");
 	}
 	printf("Extracted public identity key matches!\n");
 
-	if (buffer_compare(public_ephemeral_key, extracted_public_ephemeral_key) != 0) {
+	if (public_ephemeral_key->compare(extracted_public_ephemeral_key) != 0) {
 		THROW(INVALID_VALUE, "Extratec public ephemeral key doesn't match.");
 	}
 	printf("Extracted public ephemeral key matches!\n");
 
-	if (buffer_compare(public_prekey, extracted_public_prekey) != 0) {
+	if (public_prekey->compare(extracted_public_prekey) != 0) {
 		THROW(INVALID_VALUE, "Extracted public prekey doesn't match.");
 	}
 	printf("Extracted public prekey matches!\n");

@@ -63,7 +63,7 @@ int main(void) {
 	putchar('\n');
 
 	//compare the two (mustn't be identical!)
-	if (buffer_compare(output1, output2) == 0) {
+	if (output1->compare(output2) == 0) {
 		THROW(INCORRECT_DATA, "Random numbers aren't random.");
 	}
 

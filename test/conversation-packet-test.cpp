@@ -134,7 +134,7 @@ int main(void) {
 			bob_prekeys);
 	THROW_on_error(RECEIVE_ERROR, "Failed to decrypt received message.");
 
-	status_int = buffer_compare(send_message, received_message);
+	status_int = send_message->compare(received_message);
 	if (status_int != 0) {
 		THROW(INVALID_VALUE, "Message was decrypted incorrectly.");
 	}
@@ -172,7 +172,7 @@ int main(void) {
 	}
 
 	//now check if the received message was correctly decrypted
-	status_int = buffer_compare(bob_receive_message2, alice_send_message2);
+	status_int = bob_receive_message2->compare(alice_send_message2);
 	if (status_int != 0) {
 		THROW(INVALID_VALUE, "Received message doesn't match.");
 	}
@@ -209,7 +209,7 @@ int main(void) {
 	}
 
 	//compare sent and received messages
-	status_int = buffer_compare(bob_response_message, alice_received_response);
+	status_int = bob_response_message->compare(alice_received_response);
 	if (status_int != 0) {
 		THROW(INVALID_VALUE, "Received response doesn't match.");
 	}
@@ -252,7 +252,7 @@ int main(void) {
 			alice_prekeys);
 	THROW_on_error(RECEIVE_ERROR, "Failed to decrypt received message.");
 
-	status_int = buffer_compare(send_message, received_message);
+	status_int = send_message->compare(received_message);
 	if (status_int != 0) {
 		THROW(INVALID_VALUE, "Message incorrectly decrypted.");
 	}
@@ -290,7 +290,7 @@ int main(void) {
 	}
 
 	//now check if the received message was correctly decrypted
-	status_int = buffer_compare(alice_receive_message2, bob_send_message2);
+	status_int = alice_receive_message2->compare(bob_send_message2);
 	if (status_int != 0) {
 		THROW(INVALID_VALUE, "Received message doesn't match.");
 	}
@@ -327,7 +327,7 @@ int main(void) {
 	}
 
 	//compare sent and received messages
-	status_int = buffer_compare(alice_response_message, bob_received_response);
+	status_int = alice_response_message->compare(bob_received_response);
 	if (status_int != 0) {
 		THROW(INVALID_VALUE, "Received response doesn't match.");
 	}

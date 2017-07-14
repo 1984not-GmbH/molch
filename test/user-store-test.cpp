@@ -215,7 +215,7 @@ int main(void) {
 	if (list == nullptr) {
 		THROW(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 	}
-	if (buffer_compare(list, alice_public_signing_key) != 0) {
+	if (list->compare(alice_public_signing_key) != 0) {
 		THROW(INCORRECT_DATA, "Failed to list users.");
 	}
 	buffer_destroy_from_heap_and_null_if_valid(list);
@@ -243,8 +243,8 @@ int main(void) {
 	if (list == nullptr) {
 		THROW(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 	}
-	if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+	if ((list->comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+			|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		THROW(INCORRECT_DATA, "Failed to list users.");
 	}
 	buffer_destroy_from_heap_and_null_if_valid(list);
@@ -271,9 +271,9 @@ int main(void) {
 	if (list == nullptr) {
 		THROW(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 	}
-	if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-			|| (buffer_compare_partial(list, 2 * PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+	if ((list->comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+			|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+			|| (list->comparePartial(2 * PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		THROW(INCORRECT_DATA, "Failed to list users.");
 	}
 	buffer_destroy_from_heap_and_null_if_valid(list);
@@ -286,7 +286,7 @@ int main(void) {
 		THROW_on_error(NOT_FOUND, "Failed to find Bob's node.");
 		printf("Node found.\n");
 
-		if (buffer_compare(bob_node->public_signing_key, bob_public_signing_key) != 0) {
+		if (bob_node->public_signing_key->compare(bob_public_signing_key) != 0) {
 			THROW(INCORRECT_DATA, "Bob's data from the user store doesn't match.");
 		}
 		printf("Data from the node matches.\n");
@@ -305,8 +305,8 @@ int main(void) {
 		if (list == nullptr) {
 			THROW(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 		}
-		if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+		if ((list->comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 			THROW(INCORRECT_DATA, "Removing user failed.");
 		}
 		buffer_destroy_from_heap_and_null_if_valid(list);
@@ -371,7 +371,7 @@ int main(void) {
 		THROW_on_error(INCORRECT_DATA, "Both exports have different sizes.");
 	}
 	for (size_t i = 0; i < protobuf_export_length; i++) {
-		if (buffer_compare(protobuf_export_buffers[i], protobuf_second_export_buffers[i]) != 0) {
+		if (protobuf_export_buffers[i]->compare(protobuf_second_export_buffers[i]) != 0) {
 			THROW_on_error(INCORRECT_DATA, "Buffers don't match.");
 		}
 	}
@@ -380,8 +380,8 @@ int main(void) {
 	//check the user list
 	status = user_store_list(&list, store);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.");
-	if ((buffer_compare_partial(list, 0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-			|| (buffer_compare_partial(list, PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+	if ((list->comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+			|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		THROW(REMOVE_ERROR, "Removing user failed.");
 	}
 	buffer_destroy_from_heap_and_null_if_valid(list);

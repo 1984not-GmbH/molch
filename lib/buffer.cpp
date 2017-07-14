@@ -397,10 +397,8 @@ int buffer_clone_to_raw(
  *
  * Returns 0 if both buffers match.
  */
-int buffer_compare(
-		Buffer * const buffer1,
-		Buffer * const buffer2) {
-	return buffer_compare_to_raw(buffer1, buffer2->content, buffer2->content_length);
+int Buffer::compare(Buffer * const buffer) {
+	return this->compareToRaw(buffer->content, buffer->content_length);
 }
 
 /*
@@ -408,11 +406,8 @@ int buffer_compare(
  *
  * Returns 0 if both buffers match.
  */
-int buffer_compare_to_raw(
-		Buffer * const buffer,
-		const unsigned char * const array,
-		const size_t array_length) {
-	return buffer_compare_to_raw_partial(buffer, 0, array, array_length, 0, buffer->content_length);
+int Buffer::compareToRaw(const unsigned char * const array, const size_t array_length) {
+	return this->compareToRawPartial(0, array, array_length, 0, this->content_length);
 }
 
 /*
@@ -420,13 +415,12 @@ int buffer_compare_to_raw(
  *
  * Returns 0 if both buffers match.
  */
-int buffer_compare_partial(
-		Buffer * const buffer1,
+int Buffer::comparePartial(
 		const size_t position1,
 		Buffer * const buffer2,
 		const size_t position2,
 		const size_t length) {
-	return buffer_compare_to_raw_partial(buffer1, position1, buffer2->content, buffer2->content_length, position2, length);
+	return this->compareToRawPartial(position1, buffer2->content, buffer2->content_length, position2, length);
 }
 
 /*
@@ -434,20 +428,19 @@ int buffer_compare_partial(
  *
  * Returns 0 if both buffers match.
  */
-int buffer_compare_to_raw_partial(
-		Buffer * const buffer,
+int Buffer::compareToRawPartial(
 		const size_t position1,
 		const unsigned char * const array,
 		const size_t array_length,
 		const size_t position2,
 		const size_t comparison_length) {
-	if (((buffer->content_length - position1) < comparison_length) || ((array_length - position2) < comparison_length)) {
+	if (((this->content_length - position1) < comparison_length) || ((array_length - position2) < comparison_length)) {
 		//FIXME: Does this introduce a timing sidechannel? This leaks the information that two buffers don't have the same length
 		//buffers are too short
 		return -6;
 	}
 
-	if ((buffer->getBufferLength() == 0) || (array_length == 0)) {
+	if ((this->buffer_length == 0) || (array_length == 0)) {
 		if (comparison_length == 0) {
 			return 0;
 		} else {
@@ -455,7 +448,7 @@ int buffer_compare_to_raw_partial(
 		}
 	}
 
-	return sodium_memcmp(buffer->content + position1, array + position2, comparison_length);
+	return sodium_memcmp(this->content + position1, array + position2, comparison_length);
 }
 
 /*

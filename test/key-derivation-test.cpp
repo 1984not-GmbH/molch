@@ -61,14 +61,14 @@ int main(void) {
 	print_hex(subkey2);
 	putchar('\n');
 
-	if (buffer_compare(subkey1, subkey2) == 0) {
+	if (subkey1->compare(subkey2) == 0) {
 		THROW(KEYGENERATION_FAILED, "Both subkeys are the same.");
 	}
 
 	status = derive_key(subkey1_copy, subkey1_copy->getBufferLength(), master_key, 0);
 	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive copy of the first subkey.");
 
-	if (buffer_compare(subkey1, subkey1_copy) != 0) {
+	if (subkey1->compare(subkey1_copy) != 0) {
 		THROW(INCORRECT_DATA, "Failed to reproduce subkey.");
 	}
 

@@ -282,10 +282,10 @@ int main(void) {
 	print_hex(unspiced_master_keys->private_identity_key);
 
 	//check the exported public keys
-	if (buffer_compare(public_signing_key, unspiced_master_keys->public_signing_key) != 0) {
+	if (public_signing_key->compare(unspiced_master_keys->public_signing_key) != 0) {
 		THROW(INCORRECT_DATA, "Exported public signing key doesn't match.");
 	}
-	if (buffer_compare(public_identity_key, unspiced_master_keys->public_identity_key) != 0) {
+	if (public_identity_key->compare(unspiced_master_keys->public_identity_key) != 0) {
 		THROW(INCORRECT_DATA, "Exported public identity key doesn't match.");
 	}
 	sodium_mprotect_noaccess(unspiced_master_keys);
@@ -313,10 +313,10 @@ int main(void) {
 	print_hex(spiced_master_keys->private_identity_key);
 
 	//check the exported public keys
-	if (buffer_compare(public_signing_key, spiced_master_keys->public_signing_key) != 0) {
+	if (public_signing_key->compare(spiced_master_keys->public_signing_key) != 0) {
 		THROW(INCORRECT_DATA, "Exported public signing key doesn't match.");
 	}
-	if (buffer_compare(public_identity_key, spiced_master_keys->public_identity_key) != 0) {
+	if (public_identity_key->compare(spiced_master_keys->public_identity_key) != 0) {
 		THROW(INCORRECT_DATA, "Exported public identity key doesn't match.");
 	}
 	sodium_mprotect_noaccess(spiced_master_keys);
@@ -398,16 +398,16 @@ int main(void) {
 	THROW_on_error(EXPORT_ERROR, "Failed to export spiced master keys.");
 
 	//now compare
-	if (buffer_compare(protobuf_export_public_signing_key, protobuf_second_export_public_signing_key) != 0) {
+	if (protobuf_export_public_signing_key->compare(protobuf_second_export_public_signing_key) != 0) {
 		THROW(INCORRECT_DATA, "The public signing keys do not match.");
 	}
-	if (buffer_compare(protobuf_export_private_signing_key, protobuf_second_export_private_signing_key) != 0) {
+	if (protobuf_export_private_signing_key->compare(protobuf_second_export_private_signing_key) != 0) {
 		THROW(INCORRECT_DATA, "The private signing keys do not match.");
 	}
-	if (buffer_compare(protobuf_export_public_identity_key, protobuf_second_export_public_identity_key) != 0) {
+	if (protobuf_export_public_identity_key->compare(protobuf_second_export_public_identity_key) != 0) {
 		THROW(INCORRECT_DATA, "The public identity keys do not match.");
 	}
-	if (buffer_compare(protobuf_export_private_identity_key, protobuf_second_export_private_identity_key) != 0) {
+	if (protobuf_export_private_identity_key->compare(protobuf_second_export_private_identity_key) != 0) {
 		THROW(INCORRECT_DATA, "The private identity keys do not match.");
 	}
 

@@ -173,7 +173,7 @@ return_status prekey_store_get_prekey(
 	//search for the prekey
 	size_t i;
 	for (i = 0; i < PREKEY_AMOUNT; i++) {
-		if (buffer_compare(public_key, store->prekeys[i].public_key) == 0) {
+		if (public_key->compare(store->prekeys[i].public_key) == 0) {
 			found_prekey = &(store->prekeys[i]);
 			break;
 		}
@@ -184,7 +184,7 @@ return_status prekey_store_get_prekey(
 		deprecated = true;
 		prekey_store_node *next = store->deprecated_prekeys;
 		while (next != nullptr) {
-			if (buffer_compare(public_key, next->public_key) == 0) {
+			if (public_key->compare(next->public_key) == 0) {
 				found_prekey = next;
 				break;
 			}

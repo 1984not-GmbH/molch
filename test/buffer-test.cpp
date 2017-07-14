@@ -61,16 +61,16 @@ int main(void) {
 		goto fail;
 	}
 
-	if ((buffer_compare(string1, string2) != 0)
-			|| (buffer_compare(string1, string3) != -1)
-			|| (buffer_compare(string1, string4) != -1)) {
+	if ((string1->compare(string2) != 0)
+			|| (string1->compare(string3) != -1)
+			|| (string1->compare(string4) != -1)) {
 		fprintf(stderr, "ERROR: buffer_compare doesn't work as expected\n");
 
 		goto fail;
 	}
 
-	if ((buffer_compare_partial(string1, 0, string4, 0, 4) != 0)
-			|| (buffer_compare_partial(string1, 2, string3, 2, 2) != 0)) {
+	if ((string1->comparePartial(0, string4, 0, 4) != 0)
+			|| (string1->comparePartial(2, string3, 2, 2) != 0)) {
 		fprintf(stderr, "ERROR: buffer_compare_partial doesn't work as expected\n");
 		goto fail;
 	}
@@ -117,7 +117,7 @@ int main(void) {
 	//copy buffer
 	buffer3 = buffer_create_on_heap(5,0);
 	status = buffer_copy(buffer3, 0, buffer2, 0, buffer2->content_length);
-	if ((status != 0) || (buffer_compare(buffer2, buffer3) != 0)) {
+	if ((status != 0) || (buffer2->compare(buffer3) != 0)) {
 		fprintf(stderr, "ERROR: Failed to copy buffer. (%i)\n", status);
 		goto fail;
 	}
@@ -274,7 +274,7 @@ int main(void) {
 	}
 
 	//make sure that xor doesn't contain either 'text' or 'random2'
-	if ((buffer_compare(to_xor, text) == 0) || (buffer_compare(to_xor, random2) == 0)) {
+	if ((to_xor->compare(text) == 0) || (to_xor->compare(random2) == 0)) {
 		fprintf(stderr, "ERROR: xor buffer contains 'text' or 'random2'\n");
 		goto fail;
 	}
@@ -287,7 +287,7 @@ int main(void) {
 	}
 
 	//xor should now contain the same as random2
-	if (buffer_compare(to_xor, random2) != 0) {
+	if (to_xor->compare(random2) != 0) {
 		fprintf(stderr, "ERROR: Failed to xor buffers properly.\n");
 		goto fail;
 	}
@@ -314,17 +314,17 @@ int main(void) {
 
 	//compare buffer to an array
 	buffer_create_from_string(true_buffer, "true");
-	status = buffer_compare_to_raw(true_buffer, (const unsigned char*)"true", sizeof("true"));
+	status = true_buffer->compareToRaw((const unsigned char*)"true", sizeof("true"));
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to compare buffer to array! (%i)\n", status);
 		goto fail;
 	}
-	status = buffer_compare_to_raw(true_buffer, (const unsigned char*)"fals", sizeof("fals"));
+	status = true_buffer->compareToRaw((const unsigned char*)"fals", sizeof("fals"));
 	if (status != -1) {
 		fprintf(stderr, "ERROR: Failed to detect difference in buffer and array.\n");
 		goto fail;
 	}
-	status = buffer_compare_to_raw(true_buffer, (const unsigned char*)"false", sizeof("false"));
+	status = true_buffer->compareToRaw((const unsigned char*)"false", sizeof("false"));
 	if (status != -1) {
 		fprintf(stderr, "ERROR: Failed to detect difference in buffer and array.\n");
 		goto fail;
