@@ -98,11 +98,6 @@ public:
 };
 
 /*
- * Macro to create a new buffer of a given length.
- */
-#define buffer_create(buffer_length, content_length) ((Buffer*)alloca(sizeof(Buffer) + buffer_length))->init(buffer_length, content_length)
-
-/*
  * Create a new buffer on the heap.
  */
 Buffer *buffer_create_on_heap(
