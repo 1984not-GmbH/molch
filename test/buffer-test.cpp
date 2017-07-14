@@ -226,7 +226,7 @@ int main(void) {
 
 	//fill a buffer with random numbers
 	random = buffer_create_on_heap(10, 0);
-	status = buffer_fill_random(random, 5);
+	status = random->fillRandom(5);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to fill buffer with random numbers. (%i)\n", status);
 		goto fail;
@@ -239,13 +239,13 @@ int main(void) {
 	printf("Buffer with %zu random bytes:\n", random->content_length);
 	print_hex(random);
 
-	if (buffer_fill_random(random, 20) == 0) {
+	if (random->fillRandom(20) == 0) {
 		fprintf(stderr, "ERROR: Failed to detect too long write to buffer.\n");
 		goto fail;
 	}
 
 	random->setReadOnly(true);
-	if (buffer_fill_random(random, 4) == 0) {
+	if (random->fillRandom(4) == 0) {
 		fprintf(stderr, "ERROR: Failed to prevent write to readonly buffer.\n");
 		goto fail;
 	}
@@ -260,7 +260,7 @@ int main(void) {
 	}
 
 	random2 = buffer_create_on_heap(text->content_length, text->content_length);
-	status = buffer_fill_random(random2, random2->getBufferLength());
+	status = random2->fillRandom(random2->getBufferLength());
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to fill buffer with random data. (%i)\n", status);
 		goto fail;

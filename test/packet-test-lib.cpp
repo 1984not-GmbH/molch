@@ -53,7 +53,7 @@ return_status create_and_print_message(
 	}
 
 	//create header key
-	if (buffer_fill_random(header_key, HEADER_KEY_SIZE) != 0) {
+	if (header_key->fillRandom(HEADER_KEY_SIZE) != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to generate header key.");
 	}
 	printf("Header key (%zu Bytes):\n", header_key->content_length);
@@ -61,7 +61,7 @@ return_status create_and_print_message(
 	putchar('\n');
 
 	//create message key
-	if (buffer_fill_random(message_key, MESSAGE_KEY_SIZE) != 0) {
+	if (message_key->fillRandom(MESSAGE_KEY_SIZE) != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to generate message key.");
 	}
 	printf("Message key (%zu Bytes):\n", message_key->content_length);

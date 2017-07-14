@@ -59,11 +59,11 @@ return_status spiced_random(
 		THROW(INCORRECT_BUFFER_SIZE, "Output buffers is too short.");
 	}
 
-	if (buffer_fill_random(os_random, output_length) != 0) {
+	if (os_random->fillRandom(output_length) != 0) {
 		THROW(GENERIC_ERROR, "Failed to fill buffer with random data.");
 	}
 
-	if (buffer_fill_random(salt, crypto_pwhash_SALTBYTES) != 0) {
+	if (salt->fillRandom(crypto_pwhash_SALTBYTES) != 0) {
 		THROW(GENERIC_ERROR, "Failed to fill salt with random data.");
 	}
 

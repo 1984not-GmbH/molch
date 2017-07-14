@@ -38,7 +38,7 @@ int main(void) {
 	Buffer *message_key = buffer_create_on_heap(crypto_auth_BYTES, crypto_auth_BYTES);
 
 	//create random chain key
-	if (buffer_fill_random(chain_key, chain_key->getBufferLength()) != 0) {
+	if (chain_key->fillRandom(chain_key->getBufferLength()) != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to create chain key.");
 	}
 

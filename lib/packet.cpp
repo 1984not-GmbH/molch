@@ -202,7 +202,7 @@ return_status packet_encrypt(
 	//generate the header nonce and add it to the packet header
 	header_nonce = buffer_create_on_heap(HEADER_NONCE_SIZE, 0);
 	THROW_on_failed_alloc(header_nonce);
-	if (buffer_fill_random(header_nonce, HEADER_NONCE_SIZE) != 0) {
+	if (header_nonce->fillRandom(HEADER_NONCE_SIZE) != 0) {
 		THROW(BUFFER_ERROR, "Failed to generate header nonce.");
 	}
 	packet_header_struct.has_header_nonce = true;
@@ -234,7 +234,7 @@ return_status packet_encrypt(
 	//generate the message nonce and add it to the packet header
 	message_nonce = buffer_create_on_heap(MESSAGE_NONCE_SIZE, 0);
 	THROW_on_failed_alloc(message_nonce);
-	if (buffer_fill_random(message_nonce, MESSAGE_NONCE_SIZE) != 0) {
+	if (message_nonce->fillRandom(MESSAGE_NONCE_SIZE) != 0) {
 		THROW(BUFFER_ERROR, "Failed to generate message nonce.");
 	}
 	packet_header_struct.has_message_nonce = true;

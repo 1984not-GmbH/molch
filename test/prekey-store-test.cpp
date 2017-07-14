@@ -296,7 +296,7 @@ int main(void) {
 	printf("Successfully got prekey from the deprecated area!\n");
 
 	//try to get a nonexistent key
-	if (buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE) != 0) {
+	if (public_prekey->fillRandom(PUBLIC_KEY_SIZE) != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to generate invalid public prekey.");
 	}
 	status = prekey_store_get_prekey(store, public_prekey, private_prekey1);

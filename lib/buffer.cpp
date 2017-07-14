@@ -461,23 +461,21 @@ int buffer_compare_to_raw_partial(
 /*
  * Fill a buffer with random numbers.
  */
-int buffer_fill_random(
-		Buffer * const buffer,
-		const size_t length) {
-	if (length > buffer->getBufferLength()) {
+int Buffer::fillRandom(const size_t length) {
+	if (length > this->buffer_length) {
 		return -6;
 	}
 
-	if (buffer->isReadOnly()) {
+	if (this->readonly) {
 		return -5;
 	}
 
-	if (buffer->getBufferLength() == 0) {
+	if (this->buffer_length == 0) {
 		return 0;
 	}
 
-	buffer->content_length = length;
-	randombytes_buf(buffer->content, length);
+	this->content_length = length;
+	randombytes_buf(this->content, length);
 
 	return 0;
 }

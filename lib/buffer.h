@@ -96,6 +96,11 @@ public:
 	 */
 	int xorWith(Buffer * const source) __attribute__((warn_unused_result));
 
+	/*
+	 * Fill a buffer with random numbers.
+	 */
+	int fillRandom(const size_t length) __attribute__((warn_unused_result));
+
 	size_t getBufferLength();
 	bool isReadOnly();
 	void setReadOnly(bool readonly);
@@ -251,11 +256,4 @@ int buffer_compare_to_raw_partial(
 		const size_t array_length,
 		const size_t position2,
 		const size_t comparison_length);
-
-/*
- * Fill a buffer with random numbers.
- */
-int buffer_fill_random(
-		Buffer * const buffer,
-		const size_t length) __attribute__((warn_unused_result));
 #endif

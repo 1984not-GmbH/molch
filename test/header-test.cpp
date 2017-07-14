@@ -43,7 +43,7 @@ int main(void) {
 
 	int status_int;
 	//create ephemeral key
-	status_int = buffer_fill_random(our_public_ephemeral_key, our_public_ephemeral_key->content_length);
+	status_int = our_public_ephemeral_key->fillRandom(our_public_ephemeral_key->content_length);
 	if (status_int != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to create our public ephemeral.");
 	}

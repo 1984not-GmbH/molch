@@ -77,7 +77,7 @@ return_status conversation_create(
 	init_struct(*conversation);
 
 	//create random id
-	if (buffer_fill_random(&(*conversation)->id, CONVERSATION_ID_SIZE) != 0) {
+	if ((*conversation)->id.fillRandom(CONVERSATION_ID_SIZE) != 0) {
 		THROW(BUFFER_ERROR, "Failed to create random conversation id.");
 	}
 

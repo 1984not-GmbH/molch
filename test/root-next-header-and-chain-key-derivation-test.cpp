@@ -68,7 +68,7 @@ int main(void) {
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's ephemeral keypair.");
 
 	//create previous root key
-	if (buffer_fill_random(previous_root_key, crypto_secretbox_KEYBYTES) != 0) {
+	if (previous_root_key->fillRandom(crypto_secretbox_KEYBYTES) != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to generate previous root key.");
 	}
 

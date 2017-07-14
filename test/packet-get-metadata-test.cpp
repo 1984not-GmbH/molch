@@ -106,19 +106,19 @@ int main(void) {
 	printf("PREKEY MESSAGE:\n");
 	//create the keys
 	{
-		int status_int = buffer_fill_random(public_identity_key, PUBLIC_KEY_SIZE);
+		int status_int = public_identity_key->fillRandom(PUBLIC_KEY_SIZE);
 		if (status_int != 0) {
 			THROW(KEYGENERATION_FAILED, "Failed to generate public identity key.");
 		}
 	}
 	{
-		int status_int = buffer_fill_random(public_ephemeral_key, PUBLIC_KEY_SIZE);
+		int status_int = public_ephemeral_key->fillRandom(PUBLIC_KEY_SIZE);
 		if (status_int != 0) {
 			THROW(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
 		}
 	}
 	{
-		int status_int = buffer_fill_random(public_prekey, PUBLIC_KEY_SIZE);
+		int status_int = public_prekey->fillRandom(PUBLIC_KEY_SIZE);
 		if (status_int != 0) {
 			THROW(KEYGENERATION_FAILED, "Failed to generate public prekey.");
 		}

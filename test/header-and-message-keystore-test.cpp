@@ -172,11 +172,11 @@ int main(void) {
 	//add keys to the keystore
 	for (size_t i = 0; i < 6; i++) {
 		//create new keys
-		status_int = buffer_fill_random(header_key, header_key->getBufferLength());
+		status_int = header_key->fillRandom(header_key->getBufferLength());
 		if (status_int != 0) {
 			THROW(KEYGENERATION_FAILED, "Failed to create header key.");
 		}
-		status_int = buffer_fill_random(message_key, message_key->getBufferLength());
+		status_int = message_key->fillRandom(message_key->getBufferLength());
 		if (status_int != 0) {
 			THROW(KEYGENERATION_FAILED, "Failed to create header key.");
 		}

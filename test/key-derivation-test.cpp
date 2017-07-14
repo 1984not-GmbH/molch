@@ -41,7 +41,7 @@ int main(void) {
 	Buffer *subkey1_copy = buffer_create_on_heap(60, 60);
 
 	int status_int = 0;
-	status_int = buffer_fill_random(master_key, master_key->getBufferLength());
+	status_int = master_key->fillRandom(master_key->getBufferLength());
 	if (status_int != 0) {
 		THROW(KEYDERIVATION_FAILED, "Failed to generate master key.");
 	}

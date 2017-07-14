@@ -163,11 +163,11 @@ static return_status test_add_conversation(conversation_store * const store) {
 	if (status_int != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to generate our ephemeral keys.");
 	}
-	status_int = buffer_fill_random(their_public_identity, their_public_identity->getBufferLength());
+	status_int = their_public_identity->fillRandom(their_public_identity->getBufferLength());
 	if (status_int != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to generate their public identity keys.");
 	}
-	status_int = buffer_fill_random(their_public_ephemeral, their_public_ephemeral->getBufferLength());
+	status_int = their_public_ephemeral->fillRandom(their_public_ephemeral->getBufferLength());
 	if (status_int != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to generate their public ephemeral keys.");
 	}
@@ -185,7 +185,7 @@ static return_status test_add_conversation(conversation_store * const store) {
 	//create the conversation id
 	conversation->id.init_with_pointer(conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 
-	status_int = buffer_fill_random(&conversation->id, CONVERSATION_ID_SIZE);
+	status_int = conversation->id.fillRandom(CONVERSATION_ID_SIZE);
 	if (status_int != 0) {
 		THROW(GENERIC_ERROR, "Failed to fill buffer with random data.");
 	}

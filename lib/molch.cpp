@@ -1146,7 +1146,7 @@ return_status molch_conversation_export(
 	//generate the nonce
 	backup_nonce = buffer_create_on_heap(BACKUP_NONCE_SIZE, 0);
 	THROW_on_failed_alloc(backup_nonce);
-	if (buffer_fill_random(backup_nonce, BACKUP_NONCE_SIZE) != 0) {
+	if (backup_nonce->fillRandom(BACKUP_NONCE_SIZE) != 0) {
 		THROW(GENERIC_ERROR, "Failed to generaete backup nonce.");
 	}
 
@@ -1384,7 +1384,7 @@ return_status molch_export(
 	//generate the nonce
 	backup_nonce = buffer_create_on_heap(BACKUP_NONCE_SIZE, 0);
 	THROW_on_failed_alloc(backup_nonce);
-	if (buffer_fill_random(backup_nonce, BACKUP_NONCE_SIZE) != 0) {
+	if (backup_nonce->fillRandom(BACKUP_NONCE_SIZE) != 0) {
 		THROW(GENERIC_ERROR, "Failed to generaete backup nonce.");
 	}
 
@@ -1646,7 +1646,7 @@ return_status molch_update_backup_key(
 		THROW(GENERIC_ERROR, "Failed to make backup key content readwrite.");
 	}
 
-	if (buffer_fill_random(global_backup_key, BACKUP_KEY_SIZE) != 0) {
+	if (global_backup_key->fillRandom(BACKUP_KEY_SIZE) != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to generate new backup key.");
 	}
 
