@@ -860,7 +860,7 @@ int main(void) {
 	THROW_on_error(EXPORT_ERROR, "Failed to export Alice' ratchet to protobuf-c the second time.");
 
 	//compare both exports
-	if (protobuf_export_buffer->compare(protobuf_second_export_buffer) != 0) {
+	if ((protobuf_export_buffer == NULL) || (protobuf_export_buffer->compare(protobuf_second_export_buffer) != 0)) {
 		print_hex(protobuf_second_export_buffer);
 		THROW(INCORRECT_DATA, "Both exports don't match!");
 	}

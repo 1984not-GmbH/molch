@@ -278,7 +278,7 @@ int main(void) {
 	THROW_on_error(EXPORT_ERROR, "Failed to export charlie's conversation to protobuf-c.");
 
 	//compare
-	if (protobuf_export_buffer->compare(protobuf_second_export_buffer) != 0) {
+	if ((protobuf_export_buffer == NULL) || (protobuf_export_buffer->compare(protobuf_second_export_buffer) != 0)) {
 		THROW(EXPORT_ERROR, "Both exported buffers are not the same.");
 	}
 	printf("Both exported buffers are identitcal.\n\n");
