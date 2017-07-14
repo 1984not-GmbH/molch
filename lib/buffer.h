@@ -91,6 +91,11 @@ public:
 	 */
 	void destroy_with_custom_deallocator(void (*deallocator)(void *pointer));
 
+	/*
+	 * Xor another buffer with the same length onto this one.
+	 */
+	int xorWith(Buffer * const source) __attribute__((warn_unused_result));
+
 	size_t getBufferLength();
 	bool isReadOnly();
 	void setReadOnly(bool readonly);
@@ -253,11 +258,4 @@ int buffer_compare_to_raw_partial(
 int buffer_fill_random(
 		Buffer * const buffer,
 		const size_t length) __attribute__((warn_unused_result));
-
-/*
- * Xor a buffer onto another of the same length.
- */
-int buffer_xor(
-		Buffer * const destination,
-		Buffer * const source) __attribute__((warn_unused_result));
 #endif

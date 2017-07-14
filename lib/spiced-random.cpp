@@ -84,7 +84,7 @@ return_status spiced_random(
 	}
 
 	//now combine the spice with the OS provided random data.
-	if (buffer_xor(os_random, spice) != 0) {
+	if (os_random->xorWith(spice) != 0) {
 		THROW(GENERIC_ERROR, "Failed to xor os random data and random data derived from spice.");
 	}
 

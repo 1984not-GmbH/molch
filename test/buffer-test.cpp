@@ -267,7 +267,7 @@ int main(void) {
 	}
 
 	//xor random data to xor-buffer
-	status = buffer_xor(to_xor, random2);
+	status = to_xor->xorWith(random2);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to xor buffers. (%i)\n", status);
 		goto fail;
@@ -280,7 +280,7 @@ int main(void) {
 	}
 
 	//xor the buffer with text again to get out the random data
-	status = buffer_xor(to_xor, text);
+	status = to_xor->xorWith(text);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to xor buffers. (%i)\n", status);
 		goto fail;

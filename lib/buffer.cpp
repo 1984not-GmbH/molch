@@ -482,26 +482,21 @@ int buffer_fill_random(
 	return 0;
 }
 
-/*
- * Xor a buffer onto another of the same length.
- */
 //FIXME: Make sure this doesn't introduce any sidechannels
-int buffer_xor(
-		Buffer * const destination,
-		Buffer * const source) {
-	if (destination->isReadOnly()) {
+int Buffer::xorWith(Buffer * const source) {
+	if (this->readonly) {
 		return -5;
 	}
 
-	if ((destination->content_length != source->content_length)
-			|| (destination->getBufferLength() < destination->content_length)
-			|| (source->getBufferLength() < source->content_length)) {
+	if ((this->content_length != source->content_length)
+			|| (this->buffer_length < this->content_length)
+			|| (source->buffer_length < source->content_length)) {
 		return -6;
 	}
 
 	//xor source onto destination
-	for (size_t i = 0; i < destination->content_length; i++) {
-		destination->content[i] ^= source->content[i];
+	for (size_t i = 0; i < this->content_length; i++) {
+		this->content[i] ^= source->content[i];
 	}
 
 	return 0;
