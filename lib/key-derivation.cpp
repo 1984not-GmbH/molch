@@ -168,10 +168,10 @@ return_status derive_root_next_header_and_chain_keys(
 
 	//DH(DHRs, DHRr) or DH(DHRp, DHRs)
 	status = diffie_hellman(
-			diffie_hellman_secret,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_ephemeral,
+			*diffie_hellman_secret,
+			*our_private_ephemeral,
+			*our_public_ephemeral,
+			*their_public_ephemeral,
 			am_i_alice);
 	THROW_on_error(KEYDERIVATION_FAILED, "Failed to perform diffie hellman.");
 
@@ -284,13 +284,13 @@ return_status derive_initial_root_chain_and_header_keys(
 	//master_key = HASH( DH(A,B0) || DH(A0,B) || DH(A0,B0) )
 	assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES);
 	status = triple_diffie_hellman(
-			master_key,
-			our_private_identity,
-			our_public_identity,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_identity,
-			their_public_ephemeral,
+			*master_key,
+			*our_private_identity,
+			*our_public_identity,
+			*our_private_ephemeral,
+			*our_public_ephemeral,
+			*their_public_identity,
+			*their_public_ephemeral,
 			am_i_alice);
 	THROW_on_error(KEYDERIVATION_FAILED, "Failed to perform triple diffie hellman.");
 

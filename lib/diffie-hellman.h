@@ -41,10 +41,10 @@
  * Bob:   H(ECDH(our_private_key,their_public_key)|their_public_key|our_public_key)
  */
 return_status diffie_hellman(
-		Buffer * const derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
-		Buffer * const our_private_key, //needs to be PRIVATE_KEY_SIZE long
-		Buffer * const our_public_key, //needs to be PUBLIC_KEY_SIZE long
-		Buffer * const their_public_key, //needs to be PUBLIC_KEY_SIZE long
+		Buffer& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
+		Buffer& our_private_key, //needs to be PRIVATE_KEY_SIZE long
+		Buffer& our_public_key, //needs to be PUBLIC_KEY_SIZE long
+		Buffer& their_public_key, //needs to be PUBLIC_KEY_SIZE long
 		const bool am_i_alice) __attribute__((warn_unused_result));
 
 /*
@@ -64,12 +64,12 @@ return_status diffie_hellman(
  * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
  */
 return_status triple_diffie_hellman(
-		Buffer * const derived_key,
-		Buffer * const our_private_identity,
-		Buffer * const our_public_identity,
-		Buffer * const our_private_ephemeral,
-		Buffer * const our_public_ephemeral,
-		Buffer * const their_public_identity,
-		Buffer * const their_public_ephemeral,
+		Buffer& derived_key,
+		Buffer& our_private_identity,
+		Buffer& our_public_identity,
+		Buffer& our_private_ephemeral,
+		Buffer& our_public_ephemeral,
+		Buffer& their_public_identity,
+		Buffer& their_public_ephemeral,
 		const bool am_i_alice) __attribute__((warn_unused_result));
 #endif

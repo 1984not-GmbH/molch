@@ -63,10 +63,10 @@ int main(void) {
 
 	//Diffie Hellman on Alice's side
 	status = diffie_hellman(
-			alice_shared_secret,
-			alice_private_key,
-			alice_public_key,
-			bob_public_key,
+			*alice_shared_secret,
+			*alice_private_key,
+			*alice_public_key,
+			*bob_public_key,
 			true);
 	alice_private_key->clear();
 	THROW_on_error(KEYGENERATION_FAILED, "Diffie Hellman with Alice's private key failed.");
@@ -78,10 +78,10 @@ int main(void) {
 
 	//Diffie Hellman on Bob's side
 	status = diffie_hellman(
-			bob_shared_secret,
-			bob_private_key,
-			bob_public_key,
-			alice_public_key,
+			*bob_shared_secret,
+			*bob_private_key,
+			*bob_public_key,
+			*alice_public_key,
 			false);
 	bob_private_key->clear();
 	THROW_on_error(KEYGENERATION_FAILED, "Diffie Hellman with Bob's private key failed.");

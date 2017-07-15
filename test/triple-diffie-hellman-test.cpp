@@ -93,13 +93,13 @@ int main(void) {
 
 	//Triple Diffie Hellman on Alice's side
 	status = triple_diffie_hellman(
-			alice_shared_secret,
-			alice_private_identity,
-			alice_public_identity,
-			alice_private_ephemeral,
-			alice_public_ephemeral,
-			bob_public_identity,
-			bob_public_ephemeral,
+			*alice_shared_secret,
+			*alice_private_identity,
+			*alice_public_identity,
+			*alice_private_ephemeral,
+			*alice_public_ephemeral,
+			*bob_public_identity,
+			*bob_public_ephemeral,
 			true);
 	alice_private_identity->clear();
 	alice_private_ephemeral->clear();
@@ -111,13 +111,13 @@ int main(void) {
 
 	//Triple Diffie Hellman on Bob's side
 	status = triple_diffie_hellman(
-			bob_shared_secret,
-			bob_private_identity,
-			bob_public_identity,
-			bob_private_ephemeral,
-			bob_public_ephemeral,
-			alice_public_identity,
-			alice_public_ephemeral,
+			*bob_shared_secret,
+			*bob_private_identity,
+			*bob_public_identity,
+			*bob_private_ephemeral,
+			*bob_public_ephemeral,
+			*alice_public_identity,
+			*alice_public_ephemeral,
 			false);
 	bob_private_identity->clear();
 	bob_private_ephemeral->clear();

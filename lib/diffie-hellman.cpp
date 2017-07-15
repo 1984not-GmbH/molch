@@ -38,10 +38,10 @@
  * Bob:   H(ECDH(our_private_key,their_public_key)|their_public_key|our_public_key)
  */
 return_status diffie_hellman(
-		Buffer * const derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
-		Buffer * const our_private_key, //needs to be PRIVATE_KEY_SIZE long
-		Buffer * const our_public_key, //needs to be PUBLIC_KEY_SIZE long
-		Buffer * const their_public_key, //needs to be PUBLIC_KEY_SIZE long
+		Buffer& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
+		Buffer& our_private_key, //needs to be PRIVATE_KEY_SIZE long
+		Buffer& our_public_key, //needs to be PUBLIC_KEY_SIZE long
+		Buffer& their_public_key, //needs to be PUBLIC_KEY_SIZE long
 		const bool am_i_alice) {
 
 	return_status status = return_status_init();
@@ -52,7 +52,7 @@ return_status diffie_hellman(
 	assert(DIFFIE_HELLMAN_SIZE == crypto_generichash_BYTES);
 
 	//set content length of output to 0 (can prevent use on failure)
-	derived_key->content_length = 0;
+	derived_key.content_length = 0;
 
 	//buffer for diffie hellman shared secret
 	Buffer *dh_secret = Buffer::create(crypto_scalarmult_SCALARBYTES, crypto_scalarmult_SCALARBYTES);
@@ -61,19 +61,19 @@ return_status diffie_hellman(
 	crypto_generichash_state hash_state[1];
 
 	//check buffer sizes
-	if ((derived_key->getBufferLength() < DIFFIE_HELLMAN_SIZE)
-			|| (our_private_key->content_length != PRIVATE_KEY_SIZE)
-			|| (our_public_key->content_length != PUBLIC_KEY_SIZE)
-			|| (their_public_key->content_length != PUBLIC_KEY_SIZE)
-			|| (our_private_key->getBufferLength() < PRIVATE_KEY_SIZE)
-			|| (our_public_key->getBufferLength() < PUBLIC_KEY_SIZE)
-			|| (their_public_key->getBufferLength() < PUBLIC_KEY_SIZE)) {
+	if ((derived_key.getBufferLength() < DIFFIE_HELLMAN_SIZE)
+			|| (our_private_key.content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_key.content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_key.content_length != PUBLIC_KEY_SIZE)
+			|| (our_private_key.getBufferLength() < PRIVATE_KEY_SIZE)
+			|| (our_public_key.getBufferLength() < PUBLIC_KEY_SIZE)
+			|| (their_public_key.getBufferLength() < PUBLIC_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to diffie_hellman.");
 	}
 
 
 	//do the diffie hellman key exchange
-	if (crypto_scalarmult(dh_secret->content, our_private_key->content, their_public_key->content) != 0) {
+	if (crypto_scalarmult(dh_secret->content, our_private_key.content, their_public_key.content) != 0) {
 		THROW(KEYDERIVATION_FAILED, "Failed to do crypto_scalarmult.");
 	}
 
@@ -97,31 +97,31 @@ return_status diffie_hellman(
 	//add public keys to the input of the hash
 	if (am_i_alice) { //Alice (our_public_key|their_public_key)
 		//add our_public_key to the input of the hash
-		if (crypto_generichash_update(hash_state, our_public_key->content, our_public_key->content_length) != 0) {
+		if (crypto_generichash_update(hash_state, our_public_key.content, our_public_key.content_length) != 0) {
 			THROW(GENERIC_ERROR, "Failed to add Alice' public key to the hash input.");
 		}
 
 		//add their_public_key to the input of the hash
-		if (crypto_generichash_update(hash_state, their_public_key->content, their_public_key->content_length) != 0) {
+		if (crypto_generichash_update(hash_state, their_public_key.content, their_public_key.content_length) != 0) {
 			THROW(GENERIC_ERROR, "Failed to add Bob's public key to the hash input.");
 		}
 	} else { //Bob (their_public_key|our_public_key)
 		//add their_public_key to the input of the hash
-		if (crypto_generichash_update(hash_state, their_public_key->content, their_public_key->content_length) != 0) {
+		if (crypto_generichash_update(hash_state, their_public_key.content, their_public_key.content_length) != 0) {
 			THROW(GENERIC_ERROR, "Failed to add Alice's public key to the hash input.");
 		}
 
 		//add our_public_key to the input of the hash
-		if (crypto_generichash_update(hash_state, our_public_key->content, our_public_key->content_length) != 0) {
+		if (crypto_generichash_update(hash_state, our_public_key.content, our_public_key.content_length) != 0) {
 			THROW(GENERIC_ERROR, "Failed to add Bob's public key to the hash input.");
 		}
 	}
 
 	//finally write the hash to derived_key
-	if (crypto_generichash_final(hash_state, derived_key->content, DIFFIE_HELLMAN_SIZE) != 0) {
+	if (crypto_generichash_final(hash_state, derived_key.content, DIFFIE_HELLMAN_SIZE) != 0) {
 		THROW(GENERIC_ERROR, "Failed to finalize hash.");
 	}
-	derived_key->content_length = DIFFIE_HELLMAN_SIZE;
+	derived_key.content_length = DIFFIE_HELLMAN_SIZE;
 
 cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(dh_secret);
@@ -147,18 +147,18 @@ cleanup:
  * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
  */
 return_status triple_diffie_hellman(
-		Buffer * const derived_key,
-		Buffer * const our_private_identity,
-		Buffer * const our_public_identity,
-		Buffer * const our_private_ephemeral,
-		Buffer * const our_public_ephemeral,
-		Buffer * const their_public_identity,
-		Buffer * const their_public_ephemeral,
+		Buffer& derived_key,
+		Buffer& our_private_identity,
+		Buffer& our_public_identity,
+		Buffer& our_private_ephemeral,
+		Buffer& our_public_ephemeral,
+		Buffer& their_public_identity,
+		Buffer& their_public_ephemeral,
 		const bool am_i_alice) {
 	return_status status = return_status_init();
 
 	//set content length of output to 0 (can prevent use on failure)
-	derived_key->content_length = 0;
+	derived_key.content_length = 0;
 
 	//buffers for all 3 Diffie Hellman exchanges
 	Buffer *dh1 = nullptr;
@@ -172,26 +172,26 @@ return_status triple_diffie_hellman(
 	THROW_on_failed_alloc(dh3);
 
 	//check buffer sizes
-	if ((derived_key->getBufferLength() < DIFFIE_HELLMAN_SIZE)
-			|| (our_private_identity->content_length != PRIVATE_KEY_SIZE)
-			|| (our_public_identity->content_length != PUBLIC_KEY_SIZE)
-			|| (their_public_identity->content_length != PUBLIC_KEY_SIZE)
-			|| (our_private_ephemeral->content_length != PRIVATE_KEY_SIZE)
-			|| (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
-			|| (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
-			|| (our_private_identity->getBufferLength() < PRIVATE_KEY_SIZE)
-			|| (our_public_identity->getBufferLength() < PUBLIC_KEY_SIZE)
-			|| (their_public_identity->getBufferLength() < PUBLIC_KEY_SIZE)
-			|| (our_private_ephemeral->getBufferLength() < PRIVATE_KEY_SIZE)
-			|| (our_public_ephemeral->getBufferLength() < PUBLIC_KEY_SIZE)
-			|| (their_public_ephemeral->getBufferLength() < PUBLIC_KEY_SIZE)) {
+	if ((derived_key.getBufferLength() < DIFFIE_HELLMAN_SIZE)
+			|| (our_private_identity.content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_identity.content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_identity.content_length != PUBLIC_KEY_SIZE)
+			|| (our_private_ephemeral.content_length != PRIVATE_KEY_SIZE)
+			|| (our_public_ephemeral.content_length != PUBLIC_KEY_SIZE)
+			|| (their_public_ephemeral.content_length != PUBLIC_KEY_SIZE)
+			|| (our_private_identity.getBufferLength() < PRIVATE_KEY_SIZE)
+			|| (our_public_identity.getBufferLength() < PUBLIC_KEY_SIZE)
+			|| (their_public_identity.getBufferLength() < PUBLIC_KEY_SIZE)
+			|| (our_private_ephemeral.getBufferLength() < PRIVATE_KEY_SIZE)
+			|| (our_public_ephemeral.getBufferLength() < PUBLIC_KEY_SIZE)
+			|| (their_public_ephemeral.getBufferLength() < PUBLIC_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to triple_diffie_hellman.");
 	}
 
 	if (am_i_alice) {
 		//DH(our_identity, their_ephemeral)
 		status = diffie_hellman(
-				dh1,
+				*dh1,
 				our_private_identity,
 				our_public_identity,
 				their_public_ephemeral,
@@ -200,7 +200,7 @@ return_status triple_diffie_hellman(
 
 		//DH(our_ephemeral, their_identity)
 		status = diffie_hellman(
-				dh2,
+				*dh2,
 				our_private_ephemeral,
 				our_public_ephemeral,
 				their_public_identity,
@@ -209,7 +209,7 @@ return_status triple_diffie_hellman(
 	} else {
 		//DH(our_ephemeral, their_identity)
 		status = diffie_hellman(
-				dh1,
+				*dh1,
 				our_private_ephemeral,
 				our_public_ephemeral,
 				their_public_identity,
@@ -218,7 +218,7 @@ return_status triple_diffie_hellman(
 
 		//DH(our_identity, their_ephemeral)
 		status = diffie_hellman(
-				dh2,
+				*dh2,
 				our_private_identity,
 				our_public_identity,
 				their_public_ephemeral,
@@ -229,7 +229,7 @@ return_status triple_diffie_hellman(
 	//DH(our_ephemeral, their_ephemeral)
 	//this is identical for both Alice and Bob
 	status = diffie_hellman(
-			dh3,
+			*dh3,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral,
@@ -268,11 +268,11 @@ return_status triple_diffie_hellman(
 	}
 
 	//write final hash to output (derived_key)
-	if (crypto_generichash_final(hash_state, derived_key->content, DIFFIE_HELLMAN_SIZE) != 0) {
+	if (crypto_generichash_final(hash_state, derived_key.content, DIFFIE_HELLMAN_SIZE) != 0) {
 		sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 		THROW(GENERIC_ERROR, "Failed to finalize hash");
 	}
-	derived_key->content_length = DIFFIE_HELLMAN_SIZE;
+	derived_key.content_length = DIFFIE_HELLMAN_SIZE;
 	sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 
 cleanup:
