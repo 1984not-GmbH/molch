@@ -50,7 +50,7 @@ int main(void) {
 	//derive a chain of chain keys
 	unsigned int counter;
 	for (counter = 1; counter <= 5; counter++) {
-		status = derive_chain_key(next_chain_key, last_chain_key);
+		status = derive_chain_key(*next_chain_key, *last_chain_key);
 		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key.");
 
 		//print the derived chain key

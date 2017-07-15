@@ -49,13 +49,13 @@ int main(void) {
 	print_hex(master_key);
 	putchar('\n');
 
-	status = derive_key(subkey1, subkey1->getBufferLength(), master_key, 0);
+	status = derive_key(*subkey1, subkey1->getBufferLength(), *master_key, 0);
 	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive first subkey.");
 	printf("First subkey:\n");
 	print_hex(subkey1);
 	putchar('\n');
 
-	status = derive_key(subkey2, subkey2->getBufferLength(), master_key, 1);
+	status = derive_key(*subkey2, subkey2->getBufferLength(), *master_key, 1);
 	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive the second subkey.");
 	printf("Second subkey:\n");
 	print_hex(subkey2);
@@ -65,7 +65,7 @@ int main(void) {
 		THROW(KEYGENERATION_FAILED, "Both subkeys are the same.");
 	}
 
-	status = derive_key(subkey1_copy, subkey1_copy->getBufferLength(), master_key, 0);
+	status = derive_key(*subkey1_copy, subkey1_copy->getBufferLength(), *master_key, 0);
 	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive copy of the first subkey.");
 
 	if (subkey1->compare(subkey1_copy) != 0) {

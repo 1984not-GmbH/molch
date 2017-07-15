@@ -48,7 +48,7 @@ int main(void) {
 	putchar('\n');
 
 	//derive message key from chain key
-	status = derive_message_key(message_key, chain_key);
+	status = derive_message_key(*message_key, *chain_key);
 	chain_key->clear();
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to derive message key.");
 

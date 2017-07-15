@@ -33,9 +33,9 @@
  * and crypto_generichash_blake2b_KEYBYTES_MAX (64 Bytes).
  */
 return_status derive_key(
-		Buffer * const derived_key,
+		Buffer& derived_key,
 		size_t derived_size,
-		Buffer * const input_key,
+		Buffer& input_key,
 		uint32_t subkey_counter) __attribute__((warn_unused_result)); //number of the current subkey, used to derive multiple keys from the same input key
 
 /*
@@ -47,8 +47,8 @@ return_status derive_key(
  * (previous chain key as key, 0x01 as message)
  */
 return_status derive_chain_key(
-		Buffer * const new_chain_key,
-		Buffer * const previous_chain_key) __attribute__((warn_unused_result));
+		Buffer& new_chain_key,
+		Buffer& previous_chain_key) __attribute__((warn_unused_result));
 
 /*
  * Derive a message key from a chain key.
@@ -59,8 +59,8 @@ return_status derive_chain_key(
  * (chain_key as key, 0x00 as message)
  */
 return_status derive_message_key(
-		Buffer * const message_key,
-		Buffer * const chain_key) __attribute__((warn_unused_result));
+		Buffer& message_key,
+		Buffer& chain_key) __attribute__((warn_unused_result));
 
 /*
  * Derive a root, next header and initial chain key for a new ratchet.
@@ -70,13 +70,13 @@ return_status derive_message_key(
  * RK, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
  */
 return_status derive_root_next_header_and_chain_keys(
-		Buffer * const root_key, //ROOT_KEY_SIZE
-		Buffer * const next_header_key, //HEADER_KEY_SIZE
-		Buffer * const chain_key, //CHAIN_KEY_SIZE
-		Buffer * const our_private_ephemeral,
-		Buffer * const our_public_ephemeral,
-		Buffer * const their_public_ephemeral,
-		Buffer * const previous_root_key,
+		Buffer& root_key, //ROOT_KEY_SIZE
+		Buffer& next_header_key, //HEADER_KEY_SIZE
+		Buffer& chain_key, //CHAIN_KEY_SIZE
+		Buffer& our_private_ephemeral,
+		Buffer& our_public_ephemeral,
+		Buffer& their_public_ephemeral,
+		Buffer& previous_root_key,
 		bool am_i_alice) __attribute__((warn_unused_result));
 
 /*
@@ -85,19 +85,19 @@ return_status derive_root_next_header_and_chain_keys(
  * RK, CKs/r, HKs/r = KDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
  */
 return_status derive_initial_root_chain_and_header_keys(
-		Buffer * const root_key, //ROOT_KEY_SIZE
-		Buffer * const send_chain_key, //CHAIN_KEY_SIZE
-		Buffer * const receive_chain_key, //CHAIN_KEY_SIZE
-		Buffer * const send_header_key, //HEADER_KEY_SIZE
-		Buffer * const receive_header_key, //HEADER_KEY_SIZE
-		Buffer * const next_send_header_key, //HEADER_KEY_SIZE
-		Buffer * const next_receive_header_key, //HEADER_KEY_SIZE
-		Buffer * const our_private_identity,
-		Buffer * const our_public_identity,
-		Buffer * const their_public_identity,
-		Buffer * const our_private_ephemeral,
-		Buffer * const our_public_ephemeral,
-		Buffer * const their_public_ephemeral,
+		Buffer& root_key, //ROOT_KEY_SIZE
+		Buffer& send_chain_key, //CHAIN_KEY_SIZE
+		Buffer& receive_chain_key, //CHAIN_KEY_SIZE
+		Buffer& send_header_key, //HEADER_KEY_SIZE
+		Buffer& receive_header_key, //HEADER_KEY_SIZE
+		Buffer& next_send_header_key, //HEADER_KEY_SIZE
+		Buffer& next_receive_header_key, //HEADER_KEY_SIZE
+		Buffer& our_private_identity,
+		Buffer& our_public_identity,
+		Buffer& their_public_identity,
+		Buffer& our_private_ephemeral,
+		Buffer& our_public_ephemeral,
+		Buffer& their_public_ephemeral,
 		bool am_i_alice) __attribute__((warn_unused_result));
 
 #endif

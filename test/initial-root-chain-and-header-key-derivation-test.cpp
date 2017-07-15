@@ -99,19 +99,19 @@ int main(void) {
 
 	//derive Alice's initial root and chain key
 	status = derive_initial_root_chain_and_header_keys(
-			alice_root_key,
-			alice_send_chain_key,
-			alice_receive_chain_key,
-			alice_send_header_key,
-			alice_receive_header_key,
-			alice_next_send_header_key,
-			alice_next_receive_header_key,
-			alice_private_identity,
-			alice_public_identity,
-			bob_public_identity,
-			alice_private_ephemeral,
-			alice_public_ephemeral,
-			bob_public_ephemeral,
+			*alice_root_key,
+			*alice_send_chain_key,
+			*alice_receive_chain_key,
+			*alice_send_header_key,
+			*alice_receive_header_key,
+			*alice_next_send_header_key,
+			*alice_next_receive_header_key,
+			*alice_private_identity,
+			*alice_public_identity,
+			*bob_public_identity,
+			*alice_private_ephemeral,
+			*alice_public_ephemeral,
+			*bob_public_ephemeral,
 			true);
 	alice_private_identity->clear();
 	alice_private_ephemeral->clear();
@@ -141,19 +141,19 @@ int main(void) {
 
 	//derive Bob's initial root and chain key
 	status = derive_initial_root_chain_and_header_keys(
-			bob_root_key,
-			bob_send_chain_key,
-			bob_receive_chain_key,
-			bob_send_header_key,
-			bob_receive_header_key,
-			bob_next_send_header_key,
-			bob_next_receive_header_key,
-			bob_private_identity,
-			bob_public_identity,
-			alice_public_identity,
-			bob_private_ephemeral,
-			bob_public_ephemeral,
-			alice_public_ephemeral,
+			*bob_root_key,
+			*bob_send_chain_key,
+			*bob_receive_chain_key,
+			*bob_send_header_key,
+			*bob_receive_header_key,
+			*bob_next_send_header_key,
+			*bob_next_receive_header_key,
+			*bob_private_identity,
+			*bob_public_identity,
+			*alice_public_identity,
+			*bob_private_ephemeral,
+			*bob_public_ephemeral,
+			*alice_public_ephemeral,
 			false);
 	bob_private_identity->clear();
 	bob_private_ephemeral->clear();

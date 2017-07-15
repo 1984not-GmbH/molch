@@ -79,13 +79,13 @@ int main(void) {
 
 	//derive root and chain key for Alice
 	status = derive_root_next_header_and_chain_keys(
-			alice_root_key,
-			alice_header_key,
-			alice_chain_key,
-			alice_private_ephemeral,
-			alice_public_ephemeral,
-			bob_public_ephemeral,
-			previous_root_key,
+			*alice_root_key,
+			*alice_header_key,
+			*alice_chain_key,
+			*alice_private_ephemeral,
+			*alice_public_ephemeral,
+			*bob_public_ephemeral,
+			*previous_root_key,
 			true);
 	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive root, next header and chain key for Alice.");
 
@@ -100,13 +100,13 @@ int main(void) {
 
 	//derive root and chain key for Bob
 	status = derive_root_next_header_and_chain_keys(
-			bob_root_key,
-			bob_header_key,
-			bob_chain_key,
-			bob_private_ephemeral,
-			bob_public_ephemeral,
-			alice_public_ephemeral,
-			previous_root_key,
+			*bob_root_key,
+			*bob_header_key,
+			*bob_chain_key,
+			*bob_private_ephemeral,
+			*bob_public_ephemeral,
+			*alice_public_ephemeral,
+			*previous_root_key,
 			false);
 	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive root, next header and chain key for Bob.");
 

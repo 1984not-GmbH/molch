@@ -141,19 +141,19 @@ return_status ratchet_create(
 
 	//derive initial chain, root and header keys
 	status = derive_initial_root_chain_and_header_keys(
-			&(*ratchet)->root_key,
-			&(*ratchet)->send_chain_key,
-			&(*ratchet)->receive_chain_key,
-			&(*ratchet)->send_header_key,
-			&(*ratchet)->receive_header_key,
-			&(*ratchet)->next_send_header_key,
-			&(*ratchet)->next_receive_header_key,
-			our_private_identity,
-			our_public_identity,
-			their_public_identity,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_ephemeral,
+			(*ratchet)->root_key,
+			(*ratchet)->send_chain_key,
+			(*ratchet)->receive_chain_key,
+			(*ratchet)->send_header_key,
+			(*ratchet)->receive_header_key,
+			(*ratchet)->next_send_header_key,
+			(*ratchet)->next_receive_header_key,
+			*our_private_identity,
+			*our_public_identity,
+			*their_public_identity,
+			*our_private_ephemeral,
+			*our_public_ephemeral,
+			*their_public_ephemeral,
 			(*ratchet)->am_i_alice);
 	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive initial root chain and header keys.");
 	//copy keys into state
@@ -257,13 +257,13 @@ return_status ratchet_send(
 
 		//RK, NHKs, CKs = KDF(HMAC-HASH(RK, DH(DHRs, DHRr)))
 		status = derive_root_next_header_and_chain_keys(
-				&ratchet->root_key,
-				&ratchet->next_send_header_key,
-				&ratchet->send_chain_key,
-				&ratchet->our_private_ephemeral,
-				&ratchet->our_public_ephemeral,
-				&ratchet->their_public_ephemeral,
-				root_key_backup,
+				ratchet->root_key,
+				ratchet->next_send_header_key,
+				ratchet->send_chain_key,
+				ratchet->our_private_ephemeral,
+				ratchet->our_public_ephemeral,
+				ratchet->their_public_ephemeral,
+				*root_key_backup,
 				ratchet->am_i_alice);
 		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive root next header and chain keys.");
 
@@ -278,7 +278,7 @@ return_status ratchet_send(
 	}
 
 	//MK = HMAC-HASH(CKs, "0")
-	status = derive_message_key(message_key, &ratchet->send_chain_key);
+	status = derive_message_key(*message_key, ratchet->send_chain_key);
 	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive message key.");
 
 	//copy the other data to the output
@@ -317,8 +317,8 @@ return_status ratchet_send(
 
 	//CKs = HMAC-HASH(CKs, "1")
 	status = derive_chain_key(
-			&ratchet->send_chain_key,
-			chain_key_backup);
+			ratchet->send_chain_key,
+			*chain_key_backup);
 	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key.");
 
 cleanup:
@@ -456,7 +456,7 @@ static return_status stage_skipped_header_and_message_keys(
 
 	for (uint32_t pos = current_message_number; pos < future_message_number; pos++) {
 		//derive current message key
-		status = derive_message_key(current_message_key, current_chain_key);
+		status = derive_message_key(*current_message_key, *current_chain_key);
 		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive message key.");
 
 		//add the message key, along with current_header_key to the staging area
@@ -467,7 +467,7 @@ static return_status stage_skipped_header_and_message_keys(
 		THROW_on_error(ADDITION_ERROR, "Failed to add keys to header and message keystore.");
 
 		//derive next chain key
-		status = derive_chain_key(next_chain_key, current_chain_key);
+		status = derive_chain_key(*next_chain_key, *current_chain_key);
 		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key.");
 
 		//shift chain keys
@@ -478,14 +478,14 @@ static return_status stage_skipped_header_and_message_keys(
 
 	//derive the message key that will be returned
 	if (output_message_key != nullptr) {
-		status = derive_message_key(output_message_key, current_chain_key);
+		status = derive_message_key(*output_message_key, *current_chain_key);
 		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive message key.");
 	}
 
 	//derive the chain key that will be returned
 	//TODO: not sure if this additional derivation is needed!
 	if (output_chain_key != nullptr) {
-		status = derive_chain_key(output_chain_key, current_chain_key);
+		status = derive_chain_key(*output_chain_key, *current_chain_key);
 		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key.");
 	}
 
@@ -632,13 +632,13 @@ return_status ratchet_receive(
 
 		//RKp, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
 		status = derive_root_next_header_and_chain_keys(
-				&ratchet->purported_root_key,
-				&ratchet->purported_next_receive_header_key,
-				&ratchet->purported_receive_chain_key,
-				&ratchet->our_private_ephemeral,
-				&ratchet->our_public_ephemeral,
-				their_purported_public_ephemeral,
-				&ratchet->root_key,
+				ratchet->purported_root_key,
+				ratchet->purported_next_receive_header_key,
+				ratchet->purported_receive_chain_key,
+				ratchet->our_private_ephemeral,
+				ratchet->our_public_ephemeral,
+				*their_purported_public_ephemeral,
+				ratchet->root_key,
 				ratchet->am_i_alice);
 		THROW_on_error(KEYDERIVATION_FAILED, "Faield to derive root next header and chain keys.");
 
