@@ -380,8 +380,8 @@ return_status conversation_send(
 
 	//create the header
 	status = header_construct(
-			&header,
-			send_ephemeral_key,
+			header,
+			*send_ephemeral_key,
 			send_message_number,
 			previous_send_message_number);
 	THROW_on_error(CREATION_ERROR, "Failed to construct header.");
@@ -449,10 +449,10 @@ static int try_skipped_header_and_message_keys(
 					header_and_message_keystore_remove(skipped_keys, node);
 
 					status = header_extract(
-							their_signed_public_ephemeral,
-							receive_message_number,
-							previous_receive_message_number,
-							header);
+							*their_signed_public_ephemeral,
+							*receive_message_number,
+							*previous_receive_message_number,
+							*header);
 					THROW_on_error(GENERIC_ERROR, "Failed to extract data from header.");
 
 					goto cleanup;
@@ -576,10 +576,10 @@ return_status conversation_receive(
 	uint32_t local_receive_message_number;
 	uint32_t local_previous_receive_message_number;
 	status = header_extract(
-			their_signed_public_ephemeral,
-			&local_receive_message_number,
-			&local_previous_receive_message_number,
-			header);
+			*their_signed_public_ephemeral,
+			local_receive_message_number,
+			local_previous_receive_message_number,
+			*header);
 	THROW_on_error(GENERIC_ERROR, "Failed to extract data from header.");
 
 	//and now decrypt the message with the message key

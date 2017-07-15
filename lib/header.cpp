@@ -28,9 +28,9 @@ extern "C" {
 
 return_status header_construct(
 		//output
-		Buffer ** const header,
+		Buffer*& header,
 		//inputs
-		Buffer * const our_public_ephemeral, //PUBLIC_KEY_SIZE
+		Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE
 		const uint32_t message_number,
 		const uint32_t previous_message_number) {
 	return_status status = return_status_init();
@@ -38,18 +38,17 @@ return_status header_construct(
 	Header header_struct = HEADER__INIT;
 
 	//check input
-	if ((header == nullptr)
-			|| (our_public_ephemeral == nullptr) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
+	if (our_public_ephemeral.content_length != PUBLIC_KEY_SIZE) {
 		THROW(INVALID_INPUT, "Invalid input to header_construct.");
 	}
 
 	//initialize the output buffer
-	*header = nullptr;
+	header = nullptr;
 
 	//create buffer for our public ephemeral
 	ProtobufCBinaryData protobuf_our_public_ephemeral;
-	protobuf_our_public_ephemeral.len = our_public_ephemeral->content_length;
-	protobuf_our_public_ephemeral.data = our_public_ephemeral->content;
+	protobuf_our_public_ephemeral.len = our_public_ephemeral.content_length;
+	protobuf_our_public_ephemeral.data = our_public_ephemeral.content;
 
 	//fill the struct
 	header_struct.message_number = message_number;
@@ -62,11 +61,11 @@ return_status header_construct(
 	//allocate the header buffer
 	{
 		size_t header_length = header__get_packed_size(&header_struct);
-		*header = Buffer::create(header_length, header_length);
-		THROW_on_failed_alloc(*header);
+		header = Buffer::create(header_length, header_length);
+		THROW_on_failed_alloc(header);
 
 		//pack it
-		size_t packed_length = header__pack(&header_struct, (*header)->content);
+		size_t packed_length = header__pack(&header_struct, header->content);
 		if (packed_length != header_length) {
 			THROW(PROTOBUF_PACK_ERROR, "Packed header has incorrect length.");
 		}
@@ -74,9 +73,7 @@ return_status header_construct(
 
 cleanup:
 	on_error {
-		if ((header != nullptr) && (*header != nullptr)) {
-			buffer_destroy_from_heap_and_null_if_valid(*header);
-		}
+		buffer_destroy_from_heap_and_null_if_valid(header);
 	}
 
 	return status;
@@ -84,24 +81,22 @@ cleanup:
 
 return_status header_extract(
 		//outputs
-		Buffer * const their_public_ephemeral, //PUBLIC_KEY_SIZE
-		uint32_t * const message_number,
-		uint32_t * const previous_message_number,
+		Buffer& their_public_ephemeral, //PUBLIC_KEY_SIZE
+		uint32_t& message_number,
+		uint32_t& previous_message_number,
 		//intput
-		const Buffer * const header) {
+		const Buffer& header) {
 	return_status status = return_status_init();
 
 	Header *header_struct = nullptr;
 
 	//check input
-	if ((their_public_ephemeral == nullptr) || (their_public_ephemeral->getBufferLength() < PUBLIC_KEY_SIZE)
-			|| (message_number == nullptr) || (previous_message_number == nullptr)
-			|| (header == nullptr)) {
+	if (their_public_ephemeral.getBufferLength() < PUBLIC_KEY_SIZE) {
 		THROW(INVALID_INPUT, "Invalid input to header_extract.");
 	}
 
 	//unpack the message
-	header_struct = header__unpack(&protobuf_c_allocators, header->content_length, header->content);
+	header_struct = header__unpack(&protobuf_c_allocators, header.content_length, header.content);
 	if (header_struct == nullptr) {
 		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack header.");
 	}
@@ -114,10 +109,10 @@ return_status header_extract(
 		THROW(INCORRECT_BUFFER_SIZE, "The public ephemeral key in the header has an incorrect size.");
 	}
 
-	*message_number = header_struct->message_number;
-	*previous_message_number = header_struct->previous_message_number;
+	message_number = header_struct->message_number;
+	previous_message_number = header_struct->previous_message_number;
 
-	if (their_public_ephemeral->cloneFromRaw(header_struct->public_ephemeral_key.data, header_struct->public_ephemeral_key.len) != 0) {
+	if (their_public_ephemeral.cloneFromRaw(header_struct->public_ephemeral_key.data, header_struct->public_ephemeral_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy public ephemeral key.")
 	}
 

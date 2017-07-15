@@ -59,8 +59,8 @@ int main(void) {
 
 	//create the header
 	status = header_construct(
-			&header,
-			our_public_ephemeral_key,
+			header,
+			*our_public_ephemeral_key,
 			message_number,
 			previous_message_number);
 	THROW_on_error(CREATION_ERROR, "Failed to create header.");
@@ -74,10 +74,10 @@ int main(void) {
 	uint32_t extracted_message_number;
 	uint32_t extracted_previous_message_number;
 	status = header_extract(
-			extracted_public_ephemeral_key,
-			&extracted_message_number,
-			&extracted_previous_message_number,
-			header);
+			*extracted_public_ephemeral_key,
+			extracted_message_number,
+			extracted_previous_message_number,
+			*header);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to extract data from header.");
 
 	printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key->content_length);

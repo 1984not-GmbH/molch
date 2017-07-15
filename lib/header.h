@@ -50,9 +50,9 @@
  */
 return_status header_construct(
 		//output
-		Buffer ** const header,
+		Buffer*& header,
 		//inputs
-		Buffer * const our_public_ephemeral, //PUBLIC_KEY_SIZE
+		Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE
 		const uint32_t message_number,
 		const uint32_t previous_message_number) __attribute__((warn_unused_result));
 
@@ -73,10 +73,10 @@ return_status header_construct(
  */
 return_status header_extract(
 		//outputs
-		Buffer * const their_public_ephemeral, //PUBLIC_KEY_SIZE
-		uint32_t * const message_number,
-		uint32_t * const previous_message_number,
+		Buffer& their_public_ephemeral, //PUBLIC_KEY_SIZE
+		uint32_t& message_number,
+		uint32_t& previous_message_number,
 		//intput
-		const Buffer * const header) __attribute__((warn_unused_result));
+		const Buffer& header) __attribute__((warn_unused_result));
 
 #endif
