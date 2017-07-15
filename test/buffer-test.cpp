@@ -108,7 +108,7 @@ int main(void) {
 
 	empty = buffer_create_on_heap(0, 0);
 	empty2 = buffer_create_on_heap(0, 0);
-	status = buffer_clone(empty2, empty);
+	status = empty2->cloneFrom(empty);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to clone empty buffer.\n");
 		goto fail;
@@ -116,21 +116,21 @@ int main(void) {
 
 	//copy buffer
 	buffer3 = buffer_create_on_heap(5,0);
-	status = buffer_copy(buffer3, 0, buffer2, 0, buffer2->content_length);
+	status = buffer3->copyFrom(0, buffer2, 0, buffer2->content_length);
 	if ((status != 0) || (buffer2->compare(buffer3) != 0)) {
 		fprintf(stderr, "ERROR: Failed to copy buffer. (%i)\n", status);
 		goto fail;
 	}
 	printf("Buffer successfully copied.\n");
 
-	status = buffer_copy(buffer3, buffer2->content_length, buffer2, 0, buffer2->content_length);
+	status = buffer3->copyFrom(buffer2->content_length, buffer2, 0, buffer2->content_length);
 	if (status == 0) {
 		fprintf(stderr, "ERROR: Copied buffer that out of bounds.\n");
 		goto fail;
 	}
 	printf("Detected out of bounds buffer copying.\n");
 
-	status = buffer_copy(buffer3, 1, buffer2, 0, buffer2->content_length);
+	status = buffer3->copyFrom(1, buffer2, 0, buffer2->content_length);
 	if ((status != 0) || (buffer3->content[0] != buffer2->content[0]) || (sodium_memcmp(buffer2->content, buffer3->content + 1, buffer2->content_length) != 0)) {
 		fprintf(stderr, "ERROR: Failed to copy buffer. (%i)\n", status);
 		goto fail;
@@ -140,10 +140,9 @@ int main(void) {
 	//copy to a raw array
 	{
 		unsigned char raw_array[4];
-		status = buffer_copy_to_raw(
+		status = buffer1->copyToRaw(
 				raw_array, //destination
 				0, //destination offset
-				buffer1, //source
 				1, //source offset
 				4); //length
 		if ((status != 0) || (sodium_memcmp(raw_array, buffer1->content + 1, 4) != 0)) {
@@ -152,10 +151,9 @@ int main(void) {
 		}
 		printf("Successfully copied buffer to raw array.\n");
 
-		status = buffer_copy_to_raw(
+		status = buffer2->copyToRaw(
 				raw_array,
 				0,
-				buffer2,
 				3,
 				4);
 		if (status == 0) {
@@ -168,8 +166,7 @@ int main(void) {
 	//copy from raw array
 	{
 		unsigned char heeelo[14] = "Hello World!\n";
-		status = buffer_copy_from_raw(
-				buffer1, //destination
+		status = buffer1->copyFromRaw(
 				0, //offset
 				heeelo, //source
 				0, //offset
@@ -180,8 +177,7 @@ int main(void) {
 		}
 		printf("Successfully copied raw array to buffer.\n");
 
-		status = buffer_copy_from_raw(
-				buffer1,
+		status = buffer1->copyFromRaw(
 				1,
 				heeelo,
 				0,
@@ -253,7 +249,7 @@ int main(void) {
 	//test xor
 	buffer_create_from_string(text, "Hello World!");
 	to_xor = buffer_create_on_heap(text->content_length, text->content_length);
-	status = buffer_clone(to_xor, text);
+	status = to_xor->cloneFrom(text);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to clone buffer.\n");
 		goto fail; /* not fail, because status is set */

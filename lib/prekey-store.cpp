@@ -118,11 +118,11 @@ static int deprecate(prekey_store * const store, size_t index) {
 	deprecated_node->expiration_date = time(nullptr) + DEPRECATED_PREKEY_EXPIRATION_TIME;
 
 	//copy the node over
-	status = buffer_clone(deprecated_node->public_key, store->prekeys[index].public_key);
+	status = deprecated_node->public_key->cloneFrom(store->prekeys[index].public_key);
 	if (status != 0) {
 		goto cleanup;
 	}
-	status = buffer_clone(deprecated_node->private_key, store->prekeys[index].private_key);
+	status = deprecated_node->private_key->cloneFrom(store->prekeys[index].private_key);
 	if (status != 0) {
 		goto cleanup;
 	}
@@ -198,7 +198,7 @@ return_status prekey_store_get_prekey(
 	}
 
 	//copy the private key
-	if (buffer_clone(private_key, found_prekey->private_key) != 0) {
+	if (private_key->cloneFrom(found_prekey->private_key) != 0) {
 		private_key->content_length = 0;
 		THROW(BUFFER_ERROR, "Failed to copy private key.");
 	}
@@ -230,8 +230,7 @@ return_status prekey_store_list(
 
 	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
 		int status_int = 0;
-		status_int = buffer_copy(
-				list,
+		status_int = list->copyFrom(
 				PUBLIC_KEY_SIZE * i,
 				store->prekeys[i].public_key,
 				0,
@@ -392,10 +391,10 @@ return_status prekey_store_export_key(prekey_store_node* node, Prekey ** const k
 	public_prekey->key.len = PUBLIC_KEY_SIZE;
 
 	//fill the buffers
-	if (buffer_clone_to_raw(private_prekey->key.data, private_prekey->key.len, (Buffer*)node->private_key) != 0) {
+	if (node->private_key->cloneToRaw(private_prekey->key.data, private_prekey->key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to clone private prekey.");
 	}
-	if (buffer_clone_to_raw(public_prekey->key.data, public_prekey->key.len, (Buffer*)node->public_key) != 0) {
+	if (node->public_key->cloneToRaw(public_prekey->key.data, public_prekey->key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to clone public prekey.");
 	}
 
@@ -532,13 +531,13 @@ static return_status prekey_store_node_import(prekey_store_node * const node, co
 	}
 
 	//copy the private key
-	if (buffer_clone_from_raw(node->private_key, keypair->private_key->key.data, keypair->private_key->key.len) != 0) {
+	if (node->private_key->cloneFromRaw(keypair->private_key->key.data, keypair->private_key->key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to import private key.");
 	}
 
 	//does the public key exist, if yes: copy, if not: create it from private key
 	if (keypair->public_key != nullptr) {
-		if (buffer_clone_from_raw(node->public_key, keypair->public_key->key.data, keypair->public_key->key.len) != 0) {
+		if (node->public_key->cloneFromRaw(keypair->public_key->key.data, keypair->public_key->key.len) != 0) {
 			THROW(BUFFER_ERROR, "Failed to import public key.");
 		}
 	} else {

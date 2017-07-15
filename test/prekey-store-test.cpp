@@ -258,7 +258,7 @@ int main(void) {
 	//get a private key
 	{
 		const size_t prekey_index = 10;
-		if (buffer_clone(public_prekey, store->prekeys[prekey_index].public_key) != 0) {
+		if (public_prekey->cloneFrom(store->prekeys[prekey_index].public_key) != 0) {
 			THROW(BUFFER_ERROR, "Failed to clone public key.");
 		}
 
@@ -382,7 +382,7 @@ int main(void) {
 	}
 
 	//test the automatic deprecation of old keys
-	if (buffer_clone(public_prekey, store->prekeys[PREKEY_AMOUNT-1].public_key) != 0) {
+	if (public_prekey->cloneFrom(store->prekeys[PREKEY_AMOUNT-1].public_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to clone public key.");
 	}
 
@@ -398,7 +398,7 @@ int main(void) {
 	printf("Successfully deprecated outdated key!\n");
 
 	//test the automatic removal of old deprecated keys!
-	if (buffer_clone(public_prekey, store->deprecated_prekeys->next->public_key) != 0) {
+	if (public_prekey->cloneFrom(store->deprecated_prekeys->next->public_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to clone public key.");
 	}
 

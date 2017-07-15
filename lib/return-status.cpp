@@ -237,11 +237,11 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 		int status_int = 0;
 		// now fill the output
 		if (status_to_print->status == SUCCESS) {
-			if (buffer_clone_from_raw(output, success_string, sizeof(success_string) - 1) != 0) {
+			if (output->cloneFromRaw(success_string, sizeof(success_string) - 1) != 0) {
 				THROW(BUFFER_ERROR, "Failed to copy success_string.");
 			}
 		} else {
-			if (buffer_clone_from_raw(output, error_string, sizeof(error_string) - 1) != 0) {
+			if (output->cloneFromRaw(error_string, sizeof(error_string) - 1) != 0) {
 				THROW(BUFFER_ERROR, "Failed to copy error_string.");
 			}
 
@@ -262,8 +262,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 				}
 				output->content_length += (unsigned int)written;
 
-				status_int = buffer_copy_from_raw(
-						output,
+				status_int = output->copyFromRaw(
 						output->content_length,
 						(const unsigned char*)return_status_get_name(current_error->status),
 						0,
@@ -272,8 +271,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 					THROW(BUFFER_ERROR, "Failed to copy status name to stack trace.");
 				}
 
-				status_int = buffer_copy_from_raw(
-						output,
+				status_int = output->copyFromRaw(
 						output->content_length,
 						(const unsigned char*) ", ",
 						0,
@@ -283,8 +281,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 				}
 
 				if (current_error->message == nullptr) {
-					status_int = buffer_copy_from_raw(
-							output,
+					status_int = output->copyFromRaw(
 							output->content_length,
 							null_string,
 							0,
@@ -293,8 +290,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 						THROW(BUFFER_ERROR, "Failed to copy \"(nullptr)\" to stack trace.");
 					}
 				} else {
-					status_int = buffer_copy_from_raw(
-							output,
+					status_int = output->copyFromRaw(
 							output->content_length,
 							(const unsigned char*) current_error->message,
 							0,
@@ -304,8 +300,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 					}
 				}
 
-				status_int = buffer_copy_from_raw(
-						output,
+				status_int = output->copyFromRaw(
 						output->content_length,
 						(const unsigned char*) "\n",
 						0,
@@ -318,8 +313,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 	}
 
 	{
-		int status_int = buffer_copy_from_raw(
-				output,
+		int status_int = output->copyFromRaw(
 				output->content_length,
 				(const unsigned char*) "",
 				0,

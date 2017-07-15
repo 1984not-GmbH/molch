@@ -166,7 +166,7 @@ Buffer* Buffer::create_from_string_on_heap_helper(
 		return nullptr;
 	}
 
-	if (buffer_clone_from_raw(this, content_, content_length_) != 0) {
+	if (this->cloneFromRaw(content_, content_length_) != 0) {
 		return nullptr;
 	}
 
@@ -193,22 +193,21 @@ void Buffer::clear() {
  *
  * Returns 0 on success.
  */
-int buffer_copy(
-		Buffer * const destination,
+int Buffer::copyFrom(
 		const size_t destination_offset,
 		Buffer * const source,
 		const size_t source_offset,
 		const size_t copy_length) {
-	if (destination->isReadOnly()) {
+	if (this->readonly) {
 		return -5;
 	}
 
-	if ((destination->getBufferLength() < destination->content_length) || (source->getBufferLength() < source->content_length)) {
+	if ((this->buffer_length < this->content_length) || (source->buffer_length < source->content_length)) {
 		//the content length should never be longer than the buffer length
 		return -7;
 	}
 
-	if ((destination_offset > destination->content_length) || (copy_length > (destination->getBufferLength() - destination_offset))) {
+	if ((destination_offset > this->content_length) || (copy_length > (this->buffer_length - destination_offset))) {
 		//destination buffer isn't long enough
 		return -6;
 	}
@@ -218,17 +217,17 @@ int buffer_copy(
 		return -6;
 	}
 
-	if (source->getBufferLength() == 0) {
+	if (source->buffer_length == 0) {
 		return 0;
 	}
 
-	if ((destination->content == nullptr) || (source->content == nullptr)) {
+	if ((this->content == nullptr) || (source->content == nullptr)) {
 		return -11;
 	}
 
-	std::copy(source->content + source_offset, source->content + source_offset + copy_length, destination->content + destination_offset);
-	destination->content_length = (destination->content_length > destination_offset + copy_length)
-		? destination->content_length
+	std::copy(source->content + source_offset, source->content + source_offset + copy_length, this->content + destination_offset);
+	this->content_length = (this->content_length > destination_offset + copy_length)
+		? this->content_length
 		: destination_offset + copy_length;
 
 	return 0;
@@ -241,35 +240,28 @@ int buffer_copy(
  *
  * Returns 0 on success.
  */
-int buffer_clone(
-		Buffer * const destination,
-		Buffer * const source) {
-	if ((destination == nullptr) || (source == nullptr)) {
+int Buffer::cloneFrom(Buffer * const source) {
+	if (source == nullptr) {
 		return -1;
 	}
 
-	if (destination->isReadOnly()) {
+	if (this->readonly) {
 		return -5;
 	}
 
-	if (destination->getBufferLength() < source->content_length) {
+	if (this->buffer_length < source->content_length) {
 		return -6;
 	}
 
-	destination->content_length = source->content_length;
+	this->content_length = source->content_length;
 
-	int status = buffer_copy(
-			destination,
-			0,
-			source,
-			0,
-			source->content_length);
+	int status = this->copyFrom(0, source, 0, source->content_length);
 	if (status != 0) {
-		destination->clear();
+		this->clear();
 		return status;
 	}
 
-	destination->position = source->position;
+	this->position = source->position;
 
 	return status;
 }
@@ -279,22 +271,21 @@ int buffer_clone(
  *
  * Returns 0 on success.
  */
-int buffer_copy_from_raw(
-		Buffer * const destination,
+int Buffer::copyFromRaw(
 		const size_t destination_offset,
 		const unsigned char * const source,
 		const size_t source_offset,
 		const size_t copy_length) {
-	if (destination->isReadOnly()) {
+	if (this->readonly) {
 		return -5;
 	}
 
-	if (destination->getBufferLength() < destination->content_length) {
+	if (this->buffer_length < this->content_length) {
 		//the content length should never be longer than the buffer length
 		return -7;
 	}
 
-	if ((destination->getBufferLength() < destination_offset) || (copy_length > (destination->getBufferLength() - destination_offset))) {
+	if ((this->buffer_length < destination_offset) || (copy_length > (this->buffer_length - destination_offset))) {
 		//destination buffer isn't long enough
 		return -6;
 	}
@@ -303,9 +294,9 @@ int buffer_copy_from_raw(
 		return 0;
 	}
 
-	std::copy(source + source_offset, source + source_offset + copy_length, destination->content + destination_offset);
-	destination->content_length = (destination->content_length > destination_offset + copy_length)
-		? destination->content_length
+	std::copy(source + source_offset, source + source_offset + copy_length, this->content + destination_offset);
+	this->content_length = (this->content_length > destination_offset + copy_length)
+		? this->content_length
 		: destination_offset + copy_length;
 
 	return 0;
@@ -318,26 +309,18 @@ int buffer_copy_from_raw(
  *
  * Returns 0 on success.
  */
-int buffer_clone_from_raw(
-		Buffer * const destination,
-		const unsigned char * const source,
-		const size_t length) {
-	if (destination->isReadOnly()) {
+int Buffer::cloneFromRaw(const unsigned char * const source, const size_t length) {
+	if (this->readonly) {
 		return -5;
 	}
 
-	if (destination->getBufferLength() < length) {
+	if (this->buffer_length < length) {
 		return -6;
 	}
 
-	destination->content_length = length;
+	this->content_length = length;
 
-	return buffer_copy_from_raw(
-			destination,
-			0,
-			source,
-			0,
-			length);
+	return this->copyFromRaw(0, source, 0, length);
 }
 
 /*
@@ -345,27 +328,26 @@ int buffer_clone_from_raw(
  *
  * Returns 0 on success.
  */
-int buffer_copy_to_raw(
+int Buffer::copyToRaw(
 		unsigned char * const destination,
 		const size_t destination_offset,
-		Buffer * const source,
 		const size_t source_offset,
 		const size_t copy_length) {
-	if ((source_offset > source->content_length) || (copy_length > (source->content_length - source_offset))) {
+	if ((source_offset > this->content_length) || (copy_length > (this->content_length - source_offset))) {
 		//source buffer isn't long enough
 		return -6;
 	}
 
-	if (source->getBufferLength() < source->content_length) {
+	if (this->buffer_length < this->content_length) {
 		//the content length should never be longer than the buffer length
 		return -7;
 	}
 
-	if (source->getBufferLength() == 0) {
+	if (this->buffer_length == 0) {
 		return 0;
 	}
 
-	std::copy(source->content + source_offset, source->content + source_offset + copy_length, destination + destination_offset);
+	std::copy(this->content + source_offset, this->content + source_offset + copy_length, destination + destination_offset);
 
 	return 0;
 }
@@ -376,20 +358,12 @@ int buffer_copy_to_raw(
  *
  * Returns 0 on success.
  */
-int buffer_clone_to_raw(
-		unsigned char * const destination,
-		const size_t destination_length,
-		Buffer *source) {
-	if (destination_length < source->content_length) {
+int Buffer::cloneToRaw(unsigned char * const destination, const size_t destination_length) {
+	if (destination_length < this->content_length) {
 		return -6;
 	}
 
-	return buffer_copy_to_raw(
-			destination,
-			0,
-			source,
-			0,
-			source->content_length);
+	return this->copyToRaw(destination, 0, 0, this->content_length);
 }
 
 /*

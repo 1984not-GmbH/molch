@@ -117,7 +117,7 @@ return_status header_extract(
 	*message_number = header_struct->message_number;
 	*previous_message_number = header_struct->previous_message_number;
 
-	if (buffer_clone_from_raw(their_public_ephemeral, header_struct->public_ephemeral_key.data, header_struct->public_ephemeral_key.len) != 0) {
+	if (their_public_ephemeral->cloneFromRaw(header_struct->public_ephemeral_key.data, header_struct->public_ephemeral_key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy public ephemeral key.")
 	}
 

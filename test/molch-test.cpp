@@ -248,7 +248,7 @@ int main(void) {
 			THROW(INCORRECT_DATA, "New backup key is the same as the old one.");
 		}
 
-		if (buffer_clone(backup_key, new_backup_key) != 0) {
+		if (backup_key->cloneFrom(new_backup_key) != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy backup key.");
 		}
 
@@ -489,7 +489,7 @@ int main(void) {
 	}
 
 	//copy the backup key
-	if (buffer_clone(backup_key, new_backup_key) != 0) {
+	if (backup_key->cloneFrom(new_backup_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy backup key.");
 	}
 
@@ -538,7 +538,7 @@ int main(void) {
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt the backup.")
 
 	//copy the backup key
-	if (buffer_clone(backup_key, new_backup_key) != 0) {
+	if (backup_key->cloneFrom(new_backup_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy backup key.");
 	}
 

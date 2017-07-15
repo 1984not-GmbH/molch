@@ -650,7 +650,7 @@ return_status conversation_export(
 	//export the conversation id
 	id = (unsigned char*)zeroed_malloc(CONVERSATION_ID_SIZE);
 	THROW_on_failed_alloc(id);
-	if (buffer_clone_to_raw(id, CONVERSATION_ID_SIZE, &conversation->id) != 0) {
+	if (conversation->id.cloneToRaw(id, CONVERSATION_ID_SIZE) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy conversation id.");
 	}
 	(*exported_conversation)->id.data = id;
@@ -682,7 +682,7 @@ return_status conversation_import(
 	init_struct(*conversation);
 
 	//copy the id
-	if (buffer_clone_from_raw(&(*conversation)->id, conversation_protobuf->id.data, conversation_protobuf->id.len) != 0) {
+	if ((*conversation)->id.cloneFromRaw(conversation_protobuf->id.data, conversation_protobuf->id.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy id.");
 	}
 

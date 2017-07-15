@@ -182,8 +182,7 @@ return_status conversation_store_list(Buffer ** const list, conversation_store *
 	//copy all the id's
 	conversation_store_foreach(
 			store,
-			int status_int = buffer_copy(
-				*list,
+			int status_int = (*list)->copyFrom(
 				CONVERSATION_ID_SIZE * index,
 				&value->id,
 				0,

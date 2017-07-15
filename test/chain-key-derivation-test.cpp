@@ -64,7 +64,7 @@ int main(void) {
 		}
 
 		//move next_chain_key to last_chain_key
-		if (buffer_clone(last_chain_key, next_chain_key) != 0) {
+		if (last_chain_key->cloneFrom(next_chain_key) != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy chain key.");
 		}
 	}

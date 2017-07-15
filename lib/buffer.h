@@ -139,6 +139,65 @@ public:
 			const size_t position2,
 			const size_t comparison_length);
 
+	/*
+	 * Copy parts of a buffer to another buffer.
+	 *
+	 * Returns 0 on success.
+	 */
+	int copyFrom(
+			const size_t destination_offset,
+			Buffer * const source,
+			const size_t source_offset,
+			const size_t copy_length) __attribute__((warn_unused_result));
+
+	/*
+	 * Copy the content of a buffer to the beginning of another
+	 * buffer and set the destinations content length to the
+	 * same length as the source.
+	 *
+	 * Returns 0 on success.
+	 */
+	int cloneFrom(Buffer * const source) __attribute__((warn_unused_result));
+
+	/*
+	 * Copy from a raw array to a buffer.
+	 *
+	 * Returns 0 on success.
+	 */
+	int copyFromRaw(
+			const size_t destination_offset,
+			const unsigned char * const source,
+			const size_t source_offset,
+			const size_t copy_length) __attribute__((warn_unused_result));
+
+	/*
+	 * Copy the content of a raw array to the
+	 * beginning of a buffer, setting the buffers
+	 * content length to the length that was copied.
+	 *
+	 * Returns 0 on success.
+	 */
+	int cloneFromRaw(const unsigned char * const source, const size_t length) __attribute__((warn_unused_result));
+
+	/*
+	 * Copy from a buffer to a raw array.
+	 *
+	 * Returns 0 on success.
+	 */
+	int copyToRaw(
+			unsigned char * const destination,
+			const size_t destination_offset,
+			const size_t source_offset,
+			const size_t copy_length) __attribute__((warn_unused_result));
+
+	/*
+	 * Copy the entire content of a buffer
+	 * to a raw array.
+	 *
+	 * Returns 0 on success.
+	 */
+	int cloneToRaw(unsigned char * const destination, const size_t destination_length) __attribute__((warn_unused_result));
+
 	size_t getBufferLength();
 	bool isReadOnly();
 	void setReadOnly(bool readonly);
@@ -181,73 +240,4 @@ Buffer *buffer_create_with_custom_allocator(
  */
 #define buffer_create_with_existing_const_array(name, array, length) Buffer name[1]; name->init_with_pointer_to_const(array, length, length)
 
-/*
- * Copy parts of a buffer to another buffer.
- *
- * Returns 0 on success.
- */
-int buffer_copy(
-		Buffer * const destination,
-		const size_t destination_offset,
-		Buffer * const source,
-		const size_t source_offset,
-		const size_t copy_length) __attribute__((warn_unused_result));
-
-/*
- * Copy the content of a buffer to the beginning of another
- * buffer and set the destinations content length to the
- * same length as the source.
- *
- * Returns 0 on success.
- */
-int buffer_clone(
-		Buffer * const destination,
-		Buffer * const source) __attribute__((warn_unused_result));
-
-/*
- * Copy from a raw array to a buffer.
- *
- * Returns 0 on success.
- */
-int buffer_copy_from_raw(
-		Buffer * const destination,
-		const size_t destination_offset,
-		const unsigned char * const source,
-		const size_t source_offset,
-		const size_t copy_length) __attribute__((warn_unused_result));
-
-/*
- * Copy the content of a raw array to the
- * beginning of a buffer, setting the buffers
- * content length to the length that was copied.
- *
- * Returns 0 on success.
- */
-int buffer_clone_from_raw(
-		Buffer * const destination,
-		const unsigned char * const source,
-		const size_t length) __attribute__((warn_unused_result));
-
-/*
- * Copy from a buffer to a raw array.
- *
- * Returns 0 on success.
- */
-int buffer_copy_to_raw(
-		unsigned char * const destination,
-		const size_t destination_offset,
-		Buffer * const source,
-		const size_t source_offset,
-		const size_t copy_length) __attribute__((warn_unused_result));
-
-/*
- * Copy the entire content of a buffer
- * to a raw array.
- *
- * Returns 0 on success.
- */
-int buffer_clone_to_raw(
-		unsigned char * const destination,
-		const size_t destination_length,
-		Buffer *source) __attribute__((warn_unused_result));
 #endif

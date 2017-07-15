@@ -54,7 +54,7 @@ return_status to_big_endian(IntegerType integer, Buffer * const output) {
 		std::reverse(&reference, &reference + sizeof(integer));
 	}
 
-	if (buffer_clone_from_raw(output, &reference, sizeof(integer)) != 0) {
+	if (output->cloneFromRaw(&reference, sizeof(integer)) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy number.");
 	}
 
@@ -76,7 +76,7 @@ return_status from_big_endian(IntegerType *integer, Buffer * const buffer) {
 	{
 		unsigned char& reference = reinterpret_cast<unsigned char&>(*integer);
 
-		if (buffer_clone_to_raw(&reference, sizeof(IntegerType), buffer) != 0) {
+		if (buffer->cloneToRaw(&reference, sizeof(IntegerType)) != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy number.");
 		}
 

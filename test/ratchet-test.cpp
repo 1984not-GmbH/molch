@@ -775,7 +775,7 @@ int main(void) {
 	assert(alice_state->skipped_header_and_message_keys.length == 1);
 
 	//get the second receive message key from the message and header keystore
-	status_int = buffer_clone(alice_receive_message_key2, alice_state->skipped_header_and_message_keys.tail->message_key);
+	status_int = alice_receive_message_key2->cloneFrom(alice_state->skipped_header_and_message_keys.tail->message_key);
 	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);
@@ -786,7 +786,7 @@ int main(void) {
 	putchar('\n');
 
 	//get the second receive header key from the message and header keystore
-	status_int = buffer_clone(alice_receive_header_key2, alice_state->skipped_header_and_message_keys.tail->header_key);
+	status_int = alice_receive_header_key2->cloneFrom(alice_state->skipped_header_and_message_keys.tail->header_key);
 	if (status_int != 0) {
 		ratchet_destroy(alice_state);
 		ratchet_destroy(bob_state);

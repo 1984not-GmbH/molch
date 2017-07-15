@@ -89,7 +89,7 @@ static return_status create_prekey_list(
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get public identity key from master keys.");
 
 	//copy the public identity to the prekey list
-	if (buffer_copy(unsigned_prekey_list, 0, public_identity_key, 0, PUBLIC_KEY_SIZE) != 0) {
+	if (unsigned_prekey_list->copyFrom(0, public_identity_key, 0, PUBLIC_KEY_SIZE) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy public identity to prekey list.");
 	}
 
@@ -414,12 +414,7 @@ static return_status verify_prekey_list(
 
 	//copy the public identity key
 	{
-		int status_int = buffer_copy(
-				public_identity_key,
-				0,
-				verified_prekey_list,
-				0,
-				PUBLIC_KEY_SIZE);
+		int status_int = public_identity_key->copyFrom(0, verified_prekey_list, 0, PUBLIC_KEY_SIZE);
 		if (status_int != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy public identity.");
 		}
@@ -535,7 +530,7 @@ return_status molch_start_send_conversation(
 
 	//copy the conversation id
 	{
-		int status_int = buffer_clone(conversation_id_buffer, &conversation->id);
+		int status_int = conversation_id_buffer->cloneFrom(&conversation->id);
 		if (status_int != 0) {
 			THROW(BUFFER_ERROR, "Failed to clone conversation id.");
 		}
@@ -664,7 +659,7 @@ return_status molch_start_receive_conversation(
 
 	//copy the conversation id
 	{
-		int status_int = buffer_clone(conversation_id_buffer, &conversation->id);
+		int status_int = conversation_id_buffer->cloneFrom(&conversation->id);
 		if (status_int != 0) {
 			THROW(BUFFER_ERROR, "Failed to clone conversation id.");
 		}
@@ -1650,7 +1645,7 @@ return_status molch_update_backup_key(
 		THROW(KEYGENERATION_FAILED, "Failed to generate new backup key.");
 	}
 
-	if (buffer_clone(new_key_buffer, global_backup_key) != 0) {
+	if (new_key_buffer->cloneFrom(global_backup_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy new backup key.");
 	}
 

@@ -113,7 +113,7 @@ return_status master_keys_create(
 			THROW(INCORRECT_BUFFER_SIZE, "Public master key buffer is too short.");
 		}
 
-		if (buffer_clone(public_signing_key, (*keys)->public_signing_key) != 0) {
+		if (public_signing_key->cloneFrom((*keys)->public_signing_key) != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy public signing key.");
 		}
 	}
@@ -123,7 +123,7 @@ return_status master_keys_create(
 			THROW(INCORRECT_BUFFER_SIZE, "Public encryption key buffer is too short.");
 		}
 
-		if (buffer_clone(public_identity_key, (*keys)->public_identity_key) != 0) {
+		if (public_identity_key->cloneFrom((*keys)->public_identity_key) != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy public encryption key.");
 		}
 	}
@@ -160,7 +160,7 @@ return_status master_keys_get_signing_key(
 
 	sodium_mprotect_readonly(keys);
 
-	if (buffer_clone(public_signing_key, keys->public_signing_key) != 0) {
+	if (public_signing_key->cloneFrom(keys->public_signing_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy public signing key.");
 	}
 
@@ -187,7 +187,7 @@ return_status master_keys_get_identity_key(
 
 	sodium_mprotect_readonly(keys);
 
-	if (buffer_clone(public_identity_key, keys->public_identity_key) != 0) {
+	if (public_identity_key->cloneFrom(keys->public_identity_key) != 0) {
 		goto cleanup;
 	}
 
@@ -294,16 +294,16 @@ return_status master_keys_export(
 	sodium_mprotect_readonly(keys);
 
 	//copy the keys
-	if (buffer_clone_to_raw((*public_signing_key)->key.data, (*public_signing_key)->key.len, keys->public_signing_key) != 0) {
+	if (keys->public_signing_key->cloneToRaw((*public_signing_key)->key.data, (*public_signing_key)->key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to export public signing key.");
 	}
-	if (buffer_clone_to_raw((*private_signing_key)->key.data, (*private_signing_key)->key.len, keys->private_signing_key) != 0) {
+	if (keys->private_signing_key->cloneToRaw((*private_signing_key)->key.data, (*private_signing_key)->key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to export private signing key.");
 	}
-	if (buffer_clone_to_raw((*public_identity_key)->key.data, (*public_identity_key)->key.len, keys->public_identity_key) != 0) {
+	if (keys->public_identity_key->cloneToRaw((*public_identity_key)->key.data, (*public_identity_key)->key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to export public identity key.");
 	}
-	if (buffer_clone_to_raw((*private_identity_key)->key.data, (*private_identity_key)->key.len, keys->private_identity_key) != 0) {
+	if (keys->private_identity_key->cloneToRaw((*private_identity_key)->key.data, (*private_identity_key)->key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to export private identity key.");
 	}
 
@@ -363,16 +363,16 @@ return_status master_keys_import(
 	(*keys)->private_identity_key->init_with_pointer((*keys)->private_identity_key_storage, PRIVATE_KEY_SIZE, 0);
 
 	//copy the keys
-	if (buffer_clone_from_raw((*keys)->public_signing_key, public_signing_key->key.data, public_signing_key->key.len) != 0) {
+	if ((*keys)->public_signing_key->cloneFromRaw(public_signing_key->key.data, public_signing_key->key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy public signing key.");
 	}
-	if (buffer_clone_from_raw((*keys)->private_signing_key, private_signing_key->key.data, private_signing_key->key.len) != 0) {
+	if ((*keys)->private_signing_key->cloneFromRaw(private_signing_key->key.data, private_signing_key->key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy private signing key.");
 	}
-	if (buffer_clone_from_raw((*keys)->public_identity_key, public_identity_key->key.data, public_identity_key->key.len) != 0) {
+	if ((*keys)->public_identity_key->cloneFromRaw(public_identity_key->key.data, public_identity_key->key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy public identity key.");
 	}
-	if (buffer_clone_from_raw((*keys)->private_identity_key, private_identity_key->key.data, private_identity_key->key.len) != 0) {
+	if ((*keys)->private_identity_key->cloneFromRaw(private_identity_key->key.data, private_identity_key->key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy private identity key.");
 	}
 

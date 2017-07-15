@@ -247,7 +247,7 @@ return_status packet_encrypt(
 		padded_message = buffer_create_on_heap(message->content_length + padding, 0);
 		THROW_on_failed_alloc(padded_message);
 		//copy the message
-		if (buffer_clone(padded_message, message) != 0) {
+		if (padded_message->cloneFrom(message) != 0) {
 			THROW(BUFFER_ERROR, "Failed to clone message.");
 		}
 		//pad it
@@ -415,17 +415,17 @@ return_status packet_get_metadata_without_verification(
 	if (packet_struct->packet_header->packet_type == PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
 		//copy the public keys
 		if (public_identity_key != nullptr) {
-			if (buffer_clone_from_raw(public_identity_key, packet_struct->packet_header->public_identity_key.data, packet_struct->packet_header->public_identity_key.len) != 0) {
+			if (public_identity_key->cloneFromRaw(packet_struct->packet_header->public_identity_key.data, packet_struct->packet_header->public_identity_key.len) != 0) {
 				THROW(BUFFER_ERROR, "Failed to copy public identity key.");
 			}
 		}
 		if (public_ephemeral_key != nullptr) {
-			if (buffer_clone_from_raw(public_ephemeral_key, packet_struct->packet_header->public_ephemeral_key.data, packet_struct->packet_header->public_ephemeral_key.len) != 0) {
+			if (public_ephemeral_key->cloneFromRaw(packet_struct->packet_header->public_ephemeral_key.data, packet_struct->packet_header->public_ephemeral_key.len) != 0) {
 				THROW(BUFFER_ERROR, "Failed to copy public ephemeral key.");
 			}
 		}
 		if (public_prekey != nullptr) {
-			if (buffer_clone_from_raw(public_prekey, packet_struct->packet_header->public_prekey.data, packet_struct->packet_header->public_prekey.len) != 0) {
+			if (public_prekey->cloneFromRaw(packet_struct->packet_header->public_prekey.data, packet_struct->packet_header->public_prekey.len) != 0) {
 				THROW(BUFFER_ERROR, "Failed to copy public prekey.");
 			}
 		}
@@ -580,7 +580,7 @@ return_status packet_decrypt_message(
 		*message = buffer_create_on_heap(message_length, 0);
 		THROW_on_failed_alloc(*message);
 		//TODO this doesn't need to be copied, setting the length should be enough
-		if (buffer_copy(*message, 0, padded_message, 0, message_length) != 0) {
+		if ((*message)->copyFrom(0, padded_message, 0, message_length) != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy message from padded message.");
 		}
 	}

@@ -161,7 +161,7 @@ return_status user_store_create_user(
 			THROW(INCORRECT_BUFFER_SIZE, "Invalidly sized buffer for public signing key.");
 		}
 
-		if (buffer_clone(public_signing_key, new_node->public_signing_key) != 0) {
+		if (public_signing_key->cloneFrom(new_node->public_signing_key) != 0) {
 			THROW(BUFFER_ERROR, "Failed to clone public signing key.");
 		}
 	}
@@ -242,8 +242,7 @@ return_status user_store_list(Buffer ** const list, user_store * const store) {
 	{
 		user_store_node *current_node = store->head;
 		for (size_t i = 0; (i < store->length) && (current_node != nullptr); i++) {
-			int status_int = buffer_copy(
-					*list,
+			int status_int = (*list)->copyFrom(
 					i * PUBLIC_MASTER_KEY_SIZE,
 					current_node->public_signing_key,
 					0,
@@ -473,7 +472,7 @@ static return_status user_store_node_import(user_store_node ** const node, const
 	if (user->public_signing_key == nullptr) {
 		THROW(PROTOBUF_MISSING_ERROR, "Missing public signing key in Protobuf-C struct.");
 	}
-	if (buffer_clone_from_raw((*node)->public_signing_key, user->public_signing_key->key.data, user->public_signing_key->key.len) != 0) {
+	if ((*node)->public_signing_key->cloneFromRaw(user->public_signing_key->key.data, user->public_signing_key->key.len) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy public signing key.");
 	}
 

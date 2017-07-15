@@ -89,7 +89,7 @@ return_status spiced_random(
 	}
 
 	//copy the random data to the output
-	if (buffer_clone(random_output, os_random) != 0) {
+	if (random_output->cloneFrom(os_random) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy random data.");
 	}
 

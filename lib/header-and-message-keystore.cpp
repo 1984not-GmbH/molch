@@ -109,13 +109,13 @@ return_status create_and_populate_node(
 	//set keys and expiration date
 	(*new_node)->expiration_date = expiration_date;
 	{
-		int status_int = buffer_clone((*new_node)->message_key, message_key);
+		int status_int = (*new_node)->message_key->cloneFrom(message_key);
 		if (status_int != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy message key.");
 		}
 	}
 	{
-		int status_int = buffer_clone((*new_node)->header_key, header_key);
+		int status_int = (*new_node)->header_key->cloneFrom(header_key);
 		if (status_int != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy header key.");
 		}
@@ -219,20 +219,14 @@ static return_status header_and_message_keystore_node_export(header_and_message_
 
 	//backup header key
 	int status_int;
-	status_int = buffer_clone_to_raw(
-		header_key->key.data,
-		HEADER_KEY_SIZE,
-		node->header_key);
+	status_int = node->header_key->cloneToRaw(header_key->key.data, HEADER_KEY_SIZE);
 	if (status_int != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy header_key to backup.");
 	}
 	header_key->key.len = node->header_key->content_length;
 
 	//backup message key
-	status_int = buffer_clone_to_raw(
-		message_key->key.data,
-		HEADER_KEY_SIZE,
-		node->message_key);
+	status_int = node->message_key->cloneToRaw(message_key->key.data, HEADER_KEY_SIZE);
 	if (status_int != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy message_key to backup.");
 	}
