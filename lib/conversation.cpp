@@ -268,10 +268,9 @@ return_status conversation_start_receive_conversation(
 	}
 
 	//get the private prekey that corresponds to the public prekey used in the message
-	status = PrekeyStore_get_prekey(
-			receiver_prekeys,
-			receiver_public_prekey,
-			receiver_private_prekey);
+	status = receiver_prekeys->getPrekey(
+			*receiver_public_prekey,
+			*receiver_private_prekey);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get public prekey.");
 
 	status = conversation_create(

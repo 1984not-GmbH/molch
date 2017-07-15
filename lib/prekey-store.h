@@ -32,81 +32,86 @@ extern "C" {
 #define LIB_PrekeyStore
 
 class PrekeyStoreNode {
-public:
+	friend class PrekeyStore;
+private:
 	PrekeyStoreNode *next;
+public:
 	Buffer public_key;
 	unsigned char public_key_storage[PUBLIC_KEY_SIZE];
 	Buffer private_key;
 	unsigned char private_key_storage[PRIVATE_KEY_SIZE];
 	int64_t expiration_date;
+
+	void init();
+	PrekeyStoreNode* getNext();
+	return_status exportNode(Prekey*& keypair) __attribute__((warn_unused_result));
+	return_status import(const Prekey& keypair) __attribute__((warn_unused_result));
 };
 
 class PrekeyStore {
+private:
+	void addNodeToDeprecated(PrekeyStoreNode& deprecated_node);
+	int deprecate(const size_t index);
+	size_t countDeprecated();
 public:
 	int64_t oldest_expiration_date;
 	PrekeyStoreNode prekeys[PREKEY_AMOUNT];
 	PrekeyStoreNode *deprecated_prekeys;
 	int64_t oldest_deprecated_expiration_date;
+
+	/*
+	 * Initialise a new keystore. Generates all the keys.
+	 */
+	static return_status create(PrekeyStore*& store) __attribute__((warn_unused_result));
+
+	/*
+	 * Get a private prekey from it's public key. This will automatically
+	 * deprecate the requested prekey put it in the outdated key store and
+	 * generate a new one.
+	 */
+	return_status getPrekey(
+			Buffer& public_key, //input
+			Buffer& private_key) __attribute__((warn_unused_result)); //output
+
+	/*
+	 * Generate a list containing all public prekeys.
+	 * (this list can then be stored on a public server).
+	 */
+	return_status list(Buffer& list) __attribute__((warn_unused_result)); //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+
+	/*
+	 * Automatically deprecate old keys and generate new ones
+	 * and THROW away deprecated ones that are too old.
+	 */
+	return_status rotate() __attribute__((warn_unused_result));
+
+	void destroy();
+
+	/*! Serialise a prekey store as protobuf-c struct.
+	 * \param keypairs An array of keypairs, allocated by the function.
+	 * \param keypairs_length The length of the array of keypairs.
+	 * \param deprecated_keypairs An array of deprecated keypairs, allocated by the function.
+	 * \param deprecated_keypairs_length The length of the array of deprecated keypairs.
+	 * \returns The status.
+	 */
+	return_status exportStore(
+			Prekey**& keypairs,
+			size_t& keypairs_length,
+			Prekey**& deprecated_keypairs,
+			size_t& deprecated_keypairs_length) __attribute__((warn_unused_result));
+
+	/*! Import a prekey store from a protobuf-c struct.
+	 * \param keypairs An array of prekeys pairs.
+	 * \param keypais_length The length of the array of prekey pairs.
+	 * \param deprecated_keypairs An array of deprecated prekey pairs.
+	 * \param deprecated_keypairs_length The length of the array of deprecated prekey pairs.
+	 * \returns The status.
+	 */
+	static return_status import(
+			PrekeyStore*& store,
+			Prekey** const keypairs,
+			const size_t keypairs_length,
+			Prekey** const deprecated_keypairs,
+			const size_t deprecated_keypairs_length) __attribute__((warn_unused_result));
 };
-
-/*
- * Initialise a new keystore. Generates all the keys.
- */
-return_status PrekeyStore_create(PrekeyStore ** const store) __attribute__((warn_unused_result));
-
-/*
- * Get a private prekey from it's public key. This will automatically
- * deprecate the requested prekey put it in the outdated key store and
- * generate a new one.
- */
-return_status PrekeyStore_get_prekey(
-		PrekeyStore * const store,
-		Buffer * const public_key, //input
-		Buffer * const private_key) __attribute__((warn_unused_result)); //output
-
-/*
- * Generate a list containing all public prekeys.
- * (this list can then be stored on a public server).
- */
-return_status PrekeyStore_list(
-		PrekeyStore * const store,
-		Buffer * const list) __attribute__((warn_unused_result)); //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
-
-/*
- * Automatically deprecate old keys and generate new ones
- * and THROW away deprecated ones that are too old.
- */
-return_status PrekeyStore_rotate(PrekeyStore * const store) __attribute__((warn_unused_result));
-
-void PrekeyStore_destroy(PrekeyStore * const store);
-
-/*! Serialise a prekey store as protobuf-c struct.
- * \param PrekeyStore The prekey store to serialize.
- * \param keypairs An array of keypairs, allocated by the function.
- * \param keypairs_length The length of the array of keypairs.
- * \param deprecated_keypairs An array of deprecated keypairs, allocated by the function.
- * \param deprecated_keypairs_length The length of the array of deprecated keypairs.
- * \returns The status.
- */
-return_status PrekeyStore_export(
-		PrekeyStore * const store,
-		Prekey *** const keypairs,
-		size_t * const keypairs_length,
-		Prekey *** const deprecated_keypairs,
-		size_t * const deprecated_keypairs_length) __attribute__((warn_unused_result));
-
-/*! Import a prekey store from a protobuf-c struct.
- * \param store The prekey store to import to.__a
- * \param keypairs An array of prekeys pairs.
- * \param keypais_length The length of the array of prekey pairs.
- * \param deprecated_keypairs An array of deprecated prekey pairs.
- * \param deprecated_keypairs_length The length of the array of deprecated prekey pairs.
- * \returns The status.
- */
-return_status PrekeyStore_import(
-		PrekeyStore ** const store,
-		Prekey ** const keypairs,
-		const size_t keypairs_length,
-		Prekey ** const deprecated_keypairs,
-		const size_t deprecated_keypairs_length) __attribute__((warn_unused_result));
 #endif
