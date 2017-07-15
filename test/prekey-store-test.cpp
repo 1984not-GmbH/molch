@@ -29,52 +29,52 @@
 #include "utils.h"
 
 static return_status protobuf_export(
-		PrekeyStore * const store,
-		Prekey *** const keypairs,
-		size_t * const keypairs_size,
-		Buffer *** const key_buffers,
-		Prekey *** const deprecated_keypairs,
-		size_t * const deprecated_keypairs_size,
-		Buffer *** const deprecated_key_buffers) {
+		PrekeyStore& store,
+		Prekey**& keypairs,
+		size_t& keypairs_size,
+		Buffer**& key_buffers,
+		Prekey**& deprecated_keypairs,
+		size_t& deprecated_keypairs_size,
+		Buffer**& deprecated_key_buffers) {
 	return_status status = return_status_init();
 
-	status = store->exportStore(
-		*keypairs,
-		*keypairs_size,
-		*deprecated_keypairs,
-		*deprecated_keypairs_size);
+	status = store.exportStore(
+		keypairs,
+		keypairs_size,
+		deprecated_keypairs,
+		deprecated_keypairs_size);
 	THROW_on_error(EXPORT_ERROR, "Failed to export prekeys.");
 
-	*key_buffers = (Buffer**)zeroed_malloc((*keypairs_size) * sizeof(Buffer*));
-	THROW_on_failed_alloc(*key_buffers);
+	key_buffers = (Buffer**)zeroed_malloc(keypairs_size * sizeof(Buffer*));
+	THROW_on_failed_alloc(key_buffers);
 
 	//initialize pointers with nullptr
-	std::fill(*key_buffers, *key_buffers + *keypairs_size, nullptr);
+	std::fill(key_buffers, key_buffers + keypairs_size, nullptr);
 
-	*deprecated_key_buffers = (Buffer**)zeroed_malloc((*deprecated_keypairs_size) * sizeof(Buffer*));
-	THROW_on_failed_alloc(*deprecated_key_buffers);
+	deprecated_key_buffers = (Buffer**)zeroed_malloc((deprecated_keypairs_size) * sizeof(Buffer*));
+	THROW_on_failed_alloc(deprecated_key_buffers);
 
 	//initialize pointers with nullptr
-	std::fill(*deprecated_key_buffers, *deprecated_key_buffers + *deprecated_keypairs_size, nullptr);
+	std::fill(deprecated_key_buffers, deprecated_key_buffers + deprecated_keypairs_size, nullptr);
 
 	//export all the keypairs
-	for (size_t i = 0; i < (*keypairs_size); i++) {
-		size_t export_size = prekey__get_packed_size((*keypairs)[i]);
-		(*key_buffers)[i] = Buffer::create(export_size, 0);
-		THROW_on_failed_alloc((*key_buffers)[i]);
+	for (size_t i = 0; i < keypairs_size; i++) {
+		size_t export_size = prekey__get_packed_size(keypairs[i]);
+		key_buffers[i] = Buffer::create(export_size, 0);
+		THROW_on_failed_alloc(key_buffers[i]);
 
-		size_t packed_size = prekey__pack((*keypairs)[i], (*key_buffers)[i]->content);
-		(*key_buffers)[i]->content_length = packed_size;
+		size_t packed_size = prekey__pack(keypairs[i], key_buffers[i]->content);
+		key_buffers[i]->content_length = packed_size;
 	}
 
 	//export all the deprecated keypairs
-	for (size_t i = 0; i < (*deprecated_keypairs_size); i++) {
-		size_t export_size = prekey__get_packed_size((*deprecated_keypairs)[i]);
-		(*deprecated_key_buffers)[i] = Buffer::create(export_size, 0);
-		THROW_on_failed_alloc((*deprecated_key_buffers)[i]);
+	for (size_t i = 0; i < deprecated_keypairs_size; i++) {
+		size_t export_size = prekey__get_packed_size(deprecated_keypairs[i]);
+		deprecated_key_buffers[i] = Buffer::create(export_size, 0);
+		THROW_on_failed_alloc(deprecated_key_buffers[i]);
 
-		size_t packed_size = prekey__pack((*deprecated_keypairs)[i], (*deprecated_key_buffers)[i]->content);
-		(*deprecated_key_buffers)[i]->content_length = packed_size;
+		size_t packed_size = prekey__pack(deprecated_keypairs[i], deprecated_key_buffers[i]->content);
+		deprecated_key_buffers[i]->content_length = packed_size;
 	}
 cleanup:
 	//cleanup is done in the main function
@@ -83,10 +83,10 @@ cleanup:
 }
 
 static return_status protobuf_import(
-		PrekeyStore ** const store,
-		Buffer ** const keypair_buffers,
+		PrekeyStore*& store,
+		Buffer*& keypair_buffers,
 		const size_t keypair_buffers_size,
-		Buffer ** const deprecated_keypair_buffers,
+		Buffer*& deprecated_keypair_buffers,
 		const size_t deprecated_keypair_buffers_size) {
 	return_status status = return_status_init();
 
@@ -105,8 +105,8 @@ static return_status protobuf_import(
 	for (size_t i = 0; i < keypair_buffers_size; i++) {
 		keypairs[i] = prekey__unpack(
 			&protobuf_c_allocators,
-			keypair_buffers[i]->content_length,
-			keypair_buffers[i]->content);
+			(&keypair_buffers)[i]->content_length,
+			(&keypair_buffers)[i]->content);
 		if (keypairs[i] == nullptr) {
 			THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack prekey from protobuf.");
 		}
@@ -116,8 +116,8 @@ static return_status protobuf_import(
 	for (size_t i = 0; i < deprecated_keypair_buffers_size; i++) {
 		deprecated_keypairs[i] = prekey__unpack(
 			&protobuf_c_allocators,
-			deprecated_keypair_buffers[i]->content_length,
-			deprecated_keypair_buffers[i]->content);
+			(&deprecated_keypair_buffers)[i]->content_length,
+			(&deprecated_keypair_buffers)[i]->content);
 		if (deprecated_keypairs[i] == nullptr) {
 			THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack deprecated prekey from protobuf.");
 		}
@@ -125,7 +125,7 @@ static return_status protobuf_import(
 
 	//now do the import
 	status = PrekeyStore::import(
-		*store,
+		store,
 		keypairs,
 		keypair_buffers_size,
 		deprecated_keypairs,
@@ -305,13 +305,13 @@ int main(void) {
 	//Protobuf-C export
 	printf("Protobuf-C export\n");
 	status = protobuf_export(
-		store,
-		&protobuf_export_prekeys,
-		&protobuf_export_prekeys_size,
-		&protobuf_export_prekeys_buffers,
-		&protobuf_export_deprecated_prekeys,
-		&protobuf_export_deprecated_prekeys_size,
-		&protobuf_export_deprecated_prekeys_buffers);
+		*store,
+		protobuf_export_prekeys,
+		protobuf_export_prekeys_size,
+		protobuf_export_prekeys_buffers,
+		protobuf_export_deprecated_prekeys,
+		protobuf_export_deprecated_prekeys_size,
+		protobuf_export_deprecated_prekeys_buffers);
 	THROW_on_error(EXPORT_ERROR, "Failed to export prekey store to protobuf.");
 
 	printf("Prekeys:\n");
@@ -335,22 +335,22 @@ int main(void) {
 
 	printf("Import from Protobuf-C\n");
 	status = protobuf_import(
-		&store,
-		protobuf_export_prekeys_buffers,
+		store,
+		*protobuf_export_prekeys_buffers,
 		protobuf_export_prekeys_size,
-		protobuf_export_deprecated_prekeys_buffers,
+		*protobuf_export_deprecated_prekeys_buffers,
 		protobuf_export_deprecated_prekeys_size);
 	THROW_on_error(IMPORT_ERROR, "Failed to import from protobuf.");
 
 	printf("Protobuf-C export again\n");
 	status = protobuf_export(
-		store,
-		&protobuf_second_export_prekeys,
-		&protobuf_second_export_prekeys_size,
-		&protobuf_second_export_prekeys_buffers,
-		&protobuf_second_export_deprecated_prekeys,
-		&protobuf_second_export_deprecated_prekeys_size,
-		&protobuf_second_export_deprecated_prekeys_buffers);
+		*store,
+		protobuf_second_export_prekeys,
+		protobuf_second_export_prekeys_size,
+		protobuf_second_export_prekeys_buffers,
+		protobuf_second_export_deprecated_prekeys,
+		protobuf_second_export_deprecated_prekeys_size,
+		protobuf_second_export_deprecated_prekeys_buffers);
 	THROW_on_error(EXPORT_ERROR, "Failed to export prekey store to protobuf.");
 
 	//compare both prekey lists
