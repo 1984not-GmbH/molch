@@ -67,7 +67,7 @@ return_status protobuf_export(
 	//unpack all the conversations
 	for (size_t i = 0; i < length; i++) {
 		size_t unpacked_size = user__get_packed_size(users[i]);
-		(*export_buffers)[i] = buffer_create_on_heap(unpacked_size, 0);
+		(*export_buffers)[i] = Buffer::create(unpacked_size, 0);
 		THROW_on_failed_alloc((*export_buffers)[i]);
 
 		(*export_buffers)[i]->content_length = user__pack(users[i], (*export_buffers)[i]->content);
@@ -169,9 +169,9 @@ int main(void) {
 	return_status status = return_status_init();
 
 	//create public signing key buffers
-	Buffer *alice_public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	Buffer *bob_public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	Buffer *charlie_public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	Buffer *alice_public_signing_key = Buffer::create(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	Buffer *bob_public_signing_key = Buffer::create(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	Buffer *charlie_public_signing_key = Buffer::create(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
 
 	//protobuf-c export buffers
 	Buffer **protobuf_export_buffers = nullptr;

@@ -47,7 +47,6 @@ int main(void) {
 	Buffer *to_xor = NULL;
 	Buffer *character_buffer = NULL;
 	Buffer *heap_buffer = NULL;
-	Buffer *string_on_heap = NULL;
 	Buffer *custom_allocated_empty_buffer = NULL;
 	Buffer *custom_allocated = NULL;
 
@@ -77,15 +76,15 @@ int main(void) {
 	printf("Successfully tested buffer comparison ...\n");
 
 	//test heap allocated buffers
-	heap_buffer = buffer_create_on_heap(10, 0);
+	heap_buffer = Buffer::create(10, 0);
 	heap_buffer->destroy_from_heap();
 
 	//zero length heap buffer
-	heap_buffer = buffer_create_on_heap(0, 0);
+	heap_buffer = Buffer::create(0, 0);
 	heap_buffer->destroy_from_heap();
 
 	//create a new buffer
-	buffer1 = buffer_create_on_heap(14, 10);
+	buffer1 = Buffer::create(14, 10);
 	unsigned char buffer1_content[10];
 	randombytes_buf(buffer1_content, sizeof(buffer1_content));
 	std::copy(buffer1_content, buffer1_content + sizeof(buffer1_content), buffer1->content);
@@ -106,8 +105,8 @@ int main(void) {
 	print_hex(buffer2);
 	putchar('\n');
 
-	empty = buffer_create_on_heap(0, 0);
-	empty2 = buffer_create_on_heap(0, 0);
+	empty = Buffer::create(0, 0);
+	empty2 = Buffer::create(0, 0);
 	status = empty2->cloneFrom(empty);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to clone empty buffer.\n");
@@ -115,7 +114,7 @@ int main(void) {
 	}
 
 	//copy buffer
-	buffer3 = buffer_create_on_heap(5,0);
+	buffer3 = Buffer::create(5,0);
 	status = buffer3->copyFrom(0, buffer2, 0, buffer2->content_length);
 	if ((status != 0) || (buffer2->compare(buffer3) != 0)) {
 		fprintf(stderr, "ERROR: Failed to copy buffer. (%i)\n", status);
@@ -221,7 +220,7 @@ int main(void) {
 	printf("Buffer successfully erased.\n");
 
 	//fill a buffer with random numbers
-	random = buffer_create_on_heap(10, 0);
+	random = Buffer::create(10, 0);
 	status = random->fillRandom(5);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to fill buffer with random numbers. (%i)\n", status);
@@ -248,14 +247,14 @@ int main(void) {
 
 	//test xor
 	buffer_create_from_string(text, "Hello World!");
-	to_xor = buffer_create_on_heap(text->content_length, text->content_length);
+	to_xor = Buffer::create(text->content_length, text->content_length);
 	status = to_xor->cloneFrom(text);
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to clone buffer.\n");
 		goto fail; /* not fail, because status is set */
 	}
 
-	random2 = buffer_create_on_heap(text->content_length, text->content_length);
+	random2 = Buffer::create(text->content_length, text->content_length);
 	status = random2->fillRandom(random2->getBufferLength());
 	if (status != 0) {
 		fprintf(stderr, "ERROR: Failed to fill buffer with random data. (%i)\n", status);
@@ -301,13 +300,6 @@ int main(void) {
 		}
 	}
 
-	//create buffer from string on heap
-	string_on_heap = buffer_create_from_string_on_heap("Hello world!");
-	if (sodium_memcmp(string_on_heap->content, "Hello world!", sizeof("Hello world!")) != 0) {
-		fprintf(stderr, "ERROR: Failed to create buffer from string on heap!\n");
-		goto fail;
-	}
-
 	//compare buffer to an array
 	buffer_create_from_string(true_buffer, "true");
 	status = true_buffer->compareToRaw((const unsigned char*)"true", sizeof("true"));
@@ -328,13 +320,13 @@ int main(void) {
 	status = 0;
 
 	//test custom allocator
-	custom_allocated = buffer_create_with_custom_allocator(10, 10, sodium_malloc, sodium_free);
+	custom_allocated = Buffer::createWithCustomAllocator(10, 10, sodium_malloc, sodium_free);
 	if (custom_allocated == nullptr) {
 		fprintf(stderr, "ERROR: Failed to create buffer with custom allocator!\n");
 		goto fail;
 	}
 
-	custom_allocated_empty_buffer = buffer_create_with_custom_allocator(0, 0, malloc, free);
+	custom_allocated_empty_buffer = Buffer::createWithCustomAllocator(0, 0, malloc, free);
 	if (custom_allocated_empty_buffer == nullptr) {
 		fprintf(stderr, "ERROR: Failed to customly allocate empty buffer.\n");
 		goto fail;
@@ -359,7 +351,6 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(random2);
 	buffer_destroy_from_heap_and_null_if_valid(to_xor);
 	buffer_destroy_from_heap_and_null_if_valid(character_buffer);
-	buffer_destroy_from_heap_and_null_if_valid(string_on_heap);
 	buffer_destroy_with_custom_deallocator_and_null_if_valid(custom_allocated_empty_buffer, free);
 	buffer_destroy_with_custom_deallocator_and_null_if_valid(custom_allocated, sodium_free);
 

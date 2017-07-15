@@ -62,7 +62,7 @@ return_status header_construct(
 	//allocate the header buffer
 	{
 		size_t header_length = header__get_packed_size(&header_struct);
-		*header = buffer_create_on_heap(header_length, header_length);
+		*header = Buffer::create(header_length, header_length);
 		THROW_on_failed_alloc(*header);
 
 		//pack it

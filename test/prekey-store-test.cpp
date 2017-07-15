@@ -61,7 +61,7 @@ static return_status protobuf_export(
 	//export all the keypairs
 	for (size_t i = 0; i < (*keypairs_size); i++) {
 		size_t export_size = prekey__get_packed_size((*keypairs)[i]);
-		(*key_buffers)[i] = buffer_create_on_heap(export_size, 0);
+		(*key_buffers)[i] = Buffer::create(export_size, 0);
 		THROW_on_failed_alloc((*key_buffers)[i]);
 
 		size_t packed_size = prekey__pack((*keypairs)[i], (*key_buffers)[i]->content);
@@ -71,7 +71,7 @@ static return_status protobuf_export(
 	//export all the deprecated keypairs
 	for (size_t i = 0; i < (*deprecated_keypairs_size); i++) {
 		size_t export_size = prekey__get_packed_size((*deprecated_keypairs)[i]);
-		(*deprecated_key_buffers)[i] = buffer_create_on_heap(export_size, 0);
+		(*deprecated_key_buffers)[i] = Buffer::create(export_size, 0);
 		THROW_on_failed_alloc((*deprecated_key_buffers)[i]);
 
 		size_t packed_size = prekey__pack((*deprecated_keypairs)[i], (*deprecated_key_buffers)[i]->content);
@@ -218,10 +218,10 @@ int main(void) {
 
 	return_status status = return_status_init();
 
-	Buffer *public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer *private_prekey1 = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer *private_prekey2 = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer *prekey_list = buffer_create_on_heap(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
+	Buffer *public_prekey = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer *private_prekey1 = Buffer::create(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer *private_prekey2 = Buffer::create(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer *prekey_list = Buffer::create(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
 	Prekey **protobuf_export_prekeys = nullptr;
 	Buffer **protobuf_export_prekeys_buffers = nullptr;

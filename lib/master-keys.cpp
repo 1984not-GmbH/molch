@@ -59,7 +59,7 @@ return_status master_keys_create(
 
 	if (seed != nullptr) { //use external seed
 		//create the seed buffer
-		crypto_seeds = buffer_create_with_custom_allocator(
+		crypto_seeds = Buffer::createWithCustomAllocator(
 				crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES,
 				crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES,
 				sodium_malloc,

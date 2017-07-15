@@ -49,7 +49,7 @@ return_status protobuf_export(
 
 	{
 		size_t export_size = conversation__get_packed_size(conversation);
-		*export_buffer = buffer_create_on_heap(export_size, 0);
+		*export_buffer = Buffer::create(export_size, 0);
 		(*export_buffer)->content_length = conversation__pack(conversation, (*export_buffer)->content);
 		if (export_size != (*export_buffer)->content_length) {
 			THROW(EXPORT_ERROR, "Failed to export ratchet.");
@@ -122,48 +122,48 @@ int main(void) {
 
 	//create all the buffers
 	//alice keys
-	Buffer *alice_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer *alice_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	Buffer *alice_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer *alice_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *alice_private_identity = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	Buffer *alice_public_identity = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *alice_private_ephemeral = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	Buffer *alice_public_ephemeral = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	//bob keys
-	Buffer *bob_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer *bob_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	Buffer *bob_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer *bob_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *bob_private_identity = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	Buffer *bob_public_identity = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *bob_private_ephemeral = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	Buffer *bob_public_ephemeral = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	//alice send message and header keys
-	Buffer *alice_send_message_key1 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *alice_send_header_key1 = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *alice_send_ephemeral1 = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
-	Buffer *alice_send_message_key2 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *alice_send_header_key2 = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *alice_send_ephemeral2 = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
-	Buffer *alice_send_message_key3 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *alice_send_header_key3 = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *alice_send_ephemeral3 = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
+	Buffer *alice_send_message_key1 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *alice_send_header_key1 = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer *alice_send_ephemeral1 = Buffer::create(PUBLIC_KEY_SIZE, 0);
+	Buffer *alice_send_message_key2 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *alice_send_header_key2 = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer *alice_send_ephemeral2 = Buffer::create(PUBLIC_KEY_SIZE, 0);
+	Buffer *alice_send_message_key3 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *alice_send_header_key3 = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer *alice_send_ephemeral3 = Buffer::create(PUBLIC_KEY_SIZE, 0);
 	//bobs receive keys
-	Buffer *bob_current_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *bob_next_receive_header_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *bob_receive_key1 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *bob_receive_key2 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *bob_receive_key3 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *bob_current_receive_header_key = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer *bob_next_receive_header_key = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *bob_receive_key1 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *bob_receive_key2 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *bob_receive_key3 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 	//bobs śend message and header keys
-	Buffer *bob_send_message_key1 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *bob_send_header_key1 = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *bob_send_ephemeral1 = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
-	Buffer *bob_send_message_key2 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *bob_send_header_key2 = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *bob_send_ephemeral2 = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
-	Buffer *bob_send_message_key3 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *bob_send_header_key3 = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *bob_send_ephemeral3 = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
+	Buffer *bob_send_message_key1 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *bob_send_header_key1 = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer *bob_send_ephemeral1 = Buffer::create(PUBLIC_KEY_SIZE, 0);
+	Buffer *bob_send_message_key2 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *bob_send_header_key2 = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer *bob_send_ephemeral2 = Buffer::create(PUBLIC_KEY_SIZE, 0);
+	Buffer *bob_send_message_key3 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *bob_send_header_key3 = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer *bob_send_ephemeral3 = Buffer::create(PUBLIC_KEY_SIZE, 0);
 	//alice receive keys
-	Buffer *alice_current_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *alice_next_receive_header_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *alice_receive_message_key1 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *alice_receive_message_key2 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *alice_receive_message_key3 = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *alice_receive_header_key2 = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer *alice_current_receive_header_key = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer *alice_next_receive_header_key = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *alice_receive_message_key1 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *alice_receive_message_key2 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *alice_receive_message_key3 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *alice_receive_header_key2 = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 
 	//creating Alice's identity keypair
 	buffer_create_from_string(alice_string, "Alice");

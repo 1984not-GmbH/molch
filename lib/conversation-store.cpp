@@ -177,7 +177,7 @@ return_status conversation_store_list(Buffer ** const list, conversation_store *
 		goto cleanup;
 	}
 
-	*list = buffer_create_on_heap(store->length * CONVERSATION_ID_SIZE, 0);
+	*list = Buffer::create(store->length * CONVERSATION_ID_SIZE, 0);
 	THROW_on_failed_alloc(*list);
 	//copy all the id's
 	conversation_store_foreach(

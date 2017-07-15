@@ -101,7 +101,7 @@ return_status read_file(Buffer ** const data, const char * const filename) {
 		size_t filesize = (size_t)ftell(file);
 		fseek(file, 0, SEEK_SET);
 
-		*data = buffer_create_on_heap(filesize, filesize);
+		*data = Buffer::create(filesize, filesize);
 		THROW_on_failed_alloc(*data);
 		(*data)->content_length = fread((*data)->content, 1, filesize, file);
 		if ((*data)->content_length != (size_t)filesize) {

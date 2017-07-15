@@ -34,12 +34,12 @@ int main(void) {
 	return_status status = return_status_init();
 
 	//create buffers
-	Buffer *alice_public_key = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	Buffer *alice_private_key = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer *alice_shared_secret = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
-	Buffer *bob_public_key = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	Buffer *bob_private_key = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer *bob_shared_secret = buffer_create_on_heap(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	Buffer *alice_public_key = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *alice_private_key = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	Buffer *alice_shared_secret = Buffer::create(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	Buffer *bob_public_key = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *bob_private_key = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	Buffer *bob_shared_secret = Buffer::create(crypto_generichash_BYTES, crypto_generichash_BYTES);
 
 	int status_int = 0;
 	//create Alice's keypair

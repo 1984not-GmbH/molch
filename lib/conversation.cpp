@@ -134,9 +134,9 @@ return_status conversation_start_send_conversation(
 
 	uint32_t prekey_number;
 
-	sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	sender_public_ephemeral = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(sender_public_ephemeral);
-	sender_private_ephemeral = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	sender_private_ephemeral = Buffer::create(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	THROW_on_failed_alloc(sender_private_ephemeral);
 
 	//check many error conditions
@@ -229,13 +229,13 @@ return_status conversation_start_receive_conversation(
 	Buffer *sender_public_ephemeral = nullptr;
 	Buffer *sender_public_identity = nullptr;
 
-	receiver_public_prekey = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	receiver_public_prekey = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(receiver_public_prekey);
-	receiver_private_prekey = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	receiver_private_prekey = Buffer::create(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	THROW_on_failed_alloc(receiver_private_prekey);
-	sender_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	sender_public_ephemeral = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(sender_public_ephemeral);
-	sender_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	sender_public_identity = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(sender_public_identity);
 
 	if ((conversation == nullptr)
@@ -334,11 +334,11 @@ return_status conversation_send(
 
 	molch_message_type packet_type;
 
-	send_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	send_header_key = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	THROW_on_failed_alloc(send_header_key);
-	send_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	send_message_key = Buffer::create(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 	THROW_on_failed_alloc(send_message_key);
-	send_ephemeral_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, 0);
+	send_ephemeral_key = Buffer::create(PUBLIC_KEY_SIZE, 0);
 	THROW_on_failed_alloc(send_ephemeral_key);
 
 
@@ -430,7 +430,7 @@ static int try_skipped_header_and_message_keys(
 	//create buffers
 	Buffer *header = nullptr;
 	Buffer *their_signed_public_ephemeral = nullptr;
-	their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	their_signed_public_ephemeral = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(their_signed_public_ephemeral);
 
 	{
@@ -500,13 +500,13 @@ return_status conversation_receive(
 	Buffer *message_key = nullptr;
 	Buffer *their_signed_public_ephemeral = nullptr;
 
-	current_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	current_receive_header_key = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	THROW_on_failed_alloc(current_receive_header_key);
-	next_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	next_receive_header_key = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	THROW_on_failed_alloc(next_receive_header_key);
-	their_signed_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	their_signed_public_ephemeral = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(their_signed_public_ephemeral);
-	message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	message_key = Buffer::create(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 	THROW_on_failed_alloc(message_key);
 
 	if ((conversation == nullptr)
@@ -517,7 +517,7 @@ return_status conversation_receive(
 		THROW(INVALID_INPUT, "Invalid input to conversation_receive.");
 	}
 
-	*message = buffer_create_on_heap(packet->content_length, 0);
+	*message = Buffer::create(packet->content_length, 0);
 	THROW_on_failed_alloc(*message);
 
 	{

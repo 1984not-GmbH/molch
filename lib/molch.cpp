@@ -59,15 +59,15 @@ static return_status create_prekey_list(
 	Buffer *unsigned_prekey_list = nullptr;
 	Buffer *prekey_list_buffer = nullptr;
 	Buffer *public_identity_key = nullptr;
-	unsigned_prekey_list = buffer_create_on_heap(
+	unsigned_prekey_list = Buffer::create(
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t),
 			0);
 	THROW_on_failed_alloc(unsigned_prekey_list);
-	prekey_list_buffer = buffer_create_on_heap(
+	prekey_list_buffer = Buffer::create(
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t) + SIGNATURE_SIZE,
 			0);
 	THROW_on_failed_alloc(prekey_list_buffer);
-	public_identity_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	public_identity_key = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(public_identity_key);
 
 	//buffer for the prekey part of unsigned_prekey_list
@@ -376,7 +376,7 @@ static return_status verify_prekey_list(
 		) {
 	return_status status = return_status_init();
 
-	Buffer *verified_prekey_list = buffer_create_on_heap(prekey_list_length - SIGNATURE_SIZE, prekey_list_length - SIGNATURE_SIZE);
+	Buffer *verified_prekey_list = Buffer::create(prekey_list_length - SIGNATURE_SIZE, prekey_list_length - SIGNATURE_SIZE);
 	THROW_on_failed_alloc(verified_prekey_list);
 
 	//verify the signature
@@ -473,11 +473,11 @@ return_status molch_start_send_conversation(
 	Buffer *sender_public_identity = nullptr;
 	Buffer *receiver_public_identity = nullptr;
 	Buffer *receiver_public_ephemeral = nullptr;
-	sender_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	sender_public_identity = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(sender_public_identity);
-	receiver_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	receiver_public_identity = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(receiver_public_identity);
-	receiver_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	receiver_public_ephemeral = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(receiver_public_ephemeral);
 
 	//check input
@@ -1130,7 +1130,7 @@ return_status molch_conversation_export(
 
 	//pack the struct
 	conversation_size = conversation__get_packed_size(conversation_struct);
-	conversation_buffer = buffer_create_with_custom_allocator(conversation_size, 0, zeroed_malloc, zeroed_free);
+	conversation_buffer = Buffer::createWithCustomAllocator(conversation_size, 0, zeroed_malloc, zeroed_free);
 	THROW_on_failed_alloc(conversation_buffer);
 
 	conversation_buffer->content_length = conversation__pack(conversation_struct, conversation_buffer->content);
@@ -1139,14 +1139,14 @@ return_status molch_conversation_export(
 	}
 
 	//generate the nonce
-	backup_nonce = buffer_create_on_heap(BACKUP_NONCE_SIZE, 0);
+	backup_nonce = Buffer::create(BACKUP_NONCE_SIZE, 0);
 	THROW_on_failed_alloc(backup_nonce);
 	if (backup_nonce->fillRandom(BACKUP_NONCE_SIZE) != 0) {
 		THROW(GENERIC_ERROR, "Failed to generaete backup nonce.");
 	}
 
 	//allocate the output
-	backup_buffer = buffer_create_on_heap(conversation_size + crypto_secretbox_MACBYTES, conversation_size + crypto_secretbox_MACBYTES);
+	backup_buffer = Buffer::create(conversation_size + crypto_secretbox_MACBYTES, conversation_size + crypto_secretbox_MACBYTES);
 	THROW_on_failed_alloc(backup_buffer);
 
 	//encrypt the backup
@@ -1264,7 +1264,7 @@ return_status molch_conversation_import(
 		THROW(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
 	}
 
-	decrypted_backup = buffer_create_with_custom_allocator(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
+	decrypted_backup = Buffer::createWithCustomAllocator(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
 	THROW_on_failed_alloc(decrypted_backup);
 
 	//decrypt the backup
@@ -1368,7 +1368,7 @@ return_status molch_export(
 
 	//pack the struct
 	backup_struct_size = backup__get_packed_size(backup_struct);
-	users_buffer = buffer_create_with_custom_allocator(backup_struct_size, 0, zeroed_malloc, zeroed_free);
+	users_buffer = Buffer::createWithCustomAllocator(backup_struct_size, 0, zeroed_malloc, zeroed_free);
 	THROW_on_failed_alloc(users_buffer);
 
 	users_buffer->content_length = backup__pack(backup_struct, users_buffer->content);
@@ -1377,14 +1377,14 @@ return_status molch_export(
 	}
 
 	//generate the nonce
-	backup_nonce = buffer_create_on_heap(BACKUP_NONCE_SIZE, 0);
+	backup_nonce = Buffer::create(BACKUP_NONCE_SIZE, 0);
 	THROW_on_failed_alloc(backup_nonce);
 	if (backup_nonce->fillRandom(BACKUP_NONCE_SIZE) != 0) {
 		THROW(GENERIC_ERROR, "Failed to generaete backup nonce.");
 	}
 
 	//allocate the output
-	backup_buffer = buffer_create_on_heap(backup_struct_size + crypto_secretbox_MACBYTES, backup_struct_size + crypto_secretbox_MACBYTES);
+	backup_buffer = Buffer::create(backup_struct_size + crypto_secretbox_MACBYTES, backup_struct_size + crypto_secretbox_MACBYTES);
 	THROW_on_failed_alloc(backup_buffer);
 
 	//encrypt the backup
@@ -1510,7 +1510,7 @@ return_status molch_import(
 		THROW(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
 	}
 
-	decrypted_backup = buffer_create_with_custom_allocator(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
+	decrypted_backup = Buffer::createWithCustomAllocator(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
 	THROW_on_failed_alloc(decrypted_backup);
 
 	//decrypt the backup
@@ -1628,7 +1628,7 @@ return_status molch_update_backup_key(
 
 	// create a backup key buffer if it doesnt exist already
 	if (global_backup_key == nullptr) {
-		global_backup_key = buffer_create_with_custom_allocator(BACKUP_KEY_SIZE, 0, sodium_malloc, sodium_free);
+		global_backup_key = Buffer::createWithCustomAllocator(BACKUP_KEY_SIZE, 0, sodium_malloc, sodium_free);
 		THROW_on_failed_alloc(global_backup_key);
 	}
 

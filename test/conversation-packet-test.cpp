@@ -31,11 +31,11 @@
 int main(void) {
 	//create buffers
 	//alice' keys
-	Buffer *alice_private_identity = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer *alice_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer *alice_private_identity = Buffer::create(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer *alice_public_identity = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	//bobs keys
-	Buffer *bob_private_identity = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer *bob_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer *bob_private_identity = Buffer::create(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer *bob_public_identity = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
 	Buffer *packet = nullptr;
 	Buffer *received_message = nullptr;
@@ -56,7 +56,7 @@ int main(void) {
 	prekey_store *alice_prekeys = nullptr;
 	prekey_store *bob_prekeys = nullptr;
 
-	Buffer *prekey_list = buffer_create_on_heap(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
+	Buffer *prekey_list = Buffer::create(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
 	//conversations
 	conversation_t *alice_send_conversation = nullptr;

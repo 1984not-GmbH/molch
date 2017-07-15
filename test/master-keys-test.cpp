@@ -65,7 +65,7 @@ return_status protobuf_export(
 	//public signing key
 	{
 		size_t public_signing_key_proto_size = key__get_packed_size(public_signing_key);
-		*public_signing_key_buffer = buffer_create_on_heap(public_signing_key_proto_size, 0);
+		*public_signing_key_buffer = Buffer::create(public_signing_key_proto_size, 0);
 		(*public_signing_key_buffer)->content_length = key__pack(public_signing_key, (*public_signing_key_buffer)->content);
 		if ((*public_signing_key_buffer)->content_length != public_signing_key_proto_size) {
 			THROW(EXPORT_ERROR, "Failed to export public signing key.");
@@ -75,7 +75,7 @@ return_status protobuf_export(
 	//private signing key
 	{
 		size_t private_signing_key_proto_size = key__get_packed_size(private_signing_key);
-		*private_signing_key_buffer = buffer_create_on_heap(private_signing_key_proto_size, 0);
+		*private_signing_key_buffer = Buffer::create(private_signing_key_proto_size, 0);
 		(*private_signing_key_buffer)->content_length = key__pack(private_signing_key, (*private_signing_key_buffer)->content);
 		if ((*private_signing_key_buffer)->content_length != private_signing_key_proto_size) {
 			THROW(EXPORT_ERROR, "Failed to export private signing key.");
@@ -85,7 +85,7 @@ return_status protobuf_export(
 	//public identity key
 	{
 		size_t public_identity_key_proto_size = key__get_packed_size(public_identity_key);
-		*public_identity_key_buffer = buffer_create_on_heap(public_identity_key_proto_size, 0);
+		*public_identity_key_buffer = Buffer::create(public_identity_key_proto_size, 0);
 		(*public_identity_key_buffer)->content_length = key__pack(public_identity_key, (*public_identity_key_buffer)->content);
 		if ((*public_identity_key_buffer)->content_length != public_identity_key_proto_size) {
 			THROW(EXPORT_ERROR, "Failed to export public identity key.");
@@ -95,7 +95,7 @@ return_status protobuf_export(
 	//private identity key
 	{
 		size_t private_identity_key_proto_size = key__get_packed_size(private_identity_key);
-		*private_identity_key_buffer = buffer_create_on_heap(private_identity_key_proto_size, 0);
+		*private_identity_key_buffer = Buffer::create(private_identity_key_proto_size, 0);
 		(*private_identity_key_buffer)->content_length = key__pack(private_identity_key, (*private_identity_key_buffer)->content);
 		if ((*private_identity_key_buffer)->content_length != private_identity_key_proto_size) {
 			THROW(EXPORT_ERROR, "Failed to export private identity key.");
@@ -236,11 +236,11 @@ int main(void) {
 	master_keys_t *imported_master_keys = nullptr;
 
 	//public key buffers
-	Buffer *public_signing_key = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	Buffer *public_identity_key = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer *public_signing_key = Buffer::create(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	Buffer *public_identity_key = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
-	Buffer *signed_data = buffer_create_on_heap(100, 0);
-	Buffer *unwrapped_data = buffer_create_on_heap(100, 0);
+	Buffer *signed_data = Buffer::create(100, 0);
+	Buffer *unwrapped_data = Buffer::create(100, 0);
 
 	//export buffers
 	Buffer *protobuf_export_public_signing_key = nullptr;

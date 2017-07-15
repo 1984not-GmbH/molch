@@ -55,7 +55,7 @@ return_status diffie_hellman(
 	derived_key->content_length = 0;
 
 	//buffer for diffie hellman shared secret
-	Buffer *dh_secret = buffer_create_on_heap(crypto_scalarmult_SCALARBYTES, crypto_scalarmult_SCALARBYTES);
+	Buffer *dh_secret = Buffer::create(crypto_scalarmult_SCALARBYTES, crypto_scalarmult_SCALARBYTES);
 	THROW_on_failed_alloc(dh_secret);
 
 	crypto_generichash_state hash_state[1];
@@ -164,11 +164,11 @@ return_status triple_diffie_hellman(
 	Buffer *dh1 = nullptr;
 	Buffer *dh2 = nullptr;
 	Buffer *dh3 = nullptr;
-	dh1 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+	dh1 = Buffer::create(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
 	THROW_on_failed_alloc(dh1);
-	dh2 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+	dh2 = Buffer::create(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
 	THROW_on_failed_alloc(dh2);
-	dh3 = buffer_create_on_heap(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+	dh3 = Buffer::create(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
 	THROW_on_failed_alloc(dh3);
 
 	//check buffer sizes

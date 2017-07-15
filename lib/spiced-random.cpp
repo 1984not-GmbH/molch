@@ -47,11 +47,11 @@ return_status spiced_random(
 	//buffer that contains a random salt
 	Buffer *salt = nullptr;
 	//allocate them
-	spice = buffer_create_with_custom_allocator(output_length, output_length, sodium_malloc, sodium_free);
+	spice = Buffer::createWithCustomAllocator(output_length, output_length, sodium_malloc, sodium_free);
 	THROW_on_failed_alloc(spice);
-	os_random = buffer_create_with_custom_allocator(output_length, output_length, sodium_malloc, sodium_free);
+	os_random = Buffer::createWithCustomAllocator(output_length, output_length, sodium_malloc, sodium_free);
 	THROW_on_failed_alloc(os_random);
-	salt = buffer_create_on_heap(crypto_pwhash_SALTBYTES, 0);
+	salt = Buffer::create(crypto_pwhash_SALTBYTES, 0);
 	THROW_on_failed_alloc(salt);
 
 	//check buffer length

@@ -195,37 +195,32 @@ public:
 	 */
 	int cloneToRaw(unsigned char * const destination, const size_t destination_length) __attribute__((warn_unused_result));
 
+	/*
+	 * Create a new buffer on the heap.
+	 */
+	static Buffer *create(
+			const size_t buffer_length,
+			const size_t content_length) __attribute__((warn_unused_result));
+
+	/*
+	 * Create a new buffer with a custom allocator.
+	 */
+	static Buffer *createWithCustomAllocator(
+			const size_t buffer_length,
+			const size_t content_length,
+			void *(*allocator)(size_t size),
+			void (*deallocator)(void *pointer)
+			) __attribute__((warn_unused_result));
+
 	size_t getBufferLength();
 	bool isReadOnly();
 	void setReadOnly(bool readonly);
 };
 
 /*
- * Create a new buffer on the heap.
- */
-Buffer *buffer_create_on_heap(
-		const size_t buffer_length,
-		const size_t content_length) __attribute__((warn_unused_result));
-
-/*
- * Create a new buffer with a custom allocator.
- */
-Buffer *buffer_create_with_custom_allocator(
-		const size_t buffer_length,
-		const size_t content_length,
-		void *(*allocator)(size_t size),
-		void (*deallocator)(void *pointer)
-		) __attribute__((warn_unused_result));
-
-/*
  * Create a new buffer from a string literal.
  */
 #define buffer_create_from_string(name, string) Buffer name[1]; name->init_with_pointer_to_const((const unsigned char*) (string), sizeof(string), sizeof(string))
-
-/*
- * Create a new buffer from a string literal on heap.
- */
-#define buffer_create_from_string_on_heap(string) buffer_create_on_heap(sizeof(string), sizeof(string))->create_from_string_on_heap_helper((const unsigned char*) string, sizeof(string))
 
 /*
  * Macro to create a buffer with already existing data without cloning it.

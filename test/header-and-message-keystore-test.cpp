@@ -56,7 +56,7 @@ static return_status protobuf_export(
 	//create all the export buffers
 	for (size_t i = 0; i < (*bundles_size); i++) {
 		size_t export_size = key_bundle__get_packed_size((*key_bundles)[i]);
-		(*export_buffers)[i] = buffer_create_on_heap(export_size, 0);
+		(*export_buffers)[i] = Buffer::create(export_size, 0);
 		THROW_on_failed_alloc((*export_buffers)[i]);
 
 		size_t packed_size = key_bundle__pack((*key_bundles)[i], (*export_buffers)[i]->content);
@@ -150,8 +150,8 @@ int main(void) {
 	return_status status = return_status_init();
 
 	//buffer for message keys
-	Buffer *header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *message_key = buffer_create_on_heap(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer *header_key = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer *message_key = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
 
 	// buffers for exporting protobuf-c
 	Buffer **protobuf_export_buffers = nullptr;

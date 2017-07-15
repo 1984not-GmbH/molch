@@ -211,9 +211,9 @@ return_status ratchet_send(
 	//create buffers
 	Buffer *root_key_backup = nullptr;
 	Buffer *chain_key_backup = nullptr;
-	root_key_backup = buffer_create_on_heap(ROOT_KEY_SIZE, 0);
+	root_key_backup = Buffer::create(ROOT_KEY_SIZE, 0);
 	THROW_on_failed_alloc(root_key_backup);
-	chain_key_backup = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	chain_key_backup = Buffer::create(CHAIN_KEY_SIZE, 0);
 	THROW_on_failed_alloc(chain_key_backup);
 
 	//check input
@@ -427,11 +427,11 @@ static return_status stage_skipped_header_and_message_keys(
 	Buffer *current_chain_key = nullptr;
 	Buffer *next_chain_key = nullptr;
 	Buffer *current_message_key = nullptr;
-	current_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	current_chain_key = Buffer::create(CHAIN_KEY_SIZE, 0);
 	THROW_on_failed_alloc(current_chain_key);
-	next_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	next_chain_key = Buffer::create(CHAIN_KEY_SIZE, 0);
 	THROW_on_failed_alloc(next_chain_key);
-	current_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, 0);
+	current_message_key = Buffer::create(MESSAGE_KEY_SIZE, 0);
 	THROW_on_failed_alloc(current_message_key);
 
 	//check input
@@ -561,11 +561,11 @@ return_status ratchet_receive(
 	Buffer *THROWaway_chain_key = nullptr;
 	Buffer *THROWaway_message_key = nullptr;
 	Buffer *purported_chain_key_backup = nullptr;
-	THROWaway_chain_key = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	THROWaway_chain_key = Buffer::create(CHAIN_KEY_SIZE, 0);
 	THROW_on_failed_alloc(THROWaway_chain_key);
-	THROWaway_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, 0);
+	THROWaway_message_key = Buffer::create(MESSAGE_KEY_SIZE, 0);
 	THROW_on_failed_alloc(THROWaway_message_key);
-	purported_chain_key_backup = buffer_create_on_heap(CHAIN_KEY_SIZE, 0);
+	purported_chain_key_backup = Buffer::create(CHAIN_KEY_SIZE, 0);
 	THROW_on_failed_alloc(purported_chain_key_backup);
 
 	//check input

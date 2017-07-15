@@ -73,7 +73,7 @@ static return_status decrypt_conversation_backup(
 		THROW(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
 	}
 
-	*decrypted_backup = buffer_create_with_custom_allocator(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
+	*decrypted_backup = Buffer::createWithCustomAllocator(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
 	THROW_on_failed_alloc(*decrypted_backup);
 
 	//decrypt the backup
@@ -139,7 +139,7 @@ static return_status decrypt_full_backup(
 		THROW(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
 	}
 
-	*decrypted_backup = buffer_create_with_custom_allocator(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
+	*decrypted_backup = Buffer::createWithCustomAllocator(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
 	THROW_on_failed_alloc(*decrypted_backup);
 
 	//decrypt the backup
@@ -177,24 +177,24 @@ int main(void) {
 	return_status status = return_status_init();
 
 	//backup key buffer
-	Buffer *backup_key = buffer_create_on_heap(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
-	Buffer *new_backup_key = buffer_create_on_heap(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
+	Buffer *backup_key = Buffer::create(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
+	Buffer *new_backup_key = Buffer::create(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
 
 	//create conversation buffers
-	Buffer *alice_conversation = buffer_create_on_heap(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
-	Buffer *bob_conversation = buffer_create_on_heap(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	Buffer *alice_conversation = Buffer::create(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	Buffer *bob_conversation = Buffer::create(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 
 	//message numbers
 	uint32_t alice_receive_message_number = UINT32_MAX;
 	uint32_t alice_previous_receive_message_number = UINT32_MAX;
 
 	//alice key buffers
-	Buffer *alice_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *alice_public_identity = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	unsigned char *alice_public_prekeys = nullptr;
 	size_t alice_public_prekeys_length = 0;
 
 	//bobs key buffers
-	Buffer *bob_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *bob_public_identity = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	unsigned char *bob_public_prekeys = nullptr;
 	size_t bob_public_prekeys_length = 0;
 

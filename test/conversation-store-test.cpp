@@ -63,7 +63,7 @@ static return_status protobuf_export(
 	//unpack all the conversations
 	for (size_t i = 0; i < length; i++) {
 		size_t unpacked_size = conversation__get_packed_size(conversations[i]);
-		(*export_buffers)[i] = buffer_create_on_heap(unpacked_size, 0);
+		(*export_buffers)[i] = Buffer::create(unpacked_size, 0);
 		THROW_on_failed_alloc((*export_buffers)[i]);
 
 		(*export_buffers)[i]->content_length = conversation__pack(conversations[i], (*export_buffers)[i]->content);
@@ -140,13 +140,13 @@ cleanup:
 static return_status test_add_conversation(conversation_store * const store) {
 	//define key buffers
 	//identity keys
-	Buffer *our_private_identity = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer *our_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	Buffer *their_public_identity = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *our_private_identity = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	Buffer *our_public_identity = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *their_public_identity = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	//ephemeral keys
-	Buffer *our_private_ephemeral = buffer_create_on_heap(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer *our_public_ephemeral= buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	Buffer *their_public_ephemeral = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *our_private_ephemeral = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	Buffer *our_public_ephemeral= Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *their_public_ephemeral = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 
 	conversation_t *conversation = nullptr;
 

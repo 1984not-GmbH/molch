@@ -236,7 +236,7 @@ return_status user_store_list(Buffer ** const list, user_store * const store) {
 		THROW(INVALID_INPUT, "Invalid input to user_store_list.");
 	}
 
-	*list = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE * store->length, PUBLIC_MASTER_KEY_SIZE * store->length);
+	*list = Buffer::create(PUBLIC_MASTER_KEY_SIZE * store->length, PUBLIC_MASTER_KEY_SIZE * store->length);
 	THROW_on_failed_alloc(*list);
 
 	{

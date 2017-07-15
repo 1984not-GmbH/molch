@@ -42,8 +42,8 @@ int main(void) {
 	putchar('\n');
 
 	//output buffers
-	Buffer *output1 = buffer_create_on_heap(42, 0);
-	Buffer *output2 = buffer_create_on_heap(42, 0);
+	Buffer *output1 = Buffer::create(42, 0);
+	Buffer *output2 = Buffer::create(42, 0);
 
 	//fill buffer with spiced random data
 	status = spiced_random(output1, spice, output1->getBufferLength());

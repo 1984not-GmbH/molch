@@ -28,9 +28,9 @@
 
 int main(void) {
 	//create buffers
-	Buffer *our_public_ephemeral_key = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *our_public_ephemeral_key = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	Buffer *header = nullptr;
-	Buffer *extracted_public_ephemeral_key = buffer_create_on_heap(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer *extracted_public_ephemeral_key = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 
 	return_status status = return_status_init();
 

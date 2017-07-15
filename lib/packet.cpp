@@ -200,7 +200,7 @@ return_status packet_encrypt(
 	}
 
 	//generate the header nonce and add it to the packet header
-	header_nonce = buffer_create_on_heap(HEADER_NONCE_SIZE, 0);
+	header_nonce = Buffer::create(HEADER_NONCE_SIZE, 0);
 	THROW_on_failed_alloc(header_nonce);
 	if (header_nonce->fillRandom(HEADER_NONCE_SIZE) != 0) {
 		THROW(BUFFER_ERROR, "Failed to generate header nonce.");
@@ -210,7 +210,7 @@ return_status packet_encrypt(
 	packet_header_struct.header_nonce.len = header_nonce->content_length;
 
 	//encrypt the header
-	encrypted_axolotl_header = buffer_create_on_heap(
+	encrypted_axolotl_header = Buffer::create(
 			axolotl_header->content_length + crypto_secretbox_MACBYTES,
 			axolotl_header->content_length + crypto_secretbox_MACBYTES);
 	THROW_on_failed_alloc(encrypted_axolotl_header);
@@ -232,7 +232,7 @@ return_status packet_encrypt(
 	packet_struct.encrypted_axolotl_header.len = encrypted_axolotl_header->content_length;
 
 	//generate the message nonce and add it to the packet header
-	message_nonce = buffer_create_on_heap(MESSAGE_NONCE_SIZE, 0);
+	message_nonce = Buffer::create(MESSAGE_NONCE_SIZE, 0);
 	THROW_on_failed_alloc(message_nonce);
 	if (message_nonce->fillRandom(MESSAGE_NONCE_SIZE) != 0) {
 		THROW(BUFFER_ERROR, "Failed to generate message nonce.");
@@ -244,7 +244,7 @@ return_status packet_encrypt(
 	//pad the message (PKCS7 padding to 255 byte blocks, see RFC5652 section 6.3)
 	{
 		unsigned char padding = (unsigned char)(255 - (message->content_length % 255));
-		padded_message = buffer_create_on_heap(message->content_length + padding, 0);
+		padded_message = Buffer::create(message->content_length + padding, 0);
 		THROW_on_failed_alloc(padded_message);
 		//copy the message
 		if (padded_message->cloneFrom(message) != 0) {
@@ -256,7 +256,7 @@ return_status packet_encrypt(
 	}
 
 	//encrypt the message
-	encrypted_message = buffer_create_on_heap(
+	encrypted_message = Buffer::create(
 			padded_message->content_length + crypto_secretbox_MACBYTES,
 			padded_message->content_length + crypto_secretbox_MACBYTES);
 	THROW_on_failed_alloc(encrypted_message);
@@ -282,7 +282,7 @@ return_status packet_encrypt(
 		const size_t packed_length = packet__get_packed_size(&packet_struct);
 
 		//pack the packet
-		*packet = buffer_create_on_heap(packed_length, 0);
+		*packet = Buffer::create(packed_length, 0);
 		THROW_on_failed_alloc(*packet);
 		(*packet)->content_length = packet__pack(&packet_struct, (*packet)->content);
 		if ((*packet)->content_length != packed_length) {
@@ -489,7 +489,7 @@ return_status packet_decrypt_header(
 
 	{
 		const size_t axolotl_header_length = packet_struct->encrypted_axolotl_header.len - crypto_secretbox_MACBYTES;
-		*axolotl_header = buffer_create_on_heap(axolotl_header_length, axolotl_header_length);
+		*axolotl_header = Buffer::create(axolotl_header_length, axolotl_header_length);
 		THROW_on_failed_alloc(*axolotl_header);
 	}
 
@@ -552,7 +552,7 @@ return_status packet_decrypt_message(
 		if (padded_message_length < 255) {
 			THROW(INCORRECT_BUFFER_SIZE, "The padded message is too short.")
 		}
-		padded_message = buffer_create_on_heap(padded_message_length, padded_message_length);
+		padded_message = Buffer::create(padded_message_length, padded_message_length);
 		THROW_on_failed_alloc(padded_message);
 	}
 
@@ -577,7 +577,7 @@ return_status packet_decrypt_message(
 	//extract the message
 	{
 		const size_t message_length = padded_message->content_length - padding;
-		*message = buffer_create_on_heap(message_length, 0);
+		*message = Buffer::create(message_length, 0);
 		THROW_on_failed_alloc(*message);
 		//TODO this doesn't need to be copied, setting the length should be enough
 		if ((*message)->copyFrom(0, padded_message, 0, message_length) != 0) {

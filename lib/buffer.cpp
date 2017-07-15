@@ -91,38 +91,38 @@ Buffer* Buffer::init_with_pointer_to_const(
 /*
  * Create a new buffer on the heap.
  */
-Buffer *buffer_create_on_heap(
-		const size_t buffer_length,
-		const size_t content_length) {
+Buffer* Buffer::create(
+		const size_t buffer_length_,
+		const size_t content_length_) {
 	Buffer *buffer = (Buffer*)malloc(sizeof(Buffer));
 	if (buffer == nullptr) {
 		return nullptr;
 	}
 
 	unsigned char *content = nullptr;
-	if (buffer_length != 0) {
-		content = (unsigned char*)malloc(buffer_length);
+	if (buffer_length_ != 0) {
+		content = (unsigned char*)malloc(buffer_length_);
 		if (content == nullptr) {
 			free(buffer);
 			return nullptr;
 		}
 	}
 
-	return buffer->init_with_pointer(content, buffer_length, content_length);
+	return buffer->init_with_pointer(content, buffer_length_, content_length_);
 }
 
 /*
  * Create a new buffer with a custom allocator.
  */
-Buffer *buffer_create_with_custom_allocator(
-		const size_t buffer_length,
-		const size_t content_length,
+Buffer* Buffer::createWithCustomAllocator(
+		const size_t buffer_length_,
+		const size_t content_length_,
 		void *(*allocator)(size_t size),
 		void (*deallocator)(void *pointer)
 		) {
 	unsigned char *content = nullptr;
-	if (buffer_length != 0) {
-		content = (unsigned char*)allocator(buffer_length);
+	if (buffer_length_ != 0) {
+		content = (unsigned char*)allocator(buffer_length_);
 		if (content == nullptr) {
 			return nullptr;
 		}
@@ -134,7 +134,7 @@ Buffer *buffer_create_with_custom_allocator(
 		return nullptr;
 	}
 
-	return buffer->init_with_pointer(content, buffer_length, content_length);
+	return buffer->init_with_pointer(content, buffer_length_, content_length_);
 }
 
 /*

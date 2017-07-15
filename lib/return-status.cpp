@@ -230,7 +230,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 		}
 	}
 
-	output = buffer_create_on_heap(output_size, 0);
+	output = Buffer::create(output_size, 0);
 	THROW_on_failed_alloc(output);
 
 	{

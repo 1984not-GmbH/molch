@@ -41,25 +41,25 @@ int main(void) {
 	//create all the buffers
 	//Keys:
 	//Alice:
-	Buffer *alice_private_identity = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer *alice_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer *alice_private_ephemeral = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer *alice_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer *alice_private_identity = Buffer::create(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer *alice_public_identity = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer *alice_private_ephemeral = Buffer::create(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer *alice_public_ephemeral = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	//Bob
-	Buffer *bob_private_identity = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer *bob_public_identity = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer *bob_private_ephemeral = buffer_create_on_heap(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer *bob_public_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer *bob_private_identity = Buffer::create(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer *bob_public_identity = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer *bob_private_ephemeral = Buffer::create(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer *bob_public_ephemeral = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
 	//keys for sending
-	Buffer *send_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *send_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-	Buffer *public_send_ephemeral = buffer_create_on_heap(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer *send_header_key = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer *send_message_key = Buffer::create(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	Buffer *public_send_ephemeral = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
 	//keys for receiving
-	Buffer *current_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *next_receive_header_key = buffer_create_on_heap(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *receive_message_key = buffer_create_on_heap(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	Buffer *current_receive_header_key = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer *next_receive_header_key = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer *receive_message_key = Buffer::create(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 
 	//ratchets
 	ratchet_state *alice_send_ratchet = nullptr;

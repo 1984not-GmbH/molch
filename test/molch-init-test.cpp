@@ -36,7 +36,7 @@ int main(int argc, char *args[]) {
 		}
 	}
 	/* don't initialize libsodium here */
-	Buffer *user_id = buffer_create_on_heap(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	Buffer *user_id = Buffer::create(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
 	Buffer *backup_file = nullptr; //backup to import from
 	Buffer *backup_key_file = nullptr;
 
