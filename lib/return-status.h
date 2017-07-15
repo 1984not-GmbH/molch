@@ -107,6 +107,8 @@ char *return_status_print(const return_status * const status, size_t *length) __
 		status_type THROW_type = return_status_add_error_message(&status, message, status_type_value);\
 		if (THROW_type != SUCCESS) {\
 			status.status = THROW_type;\
+		} else {\
+			status.status = SHOULDNT_HAPPEN; /*I hope this makes clang analyzer accept my code!*/\
 		}\
 	} else {\
 		status.error = NULL;\

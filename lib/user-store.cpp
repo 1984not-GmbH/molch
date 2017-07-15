@@ -389,11 +389,9 @@ return_status user_store_node_export(user_store_node * const node, User ** const
 	(*user)->prekeys = prekeys;
 	prekeys = nullptr;
 	(*user)->n_prekeys = prekeys_length;
-	prekeys_length = 0;
 	(*user)->deprecated_prekeys = deprecated_prekeys;
 	deprecated_prekeys = nullptr;
 	(*user)->n_deprecated_prekeys = deprecated_prekeys_length;
-	deprecated_prekeys_length = 0;
 
 cleanup:
 	on_error {
