@@ -31,9 +31,6 @@ private:
 
 public:
 	size_t content_length;
-	/*This position can be used by parsers etc. to keep track of the position
-	it is initialized with a value of 0.*/
-	size_t position;
 	unsigned char *content;
 
 	/*

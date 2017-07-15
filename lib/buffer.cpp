@@ -69,8 +69,6 @@ Buffer* Buffer::init_with_pointer(
 		this->content = content_;
 	}
 
-	this->position = 0;
-
 	return this;
 }
 
@@ -185,7 +183,6 @@ void Buffer::clear() {
 	}
 	sodium_memzero(this->content, this->buffer_length);
 	this->content_length = 0;
-	this->position = 0;
 }
 
 /*
@@ -260,8 +257,6 @@ int Buffer::cloneFrom(Buffer * const source) {
 		this->clear();
 		return status;
 	}
-
-	this->position = source->position;
 
 	return status;
 }
