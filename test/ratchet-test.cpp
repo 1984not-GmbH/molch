@@ -29,10 +29,10 @@
 #include "common.h"
 
 return_status protobuf_export(
-		ratchet_state * const ratchet,
+		RatchetState * const ratchet,
 		Buffer ** const export_buffer) __attribute__((warn_unused_result));
 return_status protobuf_export(
-		ratchet_state * const ratchet,
+		RatchetState * const ratchet,
 		Buffer ** const export_buffer) {
 	return_status status = return_status_init();
 
@@ -67,10 +67,10 @@ cleanup:
 }
 
 return_status protobuf_import(
-		ratchet_state ** const ratchet,
+		RatchetState ** const ratchet,
 		const Buffer * const export_buffer) __attribute__((warn_unused_result));
 return_status protobuf_import(
-		ratchet_state ** const ratchet,
+		RatchetState ** const ratchet,
 		const Buffer * const export_buffer) {
 	return_status status = return_status_init();
 
@@ -114,8 +114,8 @@ int main(void) {
 	Buffer *protobuf_export_buffer = nullptr;
 	Buffer *protobuf_second_export_buffer = nullptr;
 
-	ratchet_state *alice_state = nullptr;
-	ratchet_state *bob_state = nullptr;
+	RatchetState *alice_state = nullptr;
+	RatchetState *bob_state = nullptr;
 	ratchet_header_decryptability decryptable = NOT_TRIED;
 
 	int status_int;

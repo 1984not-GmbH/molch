@@ -36,7 +36,7 @@ static bool is_none(Buffer * const buffer) {
 	return (buffer->content_length == 0) || sodium_is_zero(buffer->content, buffer->content_length);
 }
 
-static void init_ratchet_state(ratchet_state ** const ratchet) {
+static void init_RatchetState(RatchetState ** const ratchet) {
 	//initialize the buffers with the storage arrays
 	(*ratchet)->root_key.init((*ratchet)->root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
 	(*ratchet)->purported_root_key.init((*ratchet)->purported_root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
@@ -65,20 +65,20 @@ static void init_ratchet_state(ratchet_state ** const ratchet) {
 }
 
 /*
- * Create a new ratchet_state and initialise the pointers.
+ * Create a new RatchetState and initialise the pointers.
  */
-static return_status create_ratchet_state(ratchet_state ** const ratchet) {
+static return_status create_RatchetState(RatchetState ** const ratchet) {
 	return_status status = return_status_init();
 
 	if (ratchet == nullptr) {
-		THROW(INVALID_INPUT, "Invalid input to create_ratchet_state.");
+		THROW(INVALID_INPUT, "Invalid input to create_RatchetState.");
 	}
 
-	*ratchet = (ratchet_state*)sodium_malloc(sizeof(ratchet_state));
+	*ratchet = (RatchetState*)sodium_malloc(sizeof(RatchetState));
 	THROW_on_failed_alloc(*ratchet);
 
 	//initialize the buffers with the storage arrays
-	init_ratchet_state(ratchet);
+	init_RatchetState(ratchet);
 
 	//initialise message keystore for skipped messages
 	header_and_message_keystore_init(&(*ratchet)->skipped_header_and_message_keys);
@@ -97,7 +97,7 @@ cleanup:
  * The return value is a valid ratchet state or nullptr if an error occured.
  */
 return_status ratchet_create(
-		ratchet_state ** const ratchet,
+		RatchetState ** const ratchet,
 		Buffer * const our_private_identity,
 		Buffer * const our_public_identity,
 		Buffer * const their_public_identity,
@@ -118,7 +118,7 @@ return_status ratchet_create(
 
 	*ratchet = nullptr;
 
-	status = create_ratchet_state(ratchet);
+	status = create_RatchetState(ratchet);
 	THROW_on_error(CREATION_ERROR, "Failed to create ratchet.");
 	if ((ratchet == nullptr) || (*ratchet == nullptr)) {
 		//FIXME: I'm quite sure this case won't happen, but the static analyzer
@@ -200,7 +200,7 @@ cleanup:
  * Get keys and metadata to send the next message.
  */
 return_status ratchet_send(
-		ratchet_state *ratchet,
+		RatchetState *ratchet,
 		Buffer * const send_header_key, //HEADER_KEY_SIZE, HKs
 		uint32_t * const send_message_number, //Ns
 		uint32_t * const previous_send_message_number, //PNs
@@ -349,7 +349,7 @@ cleanup:
 return_status ratchet_get_receive_header_keys(
 		Buffer * const current_receive_header_key,
 		Buffer * const next_receive_header_key,
-		ratchet_state *state) {
+		RatchetState *state) {
 	return_status status = return_status_init();
 
 	//check input
@@ -386,7 +386,7 @@ cleanup:
  * or next (next_receive_header_key) header key, or isn't decryptable.
  */
 return_status ratchet_set_header_decryptability(
-		ratchet_state *ratchet,
+		RatchetState *ratchet,
 		ratchet_header_decryptability header_decryptable) {
 	return_status status = return_status_init();
 
@@ -519,7 +519,7 @@ cleanup:
  * Commit all the purported message keys into the message key store thats used
  * to actually decrypt late messages.
  */
-static return_status commit_skipped_header_and_message_keys(ratchet_state *state) {
+static return_status commit_skipped_header_and_message_keys(RatchetState *state) {
 	return_status status = return_status_init();
 
 	//as long as the list of purported message keys isn't empty,
@@ -550,7 +550,7 @@ cleanup:
  * after having verified the message.
  */
 return_status ratchet_receive(
-		ratchet_state * const ratchet,
+		RatchetState * const ratchet,
 		Buffer * const message_key,
 		Buffer * const their_purported_public_ephemeral,
 		const uint32_t purported_message_number,
@@ -681,7 +681,7 @@ cleanup:
  * the decryption was successful or if it wasn't.
  */
 return_status ratchet_set_last_message_authenticity(
-		ratchet_state *ratchet,
+		RatchetState *ratchet,
 		bool valid) {
 	return_status status = return_status_init();
 
@@ -747,7 +747,7 @@ cleanup:
 /*
  * End the ratchet chain and free the memory.
  */
-void ratchet_destroy(ratchet_state *state) {
+void ratchet_destroy(RatchetState *state) {
 	//empty message keystores
 	header_and_message_keystore_clear(&state->skipped_header_and_message_keys);
 	header_and_message_keystore_clear(&state->staged_header_and_message_keys);
@@ -756,7 +756,7 @@ void ratchet_destroy(ratchet_state *state) {
 }
 
 return_status ratchet_export(
-		ratchet_state * const ratchet,
+		RatchetState * const ratchet,
 		Conversation ** const conversation) {
 	return_status status = return_status_init();
 
@@ -1052,7 +1052,7 @@ cleanup:
 }
 
 return_status ratchet_import(
-		ratchet_state ** const ratchet,
+		RatchetState ** const ratchet,
 		const Conversation * const conversation) {
 	return_status status = return_status_init();
 
@@ -1061,10 +1061,10 @@ return_status ratchet_import(
 		THROW(INVALID_INPUT, "Invalid input to ratchet_import.");
 	}
 
-	*ratchet = (ratchet_state*)sodium_malloc(sizeof(ratchet_state));
+	*ratchet = (RatchetState*)sodium_malloc(sizeof(RatchetState));
 	THROW_on_failed_alloc(*ratchet);
 
-	init_ratchet_state(ratchet);
+	init_RatchetState(ratchet);
 
 	//import all the stuff
 	//root keys

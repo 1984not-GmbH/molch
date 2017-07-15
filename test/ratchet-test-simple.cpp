@@ -62,10 +62,10 @@ int main(void) {
 	Buffer *receive_message_key = Buffer::create(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 
 	//ratchets
-	ratchet_state *alice_send_ratchet = nullptr;
-	ratchet_state *alice_receive_ratchet = nullptr;
-	ratchet_state *bob_send_ratchet = nullptr;
-	ratchet_state *bob_receive_ratchet = nullptr;
+	RatchetState *alice_send_ratchet = nullptr;
+	RatchetState *alice_receive_ratchet = nullptr;
+	RatchetState *bob_send_ratchet = nullptr;
+	RatchetState *bob_receive_ratchet = nullptr;
 
 	//generate the keys
 	if (keypair(alice_private_identity, alice_public_identity) != 0) {

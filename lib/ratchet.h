@@ -36,8 +36,8 @@ typedef enum ratchet_header_decryptability {
 	NOT_TRIED //not tried to decrypt yet
 } ratchet_header_decryptability;
 
-//struct that represents the state of a conversation
-typedef struct ratchet_state {
+class RatchetState {
+public:
 	Buffer root_key; //RK
 	unsigned char root_key_storage[ROOT_KEY_SIZE];
 	Buffer purported_root_key; //RKp
@@ -92,7 +92,7 @@ typedef struct ratchet_state {
 	//list of previous message and header keys
 	header_and_message_keystore skipped_header_and_message_keys; //skipped_HK_MK (list containing message keys for messages that weren't received)
 	header_and_message_keystore staged_header_and_message_keys; //this represents the staging area specified in the axolotl ratchet
-} ratchet_state;
+};
 
 /*
  * Start a new ratchet chain. This derives an initial root key and returns a new ratchet state.
@@ -103,7 +103,7 @@ typedef struct ratchet_state {
  * The return value is a valid ratchet state or nullptr if an error occured.
  */
 return_status ratchet_create(
-		ratchet_state ** const ratchet,
+		RatchetState ** const ratchet,
 		Buffer * const our_private_identity,
 		Buffer * const our_public_identity,
 		Buffer * const their_public_identity,
@@ -115,7 +115,7 @@ return_status ratchet_create(
  * Get keys and metadata to send the next message.
  */
 return_status ratchet_send(
-		ratchet_state *state,
+		RatchetState *state,
 		Buffer * const send_header_key, //HEADER_KEY_SIZE, HKs
 		uint32_t * const send_message_number, //Ns
 		uint32_t * const previous_send_message_number, //PNs
@@ -129,14 +129,14 @@ return_status ratchet_send(
 return_status ratchet_get_receive_header_keys(
 		Buffer * const current_receive_header_key,
 		Buffer * const next_receive_header_key,
-		ratchet_state *state) __attribute__((warn_unused_result));
+		RatchetState *state) __attribute__((warn_unused_result));
 
 /*
  * Set if the header is decryptable with the current (state->receive_header_key)
  * or next (next_receive_header_key) header key, or isn't decryptable.
  */
 return_status ratchet_set_header_decryptability(
-		ratchet_state *ratchet,
+		RatchetState *ratchet,
 		ratchet_header_decryptability header_decryptable) __attribute__((warn_unused_result));
 
 /*
@@ -150,7 +150,7 @@ return_status ratchet_set_header_decryptability(
  * after having verified the message.
  */
 return_status ratchet_receive(
-		ratchet_state *state,
+		RatchetState *state,
 		Buffer * const message_key, //used to get the message key back
 		Buffer * const their_purported_public_ephemeral,
 		const uint32_t purported_message_number,
@@ -161,33 +161,33 @@ return_status ratchet_receive(
  * the decryption was successful or if it wasn't.
  */
 return_status ratchet_set_last_message_authenticity(
-		ratchet_state * const ratchet,
+		RatchetState * const ratchet,
 		bool valid) __attribute__((warn_unused_result));
 
 /*
  * End the ratchet chain and free the memory.
  */
-void ratchet_destroy(ratchet_state *state);
+void ratchet_destroy(RatchetState *state);
 
 /*! Export a ratchet state to Protobuf-C
  * NOTE: This doesn't fill the Id field of the struct.
- * \param ratchet The ratchet_state to export.
+ * \param ratchet The RatchetState to export.
  * \param conversation The Conversation Protobuf-C struct.
  * \return The status.
  */
 return_status ratchet_export(
-	ratchet_state * const ratchet,
+	RatchetState * const ratchet,
 	Conversation ** const conversation) __attribute__((warn_unused_result));
 
 /*! Import a ratchet from Protobuf-C
  * NOTE: The public identity key is needed separately,
  * because it is not contained in the Conversation
  * Protobuf-C struct
- * \param ratchet The ratchet_state to imports
+ * \param ratchet The RatchetState to imports
  * \param conversation The Protobuf-C buffer.
  * \return The status.
  */
 return_status ratchet_import(
-	ratchet_state ** const ratchet,
+	RatchetState ** const ratchet,
 	const Conversation * const conversation) __attribute__((warn_unused_result));
 #endif
