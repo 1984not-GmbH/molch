@@ -31,20 +31,6 @@ bool Buffer::isReadOnly() {
 	return this->readonly;
 }
 
-/*
- * Initialize a molch buffer with a given length.
- *
- * This is normally not called directly but via
- * the molch_buffer_create macro.
- */
-Buffer* Buffer::init(const size_t buffer_length_,
-		const size_t content_length_) {
-	return this->init_with_pointer(
-			(unsigned char*) this + sizeof(Buffer), //address after Buffer struct
-			buffer_length_,
-			content_length_);
-}
-
 void Buffer::setReadOnly(bool readonly_) {
 	this->readonly = readonly_;
 }
@@ -52,7 +38,7 @@ void Buffer::setReadOnly(bool readonly_) {
 /*
  * initialize a buffer with a pointer to the character array.
  */
-Buffer* Buffer::init_with_pointer(
+Buffer* Buffer::init(
 		unsigned char * const content_,
 		const size_t buffer_length_,
 		const size_t content_length_) {
@@ -72,13 +58,13 @@ Buffer* Buffer::init_with_pointer(
 	return this;
 }
 
-Buffer* Buffer::init_with_pointer_to_const(
+Buffer* Buffer::initWithConst(
 		const unsigned char * const content_,
 		const size_t buffer_length_,
 		const size_t content_length_) {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
-	Buffer *result = this->init_with_pointer((unsigned char*)content_, buffer_length_, content_length_);
+	Buffer *result = this->init((unsigned char*)content_, buffer_length_, content_length_);
 #pragma GCC diagnostic pop
 	if (result != nullptr) {
 		result->readonly = true;
@@ -108,7 +94,7 @@ Buffer* Buffer::create(
 		}
 	}
 
-	return buffer->init_with_pointer(content, buffer_length_, content_length_);
+	return buffer->init(content, buffer_length_, content_length_);
 }
 
 /*
@@ -134,7 +120,7 @@ Buffer* Buffer::createWithCustomAllocator(
 		return nullptr;
 	}
 
-	return buffer->init_with_pointer(content, buffer_length_, content_length_);
+	return buffer->init(content, buffer_length_, content_length_);
 }
 
 /*

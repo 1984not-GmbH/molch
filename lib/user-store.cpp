@@ -110,7 +110,7 @@ static return_status create_user_store_node(user_store_node ** const node) {
 	(*node)->master_keys = nullptr;
 
 	//initialise the public_signing key buffer
-	(*node)->public_signing_key->init_with_pointer((*node)->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	(*node)->public_signing_key->init((*node)->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
 
 	conversation_store_init((*node)->conversations);
 

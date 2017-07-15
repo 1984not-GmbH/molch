@@ -131,7 +131,7 @@ static return_status create_conversation(
 	}
 
 	//init_struct()
-	(*conversation)->id.init_with_pointer((*conversation)->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	(*conversation)->id.init((*conversation)->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 	(*conversation)->ratchet = nullptr;
 	(*conversation)->previous = nullptr;
 	(*conversation)->next = nullptr;

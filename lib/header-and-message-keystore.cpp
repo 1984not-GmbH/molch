@@ -50,8 +50,8 @@ static header_and_message_keystore_node *create_node(void) {
 	}
 
 	//initialise buffers with storage arrays
-	node->message_key->init_with_pointer(node->message_key_storage, MESSAGE_KEY_SIZE, 0);
-	node->header_key->init_with_pointer(node->header_key_storage, HEADER_KEY_SIZE, 0);
+	node->message_key->init(node->message_key_storage, MESSAGE_KEY_SIZE, 0);
+	node->header_key->init(node->header_key_storage, HEADER_KEY_SIZE, 0);
 
 	return node;
 }

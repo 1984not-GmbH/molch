@@ -38,27 +38,27 @@ static bool is_none(Buffer * const buffer) {
 
 static void init_ratchet_state(ratchet_state ** const ratchet) {
 	//initialize the buffers with the storage arrays
-	(*ratchet)->root_key.init_with_pointer((*ratchet)->root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
-	(*ratchet)->purported_root_key.init_with_pointer((*ratchet)->purported_root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
+	(*ratchet)->root_key.init((*ratchet)->root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
+	(*ratchet)->purported_root_key.init((*ratchet)->purported_root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
 	//header keys
-	(*ratchet)->send_header_key.init_with_pointer((*ratchet)->send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	(*ratchet)->receive_header_key.init_with_pointer((*ratchet)->receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	(*ratchet)->next_send_header_key.init_with_pointer((*ratchet)->next_send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	(*ratchet)->next_receive_header_key.init_with_pointer((*ratchet)->next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	(*ratchet)->purported_receive_header_key.init_with_pointer((*ratchet)->purported_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	(*ratchet)->purported_next_receive_header_key.init_with_pointer((*ratchet)->purported_next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->send_header_key.init((*ratchet)->send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->receive_header_key.init((*ratchet)->receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->next_send_header_key.init((*ratchet)->next_send_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->next_receive_header_key.init((*ratchet)->next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->purported_receive_header_key.init((*ratchet)->purported_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	(*ratchet)->purported_next_receive_header_key.init((*ratchet)->purported_next_receive_header_key_storage, HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	//chain keys
-	(*ratchet)->send_chain_key.init_with_pointer((*ratchet)->send_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-	(*ratchet)->receive_chain_key.init_with_pointer((*ratchet)->receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-	(*ratchet)->purported_receive_chain_key.init_with_pointer((*ratchet)->purported_receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	(*ratchet)->send_chain_key.init((*ratchet)->send_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	(*ratchet)->receive_chain_key.init((*ratchet)->receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	(*ratchet)->purported_receive_chain_key.init((*ratchet)->purported_receive_chain_key_storage, CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
 	//identity keys
-	(*ratchet)->our_public_identity.init_with_pointer((*ratchet)->our_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	(*ratchet)->their_public_identity.init_with_pointer((*ratchet)->their_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	(*ratchet)->our_public_identity.init((*ratchet)->our_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	(*ratchet)->their_public_identity.init((*ratchet)->their_public_identity_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	//ephemeral keys (ratchet keys)
-	(*ratchet)->our_private_ephemeral.init_with_pointer((*ratchet)->our_private_ephemeral_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	(*ratchet)->our_public_ephemeral.init_with_pointer((*ratchet)->our_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	(*ratchet)->their_public_ephemeral.init_with_pointer((*ratchet)->their_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	(*ratchet)->their_purported_public_ephemeral.init_with_pointer((*ratchet)->their_purported_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	(*ratchet)->our_private_ephemeral.init((*ratchet)->our_private_ephemeral_storage, PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	(*ratchet)->our_public_ephemeral.init((*ratchet)->our_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	(*ratchet)->their_public_ephemeral.init((*ratchet)->their_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	(*ratchet)->their_purported_public_ephemeral.init((*ratchet)->their_purported_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
 	header_and_message_keystore_init(&(*ratchet)->skipped_header_and_message_keys);
 	header_and_message_keystore_init(&(*ratchet)->staged_header_and_message_keys);

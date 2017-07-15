@@ -95,7 +95,7 @@ int main(void) {
 	putchar('\n');
 
 	//make second buffer (from pointer)
-	buffer2 = ((Buffer*)malloc(sizeof(Buffer)))->init_with_pointer((unsigned char*)malloc(5), 5, 4);
+	buffer2 = ((Buffer*)malloc(sizeof(Buffer)))->init((unsigned char*)malloc(5), 5, 4);
 	buffer2->content[0] = 0xde;
 	buffer2->content[1] = 0xad;
 	buffer2->content[2] = 0xbe;
