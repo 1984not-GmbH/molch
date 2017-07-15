@@ -43,7 +43,7 @@ struct user_store_node {
 	Buffer public_signing_key[1];
 	unsigned char public_signing_key_storage[PUBLIC_MASTER_KEY_SIZE];
 	master_keys_t *master_keys;
-	prekey_store *prekeys;
+	PrekeyStore *prekeys;
 	conversation_store conversations[1];
 };
 

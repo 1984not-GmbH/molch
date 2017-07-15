@@ -53,8 +53,8 @@ int main(void) {
 	Buffer *bob_received_response = nullptr;
 
 	//create prekey stores
-	prekey_store *alice_prekeys = nullptr;
-	prekey_store *bob_prekeys = nullptr;
+	PrekeyStore *alice_prekeys = nullptr;
+	PrekeyStore *bob_prekeys = nullptr;
 
 	Buffer *prekey_list = Buffer::create(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
@@ -77,9 +77,9 @@ int main(void) {
 	}
 
 	//create prekey stores
-	status = prekey_store_create(&alice_prekeys);
+	status = PrekeyStore_create(&alice_prekeys);
 	THROW_on_error(CREATION_ERROR, "Failed to create Alice' prekey store.");
-	status = prekey_store_create(&bob_prekeys);
+	status = PrekeyStore_create(&bob_prekeys);
 	THROW_on_error(CREATION_ERROR, "Failed to create Bobs prekey store.");
 
 	//create keys
@@ -105,7 +105,7 @@ int main(void) {
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate Bob's identity keys.");
 
 	//get the prekey list
-	status = prekey_store_list(bob_prekeys, prekey_list);
+	status = PrekeyStore_list(bob_prekeys, prekey_list);
 	THROW_on_error(GENERIC_ERROR, "Failed to get Bob's prekey list.");
 
 	//start a send conversation
@@ -220,7 +220,7 @@ int main(void) {
 	//Bob sends the message to Alice.
 
 	//get alice prekey list
-	status = prekey_store_list(alice_prekeys, prekey_list);
+	status = PrekeyStore_list(alice_prekeys, prekey_list);
 	THROW_on_error(GENERIC_ERROR, "Failed to get Alice' prekey list.");
 
 	//destroy the old packet
@@ -335,10 +335,10 @@ int main(void) {
 
 cleanup:
 	if (alice_prekeys != nullptr) {
-		prekey_store_destroy(alice_prekeys);
+		PrekeyStore_destroy(alice_prekeys);
 	}
 	if (bob_prekeys != nullptr) {
-		prekey_store_destroy(bob_prekeys);
+		PrekeyStore_destroy(bob_prekeys);
 	}
 	buffer_destroy_from_heap_and_null_if_valid(packet);
 	buffer_destroy_from_heap_and_null_if_valid(received_message);

@@ -69,7 +69,7 @@ return_status conversation_start_receive_conversation(
 		Buffer ** message, //output, free after use!
 		Buffer * const receiver_public_identity,
 		Buffer * const receiver_private_identity,
-		prekey_store * const receiver_prekeys //prekeys of the receiver
+		PrekeyStore * const receiver_prekeys //prekeys of the receiver
 		) __attribute__((warn_unused_result));
 
 /*

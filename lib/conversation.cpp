@@ -216,7 +216,7 @@ return_status conversation_start_receive_conversation(
 		Buffer ** message, //output, free after use!
 		Buffer * const receiver_public_identity,
 		Buffer * const receiver_private_identity,
-		prekey_store * const receiver_prekeys //prekeys of the receiver
+		PrekeyStore * const receiver_prekeys //prekeys of the receiver
 		) {
 	uint32_t receive_message_number = 0;
 	uint32_t previous_receive_message_number = 0;
@@ -268,7 +268,7 @@ return_status conversation_start_receive_conversation(
 	}
 
 	//get the private prekey that corresponds to the public prekey used in the message
-	status = prekey_store_get_prekey(
+	status = PrekeyStore_get_prekey(
 			receiver_prekeys,
 			receiver_public_prekey,
 			receiver_private_prekey);

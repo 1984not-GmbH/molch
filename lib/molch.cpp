@@ -79,7 +79,7 @@ static return_status create_prekey_list(
 	THROW_on_error(NOT_FOUND, "Failed to find user.");
 
 	//rotate the prekeys
-	status = prekey_store_rotate(user->prekeys);
+	status = PrekeyStore_rotate(user->prekeys);
 	THROW_on_error(GENERIC_ERROR, "Failed to rotate prekeys.");
 
 	//get the public identity key
@@ -94,7 +94,7 @@ static return_status create_prekey_list(
 	}
 
 	//get the prekeys
-	status = prekey_store_list(user->prekeys, prekeys);
+	status = PrekeyStore_list(user->prekeys, prekeys);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get prekeys.");
 
 	//add the expiration date

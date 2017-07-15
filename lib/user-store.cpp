@@ -152,7 +152,7 @@ return_status user_store_create_user(
 	THROW_on_error(CREATION_ERROR, "Failed to create master keys.");
 
 	//prekeys
-	status = prekey_store_create(&(new_node->prekeys));
+	status = PrekeyStore_create(&(new_node->prekeys));
 	THROW_on_error(CREATION_ERROR, "Failed to create prekey store.")
 
 	//copy the public signing key, if requested
@@ -172,7 +172,7 @@ cleanup:
 	on_error {
 		if (new_node != nullptr) {
 			if (new_node->prekeys != nullptr) {
-				prekey_store_destroy(new_node->prekeys);
+				PrekeyStore_destroy(new_node->prekeys);
 			}
 			if (new_node->master_keys != nullptr) {
 				sodium_free_and_null_if_valid(new_node->master_keys);
@@ -379,7 +379,7 @@ return_status user_store_node_export(user_store_node * const node, User ** const
 	conversations_length = 0;
 
 	//export the prekeys
-	status = prekey_store_export(
+	status = PrekeyStore_export(
 		node->prekeys,
 		&prekeys,
 		&prekeys_length,
@@ -482,7 +482,7 @@ static return_status user_store_node_import(user_store_node ** const node, const
 		user->n_conversations);
 	THROW_on_error(IMPORT_ERROR, "Failed to import conversations.");
 
-	status = prekey_store_import(
+	status = PrekeyStore_import(
 		&((*node)->prekeys),
 		user->prekeys,
 		user->n_prekeys,
