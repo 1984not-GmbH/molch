@@ -42,7 +42,7 @@ int main(void) {
 	{
 		uint32_t uint32 = 67305985ULL;
 		uint32_t uint32_from_big_endian;
-		status = to_big_endian(uint32, buffer32);
+		status = to_big_endian(uint32, *buffer32);
 		THROW_on_error(CONVERSION_ERROR, "Failed to convert uint32_t to big endian.");
 		printf("uint32_t %llu to big endian:\n", (unsigned long long) uint32);
 		print_hex(buffer32);
@@ -52,7 +52,7 @@ int main(void) {
 		}
 
 		//uint32_t <- big endian
-		status = from_big_endian(&uint32_from_big_endian, buffer32);
+		status = from_big_endian(uint32_from_big_endian, *buffer32);
 		THROW_on_error(CONVERSION_ERROR, "Failed to convert big endian to uint32_t.");
 		if (uint32 != uint32_from_big_endian) {
 			THROW(INCORRECT_DATA, "uint32_t from big endian is incorrect.");
@@ -64,7 +64,7 @@ int main(void) {
 	{
 		int32_t int32 = -66052LL;
 		int32_t int32_from_big_endian;
-		status = to_big_endian(int32, buffer32);
+		status = to_big_endian(int32, *buffer32);
 		THROW_on_error(CONVERSION_ERROR, "Failed to converst int32_t to big_endian.");
 		printf("int32_t %lli to big endian:\n", (signed long long) int32);
 		print_hex(buffer32);
@@ -74,7 +74,7 @@ int main(void) {
 		}
 
 		//int32_t <- big endian
-		status = from_big_endian(&int32_from_big_endian, buffer32);
+		status = from_big_endian(int32_from_big_endian, *buffer32);
 		THROW_on_error(CONVERSION_ERROR, "Failed to convert big endian to int32_t.");
 		if (int32 != int32_from_big_endian) {
 			THROW(INCORRECT_DATA, "uint32_t from big endian is incorrect.");
@@ -86,7 +86,7 @@ int main(void) {
 	{
 		uint64_t uint64 = 578437695752307201ULL;
 		uint64_t uint64_from_big_endian;
-		status = to_big_endian(uint64, buffer64);
+		status = to_big_endian(uint64, *buffer64);
 		THROW_on_error(CONVERSION_ERROR, "Failed to convert uint64_t to big endian.");
 		printf("uint64_t %llu to big endian:\n", (unsigned long long) uint64);
 		print_hex(buffer64);
@@ -96,7 +96,7 @@ int main(void) {
 		}
 
 		//uint64_t <- big endian
-		status = from_big_endian(&uint64_from_big_endian, buffer64);
+		status = from_big_endian(uint64_from_big_endian, *buffer64);
 		THROW_on_error(CONVERSION_ERROR, "Failed to convert big endian to uint64_t.");
 		if (uint64 != uint64_from_big_endian) {
 			THROW(INCORRECT_DATA, "uint64_t from big endian is incorrect.");
@@ -108,7 +108,7 @@ int main(void) {
 	{
 		int64_t int64 = -283686952306184LL;
 		int64_t int64_from_big_endian;
-		status = to_big_endian(int64, buffer64);
+		status = to_big_endian(int64, *buffer64);
 		THROW_on_error(CONVERSION_ERROR, "Failed to converst int64_t to big endian.");
 		printf("int64_t %lli to big endian:\n", (signed long long) int64);
 		print_hex(buffer64);
@@ -118,7 +118,7 @@ int main(void) {
 		}
 
 		//int64_t <- big endian
-		status = from_big_endian(&int64_from_big_endian, buffer64);
+		status = from_big_endian(int64_from_big_endian, *buffer64);
 		THROW_on_error(CONVERSION_ERROR, "Failed to convert big endian to int64_t.");
 		if (int64 != int64_from_big_endian) {
 			THROW(INCORRECT_DATA, "unit64_t from big endian is incorrect.");
