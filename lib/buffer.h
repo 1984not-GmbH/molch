@@ -135,7 +135,7 @@ public:
 	 */
 	int copyFrom(
 			const size_t destination_offset,
-			Buffer * const source,
+			const Buffer * const source,
 			const size_t source_offset,
 			const size_t copy_length) __attribute__((warn_unused_result));
 
@@ -146,7 +146,7 @@ public:
 	 *
 	 * Returns 0 on success.
 	 */
-	int cloneFrom(Buffer * const source) __attribute__((warn_unused_result));
+	int cloneFrom(const Buffer * const source) __attribute__((warn_unused_result));
 
 	/*
 	 * Copy from a raw array to a buffer.
@@ -204,8 +204,8 @@ public:
 			void (*deallocator)(void *pointer)
 			) __attribute__((warn_unused_result));
 
-	size_t getBufferLength();
-	bool isReadOnly();
+	size_t getBufferLength() const;
+	bool isReadOnly() const;
 	void setReadOnly(bool readonly);
 };
 

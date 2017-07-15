@@ -144,8 +144,8 @@ return_status user_store_create_user(
 	THROW_on_error(CREATION_ERROR, "Failed to create new user store node.");
 
 	//generate the master keys
-	status = master_keys_create(
-			&(new_node->master_keys),
+	status = MasterKeys::create(
+			new_node->master_keys,
 			seed,
 			new_node->public_signing_key,
 			public_identity_key);
@@ -352,12 +352,11 @@ return_status user_store_node_export(user_store_node * const node, User ** const
 	user__init(*user);
 
 	//export master keys
-	status = master_keys_export(
-		node->master_keys,
-		&public_signing_key,
-		&private_signing_key,
-		&public_identity_key,
-		&private_identity_key);
+	status = node->master_keys->exportMasterKeys(
+		public_signing_key,
+		private_signing_key,
+		public_identity_key,
+		private_identity_key);
 	THROW_on_error(EXPORT_ERROR, "Failed to export masters keys.");
 
 	(*user)->public_signing_key = public_signing_key;
@@ -457,8 +456,8 @@ static return_status user_store_node_import(user_store_node ** const node, const
 	THROW_on_error(CREATION_ERROR, "Failed to create user store node.");
 
 	//master keys
-	status = master_keys_import(
-		&((*node)->master_keys),
+	status = MasterKeys::import(
+		(*node)->master_keys,
 		user->public_signing_key,
 		user->private_signing_key,
 		user->public_identity_key,

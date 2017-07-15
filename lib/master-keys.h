@@ -30,83 +30,77 @@ extern "C" {
 #ifndef LIB_MASTER_KEYS
 #define LIB_MASTER_KEYS
 
-typedef struct master_keys {
+class MasterKeys {
+public:
 	//Ed25519 key for signing
-	Buffer public_signing_key[1];
+	Buffer public_signing_key;
 	unsigned char public_signing_key_storage[PUBLIC_MASTER_KEY_SIZE];
-	Buffer private_signing_key[1];
+	Buffer private_signing_key;
 	unsigned char private_signing_key_storage[PRIVATE_MASTER_KEY_SIZE];
 	//X25519 key for deriving axolotl root keys
-	Buffer public_identity_key[1];
+	Buffer public_identity_key;
 	unsigned char public_identity_key_storage[PUBLIC_KEY_SIZE];
-	Buffer private_identity_key[1];
+	Buffer private_identity_key;
 	unsigned char private_identity_key_storage[PRIVATE_KEY_SIZE];
-} master_keys_t;
 
-/*
- * Create a new set of master keys.
- *
- * Seed is optional, can be nullptr. It can be of any length and doesn't
- * require to have high entropy. It will be used as entropy source
- * in addition to the OSs CPRNG.
- *
- * WARNING: Don't use Entropy from the OSs CPRNG as seed!
- */
-return_status master_keys_create(
-		master_keys_t ** const keys, //output
-		Buffer * const seed,
-		Buffer * const public_signing_key, //output, optional, can be nullptr
-		Buffer * const public_identity_key //output, optional, can be nullptr
-		) __attribute__((warn_unused_result));
+	/*
+	 * Create a new set of master keys.
+	 *
+	 * Seed is optional, can be nullptr. It can be of any length and doesn't
+	 * require to have high entropy. It will be used as entropy source
+	 * in addition to the OSs CPRNG.
+	 *
+	 * WARNING: Don't use Entropy from the OSs CPRNG as seed!
+	 */
+	static return_status create(
+			MasterKeys*& keys, //output
+			const Buffer * const seed, //optional
+			Buffer * const public_signing_key, //output, optional, can be nullptr
+			Buffer * const public_identity_key //output, optional, can be nullptr
+			) __attribute__((warn_unused_result));
 
-/*
- * Get the public signing key.
- */
-return_status master_keys_get_signing_key(
-		master_keys_t * const keys,
-		Buffer * const public_signing_key) __attribute__((warn_unused_result));
+	/*
+	 * Get the public signing key.
+	 */
+	return_status getSigningKey(Buffer& public_signing_key) __attribute__((warn_unused_result));
 
-/*
- * Get the public identity key.
- */
-return_status master_keys_get_identity_key(
-		master_keys_t * const keys,
-		Buffer * const public_identity_key) __attribute__((warn_unused_result));
+	/*
+	 * Get the public identity key.
+	 */
+	return_status getIdentityKey(Buffer& public_identity_key) __attribute__((warn_unused_result));
 
-/*
- * Sign a piece of data. Returns the data and signature in one output buffer.
- */
-return_status master_keys_sign(
-		master_keys_t * const keys,
-		Buffer * const data,
-		Buffer * const signed_data //output, length of data + SIGNATURE_SIZE
-		) __attribute__((warn_unused_result));
+	/*
+	 * Sign a piece of data. Returns the data and signature in one output buffer.
+	 */
+	return_status sign(
+			const Buffer& data,
+			Buffer& signed_data //output, length of data + SIGNATURE_SIZE
+			) __attribute__((warn_unused_result));
 
-/*! Export a set of master keys into a user Protobuf-C struct
- * \param master_keys A set of master keys to export.
- * \param public_signing_key Public pasrt of the signing keypair.
- * \param private_signing_key Private part of the signing keypair.
- * \param public_identity_key Public part of the identity keypair.
- * \param private_identity_key Private part of the idenity keypair.
- */
-return_status master_keys_export(
-		master_keys_t * const keys,
-		Key ** const public_signing_key,
-		Key ** const private_signing_key,
-		Key ** const public_identity_key,
-		Key ** const private_identity_key) __attribute__((warn_unused_result));
+	/*! Export a set of master keys into a user Protobuf-C struct
+	 * \param public_signing_key Public pasrt of the signing keypair.
+	 * \param private_signing_key Private part of the signing keypair.
+	 * \param public_identity_key Public part of the identity keypair.
+	 * \param private_identity_key Private part of the idenity keypair.
+	 */
+	return_status exportMasterKeys(
+			Key*& public_signing_key,
+			Key*& private_signing_key,
+			Key*& public_identity_key,
+			Key*& private_identity_key) __attribute__((warn_unused_result));
 
-/*! Import a set of master keys from Protobuf-C structs
- * \param keys A set of master keys to import to.
- * \param public_signing_key Public part of the signing keypair (protobuf-c).
- * \param private_signing_key Private part of the signing keypair (protobuf-c).
- * \param public_identity_key Public part of the signing keypair (protobuf-c).
- * \param private_identity_key Private part of the signing keypair (protobuf-c).
- */
-return_status master_keys_import(
-	master_keys_t ** const keys,
-	const Key * const public_signing_key,
-	const Key * const private_signing_key,
-	const Key * const public_identity_key,
-	const Key * const private_identity_key) __attribute__((warn_unused_result));
+	/*! Import a set of master keys from Protobuf-C structs
+	 * \param keys A set of master keys to import to.
+	 * \param public_signing_key Public part of the signing keypair (protobuf-c).
+	 * \param private_signing_key Private part of the signing keypair (protobuf-c).
+	 * \param public_identity_key Public part of the signing keypair (protobuf-c).
+	 * \param private_identity_key Private part of the signing keypair (protobuf-c).
+	 */
+	static return_status import(
+		MasterKeys*& keys,
+		const Key * const public_signing_key,
+		const Key * const private_signing_key,
+		const Key * const public_identity_key,
+		const Key * const private_identity_key) __attribute__((warn_unused_result));
+};
 #endif

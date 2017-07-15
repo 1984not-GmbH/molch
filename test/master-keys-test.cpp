@@ -28,17 +28,17 @@
 #include "utils.h"
 
 return_status protobuf_export(
-		master_keys_t * const keys,
-		Buffer ** const public_signing_key_buffer,
-		Buffer ** const private_signing_key_buffer,
-		Buffer ** const public_identity_key_buffer,
-		Buffer ** const private_identity_key_buffer) __attribute__((warn_unused_result));
+		MasterKeys& keys,
+		Buffer*& public_signing_key_buffer,
+		Buffer*& private_signing_key_buffer,
+		Buffer*& public_identity_key_buffer,
+		Buffer*& private_identity_key_buffer) __attribute__((warn_unused_result));
 return_status protobuf_export(
-		master_keys_t * const keys,
-		Buffer ** const public_signing_key_buffer,
-		Buffer ** const private_signing_key_buffer,
-		Buffer ** const public_identity_key_buffer,
-		Buffer ** const private_identity_key_buffer) {
+		MasterKeys& keys,
+		Buffer*& public_signing_key_buffer,
+		Buffer*& private_signing_key_buffer,
+		Buffer*& public_identity_key_buffer,
+		Buffer*& private_identity_key_buffer) {
 	return_status status = return_status_init();
 
 	Key * public_signing_key = nullptr;
@@ -46,28 +46,16 @@ return_status protobuf_export(
 	Key * public_identity_key = nullptr;
 	Key * private_identity_key = nullptr;
 
-	//check input
-	if ((keys == nullptr)
-			|| (public_signing_key_buffer == nullptr) || (private_signing_key_buffer == nullptr)
-			|| (public_identity_key_buffer == nullptr) || (private_identity_key_buffer == nullptr)) {
-		THROW(INVALID_INPUT, "Invalid input to protobuf_export.");
-	}
-
-	status = master_keys_export(
-			keys,
-			&public_signing_key,
-			&private_signing_key,
-			&public_identity_key,
-			&private_identity_key);
+	status = keys.exportMasterKeys(public_signing_key, private_signing_key, public_identity_key, private_identity_key);
 	THROW_on_error(EXPORT_ERROR, "Failed to export master keys.");
 
 	//export the keys
 	//public signing key
 	{
 		size_t public_signing_key_proto_size = key__get_packed_size(public_signing_key);
-		*public_signing_key_buffer = Buffer::create(public_signing_key_proto_size, 0);
-		(*public_signing_key_buffer)->content_length = key__pack(public_signing_key, (*public_signing_key_buffer)->content);
-		if ((*public_signing_key_buffer)->content_length != public_signing_key_proto_size) {
+		public_signing_key_buffer = Buffer::create(public_signing_key_proto_size, 0);
+		public_signing_key_buffer->content_length = key__pack(public_signing_key, public_signing_key_buffer->content);
+		if (public_signing_key_buffer->content_length != public_signing_key_proto_size) {
 			THROW(EXPORT_ERROR, "Failed to export public signing key.");
 		}
 	}
@@ -75,9 +63,9 @@ return_status protobuf_export(
 	//private signing key
 	{
 		size_t private_signing_key_proto_size = key__get_packed_size(private_signing_key);
-		*private_signing_key_buffer = Buffer::create(private_signing_key_proto_size, 0);
-		(*private_signing_key_buffer)->content_length = key__pack(private_signing_key, (*private_signing_key_buffer)->content);
-		if ((*private_signing_key_buffer)->content_length != private_signing_key_proto_size) {
+		private_signing_key_buffer = Buffer::create(private_signing_key_proto_size, 0);
+		private_signing_key_buffer->content_length = key__pack(private_signing_key, private_signing_key_buffer->content);
+		if (private_signing_key_buffer->content_length != private_signing_key_proto_size) {
 			THROW(EXPORT_ERROR, "Failed to export private signing key.");
 		}
 	}
@@ -85,9 +73,9 @@ return_status protobuf_export(
 	//public identity key
 	{
 		size_t public_identity_key_proto_size = key__get_packed_size(public_identity_key);
-		*public_identity_key_buffer = Buffer::create(public_identity_key_proto_size, 0);
-		(*public_identity_key_buffer)->content_length = key__pack(public_identity_key, (*public_identity_key_buffer)->content);
-		if ((*public_identity_key_buffer)->content_length != public_identity_key_proto_size) {
+		public_identity_key_buffer = Buffer::create(public_identity_key_proto_size, 0);
+		public_identity_key_buffer->content_length = key__pack(public_identity_key, public_identity_key_buffer->content);
+		if (public_identity_key_buffer->content_length != public_identity_key_proto_size) {
 			THROW(EXPORT_ERROR, "Failed to export public identity key.");
 		}
 	}
@@ -95,9 +83,9 @@ return_status protobuf_export(
 	//private identity key
 	{
 		size_t private_identity_key_proto_size = key__get_packed_size(private_identity_key);
-		*private_identity_key_buffer = Buffer::create(private_identity_key_proto_size, 0);
-		(*private_identity_key_buffer)->content_length = key__pack(private_identity_key, (*private_identity_key_buffer)->content);
-		if ((*private_identity_key_buffer)->content_length != private_identity_key_proto_size) {
+		private_identity_key_buffer = Buffer::create(private_identity_key_proto_size, 0);
+		private_identity_key_buffer->content_length = key__pack(private_identity_key, private_identity_key_buffer->content);
+		if (private_identity_key_buffer->content_length != private_identity_key_proto_size) {
 			THROW(EXPORT_ERROR, "Failed to export private identity key.");
 		}
 	}
@@ -129,17 +117,17 @@ cleanup:
 
 
 return_status protobuf_import(
-		master_keys_t ** const keys,
-		const Buffer * const public_signing_key_buffer,
-		const Buffer * const private_signing_key_buffer,
-		const Buffer * const public_identity_key_buffer,
-		const Buffer * const private_identity_key_buffer) __attribute__((warn_unused_result));
+		MasterKeys*& keys,
+		const Buffer& public_signing_key_buffer,
+		const Buffer& private_signing_key_buffer,
+		const Buffer& public_identity_key_buffer,
+		const Buffer& private_identity_key_buffer) __attribute__((warn_unused_result));
 return_status protobuf_import(
-		master_keys_t ** const keys,
-		const Buffer * const public_signing_key_buffer,
-		const Buffer * const private_signing_key_buffer,
-		const Buffer * const public_identity_key_buffer,
-		const Buffer * const private_identity_key_buffer) {
+		MasterKeys*& keys,
+		const Buffer& public_signing_key_buffer,
+		const Buffer& private_signing_key_buffer,
+		const Buffer& public_identity_key_buffer,
+		const Buffer& private_identity_key_buffer) {
 	return_status status = return_status_init();
 
 	Key *public_signing_key = nullptr;
@@ -147,46 +135,37 @@ return_status protobuf_import(
 	Key *public_identity_key = nullptr;
 	Key *private_identity_key = nullptr;
 
-	//check inputs
-	if ((keys == nullptr)
-			|| (public_signing_key_buffer == nullptr)
-			|| (private_signing_key_buffer == nullptr)
-			|| (public_identity_key_buffer == nullptr)
-			|| (private_identity_key_buffer == nullptr)) {
-		THROW(INVALID_INPUT, "Invalid input to protobuf_import.");
-	}
-
 	//unpack the protobuf-c buffers
 	public_signing_key = key__unpack(
 		&protobuf_c_allocators,
-		public_signing_key_buffer->content_length,
-		public_signing_key_buffer->content);
+		public_signing_key_buffer.content_length,
+		public_signing_key_buffer.content);
 	if (public_signing_key == nullptr) {
 		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack public signing key from protobuf.");
 	}
 	private_signing_key = key__unpack(
 		&protobuf_c_allocators,
-		private_signing_key_buffer->content_length,
-		private_signing_key_buffer->content);
+		private_signing_key_buffer.content_length,
+		private_signing_key_buffer.content);
 	if (private_signing_key == nullptr) {
 		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack private signing key from protobuf.");
 	}
 	public_identity_key = key__unpack(
 		&protobuf_c_allocators,
-		public_identity_key_buffer->content_length,
-		public_identity_key_buffer->content);
+		public_identity_key_buffer.content_length,
+		public_identity_key_buffer.content);
 	if (public_identity_key == nullptr) {
 		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack public identity key from protobuf.");
 	}
 	private_identity_key = key__unpack(
 		&protobuf_c_allocators,
-		private_identity_key_buffer->content_length,
-		private_identity_key_buffer->content);
+		private_identity_key_buffer.content_length,
+		private_identity_key_buffer.content);
 	if (private_identity_key == nullptr) {
 		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack private identity key from protobuf.");
 	}
 
-	status = master_keys_import(
+	status = MasterKeys::import(
 		keys,
 		public_signing_key,
 		private_signing_key,
@@ -195,9 +174,7 @@ return_status protobuf_import(
 	THROW_on_error(IMPORT_ERROR, "Failed to import master keys.")
 cleanup:
 	on_error {
-		if (keys != nullptr) {
-			sodium_free_and_null_if_valid(*keys);
-		}
+		sodium_free_and_null_if_valid(keys);
 	}
 
 	//free the protobuf-c structs
@@ -231,9 +208,9 @@ int main(void) {
 
 	return_status status = return_status_init();
 
-	master_keys_t *unspiced_master_keys = nullptr;
-	master_keys_t *spiced_master_keys = nullptr;
-	master_keys_t *imported_master_keys = nullptr;
+	MasterKeys *unspiced_master_keys = nullptr;
+	MasterKeys *spiced_master_keys = nullptr;
+	MasterKeys *imported_master_keys = nullptr;
 
 	//public key buffers
 	Buffer *public_signing_key = Buffer::create(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
@@ -256,36 +233,36 @@ int main(void) {
 	int status_int = 0;
 
 	//create the unspiced master keys
-	status = master_keys_create(&unspiced_master_keys, nullptr, nullptr, nullptr);
+	status = MasterKeys::create(unspiced_master_keys, nullptr, nullptr, nullptr);
 	THROW_on_error(CREATION_ERROR, "Failed to create unspiced master keys.");
 
 	//get the public keys
-	status = master_keys_get_signing_key(unspiced_master_keys, public_signing_key);
+	status = unspiced_master_keys->getSigningKey(*public_signing_key);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get the public signing key!");
-	status = master_keys_get_identity_key(unspiced_master_keys, public_identity_key);
+	status = unspiced_master_keys->getIdentityKey(*public_identity_key);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get the public identity key.");
 
 	//print the keys
 	sodium_mprotect_readonly(unspiced_master_keys);
 	printf("Signing keypair:\n");
 	printf("Public:\n");
-	print_hex(unspiced_master_keys->public_signing_key);
+	print_hex(&unspiced_master_keys->public_signing_key);
 
 	printf("\nPrivate:\n");
-	print_hex(unspiced_master_keys->private_signing_key);
+	print_hex(&unspiced_master_keys->private_signing_key);
 
 	printf("\n\nIdentity keys:\n");
 	printf("Public:\n");
-	print_hex(unspiced_master_keys->public_identity_key);
+	print_hex(&unspiced_master_keys->public_identity_key);
 
 	printf("\nPrivate:\n");
-	print_hex(unspiced_master_keys->private_identity_key);
+	print_hex(&unspiced_master_keys->private_identity_key);
 
 	//check the exported public keys
-	if (public_signing_key->compare(unspiced_master_keys->public_signing_key) != 0) {
+	if (public_signing_key->compare(&unspiced_master_keys->public_signing_key) != 0) {
 		THROW(INCORRECT_DATA, "Exported public signing key doesn't match.");
 	}
-	if (public_identity_key->compare(unspiced_master_keys->public_identity_key) != 0) {
+	if (public_identity_key->compare(&unspiced_master_keys->public_identity_key) != 0) {
 		THROW(INCORRECT_DATA, "Exported public identity key doesn't match.");
 	}
 	sodium_mprotect_noaccess(unspiced_master_keys);
@@ -293,30 +270,30 @@ int main(void) {
 
 	//create the spiced master keys
 	buffer_create_from_string(seed, ";a;awoeih]]pquw4t[spdif\\aslkjdf;'ihdg#)%!@))%)#)(*)@)#)h;kuhe[orih;o's':ke';sa'd;kfa';;.calijv;a/orq930u[sd9f0u;09[02;oasijd;adk");
-	status = master_keys_create(&spiced_master_keys, seed, public_signing_key, public_identity_key);
+	status = MasterKeys::create(spiced_master_keys, seed, public_signing_key, public_identity_key);
 	THROW_on_error(CREATION_ERROR, "Failed to create spiced master keys.");
 
 	//print the keys
 	sodium_mprotect_readonly(spiced_master_keys);
 	printf("Signing keypair:\n");
 	printf("Public:\n");
-	print_hex(spiced_master_keys->public_signing_key);
+	print_hex(&spiced_master_keys->public_signing_key);
 
 	printf("\nPrivate:\n");
-	print_hex(spiced_master_keys->private_signing_key);
+	print_hex(&spiced_master_keys->private_signing_key);
 
 	printf("\n\nIdentity keys:\n");
 	printf("Public:\n");
-	print_hex(spiced_master_keys->public_identity_key);
+	print_hex(&spiced_master_keys->public_identity_key);
 
 	printf("\nPrivate:\n");
-	print_hex(spiced_master_keys->private_identity_key);
+	print_hex(&spiced_master_keys->private_identity_key);
 
 	//check the exported public keys
-	if (public_signing_key->compare(spiced_master_keys->public_signing_key) != 0) {
+	if (public_signing_key->compare(&spiced_master_keys->public_signing_key) != 0) {
 		THROW(INCORRECT_DATA, "Exported public signing key doesn't match.");
 	}
-	if (public_identity_key->compare(spiced_master_keys->public_identity_key) != 0) {
+	if (public_identity_key->compare(&spiced_master_keys->public_identity_key) != 0) {
 		THROW(INCORRECT_DATA, "Exported public identity key doesn't match.");
 	}
 	sodium_mprotect_noaccess(spiced_master_keys);
@@ -326,10 +303,7 @@ int main(void) {
 	printf("Data to be signed.\n");
 	printf("%.*s\n", (int)data->content_length, (char*)data->content);
 
-	status = master_keys_sign(
-			spiced_master_keys,
-			data,
-			signed_data);
+	status = spiced_master_keys->sign(*data, *signed_data);
 	THROW_on_error(SIGN_ERROR, "Failed to sign data.");
 	printf("Signed data:\n");
 	print_hex(signed_data);
@@ -353,11 +327,11 @@ int main(void) {
 	printf("Export to Protobuf-C:\n");
 
 	status = protobuf_export(
-		spiced_master_keys,
-		&protobuf_export_public_signing_key,
-		&protobuf_export_private_signing_key,
-		&protobuf_export_public_identity_key,
-		&protobuf_export_private_identity_key);
+		*spiced_master_keys,
+		protobuf_export_public_signing_key,
+		protobuf_export_private_signing_key,
+		protobuf_export_public_identity_key,
+		protobuf_export_private_identity_key);
 	THROW_on_error(EXPORT_ERROR, "Failed to export spiced master keys.");
 
 	printf("Public signing key:\n");
@@ -381,20 +355,20 @@ int main(void) {
 	//import again
 	printf("Import from Protobuf-C:\n");
 	status = protobuf_import(
-		&spiced_master_keys,
-		protobuf_export_public_signing_key,
-		protobuf_export_private_signing_key,
-		protobuf_export_public_identity_key,
-		protobuf_export_private_identity_key);
+		spiced_master_keys,
+		*protobuf_export_public_signing_key,
+		*protobuf_export_private_signing_key,
+		*protobuf_export_public_identity_key,
+		*protobuf_export_private_identity_key);
 	THROW_on_error(IMPORT_ERROR, "Failed to import from Protobuf-C.");
 
 	//export again
 	status = protobuf_export(
-		spiced_master_keys,
-		&protobuf_second_export_public_signing_key,
-		&protobuf_second_export_private_signing_key,
-		&protobuf_second_export_public_identity_key,
-		&protobuf_second_export_private_identity_key);
+		*spiced_master_keys,
+		protobuf_second_export_public_signing_key,
+		protobuf_second_export_private_signing_key,
+		protobuf_second_export_public_identity_key,
+		protobuf_second_export_private_identity_key);
 	THROW_on_error(EXPORT_ERROR, "Failed to export spiced master keys.");
 
 	//now compare

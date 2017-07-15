@@ -42,7 +42,7 @@ struct user_store_node {
 	user_store_node *next;
 	Buffer public_signing_key[1];
 	unsigned char public_signing_key_storage[PUBLIC_MASTER_KEY_SIZE];
-	master_keys_t *master_keys;
+	MasterKeys *master_keys;
 	PrekeyStore *prekeys;
 	conversation_store conversations[1];
 };

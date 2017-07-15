@@ -36,7 +36,7 @@
  */
 return_status spiced_random(
 		Buffer * const random_output,
-		Buffer * const low_entropy_spice,
+		const Buffer * const low_entropy_spice,
 		const size_t output_length) {
 	return_status status = return_status_init();
 

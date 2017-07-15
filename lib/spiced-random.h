@@ -35,7 +35,7 @@
  */
 return_status spiced_random(
 		Buffer * const random_output,
-		Buffer * const low_entropy_spice,
+		const Buffer * const low_entropy_spice,
 		const size_t output_length) __attribute__((warn_unused_result));
 
 #endif

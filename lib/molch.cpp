@@ -83,9 +83,7 @@ static return_status create_prekey_list(
 	THROW_on_error(GENERIC_ERROR, "Failed to rotate prekeys.");
 
 	//get the public identity key
-	status = master_keys_get_identity_key(
-			user->master_keys,
-			public_identity_key);
+	status = user->master_keys->getIdentityKey(*public_identity_key);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get public identity key from master keys.");
 
 	//copy the public identity to the prekey list
@@ -107,10 +105,7 @@ static return_status create_prekey_list(
 	}
 
 	//sign the prekey list with the current identity key
-	status = master_keys_sign(
-			user->master_keys,
-			unsigned_prekey_list,
-			prekey_list_buffer);
+	status = user->master_keys->sign(*unsigned_prekey_list, *prekey_list_buffer);
 	THROW_on_error(SIGN_ERROR, "Failed to sign prekey list.");
 
 	*prekey_list = prekey_list_buffer->content;
@@ -522,8 +517,8 @@ return_status molch_start_send_conversation(
 			&conversation,
 			message_buffer,
 			&packet_buffer,
-			user->master_keys->public_identity_key,
-			user->master_keys->private_identity_key,
+			&user->master_keys->public_identity_key,
+			&user->master_keys->private_identity_key,
 			receiver_public_identity,
 			prekeys);
 	THROW_on_error(CREATION_ERROR, "Failed to start send converstion.");
@@ -652,8 +647,8 @@ return_status molch_start_receive_conversation(
 			&conversation,
 			packet_buffer,
 			&message_buffer,
-			user->master_keys->public_identity_key,
-			user->master_keys->private_identity_key,
+			&user->master_keys->public_identity_key,
+			&user->master_keys->private_identity_key,
 			user->prekeys);
 	THROW_on_error(CREATION_ERROR, "Failed to start receive conversation.");
 

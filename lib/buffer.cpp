@@ -23,11 +23,11 @@
 
 #include "buffer.h"
 
-size_t Buffer::getBufferLength() {
+size_t Buffer::getBufferLength() const {
 	return this->buffer_length;
 }
 
-bool Buffer::isReadOnly() {
+bool Buffer::isReadOnly() const {
 	return this->readonly;
 }
 
@@ -178,7 +178,7 @@ void Buffer::clear() {
  */
 int Buffer::copyFrom(
 		const size_t destination_offset,
-		Buffer * const source,
+		const Buffer * const source,
 		const size_t source_offset,
 		const size_t copy_length) {
 	if (this->readonly) {
@@ -223,7 +223,7 @@ int Buffer::copyFrom(
  *
  * Returns 0 on success.
  */
-int Buffer::cloneFrom(Buffer * const source) {
+int Buffer::cloneFrom(const Buffer * const source) {
 	if (source == nullptr) {
 		return -1;
 	}
