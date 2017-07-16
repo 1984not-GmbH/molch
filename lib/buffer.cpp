@@ -352,7 +352,7 @@ int Buffer::cloneToRaw(unsigned char * const destination, const size_t destinati
  *
  * Returns 0 if both buffers match.
  */
-int Buffer::compare(Buffer * const buffer) noexcept {
+int Buffer::compare(const Buffer * const buffer) noexcept {
 	return this->compareToRaw(buffer->content, buffer->content_length);
 }
 

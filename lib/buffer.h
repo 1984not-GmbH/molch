@@ -95,7 +95,7 @@ public:
 	 *
 	 * Returns 0 if both buffers match.
 	 */
-	int compare(Buffer * const buffer) noexcept __attribute__((warn_unused_result));
+	int compare(const Buffer * const buffer) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Compare parts of two buffers.

@@ -44,7 +44,7 @@ struct user_store_node {
 	unsigned char public_signing_key_storage[PUBLIC_MASTER_KEY_SIZE];
 	MasterKeys *master_keys;
 	PrekeyStore *prekeys;
-	conversation_store conversations[1];
+	ConversationStore conversations[1];
 };
 
 //header of the user store

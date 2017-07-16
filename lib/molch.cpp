@@ -531,7 +531,7 @@ return_status molch_start_send_conversation(
 		}
 	}
 
-	status = conversation_store_add(user->conversations, conversation);
+	status = user->conversations->add(conversation);
 	THROW_on_error(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
 	conversation = nullptr;
 
@@ -668,7 +668,7 @@ return_status molch_start_receive_conversation(
 	THROW_on_error(CREATION_ERROR, "Failed to create prekey list.");
 
 	//add the conversation to the conversation store
-	status = conversation_store_add(user->conversations, conversation);
+	status = user->conversations->add(conversation);
 	THROW_on_error(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
 	conversation = nullptr;
 
@@ -710,7 +710,7 @@ cleanup:
 static return_status find_conversation(
 		conversation_t ** const conversation, //output
 		const unsigned char * const conversation_id,
-		conversation_store ** const conversations, //optional, can be nullptr, the conversation store where the conversation is in
+		ConversationStore ** const conversations, //optional, can be nullptr, the conversation store where the conversation is in
 		user_store_node ** const user //optional, can be nullptr, the user that the conversation belongs to
 		) {
 	return_status status = return_status_init();
@@ -727,8 +727,7 @@ static return_status find_conversation(
 	{
 		user_store_node *node = users->head;
 		while (node != nullptr) {
-			status = conversation_store_find_node(&conversation_node, node->conversations, conversation_id_buffer);
-			THROW_on_error(GENERIC_ERROR, "Failure while searching for node.");
+			conversation_node = node->conversations->findNode(*conversation_id_buffer);
 			if (conversation_node != nullptr) {
 				//found the conversation we're searching for
 				break;
@@ -954,7 +953,7 @@ return_status molch_end_conversation(
 			THROW(NOT_FOUND, "Couldn'nt find conversation.");
 		}
 
-		conversation_store_remove_by_id(user->conversations, &conversation->id);
+		user->conversations->removeById(conversation->id);
 	}
 
 	if (backup != nullptr) {
@@ -1012,7 +1011,7 @@ return_status molch_list_conversations(
 		status = user_store_find_node(&user, users, user_public_master_key_buffer);
 		THROW_on_error(NOT_FOUND, "No user found for the given public identity.")
 
-		status = conversation_store_list(&conversation_list_buffer, user->conversations);
+		status = user->conversations->list(conversation_list_buffer);
 		on_error {
 			THROW(DATA_FETCH_ERROR, "Failed to list conversations.");
 		}
@@ -1225,7 +1224,7 @@ return_status molch_conversation_import(
 	Buffer *decrypted_backup = nullptr;
 	Conversation *conversation_struct = nullptr;
 	conversation_t *conversation = nullptr;
-	conversation_store *containing_store = nullptr;
+	ConversationStore *containing_store = nullptr;
 	conversation_t *existing_conversation = nullptr;
 
 	//check input
@@ -1287,8 +1286,11 @@ return_status molch_conversation_import(
 
 	status = find_conversation(&existing_conversation, conversation->id.content, &containing_store, nullptr);
 	THROW_on_error(NOT_FOUND, "Imported conversation has to exist, but it doesn't.");
+	if (containing_store == nullptr) {
+		THROW(NOT_FOUND, "Containing store not found.");
+	}
 
-	status = conversation_store_add(containing_store, conversation);
+	status = containing_store->add(conversation);
 	THROW_on_error(ADDITION_ERROR, "Failed to add imported conversation to the conversation store.");
 	conversation = nullptr;
 
@@ -1297,12 +1299,12 @@ return_status molch_conversation_import(
 	status = molch_update_backup_key(new_backup_key, new_backup_key_length);
 	on_error {
 		//remove the new imported conversation
-		conversation_store_remove(containing_store, conversation);
+		containing_store->remove(conversation);
 		THROW(KEYGENERATION_FAILED, "Failed to update backup key.");
 	}
 
 	//everything worked, the old conversation can now be removed
-	conversation_store_remove(containing_store, existing_conversation);
+	containing_store->remove(existing_conversation);
 
 cleanup:
 	if (encrypted_backup_struct != nullptr) {

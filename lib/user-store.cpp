@@ -112,7 +112,7 @@ static return_status create_user_store_node(user_store_node ** const node) noexc
 	//initialise the public_signing key buffer
 	(*node)->public_signing_key->init((*node)->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
 
-	conversation_store_init((*node)->conversations);
+	(*node)->conversations->init();
 
 cleanup:
 	on_error {
@@ -291,7 +291,7 @@ void user_store_remove(user_store *store, user_store_node *node) noexcept {
 	}
 
 	//clear the conversation store
-	conversation_store_clear(node->conversations);
+	node->conversations->clear();
 
 	if (node->next != nullptr) { //node is not the tail
 		node->next->previous = node->previous;
@@ -369,13 +369,12 @@ return_status user_store_node_export(user_store_node * const node, User ** const
 	private_identity_key = nullptr;
 
 	//export the conversation store
-	status = conversation_store_export(node->conversations, &conversations, &conversations_length);
+	status = node->conversations->exportConversationStore(conversations, conversations_length);
 	THROW_on_error(EXPORT_ERROR, "Failed to export conversation store.");
 
 	(*user)->conversations = conversations;
 	conversations = nullptr;
 	(*user)->n_conversations = conversations_length;
-	conversations_length = 0;
 
 	//export the prekeys
 	status = node->prekeys->exportStore(
@@ -472,10 +471,7 @@ static return_status user_store_node_import(user_store_node ** const node, const
 		THROW(BUFFER_ERROR, "Failed to copy public signing key.");
 	}
 
-	status = conversation_store_import(
-		(*node)->conversations,
-		user->conversations,
-		user->n_conversations);
+	status = (*node)->conversations->import(user->conversations, user->n_conversations);
 	THROW_on_error(IMPORT_ERROR, "Failed to import conversations.");
 
 	status = PrekeyStore::import(

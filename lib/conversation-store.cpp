@@ -23,48 +23,50 @@
 
 #include "conversation-store.h"
 
+size_t ConversationStore::getLength() noexcept {
+	return this->length;
+}
+
 /*
  * Init new conversation store.
  */
-void conversation_store_init(conversation_store * const store) noexcept {
-	store->length = 0;
-	store->head = nullptr;
-	store->tail = nullptr;
+void ConversationStore::init() noexcept {
+	this->length = 0;
+	this->head = nullptr;
+	this->tail = nullptr;
 }
 
 /*
  * add a conversation to the conversation store.
  */
-return_status conversation_store_add(
-		conversation_store * const store,
-		conversation_t * const conversation) noexcept {
+return_status ConversationStore::add(conversation_t * const conversation) noexcept {
 
 	return_status status = return_status_init();
 
-	if ((store == nullptr) || (conversation == nullptr)) {
+	if (conversation == nullptr) {
 		THROW(INVALID_INPUT, "Invalid input to conversation_store_add");
 	}
 
-	if (store->head == nullptr) { //first conversation in the list
+	if (this->head == nullptr) { //first conversation in the list
 		conversation->previous = nullptr;
 		conversation->next = nullptr;
-		store->head = conversation;
-		store->tail = conversation;
+		this->head = conversation;
+		this->tail = conversation;
 
 		//update length
-		store->length++;
+		this->length++;
 
 		goto cleanup;
 	}
 
 	//add the new conversation to the tail of the list
-	store->tail->next = conversation;
-	conversation->previous = store->tail;
+	this->tail->next = conversation;
+	conversation->previous = this->tail;
 	conversation->next = nullptr;
-	store->tail = conversation;
+	this->tail = conversation;
 
 	//update length
-	store->length++;
+	this->length++;
 
 cleanup:
 
@@ -74,25 +76,25 @@ cleanup:
 /*
  * Remove a conversation from the conversation_store.
  */
-void conversation_store_remove(conversation_store * const store, conversation_t * const node) noexcept {
-	if ((store == nullptr) || (node == nullptr)) {
+void ConversationStore::remove(conversation_t * const node) noexcept {
+	if (node == nullptr) {
 		return;
 	}
 
 
-	if ((node->next != nullptr) && (node != store->tail)) { //node is not the tail
+	if ((node->next != nullptr) && (node != this->tail)) { //node is not the tail
 		node->next->previous = node->previous;
 	} else {
-		store->tail = node->previous;
+		this->tail = node->previous;
 	}
 
-	if ((node->previous != nullptr) && (node != store->head)) { //node is not the head
+	if ((node->previous != nullptr) && (node != this->head)) { //node is not the head
 		node->previous->next = node->next;
 	} else {
-		store->head = node->next;
+		this->head = node->next;
 	}
 
-	store->length--;
+	this->length--;
 
 	conversation_destroy(node);
 }
@@ -102,20 +104,14 @@ void conversation_store_remove(conversation_store * const store, conversation_t 
  *
  * The conversation is identified by it's id.
  */
-void conversation_store_remove_by_id(conversation_store * const store, Buffer * const id) noexcept {
-	return_status status = return_status_init();
-
+void ConversationStore::removeById(const Buffer& id) noexcept {
 	conversation_t *node = nullptr;
-	status = conversation_store_find_node(&node, store, id);
-	on_error {
-		return_status_destroy_errors(&status);
-		return;
-	}
+	node = this->findNode(id);
 	if (node == nullptr) {
 		return;
 	}
 
-	conversation_store_remove(store, node);
+	this->remove(node);
 }
 
 /*
@@ -123,40 +119,24 @@ void conversation_store_remove_by_id(conversation_store * const store, Buffer * 
  *
  * Returns nullptr if no conversation was found.
  */
-return_status conversation_store_find_node(
-		conversation_t ** const conversation,
-		conversation_store * const store,
-		Buffer * const id) noexcept {
-	return_status status = return_status_init();
-
-	if ((conversation == nullptr) || (store == nullptr) || (id == nullptr)) {
-		THROW(INVALID_INPUT, "Invalid input to conversation_store_find.");
-	}
-
-	*conversation = nullptr;
-
-	conversation_store_foreach(store,
-		if (value->id.compare(id) == 0) {
-			*conversation = node;
+conversation_t* ConversationStore::findNode(const Buffer& id) noexcept {
+	conversation_t* conversation = nullptr;
+	size_t index = 0;
+	for (conversation = this->head; (index < this->length) && (conversation != NULL); conversation = conversation->next, index++) {
+		if (conversation->id.compare(&id) == 0) {
 			break;
 		}
-	)
+	}
 
-cleanup:
-
-	return status;
+	return conversation;
 }
 
 /*
  * Remove all entries from a conversation store.
  */
-void conversation_store_clear(conversation_store * const store) noexcept {
-	if (store == nullptr) {
-		return;
-	}
-
-	while (store->length > 0) {
-		conversation_store_remove(store, store->tail);
+void ConversationStore::clear() noexcept {
+	while (this->length > 0) {
+		this->remove(this->tail);
 	}
 }
 
@@ -165,81 +145,68 @@ void conversation_store_clear(conversation_store * const store) noexcept {
  *
  * Returns nullptr if empty.
  */
-return_status conversation_store_list(Buffer ** const list, conversation_store * const store) noexcept {
+return_status ConversationStore::list(Buffer*& list) noexcept {
 	return_status status = return_status_init();
+	conversation_t *conversation = nullptr;
+	size_t index = 0;
 
-	if ((list == nullptr) || (store == nullptr)) {
-		THROW(INVALID_INPUT, "Invalid input to conversation_store_list.");
-	}
-
-	if (store->length == 0) {
-		*list = nullptr;
+	if (this->length == 0) {
+		list = nullptr;
 		goto cleanup;
 	}
 
-	*list = Buffer::create(store->length * CONVERSATION_ID_SIZE, 0);
-	THROW_on_failed_alloc(*list);
+	list = Buffer::create(this->length * CONVERSATION_ID_SIZE, 0);
+	THROW_on_failed_alloc(list);
 	//copy all the id's
-	conversation_store_foreach(
-			store,
-			int status_int = (*list)->copyFrom(
-				CONVERSATION_ID_SIZE * index,
-				&value->id,
-				0,
-				value->id.content_length);
-			if (status_int != 0) {
-				THROW(BUFFER_ERROR, "Failed to copy conversation id.");
-			}
-	)
+	for (conversation = this->head; (index < this->getLength()) && (conversation != nullptr); index++, conversation = conversation->next) {
+		int status_int = list->copyFrom(
+			CONVERSATION_ID_SIZE * index,
+			&conversation->id,
+			0,
+			conversation->id.content_length);
+		if (status_int != 0) {
+			THROW(BUFFER_ERROR, "Failed to copy conversation id.");
+		}
+	}
 
 cleanup:
 	on_error {
-		if (list != nullptr) {
-				buffer_destroy_from_heap_and_null_if_valid(*list);
-		}
+		buffer_destroy_from_heap_and_null_if_valid(list);
 	}
 
 	return status;
 }
 
-return_status conversation_store_export(
-		const conversation_store * const store,
-		Conversation *** const conversations,
-		size_t * const length) noexcept {
+return_status ConversationStore::exportConversationStore(Conversation**& conversations, size_t& length) const noexcept {
 	return_status status = return_status_init();
 
-	//check input
-	if ((store == nullptr) || (conversations == nullptr) || (length == nullptr)) {
-		THROW(INVALID_INPUT, "Invalid input conversation_store_export.");
-	}
-
-	if (store->length > 0) {
+	if (this->length > 0) {
 		//allocate the array of conversations
-		*conversations = (Conversation**)zeroed_malloc(store->length * sizeof(Conversation*));
-		THROW_on_failed_alloc(*conversations);
-		std::fill(*conversations, *conversations + store->length, nullptr);
+		conversations = (Conversation**)zeroed_malloc(this->length * sizeof(Conversation*));
+		THROW_on_failed_alloc(conversations);
+		std::fill(conversations, conversations + this->length, nullptr);
 	} else {
-		*conversations = nullptr;
+		conversations = nullptr;
 	}
 
 	//export the conversations
 	{
-		conversation_t *node = store->head;
-		for (size_t i = 0; (i < store->length) && (node != nullptr); i++, node = node->next) {
-			status = conversation_export(node, &(*conversations)[i]);
+		conversation_t *node = this->head;
+		for (size_t i = 0; (i < this->length) && (node != nullptr); i++, node = node->next) {
+			status = conversation_export(node, &conversations[i]);
 			THROW_on_error(EXPORT_ERROR, "Failed to export conversation.");
 		}
 	}
 
-	*length = store->length;
+	length = this->length;
 
 cleanup:
 	on_error {
-		if ((store != nullptr) && (conversations != nullptr) && (*conversations != nullptr)) {
-			for (size_t i = 0; i < store->length; i++) {
-				if ((*conversations)[i] != nullptr) {
-					conversation__free_unpacked((*conversations)[i], &protobuf_c_allocators);
-					(*conversations)[i] = nullptr;
+		if (conversations != nullptr) {
+			for (size_t i = 0; i < this->length; i++) {
+				if (conversations[i] != nullptr) {
+					conversation__free_unpacked(conversations[i], &protobuf_c_allocators);
+					conversations[i] = nullptr;
 				}
 			}
 		}
@@ -248,22 +215,18 @@ cleanup:
 	return status;
 }
 
-return_status conversation_store_import(
-		conversation_store * const store,
-		Conversation ** const conversations,
-		const size_t length) noexcept {
+return_status ConversationStore::import(Conversation ** const conversations, const size_t length) noexcept {
 	return_status status = return_status_init();
 
 	conversation_t *conversation = nullptr;
 
 	//check input
-	if ((store == nullptr)
-			|| ((length > 0) && (conversations == nullptr))
+	if (((length > 0) && (conversations == nullptr))
 			|| ((length == 0) && (conversations != nullptr))) {
 		THROW(INVALID_INPUT, "Invalid input to conversation_store_import");
 	}
 
-	conversation_store_init(store);
+	this->init();
 
 	//import all the conversations
 	for (size_t i = 0; i < length; i++) {
@@ -272,7 +235,7 @@ return_status conversation_store_import(
 			conversations[i]);
 		THROW_on_error(IMPORT_ERROR, "Failed to import conversation.");
 
-		status = conversation_store_add(store, conversation);
+		status = this->add(conversation);
 		THROW_on_error(ADDITION_ERROR, "Failed to add conversation to conversation store.");
 		conversation = nullptr;
 	}
@@ -284,9 +247,7 @@ cleanup:
 			conversation = nullptr;
 		}
 
-		if (store != nullptr) {
-			conversation_store_clear(store);
-		}
+		this->clear();
 	}
 
 	return status;

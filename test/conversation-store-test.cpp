@@ -29,11 +29,11 @@
 #include "utils.h"
 
 static return_status protobuf_export(
-		const conversation_store * const store,
+		const ConversationStore * const store,
 		Buffer *** const export_buffers,
 		size_t * const buffer_count) noexcept __attribute__((warn_unused_result));
 static return_status protobuf_export(
-		const conversation_store * const store,
+		const ConversationStore * const store,
 		Buffer *** const export_buffers,
 		size_t * const buffer_count) noexcept {
 	return_status status = return_status_init();
@@ -53,7 +53,7 @@ static return_status protobuf_export(
 		THROW(INVALID_INPUT, "Invalid input to protobuf_export.");
 	}
 
-	status = conversation_store_export(store, &conversations, &length);
+	status = store->exportConversationStore(conversations, length);
 	THROW_on_error(EXPORT_ERROR, "Failed to export conversations.");
 
 	*export_buffers = (Buffer**)malloc(length * sizeof(Buffer*));
@@ -84,11 +84,11 @@ cleanup:
 }
 
 return_status protobuf_import(
-		conversation_store * const store,
+		ConversationStore * const store,
 		Buffer ** const buffers,
 		const size_t length) noexcept __attribute__((warn_unused_result));
 return_status protobuf_import(
-		conversation_store * const store,
+		ConversationStore * const store,
 		Buffer ** const buffers,
 		const size_t length) noexcept {
 	return_status status = return_status_init();
@@ -117,10 +117,7 @@ return_status protobuf_import(
 	}
 
 	//import
-	status = conversation_store_import(
-		store,
-		conversations,
-		length);
+	status = store->import(conversations, length);
 	THROW_on_error(IMPORT_ERROR, "Failed to import conversation store.");
 
 cleanup:
@@ -137,7 +134,7 @@ cleanup:
 	return status;
 }
 
-static return_status test_add_conversation(conversation_store * const store) noexcept {
+static return_status test_add_conversation(ConversationStore * const store) noexcept {
 	//define key buffers
 	//identity keys
 	Buffer *our_private_identity = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
@@ -202,7 +199,7 @@ static return_status test_add_conversation(conversation_store * const store) noe
 		THROW(CREATION_ERROR, "Failed to creat ratchet.");
 	}
 
-	status = conversation_store_add(store, conversation);
+	status = store->add(conversation);
 	THROW_on_error(ADDITION_ERROR, "Failed to add conversation to store.");
 	conversation = nullptr;
 
@@ -232,11 +229,11 @@ return_status protobuf_empty_store(void) noexcept {
 	Conversation **exported = nullptr;
 	size_t exported_length = 0;
 
-	conversation_store store;
-	conversation_store_init(&store);
+	ConversationStore store;
+	store.init();
 
 	//export it
-	status = conversation_store_export(&store, &exported, &exported_length);
+	status = store.exportConversationStore(exported, exported_length);
 	THROW_on_error(EXPORT_ERROR, "Failed to export empty conversation store.");
 
 	if ((exported != nullptr) || (exported_length != 0)) {
@@ -244,7 +241,7 @@ return_status protobuf_empty_store(void) noexcept {
 	}
 
 	//import it
-	status = conversation_store_import(&store, exported, exported_length);
+	status = store.import(exported, exported_length);
 	THROW_on_error(IMPORT_ERROR, "Failed to import empty conversation store.");
 
 	printf("Successful.\n");
@@ -266,17 +263,17 @@ int main(void) noexcept {
 	Buffer ** protobuf_second_export_buffers = nullptr;
 	size_t protobuf_second_export_buffers_length = 0;
 
-	conversation_store *store = (conversation_store*)malloc(sizeof(conversation_store));
+	ConversationStore *store = (ConversationStore*)malloc(sizeof(ConversationStore));
 	if (store == nullptr) {
 		THROW(ALLOCATION_FAILED, "Failed to allocate conversation store.");
 	}
 
 	printf("Initialize the conversation store.\n");
-	conversation_store_init(store);
+	store->init();
 
 	// list an empty conversation store
 	Buffer *empty_list;
-	status = conversation_store_list(&empty_list, store);
+	status = store->list(empty_list);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to list empty conversation store.");
 	if (empty_list != nullptr) {
 		THROW(INCORRECT_DATA, "List of empty conversation store is not nullptr.");
@@ -288,24 +285,14 @@ int main(void) noexcept {
 		printf("%zu\n", i);
 		status = test_add_conversation(store);
 		THROW_on_error(ADDITION_ERROR, "Failed to add test conversation.");
-		if (store->length != (i + 1)) {
+		if (store->getLength() != (i + 1)) {
 			THROW(INCORRECT_DATA, "Conversation store has incorrect length.");
 		}
 	}
 
-	//show all the conversation ids
-	printf("Conversation IDs (test of foreach):\n");
-	conversation_store_foreach(store,
-		printf("ID of the conversation No. %zu:\n", index);
-		print_hex(&value->id);
-		putchar('\n');
-	)
-
 	//find node by id
 	{
-		conversation_t *found_node = nullptr;
-		status = conversation_store_find_node(&found_node, store, &store->head->next->next->id);
-		THROW_on_error(NOT_FOUND, "Failed to find conversation.");
+		conversation_t *found_node = store->findNode(store->head->next->next->id);
 		if (found_node != store->head->next->next) {
 			THROW(NOT_FOUND, "Failed to find node by ID.");
 		}
@@ -313,19 +300,19 @@ int main(void) noexcept {
 
 		//test list export feature
 		Buffer *conversation_list = nullptr;
-		status = conversation_store_list(&conversation_list, store);
+		status = store->list(conversation_list);
 		on_error {
 			THROW(DATA_FETCH_ERROR, "Failed to list conversations.");
 		}
-		if ((conversation_list == nullptr) || (conversation_list->content_length != (CONVERSATION_ID_SIZE * store->length))) {
+		if ((conversation_list == nullptr) || (conversation_list->content_length != (CONVERSATION_ID_SIZE * store->getLength()))) {
 			THROW(DATA_FETCH_ERROR, "Failed to get list of conversations.");
 		}
 
 		//check for all conversations that they exist
 		for (size_t i = 0; i < (conversation_list->content_length / CONVERSATION_ID_SIZE); i++) {
 			buffer_create_with_existing_array(current_id, conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
-			status = conversation_store_find_node(&found_node, store, current_id);
-			if ((status.status != SUCCESS) || (found_node == nullptr)) {
+			found_node = store->findNode(*current_id);
+			if (found_node == nullptr) {
 				buffer_destroy_from_heap_and_null_if_valid(conversation_list);
 				THROW(INCORRECT_DATA, "Exported list of conversations was incorrect.");
 			}
@@ -347,7 +334,7 @@ int main(void) noexcept {
 	}
 	puts("]\n\n");
 
-	conversation_store_clear(store);
+	store->clear();
 
 	//import again
 	status = protobuf_import(store, protobuf_export_buffers, protobuf_export_buffers_length);
@@ -369,20 +356,20 @@ int main(void) noexcept {
 	printf("Exported Protobuf-C strings match.\n");
 
 	//remove nodes
-	conversation_store_remove(store, store->head);
+	store->remove(store->head);
 	printf("Removed head.\n");
-	conversation_store_remove(store, store->tail);
+	store->remove(store->tail);
 	printf("Removed tail.\n");
-	conversation_store_remove(store, store->head->next);
+	store->remove(store->head->next);
 
-	if (store->length != 2) {
+	if (store->getLength() != 2) {
 		THROW(REMOVE_ERROR, "Failed to remove nodes.");
 	}
 	printf("Successfully removed nodes.\n");
 
 	//remove node by id
-	conversation_store_remove_by_id(store, &store->tail->id);
-	if (store->length != 1) {
+	store->removeById(store->tail->id);
+	if (store->getLength() != 1) {
 		THROW(REMOVE_ERROR, "Failed to remove node by id.");
 	}
 	printf("Successfully removed node by id.\n");
@@ -407,7 +394,9 @@ cleanup:
 		free_and_null_if_valid(protobuf_second_export_buffers);
 	}
 
-	conversation_store_clear(store);
+	if (store != nullptr) {
+		store->clear();
+	}
 	free_and_null_if_valid(store);
 
 	on_error {
