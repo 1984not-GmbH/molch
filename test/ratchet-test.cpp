@@ -30,10 +30,10 @@
 
 return_status protobuf_export(
 		RatchetState * const ratchet,
-		Buffer ** const export_buffer) __attribute__((warn_unused_result));
+		Buffer ** const export_buffer) noexcept __attribute__((warn_unused_result));
 return_status protobuf_export(
 		RatchetState * const ratchet,
-		Buffer ** const export_buffer) {
+		Buffer ** const export_buffer) noexcept {
 	return_status status = return_status_init();
 
 	Conversation * conversation = nullptr;
@@ -68,10 +68,10 @@ cleanup:
 
 return_status protobuf_import(
 		RatchetState ** const ratchet,
-		const Buffer * const export_buffer) __attribute__((warn_unused_result));
+		const Buffer * const export_buffer) noexcept __attribute__((warn_unused_result));
 return_status protobuf_import(
 		RatchetState ** const ratchet,
-		const Buffer * const export_buffer) {
+		const Buffer * const export_buffer) noexcept {
 	return_status status = return_status_init();
 
 	Conversation *conversation = nullptr;
@@ -103,7 +103,7 @@ cleanup:
 	return status;
 }
 
-int main(void) {
+int main(void) noexcept {
 	if (sodium_init() == -1) {
 		return -1;
 	}

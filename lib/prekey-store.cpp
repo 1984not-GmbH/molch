@@ -29,14 +29,14 @@
 static const int64_t PREKEY_EXPIRATION_TIME = 3600 * 24 * 31; //one month
 static const int64_t DEPRECATED_PREKEY_EXPIRATION_TIME = 3600; //one hour
 
-void PrekeyStoreNode::init() {
+void PrekeyStoreNode::init() noexcept {
 	this->private_key.init(this->private_key_storage, PRIVATE_KEY_SIZE, 0);
 	this->public_key.init(this->public_key_storage, PUBLIC_KEY_SIZE, 0);
 	this->next = nullptr;
 	this->expiration_date = 0;
 }
 
-PrekeyStoreNode* PrekeyStoreNode::getNext() {
+PrekeyStoreNode* PrekeyStoreNode::getNext() noexcept {
 	return this->next;
 }
 
@@ -44,7 +44,7 @@ PrekeyStoreNode* PrekeyStoreNode::getNext() {
 /*
  * Initialise a new keystore. Generates all the keys.
  */
-return_status PrekeyStore::create(PrekeyStore*& store) {
+return_status PrekeyStore::create(PrekeyStore*& store) noexcept {
 	return_status status = return_status_init();
 
 	store = (PrekeyStore*)sodium_malloc(sizeof(PrekeyStore));
@@ -86,7 +86,7 @@ cleanup:
 	return status;
 }
 
-void PrekeyStore::addNodeToDeprecated(PrekeyStoreNode& deprecated_node) {
+void PrekeyStore::addNodeToDeprecated(PrekeyStoreNode& deprecated_node) noexcept {
 	deprecated_node.next = this->deprecated_prekeys;
 	this->deprecated_prekeys = &deprecated_node;
 }
@@ -94,7 +94,7 @@ void PrekeyStore::addNodeToDeprecated(PrekeyStoreNode& deprecated_node) {
 /*
  * Helper that puts a prekey pair in the deprecated list and generates a new one.
  */
-int PrekeyStore::deprecate(const size_t index) {
+int PrekeyStore::deprecate(const size_t index) noexcept {
 	int status = 0;
 	//create a new node
 	PrekeyStoreNode *deprecated_node = (PrekeyStoreNode*)sodium_malloc(sizeof(PrekeyStoreNode));
@@ -147,7 +147,7 @@ cleanup:
  */
 return_status PrekeyStore::getPrekey(
 		Buffer& public_key, //input
-		Buffer& private_key) { //output
+		Buffer& private_key) noexcept { //output
 	return_status status = return_status_init();
 
 	PrekeyStoreNode *found_prekey = nullptr;
@@ -207,7 +207,7 @@ cleanup:
  * (this list can then be stored on a public server).
  */
 return_status PrekeyStore::list(
-		Buffer& list) { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+		Buffer& list) noexcept { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 	return_status status = return_status_init();
 
 	//check input
@@ -236,7 +236,7 @@ cleanup:
  * Automatically deprecate old keys and generate new ones
  * and THROW away deprecated ones that are too old.
  */
-return_status PrekeyStore::rotate() {
+return_status PrekeyStore::rotate() noexcept {
 	return_status status = return_status_init();
 
 	int64_t current_time = time(nullptr);
@@ -314,7 +314,7 @@ cleanup:
 	return status;
 }
 
-void PrekeyStore::destroy() {
+void PrekeyStore::destroy() noexcept {
 	while (this->deprecated_prekeys != nullptr) {
 		PrekeyStoreNode *node = this->deprecated_prekeys;
 		this->deprecated_prekeys = node->next;
@@ -326,14 +326,14 @@ void PrekeyStore::destroy() {
  * Calculate the number of deprecated prekeys
  * \return Number of deprecated prekeys.
  */
-size_t PrekeyStore::countDeprecated() {
+size_t PrekeyStore::countDeprecated() noexcept {
 	size_t length = 0;
 	for (PrekeyStoreNode *node = this->deprecated_prekeys; node != nullptr; node = node->next, length++) {}
 
 	return length;
 }
 
-return_status PrekeyStoreNode::exportNode(Prekey*& keypair) {
+return_status PrekeyStoreNode::exportNode(Prekey*& keypair) noexcept {
 	return_status status = return_status_init();
 
 	Key *private_prekey = nullptr;
@@ -398,7 +398,7 @@ return_status PrekeyStore::exportStore(
 		Prekey**& keypairs,
 		size_t& keypairs_length,
 		Prekey**& deprecated_keypairs,
-		size_t& deprecated_keypairs_length) {
+		size_t& deprecated_keypairs_length) noexcept {
 	return_status status = return_status_init();
 
 	size_t deprecated_prekey_count = 0;
@@ -468,7 +468,7 @@ cleanup:
 	return status;
 }
 
-return_status PrekeyStoreNode::import(const Prekey& keypair) {
+return_status PrekeyStoreNode::import(const Prekey& keypair) noexcept {
 	return_status status = return_status_init();
 
 	this->init();
@@ -521,7 +521,7 @@ return_status PrekeyStore::import(
 		Prekey ** const keypairs,
 		const size_t keypairs_length,
 		Prekey ** const deprecated_keypairs,
-		const size_t deprecated_keypairs_length) {
+		const size_t deprecated_keypairs_length) noexcept {
 	return_status status = return_status_init();
 
 	PrekeyStoreNode *deprecated_keypair = nullptr;

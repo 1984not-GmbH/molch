@@ -62,6 +62,6 @@ return_status create_and_print_message(
 		//optional inputs (prekey messages only)
 		Buffer * const public_identity_key,
 		Buffer * const public_epehemeral_key,
-		Buffer * const public_prekey) __attribute__((warn_unused_result));
+		Buffer * const public_prekey) noexcept __attribute__((warn_unused_result));
 
 #endif

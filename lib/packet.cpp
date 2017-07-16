@@ -31,7 +31,7 @@ extern "C" {
 /*!
  * Convert molch_message_type to PacketHeader__PacketType.
  */
-static PacketHeader__PacketType to_packet_header_packet_type(const molch_message_type packet_type) {
+static PacketHeader__PacketType to_packet_header_packet_type(const molch_message_type packet_type) noexcept {
 	switch (packet_type) {
 		case PREKEY_MESSAGE:
 			return PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE;
@@ -46,7 +46,7 @@ static PacketHeader__PacketType to_packet_header_packet_type(const molch_message
 /*!
  * Convert PacketHeader__PacketType to molch_message_type.
  */
-static molch_message_type to_molch_message_type(const PacketHeader__PacketType packet_type) {
+static molch_message_type to_molch_message_type(const PacketHeader__PacketType packet_type) noexcept {
 	switch (packet_type) {
 		case PACKET_HEADER__PACKET_TYPE__NORMAL_MESSAGE:
 			return NORMAL_MESSAGE;
@@ -69,8 +69,8 @@ static molch_message_type to_molch_message_type(const PacketHeader__PacketType p
  * \return
  *   Error status, destroy with return_status_destroy_errors if an error occurs.
  */
-return_status packet_unpack(Packet ** const packet_struct, Buffer * const packet) __attribute__((warn_unused_result));
-return_status packet_unpack(Packet ** const packet_struct, Buffer * const packet) {
+return_status packet_unpack(Packet ** const packet_struct, Buffer * const packet) noexcept __attribute__((warn_unused_result));
+return_status packet_unpack(Packet ** const packet_struct, Buffer * const packet) noexcept {
 	return_status status = return_status_init();
 
 	//check input
@@ -142,7 +142,7 @@ return_status packet_encrypt(
 		//optional inputs (prekey messages only)
 		Buffer * const public_identity_key,
 		Buffer * const public_ephemeral_key,
-		Buffer * const public_prekey) {
+		Buffer * const public_prekey) noexcept {
 	return_status status = return_status_init();
 
 	//initialize the protobuf structs
@@ -320,7 +320,7 @@ return_status packet_decrypt(
 		//optional outputs (prekey messages only)
 		Buffer * const public_identity_key,
 		Buffer * const public_ephemeral_key,
-		Buffer * const public_prekey) {
+		Buffer * const public_prekey) noexcept {
 	return_status status = return_status_init();
 
 	//initialize outputs that have to be allocated
@@ -397,7 +397,7 @@ return_status packet_get_metadata_without_verification(
 		Buffer * const public_identity_key, //PUBLIC_KEY_SIZE
 		Buffer * const public_ephemeral_key, //PUBLIC_KEY_SIZE
 		Buffer * const public_prekey //PUBLIC_KEY_SIZE
-		) {
+		) noexcept {
 	return_status status = return_status_init();
 
 	Packet *packet_struct = nullptr;
@@ -468,7 +468,7 @@ return_status packet_decrypt_header(
 		//inputs
 		Buffer * const packet,
 		Buffer * const axolotl_header_key //HEADER_KEY_SIZE
-		) {
+		) noexcept {
 	return_status status = return_status_init();
 
 	Packet *packet_struct = nullptr;
@@ -525,7 +525,7 @@ return_status packet_decrypt_message(
 		//inputs
 		Buffer * const packet,
 		Buffer * const message_key
-		) {
+		) noexcept {
 	return_status status = return_status_init();
 	unsigned char padding;
 

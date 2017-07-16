@@ -39,7 +39,7 @@ public:
 	Buffer* init(
 			unsigned char * const content,
 			const size_t buffer_length,
-			const size_t content_length);
+			const size_t content_length) noexcept;
 
 	/*
 	 * initialize a buffer with a pointer to an array of const characters.
@@ -47,7 +47,7 @@ public:
 	Buffer* initWithConst(
 			const unsigned char * const content,
 			const size_t buffer_length,
-			const size_t content_length);
+			const size_t content_length) noexcept;
 
 	/*
 	 * Copy a raw array to a buffer and return the
@@ -60,7 +60,7 @@ public:
 	 */
 	Buffer* create_from_string_on_heap_helper(
 			const unsigned char * const content,
-			const size_t content_length) __attribute__((warn_unused_result));
+			const size_t content_length) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Clear a buffer.
@@ -68,34 +68,34 @@ public:
 	 * Overwrites the buffer with zeroes and
 	 * resets the content size.
 	 */
-	void clear();
+	void clear() noexcept;
 
 	/*
 	 * Free and clear a heap allocated buffer.
 	 */
-	void destroy_from_heap();
+	void destroy_from_heap() noexcept;
 
 	/*
 	 * Destroy a buffer that was created using a custom allocator.
 	 */
-	void destroy_with_custom_deallocator(void (*deallocator)(void *pointer));
+	void destroy_with_custom_deallocator(void (*deallocator)(void *pointer)) noexcept;
 
 	/*
 	 * Xor another buffer with the same length onto this one.
 	 */
-	int xorWith(Buffer * const source) __attribute__((warn_unused_result));
+	int xorWith(Buffer * const source) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Fill a buffer with random numbers.
 	 */
-	int fillRandom(const size_t length) __attribute__((warn_unused_result));
+	int fillRandom(const size_t length) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Compare two buffers.
 	 *
 	 * Returns 0 if both buffers match.
 	 */
-	int compare(Buffer * const buffer) __attribute__((warn_unused_result));
+	int compare(Buffer * const buffer) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Compare parts of two buffers.
@@ -106,14 +106,14 @@ public:
 			const size_t position1,
 			Buffer * const buffer2,
 			const size_t position2,
-			const size_t length) __attribute__((warn_unused_result));
+			const size_t length) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Compare a buffer to a raw array.
 	 *
 	 * Returns 0 if both buffers match.
 	 */
-	int compareToRaw(const unsigned char * const array, const size_t array_length) __attribute__((warn_unused_result));
+	int compareToRaw(const unsigned char * const array, const size_t array_length) noexcept __attribute__((warn_unused_result));
 
 
 	/*
@@ -126,7 +126,7 @@ public:
 			const unsigned char * const array,
 			const size_t array_length,
 			const size_t position2,
-			const size_t comparison_length);
+			const size_t comparison_length) noexcept;
 
 	/*
 	 * Copy parts of a buffer to another buffer.
@@ -137,7 +137,7 @@ public:
 			const size_t destination_offset,
 			const Buffer * const source,
 			const size_t source_offset,
-			const size_t copy_length) __attribute__((warn_unused_result));
+			const size_t copy_length) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Copy the content of a buffer to the beginning of another
@@ -146,7 +146,7 @@ public:
 	 *
 	 * Returns 0 on success.
 	 */
-	int cloneFrom(const Buffer * const source) __attribute__((warn_unused_result));
+	int cloneFrom(const Buffer * const source) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Copy from a raw array to a buffer.
@@ -157,7 +157,7 @@ public:
 			const size_t destination_offset,
 			const unsigned char * const source,
 			const size_t source_offset,
-			const size_t copy_length) __attribute__((warn_unused_result));
+			const size_t copy_length) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Copy the content of a raw array to the
@@ -166,7 +166,7 @@ public:
 	 *
 	 * Returns 0 on success.
 	 */
-	int cloneFromRaw(const unsigned char * const source, const size_t length) __attribute__((warn_unused_result));
+	int cloneFromRaw(const unsigned char * const source, const size_t length) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Copy from a buffer to a raw array.
@@ -177,7 +177,7 @@ public:
 			unsigned char * const destination,
 			const size_t destination_offset,
 			const size_t source_offset,
-			const size_t copy_length) __attribute__((warn_unused_result));
+			const size_t copy_length) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Copy the entire content of a buffer
@@ -185,14 +185,14 @@ public:
 	 *
 	 * Returns 0 on success.
 	 */
-	int cloneToRaw(unsigned char * const destination, const size_t destination_length) __attribute__((warn_unused_result));
+	int cloneToRaw(unsigned char * const destination, const size_t destination_length) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Create a new buffer on the heap.
 	 */
 	static Buffer *create(
 			const size_t buffer_length,
-			const size_t content_length) __attribute__((warn_unused_result));
+			const size_t content_length) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Create a new buffer with a custom allocator.
@@ -202,11 +202,11 @@ public:
 			const size_t content_length,
 			void *(*allocator)(size_t size),
 			void (*deallocator)(void *pointer)
-			) __attribute__((warn_unused_result));
+			) noexcept __attribute__((warn_unused_result));
 
-	size_t getBufferLength() const;
-	bool isReadOnly() const;
-	void setReadOnly(bool readonly);
+	size_t getBufferLength() const noexcept;
+	bool isReadOnly() const noexcept;
+	void setReadOnly(bool readonly) noexcept;
 };
 
 /*

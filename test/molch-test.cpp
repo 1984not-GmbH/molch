@@ -40,7 +40,7 @@ static return_status decrypt_conversation_backup(
 		const unsigned char * const backup,
 		const size_t backup_length,
 		const unsigned char * backup_key,
-		const size_t backup_key_length) {
+		const size_t backup_key_length) noexcept {
 	return_status status = return_status_init();
 
 	EncryptedBackup *encrypted_backup_struct = nullptr;
@@ -106,7 +106,7 @@ static return_status decrypt_full_backup(
 		const unsigned char * const backup,
 		const size_t backup_length,
 		const unsigned char * backup_key,
-		const size_t backup_key_length) {
+		const size_t backup_key_length) noexcept {
 	return_status status = return_status_init();
 
 	EncryptedBackup *encrypted_backup_struct = nullptr;
@@ -165,7 +165,7 @@ cleanup:
 	return status;
 }
 
-int main(void) {
+int main(void) noexcept {
 	if (sodium_init() == -1) {
 		return -1;
 	}

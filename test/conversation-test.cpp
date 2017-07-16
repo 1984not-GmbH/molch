@@ -28,8 +28,8 @@
 #include "utils.h"
 #include "../lib/conversation.h"
 
-return_status protobuf_export(conversation_t * const conversation, Buffer ** const export_buffer) __attribute__((warn_unused_result));
-return_status protobuf_export(conversation_t * const conversation, Buffer ** const export_buffer) {
+return_status protobuf_export(conversation_t * const conversation, Buffer ** const export_buffer) noexcept __attribute__((warn_unused_result));
+return_status protobuf_export(conversation_t * const conversation, Buffer ** const export_buffer) noexcept {
 	return_status status = return_status_init();
 
 	Conversation *exported_conversation = nullptr;
@@ -63,10 +63,10 @@ cleanup:
 
 return_status protobuf_import(
 		conversation_t ** const conversation,
-		Buffer * const import_buffer) __attribute__((warn_unused_result));
+		Buffer * const import_buffer) noexcept __attribute__((warn_unused_result));
 return_status protobuf_import(
 		conversation_t ** const conversation,
-		Buffer * const import_buffer) {
+		Buffer * const import_buffer) noexcept {
 	return_status status = return_status_init();
 
 	Conversation *conversation_protobuf = nullptr;
@@ -110,7 +110,7 @@ static return_status create_conversation(
 		Buffer * const their_public_identity,
 		Buffer * const our_private_ephemeral,
 		Buffer * const our_public_ephemeral,
-		Buffer * const their_public_ephemeral) {
+		Buffer * const their_public_ephemeral) noexcept {
 
 	return_status status = return_status_init();
 
@@ -161,7 +161,7 @@ cleanup:
 	return status;
 }
 
-int main(void) {
+int main(void) noexcept {
 	if (sodium_init() == -1) {
 		fprintf(stderr, "ERROR: Failed to initialize libsodium! (-1)\n");
 		return -1;

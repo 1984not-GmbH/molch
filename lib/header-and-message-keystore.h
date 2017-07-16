@@ -55,20 +55,20 @@ typedef struct header_and_message_keystore {
 } header_and_message_keystore;
 
 //initialise a new keystore
-void header_and_message_keystore_init(header_and_message_keystore * const keystore);
+void header_and_message_keystore_init(header_and_message_keystore * const keystore) noexcept;
 
 //add a hader and message key to the keystore
 //NOTE: The entire keys are copied, not only the pointer
 return_status header_and_message_keystore_add(
 		header_and_message_keystore *keystore,
 		Buffer * const message_key,
-		Buffer * const header_key) __attribute__((warn_unused_result));
+		Buffer * const header_key) noexcept __attribute__((warn_unused_result));
 
 //remove a message key from the keystore
-void header_and_message_keystore_remove(header_and_message_keystore *keystore, header_and_message_keystore_node *node);
+void header_and_message_keystore_remove(header_and_message_keystore *keystore, header_and_message_keystore_node *node) noexcept;
 
 //clear the entire keystore
-void header_and_message_keystore_clear(header_and_message_keystore *keystore);
+void header_and_message_keystore_clear(header_and_message_keystore *keystore) noexcept;
 
 //! Export a header_and_message_keystore as Protobuf-C struct.
 /*!
@@ -80,7 +80,7 @@ void header_and_message_keystore_clear(header_and_message_keystore *keystore);
 return_status header_and_message_keystore_export(
 		const header_and_message_keystore * const store,
 		KeyBundle *** const key_bundles,
-		size_t * const bundles_size) __attribute__((warn_unused_result));
+		size_t * const bundles_size) noexcept __attribute__((warn_unused_result));
 
 //! Import a header_and_message_keystore form a Protobuf-C struct.
 /*
@@ -92,5 +92,5 @@ return_status header_and_message_keystore_export(
 return_status header_and_message_keystore_import(
 		header_and_message_keystore * const store,
 		KeyBundle ** const key_bundles,
-		const size_t bundles_size) __attribute__((warn_unused_result));
+		const size_t bundles_size) noexcept __attribute__((warn_unused_result));
 #endif

@@ -35,7 +35,7 @@ static return_status protobuf_export(
 		Buffer**& key_buffers,
 		Prekey**& deprecated_keypairs,
 		size_t& deprecated_keypairs_size,
-		Buffer**& deprecated_key_buffers) {
+		Buffer**& deprecated_key_buffers) noexcept {
 	return_status status = return_status_init();
 
 	status = store.exportStore(
@@ -87,7 +87,7 @@ static return_status protobuf_import(
 		Buffer*& keypair_buffers,
 		const size_t keypair_buffers_size,
 		Buffer*& deprecated_keypair_buffers,
-		const size_t deprecated_keypair_buffers_size) {
+		const size_t deprecated_keypair_buffers_size) noexcept {
 	return_status status = return_status_init();
 
 	Prekey ** keypairs = nullptr;
@@ -154,8 +154,8 @@ cleanup:
 	return status;
 }
 
-return_status protobuf_no_deprecated_keys(void) __attribute__((warn_unused_result));
-return_status protobuf_no_deprecated_keys(void) {
+return_status protobuf_no_deprecated_keys(void) noexcept __attribute__((warn_unused_result));
+return_status protobuf_no_deprecated_keys(void) noexcept {
 	return_status status = return_status_init();
 
 	printf("Testing im-/export of prekey store without deprecated keys.\n");
@@ -205,7 +205,7 @@ cleanup:
 	return status;
 }
 
-int main(void) {
+int main(void) noexcept {
 	if (sodium_init() == -1) {
 		return -1;
 	}

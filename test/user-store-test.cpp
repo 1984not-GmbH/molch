@@ -32,11 +32,11 @@
 return_status protobuf_export(
 		const user_store * const store,
 		Buffer *** const export_buffers,
-		size_t * const buffer_count) __attribute__((warn_unused_result));
+		size_t * const buffer_count) noexcept __attribute__((warn_unused_result));
 return_status protobuf_export(
 		const user_store * const store,
 		Buffer *** const export_buffers,
-		size_t * const buffer_count) {
+		size_t * const buffer_count) noexcept {
 	return_status status = return_status_init();
 
 	User ** users = nullptr;
@@ -91,7 +91,7 @@ cleanup:
 static return_status protobuf_import(
 		user_store ** const store,
 		Buffer ** const buffers,
-		const size_t buffers_length) {
+		const size_t buffers_length) noexcept {
 	return_status status = return_status_init();
 
 	User **users = nullptr;
@@ -129,8 +129,8 @@ cleanup:
 	return status;
 }
 
-return_status protobuf_empty_store(void) __attribute__((warn_unused_result));
-return_status protobuf_empty_store(void) {
+return_status protobuf_empty_store(void) noexcept __attribute__((warn_unused_result));
+return_status protobuf_empty_store(void) noexcept {
 	return_status status = return_status_init();
 
 	printf("Testing im-/export of empty user store.\n");
@@ -160,7 +160,7 @@ cleanup:
 	return status;
 }
 
-int main(void) {
+int main(void) noexcept {
 	if (sodium_init() == -1) {
 		return -1;
 	}

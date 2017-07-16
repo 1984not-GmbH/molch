@@ -26,7 +26,7 @@
 /*
  * Print a header and message keystore with all of it's entries.
  */
-void print_header_and_message_keystore(header_and_message_keystore *keystore);
+void print_header_and_message_keystore(header_and_message_keystore *keystore) noexcept;
 
 /*
  * Generates and prints a crypto_box keypair.
@@ -35,5 +35,5 @@ return_status generate_and_print_keypair(
 		Buffer * const public_key, //crypto_box_PUBLICKEYBYTES
 		Buffer * const private_key, //crypto_box_SECRETKEYBYTES
 		Buffer * name, //Name of the key owner (e.g. "Alice")
-		Buffer * type); //type of the key (e.g. "ephemeral")
+		Buffer * type) noexcept; //type of the key (e.g. "ephemeral")
 #endif

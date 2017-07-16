@@ -26,7 +26,7 @@
 #include "return-status.h"
 #include "buffer.h"
 
-extern return_status return_status_init() {
+extern return_status return_status_init() noexcept {
 	return_status status = {
 		SUCCESS,
 		nullptr
@@ -37,7 +37,7 @@ extern return_status return_status_init() {
 status_type return_status_add_error_message(
 		return_status *const status_object,
 		const char *const message,
-		const status_type status) {
+		const status_type status) noexcept {
 	if (status_object == nullptr) {
 		return INVALID_INPUT;
 	}
@@ -60,7 +60,7 @@ status_type return_status_add_error_message(
 	return SUCCESS;
 }
 
-void return_status_destroy_errors(return_status * const status) {
+void return_status_destroy_errors(return_status * const status) noexcept {
 	if (status == nullptr) {
 		return;
 	}
@@ -75,7 +75,7 @@ void return_status_destroy_errors(return_status * const status) {
 /*
  * Get the name of a status type as a string.
  */
-const char *return_status_get_name(status_type status) {
+const char *return_status_get_name(status_type status) noexcept {
 	switch (status) {
 		case SUCCESS:
 			return "SUCCESS";
@@ -189,7 +189,7 @@ const char *return_status_get_name(status_type status) {
  *
  * Don't forget to free with "free" after usage.
  */
-char *return_status_print(const return_status * const status_to_print, size_t *length) {
+char *return_status_print(const return_status * const status_to_print, size_t *length) noexcept {
 	return_status status = return_status_init();
 
 	Buffer *output = nullptr;

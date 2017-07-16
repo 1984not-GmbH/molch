@@ -29,7 +29,7 @@
 #include "utils.h"
 #include "packet-test-lib.h"
 
-int main(void) {
+int main(void) noexcept {
 	//generate keys and message
 	Buffer *header_key = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	Buffer *message_key = Buffer::create(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);

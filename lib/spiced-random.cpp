@@ -37,7 +37,7 @@
 return_status spiced_random(
 		Buffer * const random_output,
 		const Buffer * const low_entropy_spice,
-		const size_t output_length) {
+		const size_t output_length) noexcept {
 	return_status status = return_status_init();
 
 	//buffer to put the random data derived from the random spice into

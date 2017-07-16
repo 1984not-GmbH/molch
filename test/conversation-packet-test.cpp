@@ -28,7 +28,7 @@
 #include "utils.h"
 #include "../lib/conversation.h"
 
-int main(void) {
+int main(void) noexcept {
 	//create buffers
 	//alice' keys
 	Buffer *alice_private_identity = Buffer::create(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);

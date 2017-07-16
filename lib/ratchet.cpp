@@ -32,11 +32,11 @@
  * (filled with zeroes), and does so without introducing
  * side channels, especially timing side channels.
  */
-static bool is_none(Buffer * const buffer) {
+static bool is_none(Buffer * const buffer) noexcept {
 	return (buffer->content_length == 0) || sodium_is_zero(buffer->content, buffer->content_length);
 }
 
-static void init_RatchetState(RatchetState ** const ratchet) {
+static void init_RatchetState(RatchetState ** const ratchet) noexcept {
 	//initialize the buffers with the storage arrays
 	(*ratchet)->root_key.init((*ratchet)->root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
 	(*ratchet)->purported_root_key.init((*ratchet)->purported_root_key_storage, ROOT_KEY_SIZE, ROOT_KEY_SIZE);
@@ -67,7 +67,7 @@ static void init_RatchetState(RatchetState ** const ratchet) {
 /*
  * Create a new RatchetState and initialise the pointers.
  */
-static return_status create_RatchetState(RatchetState ** const ratchet) {
+static return_status create_RatchetState(RatchetState ** const ratchet) noexcept {
 	return_status status = return_status_init();
 
 	if (ratchet == nullptr) {
@@ -103,7 +103,7 @@ return_status ratchet_create(
 		Buffer * const their_public_identity,
 		Buffer * const our_private_ephemeral,
 		Buffer * const our_public_ephemeral,
-		Buffer * const their_public_ephemeral) {
+		Buffer * const their_public_ephemeral) noexcept {
 	return_status status = return_status_init();
 
 	//check buffer sizes
@@ -205,7 +205,7 @@ return_status ratchet_send(
 		uint32_t * const send_message_number, //Ns
 		uint32_t * const previous_send_message_number, //PNs
 		Buffer * const our_public_ephemeral, //PUBLIC_KEY_SIZE, DHRs
-		Buffer * const message_key) { //MESSAGE_KEY_SIZE, MK
+		Buffer * const message_key) noexcept { //MESSAGE_KEY_SIZE, MK
 	return_status status = return_status_init();
 
 	//create buffers
@@ -349,7 +349,7 @@ cleanup:
 return_status ratchet_get_receive_header_keys(
 		Buffer * const current_receive_header_key,
 		Buffer * const next_receive_header_key,
-		RatchetState *state) {
+		RatchetState *state) noexcept {
 	return_status status = return_status_init();
 
 	//check input
@@ -387,7 +387,7 @@ cleanup:
  */
 return_status ratchet_set_header_decryptability(
 		RatchetState *ratchet,
-		ratchet_header_decryptability header_decryptable) {
+		ratchet_header_decryptability header_decryptable) noexcept {
 	return_status status = return_status_init();
 
 	if (ratchet->header_decryptable != NOT_TRIED) {
@@ -420,7 +420,7 @@ static return_status stage_skipped_header_and_message_keys(
 		Buffer * const current_header_key,
 		const uint32_t current_message_number,
 		const uint32_t future_message_number,
-		Buffer * const chain_key) {
+		Buffer * const chain_key) noexcept {
 	return_status status = return_status_init();
 
 	//create buffers
@@ -519,7 +519,7 @@ cleanup:
  * Commit all the purported message keys into the message key store thats used
  * to actually decrypt late messages.
  */
-static return_status commit_skipped_header_and_message_keys(RatchetState *state) {
+static return_status commit_skipped_header_and_message_keys(RatchetState *state) noexcept {
 	return_status status = return_status_init();
 
 	//as long as the list of purported message keys isn't empty,
@@ -554,7 +554,7 @@ return_status ratchet_receive(
 		Buffer * const message_key,
 		Buffer * const their_purported_public_ephemeral,
 		const uint32_t purported_message_number,
-		const uint32_t purported_previous_message_number) {
+		const uint32_t purported_previous_message_number) noexcept {
 	return_status status = return_status_init();
 
 	//create buffers
@@ -682,7 +682,7 @@ cleanup:
  */
 return_status ratchet_set_last_message_authenticity(
 		RatchetState *ratchet,
-		bool valid) {
+		bool valid) noexcept {
 	return_status status = return_status_init();
 
 	//prepare for being able to receive new messages
@@ -747,7 +747,7 @@ cleanup:
 /*
  * End the ratchet chain and free the memory.
  */
-void ratchet_destroy(RatchetState *state) {
+void ratchet_destroy(RatchetState *state) noexcept {
 	//empty message keystores
 	header_and_message_keystore_clear(&state->skipped_header_and_message_keys);
 	header_and_message_keystore_clear(&state->staged_header_and_message_keys);
@@ -757,7 +757,7 @@ void ratchet_destroy(RatchetState *state) {
 
 return_status ratchet_export(
 		RatchetState * const ratchet,
-		Conversation ** const conversation) {
+		Conversation ** const conversation) noexcept {
 	return_status status = return_status_init();
 
 	//root keys
@@ -1053,7 +1053,7 @@ cleanup:
 
 return_status ratchet_import(
 		RatchetState ** const ratchet,
-		const Conversation * const conversation) {
+		const Conversation * const conversation) noexcept {
 	return_status status = return_status_init();
 
 	//check input

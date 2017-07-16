@@ -57,17 +57,17 @@ public:
 			const Buffer * const seed, //optional
 			Buffer * const public_signing_key, //output, optional, can be nullptr
 			Buffer * const public_identity_key //output, optional, can be nullptr
-			) __attribute__((warn_unused_result));
+			) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Get the public signing key.
 	 */
-	return_status getSigningKey(Buffer& public_signing_key) __attribute__((warn_unused_result));
+	return_status getSigningKey(Buffer& public_signing_key) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Get the public identity key.
 	 */
-	return_status getIdentityKey(Buffer& public_identity_key) __attribute__((warn_unused_result));
+	return_status getIdentityKey(Buffer& public_identity_key) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Sign a piece of data. Returns the data and signature in one output buffer.
@@ -75,7 +75,7 @@ public:
 	return_status sign(
 			const Buffer& data,
 			Buffer& signed_data //output, length of data + SIGNATURE_SIZE
-			) __attribute__((warn_unused_result));
+			) noexcept __attribute__((warn_unused_result));
 
 	/*! Export a set of master keys into a user Protobuf-C struct
 	 * \param public_signing_key Public pasrt of the signing keypair.
@@ -87,7 +87,7 @@ public:
 			Key*& public_signing_key,
 			Key*& private_signing_key,
 			Key*& public_identity_key,
-			Key*& private_identity_key) __attribute__((warn_unused_result));
+			Key*& private_identity_key) noexcept __attribute__((warn_unused_result));
 
 	/*! Import a set of master keys from Protobuf-C structs
 	 * \param keys A set of master keys to import to.
@@ -101,6 +101,6 @@ public:
 		const Key * const public_signing_key,
 		const Key * const private_signing_key,
 		const Key * const public_identity_key,
-		const Key * const private_identity_key) __attribute__((warn_unused_result));
+		const Key * const private_identity_key) noexcept __attribute__((warn_unused_result));
 };
 #endif

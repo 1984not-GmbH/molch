@@ -26,7 +26,7 @@
 #include "utils.h"
 #include "../lib/common.h"
 
-void print_hex(Buffer * const data) {
+void print_hex(Buffer * const data) noexcept {
 	static const size_t WIDTH = 30;
 	//buffer for hex string
 	const size_t hex_length = data->content_length * 2 + sizeof("");
@@ -56,7 +56,7 @@ void print_hex(Buffer * const data) {
 	free(hex);
 }
 
-void print_to_file(Buffer * const data, const char * const filename) {
+void print_to_file(Buffer * const data, const char * const filename) noexcept {
 	FILE *file = fopen(filename, "w");
 	if (file == nullptr) {
 		return;
@@ -67,7 +67,7 @@ void print_to_file(Buffer * const data, const char * const filename) {
 	fclose(file);
 }
 
-void print_errors(return_status * const status) {
+void print_errors(return_status * const status) noexcept {
 	if (status == nullptr) {
 		return;
 	}
@@ -80,7 +80,7 @@ void print_errors(return_status * const status) {
 }
 
 
-return_status read_file(Buffer ** const data, const char * const filename) {
+return_status read_file(Buffer ** const data, const char * const filename) noexcept {
 	return_status status = return_status_init();
 
 	FILE *file = nullptr;

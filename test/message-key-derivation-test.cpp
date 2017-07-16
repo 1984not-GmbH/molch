@@ -26,7 +26,7 @@
 #include "../lib/key-derivation.h"
 #include "utils.h"
 
-int main(void) {
+int main(void) noexcept {
 	if (sodium_init() == -1) {
 		return -1;
 	}

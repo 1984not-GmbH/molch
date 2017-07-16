@@ -28,7 +28,7 @@
 /*
  * Create a new conversation struct and initialise the buffer pointer.
  */
-static void init_struct(conversation_t *conversation) {
+static void init_struct(conversation_t *conversation) noexcept {
 	conversation->id.init(conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 	conversation->ratchet = nullptr;
 	conversation->previous = nullptr;
@@ -48,7 +48,7 @@ return_status conversation_create(
 		Buffer * const,
 		Buffer * const,
 		Buffer * const,
-		Buffer * const) __attribute__((warn_unused_result));
+		Buffer * const) noexcept __attribute__((warn_unused_result));
 return_status conversation_create(
 		conversation_t **const conversation,
 		Buffer * const our_private_identity,
@@ -56,7 +56,7 @@ return_status conversation_create(
 		Buffer * const their_public_identity,
 		Buffer * const our_private_ephemeral,
 		Buffer * const our_public_ephemeral,
-		Buffer * const their_public_ephemeral) {
+		Buffer * const their_public_ephemeral) noexcept {
 
 	return_status status = return_status_init();
 
@@ -104,7 +104,7 @@ cleanup:
 /*
  * Destroy a conversation.
  */
-void conversation_destroy(conversation_t * const conversation) {
+void conversation_destroy(conversation_t * const conversation) noexcept {
 	if (conversation->ratchet != nullptr) {
 		ratchet_destroy(conversation->ratchet);
 	}
@@ -125,7 +125,7 @@ return_status conversation_start_send_conversation(
 		Buffer * const sender_private_identity,
 		Buffer * const receiver_public_identity,
 		Buffer * const receiver_prekey_list //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
-		) {
+		) noexcept {
 
 	return_status status = return_status_init();
 
@@ -217,7 +217,7 @@ return_status conversation_start_receive_conversation(
 		Buffer * const receiver_public_identity,
 		Buffer * const receiver_private_identity,
 		PrekeyStore * const receiver_prekeys //prekeys of the receiver
-		) {
+		) noexcept {
 	uint32_t receive_message_number = 0;
 	uint32_t previous_receive_message_number = 0;
 
@@ -322,7 +322,7 @@ return_status conversation_send(
 		Buffer * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
 		Buffer * const public_ephemeral_key, //can be nullptr, if not nullptr, this will be a prekey message
 		Buffer * const public_prekey //can be nullptr, if not nullptr, this will be a prekey message
-		) {
+		) noexcept {
 	return_status status = return_status_init();
 
 	//create buffers
@@ -423,7 +423,7 @@ static int try_skipped_header_and_message_keys(
 		Buffer * const packet,
 		Buffer ** const message,
 		uint32_t * const receive_message_number,
-		uint32_t * const previous_receive_message_number) {
+		uint32_t * const previous_receive_message_number) noexcept {
 	return_status status = return_status_init();
 
 	//create buffers
@@ -489,7 +489,7 @@ return_status conversation_receive(
 	Buffer * const packet, //received packet
 	uint32_t * const receive_message_number,
 	uint32_t * const previous_receive_message_number,
-	Buffer ** const message) { //output, free after use!
+	Buffer ** const message) noexcept { //output, free after use!
 	return_status status = return_status_init();
 
 	//create buffers
@@ -632,7 +632,7 @@ cleanup:
 
 return_status conversation_export(
 		conversation_t * const conversation,
-		Conversation ** const exported_conversation) {
+		Conversation ** const exported_conversation) noexcept {
 	return_status status = return_status_init();
 
 	unsigned char *id = nullptr;
@@ -667,7 +667,7 @@ cleanup:
 
 return_status conversation_import(
 		conversation_t ** const conversation,
-		const Conversation * const conversation_protobuf) {
+		const Conversation * const conversation_protobuf) noexcept {
 	return_status status = return_status_init();
 
 	//check input

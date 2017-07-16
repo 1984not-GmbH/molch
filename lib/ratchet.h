@@ -109,7 +109,7 @@ return_status ratchet_create(
 		Buffer * const their_public_identity,
 		Buffer * const our_private_ephemeral,
 		Buffer * const our_public_ephemeral,
-		Buffer * const their_public_ephemeral) __attribute__((warn_unused_result));
+		Buffer * const their_public_ephemeral) noexcept __attribute__((warn_unused_result));
 
 /*
  * Get keys and metadata to send the next message.
@@ -121,7 +121,7 @@ return_status ratchet_send(
 		uint32_t * const previous_send_message_number, //PNs
 		Buffer * const our_public_ephemeral, //DHRs
 		Buffer * const message_key //MESSAGE_KEY_SIZE, MK
-		) __attribute__((warn_unused_result));
+		) noexcept __attribute__((warn_unused_result));
 
 /*
  * Get a copy of the current and the next receive header key.
@@ -129,7 +129,7 @@ return_status ratchet_send(
 return_status ratchet_get_receive_header_keys(
 		Buffer * const current_receive_header_key,
 		Buffer * const next_receive_header_key,
-		RatchetState *state) __attribute__((warn_unused_result));
+		RatchetState *state) noexcept __attribute__((warn_unused_result));
 
 /*
  * Set if the header is decryptable with the current (state->receive_header_key)
@@ -137,7 +137,7 @@ return_status ratchet_get_receive_header_keys(
  */
 return_status ratchet_set_header_decryptability(
 		RatchetState *ratchet,
-		ratchet_header_decryptability header_decryptable) __attribute__((warn_unused_result));
+		ratchet_header_decryptability header_decryptable) noexcept __attribute__((warn_unused_result));
 
 /*
  * First step after receiving a message: Calculate purported keys.
@@ -154,7 +154,7 @@ return_status ratchet_receive(
 		Buffer * const message_key, //used to get the message key back
 		Buffer * const their_purported_public_ephemeral,
 		const uint32_t purported_message_number,
-		const uint32_t purported_previous_message_number) __attribute__((warn_unused_result));
+		const uint32_t purported_previous_message_number) noexcept __attribute__((warn_unused_result));
 
 /*
  * Call this function after trying to decrypt a message and pass it if
@@ -162,12 +162,12 @@ return_status ratchet_receive(
  */
 return_status ratchet_set_last_message_authenticity(
 		RatchetState * const ratchet,
-		bool valid) __attribute__((warn_unused_result));
+		bool valid) noexcept __attribute__((warn_unused_result));
 
 /*
  * End the ratchet chain and free the memory.
  */
-void ratchet_destroy(RatchetState *state);
+void ratchet_destroy(RatchetState *state) noexcept;
 
 /*! Export a ratchet state to Protobuf-C
  * NOTE: This doesn't fill the Id field of the struct.
@@ -177,7 +177,7 @@ void ratchet_destroy(RatchetState *state);
  */
 return_status ratchet_export(
 	RatchetState * const ratchet,
-	Conversation ** const conversation) __attribute__((warn_unused_result));
+	Conversation ** const conversation) noexcept __attribute__((warn_unused_result));
 
 /*! Import a ratchet from Protobuf-C
  * NOTE: The public identity key is needed separately,
@@ -189,5 +189,5 @@ return_status ratchet_export(
  */
 return_status ratchet_import(
 	RatchetState ** const ratchet,
-	const Conversation * const conversation) __attribute__((warn_unused_result));
+	const Conversation * const conversation) noexcept __attribute__((warn_unused_result));
 #endif

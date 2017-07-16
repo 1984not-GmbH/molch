@@ -29,7 +29,7 @@
 #include "utils.h"
 #include "packet-test-lib.h"
 
-int main(void) {
+int main(void) noexcept {
 
 	buffer_create_from_string(message, "Hello world!\n");
 

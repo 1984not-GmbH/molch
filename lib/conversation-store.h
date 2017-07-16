@@ -34,26 +34,26 @@ typedef struct conversation_store {
 /*
  * Init new conversation store.
  */
-void conversation_store_init(conversation_store * const store);
+void conversation_store_init(conversation_store * const store) noexcept;
 
 /*
  * add a conversation to the conversation store.
  */
 return_status conversation_store_add(
 		conversation_store * const store,
-		conversation_t * const conversation) __attribute__((warn_unused_result));
+		conversation_t * const conversation) noexcept __attribute__((warn_unused_result));
 
 /*
  * Remove a conversation from the conversation_store.
  */
-void conversation_store_remove(conversation_store * const store, conversation_t * const node);
+void conversation_store_remove(conversation_store * const store, conversation_t * const node) noexcept;
 
 /*
  * Remove a conversation from the conversation store.
  *
  * The conversation is identified by it's id.
  */
-void conversation_store_remove_by_id(conversation_store * const store, Buffer * const id);
+void conversation_store_remove_by_id(conversation_store * const store, Buffer * const id) noexcept;
 
 /*
  * Find a conversation for a given conversation ID.
@@ -63,12 +63,12 @@ void conversation_store_remove_by_id(conversation_store * const store, Buffer * 
 return_status conversation_store_find_node(
 		conversation_t ** const conversation,
 		conversation_store * const store,
-		Buffer * const id) __attribute__((warn_unused_result));
+		Buffer * const id) noexcept __attribute__((warn_unused_result));
 
 /*
  * Remove all entries from a conversation store.
  */
-void conversation_store_clear(conversation_store * const store);
+void conversation_store_clear(conversation_store * const store) noexcept;
 
 /*
  * Loop through the conversation_store. In each iteration, the variables
@@ -90,7 +90,7 @@ void conversation_store_clear(conversation_store * const store);
  *
  * Returns nullptr if empty.
  */
-return_status conversation_store_list(Buffer ** const list, conversation_store * const store) __attribute__((warn_unused_result));
+return_status conversation_store_list(Buffer ** const list, conversation_store * const store) noexcept __attribute__((warn_unused_result));
 
 /*! Export a conversation store to Protobuf-C
  * \param conversation_store The conversation store to export.
@@ -100,7 +100,7 @@ return_status conversation_store_list(Buffer ** const list, conversation_store *
 return_status conversation_store_export(
 	const conversation_store * const conversation_store,
 	Conversation *** const conversations,
-	size_t * const length) __attribute__((warn_unused_result));
+	size_t * const length) noexcept __attribute__((warn_unused_result));
 
 /*! Import a conversation store from a Protobuf-C struct.
  * \param conversation_store The conversation store to import to.
@@ -112,5 +112,5 @@ return_status conversation_store_export(
 return_status conversation_store_import(
 	conversation_store * const store,
 	Conversation ** const conversations,
-	const size_t length) __attribute__((warn_unused_result));
+	const size_t length) noexcept __attribute__((warn_unused_result));
 #endif

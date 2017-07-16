@@ -26,7 +26,7 @@
 #include "../lib/alignment.h"
 #include "utils.h"
 
-int main(void) {
+int main(void) noexcept {
 	return_status status = return_status_init();
 
 	printf("Testing next_aligned_address.\n");

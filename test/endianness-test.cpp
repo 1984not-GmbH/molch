@@ -26,7 +26,7 @@
 #include "../lib/endianness.h"
 #include "utils.h"
 
-int main(void) {
+int main(void) noexcept {
 	return_status status = return_status_init();
 
 	Buffer *buffer64 = Buffer::create(8, 8);

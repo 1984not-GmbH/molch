@@ -39,7 +39,7 @@ struct conversation_t {
 /*
  * Destroy a conversation.
  */
-void conversation_destroy(conversation_t * const conversation);
+void conversation_destroy(conversation_t * const conversation) noexcept;
 
 /*
  * Start a new conversation where we are the sender.
@@ -55,7 +55,7 @@ return_status conversation_start_send_conversation(
 		Buffer * const sender_private_identity,
 		Buffer * const receiver_public_identity,
 		Buffer * const receiver_prekey_list //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
-		) __attribute__((warn_unused_result));
+		) noexcept __attribute__((warn_unused_result));
 
 /*
  * Start a new conversation where we are the receiver.
@@ -70,7 +70,7 @@ return_status conversation_start_receive_conversation(
 		Buffer * const receiver_public_identity,
 		Buffer * const receiver_private_identity,
 		PrekeyStore * const receiver_prekeys //prekeys of the receiver
-		) __attribute__((warn_unused_result));
+		) noexcept __attribute__((warn_unused_result));
 
 /*
  * Send a message using an existing conversation.
@@ -85,7 +85,7 @@ return_status conversation_send(
 		Buffer * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
 		Buffer * const public_ephemeral_key, //cann be nullptr, if not nullptr, this will be a prekey message
 		Buffer * const public_prekey //can be nullptr, if not nullptr, this will be a prekey message
-		) __attribute__((warn_unused_result));
+		) noexcept __attribute__((warn_unused_result));
 
 /*
  * Receive and decrypt a message using an existing conversation.
@@ -99,7 +99,7 @@ return_status conversation_receive(
 	uint32_t * const receive_message_number,
 	uint32_t * const previous_receive_message_number,
 	Buffer ** const message //output, free after use!
-		) __attribute__((warn_unused_result));
+		) noexcept __attribute__((warn_unused_result));
 
 /*! Export a conversation to a Protobuf-C struct.
  * \param conversation The conversation to export
@@ -107,7 +107,7 @@ return_status conversation_receive(
  */
 return_status conversation_export(
 	conversation_t * const conversation,
-	Conversation ** const exported_conversation) __attribute__((warn_unused_result));
+	Conversation ** const exported_conversation) noexcept __attribute__((warn_unused_result));
 
 /*! Import a conversatoin from a Protobuf-C struct
  * \param conversation The conversation to import to.
@@ -117,6 +117,6 @@ return_status conversation_export(
  */
 return_status conversation_import(
 	conversation_t ** const conversation,
-	const Conversation * const conversation_protobuf) __attribute__((warn_unused_result));
+	const Conversation * const conversation_protobuf) noexcept __attribute__((warn_unused_result));
 #endif
 

@@ -26,7 +26,7 @@
 #include "user-store.h"
 
 //create a new user_store
-return_status user_store_create(user_store ** const store) {
+return_status user_store_create(user_store ** const store) noexcept {
 	return_status status = return_status_init();
 
 	//check input
@@ -53,7 +53,7 @@ cleanup:
 }
 
 //destroy a user store
-void user_store_destroy(user_store* store) {
+void user_store_destroy(user_store* store) noexcept {
 	if (store != nullptr) {
 		user_store_clear(store);
 		sodium_free_and_null_if_valid(store);
@@ -63,7 +63,7 @@ void user_store_destroy(user_store* store) {
 /*
  * add a new user node to a user store.
  */
-static void add_user_store_node(user_store * const store, user_store_node * const node) {
+static void add_user_store_node(user_store * const store, user_store_node * const node) noexcept {
 	if ((store == nullptr) || (node == nullptr)) {
 		return;
 	}
@@ -93,7 +93,7 @@ static void add_user_store_node(user_store * const store, user_store_node * cons
 /*
  * create an empty user_store_node and set up all the pointers.
  */
-static return_status create_user_store_node(user_store_node ** const node) {
+static return_status create_user_store_node(user_store_node ** const node) noexcept {
 	return_status status = return_status_init();
 
 	if (node == nullptr) {
@@ -135,7 +135,7 @@ return_status user_store_create_user(
 		user_store *store,
 		Buffer * const seed, //optional, can be nullptr
 		Buffer * const public_signing_key, //output, optional, can be nullptr
-		Buffer * const public_identity_key) { //output, optional, can be nullptr
+		Buffer * const public_identity_key) noexcept { //output, optional, can be nullptr
 
 	return_status status = return_status_init();
 
@@ -190,7 +190,7 @@ cleanup:
  *
  * Returns nullptr if no user was found.
  */
-return_status user_store_find_node(user_store_node ** const node, user_store * const store, Buffer * const public_signing_key) {
+return_status user_store_find_node(user_store_node ** const node, user_store * const store, Buffer * const public_signing_key) noexcept {
 	return_status status = return_status_init();
 
 	if ((node == nullptr) || (public_signing_key == nullptr) || (public_signing_key->content_length != PUBLIC_MASTER_KEY_SIZE)) {
@@ -229,7 +229,7 @@ cleanup:
  *
  * The buffer is heap allocated, so don't forget to free it!
  */
-return_status user_store_list(Buffer ** const list, user_store * const store) {
+return_status user_store_list(Buffer ** const list, user_store * const store) noexcept {
 	return_status status = return_status_init();
 
 	if ((list == nullptr) || (store == nullptr)) {
@@ -271,7 +271,7 @@ cleanup:
  *
  * The user is identified by it's public signing key.
  */
-return_status user_store_remove_by_key(user_store * const store, Buffer * const public_signing_key) {
+return_status user_store_remove_by_key(user_store * const store, Buffer * const public_signing_key) noexcept {
 	return_status status = return_status_init();
 
 	user_store_node *node = nullptr;
@@ -285,7 +285,7 @@ cleanup:
 }
 
 //remove a user form the user store
-void user_store_remove(user_store *store, user_store_node *node) {
+void user_store_remove(user_store *store, user_store_node *node) noexcept {
 	if (node == nullptr) {
 		return;
 	}
@@ -311,7 +311,7 @@ void user_store_remove(user_store *store, user_store_node *node) {
 }
 
 //clear the entire user store
-void user_store_clear(user_store *store){
+void user_store_clear(user_store *store) noexcept {
 	if (store == nullptr) {
 		return;
 	}
@@ -322,8 +322,8 @@ void user_store_clear(user_store *store){
 
 }
 
-return_status user_store_node_export(user_store_node * const node, User ** const user) __attribute__((warn_unused_result));
-return_status user_store_node_export(user_store_node * const node, User ** const user) {
+return_status user_store_node_export(user_store_node * const node, User ** const user) noexcept __attribute__((warn_unused_result));
+return_status user_store_node_export(user_store_node * const node, User ** const user) noexcept {
 	return_status status = return_status_init();
 
 	//master keys
@@ -406,7 +406,7 @@ cleanup:
 return_status user_store_export(
 		const user_store * const store,
 		User *** const users,
-		size_t * const users_length) {
+		size_t * const users_length) noexcept {
 	return_status status = return_status_init();
 
 	//check input
@@ -444,7 +444,7 @@ cleanup:
 	return status;
 }
 
-static return_status user_store_node_import(user_store_node ** const node, const User * const user) {
+static return_status user_store_node_import(user_store_node ** const node, const User * const user) noexcept {
 	return_status status = return_status_init();
 
 	//check input
@@ -493,7 +493,7 @@ cleanup:
 return_status user_store_import(
 		user_store ** const store,
 		User ** users,
-		const size_t users_length) {
+		const size_t users_length) noexcept {
 	return_status status = return_status_init();
 
 	//check input

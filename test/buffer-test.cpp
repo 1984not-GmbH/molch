@@ -28,7 +28,7 @@
 #include "../lib/common.h"
 #include "utils.h"
 
-int main(void) {
+int main(void) noexcept {
 	int status = EXIT_SUCCESS;
 
 	//test comparison function

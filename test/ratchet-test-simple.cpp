@@ -26,11 +26,11 @@
 #include "../lib/ratchet.h"
 #include "utils.h"
 
-static int keypair(Buffer *private_key, Buffer *public_key) {
+static int keypair(Buffer *private_key, Buffer *public_key) noexcept {
 	return crypto_box_keypair(public_key->content, private_key->content);
 }
 
-int main(void) {
+int main(void) noexcept {
 	int status_int = sodium_init();
 	if (status_int != 0) {
 		return status_int;

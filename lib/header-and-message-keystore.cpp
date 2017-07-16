@@ -34,7 +34,7 @@ extern "C" {
 static const int64_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
 
 //create new keystore
-void header_and_message_keystore_init(header_and_message_keystore * const keystore) {
+void header_and_message_keystore_init(header_and_message_keystore * const keystore) noexcept {
 	keystore->length = 0;
 	keystore->head = nullptr;
 	keystore->tail = nullptr;
@@ -43,7 +43,7 @@ void header_and_message_keystore_init(header_and_message_keystore * const keysto
 /*
  * create an empty header_and_message_keystore_node and set up all the pointers.
  */
-static header_and_message_keystore_node *create_node(void) {
+static header_and_message_keystore_node *create_node(void) noexcept {
 	header_and_message_keystore_node *node = (header_and_message_keystore_node*)sodium_malloc(sizeof(header_and_message_keystore_node));
 	if (node == nullptr) {
 		return nullptr;
@@ -59,7 +59,7 @@ static header_and_message_keystore_node *create_node(void) {
 /*
  * add a new header_and_message_key_node to a keystore
  */
-static void add_node(header_and_message_keystore * const keystore, header_and_message_keystore_node * const node) {
+static void add_node(header_and_message_keystore * const keystore, header_and_message_keystore_node * const node) noexcept {
 	if (node == nullptr) {
 		return;
 	}
@@ -89,12 +89,12 @@ return_status create_and_populate_node(
 		header_and_message_keystore_node ** const new_node,
 		const int64_t expiration_date,
 		Buffer * const header_key,
-		Buffer * const message_key) __attribute__((warn_unused_result));
+		Buffer * const message_key) noexcept __attribute__((warn_unused_result));
 return_status create_and_populate_node(
 		header_and_message_keystore_node ** const new_node,
 		const int64_t expiration_date,
 		Buffer * const header_key,
-		Buffer * const message_key) {
+		Buffer * const message_key) noexcept {
 	return_status status = return_status_init();
 
 	//check buffer sizes
@@ -136,7 +136,7 @@ cleanup:
 return_status header_and_message_keystore_add(
 		header_and_message_keystore *keystore,
 		Buffer * const message_key,
-		Buffer * const header_key) {
+		Buffer * const header_key) noexcept {
 	return_status status = return_status_init();
 
 	header_and_message_keystore_node *new_node = nullptr;
@@ -156,7 +156,7 @@ cleanup:
 }
 
 //remove a set of header and message keys from the keystore
-void header_and_message_keystore_remove(header_and_message_keystore *keystore, header_and_message_keystore_node *node) {
+void header_and_message_keystore_remove(header_and_message_keystore *keystore, header_and_message_keystore_node *node) noexcept {
 	if (node == nullptr) {
 		return;
 	}
@@ -180,13 +180,13 @@ void header_and_message_keystore_remove(header_and_message_keystore *keystore, h
 }
 
 //clear the entire keystore
-void header_and_message_keystore_clear(header_and_message_keystore *keystore){
+void header_and_message_keystore_clear(header_and_message_keystore *keystore) noexcept {
 	while (keystore->length > 0) {
 		header_and_message_keystore_remove(keystore, keystore->head);
 	}
 }
 
-static return_status header_and_message_keystore_node_export(header_and_message_keystore_node * const node, KeyBundle ** const bundle) {
+static return_status header_and_message_keystore_node_export(header_and_message_keystore_node * const node, KeyBundle ** const bundle) noexcept {
 	return_status status = return_status_init();
 
 	Key *header_key = nullptr;
@@ -264,7 +264,7 @@ cleanup:
 return_status header_and_message_keystore_export(
 		const header_and_message_keystore * const store,
 		KeyBundle *** const key_bundles,
-		size_t * const bundle_size) {
+		size_t * const bundle_size) noexcept {
 	return_status status = return_status_init();
 
 	//check input
@@ -318,7 +318,7 @@ cleanup:
 return_status header_and_message_keystore_import(
 		header_and_message_keystore * const store,
 		KeyBundle ** const key_bundles,
-		const size_t bundles_size) {
+		const size_t bundles_size) noexcept {
 	return_status status =  return_status_init();
 
 	header_and_message_keystore_node *current_node = nullptr;

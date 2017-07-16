@@ -40,7 +40,7 @@ return_status create_and_print_message(
 		//optional inputs (prekey messages only)
 		Buffer * const public_identity_key,
 		Buffer * const public_ephemeral_key,
-		Buffer * const public_prekey) {
+		Buffer * const public_prekey) noexcept {
 	return_status status = return_status_init();
 
 	//check input

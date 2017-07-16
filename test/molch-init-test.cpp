@@ -28,7 +28,7 @@
 #include "../lib/molch.h"
 #include "../lib/constants.h"
 
-int main(int argc, char *args[]) {
+int main(int argc, char *args[]) noexcept {
 	bool recreate = false;
 	if (argc == 2) {
 		if (strcmp(args[1], "--recreate") == 0) {

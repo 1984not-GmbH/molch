@@ -26,7 +26,7 @@
 #include "../lib/return-status.h"
 #include "utils.h"
 
-static return_status second_level(void) {
+static return_status second_level(void) noexcept {
 	return_status status = return_status_init();
 
 	THROW(GENERIC_ERROR, "Error on the second level!");
@@ -35,7 +35,7 @@ cleanup:
 	return status;
 }
 
-static return_status first_level(void) {
+static return_status first_level(void) noexcept {
 	return_status status = return_status_init();
 
 	status = second_level();
@@ -45,7 +45,7 @@ cleanup:
 	return status;
 }
 
-int main(void) {
+int main(void) noexcept {
 	return_status status = return_status_init();
 
 	char *error_stack = nullptr;

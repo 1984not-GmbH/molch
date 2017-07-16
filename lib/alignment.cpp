@@ -23,7 +23,7 @@
 
 #include "alignment.h"
 
-void *next_aligned_address(void *pointer, size_t alignment){
+void *next_aligned_address(void *pointer, size_t alignment) noexcept {
 	//determine the amount of padding for proper alignment
 	size_t padding = 0; //padding needed to fit alignment
 	if (alignment != 0) {

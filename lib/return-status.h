@@ -26,6 +26,8 @@
 
 #ifdef __cplusplus
 extern "C" {
+#else
+	#define noexcept
 #endif
 
 // possible status types, either SUCCESS or a variety of error types.
@@ -78,26 +80,26 @@ typedef struct return_status {
 	error_message *error;
 } return_status;
 
-return_status return_status_init(void);
+return_status return_status_init(void) noexcept;
 
 status_type return_status_add_error_message(
 		return_status *const status_object,
 		const char *const message,
-		const status_type status) __attribute__((warn_unused_result));
+		const status_type status) noexcept __attribute__((warn_unused_result));
 
-void return_status_destroy_errors(return_status * const status);
+void return_status_destroy_errors(return_status * const status) noexcept;
 
 /*
  * Get the name of a status type as a string.
  */
-const char *return_status_get_name(status_type status);
+const char *return_status_get_name(status_type status) noexcept;
 
 /*
  * Pretty print the error stack into a buffer.
  *
  * Don't forget to free with "free" after usage.
  */
-char *return_status_print(const return_status * const status, size_t *length) __attribute__((warn_unused_result));
+char *return_status_print(const return_status * const status, size_t *length) noexcept __attribute__((warn_unused_result));
 
 
 //This assumes that there is a return_status struct and there is a "cleanup" label to jump to.

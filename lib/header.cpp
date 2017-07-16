@@ -32,7 +32,7 @@ return_status header_construct(
 		//inputs
 		Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE
 		const uint32_t message_number,
-		const uint32_t previous_message_number) {
+		const uint32_t previous_message_number) noexcept {
 	return_status status = return_status_init();
 
 	Header header_struct = HEADER__INIT;
@@ -85,7 +85,7 @@ return_status header_extract(
 		uint32_t& message_number,
 		uint32_t& previous_message_number,
 		//intput
-		const Buffer& header) {
+		const Buffer& header) noexcept {
 	return_status status = return_status_init();
 
 	Header *header_struct = nullptr;

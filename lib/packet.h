@@ -68,7 +68,7 @@ return_status packet_encrypt(
 		//optional inputs (prekey messages only)
 		Buffer * const public_identity_key,
 		Buffer * const public_ephemeral_key,
-		Buffer * const public_prekey) __attribute__((warn_unused_result));
+		Buffer * const public_prekey) noexcept __attribute__((warn_unused_result));
 
 /*!
  * Extract and decrypt a packet and the metadata inside of it.
@@ -113,7 +113,7 @@ return_status packet_decrypt(
 		//optional outputs (prekey messages only)
 		Buffer * const public_identity_key,
 		Buffer * const public_ephemeral_key,
-		Buffer * const public_prekey) __attribute__((warn_unused_result));
+		Buffer * const public_prekey) noexcept __attribute__((warn_unused_result));
 
 /*!
  * Extracts the metadata from a packet without actually decrypting or verifying anything.
@@ -147,7 +147,7 @@ return_status packet_get_metadata_without_verification(
 		Buffer * const public_identity_key, //PUBLIC_KEY_SIZE
 		Buffer * const public_ephemeral_key, //PUBLIC_KEY_SIZE
 		Buffer * const public_prekey //PUBLIC_KEY_SIZE
-		) __attribute__((warn_unused_result));
+		) noexcept __attribute__((warn_unused_result));
 
 /*!
  * Decrypt the axolotl header part of a packet and thereby authenticate other metadata.
@@ -168,7 +168,7 @@ return_status packet_decrypt_header(
 		//inputs
 		Buffer * const packet,
 		Buffer * const axolotl_header_key //HEADER_KEY_SIZE
-		) __attribute__((warn_unused_result));
+		) noexcept __attribute__((warn_unused_result));
 
 /*!
  * Decrypt the message part of a packet.
@@ -189,6 +189,5 @@ return_status packet_decrypt_message(
 		//inputs
 		Buffer * const packet,
 		Buffer * const message_key
-		) __attribute__((warn_unused_result));
-
+		) noexcept __attribute__((warn_unused_result));
 #endif

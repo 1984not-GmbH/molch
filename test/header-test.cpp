@@ -26,7 +26,7 @@
 #include "../lib/header.h"
 #include "utils.h"
 
-int main(void) {
+int main(void) noexcept {
 	//create buffers
 	Buffer *our_public_ephemeral_key = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 	Buffer *header = nullptr;

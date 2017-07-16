@@ -23,15 +23,15 @@
 
 #include "buffer.h"
 
-size_t Buffer::getBufferLength() const {
+size_t Buffer::getBufferLength() const noexcept {
 	return this->buffer_length;
 }
 
-bool Buffer::isReadOnly() const {
+bool Buffer::isReadOnly() const noexcept {
 	return this->readonly;
 }
 
-void Buffer::setReadOnly(bool readonly_) {
+void Buffer::setReadOnly(bool readonly_) noexcept {
 	this->readonly = readonly_;
 }
 
@@ -41,7 +41,7 @@ void Buffer::setReadOnly(bool readonly_) {
 Buffer* Buffer::init(
 		unsigned char * const content_,
 		const size_t buffer_length_,
-		const size_t content_length_) {
+		const size_t content_length_) noexcept {
 	this->buffer_length = buffer_length_;
 
 	this->content_length = (content_length_ > buffer_length_)
@@ -61,7 +61,7 @@ Buffer* Buffer::init(
 Buffer* Buffer::initWithConst(
 		const unsigned char * const content_,
 		const size_t buffer_length_,
-		const size_t content_length_) {
+		const size_t content_length_) noexcept {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
 	Buffer *result = this->init((unsigned char*)content_, buffer_length_, content_length_);
@@ -79,7 +79,7 @@ Buffer* Buffer::initWithConst(
  */
 Buffer* Buffer::create(
 		const size_t buffer_length_,
-		const size_t content_length_) {
+		const size_t content_length_) noexcept {
 	Buffer *buffer = (Buffer*)malloc(sizeof(Buffer));
 	if (buffer == nullptr) {
 		return nullptr;
@@ -105,7 +105,7 @@ Buffer* Buffer::createWithCustomAllocator(
 		const size_t content_length_,
 		void *(*allocator)(size_t size),
 		void (*deallocator)(void *pointer)
-		) {
+		) noexcept {
 	unsigned char *content = nullptr;
 	if (buffer_length_ != 0) {
 		content = (unsigned char*)allocator(buffer_length_);
@@ -126,7 +126,7 @@ Buffer* Buffer::createWithCustomAllocator(
 /*
  * Free and clear a heap allocated buffer.
  */
-void Buffer::destroy_from_heap() {
+void Buffer::destroy_from_heap() noexcept {
 	this->clear();
 	free(this->content);
 	free(this);
@@ -135,7 +135,7 @@ void Buffer::destroy_from_heap() {
 /*
  * Destroy a buffer that was created using a custom allocator.
  */
-void Buffer::destroy_with_custom_deallocator(void (*deallocator)(void *pointer)) {
+void Buffer::destroy_with_custom_deallocator(void (*deallocator)(void *pointer)) noexcept {
 	if (this->content != nullptr) {
 		sodium_memzero(this->content, this->content_length);
 		deallocator(this->content);
@@ -145,7 +145,7 @@ void Buffer::destroy_with_custom_deallocator(void (*deallocator)(void *pointer))
 
 Buffer* Buffer::create_from_string_on_heap_helper(
 		const unsigned char * const content_,
-		const size_t content_length_) {
+		const size_t content_length_) noexcept {
 	if (this->buffer_length < content_length_) {
 		return nullptr;
 	}
@@ -163,7 +163,7 @@ Buffer* Buffer::create_from_string_on_heap_helper(
  * Overwrites the buffer with zeroes and
  * resets the content size.
  */
-void Buffer::clear() {
+void Buffer::clear() noexcept {
 	if (this->buffer_length == 0) {
 		return;
 	}
@@ -180,7 +180,7 @@ int Buffer::copyFrom(
 		const size_t destination_offset,
 		const Buffer * const source,
 		const size_t source_offset,
-		const size_t copy_length) {
+		const size_t copy_length) noexcept {
 	if (this->readonly) {
 		return -5;
 	}
@@ -223,7 +223,7 @@ int Buffer::copyFrom(
  *
  * Returns 0 on success.
  */
-int Buffer::cloneFrom(const Buffer * const source) {
+int Buffer::cloneFrom(const Buffer * const source) noexcept {
 	if (source == nullptr) {
 		return -1;
 	}
@@ -256,7 +256,7 @@ int Buffer::copyFromRaw(
 		const size_t destination_offset,
 		const unsigned char * const source,
 		const size_t source_offset,
-		const size_t copy_length) {
+		const size_t copy_length) noexcept {
 	if (this->readonly) {
 		return -5;
 	}
@@ -290,7 +290,7 @@ int Buffer::copyFromRaw(
  *
  * Returns 0 on success.
  */
-int Buffer::cloneFromRaw(const unsigned char * const source, const size_t length) {
+int Buffer::cloneFromRaw(const unsigned char * const source, const size_t length) noexcept {
 	if (this->readonly) {
 		return -5;
 	}
@@ -313,7 +313,7 @@ int Buffer::copyToRaw(
 		unsigned char * const destination,
 		const size_t destination_offset,
 		const size_t source_offset,
-		const size_t copy_length) {
+		const size_t copy_length) noexcept {
 	if ((source_offset > this->content_length) || (copy_length > (this->content_length - source_offset))) {
 		//source buffer isn't long enough
 		return -6;
@@ -339,7 +339,7 @@ int Buffer::copyToRaw(
  *
  * Returns 0 on success.
  */
-int Buffer::cloneToRaw(unsigned char * const destination, const size_t destination_length) {
+int Buffer::cloneToRaw(unsigned char * const destination, const size_t destination_length) noexcept {
 	if (destination_length < this->content_length) {
 		return -6;
 	}
@@ -352,7 +352,7 @@ int Buffer::cloneToRaw(unsigned char * const destination, const size_t destinati
  *
  * Returns 0 if both buffers match.
  */
-int Buffer::compare(Buffer * const buffer) {
+int Buffer::compare(Buffer * const buffer) noexcept {
 	return this->compareToRaw(buffer->content, buffer->content_length);
 }
 
@@ -361,7 +361,7 @@ int Buffer::compare(Buffer * const buffer) {
  *
  * Returns 0 if both buffers match.
  */
-int Buffer::compareToRaw(const unsigned char * const array, const size_t array_length) {
+int Buffer::compareToRaw(const unsigned char * const array, const size_t array_length) noexcept {
 	return this->compareToRawPartial(0, array, array_length, 0, this->content_length);
 }
 
@@ -374,7 +374,7 @@ int Buffer::comparePartial(
 		const size_t position1,
 		Buffer * const buffer2,
 		const size_t position2,
-		const size_t length) {
+		const size_t length) noexcept {
 	return this->compareToRawPartial(position1, buffer2->content, buffer2->content_length, position2, length);
 }
 
@@ -388,7 +388,7 @@ int Buffer::compareToRawPartial(
 		const unsigned char * const array,
 		const size_t array_length,
 		const size_t position2,
-		const size_t comparison_length) {
+		const size_t comparison_length) noexcept {
 	if (((this->content_length - position1) < comparison_length) || ((array_length - position2) < comparison_length)) {
 		//FIXME: Does this introduce a timing sidechannel? This leaks the information that two buffers don't have the same length
 		//buffers are too short
@@ -409,7 +409,7 @@ int Buffer::compareToRawPartial(
 /*
  * Fill a buffer with random numbers.
  */
-int Buffer::fillRandom(const size_t length) {
+int Buffer::fillRandom(const size_t length) noexcept {
 	if (length > this->buffer_length) {
 		return -6;
 	}
@@ -429,7 +429,7 @@ int Buffer::fillRandom(const size_t length) {
 }
 
 //FIXME: Make sure this doesn't introduce any sidechannels
-int Buffer::xorWith(Buffer * const source) {
+int Buffer::xorWith(Buffer * const source) noexcept {
 	if (this->readonly) {
 		return -5;
 	}

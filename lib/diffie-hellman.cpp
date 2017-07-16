@@ -42,7 +42,7 @@ return_status diffie_hellman(
 		Buffer& our_private_key, //needs to be PRIVATE_KEY_SIZE long
 		Buffer& our_public_key, //needs to be PUBLIC_KEY_SIZE long
 		Buffer& their_public_key, //needs to be PUBLIC_KEY_SIZE long
-		const bool am_i_alice) {
+		const bool am_i_alice) noexcept {
 
 	return_status status = return_status_init();
 
@@ -154,7 +154,7 @@ return_status triple_diffie_hellman(
 		Buffer& our_public_ephemeral,
 		Buffer& their_public_identity,
 		Buffer& their_public_ephemeral,
-		const bool am_i_alice) {
+		const bool am_i_alice) noexcept {
 	return_status status = return_status_init();
 
 	//set content length of output to 0 (can prevent use on failure)

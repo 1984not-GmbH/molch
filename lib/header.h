@@ -54,7 +54,7 @@ return_status header_construct(
 		//inputs
 		Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE
 		const uint32_t message_number,
-		const uint32_t previous_message_number) __attribute__((warn_unused_result));
+		const uint32_t previous_message_number) noexcept __attribute__((warn_unused_result));
 
 /*!
  * Extracts the data from an Axolotl-Header.
@@ -77,6 +77,6 @@ return_status header_extract(
 		uint32_t& message_number,
 		uint32_t& previous_message_number,
 		//intput
-		const Buffer& header) __attribute__((warn_unused_result));
+		const Buffer& header) noexcept __attribute__((warn_unused_result));
 
 #endif

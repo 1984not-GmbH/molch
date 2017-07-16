@@ -24,11 +24,11 @@
 
 #ifndef TEST_UTILS_H
 #define TEST_UTILS_H
-void print_hex(Buffer * const data);
+void print_hex(Buffer * const data) noexcept;
 
-void print_to_file(Buffer * const data, const char * const filename);
+void print_to_file(Buffer * const data, const char * const filename) noexcept;
 
-void print_errors(return_status * const status);
+void print_errors(return_status * const status) noexcept;
 
-return_status read_file(Buffer ** const data, const char * const filename) __attribute__((warn_unused_result));
+return_status read_file(Buffer ** const data, const char * const filename) noexcept __attribute__((warn_unused_result));
 #endif

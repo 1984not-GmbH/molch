@@ -55,10 +55,10 @@ typedef struct user_store {
 } user_store;
 
 //create a new user store
-return_status user_store_create(user_store ** const store) __attribute__((warn_unused_result));
+return_status user_store_create(user_store ** const store) noexcept __attribute__((warn_unused_result));
 
 //destroy a user store
-void user_store_destroy(user_store * const store);
+void user_store_destroy(user_store * const store) noexcept;
 
 /*
  * Create a new user and add it to the user store.
@@ -72,14 +72,14 @@ return_status user_store_create_user(
 		Buffer * const seed, //optional, can be nullptr
 		Buffer * const public_signing_key, //output, optional, can be nullptr
 		Buffer * const public_identity_key //output, optional, can be nullptr
-		) __attribute__((warn_unused_result));
+		) noexcept __attribute__((warn_unused_result));
 
 /*
  * Find a user for a given public signing key.
  *
  * Returns nullptr if no user was found.
  */
-return_status user_store_find_node(user_store_node ** const node, user_store * const store, Buffer * const public_signing_key) __attribute__((warn_unused_result));
+return_status user_store_find_node(user_store_node ** const node, user_store * const store, Buffer * const public_signing_key) noexcept __attribute__((warn_unused_result));
 
 /*
  * List all of the users.
@@ -89,20 +89,20 @@ return_status user_store_find_node(user_store_node ** const node, user_store * c
  *
  * The buffer is heap allocated, so don't forget to free it!
  */
-return_status user_store_list(Buffer ** const list, user_store * const store) __attribute__((warn_unused_result));
+return_status user_store_list(Buffer ** const list, user_store * const store) noexcept __attribute__((warn_unused_result));
 
 /*
  * Remove a user from the user store.
  *
  * The user is identified by it's public signing key.
  */
-return_status user_store_remove_by_key(user_store * const store, Buffer * const public_signing_key);
+return_status user_store_remove_by_key(user_store * const store, Buffer * const public_signing_key) noexcept;
 
 //remove a user from the user store
-void user_store_remove(user_store * const store, user_store_node *node);
+void user_store_remove(user_store * const store, user_store_node *node) noexcept;
 
 //clear the entire user store
-void user_store_clear(user_store *keystore);
+void user_store_clear(user_store *keystore) noexcept;
 
 /*! Export a user store to an array of Protobuf-C structs
  * \param store The user store to export
@@ -113,7 +113,7 @@ void user_store_clear(user_store *keystore);
 return_status user_store_export(
 	const user_store * const store,
 	User *** const users,
-	size_t * const users_length) __attribute__((warn_unused_result));
+	size_t * const users_length) noexcept __attribute__((warn_unused_result));
 
 /*! Import a user store from an array of Protobuf-C structs
  * \param store The user store to import.
@@ -124,6 +124,6 @@ return_status user_store_export(
 return_status user_store_import(
 	user_store ** const store,
 	User ** users,
-	const size_t users_length) __attribute__((warn_unused_result));
+	const size_t users_length) noexcept __attribute__((warn_unused_result));
 
 #endif

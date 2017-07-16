@@ -31,11 +31,11 @@
 static return_status protobuf_export(
 		const conversation_store * const store,
 		Buffer *** const export_buffers,
-		size_t * const buffer_count) __attribute__((warn_unused_result));
+		size_t * const buffer_count) noexcept __attribute__((warn_unused_result));
 static return_status protobuf_export(
 		const conversation_store * const store,
 		Buffer *** const export_buffers,
-		size_t * const buffer_count) {
+		size_t * const buffer_count) noexcept {
 	return_status status = return_status_init();
 
 	Conversation ** conversations = nullptr;
@@ -86,11 +86,11 @@ cleanup:
 return_status protobuf_import(
 		conversation_store * const store,
 		Buffer ** const buffers,
-		const size_t length) __attribute__((warn_unused_result));
+		const size_t length) noexcept __attribute__((warn_unused_result));
 return_status protobuf_import(
 		conversation_store * const store,
 		Buffer ** const buffers,
-		const size_t length) {
+		const size_t length) noexcept {
 	return_status status = return_status_init();
 
 	Conversation **conversations = nullptr;
@@ -137,7 +137,7 @@ cleanup:
 	return status;
 }
 
-static return_status test_add_conversation(conversation_store * const store) {
+static return_status test_add_conversation(conversation_store * const store) noexcept {
 	//define key buffers
 	//identity keys
 	Buffer *our_private_identity = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
@@ -223,8 +223,8 @@ cleanup:
 	return status;
 }
 
-return_status protobuf_empty_store(void) __attribute__((warn_unused_result));
-return_status protobuf_empty_store(void) {
+return_status protobuf_empty_store(void) noexcept __attribute__((warn_unused_result));
+return_status protobuf_empty_store(void) noexcept {
 	return_status status = return_status_init();
 
 	printf("Testing im-/export of empty conversation store.\n");
@@ -253,7 +253,7 @@ cleanup:
 	return status;
 }
 
-int main(void) {
+int main(void) noexcept {
 	if (sodium_init() == -1) {
 		return -1;
 	}

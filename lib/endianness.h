@@ -36,13 +36,13 @@
 /*
  * Determine the current endianness at runtime.
  */
-bool endianness_is_little_endian(void);
+bool endianness_is_little_endian(void) noexcept;
 
 /*
  * Convert any integer type to a buffer in big endian format.
  */
 template <typename IntegerType>
-return_status to_big_endian(IntegerType integer, Buffer& output) {
+return_status to_big_endian(IntegerType integer, Buffer& output) noexcept {
 	return_status status = return_status_init();
 	unsigned char& reference = reinterpret_cast<unsigned char&>(integer);
 
@@ -66,7 +66,7 @@ cleanup:
  * Get an integer from a buffer in big endian format.
  */
 template <typename IntegerType>
-return_status from_big_endian(IntegerType& integer, Buffer& buffer) {
+return_status from_big_endian(IntegerType& integer, Buffer& buffer) noexcept {
 	return_status status = return_status_init();
 
 	if ((buffer.content_length != sizeof(IntegerType))) {

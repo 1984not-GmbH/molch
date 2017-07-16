@@ -26,7 +26,7 @@
 /*
  * Init new conversation store.
  */
-void conversation_store_init(conversation_store * const store) {
+void conversation_store_init(conversation_store * const store) noexcept {
 	store->length = 0;
 	store->head = nullptr;
 	store->tail = nullptr;
@@ -37,7 +37,7 @@ void conversation_store_init(conversation_store * const store) {
  */
 return_status conversation_store_add(
 		conversation_store * const store,
-		conversation_t * const conversation) {
+		conversation_t * const conversation) noexcept {
 
 	return_status status = return_status_init();
 
@@ -74,7 +74,7 @@ cleanup:
 /*
  * Remove a conversation from the conversation_store.
  */
-void conversation_store_remove(conversation_store * const store, conversation_t * const node) {
+void conversation_store_remove(conversation_store * const store, conversation_t * const node) noexcept {
 	if ((store == nullptr) || (node == nullptr)) {
 		return;
 	}
@@ -102,7 +102,7 @@ void conversation_store_remove(conversation_store * const store, conversation_t 
  *
  * The conversation is identified by it's id.
  */
-void conversation_store_remove_by_id(conversation_store * const store, Buffer * const id) {
+void conversation_store_remove_by_id(conversation_store * const store, Buffer * const id) noexcept {
 	return_status status = return_status_init();
 
 	conversation_t *node = nullptr;
@@ -126,7 +126,7 @@ void conversation_store_remove_by_id(conversation_store * const store, Buffer * 
 return_status conversation_store_find_node(
 		conversation_t ** const conversation,
 		conversation_store * const store,
-		Buffer * const id) {
+		Buffer * const id) noexcept {
 	return_status status = return_status_init();
 
 	if ((conversation == nullptr) || (store == nullptr) || (id == nullptr)) {
@@ -150,7 +150,7 @@ cleanup:
 /*
  * Remove all entries from a conversation store.
  */
-void conversation_store_clear(conversation_store * const store) {
+void conversation_store_clear(conversation_store * const store) noexcept {
 	if (store == nullptr) {
 		return;
 	}
@@ -165,7 +165,7 @@ void conversation_store_clear(conversation_store * const store) {
  *
  * Returns nullptr if empty.
  */
-return_status conversation_store_list(Buffer ** const list, conversation_store * const store) {
+return_status conversation_store_list(Buffer ** const list, conversation_store * const store) noexcept {
 	return_status status = return_status_init();
 
 	if ((list == nullptr) || (store == nullptr)) {
@@ -205,7 +205,7 @@ cleanup:
 return_status conversation_store_export(
 		const conversation_store * const store,
 		Conversation *** const conversations,
-		size_t * const length) {
+		size_t * const length) noexcept {
 	return_status status = return_status_init();
 
 	//check input
@@ -251,7 +251,7 @@ cleanup:
 return_status conversation_store_import(
 		conversation_store * const store,
 		Conversation ** const conversations,
-		const size_t length) {
+		const size_t length) noexcept {
 	return_status status = return_status_init();
 
 	conversation_t *conversation = nullptr;

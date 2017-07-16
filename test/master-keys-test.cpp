@@ -32,13 +32,13 @@ return_status protobuf_export(
 		Buffer*& public_signing_key_buffer,
 		Buffer*& private_signing_key_buffer,
 		Buffer*& public_identity_key_buffer,
-		Buffer*& private_identity_key_buffer) __attribute__((warn_unused_result));
+		Buffer*& private_identity_key_buffer) noexcept __attribute__((warn_unused_result));
 return_status protobuf_export(
 		MasterKeys& keys,
 		Buffer*& public_signing_key_buffer,
 		Buffer*& private_signing_key_buffer,
 		Buffer*& public_identity_key_buffer,
-		Buffer*& private_identity_key_buffer) {
+		Buffer*& private_identity_key_buffer) noexcept {
 	return_status status = return_status_init();
 
 	Key * public_signing_key = nullptr;
@@ -121,13 +121,13 @@ return_status protobuf_import(
 		const Buffer& public_signing_key_buffer,
 		const Buffer& private_signing_key_buffer,
 		const Buffer& public_identity_key_buffer,
-		const Buffer& private_identity_key_buffer) __attribute__((warn_unused_result));
+		const Buffer& private_identity_key_buffer) noexcept __attribute__((warn_unused_result));
 return_status protobuf_import(
 		MasterKeys*& keys,
 		const Buffer& public_signing_key_buffer,
 		const Buffer& private_signing_key_buffer,
 		const Buffer& public_identity_key_buffer,
-		const Buffer& private_identity_key_buffer) {
+		const Buffer& private_identity_key_buffer) noexcept {
 	return_status status = return_status_init();
 
 	Key *public_signing_key = nullptr;
@@ -201,7 +201,7 @@ cleanup:
 }
 
 
-int main(void) {
+int main(void) noexcept {
 	if (sodium_init() == -1) {
 		return -1;
 	}

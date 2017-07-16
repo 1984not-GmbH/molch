@@ -41,6 +41,6 @@
  *
  * \return A pointer that is aligned to alignment.
  */
-void *next_aligned_address(void *pointer, size_t alignment);
+void *next_aligned_address(void *pointer, size_t alignment) noexcept;
 
 #endif

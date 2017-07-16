@@ -45,7 +45,7 @@ return_status diffie_hellman(
 		Buffer& our_private_key, //needs to be PRIVATE_KEY_SIZE long
 		Buffer& our_public_key, //needs to be PUBLIC_KEY_SIZE long
 		Buffer& their_public_key, //needs to be PUBLIC_KEY_SIZE long
-		const bool am_i_alice) __attribute__((warn_unused_result));
+		const bool am_i_alice) noexcept __attribute__((warn_unused_result));
 
 /*
  * Triple Diffie Hellman with two keys.
@@ -71,5 +71,5 @@ return_status triple_diffie_hellman(
 		Buffer& our_public_ephemeral,
 		Buffer& their_public_identity,
 		Buffer& their_public_ephemeral,
-		const bool am_i_alice) __attribute__((warn_unused_result));
+		const bool am_i_alice) noexcept __attribute__((warn_unused_result));
 #endif

@@ -29,7 +29,7 @@
 #include "utils.h"
 #include "packet-test-lib.h"
 
-int main(void) {
+int main(void) noexcept {
 	return_status status = return_status_init();
 
 	//generate keys

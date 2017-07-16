@@ -42,17 +42,17 @@ public:
 	unsigned char private_key_storage[PRIVATE_KEY_SIZE];
 	int64_t expiration_date;
 
-	void init();
-	PrekeyStoreNode* getNext();
-	return_status exportNode(Prekey*& keypair) __attribute__((warn_unused_result));
-	return_status import(const Prekey& keypair) __attribute__((warn_unused_result));
+	void init() noexcept;
+	PrekeyStoreNode* getNext() noexcept;
+	return_status exportNode(Prekey*& keypair) noexcept __attribute__((warn_unused_result));
+	return_status import(const Prekey& keypair) noexcept __attribute__((warn_unused_result));
 };
 
 class PrekeyStore {
 private:
-	void addNodeToDeprecated(PrekeyStoreNode& deprecated_node);
-	int deprecate(const size_t index);
-	size_t countDeprecated();
+	void addNodeToDeprecated(PrekeyStoreNode& deprecated_node) noexcept;
+	int deprecate(const size_t index) noexcept;
+	size_t countDeprecated() noexcept;
 public:
 	int64_t oldest_expiration_date;
 	PrekeyStoreNode prekeys[PREKEY_AMOUNT];
@@ -62,7 +62,7 @@ public:
 	/*
 	 * Initialise a new keystore. Generates all the keys.
 	 */
-	static return_status create(PrekeyStore*& store) __attribute__((warn_unused_result));
+	static return_status create(PrekeyStore*& store) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Get a private prekey from it's public key. This will automatically
@@ -71,21 +71,21 @@ public:
 	 */
 	return_status getPrekey(
 			Buffer& public_key, //input
-			Buffer& private_key) __attribute__((warn_unused_result)); //output
+			Buffer& private_key) noexcept __attribute__((warn_unused_result)); //output
 
 	/*
 	 * Generate a list containing all public prekeys.
 	 * (this list can then be stored on a public server).
 	 */
-	return_status list(Buffer& list) __attribute__((warn_unused_result)); //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+	return_status list(Buffer& list) noexcept __attribute__((warn_unused_result)); //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 
 	/*
 	 * Automatically deprecate old keys and generate new ones
 	 * and THROW away deprecated ones that are too old.
 	 */
-	return_status rotate() __attribute__((warn_unused_result));
+	return_status rotate() noexcept __attribute__((warn_unused_result));
 
-	void destroy();
+	void destroy() noexcept;
 
 	/*! Serialise a prekey store as protobuf-c struct.
 	 * \param keypairs An array of keypairs, allocated by the function.
@@ -98,7 +98,7 @@ public:
 			Prekey**& keypairs,
 			size_t& keypairs_length,
 			Prekey**& deprecated_keypairs,
-			size_t& deprecated_keypairs_length) __attribute__((warn_unused_result));
+			size_t& deprecated_keypairs_length) noexcept __attribute__((warn_unused_result));
 
 	/*! Import a prekey store from a protobuf-c struct.
 	 * \param keypairs An array of prekeys pairs.
@@ -112,6 +112,6 @@ public:
 			Prekey** const keypairs,
 			const size_t keypairs_length,
 			Prekey** const deprecated_keypairs,
-			const size_t deprecated_keypairs_length) __attribute__((warn_unused_result));
+			const size_t deprecated_keypairs_length) noexcept __attribute__((warn_unused_result));
 };
 #endif

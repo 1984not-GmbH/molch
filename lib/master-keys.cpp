@@ -37,7 +37,7 @@ return_status MasterKeys::create(
 		const Buffer * const seed,
 		Buffer * const public_signing_key, //output, optional, can be nullptr
 		Buffer * const public_identity_key //output, optional, can be nullptr
-		) {
+		) noexcept {
 	return_status status = return_status_init();
 
 
@@ -143,7 +143,7 @@ cleanup:
  * Get the public signing key.
  */
 return_status MasterKeys::getSigningKey(
-		Buffer& public_signing_key_) {
+		Buffer& public_signing_key_) noexcept {
 	return_status status = return_status_init();
 
 	//check input
@@ -167,7 +167,7 @@ cleanup:
  * Get the public identity key.
  */
 return_status MasterKeys::getIdentityKey(
-		Buffer& public_identity_key_) {
+		Buffer& public_identity_key_) noexcept {
 	return_status status = return_status_init();
 
 	//check input
@@ -192,7 +192,7 @@ cleanup:
  */
 return_status MasterKeys::sign(
 		const Buffer& data,
-		Buffer& signed_data) { //output, length of data + SIGNATURE_SIZE
+		Buffer& signed_data) noexcept { //output, length of data + SIGNATURE_SIZE
 	return_status status = return_status_init();
 
 	if ((signed_data.getBufferLength() < (data.content_length + SIGNATURE_SIZE))) {
@@ -231,7 +231,7 @@ return_status MasterKeys::exportMasterKeys(
 		Key*& public_signing_key_,
 		Key*& private_signing_key_,
 		Key*& public_identity_key_,
-		Key*& private_identity_key_) {
+		Key*& private_identity_key_) noexcept {
 	return_status status = return_status_init();
 
 	//allocate the structs
@@ -310,7 +310,7 @@ return_status MasterKeys::import(
 		const Key * const public_signing_key,
 		const Key * const private_signing_key,
 		const Key * const public_identity_key,
-		const Key * const private_identity_key) {
+		const Key * const private_identity_key) noexcept {
 	return_status status = return_status_init();
 
 	//check inputs

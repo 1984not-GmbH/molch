@@ -36,7 +36,7 @@ return_status derive_key(
 		Buffer& derived_key,
 		size_t derived_size,
 		Buffer& input_key,
-		uint32_t subkey_counter) __attribute__((warn_unused_result)); //number of the current subkey, used to derive multiple keys from the same input key
+		uint32_t subkey_counter) noexcept __attribute__((warn_unused_result)); //number of the current subkey, used to derive multiple keys from the same input key
 
 /*
  * Derive the next chain key in a message chain.
@@ -48,7 +48,7 @@ return_status derive_key(
  */
 return_status derive_chain_key(
 		Buffer& new_chain_key,
-		Buffer& previous_chain_key) __attribute__((warn_unused_result));
+		Buffer& previous_chain_key) noexcept __attribute__((warn_unused_result));
 
 /*
  * Derive a message key from a chain key.
@@ -60,7 +60,7 @@ return_status derive_chain_key(
  */
 return_status derive_message_key(
 		Buffer& message_key,
-		Buffer& chain_key) __attribute__((warn_unused_result));
+		Buffer& chain_key) noexcept __attribute__((warn_unused_result));
 
 /*
  * Derive a root, next header and initial chain key for a new ratchet.
@@ -77,7 +77,7 @@ return_status derive_root_next_header_and_chain_keys(
 		Buffer& our_public_ephemeral,
 		Buffer& their_public_ephemeral,
 		Buffer& previous_root_key,
-		bool am_i_alice) __attribute__((warn_unused_result));
+		bool am_i_alice) noexcept __attribute__((warn_unused_result));
 
 /*
  * Derive initial root, chain and header keys.
@@ -98,6 +98,6 @@ return_status derive_initial_root_chain_and_header_keys(
 		Buffer& our_private_ephemeral,
 		Buffer& our_public_ephemeral,
 		Buffer& their_public_ephemeral,
-		bool am_i_alice) __attribute__((warn_unused_result));
+		bool am_i_alice) noexcept __attribute__((warn_unused_result));
 
 #endif

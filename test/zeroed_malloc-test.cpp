@@ -27,7 +27,7 @@
 #include "../lib/zeroed_malloc.h"
 #include "utils.h"
 
-int main(void) {
+int main(void) noexcept {
 	return_status status = return_status_init();
 
 	unsigned char * const pointer = (unsigned char*)zeroed_malloc(100);

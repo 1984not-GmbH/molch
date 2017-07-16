@@ -29,7 +29,7 @@
 #include "utils.h"
 #include "packet-test-lib.h"
 
-int main(void) {
+int main(void) noexcept {
 	buffer_create_from_string(message, "Hello world!\n");
 	//create buffers
 	Buffer *header_key = Buffer::create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
