@@ -344,10 +344,10 @@ molch_message_type molch_get_message_type(
 	uint32_t current_protocol_version;
 	uint32_t highest_supported_protocol_version;
 	return_status status = packet_get_metadata_without_verification(
-		&current_protocol_version,
-		&highest_supported_protocol_version,
-		&packet_type,
-		packet_buffer,
+		current_protocol_version,
+		highest_supported_protocol_version,
+		packet_type,
+		*packet_buffer,
 		nullptr,
 		nullptr,
 		nullptr);

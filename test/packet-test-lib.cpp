@@ -78,12 +78,12 @@ return_status create_and_print_message(
 
 	//now encrypt the message
 	status = packet_encrypt(
-			packet,
+			*packet,
 			packet_type,
-			header,
-			header_key,
-			message,
-			message_key,
+			*header,
+			*header_key,
+			*message,
+			*message_key,
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);

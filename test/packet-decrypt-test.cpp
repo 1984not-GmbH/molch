@@ -82,14 +82,14 @@ int main(void) noexcept {
 	uint32_t extracted_current_protocol_version;
 	uint32_t extracted_highest_supported_protocol_version;
 	status = packet_decrypt(
-			&extracted_current_protocol_version,
-			&extracted_highest_supported_protocol_version,
-			&extracted_packet_type,
-			&decrypted_header,
-			&decrypted_message,
-			packet,
-			header_key,
-			message_key,
+			extracted_current_protocol_version,
+			extracted_highest_supported_protocol_version,
+			extracted_packet_type,
+			decrypted_header,
+			decrypted_message,
+			*packet,
+			*header_key,
+			*message_key,
 			nullptr,
 			nullptr,
 			nullptr);
@@ -166,14 +166,14 @@ int main(void) noexcept {
 
 	//now decrypt the packet
 	status = packet_decrypt(
-			&extracted_current_protocol_version,
-			&extracted_highest_supported_protocol_version,
-			&extracted_packet_type,
-			&decrypted_header,
-			&decrypted_message,
-			packet,
-			header_key,
-			message_key,
+			extracted_current_protocol_version,
+			extracted_highest_supported_protocol_version,
+			extracted_packet_type,
+			decrypted_header,
+			decrypted_message,
+			*packet,
+			*header_key,
+			*message_key,
 			extracted_public_identity_key,
 			extracted_public_ephemeral_key,
 			extracted_public_prekey);

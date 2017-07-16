@@ -75,9 +75,9 @@ int main(void) noexcept {
 
 	//now decrypt the header
 	status = packet_decrypt_header(
-			&decrypted_header,
-			packet,
-			header_key);
+			decrypted_header,
+			*packet,
+			*header_key);
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt the header.");
 
 
@@ -96,9 +96,9 @@ int main(void) noexcept {
 	printf("Manipulating header length.\n");
 	packet->content[2]++;
 	status = packet_decrypt_header(
-			&decrypted_header,
-			packet,
-			header_key);
+			decrypted_header,
+			*packet,
+			*header_key);
 	if (status.status == SUCCESS) {
 		THROW(GENERIC_ERROR, "Manipulated packet was accepted.");
 	} else {
@@ -113,9 +113,9 @@ int main(void) noexcept {
 	printf("Manipulate header.\n");
 	packet->content[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= 0x12;
 	status = packet_decrypt_header(
-			&decrypted_header,
-			packet,
-			header_key);
+			decrypted_header,
+			*packet,
+			*header_key);
 	if (status.status == SUCCESS) {
 		THROW(GENERIC_ERROR, "Manipulated packet was accepted.");
 	} else {
@@ -166,9 +166,9 @@ int main(void) noexcept {
 
 	//now decrypt the header
 	status = packet_decrypt_header(
-			&decrypted_header,
-			packet,
-			header_key);
+			decrypted_header,
+			*packet,
+			*header_key);
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt the header.");
 
 	if (decrypted_header->content_length != header->content_length) {

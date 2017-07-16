@@ -254,10 +254,10 @@ return_status conversation_start_receive_conversation(
 	uint32_t current_protocol_version;
 	uint32_t highest_supported_protocol_version;
 	status = packet_get_metadata_without_verification(
-			&current_protocol_version,
-			&highest_supported_protocol_version,
-			&packet_type,
-			packet,
+			current_protocol_version,
+			highest_supported_protocol_version,
+			packet_type,
+			*packet,
 			sender_public_identity,
 			sender_public_ephemeral,
 			receiver_public_prekey);
@@ -385,12 +385,12 @@ return_status conversation_send(
 	THROW_on_error(CREATION_ERROR, "Failed to construct header.");
 
 	status = packet_encrypt(
-			packet,
+			*packet,
 			packet_type,
-			header,
-			send_header_key,
-			message,
-			send_message_key,
+			*header,
+			*send_header_key,
+			*message,
+			*send_message_key,
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
@@ -435,14 +435,14 @@ static int try_skipped_header_and_message_keys(
 		header_and_message_keystore_node* node = skipped_keys->head;
 		for (size_t i = 0; (i < skipped_keys->length) && (node != nullptr); i++, node = node->next) {
 			status = packet_decrypt_header(
-					&header,
-					packet,
-					node->header_key);
+					header,
+					*packet,
+					*node->header_key);
 			if (status.status == SUCCESS) {
 				status = packet_decrypt_message(
-						message,
-						packet,
-						node->message_key);
+						*message,
+						*packet,
+						*node->message_key);
 				if (status.status == SUCCESS) {
 					header_and_message_keystore_remove(skipped_keys, node);
 
@@ -536,9 +536,9 @@ return_status conversation_receive(
 
 	//try to decrypt the packet header with the current receive header key
 	status = packet_decrypt_header(
-			&header,
-			packet,
-			current_receive_header_key);
+			header,
+			*packet,
+			*current_receive_header_key);
 	if (status.status == SUCCESS) {
 		status = conversation->ratchet->setHeaderDecryptability(CURRENT_DECRYPTABLE);
 		THROW_on_error(DATA_SET_ERROR, "Failed to set decryptability to CURRENT_DECRYPTABLE.");
@@ -547,9 +547,9 @@ return_status conversation_receive(
 
 		//since this failed, try to decrypt it with the next receive header key
 		status = packet_decrypt_header(
-				&header,
-				packet,
-				next_receive_header_key);
+				header,
+				*packet,
+				*next_receive_header_key);
 		if (status.status == SUCCESS) {
 			status = conversation->ratchet->setHeaderDecryptability(NEXT_DECRYPTABLE);
 			THROW_on_error(DATA_SET_ERROR, "Failed to set decryptability to NEXT_DECRYPTABLE.");
@@ -582,9 +582,9 @@ return_status conversation_receive(
 	THROW_on_error(DECRYPT_ERROR, "Failed to get decryption keys.");
 
 	status = packet_decrypt_message(
-			message,
-			packet,
-			message_key);
+			*message,
+			*packet,
+			*message_key);
 	on_error {
 		return_status authenticity_status = return_status_init();
 		authenticity_status = conversation->ratchet->setLastMessageAuthenticity(false);

@@ -132,17 +132,17 @@ cleanup:
 
 return_status packet_encrypt(
 		//output
-		Buffer ** const packet,
+		Buffer*& packet,
 		//inputs
 		const molch_message_type packet_type,
-		Buffer * const axolotl_header,
-		Buffer * const axolotl_header_key, //HEADER_KEY_SIZE
-		Buffer * const message,
-		Buffer * const message_key, //MESSAGE_KEY_SIZE
+		const Buffer& axolotl_header,
+		const Buffer& axolotl_header_key, //HEADER_KEY_SIZE
+		const Buffer& message,
+		const Buffer& message_key, //MESSAGE_KEY_SIZE
 		//optional inputs (prekey messages only)
-		Buffer * const public_identity_key,
-		Buffer * const public_ephemeral_key,
-		Buffer * const public_prekey) noexcept {
+		const Buffer * const public_identity_key,
+		const Buffer * const public_ephemeral_key,
+		const Buffer * const public_prekey) noexcept {
 	return_status status = return_status_init();
 
 	//initialize the protobuf structs
@@ -158,12 +158,9 @@ return_status packet_encrypt(
 	Buffer *encrypted_message = nullptr;
 
 	//check the input
-	if ((packet == nullptr)
-		|| (packet_type == INVALID)
-		|| (axolotl_header == nullptr)
-		|| (axolotl_header_key == nullptr) || (axolotl_header_key->content_length != HEADER_KEY_SIZE)
-		|| (message == nullptr)
-		|| (message_key == nullptr) || (message_key->content_length != MESSAGE_KEY_SIZE)) {
+	if ((packet_type == INVALID)
+		|| (axolotl_header_key.content_length != HEADER_KEY_SIZE)
+		|| (message_key.content_length != MESSAGE_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to packet_encrypt.");
 	}
 
@@ -211,16 +208,16 @@ return_status packet_encrypt(
 
 	//encrypt the header
 	encrypted_axolotl_header = Buffer::create(
-			axolotl_header->content_length + crypto_secretbox_MACBYTES,
-			axolotl_header->content_length + crypto_secretbox_MACBYTES);
+			axolotl_header.content_length + crypto_secretbox_MACBYTES,
+			axolotl_header.content_length + crypto_secretbox_MACBYTES);
 	THROW_on_failed_alloc(encrypted_axolotl_header);
 	{
 		int status_int = crypto_secretbox_easy(
 				encrypted_axolotl_header->content,
-				axolotl_header->content,
-				axolotl_header->content_length,
+				axolotl_header.content,
+				axolotl_header.content_length,
 				header_nonce->content,
-				axolotl_header_key->content);
+				axolotl_header_key.content);
 		if (status_int != 0) {
 			THROW(ENCRYPT_ERROR, "Failed to encrypt header.");
 		}
@@ -243,11 +240,11 @@ return_status packet_encrypt(
 
 	//pad the message (PKCS7 padding to 255 byte blocks, see RFC5652 section 6.3)
 	{
-		unsigned char padding = (unsigned char)(255 - (message->content_length % 255));
-		padded_message = Buffer::create(message->content_length + padding, 0);
+		unsigned char padding = (unsigned char)(255 - (message.content_length % 255));
+		padded_message = Buffer::create(message.content_length + padding, 0);
 		THROW_on_failed_alloc(padded_message);
 		//copy the message
-		if (padded_message->cloneFrom(message) != 0) {
+		if (padded_message->cloneFrom(&message) != 0) {
 			THROW(BUFFER_ERROR, "Failed to clone message.");
 		}
 		//pad it
@@ -266,7 +263,7 @@ return_status packet_encrypt(
 				padded_message->content,
 				padded_message->content_length,
 				message_nonce->content,
-				message_key->content);
+				message_key.content);
 		if (status_int != 0) {
 			THROW(ENCRYPT_ERROR, "Failed to encrypt message.");
 		}
@@ -282,19 +279,17 @@ return_status packet_encrypt(
 		const size_t packed_length = packet__get_packed_size(&packet_struct);
 
 		//pack the packet
-		*packet = Buffer::create(packed_length, 0);
-		THROW_on_failed_alloc(*packet);
-		(*packet)->content_length = packet__pack(&packet_struct, (*packet)->content);
-		if ((*packet)->content_length != packed_length) {
+		packet = Buffer::create(packed_length, 0);
+		THROW_on_failed_alloc(packet);
+		packet->content_length = packet__pack(&packet_struct, packet->content);
+		if (packet->content_length != packed_length) {
 			THROW(PROTOBUF_PACK_ERROR, "Packet packet has incorrect length.");
 		}
 	}
 
 cleanup:
 	on_error {
-		if (packet != nullptr) {
-			buffer_destroy_from_heap_and_null_if_valid(*packet);
-		}
+		buffer_destroy_from_heap_and_null_if_valid(packet);
 	}
 
 	buffer_destroy_from_heap_and_null_if_valid(header_nonce);
@@ -308,15 +303,15 @@ cleanup:
 
 return_status packet_decrypt(
 		//outputs
-		uint32_t * const current_protocol_version,
-		uint32_t * const highest_supported_protocol_version,
-		molch_message_type * const packet_type,
-		Buffer ** const axolotl_header,
-		Buffer ** const message,
+		uint32_t& current_protocol_version,
+		uint32_t& highest_supported_protocol_version,
+		molch_message_type& packet_type,
+		Buffer*& axolotl_header,
+		Buffer*& message,
 		//inputs
-		Buffer * const packet,
-		Buffer * const axolotl_header_key, //HEADER_KEY_SIZE
-		Buffer * const message_key, //MESSAGE_KEY_SIZE
+		Buffer& packet,
+		Buffer& axolotl_header_key, //HEADER_KEY_SIZE
+		const Buffer& message_key, //MESSAGE_KEY_SIZE
 		//optional outputs (prekey messages only)
 		Buffer * const public_identity_key,
 		Buffer * const public_ephemeral_key,
@@ -324,12 +319,8 @@ return_status packet_decrypt(
 	return_status status = return_status_init();
 
 	//initialize outputs that have to be allocated
-	if (axolotl_header != nullptr) {
-		*axolotl_header = nullptr;
-	}
-	if (message != nullptr) {
-		*message = nullptr;
-	}
+	axolotl_header = nullptr;
+	message = nullptr;
 
 	//get metadata
 	status = packet_get_metadata_without_verification(
@@ -358,26 +349,17 @@ return_status packet_decrypt(
 
 cleanup:
 	on_error {
-		if (packet_type != nullptr) {
-			*packet_type = INVALID;
-		}
+		packet_type = INVALID;
 
-		if (axolotl_header != nullptr) {
-			buffer_destroy_from_heap_and_null_if_valid(*axolotl_header);
-		}
-
-		if (message != nullptr) {
-			buffer_destroy_from_heap_and_null_if_valid(*message);
-		}
+		buffer_destroy_from_heap_and_null_if_valid(axolotl_header);
+		buffer_destroy_from_heap_and_null_if_valid(message);
 
 		if (public_identity_key != nullptr) {
 			public_identity_key->clear();
 		}
-
 		if (public_ephemeral_key != nullptr) {
 			public_ephemeral_key->clear();
 		}
-
 		if (public_prekey != nullptr) {
 			public_prekey->clear();
 		}
@@ -388,11 +370,11 @@ cleanup:
 
 return_status packet_get_metadata_without_verification(
 		//outputs
-		uint32_t * const current_protocol_version,
-		uint32_t * const highest_supported_protocol_version,
-		molch_message_type * const packet_type,
+		uint32_t& current_protocol_version,
+		uint32_t& highest_supported_protocol_version,
+		molch_message_type& packet_type,
 		//input
-		Buffer * const packet,
+		Buffer& packet,
 		//optional outputs (prekey messages only)
 		Buffer * const public_identity_key, //PUBLIC_KEY_SIZE
 		Buffer * const public_ephemeral_key, //PUBLIC_KEY_SIZE
@@ -402,14 +384,7 @@ return_status packet_get_metadata_without_verification(
 
 	Packet *packet_struct = nullptr;
 
-	//check input
-	if ((current_protocol_version == nullptr) || (highest_supported_protocol_version == nullptr)
-			|| (packet_type == nullptr)
-			|| (packet == nullptr)) {
-		THROW(INVALID_INPUT, "Invalid input to packet_get_metadata_without_verification.");
-	}
-
-	status = packet_unpack(&packet_struct, packet);
+	status = packet_unpack(&packet_struct, &packet);
 	THROW_on_error(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
 
 	if (packet_struct->packet_header->packet_type == PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
@@ -431,9 +406,9 @@ return_status packet_get_metadata_without_verification(
 		}
 	}
 
-	*current_protocol_version = packet_struct->packet_header->current_protocol_version;
-	*highest_supported_protocol_version = packet_struct->packet_header->highest_supported_protocol_version;
-	*packet_type = to_molch_message_type(packet_struct->packet_header->packet_type);
+	current_protocol_version = packet_struct->packet_header->current_protocol_version;
+	highest_supported_protocol_version = packet_struct->packet_header->highest_supported_protocol_version;
+	packet_type = to_molch_message_type(packet_struct->packet_header->packet_type);
 
 cleanup:
 	if (packet_struct != nullptr) {
@@ -454,9 +429,7 @@ cleanup:
 			public_prekey->clear();
 		}
 
-		if (packet_type != nullptr) {
-			*packet_type = INVALID;
-		}
+		packet_type = INVALID;
 	}
 
 	return status;
@@ -464,23 +437,21 @@ cleanup:
 
 return_status packet_decrypt_header(
 		//output
-		Buffer ** const axolotl_header,
+		Buffer*& axolotl_header,
 		//inputs
-		Buffer * const packet,
-		Buffer * const axolotl_header_key //HEADER_KEY_SIZE
+		Buffer& packet,
+		Buffer& axolotl_header_key //HEADER_KEY_SIZE
 		) noexcept {
 	return_status status = return_status_init();
 
 	Packet *packet_struct = nullptr;
 
 	//check input
-	if ((axolotl_header == nullptr)
-			|| (packet == nullptr)
-			|| (axolotl_header_key == nullptr) || (axolotl_header_key->content_length != HEADER_KEY_SIZE)) {
+	if (axolotl_header_key.content_length != HEADER_KEY_SIZE) {
 		THROW(INVALID_INPUT, "Invalid input to packet_decrypt_header.");
 	}
 
-	status = packet_unpack(&packet_struct, packet);
+	status = packet_unpack(&packet_struct, &packet);
 	THROW_on_error(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
 
 	if (packet_struct->encrypted_axolotl_header.len < crypto_secretbox_MACBYTES) {
@@ -489,17 +460,17 @@ return_status packet_decrypt_header(
 
 	{
 		const size_t axolotl_header_length = packet_struct->encrypted_axolotl_header.len - crypto_secretbox_MACBYTES;
-		*axolotl_header = Buffer::create(axolotl_header_length, axolotl_header_length);
-		THROW_on_failed_alloc(*axolotl_header);
+		axolotl_header = Buffer::create(axolotl_header_length, axolotl_header_length);
+		THROW_on_failed_alloc(axolotl_header);
 	}
 
 	{
 		int status_int = crypto_secretbox_open_easy(
-				(*axolotl_header)->content,
+				axolotl_header->content,
 				packet_struct->encrypted_axolotl_header.data,
 				packet_struct->encrypted_axolotl_header.len,
 				packet_struct->packet_header->header_nonce.data,
-				axolotl_header_key->content);
+				axolotl_header_key.content);
 		if (status_int != 0) {
 			THROW(DECRYPT_ERROR, "Failed to decrypt axolotl header.");
 		}
@@ -511,9 +482,7 @@ cleanup:
 	}
 
 	on_error {
-		if (axolotl_header != nullptr) {
-			buffer_destroy_from_heap_and_null_if_valid(*axolotl_header);
-		}
+		buffer_destroy_from_heap_and_null_if_valid(axolotl_header);
 	}
 
 	return status;
@@ -521,10 +490,10 @@ cleanup:
 
 return_status packet_decrypt_message(
 		//output
-		Buffer ** const message,
+		Buffer*& message,
 		//inputs
-		Buffer * const packet,
-		Buffer * const message_key
+		Buffer& packet,
+		const Buffer& message_key
 		) noexcept {
 	return_status status = return_status_init();
 	unsigned char padding;
@@ -534,13 +503,11 @@ return_status packet_decrypt_message(
 	Buffer *padded_message = nullptr;
 
 	//check input
-	if ((message == nullptr)
-		|| (packet == nullptr)
-		|| (message_key == nullptr) || (message_key->content_length != MESSAGE_KEY_SIZE)) {
+	if (message_key.content_length != MESSAGE_KEY_SIZE) {
 		THROW(INVALID_INPUT, "Invalid input to packet_decrypt_message.")
 	}
 
-	status = packet_unpack(&packet_struct, packet);
+	status = packet_unpack(&packet_struct, &packet);
 	THROW_on_error(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
 
 	if (packet_struct->encrypted_message.len < crypto_secretbox_MACBYTES) {
@@ -562,7 +529,7 @@ return_status packet_decrypt_message(
 				packet_struct->encrypted_message.data,
 				packet_struct->encrypted_message.len,
 				packet_struct->packet_header->message_nonce.data,
-				message_key->content);
+				message_key.content);
 		if (status_int != 0) {
 			THROW(DECRYPT_ERROR, "Failed to decrypt message.");
 		}
@@ -577,10 +544,10 @@ return_status packet_decrypt_message(
 	//extract the message
 	{
 		const size_t message_length = padded_message->content_length - padding;
-		*message = Buffer::create(message_length, 0);
-		THROW_on_failed_alloc(*message);
+		message = Buffer::create(message_length, 0);
+		THROW_on_failed_alloc(message);
 		//TODO this doesn't need to be copied, setting the length should be enough
-		if ((*message)->copyFrom(0, padded_message, 0, message_length) != 0) {
+		if (message->copyFrom(0, padded_message, 0, message_length) != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy message from padded message.");
 		}
 	}
@@ -593,9 +560,7 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(padded_message);
 
 	on_error {
-		if (message != nullptr) {
-			buffer_destroy_from_heap_and_null_if_valid(*message);
-		}
+		buffer_destroy_from_heap_and_null_if_valid(message);
 	}
 
 	return status;

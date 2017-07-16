@@ -74,9 +74,9 @@ int main(void) noexcept {
 
 	//now decrypt the message
 	status = packet_decrypt_message(
-			&decrypted_message,
-			packet,
-			message_key);
+			decrypted_message,
+			*packet,
+			*message_key);
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
 
 	//check the message size
@@ -99,9 +99,9 @@ int main(void) noexcept {
 
 	//try to decrypt
 	status = packet_decrypt_message(
-			&decrypted_message,
-			packet,
-			message_key);
+			decrypted_message,
+			*packet,
+			*message_key);
 	if (status.status == SUCCESS) { //message was decrypted although it shouldn't
 		THROW(GENERIC_ERROR, "Decrypted manipulated message.");
 	} else {
@@ -148,9 +148,9 @@ int main(void) noexcept {
 
 	//now decrypt the message
 	status = packet_decrypt_message(
-			&decrypted_message,
-			packet,
-			message_key);
+			decrypted_message,
+			*packet,
+			*message_key);
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
 
 	//check the message size

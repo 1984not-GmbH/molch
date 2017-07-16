@@ -58,17 +58,17 @@
  */
 return_status packet_encrypt(
 		//output
-		Buffer ** const packet,
+		Buffer*& packet,
 		//inputs
 		const molch_message_type packet_type,
-		Buffer * const axolotl_header,
-		Buffer * const axolotl_header_key, //HEADER_KEY_SIZE
-		Buffer * const message,
-		Buffer * const message_key, //MESSAGE_KEY_SIZE
+		const Buffer& axolotl_header,
+		const Buffer& axolotl_header_key, //HEADER_KEY_SIZE
+		const Buffer& message,
+		const Buffer& message_key, //MESSAGE_KEY_SIZE
 		//optional inputs (prekey messages only)
-		Buffer * const public_identity_key,
-		Buffer * const public_ephemeral_key,
-		Buffer * const public_prekey) noexcept __attribute__((warn_unused_result));
+		const Buffer * const public_identity_key,
+		const Buffer * const public_ephemeral_key,
+		const Buffer * const public_prekey) noexcept __attribute__((warn_unused_result));
 
 /*!
  * Extract and decrypt a packet and the metadata inside of it.
@@ -101,15 +101,15 @@ return_status packet_encrypt(
  */
 return_status packet_decrypt(
 		//outputs
-		uint32_t * const current_protocol_version,
-		uint32_t * const highest_supported_protocol_version,
-		molch_message_type * const packet_type,
-		Buffer ** const axolotl_header,
-		Buffer ** const message,
+		uint32_t& current_protocol_version,
+		uint32_t& highest_supported_protocol_version,
+		molch_message_type& packet_type,
+		Buffer*& axolotl_header,
+		Buffer*& message,
 		//inputs
-		Buffer * const packet,
-		Buffer * const axolotl_header_key, //HEADER_KEY_SIZE
-		Buffer * const message_key, //MESSAGE_KEY_SIZE
+		Buffer& packet,
+		Buffer& axolotl_header_key, //HEADER_KEY_SIZE
+		const Buffer& message_key, //MESSAGE_KEY_SIZE
 		//optional outputs (prekey messages only)
 		Buffer * const public_identity_key,
 		Buffer * const public_ephemeral_key,
@@ -138,11 +138,11 @@ return_status packet_decrypt(
  */
 return_status packet_get_metadata_without_verification(
 		//outputs
-		uint32_t * const current_protocol_version,
-		uint32_t * const highest_supported_protocol_version,
-		molch_message_type * const packet_type,
+		uint32_t& current_protocol_version,
+		uint32_t& highest_supported_protocol_version,
+		molch_message_type& packet_type,
 		//input
-		Buffer * const packet,
+		Buffer& packet,
 		//optional outputs (prekey messages only)
 		Buffer * const public_identity_key, //PUBLIC_KEY_SIZE
 		Buffer * const public_ephemeral_key, //PUBLIC_KEY_SIZE
@@ -164,10 +164,10 @@ return_status packet_get_metadata_without_verification(
  */
 return_status packet_decrypt_header(
 		//output
-		Buffer ** const axolotl_header,
+		Buffer*& axolotl_header,
 		//inputs
-		Buffer * const packet,
-		Buffer * const axolotl_header_key //HEADER_KEY_SIZE
+		Buffer& packet,
+		Buffer& axolotl_header_key //HEADER_KEY_SIZE
 		) noexcept __attribute__((warn_unused_result));
 
 /*!
@@ -185,9 +185,9 @@ return_status packet_decrypt_header(
  */
 return_status packet_decrypt_message(
 		//output
-		Buffer ** const message,
+		Buffer*& message,
 		//inputs
-		Buffer * const packet,
-		Buffer * const message_key
+		Buffer& packet,
+		const Buffer& message_key
 		) noexcept __attribute__((warn_unused_result));
 #endif

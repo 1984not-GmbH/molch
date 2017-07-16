@@ -77,10 +77,10 @@ int main(void) noexcept {
 	uint32_t extracted_current_protocol_version;
 	uint32_t extracted_highest_supported_protocol_version;
 	status = packet_get_metadata_without_verification(
-			&extracted_current_protocol_version,
-			&extracted_highest_supported_protocol_version,
-			&extracted_packet_type,
-			packet,
+			extracted_current_protocol_version,
+			extracted_highest_supported_protocol_version,
+			extracted_packet_type,
+			*packet,
 			nullptr,
 			nullptr,
 			nullptr);
@@ -141,10 +141,10 @@ int main(void) noexcept {
 
 	//now extract the metadata
 	status = packet_get_metadata_without_verification(
-			&extracted_current_protocol_version,
-			&extracted_highest_supported_protocol_version,
-			&extracted_packet_type,
-			packet,
+			extracted_current_protocol_version,
+			extracted_highest_supported_protocol_version,
+			extracted_packet_type,
+			*packet,
 			extracted_public_identity_key,
 			extracted_public_ephemeral_key,
 			extracted_public_prekey);
