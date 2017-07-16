@@ -35,8 +35,8 @@
  * source because it might annihilate the randomness.
  */
 return_status spiced_random(
-		Buffer * const random_output,
-		const Buffer * const low_entropy_spice,
+		Buffer& random_output,
+		const Buffer& low_entropy_spice,
 		const size_t output_length) noexcept {
 	return_status status = return_status_init();
 
@@ -55,7 +55,7 @@ return_status spiced_random(
 	THROW_on_failed_alloc(salt);
 
 	//check buffer length
-	if (random_output->getBufferLength() < output_length) {
+	if (random_output.getBufferLength() < output_length) {
 		THROW(INCORRECT_BUFFER_SIZE, "Output buffers is too short.");
 	}
 
@@ -72,8 +72,8 @@ return_status spiced_random(
 		int status_int = crypto_pwhash(
 				spice->content,
 				spice->content_length,
-				(const char*)low_entropy_spice->content,
-				low_entropy_spice->content_length,
+				(const char*)low_entropy_spice.content,
+				low_entropy_spice.content_length,
 				salt->content,
 				crypto_pwhash_OPSLIMIT_INTERACTIVE,
 				crypto_pwhash_MEMLIMIT_INTERACTIVE,
@@ -89,16 +89,14 @@ return_status spiced_random(
 	}
 
 	//copy the random data to the output
-	if (random_output->cloneFrom(os_random) != 0) {
+	if (random_output.cloneFrom(os_random) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy random data.");
 	}
 
 cleanup:
 	on_error {
-		if (random_output != nullptr) {
-			random_output->clear();
-			random_output->content_length = 0;
-		}
+		random_output.clear();
+		random_output.content_length = 0;
 	}
 	buffer_destroy_with_custom_deallocator_and_null_if_valid(spice, sodium_free);
 	buffer_destroy_with_custom_deallocator_and_null_if_valid(os_random, sodium_free);

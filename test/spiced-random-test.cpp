@@ -44,9 +44,11 @@ int main(void) noexcept {
 	//output buffers
 	Buffer *output1 = Buffer::create(42, 0);
 	Buffer *output2 = Buffer::create(42, 0);
+	THROW_on_failed_alloc(output1);
+	THROW_on_failed_alloc(output2);
 
 	//fill buffer with spiced random data
-	status = spiced_random(output1, spice, output1->getBufferLength());
+	status = spiced_random(*output1, *spice, output1->getBufferLength());
 	THROW_on_error(GENERIC_ERROR, "Failed to generate spiced random data.");
 
 	printf("Spiced random data 1 (%zu Bytes):\n", output1->content_length);
@@ -55,7 +57,7 @@ int main(void) noexcept {
 
 
 	//fill buffer with spiced random data
-	status = spiced_random(output2, spice, output2->getBufferLength());
+	status = spiced_random(*output2, *spice, output2->getBufferLength());
 	THROW_on_error(GENERIC_ERROR, "Failed to generate spiced random data.");
 
 	printf("Spiced random data 2 (%zu Bytes):\n", output2->content_length);
@@ -68,7 +70,7 @@ int main(void) noexcept {
 	}
 
 	//don't crash with output length 0
-	status = spiced_random(output1, spice, 0);
+	status = spiced_random(*output1, *spice, 0);
 	on_error {
 		//on newer libsodium versions, output lengths of zero aren't supported
 		return_status_destroy_errors(&status);

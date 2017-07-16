@@ -62,7 +62,7 @@ return_status MasterKeys::create(
 				sodium_free);
 		THROW_on_failed_alloc(crypto_seeds);
 
-		status = spiced_random(crypto_seeds, seed, crypto_seeds->getBufferLength());
+		status = spiced_random(*crypto_seeds, *seed, crypto_seeds->getBufferLength());
 		THROW_on_error(GENERIC_ERROR, "Failed to create spiced random data.");
 
 		//generate the signing keypair
