@@ -269,9 +269,11 @@ int main(void) noexcept {
 
 
 	//create the spiced master keys
-	buffer_create_from_string(seed, ";a;awoeih]]pquw4t[spdif\\aslkjdf;'ihdg#)%!@))%)#)(*)@)#)h;kuhe[orih;o's':ke';sa'd;kfa';;.calijv;a/orq930u[sd9f0u;09[02;oasijd;adk");
-	status = MasterKeys::create(spiced_master_keys, seed, public_signing_key, public_identity_key);
-	THROW_on_error(CREATION_ERROR, "Failed to create spiced master keys.");
+	{
+		Buffer seed(";a;awoeih]]pquw4t[spdif\\aslkjdf;'ihdg#)%!@))%)#)(*)@)#)h;kuhe[orih;o's':ke';sa'd;kfa';;.calijv;a/orq930u[sd9f0u;09[02;oasijd;adk");
+		status = MasterKeys::create(spiced_master_keys, &seed, public_signing_key, public_identity_key);
+		THROW_on_error(CREATION_ERROR, "Failed to create spiced master keys.");
+	}
 
 	//print the keys
 	sodium_mprotect_readonly(spiced_master_keys);
@@ -299,14 +301,16 @@ int main(void) noexcept {
 	sodium_mprotect_noaccess(spiced_master_keys);
 
 	//sign some data
-	buffer_create_from_string(data, "This is some data to be signed.");
-	printf("Data to be signed.\n");
-	printf("%.*s\n", (int)data->content_length, (char*)data->content);
+	{
+		Buffer data("This is some data to be signed.");
+		printf("Data to be signed.\n");
+		printf("%.*s\n", (int)data.content_length, (char*)data.content);
 
-	status = spiced_master_keys->sign(*data, *signed_data);
-	THROW_on_error(SIGN_ERROR, "Failed to sign data.");
-	printf("Signed data:\n");
-	print_hex(signed_data);
+		status = spiced_master_keys->sign(data, *signed_data);
+		THROW_on_error(SIGN_ERROR, "Failed to sign data.");
+		printf("Signed data:\n");
+		print_hex(signed_data);
+	}
 
 	//now check the signature
 	unsigned long long unwrapped_data_length;

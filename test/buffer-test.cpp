@@ -32,10 +32,10 @@ int main(void) noexcept {
 	int status = EXIT_SUCCESS;
 
 	//test comparison function
-	buffer_create_from_string(string1, "1234");
-	buffer_create_from_string(string2, "1234");
-	buffer_create_from_string(string3, "2234");
-	buffer_create_from_string(string4, "12345");
+	Buffer string1("1234");
+	Buffer string2("1234");
+	Buffer string3("2234");
+	Buffer string4("12345");
 	Buffer *buffer1 = NULL;
 	Buffer *buffer2 = NULL;
 	Buffer *buffer3 = NULL;
@@ -55,21 +55,16 @@ int main(void) noexcept {
 		goto fail;
 	}
 
-	if (!string1->isReadOnly()) {
-		fprintf(stderr, "ERROR: buffer_create_from_string doesn't create readonly buffers.\n");
-		goto fail;
-	}
-
-	if ((string1->compare(string2) != 0)
-			|| (string1->compare(string3) != -1)
-			|| (string1->compare(string4) != -1)) {
+	if ((string1.compare(&string2) != 0)
+			|| (string1.compare(&string3) != -1)
+			|| (string1.compare(&string4) != -1)) {
 		fprintf(stderr, "ERROR: buffer_compare doesn't work as expected\n");
 
 		goto fail;
 	}
 
-	if ((string1->comparePartial(0, string4, 0, 4) != 0)
-			|| (string1->comparePartial(2, string3, 2, 2) != 0)) {
+	if ((string1.comparePartial(0, &string4, 0, 4) != 0)
+			|| (string1.comparePartial(2, &string3, 2, 2) != 0)) {
 		fprintf(stderr, "ERROR: buffer_compare_partial doesn't work as expected\n");
 		goto fail;
 	}
@@ -189,16 +184,18 @@ int main(void) noexcept {
 	}
 
 	//create a buffer from a string
-	buffer_create_from_string(string, "This is a string!");
-	if (string->content_length != sizeof("This is a string!")) {
-		fprintf(stderr, "ERROR: Buffer created from string has incorrect length.\n");
-		goto fail;
+	{
+		Buffer string("This is a string!");
+		if (string.content_length != sizeof("This is a string!")) {
+			fprintf(stderr, "ERROR: Buffer created from string has incorrect length.\n");
+			goto fail;
+		}
+		if (sodium_memcmp(string.content, "This is a string!", string.content_length) != 0) {
+			fprintf(stderr, "ERROR: Failed to create buffer from string.\n");
+			goto fail;
+		}
+		printf("Successfully created buffer from string.\n");
 	}
-	if (sodium_memcmp(string->content, "This is a string!", string->content_length) != 0) {
-		fprintf(stderr, "ERROR: Failed to create buffer from string.\n");
-		goto fail;
-	}
-	printf("Successfully created buffer from string.\n");
 
 	//erase the buffer
 	printf("Erasing buffer.\n");
@@ -246,39 +243,41 @@ int main(void) noexcept {
 	}
 
 	//test xor
-	buffer_create_from_string(text, "Hello World!");
-	to_xor = Buffer::create(text->content_length, text->content_length);
-	status = to_xor->cloneFrom(text);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to clone buffer.\n");
-		goto fail; /* not fail, because status is set */
-	}
+	{
+		Buffer text("Hello World!");
+		to_xor = Buffer::create(text.content_length, text.content_length);
+		status = to_xor->cloneFrom(&text);
+		if (status != 0) {
+			fprintf(stderr, "ERROR: Failed to clone buffer.\n");
+			goto fail; /* not fail, because status is set */
+		}
 
-	random2 = Buffer::create(text->content_length, text->content_length);
-	status = random2->fillRandom(random2->getBufferLength());
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to fill buffer with random data. (%i)\n", status);
-		goto fail;
-	}
+		random2 = Buffer::create(text.content_length, text.content_length);
+		status = random2->fillRandom(random2->getBufferLength());
+		if (status != 0) {
+			fprintf(stderr, "ERROR: Failed to fill buffer with random data. (%i)\n", status);
+			goto fail;
+		}
 
-	//xor random data to xor-buffer
-	status = to_xor->xorWith(random2);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to xor buffers. (%i)\n", status);
-		goto fail;
-	}
+		//xor random data to xor-buffer
+		status = to_xor->xorWith(random2);
+		if (status != 0) {
+			fprintf(stderr, "ERROR: Failed to xor buffers. (%i)\n", status);
+			goto fail;
+		}
 
-	//make sure that xor doesn't contain either 'text' or 'random2'
-	if ((to_xor->compare(text) == 0) || (to_xor->compare(random2) == 0)) {
-		fprintf(stderr, "ERROR: xor buffer contains 'text' or 'random2'\n");
-		goto fail;
-	}
+		//make sure that xor doesn't contain either 'text' or 'random2'
+		if ((to_xor->compare(&text) == 0) || (to_xor->compare(random2) == 0)) {
+			fprintf(stderr, "ERROR: xor buffer contains 'text' or 'random2'\n");
+			goto fail;
+		}
 
-	//xor the buffer with text again to get out the random data
-	status = to_xor->xorWith(text);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to xor buffers. (%i)\n", status);
-		goto fail;
+		//xor the buffer with text again to get out the random data
+		status = to_xor->xorWith(&text);
+		if (status != 0) {
+			fprintf(stderr, "ERROR: Failed to xor buffers. (%i)\n", status);
+			goto fail;
+		}
 	}
 
 	//xor should now contain the same as random2
@@ -291,33 +290,35 @@ int main(void) noexcept {
 	//test creating a buffer with an existing array
 	{
 		unsigned char array[] = "Hello World!\n";
-		buffer_create_with_existing_array(buffer_with_array, array, sizeof(array));
-		if ((buffer_with_array->content != array)
-				|| (buffer_with_array->content_length != sizeof(array))
-				|| (buffer_with_array->getBufferLength() != sizeof(array))) {
+		Buffer buffer_with_array(array, sizeof(array));
+		if ((buffer_with_array.content != array)
+				|| (buffer_with_array.content_length != sizeof(array))
+				|| (buffer_with_array.getBufferLength() != sizeof(array))) {
 			fprintf(stderr, "ERROR: Failed to create buffer with existing array.\n");
 			goto fail;
 		}
 	}
 
 	//compare buffer to an array
-	buffer_create_from_string(true_buffer, "true");
-	status = true_buffer->compareToRaw((const unsigned char*)"true", sizeof("true"));
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to compare buffer to array! (%i)\n", status);
-		goto fail;
+	{
+		Buffer true_buffer("true");
+		status = true_buffer.compareToRaw((const unsigned char*)"true", sizeof("true"));
+		if (status != 0) {
+			fprintf(stderr, "ERROR: Failed to compare buffer to array! (%i)\n", status);
+			goto fail;
+		}
+		status = true_buffer.compareToRaw((const unsigned char*)"fals", sizeof("fals"));
+		if (status != -1) {
+			fprintf(stderr, "ERROR: Failed to detect difference in buffer and array.\n");
+			goto fail;
+		}
+		status = true_buffer.compareToRaw((const unsigned char*)"false", sizeof("false"));
+		if (status != -1) {
+			fprintf(stderr, "ERROR: Failed to detect difference in buffer and array.\n");
+			goto fail;
+		}
+		status = 0;
 	}
-	status = true_buffer->compareToRaw((const unsigned char*)"fals", sizeof("fals"));
-	if (status != -1) {
-		fprintf(stderr, "ERROR: Failed to detect difference in buffer and array.\n");
-		goto fail;
-	}
-	status = true_buffer->compareToRaw((const unsigned char*)"false", sizeof("false"));
-	if (status != -1) {
-		fprintf(stderr, "ERROR: Failed to detect difference in buffer and array.\n");
-		goto fail;
-	}
-	status = 0;
 
 	//test custom allocator
 	custom_allocated = Buffer::createWithCustomAllocator(10, 10, sodium_malloc, sodium_free);

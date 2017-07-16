@@ -20,6 +20,7 @@
  */
 
 #include "../lib/header-and-message-keystore.h"
+#include <string>
 
 #ifndef TEST_COMMON_H
 #define TEST_COMMON_H
@@ -34,6 +35,6 @@ void print_header_and_message_keystore(header_and_message_keystore *keystore) no
 return_status generate_and_print_keypair(
 		Buffer * const public_key, //crypto_box_PUBLICKEYBYTES
 		Buffer * const private_key, //crypto_box_SECRETKEYBYTES
-		Buffer * name, //Name of the key owner (e.g. "Alice")
-		Buffer * type) noexcept; //type of the key (e.g. "ephemeral")
+		const std::string& name, //Name of the key owner (e.g. "Alice")
+		const std::string& type) noexcept; //type of the key (e.g. "ephemeral")
 #endif

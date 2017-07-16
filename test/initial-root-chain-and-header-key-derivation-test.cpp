@@ -62,39 +62,35 @@ int main(void) noexcept {
 	Buffer *bob_next_receive_header_key = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 
 	//create Alice's identity keypair
-	buffer_create_from_string(alice_string, "Alice");
-	buffer_create_from_string(identity_string, "identity");
 	status = generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
-			alice_string,
-			identity_string);
+			"Alice",
+			"identity");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice's identity keypair.");
 
 	//create Alice's ephemeral keypair
-	buffer_create_from_string(ephemeral_string, "ephemeral");
 	status = generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
-			alice_string,
-			ephemeral_string);
+			"Alice",
+			"ephemeral");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice's ephemeral keypair.");
 
 	//create Bob's identity keypair
-	buffer_create_from_string(bob_string, "Bob");
 	status = generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
-			bob_string,
-			identity_string);
+			"Bob",
+			"identity");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's identity keypair.");
 
 	//create Bob's ephemeral keypair
 	status = generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
-			bob_string,
-			ephemeral_string);
+			"Bob",
+			"ephemeral");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's ephemeral keypair.");
 
 	//derive Alice's initial root and chain key

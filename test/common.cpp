@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
+#include <iostream>
 
 #include "common.h"
 #include "utils.h"
@@ -58,8 +59,8 @@ void print_header_and_message_keystore(header_and_message_keystore *keystore) no
 return_status generate_and_print_keypair(
 		Buffer * const public_key, //crypto_box_PUBLICKEYBYTES
 		Buffer * const private_key, //crypto_box_SECRETKEYBYTES
-		Buffer * name, //Name of the key owner (e.g. "Alice")
-		Buffer * type) noexcept { //type of the key (e.g. "ephemeral")
+		const std::string& name, //Name of the key owner (e.g. "Alice")
+		const std::string& type) noexcept { //type of the key (e.g. "ephemeral")
 	return_status status = return_status_init();
 
 	//check buffer sizes
@@ -79,12 +80,12 @@ return_status generate_and_print_keypair(
 	private_key->content_length = crypto_box_SECRETKEYBYTES;
 
 	//print keypair
-	printf("%.*s's public %.*s key (%zu Bytes):\n", (int)name->content_length, name->content, (int)type->content_length, type->content, public_key->content_length);
+	std::cout << name << "'s public " << type << " key (" << public_key->content_length << ":" << std::endl;
 	print_hex(public_key);
 	putchar('\n');
-	printf("%.*s's private %.*s key (%zu Bytes):\n", (int)name->content_length, name->content, (int)type->content_length, type->content, private_key->content_length);
+	std::cout << std::endl << name << "'s private " << type << " key (" << private_key->content_length << ":" << std::endl;
 	print_hex(private_key);
-	putchar('\n');
+	std::cout << std::endl;
 
 cleanup:
 	return status;

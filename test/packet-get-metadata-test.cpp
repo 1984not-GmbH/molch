@@ -39,7 +39,7 @@ int main(void) noexcept {
 	Buffer *extracted_public_identity_key = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	Buffer *extracted_public_ephemeral_key = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	Buffer *extracted_public_prekey = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	buffer_create_from_string(message, "Hello world!\n");
+	Buffer message("Hello world!\n");
 	Buffer *header = Buffer::create(4, 4);
 	Buffer *packet = nullptr;
 
@@ -66,7 +66,7 @@ int main(void) noexcept {
 			message_key,
 			packet_type,
 			header,
-			message,
+			&message,
 			nullptr,
 			nullptr,
 			nullptr);
@@ -133,7 +133,7 @@ int main(void) noexcept {
 			message_key,
 			packet_type,
 			header,
-			message,
+			&message,
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);

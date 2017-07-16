@@ -163,30 +163,31 @@ return_status conversation_start_send_conversation(
 
 	//choose a prekey
 	prekey_number = randombytes_uniform(PREKEY_AMOUNT);
-	buffer_create_with_existing_array(
-			receiver_public_prekey,
-			&(receiver_prekey_list->content[prekey_number * PUBLIC_KEY_SIZE]),
-			PUBLIC_KEY_SIZE);
+	{
+		Buffer receiver_public_prekey(
+				&(receiver_prekey_list->content[prekey_number * PUBLIC_KEY_SIZE]),
+				PUBLIC_KEY_SIZE);
 
-	//initialize the conversation
-	status = conversation_create(
-			conversation,
-			sender_private_identity,
-			sender_public_identity,
-			receiver_public_identity,
-			sender_private_ephemeral,
-			sender_public_ephemeral,
-			receiver_public_prekey);
-	THROW_on_error(CREATION_ERROR, "Failed to create conversation.");
+		//initialize the conversation
+		status = conversation_create(
+				conversation,
+				sender_private_identity,
+				sender_public_identity,
+				receiver_public_identity,
+				sender_private_ephemeral,
+				sender_public_ephemeral,
+				&receiver_public_prekey);
+		THROW_on_error(CREATION_ERROR, "Failed to create conversation.");
 
-	status = conversation_send(
-			*conversation,
-			message,
-			packet,
-			sender_public_identity,
-			sender_public_ephemeral,
-			receiver_public_prekey);
-	THROW_on_error(SEND_ERROR, "Failed to send message using newly created conversation.");
+		status = conversation_send(
+				*conversation,
+				message,
+				packet,
+				sender_public_identity,
+				sender_public_ephemeral,
+				&receiver_public_prekey);
+		THROW_on_error(SEND_ERROR, "Failed to send message using newly created conversation.");
+	}
 
 cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(sender_public_ephemeral);

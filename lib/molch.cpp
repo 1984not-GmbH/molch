@@ -70,36 +70,38 @@ static return_status create_prekey_list(
 	public_identity_key = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(public_identity_key);
 
-	//buffer for the prekey part of unsigned_prekey_list
-	buffer_create_with_existing_array(prekeys, unsigned_prekey_list->content + PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
+	{
+		//buffer for the prekey part of unsigned_prekey_list
+		Buffer prekeys(unsigned_prekey_list->content + PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
 
-	//get the user
-	status = user_store_find_node(&user, users, public_signing_key);
-	THROW_on_error(NOT_FOUND, "Failed to find user.");
+		//get the user
+		status = user_store_find_node(&user, users, public_signing_key);
+		THROW_on_error(NOT_FOUND, "Failed to find user.");
 
-	//rotate the prekeys
-	status = user->prekeys->rotate();
-	THROW_on_error(GENERIC_ERROR, "Failed to rotate prekeys.");
+		//rotate the prekeys
+		status = user->prekeys->rotate();
+		THROW_on_error(GENERIC_ERROR, "Failed to rotate prekeys.");
 
-	//get the public identity key
-	status = user->master_keys->getIdentityKey(*public_identity_key);
-	THROW_on_error(DATA_FETCH_ERROR, "Failed to get public identity key from master keys.");
+		//get the public identity key
+		status = user->master_keys->getIdentityKey(*public_identity_key);
+		THROW_on_error(DATA_FETCH_ERROR, "Failed to get public identity key from master keys.");
 
-	//copy the public identity to the prekey list
-	if (unsigned_prekey_list->copyFrom(0, public_identity_key, 0, PUBLIC_KEY_SIZE) != 0) {
-		THROW(BUFFER_ERROR, "Failed to copy public identity to prekey list.");
+		//copy the public identity to the prekey list
+		if (unsigned_prekey_list->copyFrom(0, public_identity_key, 0, PUBLIC_KEY_SIZE) != 0) {
+			THROW(BUFFER_ERROR, "Failed to copy public identity to prekey list.");
+		}
+
+		//get the prekeys
+		status = user->prekeys->list(prekeys);
+		THROW_on_error(DATA_FETCH_ERROR, "Failed to get prekeys.");
 	}
-
-	//get the prekeys
-	status = user->prekeys->list(*prekeys);
-	THROW_on_error(DATA_FETCH_ERROR, "Failed to get prekeys.");
 
 	//add the expiration date
 	{
 		int64_t expiration_date = time(nullptr) + 3600 * 24 * 31 * 3; //the prekey list will expire in 3 months
-		buffer_create_with_existing_array(big_endian_expiration_date, unsigned_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
-		status = to_big_endian(expiration_date, *big_endian_expiration_date);
+		Buffer big_endian_expiration_date(unsigned_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
+		status = to_big_endian(expiration_date, big_endian_expiration_date);
 		THROW_on_error(CONVERSION_ERROR, "Failed to convert expiration date to big endian.");
 		unsigned_prekey_list->content_length = unsigned_prekey_list->getBufferLength();
 	}
@@ -160,6 +162,10 @@ return_status molch_create_user(
 		const size_t random_data_length) {
 	return_status status = return_status_init();
 	bool user_store_created = false;
+	//create buffers wrapping the raw arrays
+	Buffer random_data_buffer(random_data, random_data_length);
+	Buffer public_master_key_buffer(public_master_key, PUBLIC_MASTER_KEY_SIZE);
+
 
 	if ((public_master_key == nullptr)
 		|| (prekey_list == nullptr) || (prekey_list_length == nullptr)) {
@@ -173,10 +179,6 @@ return_status molch_create_user(
 	if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
 		THROW(INCORRECT_BUFFER_SIZE, "Public master key has incorrect length.");
 	}
-
-	//create buffers wrapping the raw arrays
-	buffer_create_with_existing_const_array(random_data_buffer, random_data, random_data_length);
-	buffer_create_with_existing_array(public_master_key_buffer, public_master_key, PUBLIC_MASTER_KEY_SIZE);
 
 	//create user store if it doesn't exist already
 	if (users == nullptr) {
@@ -194,15 +196,15 @@ return_status molch_create_user(
 	//create the user
 	status = user_store_create_user(
 			users,
-			random_data_buffer,
-			public_master_key_buffer,
+			&random_data_buffer,
+			&public_master_key_buffer,
 			nullptr);
 	THROW_on_error(CREATION_ERROR, "Failed to create user.");
 
 	user_store_created = true;
 
 	status = create_prekey_list(
-			public_master_key_buffer,
+			&public_master_key_buffer,
 			prekey_list,
 			prekey_list_length);
 	THROW_on_error(CREATION_ERROR, "Failed to create prekey list.");
@@ -252,9 +254,11 @@ return_status molch_destroy_user(
 
 	//TODO maybe check beforehand if the user exists and return nonzero if not
 
-	buffer_create_with_existing_const_array(public_signing_key_buffer, public_master_key, PUBLIC_KEY_SIZE);
-	status = user_store_remove_by_key(users, public_signing_key_buffer);
-	THROW_on_error(REMOVE_ERROR, "Failed to remoe user from user store by key.");
+	{
+		Buffer public_signing_key_buffer(public_master_key, PUBLIC_MASTER_KEY_SIZE);
+		status = user_store_remove_by_key(users, &public_signing_key_buffer);
+		THROW_on_error(REMOVE_ERROR, "Failed to remoe user from user store by key.");
+	}
 
 	if (backup != nullptr) {
 		if (backup_length == 0) {
@@ -338,7 +342,7 @@ molch_message_type molch_get_message_type(
 		const size_t packet_length) {
 
 	//create a buffer for the packet
-	buffer_create_with_existing_const_array(packet_buffer, packet, packet_length);
+	Buffer packet_buffer(packet, packet_length);
 
 	molch_message_type packet_type;
 	uint32_t current_protocol_version;
@@ -347,7 +351,7 @@ molch_message_type molch_get_message_type(
 		current_protocol_version,
 		highest_supported_protocol_version,
 		packet_type,
-		*packet_buffer,
+		packet_buffer,
 		nullptr,
 		nullptr,
 		nullptr);
@@ -394,16 +398,18 @@ static return_status verify_prekey_list(
 	}
 
 	//get the expiration date
-	int64_t expiration_date;
-	buffer_create_with_existing_array(big_endian_expiration_date, verified_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
-	status = from_big_endian(expiration_date, *big_endian_expiration_date);
-	THROW_on_error(CONVERSION_ERROR, "Failed to convert expiration date to big endian.");
-
-	//make sure the prekey list isn't too old
 	{
-		int64_t current_time = time(nullptr);
-		if (expiration_date < current_time) {
-			THROW(OUTDATED, "Prekey list has expired (older than 3 months).");
+		int64_t expiration_date;
+		Buffer big_endian_expiration_date(verified_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
+		status = from_big_endian(expiration_date, big_endian_expiration_date);
+		THROW_on_error(CONVERSION_ERROR, "Failed to convert expiration date to big endian.");
+
+		//make sure the prekey list isn't too old
+		{
+			int64_t current_time = time(nullptr);
+			if (expiration_date < current_time) {
+				THROW(OUTDATED, "Prekey list has expired (older than 3 months).");
+			}
 		}
 	}
 
@@ -452,11 +458,11 @@ return_status molch_start_send_conversation(
 		size_t *const backup_length
 ) {
 	//create buffers wrapping the raw input
-	buffer_create_with_existing_array(conversation_id_buffer, conversation_id, CONVERSATION_ID_SIZE);
-	buffer_create_with_existing_const_array(message_buffer, message, message_length);
-	buffer_create_with_existing_const_array(sender_public_master_key_buffer, sender_public_master_key, PUBLIC_MASTER_KEY_SIZE);
-	buffer_create_with_existing_const_array(receiver_public_master_key_buffer, receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
-	buffer_create_with_existing_const_array(prekeys, prekey_list + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t));
+	Buffer conversation_id_buffer(conversation_id, CONVERSATION_ID_SIZE);
+	Buffer message_buffer(message, message_length);
+	Buffer sender_public_master_key_buffer(sender_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+	Buffer receiver_public_master_key_buffer(receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+	Buffer prekeys(prekey_list + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t));
 
 	conversation_t *conversation = nullptr;
 	Buffer *packet_buffer = nullptr;
@@ -498,7 +504,7 @@ return_status molch_start_send_conversation(
 	}
 
 	//get the user that matches the public signing key of the sender
-	status = user_store_find_node(&user, users, sender_public_master_key_buffer);
+	status = user_store_find_node(&user, users, &sender_public_master_key_buffer);
 	THROW_on_error(NOT_FOUND, "User not found.");
 
 	//get the receivers public ephemeral and identity
@@ -506,7 +512,7 @@ return_status molch_start_send_conversation(
 			prekey_list,
 			prekey_list_length,
 			receiver_public_identity,
-			receiver_public_master_key_buffer);
+			&receiver_public_master_key_buffer);
 	THROW_on_error(VERIFICATION_FAILED, "Failed to verify prekey list.");
 
 	//unlock the master keys
@@ -515,17 +521,17 @@ return_status molch_start_send_conversation(
 	//create the conversation and encrypt the message
 	status = conversation_start_send_conversation(
 			&conversation,
-			message_buffer,
+			&message_buffer,
 			&packet_buffer,
 			&user->master_keys->public_identity_key,
 			&user->master_keys->private_identity_key,
 			receiver_public_identity,
-			prekeys);
+			&prekeys);
 	THROW_on_error(CREATION_ERROR, "Failed to start send converstion.");
 
 	//copy the conversation id
 	{
-		int status_int = conversation_id_buffer->cloneFrom(&conversation->id);
+		int status_int = conversation_id_buffer.cloneFrom(&conversation->id);
 		if (status_int != 0) {
 			THROW(BUFFER_ERROR, "Failed to clone conversation id.");
 		}
@@ -605,10 +611,10 @@ return_status molch_start_receive_conversation(
 	return_status status = return_status_init();
 
 	//create buffers to wrap the raw arrays
-	buffer_create_with_existing_array(conversation_id_buffer, conversation_id, CONVERSATION_ID_SIZE);
-	buffer_create_with_existing_const_array(packet_buffer, packet, packet_length);
-	buffer_create_with_existing_const_array(sender_public_master_key_buffer, sender_public_master_key, PUBLIC_MASTER_KEY_SIZE);
-	buffer_create_with_existing_const_array(receiver_public_master_key_buffer, receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+	Buffer conversation_id_buffer(conversation_id, CONVERSATION_ID_SIZE);
+	Buffer packet_buffer(packet, packet_length);
+	Buffer sender_public_master_key_buffer(sender_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+	Buffer receiver_public_master_key_buffer(receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
 
 	conversation_t *conversation = nullptr;
 	Buffer *message_buffer = nullptr;
@@ -636,7 +642,7 @@ return_status molch_start_receive_conversation(
 	}
 
 	//get the user that matches the public signing key of the receiver
-	status = user_store_find_node(&user, users, receiver_public_master_key_buffer);
+	status = user_store_find_node(&user, users, &receiver_public_master_key_buffer);
 	THROW_on_error(NOT_FOUND, "User not found in the user store.");
 
 	//unlock the master keys
@@ -645,7 +651,7 @@ return_status molch_start_receive_conversation(
 	//create the conversation
 	status = conversation_start_receive_conversation(
 			&conversation,
-			packet_buffer,
+			&packet_buffer,
 			&message_buffer,
 			&user->master_keys->public_identity_key,
 			&user->master_keys->private_identity_key,
@@ -654,7 +660,7 @@ return_status molch_start_receive_conversation(
 
 	//copy the conversation id
 	{
-		int status_int = conversation_id_buffer->cloneFrom(&conversation->id);
+		int status_int = conversation_id_buffer.cloneFrom(&conversation->id);
 		if (status_int != 0) {
 			THROW(BUFFER_ERROR, "Failed to clone conversation id.");
 		}
@@ -662,7 +668,7 @@ return_status molch_start_receive_conversation(
 
 	//create the prekey list
 	status = create_prekey_list(
-			receiver_public_master_key_buffer,
+			&receiver_public_master_key_buffer,
 			prekey_list,
 			prekey_list_length);
 	THROW_on_error(CREATION_ERROR, "Failed to create prekey list.");
@@ -721,13 +727,12 @@ static return_status find_conversation(
 		THROW(INVALID_INPUT, "Invalid input for find_conversation.");
 	}
 
-	buffer_create_with_existing_const_array(conversation_id_buffer, conversation_id, CONVERSATION_ID_SIZE);
-
 	//go through all the users
 	{
+		Buffer conversation_id_buffer(conversation_id, CONVERSATION_ID_SIZE);
 		user_store_node *node = users->head;
 		while (node != nullptr) {
-			conversation_node = node->conversations->findNode(*conversation_id_buffer);
+			conversation_node = node->conversations->findNode(conversation_id_buffer);
 			if (conversation_node != nullptr) {
 				//found the conversation we're searching for
 				break;
@@ -785,7 +790,7 @@ return_status molch_encrypt_message(
 		) {
 
 	//create buffer for message array
-	buffer_create_with_existing_const_array(message_buffer, message, message_length);
+	Buffer message_buffer(message, message_length);
 
 	Buffer *packet_buffer = nullptr;
 	conversation_t *conversation = nullptr;
@@ -811,7 +816,7 @@ return_status molch_encrypt_message(
 
 	status = conversation_send(
 			conversation,
-			message_buffer,
+			&message_buffer,
 			&packet_buffer,
 			nullptr,
 			nullptr,
@@ -865,7 +870,7 @@ return_status molch_decrypt_message(
 		size_t * const conversation_backup_length
 	) {
 	//create buffer for the packet
-	buffer_create_with_existing_const_array(packet_buffer, packet, packet_length);
+	Buffer packet_buffer(packet, packet_length);
 
 	return_status status = return_status_init();
 
@@ -893,7 +898,7 @@ return_status molch_decrypt_message(
 
 	status = conversation_receive(
 			conversation,
-			packet_buffer,
+			&packet_buffer,
 			receive_message_number,
 			previous_receive_message_number,
 			&message_buffer);
@@ -991,7 +996,7 @@ return_status molch_list_conversations(
 		//inputs
 		const unsigned char * const user_public_master_key,
 		const size_t user_public_master_key_length) {
-	buffer_create_with_existing_const_array(user_public_master_key_buffer, user_public_master_key, PUBLIC_KEY_SIZE);
+	Buffer user_public_master_key_buffer(user_public_master_key, PUBLIC_MASTER_KEY_SIZE);
 	Buffer *conversation_list_buffer = nullptr;
 
 	return_status status = return_status_init();
@@ -1008,7 +1013,7 @@ return_status molch_list_conversations(
 
 	{
 		user_store_node *user = nullptr;
-		status = user_store_find_node(&user, users, user_public_master_key_buffer);
+		status = user_store_find_node(&user, users, &user_public_master_key_buffer);
 		THROW_on_error(NOT_FOUND, "No user found for the given public identity.")
 
 		status = user->conversations->list(conversation_list_buffer);
@@ -1584,13 +1589,15 @@ return_status molch_get_prekey_list(
 		THROW(INCORRECT_BUFFER_SIZE, "Public master key has an incorrect length.");
 	}
 
-	buffer_create_with_existing_array(public_signing_key_buffer, public_master_key, PUBLIC_MASTER_KEY_SIZE);
+	{
+		Buffer public_signing_key_buffer(public_master_key, PUBLIC_MASTER_KEY_SIZE);
 
-	status = create_prekey_list(
-			public_signing_key_buffer,
-			prekey_list,
-			prekey_list_length);
-	THROW_on_error(CREATION_ERROR, "Failed to create prekey list.");
+		status = create_prekey_list(
+				&public_signing_key_buffer,
+				prekey_list,
+				prekey_list_length);
+		THROW_on_error(CREATION_ERROR, "Failed to create prekey list.");
+	}
 
 cleanup:
 	return status;
@@ -1607,7 +1614,7 @@ return_status molch_update_backup_key(
 		const size_t new_key_length) {
 	return_status status = return_status_init();
 
-	buffer_create_with_existing_array(new_key_buffer, new_key, BACKUP_KEY_SIZE);
+	Buffer new_key_buffer(new_key, BACKUP_KEY_SIZE);
 
 	if (users == nullptr) {
 		if (sodium_init() == -1) {
@@ -1642,7 +1649,7 @@ return_status molch_update_backup_key(
 		THROW(KEYGENERATION_FAILED, "Failed to generate new backup key.");
 	}
 
-	if (new_key_buffer->cloneFrom(global_backup_key) != 0) {
+	if (new_key_buffer.cloneFrom(global_backup_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy new backup key.");
 	}
 

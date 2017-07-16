@@ -346,11 +346,11 @@ return_status header_and_message_keystore_import(
 		}
 
 		//create buffers that point to the data in the protobuf struct
-		buffer_create_with_existing_array(header_key, current_key_bundle->header_key->key.data, current_key_bundle->message_key->key.len);
-		buffer_create_with_existing_array(message_key, current_key_bundle->message_key->key.data, current_key_bundle->message_key->key.len);
+		Buffer header_key(current_key_bundle->header_key->key.data, current_key_bundle->message_key->key.len);
+		Buffer message_key(current_key_bundle->message_key->key.data, current_key_bundle->message_key->key.len);
 
 		//create new node
-		status = create_and_populate_node(&current_node, (int64_t)current_key_bundle->expiration_time, header_key, message_key);
+		status = create_and_populate_node(&current_node, (int64_t)current_key_bundle->expiration_time, &header_key, &message_key);
 		THROW_on_error(CREATION_ERROR, "Failed to create header_and_message_keystore_node.");
 
 		add_node(store, current_node);

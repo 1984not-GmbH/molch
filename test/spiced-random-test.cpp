@@ -34,11 +34,11 @@ int main(void) noexcept {
 	return_status status = return_status_init();
 
 	//some random user input (idiot bashing his head on the keyboard)
-	buffer_create_from_string(spice, "aäipoewur+ü 093+2ß3+2ü+ ß09234rt #2ß 0iw4eräp9ui23+ 03943");
-	printf("\"Random\" input from the user (%zu Bytes):\n", spice->content_length);
-	printf("String: %s\n", spice->content);
+	Buffer spice("aäipoewur+ü 093+2ß3+2ü+ ß09234rt #2ß 0iw4eräp9ui23+ 03943");
+	printf("\"Random\" input from the user (%zu Bytes):\n", spice.content_length);
+	printf("String: %.*s\n", (int)spice.content_length, spice.content);
 	printf("Hex:\n");
-	print_hex(spice);
+	print_hex(&spice);
 	putchar('\n');
 
 	//output buffers
@@ -48,7 +48,7 @@ int main(void) noexcept {
 	THROW_on_failed_alloc(output2);
 
 	//fill buffer with spiced random data
-	status = spiced_random(*output1, *spice, output1->getBufferLength());
+	status = spiced_random(*output1, spice, output1->getBufferLength());
 	THROW_on_error(GENERIC_ERROR, "Failed to generate spiced random data.");
 
 	printf("Spiced random data 1 (%zu Bytes):\n", output1->content_length);
@@ -57,7 +57,7 @@ int main(void) noexcept {
 
 
 	//fill buffer with spiced random data
-	status = spiced_random(*output2, *spice, output2->getBufferLength());
+	status = spiced_random(*output2, spice, output2->getBufferLength());
 	THROW_on_error(GENERIC_ERROR, "Failed to generate spiced random data.");
 
 	printf("Spiced random data 2 (%zu Bytes):\n", output2->content_length);
@@ -70,7 +70,7 @@ int main(void) noexcept {
 	}
 
 	//don't crash with output length 0
-	status = spiced_random(*output1, *spice, 0);
+	status = spiced_random(*output1, spice, 0);
 	on_error {
 		//on newer libsodium versions, output lengths of zero aren't supported
 		return_status_destroy_errors(&status);

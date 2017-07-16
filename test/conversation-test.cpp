@@ -189,39 +189,35 @@ int main(void) noexcept {
 	return_status status = return_status_init();
 
 	//creating charlie's identity keypair
-	buffer_create_from_string(charlie_string, "charlie");
-	buffer_create_from_string(identity_string, "identity");
 	status = generate_and_print_keypair(
 			charlie_public_identity,
 			charlie_private_identity,
-			charlie_string,
-			identity_string);
+			"Charlie",
+			"identity");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Charlie's identity keypair.");
 
 	//creating charlie's ephemeral keypair
-	buffer_create_from_string(ephemeral_string, "ephemeral");
 	status = generate_and_print_keypair(
 			charlie_public_ephemeral,
 			charlie_private_ephemeral,
-			charlie_string,
-			ephemeral_string);
+			"Charlie",
+			"ephemeral");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Charlie's ephemeral keypair.");
 
 	//creating dora's identity keypair
-	buffer_create_from_string(dora_string, "dora");
 	status = generate_and_print_keypair(
 			dora_public_identity,
 			dora_private_identity,
-			dora_string,
-			identity_string);
+			"Dora",
+			"identity");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Dora's identity keypair.");
 
 	//creating dora's ephemeral keypair
 	status = generate_and_print_keypair(
 			dora_public_ephemeral,
 			dora_private_ephemeral,
-			dora_string,
-			ephemeral_string);
+			"Dora",
+			"ephemeral");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Dora's ephemeral keypair.");
 
 	//create charlie's conversation

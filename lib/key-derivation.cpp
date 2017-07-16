@@ -40,6 +40,11 @@ return_status derive_key(
 		uint32_t subkey_counter) noexcept { //number of the current subkey, used to derive multiple keys from the same input key
 	return_status status = return_status_init();
 
+	const char personal_string[] = "molch_cryptolib";
+	Buffer personal((const unsigned char*)personal_string, sizeof(personal_string));
+	assert(personal.content_length == crypto_generichash_blake2b_PERSONALBYTES);
+
+
 	//create a salt that contains the number of the subkey
 	Buffer *salt = Buffer::create(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
 	THROW_on_failed_alloc(salt);
@@ -58,26 +63,25 @@ return_status derive_key(
 	//set length of output
 	derived_key.content_length = derived_size;
 
-	buffer_create_from_string(personal, "molch cryptolib"); //string that's unique to molch
-	assert(personal->content_length == crypto_generichash_blake2b_PERSONALBYTES);
-
-	//fill the salt with a big endian representation of the subkey counter
-	buffer_create_with_existing_array(big_endian_subkey_counter, salt->content + salt->content_length - sizeof(uint32_t), sizeof(uint32_t));
-	status = to_big_endian(subkey_counter, *big_endian_subkey_counter);
-	THROW_on_error(CONVERSION_ERROR, "Failed to convert subkey counter to big endian.");
-
 	{
-		int status_int = crypto_generichash_blake2b_salt_personal(
-				derived_key.content,
-				derived_key.content_length,
-				nullptr, //input
-				0, //input length
-				input_key.content,
-				input_key.content_length,
-				salt->content,
-				personal->content);
-		if (status_int != 0) {
-			THROW(KEYDERIVATION_FAILED, "Failed to derive key via crypto_generichash_blake2b_salt_personal");
+		//fill the salt with a big endian representation of the subkey counter
+		Buffer big_endian_subkey_counter(salt->content + salt->content_length - sizeof(uint32_t), sizeof(uint32_t));
+		status = to_big_endian(subkey_counter, big_endian_subkey_counter);
+		THROW_on_error(CONVERSION_ERROR, "Failed to convert subkey counter to big endian.");
+
+		{
+			int status_int = crypto_generichash_blake2b_salt_personal(
+					derived_key.content,
+					derived_key.content_length,
+					nullptr, //input
+					0, //input length
+					input_key.content,
+					input_key.content_length,
+					salt->content,
+					personal.content);
+			if (status_int != 0) {
+				THROW(KEYDERIVATION_FAILED, "Failed to derive key via crypto_generichash_blake2b_salt_personal");
+			}
 		}
 	}
 

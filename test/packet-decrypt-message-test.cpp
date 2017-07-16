@@ -30,7 +30,7 @@
 #include "packet-test-lib.h"
 
 int main(void) noexcept {
-	buffer_create_from_string(message, "Hello world!\n");
+	Buffer message("Hello world!\n");
 	//create buffers
 	Buffer *header_key = Buffer::create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
 	Buffer *message_key = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
@@ -66,7 +66,7 @@ int main(void) noexcept {
 			message_key,
 			packet_type,
 			header,
-			message,
+			&message,
 			nullptr,
 			nullptr,
 			nullptr);
@@ -80,13 +80,13 @@ int main(void) noexcept {
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
 
 	//check the message size
-	if (decrypted_message->content_length != message->content_length) {
+	if (decrypted_message->content_length != message.content_length) {
 		THROW(INVALID_VALUE, "Decrypted message length isn't the same.");
 	}
 	printf("Decrypted message length is the same.\n");
 
 	//compare the message
-	if (message->compare(decrypted_message) != 0) {
+	if (message.compare(decrypted_message) != 0) {
 		THROW(INVALID_VALUE, "Decrypted message doesn't match.");
 	}
 	printf("Decrypted message is the same.\n\n");
@@ -140,7 +140,7 @@ int main(void) noexcept {
 			message_key,
 			packet_type,
 			header,
-			message,
+			&message,
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
@@ -154,13 +154,13 @@ int main(void) noexcept {
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
 
 	//check the message size
-	if (decrypted_message->content_length != message->content_length) {
+	if (decrypted_message->content_length != message.content_length) {
 		THROW(INVALID_VALUE, "Decrypted message length isn't the same.");
 	}
 	printf("Decrypted message length is the same.\n");
 
 	//compare the message
-	if (message->compare(decrypted_message) != 0) {
+	if (message.compare(decrypted_message) != 0) {
 		THROW(INVALID_VALUE, "Decrypted message doesn't match.");
 	}
 	printf("Decrypted message is the same.\n");

@@ -49,22 +49,19 @@ int main(void) noexcept {
 	Buffer *bob_header_key = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 
 	//create Alice's keypair
-	buffer_create_from_string(alice_string, "Alice");
-	buffer_create_from_string(ephemeral_string, "ephemeral");
 	status = generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
-			alice_string,
-			ephemeral_string);
+			"Alice",
+			"ephemeral");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice's ephemeral keypair.");
 
 	//create Bob's keypair
-	buffer_create_from_string(bob_string, "Bob");
 	status = generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
-			bob_string,
-			ephemeral_string);
+			"Bob",
+			"ephemeral");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's ephemeral keypair.");
 
 	//create previous root key

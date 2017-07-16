@@ -52,41 +52,37 @@ int main(void) noexcept {
 
 	int status_int = 0;
 	//create Alice's identity keypair
-	buffer_create_from_string(alice_string, "Alice");
-	buffer_create_from_string(identity_string, "identity");
 	status = generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
-			alice_string,
-			identity_string);
+			"Alice",
+			"identity");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice' identity keypair.");
 
 	//create Alice's ephemeral keypair
-	buffer_create_from_string(ephemeral_string, "ephemeral");
 	status = generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
-			alice_string,
-			ephemeral_string);
+			"Alice",
+			"ephemeral");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice' ephemeral keypair.");
 
 	printf("Generate Bob's keys ---------------------------------------------------------\n\n");
 
 	//create Bob's identity keypair
-	buffer_create_from_string(bob_string, "Bob");
 	status = generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
-			bob_string,
-			identity_string);
+			"Bob",
+			"identity");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's identity keypair.");
 
 	//create Bob's ephemeral keypair
 	status = generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
-			bob_string,
-			ephemeral_string);
+			"Bob",
+			"ephemeral");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's ephemeral keypair.");
 
 	printf("Calculate shared secret via Triple Diffie Hellman ---------------------------\n\n");

@@ -175,6 +175,7 @@ int main(void) noexcept {
 
 	int status_int = 0;
 	return_status status = return_status_init();
+	Buffer alice_send_message("Hi Bob. Alice here!");
 
 	//backup key buffer
 	Buffer *backup_key = Buffer::create(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
@@ -228,7 +229,7 @@ int main(void) noexcept {
 
 	//create a new user
 	{
-		buffer_create_from_string(alice_head_on_keyboard, "mn ujkhuzn7b7bzh6ujg7j8hn");
+		Buffer alice_head_on_keyboard("mn ujkhuzn7b7bzh6ujg7j8hn");
 		unsigned char *complete_export = nullptr;
 		size_t complete_export_length = 0;
 		status = molch_create_user(
@@ -240,8 +241,8 @@ int main(void) noexcept {
 				new_backup_key->content_length,
 				&complete_export,
 				&complete_export_length,
-				alice_head_on_keyboard->content,
-				alice_head_on_keyboard->content_length);
+				alice_head_on_keyboard.content,
+				alice_head_on_keyboard.content_length);
 		THROW_on_error(status.status, "Failed to create Alice!");
 
 		if (backup_key->compare(new_backup_key) == 0) {
@@ -276,19 +277,21 @@ int main(void) noexcept {
 	putchar('\n');
 
 	//create another user
-	buffer_create_from_string(bob_head_on_keyboard, "jnu8h77z6ht56ftgnujh");
-	status = molch_create_user(
-			bob_public_identity->content,
-			bob_public_identity->content_length,
-			&bob_public_prekeys,
-			&bob_public_prekeys_length,
-			backup_key->content,
-			backup_key->content_length,
-			nullptr,
-			nullptr,
-			bob_head_on_keyboard->content,
-			bob_head_on_keyboard->content_length);
-	THROW_on_error(status.status, "Failed to create Bob!");
+	{
+		Buffer bob_head_on_keyboard("jnu8h77z6ht56ftgnujh");
+		status = molch_create_user(
+				bob_public_identity->content,
+				bob_public_identity->content_length,
+				&bob_public_prekeys,
+				&bob_public_prekeys_length,
+				backup_key->content,
+				backup_key->content_length,
+				nullptr,
+				nullptr,
+				bob_head_on_keyboard.content,
+				bob_head_on_keyboard.content_length);
+		THROW_on_error(status.status, "Failed to create Bob!");
+	}
 
 	printf("Bob public identity (%zu Bytes):\n", bob_public_identity->content_length);
 	print_hex(bob_public_identity);
@@ -316,7 +319,6 @@ int main(void) noexcept {
 	}
 
 	//create a new send conversation (alice sends to bob)
-	buffer_create_from_string(alice_send_message, "Hi Bob. Alice here!");
 	size_t alice_send_packet_length;
 	printf("BEFORE molch_start_send_conversation\n");
 	status = molch_start_send_conversation(
@@ -330,8 +332,8 @@ int main(void) noexcept {
 			bob_public_identity->content_length,
 			bob_public_prekeys,
 			bob_public_prekeys_length,
-			alice_send_message->content,
-			alice_send_message->content_length,
+			alice_send_message.content,
+			alice_send_message.content_length,
 			nullptr,
 			nullptr);
 	THROW_on_error(CREATION_ERROR, "Failed to start send conversation.");
@@ -390,10 +392,10 @@ int main(void) noexcept {
 	THROW_on_error(CREATION_ERROR, "Failed to start receive conversation.");
 
 	//compare sent and received messages
-	printf("sent (Alice): %s\n", alice_send_message->content);
-	printf("received (Bob): %s\n", bob_receive_message);
-	if ((alice_send_message->content_length != bob_receive_message_length)
-			|| (sodium_memcmp(alice_send_message->content, bob_receive_message, bob_receive_message_length) != 0)) {
+	printf("sent (Alice): %.*s\n", (int)alice_send_message.content_length, alice_send_message.content);
+	printf("received (Bob): %.*s\n", (int)bob_receive_message_length, bob_receive_message);
+	if ((alice_send_message.content_length != bob_receive_message_length)
+			|| (sodium_memcmp(alice_send_message.content, bob_receive_message, bob_receive_message_length) != 0)) {
 		free_and_null_if_valid(bob_receive_message);
 		THROW(GENERIC_ERROR, "Incorrect message received.");
 	}
@@ -401,7 +403,7 @@ int main(void) noexcept {
 
 	//bob replies
 	{
-		buffer_create_from_string(bob_send_message, "Welcome Alice!");
+		Buffer bob_send_message("Welcome Alice!");
 		size_t bob_send_packet_length;
 		unsigned char * conversation_json_export = nullptr;
 		size_t conversation_json_export_length = 0;
@@ -410,8 +412,8 @@ int main(void) noexcept {
 				&bob_send_packet_length,
 				bob_conversation->content,
 				bob_conversation->content_length,
-				bob_send_message->content,
-				bob_send_message->content_length,
+				bob_send_message.content,
+				bob_send_message.content_length,
 				&conversation_json_export,
 				&conversation_json_export_length);
 		THROW_on_error(GENERIC_ERROR, "Couldn't send bobs message.");
@@ -451,10 +453,10 @@ int main(void) noexcept {
 		}
 
 		//compare sent and received messages
-		printf("sent (Bob): %s\n", bob_send_message->content);
-		printf("received (Alice): %s\n", alice_receive_message);
-		if ((bob_send_message->content_length != alice_receive_message_length)
-				|| (sodium_memcmp(bob_send_message->content, alice_receive_message, alice_receive_message_length) != 0)) {
+		printf("sent (Bob): %.*s\n", (int)bob_send_message.content_length, bob_send_message.content);
+		printf("received (Alice): %.*s\n", (int)alice_receive_message_length, alice_receive_message);
+		if ((bob_send_message.content_length != alice_receive_message_length)
+				|| (sodium_memcmp(bob_send_message.content, alice_receive_message, alice_receive_message_length) != 0)) {
 			free_and_null_if_valid(alice_receive_message);
 			THROW(GENERIC_ERROR, "Incorrect message received.");
 		}
@@ -598,10 +600,10 @@ int main(void) noexcept {
 	//TODO check detection of invalid prekey list signatures and old timestamps + more scenarios
 
 	{
-		buffer_create_from_string(success_buffer, "SUCCESS");
+		Buffer success_buffer("SUCCESS");
 		size_t printed_status_length = 0;
 		printed_status = (unsigned char*) molch_print_status(&printed_status_length, return_status_init());
-		if (success_buffer->compareToRaw(printed_status, printed_status_length) != 0) {
+		if (success_buffer.compareToRaw(printed_status, printed_status_length) != 0) {
 			THROW(INCORRECT_DATA, "molch_print_status produces incorrect output.");
 		}
 	}

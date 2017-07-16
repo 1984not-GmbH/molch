@@ -43,22 +43,19 @@ int main(void) noexcept {
 
 	int status_int = 0;
 	//create Alice's keypair
-	buffer_create_from_string(alice_string, "Alice");
-	buffer_create_from_string(empty_string, "");
 	status = generate_and_print_keypair(
 			alice_public_key,
 			alice_private_key,
-			alice_string,
-			empty_string);
+			"Alice",
+			"");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice's keypair.");
 
 	//create Bob's keypair
-	buffer_create_from_string(bob_string, "Bob");
 	status = generate_and_print_keypair(
 			bob_public_key,
 			bob_private_key,
-			bob_string,
-			empty_string);
+			"Bob",
+			"");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's keypair.");
 
 	//Diffie Hellman on Alice's side

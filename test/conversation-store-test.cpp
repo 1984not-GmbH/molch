@@ -310,8 +310,8 @@ int main(void) noexcept {
 
 		//check for all conversations that they exist
 		for (size_t i = 0; i < (conversation_list->content_length / CONVERSATION_ID_SIZE); i++) {
-			buffer_create_with_existing_array(current_id, conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
-			found_node = store->findNode(*current_id);
+			Buffer current_id(conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
+			found_node = store->findNode(current_id);
 			if (found_node == nullptr) {
 				buffer_destroy_from_heap_and_null_if_valid(conversation_list);
 				THROW(INCORRECT_DATA, "Exported list of conversations was incorrect.");

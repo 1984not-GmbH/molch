@@ -96,10 +96,12 @@ int main(int argc, char *args[]) noexcept {
 	}
 
 	//print the backup to a file
-	buffer_create_with_existing_array(backup_buffer, backup, backup_length);
-	buffer_create_with_existing_array(backup_key_buffer, backup_key, BACKUP_KEY_SIZE);
-	print_to_file(backup_buffer, "molch-init.backup");
-	print_to_file(backup_key_buffer, "molch-init-backup.key");
+	{
+		Buffer backup_buffer(backup, backup_length);
+		Buffer backup_key_buffer(backup_key, BACKUP_KEY_SIZE);
+		print_to_file(&backup_buffer, "molch-init.backup");
+		print_to_file(&backup_key_buffer, "molch-init-backup.key");
+	}
 
 cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(user_id);

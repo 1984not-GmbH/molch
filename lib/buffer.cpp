@@ -23,6 +23,62 @@
 
 #include "buffer.h"
 
+Buffer::Buffer() noexcept {
+	//do nothing
+}
+
+Buffer::Buffer(const std::string& string) noexcept {
+	this->buffer_length = string.length() + sizeof("");
+	this->content_length = string.length() + sizeof("");
+	this->readonly = false;
+	this->manage_memory = true;
+
+	try {
+		this->content = new unsigned char[string.length() + sizeof("")];
+	} catch (...) {
+		this->buffer_length = 0;
+		this->content_length = 0;
+		return;
+	}
+
+	std::copy(string.begin(), string.end(), this->content);
+	this->content[string.length()] = '\0';
+}
+
+Buffer::Buffer(const size_t buffer_length) noexcept {
+	Buffer(buffer_length, 0);
+}
+
+Buffer::Buffer(const size_t buffer_length, const size_t content_length) noexcept {
+	this->buffer_length = buffer_length;
+	this->content_length = content_length;
+	this->readonly = false;
+	this->manage_memory = true;
+
+	try {
+		this->content = new unsigned char[buffer_length];
+	} catch (...) {
+		this->buffer_length = 0;
+		this->content_length = 0;
+		return;
+	}
+}
+
+Buffer::Buffer(unsigned char * const content, const size_t buffer_length) noexcept {
+	this->init(content, buffer_length, buffer_length);
+}
+
+Buffer::Buffer(const unsigned char * const content, const size_t buffer_length) noexcept {
+	this->initWithConst(content, buffer_length, buffer_length);
+}
+
+Buffer::~Buffer() noexcept {
+	//only do something if this was created using a constructor
+	if (this->manage_memory) {
+		delete[] this->content;
+	}
+}
+
 size_t Buffer::getBufferLength() const noexcept {
 	return this->buffer_length;
 }
@@ -43,6 +99,7 @@ Buffer* Buffer::init(
 		const size_t buffer_length_,
 		const size_t content_length_) noexcept {
 	this->buffer_length = buffer_length_;
+	this->manage_memory = false;
 
 	this->content_length = (content_length_ > buffer_length_)
 		? buffer_length_
@@ -141,20 +198,6 @@ void Buffer::destroy_with_custom_deallocator(void (*deallocator)(void *pointer))
 		deallocator(this->content);
 	}
 	deallocator(this);
-}
-
-Buffer* Buffer::create_from_string_on_heap_helper(
-		const unsigned char * const content_,
-		const size_t content_length_) noexcept {
-	if (this->buffer_length < content_length_) {
-		return nullptr;
-	}
-
-	if (this->cloneFromRaw(content_, content_length_) != 0) {
-		return nullptr;
-	}
-
-	return this;
 }
 
 /*

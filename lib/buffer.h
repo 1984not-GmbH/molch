@@ -20,6 +20,7 @@
 
 #include <cstdbool>
 #include <cstdlib>
+#include <string>
 
 #ifndef LIB_BUFFER_H
 #define LIB_BUFFER_H
@@ -27,11 +28,20 @@
 class Buffer {
 private:
 	size_t buffer_length;
+	bool manage_memory; //should the destructor manage memory?
 	bool readonly; //if set, this buffer shouldn't be written to.
 
 public:
 	size_t content_length;
 	unsigned char *content;
+
+	Buffer() noexcept; // does nothing
+	Buffer(const std::string& string) noexcept;
+	Buffer(const size_t buffer_length) noexcept;
+	Buffer(const size_t buffer_length, const size_t content_length) noexcept;
+	Buffer(unsigned char * const content, const size_t buffer_length) noexcept;
+	Buffer(const unsigned char * const content, const size_t buffer_length) noexcept;
+	~Buffer() noexcept;
 
 	/*
 	 * initialize a buffer with a pointer to the character array.
@@ -48,19 +58,6 @@ public:
 			const unsigned char * const content,
 			const size_t buffer_length,
 			const size_t content_length) noexcept;
-
-	/*
-	 * Copy a raw array to a buffer and return the
-	 * buffer.
-	 *
-	 * This should not be used directly, it is intended for the use
-	 * with the macro buffer_create_from_string_on_heap.
-	 *
-	 * Returns nullptr on error.
-	 */
-	Buffer* create_from_string_on_heap_helper(
-			const unsigned char * const content,
-			const size_t content_length) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Clear a buffer.
@@ -210,20 +207,4 @@ public:
 	bool isReadOnly() const noexcept;
 	void setReadOnly(bool readonly) noexcept;
 };
-
-/*
- * Create a new buffer from a string literal.
- */
-#define buffer_create_from_string(name, string) Buffer name[1]; name->initWithConst((const unsigned char*) (string), sizeof(string), sizeof(string))
-
-/*
- * Macro to create a buffer with already existing data without cloning it.
- */
-#define buffer_create_with_existing_array(name, array, length) Buffer name[1]; name->init(array, length, length)
-
-/*
- * Macro to create a buffer with already existing const data.
- */
-#define buffer_create_with_existing_const_array(name, array, length) Buffer name[1]; name->initWithConst(array, length, length)
-
 #endif
