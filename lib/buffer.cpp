@@ -447,3 +447,12 @@ int Buffer::xorWith(Buffer * const source) noexcept {
 
 	return 0;
 }
+
+/*
+ * Helper function that checks if a buffer is <none>
+ * (filled with zeroes), and does so without introducing
+ * side channels, especially timing side channels.
+ */
+bool Buffer::isNone() const noexcept {
+	return (this->content_length == 0) || sodium_is_zero(this->content, this->content_length);
+}

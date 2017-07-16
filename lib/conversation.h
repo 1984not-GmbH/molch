@@ -33,7 +33,7 @@ struct conversation_t {
 	conversation_t *next;
 	Buffer id; //unique id of a conversation, generated randomly
 	unsigned char id_storage[CONVERSATION_ID_SIZE];
-	RatchetState *ratchet;
+	Ratchet *ratchet;
 };
 
 /*

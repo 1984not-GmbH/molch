@@ -204,6 +204,8 @@ public:
 			void (*deallocator)(void *pointer)
 			) noexcept __attribute__((warn_unused_result));
 
+	bool isNone() const noexcept;
+
 	size_t getBufferLength() const noexcept;
 	bool isReadOnly() const noexcept;
 	void setReadOnly(bool readonly) noexcept;

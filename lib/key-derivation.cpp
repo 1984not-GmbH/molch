@@ -137,10 +137,10 @@ return_status derive_root_next_header_and_chain_keys(
 		Buffer& root_key, //ROOT_KEY_SIZE
 		Buffer& next_header_key, //HEADER_KEY_SIZE
 		Buffer& chain_key, //CHAIN_KEY_SIZE
-		Buffer& our_private_ephemeral,
-		Buffer& our_public_ephemeral,
-		Buffer& their_public_ephemeral,
-		Buffer& previous_root_key,
+		const Buffer& our_private_ephemeral,
+		const Buffer& our_public_ephemeral,
+		const Buffer& their_public_ephemeral,
+		const Buffer& previous_root_key,
 		bool am_i_alice) noexcept {
 	return_status status = return_status_init();
 
@@ -229,12 +229,12 @@ return_status derive_initial_root_chain_and_header_keys(
 		Buffer& receive_header_key, //HEADER_KEY_SIZE
 		Buffer& next_send_header_key, //HEADER_KEY_SIZE
 		Buffer& next_receive_header_key, //HEADER_KEY_SIZE
-		Buffer& our_private_identity,
-		Buffer& our_public_identity,
-		Buffer& their_public_identity,
-		Buffer& our_private_ephemeral,
-		Buffer& our_public_ephemeral,
-		Buffer& their_public_ephemeral,
+		const Buffer& our_private_identity,
+		const Buffer& our_public_identity,
+		const Buffer& their_public_identity,
+		const Buffer& our_private_ephemeral,
+		const Buffer& our_public_ephemeral,
+		const Buffer& their_public_ephemeral,
 		bool am_i_alice) noexcept {
 	return_status status = return_status_init();
 

@@ -62,10 +62,10 @@ int main(void) noexcept {
 	Buffer *receive_message_key = Buffer::create(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 
 	//ratchets
-	RatchetState *alice_send_ratchet = nullptr;
-	RatchetState *alice_receive_ratchet = nullptr;
-	RatchetState *bob_send_ratchet = nullptr;
-	RatchetState *bob_receive_ratchet = nullptr;
+	Ratchet *alice_send_ratchet = nullptr;
+	Ratchet *alice_receive_ratchet = nullptr;
+	Ratchet *bob_send_ratchet = nullptr;
+	Ratchet *bob_receive_ratchet = nullptr;
 
 	//generate the keys
 	if (keypair(alice_private_identity, alice_public_identity) != 0) {
@@ -99,61 +99,57 @@ int main(void) noexcept {
 
 	//initialise the ratchets
 	//Alice
-	status = ratchet_create(
-			&alice_send_ratchet,
-			alice_private_identity,
-			alice_public_identity,
-			bob_public_identity,
-			alice_private_ephemeral,
-			alice_public_ephemeral,
-			bob_public_ephemeral);
+	status = Ratchet::create(
+			alice_send_ratchet,
+			*alice_private_identity,
+			*alice_public_identity,
+			*bob_public_identity,
+			*alice_private_ephemeral,
+			*alice_public_ephemeral,
+			*bob_public_ephemeral);
 	THROW_on_error(CREATION_ERROR, "Failed to create Alice' send ratchet.");
-	status = ratchet_create(
-			&alice_receive_ratchet,
-			alice_private_identity,
-			alice_public_identity,
-			bob_public_identity,
-			alice_private_ephemeral,
-			alice_public_ephemeral,
-			bob_public_ephemeral);
+	status = Ratchet::create(
+			alice_receive_ratchet,
+			*alice_private_identity,
+			*alice_public_identity,
+			*bob_public_identity,
+			*alice_private_ephemeral,
+			*alice_public_ephemeral,
+			*bob_public_ephemeral);
 	THROW_on_error(CREATION_ERROR, "Failed to create Alice' receive ratchet.");
 	//Bob
-	status = ratchet_create(
-			&bob_send_ratchet,
-			bob_private_identity,
-			bob_public_identity,
-			alice_public_identity,
-			bob_private_ephemeral,
-			bob_public_ephemeral,
-			alice_public_ephemeral);
+	status = Ratchet::create(
+			bob_send_ratchet,
+			*bob_private_identity,
+			*bob_public_identity,
+			*alice_public_identity,
+			*bob_private_ephemeral,
+			*bob_public_ephemeral,
+			*alice_public_ephemeral);
 	THROW_on_error(CREATION_ERROR, "Failed to create Bobs send ratchet.");
-	status = ratchet_create(
-			&bob_receive_ratchet,
-			bob_private_identity,
-			bob_public_identity,
-			alice_public_identity,
-			bob_private_ephemeral,
-			bob_public_ephemeral,
-			alice_public_ephemeral);
+	status = Ratchet::create(
+			bob_receive_ratchet,
+			*bob_private_identity,
+			*bob_public_identity,
+			*alice_public_identity,
+			*bob_private_ephemeral,
+			*bob_public_ephemeral,
+			*alice_public_ephemeral);
 	THROW_on_error(CREATION_ERROR, "Failed to create Bobs receive ratchet.");
 
 	// FIRST SCENARIO: ALICE SENDS A MESSAGE TO BOB
 	uint32_t send_message_number;
 	uint32_t previous_send_message_number;
-	status = ratchet_send(
-			alice_send_ratchet,
-			send_header_key,
-			&send_message_number,
-			&previous_send_message_number,
-			public_send_ephemeral,
-			send_message_key);
+	status = alice_send_ratchet->send(
+			*send_header_key,
+			send_message_number,
+			previous_send_message_number,
+			*public_send_ephemeral,
+			*send_message_key);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get send keys.");
 
 	//bob receives
-	status = ratchet_get_receive_header_keys(
-			current_receive_header_key,
-			next_receive_header_key,
-			bob_receive_ratchet);
+	status = bob_receive_ratchet->getReceiveHeaderKeys(*current_receive_header_key, *next_receive_header_key);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get receive header keys.");
 
 	ratchet_header_decryptability decryptability;
@@ -164,13 +160,12 @@ int main(void) noexcept {
 	} else {
 		decryptability = UNDECRYPTABLE;
 	}
-	status = ratchet_set_header_decryptability(bob_receive_ratchet, decryptability);
+	status = bob_receive_ratchet->setHeaderDecryptability(decryptability);
 	THROW_on_error(DATA_SET_ERROR, "Failed to set header decryptability.");
 
-	status = ratchet_receive(
-			bob_receive_ratchet,
-			receive_message_key,
-			public_send_ephemeral,
+	status = bob_receive_ratchet->receive(
+			*receive_message_key,
+			*public_send_ephemeral,
 			send_message_number,
 			previous_send_message_number);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get receive message key.");
@@ -181,25 +176,21 @@ int main(void) noexcept {
 	}
 	printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
 
-	status = ratchet_set_last_message_authenticity(bob_receive_ratchet, true);
+	status = bob_receive_ratchet->setLastMessageAuthenticity(true);
 	THROW_on_error(DATA_SET_ERROR, "Bob-Receive: Failed to set message authenticity.");
 
 
 	//SECOND SCENARIO: BOB SENDS MESSAGE TO ALICE
-	status = ratchet_send(
-			bob_send_ratchet,
-			send_header_key,
-			&send_message_number,
-			&previous_send_message_number,
-			public_send_ephemeral,
-			send_message_key);
+	status = bob_send_ratchet->send(
+			*send_header_key,
+			send_message_number,
+			previous_send_message_number,
+			*public_send_ephemeral,
+			*send_message_key);
 	THROW_on_error(DATA_FETCH_ERROR, "Bob-Send: Failed to get send keys.");
 
 	//alice receives
-	status = ratchet_get_receive_header_keys(
-			current_receive_header_key,
-			next_receive_header_key,
-			alice_receive_ratchet);
+	status = alice_receive_ratchet->getReceiveHeaderKeys(*current_receive_header_key, *next_receive_header_key);
 	THROW_on_error(DATA_FETCH_ERROR, "Alice-Receive: Failed to get receive header keys.");
 
 	if (send_header_key->compare(current_receive_header_key) == 0) {
@@ -207,13 +198,12 @@ int main(void) noexcept {
 	} else if (send_header_key->compare(next_receive_header_key) == 0) {
 		decryptability = UNDECRYPTABLE;
 	}
-	status = ratchet_set_header_decryptability(alice_receive_ratchet, decryptability);
+	status = alice_receive_ratchet->setHeaderDecryptability(decryptability);
 	THROW_on_error(DATA_SET_ERROR, "Alice-Receive: Failed to set header decryptability.");
 
-	status = ratchet_receive(
-			alice_receive_ratchet,
-			receive_message_key,
-			public_send_ephemeral,
+	status = alice_receive_ratchet->receive(
+			*receive_message_key,
+			*public_send_ephemeral,
 			send_message_number,
 			previous_send_message_number);
 	THROW_on_error(RECEIVE_ERROR, "Alice-Receive: Failed to get receive message key.");
@@ -224,24 +214,20 @@ int main(void) noexcept {
 	}
 	printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
 
-	status = ratchet_set_last_message_authenticity(alice_receive_ratchet, true);
+	status = alice_receive_ratchet->setLastMessageAuthenticity(true);
 	THROW_on_error(DATA_SET_ERROR, "Alice-Receive: Failed to set message authenticity.");
 
 	//THIRD SCENARIO: BOB ANSWERS ALICE AFTER HAVING RECEIVED HER FIRST MESSAGE
-	status = ratchet_send(
-			bob_receive_ratchet,
-			send_header_key,
-			&send_message_number,
-			&previous_send_message_number,
-			public_send_ephemeral,
-			send_message_key);
+	status = bob_receive_ratchet->send(
+			*send_header_key,
+			send_message_number,
+			previous_send_message_number,
+			*public_send_ephemeral,
+			*send_message_key);
 	THROW_on_error(DATA_FETCH_ERROR, "Bob-Response: Failed to get send keys.");
 
 	//alice receives
-	status = ratchet_get_receive_header_keys(
-			current_receive_header_key,
-			next_receive_header_key,
-			alice_send_ratchet);
+	status = alice_send_ratchet->getReceiveHeaderKeys(*current_receive_header_key, *next_receive_header_key);
 	THROW_on_error(DATA_FETCH_ERROR, "Alice-Roundtrip: Failed to get receive header keys.");
 
 	if (send_header_key->compare(current_receive_header_key) == 0) {
@@ -251,13 +237,12 @@ int main(void) noexcept {
 	} else {
 		decryptability = UNDECRYPTABLE;
 	}
-	status = ratchet_set_header_decryptability(alice_send_ratchet, decryptability);
+	status = alice_send_ratchet->setHeaderDecryptability(decryptability);
 	THROW_on_error(DATA_SET_ERROR, "Alice-Roundtrip: Failed  to set header decryptability.");
 
-	status = ratchet_receive(
-			alice_send_ratchet,
-			receive_message_key,
-			public_send_ephemeral,
+	status = alice_send_ratchet->receive(
+			*receive_message_key,
+			*public_send_ephemeral,
 			send_message_number,
 			previous_send_message_number);
 	THROW_on_error(RECEIVE_ERROR, "Alice-Roundtrip: Failed to get receive message key.");
@@ -268,24 +253,20 @@ int main(void) noexcept {
 	}
 	printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
 
-	status = ratchet_set_last_message_authenticity(alice_send_ratchet, true);
+	status = alice_send_ratchet->setLastMessageAuthenticity(true);
 	THROW_on_error(DATA_SET_ERROR, "Alice-Roundtrip: Failed to set message authenticity.");
 
 	//FOURTH SCENARIO: ALICE ANSWERS BOB AFTER HAVING RECEIVED HER FIRST MESSAGE
-	status = ratchet_send(
-			alice_receive_ratchet,
-			send_header_key,
-			&send_message_number,
-			&previous_send_message_number,
-			public_send_ephemeral,
-			send_message_key);
+	status = alice_receive_ratchet->send(
+			*send_header_key,
+			send_message_number,
+			previous_send_message_number,
+			*public_send_ephemeral,
+			*send_message_key);
 	THROW_on_error(DATA_FETCH_ERROR, "Bob-Roundtrip: Failed to get send-keys.");
 
 	//bob receives
-	status = ratchet_get_receive_header_keys(
-			current_receive_header_key,
-			next_receive_header_key,
-			bob_send_ratchet);
+	status = bob_send_ratchet->getReceiveHeaderKeys(*current_receive_header_key, *next_receive_header_key);
 	THROW_on_error(DATA_FETCH_ERROR, "Bob-Roundtrip: Failed to get receive header keys.");
 
 	if (send_header_key->compare(current_receive_header_key) == 0) {
@@ -295,13 +276,12 @@ int main(void) noexcept {
 	} else {
 		decryptability = UNDECRYPTABLE;
 	}
-	status = ratchet_set_header_decryptability(bob_send_ratchet, decryptability);
+	status = bob_send_ratchet->setHeaderDecryptability(decryptability);
 	THROW_on_error(DATA_SET_ERROR, "Bob-Roundtrip: Failed to set header decryptability.");
 
-	status = ratchet_receive(
-			bob_send_ratchet,
-			receive_message_key,
-			public_send_ephemeral,
+	status = bob_send_ratchet->receive(
+			*receive_message_key,
+			*public_send_ephemeral,
 			send_message_number,
 			previous_send_message_number);
 	THROW_on_error(RECEIVE_ERROR, "Bob-Roundtrip: Failed to get receive message key.");
@@ -312,7 +292,7 @@ int main(void) noexcept {
 	}
 	printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
 
-	status = ratchet_set_last_message_authenticity(bob_send_ratchet, true);
+	status = bob_send_ratchet->setLastMessageAuthenticity(true);
 	THROW_on_error(DATA_SET_ERROR, "Bob-Roundtrip: Failed to set message authenticity.");
 
 cleanup:
@@ -333,16 +313,16 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(receive_message_key);
 
 	if (alice_send_ratchet != nullptr) {
-		ratchet_destroy(alice_send_ratchet);
+		alice_send_ratchet->destroy();
 	}
 	if (alice_receive_ratchet != nullptr) {
-		ratchet_destroy(alice_receive_ratchet);
+		alice_receive_ratchet->destroy();
 	}
 	if (bob_send_ratchet != nullptr) {
-		ratchet_destroy(bob_send_ratchet);
+		bob_send_ratchet->destroy();
 	}
 	if (bob_receive_ratchet != nullptr) {
-		ratchet_destroy(bob_receive_ratchet);
+		bob_receive_ratchet->destroy();
 	}
 
 	on_error {

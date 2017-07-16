@@ -29,39 +29,38 @@
 
 #ifdef __cplusplus
 extern "C" {
+#else
+	#define nullptr NULL
 #endif
 
-// execute code if a pointer is not NULL
-#define if_valid(pointer, code)\
-	if (pointer != NULL) {\
-		code\
-	}
+// execute code if a pointer is not nullptr
+#define if_valid(pointer) if ((pointer) != nullptr)
 // macros that free memory and delete the pointer afterwards
 #define free_and_null_if_valid(pointer)\
-	if_valid(pointer,\
+	if_valid(pointer) {\
 		free(pointer);\
-		pointer = NULL;\
-	)
+		pointer = nullptr;\
+	}
 #define sodium_free_and_null_if_valid(pointer)\
-	if_valid(pointer,\
+	if_valid(pointer) {\
 		sodium_free(pointer);\
-		pointer = NULL;\
-	)
+		pointer = nullptr;\
+	}
 #define zeroed_free_and_null_if_valid(pointer)\
-	if_valid(pointer,\
+	if_valid(pointer) {\
 		zeroed_free(pointer);\
-		pointer = NULL;\
-	)
+		pointer = nullptr;\
+	}
 #define buffer_destroy_from_heap_and_null_if_valid(buffer)\
-	if_valid(buffer,\
+	if_valid(buffer) {\
 		(buffer)->destroy_from_heap();\
-		buffer = NULL;\
-	)
+		buffer = nullptr;\
+	}
 #define buffer_destroy_with_custom_deallocator_and_null_if_valid(buffer, deallocator)\
-	if_valid(buffer,\
+	if_valid(buffer) {\
 		(buffer)->destroy_with_custom_deallocator(deallocator);\
-		buffer = NULL;\
-	)
+		buffer = nullptr;\
+	}
 
 #ifdef __cplusplus
 }

@@ -190,14 +190,14 @@ static return_status test_add_conversation(conversation_store * const store) noe
 		THROW(GENERIC_ERROR, "Failed to fill buffer with random data.");
 	}
 
-	status = ratchet_create(
-			&(conversation->ratchet),
-			our_private_identity,
-			our_public_identity,
-			their_public_identity,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_ephemeral);
+	status = Ratchet::create(
+			conversation->ratchet,
+			*our_private_identity,
+			*our_public_identity,
+			*their_public_identity,
+			*our_private_ephemeral,
+			*our_public_ephemeral,
+			*their_public_ephemeral);
 	if (conversation->ratchet == nullptr) {
 		THROW(CREATION_ERROR, "Failed to creat ratchet.");
 	}

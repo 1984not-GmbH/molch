@@ -81,14 +81,14 @@ return_status conversation_create(
 		THROW(BUFFER_ERROR, "Failed to create random conversation id.");
 	}
 
-	status = ratchet_create(
-			&((*conversation)->ratchet),
-			our_private_identity,
-			our_public_identity,
-			their_public_identity,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_ephemeral);
+	status = Ratchet::create(
+			(*conversation)->ratchet,
+			*our_private_identity,
+			*our_public_identity,
+			*their_public_identity,
+			*our_private_ephemeral,
+			*our_public_ephemeral,
+			*their_public_ephemeral);
 	THROW_on_error(CREATION_ERROR, "Failed to create ratchet.");
 
 cleanup:
@@ -106,7 +106,7 @@ cleanup:
  */
 void conversation_destroy(conversation_t * const conversation) noexcept {
 	if (conversation->ratchet != nullptr) {
-		ratchet_destroy(conversation->ratchet);
+		conversation->ratchet->destroy();
 	}
 	free(conversation);
 }
@@ -368,13 +368,12 @@ return_status conversation_send(
 
 	uint32_t send_message_number;
 	uint32_t previous_send_message_number;
-	status = ratchet_send(
-			conversation->ratchet,
-			send_header_key,
-			&send_message_number,
-			&previous_send_message_number,
-			send_ephemeral_key,
-			send_message_key);
+	status = conversation->ratchet->send(
+			*send_header_key,
+			send_message_number,
+			previous_send_message_number,
+			*send_ephemeral_key,
+			*send_message_key);
 	THROW_on_error(SEND_ERROR, "Failed to get send keys.");
 
 	//create the header
@@ -532,10 +531,7 @@ return_status conversation_receive(
 		}
 	}
 
-	status = ratchet_get_receive_header_keys(
-			current_receive_header_key,
-			next_receive_header_key,
-			conversation->ratchet);
+	status = conversation->ratchet->getReceiveHeaderKeys(*current_receive_header_key, *next_receive_header_key);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get receive header keys.");
 
 	//try to decrypt the packet header with the current receive header key
@@ -544,9 +540,7 @@ return_status conversation_receive(
 			packet,
 			current_receive_header_key);
 	if (status.status == SUCCESS) {
-		status = ratchet_set_header_decryptability(
-				conversation->ratchet,
-				CURRENT_DECRYPTABLE);
+		status = conversation->ratchet->setHeaderDecryptability(CURRENT_DECRYPTABLE);
 		THROW_on_error(DATA_SET_ERROR, "Failed to set decryptability to CURRENT_DECRYPTABLE.");
 	} else {
 		return_status_destroy_errors(&status); //free the error stack to avoid memory leak.
@@ -557,15 +551,11 @@ return_status conversation_receive(
 				packet,
 				next_receive_header_key);
 		if (status.status == SUCCESS) {
-			status = ratchet_set_header_decryptability(
-					conversation->ratchet,
-					NEXT_DECRYPTABLE);
+			status = conversation->ratchet->setHeaderDecryptability(NEXT_DECRYPTABLE);
 			THROW_on_error(DATA_SET_ERROR, "Failed to set decryptability to NEXT_DECRYPTABLE.");
 		} else {
 			return_status decryptability_status = return_status_init();
-			decryptability_status = ratchet_set_header_decryptability(
-					conversation->ratchet,
-					UNDECRYPTABLE);
+			decryptability_status = conversation->ratchet->setHeaderDecryptability(UNDECRYPTABLE);
 			return_status_destroy_errors(&decryptability_status);
 			THROW(DECRYPT_ERROR, "Header undecryptable.");
 		}
@@ -584,10 +574,9 @@ return_status conversation_receive(
 	//and now decrypt the message with the message key
 	//now we have all the data we need to advance the ratchet
 	//so let's do that
-	status = ratchet_receive(
-			conversation->ratchet,
-			message_key,
-			their_signed_public_ephemeral,
+	status = conversation->ratchet->receive(
+			*message_key,
+			*their_signed_public_ephemeral,
 			local_receive_message_number,
 			local_previous_receive_message_number);
 	THROW_on_error(DECRYPT_ERROR, "Failed to get decryption keys.");
@@ -598,12 +587,12 @@ return_status conversation_receive(
 			message_key);
 	on_error {
 		return_status authenticity_status = return_status_init();
-		authenticity_status = ratchet_set_last_message_authenticity(conversation->ratchet, false);
+		authenticity_status = conversation->ratchet->setLastMessageAuthenticity(false);
 		return_status_destroy_errors(&authenticity_status);
 		THROW(DECRYPT_ERROR, "Failed to decrypt message.");
 	}
 
-	status = ratchet_set_last_message_authenticity(conversation->ratchet, true);
+	status = conversation->ratchet->setLastMessageAuthenticity(true);
 	THROW_on_error(DATA_SET_ERROR, "Failed to set message authenticity.");
 
 	*receive_message_number = local_receive_message_number;
@@ -613,7 +602,7 @@ cleanup:
 	on_error {
 		return_status authenticity_status = return_status_init();
 		if (conversation != nullptr) {
-			authenticity_status = ratchet_set_last_message_authenticity(conversation->ratchet, false);
+			authenticity_status = conversation->ratchet->setLastMessageAuthenticity(false);
 			return_status_destroy_errors(&authenticity_status);
 		}
 		if (message != nullptr) {
@@ -643,7 +632,7 @@ return_status conversation_export(
 	}
 
 	//export the ratchet
-	status = ratchet_export(conversation->ratchet, exported_conversation);
+	status = conversation->ratchet->exportRatchet(*exported_conversation);
 	THROW_on_error(EXPORT_ERROR, "Failed to export ratchet.");
 
 	//export the conversation id
@@ -686,7 +675,7 @@ return_status conversation_import(
 	}
 
 	//import the ratchet
-	status = ratchet_import(&((*conversation)->ratchet), conversation_protobuf);
+	status = Ratchet::import(((*conversation)->ratchet), *conversation_protobuf);
 	THROW_on_error(IMPORT_ERROR, "Failed to import ratchet.");
 cleanup:
 	on_error {

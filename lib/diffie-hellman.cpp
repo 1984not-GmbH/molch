@@ -39,9 +39,9 @@
  */
 return_status diffie_hellman(
 		Buffer& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
-		Buffer& our_private_key, //needs to be PRIVATE_KEY_SIZE long
-		Buffer& our_public_key, //needs to be PUBLIC_KEY_SIZE long
-		Buffer& their_public_key, //needs to be PUBLIC_KEY_SIZE long
+		const Buffer& our_private_key, //needs to be PRIVATE_KEY_SIZE long
+		const Buffer& our_public_key, //needs to be PUBLIC_KEY_SIZE long
+		const Buffer& their_public_key, //needs to be PUBLIC_KEY_SIZE long
 		const bool am_i_alice) noexcept {
 
 	return_status status = return_status_init();
@@ -148,12 +148,12 @@ cleanup:
  */
 return_status triple_diffie_hellman(
 		Buffer& derived_key,
-		Buffer& our_private_identity,
-		Buffer& our_public_identity,
-		Buffer& our_private_ephemeral,
-		Buffer& our_public_ephemeral,
-		Buffer& their_public_identity,
-		Buffer& their_public_ephemeral,
+		const Buffer& our_private_identity,
+		const Buffer& our_public_identity,
+		const Buffer& our_private_ephemeral,
+		const Buffer& our_public_ephemeral,
+		const Buffer& their_public_identity,
+		const Buffer& their_public_ephemeral,
 		const bool am_i_alice) noexcept {
 	return_status status = return_status_init();
 

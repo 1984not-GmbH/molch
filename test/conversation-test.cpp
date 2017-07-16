@@ -141,14 +141,14 @@ static return_status create_conversation(
 		THROW(BUFFER_ERROR, "Failed to create random conversation id.");
 	}
 
-	status = ratchet_create(
-			&((*conversation)->ratchet),
-			our_private_identity,
-			our_public_identity,
-			their_public_identity,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_ephemeral);
+	status = Ratchet::create(
+			(*conversation)->ratchet,
+			*our_private_identity,
+			*our_public_identity,
+			*their_public_identity,
+			*our_private_ephemeral,
+			*our_public_ephemeral,
+			*their_public_ephemeral);
 	THROW_on_error(CREATION_ERROR, "Failed to create ratchet.");
 
 cleanup:

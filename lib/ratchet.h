@@ -36,7 +36,19 @@ typedef enum ratchet_header_decryptability {
 	NOT_TRIED //not tried to decrypt yet
 } ratchet_header_decryptability;
 
-class RatchetState {
+class Ratchet {
+private:
+	static return_status createState(Ratchet*& ratchet) noexcept;
+	void initState() noexcept;
+	static return_status stageSkippedHeaderAndMessageKeys(
+		header_and_message_keystore& staging_area,
+		Buffer * const output_chain_key, //output, CHAIN_KEY_SIZE
+		Buffer * const output_message_key, //output, MESSAGE_KEY_SIZE
+		const Buffer& current_header_key,
+		const uint32_t current_message_number,
+		const uint32_t future_message_number,
+		const Buffer& chain_key) noexcept;
+	return_status commitSkippedHeaderAndMessageKeys() noexcept;
 public:
 	Buffer root_key; //RK
 	unsigned char root_key_storage[ROOT_KEY_SIZE];
@@ -92,102 +104,94 @@ public:
 	//list of previous message and header keys
 	header_and_message_keystore skipped_header_and_message_keys; //skipped_HK_MK (list containing message keys for messages that weren't received)
 	header_and_message_keystore staged_header_and_message_keys; //this represents the staging area specified in the axolotl ratchet
+
+	/*
+	 * Start a new ratchet chain. This derives an initial root key and returns a new ratchet state.
+	 *
+	 * All the keys will be copied so you can free the buffers afterwards. (private identity get's
+	 * immediately deleted after deriving the initial root key though!)
+	 *
+	 * The return value is a valid ratchet state or nullptr if an error occured.
+	 */
+	static return_status create(
+			Ratchet*& ratchet,
+			const Buffer& our_private_identity,
+			const Buffer& our_public_identity,
+			const Buffer& their_public_identity,
+			const Buffer& our_private_ephemeral,
+			const Buffer& our_public_ephemeral,
+			const Buffer& their_public_ephemeral) noexcept __attribute__((warn_unused_result));
+
+	/*
+	 * Get keys and metadata to send the next message.
+	 */
+	return_status send(
+			Buffer& send_header_key, //HEADER_KEY_SIZE, HKs
+			uint32_t& send_message_number, //Ns
+			uint32_t& previous_send_message_number, //PNs
+			Buffer& our_public_ephemeral, //DHRs
+			Buffer& message_key //MESSAGE_KEY_SIZE, MK
+			) noexcept __attribute__((warn_unused_result));
+
+	/*
+	 * Get a copy of the current and the next receive header key.
+	 */
+	return_status getReceiveHeaderKeys(
+			Buffer& current_receive_header_key,
+			Buffer& next_receive_header_key
+			) noexcept __attribute__((warn_unused_result));
+
+	/*
+	 * Set if the header is decryptable with the current (state->receive_header_key)
+	 * or next (next_receive_header_key) header key, or isn't decryptable.
+	 */
+	return_status setHeaderDecryptability(ratchet_header_decryptability header_decryptable) noexcept __attribute__((warn_unused_result));
+
+	/*
+	 * First step after receiving a message: Calculate purported keys.
+	 *
+	 * This is only staged until it is later verified that the message was
+	 * authentic.
+	 *
+	 * To verify that the message was authentic, encrypt it with the message key
+	 * returned by this function and call ratchet_set_last_message_authenticity
+	 * after having verified the message.
+	 */
+	return_status receive(
+			Buffer& message_key, //used to get the message key back
+			const Buffer& their_purported_public_ephemeral,
+			const uint32_t purported_message_number,
+			const uint32_t purported_previous_message_number) noexcept __attribute__((warn_unused_result));
+
+	/*
+	 * Call this function after trying to decrypt a message and pass it if
+	 * the decryption was successful or if it wasn't.
+	 */
+	return_status setLastMessageAuthenticity(bool valid) noexcept __attribute__((warn_unused_result));
+
+	/*
+	 * End the ratchet chain and free the memory.
+	 */
+	void destroy() noexcept;
+
+	/*! Export a ratchet state to Protobuf-C
+	 * NOTE: This doesn't fill the Id field of the struct.
+	 * \param ratchet The Ratchet to export.
+	 * \param conversation The Conversation Protobuf-C struct.
+	 * \return The status.
+	 */
+	return_status exportRatchet(Conversation*& conversation) noexcept __attribute__((warn_unused_result));
+
+	/*! Import a ratchet from Protobuf-C
+	 * NOTE: The public identity key is needed separately,
+	 * because it is not contained in the Conversation
+	 * Protobuf-C struct
+	 * \param ratchet The Ratchet to imports
+	 * \param conversation The Protobuf-C buffer.
+	 * \return The status.
+	 */
+	static return_status import(
+		Ratchet*& ratchet,
+		const Conversation& conversation) noexcept __attribute__((warn_unused_result));
 };
-
-/*
- * Start a new ratchet chain. This derives an initial root key and returns a new ratchet state.
- *
- * All the keys will be copied so you can free the buffers afterwards. (private identity get's
- * immediately deleted after deriving the initial root key though!)
- *
- * The return value is a valid ratchet state or nullptr if an error occured.
- */
-return_status ratchet_create(
-		RatchetState ** const ratchet,
-		Buffer * const our_private_identity,
-		Buffer * const our_public_identity,
-		Buffer * const their_public_identity,
-		Buffer * const our_private_ephemeral,
-		Buffer * const our_public_ephemeral,
-		Buffer * const their_public_ephemeral) noexcept __attribute__((warn_unused_result));
-
-/*
- * Get keys and metadata to send the next message.
- */
-return_status ratchet_send(
-		RatchetState *state,
-		Buffer * const send_header_key, //HEADER_KEY_SIZE, HKs
-		uint32_t * const send_message_number, //Ns
-		uint32_t * const previous_send_message_number, //PNs
-		Buffer * const our_public_ephemeral, //DHRs
-		Buffer * const message_key //MESSAGE_KEY_SIZE, MK
-		) noexcept __attribute__((warn_unused_result));
-
-/*
- * Get a copy of the current and the next receive header key.
- */
-return_status ratchet_get_receive_header_keys(
-		Buffer * const current_receive_header_key,
-		Buffer * const next_receive_header_key,
-		RatchetState *state) noexcept __attribute__((warn_unused_result));
-
-/*
- * Set if the header is decryptable with the current (state->receive_header_key)
- * or next (next_receive_header_key) header key, or isn't decryptable.
- */
-return_status ratchet_set_header_decryptability(
-		RatchetState *ratchet,
-		ratchet_header_decryptability header_decryptable) noexcept __attribute__((warn_unused_result));
-
-/*
- * First step after receiving a message: Calculate purported keys.
- *
- * This is only staged until it is later verified that the message was
- * authentic.
- *
- * To verify that the message was authentic, encrypt it with the message key
- * returned by this function and call ratchet_set_last_message_authenticity
- * after having verified the message.
- */
-return_status ratchet_receive(
-		RatchetState *state,
-		Buffer * const message_key, //used to get the message key back
-		Buffer * const their_purported_public_ephemeral,
-		const uint32_t purported_message_number,
-		const uint32_t purported_previous_message_number) noexcept __attribute__((warn_unused_result));
-
-/*
- * Call this function after trying to decrypt a message and pass it if
- * the decryption was successful or if it wasn't.
- */
-return_status ratchet_set_last_message_authenticity(
-		RatchetState * const ratchet,
-		bool valid) noexcept __attribute__((warn_unused_result));
-
-/*
- * End the ratchet chain and free the memory.
- */
-void ratchet_destroy(RatchetState *state) noexcept;
-
-/*! Export a ratchet state to Protobuf-C
- * NOTE: This doesn't fill the Id field of the struct.
- * \param ratchet The RatchetState to export.
- * \param conversation The Conversation Protobuf-C struct.
- * \return The status.
- */
-return_status ratchet_export(
-	RatchetState * const ratchet,
-	Conversation ** const conversation) noexcept __attribute__((warn_unused_result));
-
-/*! Import a ratchet from Protobuf-C
- * NOTE: The public identity key is needed separately,
- * because it is not contained in the Conversation
- * Protobuf-C struct
- * \param ratchet The RatchetState to imports
- * \param conversation The Protobuf-C buffer.
- * \return The status.
- */
-return_status ratchet_import(
-	RatchetState ** const ratchet,
-	const Conversation * const conversation) noexcept __attribute__((warn_unused_result));
 #endif

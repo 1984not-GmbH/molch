@@ -57,12 +57,12 @@ typedef struct header_and_message_keystore {
 //initialise a new keystore
 void header_and_message_keystore_init(header_and_message_keystore * const keystore) noexcept;
 
-//add a hader and message key to the keystore
+//add a header and message key to the keystore
 //NOTE: The entire keys are copied, not only the pointer
 return_status header_and_message_keystore_add(
 		header_and_message_keystore *keystore,
-		Buffer * const message_key,
-		Buffer * const header_key) noexcept __attribute__((warn_unused_result));
+		const Buffer * const message_key,
+		const Buffer * const header_key) noexcept __attribute__((warn_unused_result));
 
 //remove a message key from the keystore
 void header_and_message_keystore_remove(header_and_message_keystore *keystore, header_and_message_keystore_node *node) noexcept;
