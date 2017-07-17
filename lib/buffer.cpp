@@ -38,6 +38,7 @@ Buffer::Buffer(const std::string& string) noexcept {
 	} catch (...) {
 		this->buffer_length = 0;
 		this->content_length = 0;
+		this->content = nullptr;
 		return;
 	}
 
@@ -60,6 +61,7 @@ Buffer::Buffer(const size_t buffer_length, const size_t content_length) noexcept
 	} catch (...) {
 		this->buffer_length = 0;
 		this->content_length = 0;
+		this->content = nullptr;
 		return;
 	}
 }
@@ -75,6 +77,7 @@ Buffer::Buffer(const unsigned char * const content, const size_t buffer_length) 
 Buffer::~Buffer() noexcept {
 	//only do something if this was created using a constructor
 	if (this->manage_memory) {
+		this->clear();
 		delete[] this->content;
 	}
 }
