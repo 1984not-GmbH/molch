@@ -32,66 +32,72 @@ int main(void) noexcept {
 	}
 
 	return_status status = return_status_init();
+	int status_int = 0;
 
 	//create buffers
-	Buffer *alice_public_key = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	Buffer *alice_private_key = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer *alice_shared_secret = Buffer::create(crypto_generichash_BYTES, crypto_generichash_BYTES);
-	Buffer *bob_public_key = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	Buffer *bob_private_key = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer *bob_shared_secret = Buffer::create(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	Buffer alice_public_key(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer alice_private_key(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	Buffer alice_shared_secret(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	Buffer bob_public_key(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer bob_private_key(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+	Buffer bob_shared_secret(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	throw_on_invalid_buffer(alice_public_key);
+	throw_on_invalid_buffer(alice_private_key);
+	throw_on_invalid_buffer(alice_shared_secret);
+	throw_on_invalid_buffer(bob_public_key);
+	throw_on_invalid_buffer(bob_private_key);
+	throw_on_invalid_buffer(bob_shared_secret);
 
-	int status_int = 0;
 	//create Alice's keypair
 	status = generate_and_print_keypair(
-			alice_public_key,
-			alice_private_key,
+			&alice_public_key,
+			&alice_private_key,
 			"Alice",
 			"");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice's keypair.");
 
 	//create Bob's keypair
 	status = generate_and_print_keypair(
-			bob_public_key,
-			bob_private_key,
+			&bob_public_key,
+			&bob_private_key,
 			"Bob",
 			"");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's keypair.");
 
 	//Diffie Hellman on Alice's side
 	status = diffie_hellman(
-			*alice_shared_secret,
-			*alice_private_key,
-			*alice_public_key,
-			*bob_public_key,
+			alice_shared_secret,
+			alice_private_key,
+			alice_public_key,
+			bob_public_key,
 			true);
-	alice_private_key->clear();
+	alice_private_key.clear();
 	THROW_on_error(KEYGENERATION_FAILED, "Diffie Hellman with Alice's private key failed.");
 
 	//print Alice's shared secret
-	printf("Alice's shared secret ECDH(A_priv, B_pub) (%zu Bytes):\n", alice_shared_secret->content_length);
-	print_hex(alice_shared_secret);
+	printf("Alice's shared secret ECDH(A_priv, B_pub) (%zu Bytes):\n", alice_shared_secret.content_length);
+	print_hex(&alice_shared_secret);
 	putchar('\n');
 
 	//Diffie Hellman on Bob's side
 	status = diffie_hellman(
-			*bob_shared_secret,
-			*bob_private_key,
-			*bob_public_key,
-			*alice_public_key,
+			bob_shared_secret,
+			bob_private_key,
+			bob_public_key,
+			alice_public_key,
 			false);
-	bob_private_key->clear();
+	bob_private_key.clear();
 	THROW_on_error(KEYGENERATION_FAILED, "Diffie Hellman with Bob's private key failed.");
 
 	//print Bob's shared secret
-	printf("Bob's shared secret ECDH(B_priv, A_pub) (%zu Bytes):\n", bob_shared_secret->content_length);
-	print_hex(bob_shared_secret);
+	printf("Bob's shared secret ECDH(B_priv, A_pub) (%zu Bytes):\n", bob_shared_secret.content_length);
+	print_hex(&bob_shared_secret);
 	putchar('\n');
 
 	//compare both shared secrets
-	status_int = alice_shared_secret->compare(bob_shared_secret);
-	alice_shared_secret->clear();
-	bob_shared_secret->clear();
+	status_int = alice_shared_secret.compare(&bob_shared_secret);
+	alice_shared_secret.clear();
+	bob_shared_secret.clear();
 	if (status_int != 0) {
 		THROW(INCORRECT_DATA, "Diffie Hellman didn't produce the same shared secret.");
 	}
@@ -99,13 +105,6 @@ int main(void) noexcept {
 	printf("Both shared secrets match!\n");
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(alice_public_key);
-	buffer_destroy_from_heap_and_null_if_valid(alice_private_key);
-	buffer_destroy_from_heap_and_null_if_valid(alice_shared_secret);
-	buffer_destroy_from_heap_and_null_if_valid(bob_public_key);
-	buffer_destroy_from_heap_and_null_if_valid(bob_private_key);
-	buffer_destroy_from_heap_and_null_if_valid(bob_shared_secret);
-
 	on_error {
 		print_errors(&status);
 	}

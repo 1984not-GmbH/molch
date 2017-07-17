@@ -55,8 +55,8 @@ return_status diffie_hellman(
 	derived_key.content_length = 0;
 
 	//buffer for diffie hellman shared secret
-	Buffer *dh_secret = Buffer::create(crypto_scalarmult_SCALARBYTES, crypto_scalarmult_SCALARBYTES);
-	THROW_on_failed_alloc(dh_secret);
+	Buffer dh_secret(crypto_scalarmult_SCALARBYTES, crypto_scalarmult_SCALARBYTES);
+	throw_on_invalid_buffer(dh_secret);
 
 	crypto_generichash_state hash_state[1];
 
@@ -73,7 +73,7 @@ return_status diffie_hellman(
 
 
 	//do the diffie hellman key exchange
-	if (crypto_scalarmult(dh_secret->content, our_private_key.content, their_public_key.content) != 0) {
+	if (crypto_scalarmult(dh_secret.content, our_private_key.content, their_public_key.content) != 0) {
 		THROW(KEYDERIVATION_FAILED, "Failed to do crypto_scalarmult.");
 	}
 
@@ -90,7 +90,7 @@ return_status diffie_hellman(
 	}
 
 	//start input to hash with diffie hellman secret
-	if (crypto_generichash_update(hash_state, dh_secret->content, dh_secret->content_length) != 0) {
+	if (crypto_generichash_update(hash_state, dh_secret.content, dh_secret.content_length) != 0) {
 		THROW(GENERIC_ERROR, "Failed to add the diffie hellman secret to the hash input.");
 	}
 
@@ -124,7 +124,6 @@ return_status diffie_hellman(
 	derived_key.content_length = DIFFIE_HELLMAN_SIZE;
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(dh_secret);
 	sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 
 	return status;
@@ -161,15 +160,12 @@ return_status triple_diffie_hellman(
 	derived_key.content_length = 0;
 
 	//buffers for all 3 Diffie Hellman exchanges
-	Buffer *dh1 = nullptr;
-	Buffer *dh2 = nullptr;
-	Buffer *dh3 = nullptr;
-	dh1 = Buffer::create(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-	THROW_on_failed_alloc(dh1);
-	dh2 = Buffer::create(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-	THROW_on_failed_alloc(dh2);
-	dh3 = Buffer::create(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-	THROW_on_failed_alloc(dh3);
+	Buffer dh1(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+	Buffer dh2(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+	Buffer dh3(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+	throw_on_invalid_buffer(dh1);
+	throw_on_invalid_buffer(dh2);
+	throw_on_invalid_buffer(dh3);
 
 	//check buffer sizes
 	if ((derived_key.getBufferLength() < DIFFIE_HELLMAN_SIZE)
@@ -191,7 +187,7 @@ return_status triple_diffie_hellman(
 	if (am_i_alice) {
 		//DH(our_identity, their_ephemeral)
 		status = diffie_hellman(
-				*dh1,
+				dh1,
 				our_private_identity,
 				our_public_identity,
 				their_public_ephemeral,
@@ -200,7 +196,7 @@ return_status triple_diffie_hellman(
 
 		//DH(our_ephemeral, their_identity)
 		status = diffie_hellman(
-				*dh2,
+				dh2,
 				our_private_ephemeral,
 				our_public_ephemeral,
 				their_public_identity,
@@ -209,7 +205,7 @@ return_status triple_diffie_hellman(
 	} else {
 		//DH(our_ephemeral, their_identity)
 		status = diffie_hellman(
-				*dh1,
+				dh1,
 				our_private_ephemeral,
 				our_public_ephemeral,
 				their_public_identity,
@@ -218,7 +214,7 @@ return_status triple_diffie_hellman(
 
 		//DH(our_identity, their_ephemeral)
 		status = diffie_hellman(
-				*dh2,
+				dh2,
 				our_private_identity,
 				our_public_identity,
 				their_public_ephemeral,
@@ -229,7 +225,7 @@ return_status triple_diffie_hellman(
 	//DH(our_ephemeral, their_ephemeral)
 	//this is identical for both Alice and Bob
 	status = diffie_hellman(
-			*dh3,
+			dh3,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral,
@@ -253,17 +249,17 @@ return_status triple_diffie_hellman(
 	}
 
 	//add dh1 to hash input
-	if (crypto_generichash_update(hash_state, dh1->content, DIFFIE_HELLMAN_SIZE) != 0) {
+	if (crypto_generichash_update(hash_state, dh1.content, DIFFIE_HELLMAN_SIZE) != 0) {
 		THROW(GENERIC_ERROR, "Failed to add dh1 to the hash input.");
 	}
 
 	//add dh2 to hash input
-	if (crypto_generichash_update(hash_state, dh2->content, DIFFIE_HELLMAN_SIZE) != 0) {
+	if (crypto_generichash_update(hash_state, dh2.content, DIFFIE_HELLMAN_SIZE) != 0) {
 		THROW(GENERIC_ERROR, "Failed to add dh2 to the hash input.");
 	}
 
 	//add dh3 to hash input
-	if (crypto_generichash_update(hash_state, dh3->content, DIFFIE_HELLMAN_SIZE) != 0) {
+	if (crypto_generichash_update(hash_state, dh3.content, DIFFIE_HELLMAN_SIZE) != 0) {
 		THROW(GENERIC_ERROR, "Failed to add dh3 to the hash input.");
 	}
 
@@ -276,9 +272,6 @@ return_status triple_diffie_hellman(
 	sodium_memzero(hash_state, sizeof(crypto_generichash_state));
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(dh1);
-	buffer_destroy_from_heap_and_null_if_valid(dh2);
-	buffer_destroy_from_heap_and_null_if_valid(dh3);
 
 	return status;
 }
