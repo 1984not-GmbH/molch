@@ -30,6 +30,7 @@ private:
 	size_t buffer_length;
 	bool manage_memory; //should the destructor manage memory?
 	bool readonly; //if set, this buffer shouldn't be written to.
+	bool is_valid; //has an error happened on initialization?
 
 public:
 	size_t content_length;
@@ -37,7 +38,6 @@ public:
 
 	Buffer() noexcept; // does nothing
 	Buffer(const std::string& string) noexcept;
-	Buffer(const size_t buffer_length) noexcept;
 	Buffer(const size_t buffer_length, const size_t content_length) noexcept;
 	Buffer(unsigned char * const content, const size_t buffer_length) noexcept;
 	Buffer(const unsigned char * const content, const size_t buffer_length) noexcept;
@@ -202,6 +202,7 @@ public:
 			) noexcept __attribute__((warn_unused_result));
 
 	bool isNone() const noexcept;
+	bool isValid() const noexcept;
 
 	size_t getBufferLength() const noexcept;
 	bool isReadOnly() const noexcept;

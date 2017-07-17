@@ -129,6 +129,11 @@ char *return_status_print(const return_status * const status, size_t *length) no
 		THROW(ALLOCATION_FAILED, "Failed to allocate memory.");\
 	}
 
+#define throw_on_invalid_buffer(buffer) \
+	if (!(buffer).isValid()) {\
+		THROW(BUFFER_ERROR, "Buffer is invalid");\
+	}
+
 #ifdef __cplusplus
 }
 #endif

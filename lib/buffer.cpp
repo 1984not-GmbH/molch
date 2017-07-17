@@ -32,6 +32,7 @@ Buffer::Buffer(const std::string& string) noexcept {
 	this->content_length = string.length() + sizeof("");
 	this->readonly = false;
 	this->manage_memory = true;
+	this->is_valid = true;
 
 	try {
 		this->content = new unsigned char[string.length() + sizeof("")];
@@ -39,6 +40,7 @@ Buffer::Buffer(const std::string& string) noexcept {
 		this->buffer_length = 0;
 		this->content_length = 0;
 		this->content = nullptr;
+		this->is_valid = false;
 		return;
 	}
 
@@ -46,23 +48,25 @@ Buffer::Buffer(const std::string& string) noexcept {
 	this->content[string.length()] = '\0';
 }
 
-Buffer::Buffer(const size_t buffer_length) noexcept {
-	Buffer(buffer_length, 0);
-}
-
 Buffer::Buffer(const size_t buffer_length, const size_t content_length) noexcept {
 	this->buffer_length = buffer_length;
 	this->content_length = content_length;
 	this->readonly = false;
 	this->manage_memory = true;
+	this->is_valid = true;
 
-	try {
-		this->content = new unsigned char[buffer_length];
-	} catch (...) {
-		this->buffer_length = 0;
-		this->content_length = 0;
+	if (buffer_length == 0) {
 		this->content = nullptr;
-		return;
+	} else {
+		try {
+			this->content = new unsigned char[buffer_length];
+		} catch (...) {
+			this->buffer_length = 0;
+			this->content_length = 0;
+			this->content = nullptr;
+			this->is_valid = false;
+			return;
+		}
 	}
 }
 
@@ -103,6 +107,7 @@ Buffer* Buffer::init(
 		const size_t content_length_) noexcept {
 	this->buffer_length = buffer_length_;
 	this->manage_memory = false;
+	this->is_valid = true;
 
 	this->content_length = (content_length_ > buffer_length_)
 		? buffer_length_
@@ -138,49 +143,35 @@ Buffer* Buffer::initWithConst(
  * Create a new buffer on the heap.
  */
 Buffer* Buffer::create(
-		const size_t buffer_length_,
-		const size_t content_length_) noexcept {
-	Buffer *buffer = (Buffer*)malloc(sizeof(Buffer));
-	if (buffer == nullptr) {
-		return nullptr;
-	}
-
-	unsigned char *content = nullptr;
-	if (buffer_length_ != 0) {
-		content = (unsigned char*)malloc(buffer_length_);
-		if (content == nullptr) {
-			free(buffer);
-			return nullptr;
-		}
-	}
-
-	return buffer->init(content, buffer_length_, content_length_);
+		const size_t buffer_length,
+		const size_t content_length) noexcept {
+	return Buffer::createWithCustomAllocator(buffer_length, content_length, &malloc, &free);
 }
 
 /*
  * Create a new buffer with a custom allocator.
  */
 Buffer* Buffer::createWithCustomAllocator(
-		const size_t buffer_length_,
-		const size_t content_length_,
+		const size_t buffer_length,
+		const size_t content_length,
 		void *(*allocator)(size_t size),
 		void (*deallocator)(void *pointer)
 		) noexcept {
+	Buffer *buffer = (Buffer*)allocator(sizeof(Buffer));
+	if (buffer == nullptr) {
+		return nullptr;
+	}
+
 	unsigned char *content = nullptr;
-	if (buffer_length_ != 0) {
-		content = (unsigned char*)allocator(buffer_length_);
+	if (buffer_length != 0) {
+		content = (unsigned char*)allocator(buffer_length);
 		if (content == nullptr) {
+			deallocator(buffer);
 			return nullptr;
 		}
 	}
 
-	Buffer *buffer = (Buffer*)allocator(sizeof(Buffer));
-	if (buffer == nullptr) {
-		deallocator(content);
-		return nullptr;
-	}
-
-	return buffer->init(content, buffer_length_, content_length_);
+	return buffer->init(content, buffer_length, content_length);
 }
 
 /*
@@ -501,4 +492,8 @@ int Buffer::xorWith(Buffer * const source) noexcept {
  */
 bool Buffer::isNone() const noexcept {
 	return (this->content_length == 0) || sodium_is_zero(this->content, this->content_length);
+}
+
+bool Buffer::isValid() const noexcept {
+	return this->is_valid;
 }
