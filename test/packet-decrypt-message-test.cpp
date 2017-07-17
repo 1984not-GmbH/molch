@@ -86,7 +86,7 @@ int main(void) noexcept {
 	printf("Decrypted message length is the same.\n");
 
 	//compare the message
-	if (message.compare(decrypted_message) != 0) {
+	if (message != *decrypted_message) {
 		THROW(INVALID_VALUE, "Decrypted message doesn't match.");
 	}
 	printf("Decrypted message is the same.\n\n");

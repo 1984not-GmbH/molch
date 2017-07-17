@@ -389,7 +389,7 @@ int Buffer::cloneToRaw(unsigned char * const destination, const size_t destinati
  *
  * Returns 0 if both buffers match.
  */
-int Buffer::compare(const Buffer * const buffer) noexcept {
+int Buffer::compare(const Buffer * const buffer) const noexcept {
 	return this->compareToRaw(buffer->content, buffer->content_length);
 }
 
@@ -398,7 +398,7 @@ int Buffer::compare(const Buffer * const buffer) noexcept {
  *
  * Returns 0 if both buffers match.
  */
-int Buffer::compareToRaw(const unsigned char * const array, const size_t array_length) noexcept {
+int Buffer::compareToRaw(const unsigned char * const array, const size_t array_length) const noexcept {
 	return this->compareToRawPartial(0, array, array_length, 0, this->content_length);
 }
 
@@ -411,7 +411,7 @@ int Buffer::comparePartial(
 		const size_t position1,
 		Buffer * const buffer2,
 		const size_t position2,
-		const size_t length) noexcept {
+		const size_t length) const noexcept {
 	return this->compareToRawPartial(position1, buffer2->content, buffer2->content_length, position2, length);
 }
 
@@ -425,7 +425,7 @@ int Buffer::compareToRawPartial(
 		const unsigned char * const array,
 		const size_t array_length,
 		const size_t position2,
-		const size_t comparison_length) noexcept {
+		const size_t comparison_length) const noexcept {
 	if (((this->content_length - position1) < comparison_length) || ((array_length - position2) < comparison_length)) {
 		//FIXME: Does this introduce a timing sidechannel? This leaks the information that two buffers don't have the same length
 		//buffers are too short
@@ -496,4 +496,12 @@ bool Buffer::isNone() const noexcept {
 
 bool Buffer::isValid() const noexcept {
 	return this->is_valid;
+}
+
+bool Buffer::operator ==(const Buffer& buffer) const {
+	return this->compare(&buffer) == 0;
+}
+
+bool Buffer::operator !=(const Buffer& buffer) const {
+	return !(*this == buffer);
 }

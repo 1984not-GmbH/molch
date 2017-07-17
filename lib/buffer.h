@@ -92,7 +92,7 @@ public:
 	 *
 	 * Returns 0 if both buffers match.
 	 */
-	int compare(const Buffer * const buffer) noexcept __attribute__((warn_unused_result));
+	int compare(const Buffer * const buffer) const noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Compare parts of two buffers.
@@ -103,14 +103,14 @@ public:
 			const size_t position1,
 			Buffer * const buffer2,
 			const size_t position2,
-			const size_t length) noexcept __attribute__((warn_unused_result));
+			const size_t length) const noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Compare a buffer to a raw array.
 	 *
 	 * Returns 0 if both buffers match.
 	 */
-	int compareToRaw(const unsigned char * const array, const size_t array_length) noexcept __attribute__((warn_unused_result));
+	int compareToRaw(const unsigned char * const array, const size_t array_length) const noexcept __attribute__((warn_unused_result));
 
 
 	/*
@@ -123,7 +123,7 @@ public:
 			const unsigned char * const array,
 			const size_t array_length,
 			const size_t position2,
-			const size_t comparison_length) noexcept;
+			const size_t comparison_length) const noexcept;
 
 	/*
 	 * Copy parts of a buffer to another buffer.
@@ -200,6 +200,9 @@ public:
 			void *(*allocator)(size_t size),
 			void (*deallocator)(void *pointer)
 			) noexcept __attribute__((warn_unused_result));
+
+	bool operator ==(const Buffer& buffer) const;
+	bool operator !=(const Buffer& buffer) const;
 
 	bool isNone() const noexcept;
 	bool isValid() const noexcept;
