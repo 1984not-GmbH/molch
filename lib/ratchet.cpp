@@ -515,13 +515,7 @@ return_status Ratchet::receive(
 	return_status status = return_status_init();
 
 	//create buffers
-	Buffer *throwaway_chain_key = nullptr;
-	Buffer *throwaway_message_key = nullptr;
 	Buffer *purported_chain_key_backup = nullptr;
-	throwaway_chain_key = Buffer::create(CHAIN_KEY_SIZE, 0);
-	THROW_on_failed_alloc(throwaway_chain_key);
-	throwaway_message_key = Buffer::create(MESSAGE_KEY_SIZE, 0);
-	THROW_on_failed_alloc(throwaway_message_key);
 	purported_chain_key_backup = Buffer::create(CHAIN_KEY_SIZE, 0);
 	THROW_on_failed_alloc(purported_chain_key_backup);
 
@@ -623,8 +617,6 @@ cleanup:
 		message_key.content_length = 0;
 	}
 
-	buffer_destroy_from_heap_and_null_if_valid(throwaway_chain_key);
-	buffer_destroy_from_heap_and_null_if_valid(throwaway_message_key);
 	buffer_destroy_from_heap_and_null_if_valid(purported_chain_key_backup);
 
 	return status;
