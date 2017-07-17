@@ -39,8 +39,6 @@ int main(void) noexcept {
 	Buffer *buffer1 = NULL;
 	Buffer *buffer2 = NULL;
 	Buffer *buffer3 = NULL;
-	Buffer *empty = NULL;
-	Buffer *empty2 = NULL;
 	Buffer *empty3 = NULL;
 	Buffer *random = NULL;
 	Buffer *random2 = NULL;
@@ -100,12 +98,14 @@ int main(void) noexcept {
 	print_hex(buffer2);
 	putchar('\n');
 
-	empty = Buffer::create(0, 0);
-	empty2 = Buffer::create(0, 0);
-	status = empty2->cloneFrom(empty);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to clone empty buffer.\n");
-		goto fail;
+	{
+		Buffer empty((size_t)0, 0);
+		Buffer empty2((size_t)0, 0);
+		status = empty2.cloneFrom(&empty);
+		if (status != 0) {
+			fprintf(stderr, "ERROR: Failed to clone empty buffer.\n");
+			goto fail;
+		}
 	}
 
 	//copy buffer
@@ -345,8 +345,6 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(buffer1);
 	buffer_destroy_from_heap_and_null_if_valid(buffer2);
 	buffer_destroy_from_heap_and_null_if_valid(buffer3);
-	buffer_destroy_from_heap_and_null_if_valid(empty);
-	buffer_destroy_from_heap_and_null_if_valid(empty2);
 	buffer_destroy_from_heap_and_null_if_valid(empty3);
 	buffer_destroy_from_heap_and_null_if_valid(random);
 	buffer_destroy_from_heap_and_null_if_valid(random2);

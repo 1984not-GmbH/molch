@@ -150,8 +150,8 @@ int main(void) noexcept {
 	return_status status = return_status_init();
 
 	//buffer for message keys
-	Buffer *header_key = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *message_key = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 
 	// buffers for exporting protobuf-c
 	Buffer **protobuf_export_buffers = nullptr;
@@ -169,32 +169,34 @@ int main(void) noexcept {
 	assert(keystore.tail == nullptr);
 
 	int status_int = 0;
+	throw_on_invalid_buffer(header_key);
+	throw_on_invalid_buffer(message_key);
 	//add keys to the keystore
 	for (size_t i = 0; i < 6; i++) {
 		//create new keys
-		status_int = header_key->fillRandom(header_key->getBufferLength());
+		status_int = header_key.fillRandom(header_key.getBufferLength());
 		if (status_int != 0) {
 			THROW(KEYGENERATION_FAILED, "Failed to create header key.");
 		}
-		status_int = message_key->fillRandom(message_key->getBufferLength());
+		status_int = message_key.fillRandom(message_key.getBufferLength());
 		if (status_int != 0) {
 			THROW(KEYGENERATION_FAILED, "Failed to create header key.");
 		}
 
 		//print the new header key
 		printf("New Header Key No. %zu:\n", i);
-		print_hex(header_key);
+		print_hex(&header_key);
 		putchar('\n');
 
 		//print the new message key
 		printf("New message key No. %zu:\n", i);
-		print_hex(message_key);
+		print_hex(&message_key);
 		putchar('\n');
 
 		//add keys to the keystore
-		status = header_and_message_keystore_add(&keystore, message_key, header_key);
-		message_key->clear();
-		header_key->clear();
+		status = header_and_message_keystore_add(&keystore, &message_key, &header_key);
+		message_key.clear();
+		header_key.clear();
 		THROW_on_error(ADDITION_ERROR, "Failed to add key to keystore.");
 
 		print_header_and_message_keystore(&keystore);
@@ -269,9 +271,6 @@ int main(void) noexcept {
 	THROW_on_error(GENERIC_ERROR, "Testing im-/export of empty stores failed.");
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(header_key);
-	buffer_destroy_from_heap_and_null_if_valid(message_key);
-
 	if (protobuf_export_bundles != nullptr) {
 		for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
 			if (protobuf_export_bundles[i] != nullptr) {

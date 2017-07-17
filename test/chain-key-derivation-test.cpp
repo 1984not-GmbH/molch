@@ -34,45 +34,44 @@ int main(void) noexcept {
 	return_status status = return_status_init();
 
 	//buffer for derived chain keys
-	Buffer *next_chain_key = Buffer::create(crypto_auth_BYTES, crypto_auth_BYTES);
+	Buffer next_chain_key(crypto_auth_BYTES, crypto_auth_BYTES);
 	//create random initial chain key
-	Buffer *last_chain_key = Buffer::create(crypto_auth_BYTES, crypto_auth_BYTES);
-	if (last_chain_key->fillRandom(last_chain_key->getBufferLength()) != 0) {
+	Buffer last_chain_key(crypto_auth_BYTES, crypto_auth_BYTES);
+	throw_on_invalid_buffer(next_chain_key);
+	throw_on_invalid_buffer(last_chain_key);
+	if (last_chain_key.fillRandom(last_chain_key.getBufferLength()) != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to create last chain key.");
 	}
 
 	//print first chain key
 	printf("Initial chain key (%i Bytes):\n", crypto_auth_BYTES);
-	print_hex(last_chain_key);
+	print_hex(&last_chain_key);
 	putchar('\n');
 
 
 	//derive a chain of chain keys
 	unsigned int counter;
 	for (counter = 1; counter <= 5; counter++) {
-		status = derive_chain_key(*next_chain_key, *last_chain_key);
+		status = derive_chain_key(next_chain_key, last_chain_key);
 		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key.");
 
 		//print the derived chain key
 		printf("Chain key Nr. %i:\n", counter);
-		print_hex(next_chain_key);
+		print_hex(&next_chain_key);
 		putchar('\n');
 
 		//check that chain keys are different
-		if (last_chain_key->compare(next_chain_key) == 0) {
+		if (last_chain_key.compare(&next_chain_key) == 0) {
 			THROW(INCORRECT_DATA, "Derived chain key is identical.");
 		}
 
 		//move next_chain_key to last_chain_key
-		if (last_chain_key->cloneFrom(next_chain_key) != 0) {
+		if (last_chain_key.cloneFrom(&next_chain_key) != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy chain key.");
 		}
 	}
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(last_chain_key);
-	buffer_destroy_from_heap_and_null_if_valid(next_chain_key);
-
 	on_error {
 		print_errors(&status);
 	}

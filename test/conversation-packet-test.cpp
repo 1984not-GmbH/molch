@@ -31,11 +31,11 @@
 int main(void) noexcept {
 	//create buffers
 	//alice' keys
-	Buffer *alice_private_identity = Buffer::create(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer *alice_public_identity = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer alice_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer alice_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	//bobs keys
-	Buffer *bob_private_identity = Buffer::create(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer *bob_public_identity = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer bob_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
 	Buffer *packet = nullptr;
 	Buffer *received_message = nullptr;
@@ -56,7 +56,7 @@ int main(void) noexcept {
 	PrekeyStore *alice_prekeys = nullptr;
 	PrekeyStore *bob_prekeys = nullptr;
 
-	Buffer *prekey_list = Buffer::create(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
+	Buffer prekey_list(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
 	//conversations
 	conversation_t *alice_send_conversation = nullptr;
@@ -76,6 +76,11 @@ int main(void) noexcept {
 	if (status_int != 0) {
 		THROW(INIT_ERROR, "Failed to initialize libsodium!");
 	}
+	throw_on_invalid_buffer(alice_private_identity);
+	throw_on_invalid_buffer(alice_public_identity);
+	throw_on_invalid_buffer(bob_private_identity);
+	throw_on_invalid_buffer(bob_public_identity);
+	throw_on_invalid_buffer(prekey_list);
 
 	//create prekey stores
 	status = PrekeyStore::create(alice_prekeys);
@@ -87,8 +92,8 @@ int main(void) noexcept {
 	//alice
 	//identity
 	status = generate_and_print_keypair(
-			alice_public_identity,
-			alice_private_identity,
+			&alice_public_identity,
+			&alice_private_identity,
 			"Alice",
 			"identity");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate Alice' identity keys.");
@@ -96,14 +101,14 @@ int main(void) noexcept {
 	//bob
 	//identity
 	status = generate_and_print_keypair(
-			bob_public_identity,
-			bob_private_identity,
+			&bob_public_identity,
+			&bob_private_identity,
 			"Bob",
 			"identity");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate Bob's identity keys.");
 
 	//get the prekey list
-	status = bob_prekeys->list(*prekey_list);
+	status = bob_prekeys->list(prekey_list);
 	THROW_on_error(GENERIC_ERROR, "Failed to get Bob's prekey list.");
 
 	//start a send conversation
@@ -111,10 +116,10 @@ int main(void) noexcept {
 			&alice_send_conversation,
 			&send_message,
 			&packet,
-			alice_public_identity,
-			alice_private_identity,
-			bob_public_identity,
-			prekey_list);
+			&alice_public_identity,
+			&alice_private_identity,
+			&bob_public_identity,
+			&prekey_list);
 	THROW_on_error(SEND_ERROR, "Failed to send message.");
 
 	printf("Packet:\n");
@@ -126,8 +131,8 @@ int main(void) noexcept {
 			&bob_receive_conversation,
 			packet,
 			&received_message,
-			bob_public_identity,
-			bob_private_identity,
+			&bob_public_identity,
+			&bob_private_identity,
 			bob_prekeys);
 	THROW_on_error(RECEIVE_ERROR, "Failed to decrypt received message.");
 
@@ -221,7 +226,7 @@ int main(void) noexcept {
 	//Bob sends the message to Alice.
 
 	//get alice prekey list
-	status = alice_prekeys->list(*prekey_list);
+	status = alice_prekeys->list(prekey_list);
 	THROW_on_error(GENERIC_ERROR, "Failed to get Alice' prekey list.");
 
 	//destroy the old packet
@@ -230,10 +235,10 @@ int main(void) noexcept {
 			&bob_send_conversation,
 			&send_message,
 			&packet,
-			bob_public_identity,
-			bob_private_identity,
-			alice_public_identity,
-			prekey_list);
+			&bob_public_identity,
+			&bob_private_identity,
+			&alice_public_identity,
+			&prekey_list);
 	THROW_on_error(SEND_ERROR, "Failed to send message.");
 
 	printf("Sent message: %.*s\n", (int)send_message.content_length, (const char*)send_message.content);
@@ -248,8 +253,8 @@ int main(void) noexcept {
 			&alice_receive_conversation,
 			packet,
 			&received_message,
-			alice_public_identity,
-			alice_private_identity,
+			&alice_public_identity,
+			&alice_private_identity,
 			alice_prekeys);
 	THROW_on_error(RECEIVE_ERROR, "Failed to decrypt received message.");
 
@@ -367,11 +372,6 @@ cleanup:
 	if (bob_receive_conversation != nullptr) {
 		conversation_destroy(bob_receive_conversation);
 	}
-	buffer_destroy_from_heap_and_null_if_valid(alice_private_identity);
-	buffer_destroy_from_heap_and_null_if_valid(alice_public_identity);
-	buffer_destroy_from_heap_and_null_if_valid(bob_private_identity);
-	buffer_destroy_from_heap_and_null_if_valid(bob_public_identity);
-	buffer_destroy_from_heap_and_null_if_valid(prekey_list);
 
 	on_error {
 		print_errors(&status);

@@ -137,13 +137,13 @@ cleanup:
 static return_status test_add_conversation(ConversationStore * const store) noexcept {
 	//define key buffers
 	//identity keys
-	Buffer *our_private_identity = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer *our_public_identity = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	Buffer *their_public_identity = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer our_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer our_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer their_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	//ephemeral keys
-	Buffer *our_private_ephemeral = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer *our_public_ephemeral= Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	Buffer *their_public_ephemeral = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer our_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer our_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer their_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
 	conversation_t *conversation = nullptr;
 
@@ -151,20 +151,26 @@ static return_status test_add_conversation(ConversationStore * const store) noex
 
 	//generate the keys
 	int status_int = 0;
+	throw_on_invalid_buffer(our_private_identity);
+	throw_on_invalid_buffer(our_public_identity);
+	throw_on_invalid_buffer(their_public_identity);
+	throw_on_invalid_buffer(our_private_ephemeral);
+	throw_on_invalid_buffer(our_public_ephemeral);
+	throw_on_invalid_buffer(their_public_ephemeral);
 
-	status_int = crypto_box_keypair(our_public_identity->content, our_private_identity->content);
+	status_int = crypto_box_keypair(our_public_identity.content, our_private_identity.content);
 	if (status_int != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to generate our identity keys.");
 	}
-	status_int = crypto_box_keypair(our_public_ephemeral->content, our_private_ephemeral->content);
+	status_int = crypto_box_keypair(our_public_ephemeral.content, our_private_ephemeral.content);
 	if (status_int != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to generate our ephemeral keys.");
 	}
-	status_int = their_public_identity->fillRandom(their_public_identity->getBufferLength());
+	status_int = their_public_identity.fillRandom(their_public_identity.getBufferLength());
 	if (status_int != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to generate their public identity keys.");
 	}
-	status_int = their_public_ephemeral->fillRandom(their_public_ephemeral->getBufferLength());
+	status_int = their_public_ephemeral.fillRandom(their_public_ephemeral.getBufferLength());
 	if (status_int != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to generate their public ephemeral keys.");
 	}
@@ -189,12 +195,12 @@ static return_status test_add_conversation(ConversationStore * const store) noex
 
 	status = Ratchet::create(
 			conversation->ratchet,
-			*our_private_identity,
-			*our_public_identity,
-			*their_public_identity,
-			*our_private_ephemeral,
-			*our_public_ephemeral,
-			*their_public_ephemeral);
+			our_private_identity,
+			our_public_identity,
+			their_public_identity,
+			our_private_ephemeral,
+			our_public_ephemeral,
+			their_public_ephemeral);
 	if (conversation->ratchet == nullptr) {
 		THROW(CREATION_ERROR, "Failed to creat ratchet.");
 	}
@@ -209,13 +215,6 @@ cleanup:
 	if (conversation != nullptr) {
 		conversation_destroy(conversation);
 	}
-	//destroy all the buffers
-	buffer_destroy_from_heap_and_null_if_valid(our_private_identity);
-	buffer_destroy_from_heap_and_null_if_valid(our_public_identity);
-	buffer_destroy_from_heap_and_null_if_valid(their_public_identity);
-	buffer_destroy_from_heap_and_null_if_valid(our_private_ephemeral);
-	buffer_destroy_from_heap_and_null_if_valid(our_public_ephemeral);
-	buffer_destroy_from_heap_and_null_if_valid(their_public_ephemeral);
 
 	return status;
 }
