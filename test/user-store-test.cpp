@@ -169,9 +169,9 @@ int main(void) noexcept {
 	return_status status = return_status_init();
 
 	//create public signing key buffers
-	Buffer *alice_public_signing_key = Buffer::create(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	Buffer *bob_public_signing_key = Buffer::create(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	Buffer *charlie_public_signing_key = Buffer::create(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	Buffer alice_public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	Buffer bob_public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	Buffer charlie_public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
 
 	//protobuf-c export buffers
 	Buffer **protobuf_export_buffers = nullptr;
@@ -186,6 +186,10 @@ int main(void) noexcept {
 	status = user_store_create(&store);
 	THROW_on_error(CREATION_ERROR, "Failed to create user store.");
 
+	throw_on_invalid_buffer(alice_public_signing_key);
+	throw_on_invalid_buffer(bob_public_signing_key);
+	throw_on_invalid_buffer(charlie_public_signing_key);
+
 	//check the content
 	status = user_store_list(&list, store);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users in the user store.");
@@ -198,7 +202,7 @@ int main(void) noexcept {
 	status = user_store_create_user(
 			store,
 			nullptr,
-			alice_public_signing_key,
+			&alice_public_signing_key,
 			nullptr);
 	THROW_on_error(CREATION_ERROR, "Failed to create Alice.");
 	printf("Successfully created Alice to the user store.\n");
@@ -215,7 +219,7 @@ int main(void) noexcept {
 	if (list == nullptr) {
 		THROW(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 	}
-	if (list->compare(alice_public_signing_key) != 0) {
+	if (list->compare(&alice_public_signing_key) != 0) {
 		THROW(INCORRECT_DATA, "Failed to list users.");
 	}
 	buffer_destroy_from_heap_and_null_if_valid(list);
@@ -225,7 +229,7 @@ int main(void) noexcept {
 	status = user_store_create_user(
 			store,
 			nullptr,
-			bob_public_signing_key,
+			&bob_public_signing_key,
 			nullptr);
 	THROW_on_error(CREATION_ERROR, "Failed to create Bob.");
 	printf("Successfully created Bob.\n");
@@ -243,8 +247,8 @@ int main(void) noexcept {
 	if (list == nullptr) {
 		THROW(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 	}
-	if ((list->comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-			|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+	if ((list->comparePartial(0, &alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+			|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		THROW(INCORRECT_DATA, "Failed to list users.");
 	}
 	buffer_destroy_from_heap_and_null_if_valid(list);
@@ -254,7 +258,7 @@ int main(void) noexcept {
 	status = user_store_create_user(
 			store,
 			nullptr,
-			charlie_public_signing_key,
+			&charlie_public_signing_key,
 			nullptr);
 	THROW_on_error(CREATION_ERROR, "Failed to add Charlie to the user store.");
 	printf("Successfully added Charlie to the user store.\n");
@@ -271,9 +275,9 @@ int main(void) noexcept {
 	if (list == nullptr) {
 		THROW(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 	}
-	if ((list->comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-			|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-			|| (list->comparePartial(2 * PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+	if ((list->comparePartial(0, &alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+			|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+			|| (list->comparePartial(2 * PUBLIC_MASTER_KEY_SIZE, &charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		THROW(INCORRECT_DATA, "Failed to list users.");
 	}
 	buffer_destroy_from_heap_and_null_if_valid(list);
@@ -282,17 +286,17 @@ int main(void) noexcept {
 	//find node
 	{
 		user_store_node *bob_node = nullptr;
-		status = user_store_find_node(&bob_node, store, bob_public_signing_key);
+		status = user_store_find_node(&bob_node, store, &bob_public_signing_key);
 		THROW_on_error(NOT_FOUND, "Failed to find Bob's node.");
 		printf("Node found.\n");
 
-		if (bob_node->public_signing_key->compare(bob_public_signing_key) != 0) {
+		if (*bob_node->public_signing_key != bob_public_signing_key) {
 			THROW(INCORRECT_DATA, "Bob's data from the user store doesn't match.");
 		}
 		printf("Data from the node matches.\n");
 
 		//remove a user identified by it's key
-		status = user_store_remove_by_key(store, bob_public_signing_key);
+		status = user_store_remove_by_key(store, &bob_public_signing_key);
 		THROW_on_error(REMOVE_ERROR, "Failed to remvoe user from user store by key.");
 		//check the length
 		if (store->length != 2) {
@@ -305,8 +309,8 @@ int main(void) noexcept {
 		if (list == nullptr) {
 			THROW(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 		}
-		if ((list->comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+		if ((list->comparePartial(0, &alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 			THROW(INCORRECT_DATA, "Removing user failed.");
 		}
 		buffer_destroy_from_heap_and_null_if_valid(list);
@@ -316,13 +320,13 @@ int main(void) noexcept {
 		status = user_store_create_user(
 				store,
 				nullptr,
-				bob_public_signing_key,
+				&bob_public_signing_key,
 				nullptr);
 		THROW_on_error(CREATION_ERROR, "Failed to recreate.");
 		printf("Successfully recreated Bob.\n");
 
 		//now find bob again
-		status = user_store_find_node(&bob_node, store, bob_public_signing_key);
+		status = user_store_find_node(&bob_node, store, &bob_public_signing_key);
 		THROW_on_error(NOT_FOUND, "Failed to find Bob's node.");
 		printf("Bob's node found again.\n");
 
@@ -344,7 +348,7 @@ int main(void) noexcept {
 	//print the exported data
 	puts("[\n");
 	for (size_t i = 0; i < protobuf_export_length; i++) {
-		print_hex(protobuf_export_buffers[i]);
+		print_hex(*protobuf_export_buffers[i]);
 		puts(",\n");
 	}
 	puts("]\n\n");
@@ -380,8 +384,8 @@ int main(void) noexcept {
 	//check the user list
 	status = user_store_list(&list, store);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.");
-	if ((list->comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-			|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+	if ((list->comparePartial(0, &alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+			|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		THROW(REMOVE_ERROR, "Removing user failed.");
 	}
 	buffer_destroy_from_heap_and_null_if_valid(list);
@@ -424,12 +428,8 @@ cleanup:
 		free_and_null_if_valid(protobuf_second_export_buffers);
 	}
 
-	buffer_destroy_from_heap_and_null_if_valid(alice_public_signing_key);
-	buffer_destroy_from_heap_and_null_if_valid(bob_public_signing_key);
-	buffer_destroy_from_heap_and_null_if_valid(charlie_public_signing_key);
-
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

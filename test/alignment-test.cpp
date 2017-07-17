@@ -36,7 +36,7 @@ int main(void) noexcept {
 
 cleanup:
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

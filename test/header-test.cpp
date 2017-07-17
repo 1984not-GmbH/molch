@@ -52,7 +52,7 @@ int main(void) noexcept {
 		THROW(KEYGENERATION_FAILED, "Failed to create our public ephemeral.");
 	}
 	printf("Our public ephemeral key (%zu Bytes):\n", our_public_ephemeral_key.content_length);
-	print_hex(&our_public_ephemeral_key);
+	print_hex(our_public_ephemeral_key);
 
 	//message numbers
 	message_number = 2;
@@ -71,7 +71,7 @@ int main(void) noexcept {
 
 	//print the header
 	printf("Header (%zu Bytes):\n", header->content_length);
-	print_hex(header);
+	print_hex(*header);
 	putchar('\n');
 
 	//get data back out of the header again
@@ -85,7 +85,7 @@ int main(void) noexcept {
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to extract data from header.");
 
 	printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key.content_length);
-	print_hex(&extracted_public_ephemeral_key);
+	print_hex(extracted_public_ephemeral_key);
 	printf("Extracted message number: %u\n", extracted_message_number);
 	printf("Extracted previous message number: %u\n", extracted_previous_message_number);
 	putchar('\n');
@@ -110,7 +110,7 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(header);
 
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 		return_status_destroy_errors(&status);
 	}
 

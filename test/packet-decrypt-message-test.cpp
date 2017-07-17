@@ -32,12 +32,12 @@
 int main(void) noexcept {
 	Buffer message("Hello world!\n");
 	//create buffers
-	Buffer *header_key = Buffer::create(crypto_aead_chacha20poly1305_KEYBYTES, crypto_aead_chacha20poly1305_KEYBYTES);
-	Buffer *message_key = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *public_identity_key = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer *public_ephemeral_key = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer *public_prekey = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer *header = Buffer::create(4, 4);
+	Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	Buffer public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer header(4, 4);
 
 	Buffer *packet = nullptr;
 	Buffer *decrypted_message = nullptr;
@@ -46,27 +46,34 @@ int main(void) noexcept {
 
 	molch_message_type packet_type = NORMAL_MESSAGE;
 
+	throw_on_invalid_buffer(header_key);
+	throw_on_invalid_buffer(message_key);
+	throw_on_invalid_buffer(public_identity_key);
+	throw_on_invalid_buffer(public_ephemeral_key);
+	throw_on_invalid_buffer(public_prekey);
+	throw_on_invalid_buffer(header);
+
 	if (sodium_init() == -1) {
 		THROW(INIT_ERROR, "Failed to initialize libsodium.");
 	}
 
 	//generate keys and message
-	header->content[0] = 0x01;
-	header->content[1] = 0x02;
-	header->content[2] = 0x03;
-	header->content[3] = 0x04;
+	header.content[0] = 0x01;
+	header.content[1] = 0x02;
+	header.content[2] = 0x03;
+	header.content[3] = 0x04;
 	printf("Packet type: %02x\n", packet_type);
 	putchar('\n');
 
 	//NORMAL MESSAGE
 	printf("NORMAL MESSAGE\n");
 	status = create_and_print_message(
-			&packet,
+			packet,
 			header_key,
 			message_key,
 			packet_type,
 			header,
-			&message,
+			message,
 			nullptr,
 			nullptr,
 			nullptr);
@@ -76,7 +83,7 @@ int main(void) noexcept {
 	status = packet_decrypt_message(
 			decrypted_message,
 			*packet,
-			*message_key);
+			message_key);
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
 
 	//check the message size
@@ -101,7 +108,7 @@ int main(void) noexcept {
 	status = packet_decrypt_message(
 			decrypted_message,
 			*packet,
-			*message_key);
+			message_key);
 	if (status.status == SUCCESS) { //message was decrypted although it shouldn't
 		THROW(GENERIC_ERROR, "Decrypted manipulated message.");
 	} else {
@@ -113,19 +120,19 @@ int main(void) noexcept {
 	printf("PREKEY MESSAGE\n");
 	//create the public keys
 	{
-		int status_int = public_identity_key->fillRandom(PUBLIC_KEY_SIZE);
+		int status_int = public_identity_key.fillRandom(PUBLIC_KEY_SIZE);
 		if (status_int != 0) {
 			THROW(KEYGENERATION_FAILED, "Failed to generate public identity key.");
 		}
 	}
 	{
-		int status_int = public_ephemeral_key->fillRandom(PUBLIC_KEY_SIZE);
+		int status_int = public_ephemeral_key.fillRandom(PUBLIC_KEY_SIZE);
 		if (status_int != 0) {
 			THROW(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
 		}
 	}
 	{
-		int status_int = public_prekey->fillRandom(PUBLIC_KEY_SIZE);
+		int status_int = public_prekey.fillRandom(PUBLIC_KEY_SIZE);
 		if (status_int != 0) {
 			THROW(KEYGENERATION_FAILED, "Failed to generate public prekey.");
 		}
@@ -135,22 +142,22 @@ int main(void) noexcept {
 
 	packet_type = PREKEY_MESSAGE;
 	status = create_and_print_message(
-			&packet,
+			packet,
 			header_key,
 			message_key,
 			packet_type,
 			header,
-			&message,
-			public_identity_key,
-			public_ephemeral_key,
-			public_prekey);
+			message,
+			&public_identity_key,
+			&public_ephemeral_key,
+			&public_prekey);
 	THROW_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now decrypt the message
 	status = packet_decrypt_message(
 			decrypted_message,
 			*packet,
-			*message_key);
+			message_key);
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
 
 	//check the message size
@@ -166,17 +173,11 @@ int main(void) noexcept {
 	printf("Decrypted message is the same.\n");
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(header_key);
-	buffer_destroy_from_heap_and_null_if_valid(message_key);
-	buffer_destroy_from_heap_and_null_if_valid(header);
 	buffer_destroy_from_heap_and_null_if_valid(packet);
 	buffer_destroy_from_heap_and_null_if_valid(decrypted_message);
-	buffer_destroy_from_heap_and_null_if_valid(public_identity_key);
-	buffer_destroy_from_heap_and_null_if_valid(public_ephemeral_key);
-	buffer_destroy_from_heap_and_null_if_valid(public_prekey);
 
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

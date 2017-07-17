@@ -31,42 +31,52 @@
 
 int main(void) noexcept {
 	//generate keys and message
-	Buffer *header_key = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *message_key = Buffer::create(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-	Buffer *public_identity_key = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer *public_ephemeral_key = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer *public_prekey = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer *extracted_public_identity_key = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer *extracted_public_ephemeral_key = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer *extracted_public_prekey = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	Buffer public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer extracted_public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer extracted_public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer extracted_public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	Buffer message("Hello world!\n");
-	Buffer *header = Buffer::create(4, 4);
+	Buffer header(4, 4);
 	Buffer *packet = nullptr;
 
 	return_status status = return_status_init();
 
 	molch_message_type packet_type = NORMAL_MESSAGE;
 
+	throw_on_invalid_buffer(header_key);
+	throw_on_invalid_buffer(message_key);
+	throw_on_invalid_buffer(public_identity_key);
+	throw_on_invalid_buffer(public_ephemeral_key);
+	throw_on_invalid_buffer(public_prekey);
+	throw_on_invalid_buffer(extracted_public_identity_key);
+	throw_on_invalid_buffer(extracted_public_ephemeral_key);
+	throw_on_invalid_buffer(extracted_public_prekey);
+	throw_on_invalid_buffer(header);
+
 	if (sodium_init() == -1) {
 		THROW(INIT_ERROR, "Failed to initialize libsodium.");
 	}
 
-	header->content[0] = 0x01;
-	header->content[1] = 0x02;
-	header->content[2] = 0x03;
-	header->content[3] = 0x04;
+	header.content[0] = 0x01;
+	header.content[1] = 0x02;
+	header.content[2] = 0x03;
+	header.content[3] = 0x04;
 	printf("Packet type: %02x\n", packet_type);
 	putchar('\n');
 
 	//A NORMAL MESSAGE
 	printf("NORMAL MESSAGE:\n");
 	status = create_and_print_message(
-			&packet,
+			packet,
 			header_key,
 			message_key,
 			packet_type,
 			header,
-			&message,
+			message,
 			nullptr,
 			nullptr,
 			nullptr);
@@ -106,19 +116,19 @@ int main(void) noexcept {
 	printf("PREKEY MESSAGE:\n");
 	//create the keys
 	{
-		int status_int = public_identity_key->fillRandom(PUBLIC_KEY_SIZE);
+		int status_int = public_identity_key.fillRandom(PUBLIC_KEY_SIZE);
 		if (status_int != 0) {
 			THROW(KEYGENERATION_FAILED, "Failed to generate public identity key.");
 		}
 	}
 	{
-		int status_int = public_ephemeral_key->fillRandom(PUBLIC_KEY_SIZE);
+		int status_int = public_ephemeral_key.fillRandom(PUBLIC_KEY_SIZE);
 		if (status_int != 0) {
 			THROW(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
 		}
 	}
 	{
-		int status_int = public_prekey->fillRandom(PUBLIC_KEY_SIZE);
+		int status_int = public_prekey.fillRandom(PUBLIC_KEY_SIZE);
 		if (status_int != 0) {
 			THROW(KEYGENERATION_FAILED, "Failed to generate public prekey.");
 		}
@@ -128,15 +138,15 @@ int main(void) noexcept {
 
 	packet_type = PREKEY_MESSAGE;
 	status = create_and_print_message(
-			&packet,
+			packet,
 			header_key,
 			message_key,
 			packet_type,
 			header,
-			&message,
-			public_identity_key,
-			public_ephemeral_key,
-			public_prekey);
+			message,
+			&public_identity_key,
+			&public_ephemeral_key,
+			&public_prekey);
 	THROW_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now extract the metadata
@@ -145,9 +155,9 @@ int main(void) noexcept {
 			extracted_highest_supported_protocol_version,
 			extracted_packet_type,
 			*packet,
-			extracted_public_identity_key,
-			extracted_public_ephemeral_key,
-			extracted_public_prekey);
+			&extracted_public_identity_key,
+			&extracted_public_ephemeral_key,
+			&extracted_public_prekey);
 	THROW_on_error(DATA_FETCH_ERROR, "Couldn't extract metadata from the packet.");
 
 	printf("extracted_type = %u\n", extracted_packet_type);
@@ -166,35 +176,26 @@ int main(void) noexcept {
 	}
 	printf("Highest supoorted protocol version matches (%i)!\n", extracted_highest_supported_protocol_version);
 
-	if (public_identity_key->compare(extracted_public_identity_key) != 0) {
+	if (public_identity_key.compare(&extracted_public_identity_key) != 0) {
 		THROW(INVALID_VALUE, "Extracted public identity key doesn't match.");
 	}
 	printf("Extracted public identity key matches!\n");
 
-	if (public_ephemeral_key->compare(extracted_public_ephemeral_key) != 0) {
+	if (public_ephemeral_key.compare(&extracted_public_ephemeral_key) != 0) {
 		THROW(INVALID_VALUE, "Extratec public ephemeral key doesn't match.");
 	}
 	printf("Extracted public ephemeral key matches!\n");
 
-	if (public_prekey->compare(extracted_public_prekey) != 0) {
+	if (public_prekey != extracted_public_prekey) {
 		THROW(INVALID_VALUE, "Extracted public prekey doesn't match.");
 	}
 	printf("Extracted public prekey matches!\n");
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(header_key);
-	buffer_destroy_from_heap_and_null_if_valid(message_key);
-	buffer_destroy_from_heap_and_null_if_valid(header);
 	buffer_destroy_from_heap_and_null_if_valid(packet);
-	buffer_destroy_from_heap_and_null_if_valid(public_identity_key);
-	buffer_destroy_from_heap_and_null_if_valid(public_ephemeral_key);
-	buffer_destroy_from_heap_and_null_if_valid(public_prekey);
-	buffer_destroy_from_heap_and_null_if_valid(extracted_public_identity_key);
-	buffer_destroy_from_heap_and_null_if_valid(extracted_public_ephemeral_key);
-	buffer_destroy_from_heap_and_null_if_valid(extracted_public_prekey);
 
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

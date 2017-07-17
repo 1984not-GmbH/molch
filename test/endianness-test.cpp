@@ -47,7 +47,7 @@ int main(void) noexcept {
 		status = to_big_endian(uint32, buffer32);
 		THROW_on_error(CONVERSION_ERROR, "Failed to convert uint32_t to big endian.");
 		printf("uint32_t %llu to big endian:\n", (unsigned long long) uint32);
-		print_hex(&buffer32);
+		print_hex(buffer32);
 
 		if (buffer32.compareToRaw((const unsigned char*)"\x04\x03\x02\x01", sizeof(uint32_t)) != 0) {
 			THROW(INCORRECT_DATA, "Big endian of uint32_t is incorrect.");
@@ -69,7 +69,7 @@ int main(void) noexcept {
 		status = to_big_endian(int32, buffer32);
 		THROW_on_error(CONVERSION_ERROR, "Failed to converst int32_t to big_endian.");
 		printf("int32_t %lli to big endian:\n", (signed long long) int32);
-		print_hex(&buffer32);
+		print_hex(buffer32);
 
 		if (buffer32.compareToRaw((const unsigned char*)"\xFF\xFE\xFD\xFC", sizeof(int32_t)) != 0) {
 			THROW(INCORRECT_DATA, "Big endian of int32_t is incorrect.");
@@ -91,7 +91,7 @@ int main(void) noexcept {
 		status = to_big_endian(uint64, buffer64);
 		THROW_on_error(CONVERSION_ERROR, "Failed to convert uint64_t to big endian.");
 		printf("uint64_t %llu to big endian:\n", (unsigned long long) uint64);
-		print_hex(&buffer64);
+		print_hex(buffer64);
 
 		if (buffer64.compareToRaw((const unsigned char*)"\x08\x07\x06\x05\x04\x03\x02\x01", sizeof(uint64_t)) != 0) {
 			THROW(INCORRECT_DATA, "Big endian of uint64_t is incorrect.");
@@ -113,7 +113,7 @@ int main(void) noexcept {
 		status = to_big_endian(int64, buffer64);
 		THROW_on_error(CONVERSION_ERROR, "Failed to converst int64_t to big endian.");
 		printf("int64_t %lli to big endian:\n", (signed long long) int64);
-		print_hex(&buffer64);
+		print_hex(buffer64);
 
 		if (buffer64.compareToRaw((const unsigned char*)"\xFF\xFE\xFD\xFC\xFB\xFA\xF9\xF8", sizeof(int64_t)) != 0) {
 			THROW(INCORRECT_DATA, "Big endian of int64_t is incorrect.");
@@ -130,7 +130,7 @@ int main(void) noexcept {
 
 cleanup:
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

@@ -86,32 +86,32 @@ int main(void) noexcept {
 
 	//create Alice's identity keypair
 	status = generate_and_print_keypair(
-			&alice_public_identity,
-			&alice_private_identity,
+			alice_public_identity,
+			alice_private_identity,
 			"Alice",
 			"identity");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice's identity keypair.");
 
 	//create Alice's ephemeral keypair
 	status = generate_and_print_keypair(
-			&alice_public_ephemeral,
-			&alice_private_ephemeral,
+			alice_public_ephemeral,
+			alice_private_ephemeral,
 			"Alice",
 			"ephemeral");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice's ephemeral keypair.");
 
 	//create Bob's identity keypair
 	status = generate_and_print_keypair(
-			&bob_public_identity,
-			&bob_private_identity,
+			bob_public_identity,
+			bob_private_identity,
 			"Bob",
 			"identity");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's identity keypair.");
 
 	//create Bob's ephemeral keypair
 	status = generate_and_print_keypair(
-			&bob_public_ephemeral,
-			&bob_private_ephemeral,
+			bob_public_ephemeral,
+			bob_private_ephemeral,
 			"Bob",
 			"ephemeral");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's ephemeral keypair.");
@@ -138,24 +138,24 @@ int main(void) noexcept {
 
 	//print Alice's initial root and chain key
 	printf("Alice's initial root key (%zu Bytes):\n", alice_root_key.content_length);
-	print_hex(&alice_root_key);
+	print_hex(alice_root_key);
 	putchar('\n');
 	printf("Alice's initial send chain key (%zu Bytes):\n", alice_send_chain_key.content_length);
-	print_hex(&alice_send_chain_key);
+	print_hex(alice_send_chain_key);
 	putchar('\n');
 	printf("Alice's initial receive chain key (%zu Bytes):\n", alice_receive_chain_key.content_length);
-	print_hex(&alice_receive_chain_key);
+	print_hex(alice_receive_chain_key);
 	putchar('\n');
 	printf("Alice's initial send header key (%zu Bytes):\n", alice_send_header_key.content_length);
-	print_hex(&alice_send_header_key);
+	print_hex(alice_send_header_key);
 	putchar('\n');
 	printf("Alice's initial receive header key (%zu Bytes):\n", alice_receive_header_key.content_length);
-	print_hex(&alice_receive_header_key);
+	print_hex(alice_receive_header_key);
 	printf("Alice's initial next send header key (%zu Bytes):\n", alice_next_send_header_key.content_length);
-	print_hex(&alice_next_send_header_key);
+	print_hex(alice_next_send_header_key);
 	putchar('\n');
 	printf("Alice's initial next receive header key (%zu Bytes):\n", alice_next_receive_header_key.content_length);
-	print_hex(&alice_next_receive_header_key);
+	print_hex(alice_next_receive_header_key);
 	putchar('\n');
 
 	//derive Bob's initial root and chain key
@@ -180,24 +180,24 @@ int main(void) noexcept {
 
 	//print Bob's initial root and chain key
 	printf("Bob's initial root key (%zu Bytes):\n", bob_root_key.content_length);
-	print_hex(&bob_root_key);
+	print_hex(bob_root_key);
 	putchar('\n');
 	printf("Bob's initial send chain key (%zu Bytes):\n", bob_send_chain_key.content_length);
-	print_hex(&bob_send_chain_key);
+	print_hex(bob_send_chain_key);
 	putchar('\n');
 	printf("Bob's initial receive chain key (%zu Bytes):\n", bob_receive_chain_key.content_length);
-	print_hex(&bob_receive_chain_key);
+	print_hex(bob_receive_chain_key);
 	putchar('\n');
 	printf("Bob's initial send header key (%zu Bytes):\n", bob_send_header_key.content_length);
-	print_hex(&bob_send_header_key);
+	print_hex(bob_send_header_key);
 	putchar('\n');
 	printf("Bob's initial receive header key (%zu Bytes):\n", bob_receive_header_key.content_length);
-	print_hex(&bob_receive_header_key);
+	print_hex(bob_receive_header_key);
 	printf("Bob's initial next send header key (%zu Bytes):\n", bob_next_send_header_key.content_length);
-	print_hex(&bob_next_send_header_key);
+	print_hex(bob_next_send_header_key);
 	putchar('\n');
 	printf("Bob's initial next receive header key (%zu Bytes):\n", bob_next_receive_header_key.content_length);
-	print_hex(&bob_next_receive_header_key);
+	print_hex(bob_next_receive_header_key);
 	putchar('\n');
 
 	//compare Alice's and Bob's initial root key
@@ -257,7 +257,7 @@ int main(void) noexcept {
 
 cleanup:
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

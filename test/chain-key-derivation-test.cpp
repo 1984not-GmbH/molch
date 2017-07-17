@@ -45,7 +45,7 @@ int main(void) noexcept {
 
 	//print first chain key
 	printf("Initial chain key (%i Bytes):\n", crypto_auth_BYTES);
-	print_hex(&last_chain_key);
+	print_hex(last_chain_key);
 	putchar('\n');
 
 
@@ -57,7 +57,7 @@ int main(void) noexcept {
 
 		//print the derived chain key
 		printf("Chain key Nr. %i:\n", counter);
-		print_hex(&next_chain_key);
+		print_hex(next_chain_key);
 		putchar('\n');
 
 		//check that chain keys are different
@@ -73,7 +73,7 @@ int main(void) noexcept {
 
 cleanup:
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

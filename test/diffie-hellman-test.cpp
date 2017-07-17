@@ -50,16 +50,16 @@ int main(void) noexcept {
 
 	//create Alice's keypair
 	status = generate_and_print_keypair(
-			&alice_public_key,
-			&alice_private_key,
+			alice_public_key,
+			alice_private_key,
 			"Alice",
 			"");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice's keypair.");
 
 	//create Bob's keypair
 	status = generate_and_print_keypair(
-			&bob_public_key,
-			&bob_private_key,
+			bob_public_key,
+			bob_private_key,
 			"Bob",
 			"");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's keypair.");
@@ -76,7 +76,7 @@ int main(void) noexcept {
 
 	//print Alice's shared secret
 	printf("Alice's shared secret ECDH(A_priv, B_pub) (%zu Bytes):\n", alice_shared_secret.content_length);
-	print_hex(&alice_shared_secret);
+	print_hex(alice_shared_secret);
 	putchar('\n');
 
 	//Diffie Hellman on Bob's side
@@ -91,7 +91,7 @@ int main(void) noexcept {
 
 	//print Bob's shared secret
 	printf("Bob's shared secret ECDH(B_priv, A_pub) (%zu Bytes):\n", bob_shared_secret.content_length);
-	print_hex(&bob_shared_secret);
+	print_hex(bob_shared_secret);
 	putchar('\n');
 
 	//compare both shared secrets
@@ -106,7 +106,7 @@ int main(void) noexcept {
 
 cleanup:
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

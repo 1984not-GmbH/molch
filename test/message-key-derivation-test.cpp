@@ -24,6 +24,7 @@
 #include <sodium.h>
 
 #include "../lib/key-derivation.h"
+#include "../lib/constants.h"
 #include "utils.h"
 
 int main(void) noexcept {
@@ -34,35 +35,34 @@ int main(void) noexcept {
 	return_status status = return_status_init();
 
 	//create buffers;
-	Buffer *chain_key = Buffer::create(crypto_auth_BYTES, crypto_auth_BYTES);
-	Buffer *message_key = Buffer::create(crypto_auth_BYTES, crypto_auth_BYTES);
+	Buffer chain_key(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	Buffer message_key(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+	throw_on_invalid_buffer(chain_key);
+	throw_on_invalid_buffer(message_key);
 
 	//create random chain key
-	if (chain_key->fillRandom(chain_key->getBufferLength()) != 0) {
+	if (chain_key.fillRandom(chain_key.getBufferLength()) != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to create chain key.");
 	}
 
 	//print first chain key
-	printf("Chain key (%zu Bytes):\n", chain_key->content_length);
+	printf("Chain key (%zu Bytes):\n", chain_key.content_length);
 	print_hex(chain_key);
 	putchar('\n');
 
 	//derive message key from chain key
-	status = derive_message_key(*message_key, *chain_key);
-	chain_key->clear();
+	status = derive_message_key(message_key, chain_key);
+	chain_key.clear();
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to derive message key.");
 
 	//print message key
-	printf("Message key (%zu Bytes):\n", message_key->content_length);
+	printf("Message key (%zu Bytes):\n", message_key.content_length);
 	print_hex(message_key);
 	putchar('\n');
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(chain_key);
-	buffer_destroy_from_heap_and_null_if_valid(message_key);
-
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

@@ -185,12 +185,12 @@ int main(void) noexcept {
 
 		//print the new header key
 		printf("New Header Key No. %zu:\n", i);
-		print_hex(&header_key);
+		print_hex(header_key);
 		putchar('\n');
 
 		//print the new message key
 		printf("New message key No. %zu:\n", i);
-		print_hex(&message_key);
+		print_hex(message_key);
 		putchar('\n');
 
 		//add keys to the keystore
@@ -199,7 +199,7 @@ int main(void) noexcept {
 		header_key.clear();
 		THROW_on_error(ADDITION_ERROR, "Failed to add key to keystore.");
 
-		print_header_and_message_keystore(&keystore);
+		print_header_and_message_keystore(keystore);
 
 		assert(keystore.length == (i + 1));
 	}
@@ -215,7 +215,7 @@ int main(void) noexcept {
 
 	puts("[\n");
 	for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
-		print_hex(protobuf_export_buffers[i]);
+		print_hex(*protobuf_export_buffers[i]);
 		puts(",\n");
 	}
 	puts("]\n\n");
@@ -253,19 +253,19 @@ int main(void) noexcept {
 	printf("Remove head!\n");
 	header_and_message_keystore_remove(&keystore, keystore.head);
 	assert(keystore.length == (store_length - 1));
-	print_header_and_message_keystore(&keystore);
+	print_header_and_message_keystore(keystore);
 
 	//remove key from the tail
 	printf("Remove Tail:\n");
 	header_and_message_keystore_remove(&keystore, keystore.tail);
 	assert(keystore.length == (store_length - 2));
-	print_header_and_message_keystore(&keystore);
+	print_header_and_message_keystore(keystore);
 
 	//remove from inside
 	printf("Remove from inside:\n");
 	header_and_message_keystore_remove(&keystore, keystore.head->next);
 	assert(keystore.length == (store_length - 3));
-	print_header_and_message_keystore(&keystore);
+	print_header_and_message_keystore(keystore);
 
 	status = protobuf_empty_store();
 	THROW_on_error(GENERIC_ERROR, "Testing im-/export of empty stores failed.");
@@ -317,10 +317,10 @@ cleanup:
 	assert(keystore.length == 0);
 	assert(keystore.head == nullptr);
 	assert(keystore.tail == nullptr);
-	print_header_and_message_keystore(&keystore);
+	print_header_and_message_keystore(keystore);
 
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

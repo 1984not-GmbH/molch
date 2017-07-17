@@ -26,17 +26,17 @@
 #include "utils.h"
 #include "../lib/common.h"
 
-void print_hex(Buffer * const data) noexcept {
+void print_hex(Buffer& data) noexcept {
 	static const size_t WIDTH = 30;
 	//buffer for hex string
-	const size_t hex_length = data->content_length * 2 + sizeof("");
+	const size_t hex_length = data.content_length * 2 + sizeof("");
 	char *hex = (char*)malloc(hex_length);
 	if (hex == NULL) {
 		fprintf(stderr, "Failed to print hex data.");
 		exit(EXIT_FAILURE);
 	}
 
-	if (sodium_bin2hex(hex, hex_length, data->content, data->content_length) == NULL) {
+	if (sodium_bin2hex(hex, hex_length, data.content, data.content_length) == NULL) {
 		fprintf(stderr, "Failed to print hex data.");
 		exit(EXIT_FAILURE);
 	}
@@ -56,43 +56,34 @@ void print_hex(Buffer * const data) noexcept {
 	free(hex);
 }
 
-void print_to_file(Buffer * const data, const char * const filename) noexcept {
-	FILE *file = fopen(filename, "w");
+void print_to_file(Buffer& data, const std::string& filename) noexcept {
+	FILE *file = fopen(filename.c_str(), "w");
 	if (file == nullptr) {
 		return;
 	}
 
-	fwrite(data->content, 1, data->content_length, file);
+	fwrite(data.content, 1, data.content_length, file);
 
 	fclose(file);
 }
 
-void print_errors(return_status * const status) noexcept {
-	if (status == nullptr) {
-		return;
-	}
-
+void print_errors(const return_status& status) noexcept {
 	fprintf(stderr, "ERROR STACK:\n");
-	error_message *error = status->error;
+	error_message *error = status.error;
 	for (size_t i = 1; error != nullptr; i++, error = error->next) {
 		fprintf(stderr, "%zu: %s\n", i, error->message);
 	}
 }
 
 
-return_status read_file(Buffer ** const data, const char * const filename) noexcept {
+return_status read_file(Buffer*& data, const std::string& filename) noexcept {
 	return_status status = return_status_init();
 
 	FILE *file = nullptr;
 
-	//check input
-	if ((data == nullptr) || (filename == nullptr)) {
-		THROW(INVALID_INPUT, "Invalid input to read_file.");
-	}
+	data = nullptr;
 
-	*data = nullptr;
-
-	file = fopen(filename, "r");
+	file = fopen(filename.c_str(), "r");
 	THROW_on_failed_alloc(file);
 
 	{
@@ -101,19 +92,17 @@ return_status read_file(Buffer ** const data, const char * const filename) noexc
 		size_t filesize = (size_t)ftell(file);
 		fseek(file, 0, SEEK_SET);
 
-		*data = Buffer::create(filesize, filesize);
-		THROW_on_failed_alloc(*data);
-		(*data)->content_length = fread((*data)->content, 1, filesize, file);
-		if ((*data)->content_length != (size_t)filesize) {
+		data = Buffer::create(filesize, filesize);
+		THROW_on_failed_alloc(data);
+		data->content_length = fread(data->content, 1, filesize, file);
+		if (data->content_length != (size_t)filesize) {
 			THROW(INCORRECT_DATA, "Read less data from file than filesize.");
 		}
 	}
 
 cleanup:
 	on_error {
-		if (data != nullptr) {
-			buffer_destroy_from_heap_and_null_if_valid(*data);
-		}
+		buffer_destroy_from_heap_and_null_if_valid(data);
 	}
 
 	if (file != nullptr) {

@@ -178,24 +178,24 @@ int main(void) noexcept {
 	Buffer alice_send_message("Hi Bob. Alice here!");
 
 	//backup key buffer
-	Buffer *backup_key = Buffer::create(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
-	Buffer *new_backup_key = Buffer::create(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
+	Buffer backup_key(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
+	Buffer new_backup_key(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
 
 	//create conversation buffers
-	Buffer *alice_conversation = Buffer::create(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
-	Buffer *bob_conversation = Buffer::create(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	Buffer alice_conversation(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	Buffer bob_conversation(CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 
 	//message numbers
 	uint32_t alice_receive_message_number = UINT32_MAX;
 	uint32_t alice_previous_receive_message_number = UINT32_MAX;
 
 	//alice key buffers
-	Buffer *alice_public_identity = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer alice_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	unsigned char *alice_public_prekeys = nullptr;
 	size_t alice_public_prekeys_length = 0;
 
 	//bobs key buffers
-	Buffer *bob_public_identity = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	unsigned char *bob_public_prekeys = nullptr;
 	size_t bob_public_prekeys_length = 0;
 
@@ -219,7 +219,14 @@ int main(void) noexcept {
 	size_t conversation_list_length = 0;
 	unsigned char *conversation_list = nullptr;
 
-	status = molch_update_backup_key(backup_key->content, backup_key->content_length);
+	throw_on_invalid_buffer(backup_key);
+	throw_on_invalid_buffer(new_backup_key);
+	throw_on_invalid_buffer(alice_conversation);
+	throw_on_invalid_buffer(bob_conversation);
+	throw_on_invalid_buffer(alice_public_identity);
+	throw_on_invalid_buffer(bob_public_identity);
+
+	status = molch_update_backup_key(backup_key.content, backup_key.content_length);
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
 
 	//check user count
@@ -233,27 +240,27 @@ int main(void) noexcept {
 		unsigned char *complete_export = nullptr;
 		size_t complete_export_length = 0;
 		status = molch_create_user(
-				alice_public_identity->content,
-				alice_public_identity->content_length,
+				alice_public_identity.content,
+				alice_public_identity.content_length,
 				&alice_public_prekeys,
 				&alice_public_prekeys_length,
-				new_backup_key->content,
-				new_backup_key->content_length,
+				new_backup_key.content,
+				new_backup_key.content_length,
 				&complete_export,
 				&complete_export_length,
 				alice_head_on_keyboard.content,
 				alice_head_on_keyboard.content_length);
 		THROW_on_error(status.status, "Failed to create Alice!");
 
-		if (backup_key->compare(new_backup_key) == 0) {
+		if (backup_key == new_backup_key) {
 			THROW(INCORRECT_DATA, "New backup key is the same as the old one.");
 		}
 
-		if (backup_key->cloneFrom(new_backup_key) != 0) {
+		if (backup_key.cloneFrom(&new_backup_key) != 0) {
 			THROW(BUFFER_ERROR, "Failed to copy backup key.");
 		}
 
-		printf("Alice public identity (%zu Bytes):\n", alice_public_identity->content_length);
+		printf("Alice public identity (%zu Bytes):\n", alice_public_identity.content_length);
 		print_hex(alice_public_identity);
 		putchar('\n');
 		if (complete_export == nullptr) {
@@ -269,7 +276,7 @@ int main(void) noexcept {
 	}
 
 	//create a new backup key
-	status = molch_update_backup_key(backup_key->content, backup_key->content_length);
+	status = molch_update_backup_key(backup_key.content, backup_key.content_length);
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to update the backup key.");
 
 	printf("Updated backup key:\n");
@@ -280,12 +287,12 @@ int main(void) noexcept {
 	{
 		Buffer bob_head_on_keyboard("jnu8h77z6ht56ftgnujh");
 		status = molch_create_user(
-				bob_public_identity->content,
-				bob_public_identity->content_length,
+				bob_public_identity.content,
+				bob_public_identity.content_length,
 				&bob_public_prekeys,
 				&bob_public_prekeys_length,
-				backup_key->content,
-				backup_key->content_length,
+				backup_key.content,
+				backup_key.content_length,
 				nullptr,
 				nullptr,
 				bob_head_on_keyboard.content,
@@ -293,7 +300,7 @@ int main(void) noexcept {
 		THROW_on_error(status.status, "Failed to create Bob!");
 	}
 
-	printf("Bob public identity (%zu Bytes):\n", bob_public_identity->content_length);
+	printf("Bob public identity (%zu Bytes):\n", bob_public_identity.content_length);
 	print_hex(bob_public_identity);
 	putchar('\n');
 
@@ -310,8 +317,8 @@ int main(void) noexcept {
 		status = molch_list_users(&user_list, &user_list_length, &user_count);
 		THROW_on_error(CREATION_ERROR, "Failed to list users.");
 		if ((user_count != 2)
-				|| (sodium_memcmp(alice_public_identity->content, user_list, alice_public_identity->content_length) != 0)
-				|| (sodium_memcmp(bob_public_identity->content, user_list + crypto_box_PUBLICKEYBYTES, alice_public_identity->content_length) != 0)) {
+				|| (sodium_memcmp(alice_public_identity.content, user_list, alice_public_identity.content_length) != 0)
+				|| (sodium_memcmp(bob_public_identity.content, user_list + PUBLIC_KEY_SIZE, alice_public_identity.content_length) != 0)) {
 			free_and_null_if_valid(user_list);
 			THROW(INCORRECT_DATA, "User list is incorrect.");
 		}
@@ -322,14 +329,14 @@ int main(void) noexcept {
 	size_t alice_send_packet_length;
 	printf("BEFORE molch_start_send_conversation\n");
 	status = molch_start_send_conversation(
-			alice_conversation->content,
-			alice_conversation->content_length,
+			alice_conversation.content,
+			alice_conversation.content_length,
 			&alice_send_packet,
 			&alice_send_packet_length,
-			alice_public_identity->content,
-			alice_public_identity->content_length,
-			bob_public_identity->content,
-			bob_public_identity->content_length,
+			alice_public_identity.content,
+			alice_public_identity.content_length,
+			bob_public_identity.content,
+			bob_public_identity.content_length,
 			bob_public_prekeys,
 			bob_public_prekeys_length,
 			alice_send_message.content,
@@ -344,10 +351,10 @@ int main(void) noexcept {
 			&conversation_list,
 			&conversation_list_length,
 			&number_of_conversations,
-			alice_public_identity->content,
-			alice_public_identity->content_length);
+			alice_public_identity.content,
+			alice_public_identity.content_length);
 	THROW_on_error(GENERIC_ERROR, "Failed to list conversations.");
-	if ((number_of_conversations != 1) || (alice_conversation->compareToRaw(conversation_list, alice_conversation->content_length) != 0)) {
+	if ((number_of_conversations != 1) || (alice_conversation.compareToRaw(conversation_list, conversation_list_length) != 0)) {
 		free_and_null_if_valid(conversation_list);
 		THROW(GENERIC_ERROR, "Failed to list conversations.");
 	}
@@ -367,24 +374,24 @@ int main(void) noexcept {
 	status = molch_get_prekey_list(
 			&alice_public_prekeys,
 			&alice_public_prekeys_length,
-			alice_public_identity->content,
-			alice_public_identity->content_length);
+			alice_public_identity.content,
+			alice_public_identity.content_length);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get Alice' prekey list.");
 
 	//create a new receive conversation (bob receives from alice)
 	unsigned char *bob_receive_message;
 	size_t bob_receive_message_length;
 	status = molch_start_receive_conversation(
-			bob_conversation->content,
-			bob_conversation->content_length,
+			bob_conversation.content,
+			bob_conversation.content_length,
 			&bob_public_prekeys,
 			&bob_public_prekeys_length,
 			&bob_receive_message,
 			&bob_receive_message_length,
-			bob_public_identity->content,
-			bob_public_identity->content_length,
-			alice_public_identity->content,
-			alice_public_identity->content_length,
+			bob_public_identity.content,
+			bob_public_identity.content_length,
+			alice_public_identity.content,
+			alice_public_identity.content_length,
 			alice_send_packet,
 			alice_send_packet_length,
 			nullptr,
@@ -410,8 +417,8 @@ int main(void) noexcept {
 		status = molch_encrypt_message(
 				&bob_send_packet,
 				&bob_send_packet_length,
-				bob_conversation->content,
-				bob_conversation->content_length,
+				bob_conversation.content,
+				bob_conversation.content_length,
 				bob_send_message.content,
 				bob_send_message.content_length,
 				&conversation_json_export,
@@ -436,8 +443,8 @@ int main(void) noexcept {
 				&alice_receive_message_length,
 				&alice_receive_message_number,
 				&alice_previous_receive_message_number,
-				alice_conversation->content,
-				alice_conversation->content_length,
+				alice_conversation.content,
+				alice_conversation.content_length,
 				bob_send_packet,
 				bob_send_packet_length,
 				nullptr,
@@ -472,26 +479,26 @@ int main(void) noexcept {
 	//test import
 	printf("Test import!\n");
 	status = molch_import(
-			new_backup_key->content,
-			new_backup_key->content_length,
+			new_backup_key.content,
+			new_backup_key.content_length,
 			backup,
 			backup_length,
-			backup_key->content,
-			backup_key->content_length);
+			backup_key.content,
+			backup_key.content_length);
 	on_error {
 		THROW(IMPORT_ERROR, "Failed to import backup.");
 	}
 
-	status = decrypt_full_backup(&decrypted_backup, backup, backup_length, backup_key->content, backup_key->content_length);
+	status = decrypt_full_backup(&decrypted_backup, backup, backup_length, backup_key.content, backup_key.content_length);
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt backup.");
 
 	//compare the keys
-	if (backup_key->compare(new_backup_key) == 0) {
+	if (backup_key == new_backup_key) {
 		THROW(INCORRECT_DATA, "New backup key expected.");
 	}
 
 	//copy the backup key
-	if (backup_key->cloneFrom(new_backup_key) != 0) {
+	if (backup_key.cloneFrom(&new_backup_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy backup key.");
 	}
 
@@ -502,11 +509,11 @@ int main(void) noexcept {
 		THROW(EXPORT_ERROR, "Failed to export imported backup.");
 	}
 
-	status = decrypt_full_backup(&decrypted_imported_backup, imported_backup, imported_backup_length, backup_key->content, backup_key->content_length);
+	status = decrypt_full_backup(&decrypted_imported_backup, imported_backup, imported_backup_length, backup_key.content, backup_key.content_length);
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt imported backup.");
 
 	//compare
-	if (decrypted_backup->compare(decrypted_imported_backup) != 0) {
+	if (*decrypted_backup != *decrypted_imported_backup) {
 		THROW(IMPORT_ERROR, "Imported backup is incorrect.");
 	}
 	free_and_null_if_valid(backup);
@@ -516,31 +523,31 @@ int main(void) noexcept {
 	status = molch_conversation_export(
 			&backup,
 			&backup_length,
-			alice_conversation->content,
-			alice_conversation->content_length);
+			alice_conversation.content,
+			alice_conversation.content_length);
 	THROW_on_error(EXPORT_ERROR, "Failed to export Alice' conversation.");
 
 	printf("Alice' conversation exported!\n");
 
 	//import again
 	status = molch_conversation_import(
-			new_backup_key->content,
-			new_backup_key->content_length,
+			new_backup_key.content,
+			new_backup_key.content_length,
 			backup,
 			backup_length,
-			backup_key->content,
-			backup_key->content_length);
+			backup_key.content,
+			backup_key.content_length);
 	THROW_on_error(IMPORT_ERROR, "Failed to import Alice' conversation from backup.");
 
 	status = decrypt_conversation_backup(
 			&decrypted_conversation_backup,
 			backup, backup_length,
-			backup_key->content,
-			backup_key->content_length);
+			backup_key.content,
+			backup_key.content_length);
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt the backup.")
 
 	//copy the backup key
-	if (backup_key->cloneFrom(new_backup_key) != 0) {
+	if (backup_key.cloneFrom(&new_backup_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy backup key.");
 	}
 
@@ -549,27 +556,27 @@ int main(void) noexcept {
 	status = molch_conversation_export(
 			&imported_backup,
 			&imported_backup_length,
-			alice_conversation->content,
-			alice_conversation->content_length);
+			alice_conversation.content,
+			alice_conversation.content_length);
 	THROW_on_error(EXPORT_ERROR, "Failed to export Alice imported conversation.");
 
 	status = decrypt_conversation_backup(
 			&decrypted_imported_conversation_backup,
 			imported_backup,
 			imported_backup_length,
-			backup_key->content,
-			backup_key->content_length);
+			backup_key.content,
+			backup_key.content_length);
 	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt the backup.")
 
 	//compare
-	if (decrypted_conversation_backup->compare(decrypted_imported_conversation_backup) != 0) {
+	if (*decrypted_conversation_backup != *decrypted_imported_conversation_backup) {
 		THROW(IMPORT_ERROR, "Protobuf of imported conversation is incorrect.");
 	}
 
 	//destroy the conversations
-	status = molch_end_conversation(alice_conversation->content, alice_conversation->content_length, nullptr, nullptr);
+	status = molch_end_conversation(alice_conversation.content, alice_conversation.content_length, nullptr, nullptr);
 	THROW_on_error(REMOVE_ERROR, "Failed to end Alice' conversation.");
-	molch_end_conversation(bob_conversation->content, bob_conversation->content_length, nullptr, nullptr);
+	molch_end_conversation(bob_conversation.content, bob_conversation.content_length, nullptr, nullptr);
 	THROW_on_error(REMOVE_ERROR, "Failed to end Bob's conversation.");
 
 	//check if conversation has ended
@@ -579,8 +586,8 @@ int main(void) noexcept {
 			&conversation_list,
 			&conversation_list_length,
 			&number_of_conversations,
-			alice_public_identity->content,
-			alice_public_identity->content_length);
+			alice_public_identity.content,
+			alice_public_identity.content_length);
 	THROW_on_error(GENERIC_ERROR, "Failed to list conversations.");
 	if ((number_of_conversations != 0) || (conversation_list != nullptr)) {
 		free_and_null_if_valid(conversation_list);
@@ -623,16 +630,9 @@ cleanup:
 	buffer_destroy_with_custom_deallocator_and_null_if_valid(decrypted_imported_conversation_backup, zeroed_free);
 
 	molch_destroy_all_users();
-	buffer_destroy_from_heap_and_null_if_valid(alice_conversation);
-	buffer_destroy_from_heap_and_null_if_valid(bob_conversation);
-	buffer_destroy_from_heap_and_null_if_valid(alice_public_identity);
-	buffer_destroy_from_heap_and_null_if_valid(bob_public_identity);
-	buffer_destroy_from_heap_and_null_if_valid(backup_key);
-	buffer_destroy_from_heap_and_null_if_valid(new_backup_key);
-
 
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

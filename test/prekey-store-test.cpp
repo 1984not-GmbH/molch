@@ -212,10 +212,10 @@ int main(void) noexcept {
 
 	return_status status = return_status_init();
 
-	Buffer *public_prekey = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer *private_prekey1 = Buffer::create(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer *private_prekey2 = Buffer::create(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer *prekey_list = Buffer::create(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
+	Buffer public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer private_prekey1(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer private_prekey2(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer prekey_list(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
 	Prekey **protobuf_export_prekeys = nullptr;
 	Buffer **protobuf_export_prekeys_buffers = nullptr;
@@ -235,7 +235,12 @@ int main(void) noexcept {
 	status = PrekeyStore::create(store);
 	THROW_on_error(CREATION_ERROR, "Failed to create a prekey store.");
 
-	status = store->list(*prekey_list);
+	throw_on_invalid_buffer(public_prekey);
+	throw_on_invalid_buffer(private_prekey1);
+	throw_on_invalid_buffer(private_prekey2);
+	throw_on_invalid_buffer(prekey_list);
+
+	status = store->list(prekey_list);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to list prekeys.");
 	printf("Prekey list:\n");
 	print_hex(prekey_list);
@@ -243,7 +248,7 @@ int main(void) noexcept {
 
 	//compare the public keys with the ones in the prekey store
 	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		if (prekey_list->comparePartial(PUBLIC_KEY_SIZE * i, &store->prekeys[i].public_key, 0, PUBLIC_KEY_SIZE) != 0) {
+		if (prekey_list.comparePartial(PUBLIC_KEY_SIZE * i, &store->prekeys[i].public_key, 0, PUBLIC_KEY_SIZE) != 0) {
 			THROW(INCORRECT_DATA, "Key list doesn't match the prekey store.");
 		}
 	}
@@ -252,11 +257,11 @@ int main(void) noexcept {
 	//get a private key
 	{
 		const size_t prekey_index = 10;
-		if (public_prekey->cloneFrom(&store->prekeys[prekey_index].public_key) != 0) {
+		if (public_prekey.cloneFrom(&store->prekeys[prekey_index].public_key) != 0) {
 			THROW(BUFFER_ERROR, "Failed to clone public key.");
 		}
 
-		status = store->getPrekey(*public_prekey, *private_prekey1);
+		status = store->getPrekey(public_prekey, private_prekey1);
 		THROW_on_error(DATA_FETCH_ERROR, "Failed to get prekey.")
 		printf("Get a Prekey:\n");
 		printf("Public key:\n");
@@ -269,31 +274,31 @@ int main(void) noexcept {
 			THROW(GENERIC_ERROR, "Failed to deprecate requested key.");
 		}
 
-		if ((public_prekey->compare(&store->deprecated_prekeys->public_key) != 0)
-				|| (private_prekey1->compare(&store->deprecated_prekeys->private_key) != 0)) {
+		if ((public_prekey.compare(&store->deprecated_prekeys->public_key) != 0)
+				|| (private_prekey1.compare(&store->deprecated_prekeys->private_key) != 0)) {
 			THROW(INCORRECT_DATA, "Deprecated key is incorrect.");
 		}
 
-		if (store->prekeys[prekey_index].public_key.compare(public_prekey) == 0) {
+		if (store->prekeys[prekey_index].public_key.compare(&public_prekey) == 0) {
 			THROW(KEYGENERATION_FAILED, "Failed to generate new key for deprecated one.");
 		}
 		printf("Successfully deprecated requested key!\n");
 	}
 
 	//check if the prekey can be obtained from the deprecated keys
-	status = store->getPrekey(*public_prekey, *private_prekey2);
+	status = store->getPrekey(public_prekey, private_prekey2);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get key from the deprecated area.");
 
-	if (private_prekey1->compare(private_prekey2) != 0) {
+	if (private_prekey1.compare(&private_prekey2) != 0) {
 		THROW(INCORRECT_DATA, "Prekey from the deprecated area didn't match.");
 	}
 	printf("Successfully got prekey from the deprecated area!\n");
 
 	//try to get a nonexistent key
-	if (public_prekey->fillRandom(PUBLIC_KEY_SIZE) != 0) {
+	if (public_prekey.fillRandom(PUBLIC_KEY_SIZE) != 0) {
 		THROW(KEYGENERATION_FAILED, "Failed to generate invalid public prekey.");
 	}
-	status = store->getPrekey(*public_prekey, *private_prekey1);
+	status = store->getPrekey(public_prekey, private_prekey1);
 	if (status.status == SUCCESS) {
 		THROW(GENERIC_ERROR, "Didn't complain about invalid public key.");
 	}
@@ -317,7 +322,7 @@ int main(void) noexcept {
 	printf("Prekeys:\n");
 	puts("[\n");
 	for (size_t i = 0; i < protobuf_export_prekeys_size; i++) {
-		print_hex(protobuf_export_prekeys_buffers[i]);
+		print_hex(*protobuf_export_prekeys_buffers[i]);
 		puts(",\n");
 	}
 	puts("]\n\n");
@@ -325,7 +330,7 @@ int main(void) noexcept {
 	printf("Deprecated Prekeys:\n");
 	puts("[\n");
 	for (size_t i = 0; i < protobuf_export_deprecated_prekeys_size; i++) {
-		print_hex(protobuf_export_deprecated_prekeys_buffers[i]);
+		print_hex(*protobuf_export_deprecated_prekeys_buffers[i]);
 		puts(",\n");
 	}
 	puts("]\n\n");
@@ -376,7 +381,7 @@ int main(void) noexcept {
 	}
 
 	//test the automatic deprecation of old keys
-	if (public_prekey->cloneFrom(&store->prekeys[PREKEY_AMOUNT-1].public_key) != 0) {
+	if (public_prekey.cloneFrom(&store->prekeys[PREKEY_AMOUNT-1].public_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to clone public key.");
 	}
 
@@ -386,13 +391,13 @@ int main(void) noexcept {
 	status = store->rotate();
 	THROW_on_error(GENERIC_ERROR, "Failed to rotate the prekeys.");
 
-	if (store->deprecated_prekeys->public_key.compare(public_prekey) != 0) {
+	if (store->deprecated_prekeys->public_key.compare(&public_prekey) != 0) {
 		THROW(GENERIC_ERROR, "Failed to deprecate outdated key.");
 	}
 	printf("Successfully deprecated outdated key!\n");
 
 	//test the automatic removal of old deprecated keys!
-	if (public_prekey->cloneFrom(&store->deprecated_prekeys->getNext()->public_key) != 0) {
+	if (public_prekey.cloneFrom(&store->deprecated_prekeys->getNext()->public_key) != 0) {
 		THROW(BUFFER_ERROR, "Failed to clone public key.");
 	}
 
@@ -411,10 +416,6 @@ int main(void) noexcept {
 	THROW_on_error(GENERIC_ERROR, "Failed to im-/export a prekey store without deprecated prekeys.");
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(public_prekey);
-	buffer_destroy_from_heap_and_null_if_valid(private_prekey1);
-	buffer_destroy_from_heap_and_null_if_valid(private_prekey2);
-	buffer_destroy_from_heap_and_null_if_valid(prekey_list);
 	store->destroy();
 
 	if (protobuf_export_prekeys != nullptr) {
@@ -494,7 +495,7 @@ cleanup:
 	}
 
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

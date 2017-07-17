@@ -190,32 +190,32 @@ int main(void) noexcept {
 
 	//creating charlie's identity keypair
 	status = generate_and_print_keypair(
-			charlie_public_identity,
-			charlie_private_identity,
+			*charlie_public_identity,
+			*charlie_private_identity,
 			"Charlie",
 			"identity");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Charlie's identity keypair.");
 
 	//creating charlie's ephemeral keypair
 	status = generate_and_print_keypair(
-			charlie_public_ephemeral,
-			charlie_private_ephemeral,
+			*charlie_public_ephemeral,
+			*charlie_private_ephemeral,
 			"Charlie",
 			"ephemeral");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Charlie's ephemeral keypair.");
 
 	//creating dora's identity keypair
 	status = generate_and_print_keypair(
-			dora_public_identity,
-			dora_private_identity,
+			*dora_public_identity,
+			*dora_private_identity,
 			"Dora",
 			"identity");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Dora's identity keypair.");
 
 	//creating dora's ephemeral keypair
 	status = generate_and_print_keypair(
-			dora_public_ephemeral,
-			dora_private_ephemeral,
+			*dora_public_ephemeral,
+			*dora_private_ephemeral,
 			"Dora",
 			"ephemeral");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Dora's ephemeral keypair.");
@@ -257,7 +257,7 @@ int main(void) noexcept {
 	status = protobuf_export(charlie_conversation, &protobuf_export_buffer);
 	THROW_on_error(EXPORT_ERROR, "Failed to export charlie's conversation to protobuf-c.");
 
-	print_hex(protobuf_export_buffer);
+	print_hex(*protobuf_export_buffer);
 	puts("\n");
 
 	conversation_destroy(charlie_conversation);
@@ -303,7 +303,7 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(dora_public_ephemeral);
 
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

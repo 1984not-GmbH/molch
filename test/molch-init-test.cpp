@@ -36,7 +36,7 @@ int main(int argc, char *args[]) noexcept {
 		}
 	}
 	/* don't initialize libsodium here */
-	Buffer *user_id = Buffer::create(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	Buffer user_id(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
 	Buffer *backup_file = nullptr; //backup to import from
 	Buffer *backup_key_file = nullptr;
 
@@ -46,17 +46,19 @@ int main(int argc, char *args[]) noexcept {
 
 	return_status status = return_status_init();
 
+	throw_on_invalid_buffer(user_id);
+
 	if (sodium_init() != 0) {
 		THROW(INIT_ERROR, "Failed to initialize libsodium.");
 	}
 
 	if (!recreate) {
 		//load the backup from a file
-		status = read_file(&backup_file, "test-data/molch-init.backup");
+		status = read_file(backup_file, "test-data/molch-init.backup");
 		THROW_on_error(DATA_FETCH_ERROR, "Failed to read backup from a file.");
 
 		//load the backup key from a file
-		status = read_file(&backup_key_file, "test-data/molch-init-backup.key");
+		status = read_file(backup_key_file, "test-data/molch-init-backup.key");
 		THROW_on_error(DATA_FETCH_ERROR, "Failed to read backup key from a file.");
 		if (backup_key_file->content_length != BACKUP_KEY_SIZE) {
 			THROW(INCORRECT_BUFFER_SIZE, "Backup key from file has an incorrect length.");
@@ -80,8 +82,8 @@ int main(int argc, char *args[]) noexcept {
 	size_t backup_length;
 	size_t prekey_list_length;
 	status = molch_create_user(
-			user_id->content,
-			user_id->content_length,
+			user_id.content,
+			user_id.content_length,
 			&prekey_list,
 			&prekey_list_length,
 			backup_key,
@@ -99,12 +101,11 @@ int main(int argc, char *args[]) noexcept {
 	{
 		Buffer backup_buffer(backup, backup_length);
 		Buffer backup_key_buffer(backup_key, BACKUP_KEY_SIZE);
-		print_to_file(&backup_buffer, "molch-init.backup");
-		print_to_file(&backup_key_buffer, "molch-init-backup.key");
+		print_to_file(backup_buffer, "molch-init.backup");
+		print_to_file(backup_key_buffer, "molch-init-backup.key");
 	}
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(user_id);
 	free_and_null_if_valid(backup);
 	free_and_null_if_valid(prekey_list);
 	buffer_destroy_from_heap_and_null_if_valid(backup_file);
@@ -113,7 +114,7 @@ cleanup:
 	free_and_null_if_valid(backup_key);
 
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 		printf("NOTE: Did you change the backup format and forgot to create new molch-init.backup and molch-init-backup.key files?\n To recreate them run with --recreate. Then just copy them to the appropriate place.\n");
 	}
 	return_status_destroy_errors(&status);

@@ -21,14 +21,15 @@
 
 #include "../lib/buffer.h"
 #include "../lib/return-status.h"
+#include <string>
 
 #ifndef TEST_UTILS_H
 #define TEST_UTILS_H
-void print_hex(Buffer * const data) noexcept;
+void print_hex(Buffer& data) noexcept;
 
-void print_to_file(Buffer * const data, const char * const filename) noexcept;
+void print_to_file(Buffer& data, const std::string& filename) noexcept;
 
-void print_errors(return_status * const status) noexcept;
+void print_errors(const return_status&  status) noexcept;
 
-return_status read_file(Buffer ** const data, const char * const filename) noexcept __attribute__((warn_unused_result));
+return_status read_file(Buffer*& data, const std::string& filename) noexcept __attribute__((warn_unused_result));
 #endif

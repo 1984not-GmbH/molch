@@ -84,7 +84,7 @@ int main(void) noexcept {
 	printf("Here\n");
 
 	printf("Random buffer (%zu Bytes):\n", buffer1->content_length);
-	print_hex(buffer1);
+	print_hex(*buffer1);
 	putchar('\n');
 
 	//make second buffer (from pointer)
@@ -95,7 +95,7 @@ int main(void) noexcept {
 	buffer2->content[3] = 0xef;
 
 	printf("Second buffer (%zu Bytes):\n", buffer2->content_length);
-	print_hex(buffer2);
+	print_hex(*buffer2);
 	putchar('\n');
 
 	{
@@ -229,7 +229,7 @@ int main(void) noexcept {
 		goto fail;
 	}
 	printf("Buffer with %zu random bytes:\n", random->content_length);
-	print_hex(random);
+	print_hex(*random);
 
 	if (random->fillRandom(20) == 0) {
 		fprintf(stderr, "ERROR: Failed to detect too long write to buffer.\n");

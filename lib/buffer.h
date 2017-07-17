@@ -201,8 +201,8 @@ public:
 			void (*deallocator)(void *pointer)
 			) noexcept __attribute__((warn_unused_result));
 
-	bool operator ==(const Buffer& buffer) const;
-	bool operator !=(const Buffer& buffer) const;
+	bool operator ==(const Buffer& buffer) const noexcept;
+	bool operator !=(const Buffer& buffer) const noexcept;
 
 	bool isNone() const noexcept;
 	bool isValid() const noexcept;

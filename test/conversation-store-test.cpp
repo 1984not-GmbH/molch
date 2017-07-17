@@ -328,7 +328,7 @@ int main(void) noexcept {
 	//print
 	puts("[\n");
 	for (size_t i = 0; i < protobuf_export_buffers_length; i++) {
-		print_hex(protobuf_export_buffers[i]);
+		print_hex(*protobuf_export_buffers[i]);
 		puts(",\n");
 	}
 	puts("]\n\n");
@@ -399,7 +399,7 @@ cleanup:
 	free_and_null_if_valid(store);
 
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

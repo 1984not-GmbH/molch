@@ -38,39 +38,39 @@ int main(void) noexcept {
 	printf("\"Random\" input from the user (%zu Bytes):\n", spice.content_length);
 	printf("String: %.*s\n", (int)spice.content_length, spice.content);
 	printf("Hex:\n");
-	print_hex(&spice);
+	print_hex(spice);
 	putchar('\n');
 
 	//output buffers
-	Buffer *output1 = Buffer::create(42, 0);
-	Buffer *output2 = Buffer::create(42, 0);
-	THROW_on_failed_alloc(output1);
-	THROW_on_failed_alloc(output2);
+	Buffer output1(42, 0);
+	Buffer output2(42, 0);
+	throw_on_invalid_buffer(output1);
+	throw_on_invalid_buffer(output2);
 
 	//fill buffer with spiced random data
-	status = spiced_random(*output1, spice, output1->getBufferLength());
+	status = spiced_random(output1, spice, output1.getBufferLength());
 	THROW_on_error(GENERIC_ERROR, "Failed to generate spiced random data.");
 
-	printf("Spiced random data 1 (%zu Bytes):\n", output1->content_length);
+	printf("Spiced random data 1 (%zu Bytes):\n", output1.content_length);
 	print_hex(output1);
 	putchar('\n');
 
 
 	//fill buffer with spiced random data
-	status = spiced_random(*output2, spice, output2->getBufferLength());
+	status = spiced_random(output2, spice, output2.getBufferLength());
 	THROW_on_error(GENERIC_ERROR, "Failed to generate spiced random data.");
 
-	printf("Spiced random data 2 (%zu Bytes):\n", output2->content_length);
+	printf("Spiced random data 2 (%zu Bytes):\n", output2.content_length);
 	print_hex(output2);
 	putchar('\n');
 
 	//compare the two (mustn't be identical!)
-	if (output1->compare(output2) == 0) {
+	if (output1 == output2) {
 		THROW(INCORRECT_DATA, "Random numbers aren't random.");
 	}
 
 	//don't crash with output length 0
-	status = spiced_random(*output1, spice, 0);
+	status = spiced_random(output1, spice, 0);
 	on_error {
 		//on newer libsodium versions, output lengths of zero aren't supported
 		return_status_destroy_errors(&status);
@@ -78,11 +78,8 @@ int main(void) noexcept {
 	}
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(output1);
-	buffer_destroy_from_heap_and_null_if_valid(output2);
-
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

@@ -92,8 +92,8 @@ int main(void) noexcept {
 	//alice
 	//identity
 	status = generate_and_print_keypair(
-			&alice_public_identity,
-			&alice_private_identity,
+			alice_public_identity,
+			alice_private_identity,
 			"Alice",
 			"identity");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate Alice' identity keys.");
@@ -101,8 +101,8 @@ int main(void) noexcept {
 	//bob
 	//identity
 	status = generate_and_print_keypair(
-			&bob_public_identity,
-			&bob_private_identity,
+			bob_public_identity,
+			bob_private_identity,
 			"Bob",
 			"identity");
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate Bob's identity keys.");
@@ -123,7 +123,7 @@ int main(void) noexcept {
 	THROW_on_error(SEND_ERROR, "Failed to send message.");
 
 	printf("Packet:\n");
-	print_hex(packet);
+	print_hex(*packet);
 	putchar('\n');
 
 	//let bob receive the packet
@@ -157,7 +157,7 @@ int main(void) noexcept {
 
 		printf("Sent message: %.*s\n", (int)alice_send_message2.content_length, (const char*)alice_send_message2.content);
 		printf("Packet:\n");
-		print_hex(alice_send_packet2);
+		print_hex(*alice_send_packet2);
 		putchar('\n');
 
 		//bob receives the message
@@ -196,7 +196,7 @@ int main(void) noexcept {
 
 		printf("Sent message: %.*s\n", (int)bob_response_message.content_length, (const char*)bob_response_message.content);
 		printf("Packet:\n");
-		print_hex(bob_response_packet);
+		print_hex(*bob_response_packet);
 		putchar('\n');
 
 		//Alice receives the response
@@ -243,7 +243,7 @@ int main(void) noexcept {
 
 	printf("Sent message: %.*s\n", (int)send_message.content_length, (const char*)send_message.content);
 	printf("Packet:\n");
-	print_hex(packet);
+	print_hex(*packet);
 	putchar('\n');
 
 	//let alice receive the packet
@@ -279,7 +279,7 @@ int main(void) noexcept {
 
 		printf("Sent message: %.*s\n", (int)bob_send_message2.content_length, (const char*)bob_send_message2.content);
 		printf("Packet:\n");
-		print_hex(bob_send_packet2);
+		print_hex(*bob_send_packet2);
 		putchar('\n');
 
 		//alice receives the message
@@ -318,7 +318,7 @@ int main(void) noexcept {
 
 		printf("Sent message: %.*s\n", (int)alice_response_message.content_length, (const char*)alice_response_message.content);
 		printf("Packet:\n");
-		print_hex(alice_response_packet);
+		print_hex(*alice_response_packet);
 		putchar('\n');
 
 		//Bob receives the response
@@ -374,7 +374,7 @@ cleanup:
 	}
 
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 		return_status_destroy_errors(&status);
 	}
 

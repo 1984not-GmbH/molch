@@ -36,21 +36,33 @@ int main(void) noexcept {
 
 	//create buffers
 	//alice keys
-	Buffer * const alice_public_identity = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	Buffer * const alice_private_identity = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer * const alice_public_ephemeral = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	Buffer * const alice_private_ephemeral = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer * const alice_shared_secret = Buffer::create(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	Buffer alice_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer alice_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer alice_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer alice_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer alice_shared_secret(crypto_generichash_BYTES, crypto_generichash_BYTES);
 	//bobs keys
-	Buffer * const bob_public_identity = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	Buffer * const bob_private_identity = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer * const bob_public_ephemeral = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	Buffer * const bob_private_ephemeral = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer * const bob_shared_secret = Buffer::create(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer bob_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer bob_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer bob_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer bob_shared_secret(crypto_generichash_BYTES, crypto_generichash_BYTES);
 
 	printf("Generate Alice's keys -------------------------------------------------------\n\n");
 
 	int status_int = 0;
+
+	throw_on_invalid_buffer(alice_public_identity);
+	throw_on_invalid_buffer(alice_private_identity);
+	throw_on_invalid_buffer(alice_public_ephemeral);
+	throw_on_invalid_buffer(alice_private_ephemeral);
+	throw_on_invalid_buffer(alice_shared_secret);
+	throw_on_invalid_buffer(bob_public_identity);
+	throw_on_invalid_buffer(bob_private_identity);
+	throw_on_invalid_buffer(bob_public_ephemeral);
+	throw_on_invalid_buffer(bob_private_ephemeral);
+	throw_on_invalid_buffer(bob_shared_secret);
+
 	//create Alice's identity keypair
 	status = generate_and_print_keypair(
 			alice_public_identity,
@@ -89,16 +101,14 @@ int main(void) noexcept {
 
 	//Triple Diffie Hellman on Alice's side
 	status = triple_diffie_hellman(
-			*alice_shared_secret,
-			*alice_private_identity,
-			*alice_public_identity,
-			*alice_private_ephemeral,
-			*alice_public_ephemeral,
-			*bob_public_identity,
-			*bob_public_ephemeral,
+			alice_shared_secret,
+			alice_private_identity,
+			alice_public_identity,
+			alice_private_ephemeral,
+			alice_public_ephemeral,
+			bob_public_identity,
+			bob_public_ephemeral,
 			true);
-	alice_private_identity->clear();
-	alice_private_ephemeral->clear();
 	THROW_on_error(KEYGENERATION_FAILED, "Triple Diffie Hellman for Alice failed.");
 	//print Alice's shared secret
 	printf("Alice's shared secret H(DH(A_priv,B0_pub)||DH(A0_priv,B_pub)||DH(A0_priv,B0_pub)):\n");
@@ -107,16 +117,14 @@ int main(void) noexcept {
 
 	//Triple Diffie Hellman on Bob's side
 	status = triple_diffie_hellman(
-			*bob_shared_secret,
-			*bob_private_identity,
-			*bob_public_identity,
-			*bob_private_ephemeral,
-			*bob_public_ephemeral,
-			*alice_public_identity,
-			*alice_public_ephemeral,
+			bob_shared_secret,
+			bob_private_identity,
+			bob_public_identity,
+			bob_private_ephemeral,
+			bob_public_ephemeral,
+			alice_public_identity,
+			alice_public_ephemeral,
 			false);
-	bob_private_identity->clear();
-	bob_private_ephemeral->clear();
 	THROW_on_error(KEYGENERATION_FAILED, "Triple Diffie Hellnan for Bob failed.");
 	//print Bob's shared secret
 	printf("Bob's shared secret H(DH(B0_priv, A_pub)||DH(B_priv, A0_pub)||DH(B0_priv, A0_pub)):\n");
@@ -124,9 +132,7 @@ int main(void) noexcept {
 	putchar('\n');
 
 	//compare both shared secrets
-	status_int = alice_shared_secret->compare(bob_shared_secret);
-	alice_shared_secret->clear();
-	bob_shared_secret->clear();
+	status_int = alice_shared_secret.compare(&bob_shared_secret);
 	if (status_int != 0) {
 		THROW(INCORRECT_DATA, "Triple Diffie Hellman didn't produce the same shared secret.");
 	}
@@ -134,21 +140,8 @@ int main(void) noexcept {
 	printf("Both shared secrets match!\n");
 
 cleanup:
-	//alice keys
-	alice_public_identity->destroy_from_heap();
-	alice_private_identity->destroy_from_heap();
-	alice_public_ephemeral->destroy_from_heap();
-	alice_private_ephemeral->destroy_from_heap();
-	alice_shared_secret->destroy_from_heap();
-	//bobs keys
-	bob_public_identity->destroy_from_heap();
-	bob_private_identity->destroy_from_heap();
-	bob_public_ephemeral->destroy_from_heap();
-	bob_private_ephemeral->destroy_from_heap();
-	bob_shared_secret->destroy_from_heap();
-
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

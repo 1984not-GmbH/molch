@@ -120,48 +120,92 @@ int main(void) noexcept {
 
 	//create all the buffers
 	//alice keys
-	Buffer *alice_private_identity = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer *alice_public_identity = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	Buffer *alice_private_ephemeral = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer *alice_public_ephemeral = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer alice_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer alice_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer alice_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer alice_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	//bob keys
-	Buffer *bob_private_identity = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer *bob_public_identity = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-	Buffer *bob_private_ephemeral = Buffer::create(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-	Buffer *bob_public_ephemeral = Buffer::create(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+	Buffer bob_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer bob_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+	Buffer bob_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	//alice send message and header keys
-	Buffer *alice_send_message_key1 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *alice_send_header_key1 = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *alice_send_ephemeral1 = Buffer::create(PUBLIC_KEY_SIZE, 0);
-	Buffer *alice_send_message_key2 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *alice_send_header_key2 = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *alice_send_ephemeral2 = Buffer::create(PUBLIC_KEY_SIZE, 0);
-	Buffer *alice_send_message_key3 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *alice_send_header_key3 = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *alice_send_ephemeral3 = Buffer::create(PUBLIC_KEY_SIZE, 0);
+	Buffer alice_send_message_key1(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	Buffer alice_send_header_key1(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer alice_send_ephemeral1(PUBLIC_KEY_SIZE, 0);
+	Buffer alice_send_message_key2(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer alice_send_header_key2(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer alice_send_ephemeral2(PUBLIC_KEY_SIZE, 0);
+	Buffer alice_send_message_key3(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	Buffer alice_send_header_key3(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer alice_send_ephemeral3(PUBLIC_KEY_SIZE, 0);
 	//bobs receive keys
-	Buffer *bob_current_receive_header_key = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *bob_next_receive_header_key = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *bob_receive_key1 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *bob_receive_key2 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *bob_receive_key3 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	Buffer bob_current_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer bob_next_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer bob_receive_key1(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	Buffer bob_receive_key2(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	Buffer bob_receive_key3(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 	//bobs śend message and header keys
-	Buffer *bob_send_message_key1 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *bob_send_header_key1 = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *bob_send_ephemeral1 = Buffer::create(PUBLIC_KEY_SIZE, 0);
-	Buffer *bob_send_message_key2 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *bob_send_header_key2 = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *bob_send_ephemeral2 = Buffer::create(PUBLIC_KEY_SIZE, 0);
-	Buffer *bob_send_message_key3 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *bob_send_header_key3 = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *bob_send_ephemeral3 = Buffer::create(PUBLIC_KEY_SIZE, 0);
+	Buffer bob_send_message_key1(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	Buffer bob_send_header_key1(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer bob_send_ephemeral1(PUBLIC_KEY_SIZE, 0);
+	Buffer bob_send_message_key2(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	Buffer bob_send_header_key2(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer bob_send_ephemeral2(PUBLIC_KEY_SIZE, 0);
+	Buffer bob_send_message_key3(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	Buffer bob_send_header_key3(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer bob_send_ephemeral3(PUBLIC_KEY_SIZE, 0);
 	//alice receive keys
-	Buffer *alice_current_receive_header_key = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer *alice_next_receive_header_key = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *alice_receive_message_key1 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *alice_receive_message_key2 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *alice_receive_message_key3 = Buffer::create(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	Buffer *alice_receive_header_key2 = Buffer::create(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer alice_current_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer alice_next_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer alice_receive_message_key1(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	Buffer alice_receive_message_key2(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	Buffer alice_receive_message_key3(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	Buffer alice_receive_header_key2(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+
+
+	throw_on_invalid_buffer(alice_private_identity);
+	throw_on_invalid_buffer(alice_public_identity);
+	throw_on_invalid_buffer(alice_private_ephemeral);
+	throw_on_invalid_buffer(alice_public_ephemeral);
+	//bob keys
+	throw_on_invalid_buffer(bob_private_identity);
+	throw_on_invalid_buffer(bob_public_identity);
+	throw_on_invalid_buffer(bob_private_ephemeral);
+	throw_on_invalid_buffer(bob_public_ephemeral);
+	//alice send message and header keys
+	throw_on_invalid_buffer(alice_send_message_key1);
+	throw_on_invalid_buffer(alice_send_header_key1);
+	throw_on_invalid_buffer(alice_send_ephemeral1);
+	throw_on_invalid_buffer(alice_send_message_key2);
+	throw_on_invalid_buffer(alice_send_header_key2);
+	throw_on_invalid_buffer(alice_send_ephemeral2);
+	throw_on_invalid_buffer(alice_send_message_key3);
+	throw_on_invalid_buffer(alice_send_header_key3);
+	throw_on_invalid_buffer(alice_send_ephemeral3);
+	//bobs receive keys
+	throw_on_invalid_buffer(bob_current_receive_header_key);
+	throw_on_invalid_buffer(bob_next_receive_header_key);
+	throw_on_invalid_buffer(bob_receive_key1);
+	throw_on_invalid_buffer(bob_receive_key2);
+	throw_on_invalid_buffer(bob_receive_key3);
+	//bobs śend message and header keys
+	throw_on_invalid_buffer(bob_send_message_key1);
+	throw_on_invalid_buffer(bob_send_header_key1);
+	throw_on_invalid_buffer(bob_send_ephemeral1);
+	throw_on_invalid_buffer(bob_send_message_key2);
+	throw_on_invalid_buffer(bob_send_header_key2);
+	throw_on_invalid_buffer(bob_send_ephemeral2);
+	throw_on_invalid_buffer(bob_send_message_key3);
+	throw_on_invalid_buffer(bob_send_header_key3);
+	throw_on_invalid_buffer(bob_send_ephemeral3);
+	//alice receive keys
+	throw_on_invalid_buffer(alice_current_receive_header_key);
+	throw_on_invalid_buffer(alice_next_receive_header_key);
+	throw_on_invalid_buffer(alice_receive_message_key1);
+	throw_on_invalid_buffer(alice_receive_message_key2);
+	throw_on_invalid_buffer(alice_receive_message_key3);
+	throw_on_invalid_buffer(alice_receive_header_key2);
 
 	//creating Alice's identity keypair
 	status = generate_and_print_keypair(
@@ -199,42 +243,42 @@ int main(void) noexcept {
 	printf("Creating new ratchet for Alice ...\n");
 	status = Ratchet::create(
 			alice_state,
-			*alice_private_identity,
-			*alice_public_identity,
-			*bob_public_identity,
-			*alice_private_ephemeral,
-			*alice_public_ephemeral,
-			*bob_public_ephemeral);
-	alice_private_ephemeral->clear();
-	alice_private_identity->clear();
+			alice_private_identity,
+			alice_public_identity,
+			bob_public_identity,
+			alice_private_ephemeral,
+			alice_public_ephemeral,
+			bob_public_ephemeral);
+	alice_private_ephemeral.clear();
+	alice_private_identity.clear();
 	THROW_on_error(CREATION_ERROR, "Failed to create Alice' ratchet.");
 	putchar('\n');
 	//print Alice's initial root and chain keys
 	printf("Alice's initial root key (%zu Bytes):\n", alice_state->root_key.content_length);
-	print_hex(&alice_state->root_key);
+	print_hex(alice_state->root_key);
 	printf("Alice's initial chain key (%zu Bytes):\n", alice_state->send_chain_key.content_length);
-	print_hex(&alice_state->send_chain_key);
+	print_hex(alice_state->send_chain_key);
 	putchar('\n');
 
 	//start new ratchet for bob
 	printf("Creating new ratchet for Bob ...\n");
 	status = Ratchet::create(
 			bob_state,
-			*bob_private_identity,
-			*bob_public_identity,
-			*alice_public_identity,
-			*bob_private_ephemeral,
-			*bob_public_ephemeral,
-			*alice_public_ephemeral);
-	bob_private_identity->clear();
-	bob_private_ephemeral->clear();
+			bob_private_identity,
+			bob_public_identity,
+			alice_public_identity,
+			bob_private_ephemeral,
+			bob_public_ephemeral,
+			alice_public_ephemeral);
+	bob_private_identity.clear();
+	bob_private_ephemeral.clear();
 	THROW_on_error(CREATION_ERROR, "Failed to create Bob's ratchet.");
 	putchar('\n');
 	//print Bob's initial root and chain keys
 	printf("Bob's initial root key (%zu Bytes):\n", bob_state->root_key.content_length);
-	print_hex(&bob_state->root_key);
+	print_hex(bob_state->root_key);
 	printf("Bob's initial chain key (%zu Bytes):\n", bob_state->send_chain_key.content_length);
-	print_hex(&bob_state->send_chain_key);
+	print_hex(bob_state->send_chain_key);
 	putchar('\n');
 
 	//compare Alice's and Bob's initial root and chain keys
@@ -261,11 +305,11 @@ int main(void) noexcept {
 	uint32_t alice_send_message_number1;
 	uint32_t alice_previous_message_number1;
 	status = alice_state->send(
-			*alice_send_header_key1,
+			alice_send_header_key1,
 			alice_send_message_number1,
 			alice_previous_message_number1,
-			*alice_send_ephemeral1,
-			*alice_send_message_key1);
+			alice_send_ephemeral1,
+			alice_send_message_key1);
 	on_error {
 		alice_state->destroy();
 		bob_state->destroy();
@@ -282,11 +326,11 @@ int main(void) noexcept {
 	uint32_t alice_send_message_number2;
 	uint32_t alice_previous_message_number2;
 	status = alice_state->send(
-			*alice_send_header_key2,
+			alice_send_header_key2,
 			alice_send_message_number2,
 			alice_previous_message_number2,
-			*alice_send_ephemeral2,
-			*alice_send_message_key2);
+			alice_send_ephemeral2,
+			alice_send_message_key2);
 	on_error {
 		alice_state->destroy();
 		bob_state->destroy();
@@ -303,11 +347,11 @@ int main(void) noexcept {
 	uint32_t alice_send_message_number3;
 	uint32_t alice_previous_message_number3;
 	status = alice_state->send(
-			*alice_send_header_key3,
+			alice_send_header_key3,
 			alice_send_message_number3,
 			alice_previous_message_number3,
-			*alice_send_ephemeral3,
-			*alice_send_message_key3);
+			alice_send_ephemeral3,
+			alice_send_message_key3);
 	on_error {
 		alice_state->destroy();
 		bob_state->destroy();
@@ -323,7 +367,7 @@ int main(void) noexcept {
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
 	//get pointers to bob's receive header keys
-	status = bob_state->getReceiveHeaderKeys(*bob_current_receive_header_key, *bob_next_receive_header_key);
+	status = bob_state->getReceiveHeaderKeys(bob_current_receive_header_key, bob_next_receive_header_key);
 	on_error {
 		alice_state->destroy();
 		bob_state->destroy();
@@ -337,19 +381,19 @@ int main(void) noexcept {
 	putchar('\n');
 
 	//check header decryptability
-	if (bob_current_receive_header_key->compare(alice_send_header_key1) == 0) {
+	if (bob_current_receive_header_key == alice_send_header_key1) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (bob_next_receive_header_key->compare(alice_send_header_key1) == 0) {
+	} else if (bob_next_receive_header_key == alice_send_header_key1) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
 		decryptable = UNDECRYPTABLE;
 		fprintf(stderr, "Failed to decrypt header.");
 	}
-	alice_send_header_key1->clear();
-	bob_current_receive_header_key->clear();
-	bob_next_receive_header_key->clear();
+	alice_send_header_key1.clear();
+	bob_current_receive_header_key.clear();
+	bob_next_receive_header_key.clear();
 
 	//now the receive end, Bob recreates the message keys
 
@@ -362,8 +406,8 @@ int main(void) noexcept {
 	}
 
 	status = bob_state->receive(
-			*bob_receive_key1,
-			*alice_send_ephemeral1,
+			bob_receive_key1,
+			alice_send_ephemeral1,
 			0, //purported message number
 			0); //purported previous message number
 	on_error {
@@ -385,7 +429,7 @@ int main(void) noexcept {
 		THROW(DATA_SET_ERROR, "Failed to set authenticity state.");
 	}
 
-	status = bob_state->getReceiveHeaderKeys(*bob_current_receive_header_key, *bob_next_receive_header_key);
+	status = bob_state->getReceiveHeaderKeys(bob_current_receive_header_key, bob_next_receive_header_key);
 	on_error {
 		alice_state->destroy();
 		bob_state->destroy();
@@ -399,19 +443,19 @@ int main(void) noexcept {
 	putchar('\n');
 
 	//check header decryptability
-	if (bob_current_receive_header_key->compare(alice_send_header_key2) == 0) {
+	if (bob_current_receive_header_key == alice_send_header_key2) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (bob_next_receive_header_key->compare(alice_send_header_key2) == 0) {
+	} else if (bob_next_receive_header_key == alice_send_header_key2) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
 		decryptable = UNDECRYPTABLE;
 		fprintf(stderr, "Failed to decrypt header.");
 	}
-	alice_send_header_key2->clear();
-	bob_current_receive_header_key->clear();
-	bob_next_receive_header_key->clear();
+	alice_send_header_key2.clear();
+	bob_current_receive_header_key.clear();
+	bob_next_receive_header_key.clear();
 
 	//set the header decryptability
 	status = bob_state->setHeaderDecryptability(decryptable);
@@ -423,8 +467,8 @@ int main(void) noexcept {
 
 	//second receive message key
 	status = bob_state->receive(
-			*bob_receive_key2,
-			*alice_send_ephemeral2,
+			bob_receive_key2,
+			alice_send_ephemeral2,
 			1, //purported message number
 			0); //purported previous message number
 	on_error {
@@ -446,7 +490,7 @@ int main(void) noexcept {
 		THROW(DATA_SET_ERROR, "Failed to set authenticity state.");
 	}
 
-	status = bob_state->getReceiveHeaderKeys(*bob_current_receive_header_key, *bob_next_receive_header_key);
+	status = bob_state->getReceiveHeaderKeys(bob_current_receive_header_key, bob_next_receive_header_key);
 	on_error {
 		alice_state->destroy();
 		bob_state->destroy();
@@ -460,19 +504,19 @@ int main(void) noexcept {
 	putchar('\n');
 
 	//check header decryptability
-	if (bob_current_receive_header_key->compare(alice_send_header_key3) == 0) {
+	if (bob_current_receive_header_key == alice_send_header_key3) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (bob_next_receive_header_key->compare(alice_send_header_key3) == 0) {
+	} else if (bob_next_receive_header_key == alice_send_header_key3) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
 		decryptable = UNDECRYPTABLE;
 		fprintf(stderr, "Failed to decrypt header.");
 	}
-	alice_send_header_key3->clear();
-	bob_current_receive_header_key->clear();
-	bob_next_receive_header_key->clear();
+	alice_send_header_key3.clear();
+	bob_current_receive_header_key.clear();
+	bob_next_receive_header_key.clear();
 
 	//set the header decryptability
 	status = bob_state->setHeaderDecryptability(decryptable);
@@ -484,8 +528,8 @@ int main(void) noexcept {
 
 	//third receive message key
 	status = bob_state->receive(
-			*bob_receive_key3,
-			*alice_send_ephemeral3,
+			bob_receive_key3,
+			alice_send_ephemeral3,
 			2, //purported message number
 			0); //purported previous message number
 	on_error {
@@ -508,33 +552,33 @@ int main(void) noexcept {
 	}
 
 	//compare the message keys
-	if (alice_send_message_key1->compare(bob_receive_key1) != 0) {
+	if (alice_send_message_key1 != bob_receive_key1) {
 		alice_state->destroy();
 		bob_state->destroy();
 		THROW(INCORRECT_DATA, "Alice's first send key and Bob's first receive key aren't the same.");
 	}
-	alice_send_message_key1->clear();
-	bob_receive_key1->clear();
+	alice_send_message_key1.clear();
+	bob_receive_key1.clear();
 	printf("Alice's first send key and Bob's first receive key match.\n");
 
 	//second key
-	if (alice_send_message_key2->compare(bob_receive_key2) != 0) {
+	if (alice_send_message_key2 != bob_receive_key2) {
 		alice_state->destroy();
 		bob_state->destroy();
 		THROW(INCORRECT_DATA, "Alice's second send key and Bob's second receive key aren't the same.");
 	}
-	alice_send_message_key2->clear();
-	bob_receive_key2->clear();
+	alice_send_message_key2.clear();
+	bob_receive_key2.clear();
 	printf("Alice's second send key and Bob's second receive key match.\n");
 
 	//third key
-	if (alice_send_message_key3->compare(bob_receive_key3) != 0) {
+	if (alice_send_message_key3 != bob_receive_key3) {
 		alice_state->destroy();
 		bob_state->destroy();
 		THROW(INCORRECT_DATA, "Alice's third send key and Bob's third receive key aren't the same.");
 	}
-	alice_send_message_key3->clear();
-	bob_receive_key3->clear();
+	alice_send_message_key3.clear();
+	bob_receive_key3.clear();
 	printf("Alice's third send key and Bob's third receive key match.\n");
 	putchar('\n');
 
@@ -544,11 +588,11 @@ int main(void) noexcept {
 	uint32_t bob_send_message_number1;
 	uint32_t bob_previous_message_number1;
 	status = bob_state->send(
-			*bob_send_header_key1,
+			bob_send_header_key1,
 			bob_send_message_number1,
 			bob_previous_message_number1,
-			*bob_send_ephemeral1,
-			*bob_send_message_key1);
+			bob_send_ephemeral1,
+			bob_send_message_key1);
 	on_error {
 		alice_state->destroy();
 		bob_state->destroy();
@@ -565,11 +609,11 @@ int main(void) noexcept {
 	uint32_t bob_send_message_number2;
 	uint32_t bob_previous_message_number2;
 	status = bob_state->send(
-			*bob_send_header_key2,
+			bob_send_header_key2,
 			bob_send_message_number2,
 			bob_previous_message_number2,
-			*bob_send_ephemeral2,
-			*bob_send_message_key2);
+			bob_send_ephemeral2,
+			bob_send_message_key2);
 	on_error {
 		alice_state->destroy();
 		bob_state->destroy();
@@ -586,11 +630,11 @@ int main(void) noexcept {
 	uint32_t bob_send_message_number3;
 	uint32_t bob_previous_message_number3;
 	status = bob_state->send(
-			*bob_send_header_key3,
+			bob_send_header_key3,
 			bob_send_message_number3,
 			bob_previous_message_number3,
-			*bob_send_ephemeral3,
-			*bob_send_message_key3);
+			bob_send_ephemeral3,
+			bob_send_message_key3);
 	on_error {
 		alice_state->destroy();
 		bob_state->destroy();
@@ -606,7 +650,7 @@ int main(void) noexcept {
 	//--------------------------------------------------------------------------
 	puts("----------------------------------------\n");
 	//get pointers to alice's receive header keys
-	status = alice_state->getReceiveHeaderKeys(*alice_current_receive_header_key, *alice_next_receive_header_key);
+	status = alice_state->getReceiveHeaderKeys(alice_current_receive_header_key, alice_next_receive_header_key);
 	on_error {
 		alice_state->destroy();
 		bob_state->destroy();
@@ -620,19 +664,19 @@ int main(void) noexcept {
 	putchar('\n');
 
 	//check header decryptability
-	if (alice_current_receive_header_key->compare(bob_send_header_key1) == 0) {
+	if (alice_current_receive_header_key == bob_send_header_key1) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (alice_next_receive_header_key->compare(bob_send_header_key1) == 0) {
+	} else if (alice_next_receive_header_key == bob_send_header_key1) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
 		decryptable = UNDECRYPTABLE;
 		fprintf(stderr, "Failed to decrypt header.");
 	}
-	bob_send_header_key1->clear();
-	alice_current_receive_header_key->clear();
-	alice_next_receive_header_key->clear();
+	bob_send_header_key1.clear();
+	alice_current_receive_header_key.clear();
+	alice_next_receive_header_key.clear();
 
 	//now alice receives the first, then the third message (second message skipped)
 
@@ -645,8 +689,8 @@ int main(void) noexcept {
 	}
 
 	status = alice_state->receive(
-			*alice_receive_message_key1,
-			*bob_send_ephemeral1,
+			alice_receive_message_key1,
+			bob_send_ephemeral1,
 			0, //purported message number
 			0); //purported previous message number
 	on_error {
@@ -667,7 +711,7 @@ int main(void) noexcept {
 		THROW(DATA_SET_ERROR, "Failed to set authenticity state.");
 	}
 
-	status = alice_state->getReceiveHeaderKeys(*alice_current_receive_header_key, *alice_next_receive_header_key);
+	status = alice_state->getReceiveHeaderKeys(alice_current_receive_header_key, alice_next_receive_header_key);
 	on_error {
 		alice_state->destroy();
 		bob_state->destroy();
@@ -681,19 +725,19 @@ int main(void) noexcept {
 	putchar('\n');
 
 	//check header decryptability
-	if (alice_current_receive_header_key->compare(bob_send_header_key3) == 0) {
+	if (alice_current_receive_header_key == bob_send_header_key3) {
 		decryptable = CURRENT_DECRYPTABLE;
 		printf("Header decryptable with current header key.\n");
-	} else if (alice_next_receive_header_key->compare(bob_send_header_key3) == 0) {
+	} else if (alice_next_receive_header_key == bob_send_header_key3) {
 		decryptable = NEXT_DECRYPTABLE;
 		printf("Header decryptable with next header key.\n");
 	} else {
 		decryptable = UNDECRYPTABLE;
 		fprintf(stderr, "Failed to decrypt header.");
 	}
-	bob_send_header_key3->clear();
-	alice_current_receive_header_key->clear();
-	alice_next_receive_header_key->clear();
+	bob_send_header_key3.clear();
+	alice_current_receive_header_key.clear();
+	alice_next_receive_header_key.clear();
 
 	//set the header decryptability
 	status = alice_state->setHeaderDecryptability(decryptable);
@@ -704,11 +748,7 @@ int main(void) noexcept {
 	}
 
 	//third received message key (second message skipped)
-	status = alice_state->receive(
-			*alice_receive_message_key3,
-			*bob_send_ephemeral3,
-			2,
-			0);
+	status = alice_state->receive(alice_receive_message_key3, bob_send_ephemeral3, 2, 0);
 	on_error {
 		alice_state->destroy();
 		bob_state->destroy();
@@ -733,7 +773,7 @@ int main(void) noexcept {
 	assert(alice_state->skipped_header_and_message_keys.length == 1);
 
 	//get the second receive message key from the message and header keystore
-	status_int = alice_receive_message_key2->cloneFrom(alice_state->skipped_header_and_message_keys.tail->message_key);
+	status_int = alice_receive_message_key2.cloneFrom(alice_state->skipped_header_and_message_keys.tail->message_key);
 	if (status_int != 0) {
 		alice_state->destroy();
 		bob_state->destroy();
@@ -744,7 +784,7 @@ int main(void) noexcept {
 	putchar('\n');
 
 	//get the second receive header key from the message and header keystore
-	status_int = alice_receive_header_key2->cloneFrom(alice_state->skipped_header_and_message_keys.tail->header_key);
+	status_int = alice_receive_header_key2.cloneFrom(alice_state->skipped_header_and_message_keys.tail->header_key);
 	if (status_int != 0) {
 		alice_state->destroy();
 		bob_state->destroy();
@@ -755,43 +795,43 @@ int main(void) noexcept {
 	putchar('\n');
 
 	//compare header keys
-	if (alice_receive_header_key2->compare(bob_send_header_key2) != 0) {
+	if (alice_receive_header_key2 != bob_send_header_key2) {
 		alice_state->destroy();
 		bob_state->destroy();
 		THROW(INCORRECT_DATA, "Bob's second send header key and Alice's receive header key aren't the same.");
 	}
 	printf("Bob's second send header key and Alice's receive header keys match.\n");
-	alice_receive_header_key2->clear();
-	bob_send_header_key2->clear();
+	alice_receive_header_key2.clear();
+	bob_send_header_key2.clear();
 
 	//compare the keys
-	if (bob_send_message_key1->compare(alice_receive_message_key1) != 0) {
+	if (bob_send_message_key1 != alice_receive_message_key1) {
 		alice_state->destroy();
 		bob_state->destroy();
 		THROW(INCORRECT_DATA, "Bob's first send key and Alice's first receive key aren't the same.");
 	}
-	bob_send_message_key1->clear();
-	bob_send_message_key1->clear();
+	bob_send_message_key1.clear();
+	bob_send_message_key1.clear();
 	printf("Bob's first send key and Alice's first receive key match.\n");
 
 	//second key
-	if (bob_send_message_key2->compare(alice_receive_message_key2) != 0) {
+	if (bob_send_message_key2 != alice_receive_message_key2) {
 		alice_state->destroy();
 		bob_state->destroy();
 		THROW(INCORRECT_DATA, "Bob's second send key and Alice's second receive key aren't the same.");
 	}
-	bob_send_message_key2->clear();
-	alice_receive_message_key2->clear();
+	bob_send_message_key2.clear();
+	alice_receive_message_key2.clear();
 	printf("Bob's second send key and Alice's second receive key match.\n");
 
 	//third key
-	if (bob_send_message_key3->compare(alice_receive_message_key3) != 0) {
+	if (bob_send_message_key3 != alice_receive_message_key3) {
 		alice_state->destroy();
 		bob_state->destroy();
 		THROW(INCORRECT_DATA, "Bob's third send key and Alice's third receive key aren't the same.");
 	}
-	bob_send_message_key3->clear();
-	alice_receive_message_key3->clear();
+	bob_send_message_key3.clear();
+	alice_receive_message_key3.clear();
 	printf("Bob's third send key and Alice's third receive key match.\n\n");
 
 
@@ -800,7 +840,7 @@ int main(void) noexcept {
 	status = protobuf_export(alice_state, &protobuf_export_buffer);
 	THROW_on_error(EXPORT_ERROR, "Failed to export Alice' ratchet to protobuf-c.");
 
-	print_hex(protobuf_export_buffer);
+	print_hex(*protobuf_export_buffer);
 	puts("\n\n");
 
 	alice_state->destroy();
@@ -819,7 +859,7 @@ int main(void) noexcept {
 
 	//compare both exports
 	if ((protobuf_export_buffer == NULL) || (protobuf_export_buffer->compare(protobuf_second_export_buffer) != 0)) {
-		print_hex(protobuf_second_export_buffer);
+		print_hex(*protobuf_second_export_buffer);
 		THROW(INCORRECT_DATA, "Both exports don't match!");
 	}
 	printf("Exported Protobuf-C buffers match!\n");
@@ -835,53 +875,8 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffer);
 	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_buffer);
 
-	//create all the buffers
-	//alice keys
-	buffer_destroy_from_heap_and_null_if_valid(alice_private_identity);
-	buffer_destroy_from_heap_and_null_if_valid(alice_public_identity);
-	buffer_destroy_from_heap_and_null_if_valid(alice_private_ephemeral);
-	buffer_destroy_from_heap_and_null_if_valid(alice_public_ephemeral);
-	//bob keys
-	buffer_destroy_from_heap_and_null_if_valid(bob_private_identity);
-	buffer_destroy_from_heap_and_null_if_valid(bob_public_identity);
-	buffer_destroy_from_heap_and_null_if_valid(bob_private_ephemeral);
-	buffer_destroy_from_heap_and_null_if_valid(bob_public_ephemeral);
-	//alice send message and header keys
-	buffer_destroy_from_heap_and_null_if_valid(alice_send_message_key1);
-	buffer_destroy_from_heap_and_null_if_valid(alice_send_header_key1);
-	buffer_destroy_from_heap_and_null_if_valid(alice_send_ephemeral1);
-	buffer_destroy_from_heap_and_null_if_valid(alice_send_message_key2);
-	buffer_destroy_from_heap_and_null_if_valid(alice_send_header_key2);
-	buffer_destroy_from_heap_and_null_if_valid(alice_send_ephemeral2);
-	buffer_destroy_from_heap_and_null_if_valid(alice_send_message_key3);
-	buffer_destroy_from_heap_and_null_if_valid(alice_send_header_key3);
-	buffer_destroy_from_heap_and_null_if_valid(alice_send_ephemeral3);
-	//bobs receive keys
-	buffer_destroy_from_heap_and_null_if_valid(bob_current_receive_header_key);
-	buffer_destroy_from_heap_and_null_if_valid(bob_next_receive_header_key);
-	buffer_destroy_from_heap_and_null_if_valid(bob_receive_key1);
-	buffer_destroy_from_heap_and_null_if_valid(bob_receive_key2);
-	buffer_destroy_from_heap_and_null_if_valid(bob_receive_key3);
-	//bobs śend message and header keys
-	buffer_destroy_from_heap_and_null_if_valid(bob_send_message_key1);
-	buffer_destroy_from_heap_and_null_if_valid(bob_send_header_key1);
-	buffer_destroy_from_heap_and_null_if_valid(bob_send_ephemeral1);
-	buffer_destroy_from_heap_and_null_if_valid(bob_send_message_key2);
-	buffer_destroy_from_heap_and_null_if_valid(bob_send_header_key2);
-	buffer_destroy_from_heap_and_null_if_valid(bob_send_ephemeral2);
-	buffer_destroy_from_heap_and_null_if_valid(bob_send_message_key3);
-	buffer_destroy_from_heap_and_null_if_valid(bob_send_header_key3);
-	buffer_destroy_from_heap_and_null_if_valid(bob_send_ephemeral3);
-	//alice receive keys
-	buffer_destroy_from_heap_and_null_if_valid(alice_current_receive_header_key);
-	buffer_destroy_from_heap_and_null_if_valid(alice_next_receive_header_key);
-	buffer_destroy_from_heap_and_null_if_valid(alice_receive_message_key1);
-	buffer_destroy_from_heap_and_null_if_valid(alice_receive_message_key2);
-	buffer_destroy_from_heap_and_null_if_valid(alice_receive_message_key3);
-	buffer_destroy_from_heap_and_null_if_valid(alice_receive_header_key2);
-
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

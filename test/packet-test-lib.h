@@ -52,13 +52,13 @@
  */
 return_status create_and_print_message(
 		//output
-		Buffer ** const packet,
-		Buffer * const header_key, //HEADER_KEY_SIZE
-		Buffer * const message_key, //MESSAGE_KEY_SIZE
+		Buffer*& packet,
+		Buffer& header_key, //HEADER_KEY_SIZE
+		Buffer& message_key, //MESSAGE_KEY_SIZE
 		//inputs
 		const molch_message_type packet_type,
-		Buffer * const header,
-		Buffer * const message,
+		Buffer& header,
+		Buffer& message,
 		//optional inputs (prekey messages only)
 		Buffer * const public_identity_key,
 		Buffer * const public_epehemeral_key,

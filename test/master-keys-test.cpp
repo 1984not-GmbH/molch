@@ -213,11 +213,11 @@ int main(void) noexcept {
 	MasterKeys *imported_master_keys = nullptr;
 
 	//public key buffers
-	Buffer *public_signing_key = Buffer::create(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	Buffer *public_identity_key = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	Buffer public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
-	Buffer *signed_data = Buffer::create(100, 0);
-	Buffer *unwrapped_data = Buffer::create(100, 0);
+	Buffer signed_data(100, 0);
+	Buffer unwrapped_data(100, 0);
 
 	//export buffers
 	Buffer *protobuf_export_public_signing_key = nullptr;
@@ -232,37 +232,42 @@ int main(void) noexcept {
 
 	int status_int = 0;
 
+	throw_on_invalid_buffer(public_signing_key);
+	throw_on_invalid_buffer(public_identity_key);
+	throw_on_invalid_buffer(signed_data);
+	throw_on_invalid_buffer(unwrapped_data);
+
 	//create the unspiced master keys
 	status = MasterKeys::create(unspiced_master_keys, nullptr, nullptr, nullptr);
 	THROW_on_error(CREATION_ERROR, "Failed to create unspiced master keys.");
 
 	//get the public keys
-	status = unspiced_master_keys->getSigningKey(*public_signing_key);
+	status = unspiced_master_keys->getSigningKey(public_signing_key);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get the public signing key!");
-	status = unspiced_master_keys->getIdentityKey(*public_identity_key);
+	status = unspiced_master_keys->getIdentityKey(public_identity_key);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get the public identity key.");
 
 	//print the keys
 	sodium_mprotect_readonly(unspiced_master_keys);
 	printf("Signing keypair:\n");
 	printf("Public:\n");
-	print_hex(&unspiced_master_keys->public_signing_key);
+	print_hex(unspiced_master_keys->public_signing_key);
 
 	printf("\nPrivate:\n");
-	print_hex(&unspiced_master_keys->private_signing_key);
+	print_hex(unspiced_master_keys->private_signing_key);
 
 	printf("\n\nIdentity keys:\n");
 	printf("Public:\n");
-	print_hex(&unspiced_master_keys->public_identity_key);
+	print_hex(unspiced_master_keys->public_identity_key);
 
 	printf("\nPrivate:\n");
-	print_hex(&unspiced_master_keys->private_identity_key);
+	print_hex(unspiced_master_keys->private_identity_key);
 
 	//check the exported public keys
-	if (public_signing_key->compare(&unspiced_master_keys->public_signing_key) != 0) {
+	if (public_signing_key != unspiced_master_keys->public_signing_key) {
 		THROW(INCORRECT_DATA, "Exported public signing key doesn't match.");
 	}
-	if (public_identity_key->compare(&unspiced_master_keys->public_identity_key) != 0) {
+	if (public_identity_key != unspiced_master_keys->public_identity_key) {
 		THROW(INCORRECT_DATA, "Exported public identity key doesn't match.");
 	}
 	sodium_mprotect_noaccess(unspiced_master_keys);
@@ -271,7 +276,7 @@ int main(void) noexcept {
 	//create the spiced master keys
 	{
 		Buffer seed(";a;awoeih]]pquw4t[spdif\\aslkjdf;'ihdg#)%!@))%)#)(*)@)#)h;kuhe[orih;o's':ke';sa'd;kfa';;.calijv;a/orq930u[sd9f0u;09[02;oasijd;adk");
-		status = MasterKeys::create(spiced_master_keys, &seed, public_signing_key, public_identity_key);
+		status = MasterKeys::create(spiced_master_keys, &seed, &public_signing_key, &public_identity_key);
 		THROW_on_error(CREATION_ERROR, "Failed to create spiced master keys.");
 	}
 
@@ -279,23 +284,23 @@ int main(void) noexcept {
 	sodium_mprotect_readonly(spiced_master_keys);
 	printf("Signing keypair:\n");
 	printf("Public:\n");
-	print_hex(&spiced_master_keys->public_signing_key);
+	print_hex(spiced_master_keys->public_signing_key);
 
 	printf("\nPrivate:\n");
-	print_hex(&spiced_master_keys->private_signing_key);
+	print_hex(spiced_master_keys->private_signing_key);
 
 	printf("\n\nIdentity keys:\n");
 	printf("Public:\n");
-	print_hex(&spiced_master_keys->public_identity_key);
+	print_hex(spiced_master_keys->public_identity_key);
 
 	printf("\nPrivate:\n");
-	print_hex(&spiced_master_keys->private_identity_key);
+	print_hex(spiced_master_keys->private_identity_key);
 
 	//check the exported public keys
-	if (public_signing_key->compare(&spiced_master_keys->public_signing_key) != 0) {
+	if (public_signing_key != spiced_master_keys->public_signing_key) {
 		THROW(INCORRECT_DATA, "Exported public signing key doesn't match.");
 	}
-	if (public_identity_key->compare(&spiced_master_keys->public_identity_key) != 0) {
+	if (public_identity_key != spiced_master_keys->public_identity_key) {
 		THROW(INCORRECT_DATA, "Exported public identity key doesn't match.");
 	}
 	sodium_mprotect_noaccess(spiced_master_keys);
@@ -306,7 +311,7 @@ int main(void) noexcept {
 		printf("Data to be signed.\n");
 		printf("%.*s\n", (int)data.content_length, (char*)data.content);
 
-		status = spiced_master_keys->sign(data, *signed_data);
+		status = spiced_master_keys->sign(data, signed_data);
 		THROW_on_error(SIGN_ERROR, "Failed to sign data.");
 		printf("Signed data:\n");
 		print_hex(signed_data);
@@ -315,15 +320,15 @@ int main(void) noexcept {
 	//now check the signature
 	unsigned long long unwrapped_data_length;
 	status_int = crypto_sign_open(
-			unwrapped_data->content,
+			unwrapped_data.content,
 			&unwrapped_data_length,
-			signed_data->content,
-			signed_data->content_length,
-			public_signing_key->content);
+			signed_data.content,
+			signed_data.content_length,
+			public_signing_key.content);
 	if (status_int != 0) {
 		THROW(VERIFY_ERROR, "Failed to verify signature.");
 	}
-	unwrapped_data->content_length = (size_t) unwrapped_data_length;
+	unwrapped_data.content_length = (size_t) unwrapped_data_length;
 
 	printf("\nSignature was successfully verified!\n");
 
@@ -339,19 +344,19 @@ int main(void) noexcept {
 	THROW_on_error(EXPORT_ERROR, "Failed to export spiced master keys.");
 
 	printf("Public signing key:\n");
-	print_hex(protobuf_export_public_signing_key);
+	print_hex(*protobuf_export_public_signing_key);
 	puts("\n\n");
 
 	printf("Private signing key:\n");
-	print_hex(protobuf_export_private_signing_key);
+	print_hex(*protobuf_export_private_signing_key);
 	puts("\n\n");
 
 	printf("Public identity key:\n");
-	print_hex(protobuf_export_public_identity_key);
+	print_hex(*protobuf_export_public_identity_key);
 	puts("\n\n");
 
 	printf("Private identity key:\n");
-	print_hex(protobuf_export_private_identity_key);
+	print_hex(*protobuf_export_private_identity_key);
 	puts("\n\n");
 
 	sodium_free_and_null_if_valid(spiced_master_keys);
@@ -376,16 +381,16 @@ int main(void) noexcept {
 	THROW_on_error(EXPORT_ERROR, "Failed to export spiced master keys.");
 
 	//now compare
-	if (protobuf_export_public_signing_key->compare(protobuf_second_export_public_signing_key) != 0) {
+	if (*protobuf_export_public_signing_key != *protobuf_second_export_public_signing_key) {
 		THROW(INCORRECT_DATA, "The public signing keys do not match.");
 	}
-	if (protobuf_export_private_signing_key->compare(protobuf_second_export_private_signing_key) != 0) {
+	if (*protobuf_export_private_signing_key != *protobuf_second_export_private_signing_key) {
 		THROW(INCORRECT_DATA, "The private signing keys do not match.");
 	}
-	if (protobuf_export_public_identity_key->compare(protobuf_second_export_public_identity_key) != 0) {
+	if (*protobuf_export_public_identity_key != *protobuf_second_export_public_identity_key) {
 		THROW(INCORRECT_DATA, "The public identity keys do not match.");
 	}
-	if (protobuf_export_private_identity_key->compare(protobuf_second_export_private_identity_key) != 0) {
+	if (*protobuf_export_private_identity_key != *protobuf_second_export_private_identity_key) {
 		THROW(INCORRECT_DATA, "The private identity keys do not match.");
 	}
 
@@ -395,11 +400,6 @@ cleanup:
 	sodium_free_and_null_if_valid(unspiced_master_keys);
 	sodium_free_and_null_if_valid(spiced_master_keys);
 	sodium_free_and_null_if_valid(imported_master_keys);
-
-	buffer_destroy_from_heap_and_null_if_valid(public_signing_key);
-	buffer_destroy_from_heap_and_null_if_valid(public_identity_key);
-	buffer_destroy_from_heap_and_null_if_valid(signed_data);
-	buffer_destroy_from_heap_and_null_if_valid(unwrapped_data);
 
 	//protobuf export buffers
 	buffer_destroy_from_heap_and_null_if_valid(protobuf_export_public_signing_key);
@@ -412,7 +412,7 @@ cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_private_identity_key);
 
 	on_error {
-		print_errors(&status);
+		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
 

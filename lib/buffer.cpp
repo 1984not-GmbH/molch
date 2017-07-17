@@ -498,10 +498,10 @@ bool Buffer::isValid() const noexcept {
 	return this->is_valid;
 }
 
-bool Buffer::operator ==(const Buffer& buffer) const {
+bool Buffer::operator ==(const Buffer& buffer) const noexcept {
 	return this->compare(&buffer) == 0;
 }
 
-bool Buffer::operator !=(const Buffer& buffer) const {
+bool Buffer::operator !=(const Buffer& buffer) const noexcept {
 	return !(*this == buffer);
 }

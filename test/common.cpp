@@ -30,23 +30,23 @@
 /*
  * Print a header and message keystore with all of it's entries.
  */
-void print_header_and_message_keystore(header_and_message_keystore *keystore) noexcept {
+void print_header_and_message_keystore(header_and_message_keystore& keystore) noexcept {
 	printf("KEYSTORE-START-----------------------------------------------------------------\n");
-	printf("Length: %zu\n", keystore->length);
-	printf("Head: %p\n", (void*) keystore->head);
-	printf("Tail: %p\n\n", (void*) keystore->tail);
+	printf("Length: %zu\n", keystore.length);
+	printf("Head: %p\n", (void*) keystore.head);
+	printf("Tail: %p\n\n", (void*) keystore.tail);
 
-	header_and_message_keystore_node* node = keystore->head;
+	header_and_message_keystore_node* node = keystore.head;
 
 	//print all the keys in the keystore
-	for (size_t i = 0; i < keystore->length; node = node->next, i++) {
+	for (size_t i = 0; i < keystore.length; node = node->next, i++) {
 		printf("Header key %zu:\n", i);
-		print_hex(node->header_key);
+		print_hex(*node->header_key);
 		putchar('\n');
 
 		printf("Message key %zu:\n", i);
-		print_hex(node->message_key);
-		if (i != keystore->length - 1) { //omit last one
+		print_hex(*node->message_key);
+		if (i != keystore.length - 1) { //omit last one
 			putchar('\n');
 		}
 	}
@@ -57,33 +57,33 @@ void print_header_and_message_keystore(header_and_message_keystore *keystore) no
  * Generates and prints a crypto_box keypair.
  */
 return_status generate_and_print_keypair(
-		Buffer * const public_key, //crypto_box_PUBLICKEYBYTES
-		Buffer * const private_key, //crypto_box_SECRETKEYBYTES
+		Buffer& public_key, //crypto_box_PUBLICKEYBYTES
+		Buffer& private_key, //crypto_box_SECRETKEYBYTES
 		const std::string& name, //Name of the key owner (e.g. "Alice")
 		const std::string& type) noexcept { //type of the key (e.g. "ephemeral")
 	return_status status = return_status_init();
 
 	//check buffer sizes
-	if ((public_key->getBufferLength() < crypto_box_PUBLICKEYBYTES)
-			|| (private_key->getBufferLength() < crypto_box_SECRETKEYBYTES)) {
+	if ((public_key.getBufferLength() < crypto_box_PUBLICKEYBYTES)
+			|| (private_key.getBufferLength() < crypto_box_SECRETKEYBYTES)) {
 		THROW(INCORRECT_BUFFER_SIZE, "Public key buffer is too short.");
 	}
 	//generate keypair
 	{
 		int status_int = 0;
-		status_int = crypto_box_keypair(public_key->content, private_key->content);
+		status_int = crypto_box_keypair(public_key.content, private_key.content);
 		if (status_int != 0) {
 			THROW(KEYGENERATION_FAILED, "Failed to generate keypair.");
 		}
 	}
-	public_key->content_length = crypto_box_PUBLICKEYBYTES;
-	private_key->content_length = crypto_box_SECRETKEYBYTES;
+	public_key.content_length = crypto_box_PUBLICKEYBYTES;
+	private_key.content_length = crypto_box_SECRETKEYBYTES;
 
 	//print keypair
-	std::cout << name << "'s public " << type << " key (" << public_key->content_length << ":" << std::endl;
+	std::cout << name << "'s public " << type << " key (" << public_key.content_length << ":" << std::endl;
 	print_hex(public_key);
 	putchar('\n');
-	std::cout << std::endl << name << "'s private " << type << " key (" << private_key->content_length << ":" << std::endl;
+	std::cout << std::endl << name << "'s private " << type << " key (" << private_key.content_length << ":" << std::endl;
 	print_hex(private_key);
 	std::cout << std::endl;
 
