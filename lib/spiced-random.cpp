@@ -45,14 +45,13 @@ return_status spiced_random(
 	//buffer that contains the random data from the OS
 	Buffer *os_random = nullptr;
 	//buffer that contains a random salt
-	Buffer *salt = nullptr;
+	Buffer salt(crypto_pwhash_SALTBYTES, 0);
+	throw_on_invalid_buffer(salt);
 	//allocate them
 	spice = Buffer::createWithCustomAllocator(output_length, output_length, sodium_malloc, sodium_free);
 	THROW_on_failed_alloc(spice);
 	os_random = Buffer::createWithCustomAllocator(output_length, output_length, sodium_malloc, sodium_free);
 	THROW_on_failed_alloc(os_random);
-	salt = Buffer::create(crypto_pwhash_SALTBYTES, 0);
-	THROW_on_failed_alloc(salt);
 
 	//check buffer length
 	if (random_output.getBufferLength() < output_length) {
@@ -63,7 +62,7 @@ return_status spiced_random(
 		THROW(GENERIC_ERROR, "Failed to fill buffer with random data.");
 	}
 
-	if (salt->fillRandom(crypto_pwhash_SALTBYTES) != 0) {
+	if (salt.fillRandom(crypto_pwhash_SALTBYTES) != 0) {
 		THROW(GENERIC_ERROR, "Failed to fill salt with random data.");
 	}
 
@@ -74,7 +73,7 @@ return_status spiced_random(
 				spice->content_length,
 				(const char*)low_entropy_spice.content,
 				low_entropy_spice.content_length,
-				salt->content,
+				salt.content,
 				crypto_pwhash_OPSLIMIT_INTERACTIVE,
 				crypto_pwhash_MEMLIMIT_INTERACTIVE,
 				crypto_pwhash_ALG_DEFAULT);
@@ -100,7 +99,6 @@ cleanup:
 	}
 	buffer_destroy_with_custom_deallocator_and_null_if_valid(spice, sodium_free);
 	buffer_destroy_with_custom_deallocator_and_null_if_valid(os_random, sodium_free);
-	buffer_destroy_from_heap_and_null_if_valid(salt);
 
 	return status;
 }
