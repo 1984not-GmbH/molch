@@ -70,7 +70,7 @@ typedef enum status_type { //TODO add more error types
 
 typedef struct error_message error_message;
 struct error_message {
-	const char * message;
+	char * message;
 	status_type status;
 	error_message *next;
 };

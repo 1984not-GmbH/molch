@@ -22,6 +22,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <cstdio>
+#include <algorithm>
+#include <new>
+#include <memory>
 
 #include "return-status.h"
 #include "buffer.h"
@@ -37,7 +40,8 @@ extern return_status return_status_init() noexcept {
 status_type return_status_add_error_message(
 		return_status *const status_object,
 		const char *const message,
-		const status_type status) noexcept {
+		const status_type status_to_add) noexcept {
+
 	if (status_object == nullptr) {
 		return INVALID_INPUT;
 	}
@@ -46,16 +50,25 @@ status_type return_status_add_error_message(
 		return SUCCESS;
 	}
 
-	error_message *error = (error_message*)malloc(sizeof(error_message));
-	if (error == nullptr) {
+	std::unique_ptr<error_message> error;
+	std::unique_ptr<char> copied_message;
+	size_t message_length = strlen(message) + sizeof("");
+
+	// allocate the memory
+	try {
+		error = std::unique_ptr<error_message>(new error_message);
+		copied_message = std::unique_ptr<char>(new char[message_length]);
+	} catch (std::bad_alloc exception) {
 		return ALLOCATION_FAILED;
 	}
 
-	error->next = status_object->error;
-	error->message = message;
-	error->status = status;
+	error->message = copied_message.release();
+	std::copy(message, message + message_length, error->message);
 
-	status_object->error = error;
+	error->next = status_object->error;
+	error->status = status_to_add;
+
+	status_object->error = error.release();
 
 	return SUCCESS;
 }
@@ -67,7 +80,10 @@ void return_status_destroy_errors(return_status * const status) noexcept {
 
 	while (status->error != nullptr) {
 		error_message *next_error = status->error->next;
-		free_and_null_if_valid(status->error);
+
+		delete[] status->error->message;
+		delete status->error;
+
 		status->error = next_error;
 	}
 }
