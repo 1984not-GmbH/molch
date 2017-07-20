@@ -10,7 +10,7 @@ enable_testing()
 
 #Setup compiler flags
 list(APPEND custom_compiler_flag_candidates
-    -std=c++11
+    -std=c++1z
     -pedantic
     -Wall
     -Wextra
