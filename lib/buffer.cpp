@@ -505,3 +505,11 @@ bool Buffer::operator ==(const Buffer& buffer) const noexcept {
 bool Buffer::operator !=(const Buffer& buffer) const noexcept {
 	return !(*this == buffer);
 }
+
+bool Buffer::fits(const size_t size) const noexcept {
+	return this->buffer_length >= size;
+}
+
+bool Buffer::contains(const size_t size) const noexcept {
+	return this->fits(size) && (this->content_length == size);
+}

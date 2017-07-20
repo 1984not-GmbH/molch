@@ -337,6 +337,19 @@ int main(void) noexcept {
 		goto fail;
 	}
 
+	{
+		Buffer four_two(4, 2);
+		if ((!four_two.fits(4)) || (!four_two.fits(2)) || four_two.fits(5)) {
+			fprintf(stderr, "ERROR: Buffer doesn't detect correctly what fits in it.");
+			goto fail;
+		}
+
+		if ((!four_two.contains(2)) || four_two.contains(1) || four_two.contains(3)) {
+			fprintf(stderr, "ERROR: Buffer doesn't detect correctly what it contains.");
+			goto fail;
+		}
+	}
+
 	goto cleanup;
 
 fail:
