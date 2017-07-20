@@ -23,6 +23,7 @@
 
 #include "buffer.h"
 #include "common.h"
+#include "return-status.h"
 
 #ifndef LIB_DIFFIE_HELLMAN_H
 #define LIB_DIFFIE_HELLMAN_H

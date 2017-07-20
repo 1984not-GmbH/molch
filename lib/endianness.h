@@ -29,6 +29,7 @@
 
 #include "common.h"
 #include "buffer.h"
+#include "return-status.h"
 
 #ifndef LIB_ENDIANNESS_H
 #define LIB_ENDIANNESS_H

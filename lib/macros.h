@@ -19,45 +19,38 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LIB_MOLCH_EXCEPTION_H
-#define LIB_MOLCH_EXCEPTION_H
+//! \file Common macros.
 
-#include <exception>
-#include <string>
-#include <deque>
+#ifndef LIB_MACROS_H
+#define LIB_MACROS_H
 
-#include "common.h"
-#include "return-status.h"
+// execute code if a pointer is not nullptr
+#define if_valid(pointer) if ((pointer) != nullptr)
+// macros that free memory and delete the pointer afterwards
+#define free_and_null_if_valid(pointer)\
+	if_valid(pointer) {\
+		free(pointer);\
+		pointer = nullptr;\
+	}
+#define sodium_free_and_null_if_valid(pointer)\
+	if_valid(pointer) {\
+		sodium_free(pointer);\
+		pointer = nullptr;\
+	}
+#define zeroed_free_and_null_if_valid(pointer)\
+	if_valid(pointer) {\
+		zeroed_free(pointer);\
+		pointer = nullptr;\
+	}
+#define buffer_destroy_from_heap_and_null_if_valid(buffer)\
+	if_valid(buffer) {\
+		(buffer)->destroy_from_heap();\
+		buffer = nullptr;\
+	}
+#define buffer_destroy_with_custom_deallocator_and_null_if_valid(buffer, deallocator)\
+	if_valid(buffer) {\
+		(buffer)->destroy_with_custom_deallocator(deallocator);\
+		buffer = nullptr;\
+	}
 
-class MolchError {
-public:
-	status_type type;
-	std::string message;
-
-	MolchError();
-	MolchError(const status_type type, const std::string& message);
-
-	/*
-	 * \return An error message allocated with malloc
-	 */
-	error_message* toErrorMessage();
-};
-
-class MolchException : public std::exception {
-private:
-	std::deque<MolchError> error_stack;
-
-public:
-
-	MolchException(const MolchError& error);
-	MolchException(const status_type type, const std::string& message);
-
-	virtual const char* what() const noexcept;
-
-	MolchException& add(const MolchException& exception);
-	MolchException& add(const MolchError& error);
-	return_status toReturnStatus() const;
-	std::string print() const;
-};
-
-#endif /* LIB_MOLCH_EXCEPTION_H */
+#endif

@@ -29,6 +29,7 @@ extern "C" {
 #include "constants.h"
 #include "common.h"
 #include "buffer.h"
+#include "return-status.h"
 
 #ifndef LIB_HEADER_AND_MESSAGE_KEY_STORE_H
 #define LIB_HEADER_AND_MESSAGE_KEY_STORE_H

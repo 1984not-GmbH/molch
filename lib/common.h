@@ -24,9 +24,6 @@
 #ifndef LIB_COMMON_H
 #define LIB_COMMON_H
 
-#include "return-status.h"
-#include "zeroed_malloc.h"
-
 #ifdef __cplusplus
 extern "C" {
 #else

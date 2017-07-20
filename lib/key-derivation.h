@@ -21,6 +21,7 @@
 
 #include "buffer.h"
 #include "common.h"
+#include "return-status.h"
 
 #ifndef LIB_KEY_DERIVATION_H
 #define LIB_KEY_DERIVATION_H

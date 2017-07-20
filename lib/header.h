@@ -32,6 +32,7 @@
 
 #include "common.h"
 #include "buffer.h"
+#include "return-status.h"
 
 /*!
  * Constructs an Axolotl-Header into a buffer.

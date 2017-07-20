@@ -21,6 +21,7 @@
 
 #include "buffer.h"
 #include "common.h"
+#include "return-status.h"
 
 #ifndef LIB_SPICED_RANDOM_H
 #define LIB_SPICED_RANDOM_H

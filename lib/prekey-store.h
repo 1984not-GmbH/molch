@@ -27,6 +27,8 @@ extern "C" {
 #include "constants.h"
 #include "common.h"
 #include "buffer.h"
+#include "return-status.h"
+#include "zeroed_malloc.h"
 
 #ifndef LIB_PrekeyStore
 #define LIB_PrekeyStore
