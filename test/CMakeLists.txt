@@ -43,6 +43,7 @@ if (RUN_TESTS)
               alignment-test
               zeroed_malloc-test
               buffer-test
+              molch-exception-test
     )
 
     foreach(test ${tests})

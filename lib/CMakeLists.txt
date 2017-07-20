@@ -21,5 +21,6 @@ add_library(molch
 	alignment
 	zeroed_malloc
 	buffer
+	molch-exception
 )
 target_link_libraries(molch ${libs} protocol-buffers)
