@@ -56,7 +56,7 @@ status_type return_status_add_error_message(
 
 	// allocate the memory
 	try {
-		error = std::unique_ptr<error_message>(new error_message);
+		error = std::make_unique<error_message>();
 		copied_message = std::unique_ptr<char>(new char[message_length]);
 	} catch (std::bad_alloc exception) {
 		return ALLOCATION_FAILED;
