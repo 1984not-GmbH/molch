@@ -22,66 +22,65 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
+#include <exception>
+#include <iostream>
 
 #include "../lib/spiced-random.h"
+#include "../lib/molch-exception.h"
 #include "utils.h"
 
 int main(void) noexcept {
-	if (sodium_init() == -1) {
-		return -1;
+	try {
+		if (sodium_init() == -1) {
+			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+		}
+
+		//some random user input (idiot bashing his head on the keyboard)
+		Buffer spice("aäipoewur+ü 093+2ß3+2ü+ ß09234rt #2ß 0iw4eräp9ui23+ 03943");
+		printf("\"Random\" input from the user (%zu Bytes):\n", spice.content_length);
+		printf("String: %.*s\n", (int)spice.content_length, spice.content);
+		printf("Hex:\n");
+		print_hex(spice);
+		putchar('\n');
+
+		//output buffers
+		Buffer output1(42, 0);
+		Buffer output2(42, 0);
+		exception_on_invalid_buffer(output1);
+		exception_on_invalid_buffer(output2);
+
+		//fill buffer with spiced random data
+		spiced_random(output1, spice, output1.getBufferLength());
+
+		printf("Spiced random data 1 (%zu Bytes):\n", output1.content_length);
+		print_hex(output1);
+		putchar('\n');
+
+
+		//fill buffer with spiced random data
+		spiced_random(output2, spice, output2.getBufferLength());
+
+		printf("Spiced random data 2 (%zu Bytes):\n", output2.content_length);
+		print_hex(output2);
+		putchar('\n');
+
+		//compare the two (mustn't be identical!)
+		if (output1 == output2) {
+			throw MolchException(INCORRECT_DATA, "Random numbers aren't random.");
+		}
+
+		//don't crash with output length 0
+		try {
+			spiced_random(output1, spice, 0);
+		} catch (const MolchException& exception) {
+			//on newer libsodium versions, output lengths of zero aren't supported
+		}
+	} catch (const MolchException& exception) {
+		std::cout << exception.print() << std::endl;
+		return EXIT_FAILURE;
+	} catch (const std::exception& exception) {
+		return EXIT_FAILURE;
 	}
 
-	return_status status = return_status_init();
-
-	//some random user input (idiot bashing his head on the keyboard)
-	Buffer spice("aäipoewur+ü 093+2ß3+2ü+ ß09234rt #2ß 0iw4eräp9ui23+ 03943");
-	printf("\"Random\" input from the user (%zu Bytes):\n", spice.content_length);
-	printf("String: %.*s\n", (int)spice.content_length, spice.content);
-	printf("Hex:\n");
-	print_hex(spice);
-	putchar('\n');
-
-	//output buffers
-	Buffer output1(42, 0);
-	Buffer output2(42, 0);
-	throw_on_invalid_buffer(output1);
-	throw_on_invalid_buffer(output2);
-
-	//fill buffer with spiced random data
-	status = spiced_random(output1, spice, output1.getBufferLength());
-	THROW_on_error(GENERIC_ERROR, "Failed to generate spiced random data.");
-
-	printf("Spiced random data 1 (%zu Bytes):\n", output1.content_length);
-	print_hex(output1);
-	putchar('\n');
-
-
-	//fill buffer with spiced random data
-	status = spiced_random(output2, spice, output2.getBufferLength());
-	THROW_on_error(GENERIC_ERROR, "Failed to generate spiced random data.");
-
-	printf("Spiced random data 2 (%zu Bytes):\n", output2.content_length);
-	print_hex(output2);
-	putchar('\n');
-
-	//compare the two (mustn't be identical!)
-	if (output1 == output2) {
-		THROW(INCORRECT_DATA, "Random numbers aren't random.");
-	}
-
-	//don't crash with output length 0
-	status = spiced_random(output1, spice, 0);
-	on_error {
-		//on newer libsodium versions, output lengths of zero aren't supported
-		return_status_destroy_errors(&status);
-		status.status = SUCCESS;
-	}
-
-cleanup:
-	on_error {
-		print_errors(status);
-	}
-	return_status_destroy_errors(&status);
-
-	return status.status;
+	return EXIT_SUCCESS;
 }

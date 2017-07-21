@@ -66,4 +66,10 @@ public:
 		throw std::bad_alloc();\
 	}
 
+//throw std::bad_alloc if something is nullptr
+#define exception_on_failed_alloc(object) \
+	if ((object) == nullptr) {\
+		throw std::bad_alloc();\
+	}
+
 #endif /* LIB_MOLCH_EXCEPTION_H */

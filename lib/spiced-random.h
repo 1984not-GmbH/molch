@@ -34,9 +34,9 @@
  * WARNING: Don't feed this with random numbers from the OSs random
  * source because it might annihilate the randomness.
  */
-return_status spiced_random(
+void spiced_random(
 		Buffer& random_output,
 		const Buffer& low_entropy_spice,
-		const size_t output_length) noexcept __attribute__((warn_unused_result));
+		const size_t output_length);
 
 #endif

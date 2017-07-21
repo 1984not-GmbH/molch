@@ -20,6 +20,9 @@
  */
 
 #include <sodium.h>
+#include <exception>
+
+#include "molch-exception.h"
 #include "master-keys.h"
 #include "spiced-random.h"
 
@@ -62,8 +65,14 @@ return_status MasterKeys::create(
 				sodium_free);
 		THROW_on_failed_alloc(crypto_seeds);
 
-		status = spiced_random(*crypto_seeds, *seed, crypto_seeds->getBufferLength());
-		THROW_on_error(GENERIC_ERROR, "Failed to create spiced random data.");
+		try {
+			spiced_random(*crypto_seeds, *seed, crypto_seeds->getBufferLength());
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 
 		//generate the signing keypair
 		int status_int = 0;
