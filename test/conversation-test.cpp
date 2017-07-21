@@ -294,17 +294,17 @@ cleanup:
 		conversation_destroy(imported_charlies_conversation);
 	}
 
-	buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffer);
-	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_buffer);
+	buffer_destroy_and_null_if_valid(protobuf_export_buffer);
+	buffer_destroy_and_null_if_valid(protobuf_second_export_buffer);
 
-	buffer_destroy_from_heap_and_null_if_valid(charlie_private_identity);
-	buffer_destroy_from_heap_and_null_if_valid(charlie_public_identity);
-	buffer_destroy_from_heap_and_null_if_valid(charlie_private_ephemeral);
-	buffer_destroy_from_heap_and_null_if_valid(charlie_public_ephemeral);
-	buffer_destroy_from_heap_and_null_if_valid(dora_private_identity);
-	buffer_destroy_from_heap_and_null_if_valid(dora_public_identity);
-	buffer_destroy_from_heap_and_null_if_valid(dora_private_ephemeral);
-	buffer_destroy_from_heap_and_null_if_valid(dora_public_ephemeral);
+	buffer_destroy_and_null_if_valid(charlie_private_identity);
+	buffer_destroy_and_null_if_valid(charlie_public_identity);
+	buffer_destroy_and_null_if_valid(charlie_private_ephemeral);
+	buffer_destroy_and_null_if_valid(charlie_public_ephemeral);
+	buffer_destroy_and_null_if_valid(dora_private_identity);
+	buffer_destroy_and_null_if_valid(dora_public_identity);
+	buffer_destroy_and_null_if_valid(dora_private_ephemeral);
+	buffer_destroy_and_null_if_valid(dora_public_ephemeral);
 
 	on_error {
 		print_errors(status);

@@ -877,8 +877,8 @@ int main(void) noexcept {
 
 cleanup:
 	//export buffers
-	buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffer);
-	buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_buffer);
+	buffer_destroy_and_null_if_valid(protobuf_export_buffer);
+	buffer_destroy_and_null_if_valid(protobuf_second_export_buffer);
 
 	on_error {
 		print_errors(status);

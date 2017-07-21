@@ -346,7 +346,7 @@ cleanup:
 	; // C programming language, I really really love you (not)
 	char *output_string = nullptr;
 	if (status.status != SUCCESS) {
-		buffer_destroy_from_heap_and_null_if_valid(output);
+		buffer_destroy_and_null_if_valid(output);
 	} else {
 		output_string = (char*) output->content;
 		if (length != nullptr) {

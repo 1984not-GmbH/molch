@@ -107,7 +107,7 @@ int main(void) noexcept {
 	printf("Previous message numbers match.\n");
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(header);
+	buffer_destroy_and_null_if_valid(header);
 
 	on_error {
 		print_errors(status);

@@ -108,8 +108,8 @@ int main(int argc, char *args[]) noexcept {
 cleanup:
 	free_and_null_if_valid(backup);
 	free_and_null_if_valid(prekey_list);
-	buffer_destroy_from_heap_and_null_if_valid(backup_file);
-	buffer_destroy_from_heap_and_null_if_valid(backup_key_file);
+	buffer_destroy_and_null_if_valid(backup_file);
+	buffer_destroy_and_null_if_valid(backup_key_file);
 
 	free_and_null_if_valid(backup_key);
 

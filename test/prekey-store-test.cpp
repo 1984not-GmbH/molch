@@ -442,7 +442,7 @@ cleanup:
 
 	if (protobuf_export_prekeys_buffers != nullptr) {
 		for (size_t i = 0; i < protobuf_export_prekeys_size; i++) {
-			buffer_destroy_from_heap_and_null_if_valid(protobuf_export_prekeys_buffers[i]);
+			buffer_destroy_and_null_if_valid(protobuf_export_prekeys_buffers[i]);
 		}
 
 		zeroed_free_and_null_if_valid(protobuf_export_prekeys_buffers);
@@ -450,7 +450,7 @@ cleanup:
 
 	if (protobuf_export_deprecated_prekeys_buffers != nullptr) {
 		for (size_t i = 0; i < protobuf_export_deprecated_prekeys_size; i++) {
-			buffer_destroy_from_heap_and_null_if_valid(protobuf_export_deprecated_prekeys_buffers[i]);
+			buffer_destroy_and_null_if_valid(protobuf_export_deprecated_prekeys_buffers[i]);
 		}
 
 		zeroed_free_and_null_if_valid(protobuf_export_deprecated_prekeys_buffers);
@@ -480,7 +480,7 @@ cleanup:
 
 	if (protobuf_second_export_prekeys_buffers != nullptr) {
 		for (size_t i = 0; i < protobuf_second_export_prekeys_size; i++) {
-			buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_prekeys_buffers[i]);
+			buffer_destroy_and_null_if_valid(protobuf_second_export_prekeys_buffers[i]);
 		}
 
 		zeroed_free_and_null_if_valid(protobuf_second_export_prekeys_buffers);
@@ -488,7 +488,7 @@ cleanup:
 
 	if (protobuf_second_export_deprecated_prekeys_buffers != nullptr) {
 		for (size_t i = 0; i < protobuf_second_export_deprecated_prekeys_size; i++) {
-			buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_deprecated_prekeys_buffers[i]);
+			buffer_destroy_and_null_if_valid(protobuf_second_export_deprecated_prekeys_buffers[i]);
 		}
 
 		zeroed_free_and_null_if_valid(protobuf_second_export_deprecated_prekeys_buffers);

@@ -196,7 +196,7 @@ int main(void) noexcept {
 	if (list->content_length != 0) {
 		THROW(INCORRECT_DATA, "List of users is not empty.");
 	}
-	buffer_destroy_from_heap_and_null_if_valid(list);
+	buffer_destroy_and_null_if_valid(list);
 
 	//create alice
 	status = user_store_create_user(
@@ -222,7 +222,7 @@ int main(void) noexcept {
 	if (list->compare(&alice_public_signing_key) != 0) {
 		THROW(INCORRECT_DATA, "Failed to list users.");
 	}
-	buffer_destroy_from_heap_and_null_if_valid(list);
+	buffer_destroy_and_null_if_valid(list);
 	printf("Successfully listed users.\n");
 
 	//create bob
@@ -251,7 +251,7 @@ int main(void) noexcept {
 			|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		THROW(INCORRECT_DATA, "Failed to list users.");
 	}
-	buffer_destroy_from_heap_and_null_if_valid(list);
+	buffer_destroy_and_null_if_valid(list);
 	printf("Successfully listed users.\n");
 
 	//create charlie
@@ -280,7 +280,7 @@ int main(void) noexcept {
 			|| (list->comparePartial(2 * PUBLIC_MASTER_KEY_SIZE, &charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		THROW(INCORRECT_DATA, "Failed to list users.");
 	}
-	buffer_destroy_from_heap_and_null_if_valid(list);
+	buffer_destroy_and_null_if_valid(list);
 	printf("Successfully listed users.\n");
 
 	//find node
@@ -313,7 +313,7 @@ int main(void) noexcept {
 				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 			THROW(INCORRECT_DATA, "Removing user failed.");
 		}
-		buffer_destroy_from_heap_and_null_if_valid(list);
+		buffer_destroy_and_null_if_valid(list);
 		printf("Successfully removed user.\n");
 
 		//recreate bob
@@ -388,7 +388,7 @@ int main(void) noexcept {
 			|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 		THROW(REMOVE_ERROR, "Removing user failed.");
 	}
-	buffer_destroy_from_heap_and_null_if_valid(list);
+	buffer_destroy_and_null_if_valid(list);
 	printf("Successfully removed user.\n");
 
 	//clear the user store
@@ -413,17 +413,17 @@ cleanup:
 	if (store != nullptr) {
 		user_store_destroy(store);
 	}
-	buffer_destroy_from_heap_and_null_if_valid(list);
+	buffer_destroy_and_null_if_valid(list);
 
 	if (protobuf_export_buffers != nullptr) {
 		for (size_t i =0; i < protobuf_export_length; i++) {
-			buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffers[i]);
+			buffer_destroy_and_null_if_valid(protobuf_export_buffers[i]);
 		}
 		free_and_null_if_valid(protobuf_export_buffers);
 	}
 	if (protobuf_second_export_buffers != nullptr) {
 		for (size_t i =0; i < protobuf_second_export_length; i++) {
-			buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_buffers[i]);
+			buffer_destroy_and_null_if_valid(protobuf_second_export_buffers[i]);
 		}
 		free_and_null_if_valid(protobuf_second_export_buffers);
 	}

@@ -381,10 +381,10 @@ return_status conversation_send(
 cleanup:
 	on_error {
 		if (packet != nullptr) {
-			buffer_destroy_from_heap_and_null_if_valid(*packet);
+			buffer_destroy_and_null_if_valid(*packet);
 		}
 	}
-	buffer_destroy_from_heap_and_null_if_valid(header);
+	buffer_destroy_and_null_if_valid(header);
 
 	return status;
 }
@@ -441,11 +441,11 @@ static int try_skipped_header_and_message_keys(
 	status.status = NOT_FOUND;
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(header);
+	buffer_destroy_and_null_if_valid(header);
 
 	on_error {
 		if (message != nullptr) {
-			buffer_destroy_from_heap_and_null_if_valid(*message);
+			buffer_destroy_and_null_if_valid(*message);
 		}
 	}
 
@@ -579,11 +579,11 @@ cleanup:
 			return_status_destroy_errors(&authenticity_status);
 		}
 		if (message != nullptr) {
-			buffer_destroy_from_heap_and_null_if_valid(*message);
+			buffer_destroy_and_null_if_valid(*message);
 		}
 	}
 
-	buffer_destroy_from_heap_and_null_if_valid(header);
+	buffer_destroy_and_null_if_valid(header);
 
 	return status;
 }

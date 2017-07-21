@@ -624,10 +624,10 @@ cleanup:
 	free_and_null_if_valid(backup);
 	free_and_null_if_valid(imported_backup);
 
-	buffer_destroy_with_custom_deallocator_and_null_if_valid(decrypted_backup, zeroed_free);
-	buffer_destroy_with_custom_deallocator_and_null_if_valid(decrypted_imported_backup, zeroed_free);
-	buffer_destroy_with_custom_deallocator_and_null_if_valid(decrypted_conversation_backup, zeroed_free);
-	buffer_destroy_with_custom_deallocator_and_null_if_valid(decrypted_imported_conversation_backup, zeroed_free);
+	buffer_destroy_and_null_if_valid(decrypted_backup);
+	buffer_destroy_and_null_if_valid(decrypted_imported_backup);
+	buffer_destroy_and_null_if_valid(decrypted_conversation_backup);
+	buffer_destroy_and_null_if_valid(decrypted_imported_conversation_backup);
 
 	molch_destroy_all_users();
 

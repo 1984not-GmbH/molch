@@ -364,19 +364,19 @@ int main(void) noexcept {
 fail:
 	status = EXIT_FAILURE;
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(buffer1);
+	buffer_destroy_and_null_if_valid(buffer1);
 	if (buffer2 != nullptr) {
 		free_and_null_if_valid(buffer2->content);
 		free_and_null_if_valid(buffer2);
 	}
-	buffer_destroy_from_heap_and_null_if_valid(buffer3);
-	buffer_destroy_from_heap_and_null_if_valid(empty3);
-	buffer_destroy_from_heap_and_null_if_valid(random);
-	buffer_destroy_from_heap_and_null_if_valid(random2);
-	buffer_destroy_from_heap_and_null_if_valid(to_xor);
-	buffer_destroy_from_heap_and_null_if_valid(character_buffer);
-	buffer_destroy_with_custom_deallocator_and_null_if_valid(custom_allocated_empty_buffer, free);
-	buffer_destroy_with_custom_deallocator_and_null_if_valid(custom_allocated, sodium_free);
+	buffer_destroy_and_null_if_valid(buffer3);
+	buffer_destroy_and_null_if_valid(empty3);
+	buffer_destroy_and_null_if_valid(random);
+	buffer_destroy_and_null_if_valid(random2);
+	buffer_destroy_and_null_if_valid(to_xor);
+	buffer_destroy_and_null_if_valid(character_buffer);
+	buffer_destroy_and_null_if_valid(custom_allocated_empty_buffer);
+	buffer_destroy_and_null_if_valid(custom_allocated);
 
 	return status;
 }

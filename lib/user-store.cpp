@@ -259,7 +259,7 @@ return_status user_store_list(Buffer ** const list, user_store * const store) no
 cleanup:
 	on_error {
 		if (list != nullptr) {
-				buffer_destroy_from_heap_and_null_if_valid(*list);
+				buffer_destroy_and_null_if_valid(*list);
 		}
 	}
 

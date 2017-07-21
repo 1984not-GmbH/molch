@@ -333,8 +333,8 @@ cleanup:
 		message_key.content_length = 0;
 	}
 
-	buffer_destroy_from_heap_and_null_if_valid(root_key_backup);
-	buffer_destroy_from_heap_and_null_if_valid(chain_key_backup);
+	buffer_destroy_and_null_if_valid(root_key_backup);
+	buffer_destroy_and_null_if_valid(chain_key_backup);
 
 	return status;
 }
@@ -513,9 +513,9 @@ cleanup:
 		header_and_message_keystore_clear(&staging_area);
 	}
 
-	buffer_destroy_from_heap_and_null_if_valid(current_chain_key);
-	buffer_destroy_from_heap_and_null_if_valid(next_chain_key);
-	buffer_destroy_from_heap_and_null_if_valid(current_message_key);
+	buffer_destroy_and_null_if_valid(current_chain_key);
+	buffer_destroy_and_null_if_valid(next_chain_key);
+	buffer_destroy_and_null_if_valid(current_message_key);
 
 	return status;
 }
@@ -673,7 +673,7 @@ cleanup:
 		message_key.content_length = 0;
 	}
 
-	buffer_destroy_from_heap_and_null_if_valid(purported_chain_key_backup);
+	buffer_destroy_and_null_if_valid(purported_chain_key_backup);
 
 	return status;
 }

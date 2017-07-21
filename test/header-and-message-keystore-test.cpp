@@ -284,7 +284,7 @@ cleanup:
 	if (protobuf_export_buffers != nullptr) {
 		for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
 			if (protobuf_export_buffers[i] != nullptr) {
-				buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffers[i]);
+				buffer_destroy_and_null_if_valid(protobuf_export_buffers[i]);
 			}
 		}
 		zeroed_free_and_null_if_valid(protobuf_export_buffers);
@@ -303,7 +303,7 @@ cleanup:
 	if (protobuf_second_export_buffers != nullptr) {
 		for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
 			if (protobuf_second_export_buffers[i] != nullptr) {
-				buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_buffers[i]);
+				buffer_destroy_and_null_if_valid(protobuf_second_export_buffers[i]);
 			}
 		}
 		zeroed_free_and_null_if_valid(protobuf_second_export_buffers);

@@ -156,7 +156,7 @@ int main(void) noexcept {
 		}
 	}
 
-	buffer_destroy_from_heap_and_null_if_valid(packet);
+	buffer_destroy_and_null_if_valid(packet);
 
 	packet_type = PREKEY_MESSAGE;
 	status = create_and_print_message(
@@ -190,8 +190,8 @@ int main(void) noexcept {
 	printf("Decrypted header matches.\n");
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(packet);
-	buffer_destroy_from_heap_and_null_if_valid(decrypted_header);
+	buffer_destroy_and_null_if_valid(packet);
+	buffer_destroy_and_null_if_valid(decrypted_header);
 
 	on_error {
 		print_errors(status);

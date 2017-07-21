@@ -156,9 +156,9 @@ int main(void) noexcept {
 		}
 	}
 
-	buffer_destroy_from_heap_and_null_if_valid(decrypted_header);
-	buffer_destroy_from_heap_and_null_if_valid(decrypted_message);
-	buffer_destroy_from_heap_and_null_if_valid(packet);
+	buffer_destroy_and_null_if_valid(decrypted_header);
+	buffer_destroy_and_null_if_valid(decrypted_message);
+	buffer_destroy_and_null_if_valid(packet);
 
 	packet_type = PREKEY_MESSAGE;
 
@@ -234,9 +234,9 @@ int main(void) noexcept {
 	printf("Extracted public prekey matches!\n");
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(packet);
-	buffer_destroy_from_heap_and_null_if_valid(decrypted_header);
-	buffer_destroy_from_heap_and_null_if_valid(decrypted_message);
+	buffer_destroy_and_null_if_valid(packet);
+	buffer_destroy_and_null_if_valid(decrypted_header);
+	buffer_destroy_and_null_if_valid(decrypted_message);
 
 	on_error {
 		print_errors(status);

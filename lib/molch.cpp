@@ -126,8 +126,8 @@ cleanup:
 		}
 	}
 
-	buffer_destroy_from_heap_and_null_if_valid(public_identity_key);
-	buffer_destroy_from_heap_and_null_if_valid(unsigned_prekey_list);
+	buffer_destroy_and_null_if_valid(public_identity_key);
+	buffer_destroy_and_null_if_valid(unsigned_prekey_list);
 	free_and_null_if_valid(prekey_list_buffer);
 
 	return status;
@@ -434,7 +434,7 @@ static return_status verify_prekey_list(
 	}
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(verified_prekey_list);
+	buffer_destroy_and_null_if_valid(verified_prekey_list);
 
 	return status;
 }
@@ -566,9 +566,9 @@ return_status molch_start_send_conversation(
 	}
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(sender_public_identity);
-	buffer_destroy_from_heap_and_null_if_valid(receiver_public_identity);
-	buffer_destroy_from_heap_and_null_if_valid(receiver_public_ephemeral);
+	buffer_destroy_and_null_if_valid(sender_public_identity);
+	buffer_destroy_and_null_if_valid(receiver_public_identity);
+	buffer_destroy_and_null_if_valid(receiver_public_ephemeral);
 
 	if (conversation != nullptr) {
 		conversation_destroy(conversation);
@@ -1056,7 +1056,7 @@ cleanup:
 			*number = 0;
 		}
 
-		buffer_destroy_from_heap_and_null_if_valid(conversation_list_buffer);
+		buffer_destroy_and_null_if_valid(conversation_list_buffer);
 	}
 
 	return status;
@@ -1213,9 +1213,9 @@ cleanup:
 		conversation__free_unpacked(conversation_struct, &protobuf_c_allocators);
 		conversation_struct = nullptr;
 	}
-	buffer_destroy_with_custom_deallocator_and_null_if_valid(conversation_buffer, zeroed_free);
-	buffer_destroy_from_heap_and_null_if_valid(backup_nonce);
-	buffer_destroy_from_heap_and_null_if_valid(backup_buffer);
+	buffer_destroy_and_null_if_valid(conversation_buffer);
+	buffer_destroy_and_null_if_valid(backup_nonce);
+	buffer_destroy_and_null_if_valid(backup_buffer);
 
 	return status;
 }
@@ -1332,7 +1332,7 @@ cleanup:
 		conversation__free_unpacked(conversation_struct, &protobuf_c_allocators);
 		conversation_struct = nullptr;
 	}
-	buffer_destroy_with_custom_deallocator_and_null_if_valid(decrypted_backup, zeroed_free);
+	buffer_destroy_and_null_if_valid(decrypted_backup);
 	if (conversation != nullptr) {
 		conversation_destroy(conversation);
 		conversation = nullptr;
@@ -1454,9 +1454,9 @@ cleanup:
 		backup__free_unpacked(backup_struct, &protobuf_c_allocators);
 		backup_struct = nullptr;
 	}
-	buffer_destroy_with_custom_deallocator_and_null_if_valid(users_buffer, zeroed_free);
-	buffer_destroy_from_heap_and_null_if_valid(backup_nonce);
-	buffer_destroy_from_heap_and_null_if_valid(backup_buffer);
+	buffer_destroy_and_null_if_valid(users_buffer);
+	buffer_destroy_and_null_if_valid(backup_nonce);
+	buffer_destroy_and_null_if_valid(backup_buffer);
 
 	return status;
 }
@@ -1568,7 +1568,7 @@ cleanup:
 		backup__free_unpacked(backup_struct, &protobuf_c_allocators);
 		backup_struct = nullptr;
 	}
-	buffer_destroy_with_custom_deallocator_and_null_if_valid(decrypted_backup, zeroed_free);
+	buffer_destroy_and_null_if_valid(decrypted_backup);
 	if (store != nullptr) {
 		user_store_destroy(store);
 		store = nullptr;

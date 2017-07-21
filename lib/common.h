@@ -48,12 +48,7 @@ extern "C" {
 		zeroed_free(pointer);\
 		pointer = nullptr;\
 	}
-#define buffer_destroy_from_heap_and_null_if_valid(buffer)\
-	if_valid(buffer) {\
-		(buffer)->destroy();\
-		buffer = nullptr;\
-	}
-#define buffer_destroy_with_custom_deallocator_and_null_if_valid(buffer, deallocator)\
+#define buffer_destroy_and_null_if_valid(buffer)\
 	if_valid(buffer) {\
 		(buffer)->destroy();\
 		buffer = nullptr;\

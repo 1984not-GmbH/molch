@@ -134,7 +134,7 @@ return_status MasterKeys::create(
 	}
 
 cleanup:
-	buffer_destroy_with_custom_deallocator_and_null_if_valid(crypto_seeds, sodium_free);
+	buffer_destroy_and_null_if_valid(crypto_seeds);
 
 	on_error {
 		sodium_free_and_null_if_valid(keys);

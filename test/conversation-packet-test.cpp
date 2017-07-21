@@ -237,7 +237,7 @@ int main(void) noexcept {
 	THROW_on_error(GENERIC_ERROR, "Failed to get Alice' prekey list.");
 
 	//destroy the old packet
-	buffer_destroy_from_heap_and_null_if_valid(packet);
+	buffer_destroy_and_null_if_valid(packet);
 	status = conversation_start_send_conversation(
 			&bob_send_conversation,
 			&send_message,
@@ -254,7 +254,7 @@ int main(void) noexcept {
 	putchar('\n');
 
 	//let alice receive the packet
-	buffer_destroy_from_heap_and_null_if_valid(received_message);
+	buffer_destroy_and_null_if_valid(received_message);
 	received_message = nullptr;
 	status = conversation_start_receive_conversation(
 			&alice_receive_conversation,
@@ -357,16 +357,16 @@ cleanup:
 	if (bob_prekeys != nullptr) {
 		bob_prekeys->destroy();
 	}
-	buffer_destroy_from_heap_and_null_if_valid(packet);
-	buffer_destroy_from_heap_and_null_if_valid(received_message);
-	buffer_destroy_from_heap_and_null_if_valid(alice_send_packet2);
-	buffer_destroy_from_heap_and_null_if_valid(bob_receive_message2);
-	buffer_destroy_from_heap_and_null_if_valid(bob_send_packet2);
-	buffer_destroy_from_heap_and_null_if_valid(alice_receive_message2);
-	buffer_destroy_from_heap_and_null_if_valid(bob_response_packet);
-	buffer_destroy_from_heap_and_null_if_valid(alice_received_response);
-	buffer_destroy_from_heap_and_null_if_valid(alice_response_packet);
-	buffer_destroy_from_heap_and_null_if_valid(bob_received_response);
+	buffer_destroy_and_null_if_valid(packet);
+	buffer_destroy_and_null_if_valid(received_message);
+	buffer_destroy_and_null_if_valid(alice_send_packet2);
+	buffer_destroy_and_null_if_valid(bob_receive_message2);
+	buffer_destroy_and_null_if_valid(bob_send_packet2);
+	buffer_destroy_and_null_if_valid(alice_receive_message2);
+	buffer_destroy_and_null_if_valid(bob_response_packet);
+	buffer_destroy_and_null_if_valid(alice_received_response);
+	buffer_destroy_and_null_if_valid(alice_response_packet);
+	buffer_destroy_and_null_if_valid(bob_received_response);
 	if (alice_send_conversation != nullptr) {
 		conversation_destroy(alice_send_conversation);
 	}

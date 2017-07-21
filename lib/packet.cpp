@@ -289,14 +289,14 @@ return_status packet_encrypt(
 
 cleanup:
 	on_error {
-		buffer_destroy_from_heap_and_null_if_valid(packet);
+		buffer_destroy_and_null_if_valid(packet);
 	}
 
-	buffer_destroy_from_heap_and_null_if_valid(header_nonce);
-	buffer_destroy_from_heap_and_null_if_valid(message_nonce);
-	buffer_destroy_from_heap_and_null_if_valid(encrypted_axolotl_header);
-	buffer_destroy_from_heap_and_null_if_valid(padded_message);
-	buffer_destroy_from_heap_and_null_if_valid(encrypted_message);
+	buffer_destroy_and_null_if_valid(header_nonce);
+	buffer_destroy_and_null_if_valid(message_nonce);
+	buffer_destroy_and_null_if_valid(encrypted_axolotl_header);
+	buffer_destroy_and_null_if_valid(padded_message);
+	buffer_destroy_and_null_if_valid(encrypted_message);
 
 	return status;
 }
@@ -351,8 +351,8 @@ cleanup:
 	on_error {
 		packet_type = INVALID;
 
-		buffer_destroy_from_heap_and_null_if_valid(axolotl_header);
-		buffer_destroy_from_heap_and_null_if_valid(message);
+		buffer_destroy_and_null_if_valid(axolotl_header);
+		buffer_destroy_and_null_if_valid(message);
 
 		if (public_identity_key != nullptr) {
 			public_identity_key->clear();
@@ -482,7 +482,7 @@ cleanup:
 	}
 
 	on_error {
-		buffer_destroy_from_heap_and_null_if_valid(axolotl_header);
+		buffer_destroy_and_null_if_valid(axolotl_header);
 	}
 
 	return status;
@@ -557,10 +557,10 @@ cleanup:
 		packet__free_unpacked(packet_struct, &protobuf_c_allocators);
 	}
 
-	buffer_destroy_from_heap_and_null_if_valid(padded_message);
+	buffer_destroy_and_null_if_valid(padded_message);
 
 	on_error {
-		buffer_destroy_from_heap_and_null_if_valid(message);
+		buffer_destroy_and_null_if_valid(message);
 	}
 
 	return status;

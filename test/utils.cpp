@@ -102,7 +102,7 @@ return_status read_file(Buffer*& data, const std::string& filename) noexcept {
 
 cleanup:
 	on_error {
-		buffer_destroy_from_heap_and_null_if_valid(data);
+		buffer_destroy_and_null_if_valid(data);
 	}
 
 	if (file != nullptr) {

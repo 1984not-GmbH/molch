@@ -312,11 +312,11 @@ int main(void) noexcept {
 			Buffer current_id(conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
 			found_node = store->findNode(current_id);
 			if (found_node == nullptr) {
-				buffer_destroy_from_heap_and_null_if_valid(conversation_list);
+				buffer_destroy_and_null_if_valid(conversation_list);
 				THROW(INCORRECT_DATA, "Exported list of conversations was incorrect.");
 			}
 		}
-		buffer_destroy_from_heap_and_null_if_valid(conversation_list);
+		buffer_destroy_and_null_if_valid(conversation_list);
 	}
 
 	//test protobuf export
@@ -382,13 +382,13 @@ int main(void) noexcept {
 cleanup:
 	if (protobuf_export_buffers != nullptr) {
 		for (size_t i =0; i < protobuf_export_buffers_length; i++) {
-			buffer_destroy_from_heap_and_null_if_valid(protobuf_export_buffers[i]);
+			buffer_destroy_and_null_if_valid(protobuf_export_buffers[i]);
 		}
 		free_and_null_if_valid(protobuf_export_buffers);
 	}
 	if (protobuf_second_export_buffers != nullptr) {
 		for (size_t i =0; i < protobuf_second_export_buffers_length; i++) {
-			buffer_destroy_from_heap_and_null_if_valid(protobuf_second_export_buffers[i]);
+			buffer_destroy_and_null_if_valid(protobuf_second_export_buffers[i]);
 		}
 		free_and_null_if_valid(protobuf_second_export_buffers);
 	}

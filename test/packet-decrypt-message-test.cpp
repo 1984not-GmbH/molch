@@ -102,7 +102,7 @@ int main(void) noexcept {
 	packet->content[packet->content_length - crypto_secretbox_MACBYTES - 1] ^= 0xf0;
 	printf("Manipulating message.\n");
 
-	buffer_destroy_from_heap_and_null_if_valid(decrypted_message);
+	buffer_destroy_and_null_if_valid(decrypted_message);
 
 	//try to decrypt
 	status = packet_decrypt_message(
@@ -138,7 +138,7 @@ int main(void) noexcept {
 		}
 	}
 
-	buffer_destroy_from_heap_and_null_if_valid(packet);
+	buffer_destroy_and_null_if_valid(packet);
 
 	packet_type = PREKEY_MESSAGE;
 	status = create_and_print_message(
@@ -173,8 +173,8 @@ int main(void) noexcept {
 	printf("Decrypted message is the same.\n");
 
 cleanup:
-	buffer_destroy_from_heap_and_null_if_valid(packet);
-	buffer_destroy_from_heap_and_null_if_valid(decrypted_message);
+	buffer_destroy_and_null_if_valid(packet);
+	buffer_destroy_and_null_if_valid(decrypted_message);
 
 	on_error {
 		print_errors(status);
