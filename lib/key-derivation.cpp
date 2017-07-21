@@ -68,8 +68,14 @@ return_status derive_key(
 	{
 		//fill the salt with a big endian representation of the subkey counter
 		Buffer big_endian_subkey_counter(salt.content + salt.content_length - sizeof(uint32_t), sizeof(uint32_t));
-		status = to_big_endian(subkey_counter, big_endian_subkey_counter);
-		THROW_on_error(CONVERSION_ERROR, "Failed to convert subkey counter to big endian.");
+		try {
+			to_big_endian(subkey_counter, big_endian_subkey_counter);
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 
 		{
 			int status_int = crypto_generichash_blake2b_salt_personal(

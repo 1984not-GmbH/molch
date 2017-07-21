@@ -16,7 +16,6 @@ add_library(molch
 	conversation-store
 	prekey-store
 	master-keys
-	endianness
 	return-status
 	alignment
 	zeroed_malloc

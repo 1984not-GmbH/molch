@@ -101,8 +101,14 @@ static return_status create_prekey_list(
 	{
 		int64_t expiration_date = time(nullptr) + 3600 * 24 * 31 * 3; //the prekey list will expire in 3 months
 		Buffer big_endian_expiration_date(unsigned_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
-		status = to_big_endian(expiration_date, big_endian_expiration_date);
-		THROW_on_error(CONVERSION_ERROR, "Failed to convert expiration date to big endian.");
+		try {
+			to_big_endian(expiration_date, big_endian_expiration_date);
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 		unsigned_prekey_list->content_length = unsigned_prekey_list->getBufferLength();
 	}
 
@@ -401,8 +407,14 @@ static return_status verify_prekey_list(
 	{
 		int64_t expiration_date;
 		Buffer big_endian_expiration_date(verified_prekey_list->content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t));
-		status = from_big_endian(expiration_date, big_endian_expiration_date);
-		THROW_on_error(CONVERSION_ERROR, "Failed to convert expiration date to big endian.");
+		try {
+			from_big_endian(expiration_date, big_endian_expiration_date);
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 
 		//make sure the prekey list isn't too old
 		{
