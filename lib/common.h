@@ -50,12 +50,12 @@ extern "C" {
 	}
 #define buffer_destroy_from_heap_and_null_if_valid(buffer)\
 	if_valid(buffer) {\
-		(buffer)->destroy_from_heap();\
+		(buffer)->destroy();\
 		buffer = nullptr;\
 	}
 #define buffer_destroy_with_custom_deallocator_and_null_if_valid(buffer, deallocator)\
 	if_valid(buffer) {\
-		(buffer)->destroy_with_custom_deallocator(deallocator);\
+		(buffer)->destroy();\
 		buffer = nullptr;\
 	}
 

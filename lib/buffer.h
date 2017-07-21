@@ -31,6 +31,7 @@ private:
 	bool manage_memory; //should the destructor manage memory?
 	bool readonly; //if set, this buffer shouldn't be written to.
 	bool is_valid; //has an error happened on initialization?
+	void (*deallocator)(void*); //a deallocator if the buffer has been allocated with a custom allocator
 
 public:
 	size_t content_length;
@@ -41,6 +42,7 @@ public:
 	Buffer(const size_t buffer_length, const size_t content_length) noexcept;
 	Buffer(unsigned char * const content, const size_t buffer_length) noexcept;
 	Buffer(const unsigned char * const content, const size_t buffer_length) noexcept;
+	Buffer(const size_t buffer_length, const size_t content_length, void* (*allocator)(size_t), void (*deallocator)(void*)) noexcept;
 	~Buffer() noexcept;
 
 	/*
@@ -68,14 +70,9 @@ public:
 	void clear() noexcept;
 
 	/*
-	 * Free and clear a heap allocated buffer.
+	 * Free and clear an allocated buffer.
 	 */
-	void destroy_from_heap() noexcept;
-
-	/*
-	 * Destroy a buffer that was created using a custom allocator.
-	 */
-	void destroy_with_custom_deallocator(void (*deallocator)(void *pointer)) noexcept;
+	void destroy() noexcept;
 
 	/*
 	 * Xor another buffer with the same length onto this one.

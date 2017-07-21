@@ -24,7 +24,13 @@
 #include "buffer.h"
 
 Buffer::Buffer() noexcept {
-	//do nothing
+	this->buffer_length = 0;
+	this->manage_memory = false;
+	this->readonly = false;
+	this->is_valid = false;
+	this->deallocator = nullptr;
+	this->content_length = 0;
+	this->content = nullptr;
 }
 
 Buffer::Buffer(const std::string& string) noexcept {
@@ -33,6 +39,7 @@ Buffer::Buffer(const std::string& string) noexcept {
 	this->readonly = false;
 	this->manage_memory = true;
 	this->is_valid = true;
+	this->deallocator = nullptr;
 
 	try {
 		this->content = new unsigned char[string.length() + sizeof("")];
@@ -54,6 +61,7 @@ Buffer::Buffer(const size_t buffer_length, const size_t content_length) noexcept
 	this->readonly = false;
 	this->manage_memory = true;
 	this->is_valid = true;
+	this->deallocator = nullptr;
 
 	if (buffer_length == 0) {
 		this->content = nullptr;
@@ -70,6 +78,26 @@ Buffer::Buffer(const size_t buffer_length, const size_t content_length) noexcept
 	}
 }
 
+Buffer::Buffer(const size_t buffer_length, const size_t content_length, void* (*allocator)(size_t), void (*deallocator)(void*)) noexcept {
+	this->buffer_length = buffer_length;
+	this->content_length = content_length;
+	this->readonly = false;
+	this->manage_memory = true;
+	this->is_valid = true;
+	this->deallocator = deallocator;
+
+	if (buffer_length == 0) {
+		this->content = nullptr;
+	} else {
+		this->content = (unsigned char*)allocator(buffer_length);
+		if (this->content == nullptr) {
+			this->buffer_length = 0;
+			this->content_length = 0;
+			this->is_valid = false;
+		}
+	}
+}
+
 Buffer::Buffer(unsigned char * const content, const size_t buffer_length) noexcept {
 	this->init(content, buffer_length, buffer_length);
 }
@@ -82,6 +110,11 @@ Buffer::~Buffer() noexcept {
 	//only do something if this was created using a constructor
 	if (this->manage_memory) {
 		this->clear();
+		if ((this->deallocator != nullptr) && (this->content != nullptr)) {
+			deallocator(this->content);
+			return;
+		}
+
 		delete[] this->content;
 	}
 }
@@ -108,6 +141,7 @@ Buffer* Buffer::init(
 	this->buffer_length = buffer_length_;
 	this->manage_memory = false;
 	this->is_valid = true;
+	this->deallocator = nullptr;
 
 	this->content_length = (content_length_ > buffer_length_)
 		? buffer_length_
@@ -171,27 +205,18 @@ Buffer* Buffer::createWithCustomAllocator(
 		}
 	}
 
-	return buffer->init(content, buffer_length, content_length);
+	buffer->init(content, buffer_length, content_length);
+	buffer->deallocator = deallocator;
+
+	return buffer;
 }
 
-/*
- * Free and clear a heap allocated buffer.
- */
-void Buffer::destroy_from_heap() noexcept {
+void Buffer::destroy() noexcept {
 	this->clear();
-	free(this->content);
-	free(this);
-}
-
-/*
- * Destroy a buffer that was created using a custom allocator.
- */
-void Buffer::destroy_with_custom_deallocator(void (*deallocator)(void *pointer)) noexcept {
 	if (this->content != nullptr) {
-		sodium_memzero(this->content, this->content_length);
-		deallocator(this->content);
+		this->deallocator(this->content);
 	}
-	deallocator(this);
+	this->deallocator(this);
 }
 
 /*

@@ -70,11 +70,20 @@ int main(void) noexcept {
 
 	//test heap allocated buffers
 	heap_buffer = Buffer::create(10, 0);
-	heap_buffer->destroy_from_heap();
+	heap_buffer->destroy();
 
 	//zero length heap buffer
 	heap_buffer = Buffer::create(0, 0);
-	heap_buffer->destroy_from_heap();
+	heap_buffer->destroy();
+
+	//test buffer with custom allocator
+	{
+		Buffer custom(10, 2, &sodium_malloc, &sodium_free);
+		if (!custom.isValid()) {
+			fprintf(stderr, "Buffer with custom allocator is invalid.\n");
+			goto fail;
+		}
+	}
 
 	//create a new buffer
 	buffer1 = Buffer::create(14, 10);
@@ -356,7 +365,10 @@ fail:
 	status = EXIT_FAILURE;
 cleanup:
 	buffer_destroy_from_heap_and_null_if_valid(buffer1);
-	buffer_destroy_from_heap_and_null_if_valid(buffer2);
+	if (buffer2 != nullptr) {
+		free_and_null_if_valid(buffer2->content);
+		free_and_null_if_valid(buffer2);
+	}
 	buffer_destroy_from_heap_and_null_if_valid(buffer3);
 	buffer_destroy_from_heap_and_null_if_valid(empty3);
 	buffer_destroy_from_heap_and_null_if_valid(random);
