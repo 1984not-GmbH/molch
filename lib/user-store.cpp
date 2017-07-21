@@ -293,6 +293,16 @@ void user_store_remove(user_store *store, user_store_node *node) noexcept {
 	//clear the conversation store
 	node->conversations->clear();
 
+	//remove the master keys
+	if (node->master_keys != nullptr) {
+		sodium_free_and_null_if_valid(node->master_keys);
+	}
+
+	//remove the prekey store
+	if (node->prekeys != nullptr) {
+		sodium_free_and_null_if_valid(node->prekeys);
+	}
+
 	if (node->next != nullptr) { //node is not the tail
 		node->next->previous = node->previous;
 	} else { //node ist the tail
