@@ -195,6 +195,9 @@ const char *return_status_get_name(status_type status) noexcept {
 		case UNSUPPORTED_PROTOCOL_VERSION:
 			return "UNSUPPORTED_PROTOCOL_VERSION";
 
+		case EXCEPTION:
+			return "EXCEPTION";
+
 		default:
 			return "(nullptr)";
 	}

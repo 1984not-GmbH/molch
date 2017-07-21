@@ -20,11 +20,13 @@
  */
 #include <sodium.h>
 #include <cassert>
+#include <exception>
 
 #include "constants.h"
 #include "key-derivation.h"
 #include "diffie-hellman.h"
 #include "endianness.h"
+#include "molch-exception.h"
 
 /*
  * Derive a key of length between crypto_generichash_blake2b_BYTES_MIN (16 Bytes)
@@ -54,7 +56,7 @@ return_status derive_key(
 	//check if inputs are valid
 	if ((derived_size > crypto_generichash_blake2b_BYTES_MAX)
 			|| (derived_size < crypto_generichash_blake2b_BYTES_MIN)
-			|| (derived_key.getBufferLength() < derived_size)
+			|| !derived_key.fits(derived_size)
 			|| (input_key.content_length > crypto_generichash_blake2b_KEYBYTES_MAX)
 			|| (input_key.content_length < crypto_generichash_blake2b_KEYBYTES_MIN)) {
 		THROW(INVALID_INPUT, "Invalid input to derive_key.");
@@ -154,24 +156,30 @@ return_status derive_root_next_header_and_chain_keys(
 	throw_on_invalid_buffer(derivation_key);
 
 	//check input
-	if ((root_key.getBufferLength() < ROOT_KEY_SIZE)
-			|| (next_header_key.getBufferLength() < HEADER_KEY_SIZE)
-			|| (chain_key.getBufferLength() < CHAIN_KEY_SIZE)
-			|| (our_private_ephemeral.content_length != PRIVATE_KEY_SIZE)
-			|| (our_public_ephemeral.content_length != PUBLIC_KEY_SIZE)
-			|| (their_public_ephemeral.content_length != PUBLIC_KEY_SIZE)
-			|| (previous_root_key.content_length != ROOT_KEY_SIZE)) {
+	if (!root_key.fits(ROOT_KEY_SIZE)
+			|| !next_header_key.fits(HEADER_KEY_SIZE)
+			|| !chain_key.fits(CHAIN_KEY_SIZE)
+			|| !our_private_ephemeral.contains(PRIVATE_KEY_SIZE)
+			|| !our_public_ephemeral.contains(PUBLIC_KEY_SIZE)
+			|| !their_public_ephemeral.contains(PUBLIC_KEY_SIZE)
+			|| !previous_root_key.contains(ROOT_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to derive_root_next_header_and_chain_keys.");
 	}
 
 	//DH(DHRs, DHRr) or DH(DHRp, DHRs)
-	status = diffie_hellman(
+	try {
+		diffie_hellman(
 			diffie_hellman_secret,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral,
 			am_i_alice);
-	THROW_on_error(KEYDERIVATION_FAILED, "Failed to perform diffie hellman.");
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what())
+	}
 
 	//key to derive from
 	//HMAC-HASH(RK, DH(..., ...))
@@ -240,19 +248,19 @@ return_status derive_initial_root_chain_and_header_keys(
 	throw_on_invalid_buffer(master_key);
 
 	//check buffer sizes
-	if ((root_key.getBufferLength() < ROOT_KEY_SIZE)
-			|| (send_chain_key.getBufferLength() < CHAIN_KEY_SIZE)
-			|| (receive_chain_key.getBufferLength() < CHAIN_KEY_SIZE)
-			|| (send_header_key.getBufferLength() < HEADER_KEY_SIZE)
-			|| (receive_header_key.getBufferLength() < HEADER_KEY_SIZE)
-			|| (next_send_header_key.getBufferLength() < HEADER_KEY_SIZE)
-			|| (next_receive_header_key.getBufferLength() < HEADER_KEY_SIZE)
-			|| (our_private_identity.content_length != PRIVATE_KEY_SIZE)
-			|| (our_public_identity.content_length != PUBLIC_KEY_SIZE)
-			|| (their_public_identity.content_length != PUBLIC_KEY_SIZE)
-			|| (our_private_ephemeral.content_length != PRIVATE_KEY_SIZE)
-			|| (our_public_ephemeral.content_length != PUBLIC_KEY_SIZE)
-			|| (their_public_ephemeral.content_length != PUBLIC_KEY_SIZE)) {
+	if (!root_key.fits(ROOT_KEY_SIZE)
+			|| !send_chain_key.fits(CHAIN_KEY_SIZE)
+			|| !receive_chain_key.fits(CHAIN_KEY_SIZE)
+			|| !send_header_key.fits(HEADER_KEY_SIZE)
+			|| !receive_header_key.fits(HEADER_KEY_SIZE)
+			|| !next_send_header_key.fits(HEADER_KEY_SIZE)
+			|| !next_receive_header_key.fits(HEADER_KEY_SIZE)
+			|| !our_private_identity.contains(PRIVATE_KEY_SIZE)
+			|| !our_public_identity.contains(PUBLIC_KEY_SIZE)
+			|| !their_public_identity.contains(PUBLIC_KEY_SIZE)
+			|| !our_private_ephemeral.contains(PRIVATE_KEY_SIZE)
+			|| !our_public_ephemeral.contains(PUBLIC_KEY_SIZE)
+			|| !their_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input to derive_initial_root_chain_and_header_keys.");
 	}
 
@@ -260,7 +268,8 @@ return_status derive_initial_root_chain_and_header_keys(
 	//header keys and chain keys from
 	//master_key = HASH( DH(A,B0) || DH(A0,B) || DH(A0,B0) )
 	assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES);
-	status = triple_diffie_hellman(
+	try {
+		triple_diffie_hellman(
 			master_key,
 			our_private_identity,
 			our_public_identity,
@@ -269,7 +278,12 @@ return_status derive_initial_root_chain_and_header_keys(
 			their_public_identity,
 			their_public_ephemeral,
 			am_i_alice);
-	THROW_on_error(KEYDERIVATION_FAILED, "Failed to perform triple diffie hellman.");
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//derive root key
 	//RK = KDF(master_key, 0x00)

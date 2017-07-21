@@ -22,10 +22,12 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
+#include <exception>
 
 #include "../lib/diffie-hellman.h"
 #include "utils.h"
 #include "common.h"
+#include "../lib/molch-exception.h"
 
 int main(void) noexcept {
 	if (sodium_init() == -1) {
@@ -100,7 +102,8 @@ int main(void) noexcept {
 	printf("Calculate shared secret via Triple Diffie Hellman ---------------------------\n\n");
 
 	//Triple Diffie Hellman on Alice's side
-	status = triple_diffie_hellman(
+	try {
+		triple_diffie_hellman(
 			alice_shared_secret,
 			alice_private_identity,
 			alice_public_identity,
@@ -109,14 +112,20 @@ int main(void) noexcept {
 			bob_public_identity,
 			bob_public_ephemeral,
 			true);
-	THROW_on_error(KEYGENERATION_FAILED, "Triple Diffie Hellman for Alice failed.");
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 	//print Alice's shared secret
 	printf("Alice's shared secret H(DH(A_priv,B0_pub)||DH(A0_priv,B_pub)||DH(A0_priv,B0_pub)):\n");
 	print_hex(alice_shared_secret);
 	putchar('\n');
 
 	//Triple Diffie Hellman on Bob's side
-	status = triple_diffie_hellman(
+	try {
+		triple_diffie_hellman(
 			bob_shared_secret,
 			bob_private_identity,
 			bob_public_identity,
@@ -125,7 +134,12 @@ int main(void) noexcept {
 			alice_public_identity,
 			alice_public_ephemeral,
 			false);
-	THROW_on_error(KEYGENERATION_FAILED, "Triple Diffie Hellnan for Bob failed.");
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 	//print Bob's shared secret
 	printf("Bob's shared secret H(DH(B0_priv, A_pub)||DH(B_priv, A0_pub)||DH(B0_priv, A0_pub)):\n");
 	print_hex(bob_shared_secret);

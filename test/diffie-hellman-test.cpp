@@ -21,10 +21,12 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
+#include <exception>
 
 #include "../lib/diffie-hellman.h"
 #include "utils.h"
 #include "common.h"
+#include "../lib/molch-exception.h"
 
 int main(void) noexcept {
 	if (sodium_init() == -1) {
@@ -65,14 +67,20 @@ int main(void) noexcept {
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's keypair.");
 
 	//Diffie Hellman on Alice's side
-	status = diffie_hellman(
+	try {
+		diffie_hellman(
 			alice_shared_secret,
 			alice_private_key,
 			alice_public_key,
 			bob_public_key,
 			true);
-	alice_private_key.clear();
-	THROW_on_error(KEYGENERATION_FAILED, "Diffie Hellman with Alice's private key failed.");
+		alice_private_key.clear();
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//print Alice's shared secret
 	printf("Alice's shared secret ECDH(A_priv, B_pub) (%zu Bytes):\n", alice_shared_secret.content_length);
@@ -80,14 +88,20 @@ int main(void) noexcept {
 	putchar('\n');
 
 	//Diffie Hellman on Bob's side
-	status = diffie_hellman(
+	try {
+		diffie_hellman(
 			bob_shared_secret,
 			bob_private_key,
 			bob_public_key,
 			alice_public_key,
 			false);
-	bob_private_key.clear();
-	THROW_on_error(KEYGENERATION_FAILED, "Diffie Hellman with Bob's private key failed.");
+		bob_private_key.clear();
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//print Bob's shared secret
 	printf("Bob's shared secret ECDH(B_priv, A_pub) (%zu Bytes):\n", bob_shared_secret.content_length);

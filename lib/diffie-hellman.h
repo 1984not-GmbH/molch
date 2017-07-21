@@ -23,7 +23,6 @@
 
 #include "buffer.h"
 #include "common.h"
-#include "return-status.h"
 
 #ifndef LIB_DIFFIE_HELLMAN_H
 #define LIB_DIFFIE_HELLMAN_H
@@ -41,12 +40,12 @@
  * Alice: H(ECDH(our_private_key,their_public_key)|our_public_key|their_public_key)
  * Bob:   H(ECDH(our_private_key,their_public_key)|their_public_key|our_public_key)
  */
-return_status diffie_hellman(
+void diffie_hellman(
 		Buffer& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
 		const Buffer& our_private_key, //needs to be PRIVATE_KEY_SIZE long
 		const Buffer& our_public_key, //needs to be PUBLIC_KEY_SIZE long
 		const Buffer& their_public_key, //needs to be PUBLIC_KEY_SIZE long
-		const bool am_i_alice) noexcept __attribute__((warn_unused_result));
+		const bool am_i_alice);
 
 /*
  * Triple Diffie Hellman with two keys.
@@ -64,7 +63,7 @@ return_status diffie_hellman(
  * -->Alice: HASH(DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_identity)||DH(our_ephemeral, their_ephemeral))
  * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
  */
-return_status triple_diffie_hellman(
+void triple_diffie_hellman(
 		Buffer& derived_key,
 		const Buffer& our_private_identity,
 		const Buffer& our_public_identity,
@@ -72,5 +71,5 @@ return_status triple_diffie_hellman(
 		const Buffer& our_public_ephemeral,
 		const Buffer& their_public_identity,
 		const Buffer& their_public_ephemeral,
-		const bool am_i_alice) noexcept __attribute__((warn_unused_result));
+		const bool am_i_alice);
 #endif
