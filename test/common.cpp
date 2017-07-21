@@ -24,6 +24,7 @@
 #include <sodium.h>
 #include <iostream>
 
+#include "../lib/molch-exception.h"
 #include "common.h"
 #include "utils.h"
 
@@ -56,24 +57,22 @@ void print_header_and_message_keystore(header_and_message_keystore& keystore) no
 /*
  * Generates and prints a crypto_box keypair.
  */
-return_status generate_and_print_keypair(
+void generate_and_print_keypair(
 		Buffer& public_key, //crypto_box_PUBLICKEYBYTES
 		Buffer& private_key, //crypto_box_SECRETKEYBYTES
 		const std::string& name, //Name of the key owner (e.g. "Alice")
-		const std::string& type) noexcept { //type of the key (e.g. "ephemeral")
-	return_status status = return_status_init();
-
+		const std::string& type) { //type of the key (e.g. "ephemeral")
 	//check buffer sizes
-	if ((public_key.getBufferLength() < crypto_box_PUBLICKEYBYTES)
-			|| (private_key.getBufferLength() < crypto_box_SECRETKEYBYTES)) {
-		THROW(INCORRECT_BUFFER_SIZE, "Public key buffer is too short.");
+	if (!public_key.fits(crypto_box_PUBLICKEYBYTES)
+			|| !private_key.fits(crypto_box_SECRETKEYBYTES)) {
+		throw MolchException(INCORRECT_BUFFER_SIZE, "Public key buffer is too short.");
 	}
 	//generate keypair
 	{
 		int status_int = 0;
 		status_int = crypto_box_keypair(public_key.content, private_key.content);
 		if (status_int != 0) {
-			THROW(KEYGENERATION_FAILED, "Failed to generate keypair.");
+			throw MolchException(KEYGENERATION_FAILED, "Failed to generate keypair.");
 		}
 	}
 	public_key.content_length = crypto_box_PUBLICKEYBYTES;
@@ -86,7 +85,4 @@ return_status generate_and_print_keypair(
 	std::cout << std::endl << name << "'s private " << type << " key (" << private_key.content_length << ":" << std::endl;
 	print_hex(private_key);
 	std::cout << std::endl;
-
-cleanup:
-	return status;
 }

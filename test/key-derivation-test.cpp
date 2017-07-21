@@ -22,65 +22,65 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
+#include <exception>
+#include <iostream>
 
 #include "../lib/key-derivation.h"
+#include "../lib/molch-exception.h"
 #include "utils.h"
 #include "common.h"
 
-int main(void) noexcept {
-	if (sodium_init() == -1) {
-		return -1;
+int main(void) {
+	try {
+		if (sodium_init() == -1) {
+			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+		}
+
+		//create buffers
+		Buffer master_key(50, 50);
+		Buffer subkey1(60, 60);
+		Buffer subkey2(60, 60);
+		Buffer subkey1_copy(60, 60);
+
+		exception_on_invalid_buffer(master_key);
+		exception_on_invalid_buffer(subkey1);
+		exception_on_invalid_buffer(subkey2);
+		exception_on_invalid_buffer(subkey1_copy);
+
+		int status_int = master_key.fillRandom(master_key.getBufferLength());
+		if (status_int != 0) {
+			throw MolchException(KEYDERIVATION_FAILED, "Failed to generate master key.");
+		}
+		printf("Master key:\n");
+		print_hex(master_key);
+		putchar('\n');
+
+		derive_key(subkey1, subkey1.getBufferLength(), master_key, 0);
+		printf("First subkey:\n");
+		print_hex(subkey1);
+		putchar('\n');
+
+		derive_key(subkey2, subkey2.getBufferLength(), master_key, 1);
+		printf("Second subkey:\n");
+		print_hex(subkey2);
+		putchar('\n');
+
+		if (subkey1 == subkey2) {
+			throw MolchException(KEYGENERATION_FAILED, "Both subkeys are the same.");
+		}
+
+		derive_key(subkey1_copy, subkey1_copy.getBufferLength(), master_key, 0);
+
+		if (subkey1 != subkey1_copy) {
+			throw MolchException(INCORRECT_DATA, "Failed to reproduce subkey.");
+		}
+	} catch (const MolchException& exception) {
+		std::cout << exception.print() << std::endl;
+		return EXIT_FAILURE;
+	} catch (const std::exception& exception) {
+		std::cout << exception.what() << std::endl;
+		return EXIT_FAILURE;
 	}
 
-	return_status status = return_status_init();
-
-	//create buffers
-	Buffer master_key(50, 50);
-	Buffer subkey1(60, 60);
-	Buffer subkey2(60, 60);
-	Buffer subkey1_copy(60, 60);
-
-	int status_int = 0;
-	throw_on_invalid_buffer(master_key);
-	throw_on_invalid_buffer(subkey1);
-	throw_on_invalid_buffer(subkey2);
-	throw_on_invalid_buffer(subkey1_copy);
-	status_int = master_key.fillRandom(master_key.getBufferLength());
-	if (status_int != 0) {
-		THROW(KEYDERIVATION_FAILED, "Failed to generate master key.");
-	}
-	printf("Master key:\n");
-	print_hex(master_key);
-	putchar('\n');
-
-	status = derive_key(subkey1, subkey1.getBufferLength(), master_key, 0);
-	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive first subkey.");
-	printf("First subkey:\n");
-	print_hex(subkey1);
-	putchar('\n');
-
-	status = derive_key(subkey2, subkey2.getBufferLength(), master_key, 1);
-	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive the second subkey.");
-	printf("Second subkey:\n");
-	print_hex(subkey2);
-	putchar('\n');
-
-	if (subkey1 == subkey2) {
-		THROW(KEYGENERATION_FAILED, "Both subkeys are the same.");
-	}
-
-	status = derive_key(subkey1_copy, subkey1_copy.getBufferLength(), master_key, 0);
-	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive copy of the first subkey.");
-
-	if (subkey1 != subkey1_copy) {
-		THROW(INCORRECT_DATA, "Failed to reproduce subkey.");
-	}
-
-cleanup:
-	on_error {
-		print_errors(status);
-	}
-	return_status_destroy_errors(&status);
-
-	return status.status;
+	return EXIT_SUCCESS;
 }

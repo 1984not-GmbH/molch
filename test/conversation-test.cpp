@@ -22,10 +22,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
-#include <cassert>
+#include <exception>
 
 #include "common.h"
 #include "utils.h"
+#include "../lib/molch-exception.h"
 #include "../lib/conversation.h"
 
 return_status protobuf_export(conversation_t * const conversation, Buffer ** const export_buffer) noexcept __attribute__((warn_unused_result));
@@ -188,37 +189,40 @@ int main(void) noexcept {
 
 	return_status status = return_status_init();
 
-	//creating charlie's identity keypair
-	status = generate_and_print_keypair(
+	try {
+		//creating charlie's identity keypair
+		generate_and_print_keypair(
 			*charlie_public_identity,
 			*charlie_private_identity,
 			"Charlie",
 			"identity");
-	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Charlie's identity keypair.");
 
-	//creating charlie's ephemeral keypair
-	status = generate_and_print_keypair(
+		//creating charlie's ephemeral keypair
+		generate_and_print_keypair(
 			*charlie_public_ephemeral,
 			*charlie_private_ephemeral,
 			"Charlie",
 			"ephemeral");
-	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Charlie's ephemeral keypair.");
 
-	//creating dora's identity keypair
-	status = generate_and_print_keypair(
+		//creating dora's identity keypair
+		generate_and_print_keypair(
 			*dora_public_identity,
 			*dora_private_identity,
 			"Dora",
 			"identity");
-	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Dora's identity keypair.");
 
-	//creating dora's ephemeral keypair
-	status = generate_and_print_keypair(
+		//creating dora's ephemeral keypair
+		generate_and_print_keypair(
 			*dora_public_ephemeral,
 			*dora_private_ephemeral,
 			"Dora",
 			"ephemeral");
-	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Dora's ephemeral keypair.");
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//create charlie's conversation
 	status = create_conversation(

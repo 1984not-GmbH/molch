@@ -23,8 +23,10 @@
 #include <cstdlib>
 #include <sodium.h>
 #include <cassert>
+#include <exception>
 
 #include "../lib/ratchet.h"
+#include "../lib/molch-exception.h"
 #include "utils.h"
 #include "common.h"
 
@@ -207,37 +209,40 @@ int main(void) noexcept {
 	throw_on_invalid_buffer(alice_receive_message_key3);
 	throw_on_invalid_buffer(alice_receive_header_key2);
 
-	//creating Alice's identity keypair
-	status = generate_and_print_keypair(
+	try {
+		//creating Alice's identity keypair
+		generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
 			"Alice",
 			"identity");
-	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice' identity keypair.");
 
-	//creating Alice's ephemeral keypair
-	status = generate_and_print_keypair(
+		//creating Alice's ephemeral keypair
+		generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
 			"Alice",
 			"ephemeral");
-	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice' ephemeral keypair.");
 
-	//creating Bob's identity keypair
-	status = generate_and_print_keypair(
+		//creating Bob's identity keypair
+		generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
 			"Bob",
 			"identity");
-	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's identity keypair.");
 
-	//creating Bob's ephemeral keypair
-	status = generate_and_print_keypair(
+		//creating Bob's ephemeral keypair
+		generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
 			"Bob",
 			"ephemeral");
-	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's ephemeral keypair.");
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//start new ratchet for alice
 	printf("Creating new ratchet for Alice ...\n");

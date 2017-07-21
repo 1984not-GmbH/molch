@@ -35,70 +35,48 @@
  * The input key needs to be between crypto_generichash_blake2b_KEYBYTES_MIN (16 Bytes)
  * and crypto_generichash_blake2b_KEYBYTES_MAX (64 Bytes).
  */
-return_status derive_key(
+void derive_key(
 		Buffer& derived_key,
 		size_t derived_size,
 		Buffer& input_key,
-		uint32_t subkey_counter) noexcept { //number of the current subkey, used to derive multiple keys from the same input key
-	return_status status = return_status_init();
-
-	const char personal_string[] = "molch_cryptolib";
-	Buffer personal((const unsigned char*)personal_string, sizeof(personal_string));
-	assert(personal.content_length == crypto_generichash_blake2b_PERSONALBYTES);
-
-
-	//create a salt that contains the number of the subkey
-	Buffer salt(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
-	throw_on_invalid_buffer(salt);
-	salt.clear(); //fill with zeroes
-	salt.content_length = crypto_generichash_blake2b_SALTBYTES;
-
+		uint32_t subkey_counter) { //number of the current subkey, used to derive multiple keys from the same input key
 	//check if inputs are valid
 	if ((derived_size > crypto_generichash_blake2b_BYTES_MAX)
 			|| (derived_size < crypto_generichash_blake2b_BYTES_MIN)
 			|| !derived_key.fits(derived_size)
 			|| (input_key.content_length > crypto_generichash_blake2b_KEYBYTES_MAX)
 			|| (input_key.content_length < crypto_generichash_blake2b_KEYBYTES_MIN)) {
-		THROW(INVALID_INPUT, "Invalid input to derive_key.");
+		throw MolchException(INVALID_INPUT, "Invalid input to derive_key.");
 	}
+
+	//create a salt that contains the number of the subkey
+	Buffer salt(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
+	exception_on_invalid_buffer(salt);
+	salt.clear(); //fill with zeroes
+	salt.content_length = crypto_generichash_blake2b_SALTBYTES;
+
+	//fill the salt with a big endian representation of the subkey counter
+	Buffer big_endian_subkey_counter(salt.content + salt.content_length - sizeof(uint32_t), sizeof(uint32_t));
+	to_big_endian(subkey_counter, big_endian_subkey_counter);
+
+	const char personal_string[] = "molch_cryptolib";
+	Buffer personal((const unsigned char*)personal_string, sizeof(personal_string));
+	assert(personal.content_length == crypto_generichash_blake2b_PERSONALBYTES);
 
 	//set length of output
 	derived_key.content_length = derived_size;
-
-	{
-		//fill the salt with a big endian representation of the subkey counter
-		Buffer big_endian_subkey_counter(salt.content + salt.content_length - sizeof(uint32_t), sizeof(uint32_t));
-		try {
-			to_big_endian(subkey_counter, big_endian_subkey_counter);
-		} catch (const MolchException& exception) {
-			status = exception.toReturnStatus();
-			goto cleanup;
-		} catch (const std::exception& exception) {
-			THROW(EXCEPTION, exception.what());
-		}
-
-		{
-			int status_int = crypto_generichash_blake2b_salt_personal(
-					derived_key.content,
-					derived_key.content_length,
-					nullptr, //input
-					0, //input length
-					input_key.content,
-					input_key.content_length,
-					salt.content,
-					personal.content);
-			if (status_int != 0) {
-				THROW(KEYDERIVATION_FAILED, "Failed to derive key via crypto_generichash_blake2b_salt_personal");
-			}
-		}
+	int status_int = crypto_generichash_blake2b_salt_personal(
+			derived_key.content,
+			derived_key.content_length,
+			nullptr, //input
+			0, //input length
+			input_key.content,
+			input_key.content_length,
+			salt.content,
+			personal.content);
+	if (status_int != 0) {
+		throw MolchException(KEYDERIVATION_FAILED, "Failed to derive key via crypto_generichash_blake2b_salt_personal");
 	}
-
-cleanup:
-	on_error {
-		derived_key.content_length = 0;
-	}
-
-	return status;
 }
 
 /*
@@ -109,9 +87,9 @@ cleanup:
  * CK_new = HMAC-Hash(CK_prev, 0x01)
  * (previous chain key as key, 0x01 as message)
  */
-return_status derive_chain_key(
+void derive_chain_key(
 		Buffer& new_chain_key,
-		Buffer& previous_chain_key) noexcept {
+		Buffer& previous_chain_key) {
 	return derive_key(
 			new_chain_key,
 			CHAIN_KEY_SIZE,
@@ -127,9 +105,9 @@ return_status derive_chain_key(
  * MK = HMAC-Hash(CK, 0x00)
  * (chain_key as key, 0x00 as message)
  */
-return_status derive_message_key(
+void derive_message_key(
 		Buffer& message_key,
-		Buffer& chain_key) noexcept {
+		Buffer& chain_key) {
 	return derive_key(
 			message_key,
 			MESSAGE_KEY_SIZE,
@@ -144,7 +122,7 @@ return_status derive_message_key(
  * and
  * RK, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
  */
-return_status derive_root_next_header_and_chain_keys(
+void derive_root_next_header_and_chain_keys(
 		Buffer& root_key, //ROOT_KEY_SIZE
 		Buffer& next_header_key, //HEADER_KEY_SIZE
 		Buffer& chain_key, //CHAIN_KEY_SIZE
@@ -152,14 +130,7 @@ return_status derive_root_next_header_and_chain_keys(
 		const Buffer& our_public_ephemeral,
 		const Buffer& their_public_ephemeral,
 		const Buffer& previous_root_key,
-		bool am_i_alice) noexcept {
-	return_status status = return_status_init();
-
-	//create buffers
-	Buffer diffie_hellman_secret(DIFFIE_HELLMAN_SIZE, 0);
-	Buffer derivation_key(crypto_generichash_BYTES, crypto_generichash_BYTES);
-	throw_on_invalid_buffer(diffie_hellman_secret);
-	throw_on_invalid_buffer(derivation_key);
+		bool am_i_alice) {
 
 	//check input
 	if (!root_key.fits(ROOT_KEY_SIZE)
@@ -169,63 +140,45 @@ return_status derive_root_next_header_and_chain_keys(
 			|| !our_public_ephemeral.contains(PUBLIC_KEY_SIZE)
 			|| !their_public_ephemeral.contains(PUBLIC_KEY_SIZE)
 			|| !previous_root_key.contains(ROOT_KEY_SIZE)) {
-		THROW(INVALID_INPUT, "Invalid input to derive_root_next_header_and_chain_keys.");
+		throw MolchException(INVALID_INPUT, "Invalid input to derive_root_next_header_and_chain_keys.");
 	}
 
+	//create buffers
+	Buffer diffie_hellman_secret(DIFFIE_HELLMAN_SIZE, 0);
+	Buffer derivation_key(crypto_generichash_BYTES, crypto_generichash_BYTES);
+	exception_on_invalid_buffer(diffie_hellman_secret);
+	exception_on_invalid_buffer(derivation_key);
+
 	//DH(DHRs, DHRr) or DH(DHRp, DHRs)
-	try {
-		diffie_hellman(
-			diffie_hellman_secret,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_ephemeral,
-			am_i_alice);
-	} catch (const MolchException& exception) {
-		status = exception.toReturnStatus();
-		goto cleanup;
-	} catch (const std::exception& exception) {
-		THROW(EXCEPTION, exception.what())
-	}
+	diffie_hellman(
+		diffie_hellman_secret,
+		our_private_ephemeral,
+		our_public_ephemeral,
+		their_public_ephemeral,
+		am_i_alice);
 
 	//key to derive from
 	//HMAC-HASH(RK, DH(..., ...))
-	{
-		int status_int = crypto_generichash(
-				derivation_key.content,
-				derivation_key.content_length,
-				diffie_hellman_secret.content,
-				diffie_hellman_secret.content_length,
-				previous_root_key.content,
-				previous_root_key.content_length);
-		if (status_int != 0) {
-			THROW(GENERIC_ERROR, "Failed to hash diffie hellman and previous root key.");
-		}
+	int status_int = crypto_generichash(
+			derivation_key.content,
+			derivation_key.content_length,
+			diffie_hellman_secret.content,
+			diffie_hellman_secret.content_length,
+			previous_root_key.content,
+			previous_root_key.content_length);
+	if (status_int != 0) {
+		throw MolchException(GENERIC_ERROR, "Failed to hash diffie hellman and previous root key.");
 	}
 
 	//now derive the different keys from the derivation key
 	//root key
-	status = derive_key(root_key, ROOT_KEY_SIZE, derivation_key, 0);
-	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive root key from derivation key.");
+	derive_key(root_key, ROOT_KEY_SIZE, derivation_key, 0);
 
 	//next header key
-	status = derive_key(next_header_key, HEADER_KEY_SIZE, derivation_key, 1);
-	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive next header key from derivation key.");
+	derive_key(next_header_key, HEADER_KEY_SIZE, derivation_key, 1);
 
 	//chain key
-	status = derive_key(chain_key, CHAIN_KEY_SIZE, derivation_key, 2);
-	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key from derivation key.");
-
-cleanup:
-	on_error {
-		root_key.clear();
-		root_key.content_length = 0;
-		next_header_key.clear();
-		next_header_key.content_length = 0;
-		chain_key.clear();
-		chain_key.content_length = 0;
-	}
-
-	return status;
+	derive_key(chain_key, CHAIN_KEY_SIZE, derivation_key, 2);
 }
 
 /*
@@ -233,7 +186,7 @@ cleanup:
  *
  * RK, CKs/r, HKs/r, NHKs/r = KDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
  */
-return_status derive_initial_root_chain_and_header_keys(
+void derive_initial_root_chain_and_header_keys(
 		Buffer& root_key, //ROOT_KEY_SIZE
 		Buffer& send_chain_key, //CHAIN_KEY_SIZE
 		Buffer& receive_chain_key, //CHAIN_KEY_SIZE
@@ -247,12 +200,7 @@ return_status derive_initial_root_chain_and_header_keys(
 		const Buffer& our_private_ephemeral,
 		const Buffer& our_public_ephemeral,
 		const Buffer& their_public_ephemeral,
-		bool am_i_alice) noexcept {
-	return_status status = return_status_init();
-
-	Buffer master_key(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	throw_on_invalid_buffer(master_key);
-
+		bool am_i_alice) {
 	//check buffer sizes
 	if (!root_key.fits(ROOT_KEY_SIZE)
 			|| !send_chain_key.fits(CHAIN_KEY_SIZE)
@@ -267,34 +215,29 @@ return_status derive_initial_root_chain_and_header_keys(
 			|| !our_private_ephemeral.contains(PRIVATE_KEY_SIZE)
 			|| !our_public_ephemeral.contains(PUBLIC_KEY_SIZE)
 			|| !their_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
-		THROW(INVALID_INPUT, "Invalid input to derive_initial_root_chain_and_header_keys.");
+		throw MolchException(INVALID_INPUT, "Invalid input to derive_initial_root_chain_and_header_keys.");
 	}
+
+	Buffer master_key(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
+	exception_on_invalid_buffer(master_key);
 
 	//derive master_key to later derive the initial root key,
 	//header keys and chain keys from
 	//master_key = HASH( DH(A,B0) || DH(A0,B) || DH(A0,B0) )
 	assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES);
-	try {
-		triple_diffie_hellman(
-			master_key,
-			our_private_identity,
-			our_public_identity,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_identity,
-			their_public_ephemeral,
-			am_i_alice);
-	} catch (const MolchException& exception) {
-		status = exception.toReturnStatus();
-		goto cleanup;
-	} catch (const std::exception& exception) {
-		THROW(EXCEPTION, exception.what());
-	}
+	triple_diffie_hellman(
+		master_key,
+		our_private_identity,
+		our_public_identity,
+		our_private_ephemeral,
+		our_public_ephemeral,
+		their_public_identity,
+		their_public_ephemeral,
+		am_i_alice);
 
 	//derive root key
 	//RK = KDF(master_key, 0x00)
-	status = derive_key(root_key, ROOT_KEY_SIZE, master_key, 0);
-	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive root key from master key.");
+	derive_key(root_key, ROOT_KEY_SIZE, master_key, 0);
 
 	//derive chain keys and header keys
 	if (am_i_alice) {
@@ -303,70 +246,40 @@ return_status derive_initial_root_chain_and_header_keys(
 		send_header_key.clear();
 		send_header_key.content_length = HEADER_KEY_SIZE;
 		//HKr = KDF(master_key, 0x01)
-		status = derive_key(receive_header_key, HEADER_KEY_SIZE, master_key, 1);
-		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive receive header key from master key.");
+		derive_key(receive_header_key, HEADER_KEY_SIZE, master_key, 1);
 
 		//NHKs, NHKr
 		//NHKs = KDF(master_key, 0x02)
-		status = derive_key(next_send_header_key, HEADER_KEY_SIZE, master_key, 2);
-		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive next send header key from master key.");
+		derive_key(next_send_header_key, HEADER_KEY_SIZE, master_key, 2);
 
 		//NHKr = KDF(master_key, 0x03)
-		status = derive_key(next_receive_header_key, HEADER_KEY_SIZE, master_key, 3);
-		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive next receive header key from master key.");
+		derive_key(next_receive_header_key, HEADER_KEY_SIZE, master_key, 3);
 
 		//CKs=<none>, CKr=KDF
 		//CKs=<none>
 		send_chain_key.clear();
 		send_chain_key.content_length = CHAIN_KEY_SIZE;
 		//CKr = KDF(master_key, 0x04)
-		status = derive_key(receive_chain_key, CHAIN_KEY_SIZE, master_key, 4);
-		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive receive chain key from master key.");
-
+		derive_key(receive_chain_key, CHAIN_KEY_SIZE, master_key, 4);
 	} else {
 		//HKs=HKDF, HKr=<none>
 		//HKr = <none>
 		receive_header_key.clear();
 		receive_header_key.content_length = HEADER_KEY_SIZE;
 		//HKs = KDF(master_key, 0x01)
-		status = derive_key(send_header_key, HEADER_KEY_SIZE, master_key, 1);
-		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive send header key from master key.");
+		derive_key(send_header_key, HEADER_KEY_SIZE, master_key, 1);
 
 		//NHKr, NHKs
 		//NHKr = KDF(master_key, 0x02)
-		status = derive_key(next_receive_header_key, HEADER_KEY_SIZE, master_key, 2);
-		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive next receive header key from master key.");
+		derive_key(next_receive_header_key, HEADER_KEY_SIZE, master_key, 2);
 		//NHKs = KDF(master_key, 0x03)
-		status = derive_key(next_send_header_key, HEADER_KEY_SIZE, master_key, 3);
-		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive next send header key from master key.");
+		derive_key(next_send_header_key, HEADER_KEY_SIZE, master_key, 3);
 
 		//CKs=KDF, CKr=<none>
 		//CKr = <none>
 		receive_chain_key.clear();
 		receive_chain_key.content_length = CHAIN_KEY_SIZE;
 		//CKs = KDF(master_key, 0x04)
-		status = derive_key(send_chain_key, CHAIN_KEY_SIZE, master_key, 4);
-		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive send chain key from master key.");
+		derive_key(send_chain_key, CHAIN_KEY_SIZE, master_key, 4);
 	}
-
-cleanup:
-	on_error {
-		//clear all keys to prevent misuse
-		root_key.clear();
-		root_key.content_length = 0;
-		send_chain_key.clear();
-		send_chain_key.content_length = 0;
-		receive_chain_key.clear();
-		receive_chain_key.content_length = 0;
-		send_header_key.clear();
-		send_header_key.content_length = 0;
-		receive_header_key.clear();
-		receive_header_key.content_length = 0;
-		next_send_header_key.clear();
-		next_send_header_key.content_length = 0;
-		next_receive_header_key.clear();
-		next_receive_header_key.content_length = 0;
-	}
-
-	return status;
 }

@@ -22,10 +22,12 @@
 #include <sodium.h>
 #include <cassert>
 #include <cstdint>
+#include <exception>
 
 #include "constants.h"
 #include "ratchet.h"
 #include "key-derivation.h"
+#include "molch-exception.h"
 
 void Ratchet::initState() noexcept {
 	//initialize the buffers with the storage arrays
@@ -122,7 +124,8 @@ return_status Ratchet::create(
 	}
 
 	//derive initial chain, root and header keys
-	status = derive_initial_root_chain_and_header_keys(
+	try {
+		derive_initial_root_chain_and_header_keys(
 			ratchet->root_key,
 			ratchet->send_chain_key,
 			ratchet->receive_chain_key,
@@ -137,7 +140,12 @@ return_status Ratchet::create(
 			our_public_ephemeral,
 			their_public_ephemeral,
 			ratchet->am_i_alice);
-	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive initial root chain and header keys.");
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 	//copy keys into state
 	//our public identity
 	if (ratchet->our_public_identity.cloneFrom(&our_public_identity) != 0) {
@@ -232,7 +240,8 @@ return_status Ratchet::send(
 		}
 
 		//RK, NHKs, CKs = KDF(HMAC-HASH(RK, DH(DHRs, DHRr)))
-		status = derive_root_next_header_and_chain_keys(
+		try {
+			derive_root_next_header_and_chain_keys(
 				this->root_key,
 				this->next_send_header_key,
 				this->send_chain_key,
@@ -241,7 +250,12 @@ return_status Ratchet::send(
 				this->their_public_ephemeral,
 				*root_key_backup,
 				this->am_i_alice);
-		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive root next header and chain keys.");
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 
 		//PNs = Ns
 		this->previous_message_number = this->send_message_number;
@@ -254,8 +268,14 @@ return_status Ratchet::send(
 	}
 
 	//MK = HMAC-HASH(CKs, "0")
-	status = derive_message_key(message_key, this->send_chain_key);
-	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive message key.");
+	try {
+		derive_message_key(message_key, this->send_chain_key);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//copy the other data to the output
 	//(corresponds to
@@ -292,10 +312,16 @@ return_status Ratchet::send(
 	}
 
 	//CKs = HMAC-HASH(CKs, "1")
-	status = derive_chain_key(
+	try {
+		derive_chain_key(
 			this->send_chain_key,
 			*chain_key_backup);
-	THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key.");
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 cleanup:
 	on_error {
@@ -418,8 +444,14 @@ return_status Ratchet::stageSkippedHeaderAndMessageKeys(
 
 	for (uint32_t pos = current_message_number; pos < future_message_number; pos++) {
 		//derive current message key
-		status = derive_message_key(*current_message_key, *current_chain_key);
-		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive message key.");
+		try {
+			derive_message_key(*current_message_key, *current_chain_key);
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 
 		//add the message key, along with current_header_key to the staging area
 		status = header_and_message_keystore_add(
@@ -429,8 +461,14 @@ return_status Ratchet::stageSkippedHeaderAndMessageKeys(
 		THROW_on_error(ADDITION_ERROR, "Failed to add keys to header and message keystore.");
 
 		//derive next chain key
-		status = derive_chain_key(*next_chain_key, *current_chain_key);
-		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key.");
+		try {
+			derive_chain_key(*next_chain_key, *current_chain_key);
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 
 		//shift chain keys
 		if (current_chain_key->cloneFrom(next_chain_key) != 0) {
@@ -440,14 +478,26 @@ return_status Ratchet::stageSkippedHeaderAndMessageKeys(
 
 	//derive the message key that will be returned
 	if (output_message_key != nullptr) {
-		status = derive_message_key(*output_message_key, *current_chain_key);
-		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive message key.");
+		try {
+			derive_message_key(*output_message_key, *current_chain_key);
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 	}
 
 	//derive the chain key that will be returned
 	if (output_chain_key != nullptr) {
-		status = derive_chain_key(*output_chain_key, *current_chain_key);
-		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key.");
+		try {
+			derive_chain_key(*output_chain_key, *current_chain_key);
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 	}
 
 cleanup:
@@ -581,16 +631,22 @@ return_status Ratchet::receive(
 		}
 
 		//RKp, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
-		status = derive_root_next_header_and_chain_keys(
-				this->purported_root_key,
-				this->purported_next_receive_header_key,
-				this->purported_receive_chain_key,
-				this->our_private_ephemeral,
-				this->our_public_ephemeral,
-				their_purported_public_ephemeral,
-				this->root_key,
-				this->am_i_alice);
-		THROW_on_error(KEYDERIVATION_FAILED, "Faield to derive root next header and chain keys.");
+		try {
+			derive_root_next_header_and_chain_keys(
+					this->purported_root_key,
+					this->purported_next_receive_header_key,
+					this->purported_receive_chain_key,
+					this->our_private_ephemeral,
+					this->our_public_ephemeral,
+					their_purported_public_ephemeral,
+					this->root_key,
+					this->am_i_alice);
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 
 		//backup the purported chain key because it will get overwritten in the next step
 		if (purported_chain_key_backup->cloneFrom(&this->purported_receive_chain_key) != 0) {

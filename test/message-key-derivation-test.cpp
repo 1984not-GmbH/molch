@@ -22,49 +22,51 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
+#include <exception>
+#include <iostream>
 
 #include "../lib/key-derivation.h"
 #include "../lib/constants.h"
+#include "../lib/molch-exception.h"
 #include "utils.h"
 
 int main(void) noexcept {
-	if (sodium_init() == -1) {
-		return -1;
+	try {
+		if (sodium_init() == -1) {
+			return -1;
+		}
+
+		//create buffers;
+		Buffer chain_key(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+		Buffer message_key(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+		exception_on_invalid_buffer(chain_key);
+		exception_on_invalid_buffer(message_key);
+
+		//create random chain key
+		if (chain_key.fillRandom(chain_key.getBufferLength()) != 0) {
+			throw MolchException(KEYGENERATION_FAILED, "Failed to create chain key.");
+		}
+
+		//print first chain key
+		printf("Chain key (%zu Bytes):\n", chain_key.content_length);
+		print_hex(chain_key);
+		putchar('\n');
+
+		//derive message key from chain key
+		derive_message_key(message_key, chain_key);
+		chain_key.clear();
+
+		//print message key
+		printf("Message key (%zu Bytes):\n", message_key.content_length);
+		print_hex(message_key);
+		putchar('\n');
+	} catch (const MolchException& exception) {
+		std::cout << exception.print() << std::endl;
+		return EXIT_FAILURE;
+	} catch (const std::exception& exception) {
+		std::cout << exception.what() << std::endl;
+		return EXIT_FAILURE;
 	}
 
-	return_status status = return_status_init();
-
-	//create buffers;
-	Buffer chain_key(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-	Buffer message_key(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-	throw_on_invalid_buffer(chain_key);
-	throw_on_invalid_buffer(message_key);
-
-	//create random chain key
-	if (chain_key.fillRandom(chain_key.getBufferLength()) != 0) {
-		THROW(KEYGENERATION_FAILED, "Failed to create chain key.");
-	}
-
-	//print first chain key
-	printf("Chain key (%zu Bytes):\n", chain_key.content_length);
-	print_hex(chain_key);
-	putchar('\n');
-
-	//derive message key from chain key
-	status = derive_message_key(message_key, chain_key);
-	chain_key.clear();
-	THROW_on_error(KEYGENERATION_FAILED, "Failed to derive message key.");
-
-	//print message key
-	printf("Message key (%zu Bytes):\n", message_key.content_length);
-	print_hex(message_key);
-	putchar('\n');
-
-cleanup:
-	on_error {
-		print_errors(status);
-	}
-	return_status_destroy_errors(&status);
-
-	return status.status;
+	return EXIT_SUCCESS;
 }

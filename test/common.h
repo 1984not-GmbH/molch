@@ -32,9 +32,9 @@ void print_header_and_message_keystore(header_and_message_keystore& keystore) no
 /*
  * Generates and prints a crypto_box keypair.
  */
-return_status generate_and_print_keypair(
+void generate_and_print_keypair(
 		Buffer& public_key, //crypto_box_PUBLICKEYBYTES
 		Buffer& private_key, //crypto_box_SECRETKEYBYTES
 		const std::string& name, //Name of the key owner (e.g. "Alice")
-		const std::string& type) noexcept; //type of the key (e.g. "ephemeral")
+		const std::string& type); //type of the key (e.g. "ephemeral")
 #endif

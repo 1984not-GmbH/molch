@@ -23,10 +23,12 @@
 #include <cstdlib>
 #include <sodium.h>
 #include <cassert>
+#include <exception>
 
 #include "common.h"
 #include "utils.h"
 #include "../lib/conversation.h"
+#include "../lib/molch-exception.h"
 
 int main(void) noexcept {
 	//create buffers
@@ -88,24 +90,29 @@ int main(void) noexcept {
 	status = PrekeyStore::create(bob_prekeys);
 	THROW_on_error(CREATION_ERROR, "Failed to create Bobs prekey store.");
 
-	//create keys
-	//alice
-	//identity
-	status = generate_and_print_keypair(
+	try {
+		//create keys
+		//alice
+		//identity
+		generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
 			"Alice",
 			"identity");
-	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate Alice' identity keys.");
 
-	//bob
-	//identity
-	status = generate_and_print_keypair(
+		//bob
+		//identity
+		generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
 			"Bob",
 			"identity");
-	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate Bob's identity keys.");
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//get the prekey list
 	status = bob_prekeys->list(prekey_list);

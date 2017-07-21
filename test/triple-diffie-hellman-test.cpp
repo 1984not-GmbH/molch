@@ -23,6 +23,7 @@
 #include <cstdlib>
 #include <sodium.h>
 #include <exception>
+#include <iostream>
 
 #include "../lib/diffie-hellman.h"
 #include "utils.h"
@@ -30,79 +31,64 @@
 #include "../lib/molch-exception.h"
 
 int main(void) noexcept {
-	if (sodium_init() == -1) {
-		return -1;
-	}
+	try {
+		if (sodium_init() == -1) {
+			return -1;
+		}
 
-	return_status status = return_status_init();
+		printf("Generate Alice's keys -------------------------------------------------------\n\n");
 
-	//create buffers
-	//alice keys
-	Buffer alice_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer alice_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer alice_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer alice_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer alice_shared_secret(crypto_generichash_BYTES, crypto_generichash_BYTES);
-	//bobs keys
-	Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer bob_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer bob_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer bob_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer bob_shared_secret(crypto_generichash_BYTES, crypto_generichash_BYTES);
-
-	printf("Generate Alice's keys -------------------------------------------------------\n\n");
-
-	int status_int = 0;
-
-	throw_on_invalid_buffer(alice_public_identity);
-	throw_on_invalid_buffer(alice_private_identity);
-	throw_on_invalid_buffer(alice_public_ephemeral);
-	throw_on_invalid_buffer(alice_private_ephemeral);
-	throw_on_invalid_buffer(alice_shared_secret);
-	throw_on_invalid_buffer(bob_public_identity);
-	throw_on_invalid_buffer(bob_private_identity);
-	throw_on_invalid_buffer(bob_public_ephemeral);
-	throw_on_invalid_buffer(bob_private_ephemeral);
-	throw_on_invalid_buffer(bob_shared_secret);
-
-	//create Alice's identity keypair
-	status = generate_and_print_keypair(
+		//create Alice's identity keypair
+		Buffer alice_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		Buffer alice_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		exception_on_invalid_buffer(alice_public_identity);
+		exception_on_invalid_buffer(alice_private_identity);
+		generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
 			"Alice",
 			"identity");
-	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice' identity keypair.");
 
-	//create Alice's ephemeral keypair
-	status = generate_and_print_keypair(
+		//create Alice's ephemeral keypair
+		Buffer alice_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		Buffer alice_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		exception_on_invalid_buffer(alice_public_ephemeral);
+		exception_on_invalid_buffer(alice_private_ephemeral);
+		generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
 			"Alice",
 			"ephemeral");
-	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Alice' ephemeral keypair.");
 
-	printf("Generate Bob's keys ---------------------------------------------------------\n\n");
+		printf("Generate Bob's keys ---------------------------------------------------------\n\n");
 
-	//create Bob's identity keypair
-	status = generate_and_print_keypair(
+		//create Bob's identity keypair
+		Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		Buffer bob_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		exception_on_invalid_buffer(bob_public_identity);
+		exception_on_invalid_buffer(bob_private_identity);
+		generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
 			"Bob",
 			"identity");
-	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's identity keypair.");
 
-	//create Bob's ephemeral keypair
-	status = generate_and_print_keypair(
+		//create Bob's ephemeral keypair
+		Buffer bob_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		Buffer bob_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		exception_on_invalid_buffer(bob_public_ephemeral);
+		exception_on_invalid_buffer(bob_private_ephemeral);
+		generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
 			"Bob",
 			"ephemeral");
-	THROW_on_error(KEYGENERATION_FAILED, "Failed to generate and print Bob's ephemeral keypair.");
 
-	printf("Calculate shared secret via Triple Diffie Hellman ---------------------------\n\n");
+		printf("Calculate shared secret via Triple Diffie Hellman ---------------------------\n\n");
 
-	//Triple Diffie Hellman on Alice's side
-	try {
+		//Triple Diffie Hellman on Alice's side
+		Buffer alice_shared_secret(crypto_generichash_BYTES, crypto_generichash_BYTES);
+		exception_on_invalid_buffer(alice_shared_secret);
 		triple_diffie_hellman(
 			alice_shared_secret,
 			alice_private_identity,
@@ -112,19 +98,15 @@ int main(void) noexcept {
 			bob_public_identity,
 			bob_public_ephemeral,
 			true);
-	} catch (const MolchException& exception) {
-		status = exception.toReturnStatus();
-		goto cleanup;
-	} catch (const std::exception& exception) {
-		THROW(EXCEPTION, exception.what());
-	}
-	//print Alice's shared secret
-	printf("Alice's shared secret H(DH(A_priv,B0_pub)||DH(A0_priv,B_pub)||DH(A0_priv,B0_pub)):\n");
-	print_hex(alice_shared_secret);
-	putchar('\n');
 
-	//Triple Diffie Hellman on Bob's side
-	try {
+		//print Alice's shared secret
+		printf("Alice's shared secret H(DH(A_priv,B0_pub)||DH(A0_priv,B_pub)||DH(A0_priv,B0_pub)):\n");
+		print_hex(alice_shared_secret);
+		putchar('\n');
+
+		//Triple Diffie Hellman on Bob's side
+		Buffer bob_shared_secret(crypto_generichash_BYTES, crypto_generichash_BYTES);
+		exception_on_invalid_buffer(bob_shared_secret);
 		triple_diffie_hellman(
 			bob_shared_secret,
 			bob_private_identity,
@@ -134,30 +116,25 @@ int main(void) noexcept {
 			alice_public_identity,
 			alice_public_ephemeral,
 			false);
+
+		//print Bob's shared secret
+		printf("Bob's shared secret H(DH(B0_priv, A_pub)||DH(B_priv, A0_pub)||DH(B0_priv, A0_pub)):\n");
+		print_hex(bob_shared_secret);
+		putchar('\n');
+
+		//compare both shared secrets
+		if (alice_shared_secret != bob_shared_secret) {
+			throw MolchException(INCORRECT_DATA, "Triple Diffie Hellman didn't produce the same shared secret.");
+		}
+
+		printf("Both shared secrets match!\n");
 	} catch (const MolchException& exception) {
-		status = exception.toReturnStatus();
-		goto cleanup;
+		std::cout << exception.print() << std::endl;
+		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
-		THROW(EXCEPTION, exception.what());
-	}
-	//print Bob's shared secret
-	printf("Bob's shared secret H(DH(B0_priv, A_pub)||DH(B_priv, A0_pub)||DH(B0_priv, A0_pub)):\n");
-	print_hex(bob_shared_secret);
-	putchar('\n');
-
-	//compare both shared secrets
-	status_int = alice_shared_secret.compare(&bob_shared_secret);
-	if (status_int != 0) {
-		THROW(INCORRECT_DATA, "Triple Diffie Hellman didn't produce the same shared secret.");
+		std::cout << exception.what() << std::endl;
+		return EXIT_FAILURE;
 	}
 
-	printf("Both shared secrets match!\n");
-
-cleanup:
-	on_error {
-		print_errors(status);
-	}
-	return_status_destroy_errors(&status);
-
-	return status.status;
+	return EXIT_SUCCESS;
 }

@@ -33,11 +33,11 @@
  * The input key needs to be between crypto_generichash_blake2b_KEYBYTES_MIN (16 Bytes)
  * and crypto_generichash_blake2b_KEYBYTES_MAX (64 Bytes).
  */
-return_status derive_key(
+void derive_key(
 		Buffer& derived_key,
 		size_t derived_size,
 		Buffer& input_key,
-		uint32_t subkey_counter) noexcept __attribute__((warn_unused_result)); //number of the current subkey, used to derive multiple keys from the same input key
+		uint32_t subkey_counter); //number of the current subkey, used to derive multiple keys from the same input key
 
 /*
  * Derive the next chain key in a message chain.
@@ -47,9 +47,9 @@ return_status derive_key(
  * CK_new = HMAC-Hash(CK_prev, 0x01)
  * (previous chain key as key, 0x01 as message)
  */
-return_status derive_chain_key(
+void derive_chain_key(
 		Buffer& new_chain_key,
-		Buffer& previous_chain_key) noexcept __attribute__((warn_unused_result));
+		Buffer& previous_chain_key);
 
 /*
  * Derive a message key from a chain key.
@@ -59,9 +59,9 @@ return_status derive_chain_key(
  * MK = HMAC-Hash(CK, 0x00)
  * (chain_key as key, 0x00 as message)
  */
-return_status derive_message_key(
+void derive_message_key(
 		Buffer& message_key,
-		Buffer& chain_key) noexcept __attribute__((warn_unused_result));
+		Buffer& chain_key);
 
 /*
  * Derive a root, next header and initial chain key for a new ratchet.
@@ -70,7 +70,7 @@ return_status derive_message_key(
  * and
  * RK, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
  */
-return_status derive_root_next_header_and_chain_keys(
+void derive_root_next_header_and_chain_keys(
 		Buffer& root_key, //ROOT_KEY_SIZE
 		Buffer& next_header_key, //HEADER_KEY_SIZE
 		Buffer& chain_key, //CHAIN_KEY_SIZE
@@ -78,14 +78,14 @@ return_status derive_root_next_header_and_chain_keys(
 		const Buffer& our_public_ephemeral,
 		const Buffer& their_public_ephemeral,
 		const Buffer& previous_root_key,
-		bool am_i_alice) noexcept __attribute__((warn_unused_result));
+		bool am_i_alice);
 
 /*
  * Derive initial root, chain and header keys.
  *
  * RK, CKs/r, HKs/r = KDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
  */
-return_status derive_initial_root_chain_and_header_keys(
+void derive_initial_root_chain_and_header_keys(
 		Buffer& root_key, //ROOT_KEY_SIZE
 		Buffer& send_chain_key, //CHAIN_KEY_SIZE
 		Buffer& receive_chain_key, //CHAIN_KEY_SIZE
@@ -99,6 +99,6 @@ return_status derive_initial_root_chain_and_header_keys(
 		const Buffer& our_private_ephemeral,
 		const Buffer& our_public_ephemeral,
 		const Buffer& their_public_ephemeral,
-		bool am_i_alice) noexcept __attribute__((warn_unused_result));
+		bool am_i_alice);
 
 #endif

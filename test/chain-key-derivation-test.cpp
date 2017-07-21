@@ -22,60 +22,59 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
+#include <exception>
+#include <iostream>
 
 #include "../lib/key-derivation.h"
+#include "../lib/molch-exception.h"
 #include "utils.h"
 
-int main(void) noexcept {
-	if (sodium_init() == -1) {
-		return -1;
-	}
+int main(void) {
+	try {
+		if (sodium_init() == -1) {
+			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+		}
 
-	return_status status = return_status_init();
+		//create random initial chain key
+		Buffer last_chain_key(crypto_auth_BYTES, crypto_auth_BYTES);
+		exception_on_invalid_buffer(last_chain_key);
+		if (last_chain_key.fillRandom(last_chain_key.getBufferLength()) != 0) {
+			throw MolchException(KEYGENERATION_FAILED, "Failed to create last chain key.");
+		}
 
-	//buffer for derived chain keys
-	Buffer next_chain_key(crypto_auth_BYTES, crypto_auth_BYTES);
-	//create random initial chain key
-	Buffer last_chain_key(crypto_auth_BYTES, crypto_auth_BYTES);
-	throw_on_invalid_buffer(next_chain_key);
-	throw_on_invalid_buffer(last_chain_key);
-	if (last_chain_key.fillRandom(last_chain_key.getBufferLength()) != 0) {
-		THROW(KEYGENERATION_FAILED, "Failed to create last chain key.");
-	}
-
-	//print first chain key
-	printf("Initial chain key (%i Bytes):\n", crypto_auth_BYTES);
-	print_hex(last_chain_key);
-	putchar('\n');
-
-
-	//derive a chain of chain keys
-	unsigned int counter;
-	for (counter = 1; counter <= 5; counter++) {
-		status = derive_chain_key(next_chain_key, last_chain_key);
-		THROW_on_error(KEYDERIVATION_FAILED, "Failed to derive chain key.");
-
-		//print the derived chain key
-		printf("Chain key Nr. %i:\n", counter);
-		print_hex(next_chain_key);
+		//print first chain key
+		printf("Initial chain key (%i Bytes):\n", crypto_auth_BYTES);
+		print_hex(last_chain_key);
 		putchar('\n');
 
-		//check that chain keys are different
-		if (last_chain_key.compare(&next_chain_key) == 0) {
-			THROW(INCORRECT_DATA, "Derived chain key is identical.");
-		}
 
-		//move next_chain_key to last_chain_key
-		if (last_chain_key.cloneFrom(&next_chain_key) != 0) {
-			THROW(BUFFER_ERROR, "Failed to copy chain key.");
+		//derive a chain of chain keys
+		Buffer next_chain_key(crypto_auth_BYTES, crypto_auth_BYTES);
+		exception_on_invalid_buffer(next_chain_key);
+		unsigned int counter;
+		for (counter = 1; counter <= 5; counter++) {
+			derive_chain_key(next_chain_key, last_chain_key);
+
+			//print the derived chain key
+			printf("Chain key Nr. %i:\n", counter);
+			print_hex(next_chain_key);
+			putchar('\n');
+
+			//check that chain keys are different
+			if (last_chain_key == next_chain_key) {
+				throw MolchException(INCORRECT_DATA, "Derived chain key is identical.");
+			}
+
+			//move next_chain_key to last_chain_key
+			if (last_chain_key.cloneFrom(&next_chain_key) != 0) {
+				throw MolchException(BUFFER_ERROR, "Failed to copy chain key.");
+			}
 		}
+	} catch (const MolchException& exception) {
+		return EXIT_FAILURE;
+	} catch (const std::exception& exception) {
+		return EXIT_FAILURE;
 	}
 
-cleanup:
-	on_error {
-		print_errors(status);
-	}
-	return_status_destroy_errors(&status);
-
-	return status.status;
+	return EXIT_SUCCESS;
 }
