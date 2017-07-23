@@ -34,17 +34,14 @@
  * that is returned by the zeroed_malloc function.)
  */
 
-void *zeroed_malloc(size_t size) {
+void *throwing_zeroed_malloc(size_t size) {
 	// start_pointer:size:padding:allocated_memory
 	// the size is needed in order to overwrite it with zeroes later
 	// the start_pointer has to be passed to free later
 
 	size_t amount_to_allocate = size + sizeof(void*) + sizeof(size_t) + (alignof(max_align_t) - 1);
 
-	unsigned char * malloced_address = (unsigned char*)malloc(amount_to_allocate);
-	if (malloced_address == nullptr) {
-		return nullptr;
-	}
+	unsigned char *malloced_address = new unsigned char[amount_to_allocate];
 
 	unsigned char *aligned_address = (unsigned char*)next_aligned_address(malloced_address + sizeof(size_t) + sizeof(void*), alignof(intmax_t));
 
@@ -57,13 +54,21 @@ void *zeroed_malloc(size_t size) {
 	return aligned_address;
 }
 
+void *zeroed_malloc(size_t size) {
+	try {
+		return throwing_zeroed_malloc(size);
+	} catch (const std::exception& exception) {
+		return nullptr;
+	}
+}
+
 void zeroed_free(void *pointer) {
 	if (pointer == nullptr) {
 		return;
 	}
 
 	size_t size;
-	void *malloced_address;
+	unsigned char *malloced_address;
 
 	//NOTE: This has to be copied as bytes because of possible alignment issues
 	//get the size
@@ -73,7 +78,7 @@ void zeroed_free(void *pointer) {
 
 	sodium_memzero(pointer, size);
 
-	free_and_null_if_valid(malloced_address);
+	delete[] malloced_address;
 }
 
 void *protobuf_c_allocator(void *allocator_data __attribute__((unused)), size_t size) {

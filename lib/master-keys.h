@@ -23,61 +23,80 @@ extern "C" {
 	#include <user.pb-c.h>
 }
 
+#include <memory>
+
 #include "constants.h"
 #include "common.h"
 #include "buffer.h"
 #include "return-status.h"
 #include "zeroed_malloc.h"
+#include "sodium-wrappers.h"
+#include "protobuf-deleters.h"
 
 #ifndef LIB_MASTER_KEYS
 #define LIB_MASTER_KEYS
 
+class PrivateMasterKeyStorage {
+	friend class MasterKeys;
+	unsigned char signing_key[PRIVATE_MASTER_KEY_SIZE];
+	unsigned char identity_key[PRIVATE_KEY_SIZE];
+};
+
 class MasterKeys {
+private:
+	std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>> private_keys;
+
+    /* Internally does the intialization of the buffers creation of the keys */
+    void init();
+    void generate(const Buffer* low_entropy_seed);
+
+	enum {LOCKED, READONLY, READWRITE} lock_state;
+	void unlock_readwrite();
+
 public:
 	//Ed25519 key for signing
-	Buffer public_signing_key;
-	unsigned char public_signing_key_storage[PUBLIC_MASTER_KEY_SIZE];
-	Buffer private_signing_key;
-	unsigned char private_signing_key_storage[PRIVATE_MASTER_KEY_SIZE];
+	std::unique_ptr<Buffer> public_signing_key;
+	std::unique_ptr<Buffer> private_signing_key;
 	//X25519 key for deriving axolotl root keys
-	Buffer public_identity_key;
-	unsigned char public_identity_key_storage[PUBLIC_KEY_SIZE];
-	Buffer private_identity_key;
-	unsigned char private_identity_key_storage[PRIVATE_KEY_SIZE];
+	std::unique_ptr<Buffer> public_identity_key;
+	std::unique_ptr<Buffer> private_identity_key;
 
 	/*
 	 * Create a new set of master keys.
 	 *
-	 * Seed is optional, can be nullptr. It can be of any length and doesn't
+	 * Optionally wit a seed. It can be of any length and doesn't
 	 * require to have high entropy. It will be used as entropy source
 	 * in addition to the OSs CPRNG.
 	 *
 	 * WARNING: Don't use Entropy from the OSs CPRNG as seed!
 	 */
-	static return_status create(
-			MasterKeys*& keys, //output
-			const Buffer * const seed, //optional
-			Buffer * const public_signing_key, //output, optional, can be nullptr
-			Buffer * const public_identity_key //output, optional, can be nullptr
-			) noexcept __attribute__((warn_unused_result));
+	MasterKeys();
+	MasterKeys(const Buffer& low_entropy_seed);
+
+	/*
+	 * import from Protobuf-C
+	 */
+	MasterKeys(
+		const Key& public_signing_key,
+		const Key& private_signing_key,
+		const Key& public_identity_key,
+		const Key& private_identity_key);
 
 	/*
 	 * Get the public signing key.
 	 */
-	return_status getSigningKey(Buffer& public_signing_key) noexcept __attribute__((warn_unused_result));
+	void getSigningKey(Buffer& public_signing_key);
 
 	/*
 	 * Get the public identity key.
 	 */
-	return_status getIdentityKey(Buffer& public_identity_key) noexcept __attribute__((warn_unused_result));
+	void getIdentityKey(Buffer& public_identity_key);
 
 	/*
 	 * Sign a piece of data. Returns the data and signature in one output buffer.
 	 */
-	return_status sign(
-			const Buffer& data,
-			Buffer& signed_data //output, length of data + SIGNATURE_SIZE
-			) noexcept __attribute__((warn_unused_result));
+	void sign(const Buffer& data, Buffer& signed_data //output, length of data + SIGNATURE_SIZE
+			);
 
 	/*! Export a set of master keys into a user Protobuf-C struct
 	 * \param public_signing_key Public pasrt of the signing keypair.
@@ -85,24 +104,15 @@ public:
 	 * \param public_identity_key Public part of the identity keypair.
 	 * \param private_identity_key Private part of the idenity keypair.
 	 */
-	return_status exportMasterKeys(
-			Key*& public_signing_key,
-			Key*& private_signing_key,
-			Key*& public_identity_key,
-			Key*& private_identity_key) noexcept __attribute__((warn_unused_result));
+	void exportProtobuf(
+            std::unique_ptr<Key,KeyDeleter>& public_signing_key,
+            std::unique_ptr<Key,KeyDeleter>& private_signing_key,
+            std::unique_ptr<Key,KeyDeleter>& public_identity_key,
+            std::unique_ptr<Key,KeyDeleter>& private_identity_key);
 
-	/*! Import a set of master keys from Protobuf-C structs
-	 * \param keys A set of master keys to import to.
-	 * \param public_signing_key Public part of the signing keypair (protobuf-c).
-	 * \param private_signing_key Private part of the signing keypair (protobuf-c).
-	 * \param public_identity_key Public part of the signing keypair (protobuf-c).
-	 * \param private_identity_key Private part of the signing keypair (protobuf-c).
-	 */
-	static return_status import(
-		MasterKeys*& keys,
-		const Key * const public_signing_key,
-		const Key * const private_signing_key,
-		const Key * const public_identity_key,
-		const Key * const private_identity_key) noexcept __attribute__((warn_unused_result));
+	/* Manage the memory for the private keys */
+	void lock();
+	void unlock();
 };
+
 #endif

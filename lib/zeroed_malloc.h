@@ -31,10 +31,6 @@
 #include <protobuf-c/protobuf-c.h>
 #include "common.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /*!
  * Allocates a buffer of 'size' and stores it's size.
  *
@@ -44,6 +40,17 @@ extern "C" {
  *   A pointer to a heap allocated memory region of size 'size'.
  */
 void *zeroed_malloc(size_t size) __attribute__((warn_unused_result));
+
+/*!
+ * Allocates a buffer of 'size' and stores it's size.
+ *
+ * \param size
+ *   The amount of bytes to be allocated.
+ * \return
+ *   A pointer to a heap allocated memory regtion of size 'size'.
+ * \throws std::bad_alloc
+ */
+void *throwing_zeroed_malloc(size_t size) __attribute__((warn_unused_result));
 
 /*!
  * Frees a buffer allocated with zeroed_malloc and securely
@@ -82,8 +89,14 @@ static ProtobufCAllocator protobuf_c_allocators __attribute__((unused)) = {
 	NULL
 };
 
-#ifdef __cplusplus
-}
-#endif
+template <typename T>
+class ZeroedMallocDeleter {
+public:
+	void operator()(T* object) {
+		if (object != nullptr) {
+			zeroed_free(object);
+		}
+	}
+};
 
 #endif

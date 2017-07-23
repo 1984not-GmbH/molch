@@ -22,403 +22,292 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
+#include <memory>
+#include <iostream>
 
 #include "../lib/master-keys.h"
 #include "../lib/constants.h"
+#include "../lib/molch-exception.h"
+#include "../lib/protobuf-deleters.h"
 #include "utils.h"
 
-return_status protobuf_export(
+void protobuf_export(
 		MasterKeys& keys,
-		Buffer*& public_signing_key_buffer,
-		Buffer*& private_signing_key_buffer,
-		Buffer*& public_identity_key_buffer,
-		Buffer*& private_identity_key_buffer) noexcept __attribute__((warn_unused_result));
-return_status protobuf_export(
-		MasterKeys& keys,
-		Buffer*& public_signing_key_buffer,
-		Buffer*& private_signing_key_buffer,
-		Buffer*& public_identity_key_buffer,
-		Buffer*& private_identity_key_buffer) noexcept {
-	return_status status = return_status_init();
+		std::unique_ptr<Buffer>& public_signing_key_buffer,
+		std::unique_ptr<Buffer>& private_signing_key_buffer,
+		std::unique_ptr<Buffer>& public_identity_key_buffer,
+		std::unique_ptr<Buffer>& private_identity_key_buffer) {
+	std::unique_ptr<Key,KeyDeleter> public_signing_key;
+	std::unique_ptr<Key,KeyDeleter> private_signing_key;
+	std::unique_ptr<Key,KeyDeleter> public_identity_key;
+	std::unique_ptr<Key,KeyDeleter> private_identity_key;
 
-	Key * public_signing_key = nullptr;
-	Key * private_signing_key = nullptr;
-	Key * public_identity_key = nullptr;
-	Key * private_identity_key = nullptr;
+	keys.exportProtobuf(
+				public_signing_key,
+				private_signing_key,
+				public_identity_key,
+				private_identity_key);
 
-	status = keys.exportMasterKeys(public_signing_key, private_signing_key, public_identity_key, private_identity_key);
-	THROW_on_error(EXPORT_ERROR, "Failed to export master keys.");
-
-	//export the keys
+	//copy keys to buffer
 	//public signing key
-	{
-		size_t public_signing_key_proto_size = key__get_packed_size(public_signing_key);
-		public_signing_key_buffer = Buffer::create(public_signing_key_proto_size, 0);
-		public_signing_key_buffer->content_length = key__pack(public_signing_key, public_signing_key_buffer->content);
-		if (public_signing_key_buffer->content_length != public_signing_key_proto_size) {
-			THROW(EXPORT_ERROR, "Failed to export public signing key.");
-		}
+	size_t public_signing_key_proto_size = key__get_packed_size(public_signing_key.get());
+	public_signing_key_buffer = std::make_unique<Buffer>(public_signing_key_proto_size, 0);
+	public_signing_key_buffer->content_length = key__pack(public_signing_key.get(), public_signing_key_buffer->content);
+	if (!public_signing_key_buffer->contains(public_signing_key_proto_size)) {
+		throw MolchException(EXPORT_ERROR, "Failed to export public signing key.");
 	}
 
 	//private signing key
-	{
-		size_t private_signing_key_proto_size = key__get_packed_size(private_signing_key);
-		private_signing_key_buffer = Buffer::create(private_signing_key_proto_size, 0);
-		private_signing_key_buffer->content_length = key__pack(private_signing_key, private_signing_key_buffer->content);
-		if (private_signing_key_buffer->content_length != private_signing_key_proto_size) {
-			THROW(EXPORT_ERROR, "Failed to export private signing key.");
-		}
+	size_t private_signing_key_proto_size = key__get_packed_size(private_signing_key.get());
+	private_signing_key_buffer = std::make_unique<Buffer>(private_signing_key_proto_size, 0);
+	private_signing_key_buffer->content_length = key__pack(private_signing_key.get(), private_signing_key_buffer->content);
+	if (!private_signing_key_buffer->contains(private_signing_key_proto_size)) {
+		throw MolchException(EXPORT_ERROR, "Failed to export private signing key.");
 	}
 
 	//public identity key
-	{
-		size_t public_identity_key_proto_size = key__get_packed_size(public_identity_key);
-		public_identity_key_buffer = Buffer::create(public_identity_key_proto_size, 0);
-		public_identity_key_buffer->content_length = key__pack(public_identity_key, public_identity_key_buffer->content);
-		if (public_identity_key_buffer->content_length != public_identity_key_proto_size) {
-			THROW(EXPORT_ERROR, "Failed to export public identity key.");
-		}
+	size_t public_identity_key_proto_size = key__get_packed_size(public_identity_key.get());
+	public_identity_key_buffer = std::make_unique<Buffer>(public_identity_key_proto_size, 0);
+	public_identity_key_buffer->content_length = key__pack(public_identity_key.get(), public_identity_key_buffer->content);
+	if (!public_identity_key_buffer->contains(public_identity_key_proto_size)) {
+		throw MolchException(EXPORT_ERROR, "Failed to export public identity key.");
 	}
 
 	//private identity key
-	{
-		size_t private_identity_key_proto_size = key__get_packed_size(private_identity_key);
-		private_identity_key_buffer = Buffer::create(private_identity_key_proto_size, 0);
-		private_identity_key_buffer->content_length = key__pack(private_identity_key, private_identity_key_buffer->content);
-		if (private_identity_key_buffer->content_length != private_identity_key_proto_size) {
-			THROW(EXPORT_ERROR, "Failed to export private identity key.");
-		}
+	size_t private_identity_key_proto_size = key__get_packed_size(private_identity_key.get());
+	private_identity_key_buffer = std::make_unique<Buffer>(private_identity_key_proto_size, 0);
+	private_identity_key_buffer->content_length = key__pack(private_identity_key.get(), private_identity_key_buffer->content);
+	if (!private_identity_key_buffer->contains(private_identity_key_proto_size)) {
+		throw MolchException(EXPORT_ERROR, "Failed to export private identity key.");
 	}
-
-cleanup:
-	if (public_signing_key != nullptr) {
-		key__free_unpacked(public_signing_key, &protobuf_c_allocators);
-		public_signing_key = nullptr;
-	}
-
-	if (private_signing_key != nullptr) {
-		key__free_unpacked(private_signing_key, &protobuf_c_allocators);
-		private_signing_key = nullptr;
-	}
-
-	if (public_identity_key != nullptr) {
-		key__free_unpacked(public_identity_key, &protobuf_c_allocators);
-		public_identity_key = nullptr;
-	}
-
-	if (private_identity_key != nullptr) {
-		key__free_unpacked(private_identity_key, &protobuf_c_allocators);
-		private_identity_key = nullptr;
-	}
-
-	//cleanup of buffers is done in the main function
-	return status;
 }
 
 
-return_status protobuf_import(
-		MasterKeys*& keys,
+void protobuf_import(
+		std::unique_ptr<MasterKeys>& keys,
 		const Buffer& public_signing_key_buffer,
 		const Buffer& private_signing_key_buffer,
 		const Buffer& public_identity_key_buffer,
-		const Buffer& private_identity_key_buffer) noexcept __attribute__((warn_unused_result));
-return_status protobuf_import(
-		MasterKeys*& keys,
-		const Buffer& public_signing_key_buffer,
-		const Buffer& private_signing_key_buffer,
-		const Buffer& public_identity_key_buffer,
-		const Buffer& private_identity_key_buffer) noexcept {
-	return_status status = return_status_init();
-
-	Key *public_signing_key = nullptr;
-	Key *private_signing_key = nullptr;
-	Key *public_identity_key = nullptr;
-	Key *private_identity_key = nullptr;
-
+		const Buffer& private_identity_key_buffer) {
 	//unpack the protobuf-c buffers
-	public_signing_key = key__unpack(
-		&protobuf_c_allocators,
-		public_signing_key_buffer.content_length,
-		public_signing_key_buffer.content);
-	if (public_signing_key == nullptr) {
-		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack public signing key from protobuf.");
+	auto public_signing_key = std::unique_ptr<Key,KeyDeleter>(
+		key__unpack(
+			&protobuf_c_allocators,
+			public_signing_key_buffer.content_length,
+			public_signing_key_buffer.content));
+	if (!public_signing_key) {
+		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack public signing key from protobuf.");
 	}
-	private_signing_key = key__unpack(
-		&protobuf_c_allocators,
-		private_signing_key_buffer.content_length,
-		private_signing_key_buffer.content);
-	if (private_signing_key == nullptr) {
-		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack private signing key from protobuf.");
+	auto private_signing_key = std::unique_ptr<Key,KeyDeleter>(
+		key__unpack(
+			&protobuf_c_allocators,
+			private_signing_key_buffer.content_length,
+			private_signing_key_buffer.content));
+	if (!private_signing_key) {
+		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack private signing key from protobuf.");
 	}
-	public_identity_key = key__unpack(
-		&protobuf_c_allocators,
-		public_identity_key_buffer.content_length,
-		public_identity_key_buffer.content);
-	if (public_identity_key == nullptr) {
-		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack public identity key from protobuf.");
+	auto public_identity_key = std::unique_ptr<Key,KeyDeleter>(
+		key__unpack(
+			&protobuf_c_allocators,
+			public_identity_key_buffer.content_length,
+			public_identity_key_buffer.content));
+	if (!public_identity_key) {
+		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack public identity key from protobuf.");
 	}
-	private_identity_key = key__unpack(
-		&protobuf_c_allocators,
-		private_identity_key_buffer.content_length,
-		private_identity_key_buffer.content);
-	if (private_identity_key == nullptr) {
-		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack private identity key from protobuf.");
-	}
-
-	status = MasterKeys::import(
-		keys,
-		public_signing_key,
-		private_signing_key,
-		public_identity_key,
-		private_identity_key);
-	THROW_on_error(IMPORT_ERROR, "Failed to import master keys.")
-cleanup:
-	on_error {
-		sodium_free_and_null_if_valid(keys);
+	auto private_identity_key = std::unique_ptr<Key,KeyDeleter>(
+		key__unpack(
+			&protobuf_c_allocators,
+			private_identity_key_buffer.content_length,
+			private_identity_key_buffer.content));
+	if (!private_identity_key) {
+		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack private identity key from protobuf.");
 	}
 
-	//free the protobuf-c structs
-	if (public_signing_key != nullptr) {
-		key__free_unpacked(public_signing_key, &protobuf_c_allocators);
-		public_signing_key = nullptr;
-	}
-	if (private_signing_key != nullptr) {
-		key__free_unpacked(private_signing_key, &protobuf_c_allocators);
-		private_signing_key = nullptr;
-	}
-	if (public_identity_key != nullptr) {
-		key__free_unpacked(public_identity_key, &protobuf_c_allocators);
-		public_identity_key = nullptr;
-	}
-	if (private_identity_key != nullptr) {
-		key__free_unpacked(private_identity_key, &protobuf_c_allocators);
-		private_identity_key = nullptr;
-	}
-
-	//buffers will be freed in main
-
-	return status;
+	keys = std::make_unique<MasterKeys>(
+		*public_signing_key,
+		*private_signing_key,
+		*public_identity_key,
+		*private_identity_key);
 }
 
 
 int main(void) noexcept {
-	if (sodium_init() == -1) {
-		return -1;
-	}
+	try {
+		if (sodium_init() == -1) {
+			throw MolchException(INIT_ERROR, "Failed to initialize libsodium");
+		}
+		//create the unspiced master keys
+		MasterKeys unspiced_master_keys{};
 
-	return_status status = return_status_init();
+		//get the public keys
+		Buffer public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+		unspiced_master_keys.getSigningKey(public_signing_key);
+		Buffer public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		unspiced_master_keys.getIdentityKey(public_identity_key);
 
-	MasterKeys *unspiced_master_keys = nullptr;
-	MasterKeys *spiced_master_keys = nullptr;
-	MasterKeys *imported_master_keys = nullptr;
+		//print the keys
+		printf("Signing keypair:\n");
+		printf("Public:\n");
+		print_hex(*unspiced_master_keys.public_signing_key);
 
-	//public key buffers
-	Buffer public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	Buffer public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		printf("\nPrivate:\n");
+		unspiced_master_keys.unlock();
+		print_hex(*unspiced_master_keys.private_signing_key);
+		unspiced_master_keys.lock();
 
-	Buffer signed_data(100, 0);
-	Buffer unwrapped_data(100, 0);
+		printf("\n\nIdentity keys:\n");
+		printf("Public:\n");
+		print_hex(*unspiced_master_keys.public_identity_key);
 
-	//export buffers
-	Buffer *protobuf_export_public_signing_key = nullptr;
-	Buffer *protobuf_export_private_signing_key = nullptr;
-	Buffer *protobuf_export_public_identity_key = nullptr;
-	Buffer *protobuf_export_private_identity_key = nullptr;
-	//second export
-	Buffer *protobuf_second_export_public_signing_key = nullptr;
-	Buffer *protobuf_second_export_private_signing_key = nullptr;
-	Buffer *protobuf_second_export_public_identity_key = nullptr;
-	Buffer *protobuf_second_export_private_identity_key = nullptr;
+		printf("\nPrivate:\n");
+		unspiced_master_keys.unlock();
+		print_hex(*unspiced_master_keys.private_identity_key);
+		unspiced_master_keys.lock();
 
-	int status_int = 0;
-
-	throw_on_invalid_buffer(public_signing_key);
-	throw_on_invalid_buffer(public_identity_key);
-	throw_on_invalid_buffer(signed_data);
-	throw_on_invalid_buffer(unwrapped_data);
-
-	//create the unspiced master keys
-	status = MasterKeys::create(unspiced_master_keys, nullptr, nullptr, nullptr);
-	THROW_on_error(CREATION_ERROR, "Failed to create unspiced master keys.");
-
-	//get the public keys
-	status = unspiced_master_keys->getSigningKey(public_signing_key);
-	THROW_on_error(DATA_FETCH_ERROR, "Failed to get the public signing key!");
-	status = unspiced_master_keys->getIdentityKey(public_identity_key);
-	THROW_on_error(DATA_FETCH_ERROR, "Failed to get the public identity key.");
-
-	//print the keys
-	sodium_mprotect_readonly(unspiced_master_keys);
-	printf("Signing keypair:\n");
-	printf("Public:\n");
-	print_hex(unspiced_master_keys->public_signing_key);
-
-	printf("\nPrivate:\n");
-	print_hex(unspiced_master_keys->private_signing_key);
-
-	printf("\n\nIdentity keys:\n");
-	printf("Public:\n");
-	print_hex(unspiced_master_keys->public_identity_key);
-
-	printf("\nPrivate:\n");
-	print_hex(unspiced_master_keys->private_identity_key);
-
-	//check the exported public keys
-	if (public_signing_key != unspiced_master_keys->public_signing_key) {
-		THROW(INCORRECT_DATA, "Exported public signing key doesn't match.");
-	}
-	if (public_identity_key != unspiced_master_keys->public_identity_key) {
-		THROW(INCORRECT_DATA, "Exported public identity key doesn't match.");
-	}
-	sodium_mprotect_noaccess(unspiced_master_keys);
+		//check the exported public keys
+		if (public_signing_key != *unspiced_master_keys.public_signing_key) {
+			throw MolchException(INCORRECT_DATA, "Exported public signing key doesn't match.");
+		}
+		if (public_identity_key != *unspiced_master_keys.public_identity_key) {
+			throw MolchException(INCORRECT_DATA, "Exported public identity key doesn't match.");
+		}
 
 
-	//create the spiced master keys
-	{
+		//create the spiced master keys
 		Buffer seed(";a;awoeih]]pquw4t[spdif\\aslkjdf;'ihdg#)%!@))%)#)(*)@)#)h;kuhe[orih;o's':ke';sa'd;kfa';;.calijv;a/orq930u[sd9f0u;09[02;oasijd;adk");
-		status = MasterKeys::create(spiced_master_keys, &seed, &public_signing_key, &public_identity_key);
-		THROW_on_error(CREATION_ERROR, "Failed to create spiced master keys.");
-	}
+		exception_on_invalid_buffer(seed);
+		MasterKeys spiced_master_keys{seed};
+		spiced_master_keys.getSigningKey(public_signing_key);
+		spiced_master_keys.getIdentityKey(public_identity_key);
 
-	//print the keys
-	sodium_mprotect_readonly(spiced_master_keys);
-	printf("Signing keypair:\n");
-	printf("Public:\n");
-	print_hex(spiced_master_keys->public_signing_key);
+		//print the keys
+		printf("Signing keypair:\n");
+		printf("Public:\n");
+		print_hex(*spiced_master_keys.public_signing_key);
 
-	printf("\nPrivate:\n");
-	print_hex(spiced_master_keys->private_signing_key);
+		printf("\nPrivate:\n");
+		spiced_master_keys.unlock();
+		print_hex(*spiced_master_keys.private_signing_key);
+		spiced_master_keys.lock();
 
-	printf("\n\nIdentity keys:\n");
-	printf("Public:\n");
-	print_hex(spiced_master_keys->public_identity_key);
+		printf("\n\nIdentity keys:\n");
+		printf("Public:\n");
+		print_hex(*spiced_master_keys.public_identity_key);
 
-	printf("\nPrivate:\n");
-	print_hex(spiced_master_keys->private_identity_key);
+		printf("\nPrivate:\n");
+		spiced_master_keys.unlock();
+		print_hex(*spiced_master_keys.private_identity_key);
+		spiced_master_keys.lock();
 
-	//check the exported public keys
-	if (public_signing_key != spiced_master_keys->public_signing_key) {
-		THROW(INCORRECT_DATA, "Exported public signing key doesn't match.");
-	}
-	if (public_identity_key != spiced_master_keys->public_identity_key) {
-		THROW(INCORRECT_DATA, "Exported public identity key doesn't match.");
-	}
-	sodium_mprotect_noaccess(spiced_master_keys);
+		//check the exported public keys
+		if (public_signing_key != *spiced_master_keys.public_signing_key) {
+			throw MolchException(INCORRECT_DATA, "Exported public signing key doesn't match.");
+		}
+		if (public_identity_key != *spiced_master_keys.public_identity_key) {
+			throw MolchException(INCORRECT_DATA, "Exported public identity key doesn't match.");
+		}
 
-	//sign some data
-	{
-		Buffer data("This is some data to be signed.");
+		//sign some data
+		Buffer data{"This is some data to be signed."};
 		printf("Data to be signed.\n");
 		printf("%.*s\n", (int)data.content_length, (char*)data.content);
-
-		status = spiced_master_keys->sign(data, signed_data);
-		THROW_on_error(SIGN_ERROR, "Failed to sign data.");
+		Buffer signed_data{100, 0};
+		spiced_master_keys.sign(data, signed_data);
 		printf("Signed data:\n");
 		print_hex(signed_data);
+
+		//now check the signature
+		Buffer unwrapped_data{100, 0};
+		exception_on_invalid_buffer(unwrapped_data);
+		unsigned long long unwrapped_data_length;
+		int status_int = crypto_sign_open(
+				unwrapped_data.content,
+				&unwrapped_data_length,
+				signed_data.content,
+				signed_data.content_length,
+				public_signing_key.content);
+		if (status_int != 0) {
+			throw MolchException(VERIFY_ERROR, "Failed to verify signature.");
+		}
+		unwrapped_data.content_length = (size_t) unwrapped_data_length;
+
+		printf("\nSignature was successfully verified!\n");
+
+		//Test Export to Protobuf-C
+		printf("Export to Protobuf-C:\n");
+
+		//export buffers
+		auto protobuf_export_public_signing_key = std::unique_ptr<Buffer>(nullptr);
+		auto protobuf_export_private_signing_key = std::unique_ptr<Buffer>(nullptr);
+		auto protobuf_export_public_identity_key = std::unique_ptr<Buffer>(nullptr);
+		auto protobuf_export_private_identity_key = std::unique_ptr<Buffer>(nullptr);
+		protobuf_export(
+			spiced_master_keys,
+			protobuf_export_public_signing_key,
+			protobuf_export_private_signing_key,
+			protobuf_export_public_identity_key,
+			protobuf_export_private_identity_key);
+
+		printf("Public signing key:\n");
+		print_hex(*protobuf_export_public_signing_key);
+		puts("\n\n");
+
+		printf("Private signing key:\n");
+		print_hex(*protobuf_export_private_signing_key);
+		puts("\n\n");
+
+		printf("Public identity key:\n");
+		print_hex(*protobuf_export_public_identity_key);
+		puts("\n\n");
+
+		printf("Private identity key:\n");
+		print_hex(*protobuf_export_private_identity_key);
+		puts("\n\n");
+
+		//import again
+		printf("Import from Protobuf-C:\n");
+		auto imported_master_keys = std::unique_ptr<MasterKeys>(nullptr);
+		protobuf_import(
+			imported_master_keys,
+			*protobuf_export_public_signing_key,
+			*protobuf_export_private_signing_key,
+			*protobuf_export_public_identity_key,
+			*protobuf_export_private_identity_key);
+
+		//export again
+		auto protobuf_second_export_public_signing_key = std::unique_ptr<Buffer>(nullptr);
+		auto protobuf_second_export_private_signing_key = std::unique_ptr<Buffer>(nullptr);
+		auto protobuf_second_export_public_identity_key = std::unique_ptr<Buffer>(nullptr);
+		auto protobuf_second_export_private_identity_key = std::unique_ptr<Buffer>(nullptr);
+		protobuf_export(
+			*imported_master_keys,
+			protobuf_second_export_public_signing_key,
+			protobuf_second_export_private_signing_key,
+			protobuf_second_export_public_identity_key,
+			protobuf_second_export_private_identity_key);
+
+		//now compare
+		if (*protobuf_export_public_signing_key != *protobuf_second_export_public_signing_key) {
+			throw MolchException(INCORRECT_DATA, "The public signing keys do not match.");
+		}
+		if (*protobuf_export_private_signing_key != *protobuf_second_export_private_signing_key) {
+			throw MolchException(INCORRECT_DATA, "The private signing keys do not match.");
+		}
+		if (*protobuf_export_public_identity_key != *protobuf_second_export_public_identity_key) {
+			throw MolchException(INCORRECT_DATA, "The public identity keys do not match.");
+		}
+		if (*protobuf_export_private_identity_key != *protobuf_second_export_private_identity_key) {
+			throw MolchException(INCORRECT_DATA, "The private identity keys do not match.");
+		}
+
+		printf("Successfully exported to Protobuf-C and imported again.");
+	} catch (const MolchException& exception) {
+		std::cout << exception.print() << std::endl;
+		return EXIT_FAILURE;
+	} catch (const std::exception& exception) {
+		std::cout << exception.what() << std::endl;
+		return EXIT_FAILURE;
 	}
 
-	//now check the signature
-	unsigned long long unwrapped_data_length;
-	status_int = crypto_sign_open(
-			unwrapped_data.content,
-			&unwrapped_data_length,
-			signed_data.content,
-			signed_data.content_length,
-			public_signing_key.content);
-	if (status_int != 0) {
-		THROW(VERIFY_ERROR, "Failed to verify signature.");
-	}
-	unwrapped_data.content_length = (size_t) unwrapped_data_length;
-
-	printf("\nSignature was successfully verified!\n");
-
-	//Test Export to Protobuf-C
-	printf("Export to Protobuf-C:\n");
-
-	status = protobuf_export(
-		*spiced_master_keys,
-		protobuf_export_public_signing_key,
-		protobuf_export_private_signing_key,
-		protobuf_export_public_identity_key,
-		protobuf_export_private_identity_key);
-	THROW_on_error(EXPORT_ERROR, "Failed to export spiced master keys.");
-
-	printf("Public signing key:\n");
-	print_hex(*protobuf_export_public_signing_key);
-	puts("\n\n");
-
-	printf("Private signing key:\n");
-	print_hex(*protobuf_export_private_signing_key);
-	puts("\n\n");
-
-	printf("Public identity key:\n");
-	print_hex(*protobuf_export_public_identity_key);
-	puts("\n\n");
-
-	printf("Private identity key:\n");
-	print_hex(*protobuf_export_private_identity_key);
-	puts("\n\n");
-
-	sodium_free_and_null_if_valid(spiced_master_keys);
-
-	//import again
-	printf("Import from Protobuf-C:\n");
-	status = protobuf_import(
-		spiced_master_keys,
-		*protobuf_export_public_signing_key,
-		*protobuf_export_private_signing_key,
-		*protobuf_export_public_identity_key,
-		*protobuf_export_private_identity_key);
-	THROW_on_error(IMPORT_ERROR, "Failed to import from Protobuf-C.");
-
-	//export again
-	status = protobuf_export(
-		*spiced_master_keys,
-		protobuf_second_export_public_signing_key,
-		protobuf_second_export_private_signing_key,
-		protobuf_second_export_public_identity_key,
-		protobuf_second_export_private_identity_key);
-	THROW_on_error(EXPORT_ERROR, "Failed to export spiced master keys.");
-
-	//now compare
-	if (*protobuf_export_public_signing_key != *protobuf_second_export_public_signing_key) {
-		THROW(INCORRECT_DATA, "The public signing keys do not match.");
-	}
-	if (*protobuf_export_private_signing_key != *protobuf_second_export_private_signing_key) {
-		THROW(INCORRECT_DATA, "The private signing keys do not match.");
-	}
-	if (*protobuf_export_public_identity_key != *protobuf_second_export_public_identity_key) {
-		THROW(INCORRECT_DATA, "The public identity keys do not match.");
-	}
-	if (*protobuf_export_private_identity_key != *protobuf_second_export_private_identity_key) {
-		THROW(INCORRECT_DATA, "The private identity keys do not match.");
-	}
-
-	printf("Successfully exported to Protobuf-C and imported again.");
-
-cleanup:
-	sodium_free_and_null_if_valid(unspiced_master_keys);
-	sodium_free_and_null_if_valid(spiced_master_keys);
-	sodium_free_and_null_if_valid(imported_master_keys);
-
-	//protobuf export buffers
-	buffer_destroy_and_null_if_valid(protobuf_export_public_signing_key);
-	buffer_destroy_and_null_if_valid(protobuf_export_private_signing_key);
-	buffer_destroy_and_null_if_valid(protobuf_export_public_identity_key);
-	buffer_destroy_and_null_if_valid(protobuf_export_private_identity_key);
-	buffer_destroy_and_null_if_valid(protobuf_second_export_public_signing_key);
-	buffer_destroy_and_null_if_valid(protobuf_second_export_private_signing_key);
-	buffer_destroy_and_null_if_valid(protobuf_second_export_public_identity_key);
-	buffer_destroy_and_null_if_valid(protobuf_second_export_private_identity_key);
-
-	on_error {
-		print_errors(status);
-	}
-	return_status_destroy_errors(&status);
-
-	if (status_int != 0) {
-		status.status = GENERIC_ERROR;
-	}
-
-	return status.status;
+	return EXIT_SUCCESS;
 }

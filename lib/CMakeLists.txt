@@ -21,5 +21,6 @@ add_library(molch
 	zeroed_malloc
 	buffer
 	molch-exception
+	sodium-wrappers
 )
 target_link_libraries(molch ${libs} protocol-buffers)

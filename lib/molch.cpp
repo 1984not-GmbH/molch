@@ -84,8 +84,14 @@ static return_status create_prekey_list(
 		THROW_on_error(GENERIC_ERROR, "Failed to rotate prekeys.");
 
 		//get the public identity key
-		status = user->master_keys->getIdentityKey(*public_identity_key);
-		THROW_on_error(DATA_FETCH_ERROR, "Failed to get public identity key from master keys.");
+		try {
+			user->master_keys->getIdentityKey(*public_identity_key);
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 
 		//copy the public identity to the prekey list
 		if (unsigned_prekey_list->copyFrom(0, public_identity_key, 0, PUBLIC_KEY_SIZE) != 0) {
@@ -113,8 +119,14 @@ static return_status create_prekey_list(
 	}
 
 	//sign the prekey list with the current identity key
-	status = user->master_keys->sign(*unsigned_prekey_list, *prekey_list_buffer);
-	THROW_on_error(SIGN_ERROR, "Failed to sign prekey list.");
+	try {
+		user->master_keys->sign(*unsigned_prekey_list, *prekey_list_buffer);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	*prekey_list = prekey_list_buffer->content;
 	*prekey_list_length = prekey_list_buffer->content_length;
@@ -528,15 +540,22 @@ return_status molch_start_send_conversation(
 	THROW_on_error(VERIFICATION_FAILED, "Failed to verify prekey list.");
 
 	//unlock the master keys
-	sodium_mprotect_readonly(user->master_keys);
+	try {
+		user->master_keys->unlock();
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//create the conversation and encrypt the message
 	status = conversation_start_send_conversation(
 			&conversation,
 			&message_buffer,
 			&packet_buffer,
-			&user->master_keys->public_identity_key,
-			&user->master_keys->private_identity_key,
+			user->master_keys->public_identity_key.get(),
+			user->master_keys->private_identity_key.get(),
 			receiver_public_identity,
 			&prekeys);
 	THROW_on_error(CREATION_ERROR, "Failed to start send converstion.");
@@ -575,7 +594,17 @@ cleanup:
 	}
 
 	if (user != nullptr) {
-		sodium_mprotect_noaccess(user->master_keys);
+		try {
+			user->master_keys->lock();
+		} catch (const MolchException& exception) {
+			return exception.toReturnStatus();
+		} catch (const std::exception& exception) {
+			status_type type = return_status_add_error_message(&status, exception.what(), EXCEPTION);
+			if (type != SUCCESS) {
+				status.status = type;
+			}
+			return status;
+		}
 	}
 
 	on_error {
@@ -658,15 +687,22 @@ return_status molch_start_receive_conversation(
 	THROW_on_error(NOT_FOUND, "User not found in the user store.");
 
 	//unlock the master keys
-	sodium_mprotect_readonly(user->master_keys);
+	try {
+		user->master_keys->unlock();
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//create the conversation
 	status = conversation_start_receive_conversation(
 			&conversation,
 			&packet_buffer,
 			&message_buffer,
-			&user->master_keys->public_identity_key,
-			&user->master_keys->private_identity_key,
+			user->master_keys->public_identity_key.get(),
+			user->master_keys->private_identity_key.get(),
 			user->prekeys);
 	THROW_on_error(CREATION_ERROR, "Failed to start receive conversation.");
 
@@ -716,7 +752,17 @@ cleanup:
 	}
 
 	if (user != nullptr) {
-		sodium_mprotect_noaccess(user->master_keys);
+		try {
+			user->master_keys->lock();
+		} catch (const MolchException& exception) {
+			return exception.toReturnStatus();
+		} catch (const std::exception& exception) {
+			status_type type = return_status_add_error_message(&status, exception.what(), EXCEPTION);
+			if (type != SUCCESS) {
+				status.status = type;
+			}
+			return status;
+		}
 	}
 
 	return status;

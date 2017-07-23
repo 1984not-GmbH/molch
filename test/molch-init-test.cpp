@@ -113,6 +113,8 @@ cleanup:
 
 	free_and_null_if_valid(backup_key);
 
+	molch_destroy_all_users();
+
 	on_error {
 		print_errors(status);
 		printf("NOTE: Did you change the backup format and forgot to create new molch-init.backup and molch-init-backup.key files?\n To recreate them run with --recreate. Then just copy them to the appropriate place.\n");

@@ -21,7 +21,9 @@
 
 #include <algorithm>
 #include <cassert>
+#include <exception>
 
+#include "molch-exception.h"
 #include "constants.h"
 #include "user-store.h"
 
@@ -144,12 +146,27 @@ return_status user_store_create_user(
 	THROW_on_error(CREATION_ERROR, "Failed to create new user store node.");
 
 	//generate the master keys
-	status = MasterKeys::create(
-			new_node->master_keys,
-			seed,
-			new_node->public_signing_key,
-			public_identity_key);
-	THROW_on_error(CREATION_ERROR, "Failed to create master keys.");
+	try {
+		if (seed == nullptr) {
+			new_node->master_keys = new MasterKeys();
+		} else {
+			new_node->master_keys = new MasterKeys(*seed);
+		}
+
+		//get the public keys
+		new_node->master_keys->getSigningKey(*new_node->public_signing_key);
+		if (public_signing_key != nullptr) {
+			new_node->master_keys->getSigningKey(*public_signing_key);
+		}
+		if (public_identity_key != nullptr) {
+			new_node->master_keys->getIdentityKey(*public_identity_key);
+		}
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//prekeys
 	status = PrekeyStore::create(new_node->prekeys);
@@ -294,9 +311,7 @@ void user_store_remove(user_store *store, user_store_node *node) noexcept {
 	node->conversations->clear();
 
 	//remove the master keys
-	if (node->master_keys != nullptr) {
-		sodium_free_and_null_if_valid(node->master_keys);
-	}
+	delete node->master_keys;
 
 	//remove the prekey store
 	if (node->prekeys != nullptr) {
@@ -336,15 +351,15 @@ return_status user_store_node_export(user_store_node * const node, User ** const
 return_status user_store_node_export(user_store_node * const node, User ** const user) noexcept {
 	return_status status = return_status_init();
 
-	//master keys
-	Key *public_signing_key = nullptr;
-	Key *private_signing_key = nullptr;
-	Key *public_identity_key = nullptr;
-	Key *private_identity_key = nullptr;
-
 	//conversation store
 	Conversation **conversations = nullptr;
 	size_t conversations_length = 0;
+
+	//export master keys
+	std::unique_ptr<Key,KeyDeleter> public_signing_key;
+	std::unique_ptr<Key,KeyDeleter> private_signing_key;
+	std::unique_ptr<Key,KeyDeleter> public_identity_key;
+	std::unique_ptr<Key,KeyDeleter> private_identity_key;
 
 	//prekeys
 	Prekey **prekeys = nullptr;
@@ -360,23 +375,23 @@ return_status user_store_node_export(user_store_node * const node, User ** const
 	*user = (User*)zeroed_malloc(sizeof(User));
 	THROW_on_failed_alloc(*user);
 	user__init(*user);
+	try {
+		node->master_keys->exportProtobuf(
+			public_signing_key,
+			private_signing_key,
+			public_identity_key,
+			private_identity_key);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
-	//export master keys
-	status = node->master_keys->exportMasterKeys(
-		public_signing_key,
-		private_signing_key,
-		public_identity_key,
-		private_identity_key);
-	THROW_on_error(EXPORT_ERROR, "Failed to export masters keys.");
-
-	(*user)->public_signing_key = public_signing_key;
-	public_signing_key = nullptr;
-	(*user)->private_signing_key = private_signing_key;
-	private_signing_key = nullptr;
-	(*user)->public_identity_key = public_identity_key;
-	public_identity_key = nullptr;
-	(*user)->private_identity_key = private_identity_key;
-	private_identity_key = nullptr;
+	(*user)->public_signing_key = public_signing_key.release();
+	(*user)->private_signing_key = private_signing_key.release();
+	(*user)->public_identity_key = public_identity_key.release();
+	(*user)->private_identity_key = private_identity_key.release();
 
 	//export the conversation store
 	status = node->conversations->exportConversationStore(conversations, conversations_length);
@@ -465,13 +480,18 @@ static return_status user_store_node_import(user_store_node ** const node, const
 	THROW_on_error(CREATION_ERROR, "Failed to create user store node.");
 
 	//master keys
-	status = MasterKeys::import(
-		(*node)->master_keys,
-		user->public_signing_key,
-		user->private_signing_key,
-		user->public_identity_key,
-		user->private_identity_key);
-	THROW_on_error(IMPORT_ERROR, "Failed to import master keys.");
+	try {
+		(*node)->master_keys = new MasterKeys(
+			*user->public_signing_key,
+			*user->private_signing_key,
+			*user->public_identity_key,
+			*user->private_identity_key);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//public signing key
 	if (user->public_signing_key == nullptr) {
