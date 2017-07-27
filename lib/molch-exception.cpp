@@ -75,7 +75,7 @@ const char* MolchException::what() const noexcept {
 }
 
 MolchException& MolchException::add(const MolchException& exception) {
-	for (auto& error : exception.error_stack) {
+	for (auto&& error : exception.error_stack) {
 		this->error_stack.push_front(error);
 	}
 
@@ -92,7 +92,7 @@ return_status MolchException::toReturnStatus() const {
 	return_status status = return_status_init();
 
 	// add the error messages in reverse order
-	for (auto error = this->error_stack.crbegin(); error != this->error_stack.crend(); ++error) {
+	for (auto&& error = this->error_stack.crbegin(); error != this->error_stack.crend(); ++error) {
 		status_type add_status = return_status_add_error_message(&status, error->message.c_str(), error->type);
 		if (add_status != SUCCESS) {
 			return_status_destroy_errors(&status);
