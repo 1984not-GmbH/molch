@@ -20,9 +20,33 @@
  */
 
 #include <sodium.h>
+#include <memory>
 
 #ifndef LIB_SODIUM_WRAPPERS_H
 #define LIB_SODIUM_WRAPPERS_H
+
+template <class T>
+class SodiumAllocator : public std::allocator<T> {
+public:
+	T* allocate(size_t size) {
+		T* pointer = reinterpret_cast<T*> (sodium_malloc(size));
+		if (pointer == nullptr) {
+			throw std::bad_alloc();
+		}
+
+		return pointer;
+	}
+
+	T* allocate(size_t size, const void * hint) {
+		(void)hint;
+		return this->allocate(size);
+	}
+
+	void deallocate(T* pointer, size_t n) {
+		(void)n;
+		sodium_free(pointer);
+	}
+};
 
 template <typename T>
 class SodiumDeleter {

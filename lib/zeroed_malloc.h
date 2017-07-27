@@ -28,6 +28,7 @@
 #ifndef LIB_ZEROED_MALLOC_H
 #define LIB_ZEROED_MALLOC_H
 
+#include <memory>
 #include <protobuf-c/protobuf-c.h>
 #include "common.h"
 
@@ -89,8 +90,31 @@ static ProtobufCAllocator protobuf_c_allocators __attribute__((unused)) = {
 	NULL
 };
 
+template <class T>
+class ZeroedAllocator : public std::allocator<T> {
+public:
+	T* allocate(size_t size) {
+		T* pointer = reinterpret_cast<T*> (zeroed_malloc(size));
+		if (pointer == nullptr) {
+			throw std::bad_alloc();
+		}
+
+		return pointer;
+	}
+
+	T* allocate(size_t size, const void * hint) {
+		(void)hint;
+		return this->allocate(size);
+	}
+
+	void deallocate(T* pointer, size_t n) {
+		(void)n;
+		zeroed_free(pointer);
+	}
+};
+
 template <typename T>
-class ZeroedMallocDeleter {
+class ZeroedDeleter {
 public:
 	void operator()(T* object) {
 		if (object != nullptr) {
