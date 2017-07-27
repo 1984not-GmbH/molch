@@ -55,11 +55,11 @@ private:
 
 public:
 	//Ed25519 key for signing
-	std::unique_ptr<Buffer> public_signing_key;
-	std::unique_ptr<Buffer> private_signing_key;
+	Buffer public_signing_key;
+	Buffer private_signing_key;
 	//X25519 key for deriving axolotl root keys
-	std::unique_ptr<Buffer> public_identity_key;
-	std::unique_ptr<Buffer> private_identity_key;
+	Buffer public_identity_key;
+	Buffer private_identity_key;
 
 	/*
 	 * Create a new set of master keys.
@@ -95,8 +95,7 @@ public:
 	/*
 	 * Sign a piece of data. Returns the data and signature in one output buffer.
 	 */
-	void sign(const Buffer& data, Buffer& signed_data //output, length of data + SIGNATURE_SIZE
-			);
+	void sign(const Buffer& data, Buffer& signed_data); //output, length of data + SIGNATURE_SIZE
 
 	/*! Export a set of master keys into a user Protobuf-C struct
 	 * \param public_signing_key Public pasrt of the signing keypair.

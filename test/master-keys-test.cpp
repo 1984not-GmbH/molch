@@ -148,27 +148,27 @@ int main(void) noexcept {
 		//print the keys
 		printf("Signing keypair:\n");
 		printf("Public:\n");
-		print_hex(*unspiced_master_keys.public_signing_key);
+		print_hex(unspiced_master_keys.public_signing_key);
 
 		printf("\nPrivate:\n");
 		unspiced_master_keys.unlock();
-		print_hex(*unspiced_master_keys.private_signing_key);
+		print_hex(unspiced_master_keys.private_signing_key);
 		unspiced_master_keys.lock();
 
 		printf("\n\nIdentity keys:\n");
 		printf("Public:\n");
-		print_hex(*unspiced_master_keys.public_identity_key);
+		print_hex(unspiced_master_keys.public_identity_key);
 
 		printf("\nPrivate:\n");
 		unspiced_master_keys.unlock();
-		print_hex(*unspiced_master_keys.private_identity_key);
+		print_hex(unspiced_master_keys.private_identity_key);
 		unspiced_master_keys.lock();
 
 		//check the exported public keys
-		if (public_signing_key != *unspiced_master_keys.public_signing_key) {
+		if (public_signing_key != unspiced_master_keys.public_signing_key) {
 			throw MolchException(INCORRECT_DATA, "Exported public signing key doesn't match.");
 		}
-		if (public_identity_key != *unspiced_master_keys.public_identity_key) {
+		if (public_identity_key != unspiced_master_keys.public_identity_key) {
 			throw MolchException(INCORRECT_DATA, "Exported public identity key doesn't match.");
 		}
 
@@ -183,27 +183,27 @@ int main(void) noexcept {
 		//print the keys
 		printf("Signing keypair:\n");
 		printf("Public:\n");
-		print_hex(*spiced_master_keys.public_signing_key);
+		print_hex(spiced_master_keys.public_signing_key);
 
 		printf("\nPrivate:\n");
 		spiced_master_keys.unlock();
-		print_hex(*spiced_master_keys.private_signing_key);
+		print_hex(spiced_master_keys.private_signing_key);
 		spiced_master_keys.lock();
 
 		printf("\n\nIdentity keys:\n");
 		printf("Public:\n");
-		print_hex(*spiced_master_keys.public_identity_key);
+		print_hex(spiced_master_keys.public_identity_key);
 
 		printf("\nPrivate:\n");
 		spiced_master_keys.unlock();
-		print_hex(*spiced_master_keys.private_identity_key);
+		print_hex(spiced_master_keys.private_identity_key);
 		spiced_master_keys.lock();
 
 		//check the exported public keys
-		if (public_signing_key != *spiced_master_keys.public_signing_key) {
+		if (public_signing_key != spiced_master_keys.public_signing_key) {
 			throw MolchException(INCORRECT_DATA, "Exported public signing key doesn't match.");
 		}
-		if (public_identity_key != *spiced_master_keys.public_identity_key) {
+		if (public_identity_key != spiced_master_keys.public_identity_key) {
 			throw MolchException(INCORRECT_DATA, "Exported public identity key doesn't match.");
 		}
 

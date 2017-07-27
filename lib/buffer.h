@@ -45,6 +45,9 @@ public:
 	Buffer(const size_t buffer_length, const size_t content_length, void* (*allocator)(size_t), void (*deallocator)(void*)) noexcept;
 	~Buffer() noexcept;
 
+	//move assignment
+	Buffer& operator=(Buffer&& buffer) noexcept;
+
 	/*
 	 * initialize a buffer with a pointer to the character array.
 	 */

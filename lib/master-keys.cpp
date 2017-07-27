@@ -49,16 +49,16 @@ MasterKeys::MasterKeys(
 	this->unlock_readwrite();
 	try {
 		//copy the keys
-        if (this->public_signing_key->cloneFromRaw(public_signing_key.key.data, public_signing_key.key.len) != 0) {
+        if (this->public_signing_key.cloneFromRaw(public_signing_key.key.data, public_signing_key.key.len) != 0) {
 			throw MolchException(BUFFER_ERROR, "Failed to copy public signing key.");
 		}
-        if (this->public_identity_key->cloneFromRaw(public_identity_key.key.data, public_identity_key.key.len) != 0) {
+        if (this->public_identity_key.cloneFromRaw(public_identity_key.key.data, public_identity_key.key.len) != 0) {
 			throw MolchException(BUFFER_ERROR, "Failed to copy public identity key.");
 		}
-        if (this->private_signing_key->cloneFromRaw(private_signing_key.key.data, private_signing_key.key.len) != 0) {
+        if (this->private_signing_key.cloneFromRaw(private_signing_key.key.data, private_signing_key.key.len) != 0) {
 			throw MolchException(BUFFER_ERROR, "Failed to copy private signing key.");
 		}
-        if (this->private_identity_key->cloneFromRaw(private_identity_key.key.data, private_identity_key.key.len) != 0) {
+        if (this->private_identity_key.cloneFromRaw(private_identity_key.key.data, private_identity_key.key.len) != 0) {
 			throw MolchException(BUFFER_ERROR, "Failed to copy private identity key.");
 		}
 	} catch (const std::exception& exception) {
@@ -77,11 +77,11 @@ void MasterKeys::init() {
 
 	//initialize the Buffers
 	//private, initialize with pointers to private key storage
-	this->private_identity_key = std::make_unique<Buffer>(this->private_keys->identity_key, sizeof(this->private_keys->identity_key));
-	this->private_signing_key = std::make_unique<Buffer>(this->private_keys->signing_key, sizeof(this->private_keys->signing_key));
+	this->private_identity_key = Buffer(this->private_keys->identity_key, sizeof(this->private_keys->identity_key));
+	this->private_signing_key = Buffer(this->private_keys->signing_key, sizeof(this->private_keys->signing_key));
 	//public, initialize on the heap
-	this->public_identity_key = std::make_unique<Buffer>(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	this->public_signing_key = std::make_unique<Buffer>(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	this->public_identity_key = Buffer(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	this->public_signing_key = Buffer(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
 
 	//lock the private key storage
 	this->lock();
@@ -103,8 +103,8 @@ void MasterKeys::generate(const Buffer* low_entropy_seed) {
 
 			//generate the signing keypair
 			int status = crypto_sign_seed_keypair(
-					this->public_signing_key->content,
-					this->private_signing_key->content,
+					this->public_signing_key.content,
+					this->private_signing_key.content,
 					high_entropy_seed.content);
 			if (status != 0) {
 				throw MolchException(KEYGENERATION_FAILED, "Failed to generate signing keypair with seed.");
@@ -112,8 +112,8 @@ void MasterKeys::generate(const Buffer* low_entropy_seed) {
 
 			//generate the identity keypair
 			status = crypto_box_seed_keypair(
-					this->public_identity_key->content,
-					this->private_identity_key->content,
+					this->public_identity_key.content,
+					this->private_identity_key.content,
 					high_entropy_seed.content + crypto_sign_SEEDBYTES);
 			if (status != 0) {
 				throw MolchException(KEYGENERATION_FAILED, "Failed to generate identity keypair with seed.");
@@ -121,16 +121,16 @@ void MasterKeys::generate(const Buffer* low_entropy_seed) {
 		} else { //don't use external seed
 			//generate the signing keypair
 			int status = crypto_sign_keypair(
-					this->public_signing_key->content,
-					this->private_signing_key->content);
+					this->public_signing_key.content,
+					this->private_signing_key.content);
 			if (status != 0) {
 				throw MolchException(KEYGENERATION_FAILED, "Failed to generate signing keypair.");
 			}
 
 			//generate the identity keypair
 			status = crypto_box_keypair(
-					this->public_identity_key->content,
-					this->private_identity_key->content);
+					this->public_identity_key.content,
+					this->private_identity_key.content);
 			if (status != 0) {
 				throw MolchException(KEYGENERATION_FAILED, "Failed to generate identity keypair.");
 			}
@@ -152,7 +152,7 @@ void MasterKeys::getSigningKey(Buffer& public_signing_key) {
 		throw MolchException(INVALID_INPUT, "MasterKeys::getSigningKey: Output buffer is too short.");
 	}
 
-    if (public_signing_key.cloneFrom(this->public_signing_key.get()) != 0) {
+    if (public_signing_key.cloneFrom(&this->public_signing_key) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy public signing key.");
 	}
 }
@@ -166,7 +166,7 @@ void MasterKeys::getIdentityKey(Buffer& public_identity_key) {
 		throw MolchException(INVALID_INPUT, "MasterKeys::getIdentityKey: Output buffer is too short.");
 	}
 
-	if (public_identity_key.cloneFrom(this->public_identity_key.get()) != 0) {
+	if (public_identity_key.cloneFrom(&this->public_identity_key) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy public identity key.");
 	}
 }
@@ -190,7 +190,7 @@ void MasterKeys::sign(
 			&signed_message_length,
 			data.content,
 			data.content_length,
-            this->private_signing_key->content);
+            this->private_signing_key.content);
 		this->lock();
 	if (status_int != 0) {
 		throw MolchException(SIGN_ERROR, "Failed to sign message.");
@@ -225,18 +225,18 @@ void MasterKeys::exportProtobuf(
 	private_identity_key->key.len = PRIVATE_KEY_SIZE;
 
 	//copy the keys
-    if (this->public_signing_key->cloneToRaw(public_signing_key->key.data, PUBLIC_MASTER_KEY_SIZE) != 0) {
+    if (this->public_signing_key.cloneToRaw(public_signing_key->key.data, PUBLIC_MASTER_KEY_SIZE) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to export public signing key.");
 	}
-    if (this->public_identity_key->cloneToRaw(public_identity_key->key.data, PUBLIC_KEY_SIZE) != 0) {
+    if (this->public_identity_key.cloneToRaw(public_identity_key->key.data, PUBLIC_KEY_SIZE) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to export public identity key.");
 	}
 	this->unlock(); //unlock the private keys
 	try {
-        if (this->private_signing_key->cloneToRaw(private_signing_key->key.data, PRIVATE_MASTER_KEY_SIZE) != 0) {
+        if (this->private_signing_key.cloneToRaw(private_signing_key->key.data, PRIVATE_MASTER_KEY_SIZE) != 0) {
 			throw MolchException(BUFFER_ERROR, "Failed to export private signing key.");
 		}
-        if (this->private_identity_key->cloneToRaw(private_identity_key->key.data, PRIVATE_KEY_SIZE) != 0) {
+        if (this->private_identity_key.cloneToRaw(private_identity_key->key.data, PRIVATE_KEY_SIZE) != 0) {
 			throw MolchException(BUFFER_ERROR, "Failed to export private identity key.");
 		}
 	} catch (const std::exception& exception) {

@@ -119,6 +119,24 @@ Buffer::~Buffer() noexcept {
 	}
 }
 
+Buffer& Buffer::operator=(Buffer&& buffer) noexcept {
+	//copy the buffer
+	unsigned char& source_reference = reinterpret_cast<unsigned char&>(buffer);
+	unsigned char& destination_reference = reinterpret_cast<unsigned char&>(*this);
+	std::copy(&source_reference, &source_reference + sizeof(Buffer), &destination_reference);
+
+	//steal resources from the source buffer
+	buffer.buffer_length = 0;
+	buffer.manage_memory = false;
+	buffer.readonly = false;
+	buffer.is_valid = false;
+	buffer.deallocator = nullptr;
+	buffer.content_length = 0;
+	buffer.content = nullptr;
+
+	return *this;
+}
+
 size_t Buffer::getBufferLength() const noexcept {
 	return this->buffer_length;
 }
