@@ -25,26 +25,20 @@ extern "C" {
 #include "header.h"
 #include "constants.h"
 #include "zeroed_malloc.h"
+#include "molch-exception.h"
+#include "protobuf-deleters.h"
 
-return_status header_construct(
-		//output
-		Buffer*& header,
+std::unique_ptr<Buffer> header_construct(
 		//inputs
-		Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE
+		const Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE
 		const uint32_t message_number,
-		const uint32_t previous_message_number) noexcept {
-	return_status status = return_status_init();
-
+		const uint32_t previous_message_number) {
 	Header header_struct = HEADER__INIT;
 
 	//check input
 	if (our_public_ephemeral.content_length != PUBLIC_KEY_SIZE) {
-		THROW(INVALID_INPUT, "Invalid input to header_construct.");
+		throw MolchException(INVALID_INPUT, "Invalid input to header_construct.");
 	}
-
-	//initialize the output buffer
-	header = nullptr;
-
 	//create buffer for our public ephemeral
 	ProtobufCBinaryData protobuf_our_public_ephemeral;
 	protobuf_our_public_ephemeral.len = our_public_ephemeral.content_length;
@@ -59,67 +53,48 @@ return_status header_construct(
 	header_struct.has_public_ephemeral_key = true;
 
 	//allocate the header buffer
-	{
-		size_t header_length = header__get_packed_size(&header_struct);
-		header = Buffer::create(header_length, header_length);
-		THROW_on_failed_alloc(header);
+	size_t header_length = header__get_packed_size(&header_struct);
+	auto header = std::make_unique<Buffer>(header_length, header_length);
 
-		//pack it
-		size_t packed_length = header__pack(&header_struct, header->content);
-		if (packed_length != header_length) {
-			THROW(PROTOBUF_PACK_ERROR, "Packed header has incorrect length.");
-		}
+	//pack it
+	size_t packed_length = header__pack(&header_struct, header->content);
+	if (packed_length != header_length) {
+		throw MolchException(PROTOBUF_PACK_ERROR, "Packed header has incorrect length.");
 	}
 
-cleanup:
-	on_error {
-		buffer_destroy_and_null_if_valid(header);
-	}
-
-	return status;
+	return header;
 }
 
-return_status header_extract(
+void header_extract(
 		//outputs
 		Buffer& their_public_ephemeral, //PUBLIC_KEY_SIZE
 		uint32_t& message_number,
 		uint32_t& previous_message_number,
 		//intput
-		const Buffer& header) noexcept {
-	return_status status = return_status_init();
-
-	Header *header_struct = nullptr;
-
+		const Buffer& header) {
 	//check input
-	if (their_public_ephemeral.getBufferLength() < PUBLIC_KEY_SIZE) {
-		THROW(INVALID_INPUT, "Invalid input to header_extract.");
+	if (!their_public_ephemeral.fits(PUBLIC_KEY_SIZE)) {
+		throw MolchException(INVALID_INPUT, "Invalid input to header_extract.");
 	}
 
 	//unpack the message
-	header_struct = header__unpack(&protobuf_c_allocators, header.content_length, header.content);
-	if (header_struct == nullptr) {
-		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack header.");
+	auto header_struct = std::unique_ptr<Header,HeaderDeleter>(header__unpack(&protobuf_c_allocators, header.content_length, header.content));
+	if (!header_struct) {
+		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack header.");
 	}
 
 	if (!header_struct->has_message_number || !header_struct->has_previous_message_number || !header_struct->has_public_ephemeral_key) {
-		THROW(PROTOBUF_MISSING_ERROR, "Missing fields in header.");
+		throw MolchException(PROTOBUF_MISSING_ERROR, "Missing fields in header.");
 	}
 
 	if (header_struct->public_ephemeral_key.len != PUBLIC_KEY_SIZE) {
-		THROW(INCORRECT_BUFFER_SIZE, "The public ephemeral key in the header has an incorrect size.");
+		throw MolchException(INCORRECT_BUFFER_SIZE, "The public ephemeral key in the header has an incorrect size.");
 	}
 
 	message_number = header_struct->message_number;
 	previous_message_number = header_struct->previous_message_number;
 
 	if (their_public_ephemeral.cloneFromRaw(header_struct->public_ephemeral_key.data, header_struct->public_ephemeral_key.len) != 0) {
-		THROW(BUFFER_ERROR, "Failed to copy public ephemeral key.")
+		throw MolchException(BUFFER_ERROR, "Failed to copy public ephemeral key.");
 	}
-
-cleanup:
-	if (header_struct != nullptr) {
-		header__free_unpacked(header_struct, &protobuf_c_allocators);
-	}
-
-	return status;
 }

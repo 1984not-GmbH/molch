@@ -30,6 +30,8 @@
 #ifndef LIB_HEADER_H
 #define LIB_HEADER_H
 
+#include <memory>
+
 #include "common.h"
 #include "buffer.h"
 #include "return-status.h"
@@ -37,8 +39,6 @@
 /*!
  * Constructs an Axolotl-Header into a buffer.
  *
- * \param header
- *   Output, the constructed header.
  * \param our_public_ephemeral
  *   The public ephemeral key of the sender (ours). Length has to be PUBLIC_KEY_SIZE.
  * \param message_number
@@ -47,15 +47,12 @@
  *   The number of messages in the previous message chain.
  *
  * \return
- *   Error status, destroy with return_status_destroy_errors if an error occurs.
+ *   The constructed header.
  */
-return_status header_construct(
-		//output
-		Buffer*& header,
-		//inputs
-		Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE
+std::unique_ptr<Buffer> header_construct(
+		const Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE
 		const uint32_t message_number,
-		const uint32_t previous_message_number) noexcept __attribute__((warn_unused_result));
+		const uint32_t previous_message_number);
 
 /*!
  * Extracts the data from an Axolotl-Header.
@@ -72,12 +69,12 @@ return_status header_construct(
  * \return
  *   Error status, destroy with return_status_destroy_errors if an error occurs.
  */
-return_status header_extract(
+void header_extract(
 		//outputs
 		Buffer& their_public_ephemeral, //PUBLIC_KEY_SIZE
 		uint32_t& message_number,
 		uint32_t& previous_message_number,
-		//intput
-		const Buffer& header) noexcept __attribute__((warn_unused_result));
+		//input
+		const Buffer& header);
 
 #endif

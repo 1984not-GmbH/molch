@@ -19,11 +19,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include <exception>
+
 #include "constants.h"
 #include "conversation.h"
 #include "molch.h"
 #include "packet.h"
 #include "header.h"
+#include "molch-exception.h"
 
 /*
  * Create a new conversation struct and initialise the buffer pointer.
@@ -310,10 +313,10 @@ return_status conversation_send(
 		) noexcept {
 	return_status status = return_status_init();
 
-	//create buffers
-	Buffer *header = nullptr;
-
 	molch_message_type packet_type;
+
+	//create the header
+	std::unique_ptr<Buffer> header;
 
 	Buffer send_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	Buffer send_message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
@@ -358,13 +361,17 @@ return_status conversation_send(
 			send_message_key);
 	THROW_on_error(SEND_ERROR, "Failed to get send keys.");
 
-	//create the header
-	status = header_construct(
-			header,
-			send_ephemeral_key,
-			send_message_number,
-			previous_send_message_number);
-	THROW_on_error(CREATION_ERROR, "Failed to construct header.");
+	try {
+		header = header_construct(
+				send_ephemeral_key,
+				send_message_number,
+				previous_send_message_number);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	status = packet_encrypt(
 			*packet,
@@ -384,7 +391,6 @@ cleanup:
 			buffer_destroy_and_null_if_valid(*packet);
 		}
 	}
-	buffer_destroy_and_null_if_valid(header);
 
 	return status;
 }
@@ -424,11 +430,18 @@ static int try_skipped_header_and_message_keys(
 				if (status.status == SUCCESS) {
 					header_and_message_keystore_remove(skipped_keys, node);
 
-					status = header_extract(
-							their_signed_public_ephemeral,
-							*receive_message_number,
-							*previous_receive_message_number,
-							*header);
+					try {
+						header_extract(
+								their_signed_public_ephemeral,
+								*receive_message_number,
+								*previous_receive_message_number,
+								*header);
+					} catch (const MolchException& exception) {
+						status = exception.toReturnStatus();
+						goto cleanup;
+					} catch (const std::exception& exception) {
+						THROW(EXCEPTION, exception.what());
+					}
 					THROW_on_error(GENERIC_ERROR, "Failed to extract data from header.");
 
 					goto cleanup;
@@ -537,12 +550,18 @@ return_status conversation_receive(
 	//extract data from the header
 	uint32_t local_receive_message_number;
 	uint32_t local_previous_receive_message_number;
-	status = header_extract(
-			their_signed_public_ephemeral,
-			local_receive_message_number,
-			local_previous_receive_message_number,
-			*header);
-	THROW_on_error(GENERIC_ERROR, "Failed to extract data from header.");
+	try {
+		header_extract(
+				their_signed_public_ephemeral,
+				local_receive_message_number,
+				local_previous_receive_message_number,
+				*header);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//and now decrypt the message with the message key
 	//now we have all the data we need to advance the ratchet
