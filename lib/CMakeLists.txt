@@ -22,5 +22,6 @@ add_library(molch
 	buffer
 	molch-exception
 	sodium-wrappers
+	protobuf-deleters
 )
 target_link_libraries(molch ${libs} protocol-buffers)

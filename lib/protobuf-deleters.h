@@ -19,20 +19,72 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-extern "C" {
-	#include <key.pb-c.h>
-}
-
-#include "zeroed_malloc.h"
-
 #ifndef LIB_PROTOBUF_DELETERS_H
 #define LIB_PROTOBUF_DELETERS_H
 
+#include "zeroed_malloc.h"
+
+extern "C" {
+	#include <backup.pb-c.h>
+	#include <conversation.pb-c.h>
+	#include <encrypted_backup.pb-c.h>
+	#include <header.pb-c.h>
+	#include <key.pb-c.h>
+	#include <key_bundle.pb-c.h>
+	#include <packet.pb-c.h>
+	#include <packet_header.pb-c.h>
+	#include <prekey.pb-c.h>
+	#include <user.pb-c.h>
+}
+
+class BackupDeleter {
+	public:
+		void operator ()(Backup* backup);
+};
+
+class ConversationDeleter {
+	public:
+		void operator ()(Conversation* conversation);
+};
+
+class EncryptedBackupDeleter {
+	public:
+		void operator ()(EncryptedBackup* backup);
+};
+
+class HeaderDeleter {
+	public:
+		void operator ()(Header* header);
+};
+
 class KeyDeleter {
 public:
-	void operator ()(Key *key) {
-		key__free_unpacked(key, &protobuf_c_allocators);
-	}
+	void operator ()(Key *key);
+};
+
+class KeyBundleDeleter {
+	public:
+		void operator ()(KeyBundle *key_bundle);
+};
+
+class PacketDeleter {
+	public:
+		void operator ()(Packet *packet);
+};
+
+class PacketHeaderDeleter {
+	public:
+		void operator ()(PacketHeader *packet_header);
+};
+
+class PrekeyDeleter {
+public:
+	void operator ()(Prekey *prekey);
+};
+
+class UserDeleter {
+	public:
+		void operator ()(User *user);
 };
 
 #endif /* LIB_PROTOBUF_DELETERS_H */
