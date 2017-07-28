@@ -20,8 +20,10 @@
 
 #include <sodium.h>
 #include <algorithm>
+#include <memory>
 
 #include "buffer.h"
+#include "molch-exception.h"
 
 Buffer::Buffer() noexcept {
 	this->buffer_length = 0;
@@ -526,6 +528,33 @@ int Buffer::xorWith(Buffer * const source) noexcept {
 	}
 
 	return 0;
+}
+
+std::string Buffer::toString() const noexcept {
+	return std::string(reinterpret_cast<char*>(this->content), this->content_length);
+}
+
+std::string Buffer::toHex() const noexcept {
+	static const size_t width = 30;
+	//buffer for the hex string
+	const size_t hex_length = this->content_length * 2 + sizeof("");
+	auto hex = std::make_unique<char[]>(hex_length);
+	if (sodium_bin2hex(hex.get(), hex_length, this->content, this->content_length) == NULL) {
+		std::terminate();
+	}
+
+	std::string output;
+	output.reserve(hex_length + (hex_length / 30) + (hex_length / 2));
+	for (size_t i = 0; i < hex_length; i++) {
+		if ((width != 0) && ((i % width) == 0) && (i != 0)) {
+			output += '\n';
+		} else if ((i % 2 == 0) && (i != 0)) {
+			output += ' ';
+		}
+		output += hex[i];
+	}
+
+	return output;
 }
 
 /*

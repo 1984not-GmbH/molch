@@ -68,7 +68,7 @@ int main(void) noexcept {
 
 		//print previous root key
 		printf("Previous root key (%zu Bytes):\n", previous_root_key.content_length);
-		print_hex(previous_root_key);
+		std::cout << previous_root_key.toHex();
 		putchar('\n');
 
 		//derive root and chain key for Alice
@@ -90,11 +90,11 @@ int main(void) noexcept {
 
 		//print Alice's root and chain key
 		printf("Alice's root key (%zu Bytes):\n", alice_root_key.content_length);
-		print_hex(alice_root_key);
+		std::cout << alice_root_key.toHex();
 		printf("Alice's chain key (%zu Bytes):\n", alice_chain_key.content_length);
-		print_hex(alice_chain_key);
+		std::cout << alice_chain_key.toHex();
 		printf("Alice's header key (%zu Bytes):\n", alice_header_key.content_length);
-		print_hex(alice_header_key);
+		std::cout << alice_header_key.toHex();
 		putchar('\n');
 
 		//derive root and chain key for Bob
@@ -116,11 +116,11 @@ int main(void) noexcept {
 
 		//print Bob's root and chain key
 		printf("Bob's root key (%zu Bytes):\n", bob_root_key.content_length);
-		print_hex(bob_root_key);
+		std::cout << bob_root_key.toHex();
 		printf("Bob's chain key (%zu Bytes):\n", bob_chain_key.content_length);
-		print_hex(bob_chain_key);
+		std::cout << bob_chain_key.toHex();
 		printf("Bob's header key (%zu Bytes):\n", bob_header_key.content_length);
-		print_hex(bob_header_key);
+		std::cout << bob_header_key.toHex();
 		putchar('\n');
 
 		//compare Alice's and Bob's root keys

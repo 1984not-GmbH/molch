@@ -148,20 +148,20 @@ int main(void) noexcept {
 		//print the keys
 		printf("Signing keypair:\n");
 		printf("Public:\n");
-		print_hex(unspiced_master_keys.public_signing_key);
+		std::cout << unspiced_master_keys.public_signing_key.toHex();
 
 		printf("\nPrivate:\n");
 		unspiced_master_keys.unlock();
-		print_hex(unspiced_master_keys.private_signing_key);
+		std::cout << unspiced_master_keys.private_signing_key.toHex();
 		unspiced_master_keys.lock();
 
 		printf("\n\nIdentity keys:\n");
 		printf("Public:\n");
-		print_hex(unspiced_master_keys.public_identity_key);
+		std::cout << unspiced_master_keys.public_identity_key.toHex();
 
 		printf("\nPrivate:\n");
 		unspiced_master_keys.unlock();
-		print_hex(unspiced_master_keys.private_identity_key);
+		std::cout << unspiced_master_keys.private_identity_key.toHex();
 		unspiced_master_keys.lock();
 
 		//check the exported public keys
@@ -183,20 +183,20 @@ int main(void) noexcept {
 		//print the keys
 		printf("Signing keypair:\n");
 		printf("Public:\n");
-		print_hex(spiced_master_keys.public_signing_key);
+		std::cout << spiced_master_keys.public_signing_key.toHex();
 
 		printf("\nPrivate:\n");
 		spiced_master_keys.unlock();
-		print_hex(spiced_master_keys.private_signing_key);
+		std::cout << spiced_master_keys.private_signing_key.toHex();
 		spiced_master_keys.lock();
 
 		printf("\n\nIdentity keys:\n");
 		printf("Public:\n");
-		print_hex(spiced_master_keys.public_identity_key);
+		std::cout << spiced_master_keys.public_identity_key.toHex();
 
 		printf("\nPrivate:\n");
 		spiced_master_keys.unlock();
-		print_hex(spiced_master_keys.private_identity_key);
+		std::cout << spiced_master_keys.private_identity_key.toHex();
 		spiced_master_keys.lock();
 
 		//check the exported public keys
@@ -214,7 +214,7 @@ int main(void) noexcept {
 		Buffer signed_data{100, 0};
 		spiced_master_keys.sign(data, signed_data);
 		printf("Signed data:\n");
-		print_hex(signed_data);
+		std::cout << signed_data.toHex();
 
 		//now check the signature
 		Buffer unwrapped_data{100, 0};
@@ -249,19 +249,19 @@ int main(void) noexcept {
 			protobuf_export_private_identity_key);
 
 		printf("Public signing key:\n");
-		print_hex(*protobuf_export_public_signing_key);
+		std::cout << protobuf_export_public_signing_key->toHex();
 		puts("\n\n");
 
 		printf("Private signing key:\n");
-		print_hex(*protobuf_export_private_signing_key);
+		std::cout << protobuf_export_private_signing_key->toHex();
 		puts("\n\n");
 
 		printf("Public identity key:\n");
-		print_hex(*protobuf_export_public_identity_key);
+		std::cout << protobuf_export_public_identity_key->toHex();
 		puts("\n\n");
 
 		printf("Private identity key:\n");
-		print_hex(*protobuf_export_private_identity_key);
+		std::cout << protobuf_export_private_identity_key->toHex();
 		puts("\n\n");
 
 		//import again

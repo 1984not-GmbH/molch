@@ -24,6 +24,7 @@
 #include <sodium.h>
 #include <cassert>
 #include <exception>
+#include <iostream>
 
 #include "common.h"
 #include "utils.h"
@@ -130,7 +131,7 @@ int main(void) noexcept {
 	THROW_on_error(SEND_ERROR, "Failed to send message.");
 
 	printf("Packet:\n");
-	print_hex(*packet);
+	std::cout << packet->toHex();
 	putchar('\n');
 
 	//let bob receive the packet
@@ -164,7 +165,7 @@ int main(void) noexcept {
 
 		printf("Sent message: %.*s\n", (int)alice_send_message2.content_length, (const char*)alice_send_message2.content);
 		printf("Packet:\n");
-		print_hex(*alice_send_packet2);
+		std::cout << alice_send_packet2->toHex();
 		putchar('\n');
 
 		//bob receives the message
@@ -203,7 +204,7 @@ int main(void) noexcept {
 
 		printf("Sent message: %.*s\n", (int)bob_response_message.content_length, (const char*)bob_response_message.content);
 		printf("Packet:\n");
-		print_hex(*bob_response_packet);
+		std::cout << bob_response_packet->toHex();
 		putchar('\n');
 
 		//Alice receives the response
@@ -250,7 +251,7 @@ int main(void) noexcept {
 
 	printf("Sent message: %.*s\n", (int)send_message.content_length, (const char*)send_message.content);
 	printf("Packet:\n");
-	print_hex(*packet);
+	std::cout << packet->toHex();
 	putchar('\n');
 
 	//let alice receive the packet
@@ -286,7 +287,7 @@ int main(void) noexcept {
 
 		printf("Sent message: %.*s\n", (int)bob_send_message2.content_length, (const char*)bob_send_message2.content);
 		printf("Packet:\n");
-		print_hex(*bob_send_packet2);
+		std::cout << bob_send_packet2->toHex();
 		putchar('\n');
 
 		//alice receives the message
@@ -325,7 +326,7 @@ int main(void) noexcept {
 
 		printf("Sent message: %.*s\n", (int)alice_response_message.content_length, (const char*)alice_response_message.content);
 		printf("Packet:\n");
-		print_hex(*alice_response_packet);
+		std::cout << alice_response_packet->toHex();
 		putchar('\n');
 
 		//Bob receives the response

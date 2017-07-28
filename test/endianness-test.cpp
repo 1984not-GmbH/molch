@@ -45,7 +45,7 @@ int main(void) {
 		uint32_t uint32_from_big_endian;
 		to_big_endian(uint32, buffer32);
 		printf("uint32_t %llu to big endian:\n", (unsigned long long) uint32);
-		print_hex(buffer32);
+		std::cout << buffer32.toHex();
 
 		if (buffer32.compareToRaw((const unsigned char*)"\x04\x03\x02\x01", sizeof(uint32_t)) != 0) {
 			throw MolchException(INCORRECT_DATA, "Big endian of uint32_t is incorrect.");
@@ -63,7 +63,7 @@ int main(void) {
 		int32_t int32_from_big_endian;
 		to_big_endian(int32, buffer32);
 		printf("int32_t %lli to big endian:\n", (signed long long) int32);
-		print_hex(buffer32);
+		std::cout << buffer32.toHex();
 
 		if (buffer32.compareToRaw((const unsigned char*)"\xFF\xFE\xFD\xFC", sizeof(int32_t)) != 0) {
 			throw MolchException(INCORRECT_DATA, "Big endian of int32_t is incorrect.");
@@ -81,7 +81,7 @@ int main(void) {
 		uint64_t uint64_from_big_endian;
 		to_big_endian(uint64, buffer64);
 		printf("uint64_t %llu to big endian:\n", (unsigned long long) uint64);
-		print_hex(buffer64);
+		std::cout << buffer64.toHex();
 
 		if (buffer64.compareToRaw((const unsigned char*)"\x08\x07\x06\x05\x04\x03\x02\x01", sizeof(uint64_t)) != 0) {
 			throw MolchException(INCORRECT_DATA, "Big endian of uint64_t is incorrect.");
@@ -99,7 +99,7 @@ int main(void) {
 		int64_t int64_from_big_endian;
 		to_big_endian(int64, buffer64);
 		printf("int64_t %lli to big endian:\n", (signed long long) int64);
-		print_hex(buffer64);
+		std::cout << buffer64.toHex();
 
 		if (buffer64.compareToRaw((const unsigned char*)"\xFF\xFE\xFD\xFC\xFB\xFA\xF9\xF8", sizeof(int64_t)) != 0) {
 			throw MolchException(INCORRECT_DATA, "Big endian of int64_t is incorrect.");

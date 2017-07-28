@@ -52,17 +52,17 @@ int main(void) {
 			throw MolchException(KEYDERIVATION_FAILED, "Failed to generate master key.");
 		}
 		printf("Master key:\n");
-		print_hex(master_key);
+		std::cout << master_key.toHex();
 		putchar('\n');
 
 		derive_key(subkey1, subkey1.getBufferLength(), master_key, 0);
 		printf("First subkey:\n");
-		print_hex(subkey1);
+		std::cout << subkey1.toHex();
 		putchar('\n');
 
 		derive_key(subkey2, subkey2.getBufferLength(), master_key, 1);
 		printf("Second subkey:\n");
-		print_hex(subkey2);
+		std::cout << subkey2.toHex();
 		putchar('\n');
 
 		if (subkey1 == subkey2) {

@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
+#include <iostream>
 
 #include "../lib/prekey-store.h"
 #include "../lib/constants.h"
@@ -243,7 +244,7 @@ int main(void) noexcept {
 	status = store->list(prekey_list);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to list prekeys.");
 	printf("Prekey list:\n");
-	print_hex(prekey_list);
+	std::cout << prekey_list.toHex();
 	putchar('\n');
 
 	//compare the public keys with the ones in the prekey store
@@ -265,9 +266,9 @@ int main(void) noexcept {
 		THROW_on_error(DATA_FETCH_ERROR, "Failed to get prekey.")
 		printf("Get a Prekey:\n");
 		printf("Public key:\n");
-		print_hex(public_prekey);
+		std::cout << public_prekey.toHex();
 		printf("Private key:\n");
-		print_hex(private_prekey1);
+		std::cout << private_prekey1.toHex();
 		putchar('\n');
 
 		if (store->deprecated_prekeys == nullptr) {
@@ -322,7 +323,7 @@ int main(void) noexcept {
 	printf("Prekeys:\n");
 	puts("[\n");
 	for (size_t i = 0; i < protobuf_export_prekeys_size; i++) {
-		print_hex(*protobuf_export_prekeys_buffers[i]);
+		std::cout << protobuf_export_prekeys_buffers[i]->toHex();
 		puts(",\n");
 	}
 	puts("]\n\n");
@@ -330,7 +331,7 @@ int main(void) noexcept {
 	printf("Deprecated Prekeys:\n");
 	puts("[\n");
 	for (size_t i = 0; i < protobuf_export_deprecated_prekeys_size; i++) {
-		print_hex(*protobuf_export_deprecated_prekeys_buffers[i]);
+		std::cout << protobuf_export_deprecated_prekeys_buffers[i]->toHex();
 		puts(",\n");
 	}
 	puts("]\n\n");

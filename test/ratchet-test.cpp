@@ -24,6 +24,7 @@
 #include <sodium.h>
 #include <cassert>
 #include <exception>
+#include <iostream>
 
 #include "../lib/ratchet.h"
 #include "../lib/molch-exception.h"
@@ -260,9 +261,9 @@ int main(void) noexcept {
 	putchar('\n');
 	//print Alice's initial root and chain keys
 	printf("Alice's initial root key (%zu Bytes):\n", alice_state->root_key.content_length);
-	print_hex(alice_state->root_key);
+	std::cout << alice_state->root_key.toHex();
 	printf("Alice's initial chain key (%zu Bytes):\n", alice_state->send_chain_key.content_length);
-	print_hex(alice_state->send_chain_key);
+	std::cout << alice_state->send_chain_key.toHex();
 	putchar('\n');
 
 	//start new ratchet for bob
@@ -281,9 +282,9 @@ int main(void) noexcept {
 	putchar('\n');
 	//print Bob's initial root and chain keys
 	printf("Bob's initial root key (%zu Bytes):\n", bob_state->root_key.content_length);
-	print_hex(bob_state->root_key);
+	std::cout << bob_state->root_key.toHex();
 	printf("Bob's initial chain key (%zu Bytes):\n", bob_state->send_chain_key.content_length);
-	print_hex(bob_state->send_chain_key);
+	std::cout << bob_state->send_chain_key.toHex();
 	putchar('\n');
 
 	//compare Alice's and Bob's initial root and chain keys
@@ -322,9 +323,9 @@ int main(void) noexcept {
 	}
 	//print the send message key
 	printf("Alice Ratchet 1 send message key 1:\n");
-	print_hex(alice_send_message_key1);
+	std::cout << alice_send_message_key1.toHex();
 	printf("Alice Ratchet 1 send header key 1:\n");
-	print_hex(alice_send_header_key1);
+	std::cout << alice_send_header_key1.toHex();
 	putchar('\n');
 
 	//second message key
@@ -343,9 +344,9 @@ int main(void) noexcept {
 	}
 	//print the send message key
 	printf("Alice Ratchet 1 send message key 2:\n");
-	print_hex(alice_send_message_key2);
+	std::cout << alice_send_message_key2.toHex();
 	printf("Alice Ratchet 1 send header key 2:\n");
-	print_hex(alice_send_header_key2);
+	std::cout << alice_send_header_key2.toHex();
 	putchar('\n');
 
 	//third message_key
@@ -364,9 +365,9 @@ int main(void) noexcept {
 	}
 	//print the send message key
 	printf("Alice Ratchet 1 send message key 3:\n");
-	print_hex(alice_send_message_key3);
+	std::cout << alice_send_message_key3.toHex();
 	printf("Alice Ratchet 1 send header key 3:\n");
-	print_hex(alice_send_header_key3);
+	std::cout << alice_send_header_key3.toHex();
 	putchar('\n');
 
 	//--------------------------------------------------------------------------
@@ -380,9 +381,9 @@ int main(void) noexcept {
 	}
 
 	printf("Bob's first current receive header key:\n");
-	print_hex(bob_current_receive_header_key);
+	std::cout << bob_current_receive_header_key.toHex();
 	printf("Bob's first next receive_header_key:\n");
-	print_hex(bob_next_receive_header_key);
+	std::cout << bob_next_receive_header_key.toHex();
 	putchar('\n');
 
 	//check header decryptability
@@ -422,7 +423,7 @@ int main(void) noexcept {
 	}
 	//print it out!
 	printf("Bob Ratchet 1 receive message key 1:\n");
-	print_hex(bob_receive_key1);
+	std::cout << bob_receive_key1.toHex();
 	putchar('\n');
 
 	//confirm validity of the message key (this is normally done after successfully decrypting
@@ -442,9 +443,9 @@ int main(void) noexcept {
 	}
 
 	printf("Bob's second current receive header key:\n");
-	print_hex(bob_current_receive_header_key);
+	std::cout << bob_current_receive_header_key.toHex();
 	printf("Bob's second next receive_header_key:\n");
-	print_hex(bob_next_receive_header_key);
+	std::cout << bob_next_receive_header_key.toHex();
 	putchar('\n');
 
 	//check header decryptability
@@ -483,7 +484,7 @@ int main(void) noexcept {
 	}
 	//print it out!
 	printf("Bob Ratchet 1 receive message key 2:\n");
-	print_hex(bob_receive_key2);
+	std::cout << bob_receive_key2.toHex();
 	putchar('\n');
 
 	//confirm validity of the message key (this is normally done after successfully decrypting
@@ -503,9 +504,9 @@ int main(void) noexcept {
 	}
 
 	printf("Bob's third current receive header key:\n");
-	print_hex(bob_current_receive_header_key);
+	std::cout << bob_current_receive_header_key.toHex();
 	printf("Bob's third next receive_header_key:\n");
-	print_hex(bob_next_receive_header_key);
+	std::cout << bob_next_receive_header_key.toHex();
 	putchar('\n');
 
 	//check header decryptability
@@ -544,7 +545,7 @@ int main(void) noexcept {
 	}
 	//print it out!
 	printf("Bob Ratchet 1 receive message key 3:\n");
-	print_hex(bob_receive_key3);
+	std::cout << bob_receive_key3.toHex();
 	putchar('\n');
 
 	//confirm validity of the message key (this is normally done after successfully decrypting
@@ -605,9 +606,9 @@ int main(void) noexcept {
 	}
 	//print the send message key
 	printf("Bob Ratchet 2 send message key 1:\n");
-	print_hex(bob_send_message_key1);
+	std::cout << bob_send_message_key1.toHex();
 	printf("Bob Ratchet 2 send header key 1:\n");
-	print_hex(bob_send_header_key1);
+	std::cout << bob_send_header_key1.toHex();
 	putchar('\n');
 
 	//second message key
@@ -626,9 +627,9 @@ int main(void) noexcept {
 	}
 	//print the send message key
 	printf("Bob Ratchet 2 send message key 1:\n");
-	print_hex(bob_send_message_key2);
+	std::cout << bob_send_message_key2.toHex();
 	printf("Bob Ratchet 2 send header key 1:\n");
-	print_hex(bob_send_header_key2);
+	std::cout << bob_send_header_key2.toHex();
 	putchar('\n');
 
 	//third message key
@@ -647,9 +648,9 @@ int main(void) noexcept {
 	}
 	//print the send message key
 	printf("Bob Ratchet 2 send message key 3:\n");
-	print_hex(bob_send_message_key3);
+	std::cout << bob_send_message_key3.toHex();
 	printf("Bob Ratchet 2 send header key 3:\n");
-	print_hex(bob_send_header_key3);
+	std::cout << bob_send_header_key3.toHex();
 	putchar('\n');
 
 	//--------------------------------------------------------------------------
@@ -663,9 +664,9 @@ int main(void) noexcept {
 	}
 
 	printf("Alice's first current receive header key:\n");
-	print_hex(alice_current_receive_header_key);
+	std::cout << alice_current_receive_header_key.toHex();
 	printf("Alice's first next receive_header_key:\n");
-	print_hex(alice_next_receive_header_key);
+	std::cout << alice_next_receive_header_key.toHex();
 	putchar('\n');
 
 	//check header decryptability
@@ -705,7 +706,7 @@ int main(void) noexcept {
 	}
 	//print it out
 	printf("Alice Ratchet 2 receive message key 1:\n");
-	print_hex(alice_receive_message_key1);
+	std::cout << alice_receive_message_key1.toHex();
 	putchar('\n');
 
 	//confirm validity of the message key
@@ -724,9 +725,9 @@ int main(void) noexcept {
 	}
 
 	printf("Alice's current receive header key:\n");
-	print_hex(alice_current_receive_header_key);
+	std::cout << alice_current_receive_header_key.toHex();
 	printf("Alice's next receive_header_key:\n");
-	print_hex(alice_next_receive_header_key);
+	std::cout << alice_next_receive_header_key.toHex();
 	putchar('\n');
 
 	//check header decryptability
@@ -761,7 +762,7 @@ int main(void) noexcept {
 	}
 	//print it out
 	printf("Alice Ratchet 2 receive message key 3:\n");
-	print_hex(alice_receive_message_key3);
+	std::cout << alice_receive_message_key3.toHex();
 	putchar('\n');
 
 	assert(alice_state->staged_header_and_message_keys.length == 1);
@@ -785,7 +786,7 @@ int main(void) noexcept {
 		THROW(BUFFER_ERROR, "Failed to get Alice's second receive message key.");
 	}
 	printf("Alice Ratchet 2 receive message key 2:\n");
-	print_hex(alice_receive_message_key2);
+	std::cout << alice_receive_message_key2.toHex();
 	putchar('\n');
 
 	//get the second receive header key from the message and header keystore
@@ -796,7 +797,7 @@ int main(void) noexcept {
 		THROW(BUFFER_ERROR, "Failed to get Alice's second receive header key.");
 	}
 	printf("Alice Ratchet 2 receive header key 2:\n");
-	print_hex(alice_receive_header_key2);
+	std::cout << alice_receive_header_key2.toHex();
 	putchar('\n');
 
 	//compare header keys
@@ -845,7 +846,7 @@ int main(void) noexcept {
 	status = protobuf_export(alice_state, &protobuf_export_buffer);
 	THROW_on_error(EXPORT_ERROR, "Failed to export Alice' ratchet to protobuf-c.");
 
-	print_hex(*protobuf_export_buffer);
+	std::cout << protobuf_export_buffer->toHex();
 	puts("\n\n");
 
 	alice_state->destroy();
@@ -864,7 +865,7 @@ int main(void) noexcept {
 
 	//compare both exports
 	if ((protobuf_export_buffer == NULL) || (protobuf_export_buffer->compare(protobuf_second_export_buffer) != 0)) {
-		print_hex(*protobuf_second_export_buffer);
+		std::cout << protobuf_second_export_buffer->toHex();
 		THROW(INCORRECT_DATA, "Both exports don't match!");
 	}
 	printf("Exported Protobuf-C buffers match!\n");

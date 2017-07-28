@@ -25,8 +25,6 @@
 
 #ifndef TEST_UTILS_H
 #define TEST_UTILS_H
-void print_hex(Buffer& data) noexcept;
-
 void print_to_file(Buffer& data, const std::string& filename) noexcept;
 
 void print_errors(const return_status&  status) noexcept;

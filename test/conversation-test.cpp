@@ -23,6 +23,7 @@
 #include <cstdlib>
 #include <sodium.h>
 #include <exception>
+#include <iostream>
 
 #include "common.h"
 #include "utils.h"
@@ -261,7 +262,7 @@ int main(void) noexcept {
 	status = protobuf_export(charlie_conversation, &protobuf_export_buffer);
 	THROW_on_error(EXPORT_ERROR, "Failed to export charlie's conversation to protobuf-c.");
 
-	print_hex(*protobuf_export_buffer);
+	std::cout << protobuf_export_buffer->toHex();
 	puts("\n");
 
 	conversation_destroy(charlie_conversation);

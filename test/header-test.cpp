@@ -53,7 +53,7 @@ int main(void) {
 			throw MolchException(KEYGENERATION_FAILED, "Failed to create our public ephemeral.");
 		}
 		printf("Our public ephemeral key (%zu Bytes):\n", our_public_ephemeral_key.content_length);
-		print_hex(our_public_ephemeral_key);
+		std::cout << our_public_ephemeral_key.toHex();
 
 		//message numbers
 		message_number = 2;
@@ -70,7 +70,7 @@ int main(void) {
 
 		//print the header
 		printf("Header (%zu Bytes):\n", header->content_length);
-		print_hex(*header);
+		std::cout << header->toHex();
 		putchar('\n');
 
 		//get data back out of the header again
@@ -83,7 +83,7 @@ int main(void) {
 				*header);
 
 		printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key.content_length);
-		print_hex(extracted_public_ephemeral_key);
+		std::cout << extracted_public_ephemeral_key.toHex();
 		printf("Extracted message number: %u\n", extracted_message_number);
 		printf("Extracted previous message number: %u\n", extracted_previous_message_number);
 		putchar('\n');

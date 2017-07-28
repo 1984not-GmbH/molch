@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <sodium.h>
 #include <cassert>
+#include <iostream>
 
 extern "C" {
 	#include <key_bundle.pb-c.h>
@@ -185,12 +186,12 @@ int main(void) noexcept {
 
 		//print the new header key
 		printf("New Header Key No. %zu:\n", i);
-		print_hex(header_key);
+		std::cout << header_key.toHex();
 		putchar('\n');
 
 		//print the new message key
 		printf("New message key No. %zu:\n", i);
-		print_hex(message_key);
+		std::cout << message_key.toHex();
 		putchar('\n');
 
 		//add keys to the keystore
@@ -215,7 +216,7 @@ int main(void) noexcept {
 
 	puts("[\n");
 	for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
-		print_hex(*protobuf_export_buffers[i]);
+		std::cout << protobuf_export_buffers[i]->toHex();
 		puts(",\n");
 	}
 	puts("]\n\n");

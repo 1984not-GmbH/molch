@@ -23,6 +23,7 @@
 #include <cstdlib>
 #include <sodium.h>
 #include <cassert>
+#include <iostream>
 
 #include "../lib/buffer.h"
 #include "../lib/common.h"
@@ -93,7 +94,7 @@ int main(void) noexcept {
 	printf("Here\n");
 
 	printf("Random buffer (%zu Bytes):\n", buffer1->content_length);
-	print_hex(*buffer1);
+	std::cout << buffer1->toHex();
 	putchar('\n');
 
 	//make second buffer (from pointer)
@@ -104,7 +105,7 @@ int main(void) noexcept {
 	buffer2->content[3] = 0xef;
 
 	printf("Second buffer (%zu Bytes):\n", buffer2->content_length);
-	print_hex(*buffer2);
+	std::cout << buffer2->toHex();
 	putchar('\n');
 
 	{
@@ -238,7 +239,7 @@ int main(void) noexcept {
 		goto fail;
 	}
 	printf("Buffer with %zu random bytes:\n", random->content_length);
-	print_hex(*random);
+	std::cout << random->toHex();
 
 	if (random->fillRandom(20) == 0) {
 		fprintf(stderr, "ERROR: Failed to detect too long write to buffer.\n");

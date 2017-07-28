@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <sodium.h>
 #include <cassert>
+#include <iostream>
 
 #include "../lib/user-store.h"
 #include "utils.h"
@@ -348,7 +349,7 @@ int main(void) noexcept {
 	//print the exported data
 	puts("[\n");
 	for (size_t i = 0; i < protobuf_export_length; i++) {
-		print_hex(*protobuf_export_buffers[i]);
+		std::cout << protobuf_export_buffers[i]->toHex();
 		puts(",\n");
 	}
 	puts("]\n\n");

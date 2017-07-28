@@ -201,6 +201,9 @@ public:
 			void (*deallocator)(void *pointer)
 			) noexcept __attribute__((warn_unused_result));
 
+	std::string toString() const noexcept;
+	std::string toHex() const noexcept;
+
 	bool operator ==(const Buffer& buffer) const noexcept;
 	bool operator !=(const Buffer& buffer) const noexcept;
 

@@ -72,7 +72,7 @@ int main(void) noexcept {
 
 		//print Alice's shared secret
 		printf("Alice's shared secret ECDH(A_priv, B_pub) (%zu Bytes):\n", alice_shared_secret.content_length);
-		print_hex(alice_shared_secret);
+		std::cout << alice_shared_secret.toHex();
 		putchar('\n');
 
 		//Diffie Hellman on Bob's side
@@ -88,7 +88,7 @@ int main(void) noexcept {
 
 		//print Bob's shared secret
 		printf("Bob's shared secret ECDH(B_priv, A_pub) (%zu Bytes):\n", bob_shared_secret.content_length);
-		print_hex(bob_shared_secret);
+		std::cout << bob_shared_secret.toHex();
 		putchar('\n');
 
 		//compare both shared secrets

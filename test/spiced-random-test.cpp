@@ -40,7 +40,7 @@ int main(void) noexcept {
 		printf("\"Random\" input from the user (%zu Bytes):\n", spice.content_length);
 		printf("String: %.*s\n", (int)spice.content_length, spice.content);
 		printf("Hex:\n");
-		print_hex(spice);
+		std::cout << spice.toHex();
 		putchar('\n');
 
 		//output buffers
@@ -53,7 +53,7 @@ int main(void) noexcept {
 		spiced_random(output1, spice, output1.getBufferLength());
 
 		printf("Spiced random data 1 (%zu Bytes):\n", output1.content_length);
-		print_hex(output1);
+		std::cout << output1.toHex();
 		putchar('\n');
 
 
@@ -61,7 +61,7 @@ int main(void) noexcept {
 		spiced_random(output2, spice, output2.getBufferLength());
 
 		printf("Spiced random data 2 (%zu Bytes):\n", output2.content_length);
-		print_hex(output2);
+		std::cout << output2.toHex();
 		putchar('\n');
 
 		//compare the two (mustn't be identical!)

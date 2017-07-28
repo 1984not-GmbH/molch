@@ -26,36 +26,6 @@
 #include "utils.h"
 #include "../lib/common.h"
 
-void print_hex(Buffer& data) noexcept {
-	static const size_t WIDTH = 30;
-	//buffer for hex string
-	const size_t hex_length = data.content_length * 2 + sizeof("");
-	char *hex = (char*)malloc(hex_length);
-	if (hex == NULL) {
-		fprintf(stderr, "Failed to print hex data.");
-		exit(EXIT_FAILURE);
-	}
-
-	if (sodium_bin2hex(hex, hex_length, data.content, data.content_length) == NULL) {
-		fprintf(stderr, "Failed to print hex data.");
-		exit(EXIT_FAILURE);
-	}
-
-	for (size_t i = 0; i < hex_length; i++) {
-		if ((WIDTH != 0) && ((i % WIDTH) == 0) && (i != 0)) {
-			putchar('\n');
-		} else if ((i % 2 == 0) && (i != 0)) {
-			putchar(' ');
-		}
-		putchar(hex[i]);
-	}
-
-	putchar('\n');
-
-	//cleanup
-	free(hex);
-}
-
 void print_to_file(Buffer& data, const std::string& filename) noexcept {
 	FILE *file = fopen(filename.c_str(), "w");
 	if (file == nullptr) {

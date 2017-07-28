@@ -49,7 +49,7 @@ int main(void) noexcept {
 
 		//print first chain key
 		printf("Chain key (%zu Bytes):\n", chain_key.content_length);
-		print_hex(chain_key);
+		std::cout << chain_key.toHex();
 		putchar('\n');
 
 		//derive message key from chain key
@@ -58,7 +58,7 @@ int main(void) noexcept {
 
 		//print message key
 		printf("Message key (%zu Bytes):\n", message_key.content_length);
-		print_hex(message_key);
+		std::cout << message_key.toHex();
 		putchar('\n');
 	} catch (const MolchException& exception) {
 		std::cout << exception.print() << std::endl;

@@ -24,6 +24,7 @@
 #include <cstdlib>
 #include <sodium.h>
 #include <cassert>
+#include <iostream>
 
 #include "../lib/conversation-store.h"
 #include "utils.h"
@@ -328,7 +329,7 @@ int main(void) noexcept {
 	//print
 	puts("[\n");
 	for (size_t i = 0; i < protobuf_export_buffers_length; i++) {
-		print_hex(*protobuf_export_buffers[i]);
+		std::cout << protobuf_export_buffers[i]->toHex();
 		puts(",\n");
 	}
 	puts("]\n\n");

@@ -42,11 +42,11 @@ void print_header_and_message_keystore(header_and_message_keystore& keystore) no
 	//print all the keys in the keystore
 	for (size_t i = 0; i < keystore.length; node = node->next, i++) {
 		printf("Header key %zu:\n", i);
-		print_hex(*node->header_key);
+		std::cout << node->header_key->toHex();
 		putchar('\n');
 
 		printf("Message key %zu:\n", i);
-		print_hex(*node->message_key);
+		std::cout << node->message_key->toHex();
 		if (i != keystore.length - 1) { //omit last one
 			putchar('\n');
 		}
@@ -80,9 +80,8 @@ void generate_and_print_keypair(
 
 	//print keypair
 	std::cout << name << "'s public " << type << " key (" << public_key.content_length << ":" << std::endl;
-	print_hex(public_key);
+	std::cout << public_key.toHex();
 	putchar('\n');
 	std::cout << std::endl << name << "'s private " << type << " key (" << private_key.content_length << ":" << std::endl;
-	print_hex(private_key);
-	std::cout << std::endl;
+	std::cout << private_key.toHex() << std::endl;
 }

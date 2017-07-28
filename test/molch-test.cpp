@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
+#include <iostream>
 
 #include "utils.h"
 #include "../lib/molch.h"
@@ -261,7 +262,7 @@ int main(void) noexcept {
 		}
 
 		printf("Alice public identity (%zu Bytes):\n", alice_public_identity.content_length);
-		print_hex(alice_public_identity);
+		std::cout << alice_public_identity.toHex();
 		putchar('\n');
 		if (complete_export == nullptr) {
 			THROW(EXPORT_ERROR, "Failed to export the librarys state as JSON after creating alice.");
@@ -280,7 +281,7 @@ int main(void) noexcept {
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to update the backup key.");
 
 	printf("Updated backup key:\n");
-	print_hex(backup_key);
+	std::cout << backup_key.toHex();
 	putchar('\n');
 
 	//create another user
@@ -301,7 +302,7 @@ int main(void) noexcept {
 	}
 
 	printf("Bob public identity (%zu Bytes):\n", bob_public_identity.content_length);
-	print_hex(bob_public_identity);
+	std::cout << bob_public_identity.toHex();
 	putchar('\n');
 
 	//check user count

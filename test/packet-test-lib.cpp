@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
+#include <iostream>
 
 #include "../lib/packet.h"
 #include "../lib/constants.h"
@@ -55,7 +56,7 @@ return_status create_and_print_message(
 		THROW(KEYGENERATION_FAILED, "Failed to generate header key.");
 	}
 	printf("Header key (%zu Bytes):\n", header_key.content_length);
-	print_hex(header_key);
+	std::cout << header_key.toHex();
 	putchar('\n');
 
 	//create message key
@@ -63,12 +64,12 @@ return_status create_and_print_message(
 		THROW(KEYGENERATION_FAILED, "Failed to generate message key.");
 	}
 	printf("Message key (%zu Bytes):\n", message_key.content_length);
-	print_hex(message_key);
+	std::cout << message_key.toHex();
 	putchar('\n');
 
 	//print the header (as hex):
 	printf("Header (%zu Bytes):\n", header.content_length);
-	print_hex(header);
+	std::cout << header.toHex();
 	putchar('\n');
 
 	//print the message (as string):
@@ -89,7 +90,7 @@ return_status create_and_print_message(
 
 	//print encrypted packet
 	printf("Encrypted Packet (%zu Bytes):\n", packet->content_length);
-	print_hex(*packet);
+	std::cout << packet->toHex();
 	putchar('\n');
 
 cleanup:
