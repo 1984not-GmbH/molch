@@ -23,9 +23,11 @@
 #include <cstdlib>
 #include <sodium.h>
 #include <iostream>
+#include <exception>
 
 #include "../lib/packet.h"
 #include "../lib/constants.h"
+#include "../lib/molch-exception.h"
 #include "utils.h"
 #include "packet-test-lib.h"
 
@@ -76,17 +78,29 @@ return_status create_and_print_message(
 	printf("Message (%zu Bytes):\n%.*s\n\n", message.content_length, (int)message.content_length, message.content);
 
 	//now encrypt the message
-	status = packet_encrypt(
-			packet,
-			packet_type,
-			header,
-			header_key,
-			message,
-			message_key,
-			public_identity_key,
-			public_ephemeral_key,
-			public_prekey);
-	THROW_on_error(ENCRYPT_ERROR, "Failed to encrypt message and header.");
+	try {
+		std::unique_ptr<Buffer> unique_ptr_packet;
+		unique_ptr_packet = packet_encrypt(
+				packet_type,
+				header,
+				header_key,
+				message,
+				message_key,
+				public_identity_key,
+				public_ephemeral_key,
+				public_prekey);
+		//convert to malloced buffer
+		packet = Buffer::create(unique_ptr_packet->content_length, 0);
+		THROW_on_failed_alloc(packet);
+		if (packet->cloneFrom(unique_ptr_packet.get()) != 0) {
+			THROW(BUFFER_ERROR, "Failed to clone packet from unique_ptr.");
+		}
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//print encrypted packet
 	printf("Encrypted Packet (%zu Bytes):\n", packet->content_length);

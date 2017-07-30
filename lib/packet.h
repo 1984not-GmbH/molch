@@ -22,6 +22,8 @@
 #ifndef LIB_PACKET_H
 #define LIB_PACKET_H
 
+#include <memory>
+
 #include "buffer.h"
 #include "common.h"
 #include "molch.h"
@@ -34,8 +36,6 @@
 /*!
  * Construct and encrypt a packet given the keys and metadata.
  *
- * \param packet
- *   The encrypted packet.
  * \param packet_type
  *   The type of the packet (prekey message, normal message ...)
  * \param axolotl_header
@@ -54,11 +54,9 @@
  *   The prekey of the receiver that has been selected by the sender in case of prekey messages. Optional for normal messages.
  *
  * \return
- *   Error status, destroy with return_status_destroy_errors if an error occurs.
+ *   The encrypted packet.
  */
-return_status packet_encrypt(
-		//output
-		Buffer*& packet,
+std::unique_ptr<Buffer> packet_encrypt(
 		//inputs
 		const molch_message_type packet_type,
 		const Buffer& axolotl_header,
@@ -68,7 +66,7 @@ return_status packet_encrypt(
 		//optional inputs (prekey messages only)
 		const Buffer * const public_identity_key,
 		const Buffer * const public_ephemeral_key,
-		const Buffer * const public_prekey) noexcept __attribute__((warn_unused_result));
+		const Buffer * const public_prekey);
 
 /*!
  * Extract and decrypt a packet and the metadata inside of it.

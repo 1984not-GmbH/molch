@@ -373,17 +373,29 @@ return_status conversation_send(
 		THROW(EXCEPTION, exception.what());
 	}
 
-	status = packet_encrypt(
-			*packet,
-			packet_type,
-			*header,
-			send_header_key,
-			*message,
-			send_message_key,
-			public_identity_key,
-			public_ephemeral_key,
-			public_prekey);
-	THROW_on_error(ENCRYPT_ERROR, "Failed to encrypt packet.");
+	try {
+		std::unique_ptr<Buffer> unique_ptr_packet;
+		unique_ptr_packet = packet_encrypt(
+				packet_type,
+				*header,
+				send_header_key,
+				*message,
+				send_message_key,
+				public_identity_key,
+				public_ephemeral_key,
+				public_prekey);
+		//convert to malloced
+		*packet = Buffer::create(unique_ptr_packet->content_length, 0);
+		THROW_on_failed_alloc(*packet);
+		if ((*packet)->cloneFrom(unique_ptr_packet.get()) != 0) {
+			THROW(BUFFER_ERROR, "Failed to clone packet from unique_ptr.");
+		}
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 cleanup:
 	on_error {
