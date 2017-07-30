@@ -22,10 +22,12 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
+#include <exception>
 
 #include "../lib/packet.h"
 #include "../lib/molch.h"
 #include "../lib/constants.h"
+#include "../lib/molch-exception.h"
 #include "utils.h"
 #include "packet-test-lib.h"
 
@@ -86,7 +88,8 @@ int main(void) noexcept {
 	molch_message_type extracted_packet_type;
 	uint32_t extracted_current_protocol_version;
 	uint32_t extracted_highest_supported_protocol_version;
-	status = packet_get_metadata_without_verification(
+	try {
+		packet_get_metadata_without_verification(
 			extracted_current_protocol_version,
 			extracted_highest_supported_protocol_version,
 			extracted_packet_type,
@@ -94,7 +97,12 @@ int main(void) noexcept {
 			nullptr,
 			nullptr,
 			nullptr);
-	THROW_on_error(DATA_FETCH_ERROR, "Couldn't extract metadata from the packet.");
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	printf("extracted_packet_type = %u\n", extracted_packet_type);
 	if (packet_type != extracted_packet_type) {
@@ -150,7 +158,8 @@ int main(void) noexcept {
 	THROW_on_error(GENERIC_ERROR, "Failed to create and print message.");
 
 	//now extract the metadata
-	status = packet_get_metadata_without_verification(
+	try {
+		packet_get_metadata_without_verification(
 			extracted_current_protocol_version,
 			extracted_highest_supported_protocol_version,
 			extracted_packet_type,
@@ -158,7 +167,12 @@ int main(void) noexcept {
 			&extracted_public_identity_key,
 			&extracted_public_ephemeral_key,
 			&extracted_public_prekey);
-	THROW_on_error(DATA_FETCH_ERROR, "Couldn't extract metadata from the packet.");
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	printf("extracted_type = %u\n", extracted_packet_type);
 	if (packet_type != extracted_packet_type) {

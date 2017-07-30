@@ -130,22 +130,19 @@ return_status packet_decrypt(
  *   The public ephemeral key of the sender in case of prekey messages. Optional for normal messages.
  * \param public_prekey
  *   The prekey of the receiver that has been selected by the sender in case of prekey messages. Optional for normal messages.
- *
- * \return
- *   Error status, destroy with return_status_destroy_errors if an error occurs.
  */
-return_status packet_get_metadata_without_verification(
+void packet_get_metadata_without_verification(
 		//outputs
 		uint32_t& current_protocol_version,
 		uint32_t& highest_supported_protocol_version,
 		molch_message_type& packet_type,
 		//input
-		Buffer& packet,
+		const Buffer& packet,
 		//optional outputs (prekey messages only)
 		Buffer * const public_identity_key, //PUBLIC_KEY_SIZE
 		Buffer * const public_ephemeral_key, //PUBLIC_KEY_SIZE
 		Buffer * const public_prekey //PUBLIC_KEY_SIZE
-		) noexcept __attribute__((warn_unused_result));
+		);
 
 /*!
  * Decrypt the axolotl header part of a packet and thereby authenticate other metadata.

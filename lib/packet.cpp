@@ -29,6 +29,7 @@ extern "C" {
 #include "constants.h"
 #include "zeroed_malloc.h"
 #include "molch-exception.h"
+#include "protobuf-deleters.h"
 
 /*!
  * Convert molch_message_type to PacketHeader__PacketType.
@@ -63,73 +64,55 @@ static molch_message_type to_molch_message_type(const PacketHeader__PacketType p
  * Unpacks a packet via Protobuf-C into a struct and verifies that all the necessary
  * fields exist.
  *
- * \param packet_struct
- *   The unpacket struct.
  * \param packet
  *   The binary packet.
  *
  * \return
- *   Error status, destroy with return_status_destroy_errors if an error occurs.
+ *   The unpacked struct.
  */
-return_status packet_unpack(Packet ** const packet_struct, Buffer * const packet) noexcept __attribute__((warn_unused_result));
-return_status packet_unpack(Packet ** const packet_struct, Buffer * const packet) noexcept {
-	return_status status = return_status_init();
-
-	//check input
-	if ((packet_struct == nullptr) || (packet == nullptr)) {
-		THROW(INVALID_INPUT, "Invalid input to packet_unpack.");
-	}
-
+static std::unique_ptr<Packet,PacketDeleter> packet_unpack(const Buffer& packet) {
 	//unpack the packet
-	*packet_struct = packet__unpack(&protobuf_c_allocators, packet->content_length, packet->content);
-	if (*packet_struct == nullptr) {
-		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
+	auto packet_struct = std::unique_ptr<Packet,PacketDeleter>(packet__unpack(&protobuf_c_allocators, packet.content_length, packet.content));
+	if (!packet_struct) {
+		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
 	}
 
-	if ((*packet_struct)->packet_header->current_protocol_version != 0) {
-		THROW(UNSUPPORTED_PROTOCOL_VERSION, "The packet has an unsuported protocol version.");
+	if (packet_struct->packet_header->current_protocol_version != 0) {
+		throw MolchException(UNSUPPORTED_PROTOCOL_VERSION, "The packet has an unsuported protocol version.");
 	}
 
 	//check if the packet contains the necessary fields
-	if (!(*packet_struct)->has_encrypted_axolotl_header
-		|| !(*packet_struct)->has_encrypted_message
-		|| !(*packet_struct)->packet_header->has_packet_type
-		|| !(*packet_struct)->packet_header->has_header_nonce
-		|| !(*packet_struct)->packet_header->has_message_nonce) {
-		THROW(PROTOBUF_MISSING_ERROR, "Some fields are missing in the packet.");
+	if (!packet_struct->has_encrypted_axolotl_header
+		|| !packet_struct->has_encrypted_message
+		|| !packet_struct->packet_header->has_packet_type
+		|| !packet_struct->packet_header->has_header_nonce
+		|| !packet_struct->packet_header->has_message_nonce) {
+		throw MolchException(PROTOBUF_MISSING_ERROR, "Some fields are missing in the packet.");
 	}
 
 	//check the size of the nonces
-	if (((*packet_struct)->packet_header->header_nonce.len != HEADER_NONCE_SIZE)
-		|| ((*packet_struct)->packet_header->message_nonce.len != MESSAGE_NONCE_SIZE)) {
-		THROW(INCORRECT_BUFFER_SIZE, "At least one of the nonces has an incorrect length.");
+	if ((packet_struct->packet_header->header_nonce.len != HEADER_NONCE_SIZE)
+		|| (packet_struct->packet_header->message_nonce.len != MESSAGE_NONCE_SIZE)) {
+		throw MolchException(INCORRECT_BUFFER_SIZE, "At least one of the nonces has an incorrect length.");
 	}
 
-	if ((*packet_struct)->packet_header->packet_type == PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
+	if (packet_struct->packet_header->packet_type == PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
 		//check if the public keys for prekey messages are there
-		if (!(*packet_struct)->packet_header->has_public_identity_key
-			|| !(*packet_struct)->packet_header->has_public_ephemeral_key
-			|| !(*packet_struct)->packet_header->has_public_prekey) {
-			THROW(PROTOBUF_MISSING_ERROR, "The prekey packet misses at least one public key.");
+		if (!packet_struct->packet_header->has_public_identity_key
+			|| !packet_struct->packet_header->has_public_ephemeral_key
+			|| !packet_struct->packet_header->has_public_prekey) {
+			throw MolchException(PROTOBUF_MISSING_ERROR, "The prekey packet misses at least one public key.");
 		}
 
 		//check the sizes of the public keys
-		if (((*packet_struct)->packet_header->public_identity_key.len != PUBLIC_KEY_SIZE)
-			|| ((*packet_struct)->packet_header->public_ephemeral_key.len != PUBLIC_KEY_SIZE)
-			|| ((*packet_struct)->packet_header->public_prekey.len != PUBLIC_KEY_SIZE)) {
-			THROW(INCORRECT_BUFFER_SIZE, "At least one of the public keys of the prekey packet has an incorrect length.");
+		if ((packet_struct->packet_header->public_identity_key.len != PUBLIC_KEY_SIZE)
+			|| (packet_struct->packet_header->public_ephemeral_key.len != PUBLIC_KEY_SIZE)
+			|| (packet_struct->packet_header->public_prekey.len != PUBLIC_KEY_SIZE)) {
+			throw MolchException(INCORRECT_BUFFER_SIZE, "At least one of the public keys of the prekey packet has an incorrect length.");
 		}
 	}
 
-cleanup:
-	on_error {
-		if ((packet_struct != nullptr) && (*packet_struct != nullptr)) {
-			packet__free_unpacked(*packet_struct, &protobuf_c_allocators);
-			*packet_struct = nullptr;
-		}
-	}
-
-	return status;
+	return packet_struct;
 }
 
 std::unique_ptr<Buffer> packet_encrypt(
@@ -294,7 +277,8 @@ return_status packet_decrypt(
 	message = nullptr;
 
 	//get metadata
-	status = packet_get_metadata_without_verification(
+	try {
+		packet_get_metadata_without_verification(
 			current_protocol_version,
 			highest_supported_protocol_version,
 			packet_type,
@@ -302,7 +286,12 @@ return_status packet_decrypt(
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	THROW_on_error(DATA_FETCH_ERROR, "Failed to get metadata from the packet.");
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//decrypt the header
 	status = packet_decrypt_header(
@@ -339,40 +328,35 @@ cleanup:
 	return status;
 }
 
-return_status packet_get_metadata_without_verification(
+void packet_get_metadata_without_verification(
 		//outputs
 		uint32_t& current_protocol_version,
 		uint32_t& highest_supported_protocol_version,
 		molch_message_type& packet_type,
 		//input
-		Buffer& packet,
+		const Buffer& packet,
 		//optional outputs (prekey messages only)
 		Buffer * const public_identity_key, //PUBLIC_KEY_SIZE
 		Buffer * const public_ephemeral_key, //PUBLIC_KEY_SIZE
 		Buffer * const public_prekey //PUBLIC_KEY_SIZE
-		) noexcept {
-	return_status status = return_status_init();
-
-	Packet *packet_struct = nullptr;
-
-	status = packet_unpack(&packet_struct, &packet);
-	THROW_on_error(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
+		) {
+	std::unique_ptr<Packet,PacketDeleter> packet_struct = packet_unpack(packet);
 
 	if (packet_struct->packet_header->packet_type == PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
 		//copy the public keys
 		if (public_identity_key != nullptr) {
 			if (public_identity_key->cloneFromRaw(packet_struct->packet_header->public_identity_key.data, packet_struct->packet_header->public_identity_key.len) != 0) {
-				THROW(BUFFER_ERROR, "Failed to copy public identity key.");
+				throw MolchException(BUFFER_ERROR, "Failed to copy public identity key.");
 			}
 		}
 		if (public_ephemeral_key != nullptr) {
 			if (public_ephemeral_key->cloneFromRaw(packet_struct->packet_header->public_ephemeral_key.data, packet_struct->packet_header->public_ephemeral_key.len) != 0) {
-				THROW(BUFFER_ERROR, "Failed to copy public ephemeral key.");
+				throw MolchException(BUFFER_ERROR, "Failed to copy public ephemeral key.");
 			}
 		}
 		if (public_prekey != nullptr) {
 			if (public_prekey->cloneFromRaw(packet_struct->packet_header->public_prekey.data, packet_struct->packet_header->public_prekey.len) != 0) {
-				THROW(BUFFER_ERROR, "Failed to copy public prekey.");
+				throw MolchException(BUFFER_ERROR, "Failed to copy public prekey.");
 			}
 		}
 	}
@@ -380,30 +364,6 @@ return_status packet_get_metadata_without_verification(
 	current_protocol_version = packet_struct->packet_header->current_protocol_version;
 	highest_supported_protocol_version = packet_struct->packet_header->highest_supported_protocol_version;
 	packet_type = to_molch_message_type(packet_struct->packet_header->packet_type);
-
-cleanup:
-	if (packet_struct != nullptr) {
-		packet__free_unpacked(packet_struct, &protobuf_c_allocators);
-	}
-
-	on_error {
-		//make sure that incomplete data can't be accidentally used
-		if (public_identity_key != nullptr) {
-			public_identity_key->clear();
-		}
-
-		if (public_ephemeral_key != nullptr) {
-			public_ephemeral_key->clear();
-		}
-
-		if (public_prekey != nullptr) {
-			public_prekey->clear();
-		}
-
-		packet_type = INVALID;
-	}
-
-	return status;
 }
 
 return_status packet_decrypt_header(
@@ -415,15 +375,21 @@ return_status packet_decrypt_header(
 		) noexcept {
 	return_status status = return_status_init();
 
-	Packet *packet_struct = nullptr;
+	std::unique_ptr<Packet,PacketDeleter> packet_struct;
 
 	//check input
 	if (axolotl_header_key.content_length != HEADER_KEY_SIZE) {
 		THROW(INVALID_INPUT, "Invalid input to packet_decrypt_header.");
 	}
 
-	status = packet_unpack(&packet_struct, &packet);
-	THROW_on_error(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
+	try {
+		packet_struct = packet_unpack(packet);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	if (packet_struct->encrypted_axolotl_header.len < crypto_secretbox_MACBYTES) {
 		THROW(INCORRECT_BUFFER_SIZE, "The ciphertext of the axolotl header is too short.")
@@ -448,10 +414,6 @@ return_status packet_decrypt_header(
 	}
 
 cleanup:
-	if (packet_struct != nullptr) {
-		packet__free_unpacked(packet_struct, &protobuf_c_allocators);
-	}
-
 	on_error {
 		buffer_destroy_and_null_if_valid(axolotl_header);
 	}
@@ -469,7 +431,7 @@ return_status packet_decrypt_message(
 	return_status status = return_status_init();
 	unsigned char padding;
 
-	Packet *packet_struct = nullptr;
+	std::unique_ptr<Packet,PacketDeleter> packet_struct;
 
 	Buffer *padded_message = nullptr;
 
@@ -478,8 +440,14 @@ return_status packet_decrypt_message(
 		THROW(INVALID_INPUT, "Invalid input to packet_decrypt_message.")
 	}
 
-	status = packet_unpack(&packet_struct, &packet);
-	THROW_on_error(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
+	try {
+		packet_struct = packet_unpack(packet);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	if (packet_struct->encrypted_message.len < crypto_secretbox_MACBYTES) {
 		THROW(INCORRECT_BUFFER_SIZE, "The ciphertext of the message is too short.");
@@ -524,10 +492,6 @@ return_status packet_decrypt_message(
 	}
 
 cleanup:
-	if (packet_struct != nullptr) {
-		packet__free_unpacked(packet_struct, &protobuf_c_allocators);
-	}
-
 	buffer_destroy_and_null_if_valid(padded_message);
 
 	on_error {

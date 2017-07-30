@@ -245,7 +245,8 @@ return_status conversation_start_receive_conversation(
 	molch_message_type packet_type;
 	uint32_t current_protocol_version;
 	uint32_t highest_supported_protocol_version;
-	status = packet_get_metadata_without_verification(
+	try {
+		packet_get_metadata_without_verification(
 			current_protocol_version,
 			highest_supported_protocol_version,
 			packet_type,
@@ -253,7 +254,12 @@ return_status conversation_start_receive_conversation(
 			&sender_public_identity,
 			&sender_public_ephemeral,
 			&receiver_public_prekey);
-	THROW_on_error(GENERIC_ERROR, "Failed to get packet metadata.");
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	if (packet_type != PREKEY_MESSAGE) {
 		THROW(INVALID_VALUE, "Packet is not a prekey message.");
