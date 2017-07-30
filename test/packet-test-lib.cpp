@@ -23,37 +23,37 @@
 #include <cstdlib>
 #include <sodium.h>
 #include <iostream>
+#include <exception>
 
 #include "../lib/packet.h"
 #include "../lib/constants.h"
+#include "../lib/molch-exception.h"
 #include "utils.h"
 #include "packet-test-lib.h"
 
-return_status create_and_print_message(
+void create_and_print_message(
 		//output
-		Buffer*& packet,
+		std::unique_ptr<Buffer>& packet,
 		Buffer& header_key, //HEADER_KEY_SIZE
 		Buffer& message_key, //MESSAGE_KEY_SIZE
 		//inputs
 		const molch_message_type packet_type,
-		Buffer& header,
-		Buffer& message,
+		const Buffer& header,
+		const Buffer& message,
 		//optional inputs (prekey messages only)
 		Buffer * const public_identity_key,
 		Buffer * const public_ephemeral_key,
-		Buffer * const public_prekey) noexcept {
-	return_status status = return_status_init();
-
+		Buffer * const public_prekey) {
 	//check input
-	if ((header_key.getBufferLength() < HEADER_KEY_SIZE)
-		|| (message_key.getBufferLength() < MESSAGE_KEY_SIZE)
+	if (!header_key.fits(HEADER_KEY_SIZE)
+		|| !message_key.fits(MESSAGE_KEY_SIZE)
 		|| (packet_type == INVALID)) {
-		THROW(INVALID_INPUT, "Invalid input to create_and_print_message.");
+		throw MolchException(INVALID_INPUT, "Invalid input to create_and_print_message.");
 	}
 
 	//create header key
 	if (header_key.fillRandom(HEADER_KEY_SIZE) != 0) {
-		THROW(KEYGENERATION_FAILED, "Failed to generate header key.");
+		throw MolchException(KEYGENERATION_FAILED, "Failed to generate header key.");
 	}
 	printf("Header key (%zu Bytes):\n", header_key.content_length);
 	std::cout << header_key.toHex();
@@ -61,7 +61,7 @@ return_status create_and_print_message(
 
 	//create message key
 	if (message_key.fillRandom(MESSAGE_KEY_SIZE) != 0) {
-		THROW(KEYGENERATION_FAILED, "Failed to generate message key.");
+		throw MolchException(KEYGENERATION_FAILED, "Failed to generate message key.");
 	}
 	printf("Message key (%zu Bytes):\n", message_key.content_length);
 	std::cout << message_key.toHex();
@@ -76,8 +76,7 @@ return_status create_and_print_message(
 	printf("Message (%zu Bytes):\n%.*s\n\n", message.content_length, (int)message.content_length, message.content);
 
 	//now encrypt the message
-	status = packet_encrypt(
-			packet,
+	packet = packet_encrypt(
 			packet_type,
 			header,
 			header_key,
@@ -86,18 +85,9 @@ return_status create_and_print_message(
 			public_identity_key,
 			public_ephemeral_key,
 			public_prekey);
-	THROW_on_error(ENCRYPT_ERROR, "Failed to encrypt message and header.");
 
 	//print encrypted packet
 	printf("Encrypted Packet (%zu Bytes):\n", packet->content_length);
 	std::cout << packet->toHex();
 	putchar('\n');
-
-cleanup:
-	on_error {
-		header_key.clear();
-		message_key.clear();
-	}
-
-	return status;
 }

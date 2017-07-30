@@ -22,6 +22,8 @@
 #ifndef LIB_PACKET_H
 #define LIB_PACKET_H
 
+#include <memory>
+
 #include "buffer.h"
 #include "common.h"
 #include "molch.h"
@@ -34,8 +36,6 @@
 /*!
  * Construct and encrypt a packet given the keys and metadata.
  *
- * \param packet
- *   The encrypted packet.
  * \param packet_type
  *   The type of the packet (prekey message, normal message ...)
  * \param axolotl_header
@@ -54,11 +54,9 @@
  *   The prekey of the receiver that has been selected by the sender in case of prekey messages. Optional for normal messages.
  *
  * \return
- *   Error status, destroy with return_status_destroy_errors if an error occurs.
+ *   The encrypted packet.
  */
-return_status packet_encrypt(
-		//output
-		Buffer*& packet,
+std::unique_ptr<Buffer> packet_encrypt(
 		//inputs
 		const molch_message_type packet_type,
 		const Buffer& axolotl_header,
@@ -68,7 +66,7 @@ return_status packet_encrypt(
 		//optional inputs (prekey messages only)
 		const Buffer * const public_identity_key,
 		const Buffer * const public_ephemeral_key,
-		const Buffer * const public_prekey) noexcept __attribute__((warn_unused_result));
+		const Buffer * const public_prekey);
 
 /*!
  * Extract and decrypt a packet and the metadata inside of it.
@@ -95,25 +93,22 @@ return_status packet_encrypt(
  *   The public ephemeral key of the sender in case of prekey messages. Optional for normal messages.
  * \param public_prekey
  *   The prekey of the receiver that has been selected by the sender in case of prekey messages. Optional for normal messages.
- *
- * \return
- *   Error status, destroy with return_status_destroy_errors if an error occurs.
  */
-return_status packet_decrypt(
+void packet_decrypt(
 		//outputs
 		uint32_t& current_protocol_version,
 		uint32_t& highest_supported_protocol_version,
 		molch_message_type& packet_type,
-		Buffer*& axolotl_header,
-		Buffer*& message,
+		std::unique_ptr<Buffer>& axolotl_header,
+		std::unique_ptr<Buffer>& message,
 		//inputs
-		Buffer& packet,
-		Buffer& axolotl_header_key, //HEADER_KEY_SIZE
+		const Buffer& packet,
+		const Buffer& axolotl_header_key, //HEADER_KEY_SIZE
 		const Buffer& message_key, //MESSAGE_KEY_SIZE
 		//optional outputs (prekey messages only)
 		Buffer * const public_identity_key,
 		Buffer * const public_ephemeral_key,
-		Buffer * const public_prekey) noexcept __attribute__((warn_unused_result));
+		Buffer * const public_prekey);
 
 /*!
  * Extracts the metadata from a packet without actually decrypting or verifying anything.
@@ -132,62 +127,45 @@ return_status packet_decrypt(
  *   The public ephemeral key of the sender in case of prekey messages. Optional for normal messages.
  * \param public_prekey
  *   The prekey of the receiver that has been selected by the sender in case of prekey messages. Optional for normal messages.
- *
- * \return
- *   Error status, destroy with return_status_destroy_errors if an error occurs.
  */
-return_status packet_get_metadata_without_verification(
+void packet_get_metadata_without_verification(
 		//outputs
 		uint32_t& current_protocol_version,
 		uint32_t& highest_supported_protocol_version,
 		molch_message_type& packet_type,
 		//input
-		Buffer& packet,
+		const Buffer& packet,
 		//optional outputs (prekey messages only)
 		Buffer * const public_identity_key, //PUBLIC_KEY_SIZE
 		Buffer * const public_ephemeral_key, //PUBLIC_KEY_SIZE
 		Buffer * const public_prekey //PUBLIC_KEY_SIZE
-		) noexcept __attribute__((warn_unused_result));
+		);
 
 /*!
  * Decrypt the axolotl header part of a packet and thereby authenticate other metadata.
  *
- * \param axolotl_header
- *   A buffer for the decrypted axolotl header.
  * \param packet
  *   The entire packet.
  * \param axolotl_header_key
  *   The key to decrypt the axolotl header with.
  *
  * \return
- *   Error status, destroy with return_status_destroy_errors if an error occurs.
+ *   A buffer for the decrypted axolotl header.
  */
-return_status packet_decrypt_header(
-		//output
-		Buffer*& axolotl_header,
-		//inputs
-		Buffer& packet,
-		Buffer& axolotl_header_key //HEADER_KEY_SIZE
-		) noexcept __attribute__((warn_unused_result));
+std::unique_ptr<Buffer> packet_decrypt_header(
+		const Buffer& packet,
+		const Buffer& axolotl_header_key); //HEADER_KEY_SIZE
 
 /*!
  * Decrypt the message part of a packet.
  *
- * \param message
- *   A buffer for the decrypted message.
  * \param packet
  *   The entire packet.
  * \message_key
  *   The key to decrypt the message with.
  *
  * \return
- *   Error status, destroy with return_status_destroy_errors if an error occurs.
+ *   A buffer for the decrypted message.
  */
-return_status packet_decrypt_message(
-		//output
-		Buffer*& message,
-		//inputs
-		Buffer& packet,
-		const Buffer& message_key
-		) noexcept __attribute__((warn_unused_result));
+std::unique_ptr<Buffer> packet_decrypt_message(const Buffer& packet, const Buffer& message_key);
 #endif

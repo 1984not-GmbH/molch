@@ -365,16 +365,16 @@ molch_message_type molch_get_message_type(
 	molch_message_type packet_type;
 	uint32_t current_protocol_version;
 	uint32_t highest_supported_protocol_version;
-	return_status status = packet_get_metadata_without_verification(
-		current_protocol_version,
-		highest_supported_protocol_version,
-		packet_type,
-		packet_buffer,
-		nullptr,
-		nullptr,
-		nullptr);
-	on_error {
-		return_status_destroy_errors(&status);
+	try {
+		packet_get_metadata_without_verification(
+			current_protocol_version,
+			highest_supported_protocol_version,
+			packet_type,
+			packet_buffer,
+			nullptr,
+			nullptr,
+			nullptr);
+	} catch (const std::exception& exception) {
 		return INVALID;
 	}
 
@@ -489,7 +489,7 @@ return_status molch_start_send_conversation(
 	Buffer prekeys(prekey_list + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t));
 
 	conversation_t *conversation = nullptr;
-	Buffer *packet_buffer = nullptr;
+	std::unique_ptr<Buffer> packet_buffer;
 	user_store_node *user = nullptr;
 
 	return_status status = return_status_init();
@@ -553,7 +553,7 @@ return_status molch_start_send_conversation(
 	status = conversation_start_send_conversation(
 			&conversation,
 			&message_buffer,
-			&packet_buffer,
+			packet_buffer,
 			&user->master_keys->public_identity_key,
 			&user->master_keys->private_identity_key,
 			receiver_public_identity,
@@ -572,7 +572,12 @@ return_status molch_start_send_conversation(
 	THROW_on_error(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
 	conversation = nullptr;
 
-	*packet = packet_buffer->content;
+	//copy the packet to the output
+	*packet = reinterpret_cast<unsigned char*>(malloc(packet_buffer->content_length));
+	THROW_on_failed_alloc(*packet);
+	if (packet_buffer->cloneToRaw(*packet, packet_buffer->content_length) != 0) {
+		THROW(BUFFER_ERROR, "Failed to copy packet from unique_ptr.");
+	}
 	*packet_length = packet_buffer->content_length;
 
 	if (backup != nullptr) {
@@ -606,15 +611,6 @@ cleanup:
 			return status;
 		}
 	}
-
-	on_error {
-		if (packet_buffer != nullptr) {
-			//not using free_and_null_if_valid because content is const
-			free(packet_buffer->content);
-		}
-	}
-
-	free_and_null_if_valid(packet_buffer);
 
 	return status;
 }
@@ -658,7 +654,7 @@ return_status molch_start_receive_conversation(
 	Buffer receiver_public_master_key_buffer(receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
 
 	conversation_t *conversation = nullptr;
-	Buffer *message_buffer = nullptr;
+	std::unique_ptr<Buffer> message_buffer;
 	user_store_node *user = nullptr;
 
 	if ((conversation_id == nullptr)
@@ -700,7 +696,7 @@ return_status molch_start_receive_conversation(
 	status = conversation_start_receive_conversation(
 			&conversation,
 			&packet_buffer,
-			&message_buffer,
+			message_buffer,
 			&user->master_keys->public_identity_key,
 			&user->master_keys->private_identity_key,
 			user->prekeys);
@@ -726,7 +722,11 @@ return_status molch_start_receive_conversation(
 	THROW_on_error(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
 	conversation = nullptr;
 
-	*message = message_buffer->content;
+	//copy the message
+	*message = reinterpret_cast<unsigned char*>(malloc(message_buffer->content_length));
+	if (message_buffer->cloneToRaw(*message, message_buffer->content_length) != 0) {
+		THROW(BUFFER_ERROR, "Failed to copy message from unique_ptr.");
+	}
 	*message_length = message_buffer->content_length;
 
 	if (backup != nullptr) {
@@ -739,14 +739,6 @@ return_status molch_start_receive_conversation(
 	}
 
 cleanup:
-	on_error {
-		if (message_buffer != nullptr) {
-			free(message_buffer->content);
-		}
-	}
-
-	free_and_null_if_valid(message_buffer);
-
 	if (conversation != nullptr) {
 		conversation_destroy(conversation);
 	}
@@ -850,7 +842,7 @@ return_status molch_encrypt_message(
 	//create buffer for message array
 	Buffer message_buffer(message, message_length);
 
-	Buffer *packet_buffer = nullptr;
+	std::unique_ptr<Buffer> packet_buffer;
 	conversation_t *conversation = nullptr;
 
 	return_status status = return_status_init();
@@ -875,13 +867,18 @@ return_status molch_encrypt_message(
 	status = conversation_send(
 			conversation,
 			&message_buffer,
-			&packet_buffer,
+			packet_buffer,
 			nullptr,
 			nullptr,
 			nullptr);
 	THROW_on_error(GENERIC_ERROR, "Failed to send message.");
 
-	*packet = packet_buffer->content;
+	//copy the packet content
+	*packet = reinterpret_cast<unsigned char*>(malloc(packet_buffer->content_length));
+	THROW_on_failed_alloc(*packet);
+	if (packet_buffer->cloneToRaw(*packet, packet_buffer->content_length) != 0) {
+		THROW(BUFFER_ERROR, "Failed to copy packet from unique_ptr.");
+	}
 	*packet_length = packet_buffer->content_length;
 
 	if (conversation_backup != nullptr) {
@@ -900,8 +897,6 @@ cleanup:
 			free(packet_buffer->content);
 		}
 	}
-
-	free_and_null_if_valid(packet_buffer);
 
 	return status;
 }
@@ -932,7 +927,7 @@ return_status molch_decrypt_message(
 
 	return_status status = return_status_init();
 
-	Buffer *message_buffer = nullptr;
+	std::unique_ptr<Buffer> message_buffer;
 	conversation_t *conversation = nullptr;
 
 	if ((message == nullptr) || (message_length == nullptr)
@@ -959,10 +954,14 @@ return_status molch_decrypt_message(
 			&packet_buffer,
 			receive_message_number,
 			previous_receive_message_number,
-			&message_buffer);
+			message_buffer);
 	THROW_on_error(GENERIC_ERROR, "Failed to receive message.");
 
-	*message = message_buffer->content;
+	//copy the message
+	*message = reinterpret_cast<unsigned char*>(malloc(message_buffer->content_length));
+	if (message_buffer->cloneToRaw(*message, message_buffer->content_length) != 0) {
+		THROW(BUFFER_ERROR, "Failed to copy message from unique_ptr.");
+	}
 	*message_length = message_buffer->content_length;
 
 	if (conversation_backup != nullptr) {
@@ -975,15 +974,6 @@ return_status molch_decrypt_message(
 	}
 
 cleanup:
-	on_error {
-		if (message_buffer != nullptr) {
-			// not using free_and_null_if_valid because content is const
-			free(message_buffer->content);
-		}
-	}
-
-	free_and_null_if_valid(message_buffer);
-
 	return status;
 }
 
