@@ -69,6 +69,7 @@ status_type return_status_add_error_message(
 	error->status = status_to_add;
 
 	status_object->error = error.release();
+	status_object->status = status_to_add;
 
 	return SUCCESS;
 }
