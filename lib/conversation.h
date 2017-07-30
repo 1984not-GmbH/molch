@@ -66,7 +66,7 @@ return_status conversation_start_send_conversation(
 return_status conversation_start_receive_conversation(
 		conversation_t ** const conversation, //output, newly created conversation
 		Buffer * const packet, //received packet
-		Buffer ** message, //output, free after use!
+		std::unique_ptr<Buffer>& message, //output
 		Buffer * const receiver_public_identity,
 		Buffer * const receiver_private_identity,
 		PrekeyStore * const receiver_prekeys //prekeys of the receiver
@@ -98,7 +98,7 @@ return_status conversation_receive(
 	Buffer * const packet, //received packet
 	uint32_t * const receive_message_number,
 	uint32_t * const previous_receive_message_number,
-	Buffer ** const message //output, free after use!
+	std::unique_ptr<Buffer>& message //output
 		) noexcept __attribute__((warn_unused_result));
 
 /*! Export a conversation to a Protobuf-C struct.

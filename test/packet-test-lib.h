@@ -46,22 +46,19 @@
  *   Optional. Public ephemeral key of the sender. For prekey messages only.
  * \param public_prekey
  *   Optional. Prekey of the receiver. For prekey messages only.
- *
- * \return
- *   Error status, destroy with return_status_destroy_errors if an error occurs.
  */
-return_status create_and_print_message(
+void create_and_print_message(
 		//output
 		std::unique_ptr<Buffer>& packet,
 		Buffer& header_key, //HEADER_KEY_SIZE
 		Buffer& message_key, //MESSAGE_KEY_SIZE
 		//inputs
 		const molch_message_type packet_type,
-		Buffer& header,
-		Buffer& message,
+		const Buffer& header,
+		const Buffer& message,
 		//optional inputs (prekey messages only)
 		Buffer * const public_identity_key,
 		Buffer * const public_epehemeral_key,
-		Buffer * const public_prekey) noexcept __attribute__((warn_unused_result));
+		Buffer * const public_prekey);
 
 #endif

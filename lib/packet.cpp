@@ -34,7 +34,7 @@ extern "C" {
 /*!
  * Convert molch_message_type to PacketHeader__PacketType.
  */
-static PacketHeader__PacketType to_packet_header_packet_type(const molch_message_type packet_type) noexcept {
+static PacketHeader__PacketType to_packet_header_packet_type(const molch_message_type packet_type) {
 	switch (packet_type) {
 		case PREKEY_MESSAGE:
 			return PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE;
@@ -49,7 +49,7 @@ static PacketHeader__PacketType to_packet_header_packet_type(const molch_message
 /*!
  * Convert PacketHeader__PacketType to molch_message_type.
  */
-static molch_message_type to_molch_message_type(const PacketHeader__PacketType packet_type) noexcept {
+static molch_message_type to_molch_message_type(const PacketHeader__PacketType packet_type) {
 	switch (packet_type) {
 		case PACKET_HEADER__PACKET_TYPE__NORMAL_MESSAGE:
 			return NORMAL_MESSAGE;
@@ -255,77 +255,36 @@ std::unique_ptr<Buffer> packet_encrypt(
 	return packet;
 }
 
-return_status packet_decrypt(
+void packet_decrypt(
 		//outputs
 		uint32_t& current_protocol_version,
 		uint32_t& highest_supported_protocol_version,
 		molch_message_type& packet_type,
-		Buffer*& axolotl_header,
-		Buffer*& message,
+		std::unique_ptr<Buffer>& axolotl_header,
+		std::unique_ptr<Buffer>& message,
 		//inputs
-		Buffer& packet,
-		Buffer& axolotl_header_key, //HEADER_KEY_SIZE
+		const Buffer& packet,
+		const Buffer& axolotl_header_key, //HEADER_KEY_SIZE
 		const Buffer& message_key, //MESSAGE_KEY_SIZE
 		//optional outputs (prekey messages only)
 		Buffer * const public_identity_key,
 		Buffer * const public_ephemeral_key,
-		Buffer * const public_prekey) noexcept {
-	return_status status = return_status_init();
-
-	//initialize outputs that have to be allocated
-	axolotl_header = nullptr;
-	message = nullptr;
-
+		Buffer * const public_prekey) {
 	//get metadata
-	try {
-		packet_get_metadata_without_verification(
-			current_protocol_version,
-			highest_supported_protocol_version,
-			packet_type,
-			packet,
-			public_identity_key,
-			public_ephemeral_key,
-			public_prekey);
-	} catch (const MolchException& exception) {
-		status = exception.toReturnStatus();
-		goto cleanup;
-	} catch (const std::exception& exception) {
-		THROW(EXCEPTION, exception.what());
-	}
+	packet_get_metadata_without_verification(
+		current_protocol_version,
+		highest_supported_protocol_version,
+		packet_type,
+		packet,
+		public_identity_key,
+		public_ephemeral_key,
+		public_prekey);
 
 	//decrypt the header
-	status = packet_decrypt_header(
-			axolotl_header,
-			packet,
-			axolotl_header_key);
-	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt header.");
+	axolotl_header = packet_decrypt_header(packet, axolotl_header_key);
 
 	//decrypt the message
-	status = packet_decrypt_message(
-			message,
-			packet,
-			message_key);
-	THROW_on_error(DECRYPT_ERROR, "Failed to decrypt message.");
-
-cleanup:
-	on_error {
-		packet_type = INVALID;
-
-		buffer_destroy_and_null_if_valid(axolotl_header);
-		buffer_destroy_and_null_if_valid(message);
-
-		if (public_identity_key != nullptr) {
-			public_identity_key->clear();
-		}
-		if (public_ephemeral_key != nullptr) {
-			public_ephemeral_key->clear();
-		}
-		if (public_prekey != nullptr) {
-			public_prekey->clear();
-		}
-	}
-
-	return status;
+	message = packet_decrypt_message(packet, message_key);
 }
 
 void packet_get_metadata_without_verification(
@@ -366,137 +325,82 @@ void packet_get_metadata_without_verification(
 	packet_type = to_molch_message_type(packet_struct->packet_header->packet_type);
 }
 
-return_status packet_decrypt_header(
-		//output
-		Buffer*& axolotl_header,
-		//inputs
-		Buffer& packet,
-		Buffer& axolotl_header_key //HEADER_KEY_SIZE
-		) noexcept {
-	return_status status = return_status_init();
-
+std::unique_ptr<Buffer> packet_decrypt_header(
+		const Buffer& packet,
+		const Buffer& axolotl_header_key) { //HEADER_KEY_SIZE
 	std::unique_ptr<Packet,PacketDeleter> packet_struct;
 
 	//check input
-	if (axolotl_header_key.content_length != HEADER_KEY_SIZE) {
-		THROW(INVALID_INPUT, "Invalid input to packet_decrypt_header.");
+	if (!axolotl_header_key.contains(HEADER_KEY_SIZE)) {
+		throw MolchException(INVALID_INPUT, "Invalid input to packet_decrypt_header.");
 	}
 
-	try {
-		packet_struct = packet_unpack(packet);
-	} catch (const MolchException& exception) {
-		status = exception.toReturnStatus();
-		goto cleanup;
-	} catch (const std::exception& exception) {
-		THROW(EXCEPTION, exception.what());
-	}
+	packet_struct = packet_unpack(packet);
 
 	if (packet_struct->encrypted_axolotl_header.len < crypto_secretbox_MACBYTES) {
-		THROW(INCORRECT_BUFFER_SIZE, "The ciphertext of the axolotl header is too short.")
+		throw MolchException(INCORRECT_BUFFER_SIZE, "The ciphertext of the axolotl header is too short.");
 	}
 
-	{
-		const size_t axolotl_header_length = packet_struct->encrypted_axolotl_header.len - crypto_secretbox_MACBYTES;
-		axolotl_header = Buffer::create(axolotl_header_length, axolotl_header_length);
-		THROW_on_failed_alloc(axolotl_header);
+	const size_t axolotl_header_length = packet_struct->encrypted_axolotl_header.len - crypto_secretbox_MACBYTES;
+	auto axolotl_header = std::make_unique<Buffer>(axolotl_header_length, axolotl_header_length);
+	exception_on_invalid_buffer(*axolotl_header);
+
+	int status = crypto_secretbox_open_easy(
+			axolotl_header->content,
+			packet_struct->encrypted_axolotl_header.data,
+			packet_struct->encrypted_axolotl_header.len,
+			packet_struct->packet_header->header_nonce.data,
+			axolotl_header_key.content);
+	if (status != 0) {
+		throw MolchException(DECRYPT_ERROR, "Failed to decrypt axolotl header.");
 	}
 
-	{
-		int status_int = crypto_secretbox_open_easy(
-				axolotl_header->content,
-				packet_struct->encrypted_axolotl_header.data,
-				packet_struct->encrypted_axolotl_header.len,
-				packet_struct->packet_header->header_nonce.data,
-				axolotl_header_key.content);
-		if (status_int != 0) {
-			THROW(DECRYPT_ERROR, "Failed to decrypt axolotl header.");
-		}
-	}
-
-cleanup:
-	on_error {
-		buffer_destroy_and_null_if_valid(axolotl_header);
-	}
-
-	return status;
+	return axolotl_header;
 }
 
-return_status packet_decrypt_message(
-		//output
-		Buffer*& message,
-		//inputs
-		Buffer& packet,
-		const Buffer& message_key
-		) noexcept {
-	return_status status = return_status_init();
-	unsigned char padding;
-
-	std::unique_ptr<Packet,PacketDeleter> packet_struct;
-
-	Buffer *padded_message = nullptr;
-
+std::unique_ptr<Buffer> packet_decrypt_message(const Buffer& packet, const Buffer& message_key) {
 	//check input
-	if (message_key.content_length != MESSAGE_KEY_SIZE) {
-		THROW(INVALID_INPUT, "Invalid input to packet_decrypt_message.")
+	if (!message_key.contains(MESSAGE_KEY_SIZE)) {
+		throw MolchException(INVALID_INPUT, "Invalid input to packet_decrypt_message.");
 	}
 
-	try {
-		packet_struct = packet_unpack(packet);
-	} catch (const MolchException& exception) {
-		status = exception.toReturnStatus();
-		goto cleanup;
-	} catch (const std::exception& exception) {
-		THROW(EXCEPTION, exception.what());
-	}
+	std::unique_ptr<Packet,PacketDeleter> packet_struct = packet_unpack(packet);
 
 	if (packet_struct->encrypted_message.len < crypto_secretbox_MACBYTES) {
-		THROW(INCORRECT_BUFFER_SIZE, "The ciphertext of the message is too short.");
+		throw MolchException(INCORRECT_BUFFER_SIZE, "The ciphertext of the message is too short.");
 	}
 
-	{
-		const size_t padded_message_length = packet_struct->encrypted_message.len - crypto_secretbox_MACBYTES;
-		if (padded_message_length < 255) {
-			THROW(INCORRECT_BUFFER_SIZE, "The padded message is too short.")
-		}
-		padded_message = Buffer::create(padded_message_length, padded_message_length);
-		THROW_on_failed_alloc(padded_message);
+	const size_t padded_message_length = packet_struct->encrypted_message.len - crypto_secretbox_MACBYTES;
+	if (padded_message_length < 255) {
+		throw MolchException(INCORRECT_BUFFER_SIZE, "The padded message is too short.");
 	}
+	Buffer padded_message(padded_message_length, padded_message_length);
+	exception_on_invalid_buffer(padded_message);
 
-	{
-		int status_int = crypto_secretbox_open_easy(
-				padded_message->content,
-				packet_struct->encrypted_message.data,
-				packet_struct->encrypted_message.len,
-				packet_struct->packet_header->message_nonce.data,
-				message_key.content);
-		if (status_int != 0) {
-			THROW(DECRYPT_ERROR, "Failed to decrypt message.");
-		}
+	int status = crypto_secretbox_open_easy(
+			padded_message.content,
+			packet_struct->encrypted_message.data,
+			packet_struct->encrypted_message.len,
+			packet_struct->packet_header->message_nonce.data,
+			message_key.content);
+	if (status != 0) {
+		throw MolchException(DECRYPT_ERROR, "Failed to decrypt message.");
 	}
 
 	//get the padding (last byte)
-	padding = padded_message->content[padded_message->content_length - 1];
-	if (padding > padded_message->content_length) {
-		THROW(INCORRECT_BUFFER_SIZE, "The padded message is too short.")
+	unsigned char padding = padded_message.content[padded_message.content_length - 1];
+	if (padding > padded_message.content_length) {
+		throw MolchException(INCORRECT_BUFFER_SIZE, "The padded message is too short.");
 	}
 
 	//extract the message
-	{
-		const size_t message_length = padded_message->content_length - padding;
-		message = Buffer::create(message_length, 0);
-		THROW_on_failed_alloc(message);
-		//TODO this doesn't need to be copied, setting the length should be enough
-		if (message->copyFrom(0, padded_message, 0, message_length) != 0) {
-			THROW(BUFFER_ERROR, "Failed to copy message from padded message.");
-		}
+	const size_t message_length = padded_message.content_length - padding;
+	auto message = std::make_unique<Buffer>(message_length, 0);
+	exception_on_invalid_buffer(*message);
+	//TODO this doesn't need to be copied, setting the length should be enough
+	if (message->copyFrom(0, &padded_message, 0, message_length) != 0) {
+		throw MolchException(BUFFER_ERROR, "Failed to copy message from padded message.");
 	}
 
-cleanup:
-	buffer_destroy_and_null_if_valid(padded_message);
-
-	on_error {
-		buffer_destroy_and_null_if_valid(message);
-	}
-
-	return status;
+	return message;
 }

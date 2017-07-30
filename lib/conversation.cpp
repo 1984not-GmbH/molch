@@ -210,7 +210,7 @@ cleanup:
 return_status conversation_start_receive_conversation(
 		conversation_t ** const conversation, //output, newly created conversation
 		Buffer * const packet, //received packet
-		Buffer ** message, //output, free after use!
+		std::unique_ptr<Buffer>& message, //output
 		Buffer * const receiver_public_identity,
 		Buffer * const receiver_private_identity,
 		PrekeyStore * const receiver_prekeys //prekeys of the receiver
@@ -232,7 +232,6 @@ return_status conversation_start_receive_conversation(
 
 	if ((conversation == nullptr)
 			|| (packet ==nullptr)
-			|| (message == nullptr)
 			|| (receiver_public_identity == nullptr) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (receiver_private_identity == nullptr) || (receiver_private_identity->content_length != PRIVATE_KEY_SIZE)
 			|| (receiver_prekeys == nullptr)) {
@@ -396,68 +395,44 @@ cleanup:
  * Returns 0, if it was able to decrypt the packet.
  */
 static int try_skipped_header_and_message_keys(
-		header_and_message_keystore * const skipped_keys,
-		Buffer * const packet,
-		Buffer ** const message,
-		uint32_t * const receive_message_number,
-		uint32_t * const previous_receive_message_number) noexcept {
-	return_status status = return_status_init();
-
+		header_and_message_keystore& skipped_keys,
+		const Buffer& packet,
+		std::unique_ptr<Buffer>& message,
+		uint32_t& receive_message_number,
+		uint32_t& previous_receive_message_number) {
 	//create buffers
-	Buffer *header = nullptr;
+	std::unique_ptr<Buffer> header;
 	Buffer their_signed_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	throw_on_invalid_buffer(their_signed_public_ephemeral);
+	exception_on_invalid_buffer(their_signed_public_ephemeral);
 
-	{
-		header_and_message_keystore_node* node = skipped_keys->head;
-		for (size_t i = 0; (i < skipped_keys->length) && (node != nullptr); i++, node = node->next) {
-			status = packet_decrypt_header(
-					header,
-					*packet,
-					*node->header_key);
-			if (status.status == SUCCESS) {
-				status = packet_decrypt_message(
-						*message,
-						*packet,
-						*node->message_key);
-				if (status.status == SUCCESS) {
-					header_and_message_keystore_remove(skipped_keys, node);
-
-					try {
-						header_extract(
-								their_signed_public_ephemeral,
-								*receive_message_number,
-								*previous_receive_message_number,
-								*header);
-					} catch (const MolchException& exception) {
-						status = exception.toReturnStatus();
-						goto cleanup;
-					} catch (const std::exception& exception) {
-						THROW(EXCEPTION, exception.what());
-					}
-					THROW_on_error(GENERIC_ERROR, "Failed to extract data from header.");
-
-					goto cleanup;
-				}
+	header_and_message_keystore_node* node = skipped_keys.head;
+	for (size_t i = 0; (i < skipped_keys.length) && (node != nullptr); i++, node = node->next) {
+		bool decryption_successful = true;
+		try {
+			header = packet_decrypt_header(packet, *node->header_key);
+		} catch (const MolchException& exception) {
+			decryption_successful = false;
+		}
+		if (decryption_successful) {
+			try {
+				message = packet_decrypt_message(packet, *node->message_key);
+			} catch (const MolchException& exception) {
+				decryption_successful = false;
 			}
-			return_status_destroy_errors(&status);
+			if (decryption_successful) {
+				header_and_message_keystore_remove(&skipped_keys, node);
+
+				header_extract(
+						their_signed_public_ephemeral,
+						receive_message_number,
+						previous_receive_message_number,
+						*header);
+				return SUCCESS;
+			}
 		}
 	}
 
-	status.status = NOT_FOUND;
-
-cleanup:
-	buffer_destroy_and_null_if_valid(header);
-
-	on_error {
-		if (message != nullptr) {
-			buffer_destroy_and_null_if_valid(*message);
-		}
-	}
-
-	return_status_destroy_errors(&status);
-
-	return status.status;
+	return NOT_FOUND;
 }
 
 /*
@@ -471,11 +446,13 @@ return_status conversation_receive(
 	Buffer * const packet, //received packet
 	uint32_t * const receive_message_number,
 	uint32_t * const previous_receive_message_number,
-	Buffer ** const message) noexcept { //output, free after use!
+	std::unique_ptr<Buffer>& message) noexcept { //output, free after use!
 	return_status status = return_status_init();
 
+	bool decryptable = true;
+
 	//create buffers
-	Buffer *header = nullptr;
+	std::unique_ptr<Buffer> header;
 
 	Buffer current_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 	Buffer next_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
@@ -488,48 +465,56 @@ return_status conversation_receive(
 
 	if ((conversation == nullptr)
 			|| (packet == nullptr)
-			|| (message == nullptr)
 			|| (receive_message_number == nullptr)
 			|| (previous_receive_message_number == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to conversation_receive.");
 	}
 
-	*message = Buffer::create(packet->content_length, 0);
-	THROW_on_failed_alloc(*message);
-
-	{
-		int status_int = try_skipped_header_and_message_keys(
-				&conversation->ratchet->skipped_header_and_message_keys,
-				packet,
+	try {
+		int status = try_skipped_header_and_message_keys(
+				conversation->ratchet->skipped_header_and_message_keys,
+				*packet,
 				message,
-				receive_message_number,
-				previous_receive_message_number);
-		if (status_int == 0) {
+				*receive_message_number,
+				*previous_receive_message_number);
+		if (status == SUCCESS) {
 			// found a key and successfully decrypted the message
 			goto cleanup;
 		}
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
 	}
 
 	status = conversation->ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 	THROW_on_error(DATA_FETCH_ERROR, "Failed to get receive header keys.");
 
 	//try to decrypt the packet header with the current receive header key
-	status = packet_decrypt_header(
-			header,
-			*packet,
-			current_receive_header_key);
-	if (status.status == SUCCESS) {
+	try {
+		header = packet_decrypt_header(*packet, current_receive_header_key);
+	} catch (const MolchException& exception) {
+		decryptable = false;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
+	if (decryptable) {
 		status = conversation->ratchet->setHeaderDecryptability(CURRENT_DECRYPTABLE);
 		THROW_on_error(DATA_SET_ERROR, "Failed to set decryptability to CURRENT_DECRYPTABLE.");
 	} else {
 		return_status_destroy_errors(&status); //free the error stack to avoid memory leak.
 
 		//since this failed, try to decrypt it with the next receive header key
-		status = packet_decrypt_header(
-				header,
-				*packet,
-				next_receive_header_key);
-		if (status.status == SUCCESS) {
+		decryptable = true;
+		try {
+			header = packet_decrypt_header(*packet, next_receive_header_key);
+		} catch (const MolchException& exception) {
+			decryptable = false;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
+		if (decryptable) {
 			status = conversation->ratchet->setHeaderDecryptability(NEXT_DECRYPTABLE);
 			THROW_on_error(DATA_SET_ERROR, "Failed to set decryptability to NEXT_DECRYPTABLE.");
 		} else {
@@ -566,11 +551,9 @@ return_status conversation_receive(
 			local_previous_receive_message_number);
 	THROW_on_error(DECRYPT_ERROR, "Failed to get decryption keys.");
 
-	status = packet_decrypt_message(
-			*message,
-			*packet,
-			message_key);
-	on_error {
+	try {
+		message = packet_decrypt_message(*packet, message_key);
+	} catch (...) {
 		return_status authenticity_status = return_status_init();
 		authenticity_status = conversation->ratchet->setLastMessageAuthenticity(false);
 		return_status_destroy_errors(&authenticity_status);
@@ -590,12 +573,7 @@ cleanup:
 			authenticity_status = conversation->ratchet->setLastMessageAuthenticity(false);
 			return_status_destroy_errors(&authenticity_status);
 		}
-		if (message != nullptr) {
-			buffer_destroy_and_null_if_valid(*message);
-		}
 	}
-
-	buffer_destroy_and_null_if_valid(header);
 
 	return status;
 }

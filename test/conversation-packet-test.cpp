@@ -41,7 +41,7 @@ int main(void) noexcept {
 	Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
 	std::unique_ptr<Buffer> packet;
-	Buffer *received_message = nullptr;
+	std::unique_ptr<Buffer> received_message;
 
 	//packets
 	std::unique_ptr<Buffer> alice_send_packet2;
@@ -50,10 +50,10 @@ int main(void) noexcept {
 	std::unique_ptr<Buffer> alice_response_packet;
 
 	//receive messages
-	Buffer *alice_receive_message2 = nullptr;
-	Buffer *bob_receive_message2 = nullptr;
-	Buffer *alice_received_response = nullptr;
-	Buffer *bob_received_response = nullptr;
+	std::unique_ptr<Buffer> alice_receive_message2;
+	std::unique_ptr<Buffer> bob_receive_message2;
+	std::unique_ptr<Buffer> alice_received_response;
+	std::unique_ptr<Buffer> bob_received_response;
 
 	//create prekey stores
 	PrekeyStore *alice_prekeys = nullptr;
@@ -138,13 +138,13 @@ int main(void) noexcept {
 	status = conversation_start_receive_conversation(
 			&bob_receive_conversation,
 			packet.get(),
-			&received_message,
+			received_message,
 			&bob_public_identity,
 			&bob_private_identity,
 			bob_prekeys);
 	THROW_on_error(RECEIVE_ERROR, "Failed to decrypt received message.");
 
-	status_int = send_message.compare(received_message);
+	status_int = send_message.compare(received_message.get());
 	if (status_int != 0) {
 		THROW(INVALID_VALUE, "Message was decrypted incorrectly.");
 	}
@@ -174,7 +174,7 @@ int main(void) noexcept {
 				alice_send_packet2.get(),
 				&bob_receive_message_number,
 				&bob_previous_receive_message_number,
-				&bob_receive_message2);
+				bob_receive_message2);
 		THROW_on_error(RECEIVE_ERROR, "Second message from Alice failed to decrypt.");
 
 		// check the message numbers
@@ -213,7 +213,7 @@ int main(void) noexcept {
 				bob_response_packet.get(),
 				&alice_receive_message_number,
 				&alice_previous_receive_message_number,
-				&alice_received_response);
+				alice_received_response);
 		THROW_on_error(RECEIVE_ERROR, "Response from Bob failed to decrypt.");
 
 		// check the message numbers
@@ -222,7 +222,7 @@ int main(void) noexcept {
 		}
 
 		//compare sent and received messages
-		status_int = bob_response_message.compare(alice_received_response);
+		status_int = bob_response_message.compare(alice_received_response.get());
 		if (status_int != 0) {
 			THROW(INVALID_VALUE, "Received response doesn't match.");
 		}
@@ -255,18 +255,17 @@ int main(void) noexcept {
 	putchar('\n');
 
 	//let alice receive the packet
-	buffer_destroy_and_null_if_valid(received_message);
-	received_message = nullptr;
+	received_message.reset();
 	status = conversation_start_receive_conversation(
 			&alice_receive_conversation,
 			packet.get(),
-			&received_message,
+			received_message,
 			&alice_public_identity,
 			&alice_private_identity,
 			alice_prekeys);
 	THROW_on_error(RECEIVE_ERROR, "Failed to decrypt received message.");
 
-	status_int = send_message.compare(received_message);
+	status_int = send_message.compare(received_message.get());
 	if (status_int != 0) {
 		THROW(INVALID_VALUE, "Message incorrectly decrypted.");
 	}
@@ -296,7 +295,7 @@ int main(void) noexcept {
 				bob_send_packet2.get(),
 				&alice_receive_message_number,
 				&alice_previous_receive_message_number,
-				&alice_receive_message2);
+				alice_receive_message2);
 		THROW_on_error(RECEIVE_ERROR, "Second message from Bob failed to decrypt.");
 
 		// check message numbers
@@ -335,7 +334,7 @@ int main(void) noexcept {
 				alice_response_packet.get(),
 				&bob_receive_message_number,
 				&bob_previous_receive_message_number,
-				&bob_received_response);
+				bob_received_response);
 		THROW_on_error(RECEIVE_ERROR, "Response from Alice failed to decrypt.");
 
 		// check message numbers
@@ -344,7 +343,7 @@ int main(void) noexcept {
 		}
 
 		//compare sent and received messages
-		status_int = alice_response_message.compare(bob_received_response);
+		status_int = alice_response_message.compare(bob_received_response.get());
 		if (status_int != 0) {
 			THROW(INVALID_VALUE, "Received response doesn't match.");
 		}
@@ -358,11 +357,6 @@ cleanup:
 	if (bob_prekeys != nullptr) {
 		bob_prekeys->destroy();
 	}
-	buffer_destroy_and_null_if_valid(received_message);
-	buffer_destroy_and_null_if_valid(bob_receive_message2);
-	buffer_destroy_and_null_if_valid(alice_receive_message2);
-	buffer_destroy_and_null_if_valid(alice_received_response);
-	buffer_destroy_and_null_if_valid(bob_received_response);
 	if (alice_send_conversation != nullptr) {
 		conversation_destroy(alice_send_conversation);
 	}

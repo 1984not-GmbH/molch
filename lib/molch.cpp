@@ -654,7 +654,7 @@ return_status molch_start_receive_conversation(
 	Buffer receiver_public_master_key_buffer(receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
 
 	conversation_t *conversation = nullptr;
-	Buffer *message_buffer = nullptr;
+	std::unique_ptr<Buffer> message_buffer;
 	user_store_node *user = nullptr;
 
 	if ((conversation_id == nullptr)
@@ -696,7 +696,7 @@ return_status molch_start_receive_conversation(
 	status = conversation_start_receive_conversation(
 			&conversation,
 			&packet_buffer,
-			&message_buffer,
+			message_buffer,
 			&user->master_keys->public_identity_key,
 			&user->master_keys->private_identity_key,
 			user->prekeys);
@@ -722,7 +722,11 @@ return_status molch_start_receive_conversation(
 	THROW_on_error(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
 	conversation = nullptr;
 
-	*message = message_buffer->content;
+	//copy the message
+	*message = reinterpret_cast<unsigned char*>(malloc(message_buffer->content_length));
+	if (message_buffer->cloneToRaw(*message, message_buffer->content_length) != 0) {
+		THROW(BUFFER_ERROR, "Failed to copy message from unique_ptr.");
+	}
 	*message_length = message_buffer->content_length;
 
 	if (backup != nullptr) {
@@ -735,14 +739,6 @@ return_status molch_start_receive_conversation(
 	}
 
 cleanup:
-	on_error {
-		if (message_buffer != nullptr) {
-			free(message_buffer->content);
-		}
-	}
-
-	free_and_null_if_valid(message_buffer);
-
 	if (conversation != nullptr) {
 		conversation_destroy(conversation);
 	}
@@ -931,7 +927,7 @@ return_status molch_decrypt_message(
 
 	return_status status = return_status_init();
 
-	Buffer *message_buffer = nullptr;
+	std::unique_ptr<Buffer> message_buffer;
 	conversation_t *conversation = nullptr;
 
 	if ((message == nullptr) || (message_length == nullptr)
@@ -958,10 +954,14 @@ return_status molch_decrypt_message(
 			&packet_buffer,
 			receive_message_number,
 			previous_receive_message_number,
-			&message_buffer);
+			message_buffer);
 	THROW_on_error(GENERIC_ERROR, "Failed to receive message.");
 
-	*message = message_buffer->content;
+	//copy the message
+	*message = reinterpret_cast<unsigned char*>(malloc(message_buffer->content_length));
+	if (message_buffer->cloneToRaw(*message, message_buffer->content_length) != 0) {
+		THROW(BUFFER_ERROR, "Failed to copy message from unique_ptr.");
+	}
 	*message_length = message_buffer->content_length;
 
 	if (conversation_backup != nullptr) {
@@ -974,15 +974,6 @@ return_status molch_decrypt_message(
 	}
 
 cleanup:
-	on_error {
-		if (message_buffer != nullptr) {
-			// not using free_and_null_if_valid because content is const
-			free(message_buffer->content);
-		}
-	}
-
-	free_and_null_if_valid(message_buffer);
-
 	return status;
 }
 
