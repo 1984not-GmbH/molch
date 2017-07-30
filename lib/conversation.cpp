@@ -123,7 +123,7 @@ void conversation_destroy(conversation_t * const conversation) noexcept {
 return_status conversation_start_send_conversation(
 		conversation_t ** const conversation, //output, newly created conversation
 		Buffer * const message, //message we want to send to the receiver
-		Buffer ** packet, //output, free after use!
+		std::unique_ptr<Buffer>& packet, //output
 		Buffer * const sender_public_identity, //who is sending this message?
 		Buffer * const sender_private_identity,
 		Buffer * const receiver_public_identity,
@@ -142,7 +142,6 @@ return_status conversation_start_send_conversation(
 	//check many error conditions
 	if ((conversation == nullptr)
 			|| (message == nullptr)
-			|| (packet == nullptr)
 			|| (receiver_public_identity == nullptr) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (sender_public_identity == nullptr) || (sender_public_identity->content_length != PUBLIC_KEY_SIZE)
 			|| (sender_private_identity == nullptr) || (sender_private_identity->content_length != PRIVATE_KEY_SIZE)
@@ -306,7 +305,7 @@ cleanup:
 return_status conversation_send(
 		conversation_t * const conversation,
 		Buffer * const message,
-		Buffer **packet, //output, free after use!
+		std::unique_ptr<Buffer>& packet, //output
 		Buffer * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
 		Buffer * const public_ephemeral_key, //can be nullptr, if not nullptr, this will be a prekey message
 		Buffer * const public_prekey //can be nullptr, if not nullptr, this will be a prekey message
@@ -327,9 +326,7 @@ return_status conversation_send(
 
 
 	//check input
-	if ((conversation == nullptr)
-			|| (message == nullptr)
-			|| (packet == nullptr)) {
+	if ((conversation == nullptr) || (message == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to conversation_send.");
 	}
 
@@ -349,8 +346,6 @@ return_status conversation_send(
 		packet_type = PREKEY_MESSAGE;
 	}
 
-	*packet = nullptr;
-
 	uint32_t send_message_number;
 	uint32_t previous_send_message_number;
 	status = conversation->ratchet->send(
@@ -366,16 +361,8 @@ return_status conversation_send(
 				send_ephemeral_key,
 				send_message_number,
 				previous_send_message_number);
-	} catch (const MolchException& exception) {
-		status = exception.toReturnStatus();
-		goto cleanup;
-	} catch (const std::exception& exception) {
-		THROW(EXCEPTION, exception.what());
-	}
 
-	try {
-		std::unique_ptr<Buffer> unique_ptr_packet;
-		unique_ptr_packet = packet_encrypt(
+		packet = packet_encrypt(
 				packet_type,
 				*header,
 				send_header_key,
@@ -384,12 +371,6 @@ return_status conversation_send(
 				public_identity_key,
 				public_ephemeral_key,
 				public_prekey);
-		//convert to malloced
-		*packet = Buffer::create(unique_ptr_packet->content_length, 0);
-		THROW_on_failed_alloc(*packet);
-		if ((*packet)->cloneFrom(unique_ptr_packet.get()) != 0) {
-			THROW(BUFFER_ERROR, "Failed to clone packet from unique_ptr.");
-		}
 	} catch (const MolchException& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
@@ -398,12 +379,6 @@ return_status conversation_send(
 	}
 
 cleanup:
-	on_error {
-		if (packet != nullptr) {
-			buffer_destroy_and_null_if_valid(*packet);
-		}
-	}
-
 	return status;
 }
 

@@ -328,7 +328,6 @@ int main(void) noexcept {
 
 	//create a new send conversation (alice sends to bob)
 	size_t alice_send_packet_length;
-	printf("BEFORE molch_start_send_conversation\n");
 	status = molch_start_send_conversation(
 			alice_conversation.content,
 			alice_conversation.content_length,
@@ -345,7 +344,6 @@ int main(void) noexcept {
 			nullptr,
 			nullptr);
 	THROW_on_error(CREATION_ERROR, "Failed to start send conversation.");
-	printf("AFTER molch_start_send_conversation\n");
 
 	//check conversation export
 	status = molch_list_conversations(

@@ -489,7 +489,7 @@ return_status molch_start_send_conversation(
 	Buffer prekeys(prekey_list + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t));
 
 	conversation_t *conversation = nullptr;
-	Buffer *packet_buffer = nullptr;
+	std::unique_ptr<Buffer> packet_buffer;
 	user_store_node *user = nullptr;
 
 	return_status status = return_status_init();
@@ -553,7 +553,7 @@ return_status molch_start_send_conversation(
 	status = conversation_start_send_conversation(
 			&conversation,
 			&message_buffer,
-			&packet_buffer,
+			packet_buffer,
 			&user->master_keys->public_identity_key,
 			&user->master_keys->private_identity_key,
 			receiver_public_identity,
@@ -572,7 +572,12 @@ return_status molch_start_send_conversation(
 	THROW_on_error(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
 	conversation = nullptr;
 
-	*packet = packet_buffer->content;
+	//copy the packet to the output
+	*packet = reinterpret_cast<unsigned char*>(malloc(packet_buffer->content_length));
+	THROW_on_failed_alloc(*packet);
+	if (packet_buffer->cloneToRaw(*packet, packet_buffer->content_length) != 0) {
+		THROW(BUFFER_ERROR, "Failed to copy packet from unique_ptr.");
+	}
 	*packet_length = packet_buffer->content_length;
 
 	if (backup != nullptr) {
@@ -606,15 +611,6 @@ cleanup:
 			return status;
 		}
 	}
-
-	on_error {
-		if (packet_buffer != nullptr) {
-			//not using free_and_null_if_valid because content is const
-			free(packet_buffer->content);
-		}
-	}
-
-	free_and_null_if_valid(packet_buffer);
 
 	return status;
 }
@@ -850,7 +846,7 @@ return_status molch_encrypt_message(
 	//create buffer for message array
 	Buffer message_buffer(message, message_length);
 
-	Buffer *packet_buffer = nullptr;
+	std::unique_ptr<Buffer> packet_buffer;
 	conversation_t *conversation = nullptr;
 
 	return_status status = return_status_init();
@@ -875,13 +871,18 @@ return_status molch_encrypt_message(
 	status = conversation_send(
 			conversation,
 			&message_buffer,
-			&packet_buffer,
+			packet_buffer,
 			nullptr,
 			nullptr,
 			nullptr);
 	THROW_on_error(GENERIC_ERROR, "Failed to send message.");
 
-	*packet = packet_buffer->content;
+	//copy the packet content
+	*packet = reinterpret_cast<unsigned char*>(malloc(packet_buffer->content_length));
+	THROW_on_failed_alloc(*packet);
+	if (packet_buffer->cloneToRaw(*packet, packet_buffer->content_length) != 0) {
+		THROW(BUFFER_ERROR, "Failed to copy packet from unique_ptr.");
+	}
 	*packet_length = packet_buffer->content_length;
 
 	if (conversation_backup != nullptr) {
@@ -900,8 +901,6 @@ cleanup:
 			free(packet_buffer->content);
 		}
 	}
-
-	free_and_null_if_valid(packet_buffer);
 
 	return status;
 }

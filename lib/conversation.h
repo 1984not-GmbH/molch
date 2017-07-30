@@ -50,7 +50,7 @@ void conversation_destroy(conversation_t * const conversation) noexcept;
 return_status conversation_start_send_conversation(
 		conversation_t ** const conversation, //output, newly created conversation
 		Buffer *const message, //message we want to send to the receiver
-		Buffer ** packet, //output, free after use!
+		std::unique_ptr<Buffer>& packet, //output, free after use!
 		Buffer * const sender_public_identity, //who is sending this message?
 		Buffer * const sender_private_identity,
 		Buffer * const receiver_public_identity,
@@ -81,7 +81,7 @@ return_status conversation_start_receive_conversation(
 return_status conversation_send(
 		conversation_t * const conversation,
 		Buffer * const message,
-		Buffer **packet, //output, free after use!
+		std::unique_ptr<Buffer>& packet, //output
 		Buffer * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
 		Buffer * const public_ephemeral_key, //cann be nullptr, if not nullptr, this will be a prekey message
 		Buffer * const public_prekey //can be nullptr, if not nullptr, this will be a prekey message

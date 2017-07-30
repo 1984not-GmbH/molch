@@ -40,14 +40,14 @@ int main(void) noexcept {
 	Buffer bob_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
-	Buffer *packet = nullptr;
+	std::unique_ptr<Buffer> packet;
 	Buffer *received_message = nullptr;
 
 	//packets
-	Buffer *alice_send_packet2 = nullptr;
-	Buffer *bob_send_packet2 = nullptr;
-	Buffer *bob_response_packet = nullptr;
-	Buffer *alice_response_packet = nullptr;
+	std::unique_ptr<Buffer> alice_send_packet2;
+	std::unique_ptr<Buffer> bob_send_packet2;
+	std::unique_ptr<Buffer> bob_response_packet;
+	std::unique_ptr<Buffer> alice_response_packet;
 
 	//receive messages
 	Buffer *alice_receive_message2 = nullptr;
@@ -123,7 +123,7 @@ int main(void) noexcept {
 	status = conversation_start_send_conversation(
 			&alice_send_conversation,
 			&send_message,
-			&packet,
+			packet,
 			&alice_public_identity,
 			&alice_private_identity,
 			&bob_public_identity,
@@ -137,7 +137,7 @@ int main(void) noexcept {
 	//let bob receive the packet
 	status = conversation_start_receive_conversation(
 			&bob_receive_conversation,
-			packet,
+			packet.get(),
 			&received_message,
 			&bob_public_identity,
 			&bob_private_identity,
@@ -157,7 +157,7 @@ int main(void) noexcept {
 		status = conversation_send(
 				alice_send_conversation,
 				&alice_send_message2,
-				&alice_send_packet2,
+				alice_send_packet2,
 				nullptr,
 				nullptr,
 				nullptr);
@@ -171,7 +171,7 @@ int main(void) noexcept {
 		//bob receives the message
 		status = conversation_receive(
 				bob_receive_conversation,
-				alice_send_packet2,
+				alice_send_packet2.get(),
 				&bob_receive_message_number,
 				&bob_previous_receive_message_number,
 				&bob_receive_message2);
@@ -196,7 +196,7 @@ int main(void) noexcept {
 		status = conversation_send(
 				bob_receive_conversation,
 				&bob_response_message,
-				&bob_response_packet,
+				bob_response_packet,
 				nullptr,
 				nullptr,
 				nullptr);
@@ -210,7 +210,7 @@ int main(void) noexcept {
 		//Alice receives the response
 		status = conversation_receive(
 				alice_send_conversation,
-				bob_response_packet,
+				bob_response_packet.get(),
 				&alice_receive_message_number,
 				&alice_previous_receive_message_number,
 				&alice_received_response);
@@ -238,11 +238,11 @@ int main(void) noexcept {
 	THROW_on_error(GENERIC_ERROR, "Failed to get Alice' prekey list.");
 
 	//destroy the old packet
-	buffer_destroy_and_null_if_valid(packet);
+	packet.reset();
 	status = conversation_start_send_conversation(
 			&bob_send_conversation,
 			&send_message,
-			&packet,
+			packet,
 			&bob_public_identity,
 			&bob_private_identity,
 			&alice_public_identity,
@@ -259,7 +259,7 @@ int main(void) noexcept {
 	received_message = nullptr;
 	status = conversation_start_receive_conversation(
 			&alice_receive_conversation,
-			packet,
+			packet.get(),
 			&received_message,
 			&alice_public_identity,
 			&alice_private_identity,
@@ -279,7 +279,7 @@ int main(void) noexcept {
 		status = conversation_send(
 				bob_send_conversation,
 				&bob_send_message2,
-				&bob_send_packet2,
+				bob_send_packet2,
 				nullptr,
 				nullptr,
 				nullptr);
@@ -293,7 +293,7 @@ int main(void) noexcept {
 		//alice receives the message
 		status = conversation_receive(
 				alice_receive_conversation,
-				bob_send_packet2,
+				bob_send_packet2.get(),
 				&alice_receive_message_number,
 				&alice_previous_receive_message_number,
 				&alice_receive_message2);
@@ -318,7 +318,7 @@ int main(void) noexcept {
 		status = conversation_send(
 				alice_receive_conversation,
 				&alice_response_message,
-				&alice_response_packet,
+				alice_response_packet,
 				nullptr,
 				nullptr,
 				nullptr);
@@ -332,7 +332,7 @@ int main(void) noexcept {
 		//Bob receives the response
 		status = conversation_receive(
 				bob_send_conversation,
-				alice_response_packet,
+				alice_response_packet.get(),
 				&bob_receive_message_number,
 				&bob_previous_receive_message_number,
 				&bob_received_response);
@@ -358,15 +358,10 @@ cleanup:
 	if (bob_prekeys != nullptr) {
 		bob_prekeys->destroy();
 	}
-	buffer_destroy_and_null_if_valid(packet);
 	buffer_destroy_and_null_if_valid(received_message);
-	buffer_destroy_and_null_if_valid(alice_send_packet2);
 	buffer_destroy_and_null_if_valid(bob_receive_message2);
-	buffer_destroy_and_null_if_valid(bob_send_packet2);
 	buffer_destroy_and_null_if_valid(alice_receive_message2);
-	buffer_destroy_and_null_if_valid(bob_response_packet);
 	buffer_destroy_and_null_if_valid(alice_received_response);
-	buffer_destroy_and_null_if_valid(alice_response_packet);
 	buffer_destroy_and_null_if_valid(bob_received_response);
 	if (alice_send_conversation != nullptr) {
 		conversation_destroy(alice_send_conversation);
