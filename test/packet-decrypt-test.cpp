@@ -43,7 +43,7 @@ int main(void) noexcept {
 	Buffer extracted_public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	Buffer extracted_public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	Buffer header(4, 4);
-	Buffer *packet = nullptr;
+	std::unique_ptr<Buffer> packet;
 	Buffer *decrypted_header = nullptr;
 	Buffer *decrypted_message = nullptr;
 
@@ -158,7 +158,7 @@ int main(void) noexcept {
 
 	buffer_destroy_and_null_if_valid(decrypted_header);
 	buffer_destroy_and_null_if_valid(decrypted_message);
-	buffer_destroy_and_null_if_valid(packet);
+	packet.reset();
 
 	packet_type = PREKEY_MESSAGE;
 
@@ -234,7 +234,6 @@ int main(void) noexcept {
 	printf("Extracted public prekey matches!\n");
 
 cleanup:
-	buffer_destroy_and_null_if_valid(packet);
 	buffer_destroy_and_null_if_valid(decrypted_header);
 	buffer_destroy_and_null_if_valid(decrypted_message);
 

@@ -41,7 +41,7 @@ int main(void) noexcept {
 	Buffer extracted_public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	Buffer message("Hello world!\n");
 	Buffer header(4, 4);
-	Buffer *packet = nullptr;
+	std::unique_ptr<Buffer> packet;
 
 	return_status status = return_status_init();
 
@@ -134,7 +134,7 @@ int main(void) noexcept {
 		}
 	}
 
-	buffer_destroy_and_null_if_valid(packet);
+	packet.reset();
 
 	packet_type = PREKEY_MESSAGE;
 	status = create_and_print_message(
@@ -192,8 +192,6 @@ int main(void) noexcept {
 	printf("Extracted public prekey matches!\n");
 
 cleanup:
-	buffer_destroy_and_null_if_valid(packet);
-
 	on_error {
 		print_errors(status);
 	}

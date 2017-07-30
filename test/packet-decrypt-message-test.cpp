@@ -39,7 +39,7 @@ int main(void) noexcept {
 	Buffer public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	Buffer header(4, 4);
 
-	Buffer *packet = nullptr;
+	std::unique_ptr<Buffer> packet;
 	Buffer *decrypted_message = nullptr;
 
 	return_status status = return_status_init();
@@ -138,7 +138,7 @@ int main(void) noexcept {
 		}
 	}
 
-	buffer_destroy_and_null_if_valid(packet);
+	packet.reset();
 
 	packet_type = PREKEY_MESSAGE;
 	status = create_and_print_message(
@@ -173,7 +173,6 @@ int main(void) noexcept {
 	printf("Decrypted message is the same.\n");
 
 cleanup:
-	buffer_destroy_and_null_if_valid(packet);
 	buffer_destroy_and_null_if_valid(decrypted_message);
 
 	on_error {

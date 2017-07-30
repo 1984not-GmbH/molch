@@ -52,7 +52,7 @@
  */
 return_status create_and_print_message(
 		//output
-		Buffer*& packet,
+		std::unique_ptr<Buffer>& packet,
 		Buffer& header_key, //HEADER_KEY_SIZE
 		Buffer& message_key, //MESSAGE_KEY_SIZE
 		//inputs

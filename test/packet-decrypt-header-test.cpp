@@ -42,7 +42,7 @@ int main(void) noexcept {
 	Buffer header(4, 4);
 	Buffer message("Hello world!\n");
 
-	Buffer *packet = nullptr;
+	std::unique_ptr<Buffer> packet;
 	Buffer *decrypted_header = nullptr;
 
 	molch_message_type packet_type = NORMAL_MESSAGE;
@@ -156,7 +156,7 @@ int main(void) noexcept {
 		}
 	}
 
-	buffer_destroy_and_null_if_valid(packet);
+	packet.reset();
 
 	packet_type = PREKEY_MESSAGE;
 	status = create_and_print_message(
@@ -190,7 +190,6 @@ int main(void) noexcept {
 	printf("Decrypted header matches.\n");
 
 cleanup:
-	buffer_destroy_and_null_if_valid(packet);
 	buffer_destroy_and_null_if_valid(decrypted_header);
 
 	on_error {

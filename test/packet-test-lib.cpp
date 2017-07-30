@@ -33,7 +33,7 @@
 
 return_status create_and_print_message(
 		//output
-		Buffer*& packet,
+		std::unique_ptr<Buffer>& packet,
 		Buffer& header_key, //HEADER_KEY_SIZE
 		Buffer& message_key, //MESSAGE_KEY_SIZE
 		//inputs
@@ -79,8 +79,7 @@ return_status create_and_print_message(
 
 	//now encrypt the message
 	try {
-		std::unique_ptr<Buffer> unique_ptr_packet;
-		unique_ptr_packet = packet_encrypt(
+		packet = packet_encrypt(
 				packet_type,
 				header,
 				header_key,
@@ -90,11 +89,6 @@ return_status create_and_print_message(
 				public_ephemeral_key,
 				public_prekey);
 		//convert to malloced buffer
-		packet = Buffer::create(unique_ptr_packet->content_length, 0);
-		THROW_on_failed_alloc(packet);
-		if (packet->cloneFrom(unique_ptr_packet.get()) != 0) {
-			THROW(BUFFER_ERROR, "Failed to clone packet from unique_ptr.");
-		}
 	} catch (const MolchException& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
