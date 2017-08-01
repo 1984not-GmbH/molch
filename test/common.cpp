@@ -29,32 +29,6 @@
 #include "utils.h"
 
 /*
- * Print a header and message keystore with all of it's entries.
- */
-void print_header_and_message_keystore(header_and_message_keystore& keystore) noexcept {
-	printf("KEYSTORE-START-----------------------------------------------------------------\n");
-	printf("Length: %zu\n", keystore.length);
-	printf("Head: %p\n", (void*) keystore.head);
-	printf("Tail: %p\n\n", (void*) keystore.tail);
-
-	header_and_message_keystore_node* node = keystore.head;
-
-	//print all the keys in the keystore
-	for (size_t i = 0; i < keystore.length; node = node->next, i++) {
-		printf("Header key %zu:\n", i);
-		std::cout << node->header_key->toHex();
-		putchar('\n');
-
-		printf("Message key %zu:\n", i);
-		std::cout << node->message_key->toHex();
-		if (i != keystore.length - 1) { //omit last one
-			putchar('\n');
-		}
-	}
-	puts("KEYSTORE-END-------------------------------------------------------------------\n");
-}
-
-/*
  * Generates and prints a crypto_box keypair.
  */
 void generate_and_print_keypair(

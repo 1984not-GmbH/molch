@@ -25,6 +25,7 @@
 #include <sodium.h>
 #include <cassert>
 #include <iostream>
+#include <exception>
 
 extern "C" {
 	#include <key_bundle.pb-c.h>
@@ -32,298 +33,219 @@ extern "C" {
 
 #include "../lib/header-and-message-keystore.h"
 #include "../lib/zeroed_malloc.h"
+#include "../lib/molch-exception.h"
 #include "utils.h"
 #include "common.h"
 
-static return_status protobuf_export(
-			header_and_message_keystore * const keystore,
-			KeyBundle *** const key_bundles,
-			size_t * const bundles_size,
-			Buffer *** const export_buffers) noexcept {
-	return_status status = return_status_init();
-
-	status = header_and_message_keystore_export(
-			keystore,
-			key_bundles,
-			bundles_size);
-	THROW_on_error(EXPORT_ERROR, "Failed to export keystore as protobuf struct.");
-
-	*export_buffers = (Buffer**)zeroed_malloc((*bundles_size) * sizeof(Buffer*));
-	THROW_on_failed_alloc(*export_buffers);
-
-	//initialize pointers with nullptr
-	std::fill(*export_buffers, *export_buffers + *bundles_size, nullptr);
-
-	//create all the export buffers
-	for (size_t i = 0; i < (*bundles_size); i++) {
-		size_t export_size = key_bundle__get_packed_size((*key_bundles)[i]);
-		(*export_buffers)[i] = Buffer::create(export_size, 0);
-		THROW_on_failed_alloc((*export_buffers)[i]);
-
-		size_t packed_size = key_bundle__pack((*key_bundles)[i], (*export_buffers)[i]->content);
-		(*export_buffers)[i]->content_length = packed_size;
+static void free_keybundle_array(KeyBundle**& bundles, size_t length) {
+	if (bundles != nullptr) {
+		for (size_t i = 0; i < length; i++) {
+			if (bundles[i] != nullptr) {
+				key_bundle__free_unpacked(bundles[i], &protobuf_c_allocators);
+				bundles[i] = nullptr;
+			}
+		}
+		zeroed_free_and_null_if_valid(bundles);
 	}
-
-cleanup:
-	// cleanup is done in the main function
-	return status;
 }
 
-static return_status protobuf_import(
-		header_and_message_keystore * const keystore,
-		Buffer ** const exported_buffers,
-		size_t const buffers_size) noexcept {
-	return_status status = return_status_init();
+static void protobuf_export(
+			HeaderAndMessageKeyStore& keystore,
+			std::vector<Buffer>& export_buffers) {
+	KeyBundle** key_bundles = nullptr;
+	size_t bundles_size;
 
-	KeyBundle ** key_bundles = (KeyBundle**)zeroed_malloc(buffers_size * sizeof(KeyBundle*));
-	THROW_on_failed_alloc(key_bundles);
+	try {
+		keystore.exportProtobuf(key_bundles, bundles_size);
 
-	//set all pointers to nullptr
-	std::fill(key_bundles, key_bundles + buffers_size, nullptr);
+		export_buffers = std::vector<Buffer>();
+
+		//create all the export buffers
+		for (size_t i = 0; i < bundles_size; i++) {
+			size_t export_size = key_bundle__get_packed_size(key_bundles[i]);
+			Buffer export_buffer(export_size, 0);
+			exception_on_invalid_buffer(export_buffer);
+
+			export_buffer.content_length = key_bundle__pack(key_bundles[i], export_buffer.content);
+			if (export_buffer.content_length != export_size) {
+				throw MolchException(PROTOBUF_PACK_ERROR, "Packed buffer has incorrect length.");
+			}
+			export_buffers.push_back(export_buffer);
+		}
+	} catch (const std::exception& exception) {
+		free_keybundle_array(key_bundles, bundles_size);
+
+		throw exception;
+	}
+
+	free_keybundle_array(key_bundles, bundles_size);
+}
+
+static void protobuf_import(
+		HeaderAndMessageKeyStore& keystore,
+		const std::vector<Buffer>& exported_buffers) {
+	auto key_bundles = std::vector<std::unique_ptr<KeyBundle,KeyBundleDeleter>>();
+	key_bundles.reserve(exported_buffers.size());
 
 	//parse all the exported protobuf buffers
-	for (size_t i = 0; i < buffers_size; i++) {
-		key_bundles[i] = key_bundle__unpack(
-			&protobuf_c_allocators,
-			exported_buffers[i]->content_length,
-			exported_buffers[i]->content);
-		if (key_bundles[i] == nullptr) {
-			THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack key bundle from protobuf.");
+	for (const auto& exported_buffer : exported_buffers) {
+		auto key_bundle = std::unique_ptr<KeyBundle,KeyBundleDeleter>(
+					key_bundle__unpack(
+						&protobuf_c_allocators,
+						exported_buffer.content_length,
+						exported_buffer.content));
+		if (!key_bundle) {
+			throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack key bundle.");
 		}
+
+		key_bundles.push_back(std::move(key_bundle));
+	}
+
+	auto key_bundles_array = std::unique_ptr<KeyBundle*[]>(new KeyBundle*[exported_buffers.size()]);
+	for (size_t i = 0; i < exported_buffers.size(); i++) {
+		key_bundles_array[i] = key_bundles[i].get();
 	}
 
 	//now do the actual import
-	status = header_and_message_keystore_import(
-		keystore,
-		key_bundles,
-		buffers_size);
-	THROW_on_error(IMPORT_ERROR, "Failed to import header_and_message_keystore from Protobuf-C.");
-
-cleanup:
-	if (key_bundles != nullptr) {
-		for (size_t i = 0; i < buffers_size; i++) {
-			if (key_bundles[i] != nullptr) {
-				key_bundle__free_unpacked(key_bundles[i], &protobuf_c_allocators);
-				key_bundles[i] = nullptr;
-			}
-		}
-		zeroed_free_and_null_if_valid(key_bundles);
-	}
-
-	return status;
+	keystore = HeaderAndMessageKeyStore(key_bundles_array.get(), exported_buffers.size());
 }
 
-return_status protobuf_empty_store(void) noexcept __attribute__((warn_unused_result));
-return_status protobuf_empty_store(void) noexcept {
-	return_status status = return_status_init();
-
+void protobuf_empty_store(void) {
 	printf("Testing im-/export of empty header and message keystore.\n");
 
-	header_and_message_keystore store;
-	header_and_message_keystore_init(&store);
+	HeaderAndMessageKeyStore store;
 
 	KeyBundle **exported = nullptr;
 	size_t exported_length = 0;
 
 	//export it
-	status = header_and_message_keystore_export(&store, &exported, &exported_length);
-	THROW_on_error(EXPORT_ERROR, "Failed to export empty header and message keystore.");
+	store.exportProtobuf(exported, exported_length);
 
 	if ((exported != nullptr) || (exported_length != 0)) {
-		THROW(INCORRECT_DATA, "Exported data is not empty.");
+		throw MolchException(INCORRECT_DATA, "Exported data is not empty.");
 	}
 
 	//import it
-	status = header_and_message_keystore_import(&store, exported, exported_length);
-	THROW_on_error(IMPORT_ERROR, "Failed to import empty header and message keystore.");
+	store = HeaderAndMessageKeyStore(exported, exported_length);
 
 	printf("Successful.\n");
-
-cleanup:
-	return status;
 }
 
-int main(void) noexcept {
-	if (sodium_init() == -1) {
-		return -1;
-	}
-
-	return_status status = return_status_init();
-
-	//buffer for message keys
-	Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-
-	// buffers for exporting protobuf-c
-	Buffer **protobuf_export_buffers = nullptr;
-	Buffer **protobuf_second_export_buffers = nullptr;
-	KeyBundle ** protobuf_export_bundles = nullptr;
-	size_t protobuf_export_bundles_size = 0;
-	KeyBundle ** protobuf_second_export_bundles = nullptr;
-	size_t protobuf_second_export_bundles_size = 0;
-
-	//initialise message keystore
-	header_and_message_keystore keystore;
-	header_and_message_keystore_init(&keystore);
-	assert(keystore.length == 0);
-	assert(keystore.head == nullptr);
-	assert(keystore.tail == nullptr);
-
-	int status_int = 0;
-	throw_on_invalid_buffer(header_key);
-	throw_on_invalid_buffer(message_key);
-	//add keys to the keystore
-	for (size_t i = 0; i < 6; i++) {
-		//create new keys
-		status_int = header_key.fillRandom(header_key.getBufferLength());
-		if (status_int != 0) {
-			THROW(KEYGENERATION_FAILED, "Failed to create header key.");
-		}
-		status_int = message_key.fillRandom(message_key.getBufferLength());
-		if (status_int != 0) {
-			THROW(KEYGENERATION_FAILED, "Failed to create header key.");
+int main(void) {
+	try {
+		if (sodium_init() == -1) {
+			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
-		//print the new header key
-		printf("New Header Key No. %zu:\n", i);
-		std::cout << header_key.toHex();
-		putchar('\n');
+		//buffer for message keys
+		Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+		Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 
-		//print the new message key
-		printf("New message key No. %zu:\n", i);
-		std::cout << message_key.toHex();
-		putchar('\n');
+		// buffers for exporting protobuf-c
+		std::vector<Buffer> protobuf_export_buffers;
+		std::vector<Buffer> protobuf_second_export_buffers;
 
+		//initialise message keystore
+		HeaderAndMessageKeyStore keystore;
+		assert(keystore.keys.size() == 0);
+
+		int status_int = 0;
+		exception_on_invalid_buffer(header_key);
+		exception_on_invalid_buffer(message_key);
 		//add keys to the keystore
-		status = header_and_message_keystore_add(&keystore, &message_key, &header_key);
-		message_key.clear();
-		header_key.clear();
-		THROW_on_error(ADDITION_ERROR, "Failed to add key to keystore.");
+		for (size_t i = 0; i < 6; i++) {
+			//create new keys
+			status_int = header_key.fillRandom(header_key.getBufferLength());
+			if (status_int != 0) {
+				throw MolchException(KEYGENERATION_FAILED, "Failed to create header key.");
+			}
+			status_int = message_key.fillRandom(message_key.getBufferLength());
+			if (status_int != 0) {
+				throw MolchException(KEYGENERATION_FAILED, "Failed to create header key.");
+			}
 
-		print_header_and_message_keystore(keystore);
+			//print the new header key
+			printf("New Header Key No. %zu:\n", i);
+			std::cout << header_key.toHex();
+			putchar('\n');
 
-		assert(keystore.length == (i + 1));
-	}
+			//print the new message key
+			printf("New message key No. %zu:\n", i);
+			std::cout << message_key.toHex();
+			putchar('\n');
 
-	//Protobuf-C export
-	printf("Test Protobuf-C export:\n");
-	status = protobuf_export(
-			&keystore,
-			&protobuf_export_bundles,
-			&protobuf_export_bundles_size,
-			&protobuf_export_buffers);
-	THROW_on_error(EXPORT_ERROR, "Failed to export keystore via protobuf-c.");
+			//add keys to the keystore
+			keystore.add(header_key, message_key);
+			message_key.clear();
+			header_key.clear();
 
-	puts("[\n");
-	for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
-		std::cout << protobuf_export_buffers[i]->toHex();
-		puts(",\n");
-	}
-	puts("]\n\n");
+			std::cout << keystore.print();
 
-	printf("Import from Protobuf-C\n");
-	header_and_message_keystore_clear(&keystore);
-	protobuf_import(
-		&keystore,
-		protobuf_export_buffers,
-		protobuf_export_bundles_size);
-	THROW_on_error(IMPORT_ERROR, "Failed to import from protobuf-c.");
-
-	//now export again
-	printf("Export imported as Protobuf-C\n");
-	status = protobuf_export(
-		&keystore,
-		&protobuf_second_export_bundles,
-		&protobuf_second_export_bundles_size,
-		&protobuf_second_export_buffers);
-	THROW_on_error(EXPORT_ERROR, "Failed to export imported data via protobuf-c.");
-
-	//compare both exports
-	printf("Compare\n");
-	if (protobuf_export_bundles_size != protobuf_second_export_bundles_size) {
-		THROW(INCORRECT_DATA, "Both exports contain different amounts of keys.");
-	}
-	size_t store_length;
-	for (store_length = 0; store_length < protobuf_export_bundles_size; store_length++) {
-		if (protobuf_export_buffers[store_length]->compare(protobuf_second_export_buffers[store_length]) != 0) {
-			THROW(INCORRECT_DATA, "First and second export are not identical.");
+			assert(keystore.keys.size() == (i + 1));
 		}
-	}
 
-	//remove key from the head
-	printf("Remove head!\n");
-	header_and_message_keystore_remove(&keystore, keystore.head);
-	assert(keystore.length == (store_length - 1));
-	print_header_and_message_keystore(keystore);
+		//Protobuf-C export
+		printf("Test Protobuf-C export:\n");
+		protobuf_export(keystore, protobuf_export_buffers);
 
-	//remove key from the tail
-	printf("Remove Tail:\n");
-	header_and_message_keystore_remove(&keystore, keystore.tail);
-	assert(keystore.length == (store_length - 2));
-	print_header_and_message_keystore(keystore);
+		puts("[\n");
+		for (const auto& buffer : protobuf_export_buffers) {
+			std::cout << buffer.toHex();
+			puts(",\n");
+		}
+		puts("]\n\n");
 
-	//remove from inside
-	printf("Remove from inside:\n");
-	header_and_message_keystore_remove(&keystore, keystore.head->next);
-	assert(keystore.length == (store_length - 3));
-	print_header_and_message_keystore(keystore);
+		printf("Import from Protobuf-C\n");
+		keystore.keys.clear();
+		protobuf_import(keystore, protobuf_export_buffers);
 
-	status = protobuf_empty_store();
-	THROW_on_error(GENERIC_ERROR, "Testing im-/export of empty stores failed.");
+		//now export again
+		printf("Export imported as Protobuf-C\n");
+		protobuf_export(keystore, protobuf_second_export_buffers);
 
-cleanup:
-	if (protobuf_export_bundles != nullptr) {
-		for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
-			if (protobuf_export_bundles[i] != nullptr) {
-				key_bundle__free_unpacked(protobuf_export_bundles[i], &protobuf_c_allocators);
-				protobuf_export_bundles[i] = nullptr;
+		//compare both exports
+		printf("Compare\n");
+		if (protobuf_export_buffers.size() != protobuf_second_export_buffers.size()) {
+			throw MolchException(INCORRECT_DATA, "Both exports contain different amounts of keys.");
+		}
+		for (size_t index = 0; index < protobuf_export_buffers.size(); index++) {
+			if (protobuf_export_buffers[index].compare(&protobuf_second_export_buffers[index]) != 0) {
+				throw MolchException(INCORRECT_DATA, "First and second export are not identical.");
 			}
 		}
-		zeroed_free_and_null_if_valid(protobuf_export_bundles);
+
+		//remove key from the head
+		printf("Remove head!\n");
+		keystore.keys.erase(keystore.keys.cbegin());
+		assert(keystore.keys.size() == (protobuf_export_buffers.size() - 1));
+		std::cout << keystore.print();
+
+		//remove key from the tail
+		printf("Remove Tail:\n");
+		keystore.keys.erase(keystore.keys.cend());
+		assert(keystore.keys.size() == (protobuf_export_buffers.size() - 2));
+		std::cout << keystore.print();
+
+		//remove from inside
+		printf("Remove from inside:\n");
+		keystore.keys.erase(keystore.keys.cbegin() + 1);
+		assert(keystore.keys.size() == (protobuf_export_buffers.size() - 3));
+		std::cout << keystore.print();
+
+		protobuf_empty_store();
+
+		//clear the keystore
+		printf("Clear the keystore:\n");
+		keystore.keys.clear();
+		assert(keystore.keys.size() == 0);
+		std::cout << keystore.print();
+	} catch (const MolchException& exception) {
+		std::cerr << exception.print() << std::endl;
+		return EXIT_FAILURE;
+	} catch (const std::exception& exception) {
+		std::cerr << exception.what() << std::endl;
+		return EXIT_FAILURE;
 	}
 
-	if (protobuf_export_buffers != nullptr) {
-		for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
-			if (protobuf_export_buffers[i] != nullptr) {
-				buffer_destroy_and_null_if_valid(protobuf_export_buffers[i]);
-			}
-		}
-		zeroed_free_and_null_if_valid(protobuf_export_buffers);
-	}
-
-	if (protobuf_second_export_bundles != nullptr) {
-		for (size_t i = 0; i < protobuf_second_export_bundles_size; i++) {
-			if (protobuf_second_export_bundles[i] != nullptr) {
-				key_bundle__free_unpacked(protobuf_second_export_bundles[i], &protobuf_c_allocators);
-				protobuf_second_export_bundles[i] = nullptr;
-			}
-		}
-		zeroed_free_and_null_if_valid(protobuf_second_export_bundles);
-	}
-
-	if (protobuf_second_export_buffers != nullptr) {
-		for (size_t i = 0; i < protobuf_export_bundles_size; i++) {
-			if (protobuf_second_export_buffers[i] != nullptr) {
-				buffer_destroy_and_null_if_valid(protobuf_second_export_buffers[i]);
-			}
-		}
-		zeroed_free_and_null_if_valid(protobuf_second_export_buffers);
-	}
-
-	header_and_message_keystore_clear(&keystore);
-
-	//clear the keystore
-	printf("Clear the keystore:\n");
-	header_and_message_keystore_clear(&keystore);
-	assert(keystore.length == 0);
-	assert(keystore.head == nullptr);
-	assert(keystore.tail == nullptr);
-	print_header_and_message_keystore(keystore);
-
-	on_error {
-		print_errors(status);
-	}
-	return_status_destroy_errors(&status);
-
-	return status.status;
+	return EXIT_SUCCESS;
 }

@@ -395,7 +395,7 @@ cleanup:
  * Returns 0, if it was able to decrypt the packet.
  */
 static int try_skipped_header_and_message_keys(
-		header_and_message_keystore& skipped_keys,
+		HeaderAndMessageKeyStore& skipped_keys,
 		const Buffer& packet,
 		std::unique_ptr<Buffer>& message,
 		uint32_t& receive_message_number,
@@ -405,22 +405,23 @@ static int try_skipped_header_and_message_keys(
 	Buffer their_signed_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	exception_on_invalid_buffer(their_signed_public_ephemeral);
 
-	header_and_message_keystore_node* node = skipped_keys.head;
-	for (size_t i = 0; (i < skipped_keys.length) && (node != nullptr); i++, node = node->next) {
+	for (size_t index = 0; index < skipped_keys.keys.size(); index++) {
+		HeaderAndMessageKeyStoreNode& node = skipped_keys.keys[index];
 		bool decryption_successful = true;
 		try {
-			header = packet_decrypt_header(packet, *node->header_key);
+			header = packet_decrypt_header(packet, node.header_key);
 		} catch (const MolchException& exception) {
 			decryption_successful = false;
 		}
 		if (decryption_successful) {
 			try {
-				message = packet_decrypt_message(packet, *node->message_key);
+				message = packet_decrypt_message(packet, node.message_key);
 			} catch (const MolchException& exception) {
 				decryption_successful = false;
 			}
 			if (decryption_successful) {
-				header_and_message_keystore_remove(&skipped_keys, node);
+				skipped_keys.keys.erase(skipped_keys.keys.cbegin() + static_cast<ptrdiff_t>(index));
+				index--;
 
 				header_extract(
 						their_signed_public_ephemeral,
@@ -472,7 +473,7 @@ return_status conversation_receive(
 
 	try {
 		int status = try_skipped_header_and_message_keys(
-				conversation->ratchet->skipped_header_and_message_keys,
+				*conversation->ratchet->skipped_header_and_message_keys,
 				*packet,
 				message,
 				*receive_message_number,

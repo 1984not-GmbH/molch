@@ -28,6 +28,11 @@
 template <class T>
 class SodiumAllocator : public std::allocator<T> {
 public:
+	//TODO WTF is this and why do I need it? C++ is strange, especially the standard library!
+	SodiumAllocator(const std::allocator<T>& other) {
+		(void)other;
+	}
+
 	T* allocate(size_t size) {
 		T* pointer = reinterpret_cast<T*> (sodium_malloc(size));
 		if (pointer == nullptr) {

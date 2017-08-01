@@ -765,7 +765,7 @@ int main(void) noexcept {
 	std::cout << alice_receive_message_key3.toHex();
 	putchar('\n');
 
-	assert(alice_state->staged_header_and_message_keys.length == 1);
+	assert(alice_state->staged_header_and_message_keys->keys.size() == 1);
 
 	//confirm validity of the message key
 	status = alice_state->setLastMessageAuthenticity(true);
@@ -775,11 +775,11 @@ int main(void) noexcept {
 		THROW(DATA_SET_ERROR, "Failed to set authenticity state.");
 	}
 
-	assert(alice_state->staged_header_and_message_keys.length == 0);
-	assert(alice_state->skipped_header_and_message_keys.length == 1);
+	assert(alice_state->staged_header_and_message_keys->keys.size() == 0);
+	assert(alice_state->skipped_header_and_message_keys->keys.size() == 1);
 
 	//get the second receive message key from the message and header keystore
-	status_int = alice_receive_message_key2.cloneFrom(alice_state->skipped_header_and_message_keys.tail->message_key);
+	status_int = alice_receive_message_key2.cloneFrom(&alice_state->skipped_header_and_message_keys->keys.back().message_key);
 	if (status_int != 0) {
 		alice_state->destroy();
 		bob_state->destroy();
@@ -790,7 +790,7 @@ int main(void) noexcept {
 	putchar('\n');
 
 	//get the second receive header key from the message and header keystore
-	status_int = alice_receive_header_key2.cloneFrom(alice_state->skipped_header_and_message_keys.tail->header_key);
+	status_int = alice_receive_header_key2.cloneFrom(&alice_state->skipped_header_and_message_keys->keys.back().header_key);
 	if (status_int != 0) {
 		alice_state->destroy();
 		bob_state->destroy();

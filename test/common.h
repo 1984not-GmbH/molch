@@ -24,10 +24,6 @@
 
 #ifndef TEST_COMMON_H
 #define TEST_COMMON_H
-/*
- * Print a header and message keystore with all of it's entries.
- */
-void print_header_and_message_keystore(header_and_message_keystore& keystore) noexcept;
 
 /*
  * Generates and prints a crypto_box keypair.

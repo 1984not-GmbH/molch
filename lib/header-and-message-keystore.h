@@ -21,6 +21,8 @@
 
 #include <sodium.h>
 #include <ctime>
+#include <vector>
+#include <string>
 
 extern "C" {
 	#include <key_bundle.pb-c.h>
@@ -30,6 +32,8 @@ extern "C" {
 #include "common.h"
 #include "buffer.h"
 #include "return-status.h"
+#include "sodium-wrappers.h"
+#include "protobuf-deleters.h"
 
 #ifndef LIB_HEADER_AND_MESSAGE_KEY_STORE_H
 #define LIB_HEADER_AND_MESSAGE_KEY_STORE_H
@@ -37,61 +41,54 @@ extern "C" {
 //used yet. (the keys are stored to still be able to decrypt old messages that weren't received)
 
 //node of the linked list
-typedef struct header_and_message_keystore_node header_and_message_keystore_node;
-struct header_and_message_keystore_node {
-	header_and_message_keystore_node *previous;
-	header_and_message_keystore_node *next;
-	Buffer message_key[1];
+class HeaderAndMessageKeyStoreNode {
+private:
+	void init();
+	void fill(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date);
+
+public:
+	Buffer message_key;
 	unsigned char message_key_storage[MESSAGE_KEY_SIZE];
-	Buffer header_key[1];
+	Buffer header_key;
 	unsigned char header_key_storage[HEADER_KEY_SIZE];
 	int64_t expiration_date;
+
+	HeaderAndMessageKeyStoreNode();
+	HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key);
+	HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date);
+	/* copy constructor */
+	HeaderAndMessageKeyStoreNode(const HeaderAndMessageKeyStoreNode& node);
+	HeaderAndMessageKeyStoreNode(const KeyBundle& key_bundle);
+
+	/* move assignment operator */
+	HeaderAndMessageKeyStoreNode& operator=(HeaderAndMessageKeyStoreNode&& node);
+
+	std::unique_ptr<KeyBundle,KeyBundleDeleter> exportProtobuf();
+
+	std::string print() const;
 };
 
 //header of the key store
-typedef struct header_and_message_keystore {
-	size_t length;
-	header_and_message_keystore_node *head;
-	header_and_message_keystore_node *tail;
-} header_and_message_keystore;
+class HeaderAndMessageKeyStore {
+public:
+	std::vector<HeaderAndMessageKeyStoreNode,SodiumAllocator<HeaderAndMessageKeyStoreNode>> keys;
 
-//initialise a new keystore
-void header_and_message_keystore_init(header_and_message_keystore * const keystore) noexcept;
+	HeaderAndMessageKeyStore() = default;
+	//! Import a header_and_message_keystore form a Protobuf-C struct.
+	/*
+	 * \param key_bundles An array of Protobuf-C key-bundles to import from.
+	 * \param bundles_size Size of the array.
+	 */
+	HeaderAndMessageKeyStore(KeyBundle** const & key_bundles, const size_t bundles_size);
 
-//add a header and message key to the keystore
-//NOTE: The entire keys are copied, not only the pointer
-return_status header_and_message_keystore_add(
-		header_and_message_keystore *keystore,
-		const Buffer * const message_key,
-		const Buffer * const header_key) noexcept __attribute__((warn_unused_result));
+	void add(const Buffer& header_key, const Buffer& message_key);
+	//! Export a header_and_message_keystore as Protobuf-C struct.
+	/*!
+	 * \param key_bundles Pointer to a pointer of protobuf-c key bundle structs, it will be allocated in this function.
+	 * \param bundle_size Size of the outputted array.
+	 */
+	void exportProtobuf(KeyBundle**& key_bundles, size_t& bundles_size);
 
-//remove a message key from the keystore
-void header_and_message_keystore_remove(header_and_message_keystore *keystore, header_and_message_keystore_node *node) noexcept;
-
-//clear the entire keystore
-void header_and_message_keystore_clear(header_and_message_keystore *keystore) noexcept;
-
-//! Export a header_and_message_keystore as Protobuf-C struct.
-/*!
- * \param store The keystore to export.
- * \param key_bundles Pointer to a pointer of protobuf-c key bundle structs, it will be allocated in this function.
- * \param bundle_size Size of the outputted array.
- * \return The status.
- */
-return_status header_and_message_keystore_export(
-		const header_and_message_keystore * const store,
-		KeyBundle *** const key_bundles,
-		size_t * const bundles_size) noexcept __attribute__((warn_unused_result));
-
-//! Import a header_and_message_keystore form a Protobuf-C struct.
-/*
- * \param store The keystore to import to.
- * \param key_bundles An array of Protobuf-C key-bundles to import from.
- * \param bundles_size Size of the array.
- * \return The status.
- */
-return_status header_and_message_keystore_import(
-		header_and_message_keystore * const store,
-		KeyBundle ** const key_bundles,
-		const size_t bundles_size) noexcept __attribute__((warn_unused_result));
+	std::string print() const;
+};
 #endif

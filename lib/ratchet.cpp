@@ -52,9 +52,6 @@ void Ratchet::initState() noexcept {
 	this->our_public_ephemeral.init(this->our_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	this->their_public_ephemeral.init(this->their_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	this->their_purported_public_ephemeral.init(this->their_purported_public_ephemeral_storage, PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-
-	header_and_message_keystore_init(&this->skipped_header_and_message_keys);
-	header_and_message_keystore_init(&this->staged_header_and_message_keys);
 }
 
 /*
@@ -70,10 +67,30 @@ return_status Ratchet::createState(Ratchet*& ratchet) noexcept {
 	ratchet->initState();
 
 	//initialise message keystore for skipped messages
-	header_and_message_keystore_init(&ratchet->skipped_header_and_message_keys);
-	header_and_message_keystore_init(&ratchet->staged_header_and_message_keys);
+	try {
+		ratchet->skipped_header_and_message_keys = new HeaderAndMessageKeyStore();
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
+	try {
+		ratchet->staged_header_and_message_keys = new HeaderAndMessageKeyStore();
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 cleanup:
+	on_error {
+		if (ratchet != nullptr) {
+			ratchet->destroy();
+		}
+	}
+
 	return status;
 }
 
@@ -403,7 +420,7 @@ cleanup:
  * saves the skipped ones in the ratchet's staging area.
  */
 return_status Ratchet::stageSkippedHeaderAndMessageKeys(
-		header_and_message_keystore& staging_area,
+		HeaderAndMessageKeyStore& staging_area,
 		Buffer * output_chain_key, //output, optional CHAIN_KEY_SIZE
 		Buffer * output_message_key, //output, optional MESSAGE_KEY_SIZE
 		const Buffer& current_header_key,
@@ -454,11 +471,14 @@ return_status Ratchet::stageSkippedHeaderAndMessageKeys(
 		}
 
 		//add the message key, along with current_header_key to the staging area
-		status = header_and_message_keystore_add(
-				&staging_area,
-				current_message_key,
-				&current_header_key);
-		THROW_on_error(ADDITION_ERROR, "Failed to add keys to header and message keystore.");
+		try {
+			staging_area.add(current_header_key, *current_message_key);
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 
 		//derive next chain key
 		try {
@@ -510,7 +530,7 @@ cleanup:
 			output_message_key->clear();
 			output_message_key->content_length = 0;
 		}
-		header_and_message_keystore_clear(&staging_area);
+		staging_area.keys.clear();
 	}
 
 	buffer_destroy_and_null_if_valid(current_chain_key);
@@ -530,17 +550,16 @@ cleanup:
 return_status Ratchet::commitSkippedHeaderAndMessageKeys() noexcept {
 	return_status status = return_status_init();
 
-	//as long as the list of purported message keys isn't empty,
-	//add them to the list of skipped message keys
-	while (this->staged_header_and_message_keys.length != 0) {
-		status = header_and_message_keystore_add(
-				&this->skipped_header_and_message_keys,
-				this->staged_header_and_message_keys.head->message_key,
-				this->staged_header_and_message_keys.head->header_key);
-		THROW_on_error(ADDITION_ERROR, "Failed to add keys to skipped header and message keys.");
-		header_and_message_keystore_remove(
-				&this->staged_header_and_message_keys,
-				this->staged_header_and_message_keys.head);
+	try {
+		for (auto&& key_bundle : this->staged_header_and_message_keys->keys) {
+			this->skipped_header_and_message_keys->keys.push_back(key_bundle);
+		}
+		this->staged_header_and_message_keys->keys.clear();
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
 	}
 
 cleanup:
@@ -591,7 +610,7 @@ return_status Ratchet::receive(
 
 		//CKp, MK = stage_skipped_header_and_message_keys(HKr, Nr, Np, CKr)
 		status = Ratchet::stageSkippedHeaderAndMessageKeys(
-				this->staged_header_and_message_keys,
+				*this->staged_header_and_message_keys,
 				&this->purported_receive_chain_key,
 				&message_key,
 				this->receive_header_key,
@@ -616,7 +635,7 @@ return_status Ratchet::receive(
 
 		//stage_skipped_header_and_message_keys(HKr, Nr, PNp, CKr)
 		status = Ratchet::stageSkippedHeaderAndMessageKeys(
-				this->staged_header_and_message_keys,
+				*this->staged_header_and_message_keys,
 				nullptr, //output_chain_key
 				nullptr, //output_message_key
 				this->receive_header_key,
@@ -655,7 +674,7 @@ return_status Ratchet::receive(
 
 		//CKp, MK = staged_header_and_message_keys(HKp, 0, Np, CKp)
 		status = Ratchet::stageSkippedHeaderAndMessageKeys(
-				this->staged_header_and_message_keys,
+				*this->staged_header_and_message_keys,
 				&this->purported_receive_chain_key,
 				&message_key,
 				this->purported_receive_header_key,
@@ -693,7 +712,7 @@ return_status Ratchet::setLastMessageAuthenticity(bool valid) noexcept {
 	this->header_decryptable = NOT_TRIED;
 
 	if (!valid) { //message couldn't be decrypted
-		header_and_message_keystore_clear(&this->staged_header_and_message_keys);
+		this->staged_header_and_message_keys->keys.clear();
 		goto cleanup;
 	}
 
@@ -701,7 +720,7 @@ return_status Ratchet::setLastMessageAuthenticity(bool valid) noexcept {
 		if (this->ratchet_flag || (header_decryptable != NEXT_DECRYPTABLE)) {
 			//if ratchet_flag or not Dec(NHKr, header)
 			//clear purported message and header keys
-			header_and_message_keystore_clear(&this->staged_header_and_message_keys);
+			this->staged_header_and_message_keys->keys.clear();
 			goto cleanup;
 		}
 
@@ -748,9 +767,9 @@ cleanup:
  * End the ratchet chain and free the memory.
  */
 void Ratchet::destroy() noexcept {
-	//empty message keystores
-	header_and_message_keystore_clear(&this->skipped_header_and_message_keys);
-	header_and_message_keystore_clear(&this->staged_header_and_message_keys);
+	//delete the header and message keystores
+	delete this->skipped_header_and_message_keys;
+	delete this->staged_header_and_message_keys;
 
 	sodium_free(this); //this also overwrites all the keys with zeroes
 }
@@ -1000,18 +1019,21 @@ return_status Ratchet::exportRatchet(Conversation*& conversation) noexcept {
 	}
 
 	//keystores
-	//skipped header and message keystore
-	status = header_and_message_keystore_export(
-		&this->skipped_header_and_message_keys,
-		&conversation->skipped_header_and_message_keys,
-		&conversation->n_skipped_header_and_message_keys);
-	THROW_on_error(EXPORT_ERROR, "Failed to export skipped header and message keystore.");
-	//staged header and message keystore
-	status = header_and_message_keystore_export(
-		&this->staged_header_and_message_keys,
-		&conversation->staged_header_and_message_keys,
-		&conversation->n_staged_header_and_message_keys);
-	THROW_on_error(EXPORT_ERROR, "Failed to export staged header and message keystore.");
+	try {
+		//skipped header and message keystore
+		this->skipped_header_and_message_keys->exportProtobuf(
+			conversation->skipped_header_and_message_keys,
+			conversation->n_skipped_header_and_message_keys);
+		//staged header and message keystore
+		this->staged_header_and_message_keys->exportProtobuf(
+				conversation->staged_header_and_message_keys,
+				conversation->n_staged_header_and_message_keys);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 cleanup:
 	on_error {
@@ -1254,22 +1276,34 @@ return_status Ratchet::import(
 	}
 
 	//header and message keystores
-	//skipped heeader and message keys
-	status = header_and_message_keystore_import(
-		&ratchet->skipped_header_and_message_keys,
-		conversation.skipped_header_and_message_keys,
-		conversation.n_skipped_header_and_message_keys);
-	THROW_on_error(IMPORT_ERROR, "Failed to import skipped header and message keys.");
+	//skipped header and message keys
+	try {
+		ratchet->skipped_header_and_message_keys = new HeaderAndMessageKeyStore(
+				conversation.skipped_header_and_message_keys,
+				conversation.n_skipped_header_and_message_keys);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 	//staged heeader and message keys
-	status = header_and_message_keystore_import(
-		&ratchet->staged_header_and_message_keys,
-		conversation.staged_header_and_message_keys,
-		conversation.n_staged_header_and_message_keys);
-	THROW_on_error(IMPORT_ERROR, "Failed to import staged header and message keys.");
+	try {
+		ratchet->staged_header_and_message_keys = new HeaderAndMessageKeyStore(
+				conversation.staged_header_and_message_keys,
+				conversation.n_staged_header_and_message_keys);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 cleanup:
 	on_error {
-		sodium_free_and_null_if_valid(ratchet);
+		if (ratchet != nullptr) {
+			ratchet->destroy();
+		}
 	}
 
 	return status;

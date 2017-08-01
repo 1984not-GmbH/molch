@@ -25,349 +25,182 @@
 #include "constants.h"
 #include "header-and-message-keystore.h"
 #include "zeroed_malloc.h"
+#include "molch-exception.h"
 
 extern "C" {
 	#include <key.pb-c.h>
 	#include <key_bundle.pb-c.h>
 }
 
-static const int64_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
+constexpr int64_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
 
-//create new keystore
-void header_and_message_keystore_init(header_and_message_keystore * const keystore) noexcept {
-	keystore->length = 0;
-	keystore->head = nullptr;
-	keystore->tail = nullptr;
+void HeaderAndMessageKeyStoreNode::init() {
+	this->message_key = Buffer(this->message_key_storage, sizeof(this->message_key_storage));
+	this->header_key = Buffer(this->header_key_storage, sizeof(this->header_key_storage));
+	this->expiration_date = 0;
 }
 
-/*
- * create an empty header_and_message_keystore_node and set up all the pointers.
- */
-static header_and_message_keystore_node *create_node(void) noexcept {
-	header_and_message_keystore_node *node = (header_and_message_keystore_node*)sodium_malloc(sizeof(header_and_message_keystore_node));
-	if (node == nullptr) {
-		return nullptr;
+void HeaderAndMessageKeyStoreNode::fill(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date) {
+	this->init();
+
+	if (this->header_key.cloneFrom(&header_key) != 0) {
+		throw MolchException(BUFFER_ERROR, "Failed to clone header key.");
 	}
 
-	//initialise buffers with storage arrays
-	node->message_key->init(node->message_key_storage, MESSAGE_KEY_SIZE, 0);
-	node->header_key->init(node->header_key_storage, HEADER_KEY_SIZE, 0);
+	if (this->message_key.cloneFrom(&message_key) != 0) {
+		throw MolchException(BUFFER_ERROR, "Failed to clone message key.");
+	}
 
-	return node;
+	this->expiration_date = expiration_date;
 }
 
-/*
- * add a new header_and_message_key_node to a keystore
- */
-static void add_node(header_and_message_keystore * const keystore, header_and_message_keystore_node * const node) noexcept {
-	if (node == nullptr) {
-		return;
-	}
-
-	if (keystore->length == 0) { //first node in the list
-		node->previous = nullptr;
-		node->next = nullptr;
-		keystore->head = node;
-		keystore->tail = node;
-
-		//update length
-		keystore->length++;
-		return;
-	}
-
-	//add the new node to the tail of the list
-	keystore->tail->next = node;
-	node->previous = keystore->tail;
-	node->next = nullptr;
-	keystore->tail = node;
-
-	//update length
-	keystore->length++;
+HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode() {
+	this->init();
 }
 
-return_status create_and_populate_node(
-		header_and_message_keystore_node ** const new_node,
-		const int64_t expiration_date,
-		const Buffer * const header_key,
-		const Buffer * const message_key) noexcept __attribute__((warn_unused_result));
-return_status create_and_populate_node(
-		header_and_message_keystore_node ** const new_node,
-		const int64_t expiration_date,
-		const Buffer * const header_key,
-		const Buffer * const message_key) noexcept {
-	return_status status = return_status_init();
-
-	//check buffer sizes
-	if ((message_key->content_length != MESSAGE_KEY_SIZE)
-			|| (header_key->content_length != HEADER_KEY_SIZE)) {
-		THROW(INVALID_INPUT, "Invalid input to populate_node.");
-	}
-
-	*new_node = create_node();
-	THROW_on_failed_alloc(*new_node);
-
-	//set keys and expiration date
-	(*new_node)->expiration_date = expiration_date;
-	{
-		int status_int = (*new_node)->message_key->cloneFrom(message_key);
-		if (status_int != 0) {
-			THROW(BUFFER_ERROR, "Failed to copy message key.");
-		}
-	}
-	{
-		int status_int = (*new_node)->header_key->cloneFrom(header_key);
-		if (status_int != 0) {
-			THROW(BUFFER_ERROR, "Failed to copy header key.");
-		}
-	}
-
-cleanup:
-	on_error {
-		if (new_node != nullptr) {
-			sodium_free_and_null_if_valid(*new_node);
-		}
-	}
-
-	return status;
+HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key) {
+	this->fill(header_key, message_key, time(nullptr) + EXPIRATION_TIME);
 }
 
-//add a message key to the keystore
-//NOTE: The entire keys are copied, not only the pointer
-return_status header_and_message_keystore_add(
-		header_and_message_keystore *keystore,
-		const Buffer * const message_key,
-		const Buffer * const header_key) noexcept {
-	return_status status = return_status_init();
-
-	header_and_message_keystore_node *new_node = nullptr;
-
-	int64_t expiration_date = time(nullptr) + EXPIRATION_TIME;
-
-	status = create_and_populate_node(&new_node, expiration_date, header_key, message_key);
-	THROW_on_error(INIT_ERROR, "Failed to populate node.")
-
-	add_node(keystore, new_node);
-
-cleanup:
-	on_error {
-		sodium_free_and_null_if_valid(new_node);
-	}
-	return status;
+HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date) {
+	this->fill(header_key, message_key, expiration_date);
 }
 
-//remove a set of header and message keys from the keystore
-void header_and_message_keystore_remove(header_and_message_keystore *keystore, header_and_message_keystore_node *node) noexcept {
-	if (node == nullptr) {
-		return;
-	}
-
-	if (node->next != nullptr) { //node is not the tail
-		node->next->previous = node->previous;
-	} else { //node ist the tail
-		keystore->tail = node->previous;
-	}
-	if (node->previous != nullptr) { //node ist not the head
-		node->previous->next = node->next;
-	} else { //node is the head
-		keystore->head = node->next;
-	}
-
-	//free node and overwrite with zero
-	sodium_free_and_null_if_valid(node);
-
-	//update length
-	keystore->length--;
+HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const HeaderAndMessageKeyStoreNode& node) {
+	this->fill(node.header_key, node.message_key, node.expiration_date);
 }
 
-//clear the entire keystore
-void header_and_message_keystore_clear(header_and_message_keystore *keystore) noexcept {
-	while (keystore->length > 0) {
-		header_and_message_keystore_remove(keystore, keystore->head);
-	}
+HeaderAndMessageKeyStoreNode& HeaderAndMessageKeyStoreNode::operator=(HeaderAndMessageKeyStoreNode&& node) {
+	this->fill(node.header_key, node.message_key, node.expiration_date);
+	return *this;
 }
 
-static return_status header_and_message_keystore_node_export(header_and_message_keystore_node * const node, KeyBundle ** const bundle) noexcept {
-	return_status status = return_status_init();
+HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const KeyBundle& key_bundle) {
+	this->init();
 
-	Key *header_key = nullptr;
-	Key *message_key = nullptr;
-
-	//check input
-	if ((node == nullptr) || (bundle == nullptr)) {
-		THROW(INVALID_INPUT, "Invalid input to header_and_message_keystore_node_export.");
+	//import the header key
+	if ((key_bundle.header_key == nullptr)
+		|| (key_bundle.header_key->key.data == nullptr)
+		|| (key_bundle.header_key->key.len != HEADER_KEY_SIZE)) {
+		throw MolchException(PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect header key.");
+	}
+	if (this->header_key.cloneFromRaw(key_bundle.header_key->key.data, key_bundle.header_key->key.len) != 0) {
+		throw MolchException(BUFFER_ERROR, "Failed to clone header key.");
 	}
 
-	//allocate the buffers
-	//key bundle
-	*bundle = (KeyBundle*)zeroed_malloc(sizeof(KeyBundle));
-	THROW_on_failed_alloc(*bundle);
-	key_bundle__init(*bundle);
+	//import the message key
+	if ((key_bundle.message_key == nullptr)
+		|| (key_bundle.message_key->key.data == nullptr)
+		|| (key_bundle.message_key->key.len != MESSAGE_KEY_SIZE)) {
+		throw MolchException(PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect message key.");
+	}
+	if (this->message_key.cloneFromRaw(key_bundle.message_key->key.data, key_bundle.message_key->key.len) != 0) {
+		throw MolchException(BUFFER_ERROR, "Failed to clone message key.");
+	}
+
+	//import the expiration date
+	if (!key_bundle.has_expiration_time) {
+		throw MolchException(PROTOBUF_MISSING_ERROR, "KeyBundle has no expiration time.");
+	}
+	this->expiration_date = static_cast<int64_t>(key_bundle.expiration_time);
+}
+
+std::unique_ptr<KeyBundle,KeyBundleDeleter> HeaderAndMessageKeyStoreNode::exportProtobuf() {
+	auto key_bundle = std::unique_ptr<KeyBundle,KeyBundleDeleter>(reinterpret_cast<KeyBundle*>(throwing_zeroed_malloc(sizeof(KeyBundle))));
+	*key_bundle = KEY_BUNDLE__INIT;
 
 	//header key
-	header_key = (Key*)zeroed_malloc(sizeof(Key));
-	THROW_on_failed_alloc(header_key);
-	key__init(header_key);
-	header_key->key.data = (unsigned char*)zeroed_malloc(HEADER_KEY_SIZE);
-	THROW_on_failed_alloc(header_key->key.data);
+	key_bundle->header_key = reinterpret_cast<Key*>(throwing_zeroed_malloc(sizeof(Key)));
+	*key_bundle->header_key = KEY__INIT;
+	key_bundle->header_key->key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(HEADER_KEY_SIZE));
 
 	//message key
-	message_key = (Key*)zeroed_malloc(sizeof(Key));
-	THROW_on_failed_alloc(message_key);
-	key__init(message_key);
-	message_key->key.data = (unsigned char*)zeroed_malloc(MESSAGE_KEY_SIZE);
-	THROW_on_failed_alloc(message_key->key.data);
+	key_bundle->message_key = reinterpret_cast<Key*>(throwing_zeroed_malloc(sizeof(Key)));
+	*key_bundle->message_key = KEY__INIT;
+	key_bundle->message_key->key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(MESSAGE_KEY_SIZE));
 
-	//backup header key
-	int status_int;
-	status_int = node->header_key->cloneToRaw(header_key->key.data, HEADER_KEY_SIZE);
-	if (status_int != 0) {
-		THROW(BUFFER_ERROR, "Failed to copy header_key to backup.");
+	//export the header key
+	if (this->header_key.cloneToRaw(key_bundle->header_key->key.data, HEADER_KEY_SIZE) != 0) {
+		throw MolchException(BUFFER_ERROR, "Failed to export header key.");
 	}
-	header_key->key.len = node->header_key->content_length;
+	key_bundle->header_key->key.len = this->header_key.content_length;
 
-	//backup message key
-	status_int = node->message_key->cloneToRaw(message_key->key.data, HEADER_KEY_SIZE);
-	if (status_int != 0) {
-		THROW(BUFFER_ERROR, "Failed to copy message_key to backup.");
+	//export the message key
+	if (this->message_key.cloneToRaw(key_bundle->message_key->key.data, MESSAGE_KEY_SIZE) != 0) {
+		throw MolchException(BUFFER_ERROR, "Failed to export message key.");
 	}
-	message_key->key.len = node->message_key->content_length;
+	key_bundle->message_key->key.len = this->message_key.content_length;
+
 
 	//set expiration time
-	(*bundle)->expiration_time = (uint64_t) node->expiration_date;
-	(*bundle)->has_expiration_time = true;
+	key_bundle->expiration_time = static_cast<uint64_t>(this->expiration_date);
+	key_bundle->has_expiration_time = true;
 
-	//fill key bundle
-	(*bundle)->header_key = header_key;
-	(*bundle)->message_key = message_key;
-
-cleanup:
-	on_error {
-		if ((bundle != nullptr) && (*bundle != nullptr)) {
-			key_bundle__free_unpacked(*bundle, &protobuf_c_allocators);
-			*bundle = nullptr;
-		} else {
-			if (header_key != nullptr) {
-				key__free_unpacked(header_key, &protobuf_c_allocators);
-				header_key = nullptr;
-			}
-
-			if (message_key != nullptr) {
-				key__free_unpacked(message_key, &protobuf_c_allocators);
-				message_key = nullptr;
-			}
-		}
-	}
-
-	return status;
+	return key_bundle;
 }
 
-return_status header_and_message_keystore_export(
-		const header_and_message_keystore * const store,
-		KeyBundle *** const key_bundles,
-		size_t * const bundle_size) noexcept {
-	return_status status = return_status_init();
+std::string HeaderAndMessageKeyStoreNode::print() const {
+	std::string output{""};
 
-	//check input
-	if ((store == nullptr) || (key_bundles == nullptr) || (bundle_size == nullptr)) {
-		THROW(INVALID_INPUT, "Invalid input to header_and_message_keystore_export.");
-	}
+	output += "Header key:\n" + this->header_key.toHex() + "\n";
+	output += "Message key:\n" + this->message_key.toHex() + "\n";
 
-	if (store->length != 0) {
-		*key_bundles = (KeyBundle**)zeroed_malloc(store->length * sizeof(KeyBundle));
-		THROW_on_failed_alloc(*key_bundles);
-		//initialize with nullptr pointers
-		std::fill(*key_bundles, *key_bundles + store->length, nullptr);
-	} else {
-		*key_bundles = nullptr;
-	}
-
-	{
-		size_t position;
-		header_and_message_keystore_node *node = nullptr;
-		for (position = 0, node = store->head;
-				(position < store->length) && (node != nullptr);
-				position++, node = node->next) {
-			status = header_and_message_keystore_node_export(node, &(*key_bundles)[position]);
-			THROW_on_error(EXPORT_ERROR, "Failed to export header and message keystore node.");
-		}
-	}
-
-	*bundle_size = store->length;
-
-cleanup:
-	on_error {
-		if ((key_bundles != nullptr) && (*key_bundles != nullptr) && (store != nullptr)) {
-			for (size_t i = 0; i < store->length; i++) {
-				if ((*key_bundles)[i] != nullptr) {
-					key_bundle__free_unpacked((*key_bundles)[i], &protobuf_c_allocators);
-					(*key_bundles)[i] = nullptr;
-				}
-			}
-
-			zeroed_free_and_null_if_valid(*key_bundles);
-		}
-
-		if (bundle_size != nullptr) {
-			*bundle_size = 0;
-		}
-	}
-
-	return status;
+	return output;
 }
 
-return_status header_and_message_keystore_import(
-		header_and_message_keystore * const store,
-		KeyBundle ** const key_bundles,
-		const size_t bundles_size) noexcept {
-	return_status status =  return_status_init();
-
-	header_and_message_keystore_node *current_node = nullptr;
-
-	if ((store != nullptr) && (bundles_size == 0) && (key_bundles == nullptr)) {
-		//valid empty keystore
-		goto cleanup;
-	}
-
-	//check input
-	if ((store == nullptr)
-			|| ((bundles_size == 0) && (key_bundles != nullptr))
-			|| ((bundles_size > 0) && (key_bundles == nullptr))) {
-		THROW(INVALID_INPUT, "Invalid input to header_and_message_keystore_import.");
-	}
-
-	header_and_message_keystore_init(store);
-
-	//add all the keys
-	for (size_t i = 0; i < bundles_size; i++) {
-		KeyBundle *current_key_bundle = key_bundles[i];
-
-		if (!current_key_bundle->has_expiration_time) {
-			THROW(PROTOBUF_MISSING_ERROR, "Key bundle has no expiration time.");
-		}
-
-		//create buffers that point to the data in the protobuf struct
-		Buffer header_key(current_key_bundle->header_key->key.data, current_key_bundle->message_key->key.len);
-		Buffer message_key(current_key_bundle->message_key->key.data, current_key_bundle->message_key->key.len);
-
-		//create new node
-		status = create_and_populate_node(&current_node, (int64_t)current_key_bundle->expiration_time, &header_key, &message_key);
-		THROW_on_error(CREATION_ERROR, "Failed to create header_and_message_keystore_node.");
-
-		add_node(store, current_node);
-		current_node = nullptr; //set to nullptr because we don't have the ownership anymore
-	}
-
-cleanup:
-	on_error {
-		if (store != nullptr) {
-			header_and_message_keystore_clear(store);
-		}
-
-		if (current_node != nullptr) {
-			sodium_free_and_null_if_valid(current_node);
-		}
-	}
-
-	return status;
+void HeaderAndMessageKeyStore::add(const Buffer& header_key, const Buffer& message_key) {
+	this->keys.push_back(HeaderAndMessageKeyStoreNode(header_key, message_key));
 }
 
+void HeaderAndMessageKeyStore::exportProtobuf(KeyBundle**& key_bundles, size_t& bundles_size) {
+	if (this->keys.size() == 0) {
+		key_bundles = nullptr;
+		bundles_size = 0;
+		return;
+	}
+
+	auto bundles = std::vector<std::unique_ptr<KeyBundle,KeyBundleDeleter>>();
+	bundles.reserve(this->keys.size());
+
+	//export all buffers
+	for (auto&& key : this->keys) {
+		bundles.push_back(key.exportProtobuf());
+	}
+
+	//allocate output array
+	key_bundles = reinterpret_cast<KeyBundle**>(throwing_zeroed_malloc(this->keys.size() * sizeof(KeyBundle*)));
+	size_t index = 0;
+	for (auto&& bundle : bundles) {
+		key_bundles[index] = bundle.release();
+		index++;
+	}
+	bundles_size = this->keys.size();
+}
+
+HeaderAndMessageKeyStore::HeaderAndMessageKeyStore(KeyBundle** const & key_bundles, const size_t bundles_size) {
+	for (size_t index = 0; index < bundles_size; index++) {
+		if (key_bundles[index] == nullptr) {
+			throw MolchException(PROTOBUF_MISSING_ERROR, "Invalid KeyBundle.");
+		}
+
+		this->keys.push_back(HeaderAndMessageKeyStoreNode(*key_bundles[index]));
+	}
+}
+
+std::string HeaderAndMessageKeyStore::print() const {
+	std::string output{""};
+
+	output += "KEYSTORE-START-----------------------------------------------------------------\n";
+	output += "Length: " + std::to_string(this->keys.size()) + "\n\n";
+
+	size_t index = 0;
+	for (const auto& key_bundle : this->keys) {
+		output += "Entry " + std::to_string(index) + '\n';
+		index++;
+		output += key_bundle.print() + '\n';
+	}
+
+	output += "KEYSTORE-END-------------------------------------------------------------------\n";
+
+	return output;
+}
