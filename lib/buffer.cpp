@@ -121,7 +121,25 @@ Buffer::~Buffer() noexcept {
 	}
 }
 
-Buffer& Buffer::operator=(Buffer&& buffer) noexcept {
+Buffer& Buffer::copy(const Buffer& buffer) noexcept {
+	this->buffer_length = buffer.buffer_length;
+	this->manage_memory = true;
+	this->readonly = buffer.readonly;
+	this->is_valid = buffer.is_valid;
+	this->deallocator = nullptr;
+	this->content_length = buffer.content_length;
+
+	try {
+		this->content = new unsigned char[buffer.buffer_length];
+	} catch (const std::bad_alloc& exception) {
+		this->is_valid = false;
+	}
+	std::copy(buffer.content, buffer.content + buffer.content_length, this->content);
+
+	return *this;
+}
+
+Buffer& Buffer::move(Buffer&& buffer) noexcept {
 	//copy the buffer
 	unsigned char& source_reference = reinterpret_cast<unsigned char&>(buffer);
 	unsigned char& destination_reference = reinterpret_cast<unsigned char&>(*this);
@@ -137,6 +155,22 @@ Buffer& Buffer::operator=(Buffer&& buffer) noexcept {
 	buffer.content = nullptr;
 
 	return *this;
+}
+
+Buffer& Buffer::operator=(Buffer&& buffer) noexcept {
+	return this->move(std::move(buffer));
+}
+
+Buffer& Buffer::operator=(const Buffer& buffer) noexcept {
+	return this->copy(buffer);
+}
+
+Buffer::Buffer(Buffer&& buffer) {
+	this->move(std::move(buffer));
+}
+
+Buffer::Buffer(const Buffer& buffer) {
+	this->copy(buffer);
 }
 
 size_t Buffer::getBufferLength() const noexcept {

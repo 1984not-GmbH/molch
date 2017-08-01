@@ -33,11 +33,17 @@ private:
 	bool is_valid; //has an error happened on initialization?
 	void (*deallocator)(void*); //a deallocator if the buffer has been allocated with a custom allocator
 
+	Buffer& copy(const Buffer& buffer) noexcept;
+	Buffer& move(Buffer&& buffer) noexcept;
+
 public:
 	size_t content_length;
 	unsigned char *content;
 
 	Buffer() noexcept; // does nothing
+	/* move and copy constructors */
+	Buffer(Buffer&& buffer);
+	Buffer(const Buffer& buffer);
 	Buffer(const std::string& string) noexcept;
 	Buffer(const size_t buffer_length, const size_t content_length) noexcept;
 	Buffer(unsigned char * const content, const size_t buffer_length) noexcept;
@@ -47,6 +53,8 @@ public:
 
 	//move assignment
 	Buffer& operator=(Buffer&& buffer) noexcept;
+	//copy assignment
+	Buffer& operator=(const Buffer& buffer) noexcept;
 
 	/*
 	 * initialize a buffer with a pointer to the character array.
