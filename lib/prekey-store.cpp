@@ -22,564 +22,370 @@
 #include <sodium.h>
 #include <algorithm>
 #include <climits>
+#include <iostream>
 
 #include "prekey-store.h"
 #include "common.h"
+#include "molch-exception.h"
 
-static const int64_t PREKEY_EXPIRATION_TIME = 3600 * 24 * 31; //one month
-static const int64_t DEPRECATED_PREKEY_EXPIRATION_TIME = 3600; //one hour
+constexpr int64_t PREKEY_EXPIRATION_TIME = 3600 * 24 * 31; //one month
+constexpr int64_t DEPRECATED_PREKEY_EXPIRATION_TIME = 3600; //one hour
 
-void PrekeyStoreNode::init() noexcept {
+void PrekeyStoreNode::init() {
 	this->private_key.init(this->private_key_storage, PRIVATE_KEY_SIZE, 0);
 	this->public_key.init(this->public_key_storage, PUBLIC_KEY_SIZE, 0);
-	this->next = nullptr;
 	this->expiration_date = 0;
 }
 
-PrekeyStoreNode* PrekeyStoreNode::getNext() noexcept {
-	return this->next;
+void PrekeyStoreNode::fill(const Buffer& public_key, const Buffer& private_key, int64_t expiration_date) {
+	this->init();
+	this->expiration_date = expiration_date;
+	if (this->public_key.cloneFrom(&public_key) != 0) {
+		throw MolchException(BUFFER_ERROR, "Failed to copy public key.");
+	}
+	if (this->private_key.cloneFrom(&private_key) != 0) {
+		throw MolchException(BUFFER_ERROR, "Failed to copy private key.");
+	}
 }
 
+PrekeyStoreNode::PrekeyStoreNode() {
+	this->init();
+}
 
-/*
- * Initialise a new keystore. Generates all the keys.
- */
-return_status PrekeyStore::create(PrekeyStore*& store) noexcept {
-	return_status status = return_status_init();
+PrekeyStoreNode::PrekeyStoreNode(const Buffer& public_key, const Buffer& private_key, int64_t expiration_date) {
+	this->fill(public_key, private_key, expiration_date);
+}
 
-	store = (PrekeyStore*)sodium_malloc(sizeof(PrekeyStore));
-	THROW_on_failed_alloc(store);
+PrekeyStoreNode& PrekeyStoreNode::copy(const PrekeyStoreNode& node) {
+	this->fill(node.public_key, node.private_key, node.expiration_date);
 
-	//set expiration date to the past --> rotate will create new keys
-	store->oldest_expiration_date = 0;
-	store->oldest_deprecated_expiration_date = 0;
+	return *this;
+}
 
-	store->deprecated_prekeys = nullptr;
+PrekeyStoreNode& PrekeyStoreNode::move(PrekeyStoreNode&& node) {
+	return this->copy(node);
+}
 
-	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		store->prekeys[i].init();
+PrekeyStoreNode::PrekeyStoreNode(const PrekeyStoreNode& node) {
+	this->copy(node);
+}
 
-		store->prekeys[i].expiration_date = time(nullptr) + PREKEY_EXPIRATION_TIME;
-		if ((store->oldest_expiration_date == 0) || (store->prekeys[i].expiration_date < store->oldest_expiration_date)) {
-			store->oldest_expiration_date = store->prekeys[i].expiration_date;
+PrekeyStoreNode::PrekeyStoreNode(PrekeyStoreNode&& node) {
+	this->move(std::move(node));
+}
+
+PrekeyStoreNode& PrekeyStoreNode::operator=(const PrekeyStoreNode& node) {
+	return this->copy(node);
+}
+
+PrekeyStoreNode& PrekeyStoreNode::operator=(PrekeyStoreNode&& node) {
+	return this->move(std::move(node));
+}
+
+PrekeyStoreNode::PrekeyStoreNode(const Prekey& keypair) {
+	this->init();
+
+	//import private key
+	if ((keypair.private_key == nullptr)
+			|| (keypair.private_key->key.len != PRIVATE_KEY_SIZE)) {
+		throw MolchException(PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a private key.");
+	}
+	if (this->private_key.cloneFromRaw(keypair.private_key->key.data, keypair.private_key->key.len) != 0) {
+		throw MolchException(BUFFER_ERROR, "Failed to copy private key from protobuf.");
+	}
+
+	//import public key
+	if (keypair.public_key == nullptr) {
+		//public key is missing -> derive it from the private key
+		if (crypto_scalarmult_base(this->public_key.content, this->private_key.content) != 0) {
+			throw MolchException(KEYDERIVATION_FAILED, "Failed to derive public prekey from private one.");
 		}
-
-		//generate the keys
-		int status_int = 0;
-		status_int = crypto_box_keypair(
-				store->prekeys[i].public_key.content,
-				store->prekeys[i].private_key.content);
-		if (status_int != 0) {
-			THROW(KEYGENERATION_FAILED, "Failed to generate prekey pair.");
+		this->public_key.content_length = PUBLIC_KEY_SIZE;
+	} else if (keypair.public_key->key.len != PUBLIC_KEY_SIZE) {
+		throw MolchException(PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a public key.");
+	} else {
+		if (this->public_key.cloneFromRaw(keypair.public_key->key.data, keypair.public_key->key.len) != 0) {
+			throw MolchException(BUFFER_ERROR, "Failed to copy public key from protobuf.");
 		}
-
-		//set the key sizes
-		store->prekeys[i].public_key.content_length = PUBLIC_KEY_SIZE;
-		store->prekeys[i].private_key.content_length = PRIVATE_KEY_SIZE;
 	}
 
-cleanup:
-	on_error {
-		sodium_free_and_null_if_valid(store);
+	//import expiration_date
+	if (!keypair.has_expiration_time) {
+		throw MolchException(PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing an expiration time.");
 	}
-
-	return status;
+	this->expiration_date = static_cast<int64_t>(keypair.expiration_time);
 }
 
-void PrekeyStore::addNodeToDeprecated(PrekeyStoreNode& deprecated_node) noexcept {
-	deprecated_node.next = this->deprecated_prekeys;
-	this->deprecated_prekeys = &deprecated_node;
-}
+std::unique_ptr<Prekey,PrekeyDeleter> PrekeyStoreNode::exportProtobuf() {
+	auto prekey = std::unique_ptr<Prekey,PrekeyDeleter>(reinterpret_cast<Prekey*>(throwing_zeroed_malloc(sizeof(Prekey))));
+	prekey__init(prekey.get());
 
-/*
- * Helper that puts a prekey pair in the deprecated list and generates a new one.
- */
-int PrekeyStore::deprecate(const size_t index) noexcept {
-	int status = 0;
-	//create a new node
-	PrekeyStoreNode *deprecated_node = (PrekeyStoreNode*)sodium_malloc(sizeof(PrekeyStoreNode));
-	if (deprecated_node == nullptr) {
-		status = -1;
-		goto cleanup;
+	//export the private key
+	prekey->private_key = reinterpret_cast<Key*>(throwing_zeroed_malloc(sizeof(Key)));
+	key__init(prekey->private_key);
+	prekey->private_key->key.data = reinterpret_cast<uint8_t*>(throwing_zeroed_malloc(PRIVATE_KEY_SIZE));
+	prekey->private_key->key.len = PRIVATE_KEY_SIZE;
+	if (this->private_key.cloneToRaw(prekey->private_key->key.data, prekey->private_key->key.len) != 0) {
+		throw MolchException(BUFFER_ERROR, "Failed to copy private key to protobuf.");
 	}
 
-	//initialise the deprecated node
-	deprecated_node->init();
-	deprecated_node->expiration_date = time(nullptr) + DEPRECATED_PREKEY_EXPIRATION_TIME;
+	//export the public key
+	prekey->public_key = reinterpret_cast<Key*>(throwing_zeroed_malloc(sizeof(Key)));
+	key__init(prekey->public_key);
+	prekey->public_key->key.data = reinterpret_cast<uint8_t*>(throwing_zeroed_malloc(PUBLIC_KEY_SIZE));
+	prekey->public_key->key.len = PUBLIC_KEY_SIZE;
+	if (this->public_key.cloneToRaw(prekey->public_key->key.data, prekey->public_key->key.len) != 0) {
+		throw MolchException(BUFFER_ERROR, "Failed to copy public key to protobuf.");
+	}
 
-	//copy the node over
-	status = deprecated_node->public_key.cloneFrom(&this->prekeys[index].public_key);
+	//export the expiration date
+	prekey->expiration_time = static_cast<uint64_t>(this->expiration_date);
+	prekey->has_expiration_time = true;
+
+	return prekey;
+}
+
+void PrekeyStoreNode::generate() {
+	if (this->public_key.content == nullptr) {
+		throw MolchException(INVALID_INPUT, "public key is nullptr");
+	}
+	if (this->public_key.content == nullptr) {
+		throw MolchException(INVALID_INPUT, "private key is nullptr");
+	}
+	int status = crypto_box_keypair(
+		this->public_key.content,
+		this->private_key.content);
 	if (status != 0) {
-		goto cleanup;
+		throw MolchException(KEYGENERATION_FAILED, "Failed to generate prekey pair.");
 	}
-	status = deprecated_node->private_key.cloneFrom(&this->prekeys[index].private_key);
-	if (status != 0) {
-		goto cleanup;
-	}
-
-	//add it to the list of deprecated keys
-	if ((this->oldest_deprecated_expiration_date == 0) || (this->oldest_deprecated_expiration_date > deprecated_node->expiration_date)) {
-		this->oldest_deprecated_expiration_date = deprecated_node->expiration_date;
-	}
-	this->addNodeToDeprecated(*deprecated_node);
-
-	//generate a new key
-	status = crypto_box_keypair(
-			this->prekeys[index].public_key.content,
-			this->prekeys[index].public_key.content);
-	if (status != 0) {
-		goto cleanup;
-	}
-	this->prekeys[index].expiration_date = time(nullptr) + PREKEY_EXPIRATION_TIME;
-
-cleanup:
-	if (status != 0) {
-		sodium_free_and_null_if_valid(deprecated_node);
-	}
-
-	return status;
+	this->public_key.content_length = PUBLIC_KEY_SIZE;
+	this->private_key.content_length = PRIVATE_KEY_SIZE;
+	this->expiration_date = time(nullptr) + PREKEY_EXPIRATION_TIME;
 }
 
-/*
- * Get a private prekey from it's public key. This will automatically
- * deprecate the requested prekey put it in the outdated key store and
- * generate a new one.
- */
-return_status PrekeyStore::getPrekey(
-		Buffer& public_key, //input
-		Buffer& private_key) noexcept { //output
-	return_status status = return_status_init();
-
-	PrekeyStoreNode *found_prekey = nullptr;
-	bool deprecated = false;
-
-	//check buffers sizes
-	if ((public_key.content_length != PUBLIC_KEY_SIZE) || (private_key.getBufferLength() < PRIVATE_KEY_SIZE)) {
-		THROW(INVALID_INPUT, "Invalid input for PrekeyStore_get_prekey.");
+void PrekeyStore::init() {
+	this->oldest_expiration_date = 0;
+	this->oldest_deprecated_expiration_date = 0;
+	this->prekeys = std::unique_ptr<std::array<PrekeyStoreNode,PREKEY_AMOUNT>,SodiumDeleter<std::array<PrekeyStoreNode,PREKEY_AMOUNT>>>(reinterpret_cast<std::array<PrekeyStoreNode,PREKEY_AMOUNT>*>(throwing_sodium_malloc(sizeof(std::array<PrekeyStoreNode,PREKEY_AMOUNT>))));
+	for (auto&& prekey : *prekeys) {
+		prekey.init();
 	}
-
-	//search for the prekey
-	size_t i;
-	for (i = 0; i < PREKEY_AMOUNT; i++) {
-		if (public_key.compare(&this->prekeys[i].public_key) == 0) {
-			found_prekey = &(this->prekeys[i]);
-			break;
-		}
-	}
-
-	//if not found, search in the list of deprecated keys.
-	if (found_prekey == nullptr) {
-		deprecated = true;
-		PrekeyStoreNode *next = this->deprecated_prekeys;
-		while (next != nullptr) {
-			if (public_key.compare(&next->public_key) == 0) {
-				found_prekey = next;
-				break;
-			}
-			next = next->next;
-		}
-	}
-
-	if (found_prekey == nullptr) {
-		private_key.content_length = 0;
-		THROW(NOT_FOUND, "No matching prekey found.");
-	}
-
-	//copy the private key
-	if (private_key.cloneFrom(&found_prekey->private_key) != 0) {
-		private_key.content_length = 0;
-		THROW(BUFFER_ERROR, "Failed to copy private key.");
-	}
-
-	//if the key wasn't in the deprectated list already, deprecate it
-	if (!deprecated) {
-		if (this->deprecate(i) != 0) {
-			THROW(GENERIC_ERROR, "Failed to deprecate prekey.");
-		}
-	}
-
-cleanup:
-	return status;
 }
 
-/*
- * Generate a list containing all public prekeys.
- * (this list can then be stored on a public server).
- */
-return_status PrekeyStore::list(
-		Buffer& list) noexcept { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
-	return_status status = return_status_init();
+void PrekeyStore::generateKeys() {
+	for (auto&& key : *this->prekeys) {
+		key.generate();
+	}
+	this->updateExpirationDate();
+}
 
+PrekeyStore::PrekeyStore() {
+	this->init();
+	this->generateKeys();
+}
+
+PrekeyStore::PrekeyStore(
+		Prekey ** const& keypairs,
+		const size_t keypairs_length,
+		Prekey ** const& deprecated_keypairs,
+		const size_t deprecated_keypairs_length) {
 	//check input
-	if ((list.getBufferLength() < (PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
-		THROW(INVALID_INPUT, "Invalid input to PrekeyStore_list.");
+	if ((keypairs == nullptr)
+			|| (keypairs_length != PREKEY_AMOUNT)
+			|| ((deprecated_keypairs_length == 0) && (deprecated_keypairs != nullptr))
+			|| ((deprecated_keypairs_length > 0) && (deprecated_keypairs == nullptr))) {
+		throw MolchException(INVALID_INPUT, "Invalid input to PrekeyStore_import");
 	}
 
-	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		int status_int = 0;
-		status_int = list.copyFrom(
-				PUBLIC_KEY_SIZE * i,
-				&this->prekeys[i].public_key,
+	this->init();
+
+	for (size_t index = 0; index < keypairs_length; index++) {
+		if (keypairs[index] == nullptr) {
+			throw MolchException(PROTOBUF_MISSING_ERROR, "Prekey missing.");
+		}
+		(*this->prekeys)[index] = PrekeyStoreNode(*keypairs[index]);
+	}
+
+	for (size_t index = 0; index < deprecated_keypairs_length; index++) {
+		if (deprecated_keypairs[index] == nullptr) {
+			throw MolchException(PROTOBUF_MISSING_ERROR, "Deprecated prekey missing.");
+		}
+		this->deprecated_prekeys.push_back(PrekeyStoreNode(*deprecated_keypairs[index]));
+	}
+
+	this->updateExpirationDate();
+	this->updateDeprecatedExpirationDate();
+}
+
+static bool compare_expiration_dates(const PrekeyStoreNode& a, const PrekeyStoreNode& b) {
+	if (a.expiration_date < b.expiration_date) {
+		return true;
+	}
+
+	return false;
+}
+
+void PrekeyStore::updateExpirationDate() {
+	const auto& oldest = std::min_element(this->prekeys->cbegin(), this->prekeys->cend(), compare_expiration_dates);
+	this->oldest_expiration_date = oldest->expiration_date;
+}
+
+void PrekeyStore::updateDeprecatedExpirationDate() {
+	if (this->deprecated_prekeys.empty()) {
+		this->oldest_deprecated_expiration_date = 0;
+		return;
+	}
+
+	const auto& oldest = std::min_element(this->deprecated_prekeys.cbegin(), this->deprecated_prekeys.cend(), compare_expiration_dates);
+	this->oldest_deprecated_expiration_date = oldest->expiration_date;
+}
+
+void PrekeyStore::deprecate(const size_t index) {
+	auto& at_index = (*this->prekeys)[index];
+	at_index.expiration_date = time(nullptr) + DEPRECATED_PREKEY_EXPIRATION_TIME;
+	this->deprecated_prekeys.push_back(at_index);
+
+	this->updateExpirationDate();
+	this->updateDeprecatedExpirationDate();
+
+	//generate new prekey
+	at_index.generate();
+}
+
+void PrekeyStore::getPrekey(const Buffer& public_key, Buffer& private_key) {
+	//check buffers sizes
+	if (!public_key.contains(PUBLIC_KEY_SIZE) || !private_key.fits(PRIVATE_KEY_SIZE)) {
+		throw MolchException(INVALID_INPUT, "Invalid input to PrekeyStore::getPrekey.");
+	}
+
+	//lambda for comparing PrekeyNodes to public_key
+	auto key_comparer = [&public_key] (const PrekeyStoreNode& node) -> bool {
+		return public_key == node.public_key;
+	};
+
+	auto found_prekey = std::find_if(this->prekeys->cbegin(), this->prekeys->cend(), key_comparer);
+	if (found_prekey != this->prekeys->end()) {
+		//copy the private key
+		if (private_key.cloneFrom(&found_prekey->private_key) != 0) {
+			throw MolchException(BUFFER_ERROR, "Failed to clone private key from prekey.");
+		}
+
+		//and deprecate key
+		size_t index = static_cast<size_t>(found_prekey - this->prekeys->begin());
+		this->deprecate(index);
+
+		return;
+	}
+
+	auto found_deprecated_prekey = std::find_if(this->deprecated_prekeys.cbegin(), this->deprecated_prekeys.cend(), key_comparer);
+	if (found_deprecated_prekey == this->deprecated_prekeys.end()) {
+		private_key.content_length = 0;
+		throw MolchException(NOT_FOUND, "No matching prekey found.");
+	}
+
+	if (private_key.cloneFrom(&found_deprecated_prekey->private_key) != 0) {
+		throw MolchException(BUFFER_ERROR, "Failed to clone private key from deprecated prekey.");
+	}
+}
+
+void PrekeyStore::list(Buffer& list) { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+	//check input
+	if (!list.fits(PREKEY_AMOUNT * PUBLIC_KEY_SIZE)) {
+		throw MolchException(INVALID_INPUT, "Invalid input to PrekeyStore_list.");
+	}
+
+	size_t index = 0;
+	for (const auto& key_bundle : *this->prekeys) {
+		int status = list.copyFrom(
+				PUBLIC_KEY_SIZE * index,
+				&key_bundle.public_key,
 				0,
 				PUBLIC_KEY_SIZE);
-		if (status_int != 0) {
-			list.content_length = 0;
-			THROW(BUFFER_ERROR, "Failed to copy public prekey.");
+		if (status != 0) {
+			throw MolchException(BUFFER_ERROR, "Failed to copy public prekey.");
 		}
+		index++;
 	}
-
-cleanup:
-	return status;
 }
 
-/*
- * Automatically deprecate old keys and generate new ones
- * and THROW away deprecated ones that are too old.
- */
-return_status PrekeyStore::rotate() noexcept {
-	return_status status = return_status_init();
-
+void PrekeyStore::rotate() {
 	int64_t current_time = time(nullptr);
 
 	//Is the expiration date too far into the future?
 	if ((current_time + PREKEY_EXPIRATION_TIME) < this->oldest_expiration_date) {
 		//TODO: Is this correct behavior?
 		//Set the expiration date of everything to the current time + PREKEY_EXPIRATION_TIME
-		for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-			this->prekeys[i].expiration_date = current_time + PREKEY_EXPIRATION_TIME;
+		for (auto&& prekey : *this->prekeys) {
+			prekey.expiration_date = current_time + PREKEY_EXPIRATION_TIME;
 		}
+	}
 
-		PrekeyStoreNode *next = this->deprecated_prekeys;
-		while (next != nullptr) {
-			next->expiration_date = current_time + DEPRECATED_PREKEY_EXPIRATION_TIME;
-			next = next->next;
+	//Is the deprecated expiration date too far into the future?
+	if ((current_time + DEPRECATED_PREKEY_EXPIRATION_TIME) < this->oldest_deprecated_expiration_date) {
+		//Set the expiration date of everything to the current time + DEPRECATED_PREKEY_EXPIRATION_TIME
+		for (auto&& prekey : this->deprecated_prekeys) {
+			prekey.expiration_date = current_time + DEPRECATED_PREKEY_EXPIRATION_TIME;
 		}
-
-		goto cleanup; //TODO Doesn't this skip the deprecated ones?
 	}
 
 	//At least one outdated prekey
-	{
-		int64_t new_oldest_expiration_date = current_time + PREKEY_EXPIRATION_TIME;
-		if (this->oldest_expiration_date < current_time) {
-			for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-				if (this->prekeys[i].expiration_date < current_time) {
-					if (this->deprecate(i) != 0) {
-						THROW(GENERIC_ERROR, "Failed to deprecate key.");
-					}
-				} else if (this->prekeys[i].expiration_date < new_oldest_expiration_date) {
-					new_oldest_expiration_date = this->prekeys[i].expiration_date;
-				}
+	if (this->oldest_expiration_date < current_time) {
+		for (auto&& prekey : *this->prekeys) {
+			if (prekey.expiration_date < current_time) {
+				size_t index = static_cast<size_t>(&prekey - &(*this->prekeys->begin()));
+				this->deprecate(index);
 			}
 		}
-		this->oldest_expiration_date = new_oldest_expiration_date;
-	}
-
-	//Is the deprecated oldest expiration date too far into the future?
-	if ((current_time + DEPRECATED_PREKEY_EXPIRATION_TIME) < this->oldest_deprecated_expiration_date) {
-		//TODO: Is this correct behavior?
-		//Set the expiration date of everything to the current time + DEPRECATED_PREKEY_EXPIRATION_TIME
-		PrekeyStoreNode *next = this->deprecated_prekeys;
-		while (next != nullptr) {
-			next->expiration_date = current_time + DEPRECATED_PREKEY_EXPIRATION_TIME;
-			next = next->next;
-		}
-
-		goto cleanup;
 	}
 
 	//At least one key to be removed
-	{
-		int64_t new_oldest_deprecated_expiration_date = current_time + DEPRECATED_PREKEY_EXPIRATION_TIME;
-		if ((this->deprecated_prekeys != nullptr) && (this->oldest_deprecated_expiration_date < current_time)) {
-			PrekeyStoreNode **last_pointer = &(this->deprecated_prekeys);
-			PrekeyStoreNode *next = this->deprecated_prekeys;
-			while(next != nullptr) {
-				if (next->expiration_date < current_time) {
-					*last_pointer = next->next;
-					sodium_free_and_null_if_valid(next);
-					next = *last_pointer;
-					continue;
-				} else if (next->expiration_date < new_oldest_deprecated_expiration_date) {
-					new_oldest_deprecated_expiration_date = next->expiration_date;
-				}
-
-				last_pointer = &(next->next);
-				next = next->next;
+	if (this->oldest_deprecated_expiration_date < current_time) {
+		for (size_t index = 0; index < this->deprecated_prekeys.size(); index++) {
+			auto& prekey = this->deprecated_prekeys[index];
+			if (prekey.expiration_date < current_time) {
+				this->deprecated_prekeys.erase(this->deprecated_prekeys.cbegin() + static_cast<ptrdiff_t>(index));
+				index--;
 			}
 		}
-	}
-
-cleanup:
-	return status;
-}
-
-void PrekeyStore::destroy() noexcept {
-	while (this->deprecated_prekeys != nullptr) {
-		PrekeyStoreNode *node = this->deprecated_prekeys;
-		this->deprecated_prekeys = node->next;
-		sodium_free_and_null_if_valid(node);
+		this->updateDeprecatedExpirationDate();
 	}
 }
 
-/*!
- * Calculate the number of deprecated prekeys
- * \return Number of deprecated prekeys.
- */
-size_t PrekeyStore::countDeprecated() noexcept {
-	size_t length = 0;
-	for (PrekeyStoreNode *node = this->deprecated_prekeys; node != nullptr; node = node->next, length++) {}
+template <class Container>
+static void export_keypairs(Container& container, Prekey**& keypairs, size_t& keypairs_length) {
+	if (container.size() == 0) {
+		keypairs = nullptr;
+		keypairs_length = 0;
+		return;
+	}
 
-	return length;
+	auto prekeys = std::vector<std::unique_ptr<Prekey,PrekeyDeleter>>();
+	prekeys.reserve(container.size());
+
+	//export all buffers
+	for (auto&& key : container) {
+		prekeys.push_back(key.exportProtobuf());
+	}
+
+	//allocate output array
+	keypairs = reinterpret_cast<Prekey**>(throwing_zeroed_malloc(container.size() * sizeof(Prekey*)));
+	size_t index = 0;
+	for (auto&& bundle : prekeys) {
+		keypairs[index] = bundle.release();
+		index++;
+	}
+	keypairs_length = container.size();
 }
 
-return_status PrekeyStoreNode::exportNode(Prekey*& keypair) noexcept {
-	return_status status = return_status_init();
-
-	Key *private_prekey = nullptr;
-	Key *public_prekey = nullptr;
-
-	//allocate and init the prekey protobuf struct
-	keypair = (Prekey*)zeroed_malloc(sizeof(Prekey));
-	THROW_on_failed_alloc(keypair);
-
-	prekey__init(keypair);
-
-	//allocate and init the key structs
-	private_prekey = (Key*)zeroed_malloc(sizeof(Key));
-	THROW_on_failed_alloc(private_prekey);
-	key__init(private_prekey);
-	public_prekey = (Key*)zeroed_malloc(sizeof(Key));
-	THROW_on_failed_alloc(public_prekey);
-	key__init(public_prekey);
-
-	//create the key buffers
-	private_prekey->key.data = (unsigned char*)zeroed_malloc(PRIVATE_KEY_SIZE);
-	THROW_on_failed_alloc(private_prekey->key.data);
-	private_prekey->key.len = PRIVATE_KEY_SIZE;
-
-	public_prekey->key.data = (unsigned char*)zeroed_malloc(PUBLIC_KEY_SIZE);
-	THROW_on_failed_alloc(private_prekey->key.data);
-	public_prekey->key.len = PUBLIC_KEY_SIZE;
-
-	//fill the buffers
-	if (this->private_key.cloneToRaw(private_prekey->key.data, private_prekey->key.len) != 0) {
-		THROW(BUFFER_ERROR, "Failed to clone private prekey.");
-	}
-	if (this->public_key.cloneToRaw(public_prekey->key.data, public_prekey->key.len) != 0) {
-		THROW(BUFFER_ERROR, "Failed to clone public prekey.");
-	}
-
-	//set the expiration date
-	keypair->has_expiration_time = true;
-	keypair->expiration_time = (uint64_t)this->expiration_date;
-
-	//set the keys
-	keypair->public_key = public_prekey;
-	public_prekey = nullptr;
-	keypair->private_key = private_prekey;
-	private_prekey = nullptr;
-
-cleanup:
-	on_error {
-		if (keypair != nullptr) {
-			prekey__free_unpacked(keypair, &protobuf_c_allocators);
-			zeroed_free_and_null_if_valid(keypair);
-		}
-
-		zeroed_free_and_null_if_valid(private_prekey);
-		zeroed_free_and_null_if_valid(public_prekey);
-	}
-
-	return status;
-}
-
-return_status PrekeyStore::exportStore(
+void PrekeyStore::exportProtobuf(
 		Prekey**& keypairs,
 		size_t& keypairs_length,
 		Prekey**& deprecated_keypairs,
-		size_t& deprecated_keypairs_length) noexcept {
-	return_status status = return_status_init();
+		size_t& deprecated_keypairs_length) {
+	//export prekeys
+	export_keypairs(*this->prekeys, keypairs, keypairs_length);
 
-	size_t deprecated_prekey_count = 0;
-
-	//allocate the prekey array
-	keypairs = (Prekey**)zeroed_malloc(PREKEY_AMOUNT * sizeof(Prekey*));
-	THROW_on_failed_alloc(keypairs);
-
-	//initialize pointers with zero
-	std::fill(keypairs, keypairs + PREKEY_AMOUNT, nullptr);
-
-	deprecated_prekey_count = this->countDeprecated();
-	if (deprecated_prekey_count > 0) {
-		//allocate and init the deprecated prekey array
-		deprecated_keypairs = (Prekey**)zeroed_malloc(deprecated_prekey_count * sizeof(Prekey*));
-		THROW_on_failed_alloc(deprecated_keypairs);
-	} else {
-		deprecated_keypairs = nullptr;
-	}
-
-	//normal keys
-	for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-		status = this->prekeys[i].exportNode(keypairs[i]);
-		THROW_on_error(EXPORT_ERROR, "Failed to export prekey pair.");
-	}
-
-	//deprecated keys
-	{
-		PrekeyStoreNode *node = this->deprecated_prekeys;
-		for (size_t i = 0; (i < deprecated_prekey_count) && (node != nullptr); i++, node = node->next) {
-			status = node->exportNode(deprecated_keypairs[i]);
-			THROW_on_error(EXPORT_ERROR, "Failed to export deprecated prekey pair.");
-		}
-	}
-
-	keypairs_length = PREKEY_AMOUNT;
-	deprecated_keypairs_length = deprecated_prekey_count;
-
-cleanup:
-	on_error {
-		if (keypairs != nullptr) {
-			for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-				if (keypairs[i] != nullptr) {
-					prekey__free_unpacked(keypairs[i], &protobuf_c_allocators);
-					keypairs[i] = nullptr;
-				}
-			}
-
-			zeroed_free_and_null_if_valid(keypairs);
-		}
-
-		if (deprecated_keypairs != nullptr) {
-			for (size_t i = 0; i < deprecated_prekey_count; i++) {
-				if (deprecated_keypairs[i] != nullptr) {
-					prekey__free_unpacked(deprecated_keypairs[i], &protobuf_c_allocators);
-					deprecated_keypairs[i] = nullptr;
-				}
-			}
-
-			zeroed_free_and_null_if_valid(deprecated_keypairs);
-		}
-
-		keypairs_length = 0;
-		deprecated_keypairs_length = 0;
-	}
-
-	return status;
+	//export deprecated prekeys
+	export_keypairs(this->deprecated_prekeys, deprecated_keypairs, deprecated_keypairs_length);
 }
 
-return_status PrekeyStoreNode::import(const Prekey& keypair) noexcept {
-	return_status status = return_status_init();
-
-	this->init();
-
-	//check if all necessary values are contained in the keypair
-	if ((keypair.private_key  == nullptr)
-			|| (keypair.private_key->key.len != PRIVATE_KEY_SIZE)
-			|| !keypair.has_expiration_time) {
-		THROW(PROTOBUF_MISSING_ERROR, "Protobuf is missing some data.");
-	}
-
-	//check if a public key has been stored, if yes, check the size
-	if ((keypair.public_key != nullptr)
-			&& (keypair.public_key->key.len != PUBLIC_KEY_SIZE)) {
-		THROW(INCORRECT_BUFFER_SIZE, "Public key has an incorrect length.");
-	}
-
-	//copy the private key
-	if (this->private_key.cloneFromRaw(keypair.private_key->key.data, keypair.private_key->key.len) != 0) {
-		THROW(BUFFER_ERROR, "Failed to import private key.");
-	}
-
-	//does the public key exist, if yes: copy, if not: create it from private key
-	if (keypair.public_key != nullptr) {
-		if (this->public_key.cloneFromRaw(keypair.public_key->key.data, keypair.public_key->key.len) != 0) {
-			THROW(BUFFER_ERROR, "Failed to import public key.");
-		}
-	} else {
-		if (crypto_scalarmult_base(this->public_key.content, this->private_key.content) != 0) {
-			THROW(KEYDERIVATION_FAILED, "Failed to derive public prekey from private one.");
-		}
-		this->public_key.content_length = PUBLIC_KEY_SIZE;
-		this->private_key.content_length = PRIVATE_KEY_SIZE;
-	}
-
-	this->expiration_date = (int64_t)keypair.expiration_time;
-
-cleanup:
-	on_error {
-		this->public_key.content_length = 0;
-		this->private_key.content_length = 0;
-		this->expiration_date = 0;
-	}
-
-	return status;
-}
-
-return_status PrekeyStore::import(
-		PrekeyStore*& store,
-		Prekey ** const keypairs,
-		const size_t keypairs_length,
-		Prekey ** const deprecated_keypairs,
-		const size_t deprecated_keypairs_length) noexcept {
-	return_status status = return_status_init();
-
-	PrekeyStoreNode *deprecated_keypair = nullptr;
-
-	//check input
-	if ((keypairs == nullptr)
-			|| (keypairs_length != PREKEY_AMOUNT)
-			|| ((deprecated_keypairs_length == 0) && (deprecated_keypairs != nullptr))
-			|| ((deprecated_keypairs_length > 0) && (deprecated_keypairs == nullptr))) {
-		THROW(INVALID_INPUT, "Invalid input to PrekeyStore_import");
-	}
-
-	store = (PrekeyStore*)sodium_malloc(sizeof(PrekeyStore));
-	THROW_on_failed_alloc(store);
-
-	//init the store
-	store->deprecated_prekeys = nullptr;
-	store->oldest_deprecated_expiration_date = 0;
-	store->oldest_expiration_date = 0;
-
-	//copy the prekeys
-	for (size_t i = 0; i < keypairs_length; i++) {
-		status = store->prekeys[i].import(*keypairs[i]);
-		THROW_on_error(IMPORT_ERROR, "Failed to import prekey.");
-
-		//update expiration date
-		if ((store->oldest_expiration_date == 0)
-				|| (store->prekeys[i].expiration_date < store->oldest_expiration_date)) {
-			store->oldest_expiration_date = store->prekeys[i].expiration_date;
-		}
-	}
-
-	//add the deprecated prekeys
-	for (size_t i = 1; i <= deprecated_keypairs_length; i++) {
-		deprecated_keypair = (PrekeyStoreNode*)sodium_malloc(sizeof(PrekeyStoreNode));
-		THROW_on_failed_alloc(deprecated_keypair);
-
-		status = deprecated_keypair->import(*deprecated_keypairs[deprecated_keypairs_length - i]);
-		THROW_on_error(IMPORT_ERROR, "Failed to import deprecated prekey.");
-
-		//update expiration date
-		if ((store->oldest_deprecated_expiration_date == 0)
-				|| (deprecated_keypair->expiration_date < store->oldest_deprecated_expiration_date)) {
-			store->oldest_deprecated_expiration_date = deprecated_keypair->expiration_date;
-		}
-
-		store->addNodeToDeprecated(*deprecated_keypair);
-		deprecated_keypair = nullptr;
-	}
-
-cleanup:
-	on_error {
-		if (store != nullptr) {
-			store->destroy();
-		}
-
-		sodium_free_and_null_if_valid(deprecated_keypair);
-	}
-
-	return status;
-}

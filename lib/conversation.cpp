@@ -265,10 +265,14 @@ return_status conversation_start_receive_conversation(
 	}
 
 	//get the private prekey that corresponds to the public prekey used in the message
-	status = receiver_prekeys->getPrekey(
-			receiver_public_prekey,
-			receiver_private_prekey);
-	THROW_on_error(DATA_FETCH_ERROR, "Failed to get public prekey.");
+	try {
+		receiver_prekeys->getPrekey(receiver_public_prekey, receiver_private_prekey);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	status = conversation_create(
 			conversation,

@@ -20,6 +20,9 @@
  */
 
 #include <ctime>
+#include <memory>
+#include <array>
+#include <vector>
 extern "C" {
 	#include <prekey.pb-c.h>
 }
@@ -29,6 +32,8 @@ extern "C" {
 #include "buffer.h"
 #include "return-status.h"
 #include "zeroed_malloc.h"
+#include "protobuf-deleters.h"
+#include "sodium-wrappers.h"
 
 #ifndef LIB_PrekeyStore
 #define LIB_PrekeyStore
@@ -36,71 +41,62 @@ extern "C" {
 class PrekeyStoreNode {
 	friend class PrekeyStore;
 private:
-	PrekeyStoreNode *next;
+	unsigned char public_key_storage[PUBLIC_KEY_SIZE];
+	unsigned char private_key_storage[PRIVATE_KEY_SIZE];
+
+	void init();
+	void fill(const Buffer& public_key, const Buffer& private_key, int64_t expiration_date);
+	void generate();
+
+	PrekeyStoreNode& copy(const PrekeyStoreNode& node);
+	PrekeyStoreNode& move(PrekeyStoreNode&& node);
+
 public:
 	Buffer public_key;
-	unsigned char public_key_storage[PUBLIC_KEY_SIZE];
 	Buffer private_key;
-	unsigned char private_key_storage[PRIVATE_KEY_SIZE];
 	int64_t expiration_date;
 
-	void init() noexcept;
-	PrekeyStoreNode* getNext() noexcept;
-	return_status exportNode(Prekey*& keypair) noexcept __attribute__((warn_unused_result));
-	return_status import(const Prekey& keypair) noexcept __attribute__((warn_unused_result));
+	PrekeyStoreNode();
+	PrekeyStoreNode(const Buffer& public_key, const Buffer& private_key, int64_t expiration_date);
+	/* copy constructor */
+	PrekeyStoreNode(const PrekeyStoreNode& node);
+	/* move constructor */
+	PrekeyStoreNode(PrekeyStoreNode&& node);
+	PrekeyStoreNode(const Prekey& keypair);
+
+	/* copy assignment */
+	PrekeyStoreNode& operator=(const PrekeyStoreNode& node);
+	/* move assignment */
+	PrekeyStoreNode& operator=(PrekeyStoreNode&& node);
+
+	std::unique_ptr<Prekey,PrekeyDeleter> exportProtobuf();
 };
 
 class PrekeyStore {
 private:
-	void addNodeToDeprecated(PrekeyStoreNode& deprecated_node) noexcept;
-	int deprecate(const size_t index) noexcept;
-	size_t countDeprecated() noexcept;
+	void init();
+	void generateKeys();
+
+	void updateExpirationDate();
+	void updateDeprecatedExpirationDate();
+
+	/*
+	 * Helper that puts a prekey pair in the deprecated list and generates a new one.
+	 */
+	void deprecate(const size_t index);
+
 public:
 	int64_t oldest_expiration_date;
-	PrekeyStoreNode prekeys[PREKEY_AMOUNT];
-	PrekeyStoreNode *deprecated_prekeys;
 	int64_t oldest_deprecated_expiration_date;
+	std::unique_ptr<std::array<PrekeyStoreNode,PREKEY_AMOUNT>,SodiumDeleter<std::array<PrekeyStoreNode,PREKEY_AMOUNT>>> prekeys;
+	std::vector<PrekeyStoreNode,SodiumAllocator<PrekeyStoreNode>> deprecated_prekeys;
+	//PrekeyStoreNode prekeys[PREKEY_AMOUNT];
+	//PrekeyStoreNode *deprecated_prekeys;
 
 	/*
 	 * Initialise a new keystore. Generates all the keys.
 	 */
-	static return_status create(PrekeyStore*& store) noexcept __attribute__((warn_unused_result));
-
-	/*
-	 * Get a private prekey from it's public key. This will automatically
-	 * deprecate the requested prekey put it in the outdated key store and
-	 * generate a new one.
-	 */
-	return_status getPrekey(
-			Buffer& public_key, //input
-			Buffer& private_key) noexcept __attribute__((warn_unused_result)); //output
-
-	/*
-	 * Generate a list containing all public prekeys.
-	 * (this list can then be stored on a public server).
-	 */
-	return_status list(Buffer& list) noexcept __attribute__((warn_unused_result)); //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
-
-	/*
-	 * Automatically deprecate old keys and generate new ones
-	 * and THROW away deprecated ones that are too old.
-	 */
-	return_status rotate() noexcept __attribute__((warn_unused_result));
-
-	void destroy() noexcept;
-
-	/*! Serialise a prekey store as protobuf-c struct.
-	 * \param keypairs An array of keypairs, allocated by the function.
-	 * \param keypairs_length The length of the array of keypairs.
-	 * \param deprecated_keypairs An array of deprecated keypairs, allocated by the function.
-	 * \param deprecated_keypairs_length The length of the array of deprecated keypairs.
-	 * \returns The status.
-	 */
-	return_status exportStore(
-			Prekey**& keypairs,
-			size_t& keypairs_length,
-			Prekey**& deprecated_keypairs,
-			size_t& deprecated_keypairs_length) noexcept __attribute__((warn_unused_result));
+	PrekeyStore();
 
 	/*! Import a prekey store from a protobuf-c struct.
 	 * \param keypairs An array of prekeys pairs.
@@ -109,11 +105,41 @@ public:
 	 * \param deprecated_keypairs_length The length of the array of deprecated prekey pairs.
 	 * \returns The status.
 	 */
-	static return_status import(
-			PrekeyStore*& store,
-			Prekey** const keypairs,
+	PrekeyStore(
+			Prekey** const& keypairs,
 			const size_t keypairs_length,
-			Prekey** const deprecated_keypairs,
-			const size_t deprecated_keypairs_length) noexcept __attribute__((warn_unused_result));
+			Prekey** const& deprecated_keypairs,
+			const size_t deprecated_keypairs_length);
+
+	/*
+	 * Get a private prekey from it's public key. This will automatically
+	 * deprecate the requested prekey put it in the outdated key store and
+	 * generate a new one.
+	 */
+	void getPrekey(const Buffer& public_key, Buffer& private_key);
+
+	/*
+	 * Generate a list containing all public prekeys.
+	 * (this list can then be stored on a public server).
+	 */
+	void list(Buffer& list); //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+
+	/*
+	 * Automatically deprecate old keys and generate new ones
+	 * and THROW away deprecated ones that are too old.
+	 */
+	void rotate();
+
+	/*! Serialise a prekey store as protobuf-c struct.
+	 * \param keypairs An array of keypairs, allocated by the function.
+	 * \param keypairs_length The length of the array of keypairs.
+	 * \param deprecated_keypairs An array of deprecated keypairs, allocated by the function.
+	 * \param deprecated_keypairs_length The length of the array of deprecated keypairs.
+	 */
+	void exportProtobuf(
+			Prekey**& keypairs,
+			size_t& keypairs_length,
+			Prekey**& deprecated_keypairs,
+			size_t& deprecated_keypairs_length);
 };
 #endif

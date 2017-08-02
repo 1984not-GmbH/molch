@@ -169,8 +169,14 @@ return_status user_store_create_user(
 	}
 
 	//prekeys
-	status = PrekeyStore::create(new_node->prekeys);
-	THROW_on_error(CREATION_ERROR, "Failed to create prekey store.")
+	try {
+		new_node->prekeys = new PrekeyStore();
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//copy the public signing key, if requested
 	if (public_signing_key != nullptr) {
@@ -189,7 +195,7 @@ cleanup:
 	on_error {
 		if (new_node != nullptr) {
 			if (new_node->prekeys != nullptr) {
-				new_node->prekeys->destroy();
+				delete new_node->prekeys;
 			}
 			if (new_node->master_keys != nullptr) {
 				sodium_free_and_null_if_valid(new_node->master_keys);
@@ -314,9 +320,7 @@ void user_store_remove(user_store *store, user_store_node *node) noexcept {
 	delete node->master_keys;
 
 	//remove the prekey store
-	if (node->prekeys != nullptr) {
-		sodium_free_and_null_if_valid(node->prekeys);
-	}
+	delete node->prekeys;
 
 	if (node->next != nullptr) { //node is not the tail
 		node->next->previous = node->previous;
@@ -402,12 +406,18 @@ return_status user_store_node_export(user_store_node * const node, User ** const
 	(*user)->n_conversations = conversations_length;
 
 	//export the prekeys
-	status = node->prekeys->exportStore(
-		prekeys,
-		prekeys_length,
-		deprecated_prekeys,
-		deprecated_prekeys_length);
-	THROW_on_error(EXPORT_ERROR, "Failed to export prekeys.");
+	try {
+		node->prekeys->exportProtobuf(
+			prekeys,
+			prekeys_length,
+			deprecated_prekeys,
+			deprecated_prekeys_length);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	(*user)->prekeys = prekeys;
 	prekeys = nullptr;
@@ -504,13 +514,18 @@ static return_status user_store_node_import(user_store_node ** const node, const
 	status = (*node)->conversations->import(user->conversations, user->n_conversations);
 	THROW_on_error(IMPORT_ERROR, "Failed to import conversations.");
 
-	status = PrekeyStore::import(
-		(*node)->prekeys,
-		user->prekeys,
-		user->n_prekeys,
-		user->deprecated_prekeys,
-		user->n_deprecated_prekeys);
-	THROW_on_error(IMPORT_ERROR, "Failed to import prekeys.");
+	try {
+		(*node)->prekeys = new PrekeyStore(
+			user->prekeys,
+			user->n_prekeys,
+			user->deprecated_prekeys,
+			user->n_deprecated_prekeys);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 cleanup:
 	return status;

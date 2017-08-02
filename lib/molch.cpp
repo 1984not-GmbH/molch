@@ -80,8 +80,14 @@ static return_status create_prekey_list(
 		THROW_on_error(NOT_FOUND, "Failed to find user.");
 
 		//rotate the prekeys
-		status = user->prekeys->rotate();
-		THROW_on_error(GENERIC_ERROR, "Failed to rotate prekeys.");
+		try {
+			user->prekeys->rotate();
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 
 		//get the public identity key
 		try {
@@ -99,8 +105,14 @@ static return_status create_prekey_list(
 		}
 
 		//get the prekeys
-		status = user->prekeys->list(prekeys);
-		THROW_on_error(DATA_FETCH_ERROR, "Failed to get prekeys.");
+		try {
+			user->prekeys->list(prekeys);
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 	}
 
 	//add the expiration date

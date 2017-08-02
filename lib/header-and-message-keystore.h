@@ -46,11 +46,12 @@ private:
 	void init();
 	void fill(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date);
 
+	unsigned char message_key_storage[MESSAGE_KEY_SIZE];
+	unsigned char header_key_storage[HEADER_KEY_SIZE];
+
 public:
 	Buffer message_key;
-	unsigned char message_key_storage[MESSAGE_KEY_SIZE];
 	Buffer header_key;
-	unsigned char header_key_storage[HEADER_KEY_SIZE];
 	int64_t expiration_date;
 
 	HeaderAndMessageKeyStoreNode();

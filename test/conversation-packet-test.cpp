@@ -56,8 +56,8 @@ int main(void) noexcept {
 	std::unique_ptr<Buffer> bob_received_response;
 
 	//create prekey stores
-	PrekeyStore *alice_prekeys = nullptr;
-	PrekeyStore *bob_prekeys = nullptr;
+	std::unique_ptr<PrekeyStore> alice_prekeys;
+	std::unique_ptr<PrekeyStore> bob_prekeys;
 
 	Buffer prekey_list(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
@@ -85,13 +85,11 @@ int main(void) noexcept {
 	throw_on_invalid_buffer(bob_public_identity);
 	throw_on_invalid_buffer(prekey_list);
 
-	//create prekey stores
-	status = PrekeyStore::create(alice_prekeys);
-	THROW_on_error(CREATION_ERROR, "Failed to create Alice' prekey store.");
-	status = PrekeyStore::create(bob_prekeys);
-	THROW_on_error(CREATION_ERROR, "Failed to create Bobs prekey store.");
-
 	try {
+		//create prekey stores
+		alice_prekeys = std::make_unique<PrekeyStore>();
+		bob_prekeys = std::make_unique<PrekeyStore>();
+
 		//create keys
 		//alice
 		//identity
@@ -108,16 +106,15 @@ int main(void) noexcept {
 			bob_private_identity,
 			"Bob",
 			"identity");
+
+		//get the prekey list
+		bob_prekeys->list(prekey_list);
 	} catch (const MolchException& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
 	} catch (const std::exception& exception) {
 		THROW(EXCEPTION, exception.what());
 	}
-
-	//get the prekey list
-	status = bob_prekeys->list(prekey_list);
-	THROW_on_error(GENERIC_ERROR, "Failed to get Bob's prekey list.");
 
 	//start a send conversation
 	status = conversation_start_send_conversation(
@@ -141,7 +138,7 @@ int main(void) noexcept {
 			received_message,
 			&bob_public_identity,
 			&bob_private_identity,
-			bob_prekeys);
+			bob_prekeys.get());
 	THROW_on_error(RECEIVE_ERROR, "Failed to decrypt received message.");
 
 	status_int = send_message.compare(received_message.get());
@@ -234,8 +231,14 @@ int main(void) noexcept {
 	//Bob sends the message to Alice.
 
 	//get alice prekey list
-	status = alice_prekeys->list(prekey_list);
-	THROW_on_error(GENERIC_ERROR, "Failed to get Alice' prekey list.");
+	try {
+		alice_prekeys->list(prekey_list);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//destroy the old packet
 	packet.reset();
@@ -262,7 +265,7 @@ int main(void) noexcept {
 			received_message,
 			&alice_public_identity,
 			&alice_private_identity,
-			alice_prekeys);
+			alice_prekeys.get());
 	THROW_on_error(RECEIVE_ERROR, "Failed to decrypt received message.");
 
 	status_int = send_message.compare(received_message.get());
@@ -351,12 +354,6 @@ int main(void) noexcept {
 	}
 
 cleanup:
-	if (alice_prekeys != nullptr) {
-		alice_prekeys->destroy();
-	}
-	if (bob_prekeys != nullptr) {
-		bob_prekeys->destroy();
-	}
 	if (alice_send_conversation != nullptr) {
 		conversation_destroy(alice_send_conversation);
 	}
