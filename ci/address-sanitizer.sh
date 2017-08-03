@@ -3,12 +3,12 @@
 cd address-sanitizer || exit 1
 #check if address sanitizer is available
 echo "int main(void) {return 0;}" > test.c
-if ! clang -fsanitize=address test.c -o /dev/null > /dev/null; then
-    echo AddressSanitizer not available. Skipping ...
-    rm test.c
+if ! clang -fsanitize=address test.c -o asan-test > /dev/null || ! ./asan-test; then
+    echo AddressSanitizer not available or doesn\'t work. Skipping ...
+    rm test.c asan-test
     exit 0
 fi
-rm test.c
+rm test.c asan-test
 
 export CC=clang
 if cmake .. -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug -DRUN_TESTS=ON -DCMAKE_CXX_FLAGS='-fsanitize=address -O1 -fno-omit-frame-pointer -fno-common -fno-optimize-sibling-calls -g' -DDISABLE_MEMORYCHECK_COMMAND="TRUE"; then

@@ -3,12 +3,12 @@
 cd undefined-behavior-sanitizer || exit 1
 #check if undefined-behavior sanitizer is available
 echo "int main(void) {return 0;}" > test.c
-if ! clang -fsanitize="undefined,integer" test.c -o /dev/null > /dev/null; then
-    echo UndefinedBehaviorSanitizer not available. Skipping ...
-    rm test.c
+if ! clang -fsanitize="undefined,integer" test.c -o ubsan-test > /dev/null || ! ./ubsan-test; then
+    echo UndefinedBehaviorSanitizer not available or doesn\'t work. Skipping ...
+    rm test.c ubsan-test
     exit 0
 fi
-rm test.c
+rm test.c ubsan-test
 
 export CC=clang
 if cmake .. -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug -DRUN_TESTS=ON -DCMAKE_CXX_FLAGS='-fsanitize=undefined,integer -fno-sanitize-recover=undefined,integer -O1 -fno-omit-frame-pointer -fno-common -fno-optimize-sibling-calls -g' -DDISABLE_MEMORYCHECK_COMMAND="TRUE"; then
