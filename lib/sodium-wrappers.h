@@ -28,6 +28,7 @@
 template <class T>
 class SodiumAllocator : public std::allocator<T> {
 public:
+	SodiumAllocator() = default;
 	//TODO WTF is this and why do I need it? C++ is strange, especially the standard library!
 	SodiumAllocator(const std::allocator<T>& other) {
 		(void)other;
