@@ -65,7 +65,7 @@ return_status read_file(Buffer*& data, const std::string& filename) noexcept {
 		data = Buffer::create(filesize, filesize);
 		THROW_on_failed_alloc(data);
 		data->content_length = fread(data->content, 1, filesize, file);
-		if (data->content_length != (size_t)filesize) {
+		if (data->content_length != filesize) {
 			THROW(INCORRECT_DATA, "Read less data from file than filesize.");
 		}
 	}
