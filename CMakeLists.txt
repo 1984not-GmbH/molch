@@ -31,7 +31,32 @@ list(APPEND custom_compiler_flag_candidates
     -fPIC
     -Wunused-macros
     -Wmissing-variable-declarations
-    -Wc++-compat
+    -Wchkp
+    -Wnull-dereference
+    -Wimplicit-fallthrough
+    -Wunused-parameter
+    -Wstrict-aliasing=1 #might be too much
+    -Walloc-zero
+    -Walloca
+    -Wduplicated-branches
+    -Wduplicated-cond
+    -Wfloat-equal
+    -Wtrampolines
+    -Wunsafe-loop-optimizations #might be too much
+    -Wredundant-decls
+    -Wstack-protector
+    #C++ options
+    -Wnoexcept
+    -Wstrict-null-sentinel
+    -Woverloaded-virtual
+    -Wsign-promo
+    -Wmultiple-inheritance
+    -Wvirtual-inheritance
+    -Wuninitialized
+    -Wsuggest-final-types
+    -Wsuggest-final-methods
+    -Wc++1z-compat
+    -Wconditionally-supported
     )
 
 if(NOT ${CMAKE_BUILD_TYPE} MATCHES "Debug")
