@@ -38,58 +38,77 @@ typedef enum ratchet_header_decryptability {
 	NOT_TRIED //not tried to decrypt yet
 } ratchet_header_decryptability;
 
+class RatchetStorage {
+	friend class Ratchet;
+
+private:
+	unsigned char root_key_storage[ROOT_KEY_SIZE]; //RK
+	unsigned char purported_root_key_storage[ROOT_KEY_SIZE]; //RKp
+	//header keys
+	unsigned char send_header_key_storage[HEADER_KEY_SIZE];
+	unsigned char receive_header_key_storage[HEADER_KEY_SIZE];
+	unsigned char next_send_header_key_storage[HEADER_KEY_SIZE];
+	unsigned char next_receive_header_key_storage[HEADER_KEY_SIZE];
+	unsigned char purported_receive_header_key_storage[HEADER_KEY_SIZE];
+	unsigned char purported_next_receive_header_key_storage[HEADER_KEY_SIZE];
+	//chain keys
+	unsigned char send_chain_key_storage[CHAIN_KEY_SIZE]; //CKs
+	unsigned char receive_chain_key_storage[CHAIN_KEY_SIZE]; //CKr
+	unsigned char purported_receive_chain_key_storage[CHAIN_KEY_SIZE]; //CKp
+	//identity keys
+	unsigned char our_public_identity_storage[PUBLIC_KEY_SIZE]; //DHIs
+	unsigned char their_public_identity_storage[PUBLIC_KEY_SIZE]; //DHIr
+	//ephemeral keys (ratchet keys)
+	unsigned char our_private_ephemeral_storage[PRIVATE_KEY_SIZE]; //DHRs
+	unsigned char our_public_ephemeral_storage[PUBLIC_KEY_SIZE]; //DHRs
+	unsigned char their_public_ephemeral_storage[PUBLIC_KEY_SIZE]; //DHRr
+	unsigned char their_purported_public_ephemeral_storage[PUBLIC_KEY_SIZE]; //DHp
+
+	void init();
+
+public:
+	RatchetStorage();
+
+	Buffer root_key; //RK
+	Buffer purported_root_key; //RKp
+	//header keys
+	Buffer send_header_key;
+	Buffer receive_header_key;
+	Buffer next_send_header_key;
+	Buffer next_receive_header_key;
+	Buffer purported_receive_header_key;
+	Buffer purported_next_receive_header_key;
+	//chain keys
+	Buffer send_chain_key; //CKs
+	Buffer receive_chain_key; //CKr
+	Buffer purported_receive_chain_key; //CKp
+	//identity keys
+	Buffer our_public_identity; //DHIs
+	Buffer their_public_identity; //DHIr
+	//ephemeral keys (ratchet keys)
+	Buffer our_private_ephemeral; //DHRs
+	Buffer our_public_ephemeral; //DHRs
+	Buffer their_public_ephemeral; //DHRr
+	Buffer their_purported_public_ephemeral; //DHp
+};
+
 class Ratchet {
 private:
-	static return_status createState(Ratchet*& ratchet) noexcept;
-	void initState() noexcept;
-	static return_status stageSkippedHeaderAndMessageKeys(
+	void init();
+
+	static void stageSkippedHeaderAndMessageKeys(
 		HeaderAndMessageKeyStore& staging_area,
 		Buffer * const output_chain_key, //output, CHAIN_KEY_SIZE
 		Buffer * const output_message_key, //output, MESSAGE_KEY_SIZE
 		const Buffer& current_header_key,
 		const uint32_t current_message_number,
 		const uint32_t future_message_number,
-		const Buffer& chain_key) noexcept;
-	return_status commitSkippedHeaderAndMessageKeys() noexcept;
+		const Buffer& chain_key);
+	void commitSkippedHeaderAndMessageKeys();
+
 public:
-	Buffer root_key; //RK
-	unsigned char root_key_storage[ROOT_KEY_SIZE];
-	Buffer purported_root_key; //RKp
-	unsigned char purported_root_key_storage[ROOT_KEY_SIZE];
-	//header keys
-	Buffer send_header_key;
-	unsigned char send_header_key_storage[HEADER_KEY_SIZE];
-	Buffer receive_header_key;
-	unsigned char receive_header_key_storage[HEADER_KEY_SIZE];
-	Buffer next_send_header_key;
-	unsigned char next_send_header_key_storage[HEADER_KEY_SIZE];
-	Buffer next_receive_header_key;
-	unsigned char next_receive_header_key_storage[HEADER_KEY_SIZE];
-	Buffer purported_receive_header_key;
-	unsigned char purported_receive_header_key_storage[HEADER_KEY_SIZE];
-	Buffer purported_next_receive_header_key;
-	unsigned char purported_next_receive_header_key_storage[HEADER_KEY_SIZE];
-	//chain keys
-	Buffer send_chain_key; //CKs
-	unsigned char send_chain_key_storage[CHAIN_KEY_SIZE];
-	Buffer receive_chain_key; //CKr
-	unsigned char receive_chain_key_storage[CHAIN_KEY_SIZE];
-	Buffer purported_receive_chain_key; //CKp
-	unsigned char purported_receive_chain_key_storage[CHAIN_KEY_SIZE];
-	//identity keys
-	Buffer our_public_identity; //DHIs
-	unsigned char our_public_identity_storage[PUBLIC_KEY_SIZE];
-	Buffer their_public_identity; //DHIr
-	unsigned char their_public_identity_storage[PUBLIC_KEY_SIZE];
-	//ephemeral keys (ratchet keys)
-	Buffer our_private_ephemeral; //DHRs
-	unsigned char our_private_ephemeral_storage[PRIVATE_KEY_SIZE];
-	Buffer our_public_ephemeral; //DHRs
-	unsigned char our_public_ephemeral_storage[PUBLIC_KEY_SIZE];
-	Buffer their_public_ephemeral; //DHRr
-	unsigned char their_public_ephemeral_storage[PUBLIC_KEY_SIZE];
-	Buffer their_purported_public_ephemeral; //DHp
-	unsigned char their_purported_public_ephemeral_storage[PUBLIC_KEY_SIZE];
+	std::unique_ptr<RatchetStorage,SodiumDeleter<RatchetStorage>> storage;
+
 	//message numbers
 	uint32_t send_message_number; //Ns
 	uint32_t receive_message_number; //Nr
@@ -104,50 +123,55 @@ public:
 	                     //decryption
 	ratchet_header_decryptability header_decryptable; //could the last received header be decrypted?
 	//list of previous message and header keys
-	HeaderAndMessageKeyStore* skipped_header_and_message_keys; //skipped_HK_MK (list containing message keys for messages that weren't received)
-	HeaderAndMessageKeyStore* staged_header_and_message_keys; //this represents the staging area specified in the axolotl ratchet
+	HeaderAndMessageKeyStore skipped_header_and_message_keys; //skipped_HK_MK (list containing message keys for messages that weren't received)
+	HeaderAndMessageKeyStore staged_header_and_message_keys; //this represents the staging area specified in the axolotl ratchet
 
 	/*
 	 * Start a new ratchet chain. This derives an initial root key and returns a new ratchet state.
 	 *
 	 * All the keys will be copied so you can free the buffers afterwards. (private identity get's
 	 * immediately deleted after deriving the initial root key though!)
-	 *
-	 * The return value is a valid ratchet state or nullptr if an error occured.
 	 */
-	static return_status create(
-			Ratchet*& ratchet,
+	Ratchet(
 			const Buffer& our_private_identity,
 			const Buffer& our_public_identity,
 			const Buffer& their_public_identity,
 			const Buffer& our_private_ephemeral,
 			const Buffer& our_public_ephemeral,
-			const Buffer& their_public_ephemeral) noexcept __attribute__((warn_unused_result));
+			const Buffer& their_public_ephemeral);
+
+	/*! Import a ratchet from Protobuf-C
+	 * NOTE: The public identity key is needed separately,
+	 * because it is not contained in the Conversation
+	 * Protobuf-C struct
+	 * \param ratchet The Ratchet to imports
+	 * \param conversation The Protobuf-C buffer.
+	 */
+	Ratchet(const Conversation& conversation);
 
 	/*
 	 * Get keys and metadata to send the next message.
 	 */
-	return_status send(
+	void send(
 			Buffer& send_header_key, //HEADER_KEY_SIZE, HKs
 			uint32_t& send_message_number, //Ns
 			uint32_t& previous_send_message_number, //PNs
 			Buffer& our_public_ephemeral, //DHRs
 			Buffer& message_key //MESSAGE_KEY_SIZE, MK
-			) noexcept __attribute__((warn_unused_result));
+			);
 
 	/*
 	 * Get a copy of the current and the next receive header key.
 	 */
-	return_status getReceiveHeaderKeys(
+	void getReceiveHeaderKeys(
 			Buffer& current_receive_header_key,
-			Buffer& next_receive_header_key
-			) noexcept __attribute__((warn_unused_result));
+			Buffer& next_receive_header_key);
 
 	/*
 	 * Set if the header is decryptable with the current (state->receive_header_key)
 	 * or next (next_receive_header_key) header key, or isn't decryptable.
 	 */
-	return_status setHeaderDecryptability(ratchet_header_decryptability header_decryptable) noexcept __attribute__((warn_unused_result));
+	void setHeaderDecryptability(const ratchet_header_decryptability header_decryptable);
 
 	/*
 	 * First step after receiving a message: Calculate purported keys.
@@ -159,41 +183,22 @@ public:
 	 * returned by this function and call ratchet_set_last_message_authenticity
 	 * after having verified the message.
 	 */
-	return_status receive(
+	void receive(
 			Buffer& message_key, //used to get the message key back
 			const Buffer& their_purported_public_ephemeral,
 			const uint32_t purported_message_number,
-			const uint32_t purported_previous_message_number) noexcept __attribute__((warn_unused_result));
+			const uint32_t purported_previous_message_number);
 
 	/*
 	 * Call this function after trying to decrypt a message and pass it if
 	 * the decryption was successful or if it wasn't.
 	 */
-	return_status setLastMessageAuthenticity(bool valid) noexcept __attribute__((warn_unused_result));
-
-	/*
-	 * End the ratchet chain and free the memory.
-	 */
-	void destroy() noexcept;
+	void setLastMessageAuthenticity(const bool valid);
 
 	/*! Export a ratchet state to Protobuf-C
 	 * NOTE: This doesn't fill the Id field of the struct.
-	 * \param ratchet The Ratchet to export.
-	 * \param conversation The Conversation Protobuf-C struct.
-	 * \return The status.
+	 * \return conversation The Conversation Protobuf-C struct.
 	 */
-	return_status exportRatchet(Conversation*& conversation) noexcept __attribute__((warn_unused_result));
-
-	/*! Import a ratchet from Protobuf-C
-	 * NOTE: The public identity key is needed separately,
-	 * because it is not contained in the Conversation
-	 * Protobuf-C struct
-	 * \param ratchet The Ratchet to imports
-	 * \param conversation The Protobuf-C buffer.
-	 * \return The status.
-	 */
-	static return_status import(
-		Ratchet*& ratchet,
-		const Conversation& conversation) noexcept __attribute__((warn_unused_result));
+	std::unique_ptr<Conversation,ConversationDeleter> exportProtobuf();
 };
 #endif

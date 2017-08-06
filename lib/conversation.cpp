@@ -65,12 +65,12 @@ return_status conversation_create(
 
 	//check input
 	if ((conversation == nullptr)
-			|| (our_private_identity == nullptr) || (our_private_identity->content_length != PRIVATE_KEY_SIZE)
-			|| (our_public_identity == nullptr) || (our_public_identity->content_length != PUBLIC_KEY_SIZE)
-			|| (their_public_identity == nullptr) || (their_public_identity->content_length != PUBLIC_KEY_SIZE)
-			|| (our_private_ephemeral == nullptr) || (our_public_ephemeral->content_length != PRIVATE_KEY_SIZE)
-			|| (our_public_ephemeral == nullptr) || (our_public_ephemeral->content_length != PUBLIC_KEY_SIZE)
-			|| (their_public_ephemeral == nullptr) || (their_public_ephemeral->content_length != PUBLIC_KEY_SIZE)) {
+			|| (our_private_identity == nullptr) || !our_private_identity->contains(PRIVATE_KEY_SIZE)
+			|| (our_public_identity == nullptr) || !our_public_identity->contains(PUBLIC_KEY_SIZE)
+			|| (their_public_identity == nullptr) || !their_public_identity->contains(PUBLIC_KEY_SIZE)
+			|| (our_private_ephemeral == nullptr) || !our_public_ephemeral->contains(PRIVATE_KEY_SIZE)
+			|| (our_public_ephemeral == nullptr) || !our_public_ephemeral->contains(PUBLIC_KEY_SIZE)
+			|| (their_public_ephemeral == nullptr) || !their_public_ephemeral->contains(PUBLIC_KEY_SIZE)) {
 		THROW(INVALID_INPUT, "Invalid input for conversation_create.");
 	}
 
@@ -84,15 +84,21 @@ return_status conversation_create(
 		THROW(BUFFER_ERROR, "Failed to create random conversation id.");
 	}
 
-	status = Ratchet::create(
-			(*conversation)->ratchet,
-			*our_private_identity,
-			*our_public_identity,
-			*their_public_identity,
-			*our_private_ephemeral,
-			*our_public_ephemeral,
-			*their_public_ephemeral);
-	THROW_on_error(CREATION_ERROR, "Failed to create ratchet.");
+	try {
+		(*conversation)->ratchet = new Ratchet(
+				*our_private_identity,
+				*our_public_identity,
+				*their_public_identity,
+				*our_private_ephemeral,
+				*our_public_ephemeral,
+				*their_public_ephemeral);
+		THROW_on_error(CREATION_ERROR, "Failed to create ratchet.");
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 cleanup:
 	on_error {
@@ -108,10 +114,10 @@ cleanup:
  * Destroy a conversation.
  */
 void conversation_destroy(conversation_t * const conversation) noexcept {
-	if (conversation->ratchet != nullptr) {
-		conversation->ratchet->destroy();
+	delete conversation->ratchet;
+	if (conversation != nullptr) {
+		free(conversation);
 	}
-	free(conversation);
 }
 
 /*
@@ -142,10 +148,10 @@ return_status conversation_start_send_conversation(
 	//check many error conditions
 	if ((conversation == nullptr)
 			|| (message == nullptr)
-			|| (receiver_public_identity == nullptr) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
-			|| (sender_public_identity == nullptr) || (sender_public_identity->content_length != PUBLIC_KEY_SIZE)
-			|| (sender_private_identity == nullptr) || (sender_private_identity->content_length != PRIVATE_KEY_SIZE)
-			|| (receiver_prekey_list == nullptr) || (receiver_prekey_list->content_length != (PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
+			|| (receiver_public_identity == nullptr) || !receiver_public_identity->contains(PUBLIC_KEY_SIZE)
+			|| (sender_public_identity == nullptr) || !sender_public_identity->contains(PUBLIC_KEY_SIZE)
+			|| (sender_private_identity == nullptr) || !sender_private_identity->contains(PRIVATE_KEY_SIZE)
+			|| (receiver_prekey_list == nullptr) || !receiver_prekey_list->contains((PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
 		THROW(INVALID_INPUT, "Invalid input to conversation_start_send_conversation.");
 	}
 
@@ -232,8 +238,8 @@ return_status conversation_start_receive_conversation(
 
 	if ((conversation == nullptr)
 			|| (packet ==nullptr)
-			|| (receiver_public_identity == nullptr) || (receiver_public_identity->content_length != PUBLIC_KEY_SIZE)
-			|| (receiver_private_identity == nullptr) || (receiver_private_identity->content_length != PRIVATE_KEY_SIZE)
+			|| (receiver_public_identity == nullptr) || !receiver_public_identity->contains(PUBLIC_KEY_SIZE)
+			|| (receiver_private_identity == nullptr) || !receiver_private_identity->contains(PRIVATE_KEY_SIZE)
 			|| (receiver_prekeys == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to conversation_start_receive_conversation.");
 	}
@@ -345,7 +351,7 @@ return_status conversation_send(
 	}
 
 	//check the size of the public keys
-	if (((public_identity_key != nullptr) && (public_identity_key->content_length != PUBLIC_KEY_SIZE)) || ((public_prekey != nullptr) && (public_prekey->content_length != PUBLIC_KEY_SIZE))) {
+	if (((public_identity_key != nullptr) && !public_identity_key->contains(PUBLIC_KEY_SIZE)) || ((public_prekey != nullptr) && !public_prekey->contains(PUBLIC_KEY_SIZE))) {
 		THROW(INCORRECT_BUFFER_SIZE, "Public key output has incorrect size.");
 	}
 
@@ -357,12 +363,19 @@ return_status conversation_send(
 
 	uint32_t send_message_number;
 	uint32_t previous_send_message_number;
-	status = conversation->ratchet->send(
-			send_header_key,
-			send_message_number,
-			previous_send_message_number,
-			send_ephemeral_key,
-			send_message_key);
+	try {
+		conversation->ratchet->send(
+				send_header_key,
+				send_message_number,
+				previous_send_message_number,
+				send_ephemeral_key,
+				send_message_key);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 	THROW_on_error(SEND_ERROR, "Failed to get send keys.");
 
 	try {
@@ -477,7 +490,7 @@ return_status conversation_receive(
 
 	try {
 		int status = try_skipped_header_and_message_keys(
-				*conversation->ratchet->skipped_header_and_message_keys,
+				conversation->ratchet->skipped_header_and_message_keys,
 				*packet,
 				message,
 				*receive_message_number,
@@ -486,15 +499,14 @@ return_status conversation_receive(
 			// found a key and successfully decrypted the message
 			goto cleanup;
 		}
+
+		conversation->ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 	} catch (const MolchException& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
 	} catch (const std::exception& exception) {
 		THROW(EXCEPTION, exception.what());
 	}
-
-	status = conversation->ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
-	THROW_on_error(DATA_FETCH_ERROR, "Failed to get receive header keys.");
 
 	//try to decrypt the packet header with the current receive header key
 	try {
@@ -505,8 +517,14 @@ return_status conversation_receive(
 		THROW(EXCEPTION, exception.what());
 	}
 	if (decryptable) {
-		status = conversation->ratchet->setHeaderDecryptability(CURRENT_DECRYPTABLE);
-		THROW_on_error(DATA_SET_ERROR, "Failed to set decryptability to CURRENT_DECRYPTABLE.");
+		try {
+			conversation->ratchet->setHeaderDecryptability(CURRENT_DECRYPTABLE);
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 	} else {
 		return_status_destroy_errors(&status); //free the error stack to avoid memory leak.
 
@@ -520,12 +538,19 @@ return_status conversation_receive(
 			THROW(EXCEPTION, exception.what());
 		}
 		if (decryptable) {
-			status = conversation->ratchet->setHeaderDecryptability(NEXT_DECRYPTABLE);
-			THROW_on_error(DATA_SET_ERROR, "Failed to set decryptability to NEXT_DECRYPTABLE.");
+			try {
+				conversation->ratchet->setHeaderDecryptability(NEXT_DECRYPTABLE);
+			} catch (const MolchException& exception) {
+				status = exception.toReturnStatus();
+				goto cleanup;
+			} catch (const std::exception& exception) {
+				THROW(EXCEPTION, exception.what());
+			}
 		} else {
-			return_status decryptability_status = return_status_init();
-			decryptability_status = conversation->ratchet->setHeaderDecryptability(UNDECRYPTABLE);
-			return_status_destroy_errors(&decryptability_status);
+			try {
+				conversation->ratchet->setHeaderDecryptability(UNDECRYPTABLE);
+			} catch (...) {
+			}
 			THROW(DECRYPT_ERROR, "Header undecryptable.");
 		}
 	}
@@ -549,34 +574,49 @@ return_status conversation_receive(
 	//and now decrypt the message with the message key
 	//now we have all the data we need to advance the ratchet
 	//so let's do that
-	status = conversation->ratchet->receive(
+	try {
+		conversation->ratchet->receive(
 			message_key,
 			their_signed_public_ephemeral,
 			local_receive_message_number,
 			local_previous_receive_message_number);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 	THROW_on_error(DECRYPT_ERROR, "Failed to get decryption keys.");
 
 	try {
 		message = packet_decrypt_message(*packet, message_key);
 	} catch (...) {
-		return_status authenticity_status = return_status_init();
-		authenticity_status = conversation->ratchet->setLastMessageAuthenticity(false);
-		return_status_destroy_errors(&authenticity_status);
+		try {
+			conversation->ratchet->setLastMessageAuthenticity(false);
+		} catch (...) {
+		}
 		THROW(DECRYPT_ERROR, "Failed to decrypt message.");
 	}
 
-	status = conversation->ratchet->setLastMessageAuthenticity(true);
-	THROW_on_error(DATA_SET_ERROR, "Failed to set message authenticity.");
+	try {
+		conversation->ratchet->setLastMessageAuthenticity(true);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	*receive_message_number = local_receive_message_number;
 	*previous_receive_message_number = local_previous_receive_message_number;
 
 cleanup:
 	on_error {
-		return_status authenticity_status = return_status_init();
 		if (conversation != nullptr) {
-			authenticity_status = conversation->ratchet->setLastMessageAuthenticity(false);
-			return_status_destroy_errors(&authenticity_status);
+			try {
+				conversation->ratchet->setLastMessageAuthenticity(false);
+			} catch (...) {
+			}
 		}
 	}
 
@@ -588,6 +628,7 @@ return_status conversation_export(
 		Conversation ** const exported_conversation) noexcept {
 	return_status status = return_status_init();
 
+	std::unique_ptr<Conversation,ConversationDeleter> exported_conversation_ptr;
 	unsigned char *id = nullptr;
 
 	//check input
@@ -596,8 +637,14 @@ return_status conversation_export(
 	}
 
 	//export the ratchet
-	status = conversation->ratchet->exportRatchet(*exported_conversation);
-	THROW_on_error(EXPORT_ERROR, "Failed to export ratchet.");
+	try {
+		exported_conversation_ptr = conversation->ratchet->exportProtobuf();
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//export the conversation id
 	id = (unsigned char*)zeroed_malloc(CONVERSATION_ID_SIZE);
@@ -605,8 +652,10 @@ return_status conversation_export(
 	if (conversation->id.cloneToRaw(id, CONVERSATION_ID_SIZE) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy conversation id.");
 	}
-	(*exported_conversation)->id.data = id;
-	(*exported_conversation)->id.len = CONVERSATION_ID_SIZE;
+	exported_conversation_ptr->id.data = id;
+	exported_conversation_ptr->id.len = CONVERSATION_ID_SIZE;
+	*exported_conversation = exported_conversation_ptr.release();
+
 cleanup:
 	on_error {
 		zeroed_free_and_null_if_valid(id);
@@ -639,8 +688,15 @@ return_status conversation_import(
 	}
 
 	//import the ratchet
-	status = Ratchet::import(((*conversation)->ratchet), *conversation_protobuf);
-	THROW_on_error(IMPORT_ERROR, "Failed to import ratchet.");
+	try {
+		(*conversation)->ratchet = new Ratchet(*conversation_protobuf);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
+
 cleanup:
 	on_error {
 		if (conversation != nullptr) {

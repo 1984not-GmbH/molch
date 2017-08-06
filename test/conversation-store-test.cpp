@@ -24,9 +24,11 @@
 #include <cstdlib>
 #include <sodium.h>
 #include <cassert>
+#include <exception>
 #include <iostream>
 
 #include "../lib/conversation-store.h"
+#include "../lib/molch-exception.h"
 #include "utils.h"
 
 static return_status protobuf_export(
@@ -194,23 +196,23 @@ static return_status test_add_conversation(ConversationStore * const store) noex
 		THROW(GENERIC_ERROR, "Failed to fill buffer with random data.");
 	}
 
-	status = Ratchet::create(
-			conversation->ratchet,
+	try {
+		conversation->ratchet = new Ratchet(
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral);
-	if (conversation->ratchet == nullptr) {
-		THROW(CREATION_ERROR, "Failed to creat ratchet.");
+
+		status = store->add(conversation);
+		conversation = nullptr;
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
 	}
-
-	status = store->add(conversation);
-	THROW_on_error(ADDITION_ERROR, "Failed to add conversation to store.");
-	conversation = nullptr;
-
-	goto cleanup;
 
 cleanup:
 	if (conversation != nullptr) {

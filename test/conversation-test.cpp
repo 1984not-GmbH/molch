@@ -143,15 +143,20 @@ static return_status create_conversation(
 		THROW(BUFFER_ERROR, "Failed to create random conversation id.");
 	}
 
-	status = Ratchet::create(
-			(*conversation)->ratchet,
-			*our_private_identity,
-			*our_public_identity,
-			*their_public_identity,
-			*our_private_ephemeral,
-			*our_public_ephemeral,
-			*their_public_ephemeral);
-	THROW_on_error(CREATION_ERROR, "Failed to create ratchet.");
+	try {
+		(*conversation)->ratchet = new Ratchet(
+				*our_private_identity,
+				*our_public_identity,
+				*their_public_identity,
+				*our_private_ephemeral,
+				*our_public_ephemeral,
+				*their_public_ephemeral);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 cleanup:
 	on_error {
