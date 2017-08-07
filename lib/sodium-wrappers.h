@@ -67,6 +67,14 @@ public:
 /*
  * Calls sodium_malloc and throws std::bad_alloc if allocation fails
  */
-void* throwing_sodium_malloc(size_t size);
+template <typename T>
+T* throwing_sodium_malloc(size_t size) {
+	void* memory = sodium_malloc(size);
+	if (memory == nullptr) {
+		throw std::bad_alloc();
+	}
+
+	return reinterpret_cast<T*>(memory);
+}
 
 #endif /* LIB_SODIUM_WRAPPERS_H */

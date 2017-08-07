@@ -58,7 +58,7 @@ RatchetStorage::RatchetStorage() {
 }
 
 void Ratchet::init() {
-	this->storage = std::unique_ptr<RatchetStorage,SodiumDeleter<RatchetStorage>>(reinterpret_cast<RatchetStorage*>(throwing_sodium_malloc(sizeof(RatchetStorage))));
+	this->storage = std::unique_ptr<RatchetStorage,SodiumDeleter<RatchetStorage>>(throwing_sodium_malloc<RatchetStorage>(sizeof(RatchetStorage)));
 	this->storage->init();
 
 	//init scalars
@@ -548,7 +548,7 @@ void Ratchet::setLastMessageAuthenticity(bool valid) {
 }
 
 std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
-	auto conversation = std::unique_ptr<Conversation,ConversationDeleter>(reinterpret_cast<Conversation*>(throwing_zeroed_malloc(sizeof(Conversation))));
+	auto conversation = std::unique_ptr<Conversation,ConversationDeleter>(throwing_zeroed_malloc<Conversation>(sizeof(Conversation)));
 	conversation__init(conversation.get());
 
 	//root keys
@@ -556,7 +556,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	if (!this->storage->root_key.contains(ROOT_KEY_SIZE)) {
 		throw MolchException(EXPORT_ERROR, "root_key is missing or has an incorrect size.");
 	}
-	conversation->root_key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(ROOT_KEY_SIZE));
+	conversation->root_key.data = throwing_zeroed_malloc<unsigned char>(ROOT_KEY_SIZE);
 	if (this->storage->root_key.cloneToRaw(conversation->root_key.data, ROOT_KEY_SIZE) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy root key.");
 	}
@@ -564,7 +564,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	conversation->has_root_key = true;
 	//purported root key
 	if (this->storage->purported_root_key.contains(ROOT_KEY_SIZE)) {
-		conversation->purported_root_key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(ROOT_KEY_SIZE));
+		conversation->purported_root_key.data = throwing_zeroed_malloc<unsigned char>(ROOT_KEY_SIZE);
 		if (this->storage->purported_root_key.cloneToRaw(conversation->purported_root_key.data, ROOT_KEY_SIZE) != 0) {
 			throw MolchException(BUFFER_ERROR, "Failed to copy purported root key.");
 		}
@@ -577,7 +577,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	if (!this->am_i_alice && !this->storage->send_header_key.contains(HEADER_KEY_SIZE)) {
 		throw MolchException(EXPORT_ERROR, "send_header_key missing or has an incorrect size.");
 	}
-	conversation->send_header_key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(HEADER_KEY_SIZE));
+	conversation->send_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
 	if (this->storage->send_header_key.cloneToRaw(conversation->send_header_key.data, HEADER_KEY_SIZE) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy send header key.");
 	}
@@ -587,7 +587,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	if (this->am_i_alice && !this->storage->receive_header_key.contains(HEADER_KEY_SIZE)) {
 		throw MolchException(EXPORT_ERROR, "receive_header_key missing or has an incorrect size.");
 	}
-	conversation->receive_header_key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(HEADER_KEY_SIZE));
+	conversation->receive_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
 	if (this->storage->receive_header_key.cloneToRaw(conversation->receive_header_key.data, HEADER_KEY_SIZE) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy receive header key.");
 	}
@@ -597,7 +597,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	if (!this->storage->next_send_header_key.contains(HEADER_KEY_SIZE)) {
 		throw MolchException(EXPORT_ERROR, "next_send_header_key missing or has incorrect size.");
 	}
-	conversation->next_send_header_key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(HEADER_KEY_SIZE));
+	conversation->next_send_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
 	if (this->storage->next_send_header_key.cloneToRaw(conversation->next_send_header_key.data, HEADER_KEY_SIZE) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy next send header key.");
 	}
@@ -607,7 +607,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	if (!this->storage->next_receive_header_key.contains(HEADER_KEY_SIZE)) {
 		throw MolchException(EXPORT_ERROR, "next_receive_header_key missinge or has an incorrect size.");
 	}
-	conversation->next_receive_header_key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(HEADER_KEY_SIZE));
+	conversation->next_receive_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
 	if (this->storage->next_receive_header_key.cloneToRaw(conversation->next_receive_header_key.data, HEADER_KEY_SIZE) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy next receive header key.");
 	}
@@ -615,7 +615,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	conversation->has_next_receive_header_key = true;
 	//purported receive header key
 	if (this->storage->purported_receive_header_key.contains(HEADER_KEY_SIZE)) {
-		conversation->purported_receive_header_key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(HEADER_KEY_SIZE));
+		conversation->purported_receive_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
 		if (this->storage->purported_receive_header_key.cloneToRaw(conversation->purported_receive_header_key.data, HEADER_KEY_SIZE) != 0) {
 			throw MolchException(BUFFER_ERROR, "Failed to copy purported receive header key.");
 		}
@@ -624,7 +624,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	}
 	//purported next receive header key
 	if (this->storage->purported_next_receive_header_key.contains(HEADER_KEY_SIZE)) {
-		conversation->purported_next_receive_header_key.data = reinterpret_cast<unsigned char*>(zeroed_malloc(HEADER_KEY_SIZE));
+		conversation->purported_next_receive_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
 		if (this->storage->purported_next_receive_header_key.cloneToRaw(conversation->purported_next_receive_header_key.data, HEADER_KEY_SIZE) != 0) {
 			throw MolchException(BUFFER_ERROR, "Failed to copy purported next receive header key.");
 		}
@@ -637,7 +637,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	if (!this->am_i_alice && !this->storage->send_chain_key.contains(CHAIN_KEY_SIZE)) {
 		throw MolchException(EXPORT_ERROR, "send_chain_key missing or has an invalid size.");
 	}
-	conversation->send_chain_key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(CHAIN_KEY_SIZE));
+	conversation->send_chain_key.data = throwing_zeroed_malloc<unsigned char>(CHAIN_KEY_SIZE);
 	if (this->storage->send_chain_key.cloneToRaw(conversation->send_chain_key.data, CHAIN_KEY_SIZE) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy send chain key.");
 	}
@@ -647,7 +647,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	if (this->am_i_alice && !this->storage->receive_chain_key.contains(CHAIN_KEY_SIZE)) {
 		throw MolchException(EXPORT_ERROR, "receive_chain_key missing or has an incorrect size.");
 	}
-	conversation->receive_chain_key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(CHAIN_KEY_SIZE));
+	conversation->receive_chain_key.data = throwing_zeroed_malloc<unsigned char>(CHAIN_KEY_SIZE);
 	if (this->storage->receive_chain_key.cloneToRaw(conversation->receive_chain_key.data, CHAIN_KEY_SIZE) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy receive chain key.");
 	}
@@ -655,7 +655,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	conversation->has_receive_chain_key = true;
 	//purported receive chain key
 	if (this->storage->purported_receive_chain_key.contains(CHAIN_KEY_SIZE)) {
-		conversation->purported_receive_chain_key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(CHAIN_KEY_SIZE));
+		conversation->purported_receive_chain_key.data = throwing_zeroed_malloc<unsigned char>(CHAIN_KEY_SIZE);
 		if (this->storage->purported_receive_chain_key.cloneToRaw(conversation->purported_receive_chain_key.data, CHAIN_KEY_SIZE) != 0) {
 			throw MolchException(BUFFER_ERROR, "Failed to copy purported receive chain key.");
 		}
@@ -668,7 +668,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	if (!this->storage->our_public_identity.contains(PUBLIC_KEY_SIZE)) {
 		throw MolchException(EXPORT_ERROR, "our_public_identity missing or has an invalid size.");
 	}
-	conversation->our_public_identity_key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(PUBLIC_KEY_SIZE));
+	conversation->our_public_identity_key.data = throwing_zeroed_malloc<unsigned char>(PUBLIC_KEY_SIZE);
 	if (this->storage->our_public_identity.cloneToRaw(conversation->our_public_identity_key.data, PUBLIC_KEY_SIZE) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy our public identity key.");
 	}
@@ -678,7 +678,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	if (!this->storage->their_public_identity.contains(PUBLIC_KEY_SIZE)) {
 		throw MolchException(EXPORT_ERROR, "their_public_identity missing or has an invalid size.");
 	}
-	conversation->their_public_identity_key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(PUBLIC_KEY_SIZE));
+	conversation->their_public_identity_key.data = throwing_zeroed_malloc<unsigned char>(PUBLIC_KEY_SIZE);
 	if (this->storage->their_public_identity.cloneToRaw(conversation->their_public_identity_key.data, PUBLIC_KEY_SIZE) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy their public identity key.");
 	}
@@ -690,7 +690,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	if (!this->storage->our_private_ephemeral.contains(PRIVATE_KEY_SIZE)) {
 		throw MolchException(EXPORT_ERROR, "our_private_ephemeral missing or has an invalid size.");
 	}
-	conversation->our_private_ephemeral_key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(PRIVATE_KEY_SIZE));
+	conversation->our_private_ephemeral_key.data = throwing_zeroed_malloc<unsigned char>(PRIVATE_KEY_SIZE);
 	if (this->storage->our_private_ephemeral.cloneToRaw(conversation->our_private_ephemeral_key.data, PRIVATE_KEY_SIZE) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy our private ephemeral key.");
 	}
@@ -700,7 +700,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	if (!this->storage->our_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
 		throw MolchException(BUFFER_ERROR, "our_public_ephemeral missing or has an invalid size.");
 	}
-	conversation->our_public_ephemeral_key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(PUBLIC_KEY_SIZE));
+	conversation->our_public_ephemeral_key.data = throwing_zeroed_malloc<unsigned char>(PUBLIC_KEY_SIZE);
 	if (this->storage->our_public_ephemeral.cloneToRaw(conversation->our_public_ephemeral_key.data, PUBLIC_KEY_SIZE) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy our public ephemeral key.");
 	}
@@ -710,7 +710,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	if (!this->storage->their_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
 		throw MolchException(BUFFER_ERROR, "their_public_ephemeral missing or has an invalid size.");
 	}
-	conversation->their_public_ephemeral_key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(PUBLIC_KEY_SIZE));
+	conversation->their_public_ephemeral_key.data = throwing_zeroed_malloc<unsigned char>(PUBLIC_KEY_SIZE);
 	if (this->storage->their_public_ephemeral.cloneToRaw(conversation->their_public_ephemeral_key.data, PUBLIC_KEY_SIZE) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy their public ephemeral key.");
 	}
@@ -718,7 +718,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
 	conversation->has_their_public_ephemeral_key = true;
 	//their purported public ephemeral key
 	if (this->storage->their_purported_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
-		conversation->their_purported_public_ephemeral.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(PUBLIC_KEY_SIZE));
+		conversation->their_purported_public_ephemeral.data = throwing_zeroed_malloc<unsigned char>(PUBLIC_KEY_SIZE);
 		if (this->storage->their_purported_public_ephemeral.cloneToRaw(conversation->their_purported_public_ephemeral.data, PUBLIC_KEY_SIZE) != 0) {
 			throw MolchException(BUFFER_ERROR, "Failed to copy their purported public ephemeral key.");
 		}

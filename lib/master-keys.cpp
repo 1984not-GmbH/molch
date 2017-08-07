@@ -73,7 +73,7 @@ MasterKeys::MasterKeys(
 
 void MasterKeys::init() {
 	//allocate the private key storage
-	this->private_keys = std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>>(reinterpret_cast<PrivateMasterKeyStorage*>(throwing_sodium_malloc(sizeof(PrivateMasterKeyStorage))));
+	this->private_keys = std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>>(throwing_sodium_malloc<PrivateMasterKeyStorage>(sizeof(PrivateMasterKeyStorage)));
 
 	//initialize the Buffers
 	//private, initialize with pointers to private key storage
@@ -205,23 +205,23 @@ void MasterKeys::exportProtobuf(
 		std::unique_ptr<Key,KeyDeleter>& public_identity_key,
 		std::unique_ptr<Key,KeyDeleter>& private_identity_key) {
 	//create and initialize the structs
-	public_signing_key = std::unique_ptr<Key,KeyDeleter>(reinterpret_cast<Key*>(throwing_zeroed_malloc(sizeof(Key))));
+	public_signing_key = std::unique_ptr<Key,KeyDeleter>(throwing_zeroed_malloc<Key>(sizeof(Key)));
 	key__init(public_signing_key.get());
-	private_signing_key = std::unique_ptr<Key,KeyDeleter>(reinterpret_cast<Key*>(throwing_zeroed_malloc(sizeof(Key))));
+	private_signing_key = std::unique_ptr<Key,KeyDeleter>(throwing_zeroed_malloc<Key>(sizeof(Key)));
 	key__init(private_signing_key.get());
-	public_identity_key = std::unique_ptr<Key,KeyDeleter>(reinterpret_cast<Key*>(throwing_zeroed_malloc(sizeof(Key))));
+	public_identity_key = std::unique_ptr<Key,KeyDeleter>(throwing_zeroed_malloc<Key>(sizeof(Key)));
 	key__init(public_identity_key.get());
-	private_identity_key = std::unique_ptr<Key,KeyDeleter>(reinterpret_cast<Key*>(throwing_zeroed_malloc(sizeof(Key))));
+	private_identity_key = std::unique_ptr<Key,KeyDeleter>(throwing_zeroed_malloc<Key>(sizeof(Key)));
 	key__init(private_identity_key.get());
 
 	//allocate the key buffers
-	public_signing_key->key.data = reinterpret_cast<uint8_t*>(throwing_zeroed_malloc(PUBLIC_MASTER_KEY_SIZE));
+	public_signing_key->key.data = throwing_zeroed_malloc<uint8_t>(PUBLIC_MASTER_KEY_SIZE);
 	public_signing_key->key.len = PUBLIC_MASTER_KEY_SIZE;
-	private_signing_key->key.data = reinterpret_cast<uint8_t*>(throwing_zeroed_malloc(PRIVATE_MASTER_KEY_SIZE));
+	private_signing_key->key.data = throwing_zeroed_malloc<uint8_t>(PRIVATE_MASTER_KEY_SIZE);
 	private_signing_key->key.len = PRIVATE_MASTER_KEY_SIZE;
-	public_identity_key->key.data = reinterpret_cast<uint8_t*>(throwing_zeroed_malloc(PUBLIC_KEY_SIZE));
+	public_identity_key->key.data = throwing_zeroed_malloc<uint8_t>(PUBLIC_KEY_SIZE);
 	public_identity_key->key.len = PUBLIC_KEY_SIZE;
-	private_identity_key->key.data = reinterpret_cast<uint8_t*>(throwing_zeroed_malloc(PRIVATE_KEY_SIZE));
+	private_identity_key->key.data = throwing_zeroed_malloc<uint8_t>(PRIVATE_KEY_SIZE);
 	private_identity_key->key.len = PRIVATE_KEY_SIZE;
 
 	//copy the keys

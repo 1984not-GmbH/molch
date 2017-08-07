@@ -31,6 +31,8 @@
 #include <memory>
 #include <protobuf-c/protobuf-c.h>
 
+#include "molch-exception.h"
+
 /*!
  * Allocates a buffer of 'size' and stores it's size.
  *
@@ -50,7 +52,33 @@ void *zeroed_malloc(size_t size) __attribute__((warn_unused_result));
  *   A pointer to a heap allocated memory regtion of size 'size'.
  * \throws std::bad_alloc
  */
-void *throwing_zeroed_malloc(size_t size) __attribute__((warn_unused_result));
+template <typename T>
+T *throwing_zeroed_malloc(size_t size) {
+	// start_pointer:size:padding:allocated_memory
+	// the size is needed in order to overwrite it with zeroes later
+	// the start_pointer has to be passed to free later
+
+	size_t amount_to_allocate = size + sizeof(void*) + sizeof(size_t) + (alignof(max_align_t) - 1);
+
+	auto allocated_address = std::unique_ptr<unsigned char[]>(new unsigned char[amount_to_allocate]);
+	unsigned char *address = allocated_address.get();
+
+	size_t space = amount_to_allocate - sizeof(size_t) - sizeof(void*);
+	unsigned char *aligned_address = address + sizeof(size_t) + sizeof(void*);
+	if (std::align(alignof(intmax_t), size, reinterpret_cast<void*&>(aligned_address), space) == nullptr) {
+		throw MolchException(ALLOCATION_FAILED, "Failed to align memory.");
+	}
+
+	//NOTE: This has to be copied as bytes because of possible alignment issues
+	//write the size in front of the aligned address
+	std::copy(reinterpret_cast<unsigned char*>(&size), reinterpret_cast<unsigned char*>(&size + 1), aligned_address - sizeof(size_t));
+	//write the pointer from malloc in front of the size
+	std::copy(reinterpret_cast<unsigned char*>(&address), reinterpret_cast<unsigned char*>(&address + 1), aligned_address - sizeof(size_t) - sizeof(void*));
+
+	allocated_address.release();
+
+	return reinterpret_cast<T*>(aligned_address);
+}
 
 /*!
  * Frees a buffer allocated with zeroed_malloc and securely

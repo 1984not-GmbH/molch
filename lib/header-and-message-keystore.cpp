@@ -105,18 +105,18 @@ HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const KeyBundle& key_
 }
 
 std::unique_ptr<KeyBundle,KeyBundleDeleter> HeaderAndMessageKeyStoreNode::exportProtobuf() {
-	auto key_bundle = std::unique_ptr<KeyBundle,KeyBundleDeleter>(reinterpret_cast<KeyBundle*>(throwing_zeroed_malloc(sizeof(KeyBundle))));
+	auto key_bundle = std::unique_ptr<KeyBundle,KeyBundleDeleter>(throwing_zeroed_malloc<KeyBundle>(sizeof(KeyBundle)));
 	key_bundle__init(key_bundle.get());
 
 	//header key
-	key_bundle->header_key = reinterpret_cast<Key*>(throwing_zeroed_malloc(sizeof(Key)));
+	key_bundle->header_key = throwing_zeroed_malloc<Key>(sizeof(Key));
 	key__init(key_bundle->header_key);
-	key_bundle->header_key->key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(HEADER_KEY_SIZE));
+	key_bundle->header_key->key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
 
 	//message key
-	key_bundle->message_key = reinterpret_cast<Key*>(throwing_zeroed_malloc(sizeof(Key)));
+	key_bundle->message_key = throwing_zeroed_malloc<Key>(sizeof(Key));
 	key__init(key_bundle->message_key);
-	key_bundle->message_key->key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(MESSAGE_KEY_SIZE));
+	key_bundle->message_key->key.data = throwing_zeroed_malloc<unsigned char>(MESSAGE_KEY_SIZE);
 
 	//export the header key
 	if (this->header_key.cloneToRaw(key_bundle->header_key->key.data, HEADER_KEY_SIZE) != 0) {
@@ -167,7 +167,7 @@ void HeaderAndMessageKeyStore::exportProtobuf(KeyBundle**& key_bundles, size_t& 
 	}
 
 	//allocate output array
-	key_bundles = reinterpret_cast<KeyBundle**>(throwing_zeroed_malloc(this->keys.size() * sizeof(KeyBundle*)));
+	key_bundles = throwing_zeroed_malloc<KeyBundle*>(this->keys.size() * sizeof(KeyBundle*));
 	size_t index = 0;
 	for (auto&& bundle : bundles) {
 		key_bundles[index] = bundle.release();

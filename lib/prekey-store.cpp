@@ -116,22 +116,22 @@ PrekeyStoreNode::PrekeyStoreNode(const Prekey& keypair) {
 }
 
 std::unique_ptr<Prekey,PrekeyDeleter> PrekeyStoreNode::exportProtobuf() {
-	auto prekey = std::unique_ptr<Prekey,PrekeyDeleter>(reinterpret_cast<Prekey*>(throwing_zeroed_malloc(sizeof(Prekey))));
+	auto prekey = std::unique_ptr<Prekey,PrekeyDeleter>(throwing_zeroed_malloc<Prekey>(sizeof(Prekey)));
 	prekey__init(prekey.get());
 
 	//export the private key
-	prekey->private_key = reinterpret_cast<Key*>(throwing_zeroed_malloc(sizeof(Key)));
+	prekey->private_key = throwing_zeroed_malloc<Key>(sizeof(Key));
 	key__init(prekey->private_key);
-	prekey->private_key->key.data = reinterpret_cast<uint8_t*>(throwing_zeroed_malloc(PRIVATE_KEY_SIZE));
+	prekey->private_key->key.data = throwing_zeroed_malloc<uint8_t>(PRIVATE_KEY_SIZE);
 	prekey->private_key->key.len = PRIVATE_KEY_SIZE;
 	if (this->private_key.cloneToRaw(prekey->private_key->key.data, prekey->private_key->key.len) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy private key to protobuf.");
 	}
 
 	//export the public key
-	prekey->public_key = reinterpret_cast<Key*>(throwing_zeroed_malloc(sizeof(Key)));
+	prekey->public_key = throwing_zeroed_malloc<Key>(sizeof(Key));
 	key__init(prekey->public_key);
-	prekey->public_key->key.data = reinterpret_cast<uint8_t*>(throwing_zeroed_malloc(PUBLIC_KEY_SIZE));
+	prekey->public_key->key.data = throwing_zeroed_malloc<uint8_t>(PUBLIC_KEY_SIZE);
 	prekey->public_key->key.len = PUBLIC_KEY_SIZE;
 	if (this->public_key.cloneToRaw(prekey->public_key->key.data, prekey->public_key->key.len) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy public key to protobuf.");
@@ -165,7 +165,7 @@ void PrekeyStoreNode::generate() {
 void PrekeyStore::init() {
 	this->oldest_expiration_date = 0;
 	this->oldest_deprecated_expiration_date = 0;
-	this->prekeys = std::unique_ptr<std::array<PrekeyStoreNode,PREKEY_AMOUNT>,SodiumDeleter<std::array<PrekeyStoreNode,PREKEY_AMOUNT>>>(reinterpret_cast<std::array<PrekeyStoreNode,PREKEY_AMOUNT>*>(throwing_sodium_malloc(sizeof(std::array<PrekeyStoreNode,PREKEY_AMOUNT>))));
+	this->prekeys = std::unique_ptr<std::array<PrekeyStoreNode,PREKEY_AMOUNT>,SodiumDeleter<std::array<PrekeyStoreNode,PREKEY_AMOUNT>>>(throwing_sodium_malloc<std::array<PrekeyStoreNode,PREKEY_AMOUNT>>(sizeof(std::array<PrekeyStoreNode,PREKEY_AMOUNT>)));
 	for (auto&& prekey : *prekeys) {
 		prekey.init();
 	}
@@ -367,7 +367,7 @@ static void export_keypairs(Container& container, Prekey**& keypairs, size_t& ke
 	}
 
 	//allocate output array
-	keypairs = reinterpret_cast<Prekey**>(throwing_zeroed_malloc(container.size() * sizeof(Prekey*)));
+	keypairs = throwing_zeroed_malloc<Prekey*>(container.size() * sizeof(Prekey*));
 	size_t index = 0;
 	for (auto&& bundle : prekeys) {
 		keypairs[index] = bundle.release();
