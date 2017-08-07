@@ -44,7 +44,6 @@ list(APPEND custom_compiler_flag_candidates
     -Wtrampolines
     -Wunsafe-loop-optimizations
     -Wredundant-decls
-    -Wstack-protector
     -Wlogical-op
     #C++ options
     -Wnoexcept
