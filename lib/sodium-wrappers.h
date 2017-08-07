@@ -25,45 +25,6 @@
 #ifndef LIB_SODIUM_WRAPPERS_H
 #define LIB_SODIUM_WRAPPERS_H
 
-template <class T>
-class SodiumAllocator : public std::allocator<T> {
-public:
-	SodiumAllocator() = default;
-	//TODO WTF is this and why do I need it? C++ is strange, especially the standard library!
-	SodiumAllocator(const std::allocator<T>& other) {
-		(void)other;
-	}
-
-	T* allocate(size_t size) {
-		T* pointer = reinterpret_cast<T*> (sodium_malloc(size));
-		if (pointer == nullptr) {
-			throw std::bad_alloc();
-		}
-
-		return pointer;
-	}
-
-	T* allocate(size_t size, const void * hint) {
-		(void)hint;
-		return this->allocate(size);
-	}
-
-	void deallocate(T* pointer, size_t n) {
-		(void)n;
-		sodium_free(pointer);
-	}
-};
-
-template <typename T>
-class SodiumDeleter {
-public:
-	void operator()(T* object) {
-		if (object != nullptr) {
-			sodium_free(object);
-		}
-	}
-};
-
 /*
  * Calls sodium_malloc and throws std::bad_alloc if allocation fails
  */
@@ -76,5 +37,41 @@ T* throwing_sodium_malloc(size_t size) {
 
 	return reinterpret_cast<T*>(memory);
 }
+
+template <class T>
+class SodiumAllocator {
+public:
+	typedef T value_type;
+
+	SodiumAllocator() = default;
+	template <class U>
+	constexpr SodiumAllocator(const SodiumAllocator<U>&) noexcept {}
+
+	T* allocate(size_t elements) {
+		return throwing_sodium_malloc<T>(elements * sizeof(T));
+	}
+	void deallocate(T* pointer, size_t elements) noexcept {
+		(void)elements;
+		sodium_free(pointer);
+	}
+};
+template <class T, class U>
+bool operator==(const SodiumAllocator<T>&, const SodiumAllocator<U>&) {
+	return true;
+}
+template <class T, class U>
+bool operator!=(const SodiumAllocator<T>&, const SodiumAllocator<U>&) {
+	return false;
+}
+
+template <typename T>
+class SodiumDeleter {
+public:
+	void operator()(T* object) {
+		if (object != nullptr) {
+			sodium_free(object);
+		}
+	}
+};
 
 #endif /* LIB_SODIUM_WRAPPERS_H */
