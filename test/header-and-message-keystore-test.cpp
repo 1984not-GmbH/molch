@@ -223,7 +223,7 @@ int main(void) {
 
 		//remove key from the tail
 		printf("Remove Tail:\n");
-		keystore.keys.erase(keystore.keys.cend());
+		keystore.keys.pop_back();
 		assert(keystore.keys.size() == (protobuf_export_buffers.size() - 2));
 		std::cout << keystore.print();
 
