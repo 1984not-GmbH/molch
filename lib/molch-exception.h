@@ -59,16 +59,12 @@ public:
 	std::string print() const;
 };
 
-//throw std::bad_alloc if a buffer is invalid (which the buffer will do automatically in the future)
-#define exception_on_invalid_buffer(buffer) \
-	if (!(buffer).isValid()) {\
-		throw std::bad_alloc();\
-	}
-
 //throw std::bad_alloc if something is nullptr
-#define exception_on_failed_alloc(object) \
-	if ((object) == nullptr) {\
-		throw std::bad_alloc();\
+template <typename T>
+inline void exception_on_failed_alloc(const T* const& object) {
+	if (object == nullptr) {
+		throw std::bad_alloc();
 	}
+}
 
 #endif /* LIB_MOLCH_EXCEPTION_H */

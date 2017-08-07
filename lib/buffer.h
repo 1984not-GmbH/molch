@@ -225,4 +225,11 @@ public:
 	bool fits(const size_t size) const noexcept;
 	bool contains(const size_t size) const noexcept;
 };
+
+//throw std::bad_alloc if a buffer is invalid (which the buffer will do automatically in the future)
+inline void exception_on_invalid_buffer(Buffer& buffer) {
+	if (!buffer.isValid()) {
+		throw std::bad_alloc();
+	}
+}
 #endif
