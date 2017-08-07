@@ -52,7 +52,7 @@ public:
 	MolchException(const MolchError& error);
 	MolchException(const status_type type, const std::string& message);
 
-	virtual const char* what() const noexcept;
+	virtual const char* what() const noexcept override;
 
 	MolchException& add(const MolchException& exception);
 	MolchException& add(const MolchError& error);

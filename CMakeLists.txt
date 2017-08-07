@@ -57,6 +57,7 @@ list(APPEND custom_compiler_flag_candidates
     -Wuninitialized
     -Wsuggest-final-types
     -Wsuggest-final-methods
+    -Wsuggest-override
     -Wc++1z-compat
     -Wconditionally-supported
     -Wzero-as-null-pointer-constant
