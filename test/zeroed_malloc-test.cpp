@@ -30,7 +30,7 @@
 int main(void) noexcept {
 	return_status status = return_status_init();
 
-	unsigned char * const pointer = (unsigned char*)zeroed_malloc(100);
+	unsigned char * const pointer = reinterpret_cast<unsigned char*>(zeroed_malloc(100));
 	if (pointer == nullptr) {
 		THROW(ALLOCATION_FAILED, "Failed to allocate with zeroed_malloc.");
 	}
@@ -38,7 +38,7 @@ int main(void) noexcept {
 	printf("Checking size.\n");
 	{
 		size_t size = 0;
-		std::copy(pointer - sizeof(size_t), pointer, (unsigned char*)&size);
+		std::copy(pointer - sizeof(size_t), pointer, reinterpret_cast<unsigned char*>(&size));
 		if (size != 100) {
 			THROW(INCORRECT_DATA, "Size stored in the memory location is incorrect.");
 		}
@@ -48,8 +48,8 @@ int main(void) noexcept {
 	printf("Checking pointer.\n");
 	{
 		unsigned char *pointer_copy = nullptr;
-		std::copy(pointer - sizeof(size_t) - sizeof(void*), pointer - sizeof(size_t), (unsigned char*)&pointer_copy);
-		printf("pointer_copy = %p\n", (void*)pointer_copy);
+		std::copy(pointer - sizeof(size_t) - sizeof(void*), pointer - sizeof(size_t), reinterpret_cast<unsigned char*>(&pointer_copy));
+		printf("pointer_copy = %p\n", reinterpret_cast<void*>(pointer_copy));
 	}
 
 	zeroed_free(pointer);

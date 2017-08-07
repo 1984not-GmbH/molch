@@ -36,7 +36,7 @@ return_status user_store_create(user_store ** const store) noexcept {
 		THROW(INVALID_INPUT, "Pointer to put new user store into is nullptr.");
 	}
 
-	*store = (user_store*)sodium_malloc(sizeof(user_store));
+	*store = reinterpret_cast<user_store*>(sodium_malloc(sizeof(user_store)));
 	THROW_on_failed_alloc(*store);
 
 	//initialise
@@ -102,7 +102,7 @@ static return_status create_user_store_node(user_store_node ** const node) noexc
 		THROW(INVALID_INPUT, "Pointer to put new user store node into is nullptr.");
 	}
 
-	*node = (user_store_node*)sodium_malloc(sizeof(user_store_node));
+	*node = reinterpret_cast<user_store_node*>(sodium_malloc(sizeof(user_store_node)));
 	THROW_on_failed_alloc(*node);
 
 	//initialise pointers
@@ -376,7 +376,7 @@ return_status user_store_node_export(user_store_node * const node, User ** const
 		THROW(INVALID_INPUT, "Invalid input to user_store_node_export.");
 	}
 
-	*user = (User*)zeroed_malloc(sizeof(User));
+	*user = reinterpret_cast<User*>(zeroed_malloc(sizeof(User)));
 	THROW_on_failed_alloc(*user);
 	user__init(*user);
 	try {
@@ -449,7 +449,7 @@ return_status user_store_export(
 	}
 
 	if (store->length > 0) {
-		*users = (User**)zeroed_malloc(store->length * sizeof(User*));
+		*users = reinterpret_cast<User**>(zeroed_malloc(store->length * sizeof(User*)));
 		THROW_on_failed_alloc(*users);
 		std::fill(*users, *users + store->length, nullptr);
 

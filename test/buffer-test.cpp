@@ -98,7 +98,7 @@ int main(void) noexcept {
 	putchar('\n');
 
 	//make second buffer (from pointer)
-	buffer2 = ((Buffer*)malloc(sizeof(Buffer)))->init((unsigned char*)malloc(5), 5, 4);
+	buffer2 = reinterpret_cast<Buffer*>(malloc(sizeof(Buffer)))->init(reinterpret_cast<unsigned char*>(malloc(5)), 5, 4);
 	buffer2->content[0] = 0xde;
 	buffer2->content[1] = 0xad;
 	buffer2->content[2] = 0xbe;
@@ -109,8 +109,8 @@ int main(void) noexcept {
 	putchar('\n');
 
 	{
-		Buffer empty((size_t)0, 0);
-		Buffer empty2((size_t)0, 0);
+		Buffer empty(static_cast<size_t>(0), 0);
+		Buffer empty2(static_cast<size_t>(0), 0);
 		status = empty2.cloneFrom(&empty);
 		if (status != 0) {
 			fprintf(stderr, "ERROR: Failed to clone empty buffer.\n");
@@ -312,17 +312,17 @@ int main(void) noexcept {
 	//compare buffer to an array
 	{
 		Buffer true_buffer("true");
-		status = true_buffer.compareToRaw((const unsigned char*)"true", sizeof("true"));
+		status = true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("true"), sizeof("true"));
 		if (status != 0) {
 			fprintf(stderr, "ERROR: Failed to compare buffer to array! (%i)\n", status);
 			goto fail;
 		}
-		status = true_buffer.compareToRaw((const unsigned char*)"fals", sizeof("fals"));
+		status = true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("fals"), sizeof("fals"));
 		if (status != -1) {
 			fprintf(stderr, "ERROR: Failed to detect difference in buffer and array.\n");
 			goto fail;
 		}
-		status = true_buffer.compareToRaw((const unsigned char*)"false", sizeof("false"));
+		status = true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("false"), sizeof("false"));
 		if (status != -1) {
 			fprintf(stderr, "ERROR: Failed to detect difference in buffer and array.\n");
 			goto fail;

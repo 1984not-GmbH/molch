@@ -59,7 +59,7 @@ return_status read_file(Buffer*& data, const std::string& filename) noexcept {
 	{
 		//get the filesize
 		fseek(file, 0, SEEK_END);
-		size_t filesize = (size_t)ftell(file);
+		size_t filesize = static_cast<size_t>(ftell(file));
 		fseek(file, 0, SEEK_SET);
 
 		data = Buffer::create(filesize, filesize);

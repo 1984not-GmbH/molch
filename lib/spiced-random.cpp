@@ -66,7 +66,7 @@ void spiced_random(
 	int status_int = crypto_pwhash(
 			spice.content,
 			spice.content_length,
-			(const char*)low_entropy_spice.content,
+			reinterpret_cast<const char*>(low_entropy_spice.content),
 			low_entropy_spice.content_length,
 			salt.content,
 			crypto_pwhash_OPSLIMIT_INTERACTIVE,

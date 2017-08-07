@@ -48,6 +48,7 @@ list(APPEND custom_compiler_flag_candidates
     #C++ options
     -Wnoexcept
     -Wstrict-null-sentinel
+    -Wold-style-cast
     -Woverloaded-virtual
     -Wsign-promo
     -Wmultiple-inheritance

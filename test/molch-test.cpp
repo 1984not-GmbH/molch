@@ -398,8 +398,8 @@ int main(void) noexcept {
 	THROW_on_error(CREATION_ERROR, "Failed to start receive conversation.");
 
 	//compare sent and received messages
-	printf("sent (Alice): %.*s\n", (int)alice_send_message.content_length, alice_send_message.content);
-	printf("received (Bob): %.*s\n", (int)bob_receive_message_length, bob_receive_message);
+	printf("sent (Alice): %.*s\n", static_cast<int>(alice_send_message.content_length), alice_send_message.content);
+	printf("received (Bob): %.*s\n", static_cast<int>(bob_receive_message_length), bob_receive_message);
 	if ((alice_send_message.content_length != bob_receive_message_length)
 			|| (sodium_memcmp(alice_send_message.content, bob_receive_message, bob_receive_message_length) != 0)) {
 		free_and_null_if_valid(bob_receive_message);
@@ -459,8 +459,8 @@ int main(void) noexcept {
 		}
 
 		//compare sent and received messages
-		printf("sent (Bob): %.*s\n", (int)bob_send_message.content_length, bob_send_message.content);
-		printf("received (Alice): %.*s\n", (int)alice_receive_message_length, alice_receive_message);
+		printf("sent (Bob): %.*s\n", static_cast<int>(bob_send_message.content_length), bob_send_message.content);
+		printf("received (Alice): %.*s\n", static_cast<int>(alice_receive_message_length), alice_receive_message);
 		if ((bob_send_message.content_length != alice_receive_message_length)
 				|| (sodium_memcmp(bob_send_message.content, alice_receive_message, alice_receive_message_length) != 0)) {
 			free_and_null_if_valid(alice_receive_message);
@@ -608,7 +608,7 @@ int main(void) noexcept {
 	{
 		Buffer success_buffer("SUCCESS");
 		size_t printed_status_length = 0;
-		printed_status = (unsigned char*) molch_print_status(&printed_status_length, return_status_init());
+		printed_status = reinterpret_cast<unsigned char*>(molch_print_status(&printed_status_length, return_status_init()));
 		if (success_buffer.compareToRaw(printed_status, printed_status_length) != 0) {
 			THROW(INCORRECT_DATA, "molch_print_status produces incorrect output.");
 		}

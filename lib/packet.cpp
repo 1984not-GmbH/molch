@@ -211,7 +211,7 @@ std::unique_ptr<Buffer> packet_encrypt(
 	packet_header_struct.message_nonce.len = message_nonce.content_length;
 
 	//pad the message (PKCS7 padding to 255 byte blocks, see RFC5652 section 6.3)
-	unsigned char padding = (unsigned char)(255 - (message.content_length % 255));
+	unsigned char padding = static_cast<unsigned char>(255 - (message.content_length % 255));
 	Buffer padded_message(message.content_length + padding, 0);
 	exception_on_invalid_buffer(padded_message);
 	//copy the message

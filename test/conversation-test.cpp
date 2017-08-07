@@ -127,7 +127,7 @@ static return_status create_conversation(
 		THROW(INVALID_INPUT, "Invalid input for conversation_create.");
 	}
 
-	*conversation = (conversation_t*)malloc(sizeof(conversation_t));
+	*conversation = reinterpret_cast<conversation_t*>(malloc(sizeof(conversation_t)));
 	if (conversation == nullptr) {
 		THROW(ALLOCATION_FAILED, "Failed to allocate memory for conversation.");
 	}

@@ -182,7 +182,7 @@ return_status ConversationStore::exportConversationStore(Conversation**& convers
 
 	if (this->length > 0) {
 		//allocate the array of conversations
-		conversations = (Conversation**)zeroed_malloc(this->length * sizeof(Conversation*));
+		conversations = reinterpret_cast<Conversation**>(zeroed_malloc(this->length * sizeof(Conversation*)));
 		THROW_on_failed_alloc(conversations);
 		std::fill(conversations, conversations + this->length, nullptr);
 	} else {

@@ -196,7 +196,7 @@ void MasterKeys::sign(
 		throw MolchException(SIGN_ERROR, "Failed to sign message.");
 	}
 
-	signed_data.content_length = (size_t) signed_message_length;
+	signed_data.content_length = static_cast<size_t>(signed_message_length);
 }
 
 void MasterKeys::exportProtobuf(

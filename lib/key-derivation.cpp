@@ -59,8 +59,8 @@ void derive_key(
 	Buffer big_endian_subkey_counter(salt.content + salt.content_length - sizeof(uint32_t), sizeof(uint32_t));
 	to_big_endian(subkey_counter, big_endian_subkey_counter);
 
-	const char personal_string[] = "molch_cryptolib";
-	Buffer personal((const unsigned char*)personal_string, sizeof(personal_string));
+	const unsigned char personal_string[] = "molch_cryptolib";
+	Buffer personal(personal_string, sizeof(personal_string));
 	assert(personal.content_length == crypto_generichash_blake2b_PERSONALBYTES);
 
 	//set length of output

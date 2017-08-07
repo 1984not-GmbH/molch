@@ -42,7 +42,7 @@ int main(int argc, char *args[]) noexcept {
 
 	unsigned char *backup = nullptr;
 	unsigned char *prekey_list = nullptr;
-	unsigned char *backup_key = (unsigned char*)malloc(BACKUP_KEY_SIZE);
+	unsigned char *backup_key = reinterpret_cast<unsigned char*>(malloc(BACKUP_KEY_SIZE));
 
 	return_status status = return_status_init();
 
@@ -90,7 +90,7 @@ int main(int argc, char *args[]) noexcept {
 			BACKUP_KEY_SIZE,
 			&backup,
 			&backup_length,
-			(const unsigned char*)"random",
+			reinterpret_cast<const unsigned char*>("random"),
 			sizeof("random"));
 	THROW_on_error(CREATION_ERROR, "Failed to create user.");
 	if (backup == nullptr) {

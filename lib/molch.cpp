@@ -415,7 +415,7 @@ static return_status verify_prekey_list(
 				verified_prekey_list->content,
 				&verified_length,
 				prekey_list,
-				(unsigned long long)prekey_list_length,
+				static_cast<unsigned long long>(prekey_list_length),
 				public_signing_key->content);
 		if (status_int != 0) {
 			THROW(VERIFICATION_FAILED, "Failed to verify prekey list signature.");
@@ -424,7 +424,7 @@ static return_status verify_prekey_list(
 		{
 			THROW(CONVERSION_ERROR, "Length is bigger than size_t.");
 		}
-		verified_prekey_list->content_length = (size_t)verified_length;
+		verified_prekey_list->content_length = static_cast<size_t>(verified_length);
 	}
 
 	//get the expiration date
@@ -1239,7 +1239,7 @@ return_status molch_conversation_export(
 	//now pack the entire backup
 	{
 		const size_t encrypted_backup_size = encrypted_backup__get_packed_size(&encrypted_backup_struct);
-		*backup = (unsigned char*)malloc(encrypted_backup_size);
+		*backup = reinterpret_cast<unsigned char*>(malloc(encrypted_backup_size));
 		*backup_length = encrypted_backup__pack(&encrypted_backup_struct, *backup);
 		if (*backup_length != encrypted_backup_size) {
 			THROW(PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
@@ -1420,7 +1420,7 @@ return_status molch_export(
 		THROW(INCORRECT_DATA, "No backup key found.");
 	}
 
-	backup_struct = (Backup*)zeroed_malloc(sizeof(Backup));
+	backup_struct = reinterpret_cast<Backup*>(zeroed_malloc(sizeof(Backup)));
 	THROW_on_failed_alloc(backup_struct);
 	backup__init(backup_struct);
 
@@ -1480,7 +1480,7 @@ return_status molch_export(
 	//now pack the entire backup
 	{
 		const size_t encrypted_backup_size = encrypted_backup__get_packed_size(&encrypted_backup_struct);
-		*backup = (unsigned char*)malloc(encrypted_backup_size);
+		*backup = reinterpret_cast<unsigned char*>(malloc(encrypted_backup_size));
 		*backup_length = encrypted_backup__pack(&encrypted_backup_struct, *backup);
 		if (*backup_length != encrypted_backup_size) {
 			THROW(PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");

@@ -59,7 +59,7 @@ static return_status protobuf_export(
 	status = store->exportConversationStore(conversations, length);
 	THROW_on_error(EXPORT_ERROR, "Failed to export conversations.");
 
-	*export_buffers = (Buffer**)malloc(length * sizeof(Buffer*));
+	*export_buffers = reinterpret_cast<Buffer**>(malloc(length * sizeof(Buffer*)));
 	THROW_on_failed_alloc(*export_buffers);
 	*buffer_count = length;
 
@@ -107,7 +107,7 @@ return_status protobuf_import(
 
 	//allocate the array
 	if (length > 0) {
-		conversations = (Conversation**)zeroed_malloc(length * sizeof(Conversation*));
+		conversations = reinterpret_cast<Conversation**>(zeroed_malloc(length * sizeof(Conversation*)));
 		THROW_on_failed_alloc(conversations);
 		std::fill(conversations, conversations + length, nullptr);
 	}
@@ -179,7 +179,7 @@ static return_status test_add_conversation(ConversationStore * const store) noex
 	}
 
 	//create the conversation manually
-	conversation = (conversation_t*)malloc(sizeof(conversation_t));
+	conversation = reinterpret_cast<conversation_t*>(malloc(sizeof(conversation_t)));
 	if (conversation == nullptr) {
 		THROW(ALLOCATION_FAILED, "Failed to allocate conversation.");
 	}
@@ -265,7 +265,7 @@ int main(void) noexcept {
 	Buffer ** protobuf_second_export_buffers = nullptr;
 	size_t protobuf_second_export_buffers_length = 0;
 
-	ConversationStore *store = (ConversationStore*)malloc(sizeof(ConversationStore));
+	ConversationStore *store = reinterpret_cast<ConversationStore*>(malloc(sizeof(ConversationStore)));
 	if (store == nullptr) {
 		THROW(ALLOCATION_FAILED, "Failed to allocate conversation store.");
 	}

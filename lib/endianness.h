@@ -39,7 +39,7 @@
  */
 inline bool endianness_is_little_endian() {
 	uint16_t number = 0x1;
-	unsigned char* number_pointer = (unsigned char*) &number;
+	unsigned char* number_pointer = reinterpret_cast<unsigned char*>(&number);
 	return (number_pointer[0] == 0x1);
 }
 

@@ -73,7 +73,7 @@ void create_and_print_message(
 	putchar('\n');
 
 	//print the message (as string):
-	printf("Message (%zu Bytes):\n%.*s\n\n", message.content_length, (int)message.content_length, message.content);
+	printf("Message (%zu Bytes):\n%.*s\n\n", message.content_length, static_cast<int>(message.content_length), message.content);
 
 	//now encrypt the message
 	packet = packet_encrypt(

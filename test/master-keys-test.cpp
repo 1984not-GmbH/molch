@@ -210,7 +210,7 @@ int main(void) noexcept {
 		//sign some data
 		Buffer data{"This is some data to be signed."};
 		printf("Data to be signed.\n");
-		printf("%.*s\n", (int)data.content_length, (char*)data.content);
+		printf("%.*s\n", static_cast<int>(data.content_length), reinterpret_cast<char*>(data.content));
 		Buffer signed_data{100, 0};
 		spiced_master_keys.sign(data, signed_data);
 		printf("Signed data:\n");
@@ -229,7 +229,7 @@ int main(void) noexcept {
 		if (status_int != 0) {
 			throw MolchException(VERIFY_ERROR, "Failed to verify signature.");
 		}
-		unwrapped_data.content_length = (size_t) unwrapped_data_length;
+		unwrapped_data.content_length = static_cast<size_t>(unwrapped_data_length);
 
 		printf("\nSignature was successfully verified!\n");
 

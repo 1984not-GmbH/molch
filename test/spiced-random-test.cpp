@@ -38,7 +38,7 @@ int main(void) noexcept {
 		//some random user input (idiot bashing his head on the keyboard)
 		Buffer spice("aäipoewur+ü 093+2ß3+2ü+ ß09234rt #2ß 0iw4eräp9ui23+ 03943");
 		printf("\"Random\" input from the user (%zu Bytes):\n", spice.content_length);
-		printf("String: %.*s\n", (int)spice.content_length, spice.content);
+		printf("String: %.*s\n", static_cast<int>(spice.content_length), spice.content);
 		printf("Hex:\n");
 		std::cout << spice.toHex();
 		putchar('\n');

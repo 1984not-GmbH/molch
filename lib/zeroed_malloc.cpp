@@ -52,9 +52,9 @@ void *throwing_zeroed_malloc(size_t size) {
 
 	//NOTE: This has to be copied as bytes because of possible alignment issues
 	//write the size in front of the aligned address
-	std::copy((unsigned char*)&size, (unsigned char*)(&size + 1), aligned_address - sizeof(size_t));
+	std::copy(reinterpret_cast<unsigned char*>(&size), reinterpret_cast<unsigned char*>(&size + 1), aligned_address - sizeof(size_t));
 	//write the pointer from malloc in front of the size
-	std::copy((unsigned char*)&address, (unsigned char*)(&address + 1), aligned_address - sizeof(size_t) - sizeof(void*));
+	std::copy(reinterpret_cast<unsigned char*>(&address), reinterpret_cast<unsigned char*>(&address + 1), aligned_address - sizeof(size_t) - sizeof(void*));
 
 	allocated_address.release();
 
@@ -79,9 +79,9 @@ void zeroed_free(void *pointer) {
 
 	//NOTE: This has to be copied as bytes because of possible alignment issues
 	//get the size
-	std::copy(((unsigned char*)pointer) - sizeof(size_t), (unsigned char*)pointer, (unsigned char*)&size);
+	std::copy(reinterpret_cast<unsigned char*>(pointer) - sizeof(size_t), reinterpret_cast<unsigned char*>(pointer), reinterpret_cast<unsigned char*>(&size));
 	//get the original pointer
-	std::copy(((unsigned char*)pointer) - sizeof(size_t) - sizeof(void*), ((unsigned char*)pointer) - sizeof(size_t), (unsigned char*)&malloced_address);
+	std::copy(reinterpret_cast<unsigned char*>(pointer) - sizeof(size_t) - sizeof(void*), reinterpret_cast<unsigned char*>(pointer) - sizeof(size_t), reinterpret_cast<unsigned char*>(&malloced_address));
 
 	sodium_memzero(pointer, size);
 

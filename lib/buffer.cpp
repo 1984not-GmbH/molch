@@ -91,7 +91,7 @@ Buffer::Buffer(const size_t buffer_length, const size_t content_length, void* (*
 	if (buffer_length == 0) {
 		this->content = nullptr;
 	} else {
-		this->content = (unsigned char*)allocator(buffer_length);
+		this->content = reinterpret_cast<unsigned char*>(allocator(buffer_length));
 		if (this->content == nullptr) {
 			this->buffer_length = 0;
 			this->content_length = 0;
@@ -217,6 +217,7 @@ Buffer* Buffer::initWithConst(
 		const size_t content_length_) noexcept {
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
 	Buffer *result = this->init((unsigned char*)content_, buffer_length_, content_length_);
 #pragma GCC diagnostic pop
 	if (result != nullptr) {
@@ -245,14 +246,14 @@ Buffer* Buffer::createWithCustomAllocator(
 		void *(*allocator)(size_t size),
 		void (*deallocator)(void *pointer)
 		) noexcept {
-	Buffer *buffer = (Buffer*)allocator(sizeof(Buffer));
+	Buffer *buffer = reinterpret_cast<Buffer*>(allocator(sizeof(Buffer)));
 	if (buffer == nullptr) {
 		return nullptr;
 	}
 
 	unsigned char *content = nullptr;
 	if (buffer_length != 0) {
-		content = (unsigned char*)allocator(buffer_length);
+		content = reinterpret_cast<unsigned char*>(allocator(buffer_length));
 		if (content == nullptr) {
 			deallocator(buffer);
 			return nullptr;

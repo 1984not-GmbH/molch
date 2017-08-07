@@ -273,18 +273,18 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 
 				int written = 0;
 				written = snprintf(
-					(char*) output->content + output->content_length, //current position in output
+					reinterpret_cast<char*>(output->content + output->content_length), //current position in output
 					output->getBufferLength() - output->content_length, //remaining length of output
 					"%.3zu: ",
 					i);
 				if (written != (sizeof("XXX: ") - 1)) {
 					THROW(INCORRECT_BUFFER_SIZE, "Failed to write to output buffer, probably too short.");
 				}
-				output->content_length += (unsigned int)written;
+				output->content_length += static_cast<unsigned int>(written);
 
 				status_int = output->copyFromRaw(
 						output->content_length,
-						(const unsigned char*)return_status_get_name(current_error->status),
+						reinterpret_cast<const unsigned char*>(return_status_get_name(current_error->status)),
 						0,
 						strlen(return_status_get_name(current_error->status)));
 				if (status_int != 0) {
@@ -293,7 +293,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 
 				status_int = output->copyFromRaw(
 						output->content_length,
-						(const unsigned char*) ", ",
+						reinterpret_cast<const unsigned char*>(", "),
 						0,
 						sizeof(", ") - 1);
 				if (status_int != 0) {
@@ -312,7 +312,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 				} else {
 					status_int = output->copyFromRaw(
 							output->content_length,
-							(const unsigned char*) current_error->message,
+							reinterpret_cast<const unsigned char*>(current_error->message),
 							0,
 							strlen(current_error->message));
 					if (status_int != 0) {
@@ -322,7 +322,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 
 				status_int = output->copyFromRaw(
 						output->content_length,
-						(const unsigned char*) "\n",
+						reinterpret_cast<const unsigned char*>("\n"),
 						0,
 						1);
 				if (status_int != 0) {
@@ -335,7 +335,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 	{
 		int status_int = output->copyFromRaw(
 				output->content_length,
-				(const unsigned char*) "",
+				reinterpret_cast<const unsigned char*>(""),
 				0,
 				sizeof(""));
 		if (status_int != 0) {
@@ -349,7 +349,7 @@ cleanup:
 	if (status.status != SUCCESS) {
 		buffer_destroy_and_null_if_valid(output);
 	} else {
-		output_string = (char*) output->content;
+		output_string = reinterpret_cast<char*>(output->content);
 		if (length != nullptr) {
 			*length = output->content_length;
 		}

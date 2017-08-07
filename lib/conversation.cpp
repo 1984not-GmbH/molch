@@ -74,7 +74,7 @@ return_status conversation_create(
 		THROW(INVALID_INPUT, "Invalid input for conversation_create.");
 	}
 
-	*conversation = (conversation_t*)malloc(sizeof(conversation_t));
+	*conversation = reinterpret_cast<conversation_t*>(malloc(sizeof(conversation_t)));
 	THROW_on_failed_alloc(*conversation);
 
 	init_struct(*conversation);
@@ -647,7 +647,7 @@ return_status conversation_export(
 	}
 
 	//export the conversation id
-	id = (unsigned char*)zeroed_malloc(CONVERSATION_ID_SIZE);
+	id = reinterpret_cast<unsigned char*>(zeroed_malloc(CONVERSATION_ID_SIZE));
 	THROW_on_failed_alloc(id);
 	if (conversation->id.cloneToRaw(id, CONVERSATION_ID_SIZE) != 0) {
 		THROW(BUFFER_ERROR, "Failed to copy conversation id.");
@@ -678,7 +678,7 @@ return_status conversation_import(
 	}
 
 	//create the conversation
-	*conversation = (conversation_t*)malloc(sizeof(conversation_t));
+	*conversation = reinterpret_cast<conversation_t*>(malloc(sizeof(conversation_t)));
 	THROW_on_failed_alloc(*conversation);
 	init_struct(*conversation);
 
