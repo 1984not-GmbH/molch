@@ -17,7 +17,6 @@ add_library(molch
 	prekey-store
 	master-keys
 	return-status
-	alignment
 	zeroed_malloc
 	buffer
 	molch-exception

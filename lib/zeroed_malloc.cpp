@@ -24,7 +24,7 @@
 #include <sodium.h>
 
 #include "zeroed_malloc.h"
-#include "alignment.h"
+#include "molch-exception.h"
 #include "common.h"
 
 /*! \file
@@ -41,15 +41,22 @@ void *throwing_zeroed_malloc(size_t size) {
 
 	size_t amount_to_allocate = size + sizeof(void*) + sizeof(size_t) + (alignof(max_align_t) - 1);
 
-	unsigned char *malloced_address = new unsigned char[amount_to_allocate];
+	auto allocated_address = std::unique_ptr<unsigned char[]>(new unsigned char[amount_to_allocate]);
+	unsigned char *address = allocated_address.get();
 
-	unsigned char *aligned_address = (unsigned char*)next_aligned_address(malloced_address + sizeof(size_t) + sizeof(void*), alignof(intmax_t));
+	size_t space = amount_to_allocate - sizeof(size_t) - sizeof(void*);
+	unsigned char *aligned_address = address + sizeof(size_t) + sizeof(void*);
+	if (std::align(alignof(intmax_t), size, reinterpret_cast<void*&>(aligned_address), space) == nullptr) {
+		throw MolchException(ALLOCATION_FAILED, "Failed to align memory.");
+	}
 
 	//NOTE: This has to be copied as bytes because of possible alignment issues
 	//write the size in front of the aligned address
 	std::copy((unsigned char*)&size, (unsigned char*)(&size + 1), aligned_address - sizeof(size_t));
 	//write the pointer from malloc in front of the size
-	std::copy((unsigned char*)&malloced_address, (unsigned char*)(&malloced_address + 1), aligned_address - sizeof(size_t) - sizeof(void*));
+	std::copy((unsigned char*)&address, (unsigned char*)(&address + 1), aligned_address - sizeof(size_t) - sizeof(void*));
+
+	allocated_address.release();
 
 	return aligned_address;
 }
