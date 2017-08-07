@@ -22,7 +22,6 @@
 #include <sodium.h>
 #include <algorithm>
 #include <climits>
-#include <iostream>
 
 #include "prekey-store.h"
 #include "molch-exception.h"
