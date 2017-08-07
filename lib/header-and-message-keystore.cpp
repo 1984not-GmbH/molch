@@ -107,16 +107,16 @@ HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const KeyBundle& key_
 
 std::unique_ptr<KeyBundle,KeyBundleDeleter> HeaderAndMessageKeyStoreNode::exportProtobuf() {
 	auto key_bundle = std::unique_ptr<KeyBundle,KeyBundleDeleter>(reinterpret_cast<KeyBundle*>(throwing_zeroed_malloc(sizeof(KeyBundle))));
-	*key_bundle = KEY_BUNDLE__INIT;
+	key_bundle__init(key_bundle.get());
 
 	//header key
 	key_bundle->header_key = reinterpret_cast<Key*>(throwing_zeroed_malloc(sizeof(Key)));
-	*key_bundle->header_key = KEY__INIT;
+	key__init(key_bundle->header_key);
 	key_bundle->header_key->key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(HEADER_KEY_SIZE));
 
 	//message key
 	key_bundle->message_key = reinterpret_cast<Key*>(throwing_zeroed_malloc(sizeof(Key)));
-	*key_bundle->message_key = KEY__INIT;
+	key__init(key_bundle->message_key);
 	key_bundle->message_key->key.data = reinterpret_cast<unsigned char*>(throwing_zeroed_malloc(MESSAGE_KEY_SIZE));
 
 	//export the header key

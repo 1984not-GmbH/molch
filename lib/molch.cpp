@@ -239,7 +239,7 @@ return_status molch_create_user(
 	THROW_on_error(CREATION_ERROR, "Failed to create prekey list.");
 
 	if (backup != nullptr) {
-		if (backup_length == 0) {
+		if (backup_length == nullptr) {
 			*backup = nullptr;
 		} else {
 			status = molch_export(backup, backup_length);
@@ -290,7 +290,7 @@ return_status molch_destroy_user(
 	}
 
 	if (backup != nullptr) {
-		if (backup_length == 0) {
+		if (backup_length == nullptr) {
 			*backup = nullptr;
 		} else {
 			status = molch_export(backup, backup_length);
@@ -592,7 +592,7 @@ return_status molch_start_send_conversation(
 	*packet_length = packet_buffer->content_length;
 
 	if (backup != nullptr) {
-		if (backup_length == 0) {
+		if (backup_length == nullptr) {
 			*backup = nullptr;
 		} else {
 			status = molch_export(backup, backup_length);
@@ -741,7 +741,7 @@ return_status molch_start_receive_conversation(
 	*message_length = message_buffer->content_length;
 
 	if (backup != nullptr) {
-		if (backup_length == 0) {
+		if (backup_length == nullptr) {
 			*backup = nullptr;
 		} else {
 			status = molch_export(backup, backup_length);
@@ -893,7 +893,7 @@ return_status molch_encrypt_message(
 	*packet_length = packet_buffer->content_length;
 
 	if (conversation_backup != nullptr) {
-		if (conversation_backup_length == 0) {
+		if (conversation_backup_length == nullptr) {
 			*conversation_backup = nullptr;
 		} else {
 			status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id.content, conversation->id.content_length);
@@ -976,7 +976,7 @@ return_status molch_decrypt_message(
 	*message_length = message_buffer->content_length;
 
 	if (conversation_backup != nullptr) {
-		if (conversation_backup_length == 0) {
+		if (conversation_backup_length == nullptr) {
 			*conversation_backup = nullptr;
 		} else {
 			status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id.content, conversation->id.content_length);
@@ -1021,7 +1021,7 @@ return_status molch_end_conversation(
 	}
 
 	if (backup != nullptr) {
-		if (backup_length == 0) {
+		if (backup_length == nullptr) {
 			*backup = nullptr;
 		} else {
 			return_status local_status = molch_export(backup, backup_length);

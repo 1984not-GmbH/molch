@@ -465,7 +465,7 @@ return_status user_store_export(
 	*users_length = store->length;
 cleanup:
 	on_error {
-		if ((users != nullptr) && (*users != nullptr) && (users_length != 0)) {
+		if ((users != nullptr) && (*users != nullptr) && (users_length != nullptr)) {
 			for (size_t i = 0; i < *users_length; i++) {
 				user__free_unpacked((*users)[i], &protobuf_c_allocators);
 				(*users)[i] = nullptr;

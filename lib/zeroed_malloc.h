@@ -87,7 +87,7 @@ void protobuf_c_free(void *allocator_data, void *pointer);
 static ProtobufCAllocator protobuf_c_allocators __attribute__((unused)) = {
 	&protobuf_c_allocator,
 	&protobuf_c_free,
-	NULL
+	nullptr
 };
 
 template <class T>

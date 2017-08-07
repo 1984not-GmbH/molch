@@ -33,7 +33,8 @@ std::unique_ptr<Buffer> header_construct(
 		const Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE
 		const uint32_t message_number,
 		const uint32_t previous_message_number) {
-	Header header_struct = HEADER__INIT;
+	Header header_struct;
+	header__init(&header_struct);
 
 	//check input
 	if (our_public_ephemeral.content_length != PUBLIC_KEY_SIZE) {

@@ -59,6 +59,7 @@ list(APPEND custom_compiler_flag_candidates
     -Wsuggest-final-methods
     -Wc++1z-compat
     -Wconditionally-supported
+    -Wzero-as-null-pointer-constant
     )
 
 if(NOT ${CMAKE_BUILD_TYPE} MATCHES "Debug")

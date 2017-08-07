@@ -127,8 +127,10 @@ std::unique_ptr<Buffer> packet_encrypt(
 		const Buffer * const public_ephemeral_key,
 		const Buffer * const public_prekey) {
 	//initialize the protobuf structs
-	Packet packet_struct = PACKET__INIT;
-	PacketHeader packet_header_struct = PACKET_HEADER__INIT;
+	Packet packet_struct;
+	packet__init(&packet_struct);
+	PacketHeader packet_header_struct;
+	packet_header__init(&packet_header_struct);
 	packet_struct.packet_header = &packet_header_struct;
 
 	//check the input
