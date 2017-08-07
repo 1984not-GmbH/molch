@@ -444,7 +444,7 @@ return_status user_store_export(
 	return_status status = return_status_init();
 
 	//check input
-	if ((users == nullptr) || (users == nullptr) || (users_length == nullptr)) {
+	if ((users == nullptr) || (users_length == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to user_store_export.");
 	}
 

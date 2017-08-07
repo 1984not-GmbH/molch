@@ -35,16 +35,17 @@ list(APPEND custom_compiler_flag_candidates
     -Wnull-dereference
     -Wimplicit-fallthrough
     -Wunused-parameter
-    -Wstrict-aliasing=1 #might be too much
+    -Wstrict-aliasing=1
     -Walloc-zero
     -Walloca
     -Wduplicated-branches
     -Wduplicated-cond
     -Wfloat-equal
     -Wtrampolines
-    -Wunsafe-loop-optimizations #might be too much
+    -Wunsafe-loop-optimizations
     -Wredundant-decls
     -Wstack-protector
+    -Wlogical-op
     #C++ options
     -Wnoexcept
     -Wstrict-null-sentinel
