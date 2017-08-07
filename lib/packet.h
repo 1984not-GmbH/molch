@@ -25,7 +25,6 @@
 #include <memory>
 
 #include "buffer.h"
-#include "common.h"
 #include "molch.h"
 
 /*! \file

@@ -24,6 +24,7 @@
 #include <string.h>
 
 #include "../lib/return-status.h"
+#include "../lib/destroyers.h"
 #include "utils.h"
 
 static return_status second_level(void) noexcept {

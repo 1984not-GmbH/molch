@@ -22,7 +22,6 @@
 #include "constants.h"
 #include "ratchet.h"
 #include "prekey-store.h"
-#include "common.h"
 
 #ifndef LIB_CONVERSATION_H
 #define LIB_CONVERSATION_H

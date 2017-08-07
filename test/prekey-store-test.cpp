@@ -29,6 +29,7 @@
 #include "../lib/prekey-store.h"
 #include "../lib/constants.h"
 #include "../lib/molch-exception.h"
+#include "../lib/destroyers.h"
 #include "utils.h"
 
 static void free_prekey_array(Prekey**& prekeys, size_t length) {

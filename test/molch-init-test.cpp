@@ -27,6 +27,7 @@
 #include "utils.h"
 #include "../lib/molch.h"
 #include "../lib/constants.h"
+#include "../lib/destroyers.h"
 
 int main(int argc, char *args[]) noexcept {
 	bool recreate = false;

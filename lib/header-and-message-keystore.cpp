@@ -21,7 +21,6 @@
 
 #include <algorithm>
 
-#include "common.h"
 #include "constants.h"
 #include "header-and-message-keystore.h"
 #include "zeroed_malloc.h"

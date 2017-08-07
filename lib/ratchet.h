@@ -24,7 +24,6 @@ extern "C" {
 }
 #include "constants.h"
 #include "header-and-message-keystore.h"
-#include "common.h"
 #include "return-status.h"
 #include "zeroed_malloc.h"
 

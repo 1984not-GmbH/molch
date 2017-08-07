@@ -30,7 +30,6 @@
 
 #include <memory>
 #include <protobuf-c/protobuf-c.h>
-#include "common.h"
 
 /*!
  * Allocates a buffer of 'size' and stores it's size.

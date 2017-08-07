@@ -29,7 +29,6 @@ extern "C" {
 }
 
 #include "constants.h"
-#include "common.h"
 #include "buffer.h"
 #include "return-status.h"
 #include "sodium-wrappers.h"

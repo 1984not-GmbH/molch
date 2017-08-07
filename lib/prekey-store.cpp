@@ -25,7 +25,6 @@
 #include <iostream>
 
 #include "prekey-store.h"
-#include "common.h"
 #include "molch-exception.h"
 
 constexpr int64_t PREKEY_EXPIRATION_TIME = 3600 * 24 * 31; //one month

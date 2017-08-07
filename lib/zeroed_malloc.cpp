@@ -25,7 +25,6 @@
 
 #include "zeroed_malloc.h"
 #include "molch-exception.h"
-#include "common.h"
 
 /*! \file
  * The purpose of these functions is to implement a memory allocator that gets memory

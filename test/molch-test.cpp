@@ -28,6 +28,7 @@
 #include "../lib/molch.h"
 #include "../lib/user-store.h" //for PREKEY_AMOUNT
 #include "../lib/zeroed_malloc.h"
+#include "../lib/destroyers.h"
 
 extern "C" {
 	#include <encrypted_backup.pb-c.h>

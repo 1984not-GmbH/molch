@@ -27,6 +27,7 @@
 #include "packet.h"
 #include "header.h"
 #include "molch-exception.h"
+#include "destroyers.h"
 
 /*
  * Create a new conversation struct and initialise the buffer pointer.

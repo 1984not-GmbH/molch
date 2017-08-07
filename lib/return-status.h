@@ -22,8 +22,6 @@
 #ifndef LIB_RETURN_STATUS_H
 #define LIB_RETURN_STATUS_H
 
-#include "common.h"
-
 #ifdef __cplusplus
 extern "C" {
 #else

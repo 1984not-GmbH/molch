@@ -26,6 +26,7 @@
 #include <iostream>
 
 #include "../lib/user-store.h"
+#include "../lib/destroyers.h"
 #include "utils.h"
 #include "common.h"
 

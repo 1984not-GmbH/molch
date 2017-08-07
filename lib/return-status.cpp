@@ -28,6 +28,7 @@
 
 #include "return-status.h"
 #include "buffer.h"
+#include "destroyers.h"
 
 extern return_status return_status_init() noexcept {
 	return_status status = {

@@ -25,6 +25,7 @@
 #include "molch-exception.h"
 #include "constants.h"
 #include "user-store.h"
+#include "destroyers.h"
 
 //create a new user_store
 return_status user_store_create(user_store ** const store) noexcept {

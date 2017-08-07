@@ -28,6 +28,7 @@
 
 #include "../lib/conversation-store.h"
 #include "../lib/molch-exception.h"
+#include "../lib/destroyers.h"
 #include "utils.h"
 
 static return_status protobuf_export(

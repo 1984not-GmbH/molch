@@ -22,7 +22,6 @@
 #include <cstdbool>
 
 #include "buffer.h"
-#include "common.h"
 
 #ifndef LIB_DIFFIE_HELLMAN_H
 #define LIB_DIFFIE_HELLMAN_H

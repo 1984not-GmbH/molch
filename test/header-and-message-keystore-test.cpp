@@ -34,6 +34,7 @@ extern "C" {
 #include "../lib/header-and-message-keystore.h"
 #include "../lib/zeroed_malloc.h"
 #include "../lib/molch-exception.h"
+#include "../lib/destroyers.h"
 #include "utils.h"
 #include "common.h"
 

@@ -33,6 +33,7 @@
 #include "endianness.h"
 #include "return-status.h"
 #include "zeroed_malloc.h"
+#include "destroyers.h"
 
 extern "C" {
 	#include <encrypted_backup.pb-c.h>

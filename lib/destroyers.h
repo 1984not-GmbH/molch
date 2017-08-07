@@ -19,43 +19,42 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-//! \file Common includes and macros.
+//! \file Common destroyers.
 
-#ifndef LIB_COMMON_H
-#define LIB_COMMON_H
+#ifndef LIB_DESTROYERS_H
+#define LIB_DESTROYERS_H
 
-#ifdef __cplusplus
-extern "C" {
-#else
-	#define nullptr NULL
-#endif
+#include "buffer.h"
 
-// execute code if a pointer is not nullptr
-#define if_valid(pointer) if ((pointer) != nullptr)
-// macros that free memory and delete the pointer afterwards
-#define free_and_null_if_valid(pointer)\
-	if_valid(pointer) {\
-		free(pointer);\
-		pointer = nullptr;\
+template <typename T>
+inline void free_and_null_if_valid(T*& pointer) {
+	if (pointer != nullptr) {
+		free(pointer);
+		pointer = nullptr;
 	}
-#define sodium_free_and_null_if_valid(pointer)\
-	if_valid(pointer) {\
-		sodium_free(pointer);\
-		pointer = nullptr;\
-	}
-#define zeroed_free_and_null_if_valid(pointer)\
-	if_valid(pointer) {\
-		zeroed_free(pointer);\
-		pointer = nullptr;\
-	}
-#define buffer_destroy_and_null_if_valid(buffer)\
-	if_valid(buffer) {\
-		(buffer)->destroy();\
-		buffer = nullptr;\
-	}
-
-#ifdef __cplusplus
 }
-#endif
 
-#endif
+template <typename T>
+inline void sodium_free_and_null_if_valid(T*& pointer) {
+	if (pointer != nullptr) {
+		sodium_free(pointer);
+		pointer = nullptr;
+	}
+}
+
+template <typename T>
+inline void zeroed_free_and_null_if_valid(T*& pointer) {
+	if (pointer != nullptr) {
+		zeroed_free(pointer);
+		pointer = nullptr;
+	}
+}
+
+inline void buffer_destroy_and_null_if_valid(Buffer*& buffer) {
+	if (buffer != nullptr) {
+		buffer->destroy();
+		buffer = nullptr;
+	}
+}
+
+#endif /* LIB_DESTROYERS_H */

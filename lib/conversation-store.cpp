@@ -22,6 +22,7 @@
 #include <algorithm>
 
 #include "conversation-store.h"
+#include "destroyers.h"
 
 size_t ConversationStore::getLength() noexcept {
 	return this->length;

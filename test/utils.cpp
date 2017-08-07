@@ -24,7 +24,7 @@
 #include <sodium.h>
 
 #include "utils.h"
-#include "../lib/common.h"
+#include "../lib/destroyers.h"
 
 void print_to_file(Buffer& data, const std::string& filename) noexcept {
 	FILE *file = fopen(filename.c_str(), "w");

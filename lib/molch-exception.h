@@ -26,7 +26,6 @@
 #include <string>
 #include <deque>
 
-#include "common.h"
 #include "return-status.h"
 
 class MolchError {

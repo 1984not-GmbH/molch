@@ -27,7 +27,6 @@
 #include "conversation-store.h"
 #include "prekey-store.h"
 #include "master-keys.h"
-#include "common.h"
 
 #ifndef LIB_USER_STORE_H
 #define LIB_USER_STORE_H

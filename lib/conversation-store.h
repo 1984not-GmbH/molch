@@ -20,7 +20,6 @@
  */
 
 #include "conversation.h"
-#include "common.h"
 
 #ifndef LIB_CONVERSATION_STORE_H
 #define LIB_CONVERSATION_STORE_H

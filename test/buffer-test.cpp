@@ -25,7 +25,7 @@
 #include <iostream>
 
 #include "../lib/buffer.h"
-#include "../lib/common.h"
+#include "../lib/destroyers.h"
 #include "utils.h"
 
 int main(void) noexcept {

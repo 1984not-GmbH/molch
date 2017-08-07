@@ -27,7 +27,6 @@
 #include <cstdbool>
 #include <algorithm>
 
-#include "common.h"
 #include "buffer.h"
 #include "molch-exception.h"
 
