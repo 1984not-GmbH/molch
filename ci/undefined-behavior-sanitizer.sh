@@ -11,7 +11,6 @@ fi
 rm test.c ubsan-test
 
 export CC=clang
-#FIXME: Remove -fsanitize-recover=unsigned-integer-overflow as soon as bug https://gcc.gnu.org/bugzilla/show_bug.cgi?id=81749 in libstdc++ is fixed
 if cmake .. -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Debug -DRUN_TESTS=ON -DCMAKE_CXX_FLAGS='-fsanitize=undefined,integer -fno-sanitize-recover=undefined,integer -fsanitize-recover=unsigned-integer-overflow -O1 -fno-omit-frame-pointer -fno-common -fno-optimize-sibling-calls -g' -DDISABLE_MEMORYCHECK_COMMAND="TRUE"; then
     # This has to be done with else because with '!' it won't work on Mac OS X
     echo
