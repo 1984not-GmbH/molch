@@ -23,7 +23,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
-#include <cassert>
 #include <iostream>
 
 #include "../lib/user-store.h"

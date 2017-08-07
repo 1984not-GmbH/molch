@@ -22,7 +22,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
-#include <cassert>
 #include <exception>
 #include <iostream>
 

@@ -23,7 +23,6 @@
  * WARNING: ALTHOUGH THIS IMPLEMENTS THE AXOLOTL PROTOCOL, IT ISN't CONSIDERED SECURE ENOUGH TO USE AT THIS POINT
  */
 
-#include <cassert>
 #include <cstdint>
 
 #include "constants.h"

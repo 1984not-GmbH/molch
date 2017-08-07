@@ -19,7 +19,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 #include <sodium.h>
-#include <cassert>
 
 #include "constants.h"
 #include "diffie-hellman.h"
@@ -46,9 +45,9 @@ void diffie_hellman(
 		const Buffer& their_public_key, //needs to be PUBLIC_KEY_SIZE long
 		const bool am_i_alice) {
 	//make sure that the assumptions are correct
-	assert(PUBLIC_KEY_SIZE == crypto_scalarmult_SCALARBYTES);
-	assert(PRIVATE_KEY_SIZE == crypto_scalarmult_SCALARBYTES);
-	assert(DIFFIE_HELLMAN_SIZE == crypto_generichash_BYTES);
+	static_assert(PUBLIC_KEY_SIZE == crypto_scalarmult_SCALARBYTES, "crypto_scalarmult_SCALARBYTES is not PUBLIC_KEY_SIZE");
+	static_assert(PRIVATE_KEY_SIZE == crypto_scalarmult_SCALARBYTES, "crypto_scalarmult_SCALARBYTES is not PRIVATE_KEY_BYTES");
+	static_assert(DIFFIE_HELLMAN_SIZE == crypto_generichash_BYTES, "crypto_generichash_bytes is not DIFFIE_HELLMAN_SIZE");
 
 	//set content length of output to 0 (can prevent use on failure)
 	derived_key.content_length = 0;

@@ -19,7 +19,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 #include <sodium.h>
-#include <cassert>
 #include <exception>
 
 #include "constants.h"
@@ -61,7 +60,7 @@ void derive_key(
 
 	const unsigned char personal_string[] = "molch_cryptolib";
 	Buffer personal(personal_string, sizeof(personal_string));
-	assert(personal.content_length == crypto_generichash_blake2b_PERSONALBYTES);
+	static_assert(sizeof(personal_string) == crypto_generichash_blake2b_PERSONALBYTES, "personal string is not crypto_generichash_blake2b_PERSONALBYTES long");
 
 	//set length of output
 	derived_key.content_length = derived_size;
@@ -224,7 +223,7 @@ void derive_initial_root_chain_and_header_keys(
 	//derive master_key to later derive the initial root key,
 	//header keys and chain keys from
 	//master_key = HASH( DH(A,B0) || DH(A0,B) || DH(A0,B0) )
-	assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES);
+	static_assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES, "crypto_auth_BYTES is not crypto_secretbox_KEYBYTES");
 	triple_diffie_hellman(
 		master_key,
 		our_private_identity,

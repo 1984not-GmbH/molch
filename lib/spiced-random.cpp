@@ -20,7 +20,6 @@
  */
 
 #include <sodium.h>
-#include <cassert>
 
 #include "constants.h"
 #include "spiced-random.h"

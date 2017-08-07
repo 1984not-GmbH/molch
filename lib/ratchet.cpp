@@ -20,7 +20,6 @@
  */
 
 #include <sodium.h>
-#include <cassert>
 #include <cstdint>
 #include <exception>
 
