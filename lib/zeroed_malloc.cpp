@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <sodium.h>
+#include <cstddef>
 
 #include "zeroed_malloc.h"
 
@@ -34,7 +35,7 @@
 
 void *zeroed_malloc(size_t size) {
 	try {
-		return reinterpret_cast<void*>(throwing_zeroed_malloc<intmax_t>(size));
+		return reinterpret_cast<void*>(throwing_zeroed_malloc<max_align_t>(size));
 	} catch (const std::exception& exception) {
 		return nullptr;
 	}
