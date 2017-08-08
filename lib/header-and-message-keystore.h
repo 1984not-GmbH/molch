@@ -48,6 +48,9 @@ private:
 	unsigned char message_key_storage[MESSAGE_KEY_SIZE];
 	unsigned char header_key_storage[HEADER_KEY_SIZE];
 
+	HeaderAndMessageKeyStoreNode& copy(const HeaderAndMessageKeyStoreNode& node);
+	HeaderAndMessageKeyStoreNode& move(HeaderAndMessageKeyStoreNode&& node);
+
 public:
 	Buffer message_key;
 	Buffer header_key;
@@ -56,11 +59,13 @@ public:
 	HeaderAndMessageKeyStoreNode();
 	HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key);
 	HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date);
-	/* copy constructor */
+	/* copy and move constructors */
 	HeaderAndMessageKeyStoreNode(const HeaderAndMessageKeyStoreNode& node);
+	HeaderAndMessageKeyStoreNode(HeaderAndMessageKeyStoreNode&& node);
 	HeaderAndMessageKeyStoreNode(const KeyBundle& key_bundle);
 
-	/* move assignment operator */
+	/* copy and move assignment operators */
+	HeaderAndMessageKeyStoreNode& operator=(const HeaderAndMessageKeyStoreNode& node);
 	HeaderAndMessageKeyStoreNode& operator=(HeaderAndMessageKeyStoreNode&& node);
 
 	std::unique_ptr<KeyBundle,KeyBundleDeleter> exportProtobuf();

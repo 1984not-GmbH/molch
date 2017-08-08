@@ -65,13 +65,32 @@ HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const Buffer& header_
 	this->fill(header_key, message_key, expiration_date);
 }
 
-HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const HeaderAndMessageKeyStoreNode& node) {
+HeaderAndMessageKeyStoreNode& HeaderAndMessageKeyStoreNode::copy(const HeaderAndMessageKeyStoreNode& node) {
 	this->fill(node.header_key, node.message_key, node.expiration_date);
+
+	return *this;
+}
+
+HeaderAndMessageKeyStoreNode& HeaderAndMessageKeyStoreNode::move(HeaderAndMessageKeyStoreNode&& node) {
+	this->fill(node.header_key, node.message_key, node.expiration_date);
+
+	return *this;
+}
+
+HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const HeaderAndMessageKeyStoreNode& node) {
+	this->copy(node);
+}
+
+HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(HeaderAndMessageKeyStoreNode&& node) {
+	this->move(std::move(node));
+}
+
+HeaderAndMessageKeyStoreNode& HeaderAndMessageKeyStoreNode::operator=(const HeaderAndMessageKeyStoreNode& node) {
+	return this->copy(node);
 }
 
 HeaderAndMessageKeyStoreNode& HeaderAndMessageKeyStoreNode::operator=(HeaderAndMessageKeyStoreNode&& node) {
-	this->fill(node.header_key, node.message_key, node.expiration_date);
-	return *this;
+	return this->move(std::move(node));
 }
 
 HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const KeyBundle& key_bundle) {
