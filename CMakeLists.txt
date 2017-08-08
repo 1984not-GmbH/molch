@@ -17,7 +17,6 @@ list(APPEND custom_compiler_flag_candidates
     -Werror
     -Wwrite-strings
     -Winit-self
-    -Wcast-align
     -Wformat=2
     -Wstrict-overflow=2
     -Wcast-qual
