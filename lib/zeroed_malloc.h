@@ -58,14 +58,14 @@ T *throwing_zeroed_malloc(size_t size) {
 	// the size is needed in order to overwrite it with zeroes later
 	// the start_pointer has to be passed to free later
 
-	size_t amount_to_allocate = size + sizeof(void*) + sizeof(size_t) + (alignof(max_align_t) - 1);
+	size_t amount_to_allocate = size + sizeof(void*) + sizeof(size_t) + (alignof(T) - 1);
 
 	auto allocated_address = std::unique_ptr<unsigned char[]>(new unsigned char[amount_to_allocate]);
 	unsigned char *address = allocated_address.get();
 
 	size_t space = amount_to_allocate - sizeof(size_t) - sizeof(void*);
 	unsigned char *aligned_address = address + sizeof(size_t) + sizeof(void*);
-	if (std::align(alignof(intmax_t), size, reinterpret_cast<void*&>(aligned_address), space) == nullptr) {
+	if (std::align(alignof(T), size, reinterpret_cast<void*&>(aligned_address), space) == nullptr) {
 		throw MolchException(ALLOCATION_FAILED, "Failed to align memory.");
 	}
 

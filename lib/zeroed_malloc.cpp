@@ -34,7 +34,7 @@
 
 void *zeroed_malloc(size_t size) {
 	try {
-		return throwing_zeroed_malloc<void>(size);
+		return reinterpret_cast<void*>(throwing_zeroed_malloc<intmax_t>(size));
 	} catch (const std::exception& exception) {
 		return nullptr;
 	}
