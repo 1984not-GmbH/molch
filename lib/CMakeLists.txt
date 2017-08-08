@@ -21,5 +21,6 @@ add_library(molch
 	buffer
 	molch-exception
 	protobuf-deleters
+	protobuf-pool
 )
 target_link_libraries(molch ${libs} protocol-buffers)

@@ -44,6 +44,7 @@ if (RUN_TESTS)
               zeroed_malloc-test
               buffer-test
               molch-exception-test
+              protobuf-pool-test
     )
 
     foreach(test ${tests})
