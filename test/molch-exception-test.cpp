@@ -23,8 +23,8 @@
 #include <cstdlib>
 #include <string.h>
 
-#include "../lib/molch-exception.h"
-#include "utils.h"
+#include "../lib/molch-exception.hpp"
+#include "utils.hpp"
 
 static void second_level(void) {
 	throw MolchException(GENERIC_ERROR, "Error on the second level!");

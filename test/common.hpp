@@ -19,15 +19,18 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "../lib/buffer.h"
-#include "../lib/return-status.h"
+#ifndef TEST_COMMON_H
+#define TEST_COMMON_H
+
 #include <string>
+#include "../lib/header-and-message-keystore.hpp"
 
-#ifndef TEST_UTILS_H
-#define TEST_UTILS_H
-void print_to_file(Buffer& data, const std::string& filename) noexcept;
-
-void print_errors(const return_status&  status) noexcept;
-
-return_status read_file(Buffer*& data, const std::string& filename) noexcept __attribute__((warn_unused_result));
+/*
+ * Generates and prints a crypto_box keypair.
+ */
+void generate_and_print_keypair(
+		Buffer& public_key, //crypto_box_PUBLICKEYBYTES
+		Buffer& private_key, //crypto_box_SECRETKEYBYTES
+		const std::string& name, //Name of the key owner (e.g. "Alice")
+		const std::string& type); //type of the key (e.g. "ephemeral")
 #endif

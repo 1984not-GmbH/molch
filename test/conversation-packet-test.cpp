@@ -25,10 +25,10 @@
 #include <exception>
 #include <iostream>
 
-#include "common.h"
-#include "utils.h"
-#include "../lib/conversation.h"
-#include "../lib/molch-exception.h"
+#include "common.hpp"
+#include "utils.hpp"
+#include "../lib/conversation.hpp"
+#include "../lib/molch-exception.hpp"
 
 int main(void) noexcept {
 	//create buffers

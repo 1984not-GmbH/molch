@@ -19,11 +19,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sodium.h>
-#include <memory>
-
 #ifndef LIB_SODIUM_WRAPPERS_H
 #define LIB_SODIUM_WRAPPERS_H
+
+#include <sodium.h>
+#include <memory>
 
 /*
  * Calls sodium_malloc and throws std::bad_alloc if allocation fails

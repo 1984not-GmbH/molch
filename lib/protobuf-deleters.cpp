@@ -19,7 +19,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "protobuf-deleters.h"
+#include "protobuf-deleters.hpp"
 
 void BackupDeleter::operator ()(Backup* backup) {
 			backup__free_unpacked(backup, &protobuf_c_allocators);

@@ -25,11 +25,11 @@
 #include <exception>
 #include <iostream>
 
-#include "common.h"
-#include "utils.h"
-#include "../lib/molch-exception.h"
-#include "../lib/conversation.h"
-#include "../lib/destroyers.h"
+#include "common.hpp"
+#include "utils.hpp"
+#include "../lib/molch-exception.hpp"
+#include "../lib/conversation.hpp"
+#include "../lib/destroyers.hpp"
 
 return_status protobuf_export(conversation_t * const conversation, Buffer ** const export_buffer) noexcept __attribute__((warn_unused_result));
 return_status protobuf_export(conversation_t * const conversation, Buffer ** const export_buffer) noexcept {

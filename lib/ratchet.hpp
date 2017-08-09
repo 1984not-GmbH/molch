@@ -19,16 +19,16 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIB_RATCHET_H
+#define LIB_RATCHET_H
+
 extern "C" {
 	#include <conversation.pb-c.h>
 }
 #include "constants.h"
-#include "header-and-message-keystore.h"
+#include "header-and-message-keystore.hpp"
 #include "return-status.h"
-#include "zeroed_malloc.h"
-
-#ifndef LIB_RATCHET_H
-#define LIB_RATCHET_H
+#include "zeroed_malloc.hpp"
 
 typedef enum ratchet_header_decryptability {
 	CURRENT_DECRYPTABLE, //decryptable with current receive header key

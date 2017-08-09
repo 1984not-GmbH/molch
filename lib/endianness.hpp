@@ -24,14 +24,14 @@
  * packet creation.
  */
 
+#ifndef LIB_ENDIANNESS_H
+#define LIB_ENDIANNESS_H
+
 #include <cstdbool>
 #include <algorithm>
 
-#include "buffer.h"
-#include "molch-exception.h"
-
-#ifndef LIB_ENDIANNESS_H
-#define LIB_ENDIANNESS_H
+#include "buffer.hpp"
+#include "molch-exception.hpp"
 
 /*
  * Determine the current endianness at runtime.

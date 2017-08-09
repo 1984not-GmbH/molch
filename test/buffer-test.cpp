@@ -24,9 +24,9 @@
 #include <sodium.h>
 #include <iostream>
 
-#include "../lib/buffer.h"
-#include "../lib/destroyers.h"
-#include "utils.h"
+#include "../lib/buffer.hpp"
+#include "../lib/destroyers.hpp"
+#include "utils.hpp"
 
 int main(void) noexcept {
 	int status = EXIT_SUCCESS;

@@ -22,10 +22,10 @@
 #include <algorithm>
 #include <exception>
 
-#include "molch-exception.h"
+#include "molch-exception.hpp"
 #include "constants.h"
-#include "user-store.h"
-#include "destroyers.h"
+#include "user-store.hpp"
+#include "destroyers.hpp"
 
 //create a new user_store
 return_status user_store_create(user_store ** const store) noexcept {

@@ -25,11 +25,11 @@
 #include <exception>
 #include <iostream>
 
-#include "../lib/key-derivation.h"
+#include "../lib/key-derivation.hpp"
 #include "../lib/constants.h"
-#include "../lib/molch-exception.h"
-#include "utils.h"
-#include "common.h"
+#include "../lib/molch-exception.hpp"
+#include "utils.hpp"
+#include "common.hpp"
 
 int main(void) noexcept {
 	try {

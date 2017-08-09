@@ -19,42 +19,31 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-//! \file Common destroyers.
+#ifndef LIB_AUTOZERO_H
+#define LIB_AUTOZERO_H
 
-#ifndef LIB_DESTROYERS_H
-#define LIB_DESTROYERS_H
+#include <sodium.h>
 
-#include "buffer.h"
-
-template <typename T>
-inline void free_and_null_if_valid(T*& pointer) {
-	if (pointer != nullptr) {
-		free(pointer);
-		pointer = nullptr;
+template <typename T> class autozero {
+private:
+	T content;
+public:
+	autozero() {}
+	autozero(const T& content) {
+		this->content = content;
 	}
-}
 
-template <typename T>
-inline void sodium_free_and_null_if_valid(T*& pointer) {
-	if (pointer != nullptr) {
-		sodium_free(pointer);
-		pointer = nullptr;
+	T& operator *() {
+		return this->content;
 	}
-}
 
-template <typename T>
-inline void zeroed_free_and_null_if_valid(T*& pointer) {
-	if (pointer != nullptr) {
-		zeroed_free(pointer);
-		pointer = nullptr;
+	T* pointer() {
+		return &this->content;
 	}
-}
 
-inline void buffer_destroy_and_null_if_valid(Buffer*& buffer) {
-	if (buffer != nullptr) {
-		buffer->destroy();
-		buffer = nullptr;
+	~autozero() {
+		sodium_memzero(&this->content, sizeof(T));
 	}
-}
+};
 
-#endif /* LIB_DESTROYERS_H */
+#endif /* LIB_AUTOZERO_H */

@@ -25,10 +25,10 @@
 #include <exception>
 #include <iostream>
 
-#include "../lib/header.h"
+#include "../lib/header.hpp"
 #include "../lib/constants.h"
-#include "../lib/molch-exception.h"
-#include "utils.h"
+#include "../lib/molch-exception.hpp"
+#include "utils.hpp"
 
 int main(void) {
 	try {

@@ -19,17 +19,17 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIB_USER_STORE_H
+#define LIB_USER_STORE_H
+
 #include <sodium.h>
 #include <ctime>
 
 #include "constants.h"
-#include "buffer.h"
-#include "conversation-store.h"
-#include "prekey-store.h"
-#include "master-keys.h"
-
-#ifndef LIB_USER_STORE_H
-#define LIB_USER_STORE_H
+#include "buffer.hpp"
+#include "conversation-store.hpp"
+#include "prekey-store.hpp"
+#include "master-keys.hpp"
 
 //The user store stores a linked list of all users identified by their private keys
 //This linked list is supposed to be stored once in a global variable.

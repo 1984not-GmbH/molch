@@ -24,8 +24,8 @@
 #include <ctime>
 #include <iostream>
 
-#include "../lib/endianness.h"
-#include "utils.h"
+#include "../lib/endianness.hpp"
+#include "utils.hpp"
 
 int main(void) {
 	try {

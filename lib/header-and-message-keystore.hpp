@@ -19,6 +19,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIB_HEADER_AND_MESSAGE_KEY_STORE_H
+#define LIB_HEADER_AND_MESSAGE_KEY_STORE_H
+
 #include <sodium.h>
 #include <ctime>
 #include <vector>
@@ -29,17 +32,11 @@ extern "C" {
 }
 
 #include "constants.h"
-#include "buffer.h"
+#include "buffer.hpp"
 #include "return-status.h"
-#include "sodium-wrappers.h"
-#include "protobuf-deleters.h"
+#include "sodium-wrappers.hpp"
+#include "protobuf-deleters.hpp"
 
-#ifndef LIB_HEADER_AND_MESSAGE_KEY_STORE_H
-#define LIB_HEADER_AND_MESSAGE_KEY_STORE_H
-//the message key store is currently a double linked list with all the message keys that haven't been
-//used yet. (the keys are stored to still be able to decrypt old messages that weren't received)
-
-//node of the linked list
 class HeaderAndMessageKeyStoreNode {
 private:
 	void init();

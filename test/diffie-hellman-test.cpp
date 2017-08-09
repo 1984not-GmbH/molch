@@ -24,10 +24,10 @@
 #include <exception>
 #include <iostream>
 
-#include "../lib/diffie-hellman.h"
-#include "utils.h"
-#include "common.h"
-#include "../lib/molch-exception.h"
+#include "../lib/diffie-hellman.hpp"
+#include "utils.hpp"
+#include "common.hpp"
+#include "../lib/molch-exception.hpp"
 
 int main(void) noexcept {
 	try {

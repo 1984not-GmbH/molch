@@ -19,18 +19,42 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "../lib/header-and-message-keystore.h"
-#include <string>
+//! \file Common destroyers.
 
-#ifndef TEST_COMMON_H
-#define TEST_COMMON_H
+#ifndef LIB_DESTROYERS_H
+#define LIB_DESTROYERS_H
 
-/*
- * Generates and prints a crypto_box keypair.
- */
-void generate_and_print_keypair(
-		Buffer& public_key, //crypto_box_PUBLICKEYBYTES
-		Buffer& private_key, //crypto_box_SECRETKEYBYTES
-		const std::string& name, //Name of the key owner (e.g. "Alice")
-		const std::string& type); //type of the key (e.g. "ephemeral")
-#endif
+#include "buffer.hpp"
+
+template <typename T>
+inline void free_and_null_if_valid(T*& pointer) {
+	if (pointer != nullptr) {
+		free(pointer);
+		pointer = nullptr;
+	}
+}
+
+template <typename T>
+inline void sodium_free_and_null_if_valid(T*& pointer) {
+	if (pointer != nullptr) {
+		sodium_free(pointer);
+		pointer = nullptr;
+	}
+}
+
+template <typename T>
+inline void zeroed_free_and_null_if_valid(T*& pointer) {
+	if (pointer != nullptr) {
+		zeroed_free(pointer);
+		pointer = nullptr;
+	}
+}
+
+inline void buffer_destroy_and_null_if_valid(Buffer*& buffer) {
+	if (buffer != nullptr) {
+		buffer->destroy();
+		buffer = nullptr;
+	}
+}
+
+#endif /* LIB_DESTROYERS_H */

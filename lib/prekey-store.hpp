@@ -19,6 +19,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIB_PrekeyStore
+#define LIB_PrekeyStore
+
 #include <ctime>
 #include <memory>
 #include <array>
@@ -28,14 +31,11 @@ extern "C" {
 }
 
 #include "constants.h"
-#include "buffer.h"
+#include "buffer.hpp"
 #include "return-status.h"
-#include "zeroed_malloc.h"
-#include "protobuf-deleters.h"
-#include "sodium-wrappers.h"
-
-#ifndef LIB_PrekeyStore
-#define LIB_PrekeyStore
+#include "zeroed_malloc.hpp"
+#include "protobuf-deleters.hpp"
+#include "sodium-wrappers.hpp"
 
 class PrekeyStoreNode {
 	friend class PrekeyStore;

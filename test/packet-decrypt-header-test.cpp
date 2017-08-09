@@ -25,12 +25,12 @@
 #include <exception>
 #include <iostream>
 
-#include "../lib/packet.h"
+#include "../lib/packet.hpp"
 #include "../lib/molch.h"
 #include "../lib/constants.h"
-#include "../lib/molch-exception.h"
-#include "utils.h"
-#include "packet-test-lib.h"
+#include "../lib/molch-exception.hpp"
+#include "utils.hpp"
+#include "packet-test-lib.hpp"
 
 int main(void) {
 	try {

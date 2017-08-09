@@ -24,9 +24,9 @@
 #include <sodium.h>
 #include <iostream>
 
-#include "../lib/molch-exception.h"
-#include "common.h"
-#include "utils.h"
+#include "../lib/molch-exception.hpp"
+#include "common.hpp"
+#include "utils.hpp"
 
 /*
  * Generates and prints a crypto_box keypair.

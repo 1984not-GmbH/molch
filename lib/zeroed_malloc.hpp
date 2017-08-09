@@ -31,7 +31,7 @@
 #include <memory>
 #include <protobuf-c/protobuf-c.h>
 
-#include "molch-exception.h"
+#include "molch-exception.hpp"
 
 /*!
  * Allocates a buffer of 'size' and stores it's size.

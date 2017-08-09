@@ -24,9 +24,9 @@
 #include <exception>
 
 #include "constants.h"
-#include "ratchet.h"
-#include "key-derivation.h"
-#include "molch-exception.h"
+#include "ratchet.hpp"
+#include "key-derivation.hpp"
+#include "molch-exception.hpp"
 
 void RatchetStorage::init() {
 	//initialize the buffers with the storage arrays

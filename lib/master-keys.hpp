@@ -19,6 +19,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIB_MASTER_KEYS
+#define LIB_MASTER_KEYS
+
 extern "C" {
 	#include <user.pb-c.h>
 }
@@ -26,14 +29,11 @@ extern "C" {
 #include <memory>
 
 #include "constants.h"
-#include "buffer.h"
+#include "buffer.hpp"
 #include "return-status.h"
-#include "zeroed_malloc.h"
-#include "sodium-wrappers.h"
-#include "protobuf-deleters.h"
-
-#ifndef LIB_MASTER_KEYS
-#define LIB_MASTER_KEYS
+#include "zeroed_malloc.hpp"
+#include "sodium-wrappers.hpp"
+#include "protobuf-deleters.hpp"
 
 class PrivateMasterKeyStorage {
 	friend class MasterKeys;

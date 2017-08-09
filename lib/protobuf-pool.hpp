@@ -35,7 +35,7 @@
 #include <protobuf-c/protobuf-c.h>
 #include <cstddef>
 
-#include "sodium-wrappers.h"
+#include "sodium-wrappers.hpp"
 
 class ProtobufPoolBlock {
 private:

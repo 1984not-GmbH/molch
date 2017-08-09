@@ -23,7 +23,7 @@
 #include <cstdlib>
 #include <exception>
 
-#include "../lib/molch-exception.h"
+#include "../lib/molch-exception.hpp"
 #include "../lib/protobuf-pool.hpp"
 
 int main(void) {

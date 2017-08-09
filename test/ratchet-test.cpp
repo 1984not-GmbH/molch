@@ -26,10 +26,10 @@
 #include <exception>
 #include <iostream>
 
-#include "../lib/ratchet.h"
-#include "../lib/molch-exception.h"
-#include "utils.h"
-#include "common.h"
+#include "../lib/ratchet.hpp"
+#include "../lib/molch-exception.hpp"
+#include "utils.hpp"
+#include "common.hpp"
 
 std::unique_ptr<Buffer> protobuf_export(Ratchet& ratchet) {
 	std::unique_ptr<Conversation,ConversationDeleter> conversation = ratchet.exportProtobuf();

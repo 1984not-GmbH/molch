@@ -26,9 +26,9 @@
 #include <exception>
 #include <iostream>
 
-#include "../lib/ratchet.h"
-#include "../lib/molch-exception.h"
-#include "utils.h"
+#include "../lib/ratchet.hpp"
+#include "../lib/molch-exception.hpp"
+#include "utils.hpp"
 
 static int keypair(Buffer& private_key, Buffer& public_key) {
 	return crypto_box_keypair(public_key.content, private_key.content);

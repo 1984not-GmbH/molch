@@ -19,12 +19,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <cstdbool>
-
-#include "buffer.h"
-
 #ifndef LIB_DIFFIE_HELLMAN_H
 #define LIB_DIFFIE_HELLMAN_H
+
+#include <cstdbool>
+
+#include "buffer.hpp"
 
 /*
  * Diffie Hellman key exchange using our private key and the

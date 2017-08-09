@@ -25,10 +25,10 @@
 #include <sodium.h>
 #include <iostream>
 
-#include "../lib/user-store.h"
-#include "../lib/destroyers.h"
-#include "utils.h"
-#include "common.h"
+#include "../lib/user-store.hpp"
+#include "../lib/destroyers.hpp"
+#include "utils.hpp"
+#include "common.hpp"
 
 return_status protobuf_export(
 		const user_store * const store,

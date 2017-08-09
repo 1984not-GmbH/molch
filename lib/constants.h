@@ -19,11 +19,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-//This header defines all the constants that are globally available in the library.
-#include <sodium.h>
+//!file This header defines all the constants that are globally available in the library.
 
 #ifndef LIB_CONSTANTS_H
 #define LIB_CONSTANTS_H
+
+#include <sodium.h>
 
 #define CONVERSATION_ID_SIZE 32U //length of a conversation id in bytes
 #define PREKEY_AMOUNT 100U //number of prekeys that are used

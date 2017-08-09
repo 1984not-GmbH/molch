@@ -22,7 +22,7 @@
 #ifndef LIB_PROTOBUF_DELETERS_H
 #define LIB_PROTOBUF_DELETERS_H
 
-#include "zeroed_malloc.h"
+#include "zeroed_malloc.hpp"
 
 extern "C" {
 	#include <backup.pb-c.h>

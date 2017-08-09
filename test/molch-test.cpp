@@ -24,11 +24,11 @@
 #include <sodium.h>
 #include <iostream>
 
-#include "utils.h"
+#include "utils.hpp"
 #include "../lib/molch.h"
-#include "../lib/user-store.h" //for PREKEY_AMOUNT
-#include "../lib/zeroed_malloc.h"
-#include "../lib/destroyers.h"
+#include "../lib/user-store.hpp" //for PREKEY_AMOUNT
+#include "../lib/zeroed_malloc.hpp"
+#include "../lib/destroyers.hpp"
 
 extern "C" {
 	#include <encrypted_backup.pb-c.h>

@@ -26,11 +26,11 @@
 #include <iostream>
 #include <exception>
 
-#include "../lib/prekey-store.h"
+#include "../lib/prekey-store.hpp"
 #include "../lib/constants.h"
-#include "../lib/molch-exception.h"
-#include "../lib/destroyers.h"
-#include "utils.h"
+#include "../lib/molch-exception.hpp"
+#include "../lib/destroyers.hpp"
+#include "utils.hpp"
 
 static void free_prekey_array(Prekey**& prekeys, size_t length) {
 	if (prekeys != nullptr) {

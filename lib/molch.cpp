@@ -27,13 +27,12 @@
 
 #include "constants.h"
 #include "molch.h"
-#include "packet.h"
-#include "buffer.h"
-#include "user-store.h"
-#include "endianness.h"
-#include "return-status.h"
-#include "zeroed_malloc.h"
-#include "destroyers.h"
+#include "packet.hpp"
+#include "buffer.hpp"
+#include "user-store.hpp"
+#include "endianness.hpp"
+#include "zeroed_malloc.hpp"
+#include "destroyers.hpp"
 
 extern "C" {
 	#include <encrypted_backup.pb-c.h>

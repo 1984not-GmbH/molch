@@ -18,12 +18,12 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#ifndef LIB_BUFFER_H
+#define LIB_BUFFER_H
+
 #include <cstdbool>
 #include <cstdlib>
 #include <string>
-
-#ifndef LIB_BUFFER_H
-#define LIB_BUFFER_H
 
 class Buffer {
 private:

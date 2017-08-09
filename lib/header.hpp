@@ -32,7 +32,7 @@
 
 #include <memory>
 
-#include "buffer.h"
+#include "buffer.hpp"
 #include "return-status.h"
 
 /*!

@@ -24,10 +24,10 @@
 #include <sodium.h>
 #include <cstring>
 
-#include "utils.h"
+#include "utils.hpp"
 #include "../lib/molch.h"
 #include "../lib/constants.h"
-#include "../lib/destroyers.h"
+#include "../lib/destroyers.hpp"
 
 int main(int argc, char *args[]) noexcept {
 	bool recreate = false;

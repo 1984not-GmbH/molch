@@ -24,7 +24,7 @@
 #include <sodium.h>
 #include <cstddef>
 
-#include "zeroed_malloc.h"
+#include "zeroed_malloc.hpp"
 
 /*! \file
  * The purpose of these functions is to implement a memory allocator that gets memory

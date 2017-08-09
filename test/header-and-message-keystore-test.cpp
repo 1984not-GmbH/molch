@@ -31,12 +31,12 @@ extern "C" {
 	#include <key_bundle.pb-c.h>
 }
 
-#include "../lib/header-and-message-keystore.h"
-#include "../lib/zeroed_malloc.h"
-#include "../lib/molch-exception.h"
-#include "../lib/destroyers.h"
-#include "utils.h"
-#include "common.h"
+#include "../lib/header-and-message-keystore.hpp"
+#include "../lib/zeroed_malloc.hpp"
+#include "../lib/molch-exception.hpp"
+#include "../lib/destroyers.hpp"
+#include "utils.hpp"
+#include "common.hpp"
 
 static void free_keybundle_array(KeyBundle**& bundles, size_t length) {
 	if (bundles != nullptr) {

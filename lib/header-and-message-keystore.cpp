@@ -22,9 +22,9 @@
 #include <algorithm>
 
 #include "constants.h"
-#include "header-and-message-keystore.h"
-#include "zeroed_malloc.h"
-#include "molch-exception.h"
+#include "header-and-message-keystore.hpp"
+#include "zeroed_malloc.hpp"
+#include "molch-exception.hpp"
 
 extern "C" {
 	#include <key.pb-c.h>

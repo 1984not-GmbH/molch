@@ -23,8 +23,8 @@
 #include <cstdlib>
 #include <sodium.h>
 
-#include "utils.h"
-#include "../lib/destroyers.h"
+#include "utils.hpp"
+#include "../lib/destroyers.hpp"
 
 void print_to_file(Buffer& data, const std::string& filename) noexcept {
 	FILE *file = fopen(filename.c_str(), "w");

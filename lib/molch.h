@@ -19,10 +19,10 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "return-status.h"
-
 #ifndef LIB_MOLCH_H
 #define LIB_MOLCH_H
+
+#include "return-status.h"
 
 /* although molch is C++, it exports a C interface */
 #ifdef __cplusplus

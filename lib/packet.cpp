@@ -25,11 +25,11 @@ extern "C" {
 #include <algorithm>
 #include <exception>
 
-#include "packet.h"
+#include "packet.hpp"
 #include "constants.h"
-#include "zeroed_malloc.h"
-#include "molch-exception.h"
-#include "protobuf-deleters.h"
+#include "zeroed_malloc.hpp"
+#include "molch-exception.hpp"
+#include "protobuf-deleters.hpp"
 
 /*!
  * Convert molch_message_type to PacketHeader__PacketType.

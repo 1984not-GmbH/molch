@@ -22,9 +22,9 @@
 #include <sodium.h>
 
 #include "constants.h"
-#include "spiced-random.h"
+#include "spiced-random.hpp"
 #include "return-status.h"
-#include "molch-exception.h"
+#include "molch-exception.hpp"
 
 /*
  * Generate a random number by combining the OSs random number

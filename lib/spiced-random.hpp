@@ -19,31 +19,23 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <sodium.h>
+#ifndef LIB_SPICED_RANDOM_H
+#define LIB_SPICED_RANDOM_H
 
-#ifndef LIB_AUTOZERO_H
-#define LIB_AUTOZERO_H
+#include "buffer.hpp"
+#include "return-status.h"
 
-template <typename T> class autozero {
-private:
-	T content;
-public:
-	autozero() {}
-	autozero(const T& content) {
-		this->content = content;
-	}
+/*
+ * Generate a random number by combining the OSs random number
+ * generator with an external source of randomness (like some kind of
+ * user input).
+ *
+ * WARNING: Don't feed this with random numbers from the OSs random
+ * source because it might annihilate the randomness.
+ */
+void spiced_random(
+		Buffer& random_output,
+		const Buffer& low_entropy_spice,
+		const size_t output_length);
 
-	T& operator *() {
-		return this->content;
-	}
-
-	T* pointer() {
-		return &this->content;
-	}
-
-	~autozero() {
-		sodium_memzero(&this->content, sizeof(T));
-	}
-};
-
-#endif /* LIB_AUTOZERO_H */
+#endif

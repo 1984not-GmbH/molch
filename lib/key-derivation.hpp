@@ -19,11 +19,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "buffer.h"
-#include "return-status.h"
-
 #ifndef LIB_KEY_DERIVATION_H
 #define LIB_KEY_DERIVATION_H
+
+#include "buffer.hpp"
+#include "return-status.h"
 
 /*
  * Derive a key of length between crypto_generichash_blake2b_BYTES_MIN (16 Bytes)

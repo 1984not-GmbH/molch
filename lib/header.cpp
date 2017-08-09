@@ -22,11 +22,11 @@
 extern "C" {
 	#include <header.pb-c.h>
 }
-#include "header.h"
+#include "header.hpp"
 #include "constants.h"
-#include "zeroed_malloc.h"
-#include "molch-exception.h"
-#include "protobuf-deleters.h"
+#include "zeroed_malloc.hpp"
+#include "molch-exception.hpp"
+#include "protobuf-deleters.hpp"
 
 std::unique_ptr<Buffer> header_construct(
 		//inputs

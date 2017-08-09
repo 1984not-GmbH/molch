@@ -24,7 +24,7 @@
 
 #include <memory>
 
-#include "buffer.h"
+#include "buffer.hpp"
 #include "molch.h"
 
 /*! \file

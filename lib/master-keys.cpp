@@ -23,11 +23,11 @@
 #include <exception>
 #include <memory>
 
-#include "molch-exception.h"
-#include "master-keys.h"
-#include "spiced-random.h"
-#include "sodium-wrappers.h"
-#include "autozero.h"
+#include "molch-exception.hpp"
+#include "master-keys.hpp"
+#include "spiced-random.hpp"
+#include "sodium-wrappers.hpp"
+#include "autozero.hpp"
 
 MasterKeys::MasterKeys() {
 	this->init();

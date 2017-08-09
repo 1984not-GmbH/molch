@@ -23,8 +23,8 @@
 #include <algorithm>
 #include <climits>
 
-#include "prekey-store.h"
-#include "molch-exception.h"
+#include "prekey-store.hpp"
+#include "molch-exception.hpp"
 
 constexpr int64_t PREKEY_EXPIRATION_TIME = 3600 * 24 * 31; //one month
 constexpr int64_t DEPRECATED_PREKEY_EXPIRATION_TIME = 3600; //one hour

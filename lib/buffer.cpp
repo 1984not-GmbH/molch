@@ -22,8 +22,8 @@
 #include <algorithm>
 #include <memory>
 
-#include "buffer.h"
-#include "molch-exception.h"
+#include "buffer.hpp"
+#include "molch-exception.hpp"
 
 Buffer::Buffer() noexcept {
 	this->buffer_length = 0;

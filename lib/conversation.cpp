@@ -22,12 +22,12 @@
 #include <exception>
 
 #include "constants.h"
-#include "conversation.h"
+#include "conversation.hpp"
 #include "molch.h"
-#include "packet.h"
-#include "header.h"
-#include "molch-exception.h"
-#include "destroyers.h"
+#include "packet.hpp"
+#include "header.hpp"
+#include "molch-exception.hpp"
+#include "destroyers.hpp"
 
 /*
  * Create a new conversation struct and initialise the buffer pointer.

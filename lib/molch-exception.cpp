@@ -23,7 +23,7 @@
 #include <new>
 #include <memory>
 
-#include "molch-exception.h"
+#include "molch-exception.hpp"
 
 MolchError::MolchError() {
 	this->type = SUCCESS;

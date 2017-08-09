@@ -25,9 +25,9 @@
 #include <exception>
 #include <iostream>
 
-#include "../lib/spiced-random.h"
-#include "../lib/molch-exception.h"
-#include "utils.h"
+#include "../lib/spiced-random.hpp"
+#include "../lib/molch-exception.hpp"
+#include "utils.hpp"
 
 int main(void) noexcept {
 	try {

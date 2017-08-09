@@ -21,9 +21,9 @@
 #include <sodium.h>
 
 #include "constants.h"
-#include "diffie-hellman.h"
-#include "molch-exception.h"
-#include "autozero.h"
+#include "diffie-hellman.hpp"
+#include "molch-exception.hpp"
+#include "autozero.hpp"
 
 /*
  * Diffie Hellman key exchange using our private key and the

@@ -25,11 +25,11 @@
 #include <memory>
 #include <iostream>
 
-#include "../lib/master-keys.h"
+#include "../lib/master-keys.hpp"
 #include "../lib/constants.h"
-#include "../lib/molch-exception.h"
-#include "../lib/protobuf-deleters.h"
-#include "utils.h"
+#include "../lib/molch-exception.hpp"
+#include "../lib/protobuf-deleters.hpp"
+#include "utils.hpp"
 
 void protobuf_export(
 		MasterKeys& keys,

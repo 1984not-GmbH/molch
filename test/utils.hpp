@@ -19,23 +19,17 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "buffer.h"
-#include "return-status.h"
+#ifndef TEST_UTILS_H
+#define TEST_UTILS_H
 
-#ifndef LIB_SPICED_RANDOM_H
-#define LIB_SPICED_RANDOM_H
+#include <string>
 
-/*
- * Generate a random number by combining the OSs random number
- * generator with an external source of randomness (like some kind of
- * user input).
- *
- * WARNING: Don't feed this with random numbers from the OSs random
- * source because it might annihilate the randomness.
- */
-void spiced_random(
-		Buffer& random_output,
-		const Buffer& low_entropy_spice,
-		const size_t output_length);
+#include "../lib/buffer.hpp"
+#include "../lib/return-status.h"
 
+void print_to_file(Buffer& data, const std::string& filename) noexcept;
+
+void print_errors(const return_status&  status) noexcept;
+
+return_status read_file(Buffer*& data, const std::string& filename) noexcept __attribute__((warn_unused_result));
 #endif

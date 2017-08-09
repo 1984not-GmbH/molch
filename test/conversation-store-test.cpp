@@ -26,10 +26,10 @@
 #include <exception>
 #include <iostream>
 
-#include "../lib/conversation-store.h"
-#include "../lib/molch-exception.h"
-#include "../lib/destroyers.h"
-#include "utils.h"
+#include "../lib/conversation-store.hpp"
+#include "../lib/molch-exception.hpp"
+#include "../lib/destroyers.hpp"
+#include "utils.hpp"
 
 static return_status protobuf_export(
 		const ConversationStore * const store,

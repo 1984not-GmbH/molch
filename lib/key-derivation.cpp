@@ -18,14 +18,15 @@
  * ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
+
 #include <sodium.h>
 #include <exception>
 
 #include "constants.h"
-#include "key-derivation.h"
-#include "diffie-hellman.h"
-#include "endianness.h"
-#include "molch-exception.h"
+#include "key-derivation.hpp"
+#include "diffie-hellman.hpp"
+#include "endianness.hpp"
+#include "molch-exception.hpp"
 
 /*
  * Derive a key of length between crypto_generichash_blake2b_BYTES_MIN (16 Bytes)

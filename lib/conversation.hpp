@@ -19,12 +19,13 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "constants.h"
-#include "ratchet.h"
-#include "prekey-store.h"
-
 #ifndef LIB_CONVERSATION_H
 #define LIB_CONVERSATION_H
+
+#include "constants.h"
+#include "ratchet.hpp"
+#include "prekey-store.hpp"
+
 
 typedef struct conversation_t conversation_t;
 struct conversation_t {
