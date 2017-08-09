@@ -430,7 +430,7 @@ int Buffer::copyToRaw(
 		unsigned char * const destination,
 		const size_t destination_offset,
 		const size_t source_offset,
-		const size_t copy_length) noexcept {
+		const size_t copy_length) const noexcept {
 	if ((source_offset > this->content_length) || (copy_length > (this->content_length - source_offset))) {
 		//source buffer isn't long enough
 		return -6;
@@ -456,7 +456,7 @@ int Buffer::copyToRaw(
  *
  * Returns 0 on success.
  */
-int Buffer::cloneToRaw(unsigned char * const destination, const size_t destination_length) noexcept {
+int Buffer::cloneToRaw(unsigned char * const destination, const size_t destination_length) const noexcept {
 	if (destination_length < this->content_length) {
 		return -6;
 	}

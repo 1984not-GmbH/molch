@@ -30,68 +30,19 @@
 #include "../lib/conversation.hpp"
 #include "../lib/molch-exception.hpp"
 
-int main(void) noexcept {
-	//create buffers
-	//alice' keys
-	Buffer alice_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer alice_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	//bobs keys
-	Buffer bob_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-
-	std::unique_ptr<Buffer> packet;
-	std::unique_ptr<Buffer> received_message;
-
-	//packets
-	std::unique_ptr<Buffer> alice_send_packet2;
-	std::unique_ptr<Buffer> bob_send_packet2;
-	std::unique_ptr<Buffer> bob_response_packet;
-	std::unique_ptr<Buffer> alice_response_packet;
-
-	//receive messages
-	std::unique_ptr<Buffer> alice_receive_message2;
-	std::unique_ptr<Buffer> bob_receive_message2;
-	std::unique_ptr<Buffer> alice_received_response;
-	std::unique_ptr<Buffer> bob_received_response;
-
-	//create prekey stores
-	std::unique_ptr<PrekeyStore> alice_prekeys;
-	std::unique_ptr<PrekeyStore> bob_prekeys;
-
-	Buffer prekey_list(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
-
-	//conversations
-	conversation_t *alice_send_conversation = nullptr;
-	conversation_t *alice_receive_conversation = nullptr;
-	conversation_t *bob_send_conversation = nullptr;
-	conversation_t *bob_receive_conversation = nullptr;
-
-	//message numbers
-	uint32_t alice_receive_message_number = UINT32_MAX;
-	uint32_t alice_previous_receive_message_number = UINT32_MAX;
-	uint32_t bob_receive_message_number = UINT32_MAX;
-	uint32_t bob_previous_receive_message_number = UINT32_MAX;
-	Buffer send_message("Hello there!");
-
-	return_status status = return_status_init();
-	int status_int = sodium_init();
-	if (status_int != 0) {
-		THROW(INIT_ERROR, "Failed to initialize libsodium!");
-	}
-	throw_on_invalid_buffer(alice_private_identity);
-	throw_on_invalid_buffer(alice_public_identity);
-	throw_on_invalid_buffer(bob_private_identity);
-	throw_on_invalid_buffer(bob_public_identity);
-	throw_on_invalid_buffer(prekey_list);
-
+int main(void) {
 	try {
-		//create prekey stores
-		alice_prekeys = std::make_unique<PrekeyStore>();
-		bob_prekeys = std::make_unique<PrekeyStore>();
+		if (sodium_init() != 0) {
+			throw MolchException(INIT_ERROR, "Failed to initialize libsodium!");
+		}
 
 		//create keys
 		//alice
 		//identity
+		Buffer alice_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		Buffer alice_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		exception_on_invalid_buffer(alice_private_identity);
+		exception_on_invalid_buffer(alice_public_identity);
 		generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
@@ -100,6 +51,10 @@ int main(void) noexcept {
 
 		//bob
 		//identity
+		Buffer bob_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		exception_on_invalid_buffer(bob_private_identity);
+		exception_on_invalid_buffer(bob_public_identity);
 		generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
@@ -107,57 +62,48 @@ int main(void) noexcept {
 			"identity");
 
 		//get the prekey list
-		bob_prekeys->list(prekey_list);
-	} catch (const MolchException& exception) {
-		status = exception.toReturnStatus();
-		goto cleanup;
-	} catch (const std::exception& exception) {
-		THROW(EXCEPTION, exception.what());
-	}
+		Buffer prekey_list(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
+		exception_on_invalid_buffer(prekey_list);
+		PrekeyStore bob_prekeys;
+		bob_prekeys.list(prekey_list);
 
-	//start a send conversation
-	status = conversation_start_send_conversation(
-			&alice_send_conversation,
-			&send_message,
-			packet,
-			&alice_public_identity,
-			&alice_private_identity,
-			&bob_public_identity,
-			&prekey_list);
-	THROW_on_error(SEND_ERROR, "Failed to send message.");
+		//start a send conversation
+		Buffer send_message("Hello there!");
+		std::unique_ptr<Buffer> packet;
+		ConversationT alice_send_conversation(
+				send_message,
+				packet,
+				alice_public_identity,
+				alice_private_identity,
+				bob_public_identity,
+				prekey_list);
 
-	printf("Packet:\n");
-	std::cout << packet->toHex();
-	putchar('\n');
+		printf("Packet:\n");
+		std::cout << packet->toHex();
+		putchar('\n');
 
-	//let bob receive the packet
-	status = conversation_start_receive_conversation(
-			&bob_receive_conversation,
-			packet.get(),
-			received_message,
-			&bob_public_identity,
-			&bob_private_identity,
-			bob_prekeys.get());
-	THROW_on_error(RECEIVE_ERROR, "Failed to decrypt received message.");
+		//let bob receive the packet
+		std::unique_ptr<Buffer> received_message;
+		ConversationT bob_receive_conversation(
+				*packet,
+				received_message,
+				bob_public_identity,
+				bob_private_identity,
+				bob_prekeys);
 
-	status_int = send_message.compare(received_message.get());
-	if (status_int != 0) {
-		THROW(INVALID_VALUE, "Message was decrypted incorrectly.");
-	}
-	printf("Decrypted message matches with the original message.\n");
+		if (send_message != *received_message) {
+			throw MolchException(INVALID_VALUE, "Message was decrypted incorrectly.");
+		}
+		printf("Decrypted message matches with the original message.\n");
 
-	//send and receive some more messages
-	//first one
-	{
+		//send and receive some more messages
+		//first one
 		Buffer alice_send_message2("How are you Bob?");
-		status = conversation_send(
-				alice_send_conversation,
-				&alice_send_message2,
-				alice_send_packet2,
+		auto alice_send_packet2 = alice_send_conversation.send(
+				alice_send_message2,
 				nullptr,
 				nullptr,
 				nullptr);
-		THROW_on_error(SEND_ERROR, "Failed to send Alice' second message.");
 
 		printf("Sent message: %.*s\n", static_cast<int>(alice_send_message2.content_length), reinterpret_cast<const char*>(alice_send_message2.content));
 		printf("Packet:\n");
@@ -165,38 +111,31 @@ int main(void) noexcept {
 		putchar('\n');
 
 		//bob receives the message
-		status = conversation_receive(
-				bob_receive_conversation,
-				alice_send_packet2.get(),
-				&bob_receive_message_number,
-				&bob_previous_receive_message_number,
-				bob_receive_message2);
-		THROW_on_error(RECEIVE_ERROR, "Second message from Alice failed to decrypt.");
+		uint32_t bob_receive_message_number = UINT32_MAX;
+		uint32_t bob_previous_receive_message_number = UINT32_MAX;
+		auto bob_receive_message2 = bob_receive_conversation.receive(
+				*alice_send_packet2,
+				bob_receive_message_number,
+				bob_previous_receive_message_number);
 
 		// check the message numbers
 		if ((bob_receive_message_number != 1) || (bob_previous_receive_message_number != 0)) {
-			THROW(INCORRECT_DATA, "Incorrect receive message number for Bob.");
+			throw MolchException(INCORRECT_DATA, "Incorrect receive message number for Bob.");
 		}
 
 		//now check if the received message was correctly decrypted
-		status_int = bob_receive_message2->compare(&alice_send_message2);
-		if (status_int != 0) {
-			THROW(INVALID_VALUE, "Received message doesn't match.");
+		if (*bob_receive_message2 != alice_send_message2) {
+			throw MolchException(INVALID_VALUE, "Received message doesn't match.");
 		}
 		printf("Alice' second message has been sent correctly!\n");
-	}
 
-	//Bob responds to alice
-	{
+		//Bob responds to alice
 		Buffer bob_response_message("I'm fine, thanks. How are you?");
-		status = conversation_send(
-				bob_receive_conversation,
-				&bob_response_message,
-				bob_response_packet,
+		auto bob_response_packet = bob_receive_conversation.send(
+				bob_response_message,
 				nullptr,
 				nullptr,
 				nullptr);
-		THROW_on_error(SEND_ERROR, "Failed to send Bob's response message.");
 
 		printf("Sent message: %.*s\n", static_cast<int>(bob_response_message.content_length), reinterpret_cast<const char*>(bob_response_message.content));
 		printf("Packet:\n");
@@ -204,87 +143,69 @@ int main(void) noexcept {
 		putchar('\n');
 
 		//Alice receives the response
-		status = conversation_receive(
-				alice_send_conversation,
-				bob_response_packet.get(),
-				&alice_receive_message_number,
-				&alice_previous_receive_message_number,
-				alice_received_response);
-		THROW_on_error(RECEIVE_ERROR, "Response from Bob failed to decrypt.");
+		uint32_t alice_receive_message_number = UINT32_MAX;
+		uint32_t alice_previous_receive_message_number = UINT32_MAX;
+		auto alice_received_response = alice_send_conversation.receive(
+				*bob_response_packet,
+				alice_receive_message_number,
+				alice_previous_receive_message_number);
 
 		// check the message numbers
 		if ((alice_receive_message_number != 0) || (alice_previous_receive_message_number != 0)) {
-			THROW(INCORRECT_DATA, "Incorrect receive message number for Alice.");
+			throw MolchException(INCORRECT_DATA, "Incorrect receive message number for Alice.");
 		}
 
 		//compare sent and received messages
-		status_int = bob_response_message.compare(alice_received_response.get());
-		if (status_int != 0) {
-			THROW(INVALID_VALUE, "Received response doesn't match.");
+		if (bob_response_message != *alice_received_response) {
+			throw MolchException(INVALID_VALUE, "Received response doesn't match.");
 		}
 		printf("Successfully received Bob's response!\n");
-	}
 
-	//---------------------------------------------------------------------------------------------
-	//now test it the other way round (because Axolotl is assymetric in this regard)
-	//Bob sends the message to Alice.
+		//---------------------------------------------------------------------------------------------
+		//now test it the other way round (because Axolotl is assymetric in this regard)
+		//Bob sends the message to Alice.
 
-	//get alice prekey list
-	try {
-		alice_prekeys->list(prekey_list);
-	} catch (const MolchException& exception) {
-		status = exception.toReturnStatus();
-		goto cleanup;
-	} catch (const std::exception& exception) {
-		THROW(EXCEPTION, exception.what());
-	}
+		//get alice prekey list
+		PrekeyStore alice_prekeys;
+		alice_prekeys.list(prekey_list);
 
-	//destroy the old packet
-	packet.reset();
-	status = conversation_start_send_conversation(
-			&bob_send_conversation,
-			&send_message,
-			packet,
-			&bob_public_identity,
-			&bob_private_identity,
-			&alice_public_identity,
-			&prekey_list);
-	THROW_on_error(SEND_ERROR, "Failed to send message.");
+		//destroy the old packet
+		packet.reset();
+		ConversationT bob_send_conversation(
+				send_message,
+				packet,
+				bob_public_identity,
+				bob_private_identity,
+				alice_public_identity,
+				prekey_list);
 
-	printf("Sent message: %.*s\n", static_cast<int>(send_message.content_length), reinterpret_cast<const char*>(send_message.content));
-	printf("Packet:\n");
-	std::cout << packet->toHex();
-	putchar('\n');
+		printf("Sent message: %.*s\n", static_cast<int>(send_message.content_length), reinterpret_cast<const char*>(send_message.content));
+		printf("Packet:\n");
+		std::cout << packet->toHex();
+		putchar('\n');
 
-	//let alice receive the packet
-	received_message.reset();
-	status = conversation_start_receive_conversation(
-			&alice_receive_conversation,
-			packet.get(),
-			received_message,
-			&alice_public_identity,
-			&alice_private_identity,
-			alice_prekeys.get());
-	THROW_on_error(RECEIVE_ERROR, "Failed to decrypt received message.");
+		//let alice receive the packet
+		received_message.reset();
+		ConversationT alice_receive_conversation(
+				*packet,
+				received_message,
+				alice_public_identity,
+				alice_private_identity,
+				alice_prekeys);
 
-	status_int = send_message.compare(received_message.get());
-	if (status_int != 0) {
-		THROW(INVALID_VALUE, "Message incorrectly decrypted.");
-	}
-	printf("Decrypted message matched with the original message.\n");
+		if (send_message != *received_message) {
+			throw MolchException(INVALID_VALUE, "Message incorrectly decrypted.");
+		}
+		printf("Decrypted message matched with the original message.\n");
 
-	//send and receive some more messages
-	//first one
-	{
+		//send and receive some more messages
+		//first one
 		Buffer bob_send_message2("How are you Alice?");
-		status = conversation_send(
-				bob_send_conversation,
-				&bob_send_message2,
-				bob_send_packet2,
+		auto bob_send_packet2 = bob_send_conversation.send(
+				bob_send_message2,
 				nullptr,
 				nullptr,
 				nullptr);
-		THROW_on_error(SEND_ERROR, "Failed to send Bob's second message.");
 
 		printf("Sent message: %.*s\n", static_cast<int>(bob_send_message2.content_length), reinterpret_cast<const char*>(bob_send_message2.content));
 		printf("Packet:\n");
@@ -292,38 +213,29 @@ int main(void) noexcept {
 		putchar('\n');
 
 		//alice receives the message
-		status = conversation_receive(
-				alice_receive_conversation,
-				bob_send_packet2.get(),
-				&alice_receive_message_number,
-				&alice_previous_receive_message_number,
-				alice_receive_message2);
-		THROW_on_error(RECEIVE_ERROR, "Second message from Bob failed to decrypt.");
+		auto alice_receive_message2 = alice_receive_conversation.receive(
+				*bob_send_packet2,
+				alice_receive_message_number,
+				alice_previous_receive_message_number);
 
 		// check message numbers
 		if ((alice_receive_message_number != 1) || (alice_previous_receive_message_number != 0)) {
-			THROW(INCORRECT_DATA, "Incorrect receive message numbers for Alice.");
+			throw MolchException(INCORRECT_DATA, "Incorrect receive message numbers for Alice.");
 		}
 
 		//now check if the received message was correctly decrypted
-		status_int = alice_receive_message2->compare(&bob_send_message2);
-		if (status_int != 0) {
-			THROW(INVALID_VALUE, "Received message doesn't match.");
+		if (*alice_receive_message2 != bob_send_message2) {
+			throw MolchException(INVALID_VALUE, "Received message doesn't match.");
 		}
 		printf("Bobs second message has been sent correctly!.\n");
-	}
 
-	//Alice responds to Bob
-	{
+		//Alice responds to Bob
 		Buffer alice_response_message("I'm fine, thanks. How are you?");
-		status = conversation_send(
-				alice_receive_conversation,
-				&alice_response_message,
-				alice_response_packet,
+		auto alice_response_packet = alice_receive_conversation.send(
+				alice_response_message,
 				nullptr,
 				nullptr,
 				nullptr);
-		THROW_on_error(SEND_ERROR, "Failed to send Alice' response message.");
 
 		printf("Sent message: %.*s\n", static_cast<int>(alice_response_message.content_length), reinterpret_cast<const char*>(alice_response_message.content));
 		printf("Packet:\n");
@@ -331,45 +243,25 @@ int main(void) noexcept {
 		putchar('\n');
 
 		//Bob receives the response
-		status = conversation_receive(
-				bob_send_conversation,
-				alice_response_packet.get(),
-				&bob_receive_message_number,
-				&bob_previous_receive_message_number,
-				bob_received_response);
-		THROW_on_error(RECEIVE_ERROR, "Response from Alice failed to decrypt.");
+		auto bob_received_response = bob_send_conversation.receive(
+				*alice_response_packet,
+				bob_receive_message_number,
+				bob_previous_receive_message_number);
 
 		// check message numbers
 		if ((bob_receive_message_number != 0) || (bob_previous_receive_message_number != 0)) {
-			THROW(INCORRECT_DATA, "Incorrect receive message numbers for Alice.");
+			throw MolchException(INCORRECT_DATA, "Incorrect receive message numbers for Alice.");
 		}
 
 		//compare sent and received messages
-		status_int = alice_response_message.compare(bob_received_response.get());
-		if (status_int != 0) {
-			THROW(INVALID_VALUE, "Received response doesn't match.");
+		if (alice_response_message != *bob_received_response) {
+			throw MolchException(INVALID_VALUE, "Received response doesn't match.");
 		}
 		printf("Successfully received Alice' response!\n");
+	} catch (const MolchException& exception) {
+		std::cerr << exception.print() << std::endl;
+		return EXIT_FAILURE;
+	} catch (const std::exception& exception) {
+		std::cerr << exception.what() << std::endl;
 	}
-
-cleanup:
-	if (alice_send_conversation != nullptr) {
-		conversation_destroy(alice_send_conversation);
-	}
-	if (alice_receive_conversation != nullptr) {
-		conversation_destroy(alice_receive_conversation);
-	}
-	if (bob_send_conversation != nullptr) {
-		conversation_destroy(bob_send_conversation);
-	}
-	if (bob_receive_conversation != nullptr) {
-		conversation_destroy(bob_receive_conversation);
-	}
-
-	on_error {
-		print_errors(status);
-		return_status_destroy_errors(&status);
-	}
-
-	return status.status;
 }

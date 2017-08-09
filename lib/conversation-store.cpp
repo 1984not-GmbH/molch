@@ -40,7 +40,7 @@ void ConversationStore::init() noexcept {
 /*
  * add a conversation to the conversation store.
  */
-return_status ConversationStore::add(conversation_t * const conversation) noexcept {
+return_status ConversationStore::add(ConversationT * const conversation) noexcept {
 
 	return_status status = return_status_init();
 
@@ -77,7 +77,7 @@ cleanup:
 /*
  * Remove a conversation from the conversation_store.
  */
-void ConversationStore::remove(conversation_t * const node) noexcept {
+void ConversationStore::remove(ConversationT * const node) noexcept {
 	if (node == nullptr) {
 		return;
 	}
@@ -97,7 +97,7 @@ void ConversationStore::remove(conversation_t * const node) noexcept {
 
 	this->length--;
 
-	conversation_destroy(node);
+	delete node;
 }
 
 /*
@@ -106,7 +106,7 @@ void ConversationStore::remove(conversation_t * const node) noexcept {
  * The conversation is identified by it's id.
  */
 void ConversationStore::removeById(const Buffer& id) noexcept {
-	conversation_t *node = nullptr;
+	ConversationT *node = nullptr;
 	node = this->findNode(id);
 	if (node == nullptr) {
 		return;
@@ -120,8 +120,8 @@ void ConversationStore::removeById(const Buffer& id) noexcept {
  *
  * Returns nullptr if no conversation was found.
  */
-conversation_t* ConversationStore::findNode(const Buffer& id) noexcept {
-	conversation_t* conversation = nullptr;
+ConversationT* ConversationStore::findNode(const Buffer& id) noexcept {
+	ConversationT* conversation = nullptr;
 	size_t index = 0;
 	for (conversation = this->head; (index < this->length) && (conversation != NULL); conversation = conversation->next, index++) {
 		if (conversation->id.compare(&id) == 0) {
@@ -148,7 +148,7 @@ void ConversationStore::clear() noexcept {
  */
 return_status ConversationStore::list(Buffer*& list) noexcept {
 	return_status status = return_status_init();
-	conversation_t *conversation = nullptr;
+	ConversationT *conversation = nullptr;
 	size_t index = 0;
 
 	if (this->length == 0) {
@@ -192,10 +192,16 @@ return_status ConversationStore::exportConversationStore(Conversation**& convers
 
 	//export the conversations
 	{
-		conversation_t *node = this->head;
+		ConversationT *node = this->head;
 		for (size_t i = 0; (i < this->length) && (node != nullptr); i++, node = node->next) {
-			status = conversation_export(node, &conversations[i]);
-			THROW_on_error(EXPORT_ERROR, "Failed to export conversation.");
+			try {
+				conversations[i] = node->exportProtobuf().release();
+			} catch (const MolchException& exception) {
+				status = exception.toReturnStatus();
+				goto cleanup;
+			} catch (const std::exception& exception) {
+				THROW(EXCEPTION, exception.what());
+			}
 		}
 	}
 
@@ -219,7 +225,7 @@ cleanup:
 return_status ConversationStore::import(Conversation ** const conversations, const size_t length) noexcept {
 	return_status status = return_status_init();
 
-	conversation_t *conversation = nullptr;
+	ConversationT *conversation = nullptr;
 
 	//check input
 	if (((length > 0) && (conversations == nullptr))
@@ -231,10 +237,18 @@ return_status ConversationStore::import(Conversation ** const conversations, con
 
 	//import all the conversations
 	for (size_t i = 0; i < length; i++) {
-		status = conversation_import(
-			&conversation,
-			conversations[i]);
-		THROW_on_error(IMPORT_ERROR, "Failed to import conversation.");
+		if (conversations[i] == nullptr) {
+			THROW(PROTOBUF_MISSING_ERROR, "Array of conversation has an empty element.");
+		}
+
+		try {
+			conversation = new ConversationT(*conversations[i]);
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 
 		status = this->add(conversation);
 		THROW_on_error(ADDITION_ERROR, "Failed to add conversation to conversation store.");
@@ -243,10 +257,7 @@ return_status ConversationStore::import(Conversation ** const conversations, con
 
 cleanup:
 	on_error {
-		if (conversation != nullptr) {
-			conversation_destroy(conversation);
-			conversation = nullptr;
-		}
+		delete conversation;
 
 		this->clear();
 	}

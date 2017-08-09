@@ -499,7 +499,7 @@ return_status molch_start_send_conversation(
 	Buffer receiver_public_master_key_buffer(receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
 	Buffer prekeys(prekey_list + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t));
 
-	conversation_t *conversation = nullptr;
+	ConversationT *conversation = nullptr;
 	std::unique_ptr<Buffer> packet_buffer;
 	user_store_node *user = nullptr;
 
@@ -553,23 +553,21 @@ return_status molch_start_send_conversation(
 	//unlock the master keys
 	try {
 		user->master_keys->unlock();
+
+		//create the conversation and encrypt the message
+		conversation = new ConversationT(
+				message_buffer,
+				packet_buffer,
+				user->master_keys->public_identity_key,
+				user->master_keys->private_identity_key,
+				*receiver_public_identity,
+				prekeys);
 	} catch (const MolchException& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
 	} catch (const std::exception& exception) {
 		THROW(EXCEPTION, exception.what());
 	}
-
-	//create the conversation and encrypt the message
-	status = conversation_start_send_conversation(
-			&conversation,
-			&message_buffer,
-			packet_buffer,
-			&user->master_keys->public_identity_key,
-			&user->master_keys->private_identity_key,
-			receiver_public_identity,
-			&prekeys);
-	THROW_on_error(CREATION_ERROR, "Failed to start send converstion.");
 
 	//copy the conversation id
 	{
@@ -605,9 +603,7 @@ cleanup:
 	buffer_destroy_and_null_if_valid(receiver_public_identity);
 	buffer_destroy_and_null_if_valid(receiver_public_ephemeral);
 
-	if (conversation != nullptr) {
-		conversation_destroy(conversation);
-	}
+	delete conversation;
 
 	if (user != nullptr) {
 		try {
@@ -664,7 +660,7 @@ return_status molch_start_receive_conversation(
 	Buffer sender_public_master_key_buffer(sender_public_master_key, PUBLIC_MASTER_KEY_SIZE);
 	Buffer receiver_public_master_key_buffer(receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
 
-	conversation_t *conversation = nullptr;
+	ConversationT *conversation = nullptr;
 	std::unique_ptr<Buffer> message_buffer;
 	user_store_node *user = nullptr;
 
@@ -696,22 +692,20 @@ return_status molch_start_receive_conversation(
 	//unlock the master keys
 	try {
 		user->master_keys->unlock();
+
+		//create the conversation
+		conversation = new ConversationT(
+				packet_buffer,
+				message_buffer,
+				user->master_keys->public_identity_key,
+				user->master_keys->private_identity_key,
+				*user->prekeys);
 	} catch (const MolchException& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
 	} catch (const std::exception& exception) {
 		THROW(EXCEPTION, exception.what());
 	}
-
-	//create the conversation
-	status = conversation_start_receive_conversation(
-			&conversation,
-			&packet_buffer,
-			message_buffer,
-			&user->master_keys->public_identity_key,
-			&user->master_keys->private_identity_key,
-			user->prekeys);
-	THROW_on_error(CREATION_ERROR, "Failed to start receive conversation.");
 
 	//copy the conversation id
 	{
@@ -750,9 +744,7 @@ return_status molch_start_receive_conversation(
 	}
 
 cleanup:
-	if (conversation != nullptr) {
-		conversation_destroy(conversation);
-	}
+	delete conversation;
 
 	if (user != nullptr) {
 		try {
@@ -775,14 +767,14 @@ cleanup:
  * Find a conversation based on it's conversation id.
  */
 static return_status find_conversation(
-		conversation_t ** const conversation, //output
+		ConversationT** const conversation, //output
 		const unsigned char * const conversation_id,
 		ConversationStore ** const conversations, //optional, can be nullptr, the conversation store where the conversation is in
 		user_store_node ** const user //optional, can be nullptr, the user that the conversation belongs to
 		) {
 	return_status status = return_status_init();
 
-	conversation_t *conversation_node = nullptr;
+	ConversationT *conversation_node = nullptr;
 
 	if ((conversation == nullptr) || (conversation_id == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input for find_conversation.");
@@ -854,7 +846,7 @@ return_status molch_encrypt_message(
 	Buffer message_buffer(message, message_length);
 
 	std::unique_ptr<Buffer> packet_buffer;
-	conversation_t *conversation = nullptr;
+	ConversationT *conversation = nullptr;
 
 	return_status status = return_status_init();
 
@@ -875,14 +867,18 @@ return_status molch_encrypt_message(
 		THROW(NOT_FOUND, "Failed to find a conversation for the given ID.");
 	}
 
-	status = conversation_send(
-			conversation,
-			&message_buffer,
-			packet_buffer,
-			nullptr,
-			nullptr,
-			nullptr);
-	THROW_on_error(GENERIC_ERROR, "Failed to send message.");
+	try {
+		packet_buffer = conversation->send(
+				message_buffer,
+				nullptr,
+				nullptr,
+				nullptr);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//copy the packet content
 	*packet = reinterpret_cast<unsigned char*>(malloc(packet_buffer->content_length));
@@ -939,7 +935,7 @@ return_status molch_decrypt_message(
 	return_status status = return_status_init();
 
 	std::unique_ptr<Buffer> message_buffer;
-	conversation_t *conversation = nullptr;
+	ConversationT *conversation = nullptr;
 
 	if ((message == nullptr) || (message_length == nullptr)
 		|| (packet == nullptr)
@@ -960,13 +956,17 @@ return_status molch_decrypt_message(
 		THROW(NOT_FOUND, "Failed to find conversation with the given ID.");
 	}
 
-	status = conversation_receive(
-			conversation,
-			&packet_buffer,
-			receive_message_number,
-			previous_receive_message_number,
-			message_buffer);
-	THROW_on_error(GENERIC_ERROR, "Failed to receive message.");
+	try {
+		message_buffer = conversation->receive(
+				packet_buffer,
+				*receive_message_number,
+				*previous_receive_message_number);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//copy the message
 	*message = reinterpret_cast<unsigned char*>(malloc(message_buffer->content_length));
@@ -1008,7 +1008,7 @@ return_status molch_end_conversation(
 
 	//find the conversation
 	{
-		conversation_t *conversation = nullptr;
+		ConversationT *conversation = nullptr;
 		user_store_node *user = nullptr;
 		status = find_conversation(&conversation, conversation_id, nullptr, &user);
 		THROW_on_error(NOT_FOUND, "Couldn't find converstion.");
@@ -1159,7 +1159,7 @@ return_status molch_conversation_export(
 
 	EncryptedBackup encrypted_backup_struct;
 	encrypted_backup__init(&encrypted_backup_struct);
-	Conversation *conversation_struct = nullptr;
+	std::unique_ptr<Conversation,ConversationDeleter> conversation_struct;
 
 	//check input
 	if ((backup == nullptr) || (backup_length == nullptr)
@@ -1176,22 +1176,28 @@ return_status molch_conversation_export(
 
 	//find the conversation
 	{
-		conversation_t *conversation = nullptr;
+		ConversationT *conversation = nullptr;
 		status = find_conversation(&conversation, conversation_id, nullptr, nullptr);
 		THROW_on_error(NOT_FOUND, "Failed to find the conversation.");
 
 		//export the conversation
-		status = conversation_export(conversation, &conversation_struct);
-		conversation = nullptr; //remove alias
-		THROW_on_error(EXPORT_ERROR, "Failed to export conversation to protobuf-c struct.");
+		try {
+			conversation_struct = conversation->exportProtobuf();
+			conversation = nullptr; //remove alias
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 	}
 
 	//pack the struct
-	conversation_size = conversation__get_packed_size(conversation_struct);
+	conversation_size = conversation__get_packed_size(conversation_struct.get());
 	conversation_buffer = Buffer::createWithCustomAllocator(conversation_size, 0, zeroed_malloc, zeroed_free);
 	THROW_on_failed_alloc(conversation_buffer);
 
-	conversation_buffer->content_length = conversation__pack(conversation_struct, conversation_buffer->content);
+	conversation_buffer->content_length = conversation__pack(conversation_struct.get(), conversation_buffer->content);
 	if (conversation_buffer->content_length != conversation_size) {
 		THROW(PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c.");
 	}
@@ -1256,10 +1262,6 @@ cleanup:
 		}
 	}
 
-	if (conversation_struct != nullptr) {
-		conversation__free_unpacked(conversation_struct, &protobuf_c_allocators);
-		conversation_struct = nullptr;
-	}
 	buffer_destroy_and_null_if_valid(conversation_buffer);
 	buffer_destroy_and_null_if_valid(backup_nonce);
 	buffer_destroy_and_null_if_valid(backup_buffer);
@@ -1287,9 +1289,9 @@ return_status molch_conversation_import(
 	EncryptedBackup *encrypted_backup_struct = nullptr;
 	Buffer *decrypted_backup = nullptr;
 	Conversation *conversation_struct = nullptr;
-	conversation_t *conversation = nullptr;
+	ConversationT *conversation = nullptr;
 	ConversationStore *containing_store = nullptr;
-	conversation_t *existing_conversation = nullptr;
+	ConversationT *existing_conversation = nullptr;
 
 	//check input
 	if ((backup == nullptr) || (backup_key == nullptr)) {
@@ -1345,8 +1347,15 @@ return_status molch_conversation_import(
 	}
 
 	//import the conversation
-	status = conversation_import(&conversation, conversation_struct);
-	THROW_on_error(IMPORT_ERROR, "Failed to import conversation from Protobuf-C struct.");
+	try {
+		conversation = new ConversationT(*conversation_struct);
+		THROW_on_error(IMPORT_ERROR, "Failed to import conversation from Protobuf-C struct.");
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	status = find_conversation(&existing_conversation, conversation->id.content, &containing_store, nullptr);
 	THROW_on_error(NOT_FOUND, "Imported conversation has to exist, but it doesn't.");
@@ -1380,10 +1389,7 @@ cleanup:
 		conversation_struct = nullptr;
 	}
 	buffer_destroy_and_null_if_valid(decrypted_backup);
-	if (conversation != nullptr) {
-		conversation_destroy(conversation);
-		conversation = nullptr;
-	}
+	delete conversation;
 
 	return status;
 }

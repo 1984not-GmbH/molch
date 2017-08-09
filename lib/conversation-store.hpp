@@ -29,8 +29,8 @@ private:
 	size_t length;
 
 public:
-	conversation_t *head;
-	conversation_t *tail;
+	ConversationT *head;
+	ConversationT *tail;
 	size_t getLength() noexcept;
 
 	/*
@@ -41,12 +41,12 @@ public:
 	/*
 	 * add a conversation to the conversation store.
 	 */
-	return_status add(conversation_t * const conversation) noexcept __attribute__((warn_unused_result));
+	return_status add(ConversationT* const conversation) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Remove a conversation from the conversation_store.
 	 */
-	void remove(conversation_t * const node) noexcept;
+	void remove(ConversationT* const node) noexcept;
 
 	/*
 	 * Remove a conversation from the conversation store.
@@ -60,7 +60,7 @@ public:
 	 *
 	 * Returns nullptr if no conversation was found.
 	 */
-	conversation_t* findNode(const Buffer& id) noexcept __attribute__((warn_unused_result));
+	ConversationT* findNode(const Buffer& id) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Remove all entries from a conversation store.

@@ -182,7 +182,7 @@ public:
 			unsigned char * const destination,
 			const size_t destination_offset,
 			const size_t source_offset,
-			const size_t copy_length) noexcept __attribute__((warn_unused_result));
+			const size_t copy_length) const noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Copy the entire content of a buffer
@@ -190,7 +190,7 @@ public:
 	 *
 	 * Returns 0 on success.
 	 */
-	int cloneToRaw(unsigned char * const destination, const size_t destination_length) noexcept __attribute__((warn_unused_result));
+	int cloneToRaw(unsigned char * const destination, const size_t destination_length) const noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Create a new buffer on the heap.

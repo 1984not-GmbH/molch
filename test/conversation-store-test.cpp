@@ -148,7 +148,7 @@ static return_status test_add_conversation(ConversationStore * const store) noex
 	Buffer our_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	Buffer their_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 
-	conversation_t *conversation = nullptr;
+	ConversationT *conversation = nullptr;
 
 	return_status status = return_status_init();
 
@@ -179,34 +179,14 @@ static return_status test_add_conversation(ConversationStore * const store) noex
 	}
 
 	//create the conversation manually
-	conversation = reinterpret_cast<conversation_t*>(malloc(sizeof(conversation_t)));
-	if (conversation == nullptr) {
-		THROW(ALLOCATION_FAILED, "Failed to allocate conversation.");
-	}
-
-	conversation->next = nullptr;
-	conversation->previous = nullptr;
-	conversation->ratchet = nullptr;
-
-	//create the conversation id
-	conversation->id.init(conversation->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
-
-	status_int = conversation->id.fillRandom(CONVERSATION_ID_SIZE);
-	if (status_int != 0) {
-		THROW(GENERIC_ERROR, "Failed to fill buffer with random data.");
-	}
-
 	try {
-		conversation->ratchet = new Ratchet(
-			our_private_identity,
-			our_public_identity,
-			their_public_identity,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_ephemeral);
-
-		status = store->add(conversation);
-		conversation = nullptr;
+		conversation = new ConversationT(
+				our_private_identity,
+				our_public_identity,
+				their_public_identity,
+				our_private_ephemeral,
+				our_public_ephemeral,
+				their_public_ephemeral);
 	} catch (const MolchException& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
@@ -214,10 +194,11 @@ static return_status test_add_conversation(ConversationStore * const store) noex
 		THROW(EXCEPTION, exception.what());
 	}
 
+	status = store->add(conversation);
+	conversation = nullptr;
+
 cleanup:
-	if (conversation != nullptr) {
-		conversation_destroy(conversation);
-	}
+	delete conversation;
 
 	return status;
 }
@@ -294,7 +275,7 @@ int main(void) noexcept {
 
 	//find node by id
 	{
-		conversation_t *found_node = store->findNode(store->head->next->next->id);
+		ConversationT *found_node = store->findNode(store->head->next->next->id);
 		if (found_node != store->head->next->next) {
 			THROW(NOT_FOUND, "Failed to find node by ID.");
 		}
