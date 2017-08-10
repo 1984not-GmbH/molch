@@ -31,361 +31,240 @@
 #include "../lib/destroyers.hpp"
 #include "utils.hpp"
 
-static return_status protobuf_export(
-		const ConversationStore * const store,
-		Buffer *** const export_buffers,
-		size_t * const buffer_count) noexcept __attribute__((warn_unused_result));
-static return_status protobuf_export(
-		const ConversationStore * const store,
-		Buffer *** const export_buffers,
-		size_t * const buffer_count) noexcept {
-	return_status status = return_status_init();
+static void free_conversation_array(Conversation**& conversations, size_t length) {
+	if (conversations != nullptr) {
+		for (size_t i = 0; i < length; i++) {
+			if (conversations[i] != nullptr) {
+				conversation__free_unpacked(conversations[i], &protobuf_c_allocators);
+				conversations[i] = nullptr;
+			}
+		}
+		zeroed_free_and_null_if_valid(conversations);
+	}
+}
 
+static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
 	Conversation ** conversations = nullptr;
 	size_t length = 0;
 
-	if (export_buffers != nullptr) {
-		*export_buffers = nullptr;
-	}
-	if (buffer_count != nullptr) {
-		*buffer_count = 0;
-	}
+	std::vector<Buffer> export_buffers;
 
-	//check input
-	if ((store == nullptr) || (export_buffers == nullptr) || (buffer_count == nullptr)) {
-		THROW(INVALID_INPUT, "Invalid input to protobuf_export.");
-	}
+	try {
+		store.exportProtobuf(conversations, length);
 
-	status = store->exportConversationStore(conversations, length);
-	THROW_on_error(EXPORT_ERROR, "Failed to export conversations.");
+		export_buffers.reserve(length);
 
-	*export_buffers = reinterpret_cast<Buffer**>(malloc(length * sizeof(Buffer*)));
-	THROW_on_failed_alloc(*export_buffers);
-	*buffer_count = length;
-
-	//unpack all the conversations
-	for (size_t i = 0; i < length; i++) {
-		size_t unpacked_size = conversation__get_packed_size(conversations[i]);
-		(*export_buffers)[i] = Buffer::create(unpacked_size, 0);
-		THROW_on_failed_alloc((*export_buffers)[i]);
-
-		(*export_buffers)[i]->content_length = conversation__pack(conversations[i], (*export_buffers)[i]->content);
-	}
-
-cleanup:
-	if (conversations != nullptr) {
+		//unpack all the conversations
 		for (size_t i = 0; i < length; i++) {
-			if (conversations[i] != nullptr) {
-				conversation__free_unpacked(conversations[i], &protobuf_c_allocators);
-				conversations[i] = nullptr;
-			}
+			size_t unpacked_size = conversation__get_packed_size(conversations[i]);
+			export_buffers.push_back(Buffer(unpacked_size, 0));
+			exception_on_invalid_buffer(export_buffers.back());
+
+			export_buffers.back().content_length = conversation__pack(conversations[i], export_buffers.back().content);
 		}
-		zeroed_free_and_null_if_valid(conversations);
+	} catch (const std::exception& exception) {
+		free_conversation_array(conversations, length);
+		throw exception;
 	}
-	//buffer will be freed in main
-	return status;
+
+	free_conversation_array(conversations, length);
+	return export_buffers;
 }
 
-return_status protobuf_import(
-		ConversationStore * const store,
-		Buffer ** const buffers,
-		const size_t length) noexcept __attribute__((warn_unused_result));
-return_status protobuf_import(
-		ConversationStore * const store,
-		Buffer ** const buffers,
-		const size_t length) noexcept {
-	return_status status = return_status_init();
+ConversationStore protobuf_import(const std::vector<Buffer> buffers) {
+	auto conversations = std::vector<std::unique_ptr<Conversation,ConversationDeleter>>();
+	conversations.reserve(buffers.size());
 
-	Conversation **conversations = nullptr;
-
-	//check input
-	if ((store == nullptr)
-			|| ((length > 0) && (buffers == nullptr))
-			|| ((length == 0) && (buffers != nullptr))) {
-		THROW(INVALID_INPUT, "Invalid input to protobuf_import.");
-	}
-
-	//allocate the array
-	if (length > 0) {
-		conversations = reinterpret_cast<Conversation**>(zeroed_malloc(length * sizeof(Conversation*)));
-		THROW_on_failed_alloc(conversations);
-		std::fill(conversations, conversations + length, nullptr);
-	}
-
-	for (size_t i = 0; i < length; i++) {
-		conversations[i] = conversation__unpack(&protobuf_c_allocators, buffers[i]->content_length, buffers[i]->content);
-		if (conversations[i] == nullptr) {
-			THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
+	//unpack all the conversations
+	for (const auto& buffer : buffers) {
+		conversations.push_back(std::unique_ptr<Conversation,ConversationDeleter>(
+					conversation__unpack(&protobuf_c_allocators, buffer.content_length, buffer.content)));
+		if (!conversations.back()) {
+			throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
 		}
+	}
+
+	//allocate the conversation array output array
+	std::unique_ptr<Conversation*[]> conversation_array;
+	if (!buffers.empty()) {
+		conversation_array = std::unique_ptr<Conversation*[]>(new Conversation*[buffers.size()]);
+	}
+
+	size_t index = 0;
+	for (const auto& conversation : conversations) {
+		conversation_array[index] = conversation.get();
+		index++;
 	}
 
 	//import
-	status = store->import(conversations, length);
-	THROW_on_error(IMPORT_ERROR, "Failed to import conversation store.");
-
-cleanup:
-	if (conversations != nullptr) {
-		for (size_t i = 0; i < length; i++) {
-			if (conversations[i] != nullptr) {
-				conversation__free_unpacked(conversations[i], &protobuf_c_allocators);
-				conversations[i] = nullptr;
-			}
-		}
-		zeroed_free_and_null_if_valid(conversations);
-	}
-
-	return status;
+	return ConversationStore(conversation_array.get(), buffers.size());
 }
 
-static return_status test_add_conversation(ConversationStore * const store) noexcept {
-	//define key buffers
-	//identity keys
+static void test_add_conversation(ConversationStore& store) {
 	Buffer our_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	Buffer our_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer their_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	//ephemeral keys
+	exception_on_invalid_buffer(our_private_identity);
+	exception_on_invalid_buffer(our_public_identity);
+	int status = crypto_box_keypair(our_public_identity.content, our_private_identity.content);
+	if (status != 0) {
+		throw MolchException(KEYGENERATION_FAILED, "Failed to generate our identity keys.");
+	}
+
 	Buffer our_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	Buffer our_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	exception_on_invalid_buffer(our_private_ephemeral);
+	exception_on_invalid_buffer(our_public_ephemeral);
+	status = crypto_box_keypair(our_public_ephemeral.content, our_private_ephemeral.content);
+	if (status != 0) {
+		throw MolchException(KEYGENERATION_FAILED, "Failed to generate our ephemeral keys.");
+	}
+
+	Buffer their_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	exception_on_invalid_buffer(their_public_identity);
+	status = their_public_identity.fillRandom(their_public_identity.getBufferLength());
+	if (status != 0) {
+		throw MolchException(KEYGENERATION_FAILED, "Failed to generate their public identity keys.");
+	}
+
 	Buffer their_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-
-	ConversationT *conversation = nullptr;
-
-	return_status status = return_status_init();
-
-	//generate the keys
-	int status_int = 0;
-	throw_on_invalid_buffer(our_private_identity);
-	throw_on_invalid_buffer(our_public_identity);
-	throw_on_invalid_buffer(their_public_identity);
-	throw_on_invalid_buffer(our_private_ephemeral);
-	throw_on_invalid_buffer(our_public_ephemeral);
-	throw_on_invalid_buffer(their_public_ephemeral);
-
-	status_int = crypto_box_keypair(our_public_identity.content, our_private_identity.content);
-	if (status_int != 0) {
-		THROW(KEYGENERATION_FAILED, "Failed to generate our identity keys.");
-	}
-	status_int = crypto_box_keypair(our_public_ephemeral.content, our_private_ephemeral.content);
-	if (status_int != 0) {
-		THROW(KEYGENERATION_FAILED, "Failed to generate our ephemeral keys.");
-	}
-	status_int = their_public_identity.fillRandom(their_public_identity.getBufferLength());
-	if (status_int != 0) {
-		THROW(KEYGENERATION_FAILED, "Failed to generate their public identity keys.");
-	}
-	status_int = their_public_ephemeral.fillRandom(their_public_ephemeral.getBufferLength());
-	if (status_int != 0) {
-		THROW(KEYGENERATION_FAILED, "Failed to generate their public ephemeral keys.");
+	exception_on_invalid_buffer(their_public_ephemeral);
+	status = their_public_ephemeral.fillRandom(their_public_ephemeral.getBufferLength());
+	if (status != 0) {
+		throw MolchException(KEYGENERATION_FAILED, "Failed to generate their public ephemeral keys.");
 	}
 
 	//create the conversation manually
-	try {
-		conversation = new ConversationT(
-				our_private_identity,
-				our_public_identity,
-				their_public_identity,
-				our_private_ephemeral,
-				our_public_ephemeral,
-				their_public_ephemeral);
-	} catch (const MolchException& exception) {
-		status = exception.toReturnStatus();
-		goto cleanup;
-	} catch (const std::exception& exception) {
-		THROW(EXCEPTION, exception.what());
-	}
+	ConversationT conversation(
+			our_private_identity,
+			our_public_identity,
+			their_public_identity,
+			our_private_ephemeral,
+			our_public_ephemeral,
+			their_public_ephemeral);
 
-	status = store->add(conversation);
-	conversation = nullptr;
-
-cleanup:
-	delete conversation;
-
-	return status;
+	store.add(std::move(conversation));
 }
 
-return_status protobuf_empty_store(void) noexcept __attribute__((warn_unused_result));
-return_status protobuf_empty_store(void) noexcept {
-	return_status status = return_status_init();
-
+void protobuf_empty_store(void) {
 	printf("Testing im-/export of empty conversation store.\n");
 
 	Conversation **exported = nullptr;
 	size_t exported_length = 0;
 
 	ConversationStore store;
-	store.init();
 
 	//export it
-	status = store.exportConversationStore(exported, exported_length);
-	THROW_on_error(EXPORT_ERROR, "Failed to export empty conversation store.");
+	store.exportProtobuf(exported, exported_length);
 
 	if ((exported != nullptr) || (exported_length != 0)) {
-		THROW(INCORRECT_DATA, "Exported data is not empty.");
+		throw MolchException(INCORRECT_DATA, "Exported data is not empty.");
 	}
 
 	//import it
-	status = store.import(exported, exported_length);
-	THROW_on_error(IMPORT_ERROR, "Failed to import empty conversation store.");
-
+	store = ConversationStore(exported, exported_length);
 	printf("Successful.\n");
-
-cleanup:
-	return status;
 }
 
-int main(void) noexcept {
-	if (sodium_init() == -1) {
-		return -1;
-	}
-
-	return_status status = return_status_init();
-
-	//protobuf buffers
-	Buffer ** protobuf_export_buffers = nullptr;
-	size_t protobuf_export_buffers_length = 0;
-	Buffer ** protobuf_second_export_buffers = nullptr;
-	size_t protobuf_second_export_buffers_length = 0;
-
-	ConversationStore *store = reinterpret_cast<ConversationStore*>(malloc(sizeof(ConversationStore)));
-	if (store == nullptr) {
-		THROW(ALLOCATION_FAILED, "Failed to allocate conversation store.");
-	}
-
-	printf("Initialize the conversation store.\n");
-	store->init();
-
-	// list an empty conversation store
-	Buffer *empty_list;
-	status = store->list(empty_list);
-	THROW_on_error(DATA_FETCH_ERROR, "Failed to list empty conversation store.");
-	if (empty_list != nullptr) {
-		THROW(INCORRECT_DATA, "List of empty conversation store is not nullptr.");
-	}
-
-	// add five conversations
-	printf("Add five conversations.\n");
-	for (size_t i = 0; i < 5; i++) {
-		printf("%zu\n", i);
-		status = test_add_conversation(store);
-		THROW_on_error(ADDITION_ERROR, "Failed to add test conversation.");
-		if (store->getLength() != (i + 1)) {
-			THROW(INCORRECT_DATA, "Conversation store has incorrect length.");
+int main(void) {
+	try {
+		if (sodium_init() == -1) {
+			throw MolchException(INIT_ERROR, "Failed to iniitialize libsodium.");
 		}
-	}
 
-	//find node by id
-	{
-		ConversationT *found_node = store->findNode(store->head->next->next->id);
-		if (found_node != store->head->next->next) {
-			THROW(NOT_FOUND, "Failed to find node by ID.");
+		// list an empty conversation store
+		ConversationStore store;
+		auto empty_list = store.list();
+		if (empty_list) {
+			throw MolchException(INCORRECT_DATA, "List of empty conversation store is not nullptr.");
 		}
-		printf("Found node by ID.\n");
+
+		// add five conversations
+		printf("Add five conversations.\n");
+		for (size_t i = 0; i < 5; i++) {
+			printf("%zu\n", i);
+			test_add_conversation(store);
+			if (store.size() != (i + 1)) {
+				throw MolchException(INCORRECT_DATA, "Conversation store has incorrect length.");
+			}
+		}
 
 		//test list export feature
-		Buffer *conversation_list = nullptr;
-		status = store->list(conversation_list);
-		on_error {
-			THROW(DATA_FETCH_ERROR, "Failed to list conversations.");
-		}
-		if ((conversation_list == nullptr) || (conversation_list->content_length != (CONVERSATION_ID_SIZE * store->getLength()))) {
-			THROW(DATA_FETCH_ERROR, "Failed to get list of conversations.");
+		auto conversation_list = store.list();
+		if (!conversation_list || (conversation_list->content_length != (CONVERSATION_ID_SIZE * store.size()))) {
+			throw MolchException(DATA_FETCH_ERROR, "Failed to get list of conversations.");
 		}
 
 		//check for all conversations that they exist
+		Buffer first_id;
+		Buffer middle_id;
+		Buffer last_id;
 		for (size_t i = 0; i < (conversation_list->content_length / CONVERSATION_ID_SIZE); i++) {
 			Buffer current_id(conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
-			found_node = store->findNode(current_id);
+			auto found_node = store.find(current_id);
 			if (found_node == nullptr) {
-				buffer_destroy_and_null_if_valid(conversation_list);
-				THROW(INCORRECT_DATA, "Exported list of conversations was incorrect.");
+				throw MolchException(INCORRECT_DATA, "Exported list of conversations was incorrect.");
+			}
+
+			if (i == 0) {
+				first_id = current_id;
+			} else if (i == 2) {
+				middle_id = current_id;
+			} else if (i == 4) {
+				last_id = current_id;
 			}
 		}
-		buffer_destroy_and_null_if_valid(conversation_list);
-	}
 
-	//test protobuf export
-	printf("Export to Protobuf-C\n");
-	status = protobuf_export(store, &protobuf_export_buffers, &protobuf_export_buffers_length);
-	THROW_on_error(EXPORT_ERROR, "Failed to export conversation store.");
+		//test protobuf export
+		printf("Export to Protobuf-C\n");
+		auto protobuf_export_buffers = protobuf_export(store);
 
-	printf("protobuf_export_buffers_length = %zu\n", protobuf_export_buffers_length);
-	//print
-	puts("[\n");
-	for (size_t i = 0; i < protobuf_export_buffers_length; i++) {
-		std::cout << protobuf_export_buffers[i]->toHex();
-		puts(",\n");
-	}
-	puts("]\n\n");
-
-	store->clear();
-
-	//import again
-	status = protobuf_import(store, protobuf_export_buffers, protobuf_export_buffers_length);
-	THROW_on_error(IMPORT_ERROR, "Failed to import conversation store from Protobuf-C.");
-
-	//export the imported
-	status = protobuf_export(store, &protobuf_second_export_buffers, &protobuf_second_export_buffers_length);
-	THROW_on_error(EXPORT_ERROR, "Failed to export imported conversation store again to Protobuf-C.");
-
-	//compare to previous export
-	if (protobuf_export_buffers_length != protobuf_second_export_buffers_length) {
-		THROW(INCORRECT_DATA, "Both arrays of Protobuf-C strings don't have the same length.");
-	}
-	for (size_t i = 0; i < protobuf_export_buffers_length; i++) {
-		if (protobuf_export_buffers[i]->compare(protobuf_second_export_buffers[i]) != 0) {
-			THROW(INCORRECT_DATA, "Exported protobuf-c string doesn't match.");
+		printf("protobuf_export_buffers_length = %zu\n", protobuf_export_buffers.size());
+		//print
+		puts("[\n");
+		for (size_t i = 0; i < protobuf_export_buffers.size(); i++) {
+			std::cout << protobuf_export_buffers[i].toHex();
+			puts(",\n");
 		}
-	}
-	printf("Exported Protobuf-C strings match.\n");
+		puts("]\n\n");
 
-	//remove nodes
-	store->remove(store->head);
-	printf("Removed head.\n");
-	store->remove(store->tail);
-	printf("Removed tail.\n");
-	store->remove(store->head->next);
+		store.clear();
 
-	if (store->getLength() != 2) {
-		THROW(REMOVE_ERROR, "Failed to remove nodes.");
-	}
-	printf("Successfully removed nodes.\n");
+		//import again
+		store = protobuf_import(protobuf_export_buffers);
 
-	//remove node by id
-	store->removeById(store->tail->id);
-	if (store->getLength() != 1) {
-		THROW(REMOVE_ERROR, "Failed to remove node by id.");
-	}
-	printf("Successfully removed node by id.\n");
+		//export the imported
+		auto protobuf_second_export_buffers = protobuf_export(store);
 
-	//clear the conversation store
-	printf("Clear the conversation store.\n");
-
-	status = protobuf_empty_store();
-	THROW_on_error(GENERIC_ERROR, "Failed to im-/export empty conversation store.");
-
-cleanup:
-	if (protobuf_export_buffers != nullptr) {
-		for (size_t i =0; i < protobuf_export_buffers_length; i++) {
-			buffer_destroy_and_null_if_valid(protobuf_export_buffers[i]);
+		//compare to previous export
+		if (protobuf_export_buffers != protobuf_second_export_buffers) {
+			throw MolchException(INCORRECT_DATA, "Exported protobuf-c strings don't match.");
 		}
-		free_and_null_if_valid(protobuf_export_buffers);
-	}
-	if (protobuf_second_export_buffers != nullptr) {
-		for (size_t i =0; i < protobuf_second_export_buffers_length; i++) {
-			buffer_destroy_and_null_if_valid(protobuf_second_export_buffers[i]);
+		printf("Exported Protobuf-C strings match.\n");
+
+		//remove nodes
+		auto first = store.find(first_id);
+		store.remove(first);
+		printf("Removed head.\n");
+		store.remove(middle_id);
+		printf("Removed tail.\n");
+		store.remove(last_id);
+
+		if (store.size() != 2) {
+			throw MolchException(REMOVE_ERROR, "Failed to remove nodes.");
 		}
-		free_and_null_if_valid(protobuf_second_export_buffers);
+		printf("Successfully removed nodes.\n");
+
+		//clear the conversation store
+		printf("Clear the conversation store.\n");
+
+		protobuf_empty_store();
+	} catch (const MolchException& exception) {
+		std::cerr << exception.print() << std::endl;
+		return EXIT_FAILURE;
+	} catch (const std::exception& exception) {
+		std::cerr << exception.what() << std::endl;
+		return EXIT_FAILURE;
 	}
 
-	if (store != nullptr) {
-		store->clear();
-	}
-	free_and_null_if_valid(store);
-
-	on_error {
-		print_errors(status);
-	}
-	return_status_destroy_errors(&status);
-
-	return status.status;
+	return EXIT_SUCCESS;
 }

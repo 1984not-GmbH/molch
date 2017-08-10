@@ -20,6 +20,7 @@
  */
 
 #include <exception>
+#include <iostream>
 
 #include "constants.h"
 #include "conversation.hpp"
@@ -36,6 +37,27 @@ void ConversationT::init() {
 	this->id.init(this->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
 	this->previous = nullptr;
 	this->next = nullptr;
+}
+
+ConversationT& ConversationT::move(ConversationT&& conversation) {
+	this->init();
+
+	if (this->id.cloneFrom(&conversation.id) != 0) {
+		throw MolchException(BUFFER_ERROR, "Faild to clone id.");
+	}
+	this->previous = conversation.previous;
+	this->next = conversation.next;
+	this->ratchet = std::move(conversation.ratchet);
+
+	return *this;
+}
+
+ConversationT::ConversationT(ConversationT&& conversation) {
+	this->move(std::move(conversation));
+}
+
+ConversationT& ConversationT::operator=(ConversationT&& conversation) {
+	return this->move(std::move(conversation));
 }
 
 /*

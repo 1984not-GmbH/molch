@@ -114,12 +114,22 @@ static return_status create_user_store_node(user_store_node ** const node) noexc
 	//initialise the public_signing key buffer
 	(*node)->public_signing_key->init((*node)->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
 
-	(*node)->conversations->init();
+	try {
+		(*node)->conversations = new ConversationStore();
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 cleanup:
 	on_error {
 		if (node != nullptr) {
-			*node = nullptr;
+			if (*node != nullptr) {
+				delete (*node)->conversations;
+			}
+			sodium_free_and_null_if_valid(*node);
 		}
 	}
 
@@ -314,7 +324,7 @@ void user_store_remove(user_store *store, user_store_node *node) noexcept {
 	}
 
 	//clear the conversation store
-	node->conversations->clear();
+	delete node->conversations;
 
 	//remove the master keys
 	delete node->master_keys;
@@ -398,8 +408,14 @@ return_status user_store_node_export(user_store_node * const node, User ** const
 	(*user)->private_identity_key = private_identity_key.release();
 
 	//export the conversation store
-	status = node->conversations->exportConversationStore(conversations, conversations_length);
-	THROW_on_error(EXPORT_ERROR, "Failed to export conversation store.");
+	try {
+		node->conversations->exportProtobuf(conversations, conversations_length);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	(*user)->conversations = conversations;
 	conversations = nullptr;
@@ -511,8 +527,14 @@ static return_status user_store_node_import(user_store_node ** const node, const
 		THROW(BUFFER_ERROR, "Failed to copy public signing key.");
 	}
 
-	status = (*node)->conversations->import(user->conversations, user->n_conversations);
-	THROW_on_error(IMPORT_ERROR, "Failed to import conversations.");
+	try {
+		*(*node)->conversations = ConversationStore(user->conversations, user->n_conversations);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	try {
 		(*node)->prekeys = new PrekeyStore(

@@ -22,72 +22,74 @@
 #ifndef LIB_CONVERSATION_STORE_H
 #define LIB_CONVERSATION_STORE_H
 
+#include <string>
 #include "conversation.hpp"
 
 class ConversationStore {
 private:
-	size_t length;
+	std::vector<ConversationT> conversations;
 
 public:
-	ConversationT *head;
-	ConversationT *tail;
-	size_t getLength() noexcept;
+
+	size_t size();
+
+	ConversationStore() = default;
+
+	/*! Import a conversation store from a Protobuf-C struct.
+	 * \param conversations An array of Protobuf-C structs to import from.
+	 * \param length The number of array elements.
+	 * \param public_identity_key The public identity key of the user.
+	 */
+	ConversationStore(Conversation** const& conversations, const size_t length);
+
+	ConversationStore(const ConversationStore& store) = delete;
+	ConversationStore(ConversationStore&& store) = default;
+
+	ConversationStore& operator=(const ConversationStore& store) = delete;
+	ConversationStore& operator=(ConversationStore&& store) = default;
 
 	/*
-	 * Init new conversation store.
+	 * Add a conversation to the conversation store or replaces
+	 * it if one with the same ID already exists.
 	 */
-	void init() noexcept;
-
-	/*
-	 * add a conversation to the conversation store.
-	 */
-	return_status add(ConversationT* const conversation) noexcept __attribute__((warn_unused_result));
+	void add(ConversationT&& conversation);
 
 	/*
 	 * Remove a conversation from the conversation_store.
 	 */
-	void remove(ConversationT* const node) noexcept;
+	void remove(ConversationT* const node);
 
 	/*
 	 * Remove a conversation from the conversation store.
 	 *
 	 * The conversation is identified by it's id.
 	 */
-	void removeById(const Buffer& id) noexcept;
+	void remove(const Buffer& id);
 
 	/*
 	 * Find a conversation for a given conversation ID.
 	 *
 	 * Returns nullptr if no conversation was found.
 	 */
-	ConversationT* findNode(const Buffer& id) noexcept __attribute__((warn_unused_result));
+	ConversationT* find(const Buffer& id);
 
 	/*
 	 * Remove all entries from a conversation store.
 	 */
-	void clear() noexcept;
+	void clear();
 
 	/*
 	 * Create a list of conversations (one buffer filled with the conversation ids.
 	 *
 	 * Returns nullptr if empty.
 	 */
-	return_status list(Buffer*& list) noexcept __attribute__((warn_unused_result));
+	std::unique_ptr<Buffer> list();
 
 	/*! Export a conversation store to Protobuf-C
 	 * \param conversation_store The conversation store to export.
 	 * \param conversations An array of Protobuf-C structs to export it to.
 	 * \return The status.
 	 */
-	return_status exportConversationStore(Conversation**& conversations, size_t& length) const noexcept __attribute__((warn_unused_result));
-
-	/*! Import a conversation store from a Protobuf-C struct.
-	 * \param conversation_store The conversation store to import to.
-	 * \param conversations An array of Protobuf-C structs to import from.
-	 * \param length The number of array elements.
-	 * \param public_identity_key The public identity key of the user.
-	 * \return The status.
-	 */
-	return_status import(Conversation ** const conversations, const size_t length) noexcept __attribute__((warn_unused_result));
+	void exportProtobuf(Conversation**& conversations, size_t& length) const;
 };
 #endif

@@ -24,80 +24,44 @@
 #include "conversation-store.hpp"
 #include "destroyers.hpp"
 
-size_t ConversationStore::getLength() noexcept {
-	return this->length;
+size_t ConversationStore::size() {
+	return this->conversations.size();
 }
 
-/*
- * Init new conversation store.
- */
-void ConversationStore::init() noexcept {
-	this->length = 0;
-	this->head = nullptr;
-	this->tail = nullptr;
-}
-
-/*
- * add a conversation to the conversation store.
- */
-return_status ConversationStore::add(ConversationT * const conversation) noexcept {
-
-	return_status status = return_status_init();
-
-	if (conversation == nullptr) {
-		THROW(INVALID_INPUT, "Invalid input to conversation_store_add");
+void ConversationStore::add(ConversationT&& conversation) {
+	const Buffer& id = conversation.id;
+	//search if a conversation with this id already exists
+	auto existing_conversation = std::find_if(this->conversations.cbegin(), this->conversations.cend(),
+			[id](const ConversationT& conversation) {
+				return conversation.id == id;
+			});
+	//if none exists, just add the conversation
+	if (existing_conversation == this->conversations.end()) {
+		this->conversations.push_back(std::move(conversation));
+		return;
 	}
 
-	if (this->head == nullptr) { //first conversation in the list
-		conversation->previous = nullptr;
-		conversation->next = nullptr;
-		this->head = conversation;
-		this->tail = conversation;
-
-		//update length
-		this->length++;
-
-		goto cleanup;
-	}
-
-	//add the new conversation to the tail of the list
-	this->tail->next = conversation;
-	conversation->previous = this->tail;
-	conversation->next = nullptr;
-	this->tail = conversation;
-
-	//update length
-	this->length++;
-
-cleanup:
-
-	return status;
+	//otherwise replace the exiting one
+	size_t existing_index = static_cast<size_t>(existing_conversation - this->conversations.cbegin());
+	this->conversations[existing_index] = std::move(conversation);
 }
 
-/*
- * Remove a conversation from the conversation_store.
- */
-void ConversationStore::remove(ConversationT * const node) noexcept {
+void ConversationStore::remove(ConversationT * const node) {
 	if (node == nullptr) {
 		return;
 	}
 
+	auto found_node = std::find_if(this->conversations.cbegin(), this->conversations.cend(),
+			[node](const ConversationT& conversation) {
+				if (&conversation == node) {
+					return true;
+				}
 
-	if ((node->next != nullptr) && (node != this->tail)) { //node is not the tail
-		node->next->previous = node->previous;
-	} else {
-		this->tail = node->previous;
+				return false;
+			});
+	if (found_node != this->conversations.cend()) {
+		this->conversations.erase(found_node);
 	}
-
-	if ((node->previous != nullptr) && (node != this->head)) { //node is not the head
-		node->previous->next = node->next;
-	} else {
-		this->head = node->next;
-	}
-
-	this->length--;
-
-	delete node;
 }
 
 /*
@@ -105,14 +69,19 @@ void ConversationStore::remove(ConversationT * const node) noexcept {
  *
  * The conversation is identified by it's id.
  */
-void ConversationStore::removeById(const Buffer& id) noexcept {
-	ConversationT *node = nullptr;
-	node = this->findNode(id);
-	if (node == nullptr) {
-		return;
-	}
+void ConversationStore::remove(const Buffer& id) {
+	auto found_node = std::find_if(this->conversations.cbegin(), this->conversations.cend(),
+			[id](const ConversationT& conversation) {
+				if (conversation.id == id) {
+					return true;
+				}
 
-	this->remove(node);
+				return false;
+			});
+
+	if (found_node != this->conversations.cend()) {
+		this->conversations.erase(found_node);
+	}
 }
 
 /*
@@ -120,25 +89,28 @@ void ConversationStore::removeById(const Buffer& id) noexcept {
  *
  * Returns nullptr if no conversation was found.
  */
-ConversationT* ConversationStore::findNode(const Buffer& id) noexcept {
-	ConversationT* conversation = nullptr;
-	size_t index = 0;
-	for (conversation = this->head; (index < this->length) && (conversation != NULL); conversation = conversation->next, index++) {
-		if (conversation->id.compare(&id) == 0) {
-			break;
-		}
+ConversationT* ConversationStore::find(const Buffer& id) {
+	auto node = std::find_if(this->conversations.begin(), this->conversations.end(),
+			[id](const ConversationT& conversation) {
+				if (conversation.id == id) {
+					return true;
+				}
+
+				return false;
+			});
+
+	if (node == this->conversations.end()) {
+		return nullptr;
 	}
 
-	return conversation;
+	return &(*node);
 }
 
 /*
  * Remove all entries from a conversation store.
  */
-void ConversationStore::clear() noexcept {
-	while (this->length > 0) {
-		this->remove(this->tail);
-	}
+void ConversationStore::clear() {
+	this->conversations.clear();
 }
 
 /*
@@ -146,122 +118,69 @@ void ConversationStore::clear() noexcept {
  *
  * Returns nullptr if empty.
  */
-return_status ConversationStore::list(Buffer*& list) noexcept {
-	return_status status = return_status_init();
-	ConversationT *conversation = nullptr;
-	size_t index = 0;
-
-	if (this->length == 0) {
-		list = nullptr;
-		goto cleanup;
+std::unique_ptr<Buffer> ConversationStore::list() {
+	if (this->conversations.empty()) {
+		return std::unique_ptr<Buffer>();
 	}
 
-	list = Buffer::create(this->length * CONVERSATION_ID_SIZE, 0);
-	THROW_on_failed_alloc(list);
-	//copy all the id's
-	for (conversation = this->head; (index < this->getLength()) && (conversation != nullptr); index++, conversation = conversation->next) {
-		int status_int = list->copyFrom(
+	auto list = std::make_unique<Buffer>(this->conversations.size() * CONVERSATION_ID_SIZE, 0);
+
+	for (const auto& conversation : this->conversations) {
+		size_t index = static_cast<size_t>(&conversation - &(*this->conversations.cbegin()));
+		int status = list->copyFrom(
 			CONVERSATION_ID_SIZE * index,
-			&conversation->id,
+			&conversation.id,
 			0,
-			conversation->id.content_length);
-		if (status_int != 0) {
-			THROW(BUFFER_ERROR, "Failed to copy conversation id.");
+			conversation.id.content_length);
+		if (status != 0) {
+			throw MolchException(BUFFER_ERROR, "Failed to copy conversation id.");
 		}
+
 	}
 
-cleanup:
-	on_error {
-		buffer_destroy_and_null_if_valid(list);
-	}
-
-	return status;
+	return list;
 }
 
-return_status ConversationStore::exportConversationStore(Conversation**& conversations, size_t& length) const noexcept {
-	return_status status = return_status_init();
-
-	if (this->length > 0) {
-		//allocate the array of conversations
-		conversations = reinterpret_cast<Conversation**>(zeroed_malloc(this->length * sizeof(Conversation*)));
-		THROW_on_failed_alloc(conversations);
-		std::fill(conversations, conversations + this->length, nullptr);
-	} else {
+void ConversationStore::exportProtobuf(Conversation**& conversations, size_t& length) const {
+	if (this->conversations.empty()) {
 		conversations = nullptr;
+		length = 0;
+
+		return;
 	}
+
+	auto conversation_pointers = std::vector<std::unique_ptr<Conversation,ConversationDeleter>>();
+	conversation_pointers.reserve(this->conversations.size());
 
 	//export the conversations
-	{
-		ConversationT *node = this->head;
-		for (size_t i = 0; (i < this->length) && (node != nullptr); i++, node = node->next) {
-			try {
-				conversations[i] = node->exportProtobuf().release();
-			} catch (const MolchException& exception) {
-				status = exception.toReturnStatus();
-				goto cleanup;
-			} catch (const std::exception& exception) {
-				THROW(EXCEPTION, exception.what());
-			}
-		}
+	for (const auto& conversation : this->conversations) {
+		conversation_pointers.push_back(conversation.exportProtobuf());
 	}
 
-	length = this->length;
-
-cleanup:
-	on_error {
-		if (conversations != nullptr) {
-			for (size_t i = 0; i < this->length; i++) {
-				if (conversations[i] != nullptr) {
-					conversation__free_unpacked(conversations[i], &protobuf_c_allocators);
-					conversations[i] = nullptr;
-				}
-			}
-		}
+	//allocate the output array
+	conversations = throwing_zeroed_malloc<Conversation*>(this->conversations.size() * sizeof(Conversation*));
+	size_t index = 0;
+	for (auto&& conversation : conversation_pointers) {
+		conversations[index] = conversation.release();
+		index++;
 	}
-
-	return status;
+	length = this->conversations.size();
 }
 
-return_status ConversationStore::import(Conversation ** const conversations, const size_t length) noexcept {
-	return_status status = return_status_init();
-
-	ConversationT *conversation = nullptr;
-
+ConversationStore::ConversationStore(Conversation** const& conversations, const size_t length) {
 	//check input
 	if (((length > 0) && (conversations == nullptr))
 			|| ((length == 0) && (conversations != nullptr))) {
-		THROW(INVALID_INPUT, "Invalid input to conversation_store_import");
+		throw MolchException(INVALID_INPUT, "Invalid input to conversation_store_import");
 	}
-
-	this->init();
 
 	//import all the conversations
 	for (size_t i = 0; i < length; i++) {
 		if (conversations[i] == nullptr) {
-			THROW(PROTOBUF_MISSING_ERROR, "Array of conversation has an empty element.");
+			throw MolchException(PROTOBUF_MISSING_ERROR, "Array of conversation has an empty element.");
 		}
 
-		try {
-			conversation = new ConversationT(*conversations[i]);
-		} catch (const MolchException& exception) {
-			status = exception.toReturnStatus();
-			goto cleanup;
-		} catch (const std::exception& exception) {
-			THROW(EXCEPTION, exception.what());
-		}
-
-		status = this->add(conversation);
-		THROW_on_error(ADDITION_ERROR, "Failed to add conversation to conversation store.");
-		conversation = nullptr;
+		this->conversations.push_back(ConversationT(*conversations[i]));
 	}
-
-cleanup:
-	on_error {
-		delete conversation;
-
-		this->clear();
-	}
-
-	return status;
 }
 

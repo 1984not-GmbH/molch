@@ -577,9 +577,14 @@ return_status molch_start_send_conversation(
 		}
 	}
 
-	status = user->conversations->add(conversation);
-	THROW_on_error(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
-	conversation = nullptr;
+	try {
+		user->conversations->add(std::move(*conversation));
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//copy the packet to the output
 	*packet = reinterpret_cast<unsigned char*>(malloc(packet_buffer->content_length));
@@ -723,9 +728,14 @@ return_status molch_start_receive_conversation(
 	THROW_on_error(CREATION_ERROR, "Failed to create prekey list.");
 
 	//add the conversation to the conversation store
-	status = user->conversations->add(conversation);
-	THROW_on_error(ADDITION_ERROR, "Failed to add conversation to the users conversation store.");
-	conversation = nullptr;
+	try {
+		user->conversations->add(std::move(*conversation));
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//copy the message
 	*message = reinterpret_cast<unsigned char*>(malloc(message_buffer->content_length));
@@ -785,7 +795,7 @@ static return_status find_conversation(
 		Buffer conversation_id_buffer(conversation_id, CONVERSATION_ID_SIZE);
 		user_store_node *node = users->head;
 		while (node != nullptr) {
-			conversation_node = node->conversations->findNode(conversation_id_buffer);
+			conversation_node = node->conversations->find(conversation_id_buffer);
 			if (conversation_node != nullptr) {
 				//found the conversation we're searching for
 				break;
@@ -1014,10 +1024,10 @@ return_status molch_end_conversation(
 		THROW_on_error(NOT_FOUND, "Couldn't find converstion.");
 
 		if (conversation == nullptr) {
-			THROW(NOT_FOUND, "Couldn'nt find conversation.");
+			THROW(NOT_FOUND, "Couldn't find conversation.");
 		}
 
-		user->conversations->removeById(conversation->id);
+		user->conversations->remove(conversation->id);
 	}
 
 	if (backup != nullptr) {
@@ -1056,7 +1066,7 @@ return_status molch_list_conversations(
 		const unsigned char * const user_public_master_key,
 		const size_t user_public_master_key_length) {
 	Buffer user_public_master_key_buffer(user_public_master_key, PUBLIC_MASTER_KEY_SIZE);
-	Buffer *conversation_list_buffer = nullptr;
+	std::unique_ptr<Buffer> conversation_list_buffer = nullptr;
 
 	return_status status = return_status_init();
 
@@ -1075,11 +1085,18 @@ return_status molch_list_conversations(
 		status = user_store_find_node(&user, users, &user_public_master_key_buffer);
 		THROW_on_error(NOT_FOUND, "No user found for the given public identity.")
 
-		status = user->conversations->list(conversation_list_buffer);
+		try {
+			conversation_list_buffer = user->conversations->list();
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 		on_error {
 			THROW(DATA_FETCH_ERROR, "Failed to list conversations.");
 		}
-		if (conversation_list_buffer == nullptr) {
+		if (!conversation_list_buffer) {
 			// list is empty
 			*conversation_list = nullptr;
 			*number = 0;
@@ -1092,10 +1109,11 @@ return_status molch_list_conversations(
 	}
 	*number = conversation_list_buffer->content_length / CONVERSATION_ID_SIZE;
 
-	*conversation_list = conversation_list_buffer->content;
+	//allocate the conversation list output and copy it over
+	*conversation_list = reinterpret_cast<unsigned char*>(malloc(conversation_list_buffer->content_length));
+	THROW_on_failed_alloc(*conversation_list);
+	std::copy(conversation_list_buffer->content, conversation_list_buffer->content + conversation_list_buffer->content_length, *conversation_list);
 	*conversation_list_length = conversation_list_buffer->content_length;
-	free(conversation_list_buffer); //free Buffer struct
-	conversation_list_buffer = nullptr;
 
 cleanup:
 	on_error {
@@ -1103,7 +1121,12 @@ cleanup:
 			*number = 0;
 		}
 
-		buffer_destroy_and_null_if_valid(conversation_list_buffer);
+		if (conversation_list != nullptr) {
+			free_and_null_if_valid(*conversation_list);
+		}
+		if (conversation_list_length != nullptr) {
+			*conversation_list_length = 0;
+		}
 	}
 
 	return status;
@@ -1289,7 +1312,6 @@ return_status molch_conversation_import(
 	EncryptedBackup *encrypted_backup_struct = nullptr;
 	Buffer *decrypted_backup = nullptr;
 	Conversation *conversation_struct = nullptr;
-	ConversationT *conversation = nullptr;
 	ConversationStore *containing_store = nullptr;
 	ConversationT *existing_conversation = nullptr;
 
@@ -1348,8 +1370,15 @@ return_status molch_conversation_import(
 
 	//import the conversation
 	try {
-		conversation = new ConversationT(*conversation_struct);
-		THROW_on_error(IMPORT_ERROR, "Failed to import conversation from Protobuf-C struct.");
+		ConversationT conversation(*conversation_struct);
+
+		status = find_conversation(&existing_conversation, conversation.id.content, &containing_store, nullptr);
+		THROW_on_error(NOT_FOUND, "Imported conversation has to exist, but it doesn't.");
+		if (containing_store == nullptr) {
+			THROW(NOT_FOUND, "Containing store not found.");
+		}
+
+		containing_store->add(std::move(conversation));
 	} catch (const MolchException& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
@@ -1357,27 +1386,11 @@ return_status molch_conversation_import(
 		THROW(EXCEPTION, exception.what());
 	}
 
-	status = find_conversation(&existing_conversation, conversation->id.content, &containing_store, nullptr);
-	THROW_on_error(NOT_FOUND, "Imported conversation has to exist, but it doesn't.");
-	if (containing_store == nullptr) {
-		THROW(NOT_FOUND, "Containing store not found.");
-	}
-
-	status = containing_store->add(conversation);
-	THROW_on_error(ADDITION_ERROR, "Failed to add imported conversation to the conversation store.");
-	conversation = nullptr;
-
-
 	//update the backup key
 	status = molch_update_backup_key(new_backup_key, new_backup_key_length);
 	on_error {
-		//remove the new imported conversation
-		containing_store->remove(conversation);
 		THROW(KEYGENERATION_FAILED, "Failed to update backup key.");
 	}
-
-	//everything worked, the old conversation can now be removed
-	containing_store->remove(existing_conversation);
 
 cleanup:
 	if (encrypted_backup_struct != nullptr) {
@@ -1389,7 +1402,6 @@ cleanup:
 		conversation_struct = nullptr;
 	}
 	buffer_destroy_and_null_if_valid(decrypted_backup);
-	delete conversation;
 
 	return status;
 }
