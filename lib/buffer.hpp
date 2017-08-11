@@ -36,6 +36,11 @@ private:
 	Buffer& copy(const Buffer& buffer) noexcept;
 	Buffer& move(Buffer&& buffer) noexcept;
 
+	/*
+	 * Deallocate all dynamically allocated memory
+	 */
+	void destruct() noexcept;
+
 public:
 	size_t content_length;
 	unsigned char *content;

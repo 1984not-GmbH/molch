@@ -108,7 +108,7 @@ Buffer::Buffer(const unsigned char * const content, const size_t buffer_length) 
 	this->initWithConst(content, buffer_length, buffer_length);
 }
 
-Buffer::~Buffer() noexcept {
+void Buffer::destruct() noexcept {
 	//only do something if this was created using a constructor
 	if (this->manage_memory) {
 		this->clear();
@@ -121,7 +121,13 @@ Buffer::~Buffer() noexcept {
 	}
 }
 
+Buffer::~Buffer() noexcept {
+	this->destruct();
+}
+
 Buffer& Buffer::copy(const Buffer& buffer) noexcept {
+	this->destruct();
+
 	this->buffer_length = buffer.buffer_length;
 	this->manage_memory = true;
 	this->readonly = buffer.readonly;
@@ -140,6 +146,8 @@ Buffer& Buffer::copy(const Buffer& buffer) noexcept {
 }
 
 Buffer& Buffer::move(Buffer&& buffer) noexcept {
+	this->destruct();
+
 	//copy the buffer
 	unsigned char& source_reference = reinterpret_cast<unsigned char&>(buffer);
 	unsigned char& destination_reference = reinterpret_cast<unsigned char&>(*this);
@@ -166,10 +174,12 @@ Buffer& Buffer::operator=(const Buffer& buffer) noexcept {
 }
 
 Buffer::Buffer(Buffer&& buffer) {
+	this->init(nullptr, 0, 0);
 	this->move(std::move(buffer));
 }
 
 Buffer::Buffer(const Buffer& buffer) {
+	this->init(nullptr, 0, 0);
 	this->copy(buffer);
 }
 
