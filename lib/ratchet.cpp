@@ -262,7 +262,7 @@ void Ratchet::send(
  */
 void Ratchet::getReceiveHeaderKeys(
 		Buffer& current_receive_header_key,
-		Buffer& next_receive_header_key) {
+		Buffer& next_receive_header_key) const {
 	//check input
 	if (!current_receive_header_key.fits(HEADER_KEY_SIZE)
 			|| !next_receive_header_key.fits(HEADER_KEY_SIZE)) {
@@ -547,7 +547,7 @@ void Ratchet::setLastMessageAuthenticity(bool valid) {
 	}
 }
 
-std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() {
+std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() const {
 	auto conversation = std::unique_ptr<Conversation,ConversationDeleter>(throwing_zeroed_malloc<Conversation>(sizeof(Conversation)));
 	conversation__init(conversation.get());
 

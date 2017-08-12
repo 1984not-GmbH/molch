@@ -27,7 +27,7 @@
 #include "../lib/buffer.hpp"
 #include "../lib/return-status.h"
 
-void print_to_file(Buffer& data, const std::string& filename) noexcept;
+void print_to_file(const Buffer& data, const std::string& filename) noexcept;
 
 void print_errors(const return_status&  status) noexcept;
 

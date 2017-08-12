@@ -47,7 +47,7 @@ void ConversationStore::add(ConversationT&& conversation) {
 	this->conversations[existing_index] = std::move(conversation);
 }
 
-void ConversationStore::remove(ConversationT * const node) {
+void ConversationStore::remove(const ConversationT * const node) {
 	if (node == nullptr) {
 		return;
 	}
@@ -119,7 +119,7 @@ void ConversationStore::clear() {
  *
  * Returns nullptr if empty.
  */
-std::unique_ptr<Buffer> ConversationStore::list() {
+std::unique_ptr<Buffer> ConversationStore::list() const {
 	if (this->conversations.empty()) {
 		return std::unique_ptr<Buffer>();
 	}

@@ -44,7 +44,7 @@ private:
 	unsigned char private_key_storage[PRIVATE_KEY_SIZE];
 
 	void init();
-	void fill(const Buffer& public_key, const Buffer& private_key, int64_t expiration_date);
+	void fill(const Buffer& public_key, const Buffer& private_key, const int64_t expiration_date);
 	void generate();
 
 	PrekeyStoreNode& copy(const PrekeyStoreNode& node);
@@ -68,7 +68,7 @@ public:
 	/* move assignment */
 	PrekeyStoreNode& operator=(PrekeyStoreNode&& node);
 
-	std::unique_ptr<Prekey,PrekeyDeleter> exportProtobuf();
+	std::unique_ptr<Prekey,PrekeyDeleter> exportProtobuf() const;
 };
 
 class PrekeyStore {
@@ -121,7 +121,7 @@ public:
 	 * Generate a list containing all public prekeys.
 	 * (this list can then be stored on a public server).
 	 */
-	void list(Buffer& list); //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+	void list(Buffer& list) const; //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 
 	/*
 	 * Automatically deprecate old keys and generate new ones
@@ -139,6 +139,6 @@ public:
 			Prekey**& keypairs,
 			size_t& keypairs_length,
 			Prekey**& deprecated_keypairs,
-			size_t& deprecated_keypairs_length);
+			size_t& deprecated_keypairs_length) const;
 };
 #endif

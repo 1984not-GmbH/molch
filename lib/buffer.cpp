@@ -500,7 +500,7 @@ int Buffer::compareToRaw(const unsigned char * const array, const size_t array_l
  */
 int Buffer::comparePartial(
 		const size_t position1,
-		Buffer * const buffer2,
+		const Buffer * const buffer2,
 		const size_t position2,
 		const size_t length) const noexcept {
 	return this->compareToRawPartial(position1, buffer2->content, buffer2->content_length, position2, length);
@@ -557,7 +557,7 @@ int Buffer::fillRandom(const size_t length) noexcept {
 }
 
 //FIXME: Make sure this doesn't introduce any sidechannels
-int Buffer::xorWith(Buffer * const source) noexcept {
+int Buffer::xorWith(const Buffer * const source) noexcept {
 	if (this->readonly) {
 		return -5;
 	}

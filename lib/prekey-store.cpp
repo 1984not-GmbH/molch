@@ -36,7 +36,7 @@ void PrekeyStoreNode::init() {
 	this->expiration_date = 0;
 }
 
-void PrekeyStoreNode::fill(const Buffer& public_key, const Buffer& private_key, int64_t expiration_date) {
+void PrekeyStoreNode::fill(const Buffer& public_key, const Buffer& private_key, const int64_t expiration_date) {
 	this->init();
 	this->expiration_date = expiration_date;
 	if (this->public_key.cloneFrom(&public_key) != 0) {
@@ -115,7 +115,7 @@ PrekeyStoreNode::PrekeyStoreNode(const Prekey& keypair) {
 	this->expiration_date = static_cast<int64_t>(keypair.expiration_time);
 }
 
-std::unique_ptr<Prekey,PrekeyDeleter> PrekeyStoreNode::exportProtobuf() {
+std::unique_ptr<Prekey,PrekeyDeleter> PrekeyStoreNode::exportProtobuf() const {
 	auto prekey = std::unique_ptr<Prekey,PrekeyDeleter>(throwing_zeroed_malloc<Prekey>(sizeof(Prekey)));
 	prekey__init(prekey.get());
 
@@ -287,7 +287,7 @@ void PrekeyStore::getPrekey(const Buffer& public_key, Buffer& private_key) {
 	}
 }
 
-void PrekeyStore::list(Buffer& list) { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+void PrekeyStore::list(Buffer& list) const { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 	//check input
 	if (!list.fits(PREKEY_AMOUNT * PUBLIC_KEY_SIZE)) {
 		throw MolchException(INVALID_INPUT, "Invalid input to PrekeyStore_list.");
@@ -380,7 +380,7 @@ void PrekeyStore::exportProtobuf(
 		Prekey**& keypairs,
 		size_t& keypairs_length,
 		Prekey**& deprecated_keypairs,
-		size_t& deprecated_keypairs_length) {
+		size_t& deprecated_keypairs_length) const {
 	//export prekeys
 	export_keypairs(*this->prekeys, keypairs, keypairs_length);
 

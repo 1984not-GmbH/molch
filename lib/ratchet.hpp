@@ -164,7 +164,7 @@ public:
 	 */
 	void getReceiveHeaderKeys(
 			Buffer& current_receive_header_key,
-			Buffer& next_receive_header_key);
+			Buffer& next_receive_header_key) const;
 
 	/*
 	 * Set if the header is decryptable with the current (state->receive_header_key)
@@ -198,6 +198,6 @@ public:
 	 * NOTE: This doesn't fill the Id field of the struct.
 	 * \return conversation The Conversation Protobuf-C struct.
 	 */
-	std::unique_ptr<Conversation,ConversationDeleter> exportProtobuf();
+	std::unique_ptr<Conversation,ConversationDeleter> exportProtobuf() const;
 };
 #endif

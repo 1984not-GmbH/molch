@@ -65,7 +65,7 @@ public:
 	HeaderAndMessageKeyStoreNode& operator=(const HeaderAndMessageKeyStoreNode& node);
 	HeaderAndMessageKeyStoreNode& operator=(HeaderAndMessageKeyStoreNode&& node);
 
-	std::unique_ptr<KeyBundle,KeyBundleDeleter> exportProtobuf();
+	std::unique_ptr<KeyBundle,KeyBundleDeleter> exportProtobuf() const;
 
 	std::string print() const;
 };
@@ -89,7 +89,7 @@ public:
 	 * \param key_bundles Pointer to a pointer of protobuf-c key bundle structs, it will be allocated in this function.
 	 * \param bundle_size Size of the outputted array.
 	 */
-	void exportProtobuf(KeyBundle**& key_bundles, size_t& bundles_size);
+	void exportProtobuf(KeyBundle**& key_bundles, size_t& bundles_size) const;
 
 	std::string print() const;
 };

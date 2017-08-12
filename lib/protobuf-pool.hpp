@@ -56,7 +56,7 @@ public:
 	ProtobufPoolBlock& operator=(ProtobufPoolBlock&& block) = default;
 	ProtobufPoolBlock& operator=(const ProtobufPoolBlock& block) = delete;
 
-	void* allocateAligned(size_t size, size_t alignment);
+	void* allocateAligned(const size_t size, const size_t alignment);
 
 	template <typename T>
 	T* allocate(size_t size) {
@@ -76,7 +76,7 @@ private:
 public:
 	ProtobufPool() = default;
 
-	void* allocateAligned(size_t size, size_t alignment);
+	void* allocateAligned(const size_t size, const size_t alignment);
 
 	template <typename T>
 	T* allocate(size_t size) {

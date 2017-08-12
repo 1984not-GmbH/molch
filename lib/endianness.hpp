@@ -36,9 +36,9 @@
 /*
  * Determine the current endianness at runtime.
  */
-inline bool endianness_is_little_endian() {
-	uint16_t number = 0x1;
-	unsigned char* number_pointer = reinterpret_cast<unsigned char*>(&number);
+static bool endianness_is_little_endian() {
+	const uint16_t number = 0x1;
+	const unsigned char* const number_pointer = reinterpret_cast<const unsigned char* const>(&number);
 	return (number_pointer[0] == 0x1);
 }
 

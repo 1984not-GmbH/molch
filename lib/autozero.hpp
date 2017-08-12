@@ -29,9 +29,6 @@ private:
 	T content;
 public:
 	autozero() {}
-	autozero(const T& content) {
-		this->content = content;
-	}
 
 	T& operator *() {
 		return this->content;

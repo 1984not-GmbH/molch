@@ -123,7 +123,7 @@ HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const KeyBundle& key_
 	this->expiration_date = static_cast<int64_t>(key_bundle.expiration_time);
 }
 
-std::unique_ptr<KeyBundle,KeyBundleDeleter> HeaderAndMessageKeyStoreNode::exportProtobuf() {
+std::unique_ptr<KeyBundle,KeyBundleDeleter> HeaderAndMessageKeyStoreNode::exportProtobuf() const {
 	auto key_bundle = std::unique_ptr<KeyBundle,KeyBundleDeleter>(throwing_zeroed_malloc<KeyBundle>(sizeof(KeyBundle)));
 	key_bundle__init(key_bundle.get());
 
@@ -170,7 +170,7 @@ void HeaderAndMessageKeyStore::add(const Buffer& header_key, const Buffer& messa
 	this->keys.emplace_back(header_key, message_key);
 }
 
-void HeaderAndMessageKeyStore::exportProtobuf(KeyBundle**& key_bundles, size_t& bundles_size) {
+void HeaderAndMessageKeyStore::exportProtobuf(KeyBundle**& key_bundles, size_t& bundles_size) const {
 	if (this->keys.size() == 0) {
 		key_bundles = nullptr;
 		bundles_size = 0;

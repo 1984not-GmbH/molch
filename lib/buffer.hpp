@@ -93,7 +93,7 @@ public:
 	/*
 	 * Xor another buffer with the same length onto this one.
 	 */
-	int xorWith(Buffer * const source) noexcept __attribute__((warn_unused_result));
+	int xorWith(const Buffer * const source) noexcept __attribute__((warn_unused_result));
 
 	/*
 	 * Fill a buffer with random numbers.
@@ -114,7 +114,7 @@ public:
 	 */
 	int comparePartial(
 			const size_t position1,
-			Buffer * const buffer2,
+			const Buffer * const buffer2,
 			const size_t position2,
 			const size_t length) const noexcept __attribute__((warn_unused_result));
 
@@ -232,7 +232,7 @@ public:
 };
 
 //throw std::bad_alloc if a buffer is invalid (which the buffer will do automatically in the future)
-inline void exception_on_invalid_buffer(Buffer& buffer) {
+inline void exception_on_invalid_buffer(const Buffer& buffer) {
 	if (!buffer.isValid()) {
 		throw std::bad_alloc();
 	}

@@ -47,7 +47,7 @@ size_t ProtobufPoolBlock::remainingSpace() const {
 	return this->block_size - this->offset;
 }
 
-void* ProtobufPoolBlock::allocateAligned(size_t size, size_t alignment) {
+void* ProtobufPoolBlock::allocateAligned(const size_t size, const size_t alignment) {
 		if (!this->block) {
 			throw std::bad_alloc();
 		}
@@ -80,7 +80,7 @@ void* ProtobufPoolBlock::allocate<void>(size_t size) {
 	return reinterpret_cast<void*>(this->allocateAligned(size, alignof(max_align_t)));
 }
 
-void* ProtobufPool::allocateAligned(size_t size, size_t alignment) {
+void* ProtobufPool::allocateAligned(const size_t size, const size_t alignment) {
 	if (size > ProtobufPoolBlock::default_block_size) {
 		this->blocks.emplace_back(size + alignment);
 		return this->blocks.back().allocateAligned(size, alignment);

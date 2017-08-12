@@ -34,9 +34,9 @@
  */
 void derive_key(
 		Buffer& derived_key,
-		size_t derived_size,
-		Buffer& input_key,
-		uint32_t subkey_counter); //number of the current subkey, used to derive multiple keys from the same input key
+		const size_t derived_size,
+		const Buffer& input_key,
+		const uint32_t subkey_counter); //number of the current subkey, used to derive multiple keys from the same input key
 
 /*
  * Derive the next chain key in a message chain.
@@ -48,7 +48,7 @@ void derive_key(
  */
 void derive_chain_key(
 		Buffer& new_chain_key,
-		Buffer& previous_chain_key);
+		const Buffer& previous_chain_key);
 
 /*
  * Derive a message key from a chain key.
@@ -60,7 +60,7 @@ void derive_chain_key(
  */
 void derive_message_key(
 		Buffer& message_key,
-		Buffer& chain_key);
+		const Buffer& chain_key);
 
 /*
  * Derive a root, next header and initial chain key for a new ratchet.
@@ -77,7 +77,7 @@ void derive_root_next_header_and_chain_keys(
 		const Buffer& our_public_ephemeral,
 		const Buffer& their_public_ephemeral,
 		const Buffer& previous_root_key,
-		bool am_i_alice);
+		const bool am_i_alice);
 
 /*
  * Derive initial root, chain and header keys.
@@ -98,6 +98,6 @@ void derive_initial_root_chain_and_header_keys(
 		const Buffer& our_private_ephemeral,
 		const Buffer& our_public_ephemeral,
 		const Buffer& their_public_ephemeral,
-		bool am_i_alice);
+		const bool am_i_alice);
 
 #endif

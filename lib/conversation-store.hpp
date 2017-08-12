@@ -57,7 +57,7 @@ public:
 	/*
 	 * Remove a conversation from the conversation_store.
 	 */
-	void remove(ConversationT* const node);
+	void remove(const ConversationT* const node);
 
 	/*
 	 * Remove a conversation from the conversation store.
@@ -83,7 +83,7 @@ public:
 	 *
 	 * Returns nullptr if empty.
 	 */
-	std::unique_ptr<Buffer> list();
+	std::unique_ptr<Buffer> list() const;
 
 	/*! Export a conversation store to Protobuf-C
 	 * \param conversation_store The conversation store to export.
