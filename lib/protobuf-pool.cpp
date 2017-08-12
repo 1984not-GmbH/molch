@@ -81,7 +81,7 @@ void* ProtobufPoolBlock::allocate<void>(size_t size) {
 
 void* ProtobufPool::allocateAligned(size_t size, size_t alignment) {
 	if (size > ProtobufPoolBlock::default_block_size) {
-		this->blocks.push_back(ProtobufPoolBlock(size + alignment));
+		this->blocks.emplace_back(size + alignment);
 		return this->blocks.back().allocateAligned(size, alignment);
 	}
 
@@ -95,7 +95,7 @@ void* ProtobufPool::allocateAligned(size_t size, size_t alignment) {
 	}
 
 	//create a new block if no block was found
-	this->blocks.push_back(ProtobufPoolBlock());
+	this->blocks.emplace_back();
 	return this->blocks.back().allocateAligned(size, alignment);
 }
 

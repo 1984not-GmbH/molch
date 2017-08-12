@@ -65,7 +65,7 @@ static void protobuf_export(
 		key_buffers.reserve(keypairs_size);
 		for (size_t i = 0; i < keypairs_size; i++) {
 			size_t export_size = prekey__get_packed_size(keypairs[i]);
-			key_buffers.push_back(Buffer(export_size, 0));
+			key_buffers.emplace_back(export_size, 0);
 			exception_on_invalid_buffer(key_buffers[i]);
 
 			key_buffers[i].content_length = prekey__pack(keypairs[i], key_buffers[i].content);
@@ -76,7 +76,7 @@ static void protobuf_export(
 		deprecated_key_buffers.reserve(deprecated_keypairs_size);
 		for (size_t i = 0; i < deprecated_keypairs_size; i++) {
 			size_t export_size = prekey__get_packed_size(deprecated_keypairs[i]);
-			deprecated_key_buffers.push_back(Buffer(export_size, 0));
+			deprecated_key_buffers.emplace_back(export_size, 0);
 			exception_on_invalid_buffer(deprecated_key_buffers[i]);
 
 			deprecated_key_buffers[i].content_length = prekey__pack(deprecated_keypairs[i], deprecated_key_buffers[i].content);

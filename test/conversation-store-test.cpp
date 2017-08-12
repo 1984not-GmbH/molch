@@ -57,7 +57,7 @@ static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
 		//unpack all the conversations
 		for (size_t i = 0; i < length; i++) {
 			size_t unpacked_size = conversation__get_packed_size(conversations[i]);
-			export_buffers.push_back(Buffer(unpacked_size, 0));
+			export_buffers.emplace_back(unpacked_size, 0);
 			exception_on_invalid_buffer(export_buffers.back());
 
 			export_buffers.back().content_length = conversation__pack(conversations[i], export_buffers.back().content);
@@ -77,8 +77,8 @@ ConversationStore protobuf_import(const std::vector<Buffer> buffers) {
 
 	//unpack all the conversations
 	for (const auto& buffer : buffers) {
-		conversations.push_back(std::unique_ptr<Conversation,ConversationDeleter>(
-					conversation__unpack(&protobuf_c_allocators, buffer.content_length, buffer.content)));
+		conversations.emplace_back(
+					conversation__unpack(&protobuf_c_allocators, buffer.content_length, buffer.content));
 		if (!conversations.back()) {
 			throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
 		}

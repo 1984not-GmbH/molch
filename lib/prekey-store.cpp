@@ -208,7 +208,7 @@ PrekeyStore::PrekeyStore(
 		if (deprecated_keypairs[index] == nullptr) {
 			throw MolchException(PROTOBUF_MISSING_ERROR, "Deprecated prekey missing.");
 		}
-		this->deprecated_prekeys.push_back(PrekeyStoreNode(*deprecated_keypairs[index]));
+		this->deprecated_prekeys.emplace_back(*deprecated_keypairs[index]);
 	}
 
 	this->updateExpirationDate();

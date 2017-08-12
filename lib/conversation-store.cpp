@@ -180,7 +180,7 @@ ConversationStore::ConversationStore(Conversation** const& conversations, const 
 			throw MolchException(PROTOBUF_MISSING_ERROR, "Array of conversation has an empty element.");
 		}
 
-		this->conversations.push_back(ConversationT(*conversations[i]));
+		this->conversations.emplace_back(*conversations[i]);
 	}
 }
 

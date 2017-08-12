@@ -167,7 +167,7 @@ std::string HeaderAndMessageKeyStoreNode::print() const {
 }
 
 void HeaderAndMessageKeyStore::add(const Buffer& header_key, const Buffer& message_key) {
-	this->keys.push_back(HeaderAndMessageKeyStoreNode(header_key, message_key));
+	this->keys.emplace_back(header_key, message_key);
 }
 
 void HeaderAndMessageKeyStore::exportProtobuf(KeyBundle**& key_bundles, size_t& bundles_size) {
@@ -201,7 +201,7 @@ HeaderAndMessageKeyStore::HeaderAndMessageKeyStore(KeyBundle** const & key_bundl
 			throw MolchException(PROTOBUF_MISSING_ERROR, "Invalid KeyBundle.");
 		}
 
-		this->keys.push_back(HeaderAndMessageKeyStoreNode(*key_bundles[index]));
+		this->keys.emplace_back(*key_bundles[index]);
 	}
 }
 
