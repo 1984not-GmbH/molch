@@ -151,18 +151,20 @@ int main(void) noexcept {
 		std::cout << unspiced_master_keys.public_signing_key.toHex();
 
 		printf("\nPrivate:\n");
-		unspiced_master_keys.unlock();
-		std::cout << unspiced_master_keys.private_signing_key.toHex();
-		unspiced_master_keys.lock();
+		{
+			MasterKeys::Unlocker unlocker(unspiced_master_keys);
+			std::cout << unspiced_master_keys.private_signing_key.toHex();
+		}
 
 		printf("\n\nIdentity keys:\n");
 		printf("Public:\n");
 		std::cout << unspiced_master_keys.public_identity_key.toHex();
 
 		printf("\nPrivate:\n");
-		unspiced_master_keys.unlock();
-		std::cout << unspiced_master_keys.private_identity_key.toHex();
-		unspiced_master_keys.lock();
+		{
+			MasterKeys::Unlocker unlocker(unspiced_master_keys);
+			std::cout << unspiced_master_keys.private_identity_key.toHex();
+		}
 
 		//check the exported public keys
 		if (public_signing_key != unspiced_master_keys.public_signing_key) {
@@ -186,18 +188,20 @@ int main(void) noexcept {
 		std::cout << spiced_master_keys.public_signing_key.toHex();
 
 		printf("\nPrivate:\n");
-		spiced_master_keys.unlock();
-		std::cout << spiced_master_keys.private_signing_key.toHex();
-		spiced_master_keys.lock();
+		{
+			MasterKeys::Unlocker unlocker(spiced_master_keys);
+			std::cout << spiced_master_keys.private_signing_key.toHex();
+		}
 
 		printf("\n\nIdentity keys:\n");
 		printf("Public:\n");
 		std::cout << spiced_master_keys.public_identity_key.toHex();
 
 		printf("\nPrivate:\n");
-		spiced_master_keys.unlock();
-		std::cout << spiced_master_keys.private_identity_key.toHex();
-		spiced_master_keys.lock();
+		{
+			MasterKeys::Unlocker unlocker(spiced_master_keys);
+			std::cout << spiced_master_keys.private_identity_key.toHex();
+		}
 
 		//check the exported public keys
 		if (public_signing_key != spiced_master_keys.public_signing_key) {

@@ -552,7 +552,7 @@ return_status molch_start_send_conversation(
 
 	//unlock the master keys
 	try {
-		user->master_keys->unlock();
+		MasterKeys::Unlocker unlocker(*user->master_keys);
 
 		//create the conversation and encrypt the message
 		conversation = new ConversationT(
@@ -609,20 +609,6 @@ cleanup:
 	buffer_destroy_and_null_if_valid(receiver_public_ephemeral);
 
 	delete conversation;
-
-	if (user != nullptr) {
-		try {
-			user->master_keys->lock();
-		} catch (const MolchException& exception) {
-			return exception.toReturnStatus();
-		} catch (const std::exception& exception) {
-			status_type type = return_status_add_error_message(&status, exception.what(), EXCEPTION);
-			if (type != SUCCESS) {
-				status.status = type;
-			}
-			return status;
-		}
-	}
 
 	return status;
 }
@@ -696,7 +682,7 @@ return_status molch_start_receive_conversation(
 
 	//unlock the master keys
 	try {
-		user->master_keys->unlock();
+		MasterKeys::Unlocker unlocker(*user->master_keys);
 
 		//create the conversation
 		conversation = new ConversationT(
@@ -755,20 +741,6 @@ return_status molch_start_receive_conversation(
 
 cleanup:
 	delete conversation;
-
-	if (user != nullptr) {
-		try {
-			user->master_keys->lock();
-		} catch (const MolchException& exception) {
-			return exception.toReturnStatus();
-		} catch (const std::exception& exception) {
-			status_type type = return_status_add_error_message(&status, exception.what(), EXCEPTION);
-			if (type != SUCCESS) {
-				status.status = type;
-			}
-			return status;
-		}
-	}
 
 	return status;
 }

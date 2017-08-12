@@ -45,12 +45,23 @@ class MasterKeys {
 private:
 	std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>> private_keys;
 
-    /* Internally does the intialization of the buffers creation of the keys */
-    void init();
-    void generate(const Buffer* low_entropy_seed);
+	/* Internally does the intialization of the buffers creation of the keys */
+	void init();
+	void generate(const Buffer* low_entropy_seed);
 
+	/* Manage the memory for the private keys */
 	enum {LOCKED, READONLY, READWRITE} lock_state;
+	void lock();
+	void unlock();
 	void unlock_readwrite();
+
+	class ReadWriteUnlocker {
+	private:
+		MasterKeys& keys;
+	public:
+		ReadWriteUnlocker(MasterKeys& keys);
+		~ReadWriteUnlocker();
+	};
 
 public:
 	//Ed25519 key for signing
@@ -103,14 +114,21 @@ public:
 	 * \param private_identity_key Private part of the idenity keypair.
 	 */
 	void exportProtobuf(
-            std::unique_ptr<Key,KeyDeleter>& public_signing_key,
-            std::unique_ptr<Key,KeyDeleter>& private_signing_key,
-            std::unique_ptr<Key,KeyDeleter>& public_identity_key,
-            std::unique_ptr<Key,KeyDeleter>& private_identity_key);
+			std::unique_ptr<Key,KeyDeleter>& public_signing_key,
+			std::unique_ptr<Key,KeyDeleter>& private_signing_key,
+			std::unique_ptr<Key,KeyDeleter>& public_identity_key,
+			std::unique_ptr<Key,KeyDeleter>& private_identity_key);
 
-	/* Manage the memory for the private keys */
-	void lock();
-	void unlock();
+	/*! Readonly unlocks the private keys when created and
+	 * automatically locks them if destroyed.
+	 */
+	class Unlocker {
+	private:
+		MasterKeys& keys;
+	public:
+		Unlocker(MasterKeys& keys);
+		~Unlocker();
+	};
 };
 
 #endif
