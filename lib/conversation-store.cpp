@@ -32,7 +32,7 @@ void ConversationStore::add(ConversationT&& conversation) {
 	const Buffer& id = conversation.id;
 	//search if a conversation with this id already exists
 	auto existing_conversation = std::find_if(this->conversations.cbegin(), this->conversations.cend(),
-			[id](const ConversationT& conversation) {
+			[&id](const ConversationT& conversation) {
 				return conversation.id == id;
 			});
 	//if none exists, just add the conversation
@@ -52,7 +52,7 @@ void ConversationStore::remove(ConversationT * const node) {
 	}
 
 	auto found_node = std::find_if(this->conversations.cbegin(), this->conversations.cend(),
-			[node](const ConversationT& conversation) {
+			[&node](const ConversationT& conversation) {
 				if (&conversation == node) {
 					return true;
 				}
@@ -71,7 +71,7 @@ void ConversationStore::remove(ConversationT * const node) {
  */
 void ConversationStore::remove(const Buffer& id) {
 	auto found_node = std::find_if(this->conversations.cbegin(), this->conversations.cend(),
-			[id](const ConversationT& conversation) {
+			[&id](const ConversationT& conversation) {
 				if (conversation.id == id) {
 					return true;
 				}
@@ -91,7 +91,7 @@ void ConversationStore::remove(const Buffer& id) {
  */
 ConversationT* ConversationStore::find(const Buffer& id) {
 	auto node = std::find_if(this->conversations.begin(), this->conversations.end(),
-			[id](const ConversationT& conversation) {
+			[&id](const ConversationT& conversation) {
 				if (conversation.id == id) {
 					return true;
 				}
