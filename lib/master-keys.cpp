@@ -132,7 +132,7 @@ void MasterKeys::generate(const Buffer* low_entropy_seed) {
 /*
  * Get the public signing key.
  */
-void MasterKeys::getSigningKey(Buffer& public_signing_key) {
+void MasterKeys::getSigningKey(Buffer& public_signing_key) const {
 	//check input
 	if (!public_signing_key.fits(PUBLIC_MASTER_KEY_SIZE)) {
 		throw MolchException(INVALID_INPUT, "MasterKeys::getSigningKey: Output buffer is too short.");
@@ -146,7 +146,7 @@ void MasterKeys::getSigningKey(Buffer& public_signing_key) {
 /*
  * Get the public identity key.
  */
-void MasterKeys::getIdentityKey(Buffer& public_identity_key) {
+void MasterKeys::getIdentityKey(Buffer& public_identity_key) const {
 	//check input
 	if (!public_identity_key.fits(PUBLIC_KEY_SIZE)) {
 		throw MolchException(INVALID_INPUT, "MasterKeys::getIdentityKey: Output buffer is too short.");
@@ -162,7 +162,7 @@ void MasterKeys::getIdentityKey(Buffer& public_identity_key) {
  */
 void MasterKeys::sign(
 		const Buffer& data,
-		Buffer& signed_data) { //output, length of data + SIGNATURE_SIZE
+		Buffer& signed_data) const { //output, length of data + SIGNATURE_SIZE
 	if (!signed_data.fits(data.content_length + SIGNATURE_SIZE)) {
 		throw MolchException(INVALID_INPUT, "MasterKeys::sign: Output buffer is too short.");
 	}
@@ -188,7 +188,7 @@ void MasterKeys::exportProtobuf(
 		std::unique_ptr<Key,KeyDeleter>& public_signing_key,
 		std::unique_ptr<Key,KeyDeleter>& private_signing_key,
 		std::unique_ptr<Key,KeyDeleter>& public_identity_key,
-		std::unique_ptr<Key,KeyDeleter>& private_identity_key) {
+		std::unique_ptr<Key,KeyDeleter>& private_identity_key) const {
 	//create and initialize the structs
 	public_signing_key = std::unique_ptr<Key,KeyDeleter>(throwing_zeroed_malloc<Key>(sizeof(Key)));
 	key__init(public_signing_key.get());
@@ -225,32 +225,28 @@ void MasterKeys::exportProtobuf(
 	}
 }
 
-void MasterKeys::lock() {
+void MasterKeys::lock() const {
 	int status = sodium_mprotect_noaccess(this->private_keys.get());
 	if (status != 0) {
 		throw MolchException(GENERIC_ERROR, "Failed to lock memory.");
 	}
-
-	this->lock_state = LOCKED;
 }
 
-void MasterKeys::unlock() {
+void MasterKeys::unlock() const {
 	int status = sodium_mprotect_readonly(this->private_keys.get());
 	if (status != 0) {
 		throw MolchException(GENERIC_ERROR, "Failed to make memory readonly.");
 	}
-	this->lock_state = READONLY;
 }
 
-void MasterKeys::unlock_readwrite() {
+void MasterKeys::unlock_readwrite() const {
 	int status = sodium_mprotect_readwrite(this->private_keys.get());
 	if (status != 0) {
 		throw MolchException(GENERIC_ERROR, "Failed to make memory readwrite.");
 	}
-	this->lock_state = READWRITE;
 }
 
-MasterKeys::Unlocker::Unlocker(MasterKeys& keys) : keys{keys} {
+MasterKeys::Unlocker::Unlocker(const MasterKeys& keys) : keys{keys} {
 	this->keys.unlock();
 }
 
@@ -258,7 +254,7 @@ MasterKeys::Unlocker::~Unlocker() {
 	this->keys.lock();
 }
 
-MasterKeys::ReadWriteUnlocker::ReadWriteUnlocker(MasterKeys& keys) : keys{keys} {
+MasterKeys::ReadWriteUnlocker::ReadWriteUnlocker(const MasterKeys& keys) : keys{keys} {
 	this->keys.unlock_readwrite();
 }
 

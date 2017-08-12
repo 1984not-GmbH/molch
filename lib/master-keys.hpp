@@ -43,23 +43,22 @@ class PrivateMasterKeyStorage {
 
 class MasterKeys {
 private:
-	std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>> private_keys;
+	mutable std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>> private_keys;
 
 	/* Internally does the intialization of the buffers creation of the keys */
 	void init();
 	void generate(const Buffer* low_entropy_seed);
 
 	/* Manage the memory for the private keys */
-	enum {LOCKED, READONLY, READWRITE} lock_state;
-	void lock();
-	void unlock();
-	void unlock_readwrite();
+	void lock() const;
+	void unlock() const;
+	void unlock_readwrite() const;
 
 	class ReadWriteUnlocker {
 	private:
-		MasterKeys& keys;
+		const MasterKeys& keys;
 	public:
-		ReadWriteUnlocker(MasterKeys& keys);
+		ReadWriteUnlocker(const MasterKeys& keys);
 		~ReadWriteUnlocker();
 	};
 
@@ -95,17 +94,17 @@ public:
 	/*
 	 * Get the public signing key.
 	 */
-	void getSigningKey(Buffer& public_signing_key);
+	void getSigningKey(Buffer& public_signing_key) const;
 
 	/*
 	 * Get the public identity key.
 	 */
-	void getIdentityKey(Buffer& public_identity_key);
+	void getIdentityKey(Buffer& public_identity_key) const;
 
 	/*
 	 * Sign a piece of data. Returns the data and signature in one output buffer.
 	 */
-	void sign(const Buffer& data, Buffer& signed_data); //output, length of data + SIGNATURE_SIZE
+	void sign(const Buffer& data, Buffer& signed_data) const; //output, length of data + SIGNATURE_SIZE
 
 	/*! Export a set of master keys into a user Protobuf-C struct
 	 * \param public_signing_key Public pasrt of the signing keypair.
@@ -117,16 +116,16 @@ public:
 			std::unique_ptr<Key,KeyDeleter>& public_signing_key,
 			std::unique_ptr<Key,KeyDeleter>& private_signing_key,
 			std::unique_ptr<Key,KeyDeleter>& public_identity_key,
-			std::unique_ptr<Key,KeyDeleter>& private_identity_key);
+			std::unique_ptr<Key,KeyDeleter>& private_identity_key) const;
 
 	/*! Readonly unlocks the private keys when created and
 	 * automatically locks them if destroyed.
 	 */
 	class Unlocker {
 	private:
-		MasterKeys& keys;
+		const MasterKeys& keys;
 	public:
-		Unlocker(MasterKeys& keys);
+		Unlocker(const MasterKeys& keys);
 		~Unlocker();
 	};
 };
