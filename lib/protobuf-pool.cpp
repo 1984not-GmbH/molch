@@ -20,6 +20,7 @@
  */
 
 #include <algorithm>
+#include <iterator>
 #include "protobuf-pool.hpp"
 
 ProtobufPoolBlock::ProtobufPoolBlock() {
@@ -86,11 +87,11 @@ void* ProtobufPool::allocateAligned(size_t size, size_t alignment) {
 	}
 
 	//find a block with enough space
-	auto block = std::find_if(this->blocks.begin(), this->blocks.end(),
+	auto block = std::find_if(std::begin(this->blocks), std::end(this->blocks),
 			[size, alignment](const ProtobufPoolBlock& block) {
 				return block.remainingSpace() >= (alignment - 1 + size);
 			});
-	if (block != this->blocks.end()) {
+	if (block != std::end(this->blocks)) {
 		return block->allocateAligned(size, alignment);
 	}
 

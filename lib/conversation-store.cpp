@@ -20,6 +20,7 @@
  */
 
 #include <algorithm>
+#include <iterator>
 
 #include "conversation-store.hpp"
 #include "destroyers.hpp"
@@ -31,18 +32,18 @@ size_t ConversationStore::size() {
 void ConversationStore::add(ConversationT&& conversation) {
 	const Buffer& id = conversation.id;
 	//search if a conversation with this id already exists
-	auto existing_conversation = std::find_if(this->conversations.cbegin(), this->conversations.cend(),
+	auto existing_conversation = std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
 			[&id](const ConversationT& conversation) {
 				return conversation.id == id;
 			});
 	//if none exists, just add the conversation
-	if (existing_conversation == this->conversations.end()) {
+	if (existing_conversation == std::cend(this->conversations)) {
 		this->conversations.push_back(std::move(conversation));
 		return;
 	}
 
 	//otherwise replace the exiting one
-	size_t existing_index = static_cast<size_t>(existing_conversation - this->conversations.cbegin());
+	size_t existing_index = static_cast<size_t>(existing_conversation - std::begin(this->conversations));
 	this->conversations[existing_index] = std::move(conversation);
 }
 
@@ -51,7 +52,7 @@ void ConversationStore::remove(ConversationT * const node) {
 		return;
 	}
 
-	auto found_node = std::find_if(this->conversations.cbegin(), this->conversations.cend(),
+	auto found_node = std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
 			[&node](const ConversationT& conversation) {
 				if (&conversation == node) {
 					return true;
@@ -59,7 +60,7 @@ void ConversationStore::remove(ConversationT * const node) {
 
 				return false;
 			});
-	if (found_node != this->conversations.cend()) {
+	if (found_node != std::cend(this->conversations)) {
 		this->conversations.erase(found_node);
 	}
 }
@@ -70,7 +71,7 @@ void ConversationStore::remove(ConversationT * const node) {
  * The conversation is identified by it's id.
  */
 void ConversationStore::remove(const Buffer& id) {
-	auto found_node = std::find_if(this->conversations.cbegin(), this->conversations.cend(),
+	auto found_node = std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
 			[&id](const ConversationT& conversation) {
 				if (conversation.id == id) {
 					return true;
@@ -79,7 +80,7 @@ void ConversationStore::remove(const Buffer& id) {
 				return false;
 			});
 
-	if (found_node != this->conversations.cend()) {
+	if (found_node != std::cend(this->conversations)) {
 		this->conversations.erase(found_node);
 	}
 }
@@ -90,7 +91,7 @@ void ConversationStore::remove(const Buffer& id) {
  * Returns nullptr if no conversation was found.
  */
 ConversationT* ConversationStore::find(const Buffer& id) {
-	auto node = std::find_if(this->conversations.begin(), this->conversations.end(),
+	auto node = std::find_if(std::begin(this->conversations), std::end(this->conversations),
 			[&id](const ConversationT& conversation) {
 				if (conversation.id == id) {
 					return true;
@@ -99,7 +100,7 @@ ConversationT* ConversationStore::find(const Buffer& id) {
 				return false;
 			});
 
-	if (node == this->conversations.end()) {
+	if (node == std::end(this->conversations)) {
 		return nullptr;
 	}
 

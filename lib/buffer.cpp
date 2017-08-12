@@ -21,6 +21,7 @@
 #include <sodium.h>
 #include <algorithm>
 #include <memory>
+#include <iterator>
 
 #include "buffer.hpp"
 #include "molch-exception.hpp"
@@ -53,7 +54,7 @@ Buffer::Buffer(const std::string& string) noexcept {
 		return;
 	}
 
-	std::copy(string.begin(), string.end(), this->content);
+	std::copy(std::begin(string), std::end(string), this->content);
 	this->content[string.length()] = '\0';
 }
 

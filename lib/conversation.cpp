@@ -21,6 +21,7 @@
 
 #include <exception>
 #include <iostream>
+#include <iterator>
 
 #include "constants.h"
 #include "conversation.hpp"
@@ -328,7 +329,7 @@ int ConversationT::trySkippedHeaderAndMessageKeys(
 				decryption_successful = false;
 			}
 			if (decryption_successful) {
-				this->ratchet->skipped_header_and_message_keys.keys.erase(this->ratchet->skipped_header_and_message_keys.keys.cbegin() + static_cast<ptrdiff_t>(index));
+				this->ratchet->skipped_header_and_message_keys.keys.erase(std::begin(this->ratchet->skipped_header_and_message_keys.keys) + static_cast<ptrdiff_t>(index));
 				index--;
 
 				header_extract(

@@ -26,6 +26,7 @@
 #include <cassert>
 #include <iostream>
 #include <exception>
+#include <iterator>
 
 extern "C" {
 	#include <key_bundle.pb-c.h>
@@ -217,7 +218,7 @@ int main(void) {
 
 		//remove key from the head
 		printf("Remove head!\n");
-		keystore.keys.erase(keystore.keys.cbegin());
+		keystore.keys.erase(std::cbegin(keystore.keys));
 		assert(keystore.keys.size() == (protobuf_export_buffers.size() - 1));
 		std::cout << keystore.print();
 
@@ -229,7 +230,7 @@ int main(void) {
 
 		//remove from inside
 		printf("Remove from inside:\n");
-		keystore.keys.erase(keystore.keys.cbegin() + 1);
+		keystore.keys.erase(std::cbegin(keystore.keys) + 1);
 		assert(keystore.keys.size() == (protobuf_export_buffers.size() - 3));
 		std::cout << keystore.print();
 

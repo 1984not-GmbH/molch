@@ -22,6 +22,7 @@
 #include <sodium.h>
 #include <algorithm>
 #include <climits>
+#include <iterator>
 
 #include "prekey-store.hpp"
 #include "molch-exception.hpp"
@@ -224,7 +225,7 @@ static bool compare_expiration_dates(const PrekeyStoreNode& a, const PrekeyStore
 }
 
 void PrekeyStore::updateExpirationDate() {
-	const auto& oldest = std::min_element(this->prekeys->cbegin(), this->prekeys->cend(), compare_expiration_dates);
+	const auto& oldest = std::min_element(std::cbegin(*this->prekeys), std::cend(*this->prekeys), compare_expiration_dates);
 	this->oldest_expiration_date = oldest->expiration_date;
 }
 
@@ -234,7 +235,7 @@ void PrekeyStore::updateDeprecatedExpirationDate() {
 		return;
 	}
 
-	const auto& oldest = std::min_element(this->deprecated_prekeys.cbegin(), this->deprecated_prekeys.cend(), compare_expiration_dates);
+	const auto& oldest = std::min_element(std::cbegin(this->deprecated_prekeys), std::cend(this->deprecated_prekeys), compare_expiration_dates);
 	this->oldest_deprecated_expiration_date = oldest->expiration_date;
 }
 
@@ -261,7 +262,7 @@ void PrekeyStore::getPrekey(const Buffer& public_key, Buffer& private_key) {
 		return public_key == node.public_key;
 	};
 
-	auto found_prekey = std::find_if(this->prekeys->cbegin(), this->prekeys->cend(), key_comparer);
+	auto found_prekey = std::find_if(std::cbegin(*this->prekeys), std::cend(*this->prekeys), key_comparer);
 	if (found_prekey != this->prekeys->end()) {
 		//copy the private key
 		if (private_key.cloneFrom(&found_prekey->private_key) != 0) {
@@ -269,13 +270,13 @@ void PrekeyStore::getPrekey(const Buffer& public_key, Buffer& private_key) {
 		}
 
 		//and deprecate key
-		size_t index = static_cast<size_t>(found_prekey - this->prekeys->begin());
+		size_t index = static_cast<size_t>(found_prekey - std::begin(*this->prekeys));
 		this->deprecate(index);
 
 		return;
 	}
 
-	auto found_deprecated_prekey = std::find_if(this->deprecated_prekeys.cbegin(), this->deprecated_prekeys.cend(), key_comparer);
+	auto found_deprecated_prekey = std::find_if(std::cbegin(this->deprecated_prekeys), std::cend(this->deprecated_prekeys), key_comparer);
 	if (found_deprecated_prekey == this->deprecated_prekeys.end()) {
 		private_key.content_length = 0;
 		throw MolchException(NOT_FOUND, "No matching prekey found.");
@@ -330,7 +331,7 @@ void PrekeyStore::rotate() {
 	if (this->oldest_expiration_date < current_time) {
 		for (auto&& prekey : *this->prekeys) {
 			if (prekey.expiration_date < current_time) {
-				size_t index = static_cast<size_t>(&prekey - &(*this->prekeys->begin()));
+				size_t index = static_cast<size_t>(&prekey - &(*std::begin(*this->prekeys)));
 				this->deprecate(index);
 			}
 		}
@@ -341,7 +342,7 @@ void PrekeyStore::rotate() {
 		for (size_t index = 0; index < this->deprecated_prekeys.size(); index++) {
 			auto& prekey = this->deprecated_prekeys[index];
 			if (prekey.expiration_date < current_time) {
-				this->deprecated_prekeys.erase(this->deprecated_prekeys.cbegin() + static_cast<ptrdiff_t>(index));
+				this->deprecated_prekeys.erase(std::cbegin(this->deprecated_prekeys) + static_cast<ptrdiff_t>(index));
 				index--;
 			}
 		}

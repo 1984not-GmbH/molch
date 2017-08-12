@@ -22,6 +22,7 @@
 #include <algorithm>
 #include <new>
 #include <memory>
+#include <iterator>
 
 #include "molch-exception.hpp"
 
@@ -92,7 +93,7 @@ return_status MolchException::toReturnStatus() const {
 	return_status status = return_status_init();
 
 	// add the error messages in reverse order
-	for (auto&& error = this->error_stack.crbegin(); error != this->error_stack.crend(); ++error) {
+	for (auto&& error = std::crbegin(this->error_stack); error != std::crend(this->error_stack); ++error) {
 		status_type add_status = return_status_add_error_message(&status, error->message.c_str(), error->type);
 		if (add_status != SUCCESS) {
 			return_status_destroy_errors(&status);
