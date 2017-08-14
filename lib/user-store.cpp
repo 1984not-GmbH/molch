@@ -112,7 +112,7 @@ static return_status create_user_store_node(user_store_node ** const node) noexc
 	(*node)->master_keys = nullptr;
 
 	//initialise the public_signing key buffer
-	(*node)->public_signing_key->init((*node)->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+	new ((*node)->public_signing_key) Buffer{(*node)->public_signing_key_storage, PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE};
 
 	try {
 		(*node)->conversations = new ConversationStore();

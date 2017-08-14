@@ -97,7 +97,8 @@ int main(void) noexcept {
 	putchar('\n');
 
 	//make second buffer (from pointer)
-	buffer2 = reinterpret_cast<Buffer*>(malloc(sizeof(Buffer)))->init(reinterpret_cast<unsigned char*>(malloc(5)), 5, 4);
+	buffer2 = reinterpret_cast<Buffer*>(malloc(sizeof(Buffer)));
+	new (buffer2) Buffer{reinterpret_cast<unsigned char*>(malloc(5)), 5, 4};
 	buffer2->content[0] = 0xde;
 	buffer2->content[1] = 0xad;
 	buffer2->content[2] = 0xbe;

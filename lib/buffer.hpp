@@ -27,11 +27,11 @@
 
 class Buffer {
 private:
-	size_t buffer_length;
-	bool manage_memory; //should the destructor manage memory?
-	bool readonly; //if set, this buffer shouldn't be written to.
-	bool is_valid; //has an error happened on initialization?
-	void (*deallocator)(void*); //a deallocator if the buffer has been allocated with a custom allocator
+	size_t buffer_length{0};
+	bool manage_memory{true}; //should the destructor manage memory?
+	bool readonly{false}; //if set, this buffer shouldn't be written to.
+	bool is_valid{true}; //has an error happened on initialization?
+	void (*deallocator)(void*){nullptr}; //a deallocator if the buffer has been allocated with a custom allocator
 
 	Buffer& copy(const Buffer& buffer) noexcept;
 	Buffer& move(Buffer&& buffer) noexcept;
@@ -42,17 +42,25 @@ private:
 	void destruct() noexcept;
 
 public:
-	size_t content_length;
-	unsigned char *content;
+	size_t content_length{0};
+	unsigned char *content{nullptr};
 
-	Buffer() noexcept; // does nothing
+	Buffer() noexcept = default; // does nothing
 	/* move and copy constructors */
 	Buffer(Buffer&& buffer);
 	Buffer(const Buffer& buffer);
 	Buffer(const std::string& string) noexcept;
 	Buffer(const size_t buffer_length, const size_t content_length) noexcept;
+	/*
+	 * initialize a buffer with a pointer to the character array.
+	 */
 	Buffer(unsigned char * const content, const size_t buffer_length) noexcept;
+	Buffer(unsigned char * const content, const size_t buffer_length, const size_t content_length) noexcept;
+	/*
+	 * initialize a buffer with a pointer to an array of const characters.
+	 */
 	Buffer(const unsigned char * const content, const size_t buffer_length) noexcept;
+	Buffer(const unsigned char * const content, const size_t buffer_length, const size_t content_length) noexcept;
 	Buffer(const size_t buffer_length, const size_t content_length, void* (*allocator)(size_t), void (*deallocator)(void*)) noexcept;
 	~Buffer() noexcept;
 
@@ -60,22 +68,6 @@ public:
 	Buffer& operator=(Buffer&& buffer) noexcept;
 	//copy assignment
 	Buffer& operator=(const Buffer& buffer) noexcept;
-
-	/*
-	 * initialize a buffer with a pointer to the character array.
-	 */
-	Buffer* init(
-			unsigned char * const content,
-			const size_t buffer_length,
-			const size_t content_length) noexcept;
-
-	/*
-	 * initialize a buffer with a pointer to an array of const characters.
-	 */
-	Buffer* initWithConst(
-			const unsigned char * const content,
-			const size_t buffer_length,
-			const size_t content_length) noexcept;
 
 	/*
 	 * Clear a buffer.

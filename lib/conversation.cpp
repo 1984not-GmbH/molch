@@ -35,7 +35,7 @@
  * Create a new conversation struct and initialise the buffer pointer.
  */
 void ConversationT::init() {
-	this->id.init(this->id_storage, CONVERSATION_ID_SIZE, CONVERSATION_ID_SIZE);
+	new (&this->id) Buffer{this->id_storage, CONVERSATION_ID_SIZE};
 	this->previous = nullptr;
 	this->next = nullptr;
 }

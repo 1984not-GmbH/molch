@@ -31,8 +31,8 @@ constexpr int64_t PREKEY_EXPIRATION_TIME = 3600 * 24 * 31; //one month
 constexpr int64_t DEPRECATED_PREKEY_EXPIRATION_TIME = 3600; //one hour
 
 void PrekeyStoreNode::init() {
-	this->private_key.init(this->private_key_storage, PRIVATE_KEY_SIZE, 0);
-	this->public_key.init(this->public_key_storage, PUBLIC_KEY_SIZE, 0);
+	new (&this->private_key) Buffer{this->private_key_storage, PRIVATE_KEY_SIZE, 0};
+	new (&this->public_key) Buffer{this->public_key_storage, PUBLIC_KEY_SIZE, 0};
 	this->expiration_date = 0;
 }
 

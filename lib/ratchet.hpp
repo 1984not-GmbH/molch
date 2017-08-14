@@ -66,29 +66,27 @@ private:
 	void init();
 
 public:
-	RatchetStorage();
-
-	Buffer root_key; //RK
-	Buffer purported_root_key; //RKp
+	Buffer root_key{this->root_key_storage, sizeof(this->root_key_storage), 0}; //RK
+	Buffer purported_root_key{this->purported_root_key_storage, sizeof(this->purported_root_key_storage), 0}; //RKp
 	//header keys
-	Buffer send_header_key;
-	Buffer receive_header_key;
-	Buffer next_send_header_key;
-	Buffer next_receive_header_key;
-	Buffer purported_receive_header_key;
-	Buffer purported_next_receive_header_key;
+	Buffer send_header_key{this->send_header_key_storage, sizeof(this->send_header_key_storage), 0};
+	Buffer receive_header_key{this->receive_header_key_storage, sizeof(this->receive_header_key_storage), 0};
+	Buffer next_send_header_key{this->next_send_header_key_storage, sizeof(this->next_send_header_key_storage), 0};
+	Buffer next_receive_header_key{this->next_receive_header_key_storage, sizeof(this->next_receive_header_key_storage), 0};
+	Buffer purported_receive_header_key{this->purported_receive_header_key_storage, sizeof(this->purported_receive_header_key_storage), 0};
+	Buffer purported_next_receive_header_key{this->purported_next_receive_header_key_storage, sizeof(this->purported_next_receive_header_key_storage), 0};
 	//chain keys
-	Buffer send_chain_key; //CKs
-	Buffer receive_chain_key; //CKr
-	Buffer purported_receive_chain_key; //CKp
+	Buffer send_chain_key{this->send_chain_key_storage, sizeof(this->send_chain_key_storage), 0}; //CKs
+	Buffer receive_chain_key{this->receive_chain_key_storage, sizeof(this->receive_chain_key_storage), 0}; //CKr
+	Buffer purported_receive_chain_key{this->purported_receive_chain_key_storage, sizeof(this->purported_receive_chain_key_storage), 0}; //CKp
 	//identity keys
-	Buffer our_public_identity; //DHIs
-	Buffer their_public_identity; //DHIr
+	Buffer our_public_identity{this->our_public_identity_storage, sizeof(this->our_public_identity_storage), 0}; //DHIs
+	Buffer their_public_identity{this->their_public_identity_storage, sizeof(this->their_public_identity_storage), 0}; //DHIr
 	//ephemeral keys (ratchet keys)
-	Buffer our_private_ephemeral; //DHRs
-	Buffer our_public_ephemeral; //DHRs
-	Buffer their_public_ephemeral; //DHRr
-	Buffer their_purported_public_ephemeral; //DHp
+	Buffer our_private_ephemeral{this->our_private_ephemeral_storage, sizeof(this->our_private_ephemeral_storage), 0}; //DHRs
+	Buffer our_public_ephemeral{this->our_public_ephemeral_storage, sizeof(this->our_public_ephemeral_storage), 0}; //DHRs
+	Buffer their_public_ephemeral{this->their_public_ephemeral_storage, sizeof(this->their_public_ephemeral_storage), 0}; //DHRr
+	Buffer their_purported_public_ephemeral{this->their_purported_public_ephemeral_storage, sizeof(this->their_purported_public_ephemeral_storage), 0}; //DHp
 };
 
 class Ratchet {

@@ -26,23 +26,9 @@
 #include "buffer.hpp"
 #include "molch-exception.hpp"
 
-Buffer::Buffer() noexcept {
-	this->buffer_length = 0;
-	this->manage_memory = false;
-	this->readonly = false;
-	this->is_valid = false;
-	this->deallocator = nullptr;
-	this->content_length = 0;
-	this->content = nullptr;
-}
-
 Buffer::Buffer(const std::string& string) noexcept {
 	this->buffer_length = string.length() + sizeof("");
 	this->content_length = string.length() + sizeof("");
-	this->readonly = false;
-	this->manage_memory = true;
-	this->is_valid = true;
-	this->deallocator = nullptr;
 
 	try {
 		this->content = new unsigned char[string.length() + sizeof("")];
@@ -61,10 +47,6 @@ Buffer::Buffer(const std::string& string) noexcept {
 Buffer::Buffer(const size_t buffer_length, const size_t content_length) noexcept {
 	this->buffer_length = buffer_length;
 	this->content_length = content_length;
-	this->readonly = false;
-	this->manage_memory = true;
-	this->is_valid = true;
-	this->deallocator = nullptr;
 
 	if (buffer_length == 0) {
 		this->content = nullptr;
@@ -84,9 +66,6 @@ Buffer::Buffer(const size_t buffer_length, const size_t content_length) noexcept
 Buffer::Buffer(const size_t buffer_length, const size_t content_length, void* (*allocator)(size_t), void (*deallocator)(void*)) noexcept {
 	this->buffer_length = buffer_length;
 	this->content_length = content_length;
-	this->readonly = false;
-	this->manage_memory = true;
-	this->is_valid = true;
 	this->deallocator = deallocator;
 
 	if (buffer_length == 0) {
@@ -101,13 +80,34 @@ Buffer::Buffer(const size_t buffer_length, const size_t content_length, void* (*
 	}
 }
 
-Buffer::Buffer(unsigned char * const content, const size_t buffer_length) noexcept {
-	this->init(content, buffer_length, buffer_length);
-}
+Buffer::Buffer(unsigned char * const content, const size_t buffer_length, const size_t content_length) noexcept {
+	this->buffer_length = buffer_length;
+	this->manage_memory = false;
 
-Buffer::Buffer(const unsigned char * const content, const size_t buffer_length) noexcept {
-	this->initWithConst(content, buffer_length, buffer_length);
+	this->content_length = (content_length > buffer_length)
+		? buffer_length
+		: content_length;
+	this->readonly = false;
+
+	if (buffer_length == 0) {
+		this->content = nullptr;
+	} else {
+		this->content = content;
+	}
 }
+Buffer::Buffer(unsigned char * const content, const size_t buffer_length) noexcept :
+		Buffer{content, buffer_length, buffer_length} {}
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+Buffer::Buffer(const unsigned char * const content, const size_t buffer_length, const size_t content_length) noexcept :
+		Buffer{(unsigned char*)content, buffer_length, content_length} {
+	this->readonly = false;
+}
+#pragma GCC diagnostic pop
+Buffer::Buffer(const unsigned char * const content, const size_t buffer_length) noexcept :
+		Buffer{content, buffer_length, buffer_length} {}
 
 void Buffer::destruct() noexcept {
 	//only do something if this was created using a constructor
@@ -175,12 +175,10 @@ Buffer& Buffer::operator=(const Buffer& buffer) noexcept {
 }
 
 Buffer::Buffer(Buffer&& buffer) {
-	this->init(nullptr, 0, 0);
 	this->move(std::move(buffer));
 }
 
 Buffer::Buffer(const Buffer& buffer) {
-	this->init(nullptr, 0, 0);
 	this->copy(buffer);
 }
 
@@ -188,56 +186,9 @@ size_t Buffer::getBufferLength() const noexcept {
 	return this->buffer_length;
 }
 
-bool Buffer::isReadOnly() const noexcept {
-	return this->readonly;
+void Buffer::setReadOnly(bool readonly) noexcept {
+	this->readonly = readonly;
 }
-
-void Buffer::setReadOnly(bool readonly_) noexcept {
-	this->readonly = readonly_;
-}
-
-/*
- * initialize a buffer with a pointer to the character array.
- */
-Buffer* Buffer::init(
-		unsigned char * const content_,
-		const size_t buffer_length_,
-		const size_t content_length_) noexcept {
-	this->buffer_length = buffer_length_;
-	this->manage_memory = false;
-	this->is_valid = true;
-	this->deallocator = nullptr;
-
-	this->content_length = (content_length_ > buffer_length_)
-		? buffer_length_
-		: content_length_;
-	this->readonly = false;
-
-	if (buffer_length_ == 0) {
-		this->content = nullptr;
-	} else {
-		this->content = content_;
-	}
-
-	return this;
-}
-
-Buffer* Buffer::initWithConst(
-		const unsigned char * const content_,
-		const size_t buffer_length_,
-		const size_t content_length_) noexcept {
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-	Buffer *result = this->init((unsigned char*)content_, buffer_length_, content_length_);
-#pragma GCC diagnostic pop
-	if (result != nullptr) {
-		result->readonly = true;
-	}
-
-	return result;
-}
-
 
 /*
  * Create a new buffer on the heap.
@@ -271,7 +222,7 @@ Buffer* Buffer::createWithCustomAllocator(
 		}
 	}
 
-	buffer->init(content, buffer_length, content_length);
+	new (buffer) Buffer{content, buffer_length, content_length};
 	buffer->deallocator = deallocator;
 
 	return buffer;

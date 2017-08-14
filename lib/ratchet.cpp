@@ -29,32 +29,7 @@
 #include "molch-exception.hpp"
 
 void RatchetStorage::init() {
-	//initialize the buffers with the storage arrays
-	this->root_key.init(this->root_key_storage, ROOT_KEY_SIZE, 0);
-	this->purported_root_key.init(this->purported_root_key_storage, ROOT_KEY_SIZE, 0);
-	//header keys
-	this->send_header_key.init(this->send_header_key_storage, HEADER_KEY_SIZE, 0);
-	this->receive_header_key.init(this->receive_header_key_storage, HEADER_KEY_SIZE, 0);
-	this->next_send_header_key.init(this->next_send_header_key_storage, HEADER_KEY_SIZE, 0);
-	this->next_receive_header_key.init(this->next_receive_header_key_storage, HEADER_KEY_SIZE, 0);
-	this->purported_receive_header_key.init(this->purported_receive_header_key_storage, HEADER_KEY_SIZE, 0);
-	this->purported_next_receive_header_key.init(this->purported_next_receive_header_key_storage, HEADER_KEY_SIZE, 0);
-	//chain keys
-	this->send_chain_key.init(this->send_chain_key_storage, CHAIN_KEY_SIZE, 0);
-	this->receive_chain_key.init(this->receive_chain_key_storage, CHAIN_KEY_SIZE, 0);
-	this->purported_receive_chain_key.init(this->purported_receive_chain_key_storage, CHAIN_KEY_SIZE, 0);
-	//identity keys
-	this->our_public_identity.init(this->our_public_identity_storage, PUBLIC_KEY_SIZE, 0);
-	this->their_public_identity.init(this->their_public_identity_storage, PUBLIC_KEY_SIZE, 0);
-	//ephemeral keys (ratchet keys)
-	this->our_private_ephemeral.init(this->our_private_ephemeral_storage, PRIVATE_KEY_SIZE, 0);
-	this->our_public_ephemeral.init(this->our_public_ephemeral_storage, PUBLIC_KEY_SIZE, 0);
-	this->their_public_ephemeral.init(this->their_public_ephemeral_storage, PUBLIC_KEY_SIZE, 0);
-	this->their_purported_public_ephemeral.init(this->their_purported_public_ephemeral_storage, PUBLIC_KEY_SIZE, 0);
-}
-
-RatchetStorage::RatchetStorage() {
-	this->init();
+	new (this) RatchetStorage{};
 }
 
 void Ratchet::init() {

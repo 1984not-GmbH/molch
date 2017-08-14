@@ -28,7 +28,7 @@ template <typename T> class autozero {
 private:
 	T content;
 public:
-	autozero() {}
+	autozero() = default;
 
 	T& operator *() {
 		return this->content;
