@@ -28,23 +28,9 @@
 #include "key-derivation.hpp"
 #include "molch-exception.hpp"
 
-void RatchetStorage::init() {
-	new (this) RatchetStorage{};
-}
-
 void Ratchet::init() {
 	this->storage = std::unique_ptr<RatchetStorage,SodiumDeleter<RatchetStorage>>(throwing_sodium_malloc<RatchetStorage>(sizeof(RatchetStorage)));
-	this->storage->init();
-
-	//init scalars
-	this->send_message_number = 0;
-	this->receive_message_number = 0;
-	this->purported_message_number = 0;
-	this->previous_message_number = 0;
-	this->purported_previous_message_number = 0;
-	this->ratchet_flag = false;
-	this->am_i_alice = false;
-	this->received_valid = false;
+	new (this->storage.get()) RatchetStorage{};
 }
 
 /*

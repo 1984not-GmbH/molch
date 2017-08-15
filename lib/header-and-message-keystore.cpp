@@ -33,15 +33,7 @@ extern "C" {
 
 constexpr int64_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
 
-void HeaderAndMessageKeyStoreNode::init() {
-	this->message_key = Buffer(this->message_key_storage, sizeof(this->message_key_storage));
-	this->header_key = Buffer(this->header_key_storage, sizeof(this->header_key_storage));
-	this->expiration_date = 0;
-}
-
 void HeaderAndMessageKeyStoreNode::fill(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date) {
-	this->init();
-
 	if (this->header_key.cloneFrom(&header_key) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to clone header key.");
 	}
@@ -51,10 +43,6 @@ void HeaderAndMessageKeyStoreNode::fill(const Buffer& header_key, const Buffer& 
 	}
 
 	this->expiration_date = expiration_date;
-}
-
-HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode() {
-	this->init();
 }
 
 HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key) {
@@ -94,8 +82,6 @@ HeaderAndMessageKeyStoreNode& HeaderAndMessageKeyStoreNode::operator=(HeaderAndM
 }
 
 HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const KeyBundle& key_bundle) {
-	this->init();
-
 	//import the header key
 	if ((key_bundle.header_key == nullptr)
 		|| (key_bundle.header_key->key.data == nullptr)

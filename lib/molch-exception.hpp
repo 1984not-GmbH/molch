@@ -30,7 +30,7 @@
 
 class MolchError {
 public:
-	status_type type;
+	status_type type{SUCCESS};
 	std::string message;
 
 	MolchError();

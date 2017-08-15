@@ -72,9 +72,6 @@ void MasterKeys::init() {
 	//private, initialize with pointers to private key storage
 	this->private_identity_key = Buffer(this->private_keys->identity_key, sizeof(this->private_keys->identity_key));
 	this->private_signing_key = Buffer(this->private_keys->signing_key, sizeof(this->private_keys->signing_key));
-	//public, initialize on the heap
-	this->public_identity_key = Buffer(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	this->public_signing_key = Buffer(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
 
 	//lock the private key storage
 	this->lock();

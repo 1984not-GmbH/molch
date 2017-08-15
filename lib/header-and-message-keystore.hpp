@@ -39,7 +39,6 @@ extern "C" {
 
 class HeaderAndMessageKeyStoreNode {
 private:
-	void init();
 	void fill(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date);
 
 	unsigned char message_key_storage[MESSAGE_KEY_SIZE];
@@ -49,11 +48,11 @@ private:
 	HeaderAndMessageKeyStoreNode& move(HeaderAndMessageKeyStoreNode&& node);
 
 public:
-	Buffer message_key;
-	Buffer header_key;
-	int64_t expiration_date;
+	Buffer message_key{this->message_key_storage, sizeof(this->message_key_storage), 0};
+	Buffer header_key{this->header_key_storage, sizeof(this->header_key_storage), 0};
+	int64_t expiration_date{0};
 
-	HeaderAndMessageKeyStoreNode();
+	HeaderAndMessageKeyStoreNode() = default;
 	HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key);
 	HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date);
 	/* copy and move constructors */

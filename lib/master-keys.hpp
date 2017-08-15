@@ -62,12 +62,15 @@ private:
 		~ReadWriteUnlocker();
 	};
 
+	unsigned char public_signing_key_storage[PUBLIC_MASTER_KEY_SIZE];
+	unsigned char public_identity_key_storage[PUBLIC_KEY_SIZE];
+
 public:
 	//Ed25519 key for signing
-	Buffer public_signing_key;
+	Buffer public_signing_key{this->public_signing_key_storage, sizeof(this->public_signing_key_storage)};
 	Buffer private_signing_key;
 	//X25519 key for deriving axolotl root keys
-	Buffer public_identity_key;
+	Buffer public_identity_key{this->public_identity_key_storage, sizeof(this->public_identity_key_storage)};
 	Buffer private_identity_key;
 
 	/*

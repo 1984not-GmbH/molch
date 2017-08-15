@@ -30,14 +30,7 @@
 constexpr int64_t PREKEY_EXPIRATION_TIME = 3600 * 24 * 31; //one month
 constexpr int64_t DEPRECATED_PREKEY_EXPIRATION_TIME = 3600; //one hour
 
-void PrekeyStoreNode::init() {
-	new (&this->private_key) Buffer{this->private_key_storage, PRIVATE_KEY_SIZE, 0};
-	new (&this->public_key) Buffer{this->public_key_storage, PUBLIC_KEY_SIZE, 0};
-	this->expiration_date = 0;
-}
-
 void PrekeyStoreNode::fill(const Buffer& public_key, const Buffer& private_key, const int64_t expiration_date) {
-	this->init();
 	this->expiration_date = expiration_date;
 	if (this->public_key.cloneFrom(&public_key) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy public key.");
@@ -45,10 +38,6 @@ void PrekeyStoreNode::fill(const Buffer& public_key, const Buffer& private_key, 
 	if (this->private_key.cloneFrom(&private_key) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy private key.");
 	}
-}
-
-PrekeyStoreNode::PrekeyStoreNode() {
-	this->init();
 }
 
 PrekeyStoreNode::PrekeyStoreNode(const Buffer& public_key, const Buffer& private_key, int64_t expiration_date) {
@@ -82,8 +71,6 @@ PrekeyStoreNode& PrekeyStoreNode::operator=(PrekeyStoreNode&& node) {
 }
 
 PrekeyStoreNode::PrekeyStoreNode(const Prekey& keypair) {
-	this->init();
-
 	//import private key
 	if ((keypair.private_key == nullptr)
 			|| (keypair.private_key->key.len != PRIVATE_KEY_SIZE)) {
@@ -163,11 +150,10 @@ void PrekeyStoreNode::generate() {
 }
 
 void PrekeyStore::init() {
-	this->oldest_expiration_date = 0;
-	this->oldest_deprecated_expiration_date = 0;
 	this->prekeys = std::unique_ptr<std::array<PrekeyStoreNode,PREKEY_AMOUNT>,SodiumDeleter<std::array<PrekeyStoreNode,PREKEY_AMOUNT>>>(throwing_sodium_malloc<std::array<PrekeyStoreNode,PREKEY_AMOUNT>>(sizeof(std::array<PrekeyStoreNode,PREKEY_AMOUNT>)));
 	for (auto&& prekey : *prekeys) {
-		prekey.init();
+		new (&prekey) PrekeyStoreNode();
+
 	}
 }
 

@@ -31,7 +31,6 @@ class ConversationT {
 private:
 	ConversationT& move(ConversationT&& conversation);
 
-	void init();
 	void create(
 		const Buffer& our_private_identity,
 		const Buffer& our_public_identity,
@@ -46,12 +45,11 @@ private:
 		uint32_t& receive_message_number,
 		uint32_t& previous_receive_message_number);
 
-public:
 	unsigned char id_storage[CONVERSATION_ID_SIZE];
-	ConversationT *previous;
-	ConversationT *next;
 
-	Buffer id; //unique id of a conversation, generated randomly
+public:
+
+	Buffer id{this->id_storage, sizeof(this->id_storage), 0}; //unique id of a conversation, generated randomly
 	std::unique_ptr<Ratchet> ratchet;
 
 	/*

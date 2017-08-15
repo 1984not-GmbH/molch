@@ -40,13 +40,13 @@
 class ProtobufPoolBlock {
 private:
 	std::unique_ptr<unsigned char,SodiumDeleter<unsigned char>> block;
-	size_t block_size = default_block_size;
-	size_t offset = 0; //offset of the next available pointer
+	size_t block_size{default_block_size};
+	size_t offset{0}; //offset of the next available pointer
 
 	ProtobufPoolBlock& move(ProtobufPoolBlock&& block);
 
 public:
-	static constexpr size_t default_block_size = 100000; //100KB
+	static constexpr size_t default_block_size{100000}; //100KB
 
 	ProtobufPoolBlock(); //uses the default block size
 	ProtobufPoolBlock(size_t block_size);

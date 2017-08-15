@@ -31,23 +31,10 @@
 #include "molch-exception.hpp"
 #include "destroyers.hpp"
 
-/*
- * Create a new conversation struct and initialise the buffer pointer.
- */
-void ConversationT::init() {
-	new (&this->id) Buffer{this->id_storage, CONVERSATION_ID_SIZE};
-	this->previous = nullptr;
-	this->next = nullptr;
-}
-
 ConversationT& ConversationT::move(ConversationT&& conversation) {
-	this->init();
-
 	if (this->id.cloneFrom(&conversation.id) != 0) {
 		throw MolchException(BUFFER_ERROR, "Faild to clone id.");
 	}
-	this->previous = conversation.previous;
-	this->next = conversation.next;
 	this->ratchet = std::move(conversation.ratchet);
 
 	return *this;
@@ -80,8 +67,6 @@ void ConversationT::create(
 			|| !their_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
 		throw MolchException(INVALID_INPUT, "Invalid input for conversation_create.");
 	}
-
-	this->init();
 
 	//create random id
 	if (this->id.fillRandom(CONVERSATION_ID_SIZE) != 0) {
@@ -458,9 +443,6 @@ std::unique_ptr<Conversation,ConversationDeleter> ConversationT::exportProtobuf(
 }
 
 ConversationT::ConversationT(const Conversation& conversation_protobuf) {
-	//create the conversation
-	this->init();
-
 	//copy the id
 	if (this->id.cloneFromRaw(conversation_protobuf.id.data, conversation_protobuf.id.len) != 0) {
 		throw MolchException(BUFFER_ERROR, "Failed to copy id.");

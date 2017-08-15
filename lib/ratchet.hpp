@@ -63,8 +63,6 @@ private:
 	unsigned char their_public_ephemeral_storage[PUBLIC_KEY_SIZE]; //DHRr
 	unsigned char their_purported_public_ephemeral_storage[PUBLIC_KEY_SIZE]; //DHp
 
-	void init();
-
 public:
 	Buffer root_key{this->root_key_storage, sizeof(this->root_key_storage), 0}; //RK
 	Buffer purported_root_key{this->purported_root_key_storage, sizeof(this->purported_root_key_storage), 0}; //RKp
@@ -107,18 +105,18 @@ public:
 	std::unique_ptr<RatchetStorage,SodiumDeleter<RatchetStorage>> storage;
 
 	//message numbers
-	uint32_t send_message_number; //Ns
-	uint32_t receive_message_number; //Nr
-	uint32_t purported_message_number; //Np
-	uint32_t previous_message_number; //PNs (number of messages sent in previous chain)
-	uint32_t purported_previous_message_number; //PNp
+	uint32_t send_message_number{0}; //Ns
+	uint32_t receive_message_number{0}; //Nr
+	uint32_t purported_message_number{0}; //Np
+	uint32_t previous_message_number{0}; //PNs (number of messages sent in previous chain)
+	uint32_t purported_previous_message_number{0}; //PNp
 	//ratchet flag
-	bool ratchet_flag;
-	bool am_i_alice;
-	bool received_valid; //is false until the validity of a received message has been verified until the validity of a received message has been verified,
+	bool ratchet_flag{false};
+	bool am_i_alice{false};
+	bool received_valid{false}; //is false until the validity of a received message has been verified until the validity of a received message has been verified,
 	                     //this is necessary to be able to split key derivation from message
 	                     //decryption
-	ratchet_header_decryptability header_decryptable; //could the last received header be decrypted?
+	ratchet_header_decryptability header_decryptable{NOT_TRIED}; //could the last received header be decrypted?
 	//list of previous message and header keys
 	HeaderAndMessageKeyStore skipped_header_and_message_keys; //skipped_HK_MK (list containing message keys for messages that weren't received)
 	HeaderAndMessageKeyStore staged_header_and_message_keys; //this represents the staging area specified in the axolotl ratchet
