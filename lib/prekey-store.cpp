@@ -151,10 +151,7 @@ void PrekeyStoreNode::generate() {
 
 void PrekeyStore::init() {
 	this->prekeys = std::unique_ptr<std::array<PrekeyStoreNode,PREKEY_AMOUNT>,SodiumDeleter<std::array<PrekeyStoreNode,PREKEY_AMOUNT>>>(throwing_sodium_malloc<std::array<PrekeyStoreNode,PREKEY_AMOUNT>>(sizeof(std::array<PrekeyStoreNode,PREKEY_AMOUNT>)));
-	for (auto&& prekey : *prekeys) {
-		new (&prekey) PrekeyStoreNode();
-
-	}
+	new (this->prekeys.get()) std::array<PrekeyStoreNode,PREKEY_AMOUNT>{};
 }
 
 void PrekeyStore::generateKeys() {
