@@ -101,7 +101,7 @@ SET(libs ${libs} sodium ${PROTOBUFC_LIBRARY})
 
 
 find_program(MEMORYCHECK_COMMAND valgrind)
-set(MEMORYCHECK_COMMAND_OPTIONS --trace-children=yes --leak-check=full --error-exitcode=10)
+set(MEMORYCHECK_COMMAND_OPTIONS --suppressions=${CMAKE_CURRENT_SOURCE_DIR}/valgrind.supp --trace-children=yes --leak-check=full --error-exitcode=10)
 
 if("${MEMORYCHECK_COMMAND}" MATCHES "MEMORYCHECK_COMMAND-NOTFOUND")
     message(WARNING "valgrind not found")

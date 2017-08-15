@@ -1,0 +1,12 @@
+{
+	ignore_lua_leaks
+	Memcheck:Leak
+	...
+	obj:*/*lua*
+}
+{
+	ignore_valgrind_preload
+	Memcheck:Leak
+	...
+	obj:*/vgpreload_memcheck*.so
+}
