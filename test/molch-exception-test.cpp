@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include <cstdlib>
+#include <sstream>
 #include <string.h>
 
 #include "../lib/molch-exception.hpp"
@@ -58,7 +59,9 @@ int main(void) noexcept {
 		}
 		return_status_destroy_errors(&status);
 
-		auto error_message = static_cast<const MolchException&>(exception).print();
+		std::stringstream stream;
+		static_cast<const MolchException&>(exception).print(stream);
+		auto error_message = stream.str();
 		if (error_message != "ERROR\nerror stack trace:\n0: GENERIC_ERROR, Error on the first level!\n1: GENERIC_ERROR, Error on the second level!\n") {
 			std::cerr << error_message << std::endl;
 			std::cerr << "Failed to correctly print error stack." << std::endl;

@@ -24,6 +24,8 @@
  */
 
 #include <cstdint>
+#include <memory>
+#include <iostream>
 
 #include "constants.h"
 #include "molch.h"
@@ -40,7 +42,7 @@ extern "C" {
 }
 
 //global user store
-static user_store *users = nullptr;
+static std::unique_ptr<UserStore> users;
 static Buffer *global_backup_key = nullptr;
 
 /*
@@ -51,8 +53,9 @@ static return_status create_prekey_list(
 		unsigned char ** const prekey_list, //output, needs to be freed
 		size_t * const prekey_list_length) {
 
+	std::cout << "create_prekey_list" << std::endl;
 	return_status status = return_status_init();
-	user_store_node *user = nullptr;
+	UserStoreNode *user = nullptr;
 
 	//create buffers
 	Buffer *unsigned_prekey_list = nullptr;
@@ -75,22 +78,14 @@ static return_status create_prekey_list(
 
 
 		//get the user
-		status = user_store_find_node(&user, users, public_signing_key);
-		THROW_on_error(NOT_FOUND, "Failed to find user.");
-
-		//rotate the prekeys
 		try {
-			user->prekeys->rotate();
-		} catch (const MolchException& exception) {
-			status = exception.toReturnStatus();
-			goto cleanup;
-		} catch (const std::exception& exception) {
-			THROW(EXCEPTION, exception.what());
-		}
+			user = users->find(*public_signing_key);
 
-		//get the public identity key
-		try {
-			user->master_keys->getIdentityKey(*public_identity_key);
+			//rotate the prekeys
+			user->prekeys.rotate();
+
+			//get the public identity key
+			user->master_keys.getIdentityKey(*public_identity_key);
 		} catch (const MolchException& exception) {
 			status = exception.toReturnStatus();
 			goto cleanup;
@@ -105,7 +100,7 @@ static return_status create_prekey_list(
 
 		//get the prekeys
 		try {
-			user->prekeys->list(prekeys);
+			user->prekeys.list(prekeys);
 		} catch (const MolchException& exception) {
 			status = exception.toReturnStatus();
 			goto cleanup;
@@ -131,7 +126,7 @@ static return_status create_prekey_list(
 
 	//sign the prekey list with the current identity key
 	try {
-		user->master_keys->sign(*unsigned_prekey_list, *prekey_list_buffer);
+		user->master_keys.sign(*unsigned_prekey_list, *prekey_list_buffer);
 	} catch (const MolchException& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
@@ -189,6 +184,7 @@ return_status molch_create_user(
 		//optional input (can be nullptr)
 		const unsigned char *const random_data,
 		const size_t random_data_length) {
+	std::cout << "molch_create_user" << std::endl;
 	return_status status = return_status_init();
 	bool user_store_created = false;
 	//create buffers wrapping the raw arrays
@@ -209,13 +205,19 @@ return_status molch_create_user(
 		THROW(INCORRECT_BUFFER_SIZE, "Public master key has incorrect length.");
 	}
 
-	//create user store if it doesn't exist already
-	if (users == nullptr) {
+	//initialise libsodium and create user store
+	if (!users) {
 		if (sodium_init() == -1) {
 			THROW(INIT_ERROR, "Failed to init libsodium.");
 		}
-		status = user_store_create(&users);
-		THROW_on_error(CREATION_ERROR, "Failed to create user store.")
+		try {
+			users = std::make_unique<UserStore>();
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 	}
 
 	//create a new backup key
@@ -223,12 +225,18 @@ return_status molch_create_user(
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
 
 	//create the user
-	status = user_store_create_user(
-			users,
-			&random_data_buffer,
-			&public_master_key_buffer,
-			nullptr);
-	THROW_on_error(CREATION_ERROR, "Failed to create user.");
+	try {
+		if (random_data_length != 0) {
+			users->add(UserStoreNode(random_data_buffer, &public_master_key_buffer, nullptr));
+		} else {
+			users->add(UserStoreNode(&public_master_key_buffer, nullptr));
+		}
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	user_store_created = true;
 
@@ -271,10 +279,11 @@ return_status molch_destroy_user(
 		unsigned char **const backup, //exports the entire library state, free after use, check if nullptr before use!
 		size_t *const backup_length
 ) {
+	std::cout << "molch_destroy_user" << std::endl;
 	return_status status = return_status_init();
 
-	if (users == nullptr) {
-		THROW(INVALID_INPUT, "\"users\" is nullptr.")
+	if (!users) {
+		THROW(INIT_ERROR, "Molch hasn't been initialised yet.");
 	}
 
 	if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
@@ -285,8 +294,14 @@ return_status molch_destroy_user(
 
 	{
 		Buffer public_signing_key_buffer(public_master_key, PUBLIC_MASTER_KEY_SIZE);
-		status = user_store_remove_by_key(users, &public_signing_key_buffer);
-		THROW_on_error(REMOVE_ERROR, "Failed to remoe user from user store by key.");
+		try {
+			users->remove(public_signing_key_buffer);
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 	}
 
 	if (backup != nullptr) {
@@ -306,22 +321,20 @@ cleanup:
  * Get the number of users.
  */
 size_t molch_user_count() {
-	if (users == nullptr) {
+	if (!users) {
 		return 0;
 	}
 
-	return users->length;
+	return users->size();
 }
 
 /*
  * Delete all users.
  */
 void molch_destroy_all_users() {
-	if (users != nullptr) {
-		user_store_destroy(users);
+	if (users) {
+		users->clear();
 	}
-
-	users = nullptr;
 }
 
 /*
@@ -337,26 +350,45 @@ return_status molch_list_users(
 		unsigned char **const user_list,
 		size_t * const user_list_length, //length in bytes
 		size_t * const count) {
+	std::cout << "molch_list_users" << std::endl;
 	return_status status = return_status_init();
 
-	if ((users == nullptr) || (user_list_length == nullptr)) {
+	if (!users || (user_list_length == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to molch_list_users.");
 	}
 
 	//get the list of users and copy it
 	{
-		Buffer *user_list_buffer = nullptr;
-		status = user_store_list(&user_list_buffer, users);
-		THROW_on_error(CREATION_ERROR, "Failed to create user list.");
+		std::unique_ptr<Buffer> list;
+		try {
+			list = users->list();
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
+		}
 
 		*count = molch_user_count();
 
-		*user_list = user_list_buffer->content;
-		*user_list_length = user_list_buffer->content_length;
-		free_and_null_if_valid(user_list_buffer); //free the Buffer struct while leaving content intact
+		if (*count == 0) {
+			*user_list = nullptr;
+		} else {
+			*user_list = reinterpret_cast<unsigned char*>(malloc(*count * PUBLIC_MASTER_KEY_SIZE));
+			THROW_on_failed_alloc(*user_list);
+			std::copy(list->content, list->content + list->content_length, *user_list);
+		}
+
+		*user_list_length = list->content_length;
 	}
 
 cleanup:
+	on_error {
+		if (user_list != nullptr) {
+			free_and_null_if_valid(*user_list);
+		}
+
+		*count = 0;
+	}
 	return status;
 }
 
@@ -402,6 +434,7 @@ static return_status verify_prekey_list(
 		Buffer * const public_identity_key, //output, PUBLIC_KEY_SIZE
 		Buffer * const public_signing_key
 		) {
+	std::cout << "verify_prekey_list" << std::endl;
 	return_status status = return_status_init();
 
 	Buffer *verified_prekey_list = Buffer::create(prekey_list_length - SIGNATURE_SIZE, prekey_list_length - SIGNATURE_SIZE);
@@ -492,6 +525,7 @@ return_status molch_start_send_conversation(
 		unsigned char **const backup, //exports the entire library state, free after use, check if nullptr before use!
 		size_t *const backup_length
 ) {
+	std::cout << "molch_start_send_conversation" << std::endl;
 	//create buffers wrapping the raw input
 	Buffer conversation_id_buffer(conversation_id, CONVERSATION_ID_SIZE);
 	Buffer message_buffer(message, message_length);
@@ -501,7 +535,7 @@ return_status molch_start_send_conversation(
 
 	ConversationT *conversation = nullptr;
 	std::unique_ptr<Buffer> packet_buffer;
-	user_store_node *user = nullptr;
+	UserStoreNode *user = nullptr;
 
 	return_status status = return_status_init();
 
@@ -515,6 +549,10 @@ return_status molch_start_send_conversation(
 	THROW_on_failed_alloc(receiver_public_identity);
 	receiver_public_ephemeral = Buffer::create(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	THROW_on_failed_alloc(receiver_public_ephemeral);
+
+	if (!users) {
+		THROW(INIT_ERROR, "Molch hasn't been initialised yet.");
+	}
 
 	//check input
 	if ((conversation_id == nullptr)
@@ -539,8 +577,17 @@ return_status molch_start_send_conversation(
 	}
 
 	//get the user that matches the public signing key of the sender
-	status = user_store_find_node(&user, users, &sender_public_master_key_buffer);
-	THROW_on_error(NOT_FOUND, "User not found.");
+	try {
+		user = users->find(sender_public_master_key_buffer);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
+	if (user == nullptr) {
+		THROW(NOT_FOUND, "User not found.");
+	}
 
 	//get the receivers public ephemeral and identity
 	status = verify_prekey_list(
@@ -552,14 +599,14 @@ return_status molch_start_send_conversation(
 
 	//unlock the master keys
 	try {
-		MasterKeys::Unlocker unlocker(*user->master_keys);
+		MasterKeys::Unlocker unlocker(user->master_keys);
 
 		//create the conversation and encrypt the message
 		conversation = new ConversationT(
 				message_buffer,
 				packet_buffer,
-				user->master_keys->public_identity_key,
-				user->master_keys->private_identity_key,
+				user->master_keys.public_identity_key,
+				user->master_keys.private_identity_key,
 				*receiver_public_identity,
 				prekeys);
 	} catch (const MolchException& exception) {
@@ -578,7 +625,7 @@ return_status molch_start_send_conversation(
 	}
 
 	try {
-		user->conversations->add(std::move(*conversation));
+		user->conversations.add(std::move(*conversation));
 	} catch (const MolchException& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
@@ -642,6 +689,7 @@ return_status molch_start_receive_conversation(
 		unsigned char ** const backup, //exports the entire library state, free after use, check if nullptr before use!
 		size_t * const backup_length
 		) {
+	std::cout << "molch_start_receive_conversation" << std::endl;
 
 	return_status status = return_status_init();
 
@@ -653,7 +701,11 @@ return_status molch_start_receive_conversation(
 
 	ConversationT *conversation = nullptr;
 	std::unique_ptr<Buffer> message_buffer;
-	user_store_node *user = nullptr;
+	UserStoreNode *user = nullptr;
+
+	if (!users) {
+		THROW(INIT_ERROR, "Molch hasn't been initialized yet.");
+	}
 
 	if ((conversation_id == nullptr)
 		|| (message == nullptr) || (message_length == nullptr)
@@ -677,20 +729,29 @@ return_status molch_start_receive_conversation(
 	}
 
 	//get the user that matches the public signing key of the receiver
-	status = user_store_find_node(&user, users, &receiver_public_master_key_buffer);
-	THROW_on_error(NOT_FOUND, "User not found in the user store.");
+	try {
+		user = users->find(receiver_public_master_key_buffer);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
+	if (user == nullptr) {
+		THROW(NOT_FOUND, "User not found in the user store.");
+	}
 
 	//unlock the master keys
 	try {
-		MasterKeys::Unlocker unlocker(*user->master_keys);
+		MasterKeys::Unlocker unlocker(user->master_keys);
 
 		//create the conversation
 		conversation = new ConversationT(
 				packet_buffer,
 				message_buffer,
-				user->master_keys->public_identity_key,
-				user->master_keys->private_identity_key,
-				*user->prekeys);
+				user->master_keys.public_identity_key,
+				user->master_keys.private_identity_key,
+				user->prekeys);
 	} catch (const MolchException& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
@@ -715,7 +776,7 @@ return_status molch_start_receive_conversation(
 
 	//add the conversation to the conversation store
 	try {
-		user->conversations->add(std::move(*conversation));
+		user->conversations.add(std::move(*conversation));
 	} catch (const MolchException& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
@@ -746,65 +807,6 @@ cleanup:
 }
 
 /*
- * Find a conversation based on it's conversation id.
- */
-static return_status find_conversation(
-		ConversationT** const conversation, //output
-		const unsigned char * const conversation_id,
-		ConversationStore ** const conversations, //optional, can be nullptr, the conversation store where the conversation is in
-		user_store_node ** const user //optional, can be nullptr, the user that the conversation belongs to
-		) {
-	return_status status = return_status_init();
-
-	ConversationT *conversation_node = nullptr;
-
-	if ((conversation == nullptr) || (conversation_id == nullptr)) {
-		THROW(INVALID_INPUT, "Invalid input for find_conversation.");
-	}
-
-	//go through all the users
-	{
-		Buffer conversation_id_buffer(conversation_id, CONVERSATION_ID_SIZE);
-		user_store_node *node = users->head;
-		while (node != nullptr) {
-			conversation_node = node->conversations->find(conversation_id_buffer);
-			if (conversation_node != nullptr) {
-				//found the conversation we're searching for
-				break;
-			}
-			user_store_node *next = node->next;
-			node = next;
-		}
-
-		if (conversation_node == nullptr) {
-			goto cleanup;
-		}
-
-		//return the containing user
-		if ((user != nullptr) && (node != nullptr)) {
-			*user = node;
-		}
-
-		if (conversations != nullptr) {
-			*conversations = node->conversations;
-		}
-	}
-
-cleanup:
-	if (status.status != SUCCESS) {
-		if (conversation != nullptr) {
-			*conversation = nullptr;
-		}
-	} else {
-		if (conversation != nullptr) { /* clang analyzer was complaining *shrug* */
-			*conversation = conversation_node;
-		}
-	}
-
-	return status;
-}
-
-/*
  * Encrypt a message and create a packet that can be sent to the receiver.
  *
  * Don't forget to destroy the return status with return_status_destroy_errors()
@@ -823,6 +825,7 @@ return_status molch_encrypt_message(
 		unsigned char ** const conversation_backup, //exports the conversation, free after use, check if nullptr before use!
 		size_t * const conversation_backup_length
 		) {
+	std::cout << "molch_encrypt_message" << std::endl;
 
 	//create buffer for message array
 	Buffer message_buffer(message, message_length);
@@ -831,6 +834,10 @@ return_status molch_encrypt_message(
 	ConversationT *conversation = nullptr;
 
 	return_status status = return_status_init();
+
+	if (!users) {
+		THROW(INIT_ERROR, "Molch hasn't been initialized yet.");
+	}
 
 	if ((packet == nullptr) || (packet_length == nullptr)
 		|| (message == nullptr)
@@ -843,13 +850,14 @@ return_status molch_encrypt_message(
 	}
 
 	//find the conversation
-	status = find_conversation(&conversation, conversation_id, nullptr, nullptr);
-	THROW_on_error(GENERIC_ERROR, "Error while searching for conversation.");
-	if (conversation == nullptr) {
-		THROW(NOT_FOUND, "Failed to find a conversation for the given ID.");
-	}
-
 	try {
+		Buffer conversation_id_buffer(conversation_id, CONVERSATION_ID_SIZE);
+		UserStoreNode *user;
+		conversation = users->findConversation(user, conversation_id_buffer);
+		if (conversation == nullptr) {
+			throw MolchException(NOT_FOUND, "Failed to find a conversation for the given ID.");
+		}
+
 		packet_buffer = conversation->send(
 				message_buffer,
 				nullptr,
@@ -911,6 +919,7 @@ return_status molch_decrypt_message(
 		unsigned char ** const conversation_backup, //exports the conversation, free after use, check if nullptr before use!
 		size_t * const conversation_backup_length
 	) {
+	std::cout << "molch_decrypt_message" << std::endl;
 	//create buffer for the packet
 	Buffer packet_buffer(packet, packet_length);
 
@@ -918,6 +927,10 @@ return_status molch_decrypt_message(
 
 	std::unique_ptr<Buffer> message_buffer;
 	ConversationT *conversation = nullptr;
+
+	if (!users) {
+		THROW(INIT_ERROR, "Molch hasn't been initialized yet.");
+	}
 
 	if ((message == nullptr) || (message_length == nullptr)
 		|| (packet == nullptr)
@@ -932,13 +945,14 @@ return_status molch_decrypt_message(
 	}
 
 	//find the conversation
-	status = find_conversation(&conversation, conversation_id, nullptr, nullptr);
-	THROW_on_error(GENERIC_ERROR, "Error while searching for conversation.");
-	if (conversation == nullptr) {
-		THROW(NOT_FOUND, "Failed to find conversation with the given ID.");
-	}
-
 	try {
+		Buffer conversation_id_buffer(conversation_id, CONVERSATION_ID_SIZE);
+		UserStoreNode* user;
+		conversation = users->findConversation(user, conversation_id_buffer);
+		if (conversation == nullptr) {
+			throw MolchException(NOT_FOUND, "Failed to find conversation with the given ID.");
+		}
+
 		message_buffer = conversation->receive(
 				packet_buffer,
 				*receive_message_number,
@@ -978,7 +992,12 @@ return_status molch_end_conversation(
 		unsigned char ** const backup,
 		size_t * const backup_length
 		) {
+	std::cout << "molch_end_conversation" << std::endl;
 	return_status status = return_status_init();
+
+	if (!users) {
+		THROW(INIT_ERROR, "Molch hasn't been initialized yet.");
+	}
 
 	if (conversation_id == nullptr) {
 		THROW(INVALID_INPUT, "Invalid input to molch_end_conversation.");
@@ -990,16 +1009,22 @@ return_status molch_end_conversation(
 
 	//find the conversation
 	{
-		ConversationT *conversation = nullptr;
-		user_store_node *user = nullptr;
-		status = find_conversation(&conversation, conversation_id, nullptr, &user);
-		THROW_on_error(NOT_FOUND, "Couldn't find converstion.");
+		UserStoreNode *user = nullptr;
+		Buffer conversation_id_buffer(conversation_id, CONVERSATION_ID_SIZE);
+		try {
+			ConversationT *conversation = nullptr;
+			conversation = users->findConversation(user, conversation_id_buffer);
+			if (conversation == nullptr) {
+				throw MolchException(NOT_FOUND, "Couldn't find conversation.");
+			}
 
-		if (conversation == nullptr) {
-			THROW(NOT_FOUND, "Couldn't find conversation.");
+			user->conversations.remove(conversation_id_buffer);
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
 		}
-
-		user->conversations->remove(conversation->id);
 	}
 
 	if (backup != nullptr) {
@@ -1037,28 +1062,38 @@ return_status molch_list_conversations(
 		//inputs
 		const unsigned char * const user_public_master_key,
 		const size_t user_public_master_key_length) {
+	std::cout << "molch_list_conversations" << std::endl;
 	Buffer user_public_master_key_buffer(user_public_master_key, PUBLIC_MASTER_KEY_SIZE);
 	std::unique_ptr<Buffer> conversation_list_buffer = nullptr;
 
 	return_status status = return_status_init();
+
+	if (conversation_list != nullptr) {
+		*conversation_list = nullptr;
+	}
+
+	if (!users) {
+		THROW(INIT_ERROR, "Molch hasn't been initialized yet.");
+	}
 
 	if ((user_public_master_key == nullptr) || (conversation_list == nullptr) || (conversation_list_length == nullptr) || (number == nullptr)) {
 		THROW(INVALID_INPUT, "Invalid input to molch_list_conversations.");
 	}
 
 	if (user_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
+		std::cout << "molch_list_conversations: user_public_master_key_length = " << user_public_master_key_length << std::endl;
 		THROW(INCORRECT_BUFFER_SIZE, "Public master key has an incorrect length.");
 	}
 
-	*conversation_list = nullptr;
-
 	{
-		user_store_node *user = nullptr;
-		status = user_store_find_node(&user, users, &user_public_master_key_buffer);
-		THROW_on_error(NOT_FOUND, "No user found for the given public identity.")
-
+		UserStoreNode *user = nullptr;
 		try {
-			conversation_list_buffer = user->conversations->list();
+			user = users->find(user_public_master_key_buffer);
+			if (user == nullptr) {
+				throw MolchException(NOT_FOUND, "No user found for the given public identity.");
+			}
+
+			conversation_list_buffer = user->conversations.list();
 		} catch (const MolchException& exception) {
 			status = exception.toReturnStatus();
 			goto cleanup;
@@ -1110,6 +1145,7 @@ cleanup:
  * Don't forget to free the output after use.
  */
 char *molch_print_status(size_t * const output_length, return_status status) {
+	std::cout << "molch_print_status" << std::endl;
 	return return_status_print(&status, output_length);
 }
 
@@ -1119,6 +1155,7 @@ char *molch_print_status(size_t * const output_length, return_status status) {
  * (return_status.status)
  */
 const char *molch_print_status_type(status_type type) {
+	std::cout << "molch_print_status_type" << std::endl;
 	return return_status_get_name(type);
 }
 
@@ -1126,6 +1163,7 @@ const char *molch_print_status_type(status_type type) {
  * Destroy a return status (only needs to be called if there was an error).
  */
 void molch_destroy_return_status(return_status * const status) {
+	std::cout << "molch_destroy" << std::endl;
 	return_status_destroy_errors(status);
 }
 
@@ -1144,6 +1182,7 @@ return_status molch_conversation_export(
 		//input
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length) {
+	std::cout << "molch_conversation_export" << std::endl;
 	return_status status = return_status_init();
 
 	Buffer *conversation_buffer = nullptr;
@@ -1155,6 +1194,10 @@ return_status molch_conversation_export(
 	EncryptedBackup encrypted_backup_struct;
 	encrypted_backup__init(&encrypted_backup_struct);
 	std::unique_ptr<Conversation,ConversationDeleter> conversation_struct;
+
+	if (!users) {
+		THROW(INIT_ERROR, "Molch hasn't been initialized yet.");
+	}
 
 	//check input
 	if ((backup == nullptr) || (backup_length == nullptr)
@@ -1169,14 +1212,18 @@ return_status molch_conversation_export(
 		THROW(INCORRECT_DATA, "No backup key found.");
 	}
 
-	//find the conversation
 	{
-		ConversationT *conversation = nullptr;
-		status = find_conversation(&conversation, conversation_id, nullptr, nullptr);
-		THROW_on_error(NOT_FOUND, "Failed to find the conversation.");
-
-		//export the conversation
 		try {
+			//find the conversation
+			ConversationT *conversation = nullptr;
+			UserStoreNode *user;
+			Buffer conversation_id_buffer(conversation_id, CONVERSATION_ID_SIZE);
+			conversation = users->findConversation(user, conversation_id_buffer);
+			if (conversation == nullptr) {
+				throw MolchException(NOT_FOUND, "Failed to find the conversation.");
+			}
+
+			//export the conversation
 			conversation_struct = conversation->exportProtobuf();
 			conversation = nullptr; //remove alias
 		} catch (const MolchException& exception) {
@@ -1279,13 +1326,16 @@ return_status molch_conversation_import(
 		const size_t backup_length,
 		const unsigned char * backup_key,
 		const size_t backup_key_length) {
+	std::cout << "molch_conversation_import" << std::endl;
 	return_status status = return_status_init();
 
 	EncryptedBackup *encrypted_backup_struct = nullptr;
 	Buffer *decrypted_backup = nullptr;
 	Conversation *conversation_struct = nullptr;
-	ConversationStore *containing_store = nullptr;
-	ConversationT *existing_conversation = nullptr;
+
+	if (!users) {
+		THROW(INIT_ERROR, "Molch hasn't been initialized yet.");
+	}
 
 	//check input
 	if ((backup == nullptr) || (backup_key == nullptr)) {
@@ -1343,14 +1393,15 @@ return_status molch_conversation_import(
 	//import the conversation
 	try {
 		ConversationT conversation(*conversation_struct);
-
-		status = find_conversation(&existing_conversation, conversation.id.content, &containing_store, nullptr);
-		THROW_on_error(NOT_FOUND, "Imported conversation has to exist, but it doesn't.");
-		if (containing_store == nullptr) {
-			THROW(NOT_FOUND, "Containing store not found.");
+		ConversationT* existing_conversation = nullptr;
+		UserStoreNode* containing_user = nullptr;
+		Buffer conversation_id_buffer(conversation_struct->id.data, conversation_struct->id.len);
+		existing_conversation = users->findConversation(containing_user, conversation_id_buffer);
+		if (existing_conversation == nullptr) {
+			throw MolchException(NOT_FOUND, "Containing store not found.");
 		}
 
-		containing_store->add(std::move(conversation));
+		containing_user->conversations.add(std::move(conversation));
 	} catch (const MolchException& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
@@ -1389,6 +1440,7 @@ cleanup:
 return_status molch_export(
 		unsigned char ** const backup,
 		size_t *backup_length) {
+	std::cout << "molch_export" << std::endl;
 	return_status status = return_status_init();
 
 	Buffer *users_buffer = nullptr;
@@ -1399,6 +1451,10 @@ return_status molch_export(
 	EncryptedBackup encrypted_backup_struct;
 	encrypted_backup__init(&encrypted_backup_struct);
 	Backup *backup_struct = nullptr;
+
+	if (!users) {
+		THROW(INIT_ERROR, "Molch hasn't been initialized yet.");
+	}
 
 	//check input
 	if ((backup == nullptr) || (backup_length == nullptr)) {
@@ -1414,8 +1470,14 @@ return_status molch_export(
 	backup__init(backup_struct);
 
 	//export the conversation
-	status = user_store_export(users, &(backup_struct->users), &(backup_struct->n_users));
-	THROW_on_error(EXPORT_ERROR, "Failed to export user store to protobuf-c struct.");
+	try {
+		users->exportProtobuf(backup_struct->users, backup_struct->n_users);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//pack the struct
 	backup_struct_size = backup__get_packed_size(backup_struct);
@@ -1517,12 +1579,13 @@ return_status molch_import(
 		const unsigned char * const backup_key, //BACKUP_KEY_SIZE
 		const size_t backup_key_length
 		) {
+	std::cout << "molch_import" << std::endl;
 	return_status status = return_status_init();
 
 	EncryptedBackup *encrypted_backup_struct = nullptr;
 	Buffer *decrypted_backup = nullptr;
 	Backup *backup_struct = nullptr;
-	user_store *store = nullptr;
+	std::unique_ptr<UserStore> store;
 
 	//check input
 	if ((backup == nullptr) || (backup_key == nullptr)) {
@@ -1535,7 +1598,7 @@ return_status molch_import(
 		THROW(INCORRECT_BUFFER_SIZE, "New backup key has an incorrect length.");
 	}
 
-	if (users == nullptr) {
+	if (!users) {
 		if (sodium_init() == -1) {
 			THROW(INIT_ERROR, "Failed to init libsodium.");
 		}
@@ -1583,18 +1646,22 @@ return_status molch_import(
 		THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack backups protobuf-c.");
 	}
 
-	//import the user store
-	status = user_store_import(&store, backup_struct->users, backup_struct->n_users);
-	THROW_on_error(IMPORT_ERROR, "Failed to import user store from Protobuf-C struct.");
+	try {
+		//import the user store
+		store = std::make_unique<UserStore>(backup_struct->users, backup_struct->n_users);
+	} catch (const MolchException& exception) {
+		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		THROW(EXCEPTION, exception.what());
+	}
 
 	//update the backup key
 	status = molch_update_backup_key(new_backup_key, new_backup_key_length);
 	THROW_on_error(KEYGENERATION_FAILED, "Failed to update backup key.");
 
 	//everyting worked, switch to the new user store
-	user_store_destroy(users);
-	users = store;
-	store = nullptr;
+	users.reset(store.release());
 
 cleanup:
 	if (encrypted_backup_struct != nullptr) {
@@ -1606,10 +1673,6 @@ cleanup:
 		backup_struct = nullptr;
 	}
 	buffer_destroy_and_null_if_valid(decrypted_backup);
-	if (store != nullptr) {
-		user_store_destroy(store);
-		store = nullptr;
-	}
 
 	return status;
 }
@@ -1627,7 +1690,12 @@ return_status molch_get_prekey_list(
 		//input
 		unsigned char * const public_master_key,
 		const size_t public_master_key_length) {
+	std::cout << "molch_get_prekey_list" << std::endl;
 	return_status status = return_status_init();
+
+	if (!users) {
+		THROW(INIT_ERROR, "Molch hasn't been initialized yet.");
+	}
 
 	// check input
 	if ((public_master_key == nullptr) || (prekey_list == nullptr) || (prekey_list_length == nullptr)) {
@@ -1635,6 +1703,7 @@ return_status molch_get_prekey_list(
 	}
 
 	if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
+		std::cout << "molch_get_prekey_list: public_master_key_length = " << public_master_key_length << std::endl;
 		THROW(INCORRECT_BUFFER_SIZE, "Public master key has an incorrect length.");
 	}
 
@@ -1661,13 +1730,22 @@ cleanup:
 return_status molch_update_backup_key(
 		unsigned char * const new_key, //output, BACKUP_KEY_SIZE
 		const size_t new_key_length) {
+	std::cout << "molch_update_backup_key" << std::endl;
 	return_status status = return_status_init();
 
 	Buffer new_key_buffer(new_key, BACKUP_KEY_SIZE);
 
-	if (users == nullptr) {
+	if (!users) {
 		if (sodium_init() == -1) {
 			THROW(INIT_ERROR, "Failed to initialize libsodium.");
+		}
+		try {
+			users = std::make_unique<UserStore>();
+		} catch (const MolchException& exception) {
+			status = exception.toReturnStatus();
+			goto cleanup;
+		} catch (const std::exception& exception) {
+			THROW(EXCEPTION, exception.what());
 		}
 	}
 

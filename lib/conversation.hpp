@@ -22,6 +22,8 @@
 #ifndef LIB_CONVERSATION_H
 #define LIB_CONVERSATION_H
 
+#include <ostream>
+
 #include "constants.h"
 #include "ratchet.hpp"
 #include "prekey-store.hpp"
@@ -123,6 +125,8 @@ public:
 	 * \return exported_conversation The exported conversation protobuf-c struct.
 	 */
 	std::unique_ptr<Conversation,ConversationDeleter> exportProtobuf() const;
+
+	std::ostream& print(std::ostream& stream) const;
 };
 #endif
 

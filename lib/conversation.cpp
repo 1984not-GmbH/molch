@@ -20,7 +20,6 @@
  */
 
 #include <exception>
-#include <iostream>
 #include <iterator>
 
 #include "constants.h"
@@ -450,5 +449,12 @@ ConversationT::ConversationT(const Conversation& conversation_protobuf) {
 
 	//import the ratchet
 	this->ratchet = std::make_unique<Ratchet>(conversation_protobuf);
+}
+
+std::ostream& ConversationT::print(std::ostream& stream) const {
+	stream << "Conversation-ID:\n";
+	stream << this->id.toHex() << "\n";
+
+	return stream;
 }
 

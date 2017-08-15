@@ -25,7 +25,7 @@
 #include "conversation-store.hpp"
 #include "destroyers.hpp"
 
-size_t ConversationStore::size() {
+size_t ConversationStore::size() const {
 	return this->conversations.size();
 }
 
@@ -185,3 +185,12 @@ ConversationStore::ConversationStore(Conversation** const& conversations, const 
 	}
 }
 
+std::ostream& ConversationStore::print(std::ostream& stream) const {
+	stream << "Conversations: [\n";
+	for (const auto& conversation : this->conversations) {
+		conversation.print(stream) << ",\n";
+	}
+	stream << "]\n";
+
+	return stream;
+}

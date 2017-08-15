@@ -149,6 +149,16 @@ void PrekeyStoreNode::generate() {
 	this->expiration_date = time(nullptr) + PREKEY_EXPIRATION_TIME;
 }
 
+std::ostream& PrekeyStoreNode::print(std::ostream& stream) const {
+	stream << "Expiration Date = " << std::to_string(this->expiration_date) << '\n';
+	stream << "Public Prekey:\n";
+	stream << this->public_key.toHex() << '\n';
+	stream << "Private Prekey:\n";
+	stream << this->private_key.toHex() << '\n';
+
+	return stream;
+}
+
 void PrekeyStore::init() {
 	this->prekeys = std::unique_ptr<std::array<PrekeyStoreNode,PREKEY_AMOUNT>,SodiumDeleter<std::array<PrekeyStoreNode,PREKEY_AMOUNT>>>(throwing_sodium_malloc<std::array<PrekeyStoreNode,PREKEY_AMOUNT>>(sizeof(std::array<PrekeyStoreNode,PREKEY_AMOUNT>)));
 	new (this->prekeys.get()) std::array<PrekeyStoreNode,PREKEY_AMOUNT>{};
@@ -369,5 +379,22 @@ void PrekeyStore::exportProtobuf(
 
 	//export deprecated prekeys
 	export_keypairs(this->deprecated_prekeys, deprecated_keypairs, deprecated_keypairs_length);
+}
+
+std::ostream& PrekeyStore::print(std::ostream& stream) const {
+
+	stream << "Prekeys: [\n";
+	for (const auto& prekey : *this->prekeys) {
+		prekey.print(stream) <<  ",\n";
+	}
+	stream << "]\n";
+
+	stream << "Deprecated Prekeys: [\n";
+	for (const auto& prekey : this->deprecated_prekeys) {
+		prekey.print(stream) << ",\n";
+	}
+	stream << "]\n";
+
+	return stream;
 }
 

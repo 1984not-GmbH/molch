@@ -22,7 +22,7 @@
 #ifndef LIB_CONVERSATION_STORE_H
 #define LIB_CONVERSATION_STORE_H
 
-#include <string>
+#include <ostream>
 #include "conversation.hpp"
 
 class ConversationStore {
@@ -31,7 +31,7 @@ private:
 
 public:
 
-	size_t size();
+	size_t size() const;
 
 	ConversationStore() = default;
 
@@ -91,5 +91,7 @@ public:
 	 * \return The status.
 	 */
 	void exportProtobuf(Conversation**& conversations, size_t& length) const;
+
+	std::ostream& print(std::ostream& stream) const;
 };
 #endif

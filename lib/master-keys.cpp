@@ -22,12 +22,37 @@
 #include <sodium.h>
 #include <exception>
 #include <memory>
+#include <sstream>
 
 #include "molch-exception.hpp"
 #include "master-keys.hpp"
 #include "spiced-random.hpp"
 #include "sodium-wrappers.hpp"
 #include "autozero.hpp"
+
+MasterKeys& MasterKeys::move(MasterKeys&& master_keys) {
+	//move the private keys
+	this->private_keys = std::move(master_keys.private_keys);
+	this->private_identity_key = Buffer{this->private_keys->identity_key, master_keys.private_identity_key.content_length, sizeof(this->private_keys->identity_key)};
+	this->private_signing_key = Buffer{this->private_keys->signing_key, master_keys.private_signing_key.content_length, sizeof(this->private_keys->signing_key)};
+
+	if (this->public_identity_key.cloneFrom(&master_keys.public_identity_key) != 0) {
+		throw MolchException(BUFFER_ERROR, "Failed to copy public identity key.");
+	}
+	if (this->public_signing_key.cloneFrom(&master_keys.public_signing_key) != 0) {
+		throw MolchException(BUFFER_ERROR, "Failed to copy public signing key.");
+	}
+
+	return *this;
+}
+
+MasterKeys::MasterKeys(MasterKeys&& master_keys) {
+	this->move(std::move(master_keys));
+}
+
+MasterKeys& MasterKeys::operator=(MasterKeys&& master_keys) {
+	return this->move(std::move(master_keys));
+}
 
 MasterKeys::MasterKeys() {
 	this->init();
@@ -70,8 +95,8 @@ void MasterKeys::init() {
 
 	//initialize the Buffers
 	//private, initialize with pointers to private key storage
-	this->private_identity_key = Buffer(this->private_keys->identity_key, sizeof(this->private_keys->identity_key));
-	this->private_signing_key = Buffer(this->private_keys->signing_key, sizeof(this->private_keys->signing_key));
+	new (&this->private_identity_key) Buffer{this->private_keys->identity_key, sizeof(this->private_keys->identity_key), 0};
+	new (&this->private_signing_key) Buffer{this->private_keys->signing_key, sizeof(this->private_keys->signing_key), 0};
 
 	//lock the private key storage
 	this->lock();
@@ -98,6 +123,8 @@ void MasterKeys::generate(const Buffer* low_entropy_seed) {
 		if (status != 0) {
 			throw MolchException(KEYGENERATION_FAILED, "Failed to generate signing keypair with seed.");
 		}
+		this->public_signing_key.content_length = PUBLIC_MASTER_KEY_SIZE;
+		this->private_signing_key.content_length = PRIVATE_MASTER_KEY_SIZE;
 
 		//generate the identity keypair
 		status = crypto_box_seed_keypair(
@@ -107,6 +134,8 @@ void MasterKeys::generate(const Buffer* low_entropy_seed) {
 		if (status != 0) {
 			throw MolchException(KEYGENERATION_FAILED, "Failed to generate identity keypair with seed.");
 		}
+		this->public_identity_key.content_length = PUBLIC_KEY_SIZE;
+		this->private_identity_key.content_length = PRIVATE_KEY_SIZE;
 	} else { //don't use external seed
 		//generate the signing keypair
 		int status = crypto_sign_keypair(
@@ -115,6 +144,8 @@ void MasterKeys::generate(const Buffer* low_entropy_seed) {
 		if (status != 0) {
 			throw MolchException(KEYGENERATION_FAILED, "Failed to generate signing keypair.");
 		}
+		this->public_signing_key.content_length = PUBLIC_MASTER_KEY_SIZE;
+		this->private_signing_key.content_length = PRIVATE_MASTER_KEY_SIZE;
 
 		//generate the identity keypair
 		status = crypto_box_keypair(
@@ -123,6 +154,8 @@ void MasterKeys::generate(const Buffer* low_entropy_seed) {
 		if (status != 0) {
 			throw MolchException(KEYGENERATION_FAILED, "Failed to generate identity keypair.");
 		}
+		this->public_identity_key.content_length = PUBLIC_KEY_SIZE;
+		this->private_identity_key.content_length = PRIVATE_KEY_SIZE;
 	}
 }
 
@@ -241,6 +274,21 @@ void MasterKeys::unlock_readwrite() const {
 	if (status != 0) {
 		throw MolchException(GENERIC_ERROR, "Failed to make memory readwrite.");
 	}
+}
+
+std::ostream& MasterKeys::print(std::ostream& stream) const {
+	Unlocker unlocker(*this);
+
+	stream << "Public Signing Key:\n";
+	stream << this->public_signing_key.toHex() << '\n';
+	stream << "Private Signing Key:\n";
+	stream << this->private_signing_key.toHex() << '\n';
+	stream << "Public Identity Key:\n";
+	stream << this->public_identity_key.toHex() << '\n';
+	stream << "Private Identity Key:\n";
+	stream << this->private_identity_key.toHex() << '\n';
+
+	return stream;
 }
 
 MasterKeys::Unlocker::Unlocker(const MasterKeys& keys) : keys{keys} {

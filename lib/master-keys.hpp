@@ -27,6 +27,7 @@ extern "C" {
 }
 
 #include <memory>
+#include <ostream>
 
 #include "constants.h"
 #include "buffer.hpp"
@@ -43,8 +44,7 @@ class PrivateMasterKeyStorage {
 
 class MasterKeys {
 private:
-	mutable std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>> private_keys;
-
+	mutable std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>> private_keys; 
 	/* Internally does the intialization of the buffers creation of the keys */
 	void init();
 	void generate(const Buffer* low_entropy_seed);
@@ -64,6 +64,8 @@ private:
 
 	unsigned char public_signing_key_storage[PUBLIC_MASTER_KEY_SIZE];
 	unsigned char public_identity_key_storage[PUBLIC_KEY_SIZE];
+
+	MasterKeys& move(MasterKeys&& master_keys);
 
 public:
 	//Ed25519 key for signing
@@ -93,6 +95,12 @@ public:
 		const Key& private_signing_key,
 		const Key& public_identity_key,
 		const Key& private_identity_key);
+
+	MasterKeys(const MasterKeys& master_keys) = delete;
+	MasterKeys(MasterKeys&& master_keys);
+
+	MasterKeys& operator=(const MasterKeys& master_keys) = delete;
+	MasterKeys& operator=(MasterKeys&& master_keys);
 
 	/*
 	 * Get the public signing key.
@@ -131,6 +139,8 @@ public:
 		Unlocker(const MasterKeys& keys);
 		~Unlocker();
 	};
+
+	std::ostream& print(std::ostream& stream) const;
 };
 
 #endif

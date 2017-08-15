@@ -75,10 +75,10 @@ int main(void) {
 			throw MolchException(INCORRECT_DATA, "Failed to reproduce subkey.");
 		}
 	} catch (const MolchException& exception) {
-		std::cout << exception.print() << std::endl;
+		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
-		std::cout << exception.what() << std::endl;
+		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;
 	}
 

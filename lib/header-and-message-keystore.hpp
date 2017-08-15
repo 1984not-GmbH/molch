@@ -25,7 +25,7 @@
 #include <sodium.h>
 #include <ctime>
 #include <vector>
-#include <string>
+#include <ostream>
 
 extern "C" {
 	#include <key_bundle.pb-c.h>
@@ -66,7 +66,7 @@ public:
 
 	std::unique_ptr<KeyBundle,KeyBundleDeleter> exportProtobuf() const;
 
-	std::string print() const;
+	std::ostream& print(std::ostream& stream) const;
 };
 
 //header of the key store
@@ -90,6 +90,6 @@ public:
 	 */
 	void exportProtobuf(KeyBundle**& key_bundles, size_t& bundles_size) const;
 
-	std::string print() const;
+	std::ostream& print(std::ostream& stream) const;
 };
 #endif

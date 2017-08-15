@@ -216,7 +216,6 @@ public:
 	bool isValid() const noexcept;
 
 	size_t getBufferLength() const noexcept;
-	bool isReadOnly() const noexcept;
 	void setReadOnly(bool readonly) noexcept;
 
 	bool fits(const size_t size) const noexcept;

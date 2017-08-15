@@ -171,7 +171,7 @@ int main(void) {
 		}
 		printf("Decrypted header matches.\n");
 	} catch (const MolchException& exception) {
-		std::cerr << exception.print() << std::endl;
+		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;

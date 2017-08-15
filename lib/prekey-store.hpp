@@ -26,6 +26,7 @@
 #include <memory>
 #include <array>
 #include <vector>
+#include <ostream>
 extern "C" {
 	#include <prekey.pb-c.h>
 }
@@ -68,6 +69,8 @@ public:
 	PrekeyStoreNode& operator=(PrekeyStoreNode&& node);
 
 	std::unique_ptr<Prekey,PrekeyDeleter> exportProtobuf() const;
+
+	std::ostream& print(std::ostream& stream) const;
 };
 
 class PrekeyStore {
@@ -139,5 +142,7 @@ public:
 			size_t& keypairs_length,
 			Prekey**& deprecated_keypairs,
 			size_t& deprecated_keypairs_length) const;
+
+	std::ostream& print(std::ostream& stream) const;
 };
 #endif

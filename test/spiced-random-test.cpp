@@ -76,9 +76,10 @@ int main(void) noexcept {
 			//on newer libsodium versions, output lengths of zero aren't supported
 		}
 	} catch (const MolchException& exception) {
-		std::cout << exception.print() << std::endl;
+		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
+		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;
 	}
 

@@ -70,6 +70,15 @@ MolchException::MolchException(const status_type type, const std::string& messag
 	this->error_stack.push_front(MolchError(type, message));
 }
 
+MolchException::MolchException(return_status& status) {
+	error_message *error = status.error;
+	while (error != nullptr) {
+		this->error_stack.push_back(MolchError(error->status, error->message));
+	}
+
+	return_status_destroy_errors(&status);
+}
+
 const char* MolchException::what() const noexcept {
 	static const char* what = "MolchException";
 	return what;
@@ -77,7 +86,7 @@ const char* MolchException::what() const noexcept {
 
 MolchException& MolchException::add(const MolchException& exception) {
 	for (auto&& error : exception.error_stack) {
-		this->error_stack.push_front(error);
+		this->error_stack.push_back(error);
 	}
 
 	return *this;
@@ -105,14 +114,14 @@ return_status MolchException::toReturnStatus() const {
 	return status;
 }
 
-std::string MolchException::print() const {
-	std::string message("ERROR\nerror stack trace:\n");
+std::ostream& MolchException::print(std::ostream& stream) const {
+	stream << "ERROR\nerror stack trace:\n";
 
 	size_t i = 0;
 	for (const auto& error : this->error_stack) {
-		message += std::to_string(i) + ": " + return_status_get_name(error.type) + ", " + error.message + '\n';
+		stream << i << ": " << return_status_get_name(error.type) << ", " << error.message << '\n';
 		i++;
 	}
 
-	return message;
+	return stream;
 }

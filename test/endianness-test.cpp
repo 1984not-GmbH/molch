@@ -112,7 +112,7 @@ int main(void) {
 		}
 		printf("Successfully converted back!\n\n");
 	} catch (const MolchException& exception) {
-		std::cout << exception.print() << std::endl;
+		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cout << exception.what() << std::endl;

@@ -30,51 +30,7 @@
 #include "utils.hpp"
 #include "common.hpp"
 
-return_status protobuf_export(
-		const user_store * const store,
-		Buffer *** const export_buffers,
-		size_t * const buffer_count) noexcept __attribute__((warn_unused_result));
-return_status protobuf_export(
-		const user_store * const store,
-		Buffer *** const export_buffers,
-		size_t * const buffer_count) noexcept {
-	return_status status = return_status_init();
-
-	User ** users = nullptr;
-	size_t length = 0;
-
-	if (export_buffers != nullptr) {
-		*export_buffers = nullptr;
-	}
-	if (buffer_count != nullptr) {
-		*buffer_count = 0;
-	}
-
-	//check input
-	if ((store == nullptr) || (export_buffers == nullptr) || (buffer_count == nullptr)) {
-		THROW(INVALID_INPUT, "Invalid input to protobuf_export.");
-	}
-
-	status = user_store_export(store, &users, &length);
-	THROW_on_error(EXPORT_ERROR, "Failed to export conversations.");
-
-	*export_buffers = reinterpret_cast<Buffer**>(malloc(length * sizeof(Buffer*)));
-	THROW_on_failed_alloc(*export_buffers);
-
-	//initialize pointers with nullptr
-	std::fill(*export_buffers, *export_buffers + length, nullptr);
-	*buffer_count = length;
-
-	//unpack all the conversations
-	for (size_t i = 0; i < length; i++) {
-		size_t unpacked_size = user__get_packed_size(users[i]);
-		(*export_buffers)[i] = Buffer::create(unpacked_size, 0);
-		THROW_on_failed_alloc((*export_buffers)[i]);
-
-		(*export_buffers)[i]->content_length = user__pack(users[i], (*export_buffers)[i]->content);
-	}
-
-cleanup:
+static void free_user_array(User**& users, size_t length) {
 	if (users != nullptr) {
 		for (size_t i = 0; i < length; i++) {
 			if (users[i] != nullptr) {
@@ -84,359 +40,298 @@ cleanup:
 		}
 		zeroed_free_and_null_if_valid(users);
 	}
-
-	//buffer will be freed in main
-	return status;
 }
 
-static return_status protobuf_import(
-		user_store ** const store,
-		Buffer ** const buffers,
-		const size_t buffers_length) noexcept {
-	return_status status = return_status_init();
+static std::vector<Buffer> protobuf_export(UserStore& store) {
+	User** users = nullptr;
+	size_t length = 0;
 
-	User **users = nullptr;
+	std::vector<Buffer> export_buffers;
 
-	//check input
-	if ((store == nullptr) || (buffers == nullptr)) {
-		THROW(INVALID_INPUT, "Invalid input to protobuf_import.");
+	try {
+		store.exportProtobuf(users, length);
+
+		export_buffers.reserve(length);
+
+		//unpack all the users
+		for (size_t i = 0; i < length; i++) {
+			size_t unpacked_size = user__get_packed_size(users[i]);
+			export_buffers.push_back(Buffer(unpacked_size, 0));
+			exception_on_invalid_buffer(export_buffers.back());
+
+			export_buffers.back().content_length = user__pack(users[i], export_buffers.back().content);
+		}
+	} catch (const std::exception& exception) {
+		free_user_array(users, length);
+		throw exception;
 	}
 
-	users = reinterpret_cast<User**>(zeroed_malloc(buffers_length * sizeof(User*)));
-	THROW_on_failed_alloc(users);
+	free_user_array(users, length);
+	return export_buffers;
+}
 
-	//unpack the buffers
-	for (size_t i = 0; i < buffers_length; i++) {
-		users[i] = user__unpack(&protobuf_c_allocators, buffers[i]->content_length, buffers[i]->content);
-		if (users[i] == nullptr) {
-			THROW(PROTOBUF_UNPACK_ERROR, "Failed to unpack user from protobuf.");
+UserStore protobuf_import(const std::vector<Buffer> buffers) {
+	auto users = std::vector<std::unique_ptr<User,UserDeleter>>();
+	users.reserve(buffers.size());
+
+	//unpack all the conversations
+	for (const auto& buffer : buffers) {
+		users.push_back(std::unique_ptr<User,UserDeleter>(
+					user__unpack(&protobuf_c_allocators, buffer.content_length, buffer.content)));
+		if (!users.back()) {
+			throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack user from protobuf.");
 		}
 	}
 
-	//import the user store
-	status = user_store_import(store, users, buffers_length);
-	THROW_on_error(IMPORT_ERROR, "Failed to import users.");
-
-cleanup:
-	if (users != nullptr) {
-		for (size_t i = 0; i < buffers_length; i++) {
-			if (users[i] != nullptr) {
-				user__free_unpacked(users[i], &protobuf_c_allocators);
-			}
-			users[i] = nullptr;
-		}
-		zeroed_free_and_null_if_valid(users);
+	//allocate the user array output array
+	std::unique_ptr<User*[]> user_array;
+	if (!buffers.empty()) {
+		user_array = std::unique_ptr<User*[]>(new User*[buffers.size()]);
 	}
-	return status;
+
+	size_t index = 0;
+	for (const auto& user : users) {
+		user_array[index] = user.get();
+		index++;
+	}
+
+	//import
+	return UserStore(user_array.get(), buffers.size());
 }
 
-return_status protobuf_empty_store(void) noexcept __attribute__((warn_unused_result));
-return_status protobuf_empty_store(void) noexcept {
-	return_status status = return_status_init();
-
+void protobuf_empty_store(void) {
 	printf("Testing im-/export of empty user store.\n");
 
 	User **exported = nullptr;
 	size_t exported_length = 0;
 
-	user_store *store = nullptr;
-	status = user_store_create(&store);
-	THROW_on_error(CREATION_ERROR, "Failed to create user store.");
+	UserStore store;
 
 	//export it
-	status = user_store_export(store, &exported, &exported_length);
-	THROW_on_error(EXPORT_ERROR, "Failed to export empty user store.");
+	store.exportProtobuf(exported, exported_length);
 
 	if ((exported != nullptr) || (exported_length != 0)) {
-		THROW(INCORRECT_DATA, "Exported data is not empty.");
+		throw MolchException(INCORRECT_DATA, "Exported data is not empty.");
 	}
 
 	//import it
-	status = user_store_import(&store, exported, exported_length);
-	THROW_on_error(IMPORT_ERROR, "Failed to import empty user store.");
-
+	store = UserStore(exported, exported_length);
 	printf("Successful.\n");
-
-cleanup:
-	return status;
 }
 
-int main(void) noexcept {
-	if (sodium_init() == -1) {
-		return -1;
-	}
-
-	int status_int = 0;
-	return_status status = return_status_init();
-
-	//create public signing key buffers
-	Buffer alice_public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	Buffer bob_public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	Buffer charlie_public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-
-	//protobuf-c export buffers
-	Buffer **protobuf_export_buffers = nullptr;
-	size_t protobuf_export_length = 0;
-	Buffer **protobuf_second_export_buffers = nullptr;
-	size_t protobuf_second_export_length = 0;
-
-	Buffer *list = nullptr;
-
-	//create a user_store
-	user_store *store = nullptr;
-	status = user_store_create(&store);
-	THROW_on_error(CREATION_ERROR, "Failed to create user store.");
-
-	throw_on_invalid_buffer(alice_public_signing_key);
-	throw_on_invalid_buffer(bob_public_signing_key);
-	throw_on_invalid_buffer(charlie_public_signing_key);
-
-	//check the content
-	status = user_store_list(&list, store);
-	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users in the user store.");
-	if (list->content_length != 0) {
-		THROW(INCORRECT_DATA, "List of users is not empty.");
-	}
-	buffer_destroy_and_null_if_valid(list);
-
-	//create alice
-	status = user_store_create_user(
-			store,
-			nullptr,
-			&alice_public_signing_key,
-			nullptr);
-	THROW_on_error(CREATION_ERROR, "Failed to create Alice.");
-	printf("Successfully created Alice to the user store.\n");
-
-	//check length of the user store
-	if (store->length != 1) {
-		THROW(INCORRECT_DATA, "User store has incorrect length.");
-	}
-	printf("Length of the user store matches.");
-
-	//list user store
-	status = user_store_list(&list, store);
-	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.");
-	if (list == nullptr) {
-		THROW(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
-	}
-	if (list->compare(&alice_public_signing_key) != 0) {
-		THROW(INCORRECT_DATA, "Failed to list users.");
-	}
-	buffer_destroy_and_null_if_valid(list);
-	printf("Successfully listed users.\n");
-
-	//create bob
-	status = user_store_create_user(
-			store,
-			nullptr,
-			&bob_public_signing_key,
-			nullptr);
-	THROW_on_error(CREATION_ERROR, "Failed to create Bob.");
-	printf("Successfully created Bob.\n");
-
-	//check length of the user store
-	if (store->length != 2) {
-		fprintf(stderr, "ERROR: User store has incorrect length.\n");
-		THROW(INCORRECT_DATA, "User store has incorrect length.");
-	}
-	printf("Length of the user store matches.");
-
-	//list user store
-	status = user_store_list(&list, store);
-	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.");
-	if (list == nullptr) {
-		THROW(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
-	}
-	if ((list->comparePartial(0, &alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-			|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
-		THROW(INCORRECT_DATA, "Failed to list users.");
-	}
-	buffer_destroy_and_null_if_valid(list);
-	printf("Successfully listed users.\n");
-
-	//create charlie
-	status = user_store_create_user(
-			store,
-			nullptr,
-			&charlie_public_signing_key,
-			nullptr);
-	THROW_on_error(CREATION_ERROR, "Failed to add Charlie to the user store.");
-	printf("Successfully added Charlie to the user store.\n");
-
-	//check length of the user store
-	if (store->length != 3) {
-		THROW(INCORRECT_DATA, "User store has incorrect length.");
-	}
-	printf("Length of the user store matches.");
-
-	//list user store
-	status = user_store_list(&list, store);
-	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.")
-	if (list == nullptr) {
-		THROW(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
-	}
-	if ((list->comparePartial(0, &alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-			|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-			|| (list->comparePartial(2 * PUBLIC_MASTER_KEY_SIZE, &charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
-		THROW(INCORRECT_DATA, "Failed to list users.");
-	}
-	buffer_destroy_and_null_if_valid(list);
-	printf("Successfully listed users.\n");
-
-	//find node
-	{
-		user_store_node *bob_node = nullptr;
-		status = user_store_find_node(&bob_node, store, &bob_public_signing_key);
-		THROW_on_error(NOT_FOUND, "Failed to find Bob's node.");
-		printf("Node found.\n");
-
-		if (*bob_node->public_signing_key != bob_public_signing_key) {
-			THROW(INCORRECT_DATA, "Bob's data from the user store doesn't match.");
+int main(void) {
+	try {
+		if (sodium_init() == -1) {
+			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
 		}
-		printf("Data from the node matches.\n");
 
-		//remove a user identified by it's key
-		status = user_store_remove_by_key(store, &bob_public_signing_key);
-		THROW_on_error(REMOVE_ERROR, "Failed to remvoe user from user store by key.");
-		//check the length
-		if (store->length != 2) {
-			THROW(INCORRECT_DATA, "User store has incorrect length.");
+		//create a user_store
+		UserStore store;
+
+		//check the content
+		auto list = store.list();
+		if (list->content_length != 0) {
+			throw MolchException(INCORRECT_DATA, "List of users is not empty.");
+		}
+		list.reset();
+
+		//create alice
+		Buffer alice_public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+		exception_on_invalid_buffer(alice_public_signing_key);
+		std::cout << "BEFORE alice store.add()" << std::endl;
+		store.add(UserStoreNode(&alice_public_signing_key));
+		std::cout << "AFTER alice store.add()" << std::endl;
+		{
+			auto alice_user = store.find(alice_public_signing_key);
+			MasterKeys::Unlocker unlocker{alice_user->master_keys};
+			alice_user->master_keys.print(std::cout) << std::endl;
+		}
+		printf("Successfully created Alice to the user store.\n");
+
+		//check length of the user store
+		if (store.size() != 1) {
+			throw MolchException(INCORRECT_DATA, "User store has incorrect length.");
 		}
 		printf("Length of the user store matches.");
-		//check the user list
-		status = user_store_list(&list, store);
-		THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.");
-		if (list == nullptr) {
-			THROW(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
+
+		//list user store
+		list = store.list();
+		if (!list) {
+			throw MolchException(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
+		}
+		if (*list != alice_public_signing_key) {
+			throw MolchException(INCORRECT_DATA, "Failed to list users.");
+		}
+		list.reset();
+		printf("Successfully listed users.\n");
+
+		//create bob
+		Buffer bob_public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+		exception_on_invalid_buffer(bob_public_signing_key);
+		std::cout << "BEFORE bob store.add()" << std::endl;
+		store.add(UserStoreNode(&bob_public_signing_key));
+		std::cout << "AFTER bob store.add()" << std::endl;
+		printf("Successfully created Bob.\n");
+
+		//check length of the user store
+		if (store.size() != 2) {
+			throw MolchException(INCORRECT_DATA, "User store has incorrect length.");
+		}
+		printf("Length of the user store matches.");
+
+		//list user store
+		list = store.list();
+		if (!list) {
+			throw MolchException(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 		}
 		if ((list->comparePartial(0, &alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
-			THROW(INCORRECT_DATA, "Removing user failed.");
+				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+			throw MolchException(INCORRECT_DATA, "Failed to list users.");
 		}
-		buffer_destroy_and_null_if_valid(list);
-		printf("Successfully removed user.\n");
+		list.reset();
+		printf("Successfully listed users.\n");
 
-		//recreate bob
-		status = user_store_create_user(
-				store,
-				nullptr,
-				&bob_public_signing_key,
-				nullptr);
-		THROW_on_error(CREATION_ERROR, "Failed to recreate.");
-		printf("Successfully recreated Bob.\n");
+		//create charlie
+		Buffer charlie_public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+		exception_on_invalid_buffer(charlie_public_signing_key);
+		std::cout << "BEFORE charlie store.add()" << std::endl;
+		store.add(UserStoreNode(&charlie_public_signing_key));
+		printf("Successfully added Charlie to the user store.\n");
+		std::cout << "AFTER charlie store.add()" << std::endl;
 
-		//now find bob again
-		status = user_store_find_node(&bob_node, store, &bob_public_signing_key);
-		THROW_on_error(NOT_FOUND, "Failed to find Bob's node.");
-		printf("Bob's node found again.\n");
-
-		//remove bob by it's node
-		user_store_remove(store, bob_node);
-		//check the length
-		if (store->length != 2) {
-			THROW(INCORRECT_DATA, "User store has incorrect length.");
+		//check length of the user store
+		if (store.size() != 3) {
+			throw MolchException(INCORRECT_DATA, "User store has incorrect length.");
 		}
 		printf("Length of the user store matches.");
-	}
 
-
-	//test Protobuf-C export
-	printf("Export to Protobuf-C\n");
-	status = protobuf_export(store, &protobuf_export_buffers, &protobuf_export_length);
-	THROW_on_error(EXPORT_ERROR, "Failed to export user store to Protobuf-C.");
-
-	//print the exported data
-	puts("[\n");
-	for (size_t i = 0; i < protobuf_export_length; i++) {
-		std::cout << protobuf_export_buffers[i]->toHex();
-		puts(",\n");
-	}
-	puts("]\n\n");
-
-	user_store_destroy(store);
-	store = nullptr;
-
-	//import from Protobuf-C
-	printf("Import from Protobuf-C\n");
-	status = protobuf_import(&store, protobuf_export_buffers, protobuf_export_length);
-	THROW_on_error(IMPORT_ERROR, "Failed to import users from Protobuf-C.");
-
-	if (store == nullptr) {
-		THROW(SHOULDNT_HAPPEN, "Seems like this wasn't a false positive by clang static analyser!");
-	}
-
-	//export again
-	printf("Export to Protobuf-C\n");
-	status = protobuf_export(store, &protobuf_second_export_buffers, &protobuf_second_export_length);
-	THROW_on_error(EXPORT_ERROR, "Failed to export user store to Protobuf-C again.");
-
-	//compare
-	if (protobuf_export_length != protobuf_second_export_length) {
-		THROW_on_error(INCORRECT_DATA, "Both exports have different sizes.");
-	}
-	for (size_t i = 0; i < protobuf_export_length; i++) {
-		if (protobuf_export_buffers[i]->compare(protobuf_second_export_buffers[i]) != 0) {
-			THROW_on_error(INCORRECT_DATA, "Buffers don't match.");
+		//list user store
+		list = store.list();
+		if (!list) {
+			throw MolchException(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 		}
-	}
-	printf("Both exports match.\n");
-
-	//check the user list
-	status = user_store_list(&list, store);
-	THROW_on_error(DATA_FETCH_ERROR, "Failed to list users.");
-	if ((list->comparePartial(0, &alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-			|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
-		THROW(REMOVE_ERROR, "Removing user failed.");
-	}
-	buffer_destroy_and_null_if_valid(list);
-	printf("Successfully removed user.\n");
-
-	//clear the user store
-	user_store_clear(store);
-	//check the length
-	if (store->length != 0) {
-		THROW(INCORRECT_DATA, "User store has incorrect length.");
-		goto cleanup;
-	}
-	//check head and tail pointers
-	if ((store->head != nullptr) || (store->tail != nullptr)) {
-		THROW(INCORRECT_DATA, "Clearing the user store didn't reset head and tail pointers.");
-		status_int = EXIT_FAILURE;
-		goto cleanup;
-	}
-	printf("Successfully cleared user store.\n");
-
-	status = protobuf_empty_store();
-	THROW_on_error(GENERIC_ERROR, "Failed im-/export with empty user store.");
-
-cleanup:
-	if (store != nullptr) {
-		user_store_destroy(store);
-	}
-	buffer_destroy_and_null_if_valid(list);
-
-	if (protobuf_export_buffers != nullptr) {
-		for (size_t i =0; i < protobuf_export_length; i++) {
-			buffer_destroy_and_null_if_valid(protobuf_export_buffers[i]);
+		if ((list->comparePartial(0, &alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list->comparePartial(2 * PUBLIC_MASTER_KEY_SIZE, &charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+			throw MolchException(INCORRECT_DATA, "Failed to list users.");
 		}
-		free_and_null_if_valid(protobuf_export_buffers);
-	}
-	if (protobuf_second_export_buffers != nullptr) {
-		for (size_t i =0; i < protobuf_second_export_length; i++) {
-			buffer_destroy_and_null_if_valid(protobuf_second_export_buffers[i]);
+		list.reset();
+		printf("Successfully listed users.\n");
+
+		//find node
+		{
+			UserStoreNode *bob_node = nullptr;
+			bob_node = store.find(bob_public_signing_key);
+			if (bob_node == nullptr) {
+				throw MolchException(NOT_FOUND, "Failed to find Bob's node.");
+			}
+			printf("Node found.\n");
+
+			if (bob_node->public_signing_key != bob_public_signing_key) {
+				throw MolchException(INCORRECT_DATA, "Bob's data from the user store doesn't match.");
+			}
+			printf("Data from the node matches.\n");
+
+			//remove a user identified by it's key
+			store.remove(bob_public_signing_key);
+			//check the length
+			if (store.size() != 2) {
+				throw MolchException(INCORRECT_DATA, "User store has incorrect length.");
+			}
+			printf("Length of the user store matches.");
+			//check the user list
+			list = store.list();
+			if (!list) {
+				throw MolchException(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
+			}
+			if ((list->comparePartial(0, &alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+					|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+				throw MolchException(INCORRECT_DATA, "Removing user failed.");
+			}
+			list.reset();
+			printf("Successfully removed user.\n");
+
+			//recreate bob
+			std::cout << "BEFORE recreating bob store.add()" << std::endl;
+			store.add(UserStoreNode(&bob_public_signing_key));
+			std::cout << "AFTER recreating bob store.add()" << std::endl;
+			printf("Successfully recreated Bob.\n");
+
+			//now find bob again
+			bob_node = store.find(bob_public_signing_key);
+			if (bob_node == nullptr) {
+				throw MolchException(NOT_FOUND, "Failed to find Bob's node.");
+			}
+			printf("Bob's node found again.\n");
+
+			//remove bob by it's node
+			store.remove(bob_node);
+			//check the length
+			if (store.size() != 2) {
+				throw MolchException(INCORRECT_DATA, "User store has incorrect length.");
+			}
+			printf("Length of the user store matches.");
 		}
-		free_and_null_if_valid(protobuf_second_export_buffers);
+
+
+		//test Protobuf-C export
+		printf("Export to Protobuf-C\n");
+		auto protobuf_export_buffers = protobuf_export(store);
+
+		//print the exported data
+		puts("[\n");
+		for (size_t i = 0; i < protobuf_export_buffers.size(); i++) {
+			std::cout << protobuf_export_buffers[i].toHex();
+			puts(",\n");
+		}
+		puts("]\n\n");
+
+		store.clear();
+
+		//import from Protobuf-C
+		printf("Import from Protobuf-C\n");
+		store = protobuf_import(protobuf_export_buffers);
+
+		//export again
+		printf("Export to Protobuf-C\n");
+		auto protobuf_second_export_buffers = protobuf_export(store);
+
+		//compare
+		if (protobuf_export_buffers.size() != protobuf_second_export_buffers.size()) {
+			throw MolchException(INCORRECT_DATA, "Both exports have different sizes.");
+		}
+		for (size_t i = 0; i < protobuf_export_buffers.size(); i++) {
+			if (protobuf_export_buffers[i] != protobuf_second_export_buffers[i]) {
+				throw MolchException(INCORRECT_DATA, "Buffers don't match.");
+			}
+		}
+		printf("Both exports match.\n");
+
+		//check the user list
+		list = store.list();
+		if ((list->comparePartial(0, &alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+			throw MolchException(REMOVE_ERROR, "Removing user failed.");
+		}
+		list.reset();
+		printf("Successfully removed user.\n");
+
+		//clear the user store
+		store.clear();
+		//check the length
+		if (store.size() != 0) {
+			throw MolchException(INCORRECT_DATA, "User store has incorrect length.");
+		}
+		printf("Successfully cleared user store.\n");
+
+		protobuf_empty_store();
+	} catch (const MolchException& exception) {
+		exception.print(std::cerr) << std::endl;
+		return EXIT_FAILURE;
+	} catch (const std::exception& exception) {
+		std::cerr << exception.what() << std::endl;
+		return EXIT_FAILURE;
 	}
 
-	on_error {
-		print_errors(status);
-	}
-	return_status_destroy_errors(&status);
-
-	if (status_int != 0) {
-		status.status = GENERIC_ERROR;
-	}
-
-	return status.status;
+	return EXIT_SUCCESS;
 }

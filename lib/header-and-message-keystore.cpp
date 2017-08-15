@@ -143,13 +143,12 @@ std::unique_ptr<KeyBundle,KeyBundleDeleter> HeaderAndMessageKeyStoreNode::export
 	return key_bundle;
 }
 
-std::string HeaderAndMessageKeyStoreNode::print() const {
-	std::string output{""};
+std::ostream& HeaderAndMessageKeyStoreNode::print(std::ostream& stream) const {
+	stream << "Header key:\n" << this->header_key.toHex() << '\n';
+	stream << "Message key:\n" << this->message_key.toHex() << '\n';
+	stream << "Expiration date:\n" << this->expiration_date << '\n';
 
-	output += "Header key:\n" + this->header_key.toHex() + "\n";
-	output += "Message key:\n" + this->message_key.toHex() + "\n";
-
-	return output;
+	return stream;
 }
 
 void HeaderAndMessageKeyStore::add(const Buffer& header_key, const Buffer& message_key) {
@@ -191,20 +190,18 @@ HeaderAndMessageKeyStore::HeaderAndMessageKeyStore(KeyBundle** const & key_bundl
 	}
 }
 
-std::string HeaderAndMessageKeyStore::print() const {
-	std::string output{""};
-
-	output += "KEYSTORE-START-----------------------------------------------------------------\n";
-	output += "Length: " + std::to_string(this->keys.size()) + "\n\n";
+std::ostream& HeaderAndMessageKeyStore::print(std::ostream& stream) const {
+	stream << "KEYSTORE-START-----------------------------------------------------------------\n";
+	stream << "Length: " + std::to_string(this->keys.size()) + "\n\n";
 
 	size_t index = 0;
 	for (const auto& key_bundle : this->keys) {
-		output += "Entry " + std::to_string(index) + '\n';
+		stream << "Entry " << index << '\n';
 		index++;
-		output += key_bundle.print() + '\n';
+		key_bundle.print(stream) << '\n';
 	}
 
-	output += "KEYSTORE-END-------------------------------------------------------------------\n";
+	stream << "KEYSTORE-END-------------------------------------------------------------------\n";
 
-	return output;
+	return stream;
 }

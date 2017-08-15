@@ -22,6 +22,7 @@
 #ifndef LIB_RATCHET_H
 #define LIB_RATCHET_H
 
+#include <ostream>
 extern "C" {
 	#include <conversation.pb-c.h>
 }
@@ -144,6 +145,11 @@ public:
 	 */
 	Ratchet(const Conversation& conversation);
 
+	Ratchet(const Ratchet& ratchet) = delete;
+	Ratchet(Ratchet&& ratchet) = default;
+	Ratchet& operator=(const Ratchet& ratchet) = delete;
+	Ratchet& operator=(Ratchet&& ratchet) = default;
+
 	/*
 	 * Get keys and metadata to send the next message.
 	 */
@@ -195,5 +201,7 @@ public:
 	 * \return conversation The Conversation Protobuf-C struct.
 	 */
 	std::unique_ptr<Conversation,ConversationDeleter> exportProtobuf() const;
+
+	std::ostream& print(std::ostream& stream) const;
 };
 #endif

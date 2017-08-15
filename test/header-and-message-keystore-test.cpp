@@ -181,7 +181,7 @@ int main(void) {
 			message_key.clear();
 			header_key.clear();
 
-			std::cout << keystore.print();
+			keystore.print(std::cout);
 
 			assert(keystore.keys.size() == (i + 1));
 		}
@@ -220,19 +220,19 @@ int main(void) {
 		printf("Remove head!\n");
 		keystore.keys.erase(std::cbegin(keystore.keys));
 		assert(keystore.keys.size() == (protobuf_export_buffers.size() - 1));
-		std::cout << keystore.print();
+		keystore.print(std::cout);
 
 		//remove key from the tail
 		printf("Remove Tail:\n");
 		keystore.keys.pop_back();
 		assert(keystore.keys.size() == (protobuf_export_buffers.size() - 2));
-		std::cout << keystore.print();
+		keystore.print(std::cout);
 
 		//remove from inside
 		printf("Remove from inside:\n");
 		keystore.keys.erase(std::cbegin(keystore.keys) + 1);
 		assert(keystore.keys.size() == (protobuf_export_buffers.size() - 3));
-		std::cout << keystore.print();
+		keystore.print(std::cout);
 
 		protobuf_empty_store();
 
@@ -240,9 +240,9 @@ int main(void) {
 		printf("Clear the keystore:\n");
 		keystore.keys.clear();
 		assert(keystore.keys.size() == 0);
-		std::cout << keystore.print();
+		keystore.print(std::cout);
 	} catch (const MolchException& exception) {
-		std::cerr << exception.print() << std::endl;
+		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;

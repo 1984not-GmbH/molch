@@ -23,7 +23,7 @@
 #define LIB_MOLCH_EXCEPTION_H
 
 #include <exception>
-#include <string>
+#include <ostream>
 #include <deque>
 
 #include "return-status.h"
@@ -50,13 +50,14 @@ public:
 
 	MolchException(const MolchError& error);
 	MolchException(const status_type type, const std::string& message);
+	MolchException(return_status& status);
 
 	virtual const char* what() const noexcept override;
 
 	MolchException& add(const MolchException& exception);
 	MolchException& add(const MolchError& error);
 	return_status toReturnStatus() const;
-	std::string print() const;
+	std::ostream& print(std::ostream& stream) const;
 };
 
 //throw std::bad_alloc if something is nullptr

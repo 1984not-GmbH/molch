@@ -175,7 +175,6 @@ int main(void) noexcept {
 	//mustn't crash here!
 	molch_destroy_all_users();
 
-	int status_int = 0;
 	return_status status = return_status_init();
 	Buffer alice_send_message("Hi Bob. Alice here!");
 
@@ -318,7 +317,7 @@ int main(void) noexcept {
 		unsigned char *user_list = nullptr;
 		status = molch_list_users(&user_list, &user_list_length, &user_count);
 		THROW_on_error(CREATION_ERROR, "Failed to list users.");
-		if ((user_count != 2)
+		if ((user_count != 2) || (user_list_length != user_count * PUBLIC_KEY_SIZE)
 				|| (sodium_memcmp(alice_public_identity.content, user_list, alice_public_identity.content_length) != 0)
 				|| (sodium_memcmp(bob_public_identity.content, user_list + PUBLIC_KEY_SIZE, alice_public_identity.content_length) != 0)) {
 			free_and_null_if_valid(user_list);
@@ -635,10 +634,6 @@ cleanup:
 		print_errors(status);
 	}
 	return_status_destroy_errors(&status);
-
-	if (status_int != 0) {
-		status.status = GENERIC_ERROR;
-	}
 
 	return status.status;
 }

@@ -965,3 +965,70 @@ Ratchet::Ratchet(const Conversation& conversation) {
 			conversation.n_staged_header_and_message_keys);
 }
 
+std::ostream& Ratchet::print(std::ostream& stream) const {
+	//root keys
+	stream << "Root key:\n";
+	stream << this->storage->root_key.toHex() << '\n';
+	stream << "Purported root key:\n";
+	stream << this->storage->purported_root_key.toHex() << '\n';
+
+	//header keys
+	stream << "Send header key:\n";
+	stream << this->storage->send_header_key.toHex() << '\n';
+	stream << "Receive header key:\n";
+	stream << this->storage->receive_header_key.toHex() << '\n';
+	stream << "Next send header key:\n";
+	stream << this->storage->next_send_header_key.toHex() << '\n';
+	stream << "Next receive header key:\n";
+	stream << this->storage->next_receive_header_key.toHex() << '\n';
+	stream << "Purported receive header key:\n";
+	stream << this->storage->purported_receive_header_key.toHex() << '\n';
+	stream << "Purported next receive header key:\n";
+	stream << this->storage->purported_next_receive_header_key.toHex() << '\n';
+
+	//chain keys
+	stream << "Send chain key:\n";
+	stream << this->storage->send_chain_key.toHex() << '\n';
+	stream << "Receive chain key:\n";
+	stream << this->storage->receive_chain_key.toHex() << '\n';
+	stream << "Purported receive chain key:\n";
+	stream << this->storage->purported_receive_chain_key.toHex() << '\n';
+
+	//identity keys
+	stream << "Our public identity key:\n";
+	stream << this->storage->our_public_identity.toHex() << '\n';
+	stream << "Their public identity key:\n";
+	stream << this->storage->their_public_identity.toHex() << '\n';
+
+	//ephemeral keys
+	stream << "Our private ephemeral key:\n";
+	stream << this->storage->our_private_ephemeral.toHex() << '\n';
+	stream << "Our public ephemeral key:\n";
+	stream << this->storage->our_public_ephemeral.toHex() << '\n';
+	stream << "Their public ephemeral key:\n";
+	stream << this->storage->their_public_ephemeral.toHex() << '\n';
+	stream << "Their purported public ephemeral key:\n";
+	stream << this->storage->their_purported_public_ephemeral.toHex() << '\n';
+
+	//numbers
+	stream << "Send message number: " << this->send_message_number << '\n';
+	stream << "Receive message number: " << this->receive_message_number << '\n';
+	stream << "Purported message number: " << this->purported_message_number << '\n';
+	stream << "Previous message number: " << this->previous_message_number << '\n';
+	stream << "Purported previous message number: " << this->purported_previous_message_number << '\n';
+
+	//others
+	stream << "Ratchet flag: " << this->ratchet_flag << '\n';
+	stream << "Am I Alice: " << this->am_i_alice << '\n';
+	stream << "Received valid: " << this->received_valid << '\n';
+	stream << "Header decryptability: " << static_cast<unsigned int>(this->header_decryptable) << '\n';
+
+	//header and message keystores
+	stream << "Skipped header and message keys:\n";
+	this->skipped_header_and_message_keys.print(stream) << '\n';
+	stream << "Staged header and message keys:\n";
+	this->staged_header_and_message_keys.print(stream) << '\n';
+
+	return stream;
+}
+
