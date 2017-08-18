@@ -69,7 +69,7 @@ int main(void) {
 		std::unique_ptr<Buffer> decrypted_message = packet_decrypt_message(*packet, message_key);
 
 		//check the message size
-		if (!decrypted_message->contains(message.content_length)) {
+		if (!decrypted_message->contains(message.size)) {
 			throw MolchException(INVALID_VALUE, "Decrypted message length isn't the same.");
 		}
 		printf("Decrypted message length is the same.\n");
@@ -81,7 +81,7 @@ int main(void) {
 		printf("Decrypted message is the same.\n\n");
 
 		//manipulate the message
-		packet->content[packet->content_length - crypto_secretbox_MACBYTES - 1] ^= 0xf0;
+		packet->content[packet->size - crypto_secretbox_MACBYTES - 1] ^= 0xf0;
 		printf("Manipulating message.\n");
 
 		decrypted_message.reset();
@@ -126,7 +126,7 @@ int main(void) {
 		decrypted_message = packet_decrypt_message(*packet, message_key);
 
 		//check the message size
-		if (!decrypted_message->contains(message.content_length)) {
+		if (!decrypted_message->contains(message.size)) {
 			throw MolchException(INVALID_VALUE, "Decrypted message length isn't the same.");
 		}
 		printf("Decrypted message length is the same.\n");

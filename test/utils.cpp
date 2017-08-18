@@ -34,7 +34,7 @@ void print_to_file(const Buffer& data, const std::string& filename) noexcept {
 		return;
 	}
 
-	fwrite(data.content, 1, data.content_length, file);
+	fwrite(data.content, 1, data.size, file);
 
 	fclose(file);
 }
@@ -62,10 +62,10 @@ std::unique_ptr<Buffer> read_file(const std::string& filename) {
 	fseek(file, 0, SEEK_SET);
 
 	auto data = std::make_unique<Buffer>(filesize, filesize);
-	data->content_length = fread(data->content, 1, filesize, file);
+	data->size = fread(data->content, 1, filesize, file);
 	fclose(file);
 	file = nullptr;
-	if (data->content_length != filesize) {
+	if (data->size != filesize) {
 		throw MolchException(INCORRECT_DATA, "Read less data from file than filesize.");
 	}
 

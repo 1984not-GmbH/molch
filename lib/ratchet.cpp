@@ -60,7 +60,7 @@ Ratchet::Ratchet(
 
 	//find out if we are alice by comparing both public keys
 	//the one with the bigger public key is alice
-	int comparison = sodium_compare(our_public_identity.content, their_public_identity.content, our_public_identity.content_length);
+	int comparison = sodium_compare(our_public_identity.content, their_public_identity.content, our_public_identity.size);
 	if (comparison > 0) {
 		this->am_i_alice = true;
 	} else if (comparison < 0) {
@@ -128,8 +128,8 @@ void Ratchet::send(
 		int status = crypto_box_keypair(
 				this->storage->our_public_ephemeral.content,
 				this->storage->our_private_ephemeral.content);
-		this->storage->our_public_ephemeral.content_length = PUBLIC_KEY_SIZE;
-		this->storage->our_private_ephemeral.content_length = PRIVATE_KEY_SIZE;
+		this->storage->our_public_ephemeral.size = PUBLIC_KEY_SIZE;
+		this->storage->our_private_ephemeral.size = PRIVATE_KEY_SIZE;
 		if (status != 0) {
 			throw MolchException(KEYGENERATION_FAILED, "Failed to generate new ephemeral keypair.");
 		}
@@ -434,7 +434,7 @@ void Ratchet::setLastMessageAuthenticity(bool valid) {
 		this->storage->their_public_ephemeral.cloneFrom(this->storage->their_purported_public_ephemeral);
 		//erase(DHRs)
 		this->storage->our_private_ephemeral.clear();
-		this->storage->our_private_ephemeral.content_length = PRIVATE_KEY_SIZE;
+		this->storage->our_private_ephemeral.size = PRIVATE_KEY_SIZE;
 		//ratchet_flag = True
 		this->ratchet_flag = true;
 	}

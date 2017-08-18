@@ -99,7 +99,7 @@ int main(void) {
 				nullptr,
 				nullptr);
 
-		printf("Sent message: %.*s\n", static_cast<int>(alice_send_message2.content_length), reinterpret_cast<const char*>(alice_send_message2.content));
+		printf("Sent message: %.*s\n", static_cast<int>(alice_send_message2.size), reinterpret_cast<const char*>(alice_send_message2.content));
 		printf("Packet:\n");
 		alice_send_packet2->printHex(std::cout) << std::endl;
 
@@ -130,7 +130,7 @@ int main(void) {
 				nullptr,
 				nullptr);
 
-		printf("Sent message: %.*s\n", static_cast<int>(bob_response_message.content_length), reinterpret_cast<const char*>(bob_response_message.content));
+		printf("Sent message: %.*s\n", static_cast<int>(bob_response_message.size), reinterpret_cast<const char*>(bob_response_message.content));
 		printf("Packet:\n");
 		bob_response_packet->printHex(std::cout) << std::endl;
 
@@ -171,7 +171,7 @@ int main(void) {
 				alice_public_identity,
 				prekey_list);
 
-		printf("Sent message: %.*s\n", static_cast<int>(send_message.content_length), reinterpret_cast<const char*>(send_message.content));
+		printf("Sent message: %.*s\n", static_cast<int>(send_message.size), reinterpret_cast<const char*>(send_message.content));
 		printf("Packet:\n");
 		packet->printHex(std::cout) << std::endl;
 
@@ -198,7 +198,7 @@ int main(void) {
 				nullptr,
 				nullptr);
 
-		printf("Sent message: %.*s\n", static_cast<int>(bob_send_message2.content_length), reinterpret_cast<const char*>(bob_send_message2.content));
+		printf("Sent message: %.*s\n", static_cast<int>(bob_send_message2.size), reinterpret_cast<const char*>(bob_send_message2.content));
 		printf("Packet:\n");
 		bob_send_packet2->printHex(std::cout) << std::endl;
 
@@ -227,7 +227,7 @@ int main(void) {
 				nullptr,
 				nullptr);
 
-		printf("Sent message: %.*s\n", static_cast<int>(alice_response_message.content_length), reinterpret_cast<const char*>(alice_response_message.content));
+		printf("Sent message: %.*s\n", static_cast<int>(alice_response_message.size), reinterpret_cast<const char*>(alice_response_message.content));
 		printf("Packet:\n");
 		alice_response_packet->printHex(std::cout) << std::endl;
 

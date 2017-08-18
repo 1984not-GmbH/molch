@@ -37,12 +37,12 @@ std::unique_ptr<Buffer> header_construct(
 	header__init(&header_struct);
 
 	//check input
-	if (our_public_ephemeral.content_length != PUBLIC_KEY_SIZE) {
+	if (our_public_ephemeral.size != PUBLIC_KEY_SIZE) {
 		throw MolchException(INVALID_INPUT, "Invalid input to header_construct.");
 	}
 	//create buffer for our public ephemeral
 	ProtobufCBinaryData protobuf_our_public_ephemeral;
-	protobuf_our_public_ephemeral.len = our_public_ephemeral.content_length;
+	protobuf_our_public_ephemeral.len = our_public_ephemeral.size;
 	protobuf_our_public_ephemeral.data = our_public_ephemeral.content;
 
 	//fill the struct
@@ -79,7 +79,7 @@ void header_extract(
 	}
 
 	//unpack the message
-	auto header_struct = std::unique_ptr<Header,HeaderDeleter>(header__unpack(&protobuf_c_allocators, header.content_length, header.content));
+	auto header_struct = std::unique_ptr<Header,HeaderDeleter>(header__unpack(&protobuf_c_allocators, header.size, header.content));
 	if (!header_struct) {
 		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack header.");
 	}

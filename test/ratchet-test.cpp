@@ -36,8 +36,8 @@ std::unique_ptr<Buffer> protobuf_export(Ratchet& ratchet) {
 
 	size_t export_size = conversation__get_packed_size(conversation.get());
 	auto export_buffer = std::make_unique<Buffer>(export_size, 0);
-	export_buffer->content_length = conversation__pack(conversation.get(), export_buffer->content);
-	if (export_size != export_buffer->content_length) {
+	export_buffer->size = conversation__pack(conversation.get(), export_buffer->content);
+	if (export_size != export_buffer->size) {
 		throw MolchException(EXPORT_ERROR, "Failed to export ratchet.");
 	}
 
@@ -49,7 +49,7 @@ std::unique_ptr<Ratchet> protobuf_import(const Buffer& export_buffer) {
 	auto conversation = std::unique_ptr<Conversation,ConversationDeleter>(
 		conversation__unpack(
 			&protobuf_c_allocators,
-			export_buffer.content_length,
+			export_buffer.size,
 			export_buffer.content));
 	if (!conversation) {
 		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
@@ -114,9 +114,9 @@ int main(void) {
 		alice_private_identity.clear();
 		putchar('\n');
 		//print Alice's initial root and chain keys
-		printf("Alice's initial root key (%zu Bytes):\n", alice_state->storage->root_key.content_length);
+		printf("Alice's initial root key (%zu Bytes):\n", alice_state->storage->root_key.size);
 		alice_state->storage->root_key.printHex(std::cout);
-		printf("Alice's initial chain key (%zu Bytes):\n", alice_state->storage->send_chain_key.content_length);
+		printf("Alice's initial chain key (%zu Bytes):\n", alice_state->storage->send_chain_key.size);
 		alice_state->storage->send_chain_key.printHex(std::cout);
 		putchar('\n');
 
@@ -131,9 +131,9 @@ int main(void) {
 				alice_public_ephemeral);
 		putchar('\n');
 		//print Bob's initial root and chain keys
-		printf("Bob's initial root key (%zu Bytes):\n", bob_state->storage->root_key.content_length);
+		printf("Bob's initial root key (%zu Bytes):\n", bob_state->storage->root_key.size);
 		bob_state->storage->root_key.printHex(std::cout);
-		printf("Bob's initial chain key (%zu Bytes):\n", bob_state->storage->send_chain_key.content_length);
+		printf("Bob's initial chain key (%zu Bytes):\n", bob_state->storage->send_chain_key.size);
 		bob_state->storage->send_chain_key.printHex(std::cout);
 		putchar('\n');
 

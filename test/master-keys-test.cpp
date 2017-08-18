@@ -52,7 +52,7 @@ void protobuf_export(
 	//public signing key
 	size_t public_signing_key_proto_size = key__get_packed_size(public_signing_key.get());
 	public_signing_key_buffer = std::make_unique<Buffer>(public_signing_key_proto_size, 0);
-	public_signing_key_buffer->content_length = key__pack(public_signing_key.get(), public_signing_key_buffer->content);
+	public_signing_key_buffer->size = key__pack(public_signing_key.get(), public_signing_key_buffer->content);
 	if (!public_signing_key_buffer->contains(public_signing_key_proto_size)) {
 		throw MolchException(EXPORT_ERROR, "Failed to export public signing key.");
 	}
@@ -60,7 +60,7 @@ void protobuf_export(
 	//private signing key
 	size_t private_signing_key_proto_size = key__get_packed_size(private_signing_key.get());
 	private_signing_key_buffer = std::make_unique<Buffer>(private_signing_key_proto_size, 0);
-	private_signing_key_buffer->content_length = key__pack(private_signing_key.get(), private_signing_key_buffer->content);
+	private_signing_key_buffer->size = key__pack(private_signing_key.get(), private_signing_key_buffer->content);
 	if (!private_signing_key_buffer->contains(private_signing_key_proto_size)) {
 		throw MolchException(EXPORT_ERROR, "Failed to export private signing key.");
 	}
@@ -68,7 +68,7 @@ void protobuf_export(
 	//public identity key
 	size_t public_identity_key_proto_size = key__get_packed_size(public_identity_key.get());
 	public_identity_key_buffer = std::make_unique<Buffer>(public_identity_key_proto_size, 0);
-	public_identity_key_buffer->content_length = key__pack(public_identity_key.get(), public_identity_key_buffer->content);
+	public_identity_key_buffer->size = key__pack(public_identity_key.get(), public_identity_key_buffer->content);
 	if (!public_identity_key_buffer->contains(public_identity_key_proto_size)) {
 		throw MolchException(EXPORT_ERROR, "Failed to export public identity key.");
 	}
@@ -76,7 +76,7 @@ void protobuf_export(
 	//private identity key
 	size_t private_identity_key_proto_size = key__get_packed_size(private_identity_key.get());
 	private_identity_key_buffer = std::make_unique<Buffer>(private_identity_key_proto_size, 0);
-	private_identity_key_buffer->content_length = key__pack(private_identity_key.get(), private_identity_key_buffer->content);
+	private_identity_key_buffer->size = key__pack(private_identity_key.get(), private_identity_key_buffer->content);
 	if (!private_identity_key_buffer->contains(private_identity_key_proto_size)) {
 		throw MolchException(EXPORT_ERROR, "Failed to export private identity key.");
 	}
@@ -93,7 +93,7 @@ void protobuf_import(
 	auto public_signing_key = std::unique_ptr<Key,KeyDeleter>(
 		key__unpack(
 			&protobuf_c_allocators,
-			public_signing_key_buffer.content_length,
+			public_signing_key_buffer.size,
 			public_signing_key_buffer.content));
 	if (!public_signing_key) {
 		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack public signing key from protobuf.");
@@ -101,7 +101,7 @@ void protobuf_import(
 	auto private_signing_key = std::unique_ptr<Key,KeyDeleter>(
 		key__unpack(
 			&protobuf_c_allocators,
-			private_signing_key_buffer.content_length,
+			private_signing_key_buffer.size,
 			private_signing_key_buffer.content));
 	if (!private_signing_key) {
 		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack private signing key from protobuf.");
@@ -109,7 +109,7 @@ void protobuf_import(
 	auto public_identity_key = std::unique_ptr<Key,KeyDeleter>(
 		key__unpack(
 			&protobuf_c_allocators,
-			public_identity_key_buffer.content_length,
+			public_identity_key_buffer.size,
 			public_identity_key_buffer.content));
 	if (!public_identity_key) {
 		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack public identity key from protobuf.");
@@ -117,7 +117,7 @@ void protobuf_import(
 	auto private_identity_key = std::unique_ptr<Key,KeyDeleter>(
 		key__unpack(
 			&protobuf_c_allocators,
-			private_identity_key_buffer.content_length,
+			private_identity_key_buffer.size,
 			private_identity_key_buffer.content));
 	if (!private_identity_key) {
 		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack private identity key from protobuf.");
@@ -213,7 +213,7 @@ int main(void) {
 		//sign some data
 		Buffer data{"This is some data to be signed."};
 		printf("Data to be signed.\n");
-		printf("%.*s\n", static_cast<int>(data.content_length), reinterpret_cast<char*>(data.content));
+		printf("%.*s\n", static_cast<int>(data.size), reinterpret_cast<char*>(data.content));
 		Buffer signed_data{100, 0};
 		spiced_master_keys.sign(data, signed_data);
 		printf("Signed data:\n");
@@ -226,12 +226,12 @@ int main(void) {
 				unwrapped_data.content,
 				&unwrapped_data_length,
 				signed_data.content,
-				signed_data.content_length,
+				signed_data.size,
 				public_signing_key.content);
 		if (status_int != 0) {
 			throw MolchException(VERIFY_ERROR, "Failed to verify signature.");
 		}
-		unwrapped_data.content_length = static_cast<size_t>(unwrapped_data_length);
+		unwrapped_data.size = static_cast<size_t>(unwrapped_data_length);
 
 		printf("\nSignature was successfully verified!\n");
 

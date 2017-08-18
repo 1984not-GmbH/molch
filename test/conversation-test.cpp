@@ -38,8 +38,8 @@ std::unique_ptr<Buffer> protobuf_export(const ConversationT& conversation) {
 
 	size_t export_size = conversation__get_packed_size(exported_conversation.get());
 	auto export_buffer = std::make_unique<Buffer>(export_size, 0);
-	export_buffer->content_length = conversation__pack(exported_conversation.get(), export_buffer->content);
-	if (export_size != export_buffer->content_length) {
+	export_buffer->size = conversation__pack(exported_conversation.get(), export_buffer->content);
+	if (export_size != export_buffer->size) {
 		throw MolchException(PROTOBUF_PACK_ERROR, "Failed to pack protobuf-c struct into buffer.");
 	}
 
@@ -49,7 +49,7 @@ std::unique_ptr<Buffer> protobuf_export(const ConversationT& conversation) {
 std::unique_ptr<ConversationT> protobuf_import(const Buffer& import_buffer) {
 	auto conversation_protobuf = std::unique_ptr<Conversation,ConversationDeleter>(conversation__unpack(
 		&protobuf_c_allocators,
-		import_buffer.content_length,
+		import_buffer.size,
 		import_buffer.content));
 	if (!conversation_protobuf) {
 		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");

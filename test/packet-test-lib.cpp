@@ -53,23 +53,23 @@ void create_and_print_message(
 
 	//create header key
 	header_key.fillRandom(HEADER_KEY_SIZE);
-	printf("Header key (%zu Bytes):\n", header_key.content_length);
+	printf("Header key (%zu Bytes):\n", header_key.size);
 	header_key.printHex(std::cout);
 	putchar('\n');
 
 	//create message key
 	message_key.fillRandom(MESSAGE_KEY_SIZE);
-	printf("Message key (%zu Bytes):\n", message_key.content_length);
+	printf("Message key (%zu Bytes):\n", message_key.size);
 	message_key.printHex(std::cout);
 	putchar('\n');
 
 	//print the header (as hex):
-	printf("Header (%zu Bytes):\n", header.content_length);
+	printf("Header (%zu Bytes):\n", header.size);
 	header.printHex(std::cout);
 	putchar('\n');
 
 	//print the message (as string):
-	printf("Message (%zu Bytes):\n%.*s\n\n", message.content_length, static_cast<int>(message.content_length), message.content);
+	printf("Message (%zu Bytes):\n%.*s\n\n", message.size, static_cast<int>(message.size), message.content);
 
 	//now encrypt the message
 	packet = packet_encrypt(
@@ -83,7 +83,7 @@ void create_and_print_message(
 			public_prekey);
 
 	//print encrypted packet
-	printf("Encrypted Packet (%zu Bytes):\n", packet->content_length);
+	printf("Encrypted Packet (%zu Bytes):\n", packet->size);
 	packet->printHex(std::cout);
 	putchar('\n');
 }

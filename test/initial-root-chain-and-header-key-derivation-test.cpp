@@ -100,19 +100,19 @@ int main(void) {
 		alice_private_ephemeral.clear();
 
 		//print Alice's initial root and chain key
-		printf("Alice's initial root key (%zu Bytes):\n", alice_root_key.content_length);
+		printf("Alice's initial root key (%zu Bytes):\n", alice_root_key.size);
 		alice_root_key.printHex(std::cout) << std::endl;
-		printf("Alice's initial send chain key (%zu Bytes):\n", alice_send_chain_key.content_length);
+		printf("Alice's initial send chain key (%zu Bytes):\n", alice_send_chain_key.size);
 		alice_send_chain_key.printHex(std::cout) << std::endl;
-		printf("Alice's initial receive chain key (%zu Bytes):\n", alice_receive_chain_key.content_length);
+		printf("Alice's initial receive chain key (%zu Bytes):\n", alice_receive_chain_key.size);
 		alice_receive_chain_key.printHex(std::cout) << std::endl;
-		printf("Alice's initial send header key (%zu Bytes):\n", alice_send_header_key.content_length);
+		printf("Alice's initial send header key (%zu Bytes):\n", alice_send_header_key.size);
 		alice_send_header_key.printHex(std::cout) << std::endl;
-		printf("Alice's initial receive header key (%zu Bytes):\n", alice_receive_header_key.content_length);
+		printf("Alice's initial receive header key (%zu Bytes):\n", alice_receive_header_key.size);
 		alice_receive_header_key.printHex(std::cout) << std::endl;
-		printf("Alice's initial next send header key (%zu Bytes):\n", alice_next_send_header_key.content_length);
+		printf("Alice's initial next send header key (%zu Bytes):\n", alice_next_send_header_key.size);
 		alice_next_send_header_key.printHex(std::cout) << std::endl;
-		printf("Alice's initial next receive header key (%zu Bytes):\n", alice_next_receive_header_key.content_length);
+		printf("Alice's initial next receive header key (%zu Bytes):\n", alice_next_receive_header_key.size);
 		alice_next_receive_header_key.printHex(std::cout) << std::endl;
 
 		//derive Bob's initial root and chain key
@@ -142,19 +142,19 @@ int main(void) {
 		bob_private_ephemeral.clear();
 
 		//print Bob's initial root and chain key
-		printf("Bob's initial root key (%zu Bytes):\n", bob_root_key.content_length);
+		printf("Bob's initial root key (%zu Bytes):\n", bob_root_key.size);
 		bob_root_key.printHex(std::cout) << std::endl;
-		printf("Bob's initial send chain key (%zu Bytes):\n", bob_send_chain_key.content_length);
+		printf("Bob's initial send chain key (%zu Bytes):\n", bob_send_chain_key.size);
 		bob_send_chain_key.printHex(std::cout) << std::endl;
-		printf("Bob's initial receive chain key (%zu Bytes):\n", bob_receive_chain_key.content_length);
+		printf("Bob's initial receive chain key (%zu Bytes):\n", bob_receive_chain_key.size);
 		bob_receive_chain_key.printHex(std::cout) << std::endl;
-		printf("Bob's initial send header key (%zu Bytes):\n", bob_send_header_key.content_length);
+		printf("Bob's initial send header key (%zu Bytes):\n", bob_send_header_key.size);
 		bob_send_header_key.printHex(std::cout) << std::endl;
-		printf("Bob's initial receive header key (%zu Bytes):\n", bob_receive_header_key.content_length);
+		printf("Bob's initial receive header key (%zu Bytes):\n", bob_receive_header_key.size);
 		bob_receive_header_key.printHex(std::cout) << std::endl;
-		printf("Bob's initial next send header key (%zu Bytes):\n", bob_next_send_header_key.content_length);
+		printf("Bob's initial next send header key (%zu Bytes):\n", bob_next_send_header_key.size);
 		bob_next_send_header_key.printHex(std::cout) << std::endl;
-		printf("Bob's initial next receive header key (%zu Bytes):\n", bob_next_receive_header_key.content_length);
+		printf("Bob's initial next receive header key (%zu Bytes):\n", bob_next_receive_header_key.size);
 		bob_next_receive_header_key.printHex(std::cout) << std::endl;
 
 		//compare Alice's and Bob's initial root key

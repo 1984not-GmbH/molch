@@ -29,7 +29,7 @@
 
 Buffer::Buffer(const std::string& string) {
 	this->buffer_length = string.length() + sizeof("");
-	this->content_length = string.length() + sizeof("");
+	this->size = string.length() + sizeof("");
 
 	this->content = new unsigned char[string.length() + sizeof("")];
 
@@ -37,63 +37,63 @@ Buffer::Buffer(const std::string& string) {
 	this->content[string.length()] = '\0';
 }
 
-Buffer::Buffer(const size_t buffer_length, const size_t content_length) {
-	this->buffer_length = buffer_length;
-	this->content_length = content_length;
+Buffer::Buffer(const size_t capacity, const size_t size) {
+	this->buffer_length = capacity;
+	this->size = size;
 
-	if (buffer_length == 0) {
+	if (capacity == 0) {
 		this->content = nullptr;
 	} else {
-		this->content = new unsigned char[buffer_length];
+		this->content = new unsigned char[capacity];
 	}
 }
 
-Buffer::Buffer(const size_t buffer_length, const size_t content_length, void* (*allocator)(size_t), void (*deallocator)(void*)) {
-	this->buffer_length = buffer_length;
-	this->content_length = content_length;
+Buffer::Buffer(const size_t capacity, const size_t size, void* (*allocator)(size_t), void (*deallocator)(void*)) {
+	this->buffer_length = capacity;
+	this->size = size;
 	this->deallocator = deallocator;
 
-	if (buffer_length == 0) {
+	if (capacity == 0) {
 		this->content = nullptr;
 	} else {
-		this->content = reinterpret_cast<unsigned char*>(allocator(buffer_length));
+		this->content = reinterpret_cast<unsigned char*>(allocator(capacity));
 		if (this->content == nullptr) {
 			this->buffer_length = 0;
-			this->content_length = 0;
+			this->size = 0;
 
 			throw std::bad_alloc{};
 		}
 	}
 }
 
-Buffer::Buffer(unsigned char * const content, const size_t buffer_length, const size_t content_length) {
-	this->buffer_length = buffer_length;
+Buffer::Buffer(unsigned char * const content, const size_t capacity, const size_t size) {
+	this->buffer_length = capacity;
 	this->manage_memory = false;
 
-	this->content_length = (content_length > buffer_length)
-		? buffer_length
-		: content_length;
+	this->size = (size > capacity)
+		? capacity
+		: size;
 	this->readonly = false;
 
-	if (buffer_length == 0) {
+	if (capacity == 0) {
 		this->content = nullptr;
 	} else {
 		this->content = content;
 	}
 }
-Buffer::Buffer(unsigned char * const content, const size_t buffer_length)
-	: Buffer{content, buffer_length, buffer_length} {}
+Buffer::Buffer(unsigned char * const content, const size_t capacity)
+	: Buffer{content, capacity, capacity} {}
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-Buffer::Buffer(const unsigned char * const content, const size_t buffer_length, const size_t content_length)
-	: Buffer{(unsigned char*)content, buffer_length, content_length} {
+Buffer::Buffer(const unsigned char * const content, const size_t capacity, const size_t size)
+	: Buffer{(unsigned char*)content, capacity, size} {
 	this->readonly = false;
 }
 #pragma GCC diagnostic pop
-Buffer::Buffer(const unsigned char * const content, const size_t buffer_length)
-	: Buffer{content, buffer_length, buffer_length} {}
+Buffer::Buffer(const unsigned char * const content, const size_t capacity)
+	: Buffer{content, capacity, capacity} {}
 
 void Buffer::destruct() {
 	//only do something if this was created using a constructor
@@ -119,10 +119,10 @@ Buffer& Buffer::copy(const Buffer& buffer) {
 	this->manage_memory = true;
 	this->readonly = buffer.readonly;
 	this->deallocator = nullptr;
-	this->content_length = buffer.content_length;
+	this->size = buffer.size;
 
 	this->content = new unsigned char[buffer.buffer_length];
-	std::copy(buffer.content, buffer.content + buffer.content_length, this->content);
+	std::copy(buffer.content, buffer.content + buffer.size, this->content);
 
 	return *this;
 }
@@ -140,7 +140,7 @@ Buffer& Buffer::move(Buffer&& buffer) {
 	buffer.manage_memory = false;
 	buffer.readonly = false;
 	buffer.deallocator = nullptr;
-	buffer.content_length = 0;
+	buffer.size = 0;
 	buffer.content = nullptr;
 
 	return *this;
@@ -162,7 +162,7 @@ Buffer::Buffer(const Buffer& buffer) {
 	this->copy(buffer);
 }
 
-size_t Buffer::getBufferLength() const {
+size_t Buffer::capacity() const {
 	return this->buffer_length;
 }
 
@@ -175,7 +175,7 @@ void Buffer::clear() {
 		return;
 	}
 	sodium_memzero(this->content, this->buffer_length);
-	this->content_length = 0;
+	this->size = 0;
 }
 
 void Buffer::copyFrom(
@@ -187,15 +187,15 @@ void Buffer::copyFrom(
 		throw MolchException(BUFFER_ERROR, "Can't copy to readonly buffer.");
 	}
 
-	if ((this->buffer_length < this->content_length) || (source.buffer_length < source.content_length)) {
+	if ((this->buffer_length < this->size) || (source.buffer_length < source.size)) {
 		throw MolchException(BUFFER_ERROR, "The content is larger than the buffer.");
 	}
 
-	if ((destination_offset > this->content_length) || (copy_length > (this->buffer_length - destination_offset))) {
+	if ((destination_offset > this->size) || (copy_length > (this->buffer_length - destination_offset))) {
 		throw MolchException(BUFFER_ERROR, "Can't copy to buffer that is too small.");
 	}
 
-	if ((source_offset > source.content_length) || (copy_length > (source.content_length - source_offset))) {
+	if ((source_offset > source.size) || (copy_length > (source.size - source_offset))) {
 		throw MolchException(BUFFER_ERROR, "Can't copy more than buffer_length bytes.");
 	}
 
@@ -208,8 +208,8 @@ void Buffer::copyFrom(
 	}
 
 	std::copy(source.content + source_offset, source.content + source_offset + copy_length, this->content + destination_offset);
-	this->content_length = (this->content_length > destination_offset + copy_length)
-		? this->content_length
+	this->size = (this->size > destination_offset + copy_length)
+		? this->size
 		: destination_offset + copy_length;
 }
 
@@ -218,13 +218,13 @@ void Buffer::cloneFrom(const Buffer& source) {
 		throw MolchException(BUFFER_ERROR, "Can't clone to readonly buffer.");
 	}
 
-	if (this->buffer_length < source.content_length) {
+	if (this->buffer_length < source.size) {
 		throw MolchException(BUFFER_ERROR, "The source doesn't fit into the destination.");
 	}
 
-	this->content_length = source.content_length;
+	this->size = source.size;
 
-	this->copyFrom(0, source, 0, source.content_length);
+	this->copyFrom(0, source, 0, source.size);
 }
 
 void Buffer::copyFromRaw(
@@ -236,7 +236,7 @@ void Buffer::copyFromRaw(
 		throw MolchException(BUFFER_ERROR, "Can't copy to readonly buffer.");
 	}
 
-	if (this->buffer_length < this->content_length) {
+	if (this->buffer_length < this->size) {
 		throw MolchException(BUFFER_ERROR, "The content is longer than the buffer.");
 	}
 
@@ -249,8 +249,8 @@ void Buffer::copyFromRaw(
 	}
 
 	std::copy(source + source_offset, source + source_offset + copy_length, this->content + destination_offset);
-	this->content_length = (this->content_length > destination_offset + copy_length)
-		? this->content_length
+	this->size = (this->size > destination_offset + copy_length)
+		? this->size
 		: destination_offset + copy_length;
 }
 
@@ -263,7 +263,7 @@ void Buffer::cloneFromRaw(const unsigned char * const source, const size_t lengt
 		throw MolchException(BUFFER_ERROR, "The source doesn't fit into the destination.");
 	}
 
-	this->content_length = length;
+	this->size = length;
 
 	this->copyFromRaw(0, source, 0, length);
 }
@@ -273,11 +273,11 @@ void Buffer::copyToRaw(
 		const size_t destination_offset,
 		const size_t source_offset,
 		const size_t copy_length) const {
-	if ((source_offset > this->content_length) || (copy_length > (this->content_length - source_offset))) {
+	if ((source_offset > this->size) || (copy_length > (this->size - source_offset))) {
 		throw MolchException(BUFFER_ERROR, "The source doesn't fit into the destination.");
 	}
 
-	if (this->buffer_length < this->content_length) {
+	if (this->buffer_length < this->size) {
 		throw MolchException(BUFFER_ERROR, "The content is longer than the buffer.");
 	}
 
@@ -289,19 +289,19 @@ void Buffer::copyToRaw(
 }
 
 void Buffer::cloneToRaw(unsigned char * const destination, const size_t destination_length) const {
-	if (destination_length < this->content_length) {
+	if (destination_length < this->size) {
 		throw MolchException(BUFFER_ERROR, "Can't clone to raw buffer that is to small.");
 	}
 
-	this->copyToRaw(destination, 0, 0, this->content_length);
+	this->copyToRaw(destination, 0, 0, this->size);
 }
 
 int Buffer::compare(const Buffer& buffer) const {
-	return this->compareToRaw(buffer.content, buffer.content_length);
+	return this->compareToRaw(buffer.content, buffer.size);
 }
 
 int Buffer::compareToRaw(const unsigned char * const array, const size_t array_length) const {
-	return this->compareToRawPartial(0, array, array_length, 0, this->content_length);
+	return this->compareToRawPartial(0, array, array_length, 0, this->size);
 }
 
 int Buffer::comparePartial(
@@ -309,7 +309,7 @@ int Buffer::comparePartial(
 		const Buffer& buffer2,
 		const size_t position2,
 		const size_t length) const {
-	return this->compareToRawPartial(position1, buffer2.content, buffer2.content_length, position2, length);
+	return this->compareToRawPartial(position1, buffer2.content, buffer2.size, position2, length);
 }
 
 int Buffer::compareToRawPartial(
@@ -318,7 +318,7 @@ int Buffer::compareToRawPartial(
 		const size_t array_length,
 		const size_t position2,
 		const size_t comparison_length) const {
-	if (((this->content_length - position1) < comparison_length) || ((array_length - position2) < comparison_length)) {
+	if (((this->size - position1) < comparison_length) || ((array_length - position2) < comparison_length)) {
 		//FIXME: Does this introduce a timing sidechannel? This leaks the information that two buffers don't have the same length
 		//buffers are too short
 		return -6; //TODO: Is this an exception?
@@ -348,7 +348,7 @@ void Buffer::fillRandom(const size_t length) {
 		return;
 	}
 
-	this->content_length = length;
+	this->size = length;
 	randombytes_buf(this->content, length);
 }
 
@@ -358,14 +358,14 @@ void Buffer::xorWith(const Buffer& source) {
 		throw MolchException(BUFFER_ERROR, "Can't xor to readonly buffer.");
 	}
 
-	if ((this->content_length != source.content_length)
-			|| (this->buffer_length < this->content_length)
-			|| (source.buffer_length < source.content_length)) {
+	if ((this->size != source.size)
+			|| (this->buffer_length < this->size)
+			|| (source.buffer_length < source.size)) {
 		throw MolchException(BUFFER_ERROR, "Buffer length mismatch.");
 	}
 
 	//xor source onto destination
-	for (size_t i = 0; i < this->content_length; i++) {
+	for (size_t i = 0; i < this->size; i++) {
 		this->content[i] ^= source.content[i];
 	}
 }
@@ -373,14 +373,14 @@ void Buffer::xorWith(const Buffer& source) {
 unsigned char* Buffer::release() {
 	unsigned char* content = this->content;
 	this->content = nullptr;
-	this->content_length = 0;
+	this->size = 0;
 	this->buffer_length = 0;
 
 	return content;
 }
 
 std::ostream& Buffer::print(std::ostream& stream) const {
-	stream << std::string(reinterpret_cast<char*>(this->content), this->content_length);
+	stream << std::string(reinterpret_cast<char*>(this->content), this->size);
 
 	return stream;
 }
@@ -388,9 +388,9 @@ std::ostream& Buffer::print(std::ostream& stream) const {
 std::ostream& Buffer::printHex(std::ostream& stream) const {
 	static const size_t width = 30;
 	//buffer for the hex string
-	const size_t hex_length = this->content_length * 2 + sizeof("");
+	const size_t hex_length = this->size * 2 + sizeof("");
 	auto hex = std::make_unique<char[]>(hex_length);
-	if (sodium_bin2hex(hex.get(), hex_length, this->content, this->content_length) == NULL) {
+	if (sodium_bin2hex(hex.get(), hex_length, this->content, this->size) == NULL) {
 		throw MolchException(BUFFER_ERROR, "Failed to converst binary to hex with sodium_bin2hex.");
 	}
 
@@ -407,7 +407,7 @@ std::ostream& Buffer::printHex(std::ostream& stream) const {
 }
 
 bool Buffer::isNone() const {
-	return (this->content_length == 0) || sodium_is_zero(this->content, this->content_length);
+	return (this->size == 0) || sodium_is_zero(this->content, this->size);
 }
 
 bool Buffer::operator ==(const Buffer& buffer) const {
@@ -423,5 +423,5 @@ bool Buffer::fits(const size_t size) const {
 }
 
 bool Buffer::contains(const size_t size) const {
-	return this->fits(size) && (this->content_length == size);
+	return this->fits(size) && (this->size == size);
 }

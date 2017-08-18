@@ -66,8 +66,8 @@ static void protobuf_export(
 		for (size_t i = 0; i < bundles_size; i++) {
 			size_t export_size = key_bundle__get_packed_size(key_bundles[i]);
 			Buffer export_buffer(export_size, 0);
-			export_buffer.content_length = key_bundle__pack(key_bundles[i], export_buffer.content);
-			if (export_buffer.content_length != export_size) {
+			export_buffer.size = key_bundle__pack(key_bundles[i], export_buffer.content);
+			if (export_buffer.size != export_size) {
 				throw MolchException(PROTOBUF_PACK_ERROR, "Packed buffer has incorrect length.");
 			}
 			export_buffers.push_back(export_buffer);
@@ -92,7 +92,7 @@ static void protobuf_import(
 		auto key_bundle = std::unique_ptr<KeyBundle,KeyBundleDeleter>(
 					key_bundle__unpack(
 						&protobuf_c_allocators,
-						exported_buffer.content_length,
+						exported_buffer.size,
 						exported_buffer.content));
 		if (!key_bundle) {
 			throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack key bundle.");
@@ -149,9 +149,9 @@ int main(void) {
 		for (size_t i = 0; i < 6; i++) {
 			//create new keys
 			Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-			header_key.fillRandom(header_key.getBufferLength());
+			header_key.fillRandom(header_key.capacity());
 			Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-			message_key.fillRandom(message_key.getBufferLength());
+			message_key.fillRandom(message_key.capacity());
 
 			//print the new header key
 			printf("New Header Key No. %zu:\n", i);

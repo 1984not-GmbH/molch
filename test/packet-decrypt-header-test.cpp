@@ -69,7 +69,7 @@ int main(void) {
 		std::unique_ptr<Buffer> decrypted_header = packet_decrypt_header(*packet, header_key);
 
 
-		if (!decrypted_header->contains(header.content_length)) {
+		if (!decrypted_header->contains(header.size)) {
 			throw MolchException(INVALID_VALUE, "Decrypted header isn't of the same length.");
 		}
 		printf("Decrypted header has the same length.\n\n");
@@ -142,7 +142,7 @@ int main(void) {
 		//now decrypt the header
 		decrypted_header = packet_decrypt_header(*packet, header_key);
 
-		if (!decrypted_header->contains(header.content_length)) {
+		if (!decrypted_header->contains(header.size)) {
 			throw MolchException(INVALID_VALUE, "Decrypted header isn't of the same length.");
 		}
 		printf("Decrypted header has the same length.\n\n");

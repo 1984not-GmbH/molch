@@ -49,8 +49,8 @@ void diffie_hellman(
 	static_assert(PRIVATE_KEY_SIZE == crypto_scalarmult_SCALARBYTES, "crypto_scalarmult_SCALARBYTES is not PRIVATE_KEY_BYTES");
 	static_assert(DIFFIE_HELLMAN_SIZE == crypto_generichash_BYTES, "crypto_generichash_bytes is not DIFFIE_HELLMAN_SIZE");
 
-	//set content length of output to 0 (can prevent use on failure)
-	derived_key.content_length = 0;
+	//set size of output to 0 (can prevent use on failure)
+	derived_key.size = 0;
 
 	//check buffer sizes
 	if (!derived_key.fits(DIFFIE_HELLMAN_SIZE)
@@ -80,29 +80,29 @@ void diffie_hellman(
 	}
 
 	//start input to hash with diffie hellman secret
-	if (crypto_generichash_update(hash_state.pointer(), dh_secret.content, dh_secret.content_length) != 0) {
+	if (crypto_generichash_update(hash_state.pointer(), dh_secret.content, dh_secret.size) != 0) {
 		throw MolchException(GENERIC_ERROR, "Failed to add the diffie hellman secret to the hash input.");
 	}
 
 	//add public keys to the input of the hash
 	if (am_i_alice) { //Alice (our_public_key|their_public_key)
 		//add our_public_key to the input of the hash
-		if (crypto_generichash_update(hash_state.pointer(), our_public_key.content, our_public_key.content_length) != 0) {
+		if (crypto_generichash_update(hash_state.pointer(), our_public_key.content, our_public_key.size) != 0) {
 			throw MolchException(GENERIC_ERROR, "Failed to add Alice' public key to the hash input.");
 		}
 
 		//add their_public_key to the input of the hash
-		if (crypto_generichash_update(hash_state.pointer(), their_public_key.content, their_public_key.content_length) != 0) {
+		if (crypto_generichash_update(hash_state.pointer(), their_public_key.content, their_public_key.size) != 0) {
 			throw MolchException(GENERIC_ERROR, "Failed to add Bob's public key to the hash input.");
 		}
 	} else { //Bob (their_public_key|our_public_key)
 		//add their_public_key to the input of the hash
-		if (crypto_generichash_update(hash_state.pointer(), their_public_key.content, their_public_key.content_length) != 0) {
+		if (crypto_generichash_update(hash_state.pointer(), their_public_key.content, their_public_key.size) != 0) {
 			throw MolchException(GENERIC_ERROR, "Failed to add Alice's public key to the hash input.");
 		}
 
 		//add our_public_key to the input of the hash
-		if (crypto_generichash_update(hash_state.pointer(), our_public_key.content, our_public_key.content_length) != 0) {
+		if (crypto_generichash_update(hash_state.pointer(), our_public_key.content, our_public_key.size) != 0) {
 			throw MolchException(GENERIC_ERROR, "Failed to add Bob's public key to the hash input.");
 		}
 	}
@@ -111,7 +111,7 @@ void diffie_hellman(
 	if (crypto_generichash_final(hash_state.pointer(), derived_key.content, DIFFIE_HELLMAN_SIZE) != 0) {
 		throw MolchException(GENERIC_ERROR, "Failed to finalize hash.");
 	}
-	derived_key.content_length = DIFFIE_HELLMAN_SIZE;
+	derived_key.size = DIFFIE_HELLMAN_SIZE;
 }
 
 /*
@@ -140,7 +140,7 @@ void triple_diffie_hellman(
 		const Buffer& their_public_ephemeral,
 		const bool am_i_alice) {
 	//set content length of output to 0 (can prevent use on failure)
-	derived_key.content_length = 0;
+	derived_key.size = 0;
 
 	//check buffer sizes
 	if (!derived_key.fits(DIFFIE_HELLMAN_SIZE)
@@ -233,5 +233,5 @@ void triple_diffie_hellman(
 	if (crypto_generichash_final(hash_state.pointer(), derived_key.content, DIFFIE_HELLMAN_SIZE) != 0) {
 		throw MolchException(GENERIC_ERROR, "Failed to finalize hash");
 	}
-	derived_key.content_length = DIFFIE_HELLMAN_SIZE;
+	derived_key.size = DIFFIE_HELLMAN_SIZE;
 }

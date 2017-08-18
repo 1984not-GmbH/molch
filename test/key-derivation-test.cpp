@@ -37,17 +37,17 @@ int main(void) {
 		}
 
 		Buffer master_key(50, 50);
-		master_key.fillRandom(master_key.getBufferLength());
+		master_key.fillRandom(master_key.capacity());
 		printf("Master key:\n");
 		master_key.printHex(std::cout) << std::endl;
 
 		Buffer subkey1(60, 60);
-		derive_key(subkey1, subkey1.getBufferLength(), master_key, 0);
+		derive_key(subkey1, subkey1.capacity(), master_key, 0);
 		printf("First subkey:\n");
 		subkey1.printHex(std::cout) << std::endl;
 
 		Buffer subkey2(60, 60);
-		derive_key(subkey2, subkey2.getBufferLength(), master_key, 1);
+		derive_key(subkey2, subkey2.capacity(), master_key, 1);
 		printf("Second subkey:\n");
 		subkey2.printHex(std::cout) << std::endl;
 
@@ -56,7 +56,7 @@ int main(void) {
 		}
 
 		Buffer subkey1_copy(60, 60);
-		derive_key(subkey1_copy, subkey1_copy.getBufferLength(), master_key, 0);
+		derive_key(subkey1_copy, subkey1_copy.capacity(), master_key, 0);
 
 		if (subkey1 != subkey1_copy) {
 			throw MolchException(INCORRECT_DATA, "Failed to reproduce subkey.");

@@ -41,7 +41,7 @@ private:
 	void destruct();
 
 public:
-	size_t content_length{0};
+	size_t size{0};
 	unsigned char *content{nullptr};
 
 	Buffer() = default; // does nothing
@@ -49,19 +49,19 @@ public:
 	Buffer(Buffer&& buffer);
 	Buffer(const Buffer& buffer);
 	Buffer(const std::string& string);
-	Buffer(const size_t buffer_length, const size_t content_length);
+	Buffer(const size_t capacity, const size_t size);
 	/*
 	 * initialize a buffer with a pointer to the character array.
 	 * Won't zero out the data automatically!
 	 */
-	Buffer(unsigned char * const content, const size_t buffer_length);
-	Buffer(unsigned char * const content, const size_t buffer_length, const size_t content_length);
+	Buffer(unsigned char * const content, const size_t capacity);
+	Buffer(unsigned char * const content, const size_t capacity, const size_t size);
 	/*
 	 * initialize a buffer with a pointer to an array of const characters.
 	 */
-	Buffer(const unsigned char * const content, const size_t buffer_length);
-	Buffer(const unsigned char * const content, const size_t buffer_length, const size_t content_length);
-	Buffer(const size_t buffer_length, const size_t content_length, void* (*allocator)(size_t), void (*deallocator)(void*));
+	Buffer(const unsigned char * const content, const size_t capacity);
+	Buffer(const unsigned char * const content, const size_t capacity, const size_t size);
+	Buffer(const size_t capacity, const size_t size, void* (*allocator)(size_t), void (*deallocator)(void*));
 	~Buffer();
 
 	//move assignment
@@ -173,7 +173,7 @@ public:
 	void cloneToRaw(unsigned char * const destination, const size_t destination_length) const;
 
 	/*
-	 * Return the content and set the buffer_length to 0 and content_length to 0.
+	 * Return the content and set the capacity to 0 and size to 0.
 	 */
 	unsigned char* release();
 
@@ -185,7 +185,7 @@ public:
 
 	bool isNone() const;
 
-	size_t getBufferLength() const;
+	size_t capacity() const;
 	void setReadOnly(bool readonly);
 
 	bool fits(const size_t size) const;

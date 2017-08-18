@@ -115,11 +115,11 @@ std::unique_ptr<KeyBundle,KeyBundleDeleter> HeaderAndMessageKeyStoreNode::export
 
 	//export the header key
 	this->header_key.cloneToRaw(key_bundle->header_key->key.data, HEADER_KEY_SIZE);
-	key_bundle->header_key->key.len = this->header_key.content_length;
+	key_bundle->header_key->key.len = this->header_key.size;
 
 	//export the message key
 	this->message_key.cloneToRaw(key_bundle->message_key->key.data, MESSAGE_KEY_SIZE);
-	key_bundle->message_key->key.len = this->message_key.content_length;
+	key_bundle->message_key->key.len = this->message_key.size;
 
 
 	//set expiration time

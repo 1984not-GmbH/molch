@@ -61,14 +61,14 @@ int main(void) {
 		std::copy(buffer1_content, buffer1_content + sizeof(buffer1_content), buffer1.content);
 		printf("Here\n");
 
-		std::cout << "Random buffer (" << buffer1.content_length << " Bytes):\n";
+		std::cout << "Random buffer (" << buffer1.size << " Bytes):\n";
 		buffer1.printHex(std::cout) << '\n';
 
 		unsigned char buffer2_content[]{0xde, 0xad, 0xbe, 0xef, 0x00};
 		Buffer buffer2;
 		new (&buffer2) Buffer{buffer2_content, 5, 4};
 
-		printf("Second buffer (%zu Bytes):\n", buffer2.content_length);
+		printf("Second buffer (%zu Bytes):\n", buffer2.size);
 		buffer2.printHex(std::cout) << std::endl;
 
 		Buffer empty(static_cast<size_t>(0), 0);
@@ -77,7 +77,7 @@ int main(void) {
 
 		//copy buffer
 		Buffer buffer3(5, 0);
-		buffer3.copyFrom(0, buffer2, 0, buffer2.content_length);
+		buffer3.copyFrom(0, buffer2, 0, buffer2.size);
 		if (buffer2 != buffer3) {
 			throw MolchException(BUFFER_ERROR, "Failed to copy buffer.");
 		}
@@ -85,7 +85,7 @@ int main(void) {
 
 		bool detected = false;
 		try {
-			buffer3.copyFrom(buffer2.content_length, buffer2, 0, buffer2.content_length);
+			buffer3.copyFrom(buffer2.size, buffer2, 0, buffer2.size);
 		} catch (...) {
 			detected = true;
 		}
@@ -94,8 +94,8 @@ int main(void) {
 		}
 		printf("Detected out of bounds buffer copying.\n");
 
-		buffer3.copyFrom(1, buffer2, 0, buffer2.content_length);
-		if ((buffer3.content[0] != buffer2.content[0]) || (sodium_memcmp(buffer2.content, buffer3.content + 1, buffer2.content_length) != 0)) {
+		buffer3.copyFrom(1, buffer2, 0, buffer2.size);
+		if ((buffer3.content[0] != buffer2.content[0]) || (sodium_memcmp(buffer2.content, buffer3.content + 1, buffer2.size) != 0)) {
 			throw MolchException(BUFFER_ERROR, "Failed to copy buffer.");
 		}
 		printf("Successfully copied buffer.\n");
@@ -152,10 +152,10 @@ int main(void) {
 
 		//create a buffer from a string
 		Buffer string("This is a string!");
-		if (string.content_length != sizeof("This is a string!")) {
+		if (string.size != sizeof("This is a string!")) {
 			throw MolchException(BUFFER_ERROR, "Buffer created from string has incorrect length.");
 		}
-		if (sodium_memcmp(string.content, "This is a string!", string.content_length) != 0) {
+		if (sodium_memcmp(string.content, "This is a string!", string.size) != 0) {
 			throw MolchException(BUFFER_ERROR, "Failed to create buffer from string.");
 		}
 		printf("Successfully created buffer from string.\n");
@@ -166,13 +166,13 @@ int main(void) {
 
 		//check if the buffer was properly cleared
 		size_t i;
-		for (i = 0; i < buffer1.getBufferLength(); i++) {
+		for (i = 0; i < buffer1.capacity(); i++) {
 			if (buffer1.content[i] != '\0') {
 				throw MolchException(BUFFER_ERROR, "Buffer hasn't been erased properly.");
 			}
 		}
 
-		if (buffer1.content_length != 0) {
+		if (buffer1.size != 0) {
 			throw MolchException(BUFFER_ERROR, "The content length of the buffer hasn't been set to zero.");
 		}
 		printf("Buffer successfully erased.\n");
@@ -181,10 +181,10 @@ int main(void) {
 		Buffer random(10, 0);
 		random.fillRandom(5);
 
-		if (random.content_length != 5) {
+		if (random.size != 5) {
 			throw MolchException(BUFFER_ERROR, "Wrong content length.\n");
 		}
-		printf("Buffer with %zu random bytes:\n", random.content_length);
+		printf("Buffer with %zu random bytes:\n", random.size);
 		random.printHex(std::cout);
 
 		detected = false;
@@ -210,11 +210,11 @@ int main(void) {
 
 		//test xor
 		Buffer text("Hello World!");
-		Buffer to_xor(text.content_length, text.content_length);
+		Buffer to_xor(text.size, text.size);
 		to_xor.cloneFrom(text);
 
-		Buffer random2(text.content_length, text.content_length);
-		random2.fillRandom(random2.getBufferLength());
+		Buffer random2(text.size, text.size);
+		random2.fillRandom(random2.capacity());
 
 		//xor random data to xor-buffer
 		to_xor.xorWith(random2);
@@ -237,8 +237,8 @@ int main(void) {
 		unsigned char array[] = "Hello World!\n";
 		Buffer buffer_with_array(array, sizeof(array));
 		if ((buffer_with_array.content != array)
-				|| (buffer_with_array.content_length != sizeof(array))
-				|| (buffer_with_array.getBufferLength() != sizeof(array))) {
+				|| (buffer_with_array.size != sizeof(array))
+				|| (buffer_with_array.capacity() != sizeof(array))) {
 			throw MolchException(BUFFER_ERROR, "Failed to create buffer with existing array.");
 		}
 

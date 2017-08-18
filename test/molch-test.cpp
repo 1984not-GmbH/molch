@@ -152,7 +152,7 @@ int main(void) {
 
 		Buffer backup_key(BACKUP_KEY_SIZE, BACKUP_KEY_SIZE);
 		{
-			return_status status = molch_update_backup_key(backup_key.content, backup_key.content_length);
+			return_status status = molch_update_backup_key(backup_key.content, backup_key.size);
 			on_error {
 				throw MolchException(status);
 			}
@@ -176,15 +176,15 @@ int main(void) {
 			unsigned char *alice_public_prekeys_ptr = nullptr;
 			return_status status = molch_create_user(
 					alice_public_identity.content,
-					alice_public_identity.content_length,
+					alice_public_identity.size,
 					&alice_public_prekeys_ptr,
 					&alice_public_prekeys_length,
 					new_backup_key.content,
-					new_backup_key.content_length,
+					new_backup_key.size,
 					&complete_export_ptr,
 					&complete_export_length,
 					alice_head_on_keyboard.content,
-					alice_head_on_keyboard.content_length);
+					alice_head_on_keyboard.size);
 			on_error {
 				throw MolchException(status);
 			}
@@ -198,7 +198,7 @@ int main(void) {
 
 		backup_key.cloneFrom(new_backup_key);
 
-		printf("Alice public identity (%zu Bytes):\n", alice_public_identity.content_length);
+		printf("Alice public identity (%zu Bytes):\n", alice_public_identity.size);
 		alice_public_identity.printHex(std::cout) << std::endl;
 		if (!complete_export) {
 			throw MolchException(EXPORT_ERROR, "Failed to export the librarys state after creating alice.");
@@ -212,7 +212,7 @@ int main(void) {
 
 		//create a new backup key
 		{
-			return_status status = molch_update_backup_key(backup_key.content, backup_key.content_length);
+			return_status status = molch_update_backup_key(backup_key.content, backup_key.size);
 			on_error {
 				throw MolchException(status);
 			}
@@ -230,22 +230,22 @@ int main(void) {
 			unsigned char *bob_public_prekeys_ptr = nullptr;
 			return_status status = molch_create_user(
 					bob_public_identity.content,
-					bob_public_identity.content_length,
+					bob_public_identity.size,
 					&bob_public_prekeys_ptr,
 					&bob_public_prekeys_length,
 					backup_key.content,
-					backup_key.content_length,
+					backup_key.size,
 					nullptr,
 					nullptr,
 					bob_head_on_keyboard.content,
-					bob_head_on_keyboard.content_length);
+					bob_head_on_keyboard.size);
 			on_error {
 				throw MolchException(status);
 			}
 			bob_public_prekeys.reset(bob_public_prekeys_ptr);
 		}
 
-		printf("Bob public identity (%zu Bytes):\n", bob_public_identity.content_length);
+		printf("Bob public identity (%zu Bytes):\n", bob_public_identity.size);
 		bob_public_identity.printHex(std::cout) << std::endl;
 
 		//check user count
@@ -266,8 +266,8 @@ int main(void) {
 			user_list.reset(user_list_ptr);
 		}
 		if ((user_count != 2) || (user_list_length != user_count * PUBLIC_KEY_SIZE)
-				|| (sodium_memcmp(alice_public_identity.content, user_list.get(), alice_public_identity.content_length) != 0)
-				|| (sodium_memcmp(bob_public_identity.content, user_list.get() + PUBLIC_KEY_SIZE, alice_public_identity.content_length) != 0)) {
+				|| (sodium_memcmp(alice_public_identity.content, user_list.get(), alice_public_identity.size) != 0)
+				|| (sodium_memcmp(bob_public_identity.content, user_list.get() + PUBLIC_KEY_SIZE, alice_public_identity.size) != 0)) {
 			throw MolchException(INCORRECT_DATA, "User list is incorrect.");
 		}
 
@@ -280,17 +280,17 @@ int main(void) {
 			unsigned char * alice_send_packet_ptr = nullptr;
 			return_status status = molch_start_send_conversation(
 					alice_conversation.content,
-					alice_conversation.content_length,
+					alice_conversation.size,
 					&alice_send_packet_ptr,
 					&alice_send_packet_length,
 					alice_public_identity.content,
-					alice_public_identity.content_length,
+					alice_public_identity.size,
 					bob_public_identity.content,
-					bob_public_identity.content_length,
+					bob_public_identity.size,
 					bob_public_prekeys.get(),
 					bob_public_prekeys_length,
 					alice_send_message.content,
-					alice_send_message.content_length,
+					alice_send_message.size,
 					nullptr,
 					nullptr);
 			on_error {
@@ -310,7 +310,7 @@ int main(void) {
 					&conversation_list_length,
 					&number_of_conversations,
 					alice_public_identity.content,
-					alice_public_identity.content_length);
+					alice_public_identity.size);
 			on_error {
 				throw MolchException(status);
 			}
@@ -332,7 +332,7 @@ int main(void) {
 					&alice_public_prekeys_ptr,
 					&alice_public_prekeys_length,
 					alice_public_identity.content,
-					alice_public_identity.content_length);
+					alice_public_identity.size);
 			on_error {
 				throw MolchException(status);
 			}
@@ -348,15 +348,15 @@ int main(void) {
 			unsigned char *bob_public_prekeys_ptr = nullptr;
 			return_status status = molch_start_receive_conversation(
 					bob_conversation.content,
-					bob_conversation.content_length,
+					bob_conversation.size,
 					&bob_public_prekeys_ptr,
 					&bob_public_prekeys_length,
 					&bob_receive_message_ptr,
 					&bob_receive_message_length,
 					bob_public_identity.content,
-					bob_public_identity.content_length,
+					bob_public_identity.size,
 					alice_public_identity.content,
-					alice_public_identity.content_length,
+					alice_public_identity.size,
 					alice_send_packet.get(),
 					alice_send_packet_length,
 					nullptr,
@@ -369,9 +369,9 @@ int main(void) {
 		}
 
 		//compare sent and received messages
-		printf("sent (Alice): %.*s\n", static_cast<int>(alice_send_message.content_length), alice_send_message.content);
+		printf("sent (Alice): %.*s\n", static_cast<int>(alice_send_message.size), alice_send_message.content);
 		printf("received (Bob): %.*s\n", static_cast<int>(bob_receive_message_length), bob_receive_message.get());
-		if ((alice_send_message.content_length != bob_receive_message_length)
+		if ((alice_send_message.size != bob_receive_message_length)
 				|| (sodium_memcmp(alice_send_message.content, bob_receive_message.get(), bob_receive_message_length) != 0)) {
 			throw MolchException(GENERIC_ERROR, "Incorrect message received.");
 		}
@@ -389,9 +389,9 @@ int main(void) {
 					&bob_send_packet_ptr,
 					&bob_send_packet_length,
 					bob_conversation.content,
-					bob_conversation.content_length,
+					bob_conversation.size,
 					bob_send_message.content,
-					bob_send_message.content_length,
+					bob_send_message.size,
 					&conversation_export_ptr,
 					&conversation_export_length);
 			on_error {
@@ -423,7 +423,7 @@ int main(void) {
 					&alice_receive_message_number,
 					&alice_previous_receive_message_number,
 					alice_conversation.content,
-					alice_conversation.content_length,
+					alice_conversation.size,
 					bob_send_packet.get(),
 					bob_send_packet_length,
 					nullptr,
@@ -439,9 +439,9 @@ int main(void) {
 		}
 
 		//compare sent and received messages
-		printf("sent (Bob): %.*s\n", static_cast<int>(bob_send_message.content_length), bob_send_message.content);
+		printf("sent (Bob): %.*s\n", static_cast<int>(bob_send_message.size), bob_send_message.content);
 		printf("received (Alice): %.*s\n", static_cast<int>(alice_receive_message_length), alice_receive_message.get());
-		if ((bob_send_message.content_length != alice_receive_message_length)
+		if ((bob_send_message.size != alice_receive_message_length)
 				|| (sodium_memcmp(bob_send_message.content, alice_receive_message.get(), alice_receive_message_length) != 0)) {
 			throw MolchException(GENERIC_ERROR, "Incorrect message received.");
 		}
@@ -464,17 +464,17 @@ int main(void) {
 		{
 			return_status status = molch_import(
 					new_backup_key.content,
-					new_backup_key.content_length,
+					new_backup_key.size,
 					backup.get(),
 					backup_length,
 					backup_key.content,
-					backup_key.content_length);
+					backup_key.size);
 			on_error {
 				throw MolchException(status);
 			}
 		}
 
-		auto decrypted_backup = decrypt_full_backup(backup.get(), backup_length, backup_key.content, backup_key.content_length);
+		auto decrypted_backup = decrypt_full_backup(backup.get(), backup_length, backup_key.content, backup_key.size);
 
 		//compare the keys
 		if (backup_key == new_backup_key) {
@@ -496,7 +496,7 @@ int main(void) {
 			imported_backup.reset(imported_backup_ptr);
 		}
 
-		auto decrypted_imported_backup = decrypt_full_backup(imported_backup.get(), imported_backup_length, backup_key.content, backup_key.content_length);
+		auto decrypted_imported_backup = decrypt_full_backup(imported_backup.get(), imported_backup_length, backup_key.content, backup_key.size);
 
 		//compare
 		if (*decrypted_backup != *decrypted_imported_backup) {
@@ -510,7 +510,7 @@ int main(void) {
 					&backup_ptr,
 					&backup_length,
 					alice_conversation.content,
-					alice_conversation.content_length);
+					alice_conversation.size);
 			on_error {
 				throw MolchException(status);
 			}
@@ -523,11 +523,11 @@ int main(void) {
 		{
 			return_status status = molch_conversation_import(
 					new_backup_key.content,
-					new_backup_key.content_length,
+					new_backup_key.size,
 					backup.get(),
 					backup_length,
 					backup_key.content,
-					backup_key.content_length);
+					backup_key.size);
 			on_error {
 				throw MolchException(status);
 			}
@@ -537,7 +537,7 @@ int main(void) {
 				backup.get(),
 				backup_length,
 				backup_key.content,
-				backup_key.content_length);
+				backup_key.size);
 
 		//copy the backup key
 		backup_key.cloneFrom(new_backup_key);
@@ -550,7 +550,7 @@ int main(void) {
 					&imported_backup_ptr,
 					&imported_backup_length,
 					alice_conversation.content,
-					alice_conversation.content_length);
+					alice_conversation.size);
 			on_error {
 				throw MolchException(status);
 			}
@@ -561,7 +561,7 @@ int main(void) {
 				imported_backup.get(),
 				imported_backup_length,
 				backup_key.content,
-				backup_key.content_length);
+				backup_key.size);
 
 		//compare
 		if (*decrypted_conversation_backup != *decrypted_imported_conversation_backup) {
@@ -570,13 +570,13 @@ int main(void) {
 
 		//destroy the conversations
 		{
-			return_status status = molch_end_conversation(alice_conversation.content, alice_conversation.content_length, nullptr, nullptr);
+			return_status status = molch_end_conversation(alice_conversation.content, alice_conversation.size, nullptr, nullptr);
 			on_error {
 				throw MolchException(status);
 			}
 		}
 		{
-			return_status status = molch_end_conversation(bob_conversation.content, bob_conversation.content_length, nullptr, nullptr);
+			return_status status = molch_end_conversation(bob_conversation.content, bob_conversation.size, nullptr, nullptr);
 			on_error {
 				throw MolchException(status);
 			}
@@ -592,7 +592,7 @@ int main(void) {
 					&conversation_list_length,
 					&number_of_conversations,
 					alice_public_identity.content,
-					alice_public_identity.content_length);
+					alice_public_identity.size);
 			on_error {
 				throw MolchException(status);
 			}

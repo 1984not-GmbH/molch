@@ -67,7 +67,7 @@ static void protobuf_export(
 			size_t export_size = prekey__get_packed_size(keypairs[i]);
 			key_buffers.emplace_back(export_size, 0);
 
-			key_buffers[i].content_length = prekey__pack(keypairs[i], key_buffers[i].content);
+			key_buffers[i].size = prekey__pack(keypairs[i], key_buffers[i].content);
 		}
 
 		//export all the deprecated keypairs
@@ -77,7 +77,7 @@ static void protobuf_export(
 			size_t export_size = prekey__get_packed_size(deprecated_keypairs[i]);
 			deprecated_key_buffers.emplace_back(export_size, 0);
 
-			deprecated_key_buffers[i].content_length = prekey__pack(deprecated_keypairs[i], deprecated_key_buffers[i].content);
+			deprecated_key_buffers[i].size = prekey__pack(deprecated_keypairs[i], deprecated_key_buffers[i].content);
 		}
 	} catch (const std::exception& exception) {
 		free_prekey_array(keypairs, keypairs_size);
@@ -101,7 +101,7 @@ static void protobuf_import(
 		auto keypair = std::unique_ptr<Prekey,PrekeyDeleter>(
 			prekey__unpack(
 				&protobuf_c_allocators,
-				keypair_buffer.content_length,
+				keypair_buffer.size,
 				keypair_buffer.content));
 		if (!keypair) {
 			throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack prekey from protobuf.");
@@ -117,7 +117,7 @@ static void protobuf_import(
 		auto keypair = std::unique_ptr<Prekey,PrekeyDeleter>(
 			prekey__unpack(
 				&protobuf_c_allocators,
-				keypair_buffer.content_length,
+				keypair_buffer.size,
 				keypair_buffer.content));
 		if (!keypair) {
 			throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack deprecated prekey from protobuf.");

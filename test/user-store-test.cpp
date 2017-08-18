@@ -57,7 +57,7 @@ static std::vector<Buffer> protobuf_export(UserStore& store) {
 		for (size_t i = 0; i < length; i++) {
 			size_t unpacked_size = user__get_packed_size(users[i]);
 			export_buffers.push_back(Buffer(unpacked_size, 0));
-			export_buffers.back().content_length = user__pack(users[i], export_buffers.back().content);
+			export_buffers.back().size = user__pack(users[i], export_buffers.back().content);
 		}
 	} catch (const std::exception& exception) {
 		free_user_array(users, length);
@@ -75,7 +75,7 @@ UserStore protobuf_import(const std::vector<Buffer> buffers) {
 	//unpack all the conversations
 	for (const auto& buffer : buffers) {
 		users.push_back(std::unique_ptr<User,UserDeleter>(
-					user__unpack(&protobuf_c_allocators, buffer.content_length, buffer.content)));
+					user__unpack(&protobuf_c_allocators, buffer.size, buffer.content)));
 		if (!users.back()) {
 			throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack user from protobuf.");
 		}
@@ -128,7 +128,7 @@ int main(void) {
 
 		//check the content
 		auto list = store.list();
-		if (list->content_length != 0) {
+		if (list->size != 0) {
 			throw MolchException(INCORRECT_DATA, "List of users is not empty.");
 		}
 		list.reset();

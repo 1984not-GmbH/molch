@@ -33,8 +33,8 @@
 MasterKeys& MasterKeys::move(MasterKeys&& master_keys) {
 	//move the private keys
 	this->private_keys = std::move(master_keys.private_keys);
-	this->private_identity_key = Buffer{this->private_keys->identity_key, master_keys.private_identity_key.content_length, sizeof(this->private_keys->identity_key)};
-	this->private_signing_key = Buffer{this->private_keys->signing_key, master_keys.private_signing_key.content_length, sizeof(this->private_keys->signing_key)};
+	this->private_identity_key = Buffer{this->private_keys->identity_key, master_keys.private_identity_key.size, sizeof(this->private_keys->identity_key)};
+	this->private_signing_key = Buffer{this->private_keys->signing_key, master_keys.private_signing_key.size, sizeof(this->private_keys->signing_key)};
 
 	this->public_identity_key.cloneFrom(master_keys.public_identity_key);
 	this->public_signing_key.cloneFrom(master_keys.public_signing_key);
@@ -99,7 +99,7 @@ void MasterKeys::generate(const Buffer* low_entropy_seed) {
 				crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES,
 				&sodium_malloc,
 				&sodium_free);
-		spiced_random(high_entropy_seed, *low_entropy_seed, high_entropy_seed.getBufferLength());
+		spiced_random(high_entropy_seed, *low_entropy_seed, high_entropy_seed.capacity());
 
 		//generate the signing keypair
 		int status = crypto_sign_seed_keypair(
@@ -109,8 +109,8 @@ void MasterKeys::generate(const Buffer* low_entropy_seed) {
 		if (status != 0) {
 			throw MolchException(KEYGENERATION_FAILED, "Failed to generate signing keypair with seed.");
 		}
-		this->public_signing_key.content_length = PUBLIC_MASTER_KEY_SIZE;
-		this->private_signing_key.content_length = PRIVATE_MASTER_KEY_SIZE;
+		this->public_signing_key.size = PUBLIC_MASTER_KEY_SIZE;
+		this->private_signing_key.size = PRIVATE_MASTER_KEY_SIZE;
 
 		//generate the identity keypair
 		status = crypto_box_seed_keypair(
@@ -120,8 +120,8 @@ void MasterKeys::generate(const Buffer* low_entropy_seed) {
 		if (status != 0) {
 			throw MolchException(KEYGENERATION_FAILED, "Failed to generate identity keypair with seed.");
 		}
-		this->public_identity_key.content_length = PUBLIC_KEY_SIZE;
-		this->private_identity_key.content_length = PRIVATE_KEY_SIZE;
+		this->public_identity_key.size = PUBLIC_KEY_SIZE;
+		this->private_identity_key.size = PRIVATE_KEY_SIZE;
 	} else { //don't use external seed
 		//generate the signing keypair
 		int status = crypto_sign_keypair(
@@ -130,8 +130,8 @@ void MasterKeys::generate(const Buffer* low_entropy_seed) {
 		if (status != 0) {
 			throw MolchException(KEYGENERATION_FAILED, "Failed to generate signing keypair.");
 		}
-		this->public_signing_key.content_length = PUBLIC_MASTER_KEY_SIZE;
-		this->private_signing_key.content_length = PRIVATE_MASTER_KEY_SIZE;
+		this->public_signing_key.size = PUBLIC_MASTER_KEY_SIZE;
+		this->private_signing_key.size = PRIVATE_MASTER_KEY_SIZE;
 
 		//generate the identity keypair
 		status = crypto_box_keypair(
@@ -140,8 +140,8 @@ void MasterKeys::generate(const Buffer* low_entropy_seed) {
 		if (status != 0) {
 			throw MolchException(KEYGENERATION_FAILED, "Failed to generate identity keypair.");
 		}
-		this->public_identity_key.content_length = PUBLIC_KEY_SIZE;
-		this->private_identity_key.content_length = PRIVATE_KEY_SIZE;
+		this->public_identity_key.size = PUBLIC_KEY_SIZE;
+		this->private_identity_key.size = PRIVATE_KEY_SIZE;
 	}
 }
 
@@ -175,11 +175,11 @@ void MasterKeys::getIdentityKey(Buffer& public_identity_key) const {
 void MasterKeys::sign(
 		const Buffer& data,
 		Buffer& signed_data) const { //output, length of data + SIGNATURE_SIZE
-	if (!signed_data.fits(data.content_length + SIGNATURE_SIZE)) {
+	if (!signed_data.fits(data.size + SIGNATURE_SIZE)) {
 		throw MolchException(INVALID_INPUT, "MasterKeys::sign: Output buffer is too short.");
 	}
 
-	signed_data.content_length = 0;
+	signed_data.size = 0;
 
 	Unlocker unlocker(*this);
 	unsigned long long signed_message_length;
@@ -187,13 +187,13 @@ void MasterKeys::sign(
 		signed_data.content,
 		&signed_message_length,
 		data.content,
-		data.content_length,
+		data.size,
 		this->private_signing_key.content);
 	if (status_int != 0) {
 		throw MolchException(SIGN_ERROR, "Failed to sign message.");
 	}
 
-	signed_data.content_length = static_cast<size_t>(signed_message_length);
+	signed_data.size = static_cast<size_t>(signed_message_length);
 }
 
 void MasterKeys::exportProtobuf(

@@ -80,7 +80,7 @@ PrekeyStoreNode::PrekeyStoreNode(const Prekey& keypair) {
 		if (crypto_scalarmult_base(this->public_key.content, this->private_key.content) != 0) {
 			throw MolchException(KEYDERIVATION_FAILED, "Failed to derive public prekey from private one.");
 		}
-		this->public_key.content_length = PUBLIC_KEY_SIZE;
+		this->public_key.size = PUBLIC_KEY_SIZE;
 	} else if (keypair.public_key->key.len != PUBLIC_KEY_SIZE) {
 		throw MolchException(PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a public key.");
 	} else {
@@ -132,8 +132,8 @@ void PrekeyStoreNode::generate() {
 	if (status != 0) {
 		throw MolchException(KEYGENERATION_FAILED, "Failed to generate prekey pair.");
 	}
-	this->public_key.content_length = PUBLIC_KEY_SIZE;
-	this->private_key.content_length = PRIVATE_KEY_SIZE;
+	this->public_key.size = PUBLIC_KEY_SIZE;
+	this->private_key.size = PRIVATE_KEY_SIZE;
 	this->expiration_date = time(nullptr) + PREKEY_EXPIRATION_TIME;
 }
 
@@ -257,7 +257,7 @@ void PrekeyStore::getPrekey(const Buffer& public_key, Buffer& private_key) {
 
 	auto found_deprecated_prekey = std::find_if(std::cbegin(this->deprecated_prekeys), std::cend(this->deprecated_prekeys), key_comparer);
 	if (found_deprecated_prekey == this->deprecated_prekeys.end()) {
-		private_key.content_length = 0;
+		private_key.size = 0;
 		throw MolchException(NOT_FOUND, "No matching prekey found.");
 	}
 

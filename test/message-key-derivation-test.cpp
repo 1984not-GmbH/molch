@@ -38,10 +38,10 @@ int main(void) {
 
 		//create random chain key
 		Buffer chain_key(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-		chain_key.fillRandom(chain_key.getBufferLength());
+		chain_key.fillRandom(chain_key.capacity());
 
 		//print first chain key
-		printf("Chain key (%zu Bytes):\n", chain_key.content_length);
+		printf("Chain key (%zu Bytes):\n", chain_key.size);
 		chain_key.printHex(std::cout) << std::endl;
 
 		//derive message key from chain key
@@ -50,7 +50,7 @@ int main(void) {
 		chain_key.clear();
 
 		//print message key
-		printf("Message key (%zu Bytes):\n", message_key.content_length);
+		printf("Message key (%zu Bytes):\n", message_key.size);
 		message_key.printHex(std::cout) << std::endl;
 	} catch (const MolchException& exception) {
 		exception.print(std::cerr) << std::endl;

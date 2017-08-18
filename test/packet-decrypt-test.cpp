@@ -91,7 +91,7 @@ int main(void) {
 		}
 
 
-		if (decrypted_header->content_length != header.content_length) {
+		if (decrypted_header->size != header.size) {
 			throw MolchException(INVALID_VALUE, "Decrypted header isn't of the same length!");
 		}
 		printf("Decrypted header has the same length.\n");
@@ -102,7 +102,7 @@ int main(void) {
 		}
 		printf("Decrypted header matches.\n\n");
 
-		if (!decrypted_message->contains(message.content_length)) {
+		if (!decrypted_message->contains(message.size)) {
 			throw MolchException(INVALID_VALUE, "Decrypted message isn't of the same length.");
 		}
 		printf("Decrypted message has the same length.\n");
@@ -163,7 +163,7 @@ int main(void) {
 			throw MolchException(DATA_FETCH_ERROR, "Failed to retrieve metadata.");
 		}
 
-		if (!decrypted_header->contains(header.content_length)) {
+		if (!decrypted_header->contains(header.size)) {
 			throw MolchException(INVALID_VALUE, "Decrypted header isn't of the same length.");
 		}
 		printf("Decrypted header has the same length!\n");
@@ -174,7 +174,7 @@ int main(void) {
 		}
 		printf("Decrypted header matches!\n");
 
-		if (!decrypted_message->contains(message.content_length)) {
+		if (!decrypted_message->contains(message.size)) {
 			throw MolchException(INVALID_VALUE, "Decrypted message isn't of the same length.");
 		}
 		printf("Decrypted message has the same length.\n");

@@ -58,7 +58,7 @@ static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
 		for (size_t i = 0; i < length; i++) {
 			size_t unpacked_size = conversation__get_packed_size(conversations[i]);
 			export_buffers.emplace_back(unpacked_size, 0);
-			export_buffers.back().content_length = conversation__pack(conversations[i], export_buffers.back().content);
+			export_buffers.back().size = conversation__pack(conversations[i], export_buffers.back().content);
 		}
 	} catch (const std::exception& exception) {
 		free_conversation_array(conversations, length);
@@ -76,7 +76,7 @@ ConversationStore protobuf_import(const std::vector<Buffer> buffers) {
 	//unpack all the conversations
 	for (const auto& buffer : buffers) {
 		conversations.emplace_back(
-					conversation__unpack(&protobuf_c_allocators, buffer.content_length, buffer.content));
+					conversation__unpack(&protobuf_c_allocators, buffer.size, buffer.content));
 		if (!conversations.back()) {
 			throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
 		}
@@ -114,10 +114,10 @@ static void test_add_conversation(ConversationStore& store) {
 	}
 
 	Buffer their_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	their_public_identity.fillRandom(their_public_identity.getBufferLength());
+	their_public_identity.fillRandom(their_public_identity.capacity());
 
 	Buffer their_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	their_public_ephemeral.fillRandom(their_public_ephemeral.getBufferLength());
+	their_public_ephemeral.fillRandom(their_public_ephemeral.capacity());
 
 	//create the conversation manually
 	ConversationT conversation(
@@ -176,7 +176,7 @@ int main(void) {
 
 		//test list export feature
 		auto conversation_list = store.list();
-		if (!conversation_list || (conversation_list->content_length != (CONVERSATION_ID_SIZE * store.size()))) {
+		if (!conversation_list || (conversation_list->size != (CONVERSATION_ID_SIZE * store.size()))) {
 			throw MolchException(DATA_FETCH_ERROR, "Failed to get list of conversations.");
 		}
 
@@ -184,7 +184,7 @@ int main(void) {
 		Buffer first_id;
 		Buffer middle_id;
 		Buffer last_id;
-		for (size_t i = 0; i < (conversation_list->content_length / CONVERSATION_ID_SIZE); i++) {
+		for (size_t i = 0; i < (conversation_list->size / CONVERSATION_ID_SIZE); i++) {
 			Buffer current_id(conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
 			auto found_node = store.find(current_id);
 			if (found_node == nullptr) {

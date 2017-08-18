@@ -192,7 +192,7 @@ std::unique_ptr<Buffer> UserStore::list() {
 			CONVERSATION_ID_SIZE * index,
 			user.public_signing_key,
 			0,
-			user.public_signing_key.content_length);
+			user.public_signing_key.size);
 	}
 
 	return list;

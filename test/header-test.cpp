@@ -38,8 +38,8 @@ int main(void) {
 
 		//create ephemeral key
 		Buffer our_public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		our_public_ephemeral_key.fillRandom(our_public_ephemeral_key.content_length);
-		printf("Our public ephemeral key (%zu Bytes):\n", our_public_ephemeral_key.content_length);
+		our_public_ephemeral_key.fillRandom(our_public_ephemeral_key.size);
+		printf("Our public ephemeral key (%zu Bytes):\n", our_public_ephemeral_key.size);
 		our_public_ephemeral_key.printHex(std::cout);
 
 		//message numbers
@@ -56,7 +56,7 @@ int main(void) {
 				previous_message_number);
 
 		//print the header
-		printf("Header (%zu Bytes):\n", header->content_length);
+		printf("Header (%zu Bytes):\n", header->size);
 		header->printHex(std::cout);
 		putchar('\n');
 
@@ -70,7 +70,7 @@ int main(void) {
 				extracted_previous_message_number,
 				*header);
 
-		printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key.content_length);
+		printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key.size);
 		extracted_public_ephemeral_key.printHex(std::cout);
 		printf("Extracted message number: %u\n", extracted_message_number);
 		printf("Extracted previous message number: %u\n", extracted_previous_message_number);

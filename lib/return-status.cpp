@@ -266,43 +266,43 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 
 				int written = 0;
 				written = snprintf(
-					reinterpret_cast<char*>(output->content + output->content_length), //current position in output
-					output->getBufferLength() - output->content_length, //remaining length of output
+					reinterpret_cast<char*>(output->content + output->size), //current position in output
+					output->capacity() - output->size, //remaining length of output
 					"%.3zu: ",
 					i);
 				if (written != (sizeof("XXX: ") - 1)) {
 					throw MolchException(INCORRECT_BUFFER_SIZE, "Failed to write to output buffer, probably too short.");
 				}
-				output->content_length += static_cast<unsigned int>(written);
+				output->size += static_cast<unsigned int>(written);
 
 				output->copyFromRaw(
-						output->content_length,
+						output->size,
 						reinterpret_cast<const unsigned char*>(return_status_get_name(current_error->status)),
 						0,
 						strlen(return_status_get_name(current_error->status)));
 
 				output->copyFromRaw(
-						output->content_length,
+						output->size,
 						reinterpret_cast<const unsigned char*>(", "),
 						0,
 						sizeof(", ") - 1);
 
 				if (current_error->message == nullptr) {
 					output->copyFromRaw(
-							output->content_length,
+							output->size,
 							null_string,
 							0,
 							sizeof(null_string) - 1);
 				} else {
 					output->copyFromRaw(
-							output->content_length,
+							output->size,
 							reinterpret_cast<const unsigned char*>(current_error->message),
 							0,
 							strlen(current_error->message));
 				}
 
 				output->copyFromRaw(
-						output->content_length,
+						output->size,
 						reinterpret_cast<const unsigned char*>("\n"),
 						0,
 						1);
@@ -310,7 +310,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 		}
 
 		output->copyFromRaw(
-				output->content_length,
+				output->size,
 				reinterpret_cast<const unsigned char*>(""),
 				0,
 				sizeof(""));
@@ -330,7 +330,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 
 	char *output_string = nullptr;
 	if (length != nullptr) {
-		*length = output->content_length;
+		*length = output->size;
 	}
 	output_string = reinterpret_cast<char*>(output->release());
 

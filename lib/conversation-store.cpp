@@ -132,7 +132,7 @@ std::unique_ptr<Buffer> ConversationStore::list() const {
 			CONVERSATION_ID_SIZE * index,
 			conversation.id,
 			0,
-			conversation.id.content_length);
+			conversation.id.size);
 	}
 
 	return list;

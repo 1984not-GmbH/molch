@@ -49,13 +49,13 @@ void generate_and_print_keypair(
 			throw MolchException(KEYGENERATION_FAILED, "Failed to generate keypair.");
 		}
 	}
-	public_key.content_length = crypto_box_PUBLICKEYBYTES;
-	private_key.content_length = crypto_box_SECRETKEYBYTES;
+	public_key.size = crypto_box_PUBLICKEYBYTES;
+	private_key.size = crypto_box_SECRETKEYBYTES;
 
 	//print keypair
-	std::cout << name << "'s public " << type << " key (" << public_key.content_length << ":" << std::endl;
+	std::cout << name << "'s public " << type << " key (" << public_key.size << ":" << std::endl;
 	public_key.printHex(std::cout);
 	putchar('\n');
-	std::cout << std::endl << name << "'s private " << type << " key (" << private_key.content_length << ":" << std::endl;
+	std::cout << std::endl << name << "'s private " << type << " key (" << private_key.size << ":" << std::endl;
 	private_key.printHex(std::cout) << std::endl;
 }

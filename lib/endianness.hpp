@@ -65,7 +65,7 @@ void to_big_endian(IntegerType integer, Buffer& output) {
  */
 template <typename IntegerType>
 void from_big_endian(IntegerType& integer, Buffer& buffer) {
-	if ((buffer.content_length != sizeof(IntegerType))) {
+	if (!buffer.contains(sizeof(IntegerType))) {
 		throw MolchException(INVALID_INPUT, "Invalid input to from_big_endian.");
 	}
 
