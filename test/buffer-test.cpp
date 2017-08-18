@@ -19,365 +19,266 @@
  */
 
 #include <algorithm>
-#include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
 #include <iostream>
+#include <exception>
 
 #include "../lib/buffer.hpp"
 #include "../lib/destroyers.hpp"
+#include "../lib/molch-exception.hpp"
 #include "utils.hpp"
 
-int main(void) noexcept {
-	int status = EXIT_SUCCESS;
-
-	//test comparison function
-	Buffer string1("1234");
-	Buffer string2("1234");
-	Buffer string3("2234");
-	Buffer string4("12345");
-	Buffer *buffer1 = NULL;
-	Buffer *buffer2 = NULL;
-	Buffer *buffer3 = NULL;
-	Buffer *empty3 = NULL;
-	Buffer *random = NULL;
-	Buffer *random2 = NULL;
-	Buffer *to_xor = NULL;
-	Buffer *character_buffer = NULL;
-	Buffer *heap_buffer = NULL;
-	Buffer *custom_allocated_empty_buffer = NULL;
-	Buffer *custom_allocated = NULL;
-
-	if (sodium_init() == -1) {
-		fprintf(stderr, "ERROR: Failed to initialize libsodium!\n");
-		goto fail;
-	}
-
-	if ((string1.compare(&string2) != 0)
-			|| (string1.compare(&string3) != -1)
-			|| (string1.compare(&string4) != -1)) {
-		fprintf(stderr, "ERROR: buffer_compare doesn't work as expected\n");
-
-		goto fail;
-	}
-
-	if ((string1.comparePartial(0, &string4, 0, 4) != 0)
-			|| (string1.comparePartial(2, &string3, 2, 2) != 0)) {
-		fprintf(stderr, "ERROR: buffer_compare_partial doesn't work as expected\n");
-		goto fail;
-	}
-	printf("Successfully tested buffer comparison ...\n");
-
-	//test heap allocated buffers
-	heap_buffer = Buffer::create(10, 0);
-	heap_buffer->destroy();
-
-	//zero length heap buffer
-	heap_buffer = Buffer::create(0, 0);
-	heap_buffer->destroy();
-
-	//test buffer with custom allocator
-	{
-		Buffer custom(10, 2, &sodium_malloc, &sodium_free);
-		if (!custom.isValid()) {
-			fprintf(stderr, "Buffer with custom allocator is invalid.\n");
-			goto fail;
+int main(void) {
+	try {
+		if (sodium_init() == -1) {
+			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
 		}
-	}
 
-	//create a new buffer
-	buffer1 = Buffer::create(14, 10);
-	unsigned char buffer1_content[10];
-	randombytes_buf(buffer1_content, sizeof(buffer1_content));
-	std::copy(buffer1_content, buffer1_content + sizeof(buffer1_content), buffer1->content);
-	printf("Here\n");
+		Buffer string1("1234");
+		Buffer string2("1234");
+		Buffer string3("2234");
+		Buffer string4("12345");
+		if ((string1 != string2)
+				|| (string1 == string3)
+				|| (string1 == string4)) {
+			throw MolchException(BUFFER_ERROR, "buffer_compare doesn't work as expected.");
+		}
 
-	printf("Random buffer (%zu Bytes):\n", buffer1->content_length);
-	std::cout << buffer1->toHex();
-	putchar('\n');
+		if ((string1.comparePartial(0, string4, 0, 4) != 0)
+				|| (string1.comparePartial(2, string3, 2, 2) != 0)) {
+			throw MolchException(BUFFER_ERROR, "buffer_compare_partial doesn't work as expected.");
+		}
+		std::cout << "Successfully tested buffer comparison ..." << std::endl;
 
-	//make second buffer (from pointer)
-	buffer2 = reinterpret_cast<Buffer*>(malloc(sizeof(Buffer)));
-	new (buffer2) Buffer{reinterpret_cast<unsigned char*>(malloc(5)), 5, 4};
-	buffer2->content[0] = 0xde;
-	buffer2->content[1] = 0xad;
-	buffer2->content[2] = 0xbe;
-	buffer2->content[3] = 0xef;
+		//test buffer with custom allocator
+		Buffer custom(10, 2, &sodium_malloc, &sodium_free);
 
-	printf("Second buffer (%zu Bytes):\n", buffer2->content_length);
-	std::cout << buffer2->toHex();
-	putchar('\n');
+		//create a new buffer
+		Buffer buffer1(14, 10);
+		unsigned char buffer1_content[10];
+		randombytes_buf(buffer1_content, sizeof(buffer1_content));
+		std::copy(buffer1_content, buffer1_content + sizeof(buffer1_content), buffer1.content);
+		printf("Here\n");
 
-	{
+		std::cout << "Random buffer (" << buffer1.content_length << " Bytes):\n";
+		buffer1.printHex(std::cout) << '\n';
+
+		unsigned char buffer2_content[]{0xde, 0xad, 0xbe, 0xef, 0x00};
+		Buffer buffer2;
+		new (&buffer2) Buffer{buffer2_content, 5, 4};
+
+		printf("Second buffer (%zu Bytes):\n", buffer2.content_length);
+		buffer2.printHex(std::cout) << std::endl;
+
 		Buffer empty(static_cast<size_t>(0), 0);
 		Buffer empty2(static_cast<size_t>(0), 0);
-		status = empty2.cloneFrom(&empty);
-		if (status != 0) {
-			fprintf(stderr, "ERROR: Failed to clone empty buffer.\n");
-			goto fail;
+		empty2.cloneFrom(empty);
+
+		//copy buffer
+		Buffer buffer3(5, 0);
+		buffer3.copyFrom(0, buffer2, 0, buffer2.content_length);
+		if (buffer2 != buffer3) {
+			throw MolchException(BUFFER_ERROR, "Failed to copy buffer.");
 		}
-	}
+		printf("Buffer successfully copied.\n");
 
-	//copy buffer
-	buffer3 = Buffer::create(5,0);
-	status = buffer3->copyFrom(0, buffer2, 0, buffer2->content_length);
-	if ((status != 0) || (buffer2->compare(buffer3) != 0)) {
-		fprintf(stderr, "ERROR: Failed to copy buffer. (%i)\n", status);
-		goto fail;
-	}
-	printf("Buffer successfully copied.\n");
+		bool detected = false;
+		try {
+			buffer3.copyFrom(buffer2.content_length, buffer2, 0, buffer2.content_length);
+		} catch (...) {
+			detected = true;
+		}
+		if (!detected) {
+			throw MolchException(GENERIC_ERROR, "Failed to detect out of bounds buffer copying.");
+		}
+		printf("Detected out of bounds buffer copying.\n");
 
-	status = buffer3->copyFrom(buffer2->content_length, buffer2, 0, buffer2->content_length);
-	if (status == 0) {
-		fprintf(stderr, "ERROR: Copied buffer that out of bounds.\n");
-		goto fail;
-	}
-	printf("Detected out of bounds buffer copying.\n");
+		buffer3.copyFrom(1, buffer2, 0, buffer2.content_length);
+		if ((buffer3.content[0] != buffer2.content[0]) || (sodium_memcmp(buffer2.content, buffer3.content + 1, buffer2.content_length) != 0)) {
+			throw MolchException(BUFFER_ERROR, "Failed to copy buffer.");
+		}
+		printf("Successfully copied buffer.\n");
 
-	status = buffer3->copyFrom(1, buffer2, 0, buffer2->content_length);
-	if ((status != 0) || (buffer3->content[0] != buffer2->content[0]) || (sodium_memcmp(buffer2->content, buffer3->content + 1, buffer2->content_length) != 0)) {
-		fprintf(stderr, "ERROR: Failed to copy buffer. (%i)\n", status);
-		goto fail;
-	}
-	printf("Successfully copied buffer.\n");
-
-	//copy to a raw array
-	{
+		//copy to a raw array
 		unsigned char raw_array[4];
-		status = buffer1->copyToRaw(
+		buffer1.copyToRaw(
 				raw_array, //destination
 				0, //destination offset
 				1, //source offset
 				4); //length
-		if ((status != 0) || (sodium_memcmp(raw_array, buffer1->content + 1, 4) != 0)) {
-			fprintf(stderr, "ERROR: Failed to copy buffer to raw array. (%i)\n", status);
-			goto fail;
+		if (sodium_memcmp(raw_array, buffer1.content + 1, 4) != 0) {
+			throw MolchException(BUFFER_ERROR, "Failed to copy buffer to raw array.");
 		}
 		printf("Successfully copied buffer to raw array.\n");
 
-		status = buffer2->copyToRaw(
-				raw_array,
-				0,
-				3,
-				4);
-		if (status == 0) {
-			fprintf(stderr, "ERROR: Failed to detect out of bounds read!\n");
-			goto fail;
+		detected = false;
+		try {
+			buffer2.copyToRaw(raw_array, 0, 3, 4);
+		} catch (...) {
+			detected = true;
+		}
+		if (!detected) {
+			throw MolchException(GENERIC_ERROR, "Failed to detect out of bounds read.");
 		}
 		printf("Successfully detected out of bounds read.\n");
-	}
 
-	//copy from raw array
-	{
+		//copy from raw array
 		unsigned char heeelo[14] = "Hello World!\n";
-		status = buffer1->copyFromRaw(
+		buffer1.copyFromRaw(
 				0, //offset
 				heeelo, //source
 				0, //offset
 				sizeof(heeelo)); //length
-		if ((status != 0) || (sodium_memcmp(heeelo, buffer1->content, sizeof(heeelo)))) {
-			fprintf(stderr, "ERROR: Failed to copy from raw array to buffer. (%i)\n", status);
-			goto fail;
+		if (sodium_memcmp(heeelo, buffer1.content, sizeof(heeelo))) {
+			throw MolchException(BUFFER_ERROR, "Failed to copy from raw array to buffer.");
 		}
 		printf("Successfully copied raw array to buffer.\n");
 
-		status = buffer1->copyFromRaw(
-				1,
-				heeelo,
-				0,
-				sizeof(heeelo));
-		if (status == 0) {
-			fprintf(stderr, "ERROR: Failed to detect out of bounds read.\n");
-			goto fail;
+		detected = false;
+		try {
+			buffer1.copyFromRaw(
+					1,
+					heeelo,
+					0,
+					sizeof(heeelo));
+		} catch (...) {
+			detected = true;
+		}
+		if (!detected) {
+			throw MolchException(GENERIC_ERROR, "Failed to detect out of bounds read.");
 		}
 		printf("Out of bounds read detected.\n");
-	}
 
-	//create a buffer from a string
-	{
+		//create a buffer from a string
 		Buffer string("This is a string!");
 		if (string.content_length != sizeof("This is a string!")) {
-			fprintf(stderr, "ERROR: Buffer created from string has incorrect length.\n");
-			goto fail;
+			throw MolchException(BUFFER_ERROR, "Buffer created from string has incorrect length.");
 		}
 		if (sodium_memcmp(string.content, "This is a string!", string.content_length) != 0) {
-			fprintf(stderr, "ERROR: Failed to create buffer from string.\n");
-			goto fail;
+			throw MolchException(BUFFER_ERROR, "Failed to create buffer from string.");
 		}
 		printf("Successfully created buffer from string.\n");
-	}
 
-	//erase the buffer
-	printf("Erasing buffer.\n");
-	buffer1->clear();
+		//erase the buffer
+		printf("Erasing buffer.\n");
+		buffer1.clear();
 
-	//check if the buffer was properly cleared
-	size_t i;
-	for (i = 0; i < buffer1->getBufferLength(); i++) {
-		if (buffer1->content[i] != '\0') {
-			fprintf(stderr, "ERROR: Byte %zu of the buffer hasn't been erased.\n", i);
-			goto fail;
+		//check if the buffer was properly cleared
+		size_t i;
+		for (i = 0; i < buffer1.getBufferLength(); i++) {
+			if (buffer1.content[i] != '\0') {
+				throw MolchException(BUFFER_ERROR, "Buffer hasn't been erased properly.");
+			}
 		}
-	}
 
-	if (buffer1->content_length != 0) {
-		fprintf(stderr, "ERROR: The content length of the buffer hasn't been set to zero.\n");
-		goto fail;
-	}
-	printf("Buffer successfully erased.\n");
+		if (buffer1.content_length != 0) {
+			throw MolchException(BUFFER_ERROR, "The content length of the buffer hasn't been set to zero.");
+		}
+		printf("Buffer successfully erased.\n");
 
-	//fill a buffer with random numbers
-	random = Buffer::create(10, 0);
-	status = random->fillRandom(5);
-	if (status != 0) {
-		fprintf(stderr, "ERROR: Failed to fill buffer with random numbers. (%i)\n", status);
-		goto fail;
-	}
+		//fill a buffer with random numbers
+		Buffer random(10, 0);
+		random.fillRandom(5);
 
-	if (random->content_length != 5) {
-		fprintf(stderr, "ERROR: Wrong content length.\n");
-		goto fail;
-	}
-	printf("Buffer with %zu random bytes:\n", random->content_length);
-	std::cout << random->toHex();
+		if (random.content_length != 5) {
+			throw MolchException(BUFFER_ERROR, "Wrong content length.\n");
+		}
+		printf("Buffer with %zu random bytes:\n", random.content_length);
+		random.printHex(std::cout);
 
-	if (random->fillRandom(20) == 0) {
-		fprintf(stderr, "ERROR: Failed to detect too long write to buffer.\n");
-		goto fail;
-	}
+		detected = false;
+		try {
+			random.fillRandom(20);
+		} catch(...) {
+			detected = true;
+		}
+		if (!detected) {
+			throw MolchException(BUFFER_ERROR, "Failed to detect too long write to buffer.");
+		}
 
-	random->setReadOnly(true);
-	if (random->fillRandom(4) == 0) {
-		fprintf(stderr, "ERROR: Failed to prevent write to readonly buffer.\n");
-		goto fail;
-	}
+		random.setReadOnly(true);
+		detected = false;
+		try {
+			random.fillRandom(4);
+		} catch (...) {
+			detected = true;
+		}
+		if (!detected) {
+			throw MolchException(BUFFER_ERROR, "Failed to prevent write to readonly buffer.");
+		}
 
-	//test xor
-	{
+		//test xor
 		Buffer text("Hello World!");
-		to_xor = Buffer::create(text.content_length, text.content_length);
-		status = to_xor->cloneFrom(&text);
-		if (status != 0) {
-			fprintf(stderr, "ERROR: Failed to clone buffer.\n");
-			goto fail; /* not fail, because status is set */
-		}
+		Buffer to_xor(text.content_length, text.content_length);
+		to_xor.cloneFrom(text);
 
-		random2 = Buffer::create(text.content_length, text.content_length);
-		status = random2->fillRandom(random2->getBufferLength());
-		if (status != 0) {
-			fprintf(stderr, "ERROR: Failed to fill buffer with random data. (%i)\n", status);
-			goto fail;
-		}
+		Buffer random2(text.content_length, text.content_length);
+		random2.fillRandom(random2.getBufferLength());
 
 		//xor random data to xor-buffer
-		status = to_xor->xorWith(random2);
-		if (status != 0) {
-			fprintf(stderr, "ERROR: Failed to xor buffers. (%i)\n", status);
-			goto fail;
-		}
+		to_xor.xorWith(random2);
 
 		//make sure that xor doesn't contain either 'text' or 'random2'
-		if ((to_xor->compare(&text) == 0) || (to_xor->compare(random2) == 0)) {
-			fprintf(stderr, "ERROR: xor buffer contains 'text' or 'random2'\n");
-			goto fail;
+		if ((to_xor == text) || (to_xor == random2)) {
+			throw MolchException(BUFFER_ERROR, "ERROR: xor buffer contains 'text' or 'random2'.");
 		}
 
 		//xor the buffer with text again to get out the random data
-		status = to_xor->xorWith(&text);
-		if (status != 0) {
-			fprintf(stderr, "ERROR: Failed to xor buffers. (%i)\n", status);
-			goto fail;
+		to_xor.xorWith(text);
+
+		//xor should now contain the same as random2
+		if (to_xor != random2) {
+			throw MolchException(BUFFER_ERROR, "ERROR: Failed to xor buffers properly.");
 		}
-	}
+		printf("Successfully tested xor.\n");
 
-	//xor should now contain the same as random2
-	if (to_xor->compare(random2) != 0) {
-		fprintf(stderr, "ERROR: Failed to xor buffers properly.\n");
-		goto fail;
-	}
-	printf("Successfully tested xor.\n");
-
-	//test creating a buffer with an existing array
-	{
+		//test creating a buffer with an existing array
 		unsigned char array[] = "Hello World!\n";
 		Buffer buffer_with_array(array, sizeof(array));
 		if ((buffer_with_array.content != array)
 				|| (buffer_with_array.content_length != sizeof(array))
 				|| (buffer_with_array.getBufferLength() != sizeof(array))) {
-			fprintf(stderr, "ERROR: Failed to create buffer with existing array.\n");
-			goto fail;
+			throw MolchException(BUFFER_ERROR, "Failed to create buffer with existing array.");
 		}
-	}
 
-	//compare buffer to an array
-	{
+		//compare buffer to an array
 		Buffer true_buffer("true");
-		status = true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("true"), sizeof("true"));
+		int status = true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("true"), sizeof("true"));
 		if (status != 0) {
-			fprintf(stderr, "ERROR: Failed to compare buffer to array! (%i)\n", status);
-			goto fail;
+			throw MolchException(BUFFER_ERROR, "Failed to compare buffer to array.");
 		}
 		status = true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("fals"), sizeof("fals"));
-		if (status != -1) {
-			fprintf(stderr, "ERROR: Failed to detect difference in buffer and array.\n");
-			goto fail;
+		if (status == 0) {
+			throw MolchException(BUFFER_ERROR, "Failed to detect difference in buffer and array.");
 		}
 		status = true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("false"), sizeof("false"));
-		if (status != -1) {
-			fprintf(stderr, "ERROR: Failed to detect difference in buffer and array.\n");
-			goto fail;
+		if (status == 0) {
+			throw MolchException(BUFFER_ERROR, "ERROR: Failed to detect difference in buffer and array.");
 		}
-		status = 0;
-	}
 
-	//test custom allocator
-	custom_allocated = Buffer::createWithCustomAllocator(10, 10, sodium_malloc, sodium_free);
-	if (custom_allocated == nullptr) {
-		fprintf(stderr, "ERROR: Failed to create buffer with custom allocator!\n");
-		goto fail;
-	}
+		//test custom allocator
+		Buffer custom_allocated(10, 10, sodium_malloc, sodium_free);
+		Buffer custom_allocated_empty_buffer(0, 0, malloc, free);
+		if (custom_allocated_empty_buffer.content != nullptr) {
+			throw MolchException(BUFFER_ERROR, "Customly allocated empty buffer has content.");
+		}
 
-	custom_allocated_empty_buffer = Buffer::createWithCustomAllocator(0, 0, malloc, free);
-	if (custom_allocated_empty_buffer == nullptr) {
-		fprintf(stderr, "ERROR: Failed to customly allocate empty buffer.\n");
-		goto fail;
-	}
-	if (custom_allocated_empty_buffer->content != nullptr) {
-		fprintf(stderr, "ERROR: Customly allocated empty buffer has content.\n");
-		goto fail;
-	}
-
-	{
 		Buffer four_two(4, 2);
 		if ((!four_two.fits(4)) || (!four_two.fits(2)) || four_two.fits(5)) {
-			fprintf(stderr, "ERROR: Buffer doesn't detect correctly what fits in it.");
-			goto fail;
+			throw MolchException(BUFFER_ERROR, "Buffer doesn't detect correctly what fits in it.");
 		}
 
 		if ((!four_two.contains(2)) || four_two.contains(1) || four_two.contains(3)) {
-			fprintf(stderr, "ERROR: Buffer doesn't detect correctly what it contains.");
-			goto fail;
+			throw MolchException(BUFFER_ERROR, "Buffer doesn't detect correctly what it contains.");
 		}
+	} catch (const MolchException& exception) {
+		exception.print(std::cerr) << std::endl;
+		return EXIT_FAILURE;
+	} catch (const std::exception& exception) {
+		std::cerr << exception.what() << std::endl;
+		return EXIT_FAILURE;
 	}
 
-	goto cleanup;
-
-fail:
-	status = EXIT_FAILURE;
-cleanup:
-	buffer_destroy_and_null_if_valid(buffer1);
-	if (buffer2 != nullptr) {
-		free_and_null_if_valid(buffer2->content);
-		free_and_null_if_valid(buffer2);
-	}
-	buffer_destroy_and_null_if_valid(buffer3);
-	buffer_destroy_and_null_if_valid(empty3);
-	buffer_destroy_and_null_if_valid(random);
-	buffer_destroy_and_null_if_valid(random2);
-	buffer_destroy_and_null_if_valid(to_xor);
-	buffer_destroy_and_null_if_valid(character_buffer);
-	buffer_destroy_and_null_if_valid(custom_allocated_empty_buffer);
-	buffer_destroy_and_null_if_valid(custom_allocated);
-
-	return status;
+	return EXIT_SUCCESS;
 }

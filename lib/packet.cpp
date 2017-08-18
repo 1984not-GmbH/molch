@@ -174,10 +174,7 @@ std::unique_ptr<Buffer> packet_encrypt(
 
 	//generate the header nonce and add it to the packet header
 	Buffer header_nonce(HEADER_NONCE_SIZE, 0);
-	exception_on_invalid_buffer(header_nonce);
-	if (header_nonce.fillRandom(HEADER_NONCE_SIZE) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to generate header nonce.");
-	}
+	header_nonce.fillRandom(HEADER_NONCE_SIZE);
 	packet_header_struct.has_header_nonce = true;
 	packet_header_struct.header_nonce.data = header_nonce.content;
 	packet_header_struct.header_nonce.len = header_nonce.content_length;
@@ -186,7 +183,6 @@ std::unique_ptr<Buffer> packet_encrypt(
 	Buffer encrypted_axolotl_header(
 			axolotl_header.content_length + crypto_secretbox_MACBYTES,
 			axolotl_header.content_length + crypto_secretbox_MACBYTES);
-	exception_on_invalid_buffer(encrypted_axolotl_header);
 	int status = crypto_secretbox_easy(
 			encrypted_axolotl_header.content,
 			axolotl_header.content,
@@ -204,10 +200,7 @@ std::unique_ptr<Buffer> packet_encrypt(
 
 	//generate the message nonce and add it to the packet header
 	Buffer message_nonce(MESSAGE_NONCE_SIZE, 0);
-	exception_on_invalid_buffer(message_nonce);
-	if (message_nonce.fillRandom(MESSAGE_NONCE_SIZE) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to generate message nonce.");
-	}
+	message_nonce.fillRandom(MESSAGE_NONCE_SIZE);
 	packet_header_struct.has_message_nonce = true;
 	packet_header_struct.message_nonce.data = message_nonce.content;
 	packet_header_struct.message_nonce.len = message_nonce.content_length;
@@ -215,11 +208,8 @@ std::unique_ptr<Buffer> packet_encrypt(
 	//pad the message (PKCS7 padding to 255 byte blocks, see RFC5652 section 6.3)
 	unsigned char padding = static_cast<unsigned char>(255 - (message.content_length % 255));
 	Buffer padded_message(message.content_length + padding, 0);
-	exception_on_invalid_buffer(padded_message);
 	//copy the message
-	if (padded_message.cloneFrom(&message) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to clone message.");
-	}
+	padded_message.cloneFrom(message);
 	//pad it
 	std::fill(padded_message.content + padded_message.content_length, padded_message.content + padded_message.content_length + padding, padding);
 	padded_message.content_length += padding;
@@ -228,7 +218,6 @@ std::unique_ptr<Buffer> packet_encrypt(
 	Buffer encrypted_message(
 			padded_message.content_length + crypto_secretbox_MACBYTES,
 			padded_message.content_length + crypto_secretbox_MACBYTES);
-	exception_on_invalid_buffer(encrypted_message);
 	status = crypto_secretbox_easy(
 			encrypted_message.content,
 			padded_message.content,
@@ -248,7 +237,6 @@ std::unique_ptr<Buffer> packet_encrypt(
 	const size_t packed_length = packet__get_packed_size(&packet_struct);
 	//pack the packet
 	auto packet = std::make_unique<Buffer>(packed_length, 0);
-	exception_on_invalid_buffer(*packet);
 	packet->content_length = packet__pack(&packet_struct, packet->content);
 	if (packet->content_length != packed_length) {
 		throw MolchException(PROTOBUF_PACK_ERROR, "Packet packet has incorrect length.");
@@ -306,19 +294,13 @@ void packet_get_metadata_without_verification(
 	if (packet_struct->packet_header->packet_type == PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
 		//copy the public keys
 		if (public_identity_key != nullptr) {
-			if (public_identity_key->cloneFromRaw(packet_struct->packet_header->public_identity_key.data, packet_struct->packet_header->public_identity_key.len) != 0) {
-				throw MolchException(BUFFER_ERROR, "Failed to copy public identity key.");
-			}
+			public_identity_key->cloneFromRaw(packet_struct->packet_header->public_identity_key.data, packet_struct->packet_header->public_identity_key.len);
 		}
 		if (public_ephemeral_key != nullptr) {
-			if (public_ephemeral_key->cloneFromRaw(packet_struct->packet_header->public_ephemeral_key.data, packet_struct->packet_header->public_ephemeral_key.len) != 0) {
-				throw MolchException(BUFFER_ERROR, "Failed to copy public ephemeral key.");
-			}
+			public_ephemeral_key->cloneFromRaw(packet_struct->packet_header->public_ephemeral_key.data, packet_struct->packet_header->public_ephemeral_key.len);
 		}
 		if (public_prekey != nullptr) {
-			if (public_prekey->cloneFromRaw(packet_struct->packet_header->public_prekey.data, packet_struct->packet_header->public_prekey.len) != 0) {
-				throw MolchException(BUFFER_ERROR, "Failed to copy public prekey.");
-			}
+			public_prekey->cloneFromRaw(packet_struct->packet_header->public_prekey.data, packet_struct->packet_header->public_prekey.len);
 		}
 	}
 
@@ -345,7 +327,6 @@ std::unique_ptr<Buffer> packet_decrypt_header(
 
 	const size_t axolotl_header_length = packet_struct->encrypted_axolotl_header.len - crypto_secretbox_MACBYTES;
 	auto axolotl_header = std::make_unique<Buffer>(axolotl_header_length, axolotl_header_length);
-	exception_on_invalid_buffer(*axolotl_header);
 
 	int status = crypto_secretbox_open_easy(
 			axolotl_header->content,
@@ -377,7 +358,6 @@ std::unique_ptr<Buffer> packet_decrypt_message(const Buffer& packet, const Buffe
 		throw MolchException(INCORRECT_BUFFER_SIZE, "The padded message is too short.");
 	}
 	Buffer padded_message(padded_message_length, padded_message_length);
-	exception_on_invalid_buffer(padded_message);
 
 	int status = crypto_secretbox_open_easy(
 			padded_message.content,
@@ -398,11 +378,8 @@ std::unique_ptr<Buffer> packet_decrypt_message(const Buffer& packet, const Buffe
 	//extract the message
 	const size_t message_length = padded_message.content_length - padding;
 	auto message = std::make_unique<Buffer>(message_length, 0);
-	exception_on_invalid_buffer(*message);
 	//TODO this doesn't need to be copied, setting the length should be enough
-	if (message->copyFrom(0, &padded_message, 0, message_length) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to copy message from padded message.");
-	}
+	message->copyFrom(0, padded_message, 0, message_length);
 
 	return message;
 }

@@ -37,28 +37,22 @@ int main(void) {
 
 		//create random initial chain key
 		Buffer last_chain_key(crypto_auth_BYTES, crypto_auth_BYTES);
-		exception_on_invalid_buffer(last_chain_key);
-		if (last_chain_key.fillRandom(last_chain_key.getBufferLength()) != 0) {
-			throw MolchException(KEYGENERATION_FAILED, "Failed to create last chain key.");
-		}
+		last_chain_key.fillRandom(last_chain_key.getBufferLength());
 
 		//print first chain key
 		printf("Initial chain key (%i Bytes):\n", crypto_auth_BYTES);
-		std::cout << last_chain_key.toHex();
-		putchar('\n');
+		last_chain_key.printHex(std::cout) << std::endl;
 
 
 		//derive a chain of chain keys
 		Buffer next_chain_key(crypto_auth_BYTES, crypto_auth_BYTES);
-		exception_on_invalid_buffer(next_chain_key);
 		unsigned int counter;
 		for (counter = 1; counter <= 5; counter++) {
 			derive_chain_key(next_chain_key, last_chain_key);
 
 			//print the derived chain key
 			printf("Chain key Nr. %i:\n", counter);
-			std::cout << next_chain_key.toHex();
-			putchar('\n');
+			next_chain_key.printHex(std::cout) << std::endl;
 
 			//check that chain keys are different
 			if (last_chain_key == next_chain_key) {
@@ -66,9 +60,7 @@ int main(void) {
 			}
 
 			//move next_chain_key to last_chain_key
-			if (last_chain_key.cloneFrom(&next_chain_key) != 0) {
-				throw MolchException(BUFFER_ERROR, "Failed to copy chain key.");
-			}
+			last_chain_key.cloneFrom(next_chain_key);
 		}
 	} catch (const MolchException& exception) {
 		return EXIT_FAILURE;

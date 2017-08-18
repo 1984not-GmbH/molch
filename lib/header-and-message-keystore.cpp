@@ -34,14 +34,8 @@ extern "C" {
 constexpr int64_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
 
 void HeaderAndMessageKeyStoreNode::fill(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date) {
-	if (this->header_key.cloneFrom(&header_key) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to clone header key.");
-	}
-
-	if (this->message_key.cloneFrom(&message_key) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to clone message key.");
-	}
-
+	this->header_key.cloneFrom(header_key);
+	this->message_key.cloneFrom(message_key);
 	this->expiration_date = expiration_date;
 }
 
@@ -88,9 +82,7 @@ HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const KeyBundle& key_
 		|| (key_bundle.header_key->key.len != HEADER_KEY_SIZE)) {
 		throw MolchException(PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect header key.");
 	}
-	if (this->header_key.cloneFromRaw(key_bundle.header_key->key.data, key_bundle.header_key->key.len) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to clone header key.");
-	}
+	this->header_key.cloneFromRaw(key_bundle.header_key->key.data, key_bundle.header_key->key.len);
 
 	//import the message key
 	if ((key_bundle.message_key == nullptr)
@@ -98,9 +90,7 @@ HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const KeyBundle& key_
 		|| (key_bundle.message_key->key.len != MESSAGE_KEY_SIZE)) {
 		throw MolchException(PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect message key.");
 	}
-	if (this->message_key.cloneFromRaw(key_bundle.message_key->key.data, key_bundle.message_key->key.len) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to clone message key.");
-	}
+	this->message_key.cloneFromRaw(key_bundle.message_key->key.data, key_bundle.message_key->key.len);
 
 	//import the expiration date
 	if (!key_bundle.has_expiration_time) {
@@ -124,15 +114,11 @@ std::unique_ptr<KeyBundle,KeyBundleDeleter> HeaderAndMessageKeyStoreNode::export
 	key_bundle->message_key->key.data = throwing_zeroed_malloc<unsigned char>(MESSAGE_KEY_SIZE);
 
 	//export the header key
-	if (this->header_key.cloneToRaw(key_bundle->header_key->key.data, HEADER_KEY_SIZE) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to export header key.");
-	}
+	this->header_key.cloneToRaw(key_bundle->header_key->key.data, HEADER_KEY_SIZE);
 	key_bundle->header_key->key.len = this->header_key.content_length;
 
 	//export the message key
-	if (this->message_key.cloneToRaw(key_bundle->message_key->key.data, MESSAGE_KEY_SIZE) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to export message key.");
-	}
+	this->message_key.cloneToRaw(key_bundle->message_key->key.data, MESSAGE_KEY_SIZE);
 	key_bundle->message_key->key.len = this->message_key.content_length;
 
 
@@ -144,8 +130,10 @@ std::unique_ptr<KeyBundle,KeyBundleDeleter> HeaderAndMessageKeyStoreNode::export
 }
 
 std::ostream& HeaderAndMessageKeyStoreNode::print(std::ostream& stream) const {
-	stream << "Header key:\n" << this->header_key.toHex() << '\n';
-	stream << "Message key:\n" << this->message_key.toHex() << '\n';
+	stream << "Header key:\n";
+	this->header_key.printHex(stream) << '\n';
+	stream << "Message key:\n";
+	this->message_key.printHex(stream) << '\n';
 	stream << "Expiration date:\n" << this->expiration_date << '\n';
 
 	return stream;

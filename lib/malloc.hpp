@@ -30,6 +30,8 @@ T *throwing_malloc(size_t size) {
 	if (pointer == nullptr) {
 		throw std::bad_alloc();
 	}
+
+	return pointer;
 }
 
 template <typename T>

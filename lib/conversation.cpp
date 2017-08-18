@@ -31,9 +31,7 @@
 #include "destroyers.hpp"
 
 ConversationT& ConversationT::move(ConversationT&& conversation) {
-	if (this->id.cloneFrom(&conversation.id) != 0) {
-		throw MolchException(BUFFER_ERROR, "Faild to clone id.");
-	}
+	this->id.cloneFrom(conversation.id);
 	this->ratchet = std::move(conversation.ratchet);
 
 	return *this;
@@ -68,9 +66,7 @@ void ConversationT::create(
 	}
 
 	//create random id
-	if (this->id.fillRandom(CONVERSATION_ID_SIZE) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to create random conversation id.");
-	}
+	this->id.fillRandom(CONVERSATION_ID_SIZE);
 
 	this->ratchet = std::make_unique<Ratchet>(
 			our_private_identity,
@@ -110,13 +106,6 @@ ConversationT::ConversationT(
 		const Buffer& sender_private_identity,
 		const Buffer& receiver_public_identity,
 		Buffer& receiver_prekey_list) { //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
-	uint32_t prekey_number;
-
-	Buffer sender_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer sender_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	exception_on_invalid_buffer(sender_public_ephemeral);
-	exception_on_invalid_buffer(sender_private_ephemeral);
-
 	//check many error conditions
 	if (!receiver_public_identity.contains(PUBLIC_KEY_SIZE)
 			|| !sender_public_identity.contains(PUBLIC_KEY_SIZE)
@@ -126,13 +115,15 @@ ConversationT::ConversationT(
 	}
 
 	//create an ephemeral keypair
+	Buffer sender_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer sender_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	int status = crypto_box_keypair(sender_public_ephemeral.content, sender_private_ephemeral.content);
 	if (status != 0) {
 		throw MolchException(KEYGENERATION_FAILED, "Failed to generate ephemeral keypair.");
 	}
 
 	//choose a prekey
-	prekey_number = randombytes_uniform(PREKEY_AMOUNT);
+	uint32_t prekey_number = randombytes_uniform(PREKEY_AMOUNT);
 	Buffer receiver_public_prekey(
 			&(receiver_prekey_list.content[prekey_number * PUBLIC_KEY_SIZE]),
 			PUBLIC_KEY_SIZE);
@@ -168,22 +159,15 @@ ConversationT::ConversationT(
 	uint32_t receive_message_number = 0;
 	uint32_t previous_receive_message_number = 0;
 
-	//key buffers
-	Buffer receiver_public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer receiver_private_prekey(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer sender_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	Buffer sender_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	exception_on_invalid_buffer(receiver_public_prekey);
-	exception_on_invalid_buffer(receiver_private_prekey);
-	exception_on_invalid_buffer(sender_public_ephemeral);
-	exception_on_invalid_buffer(sender_public_identity);
-
 	if (!receiver_public_identity.contains(PUBLIC_KEY_SIZE)
 			|| !receiver_private_identity.contains(PRIVATE_KEY_SIZE)) {
 		throw MolchException(INVALID_INPUT, "Invalid input to conversation_start_receive_conversation.");
 	}
 
 	//get the senders keys and our public prekey from the packet
+	Buffer sender_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer receiver_public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+	Buffer sender_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	molch_message_type packet_type;
 	uint32_t current_protocol_version;
 	uint32_t highest_supported_protocol_version;
@@ -201,6 +185,7 @@ ConversationT::ConversationT(
 	}
 
 	//get the private prekey that corresponds to the public prekey used in the message
+	Buffer receiver_private_prekey(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	receiver_prekeys.getPrekey(receiver_public_prekey, receiver_private_prekey);
 
 	this->create(
@@ -228,18 +213,6 @@ std::unique_ptr<Buffer> ConversationT::send(
 		const Buffer * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
 		const Buffer * const public_ephemeral_key, //can be nullptr, if not nullptr, this will be a prekey message
 		const Buffer * const public_prekey) { //can be nullptr, if not nullptr, this will be a prekey message
-	molch_message_type packet_type;
-
-	//create the header
-	std::unique_ptr<Buffer> header;
-
-	Buffer send_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-	Buffer send_message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-	Buffer send_ephemeral_key(PUBLIC_KEY_SIZE, 0);
-	exception_on_invalid_buffer(send_header_key);
-	exception_on_invalid_buffer(send_message_key);
-	exception_on_invalid_buffer(send_ephemeral_key);
-
 	//ensure that either both public keys are nullptr or set
 	if (((public_identity_key == nullptr) && (public_prekey != nullptr)) || ((public_prekey == nullptr) && (public_identity_key != nullptr))) {
 		throw MolchException(INVALID_INPUT, "Invalid combination of provided key buffers.");
@@ -250,12 +223,9 @@ std::unique_ptr<Buffer> ConversationT::send(
 		throw MolchException(INCORRECT_BUFFER_SIZE, "Public key output has incorrect size.");
 	}
 
-	packet_type = NORMAL_MESSAGE;
-	//check if this is a prekey message
-	if (public_identity_key != nullptr) {
-		packet_type = PREKEY_MESSAGE;
-	}
-
+	Buffer send_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+	Buffer send_message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+	Buffer send_ephemeral_key(PUBLIC_KEY_SIZE, 0);
 	uint32_t send_message_number;
 	uint32_t previous_send_message_number;
 	this->ratchet->send(
@@ -265,10 +235,16 @@ std::unique_ptr<Buffer> ConversationT::send(
 			send_ephemeral_key,
 			send_message_key);
 
-	header = header_construct(
+	auto header = header_construct(
 			send_ephemeral_key,
 			send_message_number,
 			previous_send_message_number);
+
+	auto packet_type = NORMAL_MESSAGE;
+	//check if this is a prekey message
+	if (public_identity_key != nullptr) {
+		packet_type = PREKEY_MESSAGE;
+	}
 
 	return packet_encrypt(
 			packet_type,
@@ -294,12 +270,10 @@ int ConversationT::trySkippedHeaderAndMessageKeys(
 		uint32_t& receive_message_number,
 		uint32_t& previous_receive_message_number) {
 	//create buffers
-	std::unique_ptr<Buffer> header;
-	Buffer their_signed_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	exception_on_invalid_buffer(their_signed_public_ephemeral);
 
 	for (size_t index = 0; index < this->ratchet->skipped_header_and_message_keys.keys.size(); index++) {
 		HeaderAndMessageKeyStoreNode& node = this->ratchet->skipped_header_and_message_keys.keys[index];
+		std::unique_ptr<Buffer> header;
 		bool decryption_successful = true;
 		try {
 			header = packet_decrypt_header(packet, node.header_key);
@@ -316,6 +290,7 @@ int ConversationT::trySkippedHeaderAndMessageKeys(
 				this->ratchet->skipped_header_and_message_keys.keys.erase(std::begin(this->ratchet->skipped_header_and_message_keys.keys) + static_cast<ptrdiff_t>(index));
 				index--;
 
+				Buffer their_signed_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 				header_extract(
 						their_signed_public_ephemeral,
 						receive_message_number,
@@ -342,18 +317,6 @@ std::unique_ptr<Buffer> ConversationT::receive(
 	try {
 		bool decryptable = true;
 
-		//create buffers
-		std::unique_ptr<Buffer> header;
-
-		Buffer current_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer next_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer their_signed_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-		exception_on_invalid_buffer(current_receive_header_key);
-		exception_on_invalid_buffer(next_receive_header_key);
-		exception_on_invalid_buffer(their_signed_public_ephemeral);
-		exception_on_invalid_buffer(message_key);
-
 		std::unique_ptr<Buffer> message;
 		int status = trySkippedHeaderAndMessageKeys(
 				packet,
@@ -365,9 +328,12 @@ std::unique_ptr<Buffer> ConversationT::receive(
 			return message;
 		}
 
+		Buffer current_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+		Buffer next_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 		this->ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 
 		//try to decrypt the packet header with the current receive header key
+		std::unique_ptr<Buffer> header;
 		try {
 			header = packet_decrypt_header(packet, current_receive_header_key);
 		} catch (const MolchException& exception) {
@@ -392,6 +358,7 @@ std::unique_ptr<Buffer> ConversationT::receive(
 		}
 
 		//extract data from the header
+		Buffer their_signed_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 		uint32_t local_receive_message_number;
 		uint32_t local_previous_receive_message_number;
 		header_extract(
@@ -403,6 +370,7 @@ std::unique_ptr<Buffer> ConversationT::receive(
 		//and now decrypt the message with the message key
 		//now we have all the data we need to advance the ratchet
 		//so let's do that
+		Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 		this->ratchet->receive(
 			message_key,
 			their_signed_public_ephemeral,
@@ -432,9 +400,7 @@ std::unique_ptr<Conversation,ConversationDeleter> ConversationT::exportProtobuf(
 
 	//export the conversation id
 	id = throwing_zeroed_malloc<unsigned char>(CONVERSATION_ID_SIZE);
-	if (this->id.cloneToRaw(id, CONVERSATION_ID_SIZE) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to copy conversation id.");
-	}
+	this->id.cloneToRaw(id, CONVERSATION_ID_SIZE);
 	exported_conversation->id.data = id;
 	exported_conversation->id.len = CONVERSATION_ID_SIZE;
 
@@ -443,9 +409,7 @@ std::unique_ptr<Conversation,ConversationDeleter> ConversationT::exportProtobuf(
 
 ConversationT::ConversationT(const Conversation& conversation_protobuf) {
 	//copy the id
-	if (this->id.cloneFromRaw(conversation_protobuf.id.data, conversation_protobuf.id.len) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to copy id.");
-	}
+	this->id.cloneFromRaw(conversation_protobuf.id.data, conversation_protobuf.id.len);
 
 	//import the ratchet
 	this->ratchet = std::make_unique<Ratchet>(conversation_protobuf);
@@ -453,7 +417,7 @@ ConversationT::ConversationT(const Conversation& conversation_protobuf) {
 
 std::ostream& ConversationT::print(std::ostream& stream) const {
 	stream << "Conversation-ID:\n";
-	stream << this->id.toHex() << "\n";
+	this->id.printHex(stream) << "\n";
 
 	return stream;
 }

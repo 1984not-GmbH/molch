@@ -57,9 +57,7 @@ void to_big_endian(IntegerType integer, Buffer& output) {
 		std::reverse(&reference, &reference + sizeof(integer));
 	}
 
-	if (output.cloneFromRaw(&reference, sizeof(integer)) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to copy number.");
-	}
+	output.cloneFromRaw(&reference, sizeof(integer));
 }
 
 /*
@@ -73,9 +71,7 @@ void from_big_endian(IntegerType& integer, Buffer& buffer) {
 
 	unsigned char& reference = reinterpret_cast<unsigned char&>(integer);
 
-	if (buffer.cloneToRaw(&reference, sizeof(IntegerType)) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to copy number.");
-	}
+	buffer.cloneToRaw(&reference, sizeof(IntegerType));
 
 	if (endianness_is_little_endian()) {
 		std::reverse(&reference, &reference + sizeof(IntegerType));

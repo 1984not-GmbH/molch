@@ -36,39 +36,26 @@ int main(void) {
 			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
-		//create buffers
 		Buffer master_key(50, 50);
-		Buffer subkey1(60, 60);
-		Buffer subkey2(60, 60);
-		Buffer subkey1_copy(60, 60);
-
-		exception_on_invalid_buffer(master_key);
-		exception_on_invalid_buffer(subkey1);
-		exception_on_invalid_buffer(subkey2);
-		exception_on_invalid_buffer(subkey1_copy);
-
-		int status_int = master_key.fillRandom(master_key.getBufferLength());
-		if (status_int != 0) {
-			throw MolchException(KEYDERIVATION_FAILED, "Failed to generate master key.");
-		}
+		master_key.fillRandom(master_key.getBufferLength());
 		printf("Master key:\n");
-		std::cout << master_key.toHex();
-		putchar('\n');
+		master_key.printHex(std::cout) << std::endl;
 
+		Buffer subkey1(60, 60);
 		derive_key(subkey1, subkey1.getBufferLength(), master_key, 0);
 		printf("First subkey:\n");
-		std::cout << subkey1.toHex();
-		putchar('\n');
+		subkey1.printHex(std::cout) << std::endl;
 
+		Buffer subkey2(60, 60);
 		derive_key(subkey2, subkey2.getBufferLength(), master_key, 1);
 		printf("Second subkey:\n");
-		std::cout << subkey2.toHex();
-		putchar('\n');
+		subkey2.printHex(std::cout) << std::endl;
 
 		if (subkey1 == subkey2) {
 			throw MolchException(KEYGENERATION_FAILED, "Both subkeys are the same.");
 		}
 
+		Buffer subkey1_copy(60, 60);
 		derive_key(subkey1_copy, subkey1_copy.getBufferLength(), master_key, 0);
 
 		if (subkey1 != subkey1_copy) {

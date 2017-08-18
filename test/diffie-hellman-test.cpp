@@ -35,13 +35,9 @@ int main(void) noexcept {
 			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
-		int status_int = 0;
-
 		//create Alice's keypair
 		Buffer alice_public_key(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 		Buffer alice_private_key(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-		exception_on_invalid_buffer(alice_public_key);
-		exception_on_invalid_buffer(alice_private_key);
 		generate_and_print_keypair(
 			alice_public_key,
 			alice_private_key,
@@ -51,8 +47,6 @@ int main(void) noexcept {
 		//create Bob's keypair
 		Buffer bob_public_key(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
 		Buffer bob_private_key(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-		exception_on_invalid_buffer(bob_public_key);
-		exception_on_invalid_buffer(bob_private_key);
 		generate_and_print_keypair(
 			bob_public_key,
 			bob_private_key,
@@ -61,7 +55,6 @@ int main(void) noexcept {
 
 		//Diffie Hellman on Alice's side
 		Buffer alice_shared_secret(crypto_generichash_BYTES, crypto_generichash_BYTES);
-		exception_on_invalid_buffer(alice_shared_secret);
 		diffie_hellman(
 			alice_shared_secret,
 			alice_private_key,
@@ -72,12 +65,10 @@ int main(void) noexcept {
 
 		//print Alice's shared secret
 		printf("Alice's shared secret ECDH(A_priv, B_pub) (%zu Bytes):\n", alice_shared_secret.content_length);
-		std::cout << alice_shared_secret.toHex();
-		putchar('\n');
+		alice_shared_secret.printHex(std::cout) << std::endl;
 
 		//Diffie Hellman on Bob's side
 		Buffer bob_shared_secret(crypto_generichash_BYTES, crypto_generichash_BYTES);
-		exception_on_invalid_buffer(bob_shared_secret);
 		diffie_hellman(
 			bob_shared_secret,
 			bob_private_key,
@@ -88,14 +79,10 @@ int main(void) noexcept {
 
 		//print Bob's shared secret
 		printf("Bob's shared secret ECDH(B_priv, A_pub) (%zu Bytes):\n", bob_shared_secret.content_length);
-		std::cout << bob_shared_secret.toHex();
-		putchar('\n');
+		bob_shared_secret.printHex(std::cout) << std::endl;
 
 		//compare both shared secrets
-		status_int = alice_shared_secret.compare(&bob_shared_secret);
-		alice_shared_secret.clear();
-		bob_shared_secret.clear();
-		if (status_int != 0) {
+		if (alice_shared_secret != bob_shared_secret) {
 			throw MolchException(INCORRECT_DATA, "Diffie Hellman didn't produce the same shared secret.");
 		}
 

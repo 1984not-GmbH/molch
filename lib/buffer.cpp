@@ -22,48 +22,33 @@
 #include <algorithm>
 #include <memory>
 #include <iterator>
+#include <exception>
 
 #include "buffer.hpp"
 #include "molch-exception.hpp"
 
-Buffer::Buffer(const std::string& string) noexcept {
+Buffer::Buffer(const std::string& string) {
 	this->buffer_length = string.length() + sizeof("");
 	this->content_length = string.length() + sizeof("");
 
-	try {
-		this->content = new unsigned char[string.length() + sizeof("")];
-	} catch (...) {
-		this->buffer_length = 0;
-		this->content_length = 0;
-		this->content = nullptr;
-		this->is_valid = false;
-		return;
-	}
+	this->content = new unsigned char[string.length() + sizeof("")];
 
 	std::copy(std::begin(string), std::end(string), this->content);
 	this->content[string.length()] = '\0';
 }
 
-Buffer::Buffer(const size_t buffer_length, const size_t content_length) noexcept {
+Buffer::Buffer(const size_t buffer_length, const size_t content_length) {
 	this->buffer_length = buffer_length;
 	this->content_length = content_length;
 
 	if (buffer_length == 0) {
 		this->content = nullptr;
 	} else {
-		try {
-			this->content = new unsigned char[buffer_length];
-		} catch (...) {
-			this->buffer_length = 0;
-			this->content_length = 0;
-			this->content = nullptr;
-			this->is_valid = false;
-			return;
-		}
+		this->content = new unsigned char[buffer_length];
 	}
 }
 
-Buffer::Buffer(const size_t buffer_length, const size_t content_length, void* (*allocator)(size_t), void (*deallocator)(void*)) noexcept {
+Buffer::Buffer(const size_t buffer_length, const size_t content_length, void* (*allocator)(size_t), void (*deallocator)(void*)) {
 	this->buffer_length = buffer_length;
 	this->content_length = content_length;
 	this->deallocator = deallocator;
@@ -75,12 +60,13 @@ Buffer::Buffer(const size_t buffer_length, const size_t content_length, void* (*
 		if (this->content == nullptr) {
 			this->buffer_length = 0;
 			this->content_length = 0;
-			this->is_valid = false;
+
+			throw std::bad_alloc{};
 		}
 	}
 }
 
-Buffer::Buffer(unsigned char * const content, const size_t buffer_length, const size_t content_length) noexcept {
+Buffer::Buffer(unsigned char * const content, const size_t buffer_length, const size_t content_length) {
 	this->buffer_length = buffer_length;
 	this->manage_memory = false;
 
@@ -95,21 +81,21 @@ Buffer::Buffer(unsigned char * const content, const size_t buffer_length, const 
 		this->content = content;
 	}
 }
-Buffer::Buffer(unsigned char * const content, const size_t buffer_length) noexcept :
-		Buffer{content, buffer_length, buffer_length} {}
+Buffer::Buffer(unsigned char * const content, const size_t buffer_length)
+	: Buffer{content, buffer_length, buffer_length} {}
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wcast-qual"
 #pragma GCC diagnostic ignored "-Wold-style-cast"
-Buffer::Buffer(const unsigned char * const content, const size_t buffer_length, const size_t content_length) noexcept :
-		Buffer{(unsigned char*)content, buffer_length, content_length} {
+Buffer::Buffer(const unsigned char * const content, const size_t buffer_length, const size_t content_length)
+	: Buffer{(unsigned char*)content, buffer_length, content_length} {
 	this->readonly = false;
 }
 #pragma GCC diagnostic pop
-Buffer::Buffer(const unsigned char * const content, const size_t buffer_length) noexcept :
-		Buffer{content, buffer_length, buffer_length} {}
+Buffer::Buffer(const unsigned char * const content, const size_t buffer_length)
+	: Buffer{content, buffer_length, buffer_length} {}
 
-void Buffer::destruct() noexcept {
+void Buffer::destruct() {
 	//only do something if this was created using a constructor
 	if (this->manage_memory) {
 		this->clear();
@@ -122,31 +108,26 @@ void Buffer::destruct() noexcept {
 	}
 }
 
-Buffer::~Buffer() noexcept {
+Buffer::~Buffer() {
 	this->destruct();
 }
 
-Buffer& Buffer::copy(const Buffer& buffer) noexcept {
+Buffer& Buffer::copy(const Buffer& buffer) {
 	this->destruct();
 
 	this->buffer_length = buffer.buffer_length;
 	this->manage_memory = true;
 	this->readonly = buffer.readonly;
-	this->is_valid = buffer.is_valid;
 	this->deallocator = nullptr;
 	this->content_length = buffer.content_length;
 
-	try {
-		this->content = new unsigned char[buffer.buffer_length];
-	} catch (const std::bad_alloc& exception) {
-		this->is_valid = false;
-	}
+	this->content = new unsigned char[buffer.buffer_length];
 	std::copy(buffer.content, buffer.content + buffer.content_length, this->content);
 
 	return *this;
 }
 
-Buffer& Buffer::move(Buffer&& buffer) noexcept {
+Buffer& Buffer::move(Buffer&& buffer) {
 	this->destruct();
 
 	//copy the buffer
@@ -158,7 +139,6 @@ Buffer& Buffer::move(Buffer&& buffer) noexcept {
 	buffer.buffer_length = 0;
 	buffer.manage_memory = false;
 	buffer.readonly = false;
-	buffer.is_valid = false;
 	buffer.deallocator = nullptr;
 	buffer.content_length = 0;
 	buffer.content = nullptr;
@@ -166,11 +146,11 @@ Buffer& Buffer::move(Buffer&& buffer) noexcept {
 	return *this;
 }
 
-Buffer& Buffer::operator=(Buffer&& buffer) noexcept {
+Buffer& Buffer::operator=(Buffer&& buffer) {
 	return this->move(std::move(buffer));
 }
 
-Buffer& Buffer::operator=(const Buffer& buffer) noexcept {
+Buffer& Buffer::operator=(const Buffer& buffer) {
 	return this->copy(buffer);
 }
 
@@ -182,67 +162,15 @@ Buffer::Buffer(const Buffer& buffer) {
 	this->copy(buffer);
 }
 
-size_t Buffer::getBufferLength() const noexcept {
+size_t Buffer::getBufferLength() const {
 	return this->buffer_length;
 }
 
-void Buffer::setReadOnly(bool readonly) noexcept {
+void Buffer::setReadOnly(bool readonly) {
 	this->readonly = readonly;
 }
 
-/*
- * Create a new buffer on the heap.
- */
-Buffer* Buffer::create(
-		const size_t buffer_length,
-		const size_t content_length) noexcept {
-	return Buffer::createWithCustomAllocator(buffer_length, content_length, &malloc, &free);
-}
-
-/*
- * Create a new buffer with a custom allocator.
- */
-Buffer* Buffer::createWithCustomAllocator(
-		const size_t buffer_length,
-		const size_t content_length,
-		void *(*allocator)(size_t size),
-		void (*deallocator)(void *pointer)
-		) noexcept {
-	Buffer *buffer = reinterpret_cast<Buffer*>(allocator(sizeof(Buffer)));
-	if (buffer == nullptr) {
-		return nullptr;
-	}
-
-	unsigned char *content = nullptr;
-	if (buffer_length != 0) {
-		content = reinterpret_cast<unsigned char*>(allocator(buffer_length));
-		if (content == nullptr) {
-			deallocator(buffer);
-			return nullptr;
-		}
-	}
-
-	new (buffer) Buffer{content, buffer_length, content_length};
-	buffer->deallocator = deallocator;
-
-	return buffer;
-}
-
-void Buffer::destroy() noexcept {
-	this->clear();
-	if (this->content != nullptr) {
-		this->deallocator(this->content);
-	}
-	this->deallocator(this);
-}
-
-/*
- * Clear a buffer.
- *
- * Overwrites the buffer with zeroes and
- * resets the content size.
- */
-void Buffer::clear() noexcept {
+void Buffer::clear() {
 	if (this->buffer_length == 0) {
 		return;
 	}
@@ -250,228 +178,150 @@ void Buffer::clear() noexcept {
 	this->content_length = 0;
 }
 
-/*
- * Copy parts of a buffer to another buffer.
- *
- * Returns 0 on success.
- */
-int Buffer::copyFrom(
+void Buffer::copyFrom(
 		const size_t destination_offset,
-		const Buffer * const source,
+		const Buffer& source,
 		const size_t source_offset,
-		const size_t copy_length) noexcept {
+		const size_t copy_length) {
 	if (this->readonly) {
-		return -5;
+		throw MolchException(BUFFER_ERROR, "Can't copy to readonly buffer.");
 	}
 
-	if ((this->buffer_length < this->content_length) || (source->buffer_length < source->content_length)) {
-		//the content length should never be longer than the buffer length
-		return -7;
+	if ((this->buffer_length < this->content_length) || (source.buffer_length < source.content_length)) {
+		throw MolchException(BUFFER_ERROR, "The content is larger than the buffer.");
 	}
 
 	if ((destination_offset > this->content_length) || (copy_length > (this->buffer_length - destination_offset))) {
-		//destination buffer isn't long enough
-		return -6;
+		throw MolchException(BUFFER_ERROR, "Can't copy to buffer that is too small.");
 	}
 
-	if ((source_offset > source->content_length) || (copy_length > (source->content_length - source_offset))) {
-		//source buffer isn't long enough
-		return -6;
+	if ((source_offset > source.content_length) || (copy_length > (source.content_length - source_offset))) {
+		throw MolchException(BUFFER_ERROR, "Can't copy more than buffer_length bytes.");
 	}
 
-	if (source->buffer_length == 0) {
-		return 0;
+	if (source.buffer_length == 0) {
+		return; //nothing to do
 	}
 
-	if ((this->content == nullptr) || (source->content == nullptr)) {
-		return -11;
+	if ((this->content == nullptr) || (source.content == nullptr)) {
+		throw MolchException(BUFFER_ERROR, "The source or destination buffer has no content.");
 	}
 
-	std::copy(source->content + source_offset, source->content + source_offset + copy_length, this->content + destination_offset);
+	std::copy(source.content + source_offset, source.content + source_offset + copy_length, this->content + destination_offset);
 	this->content_length = (this->content_length > destination_offset + copy_length)
 		? this->content_length
 		: destination_offset + copy_length;
-
-	return 0;
 }
 
-/*
- * Copy the content of a buffer to the beginning of another
- * buffer and set the destinations content length to the
- * same length as the source.
- *
- * Returns 0 on success.
- */
-int Buffer::cloneFrom(const Buffer * const source) noexcept {
-	if (source == nullptr) {
-		return -1;
-	}
-
+void Buffer::cloneFrom(const Buffer& source) {
 	if (this->readonly) {
-		return -5;
+		throw MolchException(BUFFER_ERROR, "Can't clone to readonly buffer.");
 	}
 
-	if (this->buffer_length < source->content_length) {
-		return -6;
+	if (this->buffer_length < source.content_length) {
+		throw MolchException(BUFFER_ERROR, "The source doesn't fit into the destination.");
 	}
 
-	this->content_length = source->content_length;
+	this->content_length = source.content_length;
 
-	int status = this->copyFrom(0, source, 0, source->content_length);
-	if (status != 0) {
-		this->clear();
-		return status;
-	}
-
-	return status;
+	this->copyFrom(0, source, 0, source.content_length);
 }
 
-/*
- * Copy from a raw array to a buffer.
- *
- * Returns 0 on success.
- */
-int Buffer::copyFromRaw(
+void Buffer::copyFromRaw(
 		const size_t destination_offset,
 		const unsigned char * const source,
 		const size_t source_offset,
-		const size_t copy_length) noexcept {
+		const size_t copy_length) {
 	if (this->readonly) {
-		return -5;
+		throw MolchException(BUFFER_ERROR, "Can't copy to readonly buffer.");
 	}
 
 	if (this->buffer_length < this->content_length) {
-		//the content length should never be longer than the buffer length
-		return -7;
+		throw MolchException(BUFFER_ERROR, "The content is longer than the buffer.");
 	}
 
 	if ((this->buffer_length < destination_offset) || (copy_length > (this->buffer_length - destination_offset))) {
-		//destination buffer isn't long enough
-		return -6;
+		throw MolchException(BUFFER_ERROR, "The source doesn't fit into the destination.");
 	}
 
 	if (copy_length == 0) {
-		return 0;
+		return;
 	}
 
 	std::copy(source + source_offset, source + source_offset + copy_length, this->content + destination_offset);
 	this->content_length = (this->content_length > destination_offset + copy_length)
 		? this->content_length
 		: destination_offset + copy_length;
-
-	return 0;
 }
 
-/*
- * Copy the content of a raw array to the
- * beginning of a buffer, setting the buffers
- * content length to the length that was copied.
- *
- * Returns 0 on success.
- */
-int Buffer::cloneFromRaw(const unsigned char * const source, const size_t length) noexcept {
+void Buffer::cloneFromRaw(const unsigned char * const source, const size_t length) {
 	if (this->readonly) {
-		return -5;
+		throw MolchException(BUFFER_ERROR, "Can't clone to readonly buffer.");
 	}
 
 	if (this->buffer_length < length) {
-		return -6;
+		throw MolchException(BUFFER_ERROR, "The source doesn't fit into the destination.");
 	}
 
 	this->content_length = length;
 
-	return this->copyFromRaw(0, source, 0, length);
+	this->copyFromRaw(0, source, 0, length);
 }
 
-/*
- * Copy from a buffer to a raw array.
- *
- * Returns 0 on success.
- */
-int Buffer::copyToRaw(
+void Buffer::copyToRaw(
 		unsigned char * const destination,
 		const size_t destination_offset,
 		const size_t source_offset,
-		const size_t copy_length) const noexcept {
+		const size_t copy_length) const {
 	if ((source_offset > this->content_length) || (copy_length > (this->content_length - source_offset))) {
-		//source buffer isn't long enough
-		return -6;
+		throw MolchException(BUFFER_ERROR, "The source doesn't fit into the destination.");
 	}
 
 	if (this->buffer_length < this->content_length) {
-		//the content length should never be longer than the buffer length
-		return -7;
+		throw MolchException(BUFFER_ERROR, "The content is longer than the buffer.");
 	}
 
 	if (this->buffer_length == 0) {
-		return 0;
+		return;
 	}
 
 	std::copy(this->content + source_offset, this->content + source_offset + copy_length, destination + destination_offset);
-
-	return 0;
 }
 
-/*
- * Copy the entire content of a buffer
- * to a raw array.
- *
- * Returns 0 on success.
- */
-int Buffer::cloneToRaw(unsigned char * const destination, const size_t destination_length) const noexcept {
+void Buffer::cloneToRaw(unsigned char * const destination, const size_t destination_length) const {
 	if (destination_length < this->content_length) {
-		return -6;
+		throw MolchException(BUFFER_ERROR, "Can't clone to raw buffer that is to small.");
 	}
 
-	return this->copyToRaw(destination, 0, 0, this->content_length);
+	this->copyToRaw(destination, 0, 0, this->content_length);
 }
 
-/*
- * Compare two buffers.
- *
- * Returns 0 if both buffers match.
- */
-int Buffer::compare(const Buffer * const buffer) const noexcept {
-	return this->compareToRaw(buffer->content, buffer->content_length);
+int Buffer::compare(const Buffer& buffer) const {
+	return this->compareToRaw(buffer.content, buffer.content_length);
 }
 
-/*
- * Compare a buffer to a raw array.
- *
- * Returns 0 if both buffers match.
- */
-int Buffer::compareToRaw(const unsigned char * const array, const size_t array_length) const noexcept {
+int Buffer::compareToRaw(const unsigned char * const array, const size_t array_length) const {
 	return this->compareToRawPartial(0, array, array_length, 0, this->content_length);
 }
 
-/*
- * Compare parts of two buffers.
- *
- * Returns 0 if both buffers match.
- */
 int Buffer::comparePartial(
 		const size_t position1,
-		const Buffer * const buffer2,
+		const Buffer& buffer2,
 		const size_t position2,
-		const size_t length) const noexcept {
-	return this->compareToRawPartial(position1, buffer2->content, buffer2->content_length, position2, length);
+		const size_t length) const {
+	return this->compareToRawPartial(position1, buffer2.content, buffer2.content_length, position2, length);
 }
 
-/*
- * Compare parts of a buffer to parts of a raw array.
- *
- * Returns 0 if both buffers match.
- */
 int Buffer::compareToRawPartial(
 		const size_t position1,
 		const unsigned char * const array,
 		const size_t array_length,
 		const size_t position2,
-		const size_t comparison_length) const noexcept {
+		const size_t comparison_length) const {
 	if (((this->content_length - position1) < comparison_length) || ((array_length - position2) < comparison_length)) {
 		//FIXME: Does this introduce a timing sidechannel? This leaks the information that two buffers don't have the same length
 		//buffers are too short
-		return -6;
+		return -6; //TODO: Is this an exception?
 	}
 
 	if ((this->buffer_length == 0) || (array_length == 0)) {
@@ -485,100 +335,93 @@ int Buffer::compareToRawPartial(
 	return sodium_memcmp(this->content + position1, array + position2, comparison_length);
 }
 
-/*
- * Fill a buffer with random numbers.
- */
-int Buffer::fillRandom(const size_t length) noexcept {
+void Buffer::fillRandom(const size_t length) {
 	if (length > this->buffer_length) {
-		return -6;
+		throw MolchException(BUFFER_ERROR, "Can't fill more than the entire buffer.");
 	}
 
 	if (this->readonly) {
-		return -5;
+		throw MolchException(BUFFER_ERROR, "Can't fill readonly buffer with random numbers.");
 	}
 
 	if (this->buffer_length == 0) {
-		return 0;
+		return;
 	}
 
 	this->content_length = length;
 	randombytes_buf(this->content, length);
-
-	return 0;
 }
 
 //FIXME: Make sure this doesn't introduce any sidechannels
-int Buffer::xorWith(const Buffer * const source) noexcept {
+void Buffer::xorWith(const Buffer& source) {
 	if (this->readonly) {
-		return -5;
+		throw MolchException(BUFFER_ERROR, "Can't xor to readonly buffer.");
 	}
 
-	if ((this->content_length != source->content_length)
+	if ((this->content_length != source.content_length)
 			|| (this->buffer_length < this->content_length)
-			|| (source->buffer_length < source->content_length)) {
-		return -6;
+			|| (source.buffer_length < source.content_length)) {
+		throw MolchException(BUFFER_ERROR, "Buffer length mismatch.");
 	}
 
 	//xor source onto destination
 	for (size_t i = 0; i < this->content_length; i++) {
-		this->content[i] ^= source->content[i];
+		this->content[i] ^= source.content[i];
 	}
-
-	return 0;
 }
 
-std::string Buffer::toString() const noexcept {
-	return std::string(reinterpret_cast<char*>(this->content), this->content_length);
+unsigned char* Buffer::release() {
+	unsigned char* content = this->content;
+	this->content = nullptr;
+	this->content_length = 0;
+	this->buffer_length = 0;
+
+	return content;
 }
 
-std::string Buffer::toHex() const noexcept {
+std::ostream& Buffer::print(std::ostream& stream) const {
+	stream << std::string(reinterpret_cast<char*>(this->content), this->content_length);
+
+	return stream;
+}
+
+std::ostream& Buffer::printHex(std::ostream& stream) const {
 	static const size_t width = 30;
 	//buffer for the hex string
 	const size_t hex_length = this->content_length * 2 + sizeof("");
 	auto hex = std::make_unique<char[]>(hex_length);
 	if (sodium_bin2hex(hex.get(), hex_length, this->content, this->content_length) == NULL) {
-		std::terminate();
+		throw MolchException(BUFFER_ERROR, "Failed to converst binary to hex with sodium_bin2hex.");
 	}
 
-	std::string output;
-	output.reserve(hex_length + (hex_length / 30) + (hex_length / 2));
 	for (size_t i = 0; i < hex_length; i++) {
 		if ((width != 0) && ((i % width) == 0) && (i != 0)) {
-			output += '\n';
+			stream << '\n';
 		} else if ((i % 2 == 0) && (i != 0)) {
-			output += ' ';
+			stream << ' ';
 		}
-		output += hex[i];
+		stream << hex[i];
 	}
 
-	return output;
+	return stream;
 }
 
-/*
- * Helper function that checks if a buffer is <none>
- * (filled with zeroes), and does so without introducing
- * side channels, especially timing side channels.
- */
-bool Buffer::isNone() const noexcept {
+bool Buffer::isNone() const {
 	return (this->content_length == 0) || sodium_is_zero(this->content, this->content_length);
 }
 
-bool Buffer::isValid() const noexcept {
-	return this->is_valid;
+bool Buffer::operator ==(const Buffer& buffer) const {
+	return this->compare(buffer) == 0;
 }
 
-bool Buffer::operator ==(const Buffer& buffer) const noexcept {
-	return this->compare(&buffer) == 0;
-}
-
-bool Buffer::operator !=(const Buffer& buffer) const noexcept {
+bool Buffer::operator !=(const Buffer& buffer) const {
 	return !(*this == buffer);
 }
 
-bool Buffer::fits(const size_t size) const noexcept {
+bool Buffer::fits(const size_t size) const {
 	return this->buffer_length >= size;
 }
 
-bool Buffer::contains(const size_t size) const noexcept {
+bool Buffer::contains(const size_t size) const {
 	return this->fits(size) && (this->content_length == size);
 }

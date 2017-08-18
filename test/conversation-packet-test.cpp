@@ -41,8 +41,6 @@ int main(void) {
 		//identity
 		Buffer alice_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 		Buffer alice_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		exception_on_invalid_buffer(alice_private_identity);
-		exception_on_invalid_buffer(alice_public_identity);
 		generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
@@ -53,8 +51,6 @@ int main(void) {
 		//identity
 		Buffer bob_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 		Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		exception_on_invalid_buffer(bob_private_identity);
-		exception_on_invalid_buffer(bob_public_identity);
 		generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
@@ -63,7 +59,6 @@ int main(void) {
 
 		//get the prekey list
 		Buffer prekey_list(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
-		exception_on_invalid_buffer(prekey_list);
 		PrekeyStore bob_prekeys;
 		bob_prekeys.list(prekey_list);
 
@@ -79,8 +74,7 @@ int main(void) {
 				prekey_list);
 
 		printf("Packet:\n");
-		std::cout << packet->toHex();
-		putchar('\n');
+		packet->printHex(std::cout) << std::endl;
 
 		//let bob receive the packet
 		std::unique_ptr<Buffer> received_message;
@@ -107,8 +101,7 @@ int main(void) {
 
 		printf("Sent message: %.*s\n", static_cast<int>(alice_send_message2.content_length), reinterpret_cast<const char*>(alice_send_message2.content));
 		printf("Packet:\n");
-		std::cout << alice_send_packet2->toHex();
-		putchar('\n');
+		alice_send_packet2->printHex(std::cout) << std::endl;
 
 		//bob receives the message
 		uint32_t bob_receive_message_number = UINT32_MAX;
@@ -139,8 +132,7 @@ int main(void) {
 
 		printf("Sent message: %.*s\n", static_cast<int>(bob_response_message.content_length), reinterpret_cast<const char*>(bob_response_message.content));
 		printf("Packet:\n");
-		std::cout << bob_response_packet->toHex();
-		putchar('\n');
+		bob_response_packet->printHex(std::cout) << std::endl;
 
 		//Alice receives the response
 		uint32_t alice_receive_message_number = UINT32_MAX;
@@ -181,8 +173,7 @@ int main(void) {
 
 		printf("Sent message: %.*s\n", static_cast<int>(send_message.content_length), reinterpret_cast<const char*>(send_message.content));
 		printf("Packet:\n");
-		std::cout << packet->toHex();
-		putchar('\n');
+		packet->printHex(std::cout) << std::endl;
 
 		//let alice receive the packet
 		received_message.reset();
@@ -209,8 +200,7 @@ int main(void) {
 
 		printf("Sent message: %.*s\n", static_cast<int>(bob_send_message2.content_length), reinterpret_cast<const char*>(bob_send_message2.content));
 		printf("Packet:\n");
-		std::cout << bob_send_packet2->toHex();
-		putchar('\n');
+		bob_send_packet2->printHex(std::cout) << std::endl;
 
 		//alice receives the message
 		auto alice_receive_message2 = alice_receive_conversation.receive(
@@ -239,8 +229,7 @@ int main(void) {
 
 		printf("Sent message: %.*s\n", static_cast<int>(alice_response_message.content_length), reinterpret_cast<const char*>(alice_response_message.content));
 		printf("Packet:\n");
-		std::cout << alice_response_packet->toHex();
-		putchar('\n');
+		alice_response_packet->printHex(std::cout) << std::endl;
 
 		//Bob receives the response
 		auto bob_received_response = bob_send_conversation.receive(

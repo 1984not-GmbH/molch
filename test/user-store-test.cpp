@@ -57,8 +57,6 @@ static std::vector<Buffer> protobuf_export(UserStore& store) {
 		for (size_t i = 0; i < length; i++) {
 			size_t unpacked_size = user__get_packed_size(users[i]);
 			export_buffers.push_back(Buffer(unpacked_size, 0));
-			exception_on_invalid_buffer(export_buffers.back());
-
 			export_buffers.back().content_length = user__pack(users[i], export_buffers.back().content);
 		}
 	} catch (const std::exception& exception) {
@@ -136,11 +134,8 @@ int main(void) {
 		list.reset();
 
 		//create alice
-		Buffer alice_public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-		exception_on_invalid_buffer(alice_public_signing_key);
-		std::cout << "BEFORE alice store.add()" << std::endl;
+		Buffer alice_public_signing_key(PUBLIC_MASTER_KEY_SIZE, 0);
 		store.add(UserStoreNode(&alice_public_signing_key));
-		std::cout << "AFTER alice store.add()" << std::endl;
 		{
 			auto alice_user = store.find(alice_public_signing_key);
 			MasterKeys::Unlocker unlocker{alice_user->master_keys};
@@ -167,10 +162,7 @@ int main(void) {
 
 		//create bob
 		Buffer bob_public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-		exception_on_invalid_buffer(bob_public_signing_key);
-		std::cout << "BEFORE bob store.add()" << std::endl;
 		store.add(UserStoreNode(&bob_public_signing_key));
-		std::cout << "AFTER bob store.add()" << std::endl;
 		printf("Successfully created Bob.\n");
 
 		//check length of the user store
@@ -184,8 +176,8 @@ int main(void) {
 		if (!list) {
 			throw MolchException(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 		}
-		if ((list->comparePartial(0, &alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+		if ((list->comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 			throw MolchException(INCORRECT_DATA, "Failed to list users.");
 		}
 		list.reset();
@@ -193,11 +185,8 @@ int main(void) {
 
 		//create charlie
 		Buffer charlie_public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-		exception_on_invalid_buffer(charlie_public_signing_key);
-		std::cout << "BEFORE charlie store.add()" << std::endl;
 		store.add(UserStoreNode(&charlie_public_signing_key));
 		printf("Successfully added Charlie to the user store.\n");
-		std::cout << "AFTER charlie store.add()" << std::endl;
 
 		//check length of the user store
 		if (store.size() != 3) {
@@ -210,9 +199,9 @@ int main(void) {
 		if (!list) {
 			throw MolchException(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 		}
-		if ((list->comparePartial(0, &alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list->comparePartial(2 * PUBLIC_MASTER_KEY_SIZE, &charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+		if ((list->comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list->comparePartial(2 * PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 			throw MolchException(INCORRECT_DATA, "Failed to list users.");
 		}
 		list.reset();
@@ -244,17 +233,15 @@ int main(void) {
 			if (!list) {
 				throw MolchException(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
 			}
-			if ((list->comparePartial(0, &alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-					|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+			if ((list->comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+					|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 				throw MolchException(INCORRECT_DATA, "Removing user failed.");
 			}
 			list.reset();
 			printf("Successfully removed user.\n");
 
 			//recreate bob
-			std::cout << "BEFORE recreating bob store.add()" << std::endl;
 			store.add(UserStoreNode(&bob_public_signing_key));
-			std::cout << "AFTER recreating bob store.add()" << std::endl;
 			printf("Successfully recreated Bob.\n");
 
 			//now find bob again
@@ -281,7 +268,7 @@ int main(void) {
 		//print the exported data
 		puts("[\n");
 		for (size_t i = 0; i < protobuf_export_buffers.size(); i++) {
-			std::cout << protobuf_export_buffers[i].toHex();
+			protobuf_export_buffers[i].printHex(std::cout);
 			puts(",\n");
 		}
 		puts("]\n\n");
@@ -309,8 +296,8 @@ int main(void) {
 
 		//check the user list
 		list = store.list();
-		if ((list->comparePartial(0, &alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, &charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+		if ((list->comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 			throw MolchException(REMOVE_ERROR, "Removing user failed.");
 		}
 		list.reset();

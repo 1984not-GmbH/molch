@@ -67,8 +67,6 @@ int main(void) noexcept {
 		//creating charlie's identity keypair
 		Buffer charlie_private_identity(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 		Buffer charlie_public_identity(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-		exception_on_invalid_buffer(charlie_private_identity);
-		exception_on_invalid_buffer(charlie_public_identity);
 		generate_and_print_keypair(
 			charlie_public_identity,
 			charlie_private_identity,
@@ -78,8 +76,6 @@ int main(void) noexcept {
 		//creating charlie's ephemeral keypair
 		Buffer charlie_private_ephemeral(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 		Buffer charlie_public_ephemeral(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-		exception_on_invalid_buffer(charlie_private_ephemeral);
-		exception_on_invalid_buffer(charlie_public_ephemeral);
 		generate_and_print_keypair(
 			charlie_public_ephemeral,
 			charlie_private_ephemeral,
@@ -89,8 +85,6 @@ int main(void) noexcept {
 		//creating dora's identity keypair
 		Buffer dora_private_identity(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 		Buffer dora_public_identity(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-		exception_on_invalid_buffer(dora_private_identity);
-		exception_on_invalid_buffer(dora_public_identity);
 		generate_and_print_keypair(
 			dora_public_identity,
 			dora_private_identity,
@@ -100,8 +94,6 @@ int main(void) noexcept {
 		//creating dora's ephemeral keypair
 		Buffer dora_private_ephemeral(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
 		Buffer dora_public_ephemeral(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-		exception_on_invalid_buffer(dora_private_ephemeral);
-		exception_on_invalid_buffer(dora_public_ephemeral);
 		generate_and_print_keypair(
 			dora_public_ephemeral,
 			dora_private_ephemeral,
@@ -136,7 +128,7 @@ int main(void) noexcept {
 		printf("Export to Protobuf-C\n");
 		auto protobuf_export_buffer = protobuf_export(*charlie_conversation);
 
-		std::cout << protobuf_export_buffer->toHex();
+		protobuf_export_buffer->printHex(std::cout);
 		puts("\n");
 
 		charlie_conversation.reset();

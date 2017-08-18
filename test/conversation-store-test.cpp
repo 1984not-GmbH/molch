@@ -58,8 +58,6 @@ static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
 		for (size_t i = 0; i < length; i++) {
 			size_t unpacked_size = conversation__get_packed_size(conversations[i]);
 			export_buffers.emplace_back(unpacked_size, 0);
-			exception_on_invalid_buffer(export_buffers.back());
-
 			export_buffers.back().content_length = conversation__pack(conversations[i], export_buffers.back().content);
 		}
 	} catch (const std::exception& exception) {
@@ -103,8 +101,6 @@ ConversationStore protobuf_import(const std::vector<Buffer> buffers) {
 static void test_add_conversation(ConversationStore& store) {
 	Buffer our_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	Buffer our_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	exception_on_invalid_buffer(our_private_identity);
-	exception_on_invalid_buffer(our_public_identity);
 	int status = crypto_box_keypair(our_public_identity.content, our_private_identity.content);
 	if (status != 0) {
 		throw MolchException(KEYGENERATION_FAILED, "Failed to generate our identity keys.");
@@ -112,26 +108,16 @@ static void test_add_conversation(ConversationStore& store) {
 
 	Buffer our_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	Buffer our_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	exception_on_invalid_buffer(our_private_ephemeral);
-	exception_on_invalid_buffer(our_public_ephemeral);
 	status = crypto_box_keypair(our_public_ephemeral.content, our_private_ephemeral.content);
 	if (status != 0) {
 		throw MolchException(KEYGENERATION_FAILED, "Failed to generate our ephemeral keys.");
 	}
 
 	Buffer their_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	exception_on_invalid_buffer(their_public_identity);
-	status = their_public_identity.fillRandom(their_public_identity.getBufferLength());
-	if (status != 0) {
-		throw MolchException(KEYGENERATION_FAILED, "Failed to generate their public identity keys.");
-	}
+	their_public_identity.fillRandom(their_public_identity.getBufferLength());
 
 	Buffer their_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	exception_on_invalid_buffer(their_public_ephemeral);
-	status = their_public_ephemeral.fillRandom(their_public_ephemeral.getBufferLength());
-	if (status != 0) {
-		throw MolchException(KEYGENERATION_FAILED, "Failed to generate their public ephemeral keys.");
-	}
+	their_public_ephemeral.fillRandom(their_public_ephemeral.getBufferLength());
 
 	//create the conversation manually
 	ConversationT conversation(
@@ -222,7 +208,7 @@ int main(void) {
 		//print
 		puts("[\n");
 		for (size_t i = 0; i < protobuf_export_buffers.size(); i++) {
-			std::cout << protobuf_export_buffers[i].toHex();
+			protobuf_export_buffers[i].printHex(std::cout);
 			puts(",\n");
 		}
 		puts("]\n\n");

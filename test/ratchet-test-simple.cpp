@@ -30,8 +30,11 @@
 #include "../lib/molch-exception.hpp"
 #include "utils.hpp"
 
-static int keypair(Buffer& private_key, Buffer& public_key) {
-	return crypto_box_keypair(public_key.content, private_key.content);
+static void keypair(Buffer& private_key, Buffer& public_key) {
+	int status = crypto_box_keypair(public_key.content, private_key.content);
+	if (status != 0) {
+		throw MolchException(KEYGENERATION_FAILED, "Failed to generate keypair.");
+	}
 }
 
 int main(void) {
@@ -41,53 +44,21 @@ int main(void) {
 			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
-		//create all the buffers
-		//Keys:
+		//generate the keys
 		//Alice:
 		Buffer alice_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 		Buffer alice_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		keypair(alice_private_identity, alice_public_identity);
 		Buffer alice_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 		Buffer alice_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		//Bob
+		keypair(alice_private_ephemeral, alice_public_ephemeral);
+		//Bob:
 		Buffer bob_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 		Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		keypair(bob_private_identity, bob_public_identity);
 		Buffer bob_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 		Buffer bob_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-
-		//keys for sending
-		Buffer send_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer send_message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-		Buffer public_send_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-
-		//keys for receiving
-		Buffer current_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer next_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer receive_message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-
-		exception_on_invalid_buffer(alice_private_identity);
-		exception_on_invalid_buffer(alice_public_identity);
-		exception_on_invalid_buffer(alice_private_ephemeral);
-		exception_on_invalid_buffer(alice_public_ephemeral);
-		exception_on_invalid_buffer(send_header_key);
-		exception_on_invalid_buffer(send_message_key);
-		exception_on_invalid_buffer(public_send_ephemeral);
-		exception_on_invalid_buffer(current_receive_header_key);
-		exception_on_invalid_buffer(next_receive_header_key);
-		exception_on_invalid_buffer(receive_message_key);
-
-		//generate the keys
-		if (keypair(alice_private_identity, alice_public_identity) != 0) {
-			throw MolchException(KEYGENERATION_FAILED, "Failed to generate Alice' identity keypair.");
-		}
-		if (keypair(alice_private_ephemeral, alice_public_ephemeral) != 0) {
-			throw MolchException(KEYGENERATION_FAILED, "Failed to generate Alice' ephemeral keypair.");
-		}
-		if (keypair(bob_private_identity, bob_public_identity) != 0) {
-			throw MolchException(KEYGENERATION_FAILED, "Failed to generate Bobs identity keypair.");
-		}
-		if (keypair(bob_private_ephemeral, bob_public_ephemeral) != 0) {
-			throw MolchException(KEYGENERATION_FAILED, "Failed to generate Bobs ephemeral keypair.");
-		}
+		keypair(bob_private_ephemeral, bob_public_ephemeral);
 
 		//compare public identity keys, the one with the bigger key will be alice
 		//(to make the test more predictable, and make the 'am_i_alice' flag in the
@@ -97,15 +68,14 @@ int main(void) {
 			//swap bob and alice
 			//public identity key
 			Buffer stash(std::max(PUBLIC_KEY_SIZE, PRIVATE_KEY_SIZE), 0);
-			exception_on_invalid_buffer(stash);
-			status |= stash.cloneFrom(&alice_public_identity);
-			status |= alice_public_identity.cloneFrom(&bob_public_identity);
-			status |= bob_public_identity.cloneFrom(&stash);
+			stash.cloneFrom(alice_public_identity);
+			alice_public_identity.cloneFrom(bob_public_identity);
+			bob_public_identity.cloneFrom(stash);
 
 			//private identity key
-			status |= stash.cloneFrom(&alice_private_identity);
-			status |= alice_private_identity.cloneFrom(&bob_private_identity);
-			status |= bob_private_identity.cloneFrom(&stash);
+			stash.cloneFrom(alice_private_identity);
+			alice_private_identity.cloneFrom(bob_private_identity);
+			bob_private_identity.cloneFrom(stash);
 
 			if (status != 0) {
 				throw MolchException(BUFFER_ERROR, "Failed to switch Alice' and Bob's keys.");
@@ -145,6 +115,9 @@ int main(void) {
 			alice_public_ephemeral);
 
 		// FIRST SCENARIO: ALICE SENDS A MESSAGE TO BOB
+		Buffer send_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+		Buffer send_message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+		Buffer public_send_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 		uint32_t send_message_number;
 		uint32_t previous_send_message_number;
 		alice_send_ratchet->send(
@@ -155,6 +128,8 @@ int main(void) {
 				send_message_key);
 
 		//bob receives
+		Buffer current_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+		Buffer next_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 		bob_receive_ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 
 		ratchet_header_decryptability decryptability;
@@ -167,6 +142,7 @@ int main(void) {
 		}
 		bob_receive_ratchet->setHeaderDecryptability(decryptability);
 
+		Buffer receive_message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 		bob_receive_ratchet->receive(
 				receive_message_key,
 				public_send_ephemeral,

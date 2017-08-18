@@ -131,7 +131,7 @@ void protobuf_import(
 }
 
 
-int main(void) noexcept {
+int main(void) {
 	try {
 		if (sodium_init() == -1) {
 			throw MolchException(INIT_ERROR, "Failed to initialize libsodium");
@@ -148,22 +148,22 @@ int main(void) noexcept {
 		//print the keys
 		printf("Signing keypair:\n");
 		printf("Public:\n");
-		std::cout << unspiced_master_keys.public_signing_key.toHex();
+		unspiced_master_keys.public_signing_key.printHex(std::cout);
 
 		printf("\nPrivate:\n");
 		{
 			MasterKeys::Unlocker unlocker(unspiced_master_keys);
-			std::cout << unspiced_master_keys.private_signing_key.toHex();
+			unspiced_master_keys.private_signing_key.printHex(std::cout);
 		}
 
 		printf("\n\nIdentity keys:\n");
 		printf("Public:\n");
-		std::cout << unspiced_master_keys.public_identity_key.toHex();
+		unspiced_master_keys.public_identity_key.printHex(std::cout);
 
 		printf("\nPrivate:\n");
 		{
 			MasterKeys::Unlocker unlocker(unspiced_master_keys);
-			std::cout << unspiced_master_keys.private_identity_key.toHex();
+			unspiced_master_keys.private_identity_key.printHex(std::cout);
 		}
 
 		//check the exported public keys
@@ -177,7 +177,6 @@ int main(void) noexcept {
 
 		//create the spiced master keys
 		Buffer seed(";a;awoeih]]pquw4t[spdif\\aslkjdf;'ihdg#)%!@))%)#)(*)@)#)h;kuhe[orih;o's':ke';sa'd;kfa';;.calijv;a/orq930u[sd9f0u;09[02;oasijd;adk");
-		exception_on_invalid_buffer(seed);
 		MasterKeys spiced_master_keys{seed};
 		spiced_master_keys.getSigningKey(public_signing_key);
 		spiced_master_keys.getIdentityKey(public_identity_key);
@@ -185,22 +184,22 @@ int main(void) noexcept {
 		//print the keys
 		printf("Signing keypair:\n");
 		printf("Public:\n");
-		std::cout << spiced_master_keys.public_signing_key.toHex();
+		spiced_master_keys.public_signing_key.printHex(std::cout) << std::endl;
 
-		printf("\nPrivate:\n");
+		printf("Private:\n");
 		{
 			MasterKeys::Unlocker unlocker(spiced_master_keys);
-			std::cout << spiced_master_keys.private_signing_key.toHex();
+			spiced_master_keys.private_signing_key.printHex(std::cout) << std::endl;
 		}
 
-		printf("\n\nIdentity keys:\n");
+		printf("\nIdentity keys:\n");
 		printf("Public:\n");
-		std::cout << spiced_master_keys.public_identity_key.toHex();
+		spiced_master_keys.public_identity_key.printHex(std::cout) << std::endl;
 
-		printf("\nPrivate:\n");
+		printf("Private:\n");
 		{
 			MasterKeys::Unlocker unlocker(spiced_master_keys);
-			std::cout << spiced_master_keys.private_identity_key.toHex();
+			spiced_master_keys.private_identity_key.printHex(std::cout);
 		}
 
 		//check the exported public keys
@@ -218,11 +217,10 @@ int main(void) noexcept {
 		Buffer signed_data{100, 0};
 		spiced_master_keys.sign(data, signed_data);
 		printf("Signed data:\n");
-		std::cout << signed_data.toHex();
+		signed_data.printHex(std::cout);
 
 		//now check the signature
 		Buffer unwrapped_data{100, 0};
-		exception_on_invalid_buffer(unwrapped_data);
 		unsigned long long unwrapped_data_length;
 		int status_int = crypto_sign_open(
 				unwrapped_data.content,
@@ -253,20 +251,16 @@ int main(void) noexcept {
 			protobuf_export_private_identity_key);
 
 		printf("Public signing key:\n");
-		std::cout << protobuf_export_public_signing_key->toHex();
-		puts("\n\n");
+		protobuf_export_public_signing_key->printHex(std::cout) << "\n\n";
 
 		printf("Private signing key:\n");
-		std::cout << protobuf_export_private_signing_key->toHex();
-		puts("\n\n");
+		protobuf_export_private_signing_key->printHex(std::cout) << "\n\n";
 
 		printf("Public identity key:\n");
-		std::cout << protobuf_export_public_identity_key->toHex();
-		puts("\n\n");
+		protobuf_export_public_identity_key->printHex(std::cout) << "\n\n";
 
 		printf("Private identity key:\n");
-		std::cout << protobuf_export_private_identity_key->toHex();
-		puts("\n\n");
+		protobuf_export_private_identity_key->printHex(std::cout) << "\n\n";
 
 		//import again
 		printf("Import from Protobuf-C:\n");

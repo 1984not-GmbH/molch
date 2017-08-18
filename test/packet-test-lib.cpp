@@ -52,24 +52,20 @@ void create_and_print_message(
 	}
 
 	//create header key
-	if (header_key.fillRandom(HEADER_KEY_SIZE) != 0) {
-		throw MolchException(KEYGENERATION_FAILED, "Failed to generate header key.");
-	}
+	header_key.fillRandom(HEADER_KEY_SIZE);
 	printf("Header key (%zu Bytes):\n", header_key.content_length);
-	std::cout << header_key.toHex();
+	header_key.printHex(std::cout);
 	putchar('\n');
 
 	//create message key
-	if (message_key.fillRandom(MESSAGE_KEY_SIZE) != 0) {
-		throw MolchException(KEYGENERATION_FAILED, "Failed to generate message key.");
-	}
+	message_key.fillRandom(MESSAGE_KEY_SIZE);
 	printf("Message key (%zu Bytes):\n", message_key.content_length);
-	std::cout << message_key.toHex();
+	message_key.printHex(std::cout);
 	putchar('\n');
 
 	//print the header (as hex):
 	printf("Header (%zu Bytes):\n", header.content_length);
-	std::cout << header.toHex();
+	header.printHex(std::cout);
 	putchar('\n');
 
 	//print the message (as string):
@@ -88,6 +84,6 @@ void create_and_print_message(
 
 	//print encrypted packet
 	printf("Encrypted Packet (%zu Bytes):\n", packet->content_length);
-	std::cout << packet->toHex();
+	packet->printHex(std::cout);
 	putchar('\n');
 }

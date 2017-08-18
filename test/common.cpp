@@ -54,8 +54,8 @@ void generate_and_print_keypair(
 
 	//print keypair
 	std::cout << name << "'s public " << type << " key (" << public_key.content_length << ":" << std::endl;
-	std::cout << public_key.toHex();
+	public_key.printHex(std::cout);
 	putchar('\n');
 	std::cout << std::endl << name << "'s private " << type << " key (" << private_key.content_length << ":" << std::endl;
-	std::cout << private_key.toHex() << std::endl;
+	private_key.printHex(std::cout) << std::endl;
 }

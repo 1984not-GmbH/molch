@@ -23,104 +23,101 @@
 #include <cstdlib>
 #include <sodium.h>
 #include <cstring>
+#include <exception>
+#include <iostream>
+#include <string>
 
 #include "utils.hpp"
 #include "../lib/molch.h"
 #include "../lib/constants.h"
 #include "../lib/destroyers.hpp"
+#include "../lib/molch-exception.hpp"
+#include "../lib/malloc.hpp"
 
 int main(int argc, char *args[]) noexcept {
-	bool recreate = false;
-	if (argc == 2) {
-		if (strcmp(args[1], "--recreate") == 0) {
-			recreate = true;
-		}
-	}
-	/* don't initialize libsodium here */
-	Buffer user_id(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-	Buffer *backup_file = nullptr; //backup to import from
-	Buffer *backup_key_file = nullptr;
-
-	unsigned char *backup = nullptr;
-	unsigned char *prekey_list = nullptr;
-	unsigned char *backup_key = reinterpret_cast<unsigned char*>(malloc(BACKUP_KEY_SIZE));
-
-	return_status status = return_status_init();
-
-	throw_on_invalid_buffer(user_id);
-
-	if (sodium_init() != 0) {
-		THROW(INIT_ERROR, "Failed to initialize libsodium.");
-	}
-
-	if (!recreate) {
-		//load the backup from a file
-		status = read_file(backup_file, "test-data/molch-init.backup");
-		THROW_on_error(DATA_FETCH_ERROR, "Failed to read backup from a file.");
-
-		//load the backup key from a file
-		status = read_file(backup_key_file, "test-data/molch-init-backup.key");
-		THROW_on_error(DATA_FETCH_ERROR, "Failed to read backup key from a file.");
-		if (backup_key_file->content_length != BACKUP_KEY_SIZE) {
-			THROW(INCORRECT_BUFFER_SIZE, "Backup key from file has an incorrect length.");
+	try {
+		bool recreate = false;
+		if (argc == 2) {
+			if (strcmp(args[1], "--recreate") == 0) {
+				recreate = true;
+			}
 		}
 
-		//try to import the backup
-		status = molch_import(
-				backup_key,
-				BACKUP_KEY_SIZE,
-				backup_file->content,
-				backup_file->content_length,
-				backup_key_file->content,
-				backup_key_file->content_length);
-		THROW_on_error(IMPORT_ERROR, "Failed to import backup from backup.");
+		if (sodium_init() != 0) {
+			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+		}
 
-		//destroy again
-		molch_destroy_all_users();
-	}
+		unsigned char backup_key[BACKUP_KEY_SIZE];
+		if (!recreate) {
+			//load the backup from a file
+			auto backup_file = read_file("test-data/molch-init.backup");
 
-	//create a new user
-	size_t backup_length;
-	size_t prekey_list_length;
-	status = molch_create_user(
-			user_id.content,
-			user_id.content_length,
-			&prekey_list,
-			&prekey_list_length,
-			backup_key,
-			BACKUP_KEY_SIZE,
-			&backup,
-			&backup_length,
-			reinterpret_cast<const unsigned char*>("random"),
-			sizeof("random"));
-	THROW_on_error(CREATION_ERROR, "Failed to create user.");
-	if (backup == nullptr) {
-		THROW(EXPORT_ERROR, "Failed to export backup.");
-	}
+			//load the backup key from a file
+			auto backup_key_file = read_file("test-data/molch-init-backup.key");
+			if (backup_key_file->content_length != BACKUP_KEY_SIZE) {
+				throw MolchException(INCORRECT_BUFFER_SIZE, "Backup key from file has an incorrect length.");
+			}
 
-	//print the backup to a file
-	{
-		Buffer backup_buffer(backup, backup_length);
+			//try to import the backup
+			{
+				return_status status = molch_import(
+						backup_key,
+						BACKUP_KEY_SIZE,
+						backup_file->content,
+						backup_file->content_length,
+						backup_key_file->content,
+						backup_key_file->content_length);
+				on_error {
+					throw MolchException(status);
+				}
+			}
+
+			//destroy again
+			molch_destroy_all_users();
+		}
+
+		//create a new user
+		std::unique_ptr<unsigned char,MallocDeleter<unsigned char>> backup;
+		std::unique_ptr<unsigned char,MallocDeleter<unsigned char>> prekey_list;
+		Buffer user_id(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+		size_t backup_length;
+		size_t prekey_list_length;
+		{
+			unsigned char *backup_ptr = nullptr;
+			unsigned char *prekey_list_ptr = nullptr;
+			return_status status = molch_create_user(
+					user_id.content,
+					user_id.content_length,
+					&prekey_list_ptr,
+					&prekey_list_length,
+					backup_key,
+					BACKUP_KEY_SIZE,
+					&backup_ptr,
+					&backup_length,
+					reinterpret_cast<const unsigned char*>("random"),
+					sizeof("random"));
+			on_error {
+				throw MolchException(status);
+			}
+			backup.reset(backup_ptr);
+			prekey_list.reset(prekey_list_ptr);
+		}
+		if (backup == nullptr) {
+			throw MolchException(EXPORT_ERROR, "Failed to export backup.");
+		}
+
+		//print the backup to a file
+		Buffer backup_buffer(backup.get(), backup_length);
 		Buffer backup_key_buffer(backup_key, BACKUP_KEY_SIZE);
 		print_to_file(backup_buffer, "molch-init.backup");
 		print_to_file(backup_key_buffer, "molch-init-backup.key");
+	} catch (const MolchException& exception) {
+		exception.print(std::cerr) << std::endl;
+		return EXIT_FAILURE;
+	} catch (const std::exception& exception) {
+		std::cerr << exception.what() << std::endl;
+		return EXIT_FAILURE;
 	}
 
-cleanup:
-	free_and_null_if_valid(backup);
-	free_and_null_if_valid(prekey_list);
-	buffer_destroy_and_null_if_valid(backup_file);
-	buffer_destroy_and_null_if_valid(backup_key_file);
-
-	free_and_null_if_valid(backup_key);
-
-	molch_destroy_all_users();
-
-	on_error {
-		print_errors(status);
-		printf("NOTE: Did you change the backup format and forgot to create new molch-init.backup and molch-init-backup.key files?\n To recreate them run with --recreate. Then just copy them to the appropriate place.\n");
-	}
-	return_status_destroy_errors(&status);
-
-	return status.status;
+	return EXIT_SUCCESS;
 }

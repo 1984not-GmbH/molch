@@ -51,7 +51,6 @@ void derive_key(
 
 	//create a salt that contains the number of the subkey
 	Buffer salt(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
-	exception_on_invalid_buffer(salt);
 	salt.clear(); //fill with zeroes
 	salt.content_length = crypto_generichash_blake2b_SALTBYTES;
 
@@ -146,8 +145,6 @@ void derive_root_next_header_and_chain_keys(
 	//create buffers
 	Buffer diffie_hellman_secret(DIFFIE_HELLMAN_SIZE, 0);
 	Buffer derivation_key(crypto_generichash_BYTES, crypto_generichash_BYTES);
-	exception_on_invalid_buffer(diffie_hellman_secret);
-	exception_on_invalid_buffer(derivation_key);
 
 	//DH(DHRs, DHRr) or DH(DHRp, DHRs)
 	diffie_hellman(
@@ -219,7 +216,6 @@ void derive_initial_root_chain_and_header_keys(
 	}
 
 	Buffer master_key(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-	exception_on_invalid_buffer(master_key);
 
 	//derive master_key to later derive the initial root key,
 	//header keys and chain keys from

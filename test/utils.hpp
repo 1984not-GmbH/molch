@@ -23,6 +23,7 @@
 #define TEST_UTILS_H
 
 #include <string>
+#include <memory>
 
 #include "../lib/buffer.hpp"
 #include "../lib/return-status.h"
@@ -31,5 +32,5 @@ void print_to_file(const Buffer& data, const std::string& filename) noexcept;
 
 void print_errors(const return_status&  status) noexcept;
 
-return_status read_file(Buffer*& data, const std::string& filename) noexcept __attribute__((warn_unused_result));
+std::unique_ptr<Buffer> read_file(const std::string& filename);
 #endif

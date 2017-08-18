@@ -25,10 +25,12 @@
 #include <algorithm>
 #include <new>
 #include <memory>
+#include <exception>
 
 #include "return-status.h"
 #include "buffer.hpp"
 #include "destroyers.hpp"
+#include "molch-exception.hpp"
 
 extern return_status return_status_init() noexcept {
 	return_status status = {
@@ -211,60 +213,50 @@ const char *return_status_get_name(status_type status) noexcept {
  * Don't forget to free with "free" after usage.
  */
 char *return_status_print(const return_status * const status_to_print, size_t *length) noexcept {
-	return_status status = return_status_init();
-
-	Buffer *output = nullptr;
-
-	size_t output_size = 1; // 1 because of '\0';
-
-	//check input
-	if (status_to_print == nullptr) {
-		THROW(INVALID_INPUT, "Invalid input return_status_print.");
-	}
-
-	static const unsigned char success_string[] = "SUCCESS";
-	static const unsigned char error_string[] = "ERROR\nerror stack trace:\n";
-	static const unsigned char null_string[] = "(nullptr)";
-
-	// count how much space needs to be allocated
-	if (status_to_print->status == SUCCESS) {
-		output_size += sizeof(success_string);
-	} else {
-		output_size += sizeof(error_string);
-
-		// iterate over error stack
-		for (error_message *current_error = status_to_print->error;
-				current_error != nullptr;
-				current_error = current_error->next) {
-
-			output_size += sizeof("XXX: ");
-			output_size += strlen(return_status_get_name(current_error->status));
-			output_size += sizeof(", ");
-
-			if (current_error->message == nullptr) {
-				output_size += sizeof(null_string);
-			} else {
-				output_size += strlen(current_error->message);
-			}
-
-			output_size += sizeof('\n');
+	std::unique_ptr<Buffer> output;
+	try {
+		//check input
+		if (status_to_print == nullptr) {
+			throw MolchException(INVALID_INPUT, "Invalid input return_status_print.");
 		}
-	}
 
-	output = Buffer::create(output_size, 0);
-	THROW_on_failed_alloc(output);
+		static const unsigned char success_string[] = "SUCCESS";
+		static const unsigned char error_string[] = "ERROR\nerror stack trace:\n";
+		static const unsigned char null_string[] = "(nullptr)";
 
-	{
-		int status_int = 0;
+		// count how much space needs to be allocated
+		size_t output_size = 1; // 1 because of '\0';
+		if (status_to_print->status == SUCCESS) {
+			output_size += sizeof(success_string);
+		} else {
+			output_size += sizeof(error_string);
+
+			// iterate over error stack
+			for (error_message *current_error = status_to_print->error;
+					current_error != nullptr;
+					current_error = current_error->next) {
+
+				output_size += sizeof("XXX: ");
+				output_size += strlen(return_status_get_name(current_error->status));
+				output_size += sizeof(", ");
+
+				if (current_error->message == nullptr) {
+					output_size += sizeof(null_string);
+				} else {
+					output_size += strlen(current_error->message);
+				}
+
+				output_size += sizeof('\n');
+			}
+		}
+
+		output = std::make_unique<Buffer>(output_size, 0, &malloc, &free);
+
 		// now fill the output
 		if (status_to_print->status == SUCCESS) {
-			if (output->cloneFromRaw(success_string, sizeof(success_string) - 1) != 0) {
-				THROW(BUFFER_ERROR, "Failed to copy success_string.");
-			}
+			output->cloneFromRaw(success_string, sizeof(success_string) - 1);
 		} else {
-			if (output->cloneFromRaw(error_string, sizeof(error_string) - 1) != 0) {
-				THROW(BUFFER_ERROR, "Failed to copy error_string.");
-			}
+			output->cloneFromRaw(error_string, sizeof(error_string) - 1);
 
 			// iterate over error stack
 			size_t i = 0;
@@ -279,85 +271,68 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 					"%.3zu: ",
 					i);
 				if (written != (sizeof("XXX: ") - 1)) {
-					THROW(INCORRECT_BUFFER_SIZE, "Failed to write to output buffer, probably too short.");
+					throw MolchException(INCORRECT_BUFFER_SIZE, "Failed to write to output buffer, probably too short.");
 				}
 				output->content_length += static_cast<unsigned int>(written);
 
-				status_int = output->copyFromRaw(
+				output->copyFromRaw(
 						output->content_length,
 						reinterpret_cast<const unsigned char*>(return_status_get_name(current_error->status)),
 						0,
 						strlen(return_status_get_name(current_error->status)));
-				if (status_int != 0) {
-					THROW(BUFFER_ERROR, "Failed to copy status name to stack trace.");
-				}
 
-				status_int = output->copyFromRaw(
+				output->copyFromRaw(
 						output->content_length,
 						reinterpret_cast<const unsigned char*>(", "),
 						0,
 						sizeof(", ") - 1);
-				if (status_int != 0) {
-					THROW(BUFFER_ERROR, "Failed to copy \", \" to stack trace.");
-				}
 
 				if (current_error->message == nullptr) {
-					status_int = output->copyFromRaw(
+					output->copyFromRaw(
 							output->content_length,
 							null_string,
 							0,
 							sizeof(null_string) - 1);
-					if (status_int != 0) {
-						THROW(BUFFER_ERROR, "Failed to copy \"(nullptr)\" to stack trace.");
-					}
 				} else {
-					status_int = output->copyFromRaw(
+					output->copyFromRaw(
 							output->content_length,
 							reinterpret_cast<const unsigned char*>(current_error->message),
 							0,
 							strlen(current_error->message));
-					if (status_int != 0) {
-						THROW(BUFFER_ERROR, "Failed to copy error message to stack trace.");
-					}
 				}
 
-				status_int = output->copyFromRaw(
+				output->copyFromRaw(
 						output->content_length,
 						reinterpret_cast<const unsigned char*>("\n"),
 						0,
 						1);
-				if (status_int != 0) {
-					THROW(BUFFER_ERROR, "Failed to copy newline to stack trace.");
-				}
 			}
 		}
-	}
 
-	{
-		int status_int = output->copyFromRaw(
+		output->copyFromRaw(
 				output->content_length,
 				reinterpret_cast<const unsigned char*>(""),
 				0,
 				sizeof(""));
-		if (status_int != 0) {
-			THROW(BUFFER_ERROR, "Failed to copy null terminator to stack trace.");
-		}
-	}
-
-cleanup:
-	; // C programming language, I really really love you (not)
-	char *output_string = nullptr;
-	if (status.status != SUCCESS) {
-		buffer_destroy_and_null_if_valid(output);
-	} else {
-		output_string = reinterpret_cast<char*>(output->content);
+	} catch (const std::exception& exception) {
 		if (length != nullptr) {
-			*length = output->content_length;
+			*length = 0;
 		}
-		free_and_null_if_valid(output);
+		return nullptr;
 	}
 
-	return_status_destroy_errors(&status);
+	if (!output) {
+		if (length != nullptr) {
+			*length = 0;
+		}
+		return nullptr;
+	}
+
+	char *output_string = nullptr;
+	if (length != nullptr) {
+		*length = output->content_length;
+	}
+	output_string = reinterpret_cast<char*>(output->release());
 
 	return output_string;
 }

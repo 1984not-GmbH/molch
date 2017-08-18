@@ -22,9 +22,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
+#include <exception>
 
 #include "utils.hpp"
 #include "../lib/destroyers.hpp"
+#include "../lib/molch-exception.hpp"
 
 void print_to_file(const Buffer& data, const std::string& filename) noexcept {
 	FILE *file = fopen(filename.c_str(), "w");
@@ -46,39 +48,26 @@ void print_errors(const return_status& status) noexcept {
 }
 
 
-return_status read_file(Buffer*& data, const std::string& filename) noexcept {
-	return_status status = return_status_init();
-
+std::unique_ptr<Buffer> read_file(const std::string& filename) {
 	FILE *file = nullptr;
 
-	data = nullptr;
-
 	file = fopen(filename.c_str(), "r");
-	THROW_on_failed_alloc(file);
-
-	{
-		//get the filesize
-		fseek(file, 0, SEEK_END);
-		size_t filesize = static_cast<size_t>(ftell(file));
-		fseek(file, 0, SEEK_SET);
-
-		data = Buffer::create(filesize, filesize);
-		THROW_on_failed_alloc(data);
-		data->content_length = fread(data->content, 1, filesize, file);
-		if (data->content_length != filesize) {
-			THROW(INCORRECT_DATA, "Read less data from file than filesize.");
-		}
+	if (file == nullptr) {
+		throw MolchException(GENERIC_ERROR, "Failed to open file.");
 	}
 
-cleanup:
-	on_error {
-		buffer_destroy_and_null_if_valid(data);
+	//get the filesize
+	fseek(file, 0, SEEK_END);
+	size_t filesize = static_cast<size_t>(ftell(file));
+	fseek(file, 0, SEEK_SET);
+
+	auto data = std::make_unique<Buffer>(filesize, filesize);
+	data->content_length = fread(data->content, 1, filesize, file);
+	fclose(file);
+	file = nullptr;
+	if (data->content_length != filesize) {
+		throw MolchException(INCORRECT_DATA, "Read less data from file than filesize.");
 	}
 
-	if (file != nullptr) {
-		fclose(file);
-		file = nullptr;
-	}
-
-	return status;
+	return data;
 }

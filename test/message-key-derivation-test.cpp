@@ -30,36 +30,28 @@
 #include "../lib/molch-exception.hpp"
 #include "utils.hpp"
 
-int main(void) noexcept {
+int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			return -1;
+			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
 		}
-
-		//create buffers;
-		Buffer chain_key(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-		Buffer message_key(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-		exception_on_invalid_buffer(chain_key);
-		exception_on_invalid_buffer(message_key);
 
 		//create random chain key
-		if (chain_key.fillRandom(chain_key.getBufferLength()) != 0) {
-			throw MolchException(KEYGENERATION_FAILED, "Failed to create chain key.");
-		}
+		Buffer chain_key(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
+		chain_key.fillRandom(chain_key.getBufferLength());
 
 		//print first chain key
 		printf("Chain key (%zu Bytes):\n", chain_key.content_length);
-		std::cout << chain_key.toHex();
-		putchar('\n');
+		chain_key.printHex(std::cout) << std::endl;
 
 		//derive message key from chain key
+		Buffer message_key(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
 		derive_message_key(message_key, chain_key);
 		chain_key.clear();
 
 		//print message key
 		printf("Message key (%zu Bytes):\n", message_key.content_length);
-		std::cout << message_key.toHex();
-		putchar('\n');
+		message_key.printHex(std::cout) << std::endl;
 	} catch (const MolchException& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;

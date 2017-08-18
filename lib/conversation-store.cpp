@@ -128,15 +128,11 @@ std::unique_ptr<Buffer> ConversationStore::list() const {
 
 	for (const auto& conversation : this->conversations) {
 		size_t index = static_cast<size_t>(&conversation - &(*this->conversations.cbegin()));
-		int status = list->copyFrom(
+		list->copyFrom(
 			CONVERSATION_ID_SIZE * index,
-			&conversation.id,
+			conversation.id,
 			0,
 			conversation.id.content_length);
-		if (status != 0) {
-			throw MolchException(BUFFER_ERROR, "Failed to copy conversation id.");
-		}
-
 	}
 
 	return list;

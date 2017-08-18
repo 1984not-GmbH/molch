@@ -66,8 +66,6 @@ static void protobuf_export(
 		for (size_t i = 0; i < bundles_size; i++) {
 			size_t export_size = key_bundle__get_packed_size(key_bundles[i]);
 			Buffer export_buffer(export_size, 0);
-			exception_on_invalid_buffer(export_buffer);
-
 			export_buffer.content_length = key_bundle__pack(key_bundles[i], export_buffer.content);
 			if (export_buffer.content_length != export_size) {
 				throw MolchException(PROTOBUF_PACK_ERROR, "Packed buffer has incorrect length.");
@@ -139,10 +137,6 @@ int main(void) {
 			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
-		//buffer for message keys
-		Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-
 		// buffers for exporting protobuf-c
 		std::vector<Buffer> protobuf_export_buffers;
 		std::vector<Buffer> protobuf_second_export_buffers;
@@ -151,30 +145,21 @@ int main(void) {
 		HeaderAndMessageKeyStore keystore;
 		assert(keystore.keys.size() == 0);
 
-		int status_int = 0;
-		exception_on_invalid_buffer(header_key);
-		exception_on_invalid_buffer(message_key);
 		//add keys to the keystore
 		for (size_t i = 0; i < 6; i++) {
 			//create new keys
-			status_int = header_key.fillRandom(header_key.getBufferLength());
-			if (status_int != 0) {
-				throw MolchException(KEYGENERATION_FAILED, "Failed to create header key.");
-			}
-			status_int = message_key.fillRandom(message_key.getBufferLength());
-			if (status_int != 0) {
-				throw MolchException(KEYGENERATION_FAILED, "Failed to create header key.");
-			}
+			Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+			header_key.fillRandom(header_key.getBufferLength());
+			Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+			message_key.fillRandom(message_key.getBufferLength());
 
 			//print the new header key
 			printf("New Header Key No. %zu:\n", i);
-			std::cout << header_key.toHex();
-			putchar('\n');
+			header_key.printHex(std::cout) << std::endl;
 
 			//print the new message key
 			printf("New message key No. %zu:\n", i);
-			std::cout << message_key.toHex();
-			putchar('\n');
+			message_key.printHex(std::cout) << std::endl;
 
 			//add keys to the keystore
 			keystore.add(header_key, message_key);
@@ -192,8 +177,7 @@ int main(void) {
 
 		puts("[\n");
 		for (const auto& buffer : protobuf_export_buffers) {
-			std::cout << buffer.toHex();
-			puts(",\n");
+			buffer.printHex(std::cout) << ",\n";
 		}
 		puts("]\n\n");
 
@@ -211,7 +195,7 @@ int main(void) {
 			throw MolchException(INCORRECT_DATA, "Both exports contain different amounts of keys.");
 		}
 		for (size_t index = 0; index < protobuf_export_buffers.size(); index++) {
-			if (protobuf_export_buffers[index].compare(&protobuf_second_export_buffers[index]) != 0) {
+			if (protobuf_export_buffers[index] != protobuf_second_export_buffers[index]) {
 				throw MolchException(INCORRECT_DATA, "First and second export are not identical.");
 			}
 		}

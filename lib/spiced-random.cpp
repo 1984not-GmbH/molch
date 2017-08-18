@@ -38,30 +38,21 @@ void spiced_random(
 		Buffer& random_output,
 		const Buffer& low_entropy_spice,
 		const size_t output_length) {
-	//buffer to put the random data derived from the random spice into
-	Buffer spice(output_length, output_length, &sodium_malloc, &sodium_free);
-	exception_on_invalid_buffer(spice);
-	//buffer that contains the random data from the OS
-	Buffer os_random(output_length, output_length, &sodium_malloc, &sodium_free);
-	exception_on_invalid_buffer(os_random);
-	//buffer that contains a random salt
-	Buffer salt(crypto_pwhash_SALTBYTES, 0);
-	exception_on_invalid_buffer(salt);
-
 	//check buffer length
 	if (!random_output.fits(output_length)) {
 		throw MolchException(INCORRECT_BUFFER_SIZE, "Output buffers is too short.");
 	}
 
-	if (os_random.fillRandom(output_length) != 0) {
-		throw MolchException(GENERIC_ERROR, "Failed to fill buffer with random data.");
-	}
+	//buffer that contains the random data from the OS
+	Buffer os_random(output_length, output_length, &sodium_malloc, &sodium_free);
+	os_random.fillRandom(output_length);
 
-	if (salt.fillRandom(crypto_pwhash_SALTBYTES) != 0) {
-		throw MolchException(GENERIC_ERROR, "Failed to fill salt with random data.");
-	}
+	//buffer that contains a random salt
+	Buffer salt(crypto_pwhash_SALTBYTES, 0);
+	salt.fillRandom(crypto_pwhash_SALTBYTES);
 
 	//derive random data from the random spice
+	Buffer spice(output_length, output_length, &sodium_malloc, &sodium_free);
 	int status_int = crypto_pwhash(
 			spice.content,
 			spice.content_length,
@@ -76,12 +67,8 @@ void spiced_random(
 	}
 
 	//now combine the spice with the OS provided random data.
-	if (os_random.xorWith(&spice) != 0) {
-		throw MolchException(GENERIC_ERROR, "Failed to xor os random data and random data derived from spice.");
-	}
+	os_random.xorWith(spice);
 
 	//copy the random data to the output
-	if (random_output.cloneFrom(&os_random) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to copy random data.");
-	}
+	random_output.cloneFrom(os_random);
 }

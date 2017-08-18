@@ -34,37 +34,24 @@
 
 int main(void) {
 	try {
-		Buffer message("Hello world!\n");
-		//create buffers
-		Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-		Buffer public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer header(4, 4);
-
-		molch_message_type packet_type = NORMAL_MESSAGE;
-
-		exception_on_invalid_buffer(header_key);
-		exception_on_invalid_buffer(message_key);
-		exception_on_invalid_buffer(public_identity_key);
-		exception_on_invalid_buffer(public_ephemeral_key);
-		exception_on_invalid_buffer(public_prekey);
-		exception_on_invalid_buffer(header);
-
 		if (sodium_init() == -1) {
 			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
 		//generate keys and message
+		Buffer message("Hello world!\n");
+		Buffer header(4, 4);
 		header.content[0] = 0x01;
 		header.content[1] = 0x02;
 		header.content[2] = 0x03;
 		header.content[3] = 0x04;
+		molch_message_type packet_type = NORMAL_MESSAGE;
 		printf("Packet type: %02x\n", packet_type);
 		putchar('\n');
 
 		//NORMAL MESSAGE
+		Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+		Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 		printf("NORMAL MESSAGE\n");
 		std::unique_ptr<Buffer> packet;
 		create_and_print_message(
@@ -114,15 +101,12 @@ int main(void) {
 		//PREKEY MESSAGE
 		printf("PREKEY MESSAGE\n");
 		//create the public keys
-		if (public_identity_key.fillRandom(PUBLIC_KEY_SIZE) != 0) {
-			throw MolchException(KEYGENERATION_FAILED, "Failed to generate public identity key.");
-		}
-		if (public_ephemeral_key.fillRandom(PUBLIC_KEY_SIZE) != 0) {
-			throw MolchException(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
-		}
-		if (public_prekey.fillRandom(PUBLIC_KEY_SIZE) != 0) {
-			throw MolchException(KEYGENERATION_FAILED, "Failed to generate public prekey.");
-		}
+		Buffer public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		public_identity_key.fillRandom(PUBLIC_KEY_SIZE);
+		Buffer public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		public_ephemeral_key.fillRandom(PUBLIC_KEY_SIZE);
+		Buffer public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		public_prekey.fillRandom(PUBLIC_KEY_SIZE);
 
 		packet.reset();
 
@@ -148,7 +132,7 @@ int main(void) {
 		printf("Decrypted message length is the same.\n");
 
 		//compare the message
-		if (message.compare(decrypted_message.get()) != 0) {
+		if (message != *decrypted_message) {
 			throw MolchException(INVALID_VALUE, "Decrypted message doesn't match.");
 		}
 		printf("Decrypted message is the same.\n");

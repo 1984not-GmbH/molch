@@ -32,12 +32,8 @@ constexpr int64_t DEPRECATED_PREKEY_EXPIRATION_TIME = 3600; //one hour
 
 void PrekeyStoreNode::fill(const Buffer& public_key, const Buffer& private_key, const int64_t expiration_date) {
 	this->expiration_date = expiration_date;
-	if (this->public_key.cloneFrom(&public_key) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to copy public key.");
-	}
-	if (this->private_key.cloneFrom(&private_key) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to copy private key.");
-	}
+	this->public_key.cloneFrom(public_key);
+	this->private_key.cloneFrom(private_key);
 }
 
 PrekeyStoreNode::PrekeyStoreNode(const Buffer& public_key, const Buffer& private_key, int64_t expiration_date) {
@@ -76,9 +72,7 @@ PrekeyStoreNode::PrekeyStoreNode(const Prekey& keypair) {
 			|| (keypair.private_key->key.len != PRIVATE_KEY_SIZE)) {
 		throw MolchException(PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a private key.");
 	}
-	if (this->private_key.cloneFromRaw(keypair.private_key->key.data, keypair.private_key->key.len) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to copy private key from protobuf.");
-	}
+	this->private_key.cloneFromRaw(keypair.private_key->key.data, keypair.private_key->key.len);
 
 	//import public key
 	if (keypair.public_key == nullptr) {
@@ -90,9 +84,7 @@ PrekeyStoreNode::PrekeyStoreNode(const Prekey& keypair) {
 	} else if (keypair.public_key->key.len != PUBLIC_KEY_SIZE) {
 		throw MolchException(PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a public key.");
 	} else {
-		if (this->public_key.cloneFromRaw(keypair.public_key->key.data, keypair.public_key->key.len) != 0) {
-			throw MolchException(BUFFER_ERROR, "Failed to copy public key from protobuf.");
-		}
+		this->public_key.cloneFromRaw(keypair.public_key->key.data, keypair.public_key->key.len);
 	}
 
 	//import expiration_date
@@ -111,18 +103,14 @@ std::unique_ptr<Prekey,PrekeyDeleter> PrekeyStoreNode::exportProtobuf() const {
 	key__init(prekey->private_key);
 	prekey->private_key->key.data = throwing_zeroed_malloc<uint8_t>(PRIVATE_KEY_SIZE);
 	prekey->private_key->key.len = PRIVATE_KEY_SIZE;
-	if (this->private_key.cloneToRaw(prekey->private_key->key.data, prekey->private_key->key.len) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to copy private key to protobuf.");
-	}
+	this->private_key.cloneToRaw(prekey->private_key->key.data, prekey->private_key->key.len);
 
 	//export the public key
 	prekey->public_key = throwing_zeroed_malloc<Key>(sizeof(Key));
 	key__init(prekey->public_key);
 	prekey->public_key->key.data = throwing_zeroed_malloc<uint8_t>(PUBLIC_KEY_SIZE);
 	prekey->public_key->key.len = PUBLIC_KEY_SIZE;
-	if (this->public_key.cloneToRaw(prekey->public_key->key.data, prekey->public_key->key.len) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to copy public key to protobuf.");
-	}
+	this->public_key.cloneToRaw(prekey->public_key->key.data, prekey->public_key->key.len);
 
 	//export the expiration date
 	prekey->expiration_time = static_cast<uint64_t>(this->expiration_date);
@@ -152,16 +140,16 @@ void PrekeyStoreNode::generate() {
 std::ostream& PrekeyStoreNode::print(std::ostream& stream) const {
 	stream << "Expiration Date = " << std::to_string(this->expiration_date) << '\n';
 	stream << "Public Prekey:\n";
-	stream << this->public_key.toHex() << '\n';
+	this->public_key.printHex(stream) << '\n';
 	stream << "Private Prekey:\n";
-	stream << this->private_key.toHex() << '\n';
+	this->private_key.printHex(stream) << '\n';
 
 	return stream;
 }
 
 void PrekeyStore::init() {
 	this->prekeys = std::unique_ptr<std::array<PrekeyStoreNode,PREKEY_AMOUNT>,SodiumDeleter<std::array<PrekeyStoreNode,PREKEY_AMOUNT>>>(throwing_sodium_malloc<std::array<PrekeyStoreNode,PREKEY_AMOUNT>>(sizeof(std::array<PrekeyStoreNode,PREKEY_AMOUNT>)));
-	new (this->prekeys.get()) std::array<PrekeyStoreNode,PREKEY_AMOUNT>{};
+	new (this->prekeys.get()) std::array<PrekeyStoreNode,PREKEY_AMOUNT>;
 }
 
 void PrekeyStore::generateKeys() {
@@ -195,7 +183,7 @@ PrekeyStore::PrekeyStore(
 		if (keypairs[index] == nullptr) {
 			throw MolchException(PROTOBUF_MISSING_ERROR, "Prekey missing.");
 		}
-		(*this->prekeys)[index] = PrekeyStoreNode(*keypairs[index]);
+		new (&(*this->prekeys)[index]) PrekeyStoreNode(*keypairs[index]);
 	}
 
 	for (size_t index = 0; index < deprecated_keypairs_length; index++) {
@@ -258,9 +246,7 @@ void PrekeyStore::getPrekey(const Buffer& public_key, Buffer& private_key) {
 	auto found_prekey = std::find_if(std::cbegin(*this->prekeys), std::cend(*this->prekeys), key_comparer);
 	if (found_prekey != this->prekeys->end()) {
 		//copy the private key
-		if (private_key.cloneFrom(&found_prekey->private_key) != 0) {
-			throw MolchException(BUFFER_ERROR, "Failed to clone private key from prekey.");
-		}
+		private_key.cloneFrom(found_prekey->private_key);
 
 		//and deprecate key
 		size_t index = static_cast<size_t>(found_prekey - std::begin(*this->prekeys));
@@ -275,9 +261,7 @@ void PrekeyStore::getPrekey(const Buffer& public_key, Buffer& private_key) {
 		throw MolchException(NOT_FOUND, "No matching prekey found.");
 	}
 
-	if (private_key.cloneFrom(&found_deprecated_prekey->private_key) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to clone private key from deprecated prekey.");
-	}
+	private_key.cloneFrom(found_deprecated_prekey->private_key);
 }
 
 void PrekeyStore::list(Buffer& list) const { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
@@ -288,14 +272,11 @@ void PrekeyStore::list(Buffer& list) const { //output, PREKEY_AMOUNT * PUBLIC_KE
 
 	size_t index = 0;
 	for (const auto& key_bundle : *this->prekeys) {
-		int status = list.copyFrom(
+		list.copyFrom(
 				PUBLIC_KEY_SIZE * index,
-				&key_bundle.public_key,
+				key_bundle.public_key,
 				0,
 				PUBLIC_KEY_SIZE);
-		if (status != 0) {
-			throw MolchException(BUFFER_ERROR, "Failed to copy public prekey.");
-		}
 		index++;
 	}
 }

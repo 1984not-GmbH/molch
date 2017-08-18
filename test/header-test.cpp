@@ -32,32 +32,19 @@
 
 int main(void) {
 	try {
-		//create buffers
-		Buffer our_public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer extracted_public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		exception_on_invalid_buffer(our_public_ephemeral_key);
-		exception_on_invalid_buffer(extracted_public_ephemeral_key);
-
-		uint32_t message_number;
-		uint32_t previous_message_number;
-
-
 		if (sodium_init() == -1) {
 			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
-		int status_int;
 		//create ephemeral key
-		status_int = our_public_ephemeral_key.fillRandom(our_public_ephemeral_key.content_length);
-		if (status_int != 0) {
-			throw MolchException(KEYGENERATION_FAILED, "Failed to create our public ephemeral.");
-		}
+		Buffer our_public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		our_public_ephemeral_key.fillRandom(our_public_ephemeral_key.content_length);
 		printf("Our public ephemeral key (%zu Bytes):\n", our_public_ephemeral_key.content_length);
-		std::cout << our_public_ephemeral_key.toHex();
+		our_public_ephemeral_key.printHex(std::cout);
 
 		//message numbers
-		message_number = 2;
-		previous_message_number = 10;
+		uint32_t message_number = 2;
+		uint32_t previous_message_number = 10;
 		printf("Message number: %u\n", message_number);
 		printf("Previous message number: %u\n", previous_message_number);
 		putchar('\n');
@@ -70,10 +57,11 @@ int main(void) {
 
 		//print the header
 		printf("Header (%zu Bytes):\n", header->content_length);
-		std::cout << header->toHex();
+		header->printHex(std::cout);
 		putchar('\n');
 
 		//get data back out of the header again
+		Buffer extracted_public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 		uint32_t extracted_message_number;
 		uint32_t extracted_previous_message_number;
 		header_extract(
@@ -83,13 +71,13 @@ int main(void) {
 				*header);
 
 		printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key.content_length);
-		std::cout << extracted_public_ephemeral_key.toHex();
+		extracted_public_ephemeral_key.printHex(std::cout);
 		printf("Extracted message number: %u\n", extracted_message_number);
 		printf("Extracted previous message number: %u\n", extracted_previous_message_number);
 		putchar('\n');
 
 		//compare them
-		if (our_public_ephemeral_key.compare(&extracted_public_ephemeral_key) != 0) {
+		if (our_public_ephemeral_key != extracted_public_ephemeral_key) {
 			throw MolchException(INVALID_VALUE, "Public ephemeral keys don't match.");
 		}
 		printf("Public ephemeral keys match.\n");

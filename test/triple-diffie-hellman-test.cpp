@@ -30,10 +30,10 @@
 #include "utils.hpp"
 #include "common.hpp"
 
-int main(void) noexcept {
+int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			return -1;
+			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
 		printf("Generate Alice's keys -------------------------------------------------------\n\n");
@@ -41,8 +41,6 @@ int main(void) noexcept {
 		//create Alice's identity keypair
 		Buffer alice_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 		Buffer alice_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-		exception_on_invalid_buffer(alice_public_identity);
-		exception_on_invalid_buffer(alice_private_identity);
 		generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
@@ -52,8 +50,6 @@ int main(void) noexcept {
 		//create Alice's ephemeral keypair
 		Buffer alice_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 		Buffer alice_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-		exception_on_invalid_buffer(alice_public_ephemeral);
-		exception_on_invalid_buffer(alice_private_ephemeral);
 		generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
@@ -65,8 +61,6 @@ int main(void) noexcept {
 		//create Bob's identity keypair
 		Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 		Buffer bob_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-		exception_on_invalid_buffer(bob_public_identity);
-		exception_on_invalid_buffer(bob_private_identity);
 		generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
@@ -76,8 +70,6 @@ int main(void) noexcept {
 		//create Bob's ephemeral keypair
 		Buffer bob_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 		Buffer bob_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-		exception_on_invalid_buffer(bob_public_ephemeral);
-		exception_on_invalid_buffer(bob_private_ephemeral);
 		generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
@@ -88,7 +80,6 @@ int main(void) noexcept {
 
 		//Triple Diffie Hellman on Alice's side
 		Buffer alice_shared_secret(crypto_generichash_BYTES, crypto_generichash_BYTES);
-		exception_on_invalid_buffer(alice_shared_secret);
 		triple_diffie_hellman(
 			alice_shared_secret,
 			alice_private_identity,
@@ -101,12 +92,10 @@ int main(void) noexcept {
 
 		//print Alice's shared secret
 		printf("Alice's shared secret H(DH(A_priv,B0_pub)||DH(A0_priv,B_pub)||DH(A0_priv,B0_pub)):\n");
-		std::cout << alice_shared_secret.toHex();
-		putchar('\n');
+		alice_shared_secret.printHex(std::cout) << std::endl;
 
 		//Triple Diffie Hellman on Bob's side
 		Buffer bob_shared_secret(crypto_generichash_BYTES, crypto_generichash_BYTES);
-		exception_on_invalid_buffer(bob_shared_secret);
 		triple_diffie_hellman(
 			bob_shared_secret,
 			bob_private_identity,
@@ -119,8 +108,7 @@ int main(void) noexcept {
 
 		//print Bob's shared secret
 		printf("Bob's shared secret H(DH(B0_priv, A_pub)||DH(B_priv, A0_pub)||DH(B0_priv, A0_pub)):\n");
-		std::cout << bob_shared_secret.toHex();
-		putchar('\n');
+		bob_shared_secret.printHex(std::cout) << std::endl;
 
 		//compare both shared secrets
 		if (alice_shared_secret != bob_shared_secret) {

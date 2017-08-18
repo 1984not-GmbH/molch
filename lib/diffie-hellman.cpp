@@ -62,7 +62,6 @@ void diffie_hellman(
 
 	//buffer for diffie hellman shared secret
 	Buffer dh_secret(crypto_scalarmult_SCALARBYTES, crypto_scalarmult_SCALARBYTES);
-	exception_on_invalid_buffer(dh_secret);
 
 	//do the diffie hellman key exchange
 	if (crypto_scalarmult(dh_secret.content, our_private_key.content, their_public_key.content) != 0) {
@@ -143,14 +142,6 @@ void triple_diffie_hellman(
 	//set content length of output to 0 (can prevent use on failure)
 	derived_key.content_length = 0;
 
-	//buffers for all 3 Diffie Hellman exchanges
-	Buffer dh1(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-	Buffer dh2(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-	Buffer dh3(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-	exception_on_invalid_buffer(dh1);
-	exception_on_invalid_buffer(dh2);
-	exception_on_invalid_buffer(dh3);
-
 	//check buffer sizes
 	if (!derived_key.fits(DIFFIE_HELLMAN_SIZE)
 			|| !our_private_identity.contains(PRIVATE_KEY_SIZE)
@@ -162,6 +153,10 @@ void triple_diffie_hellman(
 		throw MolchException(INVALID_INPUT, "Invalid input to triple_diffie_hellman.");
 	}
 
+	//buffers for all 3 Diffie Hellman exchanges
+	Buffer dh1(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+	Buffer dh2(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+	Buffer dh3(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
 	if (am_i_alice) {
 		//DH(our_identity, their_ephemeral)
 		diffie_hellman(

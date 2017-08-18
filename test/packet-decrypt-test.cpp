@@ -34,39 +34,13 @@
 
 int main(void) {
 	try {
-		Buffer message("Hello world!\n");
-
-		//create buffers
-		Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-		Buffer public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer extracted_public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer extracted_public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer extracted_public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer header(4, 4);
-		std::unique_ptr<Buffer> packet;
-		std::unique_ptr<Buffer> decrypted_header;
-		std::unique_ptr<Buffer> decrypted_message;
-
-		molch_message_type packet_type = NORMAL_MESSAGE;
-
-		exception_on_invalid_buffer(header_key);
-		exception_on_invalid_buffer(message_key);
-		exception_on_invalid_buffer(public_identity_key);
-		exception_on_invalid_buffer(public_ephemeral_key);
-		exception_on_invalid_buffer(public_prekey);
-		exception_on_invalid_buffer(extracted_public_identity_key);
-		exception_on_invalid_buffer(extracted_public_ephemeral_key);
-		exception_on_invalid_buffer(extracted_public_prekey);
-		exception_on_invalid_buffer(header);
-
 		if (sodium_init() == -1) {
 			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
 		//generate keys and message
+		molch_message_type packet_type = NORMAL_MESSAGE;
+		Buffer header(4, 4);
 		header.content[0] = 0x01;
 		header.content[1] = 0x02;
 		header.content[2] = 0x03;
@@ -76,6 +50,10 @@ int main(void) {
 
 		//NORMAL MESSAGE
 		printf("NORMAL MESSAGE\n");
+		Buffer message("Hello world!\n");
+		Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+		Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+		std::unique_ptr<Buffer> packet;
 		create_and_print_message(
 			packet,
 			header_key,
@@ -89,6 +67,8 @@ int main(void) {
 
 		//now decrypt the packet
 		molch_message_type extracted_packet_type;
+		std::unique_ptr<Buffer> decrypted_header;
+		std::unique_ptr<Buffer> decrypted_message;
 		uint32_t extracted_current_protocol_version;
 		uint32_t extracted_highest_supported_protocol_version;
 		packet_decrypt(
@@ -117,7 +97,7 @@ int main(void) {
 		printf("Decrypted header has the same length.\n");
 
 		//compare headers
-		if (header.compare(decrypted_header.get()) != 0) {
+		if (header != *decrypted_header) {
 			throw MolchException(INVALID_VALUE, "Decrypted header doesn't match.");
 		}
 		printf("Decrypted header matches.\n\n");
@@ -128,7 +108,7 @@ int main(void) {
 		printf("Decrypted message has the same length.\n");
 
 		//compare messages
-		if (message.compare(decrypted_message.get()) != 0) {
+		if (message != *decrypted_message) {
 			throw MolchException(INVALID_VALUE, "Decrypted message doesn't match.");
 		}
 		printf("Decrypted message matches.\n");
@@ -136,15 +116,12 @@ int main(void) {
 		//PREKEY MESSAGE
 		printf("PREKEY MESSAGE\n");
 		//create the public keys
-		if (public_identity_key.fillRandom(PUBLIC_KEY_SIZE) != 0) {
-			throw MolchException(KEYGENERATION_FAILED, "Failed to generate public identity key.");
-		}
-		if (public_ephemeral_key.fillRandom(PUBLIC_KEY_SIZE) != 0) {
-			throw MolchException(KEYGENERATION_FAILED, "Failed to generate public ephemeral key.");
-		}
-		if (public_prekey.fillRandom(PUBLIC_KEY_SIZE) != 0) {
-			throw MolchException(KEYGENERATION_FAILED, "Failed to generate public prekey.");
-		}
+		Buffer public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		public_identity_key.fillRandom(PUBLIC_KEY_SIZE);
+		Buffer public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		public_ephemeral_key.fillRandom(PUBLIC_KEY_SIZE);
+		Buffer public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		public_prekey.fillRandom(PUBLIC_KEY_SIZE);
 
 		decrypted_header.reset();
 		decrypted_message.reset();
@@ -164,6 +141,9 @@ int main(void) {
 			&public_prekey);
 
 		//now decrypt the packet
+		Buffer extracted_public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		Buffer extracted_public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		Buffer extracted_public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 		packet_decrypt(
 			extracted_current_protocol_version,
 			extracted_highest_supported_protocol_version,
@@ -189,7 +169,7 @@ int main(void) {
 		printf("Decrypted header has the same length!\n");
 
 		//compare headers
-		if (header.compare(decrypted_header.get()) != 0) {
+		if (header != *decrypted_header) {
 			throw MolchException(INVALID_VALUE, "Decrypted header doesn't match.");
 		}
 		printf("Decrypted header matches!\n");
@@ -200,23 +180,23 @@ int main(void) {
 		printf("Decrypted message has the same length.\n");
 
 		//compare messages
-		if (message.compare(decrypted_message.get()) != 0) {
+		if (message != *decrypted_message) {
 			throw MolchException(INVALID_VALUE, "Decrypted message doesn't match.");
 		}
 		printf("Decrypted message matches.\n");
 
 		//compare public keys
-		if (public_identity_key.compare(&extracted_public_identity_key) != 0) {
+		if (public_identity_key != extracted_public_identity_key) {
 			throw MolchException(INVALID_VALUE, "Extracted public identity key doesn't match.");
 		}
 		printf("Extracted public identity key matches!\n");
 
-		if (public_ephemeral_key.compare(&extracted_public_ephemeral_key) != 0) {
+		if (public_ephemeral_key != extracted_public_ephemeral_key) {
 			throw MolchException(INVALID_VALUE, "Extracted public ephemeral key doesn't match.");
 		}
 		printf("Extracted public ephemeral key matches!\n");
 
-		if (public_prekey.compare(&extracted_public_prekey) != 0) {
+		if (public_prekey != extracted_public_prekey) {
 			throw MolchException(INVALID_VALUE, "Extracted public prekey doesn't match.");
 		}
 		printf("Extracted public prekey matches!\n");

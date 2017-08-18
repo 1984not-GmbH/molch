@@ -29,9 +29,7 @@
 #include "destroyers.hpp"
 
 UserStoreNode& UserStoreNode::move(UserStoreNode&& node) {
-	if (this->public_signing_key.cloneFrom(&node.public_signing_key) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to clone public signing key.");
-	}
+	this->public_signing_key.cloneFrom(node.public_signing_key);
 	this->master_keys = std::move(node.master_keys);
 	this->prekeys = std::move(node.prekeys);
 	this->conversations = std::move(node.conversations);
@@ -91,9 +89,7 @@ UserStoreNode::UserStoreNode(const User& user) {
 		*user.private_identity_key);
 
 	//public signing key
-	if (this->public_signing_key.cloneFromRaw(user.public_signing_key->key.data, user.public_signing_key->key.len) != 0) {
-		throw MolchException(BUFFER_ERROR, "Failed to copy public signing key.");
-	}
+	this->public_signing_key.cloneFromRaw(user.public_signing_key->key.data, user.public_signing_key->key.len);
 
 	this->conversations = ConversationStore(user.conversations, user.n_conversations);
 
@@ -106,7 +102,7 @@ UserStoreNode::UserStoreNode(const User& user) {
 
 std::ostream& UserStoreNode::print(std::ostream& stream) const {
 	stream << "Public Signing Key:\n";
-	stream << this->public_signing_key.toHex() + "\n\n";
+	this->public_signing_key.printHex(stream) << "\n\n";
 	stream << "\nMaster Keys:\n";
 	this->master_keys.print(stream);
 	stream << "\nPrekeys:\n";
@@ -192,15 +188,11 @@ std::unique_ptr<Buffer> UserStore::list() {
 
 	for (const auto& user : this->users) {
 		size_t index = static_cast<size_t>(&user - &(*std::cbegin(this->users)));
-		int status = list->copyFrom(
+		list->copyFrom(
 			CONVERSATION_ID_SIZE * index,
-			&user.public_signing_key,
+			user.public_signing_key,
 			0,
 			user.public_signing_key.content_length);
-		if (status != 0) {
-			throw MolchException(BUFFER_ERROR, "Failed to copy public signing key.");
-		}
-
 	}
 
 	return list;

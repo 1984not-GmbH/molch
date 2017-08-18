@@ -50,11 +50,4 @@ inline void zeroed_free_and_null_if_valid(T*& pointer) {
 	}
 }
 
-inline void buffer_destroy_and_null_if_valid(Buffer*& buffer) {
-	if (buffer != nullptr) {
-		buffer->destroy();
-		buffer = nullptr;
-	}
-}
-
 #endif /* LIB_DESTROYERS_H */
