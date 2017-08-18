@@ -221,15 +221,15 @@ int main(void) {
 		bob_next_receive_header_key.printHex(std::cout) << std::endl;
 
 		//check header decryptability
-		ratchet_header_decryptability decryptable = NOT_TRIED;
+		Ratchet::HeaderDecryptability decryptable = Ratchet::HeaderDecryptability::NOT_TRIED;
 		if (bob_current_receive_header_key == alice_send_header_key1) {
-			decryptable = CURRENT_DECRYPTABLE;
+			decryptable = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
 			printf("Header decryptable with current header key.\n");
 		} else if (bob_next_receive_header_key == alice_send_header_key1) {
-			decryptable = NEXT_DECRYPTABLE;
+			decryptable = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			printf("Header decryptable with next header key.\n");
 		} else {
-			decryptable = UNDECRYPTABLE;
+			decryptable = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 			fprintf(stderr, "Failed to decrypt header.");
 		}
 
@@ -263,13 +263,13 @@ int main(void) {
 
 		//check header decryptability
 		if (bob_current_receive_header_key == alice_send_header_key2) {
-			decryptable = CURRENT_DECRYPTABLE;
+			decryptable = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
 			printf("Header decryptable with current header key.\n");
 		} else if (bob_next_receive_header_key == alice_send_header_key2) {
-			decryptable = NEXT_DECRYPTABLE;
+			decryptable = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			printf("Header decryptable with next header key.\n");
 		} else {
-			decryptable = UNDECRYPTABLE;
+			decryptable = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 			fprintf(stderr, "Failed to decrypt header.");
 		}
 
@@ -302,13 +302,13 @@ int main(void) {
 
 		//check header decryptability
 		if (bob_current_receive_header_key == alice_send_header_key3) {
-			decryptable = CURRENT_DECRYPTABLE;
+			decryptable = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
 			printf("Header decryptable with current header key.\n");
 		} else if (bob_next_receive_header_key == alice_send_header_key3) {
-			decryptable = NEXT_DECRYPTABLE;
+			decryptable = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			printf("Header decryptable with next header key.\n");
 		} else {
-			decryptable = UNDECRYPTABLE;
+			decryptable = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 			fprintf(stderr, "Failed to decrypt header.");
 		}
 
@@ -420,13 +420,13 @@ int main(void) {
 
 		//check header decryptability
 		if (alice_current_receive_header_key == bob_send_header_key1) {
-			decryptable = CURRENT_DECRYPTABLE;
+			decryptable = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
 			printf("Header decryptable with current header key.\n");
 		} else if (alice_next_receive_header_key == bob_send_header_key1) {
-			decryptable = NEXT_DECRYPTABLE;
+			decryptable = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			printf("Header decryptable with next header key.\n");
 		} else {
-			decryptable = UNDECRYPTABLE;
+			decryptable = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 			fprintf(stderr, "Failed to decrypt header.");
 		}
 		bob_send_header_key1.clear();
@@ -460,13 +460,13 @@ int main(void) {
 
 		//check header decryptability
 		if (alice_current_receive_header_key == bob_send_header_key3) {
-			decryptable = CURRENT_DECRYPTABLE;
+			decryptable = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
 			printf("Header decryptable with current header key.\n");
 		} else if (alice_next_receive_header_key == bob_send_header_key3) {
-			decryptable = NEXT_DECRYPTABLE;
+			decryptable = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			printf("Header decryptable with next header key.\n");
 		} else {
-			decryptable = UNDECRYPTABLE;
+			decryptable = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 			fprintf(stderr, "Failed to decrypt header.");
 		}
 		bob_send_header_key3.clear();

@@ -340,7 +340,7 @@ std::unique_ptr<Buffer> ConversationT::receive(
 			decryptable = false;
 		}
 		if (decryptable) {
-			this->ratchet->setHeaderDecryptability(CURRENT_DECRYPTABLE);
+			this->ratchet->setHeaderDecryptability(Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE);
 		} else {
 			//since this failed, try to decrypt it with the next receive header key
 			decryptable = true;
@@ -350,9 +350,9 @@ std::unique_ptr<Buffer> ConversationT::receive(
 				decryptable = false;
 			}
 			if (decryptable) {
-				this->ratchet->setHeaderDecryptability(NEXT_DECRYPTABLE);
+				this->ratchet->setHeaderDecryptability(Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE);
 			} else {
-				this->ratchet->setHeaderDecryptability(UNDECRYPTABLE);
+				this->ratchet->setHeaderDecryptability(Ratchet::HeaderDecryptability::UNDECRYPTABLE);
 				throw MolchException(DECRYPT_ERROR, "Failed to decrypt the message.");
 			}
 		}

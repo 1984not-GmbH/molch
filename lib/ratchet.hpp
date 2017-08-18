@@ -31,13 +31,6 @@ extern "C" {
 #include "return-status.h"
 #include "zeroed_malloc.hpp"
 
-typedef enum ratchet_header_decryptability {
-	CURRENT_DECRYPTABLE, //decryptable with current receive header key
-	NEXT_DECRYPTABLE, //decryptable with next receive header key
-	UNDECRYPTABLE, //not decryptable
-	NOT_TRIED //not tried to decrypt yet
-} ratchet_header_decryptability;
-
 class RatchetStorage {
 	friend class Ratchet;
 
@@ -121,7 +114,13 @@ public:
 	bool received_valid{false}; //is false until the validity of a received message has been verified until the validity of a received message has been verified,
 	                     //this is necessary to be able to split key derivation from message
 	                     //decryption
-	ratchet_header_decryptability header_decryptable{NOT_TRIED}; //could the last received header be decrypted?
+	enum class HeaderDecryptability{
+		CURRENT_DECRYPTABLE, //decryptable with current receive header key
+		NEXT_DECRYPTABLE, //decryptable with next receive header key
+		UNDECRYPTABLE, //not decryptable
+		NOT_TRIED //not tried to decrypt yet
+	};
+	HeaderDecryptability header_decryptable{HeaderDecryptability::NOT_TRIED}; //could the last received header be decrypted?
 	//list of previous message and header keys
 	HeaderAndMessageKeyStore skipped_header_and_message_keys; //skipped_HK_MK (list containing message keys for messages that weren't received)
 	HeaderAndMessageKeyStore staged_header_and_message_keys; //this represents the staging area specified in the axolotl ratchet
@@ -176,7 +175,7 @@ public:
 	 * Set if the header is decryptable with the current (state->receive_header_key)
 	 * or next (next_receive_header_key) header key, or isn't decryptable.
 	 */
-	void setHeaderDecryptability(const ratchet_header_decryptability header_decryptable);
+	void setHeaderDecryptability(const HeaderDecryptability header_decryptable);
 
 	/*
 	 * First step after receiving a message: Calculate purported keys.

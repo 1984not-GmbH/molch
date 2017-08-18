@@ -132,13 +132,13 @@ int main(void) {
 		Buffer next_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 		bob_receive_ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 
-		ratchet_header_decryptability decryptability;
+		Ratchet::HeaderDecryptability decryptability;
 		if (send_header_key == current_receive_header_key) {
-			decryptability = CURRENT_DECRYPTABLE;
+			decryptability = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
 		} else if (send_header_key == next_receive_header_key) {
-			decryptability = NEXT_DECRYPTABLE;
+			decryptability = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 		} else {
-			decryptability = UNDECRYPTABLE;
+			decryptability = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 		}
 		bob_receive_ratchet->setHeaderDecryptability(decryptability);
 
@@ -170,9 +170,9 @@ int main(void) {
 		alice_receive_ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 
 		if (send_header_key == current_receive_header_key) {
-			decryptability = CURRENT_DECRYPTABLE;
+			decryptability = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
 		} else if (send_header_key == next_receive_header_key) {
-			decryptability = UNDECRYPTABLE;
+			decryptability = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 		}
 		alice_receive_ratchet->setHeaderDecryptability(decryptability);
 
@@ -202,11 +202,11 @@ int main(void) {
 		alice_send_ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 
 		if (send_header_key == current_receive_header_key) {
-			decryptability = CURRENT_DECRYPTABLE;
+			decryptability = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
 		} else if (send_header_key == next_receive_header_key) {
-			decryptability = NEXT_DECRYPTABLE;
+			decryptability = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 		} else {
-			decryptability = UNDECRYPTABLE;
+			decryptability = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 		}
 		alice_send_ratchet->setHeaderDecryptability(decryptability);
 
@@ -236,11 +236,11 @@ int main(void) {
 		bob_send_ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 
 		if (send_header_key == current_receive_header_key) {
-			decryptability = CURRENT_DECRYPTABLE;
+			decryptability = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
 		} else if (send_header_key == next_receive_header_key) {
-			decryptability = NEXT_DECRYPTABLE;
+			decryptability = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 		} else {
-			decryptability = UNDECRYPTABLE;
+			decryptability = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 		}
 		bob_send_ratchet->setHeaderDecryptability(decryptability);
 

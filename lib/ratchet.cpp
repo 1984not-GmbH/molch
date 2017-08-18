@@ -101,7 +101,7 @@ Ratchet::Ratchet(
 	//set other state
 	this->ratchet_flag = static_cast<bool>(this->role);
 	this->received_valid = true; //allowing the receival of new messages
-	this->header_decryptable = NOT_TRIED;
+	this->header_decryptable = HeaderDecryptability::NOT_TRIED;
 	this->send_message_number = 0;
 	this->receive_message_number = 0;
 	this->previous_message_number = 0;
@@ -210,13 +210,13 @@ void Ratchet::getReceiveHeaderKeys(
  * Set if the header is decryptable with the current (state->receive_header_key)
  * or next (next_receive_header_key) header key, or isn't decryptable.
  */
-void Ratchet::setHeaderDecryptability(const ratchet_header_decryptability header_decryptable) {
-	if (this->header_decryptable != NOT_TRIED) {
+void Ratchet::setHeaderDecryptability(const HeaderDecryptability header_decryptable) {
+	if (this->header_decryptable != HeaderDecryptability::NOT_TRIED) {
 		//if the last message hasn't been properly handled yet, abort
 		throw MolchException(GENERIC_ERROR, "Message hasn't been handled yet.");
 	}
 
-	if (header_decryptable == NOT_TRIED) {
+	if (header_decryptable == HeaderDecryptability::NOT_TRIED) {
 		//can't set to "NOT_TRIED"
 		throw MolchException(INVALID_INPUT, "Can't set to \"NOT_TRIED\"");
 	}
@@ -325,11 +325,11 @@ void Ratchet::receive(
 	}
 
 	//header decryption hasn't been tried yet
-	if (this->header_decryptable == NOT_TRIED) {
+	if (this->header_decryptable == HeaderDecryptability::NOT_TRIED) {
 		throw MolchException(INVALID_STATE, "Header decryption hasn't been tried yet.");
 	}
 
-	if (!this->storage->receive_header_key.isNone() && (this->header_decryptable == CURRENT_DECRYPTABLE)) { //still the same message chain
+	if (!this->storage->receive_header_key.isNone() && (this->header_decryptable == HeaderDecryptability::CURRENT_DECRYPTABLE)) { //still the same message chain
 		//Np = read(): get the purported message number from the input
 		this->purported_message_number = purported_message_number;
 
@@ -344,7 +344,7 @@ void Ratchet::receive(
 			this->storage->receive_chain_key);
 	} else { //new message chain
 		//if ratchet_flag or not Dec(NHKr, header)
-		if (this->ratchet_flag || (this->header_decryptable != NEXT_DECRYPTABLE)) {
+		if (this->ratchet_flag || (this->header_decryptable != HeaderDecryptability::NEXT_DECRYPTABLE)) {
 			throw MolchException(DECRYPT_ERROR, "Undecryptable.");
 		}
 
@@ -406,16 +406,16 @@ void Ratchet::setLastMessageAuthenticity(bool valid) {
 	this->received_valid = true;
 
 	//backup header decryptability
-	ratchet_header_decryptability header_decryptable = this->header_decryptable;
-	this->header_decryptable = NOT_TRIED;
+	HeaderDecryptability header_decryptable = this->header_decryptable;
+	this->header_decryptable = HeaderDecryptability::NOT_TRIED;
 
 	if (!valid) { //message couldn't be decrypted
 		this->staged_header_and_message_keys.keys.clear();
 		return;
 	}
 
-	if (this->storage->receive_header_key.isNone() || (header_decryptable != CURRENT_DECRYPTABLE)) { //new message chain
-		if (this->ratchet_flag || (header_decryptable != NEXT_DECRYPTABLE)) {
+	if (this->storage->receive_header_key.isNone() || (header_decryptable != HeaderDecryptability::CURRENT_DECRYPTABLE)) { //new message chain
+		if (this->ratchet_flag || (header_decryptable != HeaderDecryptability::NEXT_DECRYPTABLE)) {
 			//if ratchet_flag or not Dec(NHKr, header)
 			//clear purported message and header keys
 			this->staged_header_and_message_keys.keys.clear();
@@ -622,22 +622,26 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() cons
 
 	//header decryptability
 	switch (this->header_decryptable) {
-		case CURRENT_DECRYPTABLE:
+		case HeaderDecryptability::CURRENT_DECRYPTABLE:
 			conversation->has_header_decryptable = true;
 			conversation->header_decryptable = CONVERSATION__HEADER_DECRYPTABILITY__CURRENT_DECRYPTABLE;
 			break;
-		case NEXT_DECRYPTABLE:
+
+		case HeaderDecryptability::NEXT_DECRYPTABLE:
 			conversation->has_header_decryptable = true;
 			conversation->header_decryptable = CONVERSATION__HEADER_DECRYPTABILITY__NEXT_DECRYPTABLE;
 			break;
-		case UNDECRYPTABLE:
+
+		case HeaderDecryptability::UNDECRYPTABLE:
 			conversation->has_header_decryptable = true;
 			conversation->header_decryptable = CONVERSATION__HEADER_DECRYPTABILITY__UNDECRYPTABLE;
 			break;
-		case NOT_TRIED:
+
+		case HeaderDecryptability::NOT_TRIED:
 			conversation->has_header_decryptable = true;
 			conversation->header_decryptable = CONVERSATION__HEADER_DECRYPTABILITY__NOT_TRIED;
 			break;
+
 		default:
 			conversation->has_header_decryptable = false;
 			throw MolchException(INVALID_VALUE, "Invalid value of ratchet->header_decryptable.");
@@ -712,19 +716,19 @@ Ratchet::Ratchet(const Conversation& conversation) {
 	}
 	switch (conversation.header_decryptable) {
 		case CONVERSATION__HEADER_DECRYPTABILITY__CURRENT_DECRYPTABLE:
-			this->header_decryptable = CURRENT_DECRYPTABLE;
+			this->header_decryptable = HeaderDecryptability::CURRENT_DECRYPTABLE;
 			break;
 
 		case CONVERSATION__HEADER_DECRYPTABILITY__NEXT_DECRYPTABLE:
-			this->header_decryptable = NEXT_DECRYPTABLE;
+			this->header_decryptable = HeaderDecryptability::NEXT_DECRYPTABLE;
 			break;
 
 		case CONVERSATION__HEADER_DECRYPTABILITY__UNDECRYPTABLE:
-			this->header_decryptable = UNDECRYPTABLE;
+			this->header_decryptable = HeaderDecryptability::UNDECRYPTABLE;
 			break;
 
 		case CONVERSATION__HEADER_DECRYPTABILITY__NOT_TRIED:
-			this->header_decryptable = NOT_TRIED;
+			this->header_decryptable = HeaderDecryptability::NOT_TRIED;
 			break;
 
 		default:
