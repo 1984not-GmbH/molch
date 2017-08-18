@@ -84,14 +84,10 @@ Buffer::Buffer(unsigned char * const content, const size_t capacity, const size_
 Buffer::Buffer(unsigned char * const content, const size_t capacity)
 	: Buffer{content, capacity, capacity} {}
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wcast-qual"
-#pragma GCC diagnostic ignored "-Wold-style-cast"
 Buffer::Buffer(const unsigned char * const content, const size_t capacity, const size_t size)
-	: Buffer{(unsigned char*)content, capacity, size} {
+	: Buffer{const_cast<unsigned char*>(content), capacity, size} {
 	this->readonly = false;
 }
-#pragma GCC diagnostic pop
 Buffer::Buffer(const unsigned char * const content, const size_t capacity)
 	: Buffer{content, capacity, capacity} {}
 
