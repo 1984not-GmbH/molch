@@ -25,25 +25,12 @@
 #include "molch-exception.hpp"
 #include "autozero.hpp"
 
-/*
- * Diffie Hellman key exchange using our private key and the
- * other's public key. Our public key is used to derive a Hash
- * from the actual output of the diffie hellman exchange (see
- * documentation of libsodium).
- *
- * am_i_alice specifies if I am Alice or Bob. This determines in
- * what order the public keys get hashed.
- *
- * OUTPUT:
- * Alice: H(ECDH(our_private_key,their_public_key)|our_public_key|their_public_key)
- * Bob:   H(ECDH(our_private_key,their_public_key)|their_public_key|our_public_key)
- */
 void diffie_hellman(
 		Buffer& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
 		const Buffer& our_private_key, //needs to be PRIVATE_KEY_SIZE long
 		const Buffer& our_public_key, //needs to be PUBLIC_KEY_SIZE long
 		const Buffer& their_public_key, //needs to be PUBLIC_KEY_SIZE long
-		const bool am_i_alice) {
+		const Ratchet::Role role) {
 	//make sure that the assumptions are correct
 	static_assert(PUBLIC_KEY_SIZE == crypto_scalarmult_SCALARBYTES, "crypto_scalarmult_SCALARBYTES is not PUBLIC_KEY_SIZE");
 	static_assert(PRIVATE_KEY_SIZE == crypto_scalarmult_SCALARBYTES, "crypto_scalarmult_SCALARBYTES is not PRIVATE_KEY_BYTES");
@@ -85,26 +72,33 @@ void diffie_hellman(
 	}
 
 	//add public keys to the input of the hash
-	if (am_i_alice) { //Alice (our_public_key|their_public_key)
-		//add our_public_key to the input of the hash
-		if (crypto_generichash_update(hash_state.pointer(), our_public_key.content, our_public_key.size) != 0) {
-			throw MolchException(GENERIC_ERROR, "Failed to add Alice' public key to the hash input.");
-		}
+	switch (role) {
+		case Ratchet::Role::ALICE: //Alice (our_public_key|their_public_key)
+			//add our_public_key to the input of the hash
+			if (crypto_generichash_update(hash_state.pointer(), our_public_key.content, our_public_key.size) != 0) {
+				throw MolchException(GENERIC_ERROR, "Failed to add Alice' public key to the hash input.");
+			}
 
-		//add their_public_key to the input of the hash
-		if (crypto_generichash_update(hash_state.pointer(), their_public_key.content, their_public_key.size) != 0) {
-			throw MolchException(GENERIC_ERROR, "Failed to add Bob's public key to the hash input.");
-		}
-	} else { //Bob (their_public_key|our_public_key)
-		//add their_public_key to the input of the hash
-		if (crypto_generichash_update(hash_state.pointer(), their_public_key.content, their_public_key.size) != 0) {
-			throw MolchException(GENERIC_ERROR, "Failed to add Alice's public key to the hash input.");
-		}
+			//add their_public_key to the input of the hash
+			if (crypto_generichash_update(hash_state.pointer(), their_public_key.content, their_public_key.size) != 0) {
+				throw MolchException(GENERIC_ERROR, "Failed to add Bob's public key to the hash input.");
+			}
+			break;
 
-		//add our_public_key to the input of the hash
-		if (crypto_generichash_update(hash_state.pointer(), our_public_key.content, our_public_key.size) != 0) {
-			throw MolchException(GENERIC_ERROR, "Failed to add Bob's public key to the hash input.");
-		}
+		case Ratchet::Role::BOB: //Bob (their_public_key|our_public_key)
+			//add their_public_key to the input of the hash
+			if (crypto_generichash_update(hash_state.pointer(), their_public_key.content, their_public_key.size) != 0) {
+				throw MolchException(GENERIC_ERROR, "Failed to add Alice's public key to the hash input.");
+			}
+
+			//add our_public_key to the input of the hash
+			if (crypto_generichash_update(hash_state.pointer(), our_public_key.content, our_public_key.size) != 0) {
+				throw MolchException(GENERIC_ERROR, "Failed to add Bob's public key to the hash input.");
+			}
+			break;
+
+		default:
+			break;
 	}
 
 	//finally write the hash to derived_key
@@ -114,22 +108,6 @@ void diffie_hellman(
 	derived_key.size = DIFFIE_HELLMAN_SIZE;
 }
 
-/*
- * Triple Diffie Hellman with two keys.
- *
- * am_i_alice specifies if I am Alice or Bob. This determines in
- * what order the public keys get hashed.
- *
- * OUTPUT:
- * HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0))
- * Where:
- * A: Alice's identity
- * A0: Alice's ephemeral
- * B: Bob's identity
- * B0: Bob's ephemeral
- * -->Alice: HASH(DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_identity)||DH(our_ephemeral, their_ephemeral))
- * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
- */
 void triple_diffie_hellman(
 		Buffer& derived_key,
 		const Buffer& our_private_identity,
@@ -138,7 +116,7 @@ void triple_diffie_hellman(
 		const Buffer& our_public_ephemeral,
 		const Buffer& their_public_identity,
 		const Buffer& their_public_ephemeral,
-		const bool am_i_alice) {
+		const Ratchet::Role role) {
 	//set content length of output to 0 (can prevent use on failure)
 	derived_key.size = 0;
 
@@ -157,38 +135,45 @@ void triple_diffie_hellman(
 	Buffer dh1(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
 	Buffer dh2(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
 	Buffer dh3(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-	if (am_i_alice) {
-		//DH(our_identity, their_ephemeral)
-		diffie_hellman(
-			dh1,
-			our_private_identity,
-			our_public_identity,
-			their_public_ephemeral,
-			am_i_alice);
+	switch (role) {
+		case Ratchet::Role::ALICE:
+			//DH(our_identity, their_ephemeral)
+			diffie_hellman(
+				dh1,
+				our_private_identity,
+				our_public_identity,
+				their_public_ephemeral,
+				role);
 
-		//DH(our_ephemeral, their_identity)
-		diffie_hellman(
-			dh2,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_identity,
-			am_i_alice);
-	} else {
-		//DH(our_ephemeral, their_identity)
-		diffie_hellman(
-			dh1,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_identity,
-			am_i_alice);
+			//DH(our_ephemeral, their_identity)
+			diffie_hellman(
+				dh2,
+				our_private_ephemeral,
+				our_public_ephemeral,
+				their_public_identity,
+				role);
+			break;
 
-		//DH(our_identity, their_ephemeral)
-		diffie_hellman(
-			dh2,
-			our_private_identity,
-			our_public_identity,
-			their_public_ephemeral,
-			am_i_alice);
+		case Ratchet::Role::BOB:
+			//DH(our_ephemeral, their_identity)
+			diffie_hellman(
+				dh1,
+				our_private_ephemeral,
+				our_public_ephemeral,
+				their_public_identity,
+				role);
+
+			//DH(our_identity, their_ephemeral)
+			diffie_hellman(
+				dh2,
+				our_private_identity,
+				our_public_identity,
+				their_public_ephemeral,
+				role);
+			break;
+
+		default:
+			break;
 	}
 
 	//DH(our_ephemeral, their_ephemeral)
@@ -198,7 +183,7 @@ void triple_diffie_hellman(
 		our_private_ephemeral,
 		our_public_ephemeral,
 		their_public_ephemeral,
-		am_i_alice);
+		role);
 
 	//now calculate HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0))
 	//( HASH(dh1|| dh2 || dh3) )

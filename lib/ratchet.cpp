@@ -62,9 +62,9 @@ Ratchet::Ratchet(
 	//the one with the bigger public key is alice
 	int comparison = sodium_compare(our_public_identity.content, their_public_identity.content, our_public_identity.size);
 	if (comparison > 0) {
-		this->am_i_alice = true;
+		this->role = Role::ALICE;
 	} else if (comparison < 0) {
-		this->am_i_alice = false;
+		this->role = Role::BOB;
 	} else {
 		throw MolchException(SHOULDNT_HAPPEN, "This mustn't happen, both conversation partners have the same public key!");
 	}
@@ -84,7 +84,7 @@ Ratchet::Ratchet(
 		our_private_ephemeral,
 		our_public_ephemeral,
 		their_public_ephemeral,
-		this->am_i_alice);
+		this->role);
 
 	//copy keys into state
 	//our public identity
@@ -99,7 +99,7 @@ Ratchet::Ratchet(
 	this->storage->their_public_ephemeral.cloneFrom(their_public_ephemeral);
 
 	//set other state
-	this->ratchet_flag = this->am_i_alice;
+	this->ratchet_flag = static_cast<bool>(this->role);
 	this->received_valid = true; //allowing the receival of new messages
 	this->header_decryptable = NOT_TRIED;
 	this->send_message_number = 0;
@@ -150,7 +150,7 @@ void Ratchet::send(
 			this->storage->our_public_ephemeral,
 			this->storage->their_public_ephemeral,
 			root_key_backup,
-			this->am_i_alice);
+			this->role);
 
 		//PNs = Ns
 		this->previous_message_number = this->send_message_number;
@@ -377,7 +377,7 @@ void Ratchet::receive(
 				this->storage->our_public_ephemeral,
 				their_purported_public_ephemeral,
 				this->storage->root_key,
-				this->am_i_alice);
+				this->role);
 
 		//backup the purported chain key because it will get overwritten in the next step
 		Buffer purported_chain_key_backup(CHAIN_KEY_SIZE, 0);
@@ -470,7 +470,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() cons
 
 	//header keys
 	//send header key
-	if (!this->am_i_alice && !this->storage->send_header_key.contains(HEADER_KEY_SIZE)) {
+	if ((this->role == Role::BOB) && !this->storage->send_header_key.contains(HEADER_KEY_SIZE)) {
 		throw MolchException(EXPORT_ERROR, "send_header_key missing or has an incorrect size.");
 	}
 	conversation->send_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
@@ -478,7 +478,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() cons
 	conversation->send_header_key.len = HEADER_KEY_SIZE;
 	conversation->has_send_header_key = true;
 	//receive header key
-	if (this->am_i_alice && !this->storage->receive_header_key.contains(HEADER_KEY_SIZE)) {
+	if ((this->role == Role::ALICE) && !this->storage->receive_header_key.contains(HEADER_KEY_SIZE)) {
 		throw MolchException(EXPORT_ERROR, "receive_header_key missing or has an incorrect size.");
 	}
 	conversation->receive_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
@@ -518,7 +518,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() cons
 
 	//chain keys
 	//send chain key
-	if (!this->am_i_alice && !this->storage->send_chain_key.contains(CHAIN_KEY_SIZE)) {
+	if ((this->role == Role::BOB) && !this->storage->send_chain_key.contains(CHAIN_KEY_SIZE)) {
 		throw MolchException(EXPORT_ERROR, "send_chain_key missing or has an invalid size.");
 	}
 	conversation->send_chain_key.data = throwing_zeroed_malloc<unsigned char>(CHAIN_KEY_SIZE);
@@ -526,7 +526,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() cons
 	conversation->send_chain_key.len = CHAIN_KEY_SIZE;
 	conversation->has_send_chain_key = true;
 	//receive chain key
-	if (this->am_i_alice && !this->storage->receive_chain_key.contains(CHAIN_KEY_SIZE)) {
+	if ((this->role == Role::ALICE) && !this->storage->receive_chain_key.contains(CHAIN_KEY_SIZE)) {
 		throw MolchException(EXPORT_ERROR, "receive_chain_key missing or has an incorrect size.");
 	}
 	conversation->receive_chain_key.data = throwing_zeroed_malloc<unsigned char>(CHAIN_KEY_SIZE);
@@ -615,7 +615,7 @@ std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() cons
 	conversation->ratchet_flag = this->ratchet_flag;
 	//am I Alice
 	conversation->has_am_i_alice = true;
-	conversation->am_i_alice = this->am_i_alice;
+	conversation->am_i_alice = static_cast<bool>(this->role);
 	//received valid
 	conversation->has_received_valid = true;
 	conversation->received_valid = this->received_valid;
@@ -698,7 +698,7 @@ Ratchet::Ratchet(const Conversation& conversation) {
 	if (!conversation.has_am_i_alice) {
 		throw MolchException(PROTOBUF_MISSING_ERROR, "No am I Alice flag in Protobuf-C struct.");
 	}
-	this->am_i_alice = conversation.am_i_alice;
+	this->role = static_cast<Role>(conversation.am_i_alice);
 	//received valid
 	if (!conversation.has_received_valid) {
 		throw MolchException(PROTOBUF_MISSING_ERROR, "No received valid flag in Protobuf-C struct.");
@@ -744,13 +744,13 @@ Ratchet::Ratchet(const Conversation& conversation) {
 
 	//header key
 	//send header key
-	if (!this->am_i_alice
+	if ((this->role == Role::BOB)
 			&& (!conversation.has_send_header_key || (conversation.send_header_key.len != HEADER_KEY_SIZE))) {
 		throw MolchException(PROTOBUF_MISSING_ERROR, "send_header_key is missing from the protobuf.");
 	}
 	this->storage->send_header_key.cloneFromRaw(conversation.send_header_key.data, conversation.send_header_key.len);
 	//receive header key
-	if (this->am_i_alice &&
+	if ((this->role == Role::ALICE) &&
 			(!conversation.has_receive_header_key || (conversation.receive_header_key.len != HEADER_KEY_SIZE))) {
 		throw MolchException(PROTOBUF_MISSING_ERROR, "receive_header_key is missing from protobuf.");
 	}
@@ -776,13 +776,13 @@ Ratchet::Ratchet(const Conversation& conversation) {
 
 	//chain keys
 	//send chain key
-	if (!this->am_i_alice &&
+	if ((this->role == Role::BOB) &&
 			(!conversation.has_send_chain_key || (conversation.send_chain_key.len != CHAIN_KEY_SIZE))) {
 		throw MolchException(PROTOBUF_MISSING_ERROR, "send_chain_key is missing from the potobuf.");
 	}
 	this->storage->send_chain_key.cloneFromRaw(conversation.send_chain_key.data, conversation.send_chain_key.len);
 	//receive chain key
-	if (this->am_i_alice &&
+	if ((this->role == Role::ALICE) &&
 			(!conversation.has_receive_chain_key || (conversation.receive_chain_key.len != CHAIN_KEY_SIZE))) {
 		throw MolchException(PROTOBUF_MISSING_ERROR, "receive_chain_key is missing from the protobuf.");
 	}
@@ -890,7 +890,7 @@ std::ostream& Ratchet::print(std::ostream& stream) const {
 
 	//others
 	stream << "Ratchet flag: " << this->ratchet_flag << '\n';
-	stream << "Am I Alice: " << this->am_i_alice << '\n';
+	stream << "Am I Alice: " << static_cast<bool>(this->role) << '\n';
 	stream << "Received valid: " << this->received_valid << '\n';
 	stream << "Header decryptability: " << static_cast<unsigned int>(this->header_decryptable) << '\n';
 

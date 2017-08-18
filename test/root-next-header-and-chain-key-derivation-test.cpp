@@ -75,7 +75,7 @@ int main(void) {
 			alice_public_ephemeral,
 			bob_public_ephemeral,
 			previous_root_key,
-			true);
+			Ratchet::Role::ALICE);
 
 		//print Alice's root and chain key
 		printf("Alice's root key (%zu Bytes):\n", alice_root_key.size);
@@ -97,7 +97,7 @@ int main(void) {
 			bob_public_ephemeral,
 			alice_public_ephemeral,
 			previous_root_key,
-			false);
+			Ratchet::Role::BOB);
 
 		//print Bob's root and chain key
 		printf("Bob's root key (%zu Bytes):\n", bob_root_key.size);

@@ -61,7 +61,7 @@ int main(void) {
 		keypair(bob_private_ephemeral, bob_public_ephemeral);
 
 		//compare public identity keys, the one with the bigger key will be alice
-		//(to make the test more predictable, and make the 'am_i_alice' flag in the
+		//(to make the test more predictable, and make the 'role' flag in the
 		// ratchet match the names here)
 		if (sodium_compare(bob_public_identity.content, alice_public_identity.content, PUBLIC_KEY_SIZE) > 0) {
 			status = 0;

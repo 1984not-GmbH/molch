@@ -25,6 +25,7 @@
 #include <cstdbool>
 
 #include "buffer.hpp"
+#include "ratchet.hpp"
 
 /*
  * Diffie Hellman key exchange using our private key and the
@@ -32,7 +33,7 @@
  * from the actual output of the diffie hellman exchange (see
  * documentation of libsodium).
  *
- * am_i_alice specifies if I am Alice or Bob. This determines in
+ * role: specifies if I am Alice or Bob. This determines in
  * what order the public keys get hashed.
  *
  * OUTPUT:
@@ -44,12 +45,12 @@ void diffie_hellman(
 		const Buffer& our_private_key, //needs to be PRIVATE_KEY_SIZE long
 		const Buffer& our_public_key, //needs to be PUBLIC_KEY_SIZE long
 		const Buffer& their_public_key, //needs to be PUBLIC_KEY_SIZE long
-		const bool am_i_alice);
+		const Ratchet::Role role);
 
 /*
  * Triple Diffie Hellman with two keys.
  *
- * am_i_alice specifies if I am Alice or Bob. This determines in
+ * role: specifies if I am Alice or Bob. This determines in
  * what order the public keys get hashed.
  *
  * OUTPUT:
@@ -70,5 +71,5 @@ void triple_diffie_hellman(
 		const Buffer& our_public_ephemeral,
 		const Buffer& their_public_identity,
 		const Buffer& their_public_ephemeral,
-		const bool am_i_alice);
+		const Ratchet::Role role);
 #endif

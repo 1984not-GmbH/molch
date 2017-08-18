@@ -23,6 +23,7 @@
 #define LIB_KEY_DERIVATION_H
 
 #include "buffer.hpp"
+#include "ratchet.hpp"
 #include "return-status.h"
 
 /*
@@ -77,7 +78,7 @@ void derive_root_next_header_and_chain_keys(
 		const Buffer& our_public_ephemeral,
 		const Buffer& their_public_ephemeral,
 		const Buffer& previous_root_key,
-		const bool am_i_alice);
+		const Ratchet::Role role);
 
 /*
  * Derive initial root, chain and header keys.
@@ -98,6 +99,6 @@ void derive_initial_root_chain_and_header_keys(
 		const Buffer& our_private_ephemeral,
 		const Buffer& our_public_ephemeral,
 		const Buffer& their_public_ephemeral,
-		const bool am_i_alice);
+		const Ratchet::Role role);
 
 #endif

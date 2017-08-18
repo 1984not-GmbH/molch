@@ -113,7 +113,11 @@ public:
 	uint32_t purported_previous_message_number{0}; //PNp
 	//ratchet flag
 	bool ratchet_flag{false};
-	bool am_i_alice{false};
+	enum class Role : bool {
+		ALICE = true,
+		BOB = false
+	};
+	Role role{Role::BOB};
 	bool received_valid{false}; //is false until the validity of a received message has been verified until the validity of a received message has been verified,
 	                     //this is necessary to be able to split key derivation from message
 	                     //decryption

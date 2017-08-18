@@ -129,7 +129,7 @@ void derive_root_next_header_and_chain_keys(
 		const Buffer& our_public_ephemeral,
 		const Buffer& their_public_ephemeral,
 		const Buffer& previous_root_key,
-		const bool am_i_alice) {
+		const Ratchet::Role role) {
 
 	//check input
 	if (!root_key.fits(ROOT_KEY_SIZE)
@@ -152,7 +152,7 @@ void derive_root_next_header_and_chain_keys(
 		our_private_ephemeral,
 		our_public_ephemeral,
 		their_public_ephemeral,
-		am_i_alice);
+		role);
 
 	//key to derive from
 	//HMAC-HASH(RK, DH(..., ...))
@@ -197,7 +197,7 @@ void derive_initial_root_chain_and_header_keys(
 		const Buffer& our_private_ephemeral,
 		const Buffer& our_public_ephemeral,
 		const Buffer& their_public_ephemeral,
-		const bool am_i_alice) {
+		const Ratchet::Role role) {
 	//check buffer sizes
 	if (!root_key.fits(ROOT_KEY_SIZE)
 			|| !send_chain_key.fits(CHAIN_KEY_SIZE)
@@ -229,53 +229,60 @@ void derive_initial_root_chain_and_header_keys(
 		our_public_ephemeral,
 		their_public_identity,
 		their_public_ephemeral,
-		am_i_alice);
+		role);
 
 	//derive root key
 	//RK = KDF(master_key, 0x00)
 	derive_key(root_key, ROOT_KEY_SIZE, master_key, 0);
 
 	//derive chain keys and header keys
-	if (am_i_alice) {
-		//HKs=<none>, HKr=KDF
-		//HKs=<none>
-		send_header_key.clear();
-		send_header_key.size = HEADER_KEY_SIZE;
-		//HKr = KDF(master_key, 0x01)
-		derive_key(receive_header_key, HEADER_KEY_SIZE, master_key, 1);
+	switch (role) {
+		case Ratchet::Role::ALICE:
+			//HKs=<none>, HKr=KDF
+			//HKs=<none>
+			send_header_key.clear();
+			send_header_key.size = HEADER_KEY_SIZE;
+			//HKr = KDF(master_key, 0x01)
+			derive_key(receive_header_key, HEADER_KEY_SIZE, master_key, 1);
 
-		//NHKs, NHKr
-		//NHKs = KDF(master_key, 0x02)
-		derive_key(next_send_header_key, HEADER_KEY_SIZE, master_key, 2);
+			//NHKs, NHKr
+			//NHKs = KDF(master_key, 0x02)
+			derive_key(next_send_header_key, HEADER_KEY_SIZE, master_key, 2);
 
-		//NHKr = KDF(master_key, 0x03)
-		derive_key(next_receive_header_key, HEADER_KEY_SIZE, master_key, 3);
+			//NHKr = KDF(master_key, 0x03)
+			derive_key(next_receive_header_key, HEADER_KEY_SIZE, master_key, 3);
 
-		//CKs=<none>, CKr=KDF
-		//CKs=<none>
-		send_chain_key.clear();
-		send_chain_key.size = CHAIN_KEY_SIZE;
-		//CKr = KDF(master_key, 0x04)
-		derive_key(receive_chain_key, CHAIN_KEY_SIZE, master_key, 4);
-	} else {
-		//HKs=HKDF, HKr=<none>
-		//HKr = <none>
-		receive_header_key.clear();
-		receive_header_key.size = HEADER_KEY_SIZE;
-		//HKs = KDF(master_key, 0x01)
-		derive_key(send_header_key, HEADER_KEY_SIZE, master_key, 1);
+			//CKs=<none>, CKr=KDF
+			//CKs=<none>
+			send_chain_key.clear();
+			send_chain_key.size = CHAIN_KEY_SIZE;
+			//CKr = KDF(master_key, 0x04)
+			derive_key(receive_chain_key, CHAIN_KEY_SIZE, master_key, 4);
+			break;
 
-		//NHKr, NHKs
-		//NHKr = KDF(master_key, 0x02)
-		derive_key(next_receive_header_key, HEADER_KEY_SIZE, master_key, 2);
-		//NHKs = KDF(master_key, 0x03)
-		derive_key(next_send_header_key, HEADER_KEY_SIZE, master_key, 3);
+		case Ratchet::Role::BOB:
+			//HKs=HKDF, HKr=<none>
+			//HKr = <none>
+			receive_header_key.clear();
+			receive_header_key.size = HEADER_KEY_SIZE;
+			//HKs = KDF(master_key, 0x01)
+			derive_key(send_header_key, HEADER_KEY_SIZE, master_key, 1);
 
-		//CKs=KDF, CKr=<none>
-		//CKr = <none>
-		receive_chain_key.clear();
-		receive_chain_key.size = CHAIN_KEY_SIZE;
-		//CKs = KDF(master_key, 0x04)
-		derive_key(send_chain_key, CHAIN_KEY_SIZE, master_key, 4);
+			//NHKr, NHKs
+			//NHKr = KDF(master_key, 0x02)
+			derive_key(next_receive_header_key, HEADER_KEY_SIZE, master_key, 2);
+			//NHKs = KDF(master_key, 0x03)
+			derive_key(next_send_header_key, HEADER_KEY_SIZE, master_key, 3);
+
+			//CKs=KDF, CKr=<none>
+			//CKr = <none>
+			receive_chain_key.clear();
+			receive_chain_key.size = CHAIN_KEY_SIZE;
+			//CKs = KDF(master_key, 0x04)
+			derive_key(send_chain_key, CHAIN_KEY_SIZE, master_key, 4);
+			break;
+
+		default:
+			break;
 	}
 }

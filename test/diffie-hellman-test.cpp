@@ -60,7 +60,7 @@ int main(void) noexcept {
 			alice_private_key,
 			alice_public_key,
 			bob_public_key,
-			true);
+			Ratchet::Role::ALICE);
 		alice_private_key.clear();
 
 		//print Alice's shared secret
@@ -74,7 +74,7 @@ int main(void) noexcept {
 			bob_private_key,
 			bob_public_key,
 			alice_public_key,
-			false);
+			Ratchet::Role::BOB);
 		bob_private_key.clear();
 
 		//print Bob's shared secret

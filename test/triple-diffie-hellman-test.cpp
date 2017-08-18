@@ -88,7 +88,7 @@ int main(void) {
 			alice_public_ephemeral,
 			bob_public_identity,
 			bob_public_ephemeral,
-			true);
+			Ratchet::Role::ALICE);
 
 		//print Alice's shared secret
 		printf("Alice's shared secret H(DH(A_priv,B0_pub)||DH(A0_priv,B_pub)||DH(A0_priv,B0_pub)):\n");
@@ -104,7 +104,7 @@ int main(void) {
 			bob_public_ephemeral,
 			alice_public_identity,
 			alice_public_ephemeral,
-			false);
+			Ratchet::Role::BOB);
 
 		//print Bob's shared secret
 		printf("Bob's shared secret H(DH(B0_priv, A_pub)||DH(B_priv, A0_pub)||DH(B0_priv, A0_pub)):\n");
