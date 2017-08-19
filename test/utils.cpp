@@ -19,27 +19,31 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <cstdio>
 #include <cstdlib>
 #include <sodium.h>
 #include <exception>
+#include <fstream>
+#include <limits>
 
 #include "utils.hpp"
 #include "../lib/destroyers.hpp"
 #include "../lib/molch-exception.hpp"
 
-void print_to_file(const Buffer& data, const std::string& filename) noexcept {
-	FILE *file = fopen(filename.c_str(), "w");
-	if (file == nullptr) {
-		return;
+void print_to_file(const Buffer& data, const std::string& filename) {
+	std::ofstream filestream{filename, std::ios_base::out | std::ios_base::binary};
+	if (!filestream.is_open()) {
+		throw MolchException(GENERIC_ERROR, "Failed to open output file.");
 	}
 
-	fwrite(data.content, 1, data.size, file);
+	filestream.exceptions(~std::ios_base::goodbit);
 
-	fclose(file);
+	if (data.size > std::numeric_limits<std::streamsize>::max()) {
+		throw MolchException(GENERIC_ERROR, "The buffer size exceeds std::streamsize.");
+	}
+	filestream.write(reinterpret_cast<const char*>(data.content), static_cast<std::streamsize>(data.size));
 }
 
-void print_errors(const return_status& status) noexcept {
+void print_errors(const return_status& status) {
 	fprintf(stderr, "ERROR STACK:\n");
 	error_message *error = status.error;
 	for (size_t i = 1; error != nullptr; i++, error = error->next) {
@@ -49,25 +53,27 @@ void print_errors(const return_status& status) noexcept {
 
 
 Buffer read_file(const std::string& filename) {
-	FILE *file = nullptr;
-
-	file = fopen(filename.c_str(), "r");
-	if (file == nullptr) {
+	std::ifstream filestream{filename, std::ios_base::in | std::ios_base::binary};
+	if (!filestream.is_open()) {
 		throw MolchException(GENERIC_ERROR, "Failed to open file.");
 	}
 
-	//get the filesize
-	fseek(file, 0, SEEK_END);
-	size_t filesize = static_cast<size_t>(ftell(file));
-	fseek(file, 0, SEEK_SET);
+	filestream.exceptions(~std::ios_base::goodbit);
 
-	Buffer data(filesize, filesize);
-	data.size = fread(data.content, 1, filesize, file);
-	fclose(file);
-	file = nullptr;
-	if (data.size != filesize) {
-		throw MolchException(INCORRECT_DATA, "Read less data from file than filesize.");
+	//get the filesize
+	filestream.seekg(0, std::ios_base::end);
+	auto filesize = filestream.tellg();
+	if (filesize < 0) {
+		throw MolchException(GENERIC_ERROR, "Filesize is smaller than 0.");
 	}
+	if (filesize > std::numeric_limits<std::streamsize>::max()) {
+		throw Molch::Exception(GENERIC_ERROR, "Filesize is larger than representable by std::streamsize.");
+	}
+	auto size = static_cast<size_t>(filesize);
+	filestream.seekg(0);
+
+	Buffer data(size, size);
+	filestream.read(reinterpret_cast<char*>(data.content), static_cast<std::streamsize>(filesize));
 
 	return data;
 }
