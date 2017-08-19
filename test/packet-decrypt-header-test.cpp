@@ -50,7 +50,7 @@ int main(void) {
 
 		//NORMAL MESSAGE
 		printf("NORMAL MESSAGE\n");
-		std::unique_ptr<Buffer> packet;
+		Buffer packet;
 		Buffer message("Hello world!\n");
 		Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 		Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
@@ -66,26 +66,26 @@ int main(void) {
 			nullptr);
 
 		//now decrypt the header
-		std::unique_ptr<Buffer> decrypted_header = packet_decrypt_header(*packet, header_key);
+		Buffer decrypted_header = packet_decrypt_header(packet, header_key);
 
 
-		if (!decrypted_header->contains(header.size)) {
+		if (!decrypted_header.contains(header.size)) {
 			throw MolchException(INVALID_VALUE, "Decrypted header isn't of the same length.");
 		}
 		printf("Decrypted header has the same length.\n\n");
 
 		//compare headers
-		if (header != *decrypted_header) {
+		if (header != decrypted_header) {
 			throw MolchException(INVALID_VALUE, "Decrypted header doesn't match.");
 		}
 		printf("Decrypted header matches.\n\n");
 
 		//check if it decrypts manipulated packets (manipulated metadata)
 		printf("Manipulating header length.\n");
-		packet->content[2]++;
+		packet.content[2]++;
 		bool decryption_failed = false;
 		try {
-			decrypted_header = packet_decrypt_header(*packet, header_key);
+			decrypted_header = packet_decrypt_header(packet, header_key);
 		} catch (const MolchException& exception) {
 			decryption_failed = true;
 		}
@@ -96,12 +96,12 @@ int main(void) {
 		printf("Header manipulation detected.\n\n");
 
 		//repair manipulation
-		packet->content[2]--;
+		packet.content[2]--;
 		//check if it decrypts manipulated packets (manipulated header)
 		printf("Manipulate header.\n");
-		packet->content[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= 0x12;
+		packet.content[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= 0x12;
 		try {
-			decrypted_header = packet_decrypt_header(*packet, header_key);
+			decrypted_header = packet_decrypt_header(packet, header_key);
 		} catch (const MolchException& exception) {
 			decryption_failed = true;
 		}
@@ -112,7 +112,7 @@ int main(void) {
 		printf("Header manipulation detected!\n\n");
 
 		//undo header manipulation
-		packet->content[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= 0x12;
+		packet.content[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= 0x12;
 
 		//PREKEY MESSAGE
 		printf("PREKEY_MESSAGE\n");
@@ -124,8 +124,8 @@ int main(void) {
 		Buffer public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 		public_prekey.fillRandom(PUBLIC_KEY_SIZE);
 
-		packet.reset();
-		decrypted_header.reset();
+		packet.clear();
+		decrypted_header.clear();
 
 		packet_type = PREKEY_MESSAGE;
 		create_and_print_message(
@@ -140,15 +140,15 @@ int main(void) {
 			&public_prekey);
 
 		//now decrypt the header
-		decrypted_header = packet_decrypt_header(*packet, header_key);
+		decrypted_header = packet_decrypt_header(packet, header_key);
 
-		if (!decrypted_header->contains(header.size)) {
+		if (!decrypted_header.contains(header.size)) {
 			throw MolchException(INVALID_VALUE, "Decrypted header isn't of the same length.");
 		}
 		printf("Decrypted header has the same length.\n\n");
 
 		//compare headers
-		if (header != *decrypted_header) {
+		if (header != decrypted_header) {
 			throw MolchException(INVALID_VALUE, "Decrypted header doesn't match.");
 		}
 		printf("Decrypted header matches.\n");

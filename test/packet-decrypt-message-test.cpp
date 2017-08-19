@@ -53,7 +53,7 @@ int main(void) {
 		Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 		Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 		printf("NORMAL MESSAGE\n");
-		std::unique_ptr<Buffer> packet;
+		Buffer packet;
 		create_and_print_message(
 			packet,
 			header_key,
@@ -66,30 +66,30 @@ int main(void) {
 			nullptr);
 
 		//now decrypt the message
-		std::unique_ptr<Buffer> decrypted_message = packet_decrypt_message(*packet, message_key);
+		Buffer decrypted_message = packet_decrypt_message(packet, message_key);
 
 		//check the message size
-		if (!decrypted_message->contains(message.size)) {
+		if (!decrypted_message.contains(message.size)) {
 			throw MolchException(INVALID_VALUE, "Decrypted message length isn't the same.");
 		}
 		printf("Decrypted message length is the same.\n");
 
 		//compare the message
-		if (message != *decrypted_message) {
+		if (message != decrypted_message) {
 			throw MolchException(INVALID_VALUE, "Decrypted message doesn't match.");
 		}
 		printf("Decrypted message is the same.\n\n");
 
 		//manipulate the message
-		packet->content[packet->size - crypto_secretbox_MACBYTES - 1] ^= 0xf0;
+		packet.content[packet.size - crypto_secretbox_MACBYTES - 1] ^= 0xf0;
 		printf("Manipulating message.\n");
 
-		decrypted_message.reset();
+		decrypted_message.clear();
 
 		//try to decrypt
 		bool decryption_failed = false;
 		try {
-			decrypted_message = packet_decrypt_message(*packet, message_key);
+			decrypted_message = packet_decrypt_message(packet, message_key);
 		} catch (const MolchException& exception) {
 			decryption_failed = true;
 		}
@@ -108,7 +108,7 @@ int main(void) {
 		Buffer public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 		public_prekey.fillRandom(PUBLIC_KEY_SIZE);
 
-		packet.reset();
+		packet.clear();
 
 		packet_type = PREKEY_MESSAGE;
 		create_and_print_message(
@@ -123,16 +123,16 @@ int main(void) {
 			&public_prekey);
 
 		//now decrypt the message
-		decrypted_message = packet_decrypt_message(*packet, message_key);
+		decrypted_message = packet_decrypt_message(packet, message_key);
 
 		//check the message size
-		if (!decrypted_message->contains(message.size)) {
+		if (!decrypted_message.contains(message.size)) {
 			throw MolchException(INVALID_VALUE, "Decrypted message length isn't the same.");
 		}
 		printf("Decrypted message length is the same.\n");
 
 		//compare the message
-		if (message != *decrypted_message) {
+		if (message != decrypted_message) {
 			throw MolchException(INVALID_VALUE, "Decrypted message doesn't match.");
 		}
 		printf("Decrypted message is the same.\n");

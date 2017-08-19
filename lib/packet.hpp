@@ -55,7 +55,7 @@
  * \return
  *   The encrypted packet.
  */
-std::unique_ptr<Buffer> packet_encrypt(
+Buffer packet_encrypt(
 		//inputs
 		const molch_message_type packet_type,
 		const Buffer& axolotl_header,
@@ -98,8 +98,8 @@ void packet_decrypt(
 		uint32_t& current_protocol_version,
 		uint32_t& highest_supported_protocol_version,
 		molch_message_type& packet_type,
-		std::unique_ptr<Buffer>& axolotl_header,
-		std::unique_ptr<Buffer>& message,
+		Buffer& axolotl_header,
+		Buffer& message,
 		//inputs
 		const Buffer& packet,
 		const Buffer& axolotl_header_key, //HEADER_KEY_SIZE
@@ -151,7 +151,7 @@ void packet_get_metadata_without_verification(
  * \return
  *   A buffer for the decrypted axolotl header.
  */
-std::unique_ptr<Buffer> packet_decrypt_header(
+Buffer packet_decrypt_header(
 		const Buffer& packet,
 		const Buffer& axolotl_header_key); //HEADER_KEY_SIZE
 
@@ -166,5 +166,5 @@ std::unique_ptr<Buffer> packet_decrypt_header(
  * \return
  *   A buffer for the decrypted message.
  */
-std::unique_ptr<Buffer> packet_decrypt_message(const Buffer& packet, const Buffer& message_key);
+Buffer packet_decrypt_message(const Buffer& packet, const Buffer& message_key);
 #endif

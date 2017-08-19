@@ -51,7 +51,7 @@ int main(void) {
 		Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
 		Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 		Buffer message("Hello world!\n");
-		std::unique_ptr<Buffer> packet;
+		Buffer packet;
 		create_and_print_message(
 			packet,
 			header_key,
@@ -71,7 +71,7 @@ int main(void) {
 			extracted_current_protocol_version,
 			extracted_highest_supported_protocol_version,
 			extracted_packet_type,
-			*packet,
+			packet,
 			nullptr,
 			nullptr,
 			nullptr);
@@ -102,7 +102,7 @@ int main(void) {
 		Buffer public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 		public_prekey.fillRandom(PUBLIC_KEY_SIZE);
 
-		packet.reset();
+		packet.clear();
 
 		packet_type = PREKEY_MESSAGE;
 		create_and_print_message(
@@ -124,7 +124,7 @@ int main(void) {
 			extracted_current_protocol_version,
 			extracted_highest_supported_protocol_version,
 			extracted_packet_type,
-			*packet,
+			packet,
 			&extracted_public_identity_key,
 			&extracted_public_ephemeral_key,
 			&extracted_public_prekey);

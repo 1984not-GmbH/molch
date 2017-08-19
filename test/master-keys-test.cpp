@@ -33,10 +33,10 @@
 
 void protobuf_export(
 		MasterKeys& keys,
-		std::unique_ptr<Buffer>& public_signing_key_buffer,
-		std::unique_ptr<Buffer>& private_signing_key_buffer,
-		std::unique_ptr<Buffer>& public_identity_key_buffer,
-		std::unique_ptr<Buffer>& private_identity_key_buffer) {
+		Buffer& public_signing_key_buffer,
+		Buffer& private_signing_key_buffer,
+		Buffer& public_identity_key_buffer,
+		Buffer& private_identity_key_buffer) {
 	std::unique_ptr<Key,KeyDeleter> public_signing_key;
 	std::unique_ptr<Key,KeyDeleter> private_signing_key;
 	std::unique_ptr<Key,KeyDeleter> public_identity_key;
@@ -51,33 +51,33 @@ void protobuf_export(
 	//copy keys to buffer
 	//public signing key
 	size_t public_signing_key_proto_size = key__get_packed_size(public_signing_key.get());
-	public_signing_key_buffer = std::make_unique<Buffer>(public_signing_key_proto_size, 0);
-	public_signing_key_buffer->size = key__pack(public_signing_key.get(), public_signing_key_buffer->content);
-	if (!public_signing_key_buffer->contains(public_signing_key_proto_size)) {
+	public_signing_key_buffer = Buffer(public_signing_key_proto_size, 0);
+	public_signing_key_buffer.size = key__pack(public_signing_key.get(), public_signing_key_buffer.content);
+	if (!public_signing_key_buffer.contains(public_signing_key_proto_size)) {
 		throw MolchException(EXPORT_ERROR, "Failed to export public signing key.");
 	}
 
 	//private signing key
 	size_t private_signing_key_proto_size = key__get_packed_size(private_signing_key.get());
-	private_signing_key_buffer = std::make_unique<Buffer>(private_signing_key_proto_size, 0);
-	private_signing_key_buffer->size = key__pack(private_signing_key.get(), private_signing_key_buffer->content);
-	if (!private_signing_key_buffer->contains(private_signing_key_proto_size)) {
+	private_signing_key_buffer = Buffer(private_signing_key_proto_size, 0);
+	private_signing_key_buffer.size = key__pack(private_signing_key.get(), private_signing_key_buffer.content);
+	if (!private_signing_key_buffer.contains(private_signing_key_proto_size)) {
 		throw MolchException(EXPORT_ERROR, "Failed to export private signing key.");
 	}
 
 	//public identity key
 	size_t public_identity_key_proto_size = key__get_packed_size(public_identity_key.get());
-	public_identity_key_buffer = std::make_unique<Buffer>(public_identity_key_proto_size, 0);
-	public_identity_key_buffer->size = key__pack(public_identity_key.get(), public_identity_key_buffer->content);
-	if (!public_identity_key_buffer->contains(public_identity_key_proto_size)) {
+	public_identity_key_buffer = Buffer(public_identity_key_proto_size, 0);
+	public_identity_key_buffer.size = key__pack(public_identity_key.get(), public_identity_key_buffer.content);
+	if (!public_identity_key_buffer.contains(public_identity_key_proto_size)) {
 		throw MolchException(EXPORT_ERROR, "Failed to export public identity key.");
 	}
 
 	//private identity key
 	size_t private_identity_key_proto_size = key__get_packed_size(private_identity_key.get());
-	private_identity_key_buffer = std::make_unique<Buffer>(private_identity_key_proto_size, 0);
-	private_identity_key_buffer->size = key__pack(private_identity_key.get(), private_identity_key_buffer->content);
-	if (!private_identity_key_buffer->contains(private_identity_key_proto_size)) {
+	private_identity_key_buffer = Buffer(private_identity_key_proto_size, 0);
+	private_identity_key_buffer.size = key__pack(private_identity_key.get(), private_identity_key_buffer.content);
+	if (!private_identity_key_buffer.contains(private_identity_key_proto_size)) {
 		throw MolchException(EXPORT_ERROR, "Failed to export private identity key.");
 	}
 }
@@ -239,10 +239,10 @@ int main(void) {
 		printf("Export to Protobuf-C:\n");
 
 		//export buffers
-		auto protobuf_export_public_signing_key = std::unique_ptr<Buffer>(nullptr);
-		auto protobuf_export_private_signing_key = std::unique_ptr<Buffer>(nullptr);
-		auto protobuf_export_public_identity_key = std::unique_ptr<Buffer>(nullptr);
-		auto protobuf_export_private_identity_key = std::unique_ptr<Buffer>(nullptr);
+		Buffer protobuf_export_public_signing_key;
+		Buffer protobuf_export_private_signing_key;
+		Buffer protobuf_export_public_identity_key;
+		Buffer protobuf_export_private_identity_key;
 		protobuf_export(
 			spiced_master_keys,
 			protobuf_export_public_signing_key,
@@ -251,32 +251,32 @@ int main(void) {
 			protobuf_export_private_identity_key);
 
 		printf("Public signing key:\n");
-		protobuf_export_public_signing_key->printHex(std::cout) << "\n\n";
+		protobuf_export_public_signing_key.printHex(std::cout) << "\n\n";
 
 		printf("Private signing key:\n");
-		protobuf_export_private_signing_key->printHex(std::cout) << "\n\n";
+		protobuf_export_private_signing_key.printHex(std::cout) << "\n\n";
 
 		printf("Public identity key:\n");
-		protobuf_export_public_identity_key->printHex(std::cout) << "\n\n";
+		protobuf_export_public_identity_key.printHex(std::cout) << "\n\n";
 
 		printf("Private identity key:\n");
-		protobuf_export_private_identity_key->printHex(std::cout) << "\n\n";
+		protobuf_export_private_identity_key.printHex(std::cout) << "\n\n";
 
 		//import again
 		printf("Import from Protobuf-C:\n");
 		auto imported_master_keys = std::unique_ptr<MasterKeys>(nullptr);
 		protobuf_import(
 			imported_master_keys,
-			*protobuf_export_public_signing_key,
-			*protobuf_export_private_signing_key,
-			*protobuf_export_public_identity_key,
-			*protobuf_export_private_identity_key);
+			protobuf_export_public_signing_key,
+			protobuf_export_private_signing_key,
+			protobuf_export_public_identity_key,
+			protobuf_export_private_identity_key);
 
 		//export again
-		auto protobuf_second_export_public_signing_key = std::unique_ptr<Buffer>(nullptr);
-		auto protobuf_second_export_private_signing_key = std::unique_ptr<Buffer>(nullptr);
-		auto protobuf_second_export_public_identity_key = std::unique_ptr<Buffer>(nullptr);
-		auto protobuf_second_export_private_identity_key = std::unique_ptr<Buffer>(nullptr);
+		Buffer protobuf_second_export_public_signing_key;
+		Buffer protobuf_second_export_private_signing_key;
+		Buffer protobuf_second_export_public_identity_key;
+		Buffer protobuf_second_export_private_identity_key;
 		protobuf_export(
 			*imported_master_keys,
 			protobuf_second_export_public_signing_key,
@@ -285,16 +285,16 @@ int main(void) {
 			protobuf_second_export_private_identity_key);
 
 		//now compare
-		if (*protobuf_export_public_signing_key != *protobuf_second_export_public_signing_key) {
+		if (protobuf_export_public_signing_key != protobuf_second_export_public_signing_key) {
 			throw MolchException(INCORRECT_DATA, "The public signing keys do not match.");
 		}
-		if (*protobuf_export_private_signing_key != *protobuf_second_export_private_signing_key) {
+		if (protobuf_export_private_signing_key != protobuf_second_export_private_signing_key) {
 			throw MolchException(INCORRECT_DATA, "The private signing keys do not match.");
 		}
-		if (*protobuf_export_public_identity_key != *protobuf_second_export_public_identity_key) {
+		if (protobuf_export_public_identity_key != protobuf_second_export_public_identity_key) {
 			throw MolchException(INCORRECT_DATA, "The public identity keys do not match.");
 		}
-		if (*protobuf_export_private_identity_key != *protobuf_second_export_private_identity_key) {
+		if (protobuf_export_private_identity_key != protobuf_second_export_private_identity_key) {
 			throw MolchException(INCORRECT_DATA, "The private identity keys do not match.");
 		}
 

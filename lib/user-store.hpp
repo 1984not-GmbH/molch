@@ -126,7 +126,7 @@ public:
 	 * Returns a buffer containing a list of all the public
 	 * signing keys of the user.
 	 */
-	std::unique_ptr<Buffer> list();
+	Buffer list();
 
 	void remove(const Buffer& public_signing_key);
 	void remove(const UserStoreNode* const user);

@@ -126,7 +126,8 @@ static void test_add_conversation(ConversationStore& store) {
 			their_public_identity,
 			our_private_ephemeral,
 			our_public_ephemeral,
-			their_public_ephemeral);
+			their_public_ephemeral,
+			ConversationT::Confirmation::YES_I_WANT_THAT_CONSTRUCTOR);
 
 	store.add(std::move(conversation));
 }
@@ -160,7 +161,7 @@ int main(void) {
 		// list an empty conversation store
 		ConversationStore store;
 		auto empty_list = store.list();
-		if (empty_list) {
+		if (!empty_list.isNone()) {
 			throw MolchException(INCORRECT_DATA, "List of empty conversation store is not nullptr.");
 		}
 
@@ -176,7 +177,7 @@ int main(void) {
 
 		//test list export feature
 		auto conversation_list = store.list();
-		if (!conversation_list || (conversation_list->size != (CONVERSATION_ID_SIZE * store.size()))) {
+		if (!conversation_list.contains(CONVERSATION_ID_SIZE * store.size())) {
 			throw MolchException(DATA_FETCH_ERROR, "Failed to get list of conversations.");
 		}
 
@@ -184,8 +185,8 @@ int main(void) {
 		Buffer first_id;
 		Buffer middle_id;
 		Buffer last_id;
-		for (size_t i = 0; i < (conversation_list->size / CONVERSATION_ID_SIZE); i++) {
-			Buffer current_id(conversation_list->content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
+		for (size_t i = 0; i < (conversation_list.size / CONVERSATION_ID_SIZE); i++) {
+			Buffer current_id(conversation_list.content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
 			auto found_node = store.find(current_id);
 			if (found_node == nullptr) {
 				throw MolchException(INCORRECT_DATA, "Exported list of conversations was incorrect.");

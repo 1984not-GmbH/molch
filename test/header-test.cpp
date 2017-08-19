@@ -50,14 +50,14 @@ int main(void) {
 		putchar('\n');
 
 		//create the header
-		std::unique_ptr<Buffer> header = header_construct(
+		Buffer header = header_construct(
 				our_public_ephemeral_key,
 				message_number,
 				previous_message_number);
 
 		//print the header
-		printf("Header (%zu Bytes):\n", header->size);
-		header->printHex(std::cout);
+		printf("Header (%zu Bytes):\n", header.size);
+		header.printHex(std::cout);
 		putchar('\n');
 
 		//get data back out of the header again
@@ -68,7 +68,7 @@ int main(void) {
 				extracted_public_ephemeral_key,
 				extracted_message_number,
 				extracted_previous_message_number,
-				*header);
+				header);
 
 		printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key.size);
 		extracted_public_ephemeral_key.printHex(std::cout);

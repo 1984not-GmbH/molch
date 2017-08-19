@@ -28,7 +28,7 @@ extern "C" {
 #include "molch-exception.hpp"
 #include "protobuf-deleters.hpp"
 
-std::unique_ptr<Buffer> header_construct(
+Buffer header_construct(
 		//inputs
 		const Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE
 		const uint32_t message_number,
@@ -55,10 +55,10 @@ std::unique_ptr<Buffer> header_construct(
 
 	//allocate the header buffer
 	size_t header_length = header__get_packed_size(&header_struct);
-	auto header = std::make_unique<Buffer>(header_length, header_length);
+	Buffer header(header_length, header_length);
 
 	//pack it
-	size_t packed_length = header__pack(&header_struct, header->content);
+	size_t packed_length = header__pack(&header_struct, header.content);
 	if (packed_length != header_length) {
 		throw MolchException(PROTOBUF_PACK_ERROR, "Packed header has incorrect length.");
 	}

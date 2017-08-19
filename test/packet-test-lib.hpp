@@ -49,7 +49,7 @@
  */
 void create_and_print_message(
 		//output
-		std::unique_ptr<Buffer>& packet,
+		Buffer& packet,
 		Buffer& header_key, //HEADER_KEY_SIZE
 		Buffer& message_key, //MESSAGE_KEY_SIZE
 		//inputs

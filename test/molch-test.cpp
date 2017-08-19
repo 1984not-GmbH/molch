@@ -37,7 +37,7 @@ extern "C" {
 }
 
 
-static std::unique_ptr<Buffer> decrypt_conversation_backup(
+static Buffer decrypt_conversation_backup(
 		//inputs
 		const unsigned char * const backup,
 		const size_t backup_length,
@@ -71,7 +71,7 @@ static std::unique_ptr<Buffer> decrypt_conversation_backup(
 		throw MolchException(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
 	}
 
-	auto decrypted_backup = std::make_unique<Buffer>(
+	Buffer decrypted_backup(
 			encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES,
 			encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES,
 			zeroed_malloc,
@@ -79,7 +79,7 @@ static std::unique_ptr<Buffer> decrypt_conversation_backup(
 
 	//decrypt the backup
 	int status = crypto_secretbox_open_easy(
-			decrypted_backup->content,
+			decrypted_backup.content,
 			encrypted_backup_struct->encrypted_backup.data,
 			encrypted_backup_struct->encrypted_backup.len,
 			encrypted_backup_struct->encrypted_backup_nonce.data,
@@ -91,7 +91,7 @@ static std::unique_ptr<Buffer> decrypt_conversation_backup(
 	return decrypted_backup;
 }
 
-static std::unique_ptr<Buffer> decrypt_full_backup(
+static Buffer decrypt_full_backup(
 		//inputs
 		const unsigned char * const backup,
 		const size_t backup_length,
@@ -125,11 +125,11 @@ static std::unique_ptr<Buffer> decrypt_full_backup(
 		throw MolchException(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
 	}
 
-	auto decrypted_backup = std::make_unique<Buffer>(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
+	Buffer decrypted_backup(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
 
 	//decrypt the backup
 	int status_int = crypto_secretbox_open_easy(
-			decrypted_backup->content,
+			decrypted_backup.content,
 			encrypted_backup_struct->encrypted_backup.data,
 			encrypted_backup_struct->encrypted_backup.len,
 			encrypted_backup_struct->encrypted_backup_nonce.data,
@@ -499,7 +499,7 @@ int main(void) {
 		auto decrypted_imported_backup = decrypt_full_backup(imported_backup.get(), imported_backup_length, backup_key.content, backup_key.size);
 
 		//compare
-		if (*decrypted_backup != *decrypted_imported_backup) {
+		if (decrypted_backup != decrypted_imported_backup) {
 			throw MolchException(IMPORT_ERROR, "Imported backup is incorrect.");
 		}
 
@@ -564,7 +564,7 @@ int main(void) {
 				backup_key.size);
 
 		//compare
-		if (*decrypted_conversation_backup != *decrypted_imported_conversation_backup) {
+		if (decrypted_conversation_backup != decrypted_imported_conversation_backup) {
 			throw MolchException(IMPORT_ERROR, "Protobuf of imported conversation is incorrect.");
 		}
 

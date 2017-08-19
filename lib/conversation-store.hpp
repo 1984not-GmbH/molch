@@ -83,7 +83,7 @@ public:
 	 *
 	 * Returns nullptr if empty.
 	 */
-	std::unique_ptr<Buffer> list() const;
+	Buffer list() const;
 
 	/*! Export a conversation store to Protobuf-C
 	 * \param conversation_store The conversation store to export.

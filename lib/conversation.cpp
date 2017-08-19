@@ -83,7 +83,9 @@ ConversationT::ConversationT(
 		const Buffer& their_public_identity,
 		const Buffer& our_private_ephemeral,
 		const Buffer& our_public_ephemeral,
-		const Buffer& their_public_ephemeral) {
+		const Buffer& their_public_ephemeral,
+		const Confirmation yes_i_want_this_constructor) {
+	(void)yes_i_want_this_constructor;
 	this->create(
 		our_private_identity,
 		our_public_identity,
@@ -101,7 +103,7 @@ ConversationT::ConversationT(
  */
 ConversationT::ConversationT(
 		const Buffer& message, //message we want to send to the receiver
-		std::unique_ptr<Buffer>& packet, //output
+		Buffer& packet, //output
 		const Buffer& sender_public_identity, //who is sending this message?
 		const Buffer& sender_private_identity,
 		const Buffer& receiver_public_identity,
@@ -111,7 +113,7 @@ ConversationT::ConversationT(
 			|| !sender_public_identity.contains(PUBLIC_KEY_SIZE)
 			|| !sender_private_identity.contains(PRIVATE_KEY_SIZE)
 			|| !receiver_prekey_list.contains((PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
-		throw MolchException(INVALID_INPUT, "Invalid input to conversation_start_send_conversation.");
+		throw MolchException(INVALID_INPUT, "Invalid input to ConversationT::ConversationT.");
 	}
 
 	//create an ephemeral keypair
@@ -152,7 +154,7 @@ ConversationT::ConversationT(
  */
 ConversationT::ConversationT(
 		const Buffer& packet, //received packet
-		std::unique_ptr<Buffer>& message, //output
+		Buffer& message, //output
 		const Buffer& receiver_public_identity,
 		const Buffer& receiver_private_identity,
 		PrekeyStore& receiver_prekeys) { //prekeys of the receiver
@@ -208,7 +210,7 @@ ConversationT::ConversationT(
  * Don't forget to destroy the return status with return_status_destroy_errors()
  * if an error has occurred.
  */
-std::unique_ptr<Buffer> ConversationT::send(
+Buffer ConversationT::send(
 		const Buffer& message,
 		const Buffer * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
 		const Buffer * const public_ephemeral_key, //can be nullptr, if not nullptr, this will be a prekey message
@@ -248,7 +250,7 @@ std::unique_ptr<Buffer> ConversationT::send(
 
 	return packet_encrypt(
 			packet_type,
-			*header,
+			header,
 			send_header_key,
 			message,
 			send_message_key,
@@ -266,14 +268,14 @@ std::unique_ptr<Buffer> ConversationT::send(
  */
 int ConversationT::trySkippedHeaderAndMessageKeys(
 		const Buffer& packet,
-		std::unique_ptr<Buffer>& message,
+		Buffer& message,
 		uint32_t& receive_message_number,
 		uint32_t& previous_receive_message_number) {
 	//create buffers
 
 	for (size_t index = 0; index < this->ratchet->skipped_header_and_message_keys.keys.size(); index++) {
 		HeaderAndMessageKeyStoreNode& node = this->ratchet->skipped_header_and_message_keys.keys[index];
-		std::unique_ptr<Buffer> header;
+		Buffer header;
 		bool decryption_successful = true;
 		try {
 			header = packet_decrypt_header(packet, node.header_key);
@@ -295,7 +297,7 @@ int ConversationT::trySkippedHeaderAndMessageKeys(
 						their_signed_public_ephemeral,
 						receive_message_number,
 						previous_receive_message_number,
-						*header);
+						header);
 				return SUCCESS;
 			}
 		}
@@ -310,14 +312,14 @@ int ConversationT::trySkippedHeaderAndMessageKeys(
  * Don't forget to destroy the return status with return_status_destroy_errors()
  * if an error has occurred.
  */
-std::unique_ptr<Buffer> ConversationT::receive(
+Buffer ConversationT::receive(
 		const Buffer& packet, //received packet
 		uint32_t& receive_message_number,
 		uint32_t& previous_receive_message_number) {
 	try {
 		bool decryptable = true;
 
-		std::unique_ptr<Buffer> message;
+		Buffer message;
 		int status = trySkippedHeaderAndMessageKeys(
 				packet,
 				message,
@@ -333,7 +335,7 @@ std::unique_ptr<Buffer> ConversationT::receive(
 		this->ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 
 		//try to decrypt the packet header with the current receive header key
-		std::unique_ptr<Buffer> header;
+		Buffer header;
 		try {
 			header = packet_decrypt_header(packet, current_receive_header_key);
 		} catch (const MolchException& exception) {
@@ -365,7 +367,7 @@ std::unique_ptr<Buffer> ConversationT::receive(
 				their_signed_public_ephemeral,
 				local_receive_message_number,
 				local_previous_receive_message_number,
-				*header);
+				header);
 
 		//and now decrypt the message with the message key
 		//now we have all the data we need to advance the ratchet

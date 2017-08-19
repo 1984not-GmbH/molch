@@ -48,7 +48,7 @@
  * \return
  *   The constructed header.
  */
-std::unique_ptr<Buffer> header_construct(
+Buffer header_construct(
 		const Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE
 		const uint32_t message_number,
 		const uint32_t previous_message_number);

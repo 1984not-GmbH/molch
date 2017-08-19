@@ -48,7 +48,7 @@ void print_errors(const return_status& status) noexcept {
 }
 
 
-std::unique_ptr<Buffer> read_file(const std::string& filename) {
+Buffer read_file(const std::string& filename) {
 	FILE *file = nullptr;
 
 	file = fopen(filename.c_str(), "r");
@@ -61,11 +61,11 @@ std::unique_ptr<Buffer> read_file(const std::string& filename) {
 	size_t filesize = static_cast<size_t>(ftell(file));
 	fseek(file, 0, SEEK_SET);
 
-	auto data = std::make_unique<Buffer>(filesize, filesize);
-	data->size = fread(data->content, 1, filesize, file);
+	Buffer data(filesize, filesize);
+	data.size = fread(data.content, 1, filesize, file);
 	fclose(file);
 	file = nullptr;
-	if (data->size != filesize) {
+	if (data.size != filesize) {
 		throw MolchException(INCORRECT_DATA, "Read less data from file than filesize.");
 	}
 

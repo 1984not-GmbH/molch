@@ -53,7 +53,7 @@ int main(void) {
 		Buffer message("Hello world!\n");
 		Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
 		Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-		std::unique_ptr<Buffer> packet;
+		Buffer packet;
 		create_and_print_message(
 			packet,
 			header_key,
@@ -67,8 +67,8 @@ int main(void) {
 
 		//now decrypt the packet
 		molch_message_type extracted_packet_type;
-		std::unique_ptr<Buffer> decrypted_header;
-		std::unique_ptr<Buffer> decrypted_message;
+		Buffer decrypted_header;
+		Buffer decrypted_message;
 		uint32_t extracted_current_protocol_version;
 		uint32_t extracted_highest_supported_protocol_version;
 		packet_decrypt(
@@ -77,7 +77,7 @@ int main(void) {
 			extracted_packet_type,
 			decrypted_header,
 			decrypted_message,
-			*packet,
+			packet,
 			header_key,
 			message_key,
 			nullptr,
@@ -91,24 +91,24 @@ int main(void) {
 		}
 
 
-		if (decrypted_header->size != header.size) {
+		if (decrypted_header.size != header.size) {
 			throw MolchException(INVALID_VALUE, "Decrypted header isn't of the same length!");
 		}
 		printf("Decrypted header has the same length.\n");
 
 		//compare headers
-		if (header != *decrypted_header) {
+		if (header != decrypted_header) {
 			throw MolchException(INVALID_VALUE, "Decrypted header doesn't match.");
 		}
 		printf("Decrypted header matches.\n\n");
 
-		if (!decrypted_message->contains(message.size)) {
+		if (!decrypted_message.contains(message.size)) {
 			throw MolchException(INVALID_VALUE, "Decrypted message isn't of the same length.");
 		}
 		printf("Decrypted message has the same length.\n");
 
 		//compare messages
-		if (message != *decrypted_message) {
+		if (message != decrypted_message) {
 			throw MolchException(INVALID_VALUE, "Decrypted message doesn't match.");
 		}
 		printf("Decrypted message matches.\n");
@@ -123,9 +123,9 @@ int main(void) {
 		Buffer public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 		public_prekey.fillRandom(PUBLIC_KEY_SIZE);
 
-		decrypted_header.reset();
-		decrypted_message.reset();
-		packet.reset();
+		decrypted_header.clear();
+		decrypted_message.clear();
+		packet.clear();
 
 		packet_type = PREKEY_MESSAGE;
 
@@ -150,7 +150,7 @@ int main(void) {
 			extracted_packet_type,
 			decrypted_header,
 			decrypted_message,
-			*packet,
+			packet,
 			header_key,
 			message_key,
 			&extracted_public_identity_key,
@@ -163,24 +163,24 @@ int main(void) {
 			throw MolchException(DATA_FETCH_ERROR, "Failed to retrieve metadata.");
 		}
 
-		if (!decrypted_header->contains(header.size)) {
+		if (!decrypted_header.contains(header.size)) {
 			throw MolchException(INVALID_VALUE, "Decrypted header isn't of the same length.");
 		}
 		printf("Decrypted header has the same length!\n");
 
 		//compare headers
-		if (header != *decrypted_header) {
+		if (header != decrypted_header) {
 			throw MolchException(INVALID_VALUE, "Decrypted header doesn't match.");
 		}
 		printf("Decrypted header matches!\n");
 
-		if (!decrypted_message->contains(message.size)) {
+		if (!decrypted_message.contains(message.size)) {
 			throw MolchException(INVALID_VALUE, "Decrypted message isn't of the same length.");
 		}
 		printf("Decrypted message has the same length.\n");
 
 		//compare messages
-		if (message != *decrypted_message) {
+		if (message != decrypted_message) {
 			throw MolchException(INVALID_VALUE, "Decrypted message doesn't match.");
 		}
 		printf("Decrypted message matches.\n");

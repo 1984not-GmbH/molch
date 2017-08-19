@@ -33,7 +33,7 @@
 
 void create_and_print_message(
 		//output
-		std::unique_ptr<Buffer>& packet,
+		Buffer& packet,
 		Buffer& header_key, //HEADER_KEY_SIZE
 		Buffer& message_key, //MESSAGE_KEY_SIZE
 		//inputs
@@ -83,7 +83,7 @@ void create_and_print_message(
 			public_prekey);
 
 	//print encrypted packet
-	printf("Encrypted Packet (%zu Bytes):\n", packet->size);
-	packet->printHex(std::cout);
+	printf("Encrypted Packet (%zu Bytes):\n", packet.size);
+	packet.printHex(std::cout);
 	putchar('\n');
 }

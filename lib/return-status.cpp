@@ -213,7 +213,7 @@ const char *return_status_get_name(status_type status) noexcept {
  * Don't forget to free with "free" after usage.
  */
 char *return_status_print(const return_status * const status_to_print, size_t *length) noexcept {
-	std::unique_ptr<Buffer> output;
+	Buffer output;
 	try {
 		//check input
 		if (status_to_print == nullptr) {
@@ -250,13 +250,13 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 			}
 		}
 
-		output = std::make_unique<Buffer>(output_size, 0, &malloc, &free);
+		output = Buffer(output_size, 0, &malloc, &free);
 
 		// now fill the output
 		if (status_to_print->status == SUCCESS) {
-			output->cloneFromRaw(success_string, sizeof(success_string) - 1);
+			output.cloneFromRaw(success_string, sizeof(success_string) - 1);
 		} else {
-			output->cloneFromRaw(error_string, sizeof(error_string) - 1);
+			output.cloneFromRaw(error_string, sizeof(error_string) - 1);
 
 			// iterate over error stack
 			size_t i = 0;
@@ -266,51 +266,51 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 
 				int written = 0;
 				written = snprintf(
-					reinterpret_cast<char*>(output->content + output->size), //current position in output
-					output->capacity() - output->size, //remaining length of output
+					reinterpret_cast<char*>(output.content + output.size), //current position in output
+					output.capacity() - output.size, //remaining length of output
 					"%.3zu: ",
 					i);
 				if (written != (sizeof("XXX: ") - 1)) {
 					throw MolchException(INCORRECT_BUFFER_SIZE, "Failed to write to output buffer, probably too short.");
 				}
-				output->size += static_cast<unsigned int>(written);
+				output.size += static_cast<unsigned int>(written);
 
-				output->copyFromRaw(
-						output->size,
+				output.copyFromRaw(
+						output.size,
 						reinterpret_cast<const unsigned char*>(return_status_get_name(current_error->status)),
 						0,
 						strlen(return_status_get_name(current_error->status)));
 
-				output->copyFromRaw(
-						output->size,
+				output.copyFromRaw(
+						output.size,
 						reinterpret_cast<const unsigned char*>(", "),
 						0,
 						sizeof(", ") - 1);
 
 				if (current_error->message == nullptr) {
-					output->copyFromRaw(
-							output->size,
+					output.copyFromRaw(
+							output.size,
 							null_string,
 							0,
 							sizeof(null_string) - 1);
 				} else {
-					output->copyFromRaw(
-							output->size,
+					output.copyFromRaw(
+							output.size,
 							reinterpret_cast<const unsigned char*>(current_error->message),
 							0,
 							strlen(current_error->message));
 				}
 
-				output->copyFromRaw(
-						output->size,
+				output.copyFromRaw(
+						output.size,
 						reinterpret_cast<const unsigned char*>("\n"),
 						0,
 						1);
 			}
 		}
 
-		output->copyFromRaw(
-				output->size,
+		output.copyFromRaw(
+				output.size,
 				reinterpret_cast<const unsigned char*>(""),
 				0,
 				sizeof(""));
@@ -321,7 +321,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 		return nullptr;
 	}
 
-	if (!output) {
+	if (output.isNone()) {
 		if (length != nullptr) {
 			*length = 0;
 		}
@@ -330,9 +330,9 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 
 	char *output_string = nullptr;
 	if (length != nullptr) {
-		*length = output->size;
+		*length = output.size;
 	}
-	output_string = reinterpret_cast<char*>(output->release());
+	output_string = reinterpret_cast<char*>(output.release());
 
 	return output_string;
 }

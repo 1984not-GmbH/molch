@@ -54,7 +54,7 @@ int main(int argc, char *args[]) noexcept {
 
 			//load the backup key from a file
 			auto backup_key_file = read_file("test-data/molch-init-backup.key");
-			if (backup_key_file->size != BACKUP_KEY_SIZE) {
+			if (backup_key_file.size != BACKUP_KEY_SIZE) {
 				throw MolchException(INCORRECT_BUFFER_SIZE, "Backup key from file has an incorrect length.");
 			}
 
@@ -63,10 +63,10 @@ int main(int argc, char *args[]) noexcept {
 				return_status status = molch_import(
 						backup_key,
 						BACKUP_KEY_SIZE,
-						backup_file->content,
-						backup_file->size,
-						backup_key_file->content,
-						backup_key_file->size);
+						backup_file.content,
+						backup_file.size,
+						backup_key_file.content,
+						backup_key_file.size);
 				on_error {
 					throw MolchException(status);
 				}

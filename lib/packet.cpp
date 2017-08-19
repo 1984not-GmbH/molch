@@ -115,7 +115,7 @@ static std::unique_ptr<Packet,PacketDeleter> packet_unpack(const Buffer& packet)
 	return packet_struct;
 }
 
-std::unique_ptr<Buffer> packet_encrypt(
+Buffer packet_encrypt(
 		//inputs
 		const molch_message_type packet_type,
 		const Buffer& axolotl_header,
@@ -236,9 +236,9 @@ std::unique_ptr<Buffer> packet_encrypt(
 	//calculate the required length
 	const size_t packed_length = packet__get_packed_size(&packet_struct);
 	//pack the packet
-	auto packet = std::make_unique<Buffer>(packed_length, 0);
-	packet->size = packet__pack(&packet_struct, packet->content);
-	if (packet->size != packed_length) {
+	Buffer packet(packed_length, 0);
+	packet.size = packet__pack(&packet_struct, packet.content);
+	if (packet.size != packed_length) {
 		throw MolchException(PROTOBUF_PACK_ERROR, "Packet packet has incorrect length.");
 	}
 
@@ -250,8 +250,8 @@ void packet_decrypt(
 		uint32_t& current_protocol_version,
 		uint32_t& highest_supported_protocol_version,
 		molch_message_type& packet_type,
-		std::unique_ptr<Buffer>& axolotl_header,
-		std::unique_ptr<Buffer>& message,
+		Buffer& axolotl_header,
+		Buffer& message,
 		//inputs
 		const Buffer& packet,
 		const Buffer& axolotl_header_key, //HEADER_KEY_SIZE
@@ -309,7 +309,7 @@ void packet_get_metadata_without_verification(
 	packet_type = to_molch_message_type(packet_struct->packet_header->packet_type);
 }
 
-std::unique_ptr<Buffer> packet_decrypt_header(
+Buffer packet_decrypt_header(
 		const Buffer& packet,
 		const Buffer& axolotl_header_key) { //HEADER_KEY_SIZE
 	std::unique_ptr<Packet,PacketDeleter> packet_struct;
@@ -326,10 +326,10 @@ std::unique_ptr<Buffer> packet_decrypt_header(
 	}
 
 	const size_t axolotl_header_length = packet_struct->encrypted_axolotl_header.len - crypto_secretbox_MACBYTES;
-	auto axolotl_header = std::make_unique<Buffer>(axolotl_header_length, axolotl_header_length);
+	Buffer axolotl_header(axolotl_header_length, axolotl_header_length);
 
 	int status = crypto_secretbox_open_easy(
-			axolotl_header->content,
+			axolotl_header.content,
 			packet_struct->encrypted_axolotl_header.data,
 			packet_struct->encrypted_axolotl_header.len,
 			packet_struct->packet_header->header_nonce.data,
@@ -341,7 +341,7 @@ std::unique_ptr<Buffer> packet_decrypt_header(
 	return axolotl_header;
 }
 
-std::unique_ptr<Buffer> packet_decrypt_message(const Buffer& packet, const Buffer& message_key) {
+Buffer packet_decrypt_message(const Buffer& packet, const Buffer& message_key) {
 	//check input
 	if (!message_key.contains(MESSAGE_KEY_SIZE)) {
 		throw MolchException(INVALID_INPUT, "Invalid input to packet_decrypt_message.");
@@ -377,9 +377,9 @@ std::unique_ptr<Buffer> packet_decrypt_message(const Buffer& packet, const Buffe
 
 	//extract the message
 	const size_t message_length = padded_message.size - padding;
-	auto message = std::make_unique<Buffer>(message_length, 0);
+	Buffer message(message_length, 0);
 	//TODO this doesn't need to be copied, setting the length should be enough
-	message->copyFrom(0, padded_message, 0, message_length);
+	message.copyFrom(0, padded_message, 0, message_length);
 
 	return message;
 }

@@ -43,7 +43,7 @@ private:
 
 	int trySkippedHeaderAndMessageKeys(
 		const Buffer& packet,
-		std::unique_ptr<Buffer>& message,
+		Buffer& message,
 		uint32_t& receive_message_number,
 		uint32_t& previous_receive_message_number);
 
@@ -54,6 +54,8 @@ public:
 	Buffer id{this->id_storage, sizeof(this->id_storage), 0}; //unique id of a conversation, generated randomly
 	std::unique_ptr<Ratchet> ratchet;
 
+	enum class Confirmation {YES_I_WANT_THAT_CONSTRUCTOR};
+
 	/*
 	 * Create a new conversation without sending or receiving anything.
 	 */
@@ -63,14 +65,15 @@ public:
 		const Buffer& their_public_identity,
 		const Buffer& our_private_ephemeral,
 		const Buffer& our_public_ephemeral,
-		const Buffer& their_public_ephemeral);
+		const Buffer& their_public_ephemeral,
+		const Confirmation yes_i_want_this_constructor); //without this, this and the next constructor are indistinguishable
 
 	/*
 	 * Start a new conversation where we are the sender.
 	 */
 	ConversationT(
 			const Buffer& message, //message we want to send to the receiver
-			std::unique_ptr<Buffer>& packet, //output, free after use!
+			Buffer& packet, //output, free after use!
 			const Buffer& sender_public_identity, //who is sending this message?
 			const Buffer& sender_private_identity,
 			const Buffer& receiver_public_identity,
@@ -84,7 +87,7 @@ public:
 	 */
 	ConversationT(
 			const Buffer& packet, //received packet
-			std::unique_ptr<Buffer>& message, //output
+			Buffer& message, //output
 			const Buffer& receiver_public_identity,
 			const Buffer& receiver_private_identity,
 			PrekeyStore& receiver_prekeys); //prekeys of the receiver
@@ -105,7 +108,7 @@ public:
 	 *
 	 * \return A packet containing the encrypted messge.
 	 */
-	std::unique_ptr<Buffer> send(
+	Buffer send(
 			const Buffer& message,
 			const Buffer * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
 			const Buffer * const public_ephemeral_key, //cann be nullptr, if not nullptr, this will be a prekey message
@@ -116,7 +119,7 @@ public:
 	 *
 	 * \return The message that has been decrypted.
 	 */
-	std::unique_ptr<Buffer> receive(
+	Buffer receive(
 		const Buffer& packet, //received packet
 		uint32_t& receive_message_number,
 		uint32_t& previous_receive_message_number);

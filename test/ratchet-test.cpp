@@ -31,13 +31,13 @@
 #include "utils.hpp"
 #include "common.hpp"
 
-std::unique_ptr<Buffer> protobuf_export(Ratchet& ratchet) {
+Buffer protobuf_export(Ratchet& ratchet) {
 	std::unique_ptr<Conversation,ConversationDeleter> conversation = ratchet.exportProtobuf();
 
 	size_t export_size = conversation__get_packed_size(conversation.get());
-	auto export_buffer = std::make_unique<Buffer>(export_size, 0);
-	export_buffer->size = conversation__pack(conversation.get(), export_buffer->content);
-	if (export_size != export_buffer->size) {
+	Buffer export_buffer(export_size, 0);
+	export_buffer.size = conversation__pack(conversation.get(), export_buffer.content);
+	if (export_size != export_buffer.size) {
 		throw MolchException(EXPORT_ERROR, "Failed to export ratchet.");
 	}
 
@@ -530,22 +530,22 @@ int main(void) {
 
 		//export Alice's ratchet to Protobuf-C
 		printf("Export to Protobuf-C!\n");
-		std::unique_ptr<Buffer> protobuf_export_buffer = protobuf_export(*alice_state);
+		auto protobuf_export_buffer = protobuf_export(*alice_state);
 
-		protobuf_export_buffer->printHex(std::cout) << "\n\n" << std::flush;
+		protobuf_export_buffer.printHex(std::cout) << "\n\n" << std::flush;
 
 		alice_state.reset();
 
 		//import again
 		printf("Import from Protobuf-C!\n");
-		alice_state = protobuf_import(*protobuf_export_buffer);
+		alice_state = protobuf_import(protobuf_export_buffer);
 
 		//export again
-		std::unique_ptr<Buffer> protobuf_second_export_buffer = protobuf_export(*alice_state);
+		auto protobuf_second_export_buffer = protobuf_export(*alice_state);
 
 		//compare both exports
-		if ((protobuf_export_buffer == NULL) || (*protobuf_export_buffer != *protobuf_second_export_buffer)) {
-			protobuf_second_export_buffer->printHex(std::cout);
+		if (protobuf_export_buffer != protobuf_second_export_buffer) {
+			protobuf_second_export_buffer.printHex(std::cout);
 			throw MolchException(INCORRECT_DATA, "Both exports don't match!");
 		}
 		printf("Exported Protobuf-C buffers match!\n");

@@ -183,12 +183,12 @@ ConversationT* UserStore::findConversation(UserStoreNode*& user, const Buffer& c
 	return nullptr;
 }
 
-std::unique_ptr<Buffer> UserStore::list() {
-	auto list = std::make_unique<Buffer>(this->users.size() * PUBLIC_MASTER_KEY_SIZE, 0);
+Buffer UserStore::list() {
+	Buffer list(this->users.size() * PUBLIC_MASTER_KEY_SIZE, 0);
 
 	for (const auto& user : this->users) {
 		size_t index = static_cast<size_t>(&user - &(*std::cbegin(this->users)));
-		list->copyFrom(
+		list.copyFrom(
 			CONVERSATION_ID_SIZE * index,
 			user.public_signing_key,
 			0,

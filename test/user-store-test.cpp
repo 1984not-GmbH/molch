@@ -128,10 +128,10 @@ int main(void) {
 
 		//check the content
 		auto list = store.list();
-		if (list->size != 0) {
+		if (list.size != 0) {
 			throw MolchException(INCORRECT_DATA, "List of users is not empty.");
 		}
-		list.reset();
+		list.clear();
 
 		//create alice
 		Buffer alice_public_signing_key(PUBLIC_MASTER_KEY_SIZE, 0);
@@ -151,13 +151,10 @@ int main(void) {
 
 		//list user store
 		list = store.list();
-		if (!list) {
-			throw MolchException(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
-		}
-		if (*list != alice_public_signing_key) {
+		if (list != alice_public_signing_key) {
 			throw MolchException(INCORRECT_DATA, "Failed to list users.");
 		}
-		list.reset();
+		list.clear();
 		printf("Successfully listed users.\n");
 
 		//create bob
@@ -173,14 +170,11 @@ int main(void) {
 
 		//list user store
 		list = store.list();
-		if (!list) {
-			throw MolchException(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
-		}
-		if ((list->comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+		if ((list.comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list.comparePartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 			throw MolchException(INCORRECT_DATA, "Failed to list users.");
 		}
-		list.reset();
+		list.clear();
 		printf("Successfully listed users.\n");
 
 		//create charlie
@@ -196,15 +190,12 @@ int main(void) {
 
 		//list user store
 		list = store.list();
-		if (!list) {
-			throw MolchException(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
-		}
-		if ((list->comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list->comparePartial(2 * PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+		if ((list.comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list.comparePartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list.comparePartial(2 * PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 			throw MolchException(INCORRECT_DATA, "Failed to list users.");
 		}
-		list.reset();
+		list.clear();
 		printf("Successfully listed users.\n");
 
 		//find node
@@ -230,14 +221,11 @@ int main(void) {
 			printf("Length of the user store matches.");
 			//check the user list
 			list = store.list();
-			if (!list) {
-				throw MolchException(INCORRECT_DATA, "Failed to list users, user list is nullptr.");
-			}
-			if ((list->comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-					|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+			if ((list.comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+					|| (list.comparePartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 				throw MolchException(INCORRECT_DATA, "Removing user failed.");
 			}
-			list.reset();
+			list.clear();
 			printf("Successfully removed user.\n");
 
 			//recreate bob
@@ -296,11 +284,11 @@ int main(void) {
 
 		//check the user list
 		list = store.list();
-		if ((list->comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list->comparePartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+		if ((list.comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list.comparePartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 			throw MolchException(REMOVE_ERROR, "Removing user failed.");
 		}
-		list.reset();
+		list.clear();
 		printf("Successfully removed user.\n");
 
 		//clear the user store

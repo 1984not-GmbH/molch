@@ -32,14 +32,14 @@
 #include "../lib/conversation.hpp"
 #include "../lib/destroyers.hpp"
 
-std::unique_ptr<Buffer> protobuf_export(const ConversationT& conversation) {
+Buffer protobuf_export(const ConversationT& conversation) {
 	//export the conversation
 	auto exported_conversation = conversation.exportProtobuf();
 
 	size_t export_size = conversation__get_packed_size(exported_conversation.get());
-	auto export_buffer = std::make_unique<Buffer>(export_size, 0);
-	export_buffer->size = conversation__pack(exported_conversation.get(), export_buffer->content);
-	if (export_size != export_buffer->size) {
+	Buffer export_buffer(export_size, 0);
+	export_buffer.size = conversation__pack(exported_conversation.get(), export_buffer.content);
+	if (export_size != export_buffer.size) {
 		throw MolchException(PROTOBUF_PACK_ERROR, "Failed to pack protobuf-c struct into buffer.");
 	}
 
@@ -101,13 +101,16 @@ int main(void) noexcept {
 			"ephemeral");
 
 		//create charlie's conversation
+		std::cout << "BEFORE creation of Charlie's conversation" << std::endl;
 		auto charlie_conversation = std::make_unique<ConversationT>(
 				charlie_private_identity,
 				charlie_public_identity,
 				dora_public_identity,
 				charlie_private_ephemeral,
 				charlie_public_ephemeral,
-				dora_public_ephemeral);
+				dora_public_ephemeral,
+				ConversationT::Confirmation::YES_I_WANT_THAT_CONSTRUCTOR);
+		std::cout << "AFTER creation of Charlie's conversation" << std::endl;
 		if (!charlie_conversation || !charlie_conversation->id.contains(CONVERSATION_ID_SIZE)) {
 			throw MolchException(INCORRECT_DATA, "Charlie's conversation has an incorrect ID length.");
 		}
@@ -119,7 +122,8 @@ int main(void) noexcept {
 				charlie_public_identity,
 				dora_private_ephemeral,
 				dora_public_ephemeral,
-				charlie_public_ephemeral);
+				charlie_public_ephemeral,
+				ConversationT::Confirmation::YES_I_WANT_THAT_CONSTRUCTOR);
 		if (!dora_conversation || !dora_conversation->id.contains(CONVERSATION_ID_SIZE)) {
 			throw MolchException(INCORRECT_DATA, "Dora's conversation has an incorrect ID length.");
 		}
@@ -128,21 +132,21 @@ int main(void) noexcept {
 		printf("Export to Protobuf-C\n");
 		auto protobuf_export_buffer = protobuf_export(*charlie_conversation);
 
-		protobuf_export_buffer->printHex(std::cout);
+		protobuf_export_buffer.printHex(std::cout);
 		puts("\n");
 
 		charlie_conversation.reset();
 
 		//import
 		printf("Import from Protobuf-C\n");
-		charlie_conversation = protobuf_import(*protobuf_export_buffer);
+		charlie_conversation = protobuf_import(protobuf_export_buffer);
 
 		//export again
 		printf("Export again\n");
 		auto protobuf_second_export_buffer = protobuf_export(*charlie_conversation);
 
 		//compare
-		if (!protobuf_export_buffer || (*protobuf_export_buffer != *protobuf_second_export_buffer)) {
+		if (protobuf_export_buffer != protobuf_second_export_buffer) {
 			throw MolchException(EXPORT_ERROR, "Both exported buffers are not the same.");
 		}
 		printf("Both exported buffers are identitcal.\n\n");

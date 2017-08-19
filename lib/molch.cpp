@@ -87,7 +87,7 @@ public:
 /*
  * Create a prekey list.
  */
-static std::unique_ptr<Buffer> create_prekey_list(const Buffer& public_signing_key) {
+static Buffer create_prekey_list(const Buffer& public_signing_key) {
 	//get the user
 	auto user = users->find(public_signing_key);
 	if (user == nullptr) {
@@ -120,12 +120,12 @@ static std::unique_ptr<Buffer> create_prekey_list(const Buffer& public_signing_k
 	unsigned_prekey_list.size = unsigned_prekey_list.capacity();
 
 	//sign the prekey list with the current identity key
-	auto prekey_list = std::make_unique<Buffer>(
+	Buffer prekey_list(
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t) + SIGNATURE_SIZE,
 			0,
 			&malloc,
 			&free);
-	user->master_keys.sign(unsigned_prekey_list, *prekey_list);
+	user->master_keys.sign(unsigned_prekey_list, prekey_list);
 
 	return prekey_list;
 }
@@ -221,8 +221,8 @@ return_status molch_create_user(
 		}
 
 		//move the prekey list out of the buffer
-		*prekey_list_length = prekey_list_buffer->size;
-		*prekey_list = prekey_list_buffer->release();
+		*prekey_list_length = prekey_list_buffer.size;
+		*prekey_list = prekey_list_buffer.release();
 	} catch (const MolchException& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
@@ -337,10 +337,10 @@ return_status molch_list_users(
 			*user_list = nullptr;
 		} else {
 			*user_list = throwing_malloc<unsigned char>(*count * PUBLIC_MASTER_KEY_SIZE);
-			std::copy(list->content, list->content + list->size, *user_list);
+			std::copy(list.content, list.content + list.size, *user_list);
 		}
 
-		*user_list_length = list->size;
+		*user_list_length = list.size;
 	} catch (const MolchException& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
@@ -514,7 +514,7 @@ return_status molch_start_send_conversation(
 		//create the conversation and encrypt the message
 		Buffer prekeys(prekey_list + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t));
 		Buffer message_buffer(message, message_length);
-		std::unique_ptr<Buffer> packet_buffer;
+		Buffer packet_buffer;
 		ConversationT conversation(
 				message_buffer,
 				packet_buffer,
@@ -530,8 +530,8 @@ return_status molch_start_send_conversation(
 		user->conversations.add(std::move(conversation));
 
 		//copy the packet to a malloced buffer output
-		Buffer malloced_packet(packet_buffer->size, 0, &malloc, &free);
-		malloced_packet.cloneFrom(*packet_buffer);
+		Buffer malloced_packet(packet_buffer.size, 0, &malloc, &free);
+		malloced_packet.cloneFrom(packet_buffer);
 
 		if (backup != nullptr) {
 			*backup = nullptr;
@@ -626,7 +626,7 @@ cleanup:
 
 			//create the conversation
 			Buffer packet_buffer(packet, packet_length);
-			std::unique_ptr<Buffer> message_buffer;
+			Buffer message_buffer;
 			ConversationT conversation(
 					packet_buffer,
 					message_buffer,
@@ -645,8 +645,8 @@ cleanup:
 			user->conversations.add(std::move(conversation));
 
 			//copy the message
-			Buffer malloced_message(message_buffer->size, 0, &malloc, &free);
-			malloced_message.cloneFrom(*message_buffer);
+			Buffer malloced_message(message_buffer.size, 0, &malloc, &free);
+			malloced_message.cloneFrom(message_buffer);
 
 			if (backup != nullptr) {
 				*backup = nullptr;
@@ -661,8 +661,8 @@ cleanup:
 			*message_length = malloced_message.size;
 			*message = malloced_message.release();
 
-			*prekey_list_length = prekey_list_buffer->size;
-			*prekey_list = prekey_list_buffer->release();
+			*prekey_list_length = prekey_list_buffer.size;
+			*prekey_list = prekey_list_buffer.release();
 		} catch (const MolchException& exception) {
 			status = exception.toReturnStatus();
 			goto cleanup;
@@ -726,8 +726,8 @@ cleanup:
 					nullptr);
 
 			//copy the packet content
-			Buffer malloced_packet(packet_buffer->size, 0, &malloc, &free);
-			malloced_packet.cloneFrom(*packet_buffer);
+			Buffer malloced_packet(packet_buffer.size, 0, &malloc, &free);
+			malloced_packet.cloneFrom(packet_buffer);
 
 			if (conversation_backup != nullptr) {
 				*conversation_backup = nullptr;
@@ -807,8 +807,8 @@ cleanup:
 					*previous_receive_message_number);
 
 			//copy the message
-			Buffer malloced_message(message_buffer->size, 0, &malloc, &free);
-			malloced_message.cloneFrom(*message_buffer);
+			Buffer malloced_message(message_buffer.size, 0, &malloc, &free);
+			malloced_message.cloneFrom(message_buffer);
 
 			if (conversation_backup != nullptr) {
 				*conversation_backup = nullptr;
@@ -931,19 +931,19 @@ cleanup:
 			}
 
 			auto conversation_list_buffer = user->conversations.list();
-			if (!conversation_list_buffer) {
+			if (conversation_list_buffer.isNone()) {
 				// list is empty
 				*conversation_list = nullptr;
 				*number = 0;
 			} else {
-				if ((conversation_list_buffer->size % CONVERSATION_ID_SIZE) != 0) {
+				if ((conversation_list_buffer.size % CONVERSATION_ID_SIZE) != 0) {
 					throw MolchException(INCORRECT_BUFFER_SIZE, "The conversation ID buffer has an incorrect length.");
 				}
-				*number = conversation_list_buffer->size / CONVERSATION_ID_SIZE;
+				*number = conversation_list_buffer.size / CONVERSATION_ID_SIZE;
 
 				//allocate the conversation list output and copy it over
-				Buffer malloced_conversation_list(conversation_list_buffer->size, 0, &malloc, &free);
-				malloced_conversation_list.cloneFrom(*conversation_list_buffer);
+				Buffer malloced_conversation_list(conversation_list_buffer.size, 0, &malloc, &free);
+				malloced_conversation_list.cloneFrom(conversation_list_buffer);
 				*conversation_list_length = malloced_conversation_list.size;
 				*conversation_list = malloced_conversation_list.release();
 			}
@@ -1460,8 +1460,8 @@ cleanup:
 			Buffer public_signing_key_buffer(public_master_key, PUBLIC_MASTER_KEY_SIZE);
 
 			auto prekey_list_buffer = create_prekey_list(public_signing_key_buffer);
-			Buffer malloced_prekey_list(prekey_list_buffer->size, 0, &malloc, &free);
-			malloced_prekey_list.cloneFrom(*prekey_list_buffer);
+			Buffer malloced_prekey_list(prekey_list_buffer.size, 0, &malloc, &free);
+			malloced_prekey_list.cloneFrom(prekey_list_buffer);
 			*prekey_list_length = malloced_prekey_list.size;
 			*prekey_list = malloced_prekey_list.release();
 		} catch (const MolchException& exception) {

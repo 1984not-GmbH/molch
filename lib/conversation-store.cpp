@@ -119,16 +119,16 @@ void ConversationStore::clear() {
  *
  * Returns nullptr if empty.
  */
-std::unique_ptr<Buffer> ConversationStore::list() const {
+Buffer ConversationStore::list() const {
 	if (this->conversations.empty()) {
-		return std::unique_ptr<Buffer>();
+		return Buffer();
 	}
 
-	auto list = std::make_unique<Buffer>(this->conversations.size() * CONVERSATION_ID_SIZE, 0);
+	Buffer list(this->conversations.size() * CONVERSATION_ID_SIZE, 0);
 
 	for (const auto& conversation : this->conversations) {
 		size_t index = static_cast<size_t>(&conversation - &(*this->conversations.cbegin()));
-		list->copyFrom(
+		list.copyFrom(
 			CONVERSATION_ID_SIZE * index,
 			conversation.id,
 			0,

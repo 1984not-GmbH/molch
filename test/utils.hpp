@@ -32,5 +32,5 @@ void print_to_file(const Buffer& data, const std::string& filename) noexcept;
 
 void print_errors(const return_status&  status) noexcept;
 
-std::unique_ptr<Buffer> read_file(const std::string& filename);
+Buffer read_file(const std::string& filename);
 #endif
