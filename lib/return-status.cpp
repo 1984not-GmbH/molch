@@ -26,11 +26,13 @@
 #include <new>
 #include <memory>
 #include <exception>
+#include <sstream>
 
 #include "return-status.h"
 #include "buffer.hpp"
 #include "destroyers.hpp"
 #include "molch-exception.hpp"
+#include "malloc.hpp"
 
 extern return_status return_status_init() noexcept {
 	return_status status = {
@@ -213,7 +215,8 @@ const char *return_status_get_name(status_type status) noexcept {
  * Don't forget to free with "free" after usage.
  */
 char *return_status_print(const return_status * const status_to_print, size_t *length) noexcept {
-	Buffer output;
+	std::stringstream stream;
+	//Buffer output;
 	try {
 		//check input
 		if (status_to_print == nullptr) {
@@ -224,39 +227,11 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 		static const unsigned char error_string[] = "ERROR\nerror stack trace:\n";
 		static const unsigned char null_string[] = "(nullptr)";
 
-		// count how much space needs to be allocated
-		size_t output_size = 1; // 1 because of '\0';
-		if (status_to_print->status == SUCCESS) {
-			output_size += sizeof(success_string);
-		} else {
-			output_size += sizeof(error_string);
-
-			// iterate over error stack
-			for (error_message *current_error = status_to_print->error;
-					current_error != nullptr;
-					current_error = current_error->next) {
-
-				output_size += sizeof("XXX: ");
-				output_size += strlen(return_status_get_name(current_error->status));
-				output_size += sizeof(", ");
-
-				if (current_error->message == nullptr) {
-					output_size += sizeof(null_string);
-				} else {
-					output_size += strlen(current_error->message);
-				}
-
-				output_size += sizeof('\n');
-			}
-		}
-
-		output = Buffer(output_size, 0, &malloc, &free);
-
 		// now fill the output
 		if (status_to_print->status == SUCCESS) {
-			output.cloneFromRaw(success_string, sizeof(success_string) - 1);
+			stream << success_string;
 		} else {
-			output.cloneFromRaw(error_string, sizeof(error_string) - 1);
+			stream << error_string;
 
 			// iterate over error stack
 			size_t i = 0;
@@ -264,56 +239,28 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 					current_error != nullptr;
 					current_error = current_error->next, i++) {
 
-				int written = 0;
-				written = snprintf(
-					reinterpret_cast<char*>(output.content + output.size), //current position in output
-					output.capacity() - output.size, //remaining length of output
-					"%.3zu: ",
-					i);
-				if (written != (sizeof("XXX: ") - 1)) {
-					throw MolchException(INCORRECT_BUFFER_SIZE, "Failed to write to output buffer, probably too short.");
-				}
-				output.size += static_cast<unsigned int>(written);
-
-				output.copyFromRaw(
-						output.size,
-						reinterpret_cast<const unsigned char*>(return_status_get_name(current_error->status)),
-						0,
-						strlen(return_status_get_name(current_error->status)));
-
-				output.copyFromRaw(
-						output.size,
-						reinterpret_cast<const unsigned char*>(", "),
-						0,
-						sizeof(", ") - 1);
+				stream << i << ": ";
+				stream << return_status_get_name(current_error->status);
+				stream << ", ";
 
 				if (current_error->message == nullptr) {
-					output.copyFromRaw(
-							output.size,
-							null_string,
-							0,
-							sizeof(null_string) - 1);
+					stream << null_string;
 				} else {
-					output.copyFromRaw(
-							output.size,
-							reinterpret_cast<const unsigned char*>(current_error->message),
-							0,
-							strlen(current_error->message));
+					stream << current_error->message;
 				}
 
-				output.copyFromRaw(
-						output.size,
-						reinterpret_cast<const unsigned char*>("\n"),
-						0,
-						1);
+				stream << std::endl;
 			}
 		}
 
-		output.copyFromRaw(
-				output.size,
-				reinterpret_cast<const unsigned char*>(""),
-				0,
-				sizeof(""));
+		//Copy the string to the output
+		//TODO Stream directly to malloced vector of unsigned char?
+		auto output_string = stream.str();
+		auto output_ptr = std::unique_ptr<char,MallocDeleter<char>>(throwing_malloc<char>(output_string.size() + sizeof("")));
+		std::copy(output_string.data(), output_string.data() + output_string.size() + sizeof(""), output_ptr.get());
+
+		*length = output_string.size() + sizeof("");
+		return output_ptr.release();
 	} catch (const std::exception& exception) {
 		if (length != nullptr) {
 			*length = 0;
@@ -321,18 +268,18 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 		return nullptr;
 	}
 
-	if (output.isNone()) {
+	/*if (output.isNone()) {
 		if (length != nullptr) {
 			*length = 0;
 		}
 		return nullptr;
-	}
+	}*/
 
-	char *output_string = nullptr;
+	/*char *output_string = nullptr;
 	if (length != nullptr) {
 		*length = output.size;
-	}
-	output_string = reinterpret_cast<char*>(output.release());
+	}*/
+	//output_string = reinterpret_cast<char*>(output.release());
 
-	return output_string;
+	//return output_string;
 }

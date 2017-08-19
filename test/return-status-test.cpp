@@ -83,7 +83,7 @@ int main(void) noexcept {
 		}
 		printf("%s\n", error_stack);
 
-		Buffer stack_trace("ERROR\nerror stack trace:\n000: GENERIC_ERROR, Error on the first level!\n001: GENERIC_ERROR, Error on the second level!\n");
+		Buffer stack_trace("ERROR\nerror stack trace:\n0: GENERIC_ERROR, Error on the first level!\n1: GENERIC_ERROR, Error on the second level!\n");
 		if (stack_trace.compareToRaw(reinterpret_cast<unsigned char*>(error_stack), stack_print_length) != 0) {
 			THROW(INCORRECT_DATA, "Stack trace looks differently than expected.");
 		}
