@@ -35,7 +35,7 @@ using namespace Molch;
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
 		//create ephemeral key
@@ -80,20 +80,20 @@ int main(void) {
 
 		//compare them
 		if (our_public_ephemeral_key != extracted_public_ephemeral_key) {
-			throw MolchException(INVALID_VALUE, "Public ephemeral keys don't match.");
+			throw Molch::Exception(INVALID_VALUE, "Public ephemeral keys don't match.");
 		}
 		printf("Public ephemeral keys match.\n");
 
 		if (message_number != extracted_message_number) {
-			throw MolchException(INVALID_VALUE, "Message number doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Message number doesn't match.");
 		}
 		printf("Message numbers match.\n");
 
 		if (previous_message_number != extracted_previous_message_number) {
-			throw MolchException(INVALID_VALUE, "Previous message number doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Previous message number doesn't match.");
 		}
 		printf("Previous message numbers match.\n");
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {

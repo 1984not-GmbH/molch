@@ -47,7 +47,7 @@ namespace Molch {
 				|| !derived_key.fits(derived_size)
 				|| (input_key.size > crypto_generichash_blake2b_KEYBYTES_MAX)
 				|| (input_key.size < crypto_generichash_blake2b_KEYBYTES_MIN)) {
-			throw MolchException(INVALID_INPUT, "Invalid input to derive_key.");
+			throw Exception(INVALID_INPUT, "Invalid input to derive_key.");
 		}
 
 		//create a salt that contains the number of the subkey
@@ -75,7 +75,7 @@ namespace Molch {
 				salt.content,
 				personal.content);
 		if (status_int != 0) {
-			throw MolchException(KEYDERIVATION_FAILED, "Failed to derive key via crypto_generichash_blake2b_salt_personal");
+			throw Exception(KEYDERIVATION_FAILED, "Failed to derive key via crypto_generichash_blake2b_salt_personal");
 		}
 	}
 
@@ -140,7 +140,7 @@ namespace Molch {
 				|| !our_public_ephemeral.contains(PUBLIC_KEY_SIZE)
 				|| !their_public_ephemeral.contains(PUBLIC_KEY_SIZE)
 				|| !previous_root_key.contains(ROOT_KEY_SIZE)) {
-			throw MolchException(INVALID_INPUT, "Invalid input to derive_root_next_header_and_chain_keys.");
+			throw Exception(INVALID_INPUT, "Invalid input to derive_root_next_header_and_chain_keys.");
 		}
 
 		//create buffers
@@ -165,7 +165,7 @@ namespace Molch {
 				previous_root_key.content,
 				previous_root_key.size);
 		if (status_int != 0) {
-			throw MolchException(GENERIC_ERROR, "Failed to hash diffie hellman and previous root key.");
+			throw Exception(GENERIC_ERROR, "Failed to hash diffie hellman and previous root key.");
 		}
 
 		//now derive the different keys from the derivation key
@@ -213,7 +213,7 @@ namespace Molch {
 				|| !our_private_ephemeral.contains(PRIVATE_KEY_SIZE)
 				|| !our_public_ephemeral.contains(PUBLIC_KEY_SIZE)
 				|| !their_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
-			throw MolchException(INVALID_INPUT, "Invalid input to derive_initial_root_chain_and_header_keys.");
+			throw Exception(INVALID_INPUT, "Invalid input to derive_initial_root_chain_and_header_keys.");
 		}
 
 		Buffer master_key(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);

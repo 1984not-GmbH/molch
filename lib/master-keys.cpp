@@ -108,7 +108,7 @@ namespace Molch {
 					this->private_signing_key.content,
 					high_entropy_seed.content);
 			if (status != 0) {
-				throw MolchException(KEYGENERATION_FAILED, "Failed to generate signing keypair with seed.");
+				throw Exception(KEYGENERATION_FAILED, "Failed to generate signing keypair with seed.");
 			}
 			this->public_signing_key.size = PUBLIC_MASTER_KEY_SIZE;
 			this->private_signing_key.size = PRIVATE_MASTER_KEY_SIZE;
@@ -119,7 +119,7 @@ namespace Molch {
 					this->private_identity_key.content,
 					high_entropy_seed.content + crypto_sign_SEEDBYTES);
 			if (status != 0) {
-				throw MolchException(KEYGENERATION_FAILED, "Failed to generate identity keypair with seed.");
+				throw Exception(KEYGENERATION_FAILED, "Failed to generate identity keypair with seed.");
 			}
 			this->public_identity_key.size = PUBLIC_KEY_SIZE;
 			this->private_identity_key.size = PRIVATE_KEY_SIZE;
@@ -129,7 +129,7 @@ namespace Molch {
 					this->public_signing_key.content,
 					this->private_signing_key.content);
 			if (status != 0) {
-				throw MolchException(KEYGENERATION_FAILED, "Failed to generate signing keypair.");
+				throw Exception(KEYGENERATION_FAILED, "Failed to generate signing keypair.");
 			}
 			this->public_signing_key.size = PUBLIC_MASTER_KEY_SIZE;
 			this->private_signing_key.size = PRIVATE_MASTER_KEY_SIZE;
@@ -139,7 +139,7 @@ namespace Molch {
 					this->public_identity_key.content,
 					this->private_identity_key.content);
 			if (status != 0) {
-				throw MolchException(KEYGENERATION_FAILED, "Failed to generate identity keypair.");
+				throw Exception(KEYGENERATION_FAILED, "Failed to generate identity keypair.");
 			}
 			this->public_identity_key.size = PUBLIC_KEY_SIZE;
 			this->private_identity_key.size = PRIVATE_KEY_SIZE;
@@ -152,7 +152,7 @@ namespace Molch {
 	void MasterKeys::getSigningKey(Buffer& public_signing_key) const {
 		//check input
 		if (!public_signing_key.fits(PUBLIC_MASTER_KEY_SIZE)) {
-			throw MolchException(INVALID_INPUT, "MasterKeys::getSigningKey: Output buffer is too short.");
+			throw Exception(INVALID_INPUT, "MasterKeys::getSigningKey: Output buffer is too short.");
 		}
 
 		public_signing_key.cloneFrom(this->public_signing_key);
@@ -164,7 +164,7 @@ namespace Molch {
 	void MasterKeys::getIdentityKey(Buffer& public_identity_key) const {
 		//check input
 		if (!public_identity_key.fits(PUBLIC_KEY_SIZE)) {
-			throw MolchException(INVALID_INPUT, "MasterKeys::getIdentityKey: Output buffer is too short.");
+			throw Exception(INVALID_INPUT, "MasterKeys::getIdentityKey: Output buffer is too short.");
 		}
 
 		public_identity_key.cloneFrom(this->public_identity_key);
@@ -177,7 +177,7 @@ namespace Molch {
 			const Buffer& data,
 			Buffer& signed_data) const { //output, length of data + SIGNATURE_SIZE
 		if (!signed_data.fits(data.size + SIGNATURE_SIZE)) {
-			throw MolchException(INVALID_INPUT, "MasterKeys::sign: Output buffer is too short.");
+			throw Exception(INVALID_INPUT, "MasterKeys::sign: Output buffer is too short.");
 		}
 
 		signed_data.size = 0;
@@ -191,7 +191,7 @@ namespace Molch {
 			data.size,
 			this->private_signing_key.content);
 		if (status_int != 0) {
-			throw MolchException(SIGN_ERROR, "Failed to sign message.");
+			throw Exception(SIGN_ERROR, "Failed to sign message.");
 		}
 
 		signed_data.size = static_cast<size_t>(signed_message_length);
@@ -233,21 +233,21 @@ namespace Molch {
 	void MasterKeys::lock() const {
 		int status = sodium_mprotect_noaccess(this->private_keys.get());
 		if (status != 0) {
-			throw MolchException(GENERIC_ERROR, "Failed to lock memory.");
+			throw Exception(GENERIC_ERROR, "Failed to lock memory.");
 		}
 	}
 
 	void MasterKeys::unlock() const {
 		int status = sodium_mprotect_readonly(this->private_keys.get());
 		if (status != 0) {
-			throw MolchException(GENERIC_ERROR, "Failed to make memory readonly.");
+			throw Exception(GENERIC_ERROR, "Failed to make memory readonly.");
 		}
 	}
 
 	void MasterKeys::unlock_readwrite() const {
 		int status = sodium_mprotect_readwrite(this->private_keys.get());
 		if (status != 0) {
-			throw MolchException(GENERIC_ERROR, "Failed to make memory readwrite.");
+			throw Exception(GENERIC_ERROR, "Failed to make memory readwrite.");
 		}
 	}
 

@@ -34,32 +34,32 @@
 #include "protobuf.hpp"
 
 namespace Molch {
-	class HeaderAndMessageKeyStoreNode {
+	class HeaderAndMessageKey {
 	private:
 		void fill(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date);
 
 		unsigned char message_key_storage[MESSAGE_KEY_SIZE];
 		unsigned char header_key_storage[HEADER_KEY_SIZE];
 
-		HeaderAndMessageKeyStoreNode& copy(const HeaderAndMessageKeyStoreNode& node);
-		HeaderAndMessageKeyStoreNode& move(HeaderAndMessageKeyStoreNode&& node);
+		HeaderAndMessageKey& copy(const HeaderAndMessageKey& node);
+		HeaderAndMessageKey& move(HeaderAndMessageKey&& node);
 
 	public:
 		Buffer message_key{this->message_key_storage, sizeof(this->message_key_storage), 0};
 		Buffer header_key{this->header_key_storage, sizeof(this->header_key_storage), 0};
 		int64_t expiration_date{0};
 
-		HeaderAndMessageKeyStoreNode() = default;
-		HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key);
-		HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date);
+		HeaderAndMessageKey() = default;
+		HeaderAndMessageKey(const Buffer& header_key, const Buffer& message_key);
+		HeaderAndMessageKey(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date);
 		/* copy and move constructors */
-		HeaderAndMessageKeyStoreNode(const HeaderAndMessageKeyStoreNode& node);
-		HeaderAndMessageKeyStoreNode(HeaderAndMessageKeyStoreNode&& node);
-		HeaderAndMessageKeyStoreNode(const ProtobufCKeyBundle& key_bundle);
+		HeaderAndMessageKey(const HeaderAndMessageKey& node);
+		HeaderAndMessageKey(HeaderAndMessageKey&& node);
+		HeaderAndMessageKey(const ProtobufCKeyBundle& key_bundle);
 
 		/* copy and move assignment operators */
-		HeaderAndMessageKeyStoreNode& operator=(const HeaderAndMessageKeyStoreNode& node);
-		HeaderAndMessageKeyStoreNode& operator=(HeaderAndMessageKeyStoreNode&& node);
+		HeaderAndMessageKey& operator=(const HeaderAndMessageKey& node);
+		HeaderAndMessageKey& operator=(HeaderAndMessageKey&& node);
 
 		std::unique_ptr<ProtobufCKeyBundle,KeyBundleDeleter> exportProtobuf() const;
 
@@ -69,7 +69,7 @@ namespace Molch {
 	//header of the key store
 	class HeaderAndMessageKeyStore {
 	public:
-		std::vector<HeaderAndMessageKeyStoreNode,SodiumAllocator<HeaderAndMessageKeyStoreNode>> keys;
+		std::vector<HeaderAndMessageKey,SodiumAllocator<HeaderAndMessageKey>> keys;
 
 		HeaderAndMessageKeyStore() = default;
 		//! Import a header_and_message_keystore form a Protobuf-C struct.

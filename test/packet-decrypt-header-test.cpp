@@ -37,7 +37,7 @@ using namespace Molch;
 int main(void) {
 	try {
 		if(sodium_init() == -1) {
-			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
 		//generate message
@@ -72,13 +72,13 @@ int main(void) {
 
 
 		if (!decrypted_header.contains(header.size)) {
-			throw MolchException(INVALID_VALUE, "Decrypted header isn't of the same length.");
+			throw Molch::Exception(INVALID_VALUE, "Decrypted header isn't of the same length.");
 		}
 		printf("Decrypted header has the same length.\n\n");
 
 		//compare headers
 		if (header != decrypted_header) {
-			throw MolchException(INVALID_VALUE, "Decrypted header doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Decrypted header doesn't match.");
 		}
 		printf("Decrypted header matches.\n\n");
 
@@ -88,11 +88,11 @@ int main(void) {
 		bool decryption_failed = false;
 		try {
 			decrypted_header = packet_decrypt_header(packet, header_key);
-		} catch (const MolchException& exception) {
+		} catch (const Molch::Exception& exception) {
 			decryption_failed = true;
 		}
 		if (!decryption_failed) {
-			throw MolchException(GENERIC_ERROR, "Manipulated packet was accepted.");
+			throw Molch::Exception(GENERIC_ERROR, "Manipulated packet was accepted.");
 		}
 
 		printf("Header manipulation detected.\n\n");
@@ -104,11 +104,11 @@ int main(void) {
 		packet.content[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= 0x12;
 		try {
 			decrypted_header = packet_decrypt_header(packet, header_key);
-		} catch (const MolchException& exception) {
+		} catch (const Molch::Exception& exception) {
 			decryption_failed = true;
 		}
 		if (!decryption_failed) {
-			throw MolchException(GENERIC_ERROR, "Manipulated packet was accepted.");
+			throw Molch::Exception(GENERIC_ERROR, "Manipulated packet was accepted.");
 		}
 
 		printf("Header manipulation detected!\n\n");
@@ -145,16 +145,16 @@ int main(void) {
 		decrypted_header = packet_decrypt_header(packet, header_key);
 
 		if (!decrypted_header.contains(header.size)) {
-			throw MolchException(INVALID_VALUE, "Decrypted header isn't of the same length.");
+			throw Molch::Exception(INVALID_VALUE, "Decrypted header isn't of the same length.");
 		}
 		printf("Decrypted header has the same length.\n\n");
 
 		//compare headers
 		if (header != decrypted_header) {
-			throw MolchException(INVALID_VALUE, "Decrypted header doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Decrypted header doesn't match.");
 		}
 		printf("Decrypted header matches.\n");
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {

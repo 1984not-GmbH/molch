@@ -34,7 +34,7 @@
 
 using namespace Molch;
 
-Buffer protobuf_export(const ConversationT& conversation) {
+Buffer protobuf_export(const Molch::Conversation& conversation) {
 	//export the conversation
 	auto exported_conversation = conversation.exportProtobuf();
 
@@ -42,28 +42,28 @@ Buffer protobuf_export(const ConversationT& conversation) {
 	Buffer export_buffer(export_size, 0);
 	export_buffer.size = conversation__pack(exported_conversation.get(), export_buffer.content);
 	if (export_size != export_buffer.size) {
-		throw MolchException(PROTOBUF_PACK_ERROR, "Failed to pack protobuf-c struct into buffer.");
+		throw Molch::Exception(PROTOBUF_PACK_ERROR, "Failed to pack protobuf-c struct into buffer.");
 	}
 
 	return export_buffer;
 }
 
-std::unique_ptr<ConversationT> protobuf_import(const Buffer& import_buffer) {
+std::unique_ptr<Molch::Conversation> protobuf_import(const Buffer& import_buffer) {
 	auto conversation_protobuf = std::unique_ptr<ProtobufCConversation,ConversationDeleter>(conversation__unpack(
 		&protobuf_c_allocators,
 		import_buffer.size,
 		import_buffer.content));
 	if (!conversation_protobuf) {
-		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
+		throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
 	}
 
-	return std::make_unique<ConversationT>(*conversation_protobuf);
+	return std::make_unique<Molch::Conversation>(*conversation_protobuf);
 }
 
 int main(void) noexcept {
 	try {
 		if (sodium_init() == -1) {
-			throw MolchException(INIT_ERROR, "Failed to initialize libsodium!\n");
+			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium!\n");
 		}
 
 		//creating charlie's identity keypair
@@ -104,30 +104,30 @@ int main(void) noexcept {
 
 		//create charlie's conversation
 		std::cout << "BEFORE creation of Charlie's conversation" << std::endl;
-		auto charlie_conversation = std::make_unique<ConversationT>(
+		auto charlie_conversation = std::make_unique<Molch::Conversation>(
 				charlie_private_identity,
 				charlie_public_identity,
 				dora_public_identity,
 				charlie_private_ephemeral,
 				charlie_public_ephemeral,
 				dora_public_ephemeral,
-				ConversationT::Confirmation::YES_I_WANT_THAT_CONSTRUCTOR);
+				Molch::Conversation::Confirmation::YES_I_WANT_THAT_CONSTRUCTOR);
 		std::cout << "AFTER creation of Charlie's conversation" << std::endl;
 		if (!charlie_conversation || !charlie_conversation->id.contains(CONVERSATION_ID_SIZE)) {
-			throw MolchException(INCORRECT_DATA, "Charlie's conversation has an incorrect ID length.");
+			throw Molch::Exception(INCORRECT_DATA, "Charlie's conversation has an incorrect ID length.");
 		}
 
 		//create Dora's conversation
-		auto dora_conversation = std::make_unique<ConversationT>(
+		auto dora_conversation = std::make_unique<Molch::Conversation>(
 				dora_private_identity,
 				dora_public_identity,
 				charlie_public_identity,
 				dora_private_ephemeral,
 				dora_public_ephemeral,
 				charlie_public_ephemeral,
-				ConversationT::Confirmation::YES_I_WANT_THAT_CONSTRUCTOR);
+				Molch::Conversation::Confirmation::YES_I_WANT_THAT_CONSTRUCTOR);
 		if (!dora_conversation || !dora_conversation->id.contains(CONVERSATION_ID_SIZE)) {
-			throw MolchException(INCORRECT_DATA, "Dora's conversation has an incorrect ID length.");
+			throw Molch::Exception(INCORRECT_DATA, "Dora's conversation has an incorrect ID length.");
 		}
 
 		//test protobuf-c export
@@ -149,10 +149,10 @@ int main(void) noexcept {
 
 		//compare
 		if (protobuf_export_buffer != protobuf_second_export_buffer) {
-			throw MolchException(EXPORT_ERROR, "Both exported buffers are not the same.");
+			throw Molch::Exception(EXPORT_ERROR, "Both exported buffers are not the same.");
 		}
 		printf("Both exported buffers are identitcal.\n\n");
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {

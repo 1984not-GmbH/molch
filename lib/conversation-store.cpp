@@ -30,11 +30,11 @@ namespace Molch {
 		return this->conversations.size();
 	}
 
-	void ConversationStore::add(ConversationT&& conversation) {
+	void ConversationStore::add(Conversation&& conversation) {
 		const Buffer& id = conversation.id;
 		//search if a conversation with this id already exists
 		auto existing_conversation = std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
-				[&id](const ConversationT& conversation) {
+				[&id](const Conversation& conversation) {
 					return conversation.id == id;
 				});
 		//if none exists, just add the conversation
@@ -48,13 +48,13 @@ namespace Molch {
 		this->conversations[existing_index] = std::move(conversation);
 	}
 
-	void ConversationStore::remove(const ConversationT * const node) {
+	void ConversationStore::remove(const Conversation * const node) {
 		if (node == nullptr) {
 			return;
 		}
 
 		auto found_node = std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
-				[&node](const ConversationT& conversation) {
+				[&node](const Conversation& conversation) {
 					if (&conversation == node) {
 						return true;
 					}
@@ -73,7 +73,7 @@ namespace Molch {
 	 */
 	void ConversationStore::remove(const Buffer& id) {
 		auto found_node = std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
-				[&id](const ConversationT& conversation) {
+				[&id](const Conversation& conversation) {
 					if (conversation.id == id) {
 						return true;
 					}
@@ -91,9 +91,9 @@ namespace Molch {
 	 *
 	 * Returns nullptr if no conversation was found.
 	 */
-	ConversationT* ConversationStore::find(const Buffer& id) {
+	Conversation* ConversationStore::find(const Buffer& id) {
 		auto node = std::find_if(std::begin(this->conversations), std::end(this->conversations),
-				[&id](const ConversationT& conversation) {
+				[&id](const Conversation& conversation) {
 					if (conversation.id == id) {
 						return true;
 					}
@@ -139,7 +139,7 @@ namespace Molch {
 		return list;
 	}
 
-	void ConversationStore::exportProtobuf(Conversation**& conversations, size_t& length) const {
+	void ConversationStore::exportProtobuf(ProtobufCConversation**& conversations, size_t& length) const {
 		if (this->conversations.empty()) {
 			conversations = nullptr;
 			length = 0;
@@ -147,7 +147,7 @@ namespace Molch {
 			return;
 		}
 
-		auto conversation_pointers = std::vector<std::unique_ptr<Conversation,ConversationDeleter>>();
+		auto conversation_pointers = std::vector<std::unique_ptr<ProtobufCConversation,ConversationDeleter>>();
 		conversation_pointers.reserve(this->conversations.size());
 
 		//export the conversations
@@ -156,7 +156,7 @@ namespace Molch {
 		}
 
 		//allocate the output array
-		conversations = throwing_zeroed_malloc<Conversation*>(this->conversations.size() * sizeof(Conversation*));
+		conversations = throwing_zeroed_malloc<ProtobufCConversation*>(this->conversations.size() * sizeof(ProtobufCConversation*));
 		size_t index = 0;
 		for (auto&& conversation : conversation_pointers) {
 			conversations[index] = conversation.release();
@@ -165,17 +165,17 @@ namespace Molch {
 		length = this->conversations.size();
 	}
 
-	ConversationStore::ConversationStore(Conversation** const& conversations, const size_t length) {
+	ConversationStore::ConversationStore(ProtobufCConversation** const& conversations, const size_t length) {
 		//check input
 		if (((length > 0) && (conversations == nullptr))
 				|| ((length == 0) && (conversations != nullptr))) {
-			throw MolchException(INVALID_INPUT, "Invalid input to conversation_store_import");
+			throw Exception(INVALID_INPUT, "Invalid input to conversation_store_import");
 		}
 
 		//import all the conversations
 		for (size_t i = 0; i < length; i++) {
 			if (conversations[i] == nullptr) {
-				throw MolchException(PROTOBUF_MISSING_ERROR, "Array of conversation has an empty element.");
+				throw Exception(PROTOBUF_MISSING_ERROR, "Array of conversation has an empty element.");
 			}
 
 			this->conversations.emplace_back(*conversations[i]);

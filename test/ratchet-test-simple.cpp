@@ -35,7 +35,7 @@ using namespace Molch;
 static void keypair(Buffer& private_key, Buffer& public_key) {
 	int status = crypto_box_keypair(public_key.content, private_key.content);
 	if (status != 0) {
-		throw MolchException(KEYGENERATION_FAILED, "Failed to generate keypair.");
+		throw Molch::Exception(KEYGENERATION_FAILED, "Failed to generate keypair.");
 	}
 }
 
@@ -43,7 +43,7 @@ int main(void) {
 	try {
 		int status = sodium_init();
 		if (status != 0) {
-			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
 		//generate the keys
@@ -80,7 +80,7 @@ int main(void) {
 			bob_private_identity.cloneFrom(stash);
 
 			if (status != 0) {
-				throw MolchException(BUFFER_ERROR, "Failed to switch Alice' and Bob's keys.");
+				throw Molch::Exception(BUFFER_ERROR, "Failed to switch Alice' and Bob's keys.");
 			}
 		}
 
@@ -153,7 +153,7 @@ int main(void) {
 
 		//now check if the message key is the same
 		if (send_message_key != receive_message_key) {
-			throw MolchException(INCORRECT_DATA, "Bobs receive message key isn't the same as Alice' send message key.");
+			throw Molch::Exception(INCORRECT_DATA, "Bobs receive message key isn't the same as Alice' send message key.");
 		}
 		printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
 
@@ -186,7 +186,7 @@ int main(void) {
 
 		//now check if the message key is the same
 		if (send_message_key != receive_message_key) {
-			throw MolchException(INCORRECT_DATA, "Alice' receive message key isn't the same as Bobs send message key.");
+			throw Molch::Exception(INCORRECT_DATA, "Alice' receive message key isn't the same as Bobs send message key.");
 		}
 		printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
 
@@ -220,7 +220,7 @@ int main(void) {
 
 		//now check if the message key is the same
 		if (send_message_key != receive_message_key) {
-			throw MolchException(INCORRECT_DATA, "Alice' receive message key isn't the same as Bobs send message key.");
+			throw Molch::Exception(INCORRECT_DATA, "Alice' receive message key isn't the same as Bobs send message key.");
 		}
 		printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
 
@@ -254,12 +254,12 @@ int main(void) {
 
 		//now check if the message key is the same
 		if (send_message_key != receive_message_key) {
-			throw MolchException(INCORRECT_DATA, "Bobs receive message key isn't the same as Alice' send message key.");
+			throw Molch::Exception(INCORRECT_DATA, "Bobs receive message key isn't the same as Alice' send message key.");
 		}
 		printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
 
 		bob_send_ratchet->setLastMessageAuthenticity(true);
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {

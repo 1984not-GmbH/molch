@@ -35,7 +35,7 @@ using namespace Molch;
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
 		Buffer master_key(50, 50);
@@ -54,16 +54,16 @@ int main(void) {
 		subkey2.printHex(std::cout) << std::endl;
 
 		if (subkey1 == subkey2) {
-			throw MolchException(KEYGENERATION_FAILED, "Both subkeys are the same.");
+			throw Molch::Exception(KEYGENERATION_FAILED, "Both subkeys are the same.");
 		}
 
 		Buffer subkey1_copy(60, 60);
 		derive_key(subkey1_copy, subkey1_copy.capacity(), master_key, 0);
 
 		if (subkey1 != subkey1_copy) {
-			throw MolchException(INCORRECT_DATA, "Failed to reproduce subkey.");
+			throw Molch::Exception(INCORRECT_DATA, "Failed to reproduce subkey.");
 		}
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {

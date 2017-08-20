@@ -30,14 +30,14 @@
 using namespace Molch;
 
 static void second_level(void) {
-	throw MolchException(GENERIC_ERROR, "Error on the second level!");
+	throw Molch::Exception(GENERIC_ERROR, "Error on the second level!");
 }
 
 static void first_level(void) {
 	try {
 		second_level();
-	} catch(MolchException& exception) {
-		throw exception.add(MolchError(GENERIC_ERROR, "Error on the first level!"));
+	} catch(Molch::Exception& exception) {
+		throw exception.add(Molch::Error(GENERIC_ERROR, "Error on the first level!"));
 	}
 }
 
@@ -46,11 +46,11 @@ int main(void) noexcept {
 	try {
 		first_level();
 	} catch(const std::exception& exception) {
-		if (strcmp(exception.what(), "MolchException") != 0) {
-			std::cerr << "Exception is not a MolchException. Terminating" << std::endl;
+		if (strcmp(exception.what(), "Molch::Exception") != 0) {
+			std::cerr << "Molch::Exception is not a Molch::Exception. Terminating" << std::endl;
 			return EXIT_FAILURE;
 		}
-		return_status status = static_cast<const MolchException&>(exception).toReturnStatus();
+		return_status status = static_cast<const Molch::Exception&>(exception).toReturnStatus();
 		if (strcmp(status.error->message, "Error on the first level!") != 0) {
 			fprintf(stderr, "ERROR: First error message is incorrect!\n");
 			return EXIT_FAILURE;
@@ -62,7 +62,7 @@ int main(void) noexcept {
 		return_status_destroy_errors(&status);
 
 		std::stringstream stream;
-		static_cast<const MolchException&>(exception).print(stream);
+		static_cast<const Molch::Exception&>(exception).print(stream);
 		auto error_message = stream.str();
 		if (error_message != "ERROR\nerror stack trace:\n0: GENERIC_ERROR, Error on the first level!\n1: GENERIC_ERROR, Error on the second level!\n") {
 			std::cerr << error_message << std::endl;

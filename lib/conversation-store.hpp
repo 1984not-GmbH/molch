@@ -28,7 +28,7 @@
 namespace Molch {
 	class ConversationStore {
 	private:
-		std::vector<ConversationT> conversations;
+		std::vector<Conversation> conversations;
 
 	public:
 
@@ -41,7 +41,7 @@ namespace Molch {
 		 * \param length The number of array elements.
 		 * \param public_identity_key The public identity key of the user.
 		 */
-		ConversationStore(Conversation** const& conversations, const size_t length);
+		ConversationStore(ProtobufCConversation** const& conversations, const size_t length);
 
 		ConversationStore(const ConversationStore& store) = delete;
 		ConversationStore(ConversationStore&& store) = default;
@@ -53,12 +53,12 @@ namespace Molch {
 		 * Add a conversation to the conversation store or replaces
 		 * it if one with the same ID already exists.
 		 */
-		void add(ConversationT&& conversation);
+		void add(Conversation&& conversation);
 
 		/*
 		 * Remove a conversation from the conversation_store.
 		 */
-		void remove(const ConversationT* const node);
+		void remove(const Conversation* const node);
 
 		/*
 		 * Remove a conversation from the conversation store.
@@ -72,7 +72,7 @@ namespace Molch {
 		 *
 		 * Returns nullptr if no conversation was found.
 		 */
-		ConversationT* find(const Buffer& id);
+		Conversation* find(const Buffer& id);
 
 		/*
 		 * Remove all entries from a conversation store.
@@ -91,7 +91,7 @@ namespace Molch {
 		 * \param conversations An array of Protobuf-C structs to export it to.
 		 * \return The status.
 		 */
-		void exportProtobuf(Conversation**& conversations, size_t& length) const;
+		void exportProtobuf(ProtobufCConversation**& conversations, size_t& length) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

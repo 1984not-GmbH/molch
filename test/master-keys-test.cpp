@@ -55,7 +55,7 @@ static void protobuf_export(
 	public_signing_key_buffer = Buffer(public_signing_key_proto_size, 0);
 	public_signing_key_buffer.size = key__pack(public_signing_key.get(), public_signing_key_buffer.content);
 	if (!public_signing_key_buffer.contains(public_signing_key_proto_size)) {
-		throw MolchException(EXPORT_ERROR, "Failed to export public signing key.");
+		throw Molch::Exception(EXPORT_ERROR, "Failed to export public signing key.");
 	}
 
 	//private signing key
@@ -63,7 +63,7 @@ static void protobuf_export(
 	private_signing_key_buffer = Buffer(private_signing_key_proto_size, 0);
 	private_signing_key_buffer.size = key__pack(private_signing_key.get(), private_signing_key_buffer.content);
 	if (!private_signing_key_buffer.contains(private_signing_key_proto_size)) {
-		throw MolchException(EXPORT_ERROR, "Failed to export private signing key.");
+		throw Molch::Exception(EXPORT_ERROR, "Failed to export private signing key.");
 	}
 
 	//public identity key
@@ -71,7 +71,7 @@ static void protobuf_export(
 	public_identity_key_buffer = Buffer(public_identity_key_proto_size, 0);
 	public_identity_key_buffer.size = key__pack(public_identity_key.get(), public_identity_key_buffer.content);
 	if (!public_identity_key_buffer.contains(public_identity_key_proto_size)) {
-		throw MolchException(EXPORT_ERROR, "Failed to export public identity key.");
+		throw Molch::Exception(EXPORT_ERROR, "Failed to export public identity key.");
 	}
 
 	//private identity key
@@ -79,7 +79,7 @@ static void protobuf_export(
 	private_identity_key_buffer = Buffer(private_identity_key_proto_size, 0);
 	private_identity_key_buffer.size = key__pack(private_identity_key.get(), private_identity_key_buffer.content);
 	if (!private_identity_key_buffer.contains(private_identity_key_proto_size)) {
-		throw MolchException(EXPORT_ERROR, "Failed to export private identity key.");
+		throw Molch::Exception(EXPORT_ERROR, "Failed to export private identity key.");
 	}
 }
 
@@ -97,7 +97,7 @@ static void protobuf_import(
 			public_signing_key_buffer.size,
 			public_signing_key_buffer.content));
 	if (!public_signing_key) {
-		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack public signing key from protobuf.");
+		throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack public signing key from protobuf.");
 	}
 	auto private_signing_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(
 		key__unpack(
@@ -105,7 +105,7 @@ static void protobuf_import(
 			private_signing_key_buffer.size,
 			private_signing_key_buffer.content));
 	if (!private_signing_key) {
-		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack private signing key from protobuf.");
+		throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack private signing key from protobuf.");
 	}
 	auto public_identity_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(
 		key__unpack(
@@ -113,7 +113,7 @@ static void protobuf_import(
 			public_identity_key_buffer.size,
 			public_identity_key_buffer.content));
 	if (!public_identity_key) {
-		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack public identity key from protobuf.");
+		throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack public identity key from protobuf.");
 	}
 	auto private_identity_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(
 		key__unpack(
@@ -121,7 +121,7 @@ static void protobuf_import(
 			private_identity_key_buffer.size,
 			private_identity_key_buffer.content));
 	if (!private_identity_key) {
-		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack private identity key from protobuf.");
+		throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack private identity key from protobuf.");
 	}
 
 	keys = std::make_unique<MasterKeys>(
@@ -135,7 +135,7 @@ static void protobuf_import(
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw MolchException(INIT_ERROR, "Failed to initialize libsodium");
+			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium");
 		}
 		//create the unspiced master keys
 		MasterKeys unspiced_master_keys{};
@@ -169,10 +169,10 @@ int main(void) {
 
 		//check the exported public keys
 		if (public_signing_key != unspiced_master_keys.public_signing_key) {
-			throw MolchException(INCORRECT_DATA, "Exported public signing key doesn't match.");
+			throw Molch::Exception(INCORRECT_DATA, "Exported public signing key doesn't match.");
 		}
 		if (public_identity_key != unspiced_master_keys.public_identity_key) {
-			throw MolchException(INCORRECT_DATA, "Exported public identity key doesn't match.");
+			throw Molch::Exception(INCORRECT_DATA, "Exported public identity key doesn't match.");
 		}
 
 
@@ -205,10 +205,10 @@ int main(void) {
 
 		//check the exported public keys
 		if (public_signing_key != spiced_master_keys.public_signing_key) {
-			throw MolchException(INCORRECT_DATA, "Exported public signing key doesn't match.");
+			throw Molch::Exception(INCORRECT_DATA, "Exported public signing key doesn't match.");
 		}
 		if (public_identity_key != spiced_master_keys.public_identity_key) {
-			throw MolchException(INCORRECT_DATA, "Exported public identity key doesn't match.");
+			throw Molch::Exception(INCORRECT_DATA, "Exported public identity key doesn't match.");
 		}
 
 		//sign some data
@@ -230,7 +230,7 @@ int main(void) {
 				signed_data.size,
 				public_signing_key.content);
 		if (status_int != 0) {
-			throw MolchException(VERIFY_ERROR, "Failed to verify signature.");
+			throw Molch::Exception(VERIFY_ERROR, "Failed to verify signature.");
 		}
 		unwrapped_data.size = static_cast<size_t>(unwrapped_data_length);
 
@@ -287,20 +287,20 @@ int main(void) {
 
 		//now compare
 		if (protobuf_export_public_signing_key != protobuf_second_export_public_signing_key) {
-			throw MolchException(INCORRECT_DATA, "The public signing keys do not match.");
+			throw Molch::Exception(INCORRECT_DATA, "The public signing keys do not match.");
 		}
 		if (protobuf_export_private_signing_key != protobuf_second_export_private_signing_key) {
-			throw MolchException(INCORRECT_DATA, "The private signing keys do not match.");
+			throw Molch::Exception(INCORRECT_DATA, "The private signing keys do not match.");
 		}
 		if (protobuf_export_public_identity_key != protobuf_second_export_public_identity_key) {
-			throw MolchException(INCORRECT_DATA, "The public identity keys do not match.");
+			throw Molch::Exception(INCORRECT_DATA, "The public identity keys do not match.");
 		}
 		if (protobuf_export_private_identity_key != protobuf_second_export_private_identity_key) {
-			throw MolchException(INCORRECT_DATA, "The private identity keys do not match.");
+			throw Molch::Exception(INCORRECT_DATA, "The private identity keys do not match.");
 		}
 
 		printf("Successfully exported to Protobuf-C and imported again.");
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {

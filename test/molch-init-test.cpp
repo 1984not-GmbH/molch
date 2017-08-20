@@ -46,7 +46,7 @@ int main(int argc, char *args[]) noexcept {
 		}
 
 		if (sodium_init() != 0) {
-			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
 		unsigned char backup_key[BACKUP_KEY_SIZE];
@@ -57,7 +57,7 @@ int main(int argc, char *args[]) noexcept {
 			//load the backup key from a file
 			auto backup_key_file = read_file("test-data/molch-init-backup.key");
 			if (backup_key_file.size != BACKUP_KEY_SIZE) {
-				throw MolchException(INCORRECT_BUFFER_SIZE, "Backup key from file has an incorrect length.");
+				throw Molch::Exception(INCORRECT_BUFFER_SIZE, "Backup key from file has an incorrect length.");
 			}
 
 			//try to import the backup
@@ -70,7 +70,7 @@ int main(int argc, char *args[]) noexcept {
 						backup_key_file.content,
 						backup_key_file.size);
 				on_error {
-					throw MolchException(status);
+					throw Molch::Exception(status);
 				}
 			}
 
@@ -99,13 +99,13 @@ int main(int argc, char *args[]) noexcept {
 					reinterpret_cast<const unsigned char*>("random"),
 					sizeof("random"));
 			on_error {
-				throw MolchException(status);
+				throw Molch::Exception(status);
 			}
 			backup.reset(backup_ptr);
 			prekey_list.reset(prekey_list_ptr);
 		}
 		if (backup == nullptr) {
-			throw MolchException(EXPORT_ERROR, "Failed to export backup.");
+			throw Molch::Exception(EXPORT_ERROR, "Failed to export backup.");
 		}
 
 		//print the backup to a file
@@ -113,7 +113,7 @@ int main(int argc, char *args[]) noexcept {
 		Buffer backup_key_buffer(backup_key, BACKUP_KEY_SIZE);
 		print_to_file(backup_buffer, "molch-init.backup");
 		print_to_file(backup_key_buffer, "molch-init-backup.key");
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {

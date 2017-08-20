@@ -40,7 +40,7 @@ Buffer protobuf_export(Ratchet& ratchet) {
 	Buffer export_buffer(export_size, 0);
 	export_buffer.size = conversation__pack(conversation.get(), export_buffer.content);
 	if (export_size != export_buffer.size) {
-		throw MolchException(EXPORT_ERROR, "Failed to export ratchet.");
+		throw Molch::Exception(EXPORT_ERROR, "Failed to export ratchet.");
 	}
 
 	return export_buffer;
@@ -54,7 +54,7 @@ std::unique_ptr<Ratchet> protobuf_import(const Buffer& export_buffer) {
 			export_buffer.size,
 			export_buffer.content));
 	if (!conversation) {
-		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
+		throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
 	}
 
 	//now do the import
@@ -64,7 +64,7 @@ std::unique_ptr<Ratchet> protobuf_import(const Buffer& export_buffer) {
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
 		//creating Alice's identity keypair
@@ -141,13 +141,13 @@ int main(void) {
 
 		//compare Alice's and Bob's initial root and chain keys
 		if (alice_state->storage->root_key != bob_state->storage->root_key) {
-			throw MolchException(INCORRECT_DATA, "Alice's and Bob's initial root keys arent't the same.");
+			throw Molch::Exception(INCORRECT_DATA, "Alice's and Bob's initial root keys arent't the same.");
 		}
 		printf("Alice's and Bob's initial root keys match!\n");
 
 		//initial chain key
 		if (alice_state->storage->receive_chain_key != bob_state->storage->send_chain_key) {
-			throw MolchException(INCORRECT_DATA, "Alice's and Bob's initial chain keys aren't the same.");
+			throw Molch::Exception(INCORRECT_DATA, "Alice's and Bob's initial chain keys aren't the same.");
 		}
 		printf("Alice's and Bob's initial chain keys match!\n\n");
 
@@ -335,19 +335,19 @@ int main(void) {
 
 		//compare the message keys
 		if (alice_send_message_key1 != bob_receive_key1) {
-			throw MolchException(INCORRECT_DATA, "Alice's first send key and Bob's first receive key aren't the same.");
+			throw Molch::Exception(INCORRECT_DATA, "Alice's first send key and Bob's first receive key aren't the same.");
 		}
 		printf("Alice's first send key and Bob's first receive key match.\n");
 
 		//second key
 		if (alice_send_message_key2 != bob_receive_key2) {
-			throw MolchException(INCORRECT_DATA, "Alice's second send key and Bob's second receive key aren't the same.");
+			throw Molch::Exception(INCORRECT_DATA, "Alice's second send key and Bob's second receive key aren't the same.");
 		}
 		printf("Alice's second send key and Bob's second receive key match.\n");
 
 		//third key
 		if (alice_send_message_key3 != bob_receive_key3) {
-			throw MolchException(INCORRECT_DATA, "Alice's third send key and Bob's third receive key aren't the same.");
+			throw Molch::Exception(INCORRECT_DATA, "Alice's third send key and Bob's third receive key aren't the same.");
 		}
 		printf("Alice's third send key and Bob's third receive key match.\n");
 		putchar('\n');
@@ -507,25 +507,25 @@ int main(void) {
 
 		//compare header keys
 		if (alice_receive_header_key2 != bob_send_header_key2) {
-			throw MolchException(INCORRECT_DATA, "Bob's second send header key and Alice's receive header key aren't the same.");
+			throw Molch::Exception(INCORRECT_DATA, "Bob's second send header key and Alice's receive header key aren't the same.");
 		}
 		printf("Bob's second send header key and Alice's receive header keys match.\n");
 
 		//compare the keys
 		if (bob_send_message_key1 != alice_receive_message_key1) {
-			throw MolchException(INCORRECT_DATA, "Bob's first send key and Alice's first receive key aren't the same.");
+			throw Molch::Exception(INCORRECT_DATA, "Bob's first send key and Alice's first receive key aren't the same.");
 		}
 		printf("Bob's first send key and Alice's first receive key match.\n");
 
 		//second key
 		if (bob_send_message_key2 != alice_receive_message_key2) {
-			throw MolchException(INCORRECT_DATA, "Bob's second send key and Alice's second receive key aren't the same.");
+			throw Molch::Exception(INCORRECT_DATA, "Bob's second send key and Alice's second receive key aren't the same.");
 		}
 		printf("Bob's second send key and Alice's second receive key match.\n");
 
 		//third key
 		if (bob_send_message_key3 != alice_receive_message_key3) {
-			throw MolchException(INCORRECT_DATA, "Bob's third send key and Alice's third receive key aren't the same.");
+			throw Molch::Exception(INCORRECT_DATA, "Bob's third send key and Alice's third receive key aren't the same.");
 		}
 		printf("Bob's third send key and Alice's third receive key match.\n\n");
 
@@ -548,7 +548,7 @@ int main(void) {
 		//compare both exports
 		if (protobuf_export_buffer != protobuf_second_export_buffer) {
 			protobuf_second_export_buffer.printHex(std::cout);
-			throw MolchException(INCORRECT_DATA, "Both exports don't match!");
+			throw Molch::Exception(INCORRECT_DATA, "Both exports don't match!");
 		}
 		printf("Exported Protobuf-C buffers match!\n");
 
@@ -557,7 +557,7 @@ int main(void) {
 		alice_state.reset();
 		printf("Destroying Bob's ratchet ...\n");
 		bob_state.reset();
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {

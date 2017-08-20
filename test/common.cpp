@@ -41,14 +41,14 @@ void generate_and_print_keypair(
 	//check buffer sizes
 	if (!public_key.fits(crypto_box_PUBLICKEYBYTES)
 			|| !private_key.fits(crypto_box_SECRETKEYBYTES)) {
-		throw MolchException(INCORRECT_BUFFER_SIZE, "Public key buffer is too short.");
+		throw Molch::Exception(INCORRECT_BUFFER_SIZE, "Public key buffer is too short.");
 	}
 	//generate keypair
 	{
 		int status_int = 0;
 		status_int = crypto_box_keypair(public_key.content, private_key.content);
 		if (status_int != 0) {
-			throw MolchException(KEYGENERATION_FAILED, "Failed to generate keypair.");
+			throw Molch::Exception(KEYGENERATION_FAILED, "Failed to generate keypair.");
 		}
 	}
 	public_key.size = crypto_box_PUBLICKEYBYTES;

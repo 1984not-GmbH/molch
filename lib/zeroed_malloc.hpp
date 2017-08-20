@@ -67,7 +67,7 @@ namespace Molch {
 		size_t space = amount_to_allocate - sizeof(size_t) - sizeof(void*);
 		unsigned char *aligned_address = address + sizeof(size_t) + sizeof(void*);
 		if (std::align(alignof(T), size, reinterpret_cast<void*&>(aligned_address), space) == nullptr) {
-			throw MolchException(ALLOCATION_FAILED, "Failed to align memory.");
+			throw Exception(ALLOCATION_FAILED, "Failed to align memory.");
 		}
 
 		//NOTE: This has to be copied as bytes because of possible alignment issues

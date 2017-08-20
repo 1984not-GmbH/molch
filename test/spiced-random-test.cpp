@@ -34,7 +34,7 @@ using namespace Molch;
 int main(void) noexcept {
 	try {
 		if (sodium_init() == -1) {
-			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
 		//some random user input (idiot bashing his head on the keyboard)
@@ -62,16 +62,16 @@ int main(void) noexcept {
 
 		//compare the two (mustn't be identical!)
 		if (output1 == output2) {
-			throw MolchException(INCORRECT_DATA, "Random numbers aren't random.");
+			throw Molch::Exception(INCORRECT_DATA, "Random numbers aren't random.");
 		}
 
 		//don't crash with output length 0
 		try {
 			spiced_random(output1, spice, 0);
-		} catch (const MolchException& exception) {
+		} catch (const Molch::Exception& exception) {
 			//on newer libsodium versions, output lengths of zero aren't supported
 		}
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {

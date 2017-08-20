@@ -34,7 +34,7 @@ using namespace Molch;
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
 		//create random initial chain key
@@ -58,13 +58,13 @@ int main(void) {
 
 			//check that chain keys are different
 			if (last_chain_key == next_chain_key) {
-				throw MolchException(INCORRECT_DATA, "Derived chain key is identical.");
+				throw Molch::Exception(INCORRECT_DATA, "Derived chain key is identical.");
 			}
 
 			//move next_chain_key to last_chain_key
 			last_chain_key.cloneFrom(next_chain_key);
 		}
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		return EXIT_FAILURE;

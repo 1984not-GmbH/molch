@@ -31,25 +31,25 @@
 #include "destroyers.hpp"
 
 namespace Molch {
-	ConversationT& ConversationT::move(ConversationT&& conversation) {
+	Conversation& Conversation::move(Conversation&& conversation) {
 		this->id.cloneFrom(conversation.id);
 		this->ratchet = std::move(conversation.ratchet);
 
 		return *this;
 	}
 
-	ConversationT::ConversationT(ConversationT&& conversation) {
+	Conversation::Conversation(Conversation&& conversation) {
 		this->move(std::move(conversation));
 	}
 
-	ConversationT& ConversationT::operator=(ConversationT&& conversation) {
+	Conversation& Conversation::operator=(Conversation&& conversation) {
 		return this->move(std::move(conversation));
 	}
 
 	/*
 	 * Create a new conversation.
 	 */
-	void ConversationT::create(
+	void Conversation::create(
 			const Buffer& our_private_identity,
 			const Buffer& our_public_identity,
 			const Buffer& their_public_identity,
@@ -63,7 +63,7 @@ namespace Molch {
 				|| !our_public_ephemeral.contains(PRIVATE_KEY_SIZE)
 				|| !our_public_ephemeral.contains(PUBLIC_KEY_SIZE)
 				|| !their_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
-			throw MolchException(INVALID_INPUT, "Invalid input for conversation_create.");
+			throw Exception(INVALID_INPUT, "Invalid input for conversation_create.");
 		}
 
 		//create random id
@@ -78,7 +78,7 @@ namespace Molch {
 				their_public_ephemeral);
 	}
 
-	ConversationT::ConversationT(
+	Conversation::Conversation(
 			const Buffer& our_private_identity,
 			const Buffer& our_public_identity,
 			const Buffer& their_public_identity,
@@ -102,7 +102,7 @@ namespace Molch {
 	 * Don't forget to destroy the return status with return_status_destroy_errors()
 	 * if an error has occurred.
 	 */
-	ConversationT::ConversationT(
+	Conversation::Conversation(
 			const Buffer& message, //message we want to send to the receiver
 			Buffer& packet, //output
 			const Buffer& sender_public_identity, //who is sending this message?
@@ -114,7 +114,7 @@ namespace Molch {
 				|| !sender_public_identity.contains(PUBLIC_KEY_SIZE)
 				|| !sender_private_identity.contains(PRIVATE_KEY_SIZE)
 				|| !receiver_prekey_list.contains((PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
-			throw MolchException(INVALID_INPUT, "Invalid input to ConversationT::ConversationT.");
+			throw Exception(INVALID_INPUT, "Invalid input to Conversation::Conversation.");
 		}
 
 		//create an ephemeral keypair
@@ -122,7 +122,7 @@ namespace Molch {
 		Buffer sender_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 		int status = crypto_box_keypair(sender_public_ephemeral.content, sender_private_ephemeral.content);
 		if (status != 0) {
-			throw MolchException(KEYGENERATION_FAILED, "Failed to generate ephemeral keypair.");
+			throw Exception(KEYGENERATION_FAILED, "Failed to generate ephemeral keypair.");
 		}
 
 		//choose a prekey
@@ -153,7 +153,7 @@ namespace Molch {
 	 * Don't forget to destroy the return status with return_status_destroy_errors()
 	 * if an error has occurred.
 	 */
-	ConversationT::ConversationT(
+	Conversation::Conversation(
 			const Buffer& packet, //received packet
 			Buffer& message, //output
 			const Buffer& receiver_public_identity,
@@ -164,7 +164,7 @@ namespace Molch {
 
 		if (!receiver_public_identity.contains(PUBLIC_KEY_SIZE)
 				|| !receiver_private_identity.contains(PRIVATE_KEY_SIZE)) {
-			throw MolchException(INVALID_INPUT, "Invalid input to conversation_start_receive_conversation.");
+			throw Exception(INVALID_INPUT, "Invalid input to conversation_start_receive_conversation.");
 		}
 
 		//get the senders keys and our public prekey from the packet
@@ -184,7 +184,7 @@ namespace Molch {
 			&receiver_public_prekey);
 
 		if (packet_type != PREKEY_MESSAGE) {
-			throw MolchException(INVALID_VALUE, "Packet is not a prekey message.");
+			throw Exception(INVALID_VALUE, "Packet is not a prekey message.");
 		}
 
 		//get the private prekey that corresponds to the public prekey used in the message
@@ -211,19 +211,19 @@ namespace Molch {
 	 * Don't forget to destroy the return status with return_status_destroy_errors()
 	 * if an error has occurred.
 	 */
-	Buffer ConversationT::send(
+	Buffer Conversation::send(
 			const Buffer& message,
 			const Buffer * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
 			const Buffer * const public_ephemeral_key, //can be nullptr, if not nullptr, this will be a prekey message
 			const Buffer * const public_prekey) { //can be nullptr, if not nullptr, this will be a prekey message
 		//ensure that either both public keys are nullptr or set
 		if (((public_identity_key == nullptr) && (public_prekey != nullptr)) || ((public_prekey == nullptr) && (public_identity_key != nullptr))) {
-			throw MolchException(INVALID_INPUT, "Invalid combination of provided key buffers.");
+			throw Exception(INVALID_INPUT, "Invalid combination of provided key buffers.");
 		}
 
 		//check the size of the public keys
 		if (((public_identity_key != nullptr) && !public_identity_key->contains(PUBLIC_KEY_SIZE)) || ((public_prekey != nullptr) && !public_prekey->contains(PUBLIC_KEY_SIZE))) {
-			throw MolchException(INCORRECT_BUFFER_SIZE, "Public key output has incorrect size.");
+			throw Exception(INCORRECT_BUFFER_SIZE, "Public key output has incorrect size.");
 		}
 
 		Buffer send_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
@@ -267,7 +267,7 @@ namespace Molch {
 	 *
 	 * Returns 0, if it was able to decrypt the packet.
 	 */
-	int ConversationT::trySkippedHeaderAndMessageKeys(
+	int Conversation::trySkippedHeaderAndMessageKeys(
 			const Buffer& packet,
 			Buffer& message,
 			uint32_t& receive_message_number,
@@ -275,18 +275,18 @@ namespace Molch {
 		//create buffers
 
 		for (size_t index = 0; index < this->ratchet->skipped_header_and_message_keys.keys.size(); index++) {
-			HeaderAndMessageKeyStoreNode& node = this->ratchet->skipped_header_and_message_keys.keys[index];
+			HeaderAndMessageKey& node = this->ratchet->skipped_header_and_message_keys.keys[index];
 			Buffer header;
 			bool decryption_successful = true;
 			try {
 				header = packet_decrypt_header(packet, node.header_key);
-			} catch (const MolchException& exception) {
+			} catch (const Exception& exception) {
 				decryption_successful = false;
 			}
 			if (decryption_successful) {
 				try {
 					message = packet_decrypt_message(packet, node.message_key);
-				} catch (const MolchException& exception) {
+				} catch (const Exception& exception) {
 					decryption_successful = false;
 				}
 				if (decryption_successful) {
@@ -313,7 +313,7 @@ namespace Molch {
 	 * Don't forget to destroy the return status with return_status_destroy_errors()
 	 * if an error has occurred.
 	 */
-	Buffer ConversationT::receive(
+	Buffer Conversation::receive(
 			const Buffer& packet, //received packet
 			uint32_t& receive_message_number,
 			uint32_t& previous_receive_message_number) {
@@ -339,7 +339,7 @@ namespace Molch {
 			Buffer header;
 			try {
 				header = packet_decrypt_header(packet, current_receive_header_key);
-			} catch (const MolchException& exception) {
+			} catch (const Exception& exception) {
 				decryptable = false;
 			}
 			if (decryptable) {
@@ -349,14 +349,14 @@ namespace Molch {
 				decryptable = true;
 				try {
 					header = packet_decrypt_header(packet, next_receive_header_key);
-				} catch (const MolchException& exception) {
+				} catch (const Exception& exception) {
 					decryptable = false;
 				}
 				if (decryptable) {
 					this->ratchet->setHeaderDecryptability(Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE);
 				} else {
 					this->ratchet->setHeaderDecryptability(Ratchet::HeaderDecryptability::UNDECRYPTABLE);
-					throw MolchException(DECRYPT_ERROR, "Failed to decrypt the message.");
+					throw Exception(DECRYPT_ERROR, "Failed to decrypt the message.");
 				}
 			}
 
@@ -394,8 +394,8 @@ namespace Molch {
 		}
 	}
 
-	std::unique_ptr<Conversation,ConversationDeleter> ConversationT::exportProtobuf() const {
-		std::unique_ptr<Conversation,ConversationDeleter> exported_conversation;
+	std::unique_ptr<ProtobufCConversation,ConversationDeleter> Conversation::exportProtobuf() const {
+		std::unique_ptr<ProtobufCConversation,ConversationDeleter> exported_conversation;
 		unsigned char *id = nullptr;
 
 		//export the ratchet
@@ -410,7 +410,7 @@ namespace Molch {
 		return exported_conversation;
 	}
 
-	ConversationT::ConversationT(const Conversation& conversation_protobuf) {
+	Conversation::Conversation(const ProtobufCConversation& conversation_protobuf) {
 		//copy the id
 		this->id.cloneFromRaw(conversation_protobuf.id.data, conversation_protobuf.id.len);
 
@@ -418,7 +418,7 @@ namespace Molch {
 		this->ratchet = std::make_unique<Ratchet>(conversation_protobuf);
 	}
 
-	std::ostream& ConversationT::print(std::ostream& stream) const {
+	std::ostream& Conversation::print(std::ostream& stream) const {
 		stream << "Conversation-ID:\n";
 		this->id.printHex(stream) << "\n";
 

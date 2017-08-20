@@ -29,10 +29,10 @@
 #include "prekey-store.hpp"
 
 namespace Molch {
-	class ConversationT {
+	class Conversation {
 		friend class ConversationStore;
 	private:
-		ConversationT& move(ConversationT&& conversation);
+		Conversation& move(Conversation&& conversation);
 
 		void create(
 			const Buffer& our_private_identity,
@@ -60,7 +60,7 @@ namespace Molch {
 		/*
 		 * Create a new conversation without sending or receiving anything.
 		 */
-		ConversationT(
+		Conversation(
 			const Buffer& our_private_identity,
 			const Buffer& our_public_identity,
 			const Buffer& their_public_identity,
@@ -72,7 +72,7 @@ namespace Molch {
 		/*
 		 * Start a new conversation where we are the sender.
 		 */
-		ConversationT(
+		Conversation(
 				const Buffer& message, //message we want to send to the receiver
 				Buffer& packet, //output, free after use!
 				const Buffer& sender_public_identity, //who is sending this message?
@@ -86,7 +86,7 @@ namespace Molch {
 		 * Don't forget to destroy the return status with return_status_destroy_errors()
 		 * if an error has occurred.
 		 */
-		ConversationT(
+		Conversation(
 				const Buffer& packet, //received packet
 				Buffer& message, //output
 				const Buffer& receiver_public_identity,
@@ -96,13 +96,13 @@ namespace Molch {
 		/*! Import a conversatoin from a Protobuf-C struct
 		 * \param conversation_protobuf The protobuf-c struct to import from.
 		 */
-		ConversationT(const Conversation& conversation_protobuf);
+		Conversation(const ProtobufCConversation& conversation_protobuf);
 
-		ConversationT(ConversationT&& conversation);
-		ConversationT(const ConversationT& conversation) = delete;
+		Conversation(Conversation&& conversation);
+		Conversation(const Conversation& conversation) = delete;
 
-		ConversationT& operator=(ConversationT&& conversation);
-		ConversationT& operator=(const ConversationT& conversation) = delete;
+		Conversation& operator=(Conversation&& conversation);
+		Conversation& operator=(const Conversation& conversation) = delete;
 
 		/*
 		 * Send a message using an existing conversation.
@@ -128,7 +128,7 @@ namespace Molch {
 		/*! Export a conversation to a Protobuf-C struct.
 		 * \return exported_conversation The exported conversation protobuf-c struct.
 		 */
-		std::unique_ptr<Conversation,ConversationDeleter> exportProtobuf() const;
+		std::unique_ptr<ProtobufCConversation,ConversationDeleter> exportProtobuf() const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

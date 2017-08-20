@@ -34,13 +34,13 @@ using namespace Molch;
 void print_to_file(const Buffer& data, const std::string& filename) {
 	std::ofstream filestream{filename, std::ios_base::out | std::ios_base::binary};
 	if (!filestream.is_open()) {
-		throw MolchException(GENERIC_ERROR, "Failed to open output file.");
+		throw Molch::Exception(GENERIC_ERROR, "Failed to open output file.");
 	}
 
 	filestream.exceptions(~std::ios_base::goodbit);
 
 	if (data.size > std::numeric_limits<std::streamsize>::max()) {
-		throw MolchException(GENERIC_ERROR, "The buffer size exceeds std::streamsize.");
+		throw Molch::Exception(GENERIC_ERROR, "The buffer size exceeds std::streamsize.");
 	}
 	filestream.write(reinterpret_cast<const char*>(data.content), static_cast<std::streamsize>(data.size));
 }
@@ -57,7 +57,7 @@ void print_errors(const return_status& status) {
 Buffer read_file(const std::string& filename) {
 	std::ifstream filestream{filename, std::ios_base::in | std::ios_base::binary};
 	if (!filestream.is_open()) {
-		throw MolchException(GENERIC_ERROR, "Failed to open file.");
+		throw Molch::Exception(GENERIC_ERROR, "Failed to open file.");
 	}
 
 	filestream.exceptions(~std::ios_base::goodbit);
@@ -66,7 +66,7 @@ Buffer read_file(const std::string& filename) {
 	filestream.seekg(0, std::ios_base::end);
 	auto filesize = filestream.tellg();
 	if (filesize < 0) {
-		throw MolchException(GENERIC_ERROR, "Filesize is smaller than 0.");
+		throw Molch::Exception(GENERIC_ERROR, "Filesize is smaller than 0.");
 	}
 	if (filesize > std::numeric_limits<std::streamsize>::max()) {
 		throw Molch::Exception(GENERIC_ERROR, "Filesize is larger than representable by std::streamsize.");

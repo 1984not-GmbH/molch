@@ -29,7 +29,7 @@
 #include "destroyers.hpp"
 
 namespace Molch {
-	UserStoreNode& UserStoreNode::move(UserStoreNode&& node) {
+	User& User::move(User&& node) {
 		this->public_signing_key.cloneFrom(node.public_signing_key);
 		this->master_keys = std::move(node.master_keys);
 		this->prekeys = std::move(node.prekeys);
@@ -38,15 +38,15 @@ namespace Molch {
 		return *this;
 	}
 
-	UserStoreNode::UserStoreNode(UserStoreNode&& node) {
+	User::User(User&& node) {
 		this->move(std::move(node));
 	}
 
-	UserStoreNode& UserStoreNode::operator=(UserStoreNode&& node) {
+	User& User::operator=(User&& node) {
 		return this->move(std::move(node));
 	}
 
-	void UserStoreNode::exportPublicKeys(
+	void User::exportPublicKeys(
 			Buffer * const public_signing_key, //output, optional, can be nullptr
 			Buffer * const public_identity_key) { //output, optional, can be nullptr
 		//get the public keys
@@ -58,7 +58,7 @@ namespace Molch {
 		}
 	}
 
-	UserStoreNode::UserStoreNode(
+	User::User(
 			const Buffer& seed,
 			Buffer * const public_signing_key, //output, optional, can be nullptr
 			Buffer * const public_identity_key//output, optional, can be nullptr
@@ -67,19 +67,19 @@ namespace Molch {
 		this->master_keys.getSigningKey(this->public_signing_key);
 	}
 
-	UserStoreNode::UserStoreNode(
+	User::User(
 			Buffer * const public_signing_key, //output, optional, can be nullptr
 			Buffer * const public_identity_key) { //output, optional, can be nullptr
 		this->exportPublicKeys(public_signing_key, public_identity_key);
 		this->master_keys.getSigningKey(this->public_signing_key);
 	}
 
-	UserStoreNode::UserStoreNode(const ProtobufCUser& user) {
+	User::User(const ProtobufCUser& user) {
 		if ((user.public_signing_key == nullptr)
 				|| (user.private_signing_key == nullptr)
 				|| (user.public_identity_key == nullptr)
 				|| (user.private_identity_key == nullptr)) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "Missing keys.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "Missing keys.");
 		}
 
 		//master keys
@@ -101,7 +101,7 @@ namespace Molch {
 			user.n_deprecated_prekeys);
 	}
 
-	std::ostream& UserStoreNode::print(std::ostream& stream) const {
+	std::ostream& User::print(std::ostream& stream) const {
 		stream << "Public Signing Key:\n";
 		this->public_signing_key.printHex(stream) << "\n\n";
 		stream << "\nMaster Keys:\n";
@@ -118,23 +118,23 @@ namespace Molch {
 		//check input
 		if (((users_length == 0) && (users != nullptr))
 				|| ((users_length > 0) && (users == nullptr))) {
-			throw MolchException(INVALID_INPUT, "Invalid input to user_store_import.");
+			throw Exception(INVALID_INPUT, "Invalid input to user_store_import.");
 		}
 
 		for (size_t i = 0; i < users_length; i++) {
 			if (users[i] == nullptr) {
-				throw MolchException(PROTOBUF_MISSING_ERROR, "Array of users is missing a user.");
+				throw Exception(PROTOBUF_MISSING_ERROR, "Array of users is missing a user.");
 			}
 
-			this->add(UserStoreNode(*users[i]));
+			this->add(User(*users[i]));
 		}
 	}
 
-	void UserStore::add(UserStoreNode&& user) {
+	void UserStore::add(User&& user) {
 		const Buffer& public_signing_key = user.public_signing_key;
 		//search if a user with this public_signing_key already exists
 		auto existing_user = std::find_if(std::cbegin(this->users), std::cend(this->users),
-				[public_signing_key](const UserStoreNode& user) {
+				[public_signing_key](const User& user) {
 					return user.public_signing_key == public_signing_key;
 				});
 		//if none exists, just add the conversation
@@ -148,13 +148,13 @@ namespace Molch {
 		this->users[existing_index] = std::move(user);
 	}
 
-	UserStoreNode* UserStore::find(const Buffer& public_signing_key) {
+	User* UserStore::find(const Buffer& public_signing_key) {
 		if (!public_signing_key.contains(PUBLIC_MASTER_KEY_SIZE)) {
-			throw MolchException(INVALID_INPUT, "Invalid input to UserStore::find.");
+			throw Exception(INVALID_INPUT, "Invalid input to UserStore::find.");
 		}
 
 		auto user = std::find_if(std::begin(this->users), std::end(this->users),
-				[public_signing_key](const UserStoreNode& user) {
+				[public_signing_key](const User& user) {
 					return user.public_signing_key == public_signing_key;
 				});
 		if (user == std::end(this->users)) {
@@ -164,14 +164,14 @@ namespace Molch {
 		return &(*user);
 	}
 
-	ConversationT* UserStore::findConversation(UserStoreNode*& user, const Buffer& conversation_id) {
+	Conversation* UserStore::findConversation(User*& user, const Buffer& conversation_id) {
 		if (!conversation_id.contains(CONVERSATION_ID_SIZE)) {
-			throw MolchException(INVALID_INPUT, "Invalid input to UserStore::findConversation.");
+			throw Exception(INVALID_INPUT, "Invalid input to UserStore::findConversation.");
 		}
 
-		ConversationT* conversation = nullptr;
+		Conversation* conversation = nullptr;
 		auto containing_user = std::find_if(std::begin(this->users), std::end(this->users),
-				[&conversation_id, &conversation](UserStoreNode& user) {
+				[&conversation_id, &conversation](User& user) {
 					conversation = user.conversations.find(conversation_id);
 					return conversation != nullptr;
 				});
@@ -199,13 +199,13 @@ namespace Molch {
 		return list;
 	}
 
-	void UserStore::remove(const UserStoreNode* const node) {
+	void UserStore::remove(const User* const node) {
 		if (node == nullptr) {
 			return;
 		}
 
 		auto found_node = std::find_if(std::cbegin(this->users), std::cend(this->users),
-				[node](const UserStoreNode& user) {
+				[node](const User& user) {
 					if (&user == node) {
 						return true;
 					}
@@ -219,7 +219,7 @@ namespace Molch {
 
 	void UserStore::remove(const Buffer& public_signing_key) {
 		auto found_node = std::find_if(std::cbegin(this->users), std::cend(this->users),
-				[public_signing_key](const UserStoreNode& user) {
+				[public_signing_key](const User& user) {
 					return user.public_signing_key == public_signing_key;
 				});
 
@@ -232,7 +232,7 @@ namespace Molch {
 		this->users.clear();
 	}
 
-	std::unique_ptr<ProtobufCUser,UserDeleter> UserStoreNode::exportProtobuf() {
+	std::unique_ptr<ProtobufCUser,UserDeleter> User::exportProtobuf() {
 		auto user = std::unique_ptr<ProtobufCUser,UserDeleter>(throwing_zeroed_malloc<ProtobufCUser>(sizeof(ProtobufCUser)));
 		user__init(user.get());
 

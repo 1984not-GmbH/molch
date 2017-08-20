@@ -51,7 +51,7 @@ namespace Molch {
 		unsigned char& reference = reinterpret_cast<unsigned char&>(integer);
 
 		if (!output.fits(sizeof(IntegerType))) {
-			throw MolchException(INVALID_INPUT, "Invalid input to endianness to big endian.");
+			throw Exception(INVALID_INPUT, "Invalid input to endianness to big endian.");
 		}
 
 		if (endianness_is_little_endian()) {
@@ -67,7 +67,7 @@ namespace Molch {
 	template <typename IntegerType>
 	void from_big_endian(IntegerType& integer, Buffer& buffer) {
 		if (!buffer.contains(sizeof(IntegerType))) {
-			throw MolchException(INVALID_INPUT, "Invalid input to from_big_endian.");
+			throw Exception(INVALID_INPUT, "Invalid input to from_big_endian.");
 		}
 
 		unsigned char& reference = reinterpret_cast<unsigned char&>(integer);

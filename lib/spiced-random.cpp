@@ -41,7 +41,7 @@ namespace Molch {
 			const size_t output_length) {
 		//check buffer length
 		if (!random_output.fits(output_length)) {
-			throw MolchException(INCORRECT_BUFFER_SIZE, "Output buffers is too short.");
+			throw Exception(INCORRECT_BUFFER_SIZE, "Output buffers is too short.");
 		}
 
 		//buffer that contains the random data from the OS
@@ -64,7 +64,7 @@ namespace Molch {
 				crypto_pwhash_MEMLIMIT_INTERACTIVE,
 				crypto_pwhash_ALG_DEFAULT);
 		if (status_int != 0) {
-			throw MolchException(GENERIC_ERROR, "Failed to derive random data from spice.");
+			throw Exception(GENERIC_ERROR, "Failed to derive random data from spice.");
 		}
 
 		//now combine the spice with the OS provided random data.

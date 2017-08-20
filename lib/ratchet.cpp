@@ -54,7 +54,7 @@ namespace Molch {
 				|| !our_private_ephemeral.contains(PRIVATE_KEY_SIZE)
 				|| !our_public_ephemeral.contains(PUBLIC_KEY_SIZE)
 				|| !their_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
-			throw MolchException(INVALID_INPUT, "Invalid input to ratchet_create.");
+			throw Exception(INVALID_INPUT, "Invalid input to ratchet_create.");
 		}
 
 		this->init();
@@ -67,7 +67,7 @@ namespace Molch {
 		} else if (comparison < 0) {
 			this->role = Role::BOB;
 		} else {
-			throw MolchException(SHOULDNT_HAPPEN, "This mustn't happen, both conversation partners have the same public key!");
+			throw Exception(SHOULDNT_HAPPEN, "This mustn't happen, both conversation partners have the same public key!");
 		}
 
 		//derive initial chain, root and header keys
@@ -121,7 +121,7 @@ namespace Molch {
 		if (!send_header_key.fits(HEADER_KEY_SIZE)
 				|| !our_public_ephemeral.fits(PUBLIC_KEY_SIZE)
 				|| !message_key.fits(MESSAGE_KEY_SIZE)) {
-			throw MolchException(INVALID_INPUT, "Invalid input to ratchet_send.");
+			throw Exception(INVALID_INPUT, "Invalid input to ratchet_send.");
 		}
 
 		if (this->ratchet_flag) {
@@ -132,7 +132,7 @@ namespace Molch {
 			this->storage->our_public_ephemeral.size = PUBLIC_KEY_SIZE;
 			this->storage->our_private_ephemeral.size = PRIVATE_KEY_SIZE;
 			if (status != 0) {
-				throw MolchException(KEYGENERATION_FAILED, "Failed to generate new ephemeral keypair.");
+				throw Exception(KEYGENERATION_FAILED, "Failed to generate new ephemeral keypair.");
 			}
 
 			//HKs = NHKs
@@ -199,7 +199,7 @@ namespace Molch {
 		//check input
 		if (!current_receive_header_key.fits(HEADER_KEY_SIZE)
 				|| !next_receive_header_key.fits(HEADER_KEY_SIZE)) {
-			throw MolchException(INVALID_INPUT, "Invalid input to ratchet_get_receive_header_keys.");
+			throw Exception(INVALID_INPUT, "Invalid input to ratchet_get_receive_header_keys.");
 		}
 
 		//clone the header keys
@@ -214,12 +214,12 @@ namespace Molch {
 	void Ratchet::setHeaderDecryptability(const HeaderDecryptability header_decryptable) {
 		if (this->header_decryptable != HeaderDecryptability::NOT_TRIED) {
 			//if the last message hasn't been properly handled yet, abort
-			throw MolchException(GENERIC_ERROR, "Message hasn't been handled yet.");
+			throw Exception(GENERIC_ERROR, "Message hasn't been handled yet.");
 		}
 
 		if (header_decryptable == HeaderDecryptability::NOT_TRIED) {
 			//can't set to "NOT_TRIED"
-			throw MolchException(INVALID_INPUT, "Can't set to \"NOT_TRIED\"");
+			throw Exception(INVALID_INPUT, "Can't set to \"NOT_TRIED\"");
 		}
 
 		this->header_decryptable = header_decryptable;
@@ -245,7 +245,7 @@ namespace Molch {
 				|| ((output_message_key != nullptr) && !output_message_key->fits(MESSAGE_KEY_SIZE))
 				|| !current_header_key.contains(HEADER_KEY_SIZE)
 				|| !chain_key.contains(CHAIN_KEY_SIZE)) {
-			throw MolchException(INVALID_INPUT, "Invalid input to stage_skipped_header_and_message_keys.");
+			throw Exception(INVALID_INPUT, "Invalid input to stage_skipped_header_and_message_keys.");
 		}
 
 		//when chain key is <none>, do nothing
@@ -317,17 +317,17 @@ namespace Molch {
 		//check input
 		if (!message_key.fits(MESSAGE_KEY_SIZE)
 				|| !their_purported_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
-			throw MolchException(INVALID_INPUT, "Invalid input to ratchet_receive.");
+			throw Exception(INVALID_INPUT, "Invalid input to ratchet_receive.");
 		}
 
 		if (!this->received_valid) {
 			//abort because the previously received message hasn't been verified yet.
-			throw MolchException(INVALID_STATE, "Previously received message hasn't been verified yet.");
+			throw Exception(INVALID_STATE, "Previously received message hasn't been verified yet.");
 		}
 
 		//header decryption hasn't been tried yet
 		if (this->header_decryptable == HeaderDecryptability::NOT_TRIED) {
-			throw MolchException(INVALID_STATE, "Header decryption hasn't been tried yet.");
+			throw Exception(INVALID_STATE, "Header decryption hasn't been tried yet.");
 		}
 
 		if (!this->storage->receive_header_key.isNone() && (this->header_decryptable == HeaderDecryptability::CURRENT_DECRYPTABLE)) { //still the same message chain
@@ -346,7 +346,7 @@ namespace Molch {
 		} else { //new message chain
 			//if ratchet_flag or not Dec(NHKr, header)
 			if (this->ratchet_flag || (this->header_decryptable != HeaderDecryptability::NEXT_DECRYPTABLE)) {
-				throw MolchException(DECRYPT_ERROR, "Undecryptable.");
+				throw Exception(DECRYPT_ERROR, "Undecryptable.");
 			}
 
 			//Np = read(): get the purported message number from the input
@@ -455,7 +455,7 @@ namespace Molch {
 		//root keys
 		//root key
 		if (!this->storage->root_key.contains(ROOT_KEY_SIZE)) {
-			throw MolchException(EXPORT_ERROR, "root_key is missing or has an incorrect size.");
+			throw Exception(EXPORT_ERROR, "root_key is missing or has an incorrect size.");
 		}
 		conversation->root_key.data = throwing_zeroed_malloc<unsigned char>(ROOT_KEY_SIZE);
 		this->storage->root_key.cloneToRaw(conversation->root_key.data, ROOT_KEY_SIZE);
@@ -472,7 +472,7 @@ namespace Molch {
 		//header keys
 		//send header key
 		if ((this->role == Role::BOB) && !this->storage->send_header_key.contains(HEADER_KEY_SIZE)) {
-			throw MolchException(EXPORT_ERROR, "send_header_key missing or has an incorrect size.");
+			throw Exception(EXPORT_ERROR, "send_header_key missing or has an incorrect size.");
 		}
 		conversation->send_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
 		this->storage->send_header_key.cloneToRaw(conversation->send_header_key.data, HEADER_KEY_SIZE);
@@ -480,7 +480,7 @@ namespace Molch {
 		conversation->has_send_header_key = true;
 		//receive header key
 		if ((this->role == Role::ALICE) && !this->storage->receive_header_key.contains(HEADER_KEY_SIZE)) {
-			throw MolchException(EXPORT_ERROR, "receive_header_key missing or has an incorrect size.");
+			throw Exception(EXPORT_ERROR, "receive_header_key missing or has an incorrect size.");
 		}
 		conversation->receive_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
 		this->storage->receive_header_key.cloneToRaw(conversation->receive_header_key.data, HEADER_KEY_SIZE);
@@ -488,7 +488,7 @@ namespace Molch {
 		conversation->has_receive_header_key = true;
 		//next send header key
 		if (!this->storage->next_send_header_key.contains(HEADER_KEY_SIZE)) {
-			throw MolchException(EXPORT_ERROR, "next_send_header_key missing or has incorrect size.");
+			throw Exception(EXPORT_ERROR, "next_send_header_key missing or has incorrect size.");
 		}
 		conversation->next_send_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
 		this->storage->next_send_header_key.cloneToRaw(conversation->next_send_header_key.data, HEADER_KEY_SIZE);
@@ -496,7 +496,7 @@ namespace Molch {
 		conversation->has_next_send_header_key = true;
 		//next receive header key
 		if (!this->storage->next_receive_header_key.contains(HEADER_KEY_SIZE)) {
-			throw MolchException(EXPORT_ERROR, "next_receive_header_key missinge or has an incorrect size.");
+			throw Exception(EXPORT_ERROR, "next_receive_header_key missinge or has an incorrect size.");
 		}
 		conversation->next_receive_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
 		this->storage->next_receive_header_key.cloneToRaw(conversation->next_receive_header_key.data, HEADER_KEY_SIZE);
@@ -520,7 +520,7 @@ namespace Molch {
 		//chain keys
 		//send chain key
 		if ((this->role == Role::BOB) && !this->storage->send_chain_key.contains(CHAIN_KEY_SIZE)) {
-			throw MolchException(EXPORT_ERROR, "send_chain_key missing or has an invalid size.");
+			throw Exception(EXPORT_ERROR, "send_chain_key missing or has an invalid size.");
 		}
 		conversation->send_chain_key.data = throwing_zeroed_malloc<unsigned char>(CHAIN_KEY_SIZE);
 		this->storage->send_chain_key.cloneToRaw(conversation->send_chain_key.data, CHAIN_KEY_SIZE);
@@ -528,7 +528,7 @@ namespace Molch {
 		conversation->has_send_chain_key = true;
 		//receive chain key
 		if ((this->role == Role::ALICE) && !this->storage->receive_chain_key.contains(CHAIN_KEY_SIZE)) {
-			throw MolchException(EXPORT_ERROR, "receive_chain_key missing or has an incorrect size.");
+			throw Exception(EXPORT_ERROR, "receive_chain_key missing or has an incorrect size.");
 		}
 		conversation->receive_chain_key.data = throwing_zeroed_malloc<unsigned char>(CHAIN_KEY_SIZE);
 		this->storage->receive_chain_key.cloneToRaw(conversation->receive_chain_key.data, CHAIN_KEY_SIZE);
@@ -545,7 +545,7 @@ namespace Molch {
 		//identity key
 		//our public identity key
 		if (!this->storage->our_public_identity.contains(PUBLIC_KEY_SIZE)) {
-			throw MolchException(EXPORT_ERROR, "our_public_identity missing or has an invalid size.");
+			throw Exception(EXPORT_ERROR, "our_public_identity missing or has an invalid size.");
 		}
 		conversation->our_public_identity_key.data = throwing_zeroed_malloc<unsigned char>(PUBLIC_KEY_SIZE);
 		this->storage->our_public_identity.cloneToRaw(conversation->our_public_identity_key.data, PUBLIC_KEY_SIZE);
@@ -553,7 +553,7 @@ namespace Molch {
 		conversation->has_our_public_identity_key = true;
 		//their public identity key
 		if (!this->storage->their_public_identity.contains(PUBLIC_KEY_SIZE)) {
-			throw MolchException(EXPORT_ERROR, "their_public_identity missing or has an invalid size.");
+			throw Exception(EXPORT_ERROR, "their_public_identity missing or has an invalid size.");
 		}
 		conversation->their_public_identity_key.data = throwing_zeroed_malloc<unsigned char>(PUBLIC_KEY_SIZE);
 		this->storage->their_public_identity.cloneToRaw(conversation->their_public_identity_key.data, PUBLIC_KEY_SIZE);
@@ -563,7 +563,7 @@ namespace Molch {
 		//ephemeral keys
 		//our private ephemeral key
 		if (!this->storage->our_private_ephemeral.contains(PRIVATE_KEY_SIZE)) {
-			throw MolchException(EXPORT_ERROR, "our_private_ephemeral missing or has an invalid size.");
+			throw Exception(EXPORT_ERROR, "our_private_ephemeral missing or has an invalid size.");
 		}
 		conversation->our_private_ephemeral_key.data = throwing_zeroed_malloc<unsigned char>(PRIVATE_KEY_SIZE);
 		this->storage->our_private_ephemeral.cloneToRaw(conversation->our_private_ephemeral_key.data, PRIVATE_KEY_SIZE);
@@ -571,7 +571,7 @@ namespace Molch {
 		conversation->has_our_private_ephemeral_key = true;
 		//our public ephemeral key
 		if (!this->storage->our_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
-			throw MolchException(BUFFER_ERROR, "our_public_ephemeral missing or has an invalid size.");
+			throw Exception(BUFFER_ERROR, "our_public_ephemeral missing or has an invalid size.");
 		}
 		conversation->our_public_ephemeral_key.data = throwing_zeroed_malloc<unsigned char>(PUBLIC_KEY_SIZE);
 		this->storage->our_public_ephemeral.cloneToRaw(conversation->our_public_ephemeral_key.data, PUBLIC_KEY_SIZE);
@@ -579,7 +579,7 @@ namespace Molch {
 		conversation->has_our_public_ephemeral_key = true;
 		//their public ephemeral key
 		if (!this->storage->their_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
-			throw MolchException(BUFFER_ERROR, "their_public_ephemeral missing or has an invalid size.");
+			throw Exception(BUFFER_ERROR, "their_public_ephemeral missing or has an invalid size.");
 		}
 		conversation->their_public_ephemeral_key.data = throwing_zeroed_malloc<unsigned char>(PUBLIC_KEY_SIZE);
 		this->storage->their_public_ephemeral.cloneToRaw(conversation->their_public_ephemeral_key.data, PUBLIC_KEY_SIZE);
@@ -645,7 +645,7 @@ namespace Molch {
 
 			default:
 				conversation->has_header_decryptable = false;
-				throw MolchException(INVALID_VALUE, "Invalid value of ratchet->header_decryptable.");
+				throw Exception(INVALID_VALUE, "Invalid value of ratchet->header_decryptable.");
 		}
 
 		//keystores
@@ -668,27 +668,27 @@ namespace Molch {
 		//message numbers
 		//send message number
 		if (!conversation.has_send_message_number) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "No send message number in Protobuf-C struct.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "No send message number in Protobuf-C struct.");
 		}
 		this->send_message_number = conversation.send_message_number;
 		//receive message number
 		if (!conversation.has_receive_message_number) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "No receive message number in Protobuf-C struct.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "No receive message number in Protobuf-C struct.");
 		}
 		this->receive_message_number = conversation.receive_message_number;
 		//purported message number
 		if (!conversation.has_purported_message_number) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "No purported message number in Protobuf-C struct.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "No purported message number in Protobuf-C struct.");
 		}
 		this->purported_message_number = conversation.purported_message_number;
 		//previous message number
 		if (!conversation.has_previous_message_number) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "No previous message number in Protobuf-C struct.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "No previous message number in Protobuf-C struct.");
 		}
 		this->previous_message_number = conversation.previous_message_number;
 		//purported previous message number
 		if (!conversation.has_purported_previous_message_number) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "No purported previous message number in Protobuf-C struct.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "No purported previous message number in Protobuf-C struct.");
 		}
 		this->purported_previous_message_number = conversation.purported_previous_message_number;
 
@@ -696,24 +696,24 @@ namespace Molch {
 		//flags
 		//ratchet flag
 		if (!conversation.has_ratchet_flag) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "No ratchet flag in Protobuf-C struct.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "No ratchet flag in Protobuf-C struct.");
 		}
 		this->ratchet_flag = conversation.ratchet_flag;
 		//am I Alice
 		if (!conversation.has_am_i_alice) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "No am I Alice flag in Protobuf-C struct.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "No am I Alice flag in Protobuf-C struct.");
 		}
 		this->role = static_cast<Role>(conversation.am_i_alice);
 		//received valid
 		if (!conversation.has_received_valid) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "No received valid flag in Protobuf-C struct.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "No received valid flag in Protobuf-C struct.");
 		}
 		this->received_valid = conversation.received_valid;
 
 
 		//header decryptable
 		if (!conversation.has_header_decryptable) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "No header decryptable enum in Protobuf-C struct.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "No header decryptable enum in Protobuf-C struct.");
 		}
 		switch (conversation.header_decryptable) {
 			case CONVERSATION__HEADER_DECRYPTABILITY__CURRENT_DECRYPTABLE:
@@ -733,13 +733,13 @@ namespace Molch {
 				break;
 
 			default:
-				throw MolchException(INVALID_VALUE, "header_decryptable has an invalid value.");
+				throw Exception(INVALID_VALUE, "header_decryptable has an invalid value.");
 		}
 
 		//root keys
 		//root key
 		if (!conversation.has_root_key || (conversation.root_key.len != ROOT_KEY_SIZE)) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "root_key is missing from protobuf.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "root_key is missing from protobuf.");
 		}
 		this->storage->root_key.cloneFromRaw(conversation.root_key.data, conversation.root_key.len);
 		//purported root key
@@ -751,23 +751,23 @@ namespace Molch {
 		//send header key
 		if ((this->role == Role::BOB)
 				&& (!conversation.has_send_header_key || (conversation.send_header_key.len != HEADER_KEY_SIZE))) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "send_header_key is missing from the protobuf.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "send_header_key is missing from the protobuf.");
 		}
 		this->storage->send_header_key.cloneFromRaw(conversation.send_header_key.data, conversation.send_header_key.len);
 		//receive header key
 		if ((this->role == Role::ALICE) &&
 				(!conversation.has_receive_header_key || (conversation.receive_header_key.len != HEADER_KEY_SIZE))) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "receive_header_key is missing from protobuf.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "receive_header_key is missing from protobuf.");
 		}
 		this->storage->receive_header_key.cloneFromRaw(conversation.receive_header_key.data, conversation.receive_header_key.len);
 		//next send header key
 		if (!conversation.has_next_send_header_key || (conversation.next_send_header_key.len != HEADER_KEY_SIZE)) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "next_send_header_key is missing from protobuf.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "next_send_header_key is missing from protobuf.");
 		}
 		this->storage->next_send_header_key.cloneFromRaw(conversation.next_send_header_key.data, conversation.next_send_header_key.len);
 		//next receive header key
 		if (!conversation.has_next_receive_header_key || (conversation.next_receive_header_key.len != HEADER_KEY_SIZE)) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "next_receive_header_key is missing from protobuf.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "next_receive_header_key is missing from protobuf.");
 		}
 		this->storage->next_receive_header_key.cloneFromRaw(conversation.next_receive_header_key.data, conversation.next_receive_header_key.len);
 		//purported receive header key
@@ -783,13 +783,13 @@ namespace Molch {
 		//send chain key
 		if ((this->role == Role::BOB) &&
 				(!conversation.has_send_chain_key || (conversation.send_chain_key.len != CHAIN_KEY_SIZE))) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "send_chain_key is missing from the potobuf.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "send_chain_key is missing from the potobuf.");
 		}
 		this->storage->send_chain_key.cloneFromRaw(conversation.send_chain_key.data, conversation.send_chain_key.len);
 		//receive chain key
 		if ((this->role == Role::ALICE) &&
 				(!conversation.has_receive_chain_key || (conversation.receive_chain_key.len != CHAIN_KEY_SIZE))) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "receive_chain_key is missing from the protobuf.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "receive_chain_key is missing from the protobuf.");
 		}
 		this->storage->receive_chain_key.cloneFromRaw(conversation.receive_chain_key.data, conversation.receive_chain_key.len);
 		//purported receive chain key
@@ -800,29 +800,29 @@ namespace Molch {
 		//identity key
 		//our public identity key
 		if (!conversation.has_our_public_identity_key || (conversation.our_public_identity_key.len != PUBLIC_KEY_SIZE)) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "our_public_identity_key is missing from the protobuf.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "our_public_identity_key is missing from the protobuf.");
 		}
 		this->storage->our_public_identity.cloneFromRaw(conversation.our_public_identity_key.data, conversation.our_public_identity_key.len);
 		//their public identity key
 		if (!conversation.has_their_public_identity_key || (conversation.their_public_identity_key.len != PUBLIC_KEY_SIZE)) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "their_public_identity is missing from the protobuf.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "their_public_identity is missing from the protobuf.");
 		}
 		this->storage->their_public_identity.cloneFromRaw(conversation.their_public_identity_key.data, conversation.their_public_identity_key.len);
 
 		//ephemeral keys
 		//our private ephemeral key
 		if (!conversation.has_our_private_ephemeral_key || (conversation.our_private_ephemeral_key.len != PRIVATE_KEY_SIZE)) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "our_private_ephemral is missing from the protobuf.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "our_private_ephemral is missing from the protobuf.");
 		}
 		this->storage->our_private_ephemeral.cloneFromRaw(conversation.our_private_ephemeral_key.data, conversation.our_private_ephemeral_key.len);
 		//our public ephemeral key
 		if (!conversation.has_our_public_ephemeral_key || (conversation.our_public_ephemeral_key.len != PUBLIC_KEY_SIZE)) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "our_public_ephemeral is missing from the protobuf.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "our_public_ephemeral is missing from the protobuf.");
 		}
 		this->storage->our_public_ephemeral.cloneFromRaw(conversation.our_public_ephemeral_key.data, conversation.our_public_ephemeral_key.len);
 		//their public ephemeral key
 		if (!conversation.has_their_public_ephemeral_key || (conversation.their_public_ephemeral_key.len != PUBLIC_KEY_SIZE)) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "their_public_ephemeral is missing from the protobuf.");
+			throw Exception(PROTOBUF_MISSING_ERROR, "their_public_ephemeral is missing from the protobuf.");
 		}
 		this->storage->their_public_ephemeral.cloneFromRaw(conversation.their_public_ephemeral_key.data, conversation.their_public_ephemeral_key.len);
 		//their purported public ephemeral key

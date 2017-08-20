@@ -37,7 +37,7 @@ using namespace Molch;
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
 		molch_message_type packet_type = NORMAL_MESSAGE;
@@ -80,17 +80,17 @@ int main(void) {
 
 		printf("extracted_packet_type = %u\n", extracted_packet_type);
 		if (packet_type != extracted_packet_type) {
-			throw MolchException(INVALID_VALUE, "Extracted packet type doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Extracted packet type doesn't match.");
 		}
 		printf("Packet type matches!\n");
 
 		if (extracted_current_protocol_version != 0) {
-			throw MolchException(INVALID_VALUE, "Extracted current protocol version doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Extracted current protocol version doesn't match.");
 		}
 		printf("Current protocol version matches!\n");
 
 		if (extracted_highest_supported_protocol_version != 0) {
-			throw MolchException(INVALID_VALUE, "Extracted highest supported protocol version doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Extracted highest supported protocol version doesn't match.");
 		}
 		printf("Highest supoorted protocol version matches (%i)!\n", extracted_highest_supported_protocol_version);
 
@@ -133,35 +133,35 @@ int main(void) {
 
 		printf("extracted_type = %u\n", extracted_packet_type);
 		if (packet_type != extracted_packet_type) {
-			throw MolchException(INVALID_VALUE, "Extracted packet type doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Extracted packet type doesn't match.");
 		}
 		printf("Packet type matches!\n");
 
 		if (extracted_current_protocol_version != 0) {
-			throw MolchException(INVALID_VALUE, "Extracted current protocol version doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Extracted current protocol version doesn't match.");
 		}
 		printf("Current protocol version matches!\n");
 
 		if (extracted_highest_supported_protocol_version != 0) {
-			throw MolchException(INVALID_VALUE, "Extracted highest supported protocl version doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Extracted highest supported protocl version doesn't match.");
 		}
 		printf("Highest supoorted protocol version matches (%i)!\n", extracted_highest_supported_protocol_version);
 
 		if (public_identity_key != extracted_public_identity_key) {
-			throw MolchException(INVALID_VALUE, "Extracted public identity key doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Extracted public identity key doesn't match.");
 		}
 		printf("Extracted public identity key matches!\n");
 
 		if (public_ephemeral_key != extracted_public_ephemeral_key) {
-			throw MolchException(INVALID_VALUE, "Extratec public ephemeral key doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Extratec public ephemeral key doesn't match.");
 		}
 		printf("Extracted public ephemeral key matches!\n");
 
 		if (public_prekey != extracted_public_prekey) {
-			throw MolchException(INVALID_VALUE, "Extracted public prekey doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Extracted public prekey doesn't match.");
 		}
 		printf("Extracted public prekey matches!\n");
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {

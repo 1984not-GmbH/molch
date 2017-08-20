@@ -181,19 +181,19 @@ namespace Molch {
 			const size_t source_offset,
 			const size_t copy_length) {
 		if (this->readonly) {
-			throw MolchException(BUFFER_ERROR, "Can't copy to readonly buffer.");
+			throw Exception(BUFFER_ERROR, "Can't copy to readonly buffer.");
 		}
 
 		if ((this->buffer_length < this->size) || (source.buffer_length < source.size)) {
-			throw MolchException(BUFFER_ERROR, "The content is larger than the buffer.");
+			throw Exception(BUFFER_ERROR, "The content is larger than the buffer.");
 		}
 
 		if ((destination_offset > this->size) || (copy_length > (this->buffer_length - destination_offset))) {
-			throw MolchException(BUFFER_ERROR, "Can't copy to buffer that is too small.");
+			throw Exception(BUFFER_ERROR, "Can't copy to buffer that is too small.");
 		}
 
 		if ((source_offset > source.size) || (copy_length > (source.size - source_offset))) {
-			throw MolchException(BUFFER_ERROR, "Can't copy more than buffer_length bytes.");
+			throw Exception(BUFFER_ERROR, "Can't copy more than buffer_length bytes.");
 		}
 
 		if (source.buffer_length == 0) {
@@ -201,7 +201,7 @@ namespace Molch {
 		}
 
 		if ((this->content == nullptr) || (source.content == nullptr)) {
-			throw MolchException(BUFFER_ERROR, "The source or destination buffer has no content.");
+			throw Exception(BUFFER_ERROR, "The source or destination buffer has no content.");
 		}
 
 		std::copy(source.content + source_offset, source.content + source_offset + copy_length, this->content + destination_offset);
@@ -212,11 +212,11 @@ namespace Molch {
 
 	void Buffer::cloneFrom(const Buffer& source) {
 		if (this->readonly) {
-			throw MolchException(BUFFER_ERROR, "Can't clone to readonly buffer.");
+			throw Exception(BUFFER_ERROR, "Can't clone to readonly buffer.");
 		}
 
 		if (this->buffer_length < source.size) {
-			throw MolchException(BUFFER_ERROR, "The source doesn't fit into the destination.");
+			throw Exception(BUFFER_ERROR, "The source doesn't fit into the destination.");
 		}
 
 		this->size = source.size;
@@ -230,15 +230,15 @@ namespace Molch {
 			const size_t source_offset,
 			const size_t copy_length) {
 		if (this->readonly) {
-			throw MolchException(BUFFER_ERROR, "Can't copy to readonly buffer.");
+			throw Exception(BUFFER_ERROR, "Can't copy to readonly buffer.");
 		}
 
 		if (this->buffer_length < this->size) {
-			throw MolchException(BUFFER_ERROR, "The content is longer than the buffer.");
+			throw Exception(BUFFER_ERROR, "The content is longer than the buffer.");
 		}
 
 		if ((this->buffer_length < destination_offset) || (copy_length > (this->buffer_length - destination_offset))) {
-			throw MolchException(BUFFER_ERROR, "The source doesn't fit into the destination.");
+			throw Exception(BUFFER_ERROR, "The source doesn't fit into the destination.");
 		}
 
 		if (copy_length == 0) {
@@ -253,11 +253,11 @@ namespace Molch {
 
 	void Buffer::cloneFromRaw(const unsigned char * const source, const size_t length) {
 		if (this->readonly) {
-			throw MolchException(BUFFER_ERROR, "Can't clone to readonly buffer.");
+			throw Exception(BUFFER_ERROR, "Can't clone to readonly buffer.");
 		}
 
 		if (this->buffer_length < length) {
-			throw MolchException(BUFFER_ERROR, "The source doesn't fit into the destination.");
+			throw Exception(BUFFER_ERROR, "The source doesn't fit into the destination.");
 		}
 
 		this->size = length;
@@ -271,11 +271,11 @@ namespace Molch {
 			const size_t source_offset,
 			const size_t copy_length) const {
 		if ((source_offset > this->size) || (copy_length > (this->size - source_offset))) {
-			throw MolchException(BUFFER_ERROR, "The source doesn't fit into the destination.");
+			throw Exception(BUFFER_ERROR, "The source doesn't fit into the destination.");
 		}
 
 		if (this->buffer_length < this->size) {
-			throw MolchException(BUFFER_ERROR, "The content is longer than the buffer.");
+			throw Exception(BUFFER_ERROR, "The content is longer than the buffer.");
 		}
 
 		if (this->buffer_length == 0) {
@@ -287,7 +287,7 @@ namespace Molch {
 
 	void Buffer::cloneToRaw(unsigned char * const destination, const size_t destination_length) const {
 		if (destination_length < this->size) {
-			throw MolchException(BUFFER_ERROR, "Can't clone to raw buffer that is to small.");
+			throw Exception(BUFFER_ERROR, "Can't clone to raw buffer that is to small.");
 		}
 
 		this->copyToRaw(destination, 0, 0, this->size);
@@ -334,11 +334,11 @@ namespace Molch {
 
 	void Buffer::fillRandom(const size_t length) {
 		if (length > this->buffer_length) {
-			throw MolchException(BUFFER_ERROR, "Can't fill more than the entire buffer.");
+			throw Exception(BUFFER_ERROR, "Can't fill more than the entire buffer.");
 		}
 
 		if (this->readonly) {
-			throw MolchException(BUFFER_ERROR, "Can't fill readonly buffer with random numbers.");
+			throw Exception(BUFFER_ERROR, "Can't fill readonly buffer with random numbers.");
 		}
 
 		if (this->buffer_length == 0) {
@@ -352,13 +352,13 @@ namespace Molch {
 	//FIXME: Make sure this doesn't introduce any sidechannels
 	void Buffer::xorWith(const Buffer& source) {
 		if (this->readonly) {
-			throw MolchException(BUFFER_ERROR, "Can't xor to readonly buffer.");
+			throw Exception(BUFFER_ERROR, "Can't xor to readonly buffer.");
 		}
 
 		if ((this->size != source.size)
 				|| (this->buffer_length < this->size)
 				|| (source.buffer_length < source.size)) {
-			throw MolchException(BUFFER_ERROR, "Buffer length mismatch.");
+			throw Exception(BUFFER_ERROR, "Buffer length mismatch.");
 		}
 
 		//xor source onto destination
@@ -388,7 +388,7 @@ namespace Molch {
 		const size_t hex_length = this->size * 2 + sizeof("");
 		auto hex = std::make_unique<char[]>(hex_length);
 		if (sodium_bin2hex(hex.get(), hex_length, this->content, this->size) == NULL) {
-			throw MolchException(BUFFER_ERROR, "Failed to converst binary to hex with sodium_bin2hex.");
+			throw Exception(BUFFER_ERROR, "Failed to converst binary to hex with sodium_bin2hex.");
 		}
 
 		for (size_t i = 0; i < hex_length; i++) {

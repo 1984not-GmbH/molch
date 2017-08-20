@@ -37,7 +37,7 @@ using namespace Molch;
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
 		//generate keys and message
@@ -89,29 +89,29 @@ int main(void) {
 		if ((packet_type != extracted_packet_type)
 			|| (extracted_current_protocol_version != 0)
 			|| (extracted_highest_supported_protocol_version != 0)) {
-			throw MolchException(DATA_FETCH_ERROR, "Failed to retrieve metadata.");
+			throw Molch::Exception(DATA_FETCH_ERROR, "Failed to retrieve metadata.");
 		}
 
 
 		if (decrypted_header.size != header.size) {
-			throw MolchException(INVALID_VALUE, "Decrypted header isn't of the same length!");
+			throw Molch::Exception(INVALID_VALUE, "Decrypted header isn't of the same length!");
 		}
 		printf("Decrypted header has the same length.\n");
 
 		//compare headers
 		if (header != decrypted_header) {
-			throw MolchException(INVALID_VALUE, "Decrypted header doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Decrypted header doesn't match.");
 		}
 		printf("Decrypted header matches.\n\n");
 
 		if (!decrypted_message.contains(message.size)) {
-			throw MolchException(INVALID_VALUE, "Decrypted message isn't of the same length.");
+			throw Molch::Exception(INVALID_VALUE, "Decrypted message isn't of the same length.");
 		}
 		printf("Decrypted message has the same length.\n");
 
 		//compare messages
 		if (message != decrypted_message) {
-			throw MolchException(INVALID_VALUE, "Decrypted message doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Decrypted message doesn't match.");
 		}
 		printf("Decrypted message matches.\n");
 
@@ -162,47 +162,47 @@ int main(void) {
 		if ((packet_type != extracted_packet_type)
 				|| (extracted_current_protocol_version != 0)
 				|| (extracted_highest_supported_protocol_version != 0)) {
-			throw MolchException(DATA_FETCH_ERROR, "Failed to retrieve metadata.");
+			throw Molch::Exception(DATA_FETCH_ERROR, "Failed to retrieve metadata.");
 		}
 
 		if (!decrypted_header.contains(header.size)) {
-			throw MolchException(INVALID_VALUE, "Decrypted header isn't of the same length.");
+			throw Molch::Exception(INVALID_VALUE, "Decrypted header isn't of the same length.");
 		}
 		printf("Decrypted header has the same length!\n");
 
 		//compare headers
 		if (header != decrypted_header) {
-			throw MolchException(INVALID_VALUE, "Decrypted header doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Decrypted header doesn't match.");
 		}
 		printf("Decrypted header matches!\n");
 
 		if (!decrypted_message.contains(message.size)) {
-			throw MolchException(INVALID_VALUE, "Decrypted message isn't of the same length.");
+			throw Molch::Exception(INVALID_VALUE, "Decrypted message isn't of the same length.");
 		}
 		printf("Decrypted message has the same length.\n");
 
 		//compare messages
 		if (message != decrypted_message) {
-			throw MolchException(INVALID_VALUE, "Decrypted message doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Decrypted message doesn't match.");
 		}
 		printf("Decrypted message matches.\n");
 
 		//compare public keys
 		if (public_identity_key != extracted_public_identity_key) {
-			throw MolchException(INVALID_VALUE, "Extracted public identity key doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Extracted public identity key doesn't match.");
 		}
 		printf("Extracted public identity key matches!\n");
 
 		if (public_ephemeral_key != extracted_public_ephemeral_key) {
-			throw MolchException(INVALID_VALUE, "Extracted public ephemeral key doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Extracted public ephemeral key doesn't match.");
 		}
 		printf("Extracted public ephemeral key matches!\n");
 
 		if (public_prekey != extracted_public_prekey) {
-			throw MolchException(INVALID_VALUE, "Extracted public prekey doesn't match.");
+			throw Molch::Exception(INVALID_VALUE, "Extracted public prekey doesn't match.");
 		}
 		printf("Extracted public prekey matches!\n");
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {

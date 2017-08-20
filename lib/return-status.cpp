@@ -222,7 +222,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 	try {
 		//check input
 		if (status_to_print == nullptr) {
-			throw MolchException(INVALID_INPUT, "Invalid input return_status_print.");
+			throw Exception(INVALID_INPUT, "Invalid input return_status_print.");
 		}
 
 		static const unsigned char success_string[] = "SUCCESS";

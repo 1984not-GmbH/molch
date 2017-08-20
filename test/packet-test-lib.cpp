@@ -50,7 +50,7 @@ void create_and_print_message(
 	if (!header_key.fits(HEADER_KEY_SIZE)
 		|| !message_key.fits(MESSAGE_KEY_SIZE)
 		|| (packet_type == INVALID)) {
-		throw MolchException(INVALID_INPUT, "Invalid input to create_and_print_message.");
+		throw Molch::Exception(INVALID_INPUT, "Invalid input to create_and_print_message.");
 	}
 
 	//create header key

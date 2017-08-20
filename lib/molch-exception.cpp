@@ -27,17 +27,17 @@
 #include "molch-exception.hpp"
 
 namespace Molch {
-	MolchError::MolchError() {
+	Error::Error() {
 		this->type = SUCCESS;
 		this->message = "";
 	}
 
-	MolchError::MolchError(const status_type type, const std::string& message) {
+	Error::Error(const status_type type, const std::string& message) {
 		this->type = type;
 		this->message = message;
 	}
 
-	error_message* MolchError::toErrorMessage() {
+	error_message* Error::toErrorMessage() {
 		std::unique_ptr<error_message> error;
 		std::unique_ptr<char> copied_message;
 
@@ -63,29 +63,29 @@ namespace Molch {
 		return error.release();
 	}
 
-	MolchException::MolchException(const MolchError& error) {
+	Exception::Exception(const Error& error) {
 		this->add(error);
 	}
 
-	MolchException::MolchException(const status_type type, const std::string& message) {
-		this->error_stack.push_front(MolchError(type, message));
+	Exception::Exception(const status_type type, const std::string& message) {
+		this->error_stack.push_front(Error(type, message));
 	}
 
-	MolchException::MolchException(return_status& status) {
+	Exception::Exception(return_status& status) {
 		error_message *error = status.error;
 		while (error != nullptr) {
-			this->error_stack.push_back(MolchError(error->status, error->message));
+			this->error_stack.push_back(Error(error->status, error->message));
 		}
 
 		return_status_destroy_errors(&status);
 	}
 
-	const char* MolchException::what() const noexcept {
-		static const char* what = "MolchException";
+	const char* Exception::what() const noexcept {
+		static const char* what = "Molch::Exception";
 		return what;
 	}
 
-	MolchException& MolchException::add(const MolchException& exception) {
+	Exception& Exception::add(const Exception& exception) {
 		for (auto&& error : exception.error_stack) {
 			this->error_stack.push_back(error);
 		}
@@ -93,13 +93,13 @@ namespace Molch {
 		return *this;
 	}
 
-	MolchException& MolchException::add(const MolchError& error) {
+	Exception& Exception::add(const Error& error) {
 		this->error_stack.push_front(error);
 
 		return *this;
 	}
 
-	return_status MolchException::toReturnStatus() const {
+	return_status Exception::toReturnStatus() const {
 		return_status status = return_status_init();
 
 		// add the error messages in reverse order
@@ -115,7 +115,7 @@ namespace Molch {
 		return status;
 	}
 
-	std::ostream& MolchException::print(std::ostream& stream) const {
+	std::ostream& Exception::print(std::ostream& stream) const {
 		stream << "ERROR\nerror stack trace:\n";
 
 		size_t i = 0;

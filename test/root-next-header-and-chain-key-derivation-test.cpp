@@ -36,7 +36,7 @@ using namespace Molch;
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw MolchException(INIT_ERROR, "Initialize libsodium.");
+			throw Molch::Exception(INIT_ERROR, "Initialize libsodium.");
 		}
 
 		//create Alice's keypair
@@ -113,7 +113,7 @@ int main(void) {
 		if (alice_root_key == bob_root_key) {
 			printf("Alice's and Bob's root keys match.\n");
 		} else {
-			throw MolchException(INCORRECT_DATA, "Alice's and Bob's root keys don't match.");
+			throw Molch::Exception(INCORRECT_DATA, "Alice's and Bob's root keys don't match.");
 		}
 		alice_root_key.clear();
 		bob_root_key.clear();
@@ -122,16 +122,16 @@ int main(void) {
 		if (alice_chain_key == bob_chain_key) {
 			printf("Alice's and Bob's chain keys match.\n");
 		} else {
-			throw MolchException(INCORRECT_DATA, "Alice's and Bob's chain keys don't match.");
+			throw Molch::Exception(INCORRECT_DATA, "Alice's and Bob's chain keys don't match.");
 		}
 
 		//compare Alice's and Bob's header keys
 		if (alice_header_key == bob_header_key) {
 			printf("Alice's and Bob's header keys match.\n");
 		} else {
-			throw MolchException(INCORRECT_DATA, "Alice's and Bob's header keys don't match.");
+			throw Molch::Exception(INCORRECT_DATA, "Alice's and Bob's header keys don't match.");
 		}
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {

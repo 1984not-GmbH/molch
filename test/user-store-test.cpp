@@ -79,7 +79,7 @@ UserStore protobuf_import(const std::vector<Buffer> buffers) {
 		users.push_back(std::unique_ptr<ProtobufCUser,UserDeleter>(
 					user__unpack(&protobuf_c_allocators, buffer.size, buffer.content)));
 		if (!users.back()) {
-			throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack user from protobuf.");
+			throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack user from protobuf.");
 		}
 	}
 
@@ -111,7 +111,7 @@ void protobuf_empty_store(void) {
 	store.exportProtobuf(exported, exported_length);
 
 	if ((exported != nullptr) || (exported_length != 0)) {
-		throw MolchException(INCORRECT_DATA, "Exported data is not empty.");
+		throw Molch::Exception(INCORRECT_DATA, "Exported data is not empty.");
 	}
 
 	//import it
@@ -122,7 +122,7 @@ void protobuf_empty_store(void) {
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
 		//create a user_store
@@ -131,13 +131,13 @@ int main(void) {
 		//check the content
 		auto list = store.list();
 		if (list.size != 0) {
-			throw MolchException(INCORRECT_DATA, "List of users is not empty.");
+			throw Molch::Exception(INCORRECT_DATA, "List of users is not empty.");
 		}
 		list.clear();
 
 		//create alice
 		Buffer alice_public_signing_key(PUBLIC_MASTER_KEY_SIZE, 0);
-		store.add(UserStoreNode(&alice_public_signing_key));
+		store.add(Molch::User(&alice_public_signing_key));
 		{
 			auto alice_user = store.find(alice_public_signing_key);
 			MasterKeys::Unlocker unlocker{alice_user->master_keys};
@@ -147,26 +147,26 @@ int main(void) {
 
 		//check length of the user store
 		if (store.size() != 1) {
-			throw MolchException(INCORRECT_DATA, "User store has incorrect length.");
+			throw Molch::Exception(INCORRECT_DATA, "User store has incorrect length.");
 		}
 		printf("Length of the user store matches.");
 
 		//list user store
 		list = store.list();
 		if (list != alice_public_signing_key) {
-			throw MolchException(INCORRECT_DATA, "Failed to list users.");
+			throw Molch::Exception(INCORRECT_DATA, "Failed to list users.");
 		}
 		list.clear();
 		printf("Successfully listed users.\n");
 
 		//create bob
 		Buffer bob_public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-		store.add(UserStoreNode(&bob_public_signing_key));
+		store.add(Molch::User(&bob_public_signing_key));
 		printf("Successfully created Bob.\n");
 
 		//check length of the user store
 		if (store.size() != 2) {
-			throw MolchException(INCORRECT_DATA, "User store has incorrect length.");
+			throw Molch::Exception(INCORRECT_DATA, "User store has incorrect length.");
 		}
 		printf("Length of the user store matches.");
 
@@ -174,19 +174,19 @@ int main(void) {
 		list = store.list();
 		if ((list.comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
 				|| (list.comparePartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
-			throw MolchException(INCORRECT_DATA, "Failed to list users.");
+			throw Molch::Exception(INCORRECT_DATA, "Failed to list users.");
 		}
 		list.clear();
 		printf("Successfully listed users.\n");
 
 		//create charlie
 		Buffer charlie_public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
-		store.add(UserStoreNode(&charlie_public_signing_key));
+		store.add(Molch::User(&charlie_public_signing_key));
 		printf("Successfully added Charlie to the user store.\n");
 
 		//check length of the user store
 		if (store.size() != 3) {
-			throw MolchException(INCORRECT_DATA, "User store has incorrect length.");
+			throw Molch::Exception(INCORRECT_DATA, "User store has incorrect length.");
 		}
 		printf("Length of the user store matches.");
 
@@ -195,22 +195,22 @@ int main(void) {
 		if ((list.comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
 				|| (list.comparePartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
 				|| (list.comparePartial(2 * PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
-			throw MolchException(INCORRECT_DATA, "Failed to list users.");
+			throw Molch::Exception(INCORRECT_DATA, "Failed to list users.");
 		}
 		list.clear();
 		printf("Successfully listed users.\n");
 
 		//find node
 		{
-			UserStoreNode *bob_node = nullptr;
+			Molch::User *bob_node = nullptr;
 			bob_node = store.find(bob_public_signing_key);
 			if (bob_node == nullptr) {
-				throw MolchException(NOT_FOUND, "Failed to find Bob's node.");
+				throw Molch::Exception(NOT_FOUND, "Failed to find Bob's node.");
 			}
 			printf("Node found.\n");
 
 			if (bob_node->public_signing_key != bob_public_signing_key) {
-				throw MolchException(INCORRECT_DATA, "Bob's data from the user store doesn't match.");
+				throw Molch::Exception(INCORRECT_DATA, "Bob's data from the user store doesn't match.");
 			}
 			printf("Data from the node matches.\n");
 
@@ -218,26 +218,26 @@ int main(void) {
 			store.remove(bob_public_signing_key);
 			//check the length
 			if (store.size() != 2) {
-				throw MolchException(INCORRECT_DATA, "User store has incorrect length.");
+				throw Molch::Exception(INCORRECT_DATA, "User store has incorrect length.");
 			}
 			printf("Length of the user store matches.");
 			//check the user list
 			list = store.list();
 			if ((list.comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
 					|| (list.comparePartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
-				throw MolchException(INCORRECT_DATA, "Removing user failed.");
+				throw Molch::Exception(INCORRECT_DATA, "Removing user failed.");
 			}
 			list.clear();
 			printf("Successfully removed user.\n");
 
 			//recreate bob
-			store.add(UserStoreNode(&bob_public_signing_key));
+			store.add(Molch::User(&bob_public_signing_key));
 			printf("Successfully recreated Bob.\n");
 
 			//now find bob again
 			bob_node = store.find(bob_public_signing_key);
 			if (bob_node == nullptr) {
-				throw MolchException(NOT_FOUND, "Failed to find Bob's node.");
+				throw Molch::Exception(NOT_FOUND, "Failed to find Bob's node.");
 			}
 			printf("Bob's node found again.\n");
 
@@ -245,7 +245,7 @@ int main(void) {
 			store.remove(bob_node);
 			//check the length
 			if (store.size() != 2) {
-				throw MolchException(INCORRECT_DATA, "User store has incorrect length.");
+				throw Molch::Exception(INCORRECT_DATA, "User store has incorrect length.");
 			}
 			printf("Length of the user store matches.");
 		}
@@ -275,11 +275,11 @@ int main(void) {
 
 		//compare
 		if (protobuf_export_buffers.size() != protobuf_second_export_buffers.size()) {
-			throw MolchException(INCORRECT_DATA, "Both exports have different sizes.");
+			throw Molch::Exception(INCORRECT_DATA, "Both exports have different sizes.");
 		}
 		for (size_t i = 0; i < protobuf_export_buffers.size(); i++) {
 			if (protobuf_export_buffers[i] != protobuf_second_export_buffers[i]) {
-				throw MolchException(INCORRECT_DATA, "Buffers don't match.");
+				throw Molch::Exception(INCORRECT_DATA, "Buffers don't match.");
 			}
 		}
 		printf("Both exports match.\n");
@@ -288,7 +288,7 @@ int main(void) {
 		list = store.list();
 		if ((list.comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
 				|| (list.comparePartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
-			throw MolchException(REMOVE_ERROR, "Removing user failed.");
+			throw Molch::Exception(REMOVE_ERROR, "Removing user failed.");
 		}
 		list.clear();
 		printf("Successfully removed user.\n");
@@ -297,12 +297,12 @@ int main(void) {
 		store.clear();
 		//check the length
 		if (store.size() != 0) {
-			throw MolchException(INCORRECT_DATA, "User store has incorrect length.");
+			throw Molch::Exception(INCORRECT_DATA, "User store has incorrect length.");
 		}
 		printf("Successfully cleared user store.\n");
 
 		protobuf_empty_store();
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {

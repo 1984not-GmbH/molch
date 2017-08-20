@@ -35,7 +35,7 @@ using namespace Molch;
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
 		//create random chain key
@@ -54,7 +54,7 @@ int main(void) {
 		//print message key
 		printf("Message key (%zu Bytes):\n", message_key.size);
 		message_key.printHex(std::cout) << std::endl;
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {

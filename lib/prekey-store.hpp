@@ -36,7 +36,7 @@
 #include "sodium-wrappers.hpp"
 
 namespace Molch {
-	class PrekeyStoreNode {
+	class Prekey {
 		friend class PrekeyStore;
 	private:
 		unsigned char public_key_storage[PUBLIC_KEY_SIZE];
@@ -45,26 +45,26 @@ namespace Molch {
 		void fill(const Buffer& public_key, const Buffer& private_key, const int64_t expiration_date);
 		void generate();
 
-		PrekeyStoreNode& copy(const PrekeyStoreNode& node);
-		PrekeyStoreNode& move(PrekeyStoreNode&& node);
+		Prekey& copy(const Prekey& node);
+		Prekey& move(Prekey&& node);
 
 	public:
 		Buffer public_key{this->public_key_storage, sizeof(this->public_key_storage), 0};
 		Buffer private_key{this->private_key_storage, sizeof(this->private_key_storage), 0};
 		int64_t expiration_date{0};
 
-		PrekeyStoreNode() = default;
-		PrekeyStoreNode(const Buffer& public_key, const Buffer& private_key, int64_t expiration_date);
+		Prekey() = default;
+		Prekey(const Buffer& public_key, const Buffer& private_key, int64_t expiration_date);
 		/* copy constructor */
-		PrekeyStoreNode(const PrekeyStoreNode& node);
+		Prekey(const Prekey& node);
 		/* move constructor */
-		PrekeyStoreNode(PrekeyStoreNode&& node);
-		PrekeyStoreNode(const ProtobufCPrekey& keypair);
+		Prekey(Prekey&& node);
+		Prekey(const ProtobufCPrekey& keypair);
 
 		/* copy assignment */
-		PrekeyStoreNode& operator=(const PrekeyStoreNode& node);
+		Prekey& operator=(const Prekey& node);
 		/* move assignment */
-		PrekeyStoreNode& operator=(PrekeyStoreNode&& node);
+		Prekey& operator=(Prekey&& node);
 
 		std::unique_ptr<ProtobufCPrekey,PrekeyDeleter> exportProtobuf() const;
 
@@ -87,8 +87,8 @@ namespace Molch {
 	public:
 		int64_t oldest_expiration_date{0};
 		int64_t oldest_deprecated_expiration_date{0};
-		std::unique_ptr<std::array<PrekeyStoreNode,PREKEY_AMOUNT>,SodiumDeleter<std::array<PrekeyStoreNode,PREKEY_AMOUNT>>> prekeys;
-		std::vector<PrekeyStoreNode,SodiumAllocator<PrekeyStoreNode>> deprecated_prekeys;
+		std::unique_ptr<std::array<Prekey,PREKEY_AMOUNT>,SodiumDeleter<std::array<Prekey,PREKEY_AMOUNT>>> prekeys;
+		std::vector<Prekey,SodiumAllocator<Prekey>> deprecated_prekeys;
 
 		/*
 		 * Initialise a new keystore. Generates all the keys.

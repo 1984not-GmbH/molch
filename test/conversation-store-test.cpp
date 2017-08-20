@@ -79,7 +79,7 @@ ConversationStore protobuf_import(const std::vector<Buffer> buffers) {
 		conversations.emplace_back(
 					conversation__unpack(&protobuf_c_allocators, buffer.size, buffer.content));
 		if (!conversations.back()) {
-			throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
+			throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
 		}
 	}
 
@@ -104,14 +104,14 @@ static void test_add_conversation(ConversationStore& store) {
 	Buffer our_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	int status = crypto_box_keypair(our_public_identity.content, our_private_identity.content);
 	if (status != 0) {
-		throw MolchException(KEYGENERATION_FAILED, "Failed to generate our identity keys.");
+		throw Molch::Exception(KEYGENERATION_FAILED, "Failed to generate our identity keys.");
 	}
 
 	Buffer our_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
 	Buffer our_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
 	status = crypto_box_keypair(our_public_ephemeral.content, our_private_ephemeral.content);
 	if (status != 0) {
-		throw MolchException(KEYGENERATION_FAILED, "Failed to generate our ephemeral keys.");
+		throw Molch::Exception(KEYGENERATION_FAILED, "Failed to generate our ephemeral keys.");
 	}
 
 	Buffer their_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
@@ -121,14 +121,14 @@ static void test_add_conversation(ConversationStore& store) {
 	their_public_ephemeral.fillRandom(their_public_ephemeral.capacity());
 
 	//create the conversation manually
-	ConversationT conversation(
+	Molch::Conversation conversation(
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral,
-			ConversationT::Confirmation::YES_I_WANT_THAT_CONSTRUCTOR);
+			Molch::Conversation::Confirmation::YES_I_WANT_THAT_CONSTRUCTOR);
 
 	store.add(std::move(conversation));
 }
@@ -145,7 +145,7 @@ void protobuf_empty_store(void) {
 	store.exportProtobuf(exported, exported_length);
 
 	if ((exported != nullptr) || (exported_length != 0)) {
-		throw MolchException(INCORRECT_DATA, "Exported data is not empty.");
+		throw Molch::Exception(INCORRECT_DATA, "Exported data is not empty.");
 	}
 
 	//import it
@@ -156,14 +156,14 @@ void protobuf_empty_store(void) {
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw MolchException(INIT_ERROR, "Failed to iniitialize libsodium.");
+			throw Molch::Exception(INIT_ERROR, "Failed to iniitialize libsodium.");
 		}
 
 		// list an empty conversation store
 		ConversationStore store;
 		auto empty_list = store.list();
 		if (!empty_list.isNone()) {
-			throw MolchException(INCORRECT_DATA, "List of empty conversation store is not nullptr.");
+			throw Molch::Exception(INCORRECT_DATA, "List of empty conversation store is not nullptr.");
 		}
 
 		// add five conversations
@@ -172,14 +172,14 @@ int main(void) {
 			printf("%zu\n", i);
 			test_add_conversation(store);
 			if (store.size() != (i + 1)) {
-				throw MolchException(INCORRECT_DATA, "Conversation store has incorrect length.");
+				throw Molch::Exception(INCORRECT_DATA, "Conversation store has incorrect length.");
 			}
 		}
 
 		//test list export feature
 		auto conversation_list = store.list();
 		if (!conversation_list.contains(CONVERSATION_ID_SIZE * store.size())) {
-			throw MolchException(DATA_FETCH_ERROR, "Failed to get list of conversations.");
+			throw Molch::Exception(DATA_FETCH_ERROR, "Failed to get list of conversations.");
 		}
 
 		//check for all conversations that they exist
@@ -190,7 +190,7 @@ int main(void) {
 			Buffer current_id(conversation_list.content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
 			auto found_node = store.find(current_id);
 			if (found_node == nullptr) {
-				throw MolchException(INCORRECT_DATA, "Exported list of conversations was incorrect.");
+				throw Molch::Exception(INCORRECT_DATA, "Exported list of conversations was incorrect.");
 			}
 
 			if (i == 0) {
@@ -225,7 +225,7 @@ int main(void) {
 
 		//compare to previous export
 		if (protobuf_export_buffers != protobuf_second_export_buffers) {
-			throw MolchException(INCORRECT_DATA, "Exported protobuf-c strings don't match.");
+			throw Molch::Exception(INCORRECT_DATA, "Exported protobuf-c strings don't match.");
 		}
 		printf("Exported Protobuf-C strings match.\n");
 
@@ -238,7 +238,7 @@ int main(void) {
 		store.remove(last_id);
 
 		if (store.size() != 2) {
-			throw MolchException(REMOVE_ERROR, "Failed to remove nodes.");
+			throw Molch::Exception(REMOVE_ERROR, "Failed to remove nodes.");
 		}
 		printf("Successfully removed nodes.\n");
 
@@ -246,7 +246,7 @@ int main(void) {
 		printf("Clear the conversation store.\n");
 
 		protobuf_empty_store();
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {

@@ -106,7 +106,7 @@ static void protobuf_import(
 				keypair_buffer.size,
 				keypair_buffer.content));
 		if (!keypair) {
-			throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack prekey from protobuf.");
+			throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack prekey from protobuf.");
 		}
 
 		keypairs.push_back(std::move(keypair));
@@ -122,7 +122,7 @@ static void protobuf_import(
 				keypair_buffer.size,
 				keypair_buffer.content));
 		if (!keypair) {
-			throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack deprecated prekey from protobuf.");
+			throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack deprecated prekey from protobuf.");
 		}
 
 		deprecated_keypairs.push_back(std::move(keypair));
@@ -161,7 +161,7 @@ void protobuf_no_deprecated_keys(void) {
 		store.exportProtobuf(exported, exported_length, deprecated, deprecated_length);
 
 		if ((deprecated != nullptr) || (deprecated_length != 0)) {
-			throw MolchException(INCORRECT_DATA, "Exported deprecated prekeys are not empty.");
+			throw Molch::Exception(INCORRECT_DATA, "Exported deprecated prekeys are not empty.");
 		}
 
 		//import it
@@ -184,7 +184,7 @@ void protobuf_no_deprecated_keys(void) {
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw MolchException(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
 		auto store = std::make_unique<PrekeyStore>();
@@ -196,7 +196,7 @@ int main(void) {
 		//compare the public keys with the ones in the prekey store
 		for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
 			if (prekey_list.comparePartial(PUBLIC_KEY_SIZE * i, (*store->prekeys)[i].public_key, 0, PUBLIC_KEY_SIZE) != 0) {
-				throw MolchException(INCORRECT_DATA, "Key list doesn't match the prekey store.");
+				throw Molch::Exception(INCORRECT_DATA, "Key list doesn't match the prekey store.");
 			}
 		}
 		printf("Prekey list matches the prekey store!\n");
@@ -215,16 +215,16 @@ int main(void) {
 		private_prekey1.printHex(std::cout) << std::endl;
 
 		if (store->deprecated_prekeys.empty()) {
-			throw MolchException(GENERIC_ERROR, "Failed to deprecate requested key.");
+			throw Molch::Exception(GENERIC_ERROR, "Failed to deprecate requested key.");
 		}
 
 		if ((public_prekey != store->deprecated_prekeys[0].public_key)
 				|| (private_prekey1 != store->deprecated_prekeys[0].private_key)) {
-			throw MolchException(INCORRECT_DATA, "Deprecated key is incorrect.");
+			throw Molch::Exception(INCORRECT_DATA, "Deprecated key is incorrect.");
 		}
 
 		if ((*store->prekeys)[prekey_index].public_key == public_prekey) {
-			throw MolchException(KEYGENERATION_FAILED, "Failed to generate new key for deprecated one.");
+			throw Molch::Exception(KEYGENERATION_FAILED, "Failed to generate new key for deprecated one.");
 		}
 		printf("Successfully deprecated requested key!\n");
 
@@ -233,7 +233,7 @@ int main(void) {
 		store->getPrekey(public_prekey, private_prekey2);
 
 		if (private_prekey1 != private_prekey2) {
-			throw MolchException(INCORRECT_DATA, "Prekey from the deprecated area didn't match.");
+			throw Molch::Exception(INCORRECT_DATA, "Prekey from the deprecated area didn't match.");
 		}
 		printf("Successfully got prekey from the deprecated area!\n");
 
@@ -242,11 +242,11 @@ int main(void) {
 		bool found = true;
 		try {
 			store->getPrekey(public_prekey, private_prekey1);
-		} catch (const MolchException& exception) {
+		} catch (const Molch::Exception& exception) {
 			found = false;
 		}
 		if (found) {
-			throw MolchException(GENERIC_ERROR, "Didn't complain about invalid public key.");
+			throw Molch::Exception(GENERIC_ERROR, "Didn't complain about invalid public key.");
 		}
 		printf("Detected invalid public prekey!\n");
 
@@ -292,22 +292,22 @@ int main(void) {
 		//compare both prekey lists
 		printf("Compare normal prekeys\n");
 		if (protobuf_export_prekeys_buffers.size() != protobuf_second_export_prekeys_buffers.size()) {
-			throw MolchException(INCORRECT_DATA, "Both prekey exports contain different amounts of keys.");
+			throw Molch::Exception(INCORRECT_DATA, "Both prekey exports contain different amounts of keys.");
 		}
 		for (size_t i = 0; i < protobuf_export_prekeys_buffers.size(); i++) {
 			if (protobuf_export_prekeys_buffers[i] != protobuf_second_export_prekeys_buffers[i]) {
-				throw MolchException(INCORRECT_DATA, "First and second prekey export are not identical.");
+				throw Molch::Exception(INCORRECT_DATA, "First and second prekey export are not identical.");
 			}
 		}
 
 		//compare both deprecated prekey lists
 		printf("Compare deprecated prekeys\n");
 		if (protobuf_export_deprecated_prekeys_buffers.size() != protobuf_second_export_deprecated_prekeys_buffers.size()) {
-			throw MolchException(INCORRECT_DATA, "Both depcated prekey exports contain different amounts of keys.");
+			throw Molch::Exception(INCORRECT_DATA, "Both depcated prekey exports contain different amounts of keys.");
 		}
 		for (size_t i = 0; i < protobuf_export_deprecated_prekeys_buffers.size(); i++) {
 			if (protobuf_export_deprecated_prekeys_buffers[i] != protobuf_second_export_deprecated_prekeys_buffers[i]) {
-				throw MolchException(INCORRECT_DATA, "First and second deprecated prekey export are not identical.");
+				throw Molch::Exception(INCORRECT_DATA, "First and second deprecated prekey export are not identical.");
 			}
 		}
 
@@ -320,7 +320,7 @@ int main(void) {
 		store->rotate();
 
 		if (store->deprecated_prekeys.back().public_key != public_prekey) {
-			throw MolchException(GENERIC_ERROR, "Failed to deprecate outdated key.");
+			throw Molch::Exception(GENERIC_ERROR, "Failed to deprecate outdated key.");
 		}
 		printf("Successfully deprecated outdated key!\n");
 
@@ -333,12 +333,12 @@ int main(void) {
 		store->rotate();
 
 		if (store->deprecated_prekeys.size() != 1) {
-			throw MolchException(GENERIC_ERROR, "Failed to remove outdated key.");
+			throw Molch::Exception(GENERIC_ERROR, "Failed to remove outdated key.");
 		}
 		printf("Successfully removed outdated deprecated key!\n");
 
 		protobuf_no_deprecated_keys();
-	} catch (const MolchException& exception) {
+	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {

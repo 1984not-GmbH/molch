@@ -29,13 +29,13 @@
 #include "return-status.h"
 
 namespace Molch {
-	class MolchError {
+	class Error {
 	public:
 		status_type type{SUCCESS};
 		std::string message;
 
-		MolchError();
-		MolchError(const status_type type, const std::string& message);
+		Error();
+		Error(const status_type type, const std::string& message);
 
 		/*
 		 * \return An error message allocated with malloc
@@ -43,20 +43,20 @@ namespace Molch {
 		error_message* toErrorMessage();
 	};
 
-	class MolchException : public std::exception {
+	class Exception : public std::exception {
 	private:
-		std::deque<MolchError> error_stack;
+		std::deque<Error> error_stack;
 
 	public:
 
-		MolchException(const MolchError& error);
-		MolchException(const status_type type, const std::string& message);
-		MolchException(return_status& status);
+		Exception(const Error& error);
+		Exception(const status_type type, const std::string& message);
+		Exception(return_status& status);
 
 		virtual const char* what() const noexcept override;
 
-		MolchException& add(const MolchException& exception);
-		MolchException& add(const MolchError& error);
+		Exception& add(const Exception& exception);
+		Exception& add(const Error& error);
 		return_status toReturnStatus() const;
 		std::ostream& print(std::ostream& stream) const;
 	};
