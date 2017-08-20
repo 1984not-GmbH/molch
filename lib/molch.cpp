@@ -35,11 +35,7 @@
 #include "zeroed_malloc.hpp"
 #include "destroyers.hpp"
 #include "malloc.hpp"
-
-extern "C" {
-	#include <encrypted_backup.pb-c.h>
-	#include <backup.pb-c.h>
-}
+#include "protobuf.hpp"
 
 using namespace Molch;
 
@@ -1013,7 +1009,7 @@ cleanup:
 		return_status status = return_status_init();
 
 		try {
-			EncryptedBackup encrypted_backup_struct;
+			ProtobufCEncryptedBackup encrypted_backup_struct;
 			encrypted_backup__init(&encrypted_backup_struct);
 
 			if (!users) {
@@ -1151,7 +1147,7 @@ cleanup:
 			}
 
 			//unpack the encrypted backup
-			auto encrypted_backup_struct = std::unique_ptr<EncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup));
+			auto encrypted_backup_struct = std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup));
 			if (encrypted_backup_struct == nullptr) {
 				throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
 			}
@@ -1247,7 +1243,7 @@ cleanup:
 				throw MolchException(INCORRECT_DATA, "No backup key found.");
 			}
 
-			auto backup_struct = std::unique_ptr<Backup,BackupDeleter>(throwing_zeroed_malloc<Backup>(sizeof(Backup)));
+			auto backup_struct = std::unique_ptr<ProtobufCBackup,BackupDeleter>(throwing_zeroed_malloc<ProtobufCBackup>(sizeof(ProtobufCBackup)));
 			backup__init(backup_struct.get());
 
 			//export the conversation
@@ -1282,7 +1278,7 @@ cleanup:
 			}
 
 			//fill in the encrypted backup struct
-			EncryptedBackup encrypted_backup_struct;
+			ProtobufCEncryptedBackup encrypted_backup_struct;
 			encrypted_backup__init(&encrypted_backup_struct);
 			//metadata
 			encrypted_backup_struct.backup_version = 0;
@@ -1367,7 +1363,7 @@ cleanup:
 			}
 
 			//unpack the encrypted backup
-			auto encrypted_backup_struct = std::unique_ptr<EncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup));
+			auto encrypted_backup_struct = std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup));
 			if (encrypted_backup_struct == nullptr) {
 				throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
 			}
@@ -1403,7 +1399,7 @@ cleanup:
 			}
 
 			//unpack the struct
-			auto backup_struct = std::unique_ptr<Backup,BackupDeleter>(backup__unpack(&protobuf_c_allocators, decrypted_backup.size, decrypted_backup.content));
+			auto backup_struct = std::unique_ptr<ProtobufCBackup,BackupDeleter>(backup__unpack(&protobuf_c_allocators, decrypted_backup.size, decrypted_backup.content));
 			if (backup_struct == nullptr) {
 				throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack backups protobuf-c.");
 			}

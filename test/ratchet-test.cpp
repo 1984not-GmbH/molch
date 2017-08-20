@@ -34,7 +34,7 @@
 using namespace Molch;
 
 Buffer protobuf_export(Ratchet& ratchet) {
-	std::unique_ptr<Conversation,ConversationDeleter> conversation = ratchet.exportProtobuf();
+	std::unique_ptr<ProtobufCConversation,ConversationDeleter> conversation = ratchet.exportProtobuf();
 
 	size_t export_size = conversation__get_packed_size(conversation.get());
 	Buffer export_buffer(export_size, 0);
@@ -48,7 +48,7 @@ Buffer protobuf_export(Ratchet& ratchet) {
 
 std::unique_ptr<Ratchet> protobuf_import(const Buffer& export_buffer) {
 	//unpack the buffer
-	auto conversation = std::unique_ptr<Conversation,ConversationDeleter>(
+	auto conversation = std::unique_ptr<ProtobufCConversation,ConversationDeleter>(
 		conversation__unpack(
 			&protobuf_c_allocators,
 			export_buffer.size,

@@ -27,15 +27,11 @@
 #include <vector>
 #include <ostream>
 
-extern "C" {
-	#include <key_bundle.pb-c.h>
-}
-
 #include "constants.h"
 #include "buffer.hpp"
 #include "return-status.h"
 #include "sodium-wrappers.hpp"
-#include "protobuf-deleters.hpp"
+#include "protobuf.hpp"
 
 namespace Molch {
 	class HeaderAndMessageKeyStoreNode {
@@ -59,13 +55,13 @@ namespace Molch {
 		/* copy and move constructors */
 		HeaderAndMessageKeyStoreNode(const HeaderAndMessageKeyStoreNode& node);
 		HeaderAndMessageKeyStoreNode(HeaderAndMessageKeyStoreNode&& node);
-		HeaderAndMessageKeyStoreNode(const KeyBundle& key_bundle);
+		HeaderAndMessageKeyStoreNode(const ProtobufCKeyBundle& key_bundle);
 
 		/* copy and move assignment operators */
 		HeaderAndMessageKeyStoreNode& operator=(const HeaderAndMessageKeyStoreNode& node);
 		HeaderAndMessageKeyStoreNode& operator=(HeaderAndMessageKeyStoreNode&& node);
 
-		std::unique_ptr<KeyBundle,KeyBundleDeleter> exportProtobuf() const;
+		std::unique_ptr<ProtobufCKeyBundle,KeyBundleDeleter> exportProtobuf() const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};
@@ -81,7 +77,7 @@ namespace Molch {
 		 * \param key_bundles An array of Protobuf-C key-bundles to import from.
 		 * \param bundles_size Size of the array.
 		 */
-		HeaderAndMessageKeyStore(KeyBundle** const & key_bundles, const size_t bundles_size);
+		HeaderAndMessageKeyStore(ProtobufCKeyBundle** const & key_bundles, const size_t bundles_size);
 
 		void add(const Buffer& header_key, const Buffer& message_key);
 		//! Export a header_and_message_keystore as Protobuf-C struct.
@@ -89,7 +85,7 @@ namespace Molch {
 		 * \param key_bundles Pointer to a pointer of protobuf-c key bundle structs, it will be allocated in this function.
 		 * \param bundle_size Size of the outputted array.
 		 */
-		void exportProtobuf(KeyBundle**& key_bundles, size_t& bundles_size) const;
+		void exportProtobuf(ProtobufCKeyBundle**& key_bundles, size_t& bundles_size) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

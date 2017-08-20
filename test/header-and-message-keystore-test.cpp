@@ -28,10 +28,6 @@
 #include <exception>
 #include <iterator>
 
-extern "C" {
-	#include <key_bundle.pb-c.h>
-}
-
 #include "../lib/header-and-message-keystore.hpp"
 #include "../lib/zeroed_malloc.hpp"
 #include "../lib/molch-exception.hpp"
@@ -41,7 +37,7 @@ extern "C" {
 
 using namespace Molch;
 
-static void free_keybundle_array(KeyBundle**& bundles, size_t length) {
+static void free_keybundle_array(ProtobufCKeyBundle**& bundles, size_t length) {
 	if (bundles != nullptr) {
 		for (size_t i = 0; i < length; i++) {
 			if (bundles[i] != nullptr) {
@@ -56,7 +52,7 @@ static void free_keybundle_array(KeyBundle**& bundles, size_t length) {
 static void protobuf_export(
 			HeaderAndMessageKeyStore& keystore,
 			std::vector<Buffer>& export_buffers) {
-	KeyBundle** key_bundles = nullptr;
+			ProtobufCKeyBundle** key_bundles = nullptr;
 	size_t bundles_size;
 
 	try {
@@ -86,12 +82,12 @@ static void protobuf_export(
 static void protobuf_import(
 		HeaderAndMessageKeyStore& keystore,
 		const std::vector<Buffer>& exported_buffers) {
-	auto key_bundles = std::vector<std::unique_ptr<KeyBundle,KeyBundleDeleter>>();
+	auto key_bundles = std::vector<std::unique_ptr<ProtobufCKeyBundle,KeyBundleDeleter>>();
 	key_bundles.reserve(exported_buffers.size());
 
 	//parse all the exported protobuf buffers
 	for (const auto& exported_buffer : exported_buffers) {
-		auto key_bundle = std::unique_ptr<KeyBundle,KeyBundleDeleter>(
+		auto key_bundle = std::unique_ptr<ProtobufCKeyBundle,KeyBundleDeleter>(
 					key_bundle__unpack(
 						&protobuf_c_allocators,
 						exported_buffer.size,
@@ -103,7 +99,7 @@ static void protobuf_import(
 		key_bundles.push_back(std::move(key_bundle));
 	}
 
-	auto key_bundles_array = std::unique_ptr<KeyBundle*[]>(new KeyBundle*[exported_buffers.size()]);
+	auto key_bundles_array = std::unique_ptr<ProtobufCKeyBundle*[]>(new ProtobufCKeyBundle*[exported_buffers.size()]);
 	for (size_t i = 0; i < exported_buffers.size(); i++) {
 		key_bundles_array[i] = key_bundles[i].get();
 	}
@@ -117,7 +113,7 @@ void protobuf_empty_store(void) {
 
 	HeaderAndMessageKeyStore store;
 
-	KeyBundle **exported = nullptr;
+	ProtobufCKeyBundle **exported = nullptr;
 	size_t exported_length = 0;
 
 	//export it

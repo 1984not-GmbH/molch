@@ -74,7 +74,7 @@ namespace Molch {
 		this->master_keys.getSigningKey(this->public_signing_key);
 	}
 
-	UserStoreNode::UserStoreNode(const User& user) {
+	UserStoreNode::UserStoreNode(const ProtobufCUser& user) {
 		if ((user.public_signing_key == nullptr)
 				|| (user.private_signing_key == nullptr)
 				|| (user.public_identity_key == nullptr)
@@ -114,7 +114,7 @@ namespace Molch {
 		return stream;
 	}
 
-	UserStore::UserStore(User ** const& users, const size_t users_length) {
+	UserStore::UserStore(ProtobufCUser ** const& users, const size_t users_length) {
 		//check input
 		if (((users_length == 0) && (users != nullptr))
 				|| ((users_length > 0) && (users == nullptr))) {
@@ -232,8 +232,8 @@ namespace Molch {
 		this->users.clear();
 	}
 
-	std::unique_ptr<User,UserDeleter> UserStoreNode::exportProtobuf() {
-		auto user = std::unique_ptr<User,UserDeleter>(throwing_zeroed_malloc<User>(sizeof(User)));
+	std::unique_ptr<ProtobufCUser,UserDeleter> UserStoreNode::exportProtobuf() {
+		auto user = std::unique_ptr<ProtobufCUser,UserDeleter>(throwing_zeroed_malloc<ProtobufCUser>(sizeof(ProtobufCUser)));
 		user__init(user.get());
 
 		//export master keys
@@ -264,7 +264,7 @@ namespace Molch {
 		return user;
 	}
 
-	void UserStore::exportProtobuf(User**& users, size_t& users_length) {
+	void UserStore::exportProtobuf(ProtobufCUser**& users, size_t& users_length) {
 		if (this->users.empty()) {
 			users = nullptr;
 			users_length = 0;
@@ -272,7 +272,7 @@ namespace Molch {
 			return;
 		}
 
-		auto user_pointers = std::vector<std::unique_ptr<User,UserDeleter>>();
+		auto user_pointers = std::vector<std::unique_ptr<ProtobufCUser,UserDeleter>>();
 		user_pointers.reserve(this->users.size());
 
 		//export the conversations
@@ -281,7 +281,7 @@ namespace Molch {
 		}
 
 		//allocate the output array
-		users = throwing_zeroed_malloc<User*>(this->users.size() * sizeof(User*));
+		users = throwing_zeroed_malloc<ProtobufCUser*>(this->users.size() * sizeof(ProtobufCUser*));
 		size_t index = 0;
 		for (auto&& user : user_pointers) {
 			users[index] = user.release();

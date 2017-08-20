@@ -49,7 +49,7 @@ Buffer protobuf_export(const ConversationT& conversation) {
 }
 
 std::unique_ptr<ConversationT> protobuf_import(const Buffer& import_buffer) {
-	auto conversation_protobuf = std::unique_ptr<Conversation,ConversationDeleter>(conversation__unpack(
+	auto conversation_protobuf = std::unique_ptr<ProtobufCConversation,ConversationDeleter>(conversation__unpack(
 		&protobuf_c_allocators,
 		import_buffer.size,
 		import_buffer.content));

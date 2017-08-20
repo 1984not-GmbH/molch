@@ -32,7 +32,7 @@
 #include "conversation-store.hpp"
 #include "prekey-store.hpp"
 #include "master-keys.hpp"
-#include "protobuf-deleters.hpp"
+#include "protobuf.hpp"
 
 //The user store stores a list of all users identified by their public keys
 
@@ -49,9 +49,9 @@ namespace Molch {
 		/*! Import a user from a Protobuf-C struct
 		 * \param user The struct to import from.
 		 */
-		UserStoreNode(const User& user);
+		UserStoreNode(const ProtobufCUser& user);
 
-		std::unique_ptr<User,UserDeleter> exportProtobuf();
+		std::unique_ptr<ProtobufCUser,UserDeleter> exportProtobuf();
 
 		UserStoreNode& move(UserStoreNode&& node);
 
@@ -97,7 +97,7 @@ namespace Molch {
 		 * \param users The array to import from.
 		 * \param users_length The length of the array.
 		 */
-		UserStore(User** const& users, const size_t users_length);
+		UserStore(ProtobufCUser** const& users, const size_t users_length);
 
 		UserStore(const UserStore& store) = delete;
 		UserStore(UserStore&& store) = default;
@@ -140,7 +140,7 @@ namespace Molch {
 		 * \param users_length The length of the exported array.
 		 * \return The status.
 		 */
-		void exportProtobuf(User**& users, size_t& users_length);
+		void exportProtobuf(ProtobufCUser**& users, size_t& users_length);
 
 		size_t size() const;
 

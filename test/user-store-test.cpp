@@ -32,7 +32,7 @@
 
 using namespace Molch;
 
-static void free_user_array(User**& users, size_t length) {
+static void free_user_array(ProtobufCUser**& users, size_t length) {
 	if (users != nullptr) {
 		for (size_t i = 0; i < length; i++) {
 			if (users[i] != nullptr) {
@@ -45,7 +45,7 @@ static void free_user_array(User**& users, size_t length) {
 }
 
 static std::vector<Buffer> protobuf_export(UserStore& store) {
-	User** users = nullptr;
+	ProtobufCUser** users = nullptr;
 	size_t length = 0;
 
 	std::vector<Buffer> export_buffers;
@@ -71,12 +71,12 @@ static std::vector<Buffer> protobuf_export(UserStore& store) {
 }
 
 UserStore protobuf_import(const std::vector<Buffer> buffers) {
-	auto users = std::vector<std::unique_ptr<User,UserDeleter>>();
+	auto users = std::vector<std::unique_ptr<ProtobufCUser,UserDeleter>>();
 	users.reserve(buffers.size());
 
 	//unpack all the conversations
 	for (const auto& buffer : buffers) {
-		users.push_back(std::unique_ptr<User,UserDeleter>(
+		users.push_back(std::unique_ptr<ProtobufCUser,UserDeleter>(
 					user__unpack(&protobuf_c_allocators, buffer.size, buffer.content)));
 		if (!users.back()) {
 			throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack user from protobuf.");
@@ -84,9 +84,9 @@ UserStore protobuf_import(const std::vector<Buffer> buffers) {
 	}
 
 	//allocate the user array output array
-	std::unique_ptr<User*[]> user_array;
+	std::unique_ptr<ProtobufCUser*[]> user_array;
 	if (!buffers.empty()) {
-		user_array = std::unique_ptr<User*[]>(new User*[buffers.size()]);
+		user_array = std::unique_ptr<ProtobufCUser*[]>(new ProtobufCUser*[buffers.size()]);
 	}
 
 	size_t index = 0;
@@ -102,7 +102,7 @@ UserStore protobuf_import(const std::vector<Buffer> buffers) {
 void protobuf_empty_store(void) {
 	printf("Testing im-/export of empty user store.\n");
 
-	User **exported = nullptr;
+	ProtobufCUser **exported = nullptr;
 	size_t exported_length = 0;
 
 	UserStore store;

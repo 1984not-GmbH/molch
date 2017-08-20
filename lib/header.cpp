@@ -19,14 +19,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-extern "C" {
-	#include <header.pb-c.h>
-}
 #include "header.hpp"
 #include "constants.h"
 #include "zeroed_malloc.hpp"
 #include "molch-exception.hpp"
-#include "protobuf-deleters.hpp"
+#include "protobuf.hpp"
 
 namespace Molch {
 	Buffer header_construct(
@@ -34,7 +31,7 @@ namespace Molch {
 			const Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE
 			const uint32_t message_number,
 			const uint32_t previous_message_number) {
-		Header header_struct;
+		ProtobufCHeader header_struct;
 		header__init(&header_struct);
 
 		//check input
@@ -80,7 +77,7 @@ namespace Molch {
 		}
 
 		//unpack the message
-		auto header_struct = std::unique_ptr<Header,HeaderDeleter>(header__unpack(&protobuf_c_allocators, header.size, header.content));
+		auto header_struct = std::unique_ptr<ProtobufCHeader,HeaderDeleter>(header__unpack(&protobuf_c_allocators, header.size, header.content));
 		if (!header_struct) {
 			throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack header.");
 		}

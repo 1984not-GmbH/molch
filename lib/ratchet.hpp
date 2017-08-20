@@ -23,13 +23,11 @@
 #define LIB_RATCHET_H
 
 #include <ostream>
-extern "C" {
-	#include <conversation.pb-c.h>
-}
 #include "constants.h"
 #include "header-and-message-keystore.hpp"
 #include "return-status.h"
 #include "zeroed_malloc.hpp"
+#include "protobuf.hpp"
 
 namespace Molch {
 	class RatchetStorage {
@@ -147,7 +145,7 @@ namespace Molch {
 		 * \param ratchet The Ratchet to imports
 		 * \param conversation The Protobuf-C buffer.
 		 */
-		Ratchet(const Conversation& conversation);
+		Ratchet(const ProtobufCConversation& conversation);
 
 		Ratchet(const Ratchet& ratchet) = delete;
 		Ratchet(Ratchet&& ratchet) = default;
@@ -204,7 +202,7 @@ namespace Molch {
 		 * NOTE: This doesn't fill the Id field of the struct.
 		 * \return conversation The Conversation Protobuf-C struct.
 		 */
-		std::unique_ptr<Conversation,ConversationDeleter> exportProtobuf() const;
+		std::unique_ptr<ProtobufCConversation,ConversationDeleter> exportProtobuf() const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

@@ -20,7 +20,7 @@ add_library(molch
 	zeroed_malloc
 	buffer
 	molch-exception
-	protobuf-deleters
+	protobuf.cpp #file extension required to distinguish from the protobuf directory
 	protobuf-pool
 )
 target_link_libraries(molch ${libs} protocol-buffers)

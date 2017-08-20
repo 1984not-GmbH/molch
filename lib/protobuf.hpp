@@ -34,55 +34,66 @@ extern "C" {
 	#include <user.pb-c.h>
 }
 
+typedef Backup ProtobufCBackup;
+typedef Conversation ProtobufCConversation;
+typedef EncryptedBackup ProtobufCEncryptedBackup;
+typedef Header ProtobufCHeader;
+typedef Key ProtobufCKey;
+typedef KeyBundle ProtobufCKeyBundle;
+typedef Packet ProtobufCPacket;
+typedef PacketHeader ProtobufCPacketHeader;
+typedef Prekey ProtobufCPrekey;
+typedef User ProtobufCUser;
+
 namespace Molch {
 	class BackupDeleter {
 		public:
-			void operator ()(Backup* backup);
+			void operator ()(ProtobufCBackup* backup);
 	};
 
 	class ConversationDeleter {
 		public:
-			void operator ()(Conversation* conversation);
+			void operator ()(ProtobufCConversation* conversation);
 	};
 
 	class EncryptedBackupDeleter {
 		public:
-			void operator ()(EncryptedBackup* backup);
+			void operator ()(ProtobufCEncryptedBackup* backup);
 	};
 
 	class HeaderDeleter {
 		public:
-			void operator ()(Header* header);
+			void operator ()(ProtobufCHeader* header);
 	};
 
 	class KeyDeleter {
 	public:
-		void operator ()(Key *key);
+		void operator ()(ProtobufCKey *key);
 	};
 
 	class KeyBundleDeleter {
 		public:
-			void operator ()(KeyBundle *key_bundle);
+			void operator ()(ProtobufCKeyBundle *key_bundle);
 	};
 
 	class PacketDeleter {
 		public:
-			void operator ()(Packet *packet);
+			void operator ()(ProtobufCPacket *packet);
 	};
 
 	class PacketHeaderDeleter {
 		public:
-			void operator ()(PacketHeader *packet_header);
+			void operator ()(ProtobufCPacketHeader *packet_header);
 	};
 
 	class PrekeyDeleter {
 	public:
-		void operator ()(Prekey *prekey);
+		void operator ()(ProtobufCPrekey *prekey);
 	};
 
 	class UserDeleter {
 		public:
-			void operator ()(User *user);
+			void operator ()(ProtobufCUser *user);
 	};
 }
 

@@ -22,10 +22,6 @@
 #ifndef LIB_MASTER_KEYS
 #define LIB_MASTER_KEYS
 
-extern "C" {
-	#include <user.pb-c.h>
-}
-
 #include <memory>
 #include <ostream>
 
@@ -34,7 +30,7 @@ extern "C" {
 #include "return-status.h"
 #include "zeroed_malloc.hpp"
 #include "sodium-wrappers.hpp"
-#include "protobuf-deleters.hpp"
+#include "protobuf.hpp"
 
 namespace Molch {
 	class PrivateMasterKeyStorage {
@@ -45,7 +41,7 @@ namespace Molch {
 
 	class MasterKeys {
 	private:
-		mutable std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>> private_keys; 
+		mutable std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>> private_keys;
 		/* Internally does the intialization of the buffers creation of the keys */
 		void init();
 		void generate(const Buffer* low_entropy_seed);
@@ -92,10 +88,10 @@ namespace Molch {
 		 * import from Protobuf-C
 		 */
 		MasterKeys(
-			const Key& public_signing_key,
-			const Key& private_signing_key,
-			const Key& public_identity_key,
-			const Key& private_identity_key);
+			const ProtobufCKey& public_signing_key,
+			const ProtobufCKey& private_signing_key,
+			const ProtobufCKey& public_identity_key,
+			const ProtobufCKey& private_identity_key);
 
 		MasterKeys(const MasterKeys& master_keys) = delete;
 		MasterKeys(MasterKeys&& master_keys);
@@ -125,10 +121,10 @@ namespace Molch {
 		 * \param private_identity_key Private part of the idenity keypair.
 		 */
 		void exportProtobuf(
-				std::unique_ptr<Key,KeyDeleter>& public_signing_key,
-				std::unique_ptr<Key,KeyDeleter>& private_signing_key,
-				std::unique_ptr<Key,KeyDeleter>& public_identity_key,
-				std::unique_ptr<Key,KeyDeleter>& private_identity_key) const;
+				std::unique_ptr<ProtobufCKey,KeyDeleter>& public_signing_key,
+				std::unique_ptr<ProtobufCKey,KeyDeleter>& private_signing_key,
+				std::unique_ptr<ProtobufCKey,KeyDeleter>& public_identity_key,
+				std::unique_ptr<ProtobufCKey,KeyDeleter>& private_identity_key) const;
 
 		/*! Readonly unlocks the private keys when created and
 		 * automatically locks them if destroyed.

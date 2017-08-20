@@ -448,8 +448,8 @@ namespace Molch {
 		this->storage->receive_chain_key.cloneFrom(this->storage->purported_receive_chain_key);
 	}
 
-	std::unique_ptr<Conversation,ConversationDeleter> Ratchet::exportProtobuf() const {
-		auto conversation = std::unique_ptr<Conversation,ConversationDeleter>(throwing_zeroed_malloc<Conversation>(sizeof(Conversation)));
+	std::unique_ptr<ProtobufCConversation,ConversationDeleter> Ratchet::exportProtobuf() const {
+		auto conversation = std::unique_ptr<ProtobufCConversation,ConversationDeleter>(throwing_zeroed_malloc<ProtobufCConversation>(sizeof(ProtobufCConversation)));
 		conversation__init(conversation.get());
 
 		//root keys
@@ -661,7 +661,7 @@ namespace Molch {
 		return conversation;
 	}
 
-	Ratchet::Ratchet(const Conversation& conversation) {
+	Ratchet::Ratchet(const ProtobufCConversation& conversation) {
 		this->init();
 
 		//import all the stuff

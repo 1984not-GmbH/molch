@@ -62,10 +62,10 @@ namespace Molch {
 	}
 
 	MasterKeys::MasterKeys(
-			const Key& public_signing_key,
-			const Key& private_signing_key,
-			const Key& public_identity_key,
-			const Key& private_identity_key) {
+			const ProtobufCKey& public_signing_key,
+			const ProtobufCKey& private_signing_key,
+			const ProtobufCKey& public_identity_key,
+			const ProtobufCKey& private_identity_key) {
 		this->init();
 
 		ReadWriteUnlocker unlocker(*this);
@@ -198,18 +198,18 @@ namespace Molch {
 	}
 
 	void MasterKeys::exportProtobuf(
-			std::unique_ptr<Key,KeyDeleter>& public_signing_key,
-			std::unique_ptr<Key,KeyDeleter>& private_signing_key,
-			std::unique_ptr<Key,KeyDeleter>& public_identity_key,
-			std::unique_ptr<Key,KeyDeleter>& private_identity_key) const {
+			std::unique_ptr<ProtobufCKey,KeyDeleter>& public_signing_key,
+			std::unique_ptr<ProtobufCKey,KeyDeleter>& private_signing_key,
+			std::unique_ptr<ProtobufCKey,KeyDeleter>& public_identity_key,
+			std::unique_ptr<ProtobufCKey,KeyDeleter>& private_identity_key) const {
 		//create and initialize the structs
-		public_signing_key = std::unique_ptr<Key,KeyDeleter>(throwing_zeroed_malloc<Key>(sizeof(Key)));
+		public_signing_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(throwing_zeroed_malloc<ProtobufCKey>(sizeof(ProtobufCKey)));
 		key__init(public_signing_key.get());
-		private_signing_key = std::unique_ptr<Key,KeyDeleter>(throwing_zeroed_malloc<Key>(sizeof(Key)));
+		private_signing_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(throwing_zeroed_malloc<ProtobufCKey>(sizeof(ProtobufCKey)));
 		key__init(private_signing_key.get());
-		public_identity_key = std::unique_ptr<Key,KeyDeleter>(throwing_zeroed_malloc<Key>(sizeof(Key)));
+		public_identity_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(throwing_zeroed_malloc<ProtobufCKey>(sizeof(ProtobufCKey)));
 		key__init(public_identity_key.get());
-		private_identity_key = std::unique_ptr<Key,KeyDeleter>(throwing_zeroed_malloc<Key>(sizeof(Key)));
+		private_identity_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(throwing_zeroed_malloc<ProtobufCKey>(sizeof(ProtobufCKey)));
 		key__init(private_identity_key.get());
 
 		//allocate the key buffers

@@ -19,46 +19,46 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "protobuf-deleters.hpp"
+#include "protobuf.hpp"
 
 namespace Molch {
-	void BackupDeleter::operator ()(Backup* backup) {
+	void BackupDeleter::operator ()(ProtobufCBackup* backup) {
 				backup__free_unpacked(backup, &protobuf_c_allocators);
 	}
 
-	void ConversationDeleter::operator ()(Conversation* conversation) {
+	void ConversationDeleter::operator ()(ProtobufCConversation* conversation) {
 		conversation__free_unpacked(conversation, &protobuf_c_allocators);
 	}
 
-	void EncryptedBackupDeleter::operator ()(EncryptedBackup* backup) {
+	void EncryptedBackupDeleter::operator ()(ProtobufCEncryptedBackup* backup) {
 		encrypted_backup__free_unpacked(backup, &protobuf_c_allocators);
 	}
 
-	void HeaderDeleter::operator ()(Header* header) {
+	void HeaderDeleter::operator ()(ProtobufCHeader* header) {
 		header__free_unpacked(header, &protobuf_c_allocators);
 	}
 
-	void KeyDeleter::operator ()(Key *key) {
+	void KeyDeleter::operator ()(ProtobufCKey *key) {
 		key__free_unpacked(key, &protobuf_c_allocators);
 	}
 
-	void KeyBundleDeleter::operator ()(KeyBundle *key_bundle) {
+	void KeyBundleDeleter::operator ()(ProtobufCKeyBundle *key_bundle) {
 		key_bundle__free_unpacked(key_bundle, &protobuf_c_allocators);
 	}
 
-	void PacketDeleter::operator ()(Packet *packet) {
+	void PacketDeleter::operator ()(ProtobufCPacket *packet) {
 		packet__free_unpacked(packet, &protobuf_c_allocators);
 	}
 
-	void PacketHeaderDeleter::operator ()(PacketHeader *packet_header) {
+	void PacketHeaderDeleter::operator ()(ProtobufCPacketHeader *packet_header) {
 		packet_header__free_unpacked(packet_header, &protobuf_c_allocators);
 	}
 
-	void PrekeyDeleter::operator ()(Prekey *prekey) {
+	void PrekeyDeleter::operator ()(ProtobufCPrekey *prekey) {
 		prekey__free_unpacked(prekey, &protobuf_c_allocators);
 	}
 
-	void UserDeleter::operator ()(User *user) {
+	void UserDeleter::operator ()(ProtobufCUser *user) {
 		user__free_unpacked(user, &protobuf_c_allocators);
 	}
 }

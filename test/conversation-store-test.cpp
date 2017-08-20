@@ -33,7 +33,7 @@
 
 using namespace Molch;
 
-static void free_conversation_array(Conversation**& conversations, size_t length) {
+static void free_conversation_array(ProtobufCConversation**& conversations, size_t length) {
 	if (conversations != nullptr) {
 		for (size_t i = 0; i < length; i++) {
 			if (conversations[i] != nullptr) {
@@ -46,7 +46,7 @@ static void free_conversation_array(Conversation**& conversations, size_t length
 }
 
 static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
-	Conversation ** conversations = nullptr;
+	ProtobufCConversation ** conversations = nullptr;
 	size_t length = 0;
 
 	std::vector<Buffer> export_buffers;
@@ -70,9 +70,8 @@ static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
 	free_conversation_array(conversations, length);
 	return export_buffers;
 }
-
 ConversationStore protobuf_import(const std::vector<Buffer> buffers) {
-	auto conversations = std::vector<std::unique_ptr<Conversation,ConversationDeleter>>();
+	auto conversations = std::vector<std::unique_ptr<ProtobufCConversation,ConversationDeleter>>();
 	conversations.reserve(buffers.size());
 
 	//unpack all the conversations
@@ -85,9 +84,9 @@ ConversationStore protobuf_import(const std::vector<Buffer> buffers) {
 	}
 
 	//allocate the conversation array output array
-	std::unique_ptr<Conversation*[]> conversation_array;
+	std::unique_ptr<ProtobufCConversation*[]> conversation_array;
 	if (!buffers.empty()) {
-		conversation_array = std::unique_ptr<Conversation*[]>(new Conversation*[buffers.size()]);
+		conversation_array = std::unique_ptr<ProtobufCConversation*[]>(new ProtobufCConversation*[buffers.size()]);
 	}
 
 	size_t index = 0;
@@ -137,7 +136,7 @@ static void test_add_conversation(ConversationStore& store) {
 void protobuf_empty_store(void) {
 	printf("Testing im-/export of empty conversation store.\n");
 
-	Conversation **exported = nullptr;
+	ProtobufCConversation **exported = nullptr;
 	size_t exported_length = 0;
 
 	ConversationStore store;

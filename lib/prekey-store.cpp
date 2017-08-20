@@ -67,7 +67,7 @@ namespace Molch {
 		return this->move(std::move(node));
 	}
 
-	PrekeyStoreNode::PrekeyStoreNode(const Prekey& keypair) {
+	PrekeyStoreNode::PrekeyStoreNode(const ProtobufCPrekey& keypair) {
 		//import private key
 		if ((keypair.private_key == nullptr)
 				|| (keypair.private_key->key.len != PRIVATE_KEY_SIZE)) {
@@ -95,8 +95,8 @@ namespace Molch {
 		this->expiration_date = static_cast<int64_t>(keypair.expiration_time);
 	}
 
-	std::unique_ptr<Prekey,PrekeyDeleter> PrekeyStoreNode::exportProtobuf() const {
-		auto prekey = std::unique_ptr<Prekey,PrekeyDeleter>(throwing_zeroed_malloc<Prekey>(sizeof(Prekey)));
+	std::unique_ptr<ProtobufCPrekey,PrekeyDeleter> PrekeyStoreNode::exportProtobuf() const {
+		auto prekey = std::unique_ptr<ProtobufCPrekey,PrekeyDeleter>(throwing_zeroed_malloc<ProtobufCPrekey>(sizeof(ProtobufCPrekey)));
 		prekey__init(prekey.get());
 
 		//export the private key
@@ -166,9 +166,9 @@ namespace Molch {
 	}
 
 	PrekeyStore::PrekeyStore(
-			Prekey ** const& keypairs,
+			ProtobufCPrekey ** const& keypairs,
 			const size_t keypairs_length,
-			Prekey ** const& deprecated_keypairs,
+			ProtobufCPrekey ** const& deprecated_keypairs,
 			const size_t deprecated_keypairs_length) {
 		//check input
 		if ((keypairs == nullptr)
@@ -326,14 +326,14 @@ namespace Molch {
 	}
 
 	template <class Container>
-	static void export_keypairs(Container& container, Prekey**& keypairs, size_t& keypairs_length) {
+	static void export_keypairs(Container& container, ProtobufCPrekey**& keypairs, size_t& keypairs_length) {
 		if (container.size() == 0) {
 			keypairs = nullptr;
 			keypairs_length = 0;
 			return;
 		}
 
-		auto prekeys = std::vector<std::unique_ptr<Prekey,PrekeyDeleter>>();
+		auto prekeys = std::vector<std::unique_ptr<ProtobufCPrekey,PrekeyDeleter>>();
 		prekeys.reserve(container.size());
 
 		//export all buffers
@@ -342,7 +342,7 @@ namespace Molch {
 		}
 
 		//allocate output array
-		keypairs = throwing_zeroed_malloc<Prekey*>(container.size() * sizeof(Prekey*));
+		keypairs = throwing_zeroed_malloc<ProtobufCPrekey*>(container.size() * sizeof(ProtobufCPrekey*));
 		size_t index = 0;
 		for (auto&& bundle : prekeys) {
 			keypairs[index] = bundle.release();
@@ -352,9 +352,9 @@ namespace Molch {
 	}
 
 	void PrekeyStore::exportProtobuf(
-			Prekey**& keypairs,
+			ProtobufCPrekey**& keypairs,
 			size_t& keypairs_length,
-			Prekey**& deprecated_keypairs,
+			ProtobufCPrekey**& deprecated_keypairs,
 			size_t& deprecated_keypairs_length) const {
 		//export prekeys
 		export_keypairs(*this->prekeys, keypairs, keypairs_length);

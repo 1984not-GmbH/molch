@@ -27,15 +27,12 @@
 #include <array>
 #include <vector>
 #include <ostream>
-extern "C" {
-	#include <prekey.pb-c.h>
-}
 
 #include "constants.h"
 #include "buffer.hpp"
 #include "return-status.h"
 #include "zeroed_malloc.hpp"
-#include "protobuf-deleters.hpp"
+#include "protobuf.hpp"
 #include "sodium-wrappers.hpp"
 
 namespace Molch {
@@ -62,14 +59,14 @@ namespace Molch {
 		PrekeyStoreNode(const PrekeyStoreNode& node);
 		/* move constructor */
 		PrekeyStoreNode(PrekeyStoreNode&& node);
-		PrekeyStoreNode(const Prekey& keypair);
+		PrekeyStoreNode(const ProtobufCPrekey& keypair);
 
 		/* copy assignment */
 		PrekeyStoreNode& operator=(const PrekeyStoreNode& node);
 		/* move assignment */
 		PrekeyStoreNode& operator=(PrekeyStoreNode&& node);
 
-		std::unique_ptr<Prekey,PrekeyDeleter> exportProtobuf() const;
+		std::unique_ptr<ProtobufCPrekey,PrekeyDeleter> exportProtobuf() const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};
@@ -92,8 +89,6 @@ namespace Molch {
 		int64_t oldest_deprecated_expiration_date{0};
 		std::unique_ptr<std::array<PrekeyStoreNode,PREKEY_AMOUNT>,SodiumDeleter<std::array<PrekeyStoreNode,PREKEY_AMOUNT>>> prekeys;
 		std::vector<PrekeyStoreNode,SodiumAllocator<PrekeyStoreNode>> deprecated_prekeys;
-		//PrekeyStoreNode prekeys[PREKEY_AMOUNT];
-		//PrekeyStoreNode *deprecated_prekeys;
 
 		/*
 		 * Initialise a new keystore. Generates all the keys.
@@ -108,9 +103,9 @@ namespace Molch {
 		 * \returns The status.
 		 */
 		PrekeyStore(
-				Prekey** const& keypairs,
+				ProtobufCPrekey** const& keypairs,
 				const size_t keypairs_length,
-				Prekey** const& deprecated_keypairs,
+				ProtobufCPrekey** const& deprecated_keypairs,
 				const size_t deprecated_keypairs_length);
 
 		/*
@@ -139,9 +134,9 @@ namespace Molch {
 		 * \param deprecated_keypairs_length The length of the array of deprecated keypairs.
 		 */
 		void exportProtobuf(
-				Prekey**& keypairs,
+				ProtobufCPrekey**& keypairs,
 				size_t& keypairs_length,
-				Prekey**& deprecated_keypairs,
+				ProtobufCPrekey**& deprecated_keypairs,
 				size_t& deprecated_keypairs_length) const;
 
 		std::ostream& print(std::ostream& stream) const;

@@ -26,11 +26,6 @@
 #include "zeroed_malloc.hpp"
 #include "molch-exception.hpp"
 
-extern "C" {
-	#include <key.pb-c.h>
-	#include <key_bundle.pb-c.h>
-}
-
 namespace Molch {
 	constexpr int64_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
 
@@ -76,7 +71,7 @@ namespace Molch {
 		return this->move(std::move(node));
 	}
 
-	HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const KeyBundle& key_bundle) {
+	HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const ProtobufCKeyBundle& key_bundle) {
 		//import the header key
 		if ((key_bundle.header_key == nullptr)
 			|| (key_bundle.header_key->key.data == nullptr)
@@ -100,17 +95,17 @@ namespace Molch {
 		this->expiration_date = static_cast<int64_t>(key_bundle.expiration_time);
 	}
 
-	std::unique_ptr<KeyBundle,KeyBundleDeleter> HeaderAndMessageKeyStoreNode::exportProtobuf() const {
-		auto key_bundle = std::unique_ptr<KeyBundle,KeyBundleDeleter>(throwing_zeroed_malloc<KeyBundle>(sizeof(KeyBundle)));
+	std::unique_ptr<ProtobufCKeyBundle,KeyBundleDeleter> HeaderAndMessageKeyStoreNode::exportProtobuf() const {
+		auto key_bundle = std::unique_ptr<ProtobufCKeyBundle,KeyBundleDeleter>(throwing_zeroed_malloc<ProtobufCKeyBundle>(sizeof(ProtobufCKeyBundle)));
 		key_bundle__init(key_bundle.get());
 
 		//header key
-		key_bundle->header_key = throwing_zeroed_malloc<Key>(sizeof(Key));
+		key_bundle->header_key = throwing_zeroed_malloc<ProtobufCKey>(sizeof(ProtobufCKey));
 		key__init(key_bundle->header_key);
 		key_bundle->header_key->key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
 
 		//message key
-		key_bundle->message_key = throwing_zeroed_malloc<Key>(sizeof(Key));
+		key_bundle->message_key = throwing_zeroed_malloc<ProtobufCKey>(sizeof(ProtobufCKey));
 		key__init(key_bundle->message_key);
 		key_bundle->message_key->key.data = throwing_zeroed_malloc<unsigned char>(MESSAGE_KEY_SIZE);
 
@@ -144,14 +139,14 @@ namespace Molch {
 		this->keys.emplace_back(header_key, message_key);
 	}
 
-	void HeaderAndMessageKeyStore::exportProtobuf(KeyBundle**& key_bundles, size_t& bundles_size) const {
+	void HeaderAndMessageKeyStore::exportProtobuf(ProtobufCKeyBundle**& key_bundles, size_t& bundles_size) const {
 		if (this->keys.size() == 0) {
 			key_bundles = nullptr;
 			bundles_size = 0;
 			return;
 		}
 
-		auto bundles = std::vector<std::unique_ptr<KeyBundle,KeyBundleDeleter>>();
+		auto bundles = std::vector<std::unique_ptr<ProtobufCKeyBundle,KeyBundleDeleter>>();
 		bundles.reserve(this->keys.size());
 
 		//export all buffers
@@ -160,7 +155,7 @@ namespace Molch {
 		}
 
 		//allocate output array
-		key_bundles = throwing_zeroed_malloc<KeyBundle*>(this->keys.size() * sizeof(KeyBundle*));
+		key_bundles = throwing_zeroed_malloc<ProtobufCKeyBundle*>(this->keys.size() * sizeof(ProtobufCKeyBundle*));
 		size_t index = 0;
 		for (auto&& bundle : bundles) {
 			key_bundles[index] = bundle.release();
@@ -169,7 +164,7 @@ namespace Molch {
 		bundles_size = this->keys.size();
 	}
 
-	HeaderAndMessageKeyStore::HeaderAndMessageKeyStore(KeyBundle** const & key_bundles, const size_t bundles_size) {
+	HeaderAndMessageKeyStore::HeaderAndMessageKeyStore(ProtobufCKeyBundle** const & key_bundles, const size_t bundles_size) {
 		for (size_t index = 0; index < bundles_size; index++) {
 			if (key_bundles[index] == nullptr) {
 				throw MolchException(PROTOBUF_MISSING_ERROR, "Invalid KeyBundle.");

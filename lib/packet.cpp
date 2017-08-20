@@ -19,9 +19,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-extern "C" {
-	#include <packet.pb-c.h>
-}
 #include <algorithm>
 #include <exception>
 
@@ -29,7 +26,7 @@ extern "C" {
 #include "constants.h"
 #include "zeroed_malloc.hpp"
 #include "molch-exception.hpp"
-#include "protobuf-deleters.hpp"
+#include "protobuf.hpp"
 
 namespace Molch {
 	/*!
@@ -71,9 +68,9 @@ namespace Molch {
 	 * \return
 	 *   The unpacked struct.
 	 */
-	static std::unique_ptr<Packet,PacketDeleter> packet_unpack(const Buffer& packet) {
+	static std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_unpack(const Buffer& packet) {
 		//unpack the packet
-		auto packet_struct = std::unique_ptr<Packet,PacketDeleter>(packet__unpack(&protobuf_c_allocators, packet.size, packet.content));
+		auto packet_struct = std::unique_ptr<ProtobufCPacket,PacketDeleter>(packet__unpack(&protobuf_c_allocators, packet.size, packet.content));
 		if (!packet_struct) {
 			throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
 		}
@@ -128,9 +125,9 @@ namespace Molch {
 			const Buffer * const public_ephemeral_key,
 			const Buffer * const public_prekey) {
 		//initialize the protobuf structs
-		Packet packet_struct;
+		ProtobufCPacket packet_struct;
 		packet__init(&packet_struct);
-		PacketHeader packet_header_struct;
+		ProtobufCPacketHeader packet_header_struct;
 		packet_header__init(&packet_header_struct);
 		packet_struct.packet_header = &packet_header_struct;
 
@@ -290,7 +287,7 @@ namespace Molch {
 			Buffer * const public_ephemeral_key, //PUBLIC_KEY_SIZE
 			Buffer * const public_prekey //PUBLIC_KEY_SIZE
 			) {
-		std::unique_ptr<Packet,PacketDeleter> packet_struct = packet_unpack(packet);
+		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct = packet_unpack(packet);
 
 		if (packet_struct->packet_header->packet_type == PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
 			//copy the public keys
@@ -313,7 +310,7 @@ namespace Molch {
 	Buffer packet_decrypt_header(
 			const Buffer& packet,
 			const Buffer& axolotl_header_key) { //HEADER_KEY_SIZE
-		std::unique_ptr<Packet,PacketDeleter> packet_struct;
+		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct;
 
 		//check input
 		if (!axolotl_header_key.contains(HEADER_KEY_SIZE)) {
@@ -348,7 +345,7 @@ namespace Molch {
 			throw MolchException(INVALID_INPUT, "Invalid input to packet_decrypt_message.");
 		}
 
-		std::unique_ptr<Packet,PacketDeleter> packet_struct = packet_unpack(packet);
+		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct = packet_unpack(packet);
 
 		if (packet_struct->encrypted_message.len < crypto_secretbox_MACBYTES) {
 			throw MolchException(INCORRECT_BUFFER_SIZE, "The ciphertext of the message is too short.");

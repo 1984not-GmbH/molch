@@ -32,10 +32,6 @@
 #include "../lib/destroyers.hpp"
 #include "../lib/malloc.hpp"
 
-extern "C" {
-	#include <encrypted_backup.pb-c.h>
-}
-
 using namespace Molch;
 
 static Buffer decrypt_conversation_backup(
@@ -53,7 +49,7 @@ static Buffer decrypt_conversation_backup(
 	}
 
 	//unpack the encrypted backup
-	auto encrypted_backup_struct = std::unique_ptr<EncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup));
+	auto encrypted_backup_struct = std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup));
 	if (encrypted_backup_struct == nullptr) {
 		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
 	}
@@ -107,7 +103,7 @@ static Buffer decrypt_full_backup(
 	}
 
 	//unpack the encrypted backup
-	auto encrypted_backup_struct = std::unique_ptr<EncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup));
+	auto encrypted_backup_struct = std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup));
 	if (encrypted_backup_struct == nullptr) {
 		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
 	}

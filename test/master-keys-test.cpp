@@ -28,7 +28,6 @@
 #include "../lib/master-keys.hpp"
 #include "../lib/constants.h"
 #include "../lib/molch-exception.hpp"
-#include "../lib/protobuf-deleters.hpp"
 #include "utils.hpp"
 
 using namespace Molch;
@@ -39,10 +38,10 @@ static void protobuf_export(
 		Buffer& private_signing_key_buffer,
 		Buffer& public_identity_key_buffer,
 		Buffer& private_identity_key_buffer) {
-	std::unique_ptr<Key,KeyDeleter> public_signing_key;
-	std::unique_ptr<Key,KeyDeleter> private_signing_key;
-	std::unique_ptr<Key,KeyDeleter> public_identity_key;
-	std::unique_ptr<Key,KeyDeleter> private_identity_key;
+	std::unique_ptr<ProtobufCKey,KeyDeleter> public_signing_key;
+	std::unique_ptr<ProtobufCKey,KeyDeleter> private_signing_key;
+	std::unique_ptr<ProtobufCKey,KeyDeleter> public_identity_key;
+	std::unique_ptr<ProtobufCKey,KeyDeleter> private_identity_key;
 
 	keys.exportProtobuf(
 				public_signing_key,
@@ -92,7 +91,7 @@ static void protobuf_import(
 		const Buffer& public_identity_key_buffer,
 		const Buffer& private_identity_key_buffer) {
 	//unpack the protobuf-c buffers
-	auto public_signing_key = std::unique_ptr<Key,KeyDeleter>(
+	auto public_signing_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(
 		key__unpack(
 			&protobuf_c_allocators,
 			public_signing_key_buffer.size,
@@ -100,7 +99,7 @@ static void protobuf_import(
 	if (!public_signing_key) {
 		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack public signing key from protobuf.");
 	}
-	auto private_signing_key = std::unique_ptr<Key,KeyDeleter>(
+	auto private_signing_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(
 		key__unpack(
 			&protobuf_c_allocators,
 			private_signing_key_buffer.size,
@@ -108,7 +107,7 @@ static void protobuf_import(
 	if (!private_signing_key) {
 		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack private signing key from protobuf.");
 	}
-	auto public_identity_key = std::unique_ptr<Key,KeyDeleter>(
+	auto public_identity_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(
 		key__unpack(
 			&protobuf_c_allocators,
 			public_identity_key_buffer.size,
@@ -116,7 +115,7 @@ static void protobuf_import(
 	if (!public_identity_key) {
 		throw MolchException(PROTOBUF_UNPACK_ERROR, "Failed to unpack public identity key from protobuf.");
 	}
-	auto private_identity_key = std::unique_ptr<Key,KeyDeleter>(
+	auto private_identity_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(
 		key__unpack(
 			&protobuf_c_allocators,
 			private_identity_key_buffer.size,
