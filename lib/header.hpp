@@ -35,45 +35,47 @@
 #include "buffer.hpp"
 #include "return-status.h"
 
-/*!
- * Constructs an Axolotl-Header into a buffer.
- *
- * \param our_public_ephemeral
- *   The public ephemeral key of the sender (ours). Length has to be PUBLIC_KEY_SIZE.
- * \param message_number
- *   The number of the message in the current message chain.
- * \param previous_message_number
- *   The number of messages in the previous message chain.
- *
- * \return
- *   The constructed header.
- */
-Buffer header_construct(
-		const Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE
-		const uint32_t message_number,
-		const uint32_t previous_message_number);
+namespace Molch {
+	/*!
+	 * Constructs an Axolotl-Header into a buffer.
+	 *
+	 * \param our_public_ephemeral
+	 *   The public ephemeral key of the sender (ours). Length has to be PUBLIC_KEY_SIZE.
+	 * \param message_number
+	 *   The number of the message in the current message chain.
+	 * \param previous_message_number
+	 *   The number of messages in the previous message chain.
+	 *
+	 * \return
+	 *   The constructed header.
+	 */
+	Buffer header_construct(
+			const Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE
+			const uint32_t message_number,
+			const uint32_t previous_message_number);
 
-/*!
- * Extracts the data from an Axolotl-Header.
- *
- * \param their_public_ephemeral
- *   The public ephemeral key of the sender (theirs). Length has to be PUBLIC_KEY_SIZE.
- * \param message_number
- *   The number of the message in the current message chain.
- * \param previous_message_number
- *   The number of the messages in the previous message chain.
- * \param header
- *   A buffer containing the Axolotl-Header.
- *
- * \return
- *   Error status, destroy with return_status_destroy_errors if an error occurs.
- */
-void header_extract(
-		//outputs
-		Buffer& their_public_ephemeral, //PUBLIC_KEY_SIZE
-		uint32_t& message_number,
-		uint32_t& previous_message_number,
-		//input
-		const Buffer& header);
+	/*!
+	 * Extracts the data from an Axolotl-Header.
+	 *
+	 * \param their_public_ephemeral
+	 *   The public ephemeral key of the sender (theirs). Length has to be PUBLIC_KEY_SIZE.
+	 * \param message_number
+	 *   The number of the message in the current message chain.
+	 * \param previous_message_number
+	 *   The number of the messages in the previous message chain.
+	 * \param header
+	 *   A buffer containing the Axolotl-Header.
+	 *
+	 * \return
+	 *   Error status, destroy with return_status_destroy_errors if an error occurs.
+	 */
+	void header_extract(
+			//outputs
+			Buffer& their_public_ephemeral, //PUBLIC_KEY_SIZE
+			uint32_t& message_number,
+			uint32_t& previous_message_number,
+			//input
+			const Buffer& header);
+}
 
 #endif

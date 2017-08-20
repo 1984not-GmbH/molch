@@ -32,6 +32,8 @@
 #include "../lib/conversation.hpp"
 #include "../lib/destroyers.hpp"
 
+using namespace Molch;
+
 Buffer protobuf_export(const ConversationT& conversation) {
 	//export the conversation
 	auto exported_conversation = conversation.exportProtobuf();

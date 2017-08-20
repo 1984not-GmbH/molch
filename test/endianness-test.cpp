@@ -27,6 +27,8 @@
 #include "../lib/endianness.hpp"
 #include "utils.hpp"
 
+using namespace Molch;
+
 int main(void) {
 	try {
 		if (endianness_is_little_endian()) {

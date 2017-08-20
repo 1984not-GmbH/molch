@@ -29,6 +29,8 @@
 #include "../lib/destroyers.hpp"
 #include "../lib/molch-exception.hpp"
 
+using namespace Molch;
+
 void print_to_file(const Buffer& data, const std::string& filename) {
 	std::ofstream filestream{filename, std::ios_base::out | std::ios_base::binary};
 	if (!filestream.is_open()) {

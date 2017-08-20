@@ -31,7 +31,9 @@
 #include "../lib/protobuf-deleters.hpp"
 #include "utils.hpp"
 
-void protobuf_export(
+using namespace Molch;
+
+static void protobuf_export(
 		MasterKeys& keys,
 		Buffer& public_signing_key_buffer,
 		Buffer& private_signing_key_buffer,
@@ -83,7 +85,7 @@ void protobuf_export(
 }
 
 
-void protobuf_import(
+static void protobuf_import(
 		std::unique_ptr<MasterKeys>& keys,
 		const Buffer& public_signing_key_buffer,
 		const Buffer& private_signing_key_buffer,

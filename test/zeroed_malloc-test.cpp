@@ -27,6 +27,8 @@
 #include "../lib/zeroed_malloc.hpp"
 #include "utils.hpp"
 
+using namespace Molch;
+
 int main(void) noexcept {
 	return_status status = return_status_init();
 

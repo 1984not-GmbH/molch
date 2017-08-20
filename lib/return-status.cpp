@@ -34,6 +34,8 @@
 #include "molch-exception.hpp"
 #include "malloc.hpp"
 
+using namespace Molch;
+
 extern return_status return_status_init() noexcept {
 	return_status status = {
 		SUCCESS,

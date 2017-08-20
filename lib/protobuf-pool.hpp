@@ -37,61 +37,63 @@
 
 #include "sodium-wrappers.hpp"
 
-class ProtobufPoolBlock {
-private:
-	std::unique_ptr<unsigned char,SodiumDeleter<unsigned char>> block;
-	size_t block_size{default_block_size};
-	size_t offset{0}; //offset of the next available pointer
+namespace Molch {
+	class ProtobufPoolBlock {
+	private:
+		std::unique_ptr<unsigned char,SodiumDeleter<unsigned char>> block;
+		size_t block_size{default_block_size};
+		size_t offset{0}; //offset of the next available pointer
 
-	ProtobufPoolBlock& move(ProtobufPoolBlock&& block);
+		ProtobufPoolBlock& move(ProtobufPoolBlock&& block);
 
-public:
-	static constexpr size_t default_block_size{100000}; //100KB
+	public:
+		static constexpr size_t default_block_size{100000}; //100KB
 
-	ProtobufPoolBlock(); //uses the default block size
-	ProtobufPoolBlock(size_t block_size);
-	ProtobufPoolBlock(ProtobufPoolBlock&& block) = default;
-	ProtobufPoolBlock(const ProtobufPoolBlock& block) = delete;
+		ProtobufPoolBlock(); //uses the default block size
+		ProtobufPoolBlock(size_t block_size);
+		ProtobufPoolBlock(ProtobufPoolBlock&& block) = default;
+		ProtobufPoolBlock(const ProtobufPoolBlock& block) = delete;
 
-	ProtobufPoolBlock& operator=(ProtobufPoolBlock&& block) = default;
-	ProtobufPoolBlock& operator=(const ProtobufPoolBlock& block) = delete;
+		ProtobufPoolBlock& operator=(ProtobufPoolBlock&& block) = default;
+		ProtobufPoolBlock& operator=(const ProtobufPoolBlock& block) = delete;
 
-	void* allocateAligned(const size_t size, const size_t alignment);
+		void* allocateAligned(const size_t size, const size_t alignment);
 
-	template <typename T>
-	T* allocate(size_t size) {
-		return reinterpret_cast<T*>(this->allocateAligned(size, alignof(T)));
-	}
+		template <typename T>
+		T* allocate(size_t size) {
+			return reinterpret_cast<T*>(this->allocateAligned(size, alignof(T)));
+		}
 
-	size_t size() const;
-	size_t remainingSpace() const;
-};
-template <>
-void* ProtobufPoolBlock::allocate<void>(size_t size);
+		size_t size() const;
+		size_t remainingSpace() const;
+	};
+	template <>
+	void* ProtobufPoolBlock::allocate<void>(size_t size);
 
-class ProtobufPool {
-private:
-	std::vector<ProtobufPoolBlock> blocks;
+	class ProtobufPool {
+	private:
+		std::vector<ProtobufPoolBlock> blocks;
 
-public:
-	ProtobufPool() = default;
+	public:
+		ProtobufPool() = default;
 
-	void* allocateAligned(const size_t size, const size_t alignment);
+		void* allocateAligned(const size_t size, const size_t alignment);
 
-	template <typename T>
-	T* allocate(size_t size) {
-		return reinterpret_cast<T*>(this->allocateAligned(size, alignof(T)));
-	}
+		template <typename T>
+		T* allocate(size_t size) {
+			return reinterpret_cast<T*>(this->allocateAligned(size, alignof(T)));
+		}
 
-	/* functions for Protobuf-C */
-	static void* poolAllocate(void* pool, size_t size) noexcept;
-	static void poolFree(void* pool, void* pointer) noexcept;
+		/* functions for Protobuf-C */
+		static void* poolAllocate(void* pool, size_t size) noexcept;
+		static void poolFree(void* pool, void* pointer) noexcept;
 
-	/* returns a ProtobufCAllocator struct for this allocator */
-	ProtobufCAllocator getProtobufCAllocator();
-};
+		/* returns a ProtobufCAllocator struct for this allocator */
+		ProtobufCAllocator getProtobufCAllocator();
+	};
 
-template <>
-void* ProtobufPool::allocate<void>(size_t size);
+	template <>
+	void* ProtobufPool::allocate<void>(size_t size);
+}
 
 #endif /* LIB_PROTOBUF_POOL_H */

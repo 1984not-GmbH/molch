@@ -28,6 +28,8 @@
 #include "common.hpp"
 #include "utils.hpp"
 
+using namespace Molch;
+
 /*
  * Generates and prints a crypto_box keypair.
  */

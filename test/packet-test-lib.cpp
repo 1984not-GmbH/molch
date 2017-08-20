@@ -31,6 +31,8 @@
 #include "utils.hpp"
 #include "packet-test-lib.hpp"
 
+using namespace Molch;
+
 void create_and_print_message(
 		//output
 		Buffer& packet,

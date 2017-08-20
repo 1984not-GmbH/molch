@@ -29,6 +29,8 @@
 #include "../lib/molch-exception.hpp"
 #include "utils.hpp"
 
+using namespace Molch;
+
 int main(void) {
 	try {
 		if (sodium_init() == -1) {

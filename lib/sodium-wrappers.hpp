@@ -25,53 +25,55 @@
 #include <sodium.h>
 #include <memory>
 
-/*
- * Calls sodium_malloc and throws std::bad_alloc if allocation fails
- */
-template <typename T>
-T* throwing_sodium_malloc(size_t size) {
-	void* memory = sodium_malloc(size);
-	if (memory == nullptr) {
-		throw std::bad_alloc();
-	}
-
-	return reinterpret_cast<T*>(memory);
-}
-
-template <class T>
-class SodiumAllocator {
-public:
-	typedef T value_type;
-
-	SodiumAllocator() = default;
-	template <class U>
-	constexpr SodiumAllocator(const SodiumAllocator<U>&) noexcept {}
-
-	T* allocate(size_t elements) {
-		return throwing_sodium_malloc<T>(elements * sizeof(T));
-	}
-	void deallocate(T* pointer, size_t elements) noexcept {
-		(void)elements;
-		sodium_free(pointer);
-	}
-};
-template <class T, class U>
-bool operator==(const SodiumAllocator<T>&, const SodiumAllocator<U>&) {
-	return true;
-}
-template <class T, class U>
-bool operator!=(const SodiumAllocator<T>&, const SodiumAllocator<U>&) {
-	return false;
-}
-
-template <typename T>
-class SodiumDeleter {
-public:
-	void operator()(T* object) {
-		if (object != nullptr) {
-			sodium_free(object);
+namespace Molch {
+	/*
+	 * Calls sodium_malloc and throws std::bad_alloc if allocation fails
+	 */
+	template <typename T>
+	T* throwing_sodium_malloc(size_t size) {
+		void* memory = sodium_malloc(size);
+		if (memory == nullptr) {
+			throw std::bad_alloc();
 		}
+
+		return reinterpret_cast<T*>(memory);
 	}
-};
+
+	template <class T>
+	class SodiumAllocator {
+	public:
+		typedef T value_type;
+
+		SodiumAllocator() = default;
+		template <class U>
+		constexpr SodiumAllocator(const SodiumAllocator<U>&) noexcept {}
+
+		T* allocate(size_t elements) {
+			return throwing_sodium_malloc<T>(elements * sizeof(T));
+		}
+		void deallocate(T* pointer, size_t elements) noexcept {
+			(void)elements;
+			sodium_free(pointer);
+		}
+	};
+	template <class T, class U>
+	bool operator==(const SodiumAllocator<T>&, const SodiumAllocator<U>&) {
+		return true;
+	}
+	template <class T, class U>
+	bool operator!=(const SodiumAllocator<T>&, const SodiumAllocator<U>&) {
+		return false;
+	}
+
+	template <typename T>
+	class SodiumDeleter {
+	public:
+		void operator()(T* object) {
+			if (object != nullptr) {
+				sodium_free(object);
+			}
+		}
+	};
+}
 
 #endif /* LIB_SODIUM_WRAPPERS_H */

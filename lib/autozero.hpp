@@ -24,23 +24,25 @@
 
 #include <sodium.h>
 
-template <typename T> class autozero {
-private:
-	T content;
-public:
-	autozero() = default;
+namespace Molch {
+	template <typename T> class autozero {
+	private:
+		T content;
+	public:
+		autozero() = default;
 
-	T& operator *() {
-		return this->content;
-	}
+		T& operator *() {
+			return this->content;
+		}
 
-	T* pointer() {
-		return &this->content;
-	}
+		T* pointer() {
+			return &this->content;
+		}
 
-	~autozero() {
-		sodium_memzero(&this->content, sizeof(T));
-	}
-};
+		~autozero() {
+			sodium_memzero(&this->content, sizeof(T));
+		}
+	};
+}
 
 #endif /* LIB_AUTOZERO_H */

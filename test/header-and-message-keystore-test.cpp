@@ -39,6 +39,8 @@ extern "C" {
 #include "utils.hpp"
 #include "common.hpp"
 
+using namespace Molch;
+
 static void free_keybundle_array(KeyBundle**& bundles, size_t length) {
 	if (bundles != nullptr) {
 		for (size_t i = 0; i < length; i++) {

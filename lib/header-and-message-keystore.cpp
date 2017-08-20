@@ -31,165 +31,167 @@ extern "C" {
 	#include <key_bundle.pb-c.h>
 }
 
-constexpr int64_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
+namespace Molch {
+	constexpr int64_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
 
-void HeaderAndMessageKeyStoreNode::fill(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date) {
-	this->header_key.cloneFrom(header_key);
-	this->message_key.cloneFrom(message_key);
-	this->expiration_date = expiration_date;
-}
-
-HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key) {
-	this->fill(header_key, message_key, time(nullptr) + EXPIRATION_TIME);
-}
-
-HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date) {
-	this->fill(header_key, message_key, expiration_date);
-}
-
-HeaderAndMessageKeyStoreNode& HeaderAndMessageKeyStoreNode::copy(const HeaderAndMessageKeyStoreNode& node) {
-	this->fill(node.header_key, node.message_key, node.expiration_date);
-
-	return *this;
-}
-
-HeaderAndMessageKeyStoreNode& HeaderAndMessageKeyStoreNode::move(HeaderAndMessageKeyStoreNode&& node) {
-	this->fill(node.header_key, node.message_key, node.expiration_date);
-
-	return *this;
-}
-
-HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const HeaderAndMessageKeyStoreNode& node) {
-	this->copy(node);
-}
-
-HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(HeaderAndMessageKeyStoreNode&& node) {
-	this->move(std::move(node));
-}
-
-HeaderAndMessageKeyStoreNode& HeaderAndMessageKeyStoreNode::operator=(const HeaderAndMessageKeyStoreNode& node) {
-	return this->copy(node);
-}
-
-HeaderAndMessageKeyStoreNode& HeaderAndMessageKeyStoreNode::operator=(HeaderAndMessageKeyStoreNode&& node) {
-	return this->move(std::move(node));
-}
-
-HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const KeyBundle& key_bundle) {
-	//import the header key
-	if ((key_bundle.header_key == nullptr)
-		|| (key_bundle.header_key->key.data == nullptr)
-		|| (key_bundle.header_key->key.len != HEADER_KEY_SIZE)) {
-		throw MolchException(PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect header key.");
-	}
-	this->header_key.cloneFromRaw(key_bundle.header_key->key.data, key_bundle.header_key->key.len);
-
-	//import the message key
-	if ((key_bundle.message_key == nullptr)
-		|| (key_bundle.message_key->key.data == nullptr)
-		|| (key_bundle.message_key->key.len != MESSAGE_KEY_SIZE)) {
-		throw MolchException(PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect message key.");
-	}
-	this->message_key.cloneFromRaw(key_bundle.message_key->key.data, key_bundle.message_key->key.len);
-
-	//import the expiration date
-	if (!key_bundle.has_expiration_time) {
-		throw MolchException(PROTOBUF_MISSING_ERROR, "KeyBundle has no expiration time.");
-	}
-	this->expiration_date = static_cast<int64_t>(key_bundle.expiration_time);
-}
-
-std::unique_ptr<KeyBundle,KeyBundleDeleter> HeaderAndMessageKeyStoreNode::exportProtobuf() const {
-	auto key_bundle = std::unique_ptr<KeyBundle,KeyBundleDeleter>(throwing_zeroed_malloc<KeyBundle>(sizeof(KeyBundle)));
-	key_bundle__init(key_bundle.get());
-
-	//header key
-	key_bundle->header_key = throwing_zeroed_malloc<Key>(sizeof(Key));
-	key__init(key_bundle->header_key);
-	key_bundle->header_key->key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
-
-	//message key
-	key_bundle->message_key = throwing_zeroed_malloc<Key>(sizeof(Key));
-	key__init(key_bundle->message_key);
-	key_bundle->message_key->key.data = throwing_zeroed_malloc<unsigned char>(MESSAGE_KEY_SIZE);
-
-	//export the header key
-	this->header_key.cloneToRaw(key_bundle->header_key->key.data, HEADER_KEY_SIZE);
-	key_bundle->header_key->key.len = this->header_key.size;
-
-	//export the message key
-	this->message_key.cloneToRaw(key_bundle->message_key->key.data, MESSAGE_KEY_SIZE);
-	key_bundle->message_key->key.len = this->message_key.size;
-
-
-	//set expiration time
-	key_bundle->expiration_time = static_cast<uint64_t>(this->expiration_date);
-	key_bundle->has_expiration_time = true;
-
-	return key_bundle;
-}
-
-std::ostream& HeaderAndMessageKeyStoreNode::print(std::ostream& stream) const {
-	stream << "Header key:\n";
-	this->header_key.printHex(stream) << '\n';
-	stream << "Message key:\n";
-	this->message_key.printHex(stream) << '\n';
-	stream << "Expiration date:\n" << this->expiration_date << '\n';
-
-	return stream;
-}
-
-void HeaderAndMessageKeyStore::add(const Buffer& header_key, const Buffer& message_key) {
-	this->keys.emplace_back(header_key, message_key);
-}
-
-void HeaderAndMessageKeyStore::exportProtobuf(KeyBundle**& key_bundles, size_t& bundles_size) const {
-	if (this->keys.size() == 0) {
-		key_bundles = nullptr;
-		bundles_size = 0;
-		return;
+	void HeaderAndMessageKeyStoreNode::fill(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date) {
+		this->header_key.cloneFrom(header_key);
+		this->message_key.cloneFrom(message_key);
+		this->expiration_date = expiration_date;
 	}
 
-	auto bundles = std::vector<std::unique_ptr<KeyBundle,KeyBundleDeleter>>();
-	bundles.reserve(this->keys.size());
-
-	//export all buffers
-	for (auto&& key : this->keys) {
-		bundles.push_back(key.exportProtobuf());
+	HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key) {
+		this->fill(header_key, message_key, time(nullptr) + EXPIRATION_TIME);
 	}
 
-	//allocate output array
-	key_bundles = throwing_zeroed_malloc<KeyBundle*>(this->keys.size() * sizeof(KeyBundle*));
-	size_t index = 0;
-	for (auto&& bundle : bundles) {
-		key_bundles[index] = bundle.release();
-		index++;
+	HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date) {
+		this->fill(header_key, message_key, expiration_date);
 	}
-	bundles_size = this->keys.size();
-}
 
-HeaderAndMessageKeyStore::HeaderAndMessageKeyStore(KeyBundle** const & key_bundles, const size_t bundles_size) {
-	for (size_t index = 0; index < bundles_size; index++) {
-		if (key_bundles[index] == nullptr) {
-			throw MolchException(PROTOBUF_MISSING_ERROR, "Invalid KeyBundle.");
+	HeaderAndMessageKeyStoreNode& HeaderAndMessageKeyStoreNode::copy(const HeaderAndMessageKeyStoreNode& node) {
+		this->fill(node.header_key, node.message_key, node.expiration_date);
+
+		return *this;
+	}
+
+	HeaderAndMessageKeyStoreNode& HeaderAndMessageKeyStoreNode::move(HeaderAndMessageKeyStoreNode&& node) {
+		this->fill(node.header_key, node.message_key, node.expiration_date);
+
+		return *this;
+	}
+
+	HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const HeaderAndMessageKeyStoreNode& node) {
+		this->copy(node);
+	}
+
+	HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(HeaderAndMessageKeyStoreNode&& node) {
+		this->move(std::move(node));
+	}
+
+	HeaderAndMessageKeyStoreNode& HeaderAndMessageKeyStoreNode::operator=(const HeaderAndMessageKeyStoreNode& node) {
+		return this->copy(node);
+	}
+
+	HeaderAndMessageKeyStoreNode& HeaderAndMessageKeyStoreNode::operator=(HeaderAndMessageKeyStoreNode&& node) {
+		return this->move(std::move(node));
+	}
+
+	HeaderAndMessageKeyStoreNode::HeaderAndMessageKeyStoreNode(const KeyBundle& key_bundle) {
+		//import the header key
+		if ((key_bundle.header_key == nullptr)
+			|| (key_bundle.header_key->key.data == nullptr)
+			|| (key_bundle.header_key->key.len != HEADER_KEY_SIZE)) {
+			throw MolchException(PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect header key.");
+		}
+		this->header_key.cloneFromRaw(key_bundle.header_key->key.data, key_bundle.header_key->key.len);
+
+		//import the message key
+		if ((key_bundle.message_key == nullptr)
+			|| (key_bundle.message_key->key.data == nullptr)
+			|| (key_bundle.message_key->key.len != MESSAGE_KEY_SIZE)) {
+			throw MolchException(PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect message key.");
+		}
+		this->message_key.cloneFromRaw(key_bundle.message_key->key.data, key_bundle.message_key->key.len);
+
+		//import the expiration date
+		if (!key_bundle.has_expiration_time) {
+			throw MolchException(PROTOBUF_MISSING_ERROR, "KeyBundle has no expiration time.");
+		}
+		this->expiration_date = static_cast<int64_t>(key_bundle.expiration_time);
+	}
+
+	std::unique_ptr<KeyBundle,KeyBundleDeleter> HeaderAndMessageKeyStoreNode::exportProtobuf() const {
+		auto key_bundle = std::unique_ptr<KeyBundle,KeyBundleDeleter>(throwing_zeroed_malloc<KeyBundle>(sizeof(KeyBundle)));
+		key_bundle__init(key_bundle.get());
+
+		//header key
+		key_bundle->header_key = throwing_zeroed_malloc<Key>(sizeof(Key));
+		key__init(key_bundle->header_key);
+		key_bundle->header_key->key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
+
+		//message key
+		key_bundle->message_key = throwing_zeroed_malloc<Key>(sizeof(Key));
+		key__init(key_bundle->message_key);
+		key_bundle->message_key->key.data = throwing_zeroed_malloc<unsigned char>(MESSAGE_KEY_SIZE);
+
+		//export the header key
+		this->header_key.cloneToRaw(key_bundle->header_key->key.data, HEADER_KEY_SIZE);
+		key_bundle->header_key->key.len = this->header_key.size;
+
+		//export the message key
+		this->message_key.cloneToRaw(key_bundle->message_key->key.data, MESSAGE_KEY_SIZE);
+		key_bundle->message_key->key.len = this->message_key.size;
+
+
+		//set expiration time
+		key_bundle->expiration_time = static_cast<uint64_t>(this->expiration_date);
+		key_bundle->has_expiration_time = true;
+
+		return key_bundle;
+	}
+
+	std::ostream& HeaderAndMessageKeyStoreNode::print(std::ostream& stream) const {
+		stream << "Header key:\n";
+		this->header_key.printHex(stream) << '\n';
+		stream << "Message key:\n";
+		this->message_key.printHex(stream) << '\n';
+		stream << "Expiration date:\n" << this->expiration_date << '\n';
+
+		return stream;
+	}
+
+	void HeaderAndMessageKeyStore::add(const Buffer& header_key, const Buffer& message_key) {
+		this->keys.emplace_back(header_key, message_key);
+	}
+
+	void HeaderAndMessageKeyStore::exportProtobuf(KeyBundle**& key_bundles, size_t& bundles_size) const {
+		if (this->keys.size() == 0) {
+			key_bundles = nullptr;
+			bundles_size = 0;
+			return;
 		}
 
-		this->keys.emplace_back(*key_bundles[index]);
+		auto bundles = std::vector<std::unique_ptr<KeyBundle,KeyBundleDeleter>>();
+		bundles.reserve(this->keys.size());
+
+		//export all buffers
+		for (auto&& key : this->keys) {
+			bundles.push_back(key.exportProtobuf());
+		}
+
+		//allocate output array
+		key_bundles = throwing_zeroed_malloc<KeyBundle*>(this->keys.size() * sizeof(KeyBundle*));
+		size_t index = 0;
+		for (auto&& bundle : bundles) {
+			key_bundles[index] = bundle.release();
+			index++;
+		}
+		bundles_size = this->keys.size();
 	}
-}
 
-std::ostream& HeaderAndMessageKeyStore::print(std::ostream& stream) const {
-	stream << "KEYSTORE-START-----------------------------------------------------------------\n";
-	stream << "Length: " + std::to_string(this->keys.size()) + "\n\n";
+	HeaderAndMessageKeyStore::HeaderAndMessageKeyStore(KeyBundle** const & key_bundles, const size_t bundles_size) {
+		for (size_t index = 0; index < bundles_size; index++) {
+			if (key_bundles[index] == nullptr) {
+				throw MolchException(PROTOBUF_MISSING_ERROR, "Invalid KeyBundle.");
+			}
 
-	size_t index = 0;
-	for (const auto& key_bundle : this->keys) {
-		stream << "Entry " << index << '\n';
-		index++;
-		key_bundle.print(stream) << '\n';
+			this->keys.emplace_back(*key_bundles[index]);
+		}
 	}
 
-	stream << "KEYSTORE-END-------------------------------------------------------------------\n";
+	std::ostream& HeaderAndMessageKeyStore::print(std::ostream& stream) const {
+		stream << "KEYSTORE-START-----------------------------------------------------------------\n";
+		stream << "Length: " + std::to_string(this->keys.size()) + "\n\n";
 
-	return stream;
+		size_t index = 0;
+		for (const auto& key_bundle : this->keys) {
+			stream << "Entry " << index << '\n';
+			index++;
+			key_bundle.print(stream) << '\n';
+		}
+
+		stream << "KEYSTORE-END-------------------------------------------------------------------\n";
+
+		return stream;
+	}
 }

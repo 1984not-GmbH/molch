@@ -31,6 +31,8 @@
 #include "../lib/destroyers.hpp"
 #include "utils.hpp"
 
+using namespace Molch;
+
 static void free_conversation_array(Conversation**& conversations, size_t length) {
 	if (conversations != nullptr) {
 		for (size_t i = 0; i < length; i++) {

@@ -27,6 +27,8 @@
 #include "../lib/destroyers.hpp"
 #include "utils.hpp"
 
+using namespace Molch;
+
 static return_status second_level(void) noexcept {
 	return_status status = return_status_init();
 

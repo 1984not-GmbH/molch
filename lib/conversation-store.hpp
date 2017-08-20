@@ -25,73 +25,75 @@
 #include <ostream>
 #include "conversation.hpp"
 
-class ConversationStore {
-private:
-	std::vector<ConversationT> conversations;
+namespace Molch {
+	class ConversationStore {
+	private:
+		std::vector<ConversationT> conversations;
 
-public:
+	public:
 
-	size_t size() const;
+		size_t size() const;
 
-	ConversationStore() = default;
+		ConversationStore() = default;
 
-	/*! Import a conversation store from a Protobuf-C struct.
-	 * \param conversations An array of Protobuf-C structs to import from.
-	 * \param length The number of array elements.
-	 * \param public_identity_key The public identity key of the user.
-	 */
-	ConversationStore(Conversation** const& conversations, const size_t length);
+		/*! Import a conversation store from a Protobuf-C struct.
+		 * \param conversations An array of Protobuf-C structs to import from.
+		 * \param length The number of array elements.
+		 * \param public_identity_key The public identity key of the user.
+		 */
+		ConversationStore(Conversation** const& conversations, const size_t length);
 
-	ConversationStore(const ConversationStore& store) = delete;
-	ConversationStore(ConversationStore&& store) = default;
+		ConversationStore(const ConversationStore& store) = delete;
+		ConversationStore(ConversationStore&& store) = default;
 
-	ConversationStore& operator=(const ConversationStore& store) = delete;
-	ConversationStore& operator=(ConversationStore&& store) = default;
+		ConversationStore& operator=(const ConversationStore& store) = delete;
+		ConversationStore& operator=(ConversationStore&& store) = default;
 
-	/*
-	 * Add a conversation to the conversation store or replaces
-	 * it if one with the same ID already exists.
-	 */
-	void add(ConversationT&& conversation);
+		/*
+		 * Add a conversation to the conversation store or replaces
+		 * it if one with the same ID already exists.
+		 */
+		void add(ConversationT&& conversation);
 
-	/*
-	 * Remove a conversation from the conversation_store.
-	 */
-	void remove(const ConversationT* const node);
+		/*
+		 * Remove a conversation from the conversation_store.
+		 */
+		void remove(const ConversationT* const node);
 
-	/*
-	 * Remove a conversation from the conversation store.
-	 *
-	 * The conversation is identified by it's id.
-	 */
-	void remove(const Buffer& id);
+		/*
+		 * Remove a conversation from the conversation store.
+		 *
+		 * The conversation is identified by it's id.
+		 */
+		void remove(const Buffer& id);
 
-	/*
-	 * Find a conversation for a given conversation ID.
-	 *
-	 * Returns nullptr if no conversation was found.
-	 */
-	ConversationT* find(const Buffer& id);
+		/*
+		 * Find a conversation for a given conversation ID.
+		 *
+		 * Returns nullptr if no conversation was found.
+		 */
+		ConversationT* find(const Buffer& id);
 
-	/*
-	 * Remove all entries from a conversation store.
-	 */
-	void clear();
+		/*
+		 * Remove all entries from a conversation store.
+		 */
+		void clear();
 
-	/*
-	 * Create a list of conversations (one buffer filled with the conversation ids.
-	 *
-	 * Returns nullptr if empty.
-	 */
-	Buffer list() const;
+		/*
+		 * Create a list of conversations (one buffer filled with the conversation ids.
+		 *
+		 * Returns nullptr if empty.
+		 */
+		Buffer list() const;
 
-	/*! Export a conversation store to Protobuf-C
-	 * \param conversation_store The conversation store to export.
-	 * \param conversations An array of Protobuf-C structs to export it to.
-	 * \return The status.
-	 */
-	void exportProtobuf(Conversation**& conversations, size_t& length) const;
+		/*! Export a conversation store to Protobuf-C
+		 * \param conversation_store The conversation store to export.
+		 * \param conversations An array of Protobuf-C structs to export it to.
+		 * \return The status.
+		 */
+		void exportProtobuf(Conversation**& conversations, size_t& length) const;
 
-	std::ostream& print(std::ostream& stream) const;
-};
+		std::ostream& print(std::ostream& stream) const;
+	};
+}
 #endif

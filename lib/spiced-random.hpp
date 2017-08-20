@@ -25,17 +25,19 @@
 #include "buffer.hpp"
 #include "return-status.h"
 
-/*
- * Generate a random number by combining the OSs random number
- * generator with an external source of randomness (like some kind of
- * user input).
- *
- * WARNING: Don't feed this with random numbers from the OSs random
- * source because it might annihilate the randomness.
- */
-void spiced_random(
-		Buffer& random_output,
-		const Buffer& low_entropy_spice,
-		const size_t output_length);
+namespace Molch {
+	/*
+	 * Generate a random number by combining the OSs random number
+	 * generator with an external source of randomness (like some kind of
+	 * user input).
+	 *
+	 * WARNING: Don't feed this with random numbers from the OSs random
+	 * source because it might annihilate the randomness.
+	 */
+	void spiced_random(
+			Buffer& random_output,
+			const Buffer& low_entropy_spice,
+			const size_t output_length);
+}
 
 #endif

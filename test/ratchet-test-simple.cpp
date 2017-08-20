@@ -30,6 +30,8 @@
 #include "../lib/molch-exception.hpp"
 #include "utils.hpp"
 
+using namespace Molch;
+
 static void keypair(Buffer& private_key, Buffer& public_key) {
 	int status = crypto_box_keypair(public_key.content, private_key.content);
 	if (status != 0) {

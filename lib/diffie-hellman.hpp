@@ -27,49 +27,52 @@
 #include "buffer.hpp"
 #include "ratchet.hpp"
 
-/*
- * Diffie Hellman key exchange using our private key and the
- * other's public key. Our public key is used to derive a Hash
- * from the actual output of the diffie hellman exchange (see
- * documentation of libsodium).
- *
- * role: specifies if I am Alice or Bob. This determines in
- * what order the public keys get hashed.
- *
- * OUTPUT:
- * Alice: H(ECDH(our_private_key,their_public_key)|our_public_key|their_public_key)
- * Bob:   H(ECDH(our_private_key,their_public_key)|their_public_key|our_public_key)
- */
-void diffie_hellman(
-		Buffer& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
-		const Buffer& our_private_key, //needs to be PRIVATE_KEY_SIZE long
-		const Buffer& our_public_key, //needs to be PUBLIC_KEY_SIZE long
-		const Buffer& their_public_key, //needs to be PUBLIC_KEY_SIZE long
-		const Ratchet::Role role);
+namespace Molch {
+	/*
+	 * Diffie Hellman key exchange using our private key and the
+	 * other's public key. Our public key is used to derive a Hash
+	 * from the actual output of the diffie hellman exchange (see
+	 * documentation of libsodium).
+	 *
+	 * role: specifies if I am Alice or Bob. This determines in
+	 * what order the public keys get hashed.
+	 *
+	 * OUTPUT:
+	 * Alice: H(ECDH(our_private_key,their_public_key)|our_public_key|their_public_key)
+	 * Bob:   H(ECDH(our_private_key,their_public_key)|their_public_key|our_public_key)
+	 */
+	void diffie_hellman(
+			Buffer& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
+			const Buffer& our_private_key, //needs to be PRIVATE_KEY_SIZE long
+			const Buffer& our_public_key, //needs to be PUBLIC_KEY_SIZE long
+			const Buffer& their_public_key, //needs to be PUBLIC_KEY_SIZE long
+			const Ratchet::Role role);
 
-/*
- * Triple Diffie Hellman with two keys.
- *
- * role: specifies if I am Alice or Bob. This determines in
- * what order the public keys get hashed.
- *
- * OUTPUT:
- * HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0))
- * Where:
- * A: Alice's identity
- * A0: Alice's ephemeral
- * B: Bob's identity
- * B0: Bob's ephemeral
- * -->Alice: HASH(DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_identity)||DH(our_ephemeral, their_ephemeral))
- * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
- */
-void triple_diffie_hellman(
-		Buffer& derived_key,
-		const Buffer& our_private_identity,
-		const Buffer& our_public_identity,
-		const Buffer& our_private_ephemeral,
-		const Buffer& our_public_ephemeral,
-		const Buffer& their_public_identity,
-		const Buffer& their_public_ephemeral,
-		const Ratchet::Role role);
+	/*
+	 * Triple Diffie Hellman with two keys.
+	 *
+	 * role: specifies if I am Alice or Bob. This determines in
+	 * what order the public keys get hashed.
+	 *
+	 * OUTPUT:
+	 * HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0))
+	 * Where:
+	 * A: Alice's identity
+	 * A0: Alice's ephemeral
+	 * B: Bob's identity
+	 * B0: Bob's ephemeral
+	 * -->Alice: HASH(DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_identity)||DH(our_ephemeral, their_ephemeral))
+	 * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
+	 */
+	void triple_diffie_hellman(
+			Buffer& derived_key,
+			const Buffer& our_private_identity,
+			const Buffer& our_public_identity,
+			const Buffer& our_private_ephemeral,
+			const Buffer& our_public_ephemeral,
+			const Buffer& their_public_identity,
+			const Buffer& their_public_ephemeral,
+			const Ratchet::Role role);
+}
+
 #endif

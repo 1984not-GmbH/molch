@@ -23,105 +23,107 @@
 #include <iterator>
 #include "protobuf-pool.hpp"
 
-ProtobufPoolBlock::ProtobufPoolBlock() {
-	//allocate the block
-	this->block = std::unique_ptr<unsigned char,SodiumDeleter<unsigned char>>(throwing_sodium_malloc<unsigned char>(this->default_block_size));
-}
-
-ProtobufPoolBlock::ProtobufPoolBlock(size_t block_size) {
-	//allocate the block
-	this->block = std::unique_ptr<unsigned char,SodiumDeleter<unsigned char>>(throwing_sodium_malloc<unsigned char>(block_size));
-
-	this->block_size = block_size;
-}
-
-size_t ProtobufPoolBlock::size() const {
-	return this->block_size;
-}
-
-size_t ProtobufPoolBlock::remainingSpace() const {
-	if ((this->block_size < this->offset)) {
-		return 0;
+namespace Molch {
+	ProtobufPoolBlock::ProtobufPoolBlock() {
+		//allocate the block
+		this->block = std::unique_ptr<unsigned char,SodiumDeleter<unsigned char>>(throwing_sodium_malloc<unsigned char>(this->default_block_size));
 	}
 
-	return this->block_size - this->offset;
-}
+	ProtobufPoolBlock::ProtobufPoolBlock(size_t block_size) {
+		//allocate the block
+		this->block = std::unique_ptr<unsigned char,SodiumDeleter<unsigned char>>(throwing_sodium_malloc<unsigned char>(block_size));
 
-void* ProtobufPoolBlock::allocateAligned(const size_t size, const size_t alignment) {
-		if (!this->block) {
-			throw std::bad_alloc();
+		this->block_size = block_size;
+	}
+
+	size_t ProtobufPoolBlock::size() const {
+		return this->block_size;
+	}
+
+	size_t ProtobufPoolBlock::remainingSpace() const {
+		if ((this->block_size < this->offset)) {
+			return 0;
 		}
 
-		size_t space = this->remainingSpace();
+		return this->block_size - this->offset;
+	}
 
-		if (space < (size + alignment - 1)) {
-			throw std::bad_alloc();
+	void* ProtobufPoolBlock::allocateAligned(const size_t size, const size_t alignment) {
+			if (!this->block) {
+				throw std::bad_alloc();
+			}
+
+			size_t space = this->remainingSpace();
+
+			if (space < (size + alignment - 1)) {
+				throw std::bad_alloc();
+			}
+
+			void* offset_pointer = reinterpret_cast<void*>(this->block.get() + this->offset);
+
+			//align the pointer
+			if (std::align(alignment, size, offset_pointer, space) == nullptr) {
+				throw std::bad_alloc();
+			}
+
+			if (reinterpret_cast<unsigned char*>(offset_pointer) < this->block.get()) {
+				throw std::bad_alloc();
+			}
+
+			//update the offset
+			this->offset = static_cast<size_t>(reinterpret_cast<unsigned char*>(offset_pointer) - this->block.get()) + size;
+
+			return offset_pointer;
+	}
+
+	template <>
+	void* ProtobufPoolBlock::allocate<void>(size_t size) {
+		return reinterpret_cast<void*>(this->allocateAligned(size, alignof(max_align_t)));
+	}
+
+	void* ProtobufPool::allocateAligned(const size_t size, const size_t alignment) {
+		if (size > ProtobufPoolBlock::default_block_size) {
+			this->blocks.emplace_back(size + alignment);
+			return this->blocks.back().allocateAligned(size, alignment);
 		}
 
-		void* offset_pointer = reinterpret_cast<void*>(this->block.get() + this->offset);
-
-		//align the pointer
-		if (std::align(alignment, size, offset_pointer, space) == nullptr) {
-			throw std::bad_alloc();
+		//find a block with enough space
+		auto block = std::find_if(std::begin(this->blocks), std::end(this->blocks),
+				[size, alignment](const ProtobufPoolBlock& block) {
+					return block.remainingSpace() >= (alignment - 1 + size);
+				});
+		if (block != std::end(this->blocks)) {
+			return block->allocateAligned(size, alignment);
 		}
 
-		if (reinterpret_cast<unsigned char*>(offset_pointer) < this->block.get()) {
-			throw std::bad_alloc();
-		}
-
-		//update the offset
-		this->offset = static_cast<size_t>(reinterpret_cast<unsigned char*>(offset_pointer) - this->block.get()) + size;
-
-		return offset_pointer;
-}
-
-template <>
-void* ProtobufPoolBlock::allocate<void>(size_t size) {
-	return reinterpret_cast<void*>(this->allocateAligned(size, alignof(max_align_t)));
-}
-
-void* ProtobufPool::allocateAligned(const size_t size, const size_t alignment) {
-	if (size > ProtobufPoolBlock::default_block_size) {
-		this->blocks.emplace_back(size + alignment);
+		//create a new block if no block was found
+		this->blocks.emplace_back();
 		return this->blocks.back().allocateAligned(size, alignment);
 	}
 
-	//find a block with enough space
-	auto block = std::find_if(std::begin(this->blocks), std::end(this->blocks),
-			[size, alignment](const ProtobufPoolBlock& block) {
-				return block.remainingSpace() >= (alignment - 1 + size);
-			});
-	if (block != std::end(this->blocks)) {
-		return block->allocateAligned(size, alignment);
+	template <>
+	void* ProtobufPool::allocate<void>(size_t size) {
+		return this->allocateAligned(size, alignof(max_align_t));
 	}
 
-	//create a new block if no block was found
-	this->blocks.emplace_back();
-	return this->blocks.back().allocateAligned(size, alignment);
-}
+	void* ProtobufPool::poolAllocate(void* pool, size_t size) noexcept {
+		if (pool == nullptr) {
+			return nullptr;
+		}
 
-template <>
-void* ProtobufPool::allocate<void>(size_t size) {
-	return this->allocateAligned(size, alignof(max_align_t));
-}
-
-void* ProtobufPool::poolAllocate(void* pool, size_t size) noexcept {
-	if (pool == nullptr) {
-		return nullptr;
+		return reinterpret_cast<ProtobufPool*>(pool)->allocate<void>(size);
 	}
 
-	return reinterpret_cast<ProtobufPool*>(pool)->allocate<void>(size);
-}
+	void ProtobufPool::poolFree(void* pool, void* pointer) noexcept {
+		(void)pool;
+		(void)pointer;
+	}
 
-void ProtobufPool::poolFree(void* pool, void* pointer) noexcept {
-	(void)pool;
-	(void)pointer;
-}
-
-ProtobufCAllocator ProtobufPool::getProtobufCAllocator() {
-	return {
-		&ProtobufPool::poolAllocate,
-		&ProtobufPool::poolFree,
-		reinterpret_cast<void*>(this)
-	};
+	ProtobufCAllocator ProtobufPool::getProtobufCAllocator() {
+		return {
+			&ProtobufPool::poolAllocate,
+			&ProtobufPool::poolFree,
+			reinterpret_cast<void*>(this)
+		};
+	}
 }

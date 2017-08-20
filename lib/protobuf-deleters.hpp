@@ -34,54 +34,56 @@ extern "C" {
 	#include <user.pb-c.h>
 }
 
-class BackupDeleter {
+namespace Molch {
+	class BackupDeleter {
+		public:
+			void operator ()(Backup* backup);
+	};
+
+	class ConversationDeleter {
+		public:
+			void operator ()(Conversation* conversation);
+	};
+
+	class EncryptedBackupDeleter {
+		public:
+			void operator ()(EncryptedBackup* backup);
+	};
+
+	class HeaderDeleter {
+		public:
+			void operator ()(Header* header);
+	};
+
+	class KeyDeleter {
 	public:
-		void operator ()(Backup* backup);
-};
+		void operator ()(Key *key);
+	};
 
-class ConversationDeleter {
+	class KeyBundleDeleter {
+		public:
+			void operator ()(KeyBundle *key_bundle);
+	};
+
+	class PacketDeleter {
+		public:
+			void operator ()(Packet *packet);
+	};
+
+	class PacketHeaderDeleter {
+		public:
+			void operator ()(PacketHeader *packet_header);
+	};
+
+	class PrekeyDeleter {
 	public:
-		void operator ()(Conversation* conversation);
-};
+		void operator ()(Prekey *prekey);
+	};
 
-class EncryptedBackupDeleter {
-	public:
-		void operator ()(EncryptedBackup* backup);
-};
-
-class HeaderDeleter {
-	public:
-		void operator ()(Header* header);
-};
-
-class KeyDeleter {
-public:
-	void operator ()(Key *key);
-};
-
-class KeyBundleDeleter {
-	public:
-		void operator ()(KeyBundle *key_bundle);
-};
-
-class PacketDeleter {
-	public:
-		void operator ()(Packet *packet);
-};
-
-class PacketHeaderDeleter {
-	public:
-		void operator ()(PacketHeader *packet_header);
-};
-
-class PrekeyDeleter {
-public:
-	void operator ()(Prekey *prekey);
-};
-
-class UserDeleter {
-	public:
-		void operator ()(User *user);
-};
+	class UserDeleter {
+		public:
+			void operator ()(User *user);
+	};
+}
 
 #endif /* LIB_PROTOBUF_DELETERS_H */

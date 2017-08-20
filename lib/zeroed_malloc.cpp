@@ -33,37 +33,39 @@
  * that is returned by the zeroed_malloc function.)
  */
 
-void *zeroed_malloc(size_t size) {
-	try {
-		return reinterpret_cast<void*>(throwing_zeroed_malloc<max_align_t>(size));
-	} catch (const std::exception& exception) {
-		return nullptr;
-	}
-}
-
-void zeroed_free(void *pointer) {
-	if (pointer == nullptr) {
-		return;
+namespace Molch {
+	void *zeroed_malloc(size_t size) {
+		try {
+			return reinterpret_cast<void*>(throwing_zeroed_malloc<max_align_t>(size));
+		} catch (const std::exception& exception) {
+			return nullptr;
+		}
 	}
 
-	size_t size;
-	unsigned char *malloced_address;
+	void zeroed_free(void *pointer) {
+		if (pointer == nullptr) {
+			return;
+		}
 
-	//NOTE: This has to be copied as bytes because of possible alignment issues
-	//get the size
-	std::copy(reinterpret_cast<unsigned char*>(pointer) - sizeof(size_t), reinterpret_cast<unsigned char*>(pointer), reinterpret_cast<unsigned char*>(&size));
-	//get the original pointer
-	std::copy(reinterpret_cast<unsigned char*>(pointer) - sizeof(size_t) - sizeof(void*), reinterpret_cast<unsigned char*>(pointer) - sizeof(size_t), reinterpret_cast<unsigned char*>(&malloced_address));
+		size_t size;
+		unsigned char *malloced_address;
 
-	sodium_memzero(pointer, size);
+		//NOTE: This has to be copied as bytes because of possible alignment issues
+		//get the size
+		std::copy(reinterpret_cast<unsigned char*>(pointer) - sizeof(size_t), reinterpret_cast<unsigned char*>(pointer), reinterpret_cast<unsigned char*>(&size));
+		//get the original pointer
+		std::copy(reinterpret_cast<unsigned char*>(pointer) - sizeof(size_t) - sizeof(void*), reinterpret_cast<unsigned char*>(pointer) - sizeof(size_t), reinterpret_cast<unsigned char*>(&malloced_address));
 
-	delete[] malloced_address;
-}
+		sodium_memzero(pointer, size);
 
-void *protobuf_c_allocator(void *allocator_data __attribute__((unused)), size_t size) {
-	return zeroed_malloc(size);
-}
+		delete[] malloced_address;
+	}
 
-void protobuf_c_free(void *allocator_data __attribute__((unused)), void *pointer) {
-	zeroed_free(pointer);
+	void *protobuf_c_allocator(void *allocator_data __attribute__((unused)), size_t size) {
+		return zeroed_malloc(size);
+	}
+
+	void protobuf_c_free(void *allocator_data __attribute__((unused)), void *pointer) {
+		zeroed_free(pointer);
+	}
 }

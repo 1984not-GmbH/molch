@@ -30,6 +30,8 @@
 #include "../lib/conversation.hpp"
 #include "../lib/molch-exception.hpp"
 
+using namespace Molch;
+
 int main(void) {
 	try {
 		if (sodium_init() != 0) {

@@ -27,6 +27,8 @@
 #include "../lib/molch-exception.hpp"
 #include "utils.hpp"
 
+using namespace Molch;
+
 static void second_level(void) {
 	throw MolchException(GENERIC_ERROR, "Error on the second level!");
 }

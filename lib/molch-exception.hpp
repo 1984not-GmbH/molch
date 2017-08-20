@@ -28,43 +28,45 @@
 
 #include "return-status.h"
 
-class MolchError {
-public:
-	status_type type{SUCCESS};
-	std::string message;
+namespace Molch {
+	class MolchError {
+	public:
+		status_type type{SUCCESS};
+		std::string message;
 
-	MolchError();
-	MolchError(const status_type type, const std::string& message);
+		MolchError();
+		MolchError(const status_type type, const std::string& message);
 
-	/*
-	 * \return An error message allocated with malloc
-	 */
-	error_message* toErrorMessage();
-};
+		/*
+		 * \return An error message allocated with malloc
+		 */
+		error_message* toErrorMessage();
+	};
 
-class MolchException : public std::exception {
-private:
-	std::deque<MolchError> error_stack;
+	class MolchException : public std::exception {
+	private:
+		std::deque<MolchError> error_stack;
 
-public:
+	public:
 
-	MolchException(const MolchError& error);
-	MolchException(const status_type type, const std::string& message);
-	MolchException(return_status& status);
+		MolchException(const MolchError& error);
+		MolchException(const status_type type, const std::string& message);
+		MolchException(return_status& status);
 
-	virtual const char* what() const noexcept override;
+		virtual const char* what() const noexcept override;
 
-	MolchException& add(const MolchException& exception);
-	MolchException& add(const MolchError& error);
-	return_status toReturnStatus() const;
-	std::ostream& print(std::ostream& stream) const;
-};
+		MolchException& add(const MolchException& exception);
+		MolchException& add(const MolchError& error);
+		return_status toReturnStatus() const;
+		std::ostream& print(std::ostream& stream) const;
+	};
 
-//throw std::bad_alloc if something is nullptr
-template <typename T>
-inline void exception_on_failed_alloc(const T* const& object) {
-	if (object == nullptr) {
-		throw std::bad_alloc();
+	//throw std::bad_alloc if something is nullptr
+	template <typename T>
+	inline void exception_on_failed_alloc(const T* const& object) {
+		if (object == nullptr) {
+			throw std::bad_alloc();
+		}
 	}
 }
 

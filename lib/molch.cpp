@@ -41,6 +41,8 @@ extern "C" {
 	#include <backup.pb-c.h>
 }
 
+using namespace Molch;
+
 class GlobalBackupDeleter {
 public:
 	void operator()(Buffer* buffer) {

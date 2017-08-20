@@ -36,6 +36,7 @@ extern "C" {
 	#include <encrypted_backup.pb-c.h>
 }
 
+using namespace Molch;
 
 static Buffer decrypt_conversation_backup(
 		//inputs

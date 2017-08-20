@@ -34,6 +34,8 @@
 #include "../lib/molch-exception.hpp"
 #include "../lib/malloc.hpp"
 
+using namespace Molch;
+
 int main(int argc, char *args[]) noexcept {
 	try {
 		bool recreate = false;

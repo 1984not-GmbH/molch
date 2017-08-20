@@ -24,24 +24,26 @@
 
 #include <memory>
 
-template <typename T>
-T *throwing_malloc(size_t size) {
-	T* pointer = reinterpret_cast<T*>(malloc(size));
-	if (pointer == nullptr) {
-		throw std::bad_alloc();
-	}
-
-	return pointer;
-}
-
-template <typename T>
-class MallocDeleter {
-public:
-	void operator()(T* object) {
-		if (object != nullptr) {
-			free(object);
+namespace Molch {
+	template <typename T>
+	T *throwing_malloc(size_t size) {
+		T* pointer = reinterpret_cast<T*>(malloc(size));
+		if (pointer == nullptr) {
+			throw std::bad_alloc();
 		}
+
+		return pointer;
 	}
-};
+
+	template <typename T>
+	class MallocDeleter {
+	public:
+		void operator()(T* object) {
+			if (object != nullptr) {
+				free(object);
+			}
+		}
+	};
+}
 
 #endif /* LIB_MALLOC_HPP */

@@ -30,6 +30,8 @@
 #include "utils.hpp"
 #include "common.hpp"
 
+using namespace Molch;
+
 static void free_user_array(User**& users, size_t length) {
 	if (users != nullptr) {
 		for (size_t i = 0; i < length; i++) {

@@ -31,6 +31,8 @@
 #include "utils.hpp"
 #include "common.hpp"
 
+using namespace Molch;
+
 Buffer protobuf_export(Ratchet& ratchet) {
 	std::unique_ptr<Conversation,ConversationDeleter> conversation = ratchet.exportProtobuf();
 

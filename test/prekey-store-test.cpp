@@ -32,6 +32,8 @@
 #include "../lib/destroyers.hpp"
 #include "utils.hpp"
 
+using namespace Molch;
+
 static void free_prekey_array(Prekey**& prekeys, size_t length) {
 	if (prekeys != nullptr) {
 		for (size_t i = 0; i < length; i++) {

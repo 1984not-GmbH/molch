@@ -32,6 +32,8 @@
 #include "utils.hpp"
 #include "packet-test-lib.hpp"
 
+using namespace Molch;
+
 int main(void) {
 	try {
 		if (sodium_init() == -1) {

@@ -37,59 +37,61 @@ extern "C" {
 #include "sodium-wrappers.hpp"
 #include "protobuf-deleters.hpp"
 
-class HeaderAndMessageKeyStoreNode {
-private:
-	void fill(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date);
+namespace Molch {
+	class HeaderAndMessageKeyStoreNode {
+	private:
+		void fill(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date);
 
-	unsigned char message_key_storage[MESSAGE_KEY_SIZE];
-	unsigned char header_key_storage[HEADER_KEY_SIZE];
+		unsigned char message_key_storage[MESSAGE_KEY_SIZE];
+		unsigned char header_key_storage[HEADER_KEY_SIZE];
 
-	HeaderAndMessageKeyStoreNode& copy(const HeaderAndMessageKeyStoreNode& node);
-	HeaderAndMessageKeyStoreNode& move(HeaderAndMessageKeyStoreNode&& node);
+		HeaderAndMessageKeyStoreNode& copy(const HeaderAndMessageKeyStoreNode& node);
+		HeaderAndMessageKeyStoreNode& move(HeaderAndMessageKeyStoreNode&& node);
 
-public:
-	Buffer message_key{this->message_key_storage, sizeof(this->message_key_storage), 0};
-	Buffer header_key{this->header_key_storage, sizeof(this->header_key_storage), 0};
-	int64_t expiration_date{0};
+	public:
+		Buffer message_key{this->message_key_storage, sizeof(this->message_key_storage), 0};
+		Buffer header_key{this->header_key_storage, sizeof(this->header_key_storage), 0};
+		int64_t expiration_date{0};
 
-	HeaderAndMessageKeyStoreNode() = default;
-	HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key);
-	HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date);
-	/* copy and move constructors */
-	HeaderAndMessageKeyStoreNode(const HeaderAndMessageKeyStoreNode& node);
-	HeaderAndMessageKeyStoreNode(HeaderAndMessageKeyStoreNode&& node);
-	HeaderAndMessageKeyStoreNode(const KeyBundle& key_bundle);
+		HeaderAndMessageKeyStoreNode() = default;
+		HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key);
+		HeaderAndMessageKeyStoreNode(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date);
+		/* copy and move constructors */
+		HeaderAndMessageKeyStoreNode(const HeaderAndMessageKeyStoreNode& node);
+		HeaderAndMessageKeyStoreNode(HeaderAndMessageKeyStoreNode&& node);
+		HeaderAndMessageKeyStoreNode(const KeyBundle& key_bundle);
 
-	/* copy and move assignment operators */
-	HeaderAndMessageKeyStoreNode& operator=(const HeaderAndMessageKeyStoreNode& node);
-	HeaderAndMessageKeyStoreNode& operator=(HeaderAndMessageKeyStoreNode&& node);
+		/* copy and move assignment operators */
+		HeaderAndMessageKeyStoreNode& operator=(const HeaderAndMessageKeyStoreNode& node);
+		HeaderAndMessageKeyStoreNode& operator=(HeaderAndMessageKeyStoreNode&& node);
 
-	std::unique_ptr<KeyBundle,KeyBundleDeleter> exportProtobuf() const;
+		std::unique_ptr<KeyBundle,KeyBundleDeleter> exportProtobuf() const;
 
-	std::ostream& print(std::ostream& stream) const;
-};
+		std::ostream& print(std::ostream& stream) const;
+	};
 
-//header of the key store
-class HeaderAndMessageKeyStore {
-public:
-	std::vector<HeaderAndMessageKeyStoreNode,SodiumAllocator<HeaderAndMessageKeyStoreNode>> keys;
+	//header of the key store
+	class HeaderAndMessageKeyStore {
+	public:
+		std::vector<HeaderAndMessageKeyStoreNode,SodiumAllocator<HeaderAndMessageKeyStoreNode>> keys;
 
-	HeaderAndMessageKeyStore() = default;
-	//! Import a header_and_message_keystore form a Protobuf-C struct.
-	/*
-	 * \param key_bundles An array of Protobuf-C key-bundles to import from.
-	 * \param bundles_size Size of the array.
-	 */
-	HeaderAndMessageKeyStore(KeyBundle** const & key_bundles, const size_t bundles_size);
+		HeaderAndMessageKeyStore() = default;
+		//! Import a header_and_message_keystore form a Protobuf-C struct.
+		/*
+		 * \param key_bundles An array of Protobuf-C key-bundles to import from.
+		 * \param bundles_size Size of the array.
+		 */
+		HeaderAndMessageKeyStore(KeyBundle** const & key_bundles, const size_t bundles_size);
 
-	void add(const Buffer& header_key, const Buffer& message_key);
-	//! Export a header_and_message_keystore as Protobuf-C struct.
-	/*!
-	 * \param key_bundles Pointer to a pointer of protobuf-c key bundle structs, it will be allocated in this function.
-	 * \param bundle_size Size of the outputted array.
-	 */
-	void exportProtobuf(KeyBundle**& key_bundles, size_t& bundles_size) const;
+		void add(const Buffer& header_key, const Buffer& message_key);
+		//! Export a header_and_message_keystore as Protobuf-C struct.
+		/*!
+		 * \param key_bundles Pointer to a pointer of protobuf-c key bundle structs, it will be allocated in this function.
+		 * \param bundle_size Size of the outputted array.
+		 */
+		void exportProtobuf(KeyBundle**& key_bundles, size_t& bundles_size) const;
 
-	std::ostream& print(std::ostream& stream) const;
-};
+		std::ostream& print(std::ostream& stream) const;
+	};
+}
 #endif
