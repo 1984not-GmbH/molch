@@ -53,11 +53,8 @@ namespace Molch {
 	template <size_t length, KeyType keytype>
 	class Key : public std::array<unsigned char,length> {
 	private:
-		std::unique_ptr<Buffer> key_buffer{nullptr};
-
 		Key& copy(const Key& key) {
 			this->empty = key.empty;
-			this->key_buffer.reset();
 
 			std::copy(std::cbegin(key), std::cend(key), std::begin(*this));
 
@@ -66,7 +63,6 @@ namespace Molch {
 
 		Key& move(Key&& key) {
 			this->empty = key.empty;
-			this->key_buffer.reset();
 
 			if (key.empty) {
 				key.clear();
@@ -101,17 +97,6 @@ namespace Molch {
 		}
 		Key& operator=(Key&& key) {
 			return this->move(std::move(key));
-		}
-
-		Key& operator=(const Buffer& buffer) {
-			if (!buffer.contains(length)) {
-				throw Exception(INVALID_INPUT, "Buffer has wrong length to assign key.");
-			}
-
-			buffer.cloneToRaw(this->data, length);
-			this->empty = false;
-
-			return *this;
 		}
 
 		/*
@@ -206,14 +191,6 @@ namespace Molch {
 			derived_key.empty = false;
 		}
 
-		Buffer& buffer() {
-			if (!this->key_buffer) {
-				this->key_buffer = std::make_unique<Buffer>(this->data(), length, length);
-			}
-
-			return *this->key_buffer;
-		}
-
 		void fillRandom() {
 			randombytes_buf(reinterpret_cast<void*>(this->data()), this->size());
 			this->empty = false;
@@ -249,9 +226,6 @@ namespace Molch {
 		void clear() {
 			sodium_memzero(reinterpret_cast<void*>(this->data()), length);
 			this->empty = true;
-			if (this->key_buffer) {
-				this->key_buffer->size = 0;
-			}
 		}
 
 		std::ostream& printHex(std::ostream& stream) const {

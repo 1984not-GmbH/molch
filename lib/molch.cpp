@@ -95,7 +95,7 @@ static Buffer create_prekey_list(const PublicSigningKey& public_signing_key) {
 			0,
 			&malloc,
 			&free);
-	unsigned_prekey_list.copyFrom(0, public_identity_key.buffer(), 0, PUBLIC_KEY_SIZE);
+	unsigned_prekey_list.copyFromRaw(0, public_identity_key.data(), 0, PUBLIC_KEY_SIZE);
 
 	//get the prekeys
 	Buffer prekeys(unsigned_prekey_list.content + PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
