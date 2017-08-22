@@ -186,11 +186,11 @@ int main(void) {
 		}
 
 		//check for all conversations that they exist
-		Molch::Key<CONVERSATION_ID_SIZE> first_id;
-		Molch::Key<CONVERSATION_ID_SIZE> middle_id;
-		Molch::Key<CONVERSATION_ID_SIZE> last_id;
+		Molch::Key<CONVERSATION_ID_SIZE,Molch::KeyType::Key> first_id;
+		Molch::Key<CONVERSATION_ID_SIZE,Molch::KeyType::Key> middle_id;
+		Molch::Key<CONVERSATION_ID_SIZE,Molch::KeyType::Key> last_id;
 		for (size_t i = 0; i < (conversation_list.size / CONVERSATION_ID_SIZE); i++) {
-			Molch::Key<CONVERSATION_ID_SIZE> current_id;
+			Molch::Key<CONVERSATION_ID_SIZE,Molch::KeyType::Key> current_id;
 			current_id.set(conversation_list.content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
 			auto found_node = store.find(current_id);
 			if (found_node == nullptr) {

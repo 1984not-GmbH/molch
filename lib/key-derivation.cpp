@@ -54,8 +54,8 @@ namespace Molch {
 		}
 
 		//create buffers
-		Key<DIFFIE_HELLMAN_SIZE> diffie_hellman_secret;
-		Key<crypto_generichash_BYTES> derivation_key;
+		Key<DIFFIE_HELLMAN_SIZE,KeyType::Key> diffie_hellman_secret;
+		Key<crypto_generichash_BYTES,KeyType::Key> derivation_key;
 
 		//DH(DHRs, DHRr) or DH(DHRp, DHRs)
 		diffie_hellman(
@@ -120,7 +120,7 @@ namespace Molch {
 			throw Exception(INVALID_INPUT, "Invalid input to derive_initial_root_chain_and_header_keys.");
 		}
 
-		Key<crypto_secretbox_KEYBYTES> master_key;
+		Key<crypto_secretbox_KEYBYTES,KeyType::Key> master_key;
 
 		//derive master_key to later derive the initial root key,
 		//header keys and chain keys from

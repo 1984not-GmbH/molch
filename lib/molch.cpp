@@ -705,7 +705,7 @@ cleanup:
 			}
 
 			//find the conversation
-			Molch::Key<CONVERSATION_ID_SIZE> conversation_id_key;
+			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
 			conversation_id_key.set(conversation_id, CONVERSATION_ID_SIZE);
 			Molch::User *user;
 			auto *conversation = users->findConversation(user, conversation_id_key);
@@ -788,7 +788,7 @@ cleanup:
 			}
 
 			//find the conversation
-			Molch::Key<CONVERSATION_ID_SIZE> conversation_id_key;
+			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
 			conversation_id_key.set(conversation_id, CONVERSATION_ID_SIZE);
 			Molch::User* user;
 			auto conversation = users->findConversation(user, conversation_id_key);
@@ -854,7 +854,7 @@ cleanup:
 
 			//find the conversation
 			Molch::User *user = nullptr;
-			Molch::Key<CONVERSATION_ID_SIZE> conversation_id_key;
+			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
 			conversation_id_key.set(conversation_id, CONVERSATION_ID_SIZE);
 			auto conversation = users->findConversation(user, conversation_id_key);
 			if (conversation == nullptr) {
@@ -1031,7 +1031,7 @@ cleanup:
 
 			//find the conversation
 			Molch::User *user;
-			Molch::Key<CONVERSATION_ID_SIZE> conversation_id_key;
+			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
 			conversation_id_key.set(conversation_id, CONVERSATION_ID_SIZE);
 			auto conversation = users->findConversation(user, conversation_id_key);
 			if (conversation == nullptr) {
@@ -1193,7 +1193,7 @@ cleanup:
 			//import the conversation
 			ProtobufCConversation conversation(*conversation_struct);
 			Molch::User* containing_user = nullptr;
-			Molch::Key<CONVERSATION_ID_SIZE> conversation_id_key;
+			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
 			conversation_id_key.set(conversation_struct->id.data, conversation_struct->id.len);
 			auto existing_conversation = users->findConversation(containing_user, conversation_id_key);
 			if (existing_conversation == nullptr) {

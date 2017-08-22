@@ -49,7 +49,7 @@ namespace Molch {
 			uint32_t& previous_receive_message_number);
 
 	public:
-		Key<CONVERSATION_ID_SIZE> id; //unique id of a conversation, generated randomly
+		Key<CONVERSATION_ID_SIZE,KeyType::Key> id; //unique id of a conversation, generated randomly
 		std::unique_ptr<Ratchet> ratchet;
 
 		/*

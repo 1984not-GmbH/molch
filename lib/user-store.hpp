@@ -117,7 +117,7 @@ namespace Molch {
 		 *
 		 * return nullptr if no conversation was found.
 		 */
-		Conversation* findConversation(User*& user, const Key<CONVERSATION_ID_SIZE>& conversation_id);
+		Conversation* findConversation(User*& user, const Key<CONVERSATION_ID_SIZE,KeyType::Key>& conversation_id);
 
 		/*
 		 * List all of the users.

@@ -34,7 +34,23 @@
 #include "endianness.hpp"
 
 namespace Molch {
-	template <size_t length>
+
+	//type of key, this is used to distinguish key types
+	//and for example avoid copying a private key to a public key
+	enum class KeyType : uint8_t {
+		Key,
+		MessageKey,
+		ChainKey,
+		HeaderKey,
+		RootKey,
+		BackupKey,
+		PublicKey,
+		PrivateKey,
+		PublicSigningKey,
+		PrivateSigningKey
+	};
+
+	template <size_t length, KeyType keytype>
 	class Key : public std::array<unsigned char,length> {
 	private:
 		std::unique_ptr<Buffer> key_buffer{nullptr};
@@ -145,8 +161,12 @@ namespace Molch {
 			return !(*this == key);
 		}
 
-		template <size_t derived_length>
-		void deriveTo(Key<derived_length>& derived_key, const uint32_t subkey_counter) const {
+		KeyType type() {
+			return type;
+		}
+
+		template <size_t derived_length,KeyType derived_type>
+		void deriveTo(Key<derived_length,derived_type>& derived_key, const uint32_t subkey_counter) const {
 			static_assert(derived_length <= crypto_generichash_blake2b_BYTES_MAX, "The derived length is greater than crypto_generichas_blake2b_BYTES_MAX");
 			static_assert(derived_length >= crypto_generichash_blake2b_BYTES_MIN, "The derived length is smaller than crypto_generichash_blake2b_BYTES_MAX");
 			static_assert(length <= crypto_generichash_blake2b_KEYBYTES_MAX, "The length to derive from is greater than crypto_generichash_blake2b_KEYBYTES_MAX");
@@ -260,10 +280,10 @@ namespace Molch {
 		}
 	};
 
-	class MessageKey : public Key<MESSAGE_KEY_SIZE> {
+	class MessageKey : public Key<MESSAGE_KEY_SIZE,KeyType::MessageKey> {
 	};
 
-	class ChainKey : public Key<CHAIN_KEY_SIZE> {
+	class ChainKey : public Key<CHAIN_KEY_SIZE,KeyType::ChainKey> {
 	public:
 		MessageKey deriveMessageKey() const {
 			MessageKey message_key;
@@ -280,17 +300,17 @@ namespace Molch {
 		}
 	};
 
-	class HeaderKey : public Key<HEADER_KEY_SIZE> {};
+	class HeaderKey : public Key<HEADER_KEY_SIZE,KeyType::HeaderKey> {};
 
-	class RootKey : public Key<ROOT_KEY_SIZE> {};
+	class RootKey : public Key<ROOT_KEY_SIZE,KeyType::RootKey> {};
 
-	class BackupKey : public Key<BACKUP_KEY_SIZE> {};
+	class BackupKey : public Key<BACKUP_KEY_SIZE,KeyType::BackupKey> {};
 
-	class PublicKey : public Key<PUBLIC_KEY_SIZE> {};
-	class PrivateKey : public Key<PRIVATE_KEY_SIZE> {};
+	class PublicKey : public Key<PUBLIC_KEY_SIZE,KeyType::PublicKey> {};
+	class PrivateKey : public Key<PRIVATE_KEY_SIZE,KeyType::PrivateKey> {};
 
-	class PublicSigningKey : public Key<PUBLIC_MASTER_KEY_SIZE> {};
-	class PrivateSigningKey : public Key<PRIVATE_MASTER_KEY_SIZE> {};
+	class PublicSigningKey : public Key<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey> {};
+	class PrivateSigningKey : public Key<PRIVATE_MASTER_KEY_SIZE,KeyType::PrivateSigningKey> {};
 }
 
 #endif /* LIB_KEY_HPP */

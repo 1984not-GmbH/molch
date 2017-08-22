@@ -164,7 +164,7 @@ namespace Molch {
 		return &(*user);
 	}
 
-	Conversation* UserStore::findConversation(User*& user, const Key<CONVERSATION_ID_SIZE>& conversation_id) {
+	Conversation* UserStore::findConversation(User*& user, const Key<CONVERSATION_ID_SIZE,KeyType::Key>& conversation_id) {
 		if (conversation_id.empty) {
 			throw Exception(INVALID_INPUT, "Invalid input to UserStore::findConversation.");
 		}
