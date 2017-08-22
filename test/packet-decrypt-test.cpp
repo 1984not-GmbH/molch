@@ -53,8 +53,8 @@ int main(void) {
 		//NORMAL MESSAGE
 		printf("NORMAL MESSAGE\n");
 		Buffer message("Hello world!\n");
-		Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+		HeaderKey header_key;
+		MessageKey message_key;
 		Buffer packet;
 		create_and_print_message(
 			packet,
@@ -118,12 +118,12 @@ int main(void) {
 		//PREKEY MESSAGE
 		printf("PREKEY MESSAGE\n");
 		//create the public keys
-		Buffer public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		public_identity_key.fillRandom(PUBLIC_KEY_SIZE);
-		Buffer public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		public_ephemeral_key.fillRandom(PUBLIC_KEY_SIZE);
-		Buffer public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		public_prekey.fillRandom(PUBLIC_KEY_SIZE);
+		PublicKey public_identity_key;
+		public_identity_key.fillRandom();
+		PublicKey public_ephemeral_key;
+		public_ephemeral_key.fillRandom();
+		PublicKey public_prekey;
+		public_prekey.fillRandom();
 
 		decrypted_header.clear();
 		decrypted_message.clear();
@@ -143,9 +143,9 @@ int main(void) {
 			&public_prekey);
 
 		//now decrypt the packet
-		Buffer extracted_public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer extracted_public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer extracted_public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		PublicKey extracted_public_identity_key;
+		PublicKey extracted_public_ephemeral_key;
+		PublicKey extracted_public_prekey;
 		packet_decrypt(
 			extracted_current_protocol_version,
 			extracted_highest_supported_protocol_version,

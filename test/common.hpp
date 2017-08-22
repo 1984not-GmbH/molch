@@ -24,13 +24,14 @@
 
 #include <string>
 #include "../lib/header-and-message-keystore.hpp"
+#include "../lib/key.hpp"
 
 /*
  * Generates and prints a crypto_box keypair.
  */
 void generate_and_print_keypair(
-		Molch::Buffer& public_key, //crypto_box_PUBLICKEYBYTES
-		Molch::Buffer& private_key, //crypto_box_SECRETKEYBYTES
+		Molch::PublicKey& public_key,
+		Molch::PrivateKey& private_key,
 		const std::string& name, //Name of the key owner (e.g. "Alice")
 		const std::string& type); //type of the key (e.g. "ephemeral")
 #endif

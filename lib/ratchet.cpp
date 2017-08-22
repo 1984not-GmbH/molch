@@ -41,19 +41,19 @@ namespace Molch {
 	 * immediately deleted after deriving the initial root key though!)
 	 */
 	Ratchet::Ratchet(
-			const Buffer& our_private_identity,
-			const Buffer& our_public_identity,
-			const Buffer& their_public_identity,
-			const Buffer& our_private_ephemeral,
-			const Buffer& our_public_ephemeral,
-			const Buffer& their_public_ephemeral) {
+			const PrivateKey& our_private_identity,
+			const PublicKey& our_public_identity,
+			const PublicKey& their_public_identity,
+			const PrivateKey& our_private_ephemeral,
+			const PublicKey& our_public_ephemeral,
+			const PublicKey& their_public_ephemeral) {
 		//check buffer sizes
-		if (!our_private_identity.contains(PRIVATE_KEY_SIZE)
-				|| !our_public_identity.contains(PUBLIC_KEY_SIZE)
-				|| !their_public_identity.contains(PUBLIC_KEY_SIZE)
-				|| !our_private_ephemeral.contains(PRIVATE_KEY_SIZE)
-				|| !our_public_ephemeral.contains(PUBLIC_KEY_SIZE)
-				|| !their_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
+		if (our_private_identity.empty
+				|| our_public_identity.empty
+				|| their_public_identity.empty
+				|| our_private_ephemeral.empty
+				|| our_public_ephemeral.empty
+				|| their_public_ephemeral.empty) {
 			throw Exception(INVALID_INPUT, "Invalid input to ratchet_create.");
 		}
 
@@ -61,10 +61,9 @@ namespace Molch {
 
 		//find out if we are alice by comparing both public keys
 		//the one with the bigger public key is alice
-		int comparison = sodium_compare(our_public_identity.content, their_public_identity.content, our_public_identity.size);
-		if (comparison > 0) {
+		if (our_public_identity > their_public_identity) {
 			this->role = Role::ALICE;
-		} else if (comparison < 0) {
+		} else if (our_public_identity < their_public_identity) {
 			this->role = Role::BOB;
 		} else {
 			throw Exception(SHOULDNT_HAPPEN, "This mustn't happen, both conversation partners have the same public key!");
@@ -89,15 +88,15 @@ namespace Molch {
 
 		//copy keys into state
 		//our public identity
-		this->storage->our_public_identity.cloneFrom(our_public_identity);
+		this->storage->our_public_identity = our_public_identity;
 		//their_public_identity
-		this->storage->their_public_identity.cloneFrom(their_public_identity);
+		this->storage->their_public_identity = their_public_identity;
 		//our_private_ephemeral
-		this->storage->our_private_ephemeral.cloneFrom(our_private_ephemeral);
+		this->storage->our_private_ephemeral = our_private_ephemeral;
 		//our_public_ephemeral
-		this->storage->our_public_ephemeral.cloneFrom(our_public_ephemeral);
+		this->storage->our_public_ephemeral = our_public_ephemeral;
 		//their_public_ephemeral
-		this->storage->their_public_ephemeral.cloneFrom(their_public_ephemeral);
+		this->storage->their_public_ephemeral = their_public_ephemeral;
 
 		//set other state
 		this->ratchet_flag = static_cast<bool>(this->role);
@@ -112,35 +111,27 @@ namespace Molch {
 	 * Get keys and metadata to send the next message.
 	 */
 	void Ratchet::send(
-			Buffer& send_header_key, //HEADER_KEY_SIZE, HKs
+			HeaderKey& send_header_key, //HEADER_KEY_SIZE, HKs
 			uint32_t& send_message_number, //Ns
 			uint32_t& previous_send_message_number, //PNs
-			Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE, DHRs
-			Buffer& message_key) { //MESSAGE_KEY_SIZE, MK
-		//check input
-		if (!send_header_key.fits(HEADER_KEY_SIZE)
-				|| !our_public_ephemeral.fits(PUBLIC_KEY_SIZE)
-				|| !message_key.fits(MESSAGE_KEY_SIZE)) {
-			throw Exception(INVALID_INPUT, "Invalid input to ratchet_send.");
-		}
-
+			PublicKey& our_public_ephemeral, //PUBLIC_KEY_SIZE, DHRs
+			MessageKey& message_key) { //MESSAGE_KEY_SIZE, MK
 		if (this->ratchet_flag) {
 			//DHRs = generateECDH()
 			int status = crypto_box_keypair(
-					this->storage->our_public_ephemeral.content,
-					this->storage->our_private_ephemeral.content);
-			this->storage->our_public_ephemeral.size = PUBLIC_KEY_SIZE;
-			this->storage->our_private_ephemeral.size = PRIVATE_KEY_SIZE;
+					this->storage->our_public_ephemeral.data(),
+					this->storage->our_private_ephemeral.data());
 			if (status != 0) {
 				throw Exception(KEYGENERATION_FAILED, "Failed to generate new ephemeral keypair.");
 			}
+			this->storage->our_public_ephemeral.empty = false;
+			this->storage->our_private_ephemeral.empty = false;
 
 			//HKs = NHKs
-			this->storage->send_header_key.cloneFrom(this->storage->next_send_header_key);
+			this->storage->send_header_key = this->storage->next_send_header_key;
 
 			//clone the root key for it to not be overwritten in the next step
-			Buffer root_key_backup(ROOT_KEY_SIZE, 0);
-			root_key_backup.cloneFrom(this->storage->root_key);
+			RootKey root_key_backup{this->storage->root_key};
 
 			//RK, NHKs, CKs = KDF(HMAC-HASH(RK, DH(DHRs, DHRr)))
 			derive_root_next_header_and_chain_keys(
@@ -164,47 +155,40 @@ namespace Molch {
 		}
 
 		//MK = HMAC-HASH(CKs, "0")
-		derive_message_key(message_key, this->storage->send_chain_key);
+		message_key = this->storage->send_chain_key.deriveMessageKey();
 
 		//copy the other data to the output
 		//(corresponds to
 		//  msg = Enc(HKs, Ns || PNs || DHRs) || Enc(MK, plaintext)
 		//  in the axolotl specification)
 		//HKs:
-		send_header_key.cloneFrom(this->storage->send_header_key);
+		send_header_key = this->storage->send_header_key;
 		//Ns
 		send_message_number = this->send_message_number;
 		//PNs
 		previous_send_message_number = this->previous_message_number;
 		//DHRs
-		our_public_ephemeral.cloneFrom(this->storage->our_public_ephemeral);
+		our_public_ephemeral = this->storage->our_public_ephemeral;
 
 		//Ns = Ns + 1
 		this->send_message_number++;
 
 		//clone the chain key for it to not be overwritten in the next step
-		Buffer chain_key_backup(ROOT_KEY_SIZE, 0);
-		chain_key_backup.cloneFrom(this->storage->send_chain_key);
+		ChainKey chain_key_backup{this->storage->send_chain_key};
 
 		//CKs = HMAC-HASH(CKs, "1")
-		derive_chain_key(this->storage->send_chain_key, chain_key_backup);
+		this->storage->send_chain_key = chain_key_backup.deriveChainKey();
 	}
 
 	/*
 	 * Get a copy of the current and the next receive header key.
 	 */
 	void Ratchet::getReceiveHeaderKeys(
-			Buffer& current_receive_header_key,
-			Buffer& next_receive_header_key) const {
-		//check input
-		if (!current_receive_header_key.fits(HEADER_KEY_SIZE)
-				|| !next_receive_header_key.fits(HEADER_KEY_SIZE)) {
-			throw Exception(INVALID_INPUT, "Invalid input to ratchet_get_receive_header_keys.");
-		}
-
+			HeaderKey& current_receive_header_key,
+			HeaderKey& next_receive_header_key) const {
 		//clone the header keys
-		current_receive_header_key.cloneFrom(this->storage->receive_header_key);
-		next_receive_header_key.cloneFrom(this->storage->next_receive_header_key);
+		current_receive_header_key = this->storage->receive_header_key;
+		next_receive_header_key = this->storage->next_receive_header_key;
 	}
 
 	/*
@@ -234,20 +218,12 @@ namespace Molch {
 	 */
 	void Ratchet::stageSkippedHeaderAndMessageKeys(
 			HeaderAndMessageKeyStore& staging_area,
-			Buffer * const output_chain_key, //output, optional CHAIN_KEY_SIZE
-			Buffer * const output_message_key, //output, optional MESSAGE_KEY_SIZE
-			const Buffer& current_header_key,
+			ChainKey * const output_chain_key, //output, optional CHAIN_KEY_SIZE
+			MessageKey * const output_message_key, //output, optional MESSAGE_KEY_SIZE
+			const HeaderKey& current_header_key,
 			const uint32_t current_message_number,
 			const uint32_t future_message_number,
-			const Buffer& chain_key) {
-		//check input
-		if (((output_chain_key != nullptr) && !output_chain_key->fits(CHAIN_KEY_SIZE))
-				|| ((output_message_key != nullptr) && !output_message_key->fits(MESSAGE_KEY_SIZE))
-				|| !current_header_key.contains(HEADER_KEY_SIZE)
-				|| !chain_key.contains(CHAIN_KEY_SIZE)) {
-			throw Exception(INVALID_INPUT, "Invalid input to stage_skipped_header_and_message_keys.");
-		}
-
+			const ChainKey& chain_key) {
 		//when chain key is <none>, do nothing
 		if (chain_key.isNone()) {
 			return;
@@ -255,33 +231,27 @@ namespace Molch {
 
 		//set current_chain_key to chain key to initialize it for the calculation that's
 		//following
-		Buffer current_chain_key(CHAIN_KEY_SIZE, 0);
-		current_chain_key.cloneFrom(chain_key);
+		ChainKey current_chain_key{chain_key};
 
-		Buffer next_chain_key(CHAIN_KEY_SIZE, 0);
-		Buffer current_message_key(MESSAGE_KEY_SIZE, 0);
+		ChainKey next_chain_key;
+		MessageKey current_message_key;
 		for (uint32_t pos = current_message_number; pos < future_message_number; pos++) {
-			//derive current message key
-			derive_message_key(current_message_key, current_chain_key);
-
-			//add the message key, along with current_header_key to the staging area
+			current_message_key = current_chain_key.deriveMessageKey();
 			staging_area.add(current_header_key, current_message_key);
-
-			//derive next chain key
-			derive_chain_key(next_chain_key, current_chain_key);
+			next_chain_key = current_chain_key.deriveChainKey();
 
 			//shift chain keys
-			current_chain_key.cloneFrom(next_chain_key);
+			current_chain_key = next_chain_key;
 		}
 
 		//derive the message key that will be returned
 		if (output_message_key != nullptr) {
-			derive_message_key(*output_message_key, current_chain_key);
+			*output_message_key = current_chain_key.deriveMessageKey();
 		}
 
 		//derive the chain key that will be returned
 		if (output_chain_key != nullptr) {
-			derive_chain_key(*output_chain_key, current_chain_key);
+			*output_chain_key = current_chain_key.deriveChainKey();
 		}
 	}
 
@@ -310,13 +280,12 @@ namespace Molch {
 	 * after having verified the message.
 	 */
 	void Ratchet::receive(
-			Buffer& message_key,
-			const Buffer& their_purported_public_ephemeral,
+			MessageKey& message_key,
+			const PublicKey& their_purported_public_ephemeral,
 			const uint32_t purported_message_number,
 			const uint32_t purported_previous_message_number) {
 		//check input
-		if (!message_key.fits(MESSAGE_KEY_SIZE)
-				|| !their_purported_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
+		if (their_purported_public_ephemeral.empty) {
 			throw Exception(INVALID_INPUT, "Invalid input to ratchet_receive.");
 		}
 
@@ -354,8 +323,18 @@ namespace Molch {
 			//PNp = read(): get the purported previous message number from the input
 			this->purported_previous_message_number = purported_previous_message_number;
 			//DHRp = read(): get the purported ephemeral from the input
-			this->storage->their_purported_public_ephemeral.cloneFrom(their_purported_public_ephemeral);
+			this->storage->their_purported_public_ephemeral = their_purported_public_ephemeral;
 
+			switch (this->role) {
+				case Role::ALICE:
+					break;
+
+				case Role::BOB:
+					break;
+
+				default:
+					break;
+			}
 			//stage_skipped_header_and_message_keys(HKr, Nr, PNp, CKr)
 			Ratchet::stageSkippedHeaderAndMessageKeys(
 					this->staged_header_and_message_keys,
@@ -367,7 +346,7 @@ namespace Molch {
 					this->storage->receive_chain_key);
 
 			//HKp = NHKr
-			this->storage->purported_receive_header_key.cloneFrom(this->storage->next_receive_header_key);
+			this->storage->purported_receive_header_key = this->storage->next_receive_header_key;
 
 			//RKp, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
 			derive_root_next_header_and_chain_keys(
@@ -381,8 +360,7 @@ namespace Molch {
 					this->role);
 
 			//backup the purported chain key because it will get overwritten in the next step
-			Buffer purported_chain_key_backup(CHAIN_KEY_SIZE, 0);
-			purported_chain_key_backup.cloneFrom(this->storage->purported_receive_chain_key);
+			ChainKey purported_chain_key_backup{this->storage->purported_receive_chain_key};
 
 			//CKp, MK = staged_header_and_message_keys(HKp, 0, Np, CKp)
 			Ratchet::stageSkippedHeaderAndMessageKeys(
@@ -426,16 +404,17 @@ namespace Molch {
 			//otherwise, received message was valid
 			//accept purported values
 			//RK = RKp
-			this->storage->root_key.cloneFrom(this->storage->purported_root_key);
+			this->storage->root_key = this->storage->purported_root_key;
 			//HKr = HKp
-			this->storage->receive_header_key.cloneFrom(this->storage->purported_receive_header_key);
+			this->storage->receive_header_key = this->storage->purported_receive_header_key;
 			//NHKr = NHKp
-			this->storage->next_receive_header_key.cloneFrom(this->storage->purported_next_receive_header_key);
+			this->storage->next_receive_header_key = this->storage->purported_next_receive_header_key;
 			//DHRr = DHRp
-			this->storage->their_public_ephemeral.cloneFrom(this->storage->their_purported_public_ephemeral);
+			this->storage->their_public_ephemeral = this->storage->their_purported_public_ephemeral;
 			//erase(DHRs)
 			this->storage->our_private_ephemeral.clear();
-			this->storage->our_private_ephemeral.size = PRIVATE_KEY_SIZE;
+			//TODO: Get rid of this somedeay
+			this->storage->our_private_ephemeral.empty = false;
 			//ratchet_flag = True
 			this->ratchet_flag = true;
 		}
@@ -445,7 +424,7 @@ namespace Molch {
 		//Nr = Np + 1
 		this->receive_message_number = this->purported_message_number + 1;
 		//CKr = CKp
-		this->storage->receive_chain_key.cloneFrom(this->storage->purported_receive_chain_key);
+		this->storage->receive_chain_key = this->storage->purported_receive_chain_key;
 	}
 
 	std::unique_ptr<ProtobufCConversation,ConversationDeleter> Ratchet::exportProtobuf() const {
@@ -454,141 +433,141 @@ namespace Molch {
 
 		//root keys
 		//root key
-		if (!this->storage->root_key.contains(ROOT_KEY_SIZE)) {
+		if (this->storage->root_key.empty) {
 			throw Exception(EXPORT_ERROR, "root_key is missing or has an incorrect size.");
 		}
 		conversation->root_key.data = throwing_zeroed_malloc<unsigned char>(ROOT_KEY_SIZE);
-		this->storage->root_key.cloneToRaw(conversation->root_key.data, ROOT_KEY_SIZE);
+		this->storage->root_key.copyTo(conversation->root_key.data, ROOT_KEY_SIZE);
 		conversation->root_key.len = ROOT_KEY_SIZE;
 		conversation->has_root_key = true;
 		//purported root key
-		if (this->storage->purported_root_key.contains(ROOT_KEY_SIZE)) {
+		if (!this->storage->purported_root_key.empty) {
 			conversation->purported_root_key.data = throwing_zeroed_malloc<unsigned char>(ROOT_KEY_SIZE);
-			this->storage->purported_root_key.cloneToRaw(conversation->purported_root_key.data, ROOT_KEY_SIZE);
+			this->storage->purported_root_key.copyTo(conversation->purported_root_key.data, ROOT_KEY_SIZE);
 			conversation->purported_root_key.len = ROOT_KEY_SIZE;
 			conversation->has_purported_root_key = true;
 		}
 
 		//header keys
 		//send header key
-		if ((this->role == Role::BOB) && !this->storage->send_header_key.contains(HEADER_KEY_SIZE)) {
+		if ((this->role == Role::BOB) && this->storage->send_header_key.empty) {
 			throw Exception(EXPORT_ERROR, "send_header_key missing or has an incorrect size.");
 		}
 		conversation->send_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
-		this->storage->send_header_key.cloneToRaw(conversation->send_header_key.data, HEADER_KEY_SIZE);
+		this->storage->send_header_key.copyTo(conversation->send_header_key.data, HEADER_KEY_SIZE);
 		conversation->send_header_key.len = HEADER_KEY_SIZE;
 		conversation->has_send_header_key = true;
 		//receive header key
-		if ((this->role == Role::ALICE) && !this->storage->receive_header_key.contains(HEADER_KEY_SIZE)) {
+		if ((this->role == Role::ALICE) && this->storage->receive_header_key.empty) {
 			throw Exception(EXPORT_ERROR, "receive_header_key missing or has an incorrect size.");
 		}
 		conversation->receive_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
-		this->storage->receive_header_key.cloneToRaw(conversation->receive_header_key.data, HEADER_KEY_SIZE);
+		this->storage->receive_header_key.copyTo(conversation->receive_header_key.data, HEADER_KEY_SIZE);
 		conversation->receive_header_key.len = HEADER_KEY_SIZE;
 		conversation->has_receive_header_key = true;
 		//next send header key
-		if (!this->storage->next_send_header_key.contains(HEADER_KEY_SIZE)) {
+		if (this->storage->next_send_header_key.empty) {
 			throw Exception(EXPORT_ERROR, "next_send_header_key missing or has incorrect size.");
 		}
 		conversation->next_send_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
-		this->storage->next_send_header_key.cloneToRaw(conversation->next_send_header_key.data, HEADER_KEY_SIZE);
+		this->storage->next_send_header_key.copyTo(conversation->next_send_header_key.data, HEADER_KEY_SIZE);
 		conversation->next_send_header_key.len = HEADER_KEY_SIZE;
 		conversation->has_next_send_header_key = true;
 		//next receive header key
-		if (!this->storage->next_receive_header_key.contains(HEADER_KEY_SIZE)) {
+		if (this->storage->next_receive_header_key.empty) {
 			throw Exception(EXPORT_ERROR, "next_receive_header_key missinge or has an incorrect size.");
 		}
 		conversation->next_receive_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
-		this->storage->next_receive_header_key.cloneToRaw(conversation->next_receive_header_key.data, HEADER_KEY_SIZE);
+		this->storage->next_receive_header_key.copyTo(conversation->next_receive_header_key.data, HEADER_KEY_SIZE);
 		conversation->next_receive_header_key.len = HEADER_KEY_SIZE;
 		conversation->has_next_receive_header_key = true;
 		//purported receive header key
-		if (this->storage->purported_receive_header_key.contains(HEADER_KEY_SIZE)) {
+		if (!this->storage->purported_receive_header_key.empty) {
 			conversation->purported_receive_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
-			this->storage->purported_receive_header_key.cloneToRaw(conversation->purported_receive_header_key.data, HEADER_KEY_SIZE);
+			this->storage->purported_receive_header_key.copyTo(conversation->purported_receive_header_key.data, HEADER_KEY_SIZE);
 			conversation->purported_receive_header_key.len = HEADER_KEY_SIZE;
 			conversation->has_purported_receive_header_key = true;
 		}
 		//purported next receive header key
-		if (this->storage->purported_next_receive_header_key.contains(HEADER_KEY_SIZE)) {
+		if (!this->storage->purported_next_receive_header_key.empty) {
 			conversation->purported_next_receive_header_key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
-			this->storage->purported_next_receive_header_key.cloneToRaw(conversation->purported_next_receive_header_key.data, HEADER_KEY_SIZE);
+			this->storage->purported_next_receive_header_key.copyTo(conversation->purported_next_receive_header_key.data, HEADER_KEY_SIZE);
 			conversation->purported_next_receive_header_key.len = HEADER_KEY_SIZE;
 			conversation->has_purported_next_receive_header_key = true;
 		}
 
 		//chain keys
 		//send chain key
-		if ((this->role == Role::BOB) && !this->storage->send_chain_key.contains(CHAIN_KEY_SIZE)) {
+		if ((this->role == Role::BOB) && this->storage->send_chain_key.empty) {
 			throw Exception(EXPORT_ERROR, "send_chain_key missing or has an invalid size.");
 		}
 		conversation->send_chain_key.data = throwing_zeroed_malloc<unsigned char>(CHAIN_KEY_SIZE);
-		this->storage->send_chain_key.cloneToRaw(conversation->send_chain_key.data, CHAIN_KEY_SIZE);
+		this->storage->send_chain_key.copyTo(conversation->send_chain_key.data, CHAIN_KEY_SIZE);
 		conversation->send_chain_key.len = CHAIN_KEY_SIZE;
 		conversation->has_send_chain_key = true;
 		//receive chain key
-		if ((this->role == Role::ALICE) && !this->storage->receive_chain_key.contains(CHAIN_KEY_SIZE)) {
+		if ((this->role == Role::ALICE) && this->storage->receive_chain_key.empty) {
 			throw Exception(EXPORT_ERROR, "receive_chain_key missing or has an incorrect size.");
 		}
 		conversation->receive_chain_key.data = throwing_zeroed_malloc<unsigned char>(CHAIN_KEY_SIZE);
-		this->storage->receive_chain_key.cloneToRaw(conversation->receive_chain_key.data, CHAIN_KEY_SIZE);
+		this->storage->receive_chain_key.copyTo(conversation->receive_chain_key.data, CHAIN_KEY_SIZE);
 		conversation->receive_chain_key.len = CHAIN_KEY_SIZE;
 		conversation->has_receive_chain_key = true;
 		//purported receive chain key
-		if (this->storage->purported_receive_chain_key.contains(CHAIN_KEY_SIZE)) {
+		if (!this->storage->purported_receive_chain_key.empty) {
 			conversation->purported_receive_chain_key.data = throwing_zeroed_malloc<unsigned char>(CHAIN_KEY_SIZE);
-			this->storage->purported_receive_chain_key.cloneToRaw(conversation->purported_receive_chain_key.data, CHAIN_KEY_SIZE);
+			this->storage->purported_receive_chain_key.copyTo(conversation->purported_receive_chain_key.data, CHAIN_KEY_SIZE);
 			conversation->purported_receive_chain_key.len = CHAIN_KEY_SIZE;
 			conversation->has_purported_receive_chain_key = true;
 		}
 
 		//identity key
 		//our public identity key
-		if (!this->storage->our_public_identity.contains(PUBLIC_KEY_SIZE)) {
+		if (this->storage->our_public_identity.empty) {
 			throw Exception(EXPORT_ERROR, "our_public_identity missing or has an invalid size.");
 		}
 		conversation->our_public_identity_key.data = throwing_zeroed_malloc<unsigned char>(PUBLIC_KEY_SIZE);
-		this->storage->our_public_identity.cloneToRaw(conversation->our_public_identity_key.data, PUBLIC_KEY_SIZE);
+		this->storage->our_public_identity.copyTo(conversation->our_public_identity_key.data, PUBLIC_KEY_SIZE);
 		conversation->our_public_identity_key.len = PUBLIC_KEY_SIZE;
 		conversation->has_our_public_identity_key = true;
 		//their public identity key
-		if (!this->storage->their_public_identity.contains(PUBLIC_KEY_SIZE)) {
+		if (this->storage->their_public_identity.empty) {
 			throw Exception(EXPORT_ERROR, "their_public_identity missing or has an invalid size.");
 		}
 		conversation->their_public_identity_key.data = throwing_zeroed_malloc<unsigned char>(PUBLIC_KEY_SIZE);
-		this->storage->their_public_identity.cloneToRaw(conversation->their_public_identity_key.data, PUBLIC_KEY_SIZE);
+		this->storage->their_public_identity.copyTo(conversation->their_public_identity_key.data, PUBLIC_KEY_SIZE);
 		conversation->their_public_identity_key.len = PUBLIC_KEY_SIZE;
 		conversation->has_their_public_identity_key = true;
 
 		//ephemeral keys
 		//our private ephemeral key
-		if (!this->storage->our_private_ephemeral.contains(PRIVATE_KEY_SIZE)) {
+		if (this->storage->our_private_ephemeral.empty) {
 			throw Exception(EXPORT_ERROR, "our_private_ephemeral missing or has an invalid size.");
 		}
 		conversation->our_private_ephemeral_key.data = throwing_zeroed_malloc<unsigned char>(PRIVATE_KEY_SIZE);
-		this->storage->our_private_ephemeral.cloneToRaw(conversation->our_private_ephemeral_key.data, PRIVATE_KEY_SIZE);
+		this->storage->our_private_ephemeral.copyTo(conversation->our_private_ephemeral_key.data, PRIVATE_KEY_SIZE);
 		conversation->our_private_ephemeral_key.len = PRIVATE_KEY_SIZE;
 		conversation->has_our_private_ephemeral_key = true;
 		//our public ephemeral key
-		if (!this->storage->our_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
+		if (this->storage->our_public_ephemeral.empty) {
 			throw Exception(BUFFER_ERROR, "our_public_ephemeral missing or has an invalid size.");
 		}
 		conversation->our_public_ephemeral_key.data = throwing_zeroed_malloc<unsigned char>(PUBLIC_KEY_SIZE);
-		this->storage->our_public_ephemeral.cloneToRaw(conversation->our_public_ephemeral_key.data, PUBLIC_KEY_SIZE);
+		this->storage->our_public_ephemeral.copyTo(conversation->our_public_ephemeral_key.data, PUBLIC_KEY_SIZE);
 		conversation->our_public_ephemeral_key.len = PUBLIC_KEY_SIZE;
 		conversation->has_our_public_ephemeral_key = true;
 		//their public ephemeral key
-		if (!this->storage->their_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
+		if (this->storage->their_public_ephemeral.empty) {
 			throw Exception(BUFFER_ERROR, "their_public_ephemeral missing or has an invalid size.");
 		}
 		conversation->their_public_ephemeral_key.data = throwing_zeroed_malloc<unsigned char>(PUBLIC_KEY_SIZE);
-		this->storage->their_public_ephemeral.cloneToRaw(conversation->their_public_ephemeral_key.data, PUBLIC_KEY_SIZE);
+		this->storage->their_public_ephemeral.copyTo(conversation->their_public_ephemeral_key.data, PUBLIC_KEY_SIZE);
 		conversation->their_public_ephemeral_key.len = PUBLIC_KEY_SIZE;
 		conversation->has_their_public_ephemeral_key = true;
 		//their purported public ephemeral key
-		if (this->storage->their_purported_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
+		if (!this->storage->their_purported_public_ephemeral.empty) {
 			conversation->their_purported_public_ephemeral.data = throwing_zeroed_malloc<unsigned char>(PUBLIC_KEY_SIZE);
-			this->storage->their_purported_public_ephemeral.cloneToRaw(conversation->their_purported_public_ephemeral.data, PUBLIC_KEY_SIZE);
+			this->storage->their_purported_public_ephemeral.copyTo(conversation->their_purported_public_ephemeral.data, PUBLIC_KEY_SIZE);
 			conversation->their_purported_public_ephemeral.len = PUBLIC_KEY_SIZE;
 			conversation->has_their_purported_public_ephemeral = true;
 		}
@@ -741,10 +720,10 @@ namespace Molch {
 		if (!conversation.has_root_key || (conversation.root_key.len != ROOT_KEY_SIZE)) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "root_key is missing from protobuf.");
 		}
-		this->storage->root_key.cloneFromRaw(conversation.root_key.data, conversation.root_key.len);
+		this->storage->root_key.set(conversation.root_key.data, conversation.root_key.len);
 		//purported root key
 		if (conversation.has_purported_root_key && (conversation.purported_root_key.len == ROOT_KEY_SIZE)) {
-			this->storage->purported_root_key.cloneFromRaw(conversation.purported_root_key.data, conversation.purported_root_key.len);
+			this->storage->purported_root_key.set(conversation.purported_root_key.data, conversation.purported_root_key.len);
 		}
 
 		//header key
@@ -753,30 +732,30 @@ namespace Molch {
 				&& (!conversation.has_send_header_key || (conversation.send_header_key.len != HEADER_KEY_SIZE))) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "send_header_key is missing from the protobuf.");
 		}
-		this->storage->send_header_key.cloneFromRaw(conversation.send_header_key.data, conversation.send_header_key.len);
+		this->storage->send_header_key.set(conversation.send_header_key.data, conversation.send_header_key.len);
 		//receive header key
 		if ((this->role == Role::ALICE) &&
 				(!conversation.has_receive_header_key || (conversation.receive_header_key.len != HEADER_KEY_SIZE))) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "receive_header_key is missing from protobuf.");
 		}
-		this->storage->receive_header_key.cloneFromRaw(conversation.receive_header_key.data, conversation.receive_header_key.len);
+		this->storage->receive_header_key.set(conversation.receive_header_key.data, conversation.receive_header_key.len);
 		//next send header key
 		if (!conversation.has_next_send_header_key || (conversation.next_send_header_key.len != HEADER_KEY_SIZE)) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "next_send_header_key is missing from protobuf.");
 		}
-		this->storage->next_send_header_key.cloneFromRaw(conversation.next_send_header_key.data, conversation.next_send_header_key.len);
+		this->storage->next_send_header_key.set(conversation.next_send_header_key.data, conversation.next_send_header_key.len);
 		//next receive header key
 		if (!conversation.has_next_receive_header_key || (conversation.next_receive_header_key.len != HEADER_KEY_SIZE)) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "next_receive_header_key is missing from protobuf.");
 		}
-		this->storage->next_receive_header_key.cloneFromRaw(conversation.next_receive_header_key.data, conversation.next_receive_header_key.len);
+		this->storage->next_receive_header_key.set(conversation.next_receive_header_key.data, conversation.next_receive_header_key.len);
 		//purported receive header key
 		if (conversation.has_purported_receive_header_key && (conversation.purported_receive_header_key.len == HEADER_KEY_SIZE)) {
-			this->storage->purported_receive_header_key.cloneFromRaw(conversation.purported_receive_header_key.data, conversation.purported_receive_header_key.len);
+			this->storage->purported_receive_header_key.set(conversation.purported_receive_header_key.data, conversation.purported_receive_header_key.len);
 		}
 		//purported next receive header key
 		if (conversation.has_purported_next_receive_header_key && (conversation.purported_next_receive_header_key.len == HEADER_KEY_SIZE)) {
-			this->storage->purported_next_receive_header_key.cloneFromRaw(conversation.purported_next_receive_header_key.data, conversation.purported_next_receive_header_key.len);
+			this->storage->purported_next_receive_header_key.set(conversation.purported_next_receive_header_key.data, conversation.purported_next_receive_header_key.len);
 		}
 
 		//chain keys
@@ -785,16 +764,16 @@ namespace Molch {
 				(!conversation.has_send_chain_key || (conversation.send_chain_key.len != CHAIN_KEY_SIZE))) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "send_chain_key is missing from the potobuf.");
 		}
-		this->storage->send_chain_key.cloneFromRaw(conversation.send_chain_key.data, conversation.send_chain_key.len);
+		this->storage->send_chain_key.set(conversation.send_chain_key.data, conversation.send_chain_key.len);
 		//receive chain key
 		if ((this->role == Role::ALICE) &&
 				(!conversation.has_receive_chain_key || (conversation.receive_chain_key.len != CHAIN_KEY_SIZE))) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "receive_chain_key is missing from the protobuf.");
 		}
-		this->storage->receive_chain_key.cloneFromRaw(conversation.receive_chain_key.data, conversation.receive_chain_key.len);
+		this->storage->receive_chain_key.set(conversation.receive_chain_key.data, conversation.receive_chain_key.len);
 		//purported receive chain key
 		if (conversation.has_purported_receive_chain_key && (conversation.purported_receive_chain_key.len == CHAIN_KEY_SIZE)) {
-			this->storage->purported_receive_chain_key.cloneFromRaw(conversation.purported_receive_chain_key.data, conversation.purported_receive_chain_key.len);
+			this->storage->purported_receive_chain_key.set(conversation.purported_receive_chain_key.data, conversation.purported_receive_chain_key.len);
 		}
 
 		//identity key
@@ -802,32 +781,32 @@ namespace Molch {
 		if (!conversation.has_our_public_identity_key || (conversation.our_public_identity_key.len != PUBLIC_KEY_SIZE)) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "our_public_identity_key is missing from the protobuf.");
 		}
-		this->storage->our_public_identity.cloneFromRaw(conversation.our_public_identity_key.data, conversation.our_public_identity_key.len);
+		this->storage->our_public_identity.set(conversation.our_public_identity_key.data, conversation.our_public_identity_key.len);
 		//their public identity key
 		if (!conversation.has_their_public_identity_key || (conversation.their_public_identity_key.len != PUBLIC_KEY_SIZE)) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "their_public_identity is missing from the protobuf.");
 		}
-		this->storage->their_public_identity.cloneFromRaw(conversation.their_public_identity_key.data, conversation.their_public_identity_key.len);
+		this->storage->their_public_identity.set(conversation.their_public_identity_key.data, conversation.their_public_identity_key.len);
 
 		//ephemeral keys
 		//our private ephemeral key
 		if (!conversation.has_our_private_ephemeral_key || (conversation.our_private_ephemeral_key.len != PRIVATE_KEY_SIZE)) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "our_private_ephemral is missing from the protobuf.");
 		}
-		this->storage->our_private_ephemeral.cloneFromRaw(conversation.our_private_ephemeral_key.data, conversation.our_private_ephemeral_key.len);
+		this->storage->our_private_ephemeral.set(conversation.our_private_ephemeral_key.data, conversation.our_private_ephemeral_key.len);
 		//our public ephemeral key
 		if (!conversation.has_our_public_ephemeral_key || (conversation.our_public_ephemeral_key.len != PUBLIC_KEY_SIZE)) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "our_public_ephemeral is missing from the protobuf.");
 		}
-		this->storage->our_public_ephemeral.cloneFromRaw(conversation.our_public_ephemeral_key.data, conversation.our_public_ephemeral_key.len);
+		this->storage->our_public_ephemeral.set(conversation.our_public_ephemeral_key.data, conversation.our_public_ephemeral_key.len);
 		//their public ephemeral key
 		if (!conversation.has_their_public_ephemeral_key || (conversation.their_public_ephemeral_key.len != PUBLIC_KEY_SIZE)) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "their_public_ephemeral is missing from the protobuf.");
 		}
-		this->storage->their_public_ephemeral.cloneFromRaw(conversation.their_public_ephemeral_key.data, conversation.their_public_ephemeral_key.len);
+		this->storage->their_public_ephemeral.set(conversation.their_public_ephemeral_key.data, conversation.their_public_ephemeral_key.len);
 		//their purported public ephemeral key
 		if (conversation.has_their_purported_public_ephemeral && (conversation.their_purported_public_ephemeral.len == PUBLIC_KEY_SIZE)) {
-			this->storage->their_purported_public_ephemeral.cloneFromRaw(conversation.their_purported_public_ephemeral.data, conversation.their_purported_public_ephemeral.len);
+			this->storage->their_purported_public_ephemeral.set(conversation.their_purported_public_ephemeral.data, conversation.their_purported_public_ephemeral.len);
 		}
 
 		//header and message keystores

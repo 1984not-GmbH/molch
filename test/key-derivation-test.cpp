@@ -38,18 +38,18 @@ int main(void) {
 			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
-		Buffer master_key(50, 50);
-		master_key.fillRandom(master_key.capacity());
+		Molch::Key<50> master_key;
+		master_key.fillRandom();
 		printf("Master key:\n");
 		master_key.printHex(std::cout) << std::endl;
 
-		Buffer subkey1(60, 60);
-		derive_key(subkey1, subkey1.capacity(), master_key, 0);
+		Molch::Key<60> subkey1;
+		master_key.deriveTo(subkey1, 0);
 		printf("First subkey:\n");
 		subkey1.printHex(std::cout) << std::endl;
 
-		Buffer subkey2(60, 60);
-		derive_key(subkey2, subkey2.capacity(), master_key, 1);
+		Molch::Key<60> subkey2;
+		master_key.deriveTo(subkey2, 1);
 		printf("Second subkey:\n");
 		subkey2.printHex(std::cout) << std::endl;
 
@@ -57,8 +57,8 @@ int main(void) {
 			throw Molch::Exception(KEYGENERATION_FAILED, "Both subkeys are the same.");
 		}
 
-		Buffer subkey1_copy(60, 60);
-		derive_key(subkey1_copy, subkey1_copy.capacity(), master_key, 0);
+		Molch::Key<60> subkey1_copy;
+		master_key.deriveTo(subkey1_copy, 0);
 
 		if (subkey1 != subkey1_copy) {
 			throw Molch::Exception(INCORRECT_DATA, "Failed to reproduce subkey.");

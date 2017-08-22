@@ -40,11 +40,9 @@ namespace Molch {
 	class User {
 		friend class UserStore;
 	private:
-		unsigned char public_signing_key_storage[PUBLIC_MASTER_KEY_SIZE];
-
 		void exportPublicKeys(
-				Buffer * const public_signing_key, //output, optional, can be nullptr
-				Buffer * const public_identity_key); //output, optional, can be nullptr
+				PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
+				PublicKey * const public_identity_key); //output, optional, can be nullptr
 
 		/*! Import a user from a Protobuf-C struct
 		 * \param user The struct to import from.
@@ -56,7 +54,7 @@ namespace Molch {
 		User& move(User&& node);
 
 	public:
-		Buffer public_signing_key{this->public_signing_key_storage, sizeof(this->public_signing_key_storage), 0};
+		PublicSigningKey public_signing_key;
 		MasterKeys master_keys;
 		PrekeyStore prekeys;
 		ConversationStore conversations;
@@ -70,11 +68,11 @@ namespace Molch {
 		 */
 		User(
 				const Buffer& seed,
-				Buffer * const public_signing_key = nullptr, //output, optional, can be nullptr
-				Buffer * const public_identity_key = nullptr); //output, optional, can be nullptr
+				PublicSigningKey * const public_signing_key = nullptr, //output, optional, can be nullptr
+				PublicKey * const public_identity_key = nullptr); //output, optional, can be nullptr
 		User(
-				Buffer * const public_signing_key = nullptr, //output, optional, can be nullptr
-				Buffer * const public_identity_key = nullptr); //output, optional, can be nullptr
+				PublicSigningKey * const public_signing_key = nullptr, //output, optional, can be nullptr
+				PublicKey * const public_identity_key = nullptr); //output, optional, can be nullptr
 
 		User(const User& node) = delete;
 		User(User&& node);
@@ -112,14 +110,14 @@ namespace Molch {
 		 *
 		 * Returns nullptr if no user was found.
 		 */
-		User* find(const Buffer& public_signing_key);
+		User* find(const PublicSigningKey& public_signing_key);
 
 		/*
 		 * Find a conversation with a given public signing key.
 		 *
 		 * return nullptr if no conversation was found.
 		 */
-		Conversation* findConversation(User*& user, const Buffer& conversation_id);
+		Conversation* findConversation(User*& user, const Key<CONVERSATION_ID_SIZE>& conversation_id);
 
 		/*
 		 * List all of the users.
@@ -129,7 +127,7 @@ namespace Molch {
 		 */
 		Buffer list();
 
-		void remove(const Buffer& public_signing_key);
+		void remove(const PublicSigningKey& public_signing_key);
 		void remove(const User* const user);
 
 		void clear();

@@ -195,7 +195,7 @@ int main(void) {
 
 		//compare the public keys with the ones in the prekey store
 		for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
-			if (prekey_list.comparePartial(PUBLIC_KEY_SIZE * i, (*store->prekeys)[i].public_key, 0, PUBLIC_KEY_SIZE) != 0) {
+			if (prekey_list.compareToRawPartial(PUBLIC_KEY_SIZE * i, (*store->prekeys)[i].public_key.data(), (*store->prekeys)[i].public_key.size(), 0, PUBLIC_KEY_SIZE) != 0) {
 				throw Molch::Exception(INCORRECT_DATA, "Key list doesn't match the prekey store.");
 			}
 		}
@@ -203,10 +203,9 @@ int main(void) {
 
 		//get a private key
 		const size_t prekey_index = 10;
-		Buffer public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		public_prekey.cloneFrom((*store->prekeys)[prekey_index].public_key);
+		PublicKey public_prekey{(*store->prekeys)[prekey_index].public_key};
 
-		Buffer private_prekey1(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		PrivateKey private_prekey1;
 		store->getPrekey(public_prekey, private_prekey1);
 		printf("Get a Prekey:\n");
 		printf("Public key:\n");
@@ -229,7 +228,7 @@ int main(void) {
 		printf("Successfully deprecated requested key!\n");
 
 		//check if the prekey can be obtained from the deprecated keys
-		Buffer private_prekey2(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		PrivateKey private_prekey2;
 		store->getPrekey(public_prekey, private_prekey2);
 
 		if (private_prekey1 != private_prekey2) {
@@ -238,7 +237,7 @@ int main(void) {
 		printf("Successfully got prekey from the deprecated area!\n");
 
 		//try to get a nonexistent key
-		public_prekey.fillRandom(PUBLIC_KEY_SIZE);
+		public_prekey.fillRandom();
 		bool found = true;
 		try {
 			store->getPrekey(public_prekey, private_prekey1);
@@ -312,7 +311,7 @@ int main(void) {
 		}
 
 		//test the automatic deprecation of old keys
-		public_prekey.cloneFrom((*store->prekeys)[PREKEY_AMOUNT-1].public_key);
+		public_prekey = (*store->prekeys)[PREKEY_AMOUNT-1].public_key;
 
 		(*store->prekeys)[PREKEY_AMOUNT-1].expiration_date -= 365 * 24 * 3600; //one year
 		store->oldest_expiration_date = (*store->prekeys)[PREKEY_AMOUNT - 1].expiration_date;
@@ -325,7 +324,7 @@ int main(void) {
 		printf("Successfully deprecated outdated key!\n");
 
 		//test the automatic removal of old deprecated keys!
-		public_prekey.cloneFrom(store->deprecated_prekeys[1].public_key);
+		public_prekey = store->deprecated_prekeys[1].public_key;
 
 		store->deprecated_prekeys[1].expiration_date -= 24 * 3600;
 		store->oldest_deprecated_expiration_date = store->deprecated_prekeys[1].expiration_date;

@@ -38,8 +38,8 @@ int main(void) noexcept {
 		}
 
 		//create Alice's keypair
-		Buffer alice_public_key(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-		Buffer alice_private_key(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+		PublicKey alice_public_key;
+		PrivateKey alice_private_key;
 		generate_and_print_keypair(
 			alice_public_key,
 			alice_private_key,
@@ -47,8 +47,8 @@ int main(void) noexcept {
 			"");
 
 		//create Bob's keypair
-		Buffer bob_public_key(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
-		Buffer bob_private_key(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
+		PublicKey bob_public_key;
+		PrivateKey bob_private_key;
 		generate_and_print_keypair(
 			bob_public_key,
 			bob_private_key,
@@ -56,7 +56,7 @@ int main(void) noexcept {
 			"");
 
 		//Diffie Hellman on Alice's side
-		Buffer alice_shared_secret(crypto_generichash_BYTES, crypto_generichash_BYTES);
+		Molch::Key<DIFFIE_HELLMAN_SIZE> alice_shared_secret;
 		diffie_hellman(
 			alice_shared_secret,
 			alice_private_key,
@@ -66,11 +66,11 @@ int main(void) noexcept {
 		alice_private_key.clear();
 
 		//print Alice's shared secret
-		printf("Alice's shared secret ECDH(A_priv, B_pub) (%zu Bytes):\n", alice_shared_secret.size);
+		printf("Alice's shared secret ECDH(A_priv, B_pub) (%zu Bytes):\n", alice_shared_secret.size());
 		alice_shared_secret.printHex(std::cout) << std::endl;
 
 		//Diffie Hellman on Bob's side
-		Buffer bob_shared_secret(crypto_generichash_BYTES, crypto_generichash_BYTES);
+		Molch::Key<DIFFIE_HELLMAN_SIZE> bob_shared_secret;
 		diffie_hellman(
 			bob_shared_secret,
 			bob_private_key,
@@ -80,7 +80,7 @@ int main(void) noexcept {
 		bob_private_key.clear();
 
 		//print Bob's shared secret
-		printf("Bob's shared secret ECDH(B_priv, A_pub) (%zu Bytes):\n", bob_shared_secret.size);
+		printf("Bob's shared secret ECDH(B_priv, A_pub) (%zu Bytes):\n", bob_shared_secret.size());
 		bob_shared_secret.printHex(std::cout) << std::endl;
 
 		//compare both shared secrets

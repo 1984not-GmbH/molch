@@ -54,8 +54,8 @@ int main(void) {
 		printf("NORMAL MESSAGE\n");
 		Buffer packet;
 		Buffer message("Hello world!\n");
-		Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+		HeaderKey header_key;
+		MessageKey message_key;
 		create_and_print_message(
 			packet,
 			header_key,
@@ -68,7 +68,7 @@ int main(void) {
 			nullptr);
 
 		//now decrypt the header
-		Buffer decrypted_header = packet_decrypt_header(packet, header_key);
+		auto decrypted_header = packet_decrypt_header(packet, header_key);
 
 
 		if (!decrypted_header.contains(header.size)) {
@@ -119,12 +119,12 @@ int main(void) {
 		//PREKEY MESSAGE
 		printf("PREKEY_MESSAGE\n");
 		//create the public keys
-		Buffer public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		public_identity_key.fillRandom(PUBLIC_KEY_SIZE);
-		Buffer public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		public_ephemeral_key.fillRandom(PUBLIC_KEY_SIZE);
-		Buffer public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		public_prekey.fillRandom(PUBLIC_KEY_SIZE);
+		PublicKey public_identity_key;
+		public_identity_key.fillRandom();
+		PublicKey public_ephemeral_key;
+		public_ephemeral_key.fillRandom();
+		PublicKey public_prekey;
+		public_prekey.fillRandom();
 
 		packet.clear();
 		decrypted_header.clear();

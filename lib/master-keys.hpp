@@ -31,12 +31,13 @@
 #include "zeroed_malloc.hpp"
 #include "sodium-wrappers.hpp"
 #include "protobuf.hpp"
+#include "key.hpp"
 
 namespace Molch {
 	class PrivateMasterKeyStorage {
 		friend class MasterKeys;
-		unsigned char signing_key[PRIVATE_MASTER_KEY_SIZE];
-		unsigned char identity_key[PRIVATE_KEY_SIZE];
+		PrivateSigningKey signing_key;
+		PrivateKey identity_key;
 	};
 
 	class MasterKeys {
@@ -59,18 +60,15 @@ namespace Molch {
 			~ReadWriteUnlocker();
 		};
 
-		unsigned char public_signing_key_storage[PUBLIC_MASTER_KEY_SIZE];
-		unsigned char public_identity_key_storage[PUBLIC_KEY_SIZE];
-
 		MasterKeys& move(MasterKeys&& master_keys);
 
 	public:
 		//Ed25519 key for signing
-		Buffer public_signing_key{this->public_signing_key_storage, sizeof(this->public_signing_key_storage)};
-		Buffer private_signing_key;
+		PublicSigningKey public_signing_key;
+		PrivateSigningKey *private_signing_key{nullptr};
 		//X25519 key for deriving axolotl root keys
-		Buffer public_identity_key{this->public_identity_key_storage, sizeof(this->public_identity_key_storage)};
-		Buffer private_identity_key;
+		PublicKey public_identity_key;
+		PrivateKey *private_identity_key{nullptr};
 
 		/*
 		 * Create a new set of master keys.
@@ -102,12 +100,12 @@ namespace Molch {
 		/*
 		 * Get the public signing key.
 		 */
-		void getSigningKey(Buffer& public_signing_key) const;
+		void getSigningKey(PublicSigningKey& public_signing_key) const;
 
 		/*
 		 * Get the public identity key.
 		 */
-		void getIdentityKey(Buffer& public_identity_key) const;
+		void getIdentityKey(PublicKey& public_identity_key) const;
 
 		/*
 		 * Sign a piece of data. Returns the data and signature in one output buffer.

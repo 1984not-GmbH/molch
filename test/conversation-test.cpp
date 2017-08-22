@@ -31,6 +31,7 @@
 #include "../lib/molch-exception.hpp"
 #include "../lib/conversation.hpp"
 #include "../lib/destroyers.hpp"
+#include "../lib/key.hpp"
 
 using namespace Molch;
 
@@ -67,8 +68,8 @@ int main(void) noexcept {
 		}
 
 		//creating charlie's identity keypair
-		Buffer charlie_private_identity(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-		Buffer charlie_public_identity(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+		PrivateKey charlie_private_identity;
+		PublicKey charlie_public_identity;
 		generate_and_print_keypair(
 			charlie_public_identity,
 			charlie_private_identity,
@@ -76,8 +77,8 @@ int main(void) noexcept {
 			"identity");
 
 		//creating charlie's ephemeral keypair
-		Buffer charlie_private_ephemeral(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-		Buffer charlie_public_ephemeral(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+		PrivateKey charlie_private_ephemeral;
+		PublicKey charlie_public_ephemeral;
 		generate_and_print_keypair(
 			charlie_public_ephemeral,
 			charlie_private_ephemeral,
@@ -85,8 +86,8 @@ int main(void) noexcept {
 			"ephemeral");
 
 		//creating dora's identity keypair
-		Buffer dora_private_identity(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-		Buffer dora_public_identity(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+		PrivateKey dora_private_identity;
+		PublicKey dora_public_identity;
 		generate_and_print_keypair(
 			dora_public_identity,
 			dora_private_identity,
@@ -94,8 +95,8 @@ int main(void) noexcept {
 			"identity");
 
 		//creating dora's ephemeral keypair
-		Buffer dora_private_ephemeral(crypto_box_SECRETKEYBYTES, crypto_box_SECRETKEYBYTES);
-		Buffer dora_public_ephemeral(crypto_box_PUBLICKEYBYTES, crypto_box_PUBLICKEYBYTES);
+		PrivateKey dora_private_ephemeral;
+		PublicKey dora_public_ephemeral;
 		generate_and_print_keypair(
 			dora_public_ephemeral,
 			dora_private_ephemeral,
@@ -110,10 +111,9 @@ int main(void) noexcept {
 				dora_public_identity,
 				charlie_private_ephemeral,
 				charlie_public_ephemeral,
-				dora_public_ephemeral,
-				Molch::Conversation::Confirmation::YES_I_WANT_THAT_CONSTRUCTOR);
+				dora_public_ephemeral);
 		std::cout << "AFTER creation of Charlie's conversation" << std::endl;
-		if (!charlie_conversation || !charlie_conversation->id.contains(CONVERSATION_ID_SIZE)) {
+		if (!charlie_conversation || charlie_conversation->id.empty) {
 			throw Molch::Exception(INCORRECT_DATA, "Charlie's conversation has an incorrect ID length.");
 		}
 
@@ -124,9 +124,8 @@ int main(void) noexcept {
 				charlie_public_identity,
 				dora_private_ephemeral,
 				dora_public_ephemeral,
-				charlie_public_ephemeral,
-				Molch::Conversation::Confirmation::YES_I_WANT_THAT_CONSTRUCTOR);
-		if (!dora_conversation || !dora_conversation->id.contains(CONVERSATION_ID_SIZE)) {
+				charlie_public_ephemeral);
+		if (!dora_conversation || dora_conversation->id.empty) {
 			throw Molch::Exception(INCORRECT_DATA, "Dora's conversation has an incorrect ID length.");
 		}
 

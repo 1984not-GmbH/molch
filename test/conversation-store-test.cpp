@@ -100,25 +100,29 @@ ConversationStore protobuf_import(const std::vector<Buffer> buffers) {
 }
 
 static void test_add_conversation(ConversationStore& store) {
-	Buffer our_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer our_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	int status = crypto_box_keypair(our_public_identity.content, our_private_identity.content);
+	PrivateKey our_private_identity;
+	PublicKey our_public_identity;
+	int status = crypto_box_keypair(our_public_identity.data(), our_private_identity.data());
 	if (status != 0) {
 		throw Molch::Exception(KEYGENERATION_FAILED, "Failed to generate our identity keys.");
 	}
+	our_private_identity.empty = false;
+	our_public_identity.empty = false;
 
-	Buffer our_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-	Buffer our_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	status = crypto_box_keypair(our_public_ephemeral.content, our_private_ephemeral.content);
+	PrivateKey our_private_ephemeral;
+	PublicKey our_public_ephemeral;
+	status = crypto_box_keypair(our_public_ephemeral.data(), our_private_ephemeral.data());
 	if (status != 0) {
 		throw Molch::Exception(KEYGENERATION_FAILED, "Failed to generate our ephemeral keys.");
 	}
+	our_private_ephemeral.empty = false;
+	our_public_ephemeral.empty = false;
 
-	Buffer their_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	their_public_identity.fillRandom(their_public_identity.capacity());
+	PublicKey their_public_identity;
+	their_public_identity.fillRandom();
 
-	Buffer their_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-	their_public_ephemeral.fillRandom(their_public_ephemeral.capacity());
+	PublicKey their_public_ephemeral;
+	their_public_ephemeral.fillRandom();
 
 	//create the conversation manually
 	Molch::Conversation conversation(
@@ -127,8 +131,7 @@ static void test_add_conversation(ConversationStore& store) {
 			their_public_identity,
 			our_private_ephemeral,
 			our_public_ephemeral,
-			their_public_ephemeral,
-			Molch::Conversation::Confirmation::YES_I_WANT_THAT_CONSTRUCTOR);
+			their_public_ephemeral);
 
 	store.add(std::move(conversation));
 }
@@ -183,11 +186,12 @@ int main(void) {
 		}
 
 		//check for all conversations that they exist
-		Buffer first_id;
-		Buffer middle_id;
-		Buffer last_id;
+		Molch::Key<CONVERSATION_ID_SIZE> first_id;
+		Molch::Key<CONVERSATION_ID_SIZE> middle_id;
+		Molch::Key<CONVERSATION_ID_SIZE> last_id;
 		for (size_t i = 0; i < (conversation_list.size / CONVERSATION_ID_SIZE); i++) {
-			Buffer current_id(conversation_list.content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
+			Molch::Key<CONVERSATION_ID_SIZE> current_id;
+			current_id.set(conversation_list.content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
 			auto found_node = store.find(current_id);
 			if (found_node == nullptr) {
 				throw Molch::Exception(INCORRECT_DATA, "Exported list of conversations was incorrect.");

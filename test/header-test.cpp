@@ -39,9 +39,9 @@ int main(void) {
 		}
 
 		//create ephemeral key
-		Buffer our_public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		our_public_ephemeral_key.fillRandom(our_public_ephemeral_key.size);
-		printf("Our public ephemeral key (%zu Bytes):\n", our_public_ephemeral_key.size);
+		PublicKey our_public_ephemeral_key;
+		our_public_ephemeral_key.fillRandom();
+		printf("Our public ephemeral key (%zu Bytes):\n", our_public_ephemeral_key.size());
 		our_public_ephemeral_key.printHex(std::cout);
 
 		//message numbers
@@ -52,7 +52,7 @@ int main(void) {
 		putchar('\n');
 
 		//create the header
-		Buffer header = header_construct(
+		auto header = header_construct(
 				our_public_ephemeral_key,
 				message_number,
 				previous_message_number);
@@ -63,7 +63,7 @@ int main(void) {
 		putchar('\n');
 
 		//get data back out of the header again
-		Buffer extracted_public_ephemeral_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		PublicKey extracted_public_ephemeral_key;
 		uint32_t extracted_message_number;
 		uint32_t extracted_previous_message_number;
 		header_extract(
@@ -72,7 +72,7 @@ int main(void) {
 				extracted_previous_message_number,
 				header);
 
-		printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key.size);
+		printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key.size());
 		extracted_public_ephemeral_key.printHex(std::cout);
 		printf("Extracted message number: %u\n", extracted_message_number);
 		printf("Extracted previous message number: %u\n", extracted_previous_message_number);

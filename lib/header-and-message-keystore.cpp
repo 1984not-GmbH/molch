@@ -29,17 +29,17 @@
 namespace Molch {
 	constexpr int64_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
 
-	void HeaderAndMessageKey::fill(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date) {
-		this->header_key.cloneFrom(header_key);
-		this->message_key.cloneFrom(message_key);
+	void HeaderAndMessageKey::fill(const HeaderKey& header_key, const MessageKey& message_key, const int64_t expiration_date) {
+		this->header_key = header_key;
+		this->message_key = message_key;
 		this->expiration_date = expiration_date;
 	}
 
-	HeaderAndMessageKey::HeaderAndMessageKey(const Buffer& header_key, const Buffer& message_key) {
+	HeaderAndMessageKey::HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key) {
 		this->fill(header_key, message_key, time(nullptr) + EXPIRATION_TIME);
 	}
 
-	HeaderAndMessageKey::HeaderAndMessageKey(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date) {
+	HeaderAndMessageKey::HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key, const int64_t expiration_date) {
 		this->fill(header_key, message_key, expiration_date);
 	}
 
@@ -78,7 +78,7 @@ namespace Molch {
 			|| (key_bundle.header_key->key.len != HEADER_KEY_SIZE)) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect header key.");
 		}
-		this->header_key.cloneFromRaw(key_bundle.header_key->key.data, key_bundle.header_key->key.len);
+		this->header_key.set(key_bundle.header_key->key.data, key_bundle.header_key->key.len);
 
 		//import the message key
 		if ((key_bundle.message_key == nullptr)
@@ -86,7 +86,7 @@ namespace Molch {
 			|| (key_bundle.message_key->key.len != MESSAGE_KEY_SIZE)) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect message key.");
 		}
-		this->message_key.cloneFromRaw(key_bundle.message_key->key.data, key_bundle.message_key->key.len);
+		this->message_key.set(key_bundle.message_key->key.data, key_bundle.message_key->key.len);
 
 		//import the expiration date
 		if (!key_bundle.has_expiration_time) {
@@ -110,12 +110,12 @@ namespace Molch {
 		key_bundle->message_key->key.data = throwing_zeroed_malloc<unsigned char>(MESSAGE_KEY_SIZE);
 
 		//export the header key
-		this->header_key.cloneToRaw(key_bundle->header_key->key.data, HEADER_KEY_SIZE);
-		key_bundle->header_key->key.len = this->header_key.size;
+		this->header_key.copyTo(key_bundle->header_key->key.data, HEADER_KEY_SIZE);
+		key_bundle->header_key->key.len = this->header_key.size();
 
 		//export the message key
-		this->message_key.cloneToRaw(key_bundle->message_key->key.data, MESSAGE_KEY_SIZE);
-		key_bundle->message_key->key.len = this->message_key.size;
+		this->message_key.copyTo(key_bundle->message_key->key.data, MESSAGE_KEY_SIZE);
+		key_bundle->message_key->key.len = this->message_key.size();
 
 
 		//set expiration time
@@ -135,7 +135,7 @@ namespace Molch {
 		return stream;
 	}
 
-	void HeaderAndMessageKeyStore::add(const Buffer& header_key, const Buffer& message_key) {
+	void HeaderAndMessageKeyStore::add(const HeaderKey& header_key, const MessageKey& message_key) {
 		this->keys.emplace_back(header_key, message_key);
 	}
 

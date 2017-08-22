@@ -35,12 +35,12 @@ namespace Molch {
 		Conversation& move(Conversation&& conversation);
 
 		void create(
-			const Buffer& our_private_identity,
-			const Buffer& our_public_identity,
-			const Buffer& their_public_identity,
-			const Buffer& our_private_ephemeral,
-			const Buffer& our_public_ephemeral,
-			const Buffer& their_public_ephemeral);
+			const PrivateKey& our_private_identity,
+			const PublicKey& our_public_identity,
+			const PublicKey& their_public_identity,
+			const PrivateKey& our_private_ephemeral,
+			const PublicKey& our_public_ephemeral,
+			const PublicKey& their_public_ephemeral);
 
 		int trySkippedHeaderAndMessageKeys(
 			const Buffer& packet,
@@ -48,26 +48,20 @@ namespace Molch {
 			uint32_t& receive_message_number,
 			uint32_t& previous_receive_message_number);
 
-		unsigned char id_storage[CONVERSATION_ID_SIZE];
-
 	public:
-
-		Buffer id{this->id_storage, sizeof(this->id_storage), 0}; //unique id of a conversation, generated randomly
+		Key<CONVERSATION_ID_SIZE> id; //unique id of a conversation, generated randomly
 		std::unique_ptr<Ratchet> ratchet;
-
-		enum class Confirmation {YES_I_WANT_THAT_CONSTRUCTOR};
 
 		/*
 		 * Create a new conversation without sending or receiving anything.
 		 */
 		Conversation(
-			const Buffer& our_private_identity,
-			const Buffer& our_public_identity,
-			const Buffer& their_public_identity,
-			const Buffer& our_private_ephemeral,
-			const Buffer& our_public_ephemeral,
-			const Buffer& their_public_ephemeral,
-			const Confirmation yes_i_want_this_constructor); //without this, this and the next constructor are indistinguishable
+			const PrivateKey& our_private_identity,
+			const PublicKey& our_public_identity,
+			const PublicKey& their_public_identity,
+			const PrivateKey& our_private_ephemeral,
+			const PublicKey& our_public_ephemeral,
+			const PublicKey& their_public_ephemeral);
 
 		/*
 		 * Start a new conversation where we are the sender.
@@ -75,9 +69,9 @@ namespace Molch {
 		Conversation(
 				const Buffer& message, //message we want to send to the receiver
 				Buffer& packet, //output, free after use!
-				const Buffer& sender_public_identity, //who is sending this message?
-				const Buffer& sender_private_identity,
-				const Buffer& receiver_public_identity,
+				const PublicKey& sender_public_identity, //who is sending this message?
+				const PrivateKey& sender_private_identity,
+				const PublicKey& receiver_public_identity,
 				Buffer& receiver_prekey_list); //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 
 		/*
@@ -89,8 +83,8 @@ namespace Molch {
 		Conversation(
 				const Buffer& packet, //received packet
 				Buffer& message, //output
-				const Buffer& receiver_public_identity,
-				const Buffer& receiver_private_identity,
+				const PublicKey& receiver_public_identity,
+				const PrivateKey& receiver_private_identity,
 				PrekeyStore& receiver_prekeys); //prekeys of the receiver
 
 		/*! Import a conversatoin from a Protobuf-C struct
@@ -111,9 +105,9 @@ namespace Molch {
 		 */
 		Buffer send(
 				const Buffer& message,
-				const Buffer * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
-				const Buffer * const public_ephemeral_key, //cann be nullptr, if not nullptr, this will be a prekey message
-				const Buffer * const public_prekey); //can be nullptr, if not nullptr, this will be a prekey message
+				const PublicKey * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
+				const PublicKey * const public_ephemeral_key, //cann be nullptr, if not nullptr, this will be a prekey message
+				const PublicKey * const public_prekey); //can be nullptr, if not nullptr, this will be a prekey message
 
 		/*
 		 * Receive and decrypt a message using an existing conversation.

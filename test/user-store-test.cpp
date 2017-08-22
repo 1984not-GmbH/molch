@@ -136,7 +136,7 @@ int main(void) {
 		list.clear();
 
 		//create alice
-		Buffer alice_public_signing_key(PUBLIC_MASTER_KEY_SIZE, 0);
+		PublicSigningKey alice_public_signing_key;
 		store.add(Molch::User(&alice_public_signing_key));
 		{
 			auto alice_user = store.find(alice_public_signing_key);
@@ -153,14 +153,14 @@ int main(void) {
 
 		//list user store
 		list = store.list();
-		if (list != alice_public_signing_key) {
+		if (list.compareToRaw(alice_public_signing_key.data(), alice_public_signing_key.size()) != 0) {
 			throw Molch::Exception(INCORRECT_DATA, "Failed to list users.");
 		}
 		list.clear();
 		printf("Successfully listed users.\n");
 
 		//create bob
-		Buffer bob_public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+		PublicSigningKey bob_public_signing_key;
 		store.add(Molch::User(&bob_public_signing_key));
 		printf("Successfully created Bob.\n");
 
@@ -172,15 +172,15 @@ int main(void) {
 
 		//list user store
 		list = store.list();
-		if ((list.comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list.comparePartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+		if ((list.compareToRawPartial(0, alice_public_signing_key.data(), alice_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key.data(), bob_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 			throw Molch::Exception(INCORRECT_DATA, "Failed to list users.");
 		}
 		list.clear();
 		printf("Successfully listed users.\n");
 
 		//create charlie
-		Buffer charlie_public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+		PublicSigningKey charlie_public_signing_key;
 		store.add(Molch::User(&charlie_public_signing_key));
 		printf("Successfully added Charlie to the user store.\n");
 
@@ -192,9 +192,9 @@ int main(void) {
 
 		//list user store
 		list = store.list();
-		if ((list.comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list.comparePartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list.comparePartial(2 * PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+		if ((list.compareToRawPartial(0, alice_public_signing_key.data(), alice_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key.data(), bob_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list.compareToRawPartial(2 * PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key.data(), charlie_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 			throw Molch::Exception(INCORRECT_DATA, "Failed to list users.");
 		}
 		list.clear();
@@ -223,8 +223,8 @@ int main(void) {
 			printf("Length of the user store matches.");
 			//check the user list
 			list = store.list();
-			if ((list.comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-					|| (list.comparePartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+			if ((list.compareToRawPartial(0, alice_public_signing_key.data(), alice_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+					|| (list.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key.data(), charlie_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 				throw Molch::Exception(INCORRECT_DATA, "Removing user failed.");
 			}
 			list.clear();
@@ -286,8 +286,8 @@ int main(void) {
 
 		//check the user list
 		list = store.list();
-		if ((list.comparePartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list.comparePartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+		if ((list.compareToRawPartial(0, alice_public_signing_key.data(), alice_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key.data(), charlie_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 			throw Molch::Exception(REMOVE_ERROR, "Removing user failed.");
 		}
 		list.clear();

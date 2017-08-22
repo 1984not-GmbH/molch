@@ -34,11 +34,11 @@ namespace Molch {
 	MasterKeys& MasterKeys::move(MasterKeys&& master_keys) {
 		//move the private keys
 		this->private_keys = std::move(master_keys.private_keys);
-		this->private_identity_key = Buffer{this->private_keys->identity_key, master_keys.private_identity_key.size, sizeof(this->private_keys->identity_key)};
-		this->private_signing_key = Buffer{this->private_keys->signing_key, master_keys.private_signing_key.size, sizeof(this->private_keys->signing_key)};
+		this->private_identity_key = master_keys.private_identity_key;
+		this->private_signing_key = master_keys.private_signing_key;
 
-		this->public_identity_key.cloneFrom(master_keys.public_identity_key);
-		this->public_signing_key.cloneFrom(master_keys.public_signing_key);
+		this->public_identity_key = master_keys.public_identity_key;
+		this->public_signing_key = master_keys.public_signing_key;
 
 		return *this;
 	}
@@ -68,13 +68,17 @@ namespace Molch {
 			const ProtobufCKey& private_identity_key) {
 		this->init();
 
+		if ((this->private_signing_key == nullptr) || (this->private_identity_key == nullptr)) {
+			throw Exception(INCORRECT_DATA, "One of the private key pointers is nullptr.");
+		}
+
 		ReadWriteUnlocker unlocker(*this);
 
 		//copy the keys
-		this->public_signing_key.cloneFromRaw(public_signing_key.key.data, public_signing_key.key.len);
-		this->public_identity_key.cloneFromRaw(public_identity_key.key.data, public_identity_key.key.len);
-		this->private_signing_key.cloneFromRaw(private_signing_key.key.data, private_signing_key.key.len);
-		this->private_identity_key.cloneFromRaw(private_identity_key.key.data, private_identity_key.key.len);
+		this->public_signing_key.set(public_signing_key.key.data, public_signing_key.key.len);
+		this->public_identity_key.set(public_identity_key.key.data, public_identity_key.key.len);
+		this->private_signing_key->set(private_signing_key.key.data, private_signing_key.key.len);
+		this->private_identity_key->set(private_identity_key.key.data, private_identity_key.key.len);
 	}
 
 
@@ -84,8 +88,8 @@ namespace Molch {
 
 		//initialize the Buffers
 		//private, initialize with pointers to private key storage
-		new (&this->private_identity_key) Buffer{this->private_keys->identity_key, sizeof(this->private_keys->identity_key), 0};
-		new (&this->private_signing_key) Buffer{this->private_keys->signing_key, sizeof(this->private_keys->signing_key), 0};
+		this->private_identity_key = &this->private_keys->identity_key;
+		this->private_signing_key = &this->private_keys->signing_key;
 
 		//lock the private key storage
 		this->lock();
@@ -104,70 +108,60 @@ namespace Molch {
 
 			//generate the signing keypair
 			int status = crypto_sign_seed_keypair(
-					this->public_signing_key.content,
-					this->private_signing_key.content,
+					this->public_signing_key.data(),
+					this->private_signing_key->data(),
 					high_entropy_seed.content);
 			if (status != 0) {
 				throw Exception(KEYGENERATION_FAILED, "Failed to generate signing keypair with seed.");
 			}
-			this->public_signing_key.size = PUBLIC_MASTER_KEY_SIZE;
-			this->private_signing_key.size = PRIVATE_MASTER_KEY_SIZE;
+			this->public_signing_key.empty = false;
+			this->private_signing_key->empty = false;
 
 			//generate the identity keypair
 			status = crypto_box_seed_keypair(
-					this->public_identity_key.content,
-					this->private_identity_key.content,
+					this->public_identity_key.data(),
+					this->private_identity_key->data(),
 					high_entropy_seed.content + crypto_sign_SEEDBYTES);
 			if (status != 0) {
 				throw Exception(KEYGENERATION_FAILED, "Failed to generate identity keypair with seed.");
 			}
-			this->public_identity_key.size = PUBLIC_KEY_SIZE;
-			this->private_identity_key.size = PRIVATE_KEY_SIZE;
+			this->public_identity_key.empty = false;
+			this->private_identity_key->empty = false;
 		} else { //don't use external seed
 			//generate the signing keypair
 			int status = crypto_sign_keypair(
-					this->public_signing_key.content,
-					this->private_signing_key.content);
+					this->public_signing_key.data(),
+					this->private_signing_key->data());
 			if (status != 0) {
 				throw Exception(KEYGENERATION_FAILED, "Failed to generate signing keypair.");
 			}
-			this->public_signing_key.size = PUBLIC_MASTER_KEY_SIZE;
-			this->private_signing_key.size = PRIVATE_MASTER_KEY_SIZE;
+			this->public_signing_key.empty = false;
+			this->private_signing_key->empty = false;
 
 			//generate the identity keypair
 			status = crypto_box_keypair(
-					this->public_identity_key.content,
-					this->private_identity_key.content);
+					this->public_identity_key.data(),
+					this->private_identity_key->data());
 			if (status != 0) {
 				throw Exception(KEYGENERATION_FAILED, "Failed to generate identity keypair.");
 			}
-			this->public_identity_key.size = PUBLIC_KEY_SIZE;
-			this->private_identity_key.size = PRIVATE_KEY_SIZE;
+			this->public_identity_key.empty = false;
+			this->private_identity_key->empty = false;
 		}
 	}
 
 	/*
 	 * Get the public signing key.
 	 */
-	void MasterKeys::getSigningKey(Buffer& public_signing_key) const {
-		//check input
-		if (!public_signing_key.fits(PUBLIC_MASTER_KEY_SIZE)) {
-			throw Exception(INVALID_INPUT, "MasterKeys::getSigningKey: Output buffer is too short.");
-		}
-
-		public_signing_key.cloneFrom(this->public_signing_key);
+	void MasterKeys::getSigningKey(PublicSigningKey& public_signing_key) const {
+		public_signing_key = this->public_signing_key;
 	}
 
 	/*
 	 * Get the public identity key.
 	 */
-	void MasterKeys::getIdentityKey(Buffer& public_identity_key) const {
-		//check input
-		if (!public_identity_key.fits(PUBLIC_KEY_SIZE)) {
-			throw Exception(INVALID_INPUT, "MasterKeys::getIdentityKey: Output buffer is too short.");
-		}
-
-		public_identity_key.cloneFrom(this->public_identity_key);
+	void MasterKeys::getIdentityKey(PublicKey& public_identity_key) const {
+		public_identity_key = this->public_identity_key;
 	}
 
 	/*
@@ -189,7 +183,7 @@ namespace Molch {
 			&signed_message_length,
 			data.content,
 			data.size,
-			this->private_signing_key.content);
+			this->private_signing_key->data());
 		if (status_int != 0) {
 			throw Exception(SIGN_ERROR, "Failed to sign message.");
 		}
@@ -223,11 +217,11 @@ namespace Molch {
 		private_identity_key->key.len = PRIVATE_KEY_SIZE;
 
 		//copy the keys
-		this->public_signing_key.cloneToRaw(public_signing_key->key.data, PUBLIC_MASTER_KEY_SIZE);
-		this->public_identity_key.cloneToRaw(public_identity_key->key.data, PUBLIC_KEY_SIZE);
+		this->public_signing_key.copyTo(public_signing_key->key.data, PUBLIC_MASTER_KEY_SIZE);
+		this->public_identity_key.copyTo(public_identity_key->key.data, PUBLIC_KEY_SIZE);
 		Unlocker unlocker(*this);
-		this->private_signing_key.cloneToRaw(private_signing_key->key.data, PRIVATE_MASTER_KEY_SIZE);
-		this->private_identity_key.cloneToRaw(private_identity_key->key.data, PRIVATE_KEY_SIZE);
+		this->private_signing_key->copyTo(private_signing_key->key.data, PRIVATE_MASTER_KEY_SIZE);
+		this->private_identity_key->copyTo(private_identity_key->key.data, PRIVATE_KEY_SIZE);
 	}
 
 	void MasterKeys::lock() const {
@@ -257,11 +251,11 @@ namespace Molch {
 		stream << "Public Signing Key:\n";
 		this->public_signing_key.printHex(stream) << '\n';
 		stream << "Private Signing Key:\n";
-		this->private_signing_key.printHex(stream) << '\n';
+		this->private_signing_key->printHex(stream) << '\n';
 		stream << "Public Identity Key:\n";
 		this->public_identity_key.printHex(stream) << '\n';
 		stream << "Private Identity Key:\n";
-		this->private_identity_key.printHex(stream) << '\n';
+		this->private_identity_key->printHex(stream) << '\n';
 
 		return stream;
 	}

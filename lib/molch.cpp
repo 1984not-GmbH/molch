@@ -36,23 +36,13 @@
 #include "destroyers.hpp"
 #include "malloc.hpp"
 #include "protobuf.hpp"
+#include "key.hpp"
 
 using namespace Molch;
 
-class GlobalBackupDeleter {
-public:
-	void operator()(Buffer* buffer) {
-		if (buffer != nullptr) {
-			sodium_mprotect_readwrite(buffer->content);
-			delete buffer;
-		}
-	}
-};
-
-
 //global user store
 static std::unique_ptr<UserStore> users;
-static std::unique_ptr<Buffer,GlobalBackupDeleter> global_backup_key;
+static std::unique_ptr<BackupKey,SodiumDeleter<BackupKey>> global_backup_key;
 
 class GlobalBackupKeyUnlocker {
 public:
@@ -60,11 +50,11 @@ public:
 		if (!global_backup_key) {
 			throw Exception(GENERIC_ERROR, "No backup key to unlock!");
 		}
-		sodium_mprotect_readonly(global_backup_key->content);
+		sodium_mprotect_readonly(global_backup_key.get());
 	}
 
 	~GlobalBackupKeyUnlocker() {
-		sodium_mprotect_noaccess(global_backup_key->content);
+		sodium_mprotect_noaccess(global_backup_key.get());
 	}
 };
 
@@ -74,18 +64,18 @@ public:
 		if (!global_backup_key) {
 			throw Exception(GENERIC_ERROR, "No backup key to unlock!");
 		}
-		sodium_mprotect_readwrite(global_backup_key->content);
+		sodium_mprotect_readwrite(global_backup_key.get());
 	}
 
 	~GlobalBackupKeyWriteUnlocker() {
-		sodium_mprotect_noaccess(global_backup_key->content);
+		sodium_mprotect_noaccess(global_backup_key.get());
 	}
 };
 
 /*
  * Create a prekey list.
  */
-static Buffer create_prekey_list(const Buffer& public_signing_key) {
+static Buffer create_prekey_list(const PublicSigningKey& public_signing_key) {
 	//get the user
 	auto user = users->find(public_signing_key);
 	if (user == nullptr) {
@@ -96,7 +86,7 @@ static Buffer create_prekey_list(const Buffer& public_signing_key) {
 	user->prekeys.rotate();
 
 	//get the public identity key
-	Buffer public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE, &malloc, &free);
+	PublicKey public_identity_key;
 	user->master_keys.getIdentityKey(public_identity_key);
 
 	//copy the public identity to the prekey list
@@ -105,7 +95,7 @@ static Buffer create_prekey_list(const Buffer& public_signing_key) {
 			0,
 			&malloc,
 			&free);
-	unsigned_prekey_list.copyFrom(0, public_identity_key, 0, PUBLIC_KEY_SIZE);
+	unsigned_prekey_list.copyFrom(0, public_identity_key.buffer(), 0, PUBLIC_KEY_SIZE);
 
 	//get the prekeys
 	Buffer prekeys(unsigned_prekey_list.content + PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
@@ -197,16 +187,17 @@ return_status molch_create_user(
 
 		//create the user
 		Buffer random_data_buffer(random_data, random_data_length);
-		Buffer public_master_key_buffer(public_master_key, PUBLIC_MASTER_KEY_SIZE);
+		PublicSigningKey public_master_key_key;
 		if (random_data_length != 0) {
-			users->add(Molch::User(random_data_buffer, &public_master_key_buffer));
+			users->add(Molch::User(random_data_buffer, &public_master_key_key));
 		} else {
-			users->add(Molch::User(&public_master_key_buffer));
+			users->add(Molch::User(&public_master_key_key));
 		}
+		public_master_key_key.copyTo(public_master_key, PUBLIC_MASTER_KEY_SIZE);
 
 		user_store_created = true;
 
-		auto prekey_list_buffer = create_prekey_list(public_master_key_buffer);
+		auto prekey_list_buffer = create_prekey_list(public_master_key_key);
 
 		if (backup != nullptr) {
 			*backup = nullptr;
@@ -263,8 +254,9 @@ return_status molch_destroy_user(
 			throw Exception(INCORRECT_BUFFER_SIZE, "Public master key has incorrect size.");
 		}
 
-		Buffer public_signing_key_buffer(public_master_key, PUBLIC_MASTER_KEY_SIZE);
-		users->remove(public_signing_key_buffer);
+		PublicSigningKey public_master_key_key;
+		public_master_key_key.set(public_master_key, PUBLIC_MASTER_KEY_SIZE);
+		users->remove(public_master_key_key);
 
 		if (backup != nullptr) {
 			*backup = nullptr;
@@ -396,8 +388,8 @@ molch_message_type molch_get_message_type(
 static void verify_prekey_list(
 		const unsigned char * const prekey_list,
 		const size_t prekey_list_length,
-		Buffer& public_identity_key, //output, PUBLIC_KEY_SIZE
-		Buffer& public_signing_key) {
+		PublicKey& public_identity_key, //output, PUBLIC_KEY_SIZE
+		PublicSigningKey& public_signing_key) {
 	//verify the signature
 	Buffer verified_prekey_list(prekey_list_length - SIGNATURE_SIZE, prekey_list_length - SIGNATURE_SIZE);
 	unsigned long long verified_length;
@@ -406,10 +398,11 @@ static void verify_prekey_list(
 			&verified_length,
 			prekey_list,
 			static_cast<unsigned long long>(prekey_list_length),
-			public_signing_key.content);
+			public_signing_key.data());
 	if (status != 0) {
 		throw Exception(VERIFICATION_FAILED, "Failed to verify prekey list signature.");
 	}
+	public_signing_key.empty = false;
 	if (verified_length > SIZE_MAX)
 	{
 		throw Exception(CONVERSION_ERROR, "Length is bigger than size_t.");
@@ -428,7 +421,8 @@ static void verify_prekey_list(
 	}
 
 	//copy the public identity key
-	public_identity_key.copyFrom(0, verified_prekey_list, 0, PUBLIC_KEY_SIZE);
+	verified_prekey_list.copyToRaw(public_identity_key.data(), 0, 0, PUBLIC_KEY_SIZE);
+	public_identity_key.empty = false;
 }
 
 /*
@@ -491,20 +485,23 @@ return_status molch_start_send_conversation(
 		}
 
 		//get the user that matches the public signing key of the sender
-		Buffer sender_public_master_key_buffer(sender_public_master_key, PUBLIC_MASTER_KEY_SIZE);
-		Molch::User *user = users->find(sender_public_master_key_buffer);
+		PublicSigningKey sender_public_master_key_key;
+		sender_public_master_key_key.set(sender_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+		Molch::User *user = users->find(sender_public_master_key_key);
 		if (user == nullptr) {
 			throw Exception(NOT_FOUND, "User not found.");
 		}
 
 		//get the receivers public ephemeral and identity
-		Buffer receiver_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		PublicKey receiver_public_identity;
 		Buffer receiver_public_master_key_buffer(receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+		PublicSigningKey receiver_public_master_key_key;
+		receiver_public_master_key_key.set(receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
 		verify_prekey_list(
 				prekey_list,
 				prekey_list_length,
 				receiver_public_identity,
-				receiver_public_master_key_buffer);
+				receiver_public_master_key_key);
 
 		//unlock the master keys
 		MasterKeys::Unlocker unlocker(user->master_keys);
@@ -517,13 +514,12 @@ return_status molch_start_send_conversation(
 				message_buffer,
 				packet_buffer,
 				user->master_keys.public_identity_key,
-				user->master_keys.private_identity_key,
+				*user->master_keys.private_identity_key,
 				receiver_public_identity,
 				prekeys);
 
 		//copy the conversation id
-		Buffer conversation_id_buffer(conversation_id, CONVERSATION_ID_SIZE);
-		conversation_id_buffer.cloneFrom(conversation.id);
+		conversation.id.copyTo(conversation_id, CONVERSATION_ID_SIZE);
 
 		user->conversations.add(std::move(conversation));
 
@@ -613,8 +609,9 @@ cleanup:
 			}
 
 			//get the user that matches the public signing key of the receiver
-			Buffer receiver_public_master_key_buffer(receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
-			Molch::User *user = users->find(receiver_public_master_key_buffer);
+			PublicSigningKey receiver_public_master_key_key;
+			receiver_public_master_key_key.set(receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+			Molch::User *user = users->find(receiver_public_master_key_key);
 			if (user == nullptr) {
 				throw Exception(NOT_FOUND, "User not found in the user store.");
 			}
@@ -629,15 +626,14 @@ cleanup:
 					packet_buffer,
 					message_buffer,
 					user->master_keys.public_identity_key,
-					user->master_keys.private_identity_key,
+					*user->master_keys.private_identity_key,
 					user->prekeys);
 
 			//copy the conversation id
-			Buffer conversation_id_buffer(conversation_id, CONVERSATION_ID_SIZE);
-			conversation_id_buffer.cloneFrom(conversation.id);
+			conversation.id.copyTo(conversation_id, CONVERSATION_ID_SIZE);
 
 			//create the prekey list
-			auto prekey_list_buffer = create_prekey_list(receiver_public_master_key_buffer);
+			auto prekey_list_buffer = create_prekey_list(receiver_public_master_key_key);
 
 			//add the conversation to the conversation store
 			user->conversations.add(std::move(conversation));
@@ -709,9 +705,10 @@ cleanup:
 			}
 
 			//find the conversation
-			Buffer conversation_id_buffer(conversation_id, CONVERSATION_ID_SIZE);
+			Molch::Key<CONVERSATION_ID_SIZE> conversation_id_key;
+			conversation_id_key.set(conversation_id, CONVERSATION_ID_SIZE);
 			Molch::User *user;
-			auto *conversation = users->findConversation(user, conversation_id_buffer);
+			auto *conversation = users->findConversation(user, conversation_id_key);
 			if (conversation == nullptr) {
 				throw Exception(NOT_FOUND, "Failed to find a conversation for the given ID.");
 			}
@@ -730,7 +727,7 @@ cleanup:
 			if (conversation_backup != nullptr) {
 				*conversation_backup = nullptr;
 				if (conversation_backup_length != nullptr) {
-					return_status status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id.content, conversation->id.size);
+					return_status status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id.data(), conversation->id.size());
 					on_error {
 						throw Exception(status);
 					}
@@ -791,9 +788,10 @@ cleanup:
 			}
 
 			//find the conversation
-			Buffer conversation_id_buffer(conversation_id, CONVERSATION_ID_SIZE);
+			Molch::Key<CONVERSATION_ID_SIZE> conversation_id_key;
+			conversation_id_key.set(conversation_id, CONVERSATION_ID_SIZE);
 			Molch::User* user;
-			auto conversation = users->findConversation(user, conversation_id_buffer);
+			auto conversation = users->findConversation(user, conversation_id_key);
 			if (conversation == nullptr) {
 				throw Exception(NOT_FOUND, "Failed to find conversation with the given ID.");
 			}
@@ -811,7 +809,7 @@ cleanup:
 			if (conversation_backup != nullptr) {
 				*conversation_backup = nullptr;
 				if (conversation_backup_length != nullptr) {
-					return_status status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id.content, conversation->id.size);
+					return_status status = molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id.data(), conversation->id.size());
 					on_error {
 						throw Exception(status);
 					}
@@ -856,13 +854,14 @@ cleanup:
 
 			//find the conversation
 			Molch::User *user = nullptr;
-			Buffer conversation_id_buffer(conversation_id, CONVERSATION_ID_SIZE);
-			auto conversation = users->findConversation(user, conversation_id_buffer);
+			Molch::Key<CONVERSATION_ID_SIZE> conversation_id_key;
+			conversation_id_key.set(conversation_id, CONVERSATION_ID_SIZE);
+			auto conversation = users->findConversation(user, conversation_id_key);
 			if (conversation == nullptr) {
 				throw Exception(NOT_FOUND, "Couldn't find conversation.");
 			}
 
-			user->conversations.remove(conversation_id_buffer);
+			user->conversations.remove(conversation_id_key);
 
 			if (backup != nullptr) {
 				*backup = nullptr;
@@ -922,8 +921,9 @@ cleanup:
 				throw Exception(INCORRECT_BUFFER_SIZE, "Public master key has an incorrect length.");
 			}
 
-			Buffer user_public_master_key_buffer(user_public_master_key, PUBLIC_MASTER_KEY_SIZE);
-			auto user = users->find(user_public_master_key_buffer);
+			PublicSigningKey user_public_master_key_key;
+			user_public_master_key_key.set(user_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+			auto user = users->find(user_public_master_key_key);
 			if (user == nullptr) {
 				throw Exception(NOT_FOUND, "No user found for the given public identity.");
 			}
@@ -1025,14 +1025,15 @@ cleanup:
 				throw Exception(INVALID_INPUT, "Conversation ID has an invalid size.");
 			}
 
-			if ((global_backup_key == nullptr) || (global_backup_key->size != BACKUP_KEY_SIZE)) {
+			if ((global_backup_key == nullptr) || (global_backup_key->size() != BACKUP_KEY_SIZE)) {
 				throw Exception(INCORRECT_DATA, "No backup key found.");
 			}
 
 			//find the conversation
 			Molch::User *user;
-			Buffer conversation_id_buffer(conversation_id, CONVERSATION_ID_SIZE);
-			auto conversation = users->findConversation(user, conversation_id_buffer);
+			Molch::Key<CONVERSATION_ID_SIZE> conversation_id_key;
+			conversation_id_key.set(conversation_id, CONVERSATION_ID_SIZE);
+			auto conversation = users->findConversation(user, conversation_id_key);
 			if (conversation == nullptr) {
 				throw Exception(NOT_FOUND, "Failed to find the conversation.");
 			}
@@ -1063,7 +1064,7 @@ cleanup:
 					conversation_buffer.content,
 					conversation_buffer.size,
 					backup_nonce.content,
-					global_backup_key->content);
+					global_backup_key->data());
 			if (status != 0) {
 				backup_buffer.size = 0;
 				throw Exception(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
@@ -1192,8 +1193,9 @@ cleanup:
 			//import the conversation
 			ProtobufCConversation conversation(*conversation_struct);
 			Molch::User* containing_user = nullptr;
-			Buffer conversation_id_buffer(conversation_struct->id.data, conversation_struct->id.len);
-			auto existing_conversation = users->findConversation(containing_user, conversation_id_buffer);
+			Molch::Key<CONVERSATION_ID_SIZE> conversation_id_key;
+			conversation_id_key.set(conversation_struct->id.data, conversation_struct->id.len);
+			auto existing_conversation = users->findConversation(containing_user, conversation_id_key);
 			if (existing_conversation == nullptr) {
 				throw Exception(NOT_FOUND, "Containing store not found.");
 			}
@@ -1239,7 +1241,8 @@ cleanup:
 				throw Exception(INVALID_INPUT, "Invalid input to molch_export");
 			}
 
-			if ((global_backup_key == nullptr) || (global_backup_key->size != BACKUP_KEY_SIZE)) {
+			GlobalBackupKeyUnlocker unlocker;
+			if ((global_backup_key == nullptr) || global_backup_key->empty) {
 				throw Exception(INCORRECT_DATA, "No backup key found.");
 			}
 
@@ -1266,13 +1269,12 @@ cleanup:
 			Buffer backup_buffer(backup_struct_size + crypto_secretbox_MACBYTES, backup_struct_size + crypto_secretbox_MACBYTES);
 
 			//encrypt the backup
-			GlobalBackupKeyUnlocker unlocker;
 			int status = crypto_secretbox_easy(
 					backup_buffer.content,
 					users_buffer.content,
 					users_buffer.size,
 					backup_nonce.content,
-					global_backup_key->content);
+					global_backup_key->data());
 			if (status != 0) {
 				throw Exception(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
 			}
@@ -1455,9 +1457,9 @@ cleanup:
 				throw Exception(INCORRECT_BUFFER_SIZE, "Public master key has an incorrect length.");
 			}
 
-			Buffer public_signing_key_buffer(public_master_key, PUBLIC_MASTER_KEY_SIZE);
-
-			auto prekey_list_buffer = create_prekey_list(public_signing_key_buffer);
+			PublicSigningKey public_signing_key_key;
+			public_signing_key_key.set(public_master_key, PUBLIC_MASTER_KEY_SIZE);
+			auto prekey_list_buffer = create_prekey_list(public_signing_key_key);
 			Buffer malloced_prekey_list(prekey_list_buffer.size, 0, &malloc, &free);
 			malloced_prekey_list.cloneFrom(prekey_list_buffer);
 			*prekey_list_length = malloced_prekey_list.size;
@@ -1502,16 +1504,16 @@ cleanup:
 
 			// create a backup key buffer if it doesnt exist already
 			if (global_backup_key == nullptr) {
-				global_backup_key = std::unique_ptr<Buffer,GlobalBackupDeleter>(new Buffer(BACKUP_KEY_SIZE, 0, &sodium_malloc, &sodium_free));
+				global_backup_key = std::unique_ptr<BackupKey,SodiumDeleter<BackupKey>>(throwing_sodium_malloc<BackupKey>(sizeof(BackupKey)));
+				new (global_backup_key.get()) BackupKey();
 			}
 
 			//make the content of the backup key writable
 			GlobalBackupKeyWriteUnlocker unlocker;
 
-			global_backup_key->fillRandom(BACKUP_KEY_SIZE);
+			global_backup_key->fillRandom();
 
-			Buffer new_key_buffer(new_key, BACKUP_KEY_SIZE);
-			new_key_buffer.cloneFrom(*global_backup_key);
+			global_backup_key->copyTo(new_key, BACKUP_KEY_SIZE);
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
 			goto cleanup;

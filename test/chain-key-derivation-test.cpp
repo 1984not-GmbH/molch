@@ -38,8 +38,8 @@ int main(void) {
 		}
 
 		//create random initial chain key
-		Buffer last_chain_key(crypto_auth_BYTES, crypto_auth_BYTES);
-		last_chain_key.fillRandom(last_chain_key.capacity());
+		ChainKey last_chain_key;
+		last_chain_key.fillRandom();
 
 		//print first chain key
 		printf("Initial chain key (%i Bytes):\n", crypto_auth_BYTES);
@@ -47,10 +47,10 @@ int main(void) {
 
 
 		//derive a chain of chain keys
-		Buffer next_chain_key(crypto_auth_BYTES, crypto_auth_BYTES);
+		ChainKey next_chain_key;
 		unsigned int counter;
 		for (counter = 1; counter <= 5; counter++) {
-			derive_chain_key(next_chain_key, last_chain_key);
+			next_chain_key = last_chain_key.deriveChainKey();
 
 			//print the derived chain key
 			printf("Chain key Nr. %i:\n", counter);
@@ -62,7 +62,7 @@ int main(void) {
 			}
 
 			//move next_chain_key to last_chain_key
-			last_chain_key.cloneFrom(next_chain_key);
+			last_chain_key = next_chain_key;
 		}
 	} catch (const Molch::Exception& exception) {
 		return EXIT_FAILURE;

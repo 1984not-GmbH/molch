@@ -31,13 +31,13 @@ namespace Molch {
 	constexpr int64_t PREKEY_EXPIRATION_TIME = 3600 * 24 * 31; //one month
 	constexpr int64_t DEPRECATED_PREKEY_EXPIRATION_TIME = 3600; //one hour
 
-	void Prekey::fill(const Buffer& public_key, const Buffer& private_key, const int64_t expiration_date) {
+	void Prekey::fill(const PublicKey& public_key, const PrivateKey& private_key, const int64_t expiration_date) {
 		this->expiration_date = expiration_date;
-		this->public_key.cloneFrom(public_key);
-		this->private_key.cloneFrom(private_key);
+		this->public_key = public_key;
+		this->private_key = private_key;
 	}
 
-	Prekey::Prekey(const Buffer& public_key, const Buffer& private_key, int64_t expiration_date) {
+	Prekey::Prekey(const PublicKey& public_key, const PrivateKey& private_key, int64_t expiration_date) {
 		this->fill(public_key, private_key, expiration_date);
 	}
 
@@ -73,19 +73,19 @@ namespace Molch {
 				|| (keypair.private_key->key.len != PRIVATE_KEY_SIZE)) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a private key.");
 		}
-		this->private_key.cloneFromRaw(keypair.private_key->key.data, keypair.private_key->key.len);
+		this->private_key.set(keypair.private_key->key.data, keypair.private_key->key.len);
 
 		//import public key
 		if (keypair.public_key == nullptr) {
 			//public key is missing -> derive it from the private key
-			if (crypto_scalarmult_base(this->public_key.content, this->private_key.content) != 0) {
+			if (crypto_scalarmult_base(this->public_key.data(), this->private_key.data()) != 0) {
 				throw Exception(KEYDERIVATION_FAILED, "Failed to derive public prekey from private one.");
 			}
-			this->public_key.size = PUBLIC_KEY_SIZE;
+			this->public_key.empty = false;
 		} else if (keypair.public_key->key.len != PUBLIC_KEY_SIZE) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a public key.");
 		} else {
-			this->public_key.cloneFromRaw(keypair.public_key->key.data, keypair.public_key->key.len);
+			this->public_key.set(keypair.public_key->key.data, keypair.public_key->key.len);
 		}
 
 		//import expiration_date
@@ -100,18 +100,18 @@ namespace Molch {
 		prekey__init(prekey.get());
 
 		//export the private key
-		prekey->private_key = throwing_zeroed_malloc<Key>(sizeof(Key));
+		prekey->private_key = throwing_zeroed_malloc<ProtobufCKey>(sizeof(ProtobufCKey));
 		key__init(prekey->private_key);
 		prekey->private_key->key.data = throwing_zeroed_malloc<uint8_t>(PRIVATE_KEY_SIZE);
 		prekey->private_key->key.len = PRIVATE_KEY_SIZE;
-		this->private_key.cloneToRaw(prekey->private_key->key.data, prekey->private_key->key.len);
+		this->private_key.copyTo(prekey->private_key->key.data, prekey->private_key->key.len);
 
 		//export the public key
-		prekey->public_key = throwing_zeroed_malloc<Key>(sizeof(Key));
+		prekey->public_key = throwing_zeroed_malloc<ProtobufCKey>(sizeof(ProtobufCKey));
 		key__init(prekey->public_key);
 		prekey->public_key->key.data = throwing_zeroed_malloc<uint8_t>(PUBLIC_KEY_SIZE);
 		prekey->public_key->key.len = PUBLIC_KEY_SIZE;
-		this->public_key.cloneToRaw(prekey->public_key->key.data, prekey->public_key->key.len);
+		this->public_key.copyTo(prekey->public_key->key.data, prekey->public_key->key.len);
 
 		//export the expiration date
 		prekey->expiration_time = static_cast<uint64_t>(this->expiration_date);
@@ -121,20 +121,14 @@ namespace Molch {
 	}
 
 	void Prekey::generate() {
-		if (this->public_key.content == nullptr) {
-			throw Exception(INVALID_INPUT, "public key is nullptr");
-		}
-		if (this->public_key.content == nullptr) {
-			throw Exception(INVALID_INPUT, "private key is nullptr");
-		}
 		int status = crypto_box_keypair(
-			this->public_key.content,
-			this->private_key.content);
+			this->public_key.data(),
+			this->private_key.data());
 		if (status != 0) {
 			throw Exception(KEYGENERATION_FAILED, "Failed to generate prekey pair.");
 		}
-		this->public_key.size = PUBLIC_KEY_SIZE;
-		this->private_key.size = PRIVATE_KEY_SIZE;
+		this->public_key.empty = false;
+		this->private_key.empty = false;
 		this->expiration_date = time(nullptr) + PREKEY_EXPIRATION_TIME;
 	}
 
@@ -233,9 +227,9 @@ namespace Molch {
 		at_index.generate();
 	}
 
-	void PrekeyStore::getPrekey(const Buffer& public_key, Buffer& private_key) {
+	void PrekeyStore::getPrekey(const PublicKey& public_key, PrivateKey& private_key) {
 		//check buffers sizes
-		if (!public_key.contains(PUBLIC_KEY_SIZE) || !private_key.fits(PRIVATE_KEY_SIZE)) {
+		if (public_key.empty) {
 			throw Exception(INVALID_INPUT, "Invalid input to PrekeyStore::getPrekey.");
 		}
 
@@ -247,7 +241,7 @@ namespace Molch {
 		auto found_prekey = std::find_if(std::cbegin(*this->prekeys), std::cend(*this->prekeys), key_comparer);
 		if (found_prekey != this->prekeys->end()) {
 			//copy the private key
-			private_key.cloneFrom(found_prekey->private_key);
+			private_key = found_prekey->private_key;
 
 			//and deprecate key
 			size_t index = static_cast<size_t>(found_prekey - std::begin(*this->prekeys));
@@ -258,11 +252,11 @@ namespace Molch {
 
 		auto found_deprecated_prekey = std::find_if(std::cbegin(this->deprecated_prekeys), std::cend(this->deprecated_prekeys), key_comparer);
 		if (found_deprecated_prekey == this->deprecated_prekeys.end()) {
-			private_key.size = 0;
+			private_key.empty = true;
 			throw Exception(NOT_FOUND, "No matching prekey found.");
 		}
 
-		private_key.cloneFrom(found_deprecated_prekey->private_key);
+		private_key = found_deprecated_prekey->private_key;
 	}
 
 	void PrekeyStore::list(Buffer& list) const { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
@@ -273,9 +267,9 @@ namespace Molch {
 
 		size_t index = 0;
 		for (const auto& key_bundle : *this->prekeys) {
-			list.copyFrom(
+			list.copyFromRaw(
 					PUBLIC_KEY_SIZE * index,
-					key_bundle.public_key,
+					key_bundle.public_key.data(),
 					0,
 					PUBLIC_KEY_SIZE);
 			index++;

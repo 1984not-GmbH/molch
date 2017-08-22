@@ -40,8 +40,8 @@ int main(void) {
 		}
 
 		//create Alice's keypair
-		Buffer alice_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer alice_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		PublicKey alice_public_ephemeral;
+		PrivateKey alice_private_ephemeral;
 		generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
@@ -49,8 +49,8 @@ int main(void) {
 			"ephemeral");
 
 		//create Bob's keypair
-		Buffer bob_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer bob_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		PublicKey bob_public_ephemeral;
+		PrivateKey bob_private_ephemeral;
 		generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
@@ -58,17 +58,17 @@ int main(void) {
 			"ephemeral");
 
 		//create previous root key
-		Buffer previous_root_key(ROOT_KEY_SIZE, ROOT_KEY_SIZE);
-		previous_root_key.fillRandom(ROOT_KEY_SIZE);
+		RootKey previous_root_key;
+		previous_root_key.fillRandom();
 
 		//print previous root key
-		printf("Previous root key (%zu Bytes):\n", previous_root_key.size);
+		printf("Previous root key (%zu Bytes):\n", previous_root_key.size());
 		previous_root_key.printHex(std::cout) << std::endl;
 
 		//derive root and chain key for Alice
-		Buffer alice_root_key(ROOT_KEY_SIZE, ROOT_KEY_SIZE);
-		Buffer alice_chain_key(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-		Buffer alice_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+		RootKey alice_root_key;
+		ChainKey alice_chain_key;
+		HeaderKey alice_header_key;
 		derive_root_next_header_and_chain_keys(
 			alice_root_key,
 			alice_header_key,
@@ -80,17 +80,17 @@ int main(void) {
 			Ratchet::Role::ALICE);
 
 		//print Alice's root and chain key
-		printf("Alice's root key (%zu Bytes):\n", alice_root_key.size);
+		printf("Alice's root key (%zu Bytes):\n", alice_root_key.size());
 		alice_root_key.printHex(std::cout);
-		printf("Alice's chain key (%zu Bytes):\n", alice_chain_key.size);
+		printf("Alice's chain key (%zu Bytes):\n", alice_chain_key.size());
 		alice_chain_key.printHex(std::cout);
-		printf("Alice's header key (%zu Bytes):\n", alice_header_key.size);
+		printf("Alice's header key (%zu Bytes):\n", alice_header_key.size());
 		alice_header_key.printHex(std::cout) << std::endl;
 
 		//derive root and chain key for Bob
-		Buffer bob_root_key(ROOT_KEY_SIZE, ROOT_KEY_SIZE);
-		Buffer bob_chain_key(CHAIN_KEY_SIZE, CHAIN_KEY_SIZE);
-		Buffer bob_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+		RootKey bob_root_key;
+		ChainKey bob_chain_key;
+		HeaderKey bob_header_key;
 		derive_root_next_header_and_chain_keys(
 			bob_root_key,
 			bob_header_key,
@@ -102,11 +102,11 @@ int main(void) {
 			Ratchet::Role::BOB);
 
 		//print Bob's root and chain key
-		printf("Bob's root key (%zu Bytes):\n", bob_root_key.size);
+		printf("Bob's root key (%zu Bytes):\n", bob_root_key.size());
 		bob_root_key.printHex(std::cout);
-		printf("Bob's chain key (%zu Bytes):\n", bob_chain_key.size);
+		printf("Bob's chain key (%zu Bytes):\n", bob_chain_key.size());
 		bob_chain_key.printHex(std::cout);
-		printf("Bob's header key (%zu Bytes):\n", bob_header_key.size);
+		printf("Bob's header key (%zu Bytes):\n", bob_header_key.size());
 		bob_header_key.printHex(std::cout) << std::endl;
 
 		//compare Alice's and Bob's root keys

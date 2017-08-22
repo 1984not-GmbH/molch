@@ -34,27 +34,25 @@
 #include "zeroed_malloc.hpp"
 #include "protobuf.hpp"
 #include "sodium-wrappers.hpp"
+#include "key.hpp"
 
 namespace Molch {
 	class Prekey {
 		friend class PrekeyStore;
 	private:
-		unsigned char public_key_storage[PUBLIC_KEY_SIZE];
-		unsigned char private_key_storage[PRIVATE_KEY_SIZE];
-
-		void fill(const Buffer& public_key, const Buffer& private_key, const int64_t expiration_date);
+		void fill(const PublicKey& public_key, const PrivateKey& private_key, const int64_t expiration_date);
 		void generate();
 
 		Prekey& copy(const Prekey& node);
 		Prekey& move(Prekey&& node);
 
 	public:
-		Buffer public_key{this->public_key_storage, sizeof(this->public_key_storage), 0};
-		Buffer private_key{this->private_key_storage, sizeof(this->private_key_storage), 0};
+		PublicKey public_key;
+		PrivateKey private_key;
 		int64_t expiration_date{0};
 
 		Prekey() = default;
-		Prekey(const Buffer& public_key, const Buffer& private_key, int64_t expiration_date);
+		Prekey(const PublicKey& public_key, const PrivateKey& private_key, int64_t expiration_date);
 		/* copy constructor */
 		Prekey(const Prekey& node);
 		/* move constructor */
@@ -113,7 +111,7 @@ namespace Molch {
 		 * deprecate the requested prekey put it in the outdated key store and
 		 * generate a new one.
 		 */
-		void getPrekey(const Buffer& public_key, Buffer& private_key);
+		void getPrekey(const PublicKey& public_key, PrivateKey& private_key);
 
 		/*
 		 * Generate a list containing all public prekeys.

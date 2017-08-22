@@ -30,7 +30,7 @@
 
 namespace Molch {
 	User& User::move(User&& node) {
-		this->public_signing_key.cloneFrom(node.public_signing_key);
+		this->public_signing_key = node.public_signing_key;
 		this->master_keys = std::move(node.master_keys);
 		this->prekeys = std::move(node.prekeys);
 		this->conversations = std::move(node.conversations);
@@ -47,8 +47,8 @@ namespace Molch {
 	}
 
 	void User::exportPublicKeys(
-			Buffer * const public_signing_key, //output, optional, can be nullptr
-			Buffer * const public_identity_key) { //output, optional, can be nullptr
+			PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
+			PublicKey * const public_identity_key) { //output, optional, can be nullptr
 		//get the public keys
 		if (public_signing_key != nullptr) {
 			this->master_keys.getSigningKey(*public_signing_key);
@@ -60,16 +60,16 @@ namespace Molch {
 
 	User::User(
 			const Buffer& seed,
-			Buffer * const public_signing_key, //output, optional, can be nullptr
-			Buffer * const public_identity_key//output, optional, can be nullptr
+			PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
+			PublicKey * const public_identity_key//output, optional, can be nullptr
 			) : master_keys(seed) {
 		this->exportPublicKeys(public_signing_key, public_identity_key);
 		this->master_keys.getSigningKey(this->public_signing_key);
 	}
 
 	User::User(
-			Buffer * const public_signing_key, //output, optional, can be nullptr
-			Buffer * const public_identity_key) { //output, optional, can be nullptr
+			PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
+			PublicKey * const public_identity_key) { //output, optional, can be nullptr
 		this->exportPublicKeys(public_signing_key, public_identity_key);
 		this->master_keys.getSigningKey(this->public_signing_key);
 	}
@@ -90,7 +90,7 @@ namespace Molch {
 			*user.private_identity_key);
 
 		//public signing key
-		this->public_signing_key.cloneFromRaw(user.public_signing_key->key.data, user.public_signing_key->key.len);
+		this->public_signing_key.set(user.public_signing_key->key.data, user.public_signing_key->key.len);
 
 		this->conversations = ConversationStore(user.conversations, user.n_conversations);
 
@@ -131,7 +131,7 @@ namespace Molch {
 	}
 
 	void UserStore::add(User&& user) {
-		const Buffer& public_signing_key = user.public_signing_key;
+		const PublicSigningKey& public_signing_key = user.public_signing_key;
 		//search if a user with this public_signing_key already exists
 		auto existing_user = std::find_if(std::cbegin(this->users), std::cend(this->users),
 				[public_signing_key](const User& user) {
@@ -148,8 +148,8 @@ namespace Molch {
 		this->users[existing_index] = std::move(user);
 	}
 
-	User* UserStore::find(const Buffer& public_signing_key) {
-		if (!public_signing_key.contains(PUBLIC_MASTER_KEY_SIZE)) {
+	User* UserStore::find(const PublicSigningKey& public_signing_key) {
+		if (public_signing_key.empty) {
 			throw Exception(INVALID_INPUT, "Invalid input to UserStore::find.");
 		}
 
@@ -164,8 +164,8 @@ namespace Molch {
 		return &(*user);
 	}
 
-	Conversation* UserStore::findConversation(User*& user, const Buffer& conversation_id) {
-		if (!conversation_id.contains(CONVERSATION_ID_SIZE)) {
+	Conversation* UserStore::findConversation(User*& user, const Key<CONVERSATION_ID_SIZE>& conversation_id) {
+		if (conversation_id.empty) {
 			throw Exception(INVALID_INPUT, "Invalid input to UserStore::findConversation.");
 		}
 
@@ -189,11 +189,11 @@ namespace Molch {
 
 		for (const auto& user : this->users) {
 			size_t index = static_cast<size_t>(&user - &(*std::cbegin(this->users)));
-			list.copyFrom(
-				CONVERSATION_ID_SIZE * index,
-				user.public_signing_key,
+			list.copyFromRaw(
+				PUBLIC_MASTER_KEY_SIZE * index,
+				user.public_signing_key.data(),
 				0,
-				user.public_signing_key.size);
+				user.public_signing_key.size());
 		}
 
 		return list;
@@ -217,7 +217,7 @@ namespace Molch {
 		}
 	}
 
-	void UserStore::remove(const Buffer& public_signing_key) {
+	void UserStore::remove(const PublicSigningKey& public_signing_key) {
 		auto found_node = std::find_if(std::cbegin(this->users), std::cend(this->users),
 				[public_signing_key](const User& user) {
 					return user.public_signing_key == public_signing_key;
@@ -237,10 +237,10 @@ namespace Molch {
 		user__init(user.get());
 
 		//export master keys
-		std::unique_ptr<Key,KeyDeleter> public_signing_key;
-		std::unique_ptr<Key,KeyDeleter> private_signing_key;
-		std::unique_ptr<Key,KeyDeleter> public_identity_key;
-		std::unique_ptr<Key,KeyDeleter> private_identity_key;
+		std::unique_ptr<ProtobufCKey,KeyDeleter> public_signing_key;
+		std::unique_ptr<ProtobufCKey,KeyDeleter> private_signing_key;
+		std::unique_ptr<ProtobufCKey,KeyDeleter> public_identity_key;
+		std::unique_ptr<ProtobufCKey,KeyDeleter> private_identity_key;
 		this->master_keys.exportProtobuf(
 			public_signing_key,
 			private_signing_key,

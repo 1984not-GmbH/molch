@@ -23,61 +23,38 @@
 #define LIB_RATCHET_H
 
 #include <ostream>
+
 #include "constants.h"
 #include "header-and-message-keystore.hpp"
 #include "return-status.h"
 #include "zeroed_malloc.hpp"
 #include "protobuf.hpp"
+#include "key.hpp"
 
 namespace Molch {
 	class RatchetStorage {
-		friend class Ratchet;
-
-	private:
-		unsigned char root_key_storage[ROOT_KEY_SIZE]; //RK
-		unsigned char purported_root_key_storage[ROOT_KEY_SIZE]; //RKp
-		//header keys
-		unsigned char send_header_key_storage[HEADER_KEY_SIZE];
-		unsigned char receive_header_key_storage[HEADER_KEY_SIZE];
-		unsigned char next_send_header_key_storage[HEADER_KEY_SIZE];
-		unsigned char next_receive_header_key_storage[HEADER_KEY_SIZE];
-		unsigned char purported_receive_header_key_storage[HEADER_KEY_SIZE];
-		unsigned char purported_next_receive_header_key_storage[HEADER_KEY_SIZE];
-		//chain keys
-		unsigned char send_chain_key_storage[CHAIN_KEY_SIZE]; //CKs
-		unsigned char receive_chain_key_storage[CHAIN_KEY_SIZE]; //CKr
-		unsigned char purported_receive_chain_key_storage[CHAIN_KEY_SIZE]; //CKp
-		//identity keys
-		unsigned char our_public_identity_storage[PUBLIC_KEY_SIZE]; //DHIs
-		unsigned char their_public_identity_storage[PUBLIC_KEY_SIZE]; //DHIr
-		//ephemeral keys (ratchet keys)
-		unsigned char our_private_ephemeral_storage[PRIVATE_KEY_SIZE]; //DHRs
-		unsigned char our_public_ephemeral_storage[PUBLIC_KEY_SIZE]; //DHRs
-		unsigned char their_public_ephemeral_storage[PUBLIC_KEY_SIZE]; //DHRr
-		unsigned char their_purported_public_ephemeral_storage[PUBLIC_KEY_SIZE]; //DHp
-
 	public:
-		Buffer root_key{this->root_key_storage, sizeof(this->root_key_storage), 0}; //RK
-		Buffer purported_root_key{this->purported_root_key_storage, sizeof(this->purported_root_key_storage), 0}; //RKp
+		RootKey root_key; //RK
+		RootKey purported_root_key; //RKp
 		//header keys
-		Buffer send_header_key{this->send_header_key_storage, sizeof(this->send_header_key_storage), 0};
-		Buffer receive_header_key{this->receive_header_key_storage, sizeof(this->receive_header_key_storage), 0};
-		Buffer next_send_header_key{this->next_send_header_key_storage, sizeof(this->next_send_header_key_storage), 0};
-		Buffer next_receive_header_key{this->next_receive_header_key_storage, sizeof(this->next_receive_header_key_storage), 0};
-		Buffer purported_receive_header_key{this->purported_receive_header_key_storage, sizeof(this->purported_receive_header_key_storage), 0};
-		Buffer purported_next_receive_header_key{this->purported_next_receive_header_key_storage, sizeof(this->purported_next_receive_header_key_storage), 0};
+		HeaderKey send_header_key;
+		HeaderKey receive_header_key;
+		HeaderKey next_send_header_key;
+		HeaderKey next_receive_header_key;
+		HeaderKey purported_receive_header_key;
+		HeaderKey purported_next_receive_header_key;
 		//chain keys
-		Buffer send_chain_key{this->send_chain_key_storage, sizeof(this->send_chain_key_storage), 0}; //CKs
-		Buffer receive_chain_key{this->receive_chain_key_storage, sizeof(this->receive_chain_key_storage), 0}; //CKr
-		Buffer purported_receive_chain_key{this->purported_receive_chain_key_storage, sizeof(this->purported_receive_chain_key_storage), 0}; //CKp
+		ChainKey send_chain_key; //CKs
+		ChainKey receive_chain_key; //CKr
+		ChainKey purported_receive_chain_key; //CKp
 		//identity keys
-		Buffer our_public_identity{this->our_public_identity_storage, sizeof(this->our_public_identity_storage), 0}; //DHIs
-		Buffer their_public_identity{this->their_public_identity_storage, sizeof(this->their_public_identity_storage), 0}; //DHIr
+		PublicKey our_public_identity; //DHIs
+		PublicKey their_public_identity; //DHIr
 		//ephemeral keys (ratchet keys)
-		Buffer our_private_ephemeral{this->our_private_ephemeral_storage, sizeof(this->our_private_ephemeral_storage), 0}; //DHRs
-		Buffer our_public_ephemeral{this->our_public_ephemeral_storage, sizeof(this->our_public_ephemeral_storage), 0}; //DHRs
-		Buffer their_public_ephemeral{this->their_public_ephemeral_storage, sizeof(this->their_public_ephemeral_storage), 0}; //DHRr
-		Buffer their_purported_public_ephemeral{this->their_purported_public_ephemeral_storage, sizeof(this->their_purported_public_ephemeral_storage), 0}; //DHp
+		PrivateKey our_private_ephemeral; //DHRs
+		PublicKey our_public_ephemeral; //DHRs
+		PublicKey their_public_ephemeral; //DHRr
+		PublicKey their_purported_public_ephemeral; //DHp
 	};
 
 	class Ratchet {
@@ -86,12 +63,12 @@ namespace Molch {
 
 		static void stageSkippedHeaderAndMessageKeys(
 			HeaderAndMessageKeyStore& staging_area,
-			Buffer * const output_chain_key, //output, CHAIN_KEY_SIZE
-			Buffer * const output_message_key, //output, MESSAGE_KEY_SIZE
-			const Buffer& current_header_key,
+			ChainKey * const output_chain_key, //output, CHAIN_KEY_SIZE
+			MessageKey * const output_message_key, //output, MESSAGE_KEY_SIZE
+			const HeaderKey& current_header_key,
 			const uint32_t current_message_number,
 			const uint32_t future_message_number,
-			const Buffer& chain_key);
+			const ChainKey& chain_key);
 		void commitSkippedHeaderAndMessageKeys();
 
 	public:
@@ -131,12 +108,12 @@ namespace Molch {
 		 * immediately deleted after deriving the initial root key though!)
 		 */
 		Ratchet(
-				const Buffer& our_private_identity,
-				const Buffer& our_public_identity,
-				const Buffer& their_public_identity,
-				const Buffer& our_private_ephemeral,
-				const Buffer& our_public_ephemeral,
-				const Buffer& their_public_ephemeral);
+				const PrivateKey& our_private_identity,
+				const PublicKey& our_public_identity,
+				const PublicKey& their_public_identity,
+				const PrivateKey& our_private_ephemeral,
+				const PublicKey& our_public_ephemeral,
+				const PublicKey& their_public_ephemeral);
 
 		/*! Import a ratchet from Protobuf-C
 		 * NOTE: The public identity key is needed separately,
@@ -156,19 +133,19 @@ namespace Molch {
 		 * Get keys and metadata to send the next message.
 		 */
 		void send(
-				Buffer& send_header_key, //HEADER_KEY_SIZE, HKs
+				HeaderKey& send_header_key, //HEADER_KEY_SIZE, HKs
 				uint32_t& send_message_number, //Ns
 				uint32_t& previous_send_message_number, //PNs
-				Buffer& our_public_ephemeral, //DHRs
-				Buffer& message_key //MESSAGE_KEY_SIZE, MK
+				PublicKey& our_public_ephemeral, //DHRs
+				MessageKey& message_key //MESSAGE_KEY_SIZE, MK
 				);
 
 		/*
 		 * Get a copy of the current and the next receive header key.
 		 */
 		void getReceiveHeaderKeys(
-				Buffer& current_receive_header_key,
-				Buffer& next_receive_header_key) const;
+				HeaderKey& current_receive_header_key,
+				HeaderKey& next_receive_header_key) const;
 
 		/*
 		 * Set if the header is decryptable with the current (state->receive_header_key)
@@ -187,8 +164,8 @@ namespace Molch {
 		 * after having verified the message.
 		 */
 		void receive(
-				Buffer& message_key, //used to get the message key back
-				const Buffer& their_purported_public_ephemeral,
+				MessageKey& message_key, //used to get the message key back
+				const PublicKey& their_purported_public_ephemeral,
 				const uint32_t purported_message_number,
 				const uint32_t purported_previous_message_number);
 

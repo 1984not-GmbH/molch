@@ -41,8 +41,8 @@ int main(void) {
 		//create keys
 		//alice
 		//identity
-		Buffer alice_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-		Buffer alice_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		PrivateKey alice_private_identity;
+		PublicKey alice_public_identity;
 		generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
@@ -51,8 +51,8 @@ int main(void) {
 
 		//bob
 		//identity
-		Buffer bob_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-		Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		PrivateKey bob_private_identity;
+		PublicKey bob_public_identity;
 		generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,

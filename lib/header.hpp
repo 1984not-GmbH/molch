@@ -34,6 +34,7 @@
 
 #include "buffer.hpp"
 #include "return-status.h"
+#include "key.hpp"
 
 namespace Molch {
 	/*!
@@ -50,7 +51,7 @@ namespace Molch {
 	 *   The constructed header.
 	 */
 	Buffer header_construct(
-			const Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE
+			const PublicKey& our_public_ephemeral, //PUBLIC_KEY_SIZE
 			const uint32_t message_number,
 			const uint32_t previous_message_number);
 
@@ -71,7 +72,7 @@ namespace Molch {
 	 */
 	void header_extract(
 			//outputs
-			Buffer& their_public_ephemeral, //PUBLIC_KEY_SIZE
+			PublicKey& their_public_ephemeral, //PUBLIC_KEY_SIZE
 			uint32_t& message_number,
 			uint32_t& previous_message_number,
 			//input

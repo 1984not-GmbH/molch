@@ -32,11 +32,13 @@
 
 using namespace Molch;
 
-static void keypair(Buffer& private_key, Buffer& public_key) {
-	int status = crypto_box_keypair(public_key.content, private_key.content);
+static void keypair(PrivateKey& private_key, PublicKey& public_key) {
+	int status = crypto_box_keypair(public_key.data(), private_key.data());
 	if (status != 0) {
 		throw Molch::Exception(KEYGENERATION_FAILED, "Failed to generate keypair.");
 	}
+	private_key.empty = false;
+	public_key.empty = false;
 }
 
 int main(void) {
@@ -48,40 +50,27 @@ int main(void) {
 
 		//generate the keys
 		//Alice:
-		Buffer alice_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-		Buffer alice_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		PrivateKey alice_private_identity;
+		PublicKey alice_public_identity;
 		keypair(alice_private_identity, alice_public_identity);
-		Buffer alice_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-		Buffer alice_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		PrivateKey alice_private_ephemeral;
+		PublicKey alice_public_ephemeral;
 		keypair(alice_private_ephemeral, alice_public_ephemeral);
 		//Bob:
-		Buffer bob_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-		Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		PrivateKey bob_private_identity;
+		PublicKey bob_public_identity;
 		keypair(bob_private_identity, bob_public_identity);
-		Buffer bob_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-		Buffer bob_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		PrivateKey bob_private_ephemeral;
+		PublicKey bob_public_ephemeral;
 		keypair(bob_private_ephemeral, bob_public_ephemeral);
 
 		//compare public identity keys, the one with the bigger key will be alice
 		//(to make the test more predictable, and make the 'role' flag in the
 		// ratchet match the names here)
-		if (sodium_compare(bob_public_identity.content, alice_public_identity.content, PUBLIC_KEY_SIZE) > 0) {
-			status = 0;
+		if (bob_public_identity > alice_public_identity) {
 			//swap bob and alice
-			//public identity key
-			Buffer stash(std::max(PUBLIC_KEY_SIZE, PRIVATE_KEY_SIZE), 0);
-			stash.cloneFrom(alice_public_identity);
-			alice_public_identity.cloneFrom(bob_public_identity);
-			bob_public_identity.cloneFrom(stash);
-
-			//private identity key
-			stash.cloneFrom(alice_private_identity);
-			alice_private_identity.cloneFrom(bob_private_identity);
-			bob_private_identity.cloneFrom(stash);
-
-			if (status != 0) {
-				throw Molch::Exception(BUFFER_ERROR, "Failed to switch Alice' and Bob's keys.");
-			}
+			std::swap(alice_public_identity, bob_public_identity);
+			std::swap(alice_private_identity, bob_private_identity);
 		}
 
 		//initialise the ratchets
@@ -117,9 +106,9 @@ int main(void) {
 			alice_public_ephemeral);
 
 		// FIRST SCENARIO: ALICE SENDS A MESSAGE TO BOB
-		Buffer send_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer send_message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-		Buffer public_send_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		HeaderKey send_header_key;
+		MessageKey send_message_key;
+		PublicKey public_send_ephemeral;
 		uint32_t send_message_number;
 		uint32_t previous_send_message_number;
 		alice_send_ratchet->send(
@@ -130,21 +119,22 @@ int main(void) {
 				send_message_key);
 
 		//bob receives
-		Buffer current_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer next_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+		HeaderKey current_receive_header_key;
+		HeaderKey next_receive_header_key;
 		bob_receive_ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 
-		Ratchet::HeaderDecryptability decryptability;
-		if (send_header_key == current_receive_header_key) {
-			decryptability = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-		} else if (send_header_key == next_receive_header_key) {
-			decryptability = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
-		} else {
-			decryptability = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
-		}
+		Ratchet::HeaderDecryptability decryptability = [&]() {
+			if (send_header_key == current_receive_header_key) {
+				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
+			} else if (send_header_key == next_receive_header_key) {
+				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
+			} else {
+				return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
+			}
+		}();
 		bob_receive_ratchet->setHeaderDecryptability(decryptability);
 
-		Buffer receive_message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+		MessageKey receive_message_key;
 		bob_receive_ratchet->receive(
 				receive_message_key,
 				public_send_ephemeral,

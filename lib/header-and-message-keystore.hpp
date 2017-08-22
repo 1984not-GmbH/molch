@@ -32,26 +32,24 @@
 #include "return-status.h"
 #include "sodium-wrappers.hpp"
 #include "protobuf.hpp"
+#include "key.hpp"
 
 namespace Molch {
 	class HeaderAndMessageKey {
 	private:
-		void fill(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date);
-
-		unsigned char message_key_storage[MESSAGE_KEY_SIZE];
-		unsigned char header_key_storage[HEADER_KEY_SIZE];
+		void fill(const HeaderKey& header_key, const MessageKey& message_key, const int64_t expiration_date);
 
 		HeaderAndMessageKey& copy(const HeaderAndMessageKey& node);
 		HeaderAndMessageKey& move(HeaderAndMessageKey&& node);
 
 	public:
-		Buffer message_key{this->message_key_storage, sizeof(this->message_key_storage), 0};
-		Buffer header_key{this->header_key_storage, sizeof(this->header_key_storage), 0};
+		MessageKey message_key;
+		HeaderKey header_key;
 		int64_t expiration_date{0};
 
 		HeaderAndMessageKey() = default;
-		HeaderAndMessageKey(const Buffer& header_key, const Buffer& message_key);
-		HeaderAndMessageKey(const Buffer& header_key, const Buffer& message_key, const int64_t expiration_date);
+		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key);
+		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key, const int64_t expiration_date);
 		/* copy and move constructors */
 		HeaderAndMessageKey(const HeaderAndMessageKey& node);
 		HeaderAndMessageKey(HeaderAndMessageKey&& node);
@@ -79,7 +77,7 @@ namespace Molch {
 		 */
 		HeaderAndMessageKeyStore(ProtobufCKeyBundle** const & key_bundles, const size_t bundles_size);
 
-		void add(const Buffer& header_key, const Buffer& message_key);
+		void add(const HeaderKey& header_key, const MessageKey& message_key);
 		//! Export a header_and_message_keystore as Protobuf-C struct.
 		/*!
 		 * \param key_bundles Pointer to a pointer of protobuf-c key bundle structs, it will be allocated in this function.

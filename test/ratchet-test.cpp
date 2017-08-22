@@ -68,8 +68,8 @@ int main(void) {
 		}
 
 		//creating Alice's identity keypair
-		Buffer alice_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer alice_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		PublicKey alice_public_identity;
+		PrivateKey alice_private_identity;
 		generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
@@ -77,8 +77,8 @@ int main(void) {
 			"identity");
 
 		//creating Alice's ephemeral keypair
-		Buffer alice_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer alice_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		PublicKey alice_public_ephemeral;
+		PrivateKey alice_private_ephemeral;
 		generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
@@ -86,8 +86,8 @@ int main(void) {
 			"ephemeral");
 
 		//creating Bob's identity keypair
-		Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer bob_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		PublicKey bob_public_identity;
+		PrivateKey bob_private_identity;
 		generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
@@ -95,8 +95,8 @@ int main(void) {
 			"identity");
 
 		//creating Bob's ephemeral keypair
-		Buffer bob_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-		Buffer bob_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		PublicKey bob_public_ephemeral;
+		PrivateKey bob_private_ephemeral;
 		generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
@@ -116,9 +116,9 @@ int main(void) {
 		alice_private_identity.clear();
 		putchar('\n');
 		//print Alice's initial root and chain keys
-		printf("Alice's initial root key (%zu Bytes):\n", alice_state->storage->root_key.size);
+		printf("Alice's initial root key (%zu Bytes):\n", alice_state->storage->root_key.size());
 		alice_state->storage->root_key.printHex(std::cout);
-		printf("Alice's initial chain key (%zu Bytes):\n", alice_state->storage->send_chain_key.size);
+		printf("Alice's initial chain key (%zu Bytes):\n", alice_state->storage->send_chain_key.size());
 		alice_state->storage->send_chain_key.printHex(std::cout);
 		putchar('\n');
 
@@ -133,9 +133,9 @@ int main(void) {
 				alice_public_ephemeral);
 		putchar('\n');
 		//print Bob's initial root and chain keys
-		printf("Bob's initial root key (%zu Bytes):\n", bob_state->storage->root_key.size);
+		printf("Bob's initial root key (%zu Bytes):\n", bob_state->storage->root_key.size());
 		bob_state->storage->root_key.printHex(std::cout);
-		printf("Bob's initial chain key (%zu Bytes):\n", bob_state->storage->send_chain_key.size);
+		printf("Bob's initial chain key (%zu Bytes):\n", bob_state->storage->send_chain_key.size());
 		bob_state->storage->send_chain_key.printHex(std::cout);
 		putchar('\n');
 
@@ -154,9 +154,9 @@ int main(void) {
 		//--------------------------------------------------------------------------
 		puts("----------------------------------------\n");
 		//first, alice sends two messages
-		Buffer alice_send_message_key1(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-		Buffer alice_send_header_key1(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer alice_send_ephemeral1(PUBLIC_KEY_SIZE, 0);
+		MessageKey alice_send_message_key1;
+		HeaderKey alice_send_header_key1;
+		PublicKey alice_send_ephemeral1;
 		uint32_t alice_send_message_number1;
 		uint32_t alice_previous_message_number1;
 		alice_state->send(
@@ -173,9 +173,9 @@ int main(void) {
 		putchar('\n');
 
 		//second message key
-		Buffer alice_send_message_key2(crypto_secretbox_KEYBYTES, crypto_secretbox_KEYBYTES);
-		Buffer alice_send_header_key2(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer alice_send_ephemeral2(PUBLIC_KEY_SIZE, 0);
+		MessageKey alice_send_message_key2;
+		HeaderKey alice_send_header_key2;
+		PublicKey alice_send_ephemeral2;
 		uint32_t alice_send_message_number2;
 		uint32_t alice_previous_message_number2;
 		alice_state->send(
@@ -192,9 +192,9 @@ int main(void) {
 		putchar('\n');
 
 		//third message_key
-		Buffer alice_send_message_key3(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-		Buffer alice_send_header_key3(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer alice_send_ephemeral3(PUBLIC_KEY_SIZE, 0);
+		MessageKey alice_send_message_key3;
+		HeaderKey alice_send_header_key3;
+		PublicKey alice_send_ephemeral3;
 		uint32_t alice_send_message_number3;
 		uint32_t alice_previous_message_number3;
 		alice_state->send(
@@ -213,8 +213,8 @@ int main(void) {
 		//--------------------------------------------------------------------------
 		puts("----------------------------------------\n");
 		//get pointers to bob's receive header keys
-		Buffer bob_current_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer bob_next_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+		HeaderKey bob_current_receive_header_key;
+		HeaderKey bob_next_receive_header_key;
 		bob_state->getReceiveHeaderKeys(bob_current_receive_header_key, bob_next_receive_header_key);
 
 		printf("Bob's first current receive header key:\n");
@@ -240,7 +240,7 @@ int main(void) {
 		//set the header decryptability
 		bob_state->setHeaderDecryptability(decryptable);
 
-		Buffer bob_receive_key1(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+		MessageKey bob_receive_key1;
 		bob_state->receive(
 				bob_receive_key1,
 				alice_send_ephemeral1,
@@ -279,7 +279,7 @@ int main(void) {
 		bob_state->setHeaderDecryptability(decryptable);
 
 		//second receive message key
-		Buffer bob_receive_key2(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+		MessageKey bob_receive_key2;
 		bob_state->receive(
 				bob_receive_key2,
 				alice_send_ephemeral2,
@@ -318,7 +318,7 @@ int main(void) {
 		bob_state->setHeaderDecryptability(decryptable);
 
 		//third receive message key
-		Buffer bob_receive_key3(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+		MessageKey bob_receive_key3;
 		bob_state->receive(
 				bob_receive_key3,
 				alice_send_ephemeral3,
@@ -355,9 +355,9 @@ int main(void) {
 		//--------------------------------------------------------------------------
 		puts("----------------------------------------\n");
 		//Now Bob replies with three messages
-		Buffer bob_send_message_key1(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-		Buffer bob_send_header_key1(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer bob_send_ephemeral1(PUBLIC_KEY_SIZE, 0);
+		MessageKey bob_send_message_key1;
+		HeaderKey bob_send_header_key1;
+		PublicKey bob_send_ephemeral1;
 		uint32_t bob_send_message_number1;
 		uint32_t bob_previous_message_number1;
 		bob_state->send(
@@ -373,9 +373,9 @@ int main(void) {
 		bob_send_header_key1.printHex(std::cout) << std::endl;
 
 		//second message key
-		Buffer bob_send_message_key2(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-		Buffer bob_send_header_key2(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer bob_send_ephemeral2(PUBLIC_KEY_SIZE, 0);
+		MessageKey bob_send_message_key2;
+		HeaderKey bob_send_header_key2;
+		PublicKey bob_send_ephemeral2;
 		uint32_t bob_send_message_number2;
 		uint32_t bob_previous_message_number2;
 		bob_state->send(
@@ -391,9 +391,9 @@ int main(void) {
 		bob_send_header_key2.printHex(std::cout) << std::endl;
 
 		//third message key
-		Buffer bob_send_message_key3(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-		Buffer bob_send_header_key3(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer bob_send_ephemeral3(PUBLIC_KEY_SIZE, 0);
+		MessageKey bob_send_message_key3;
+		HeaderKey bob_send_header_key3;
+		PublicKey bob_send_ephemeral3;
 		uint32_t bob_send_message_number3;
 		uint32_t bob_previous_message_number3;
 		bob_state->send(
@@ -411,8 +411,8 @@ int main(void) {
 		//--------------------------------------------------------------------------
 		puts("----------------------------------------\n");
 		//get pointers to alice's receive header keys
-		Buffer alice_current_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer alice_next_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+		HeaderKey alice_current_receive_header_key;
+		HeaderKey alice_next_receive_header_key;
 		alice_state->getReceiveHeaderKeys(alice_current_receive_header_key, alice_next_receive_header_key);
 
 		printf("Alice's first current receive header key:\n");
@@ -440,7 +440,7 @@ int main(void) {
 		//set the header decryptability
 		alice_state->setHeaderDecryptability(decryptable);
 
-		Buffer alice_receive_message_key1(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+		MessageKey alice_receive_message_key1;
 		alice_state->receive(
 				alice_receive_message_key1,
 				bob_send_ephemeral1,
@@ -479,7 +479,7 @@ int main(void) {
 		alice_state->setHeaderDecryptability(decryptable);
 
 		//third received message key (second message skipped)
-		Buffer alice_receive_message_key3(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+		MessageKey alice_receive_message_key3;
 		alice_state->receive(alice_receive_message_key3, bob_send_ephemeral3, 2, 0);
 		//print it out
 		printf("Alice Ratchet 2 receive message key 3:\n");
@@ -494,14 +494,14 @@ int main(void) {
 		assert(alice_state->skipped_header_and_message_keys.keys.size() == 1);
 
 		//get the second receive message key from the message and header keystore
-		Buffer alice_receive_message_key2(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-		alice_receive_message_key2.cloneFrom(alice_state->skipped_header_and_message_keys.keys.back().message_key);
+		MessageKey alice_receive_message_key2;
+		alice_receive_message_key2 = alice_state->skipped_header_and_message_keys.keys.back().message_key;
 		printf("Alice Ratchet 2 receive message key 2:\n");
 		alice_receive_message_key2.printHex(std::cout) << std::endl;
 
 		//get the second receive header key from the message and header keystore
-		Buffer alice_receive_header_key2(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		alice_receive_header_key2.cloneFrom(alice_state->skipped_header_and_message_keys.keys.back().header_key);
+		HeaderKey alice_receive_header_key2;
+		alice_receive_header_key2 = alice_state->skipped_header_and_message_keys.keys.back().header_key;
 		printf("Alice Ratchet 2 receive header key 2:\n");
 		alice_receive_header_key2.printHex(std::cout) << std::endl;
 

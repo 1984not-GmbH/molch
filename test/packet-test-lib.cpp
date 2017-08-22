@@ -36,32 +36,30 @@ using namespace Molch;
 void create_and_print_message(
 		//output
 		Buffer& packet,
-		Buffer& header_key, //HEADER_KEY_SIZE
-		Buffer& message_key, //MESSAGE_KEY_SIZE
+		HeaderKey& header_key,
+		MessageKey& message_key,
 		//inputs
 		const molch_message_type packet_type,
 		const Buffer& header,
 		const Buffer& message,
 		//optional inputs (prekey messages only)
-		Buffer * const public_identity_key,
-		Buffer * const public_ephemeral_key,
-		Buffer * const public_prekey) {
+		PublicKey * const public_identity_key,
+		PublicKey * const public_ephemeral_key,
+		PublicKey * const public_prekey) {
 	//check input
-	if (!header_key.fits(HEADER_KEY_SIZE)
-		|| !message_key.fits(MESSAGE_KEY_SIZE)
-		|| (packet_type == INVALID)) {
+	if (packet_type == INVALID) {
 		throw Molch::Exception(INVALID_INPUT, "Invalid input to create_and_print_message.");
 	}
 
 	//create header key
-	header_key.fillRandom(HEADER_KEY_SIZE);
-	printf("Header key (%zu Bytes):\n", header_key.size);
+	header_key.fillRandom();
+	printf("Header key (%zu Bytes):\n", header_key.size());
 	header_key.printHex(std::cout);
 	putchar('\n');
 
 	//create message key
-	message_key.fillRandom(MESSAGE_KEY_SIZE);
-	printf("Message key (%zu Bytes):\n", message_key.size);
+	message_key.fillRandom();
+	printf("Message key (%zu Bytes):\n", message_key.size());
 	message_key.printHex(std::cout);
 	putchar('\n');
 

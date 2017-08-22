@@ -42,10 +42,10 @@ namespace Molch {
 	 * Bob:   H(ECDH(our_private_key,their_public_key)|their_public_key|our_public_key)
 	 */
 	void diffie_hellman(
-			Buffer& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
-			const Buffer& our_private_key, //needs to be PRIVATE_KEY_SIZE long
-			const Buffer& our_public_key, //needs to be PUBLIC_KEY_SIZE long
-			const Buffer& their_public_key, //needs to be PUBLIC_KEY_SIZE long
+			Key<DIFFIE_HELLMAN_SIZE>& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
+			const PrivateKey& our_private_key, //needs to be PRIVATE_KEY_SIZE long
+			const PublicKey& our_public_key, //needs to be PUBLIC_KEY_SIZE long
+			const PublicKey& their_public_key, //needs to be PUBLIC_KEY_SIZE long
 			const Ratchet::Role role);
 
 	/*
@@ -65,13 +65,13 @@ namespace Molch {
 	 * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
 	 */
 	void triple_diffie_hellman(
-			Buffer& derived_key,
-			const Buffer& our_private_identity,
-			const Buffer& our_public_identity,
-			const Buffer& our_private_ephemeral,
-			const Buffer& our_public_ephemeral,
-			const Buffer& their_public_identity,
-			const Buffer& their_public_ephemeral,
+			Key<DIFFIE_HELLMAN_SIZE>& derived_key,
+			const PrivateKey& our_private_identity,
+			const PublicKey& our_public_identity,
+			const PrivateKey& our_private_ephemeral,
+			const PublicKey& our_public_ephemeral,
+			const PublicKey& their_public_identity,
+			const PublicKey& their_public_ephemeral,
 			const Ratchet::Role role);
 }
 

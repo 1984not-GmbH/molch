@@ -41,8 +41,8 @@ int main(void) {
 		printf("Generate Alice's keys -------------------------------------------------------\n\n");
 
 		//create Alice's identity keypair
-		Buffer alice_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer alice_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		PublicKey alice_public_identity;
+		PrivateKey alice_private_identity;
 		generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
@@ -50,8 +50,8 @@ int main(void) {
 			"identity");
 
 		//create Alice's ephemeral keypair
-		Buffer alice_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer alice_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		PublicKey alice_public_ephemeral;
+		PrivateKey alice_private_ephemeral;
 		generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
@@ -61,8 +61,8 @@ int main(void) {
 		printf("Generate Bob's keys ---------------------------------------------------------\n\n");
 
 		//create Bob's identity keypair
-		Buffer bob_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer bob_private_identity(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		PublicKey bob_public_identity;
+		PrivateKey bob_private_identity;
 		generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
@@ -70,8 +70,8 @@ int main(void) {
 			"identity");
 
 		//create Bob's ephemeral keypair
-		Buffer bob_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer bob_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		PublicKey bob_public_ephemeral;
+		PrivateKey bob_private_ephemeral;
 		generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
@@ -81,7 +81,7 @@ int main(void) {
 		printf("Calculate shared secret via Triple Diffie Hellman ---------------------------\n\n");
 
 		//Triple Diffie Hellman on Alice's side
-		Buffer alice_shared_secret(crypto_generichash_BYTES, crypto_generichash_BYTES);
+		Molch::Key<DIFFIE_HELLMAN_SIZE> alice_shared_secret;
 		triple_diffie_hellman(
 			alice_shared_secret,
 			alice_private_identity,
@@ -97,7 +97,7 @@ int main(void) {
 		alice_shared_secret.printHex(std::cout) << std::endl;
 
 		//Triple Diffie Hellman on Bob's side
-		Buffer bob_shared_secret(crypto_generichash_BYTES, crypto_generichash_BYTES);
+		Molch::Key<DIFFIE_HELLMAN_SIZE> bob_shared_secret;
 		triple_diffie_hellman(
 			bob_shared_secret,
 			bob_private_identity,

@@ -141,9 +141,9 @@ int main(void) {
 		MasterKeys unspiced_master_keys{};
 
 		//get the public keys
-		Buffer public_signing_key(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+		PublicSigningKey public_signing_key;
 		unspiced_master_keys.getSigningKey(public_signing_key);
-		Buffer public_identity_key(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		PublicKey public_identity_key;
 		unspiced_master_keys.getIdentityKey(public_identity_key);
 
 		//print the keys
@@ -154,7 +154,7 @@ int main(void) {
 		printf("\nPrivate:\n");
 		{
 			MasterKeys::Unlocker unlocker(unspiced_master_keys);
-			unspiced_master_keys.private_signing_key.printHex(std::cout);
+			unspiced_master_keys.private_signing_key->printHex(std::cout);
 		}
 
 		printf("\n\nIdentity keys:\n");
@@ -164,7 +164,7 @@ int main(void) {
 		printf("\nPrivate:\n");
 		{
 			MasterKeys::Unlocker unlocker(unspiced_master_keys);
-			unspiced_master_keys.private_identity_key.printHex(std::cout);
+			unspiced_master_keys.private_identity_key->printHex(std::cout);
 		}
 
 		//check the exported public keys
@@ -190,7 +190,7 @@ int main(void) {
 		printf("Private:\n");
 		{
 			MasterKeys::Unlocker unlocker(spiced_master_keys);
-			spiced_master_keys.private_signing_key.printHex(std::cout) << std::endl;
+			spiced_master_keys.private_signing_key->printHex(std::cout) << std::endl;
 		}
 
 		printf("\nIdentity keys:\n");
@@ -200,7 +200,7 @@ int main(void) {
 		printf("Private:\n");
 		{
 			MasterKeys::Unlocker unlocker(spiced_master_keys);
-			spiced_master_keys.private_identity_key.printHex(std::cout);
+			spiced_master_keys.private_identity_key->printHex(std::cout);
 		}
 
 		//check the exported public keys
@@ -228,7 +228,7 @@ int main(void) {
 				&unwrapped_data_length,
 				signed_data.content,
 				signed_data.size,
-				public_signing_key.content);
+				public_signing_key.data());
 		if (status_int != 0) {
 			throw Molch::Exception(VERIFY_ERROR, "Failed to verify signature.");
 		}

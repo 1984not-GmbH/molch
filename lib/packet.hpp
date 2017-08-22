@@ -26,6 +26,7 @@
 
 #include "buffer.hpp"
 #include "molch.h"
+#include "key.hpp"
 
 /*! \file
  * Theses functions create a packet from a packet header, encryption keys, an azolotl header and a
@@ -60,13 +61,13 @@ namespace Molch {
 			//inputs
 			const molch_message_type packet_type,
 			const Buffer& axolotl_header,
-			const Buffer& axolotl_header_key, //HEADER_KEY_SIZE
+			const HeaderKey& axolotl_header_key,
 			const Buffer& message,
-			const Buffer& message_key, //MESSAGE_KEY_SIZE
+			const MessageKey& message_key,
 			//optional inputs (prekey messages only)
-			const Buffer * const public_identity_key,
-			const Buffer * const public_ephemeral_key,
-			const Buffer * const public_prekey);
+			const PublicKey * const public_identity_key,
+			const PublicKey * const public_ephemeral_key,
+			const PublicKey * const public_prekey);
 
 	/*!
 	 * Extract and decrypt a packet and the metadata inside of it.
@@ -103,12 +104,12 @@ namespace Molch {
 			Buffer& message,
 			//inputs
 			const Buffer& packet,
-			const Buffer& axolotl_header_key, //HEADER_KEY_SIZE
-			const Buffer& message_key, //MESSAGE_KEY_SIZE
+			const HeaderKey& axolotl_header_key,
+			const MessageKey& message_key,
 			//optional outputs (prekey messages only)
-			Buffer * const public_identity_key,
-			Buffer * const public_ephemeral_key,
-			Buffer * const public_prekey);
+			PublicKey * const public_identity_key,
+			PublicKey * const public_ephemeral_key,
+			PublicKey * const public_prekey);
 
 	/*!
 	 * Extracts the metadata from a packet without actually decrypting or verifying anything.
@@ -136,10 +137,9 @@ namespace Molch {
 			//input
 			const Buffer& packet,
 			//optional outputs (prekey messages only)
-			Buffer * const public_identity_key, //PUBLIC_KEY_SIZE
-			Buffer * const public_ephemeral_key, //PUBLIC_KEY_SIZE
-			Buffer * const public_prekey //PUBLIC_KEY_SIZE
-			);
+			PublicKey * const public_identity_key,
+			PublicKey * const public_ephemeral_key,
+			PublicKey * const public_prekey);
 
 	/*!
 	 * Decrypt the axolotl header part of a packet and thereby authenticate other metadata.
@@ -154,7 +154,7 @@ namespace Molch {
 	 */
 	Buffer packet_decrypt_header(
 			const Buffer& packet,
-			const Buffer& axolotl_header_key); //HEADER_KEY_SIZE
+			const HeaderKey& axolotl_header_key);
 
 	/*!
 	 * Decrypt the message part of a packet.
@@ -167,6 +167,6 @@ namespace Molch {
 	 * \return
 	 *   A buffer for the decrypted message.
 	 */
-	Buffer packet_decrypt_message(const Buffer& packet, const Buffer& message_key);
+	Buffer packet_decrypt_message(const Buffer& packet, const MessageKey& message_key);
 }
 #endif

@@ -117,13 +117,13 @@ namespace Molch {
 			//inputs
 			const molch_message_type packet_type,
 			const Buffer& axolotl_header,
-			const Buffer& axolotl_header_key, //HEADER_KEY_SIZE
+			const HeaderKey& axolotl_header_key,
 			const Buffer& message,
-			const Buffer& message_key, //MESSAGE_KEY_SIZE
+			const MessageKey& message_key,
 			//optional inputs (prekey messages only)
-			const Buffer * const public_identity_key,
-			const Buffer * const public_ephemeral_key,
-			const Buffer * const public_prekey) {
+			const PublicKey * const public_identity_key,
+			const PublicKey * const public_ephemeral_key,
+			const PublicKey * const public_prekey) {
 		//initialize the protobuf structs
 		ProtobufCPacket packet_struct;
 		packet__init(&packet_struct);
@@ -133,8 +133,8 @@ namespace Molch {
 
 		//check the input
 		if ((packet_type == INVALID)
-			|| !axolotl_header_key.contains(HEADER_KEY_SIZE)
-			|| !message_key.contains(MESSAGE_KEY_SIZE)) {
+			|| axolotl_header_key.empty
+			|| message_key.empty) {
 			throw Exception(INVALID_INPUT, "Invalid input to packet_encrypt.");
 		}
 
@@ -148,26 +148,26 @@ namespace Molch {
 
 		if (packet_type == PREKEY_MESSAGE) {
 			//check input
-			if ((public_identity_key == nullptr) || !public_identity_key->contains(PUBLIC_KEY_SIZE)
-				|| (public_ephemeral_key == nullptr) || !public_ephemeral_key->contains(PUBLIC_KEY_SIZE )
-				|| (public_prekey == nullptr) || !public_prekey->contains(PUBLIC_KEY_SIZE)) {
+			if ((public_identity_key == nullptr) || public_identity_key->empty
+				|| (public_ephemeral_key == nullptr) || public_ephemeral_key->empty
+				|| (public_prekey == nullptr) || public_prekey->empty) {
 				throw Exception(INVALID_INPUT, "Invalid public key to packet_encrypt for prekey message.");
 			}
 
 			//set the public identity key
 			packet_header_struct.has_public_identity_key = true;
-			packet_header_struct.public_identity_key.data = public_identity_key->content;
-			packet_header_struct.public_identity_key.len = public_identity_key->size;
+			packet_header_struct.public_identity_key.data = const_cast<uint8_t*>(public_identity_key->data());
+			packet_header_struct.public_identity_key.len = public_identity_key->size();
 
 			//set the public ephemeral key
 			packet_header_struct.has_public_ephemeral_key = true;
-			packet_header_struct.public_ephemeral_key.data = public_ephemeral_key->content;
-			packet_header_struct.public_ephemeral_key.len = public_ephemeral_key->size;
+			packet_header_struct.public_ephemeral_key.data = const_cast<uint8_t*>(public_ephemeral_key->data());
+			packet_header_struct.public_ephemeral_key.len = public_ephemeral_key->size();
 
 			//set the public prekey
 			packet_header_struct.has_public_prekey = true;
-			packet_header_struct.public_prekey.data = public_prekey->content;
-			packet_header_struct.public_prekey.len = public_prekey->size;
+			packet_header_struct.public_prekey.data = const_cast<uint8_t*>(public_prekey->data());
+			packet_header_struct.public_prekey.len = public_prekey->size();
 		}
 
 		//generate the header nonce and add it to the packet header
@@ -186,7 +186,7 @@ namespace Molch {
 				axolotl_header.content,
 				axolotl_header.size,
 				header_nonce.content,
-				axolotl_header_key.content);
+				axolotl_header_key.data());
 		if (status != 0) {
 			throw Exception(ENCRYPT_ERROR, "Failed to encrypt header.");
 		}
@@ -221,7 +221,7 @@ namespace Molch {
 				padded_message.content,
 				padded_message.size,
 				message_nonce.content,
-				message_key.content);
+				message_key.data());
 		if (status != 0) {
 			throw Exception(ENCRYPT_ERROR, "Failed to encrypt message.");
 		}
@@ -252,12 +252,12 @@ namespace Molch {
 			Buffer& message,
 			//inputs
 			const Buffer& packet,
-			const Buffer& axolotl_header_key, //HEADER_KEY_SIZE
-			const Buffer& message_key, //MESSAGE_KEY_SIZE
+			const HeaderKey& axolotl_header_key,
+			const MessageKey& message_key, //MESSAGE_KEY_SIZE
 			//optional outputs (prekey messages only)
-			Buffer * const public_identity_key,
-			Buffer * const public_ephemeral_key,
-			Buffer * const public_prekey) {
+			PublicKey * const public_identity_key,
+			PublicKey * const public_ephemeral_key,
+			PublicKey * const public_prekey) {
 		//get metadata
 		packet_get_metadata_without_verification(
 			current_protocol_version,
@@ -283,22 +283,21 @@ namespace Molch {
 			//input
 			const Buffer& packet,
 			//optional outputs (prekey messages only)
-			Buffer * const public_identity_key, //PUBLIC_KEY_SIZE
-			Buffer * const public_ephemeral_key, //PUBLIC_KEY_SIZE
-			Buffer * const public_prekey //PUBLIC_KEY_SIZE
-			) {
+			PublicKey * const public_identity_key,
+			PublicKey * const public_ephemeral_key,
+			PublicKey * const public_prekey) {
 		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct = packet_unpack(packet);
 
 		if (packet_struct->packet_header->packet_type == PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
 			//copy the public keys
 			if (public_identity_key != nullptr) {
-				public_identity_key->cloneFromRaw(packet_struct->packet_header->public_identity_key.data, packet_struct->packet_header->public_identity_key.len);
+				public_identity_key->set(packet_struct->packet_header->public_identity_key.data, packet_struct->packet_header->public_identity_key.len);
 			}
 			if (public_ephemeral_key != nullptr) {
-				public_ephemeral_key->cloneFromRaw(packet_struct->packet_header->public_ephemeral_key.data, packet_struct->packet_header->public_ephemeral_key.len);
+				public_ephemeral_key->set(packet_struct->packet_header->public_ephemeral_key.data, packet_struct->packet_header->public_ephemeral_key.len);
 			}
 			if (public_prekey != nullptr) {
-				public_prekey->cloneFromRaw(packet_struct->packet_header->public_prekey.data, packet_struct->packet_header->public_prekey.len);
+				public_prekey->set(packet_struct->packet_header->public_prekey.data, packet_struct->packet_header->public_prekey.len);
 			}
 		}
 
@@ -309,11 +308,11 @@ namespace Molch {
 
 	Buffer packet_decrypt_header(
 			const Buffer& packet,
-			const Buffer& axolotl_header_key) { //HEADER_KEY_SIZE
+			const HeaderKey& axolotl_header_key) {
 		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct;
 
 		//check input
-		if (!axolotl_header_key.contains(HEADER_KEY_SIZE)) {
+		if (axolotl_header_key.empty) {
 			throw Exception(INVALID_INPUT, "Invalid input to packet_decrypt_header.");
 		}
 
@@ -331,7 +330,7 @@ namespace Molch {
 				packet_struct->encrypted_axolotl_header.data,
 				packet_struct->encrypted_axolotl_header.len,
 				packet_struct->packet_header->header_nonce.data,
-				axolotl_header_key.content);
+				axolotl_header_key.data());
 		if (status != 0) {
 			throw Exception(DECRYPT_ERROR, "Failed to decrypt axolotl header.");
 		}
@@ -339,9 +338,9 @@ namespace Molch {
 		return axolotl_header;
 	}
 
-	Buffer packet_decrypt_message(const Buffer& packet, const Buffer& message_key) {
+	Buffer packet_decrypt_message(const Buffer& packet, const MessageKey& message_key) {
 		//check input
-		if (!message_key.contains(MESSAGE_KEY_SIZE)) {
+		if (message_key.empty) {
 			throw Exception(INVALID_INPUT, "Invalid input to packet_decrypt_message.");
 		}
 
@@ -362,7 +361,7 @@ namespace Molch {
 				packet_struct->encrypted_message.data,
 				packet_struct->encrypted_message.len,
 				packet_struct->packet_header->message_nonce.data,
-				message_key.content);
+				message_key.data());
 		if (status != 0) {
 			throw Exception(DECRYPT_ERROR, "Failed to decrypt message.");
 		}

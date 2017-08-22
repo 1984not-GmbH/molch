@@ -32,7 +32,7 @@
 
 namespace Molch {
 	Conversation& Conversation::move(Conversation&& conversation) {
-		this->id.cloneFrom(conversation.id);
+		this->id = conversation.id;
 		this->ratchet = std::move(conversation.ratchet);
 
 		return *this;
@@ -50,24 +50,24 @@ namespace Molch {
 	 * Create a new conversation.
 	 */
 	void Conversation::create(
-			const Buffer& our_private_identity,
-			const Buffer& our_public_identity,
-			const Buffer& their_public_identity,
-			const Buffer& our_private_ephemeral,
-			const Buffer& our_public_ephemeral,
-			const Buffer& their_public_ephemeral) {
+			const PrivateKey& our_private_identity,
+			const PublicKey& our_public_identity,
+			const PublicKey& their_public_identity,
+			const PrivateKey& our_private_ephemeral,
+			const PublicKey& our_public_ephemeral,
+			const PublicKey& their_public_ephemeral) {
 		//check input
-		if (!our_private_identity.contains(PRIVATE_KEY_SIZE)
-				|| !our_public_identity.contains(PUBLIC_KEY_SIZE)
-				|| !their_public_identity.contains(PUBLIC_KEY_SIZE)
-				|| !our_public_ephemeral.contains(PRIVATE_KEY_SIZE)
-				|| !our_public_ephemeral.contains(PUBLIC_KEY_SIZE)
-				|| !their_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
+		if (our_private_identity.empty
+				|| our_public_identity.empty
+				|| their_public_identity.empty
+				|| our_public_ephemeral.empty
+				|| our_public_ephemeral.empty
+				|| their_public_ephemeral.empty) {
 			throw Exception(INVALID_INPUT, "Invalid input for conversation_create.");
 		}
 
 		//create random id
-		this->id.fillRandom(CONVERSATION_ID_SIZE);
+		this->id.fillRandom();
 
 		this->ratchet = std::make_unique<Ratchet>(
 				our_private_identity,
@@ -79,14 +79,12 @@ namespace Molch {
 	}
 
 	Conversation::Conversation(
-			const Buffer& our_private_identity,
-			const Buffer& our_public_identity,
-			const Buffer& their_public_identity,
-			const Buffer& our_private_ephemeral,
-			const Buffer& our_public_ephemeral,
-			const Buffer& their_public_ephemeral,
-			const Confirmation yes_i_want_this_constructor) {
-		(void)yes_i_want_this_constructor;
+			const PrivateKey& our_private_identity,
+			const PublicKey& our_public_identity,
+			const PublicKey& their_public_identity,
+			const PrivateKey& our_private_ephemeral,
+			const PublicKey& our_public_ephemeral,
+			const PublicKey& their_public_ephemeral) {
 		this->create(
 			our_private_identity,
 			our_public_identity,
@@ -105,30 +103,33 @@ namespace Molch {
 	Conversation::Conversation(
 			const Buffer& message, //message we want to send to the receiver
 			Buffer& packet, //output
-			const Buffer& sender_public_identity, //who is sending this message?
-			const Buffer& sender_private_identity,
-			const Buffer& receiver_public_identity,
+			const PublicKey& sender_public_identity, //who is sending this message?
+			const PrivateKey& sender_private_identity,
+			const PublicKey& receiver_public_identity,
 			Buffer& receiver_prekey_list) { //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 		//check many error conditions
-		if (!receiver_public_identity.contains(PUBLIC_KEY_SIZE)
-				|| !sender_public_identity.contains(PUBLIC_KEY_SIZE)
-				|| !sender_private_identity.contains(PRIVATE_KEY_SIZE)
+		if (receiver_public_identity.empty
+				|| sender_public_identity.empty
+				|| sender_private_identity.empty
 				|| !receiver_prekey_list.contains((PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
 			throw Exception(INVALID_INPUT, "Invalid input to Conversation::Conversation.");
 		}
 
 		//create an ephemeral keypair
-		Buffer sender_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer sender_private_ephemeral(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
-		int status = crypto_box_keypair(sender_public_ephemeral.content, sender_private_ephemeral.content);
+		PublicKey sender_public_ephemeral;
+		PrivateKey sender_private_ephemeral;
+		int status = crypto_box_keypair(sender_public_ephemeral.data(), sender_private_ephemeral.data());
 		if (status != 0) {
 			throw Exception(KEYGENERATION_FAILED, "Failed to generate ephemeral keypair.");
 		}
+		sender_public_ephemeral.empty = false;
+		sender_private_ephemeral.empty = false;
 
 		//choose a prekey
 		uint32_t prekey_number = randombytes_uniform(PREKEY_AMOUNT);
-		Buffer receiver_public_prekey(
-				&(receiver_prekey_list.content[prekey_number * PUBLIC_KEY_SIZE]),
+		PublicKey receiver_public_prekey;
+		receiver_public_prekey.set(
+				&receiver_prekey_list.content[prekey_number * PUBLIC_KEY_SIZE],
 				PUBLIC_KEY_SIZE);
 
 		//initialize the conversation
@@ -156,21 +157,21 @@ namespace Molch {
 	Conversation::Conversation(
 			const Buffer& packet, //received packet
 			Buffer& message, //output
-			const Buffer& receiver_public_identity,
-			const Buffer& receiver_private_identity,
+			const PublicKey& receiver_public_identity,
+			const PrivateKey& receiver_private_identity,
 			PrekeyStore& receiver_prekeys) { //prekeys of the receiver
 		uint32_t receive_message_number = 0;
 		uint32_t previous_receive_message_number = 0;
 
-		if (!receiver_public_identity.contains(PUBLIC_KEY_SIZE)
-				|| !receiver_private_identity.contains(PRIVATE_KEY_SIZE)) {
+		if (receiver_public_identity.empty
+				|| receiver_private_identity.empty) {
 			throw Exception(INVALID_INPUT, "Invalid input to conversation_start_receive_conversation.");
 		}
 
 		//get the senders keys and our public prekey from the packet
-		Buffer sender_public_identity(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer receiver_public_prekey(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
-		Buffer sender_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+		PublicKey sender_public_identity;
+		PublicKey receiver_public_prekey;
+		PublicKey sender_public_ephemeral;
 		molch_message_type packet_type;
 		uint32_t current_protocol_version;
 		uint32_t highest_supported_protocol_version;
@@ -188,7 +189,7 @@ namespace Molch {
 		}
 
 		//get the private prekey that corresponds to the public prekey used in the message
-		Buffer receiver_private_prekey(PRIVATE_KEY_SIZE, PRIVATE_KEY_SIZE);
+		PrivateKey receiver_private_prekey;
 		receiver_prekeys.getPrekey(receiver_public_prekey, receiver_private_prekey);
 
 		this->create(
@@ -213,22 +214,22 @@ namespace Molch {
 	 */
 	Buffer Conversation::send(
 			const Buffer& message,
-			const Buffer * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
-			const Buffer * const public_ephemeral_key, //can be nullptr, if not nullptr, this will be a prekey message
-			const Buffer * const public_prekey) { //can be nullptr, if not nullptr, this will be a prekey message
+			const PublicKey * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
+			const PublicKey * const public_ephemeral_key, //can be nullptr, if not nullptr, this will be a prekey message
+			const PublicKey * const public_prekey) { //can be nullptr, if not nullptr, this will be a prekey message
 		//ensure that either both public keys are nullptr or set
 		if (((public_identity_key == nullptr) && (public_prekey != nullptr)) || ((public_prekey == nullptr) && (public_identity_key != nullptr))) {
 			throw Exception(INVALID_INPUT, "Invalid combination of provided key buffers.");
 		}
 
 		//check the size of the public keys
-		if (((public_identity_key != nullptr) && !public_identity_key->contains(PUBLIC_KEY_SIZE)) || ((public_prekey != nullptr) && !public_prekey->contains(PUBLIC_KEY_SIZE))) {
+		if (((public_identity_key != nullptr) && public_identity_key->empty) || ((public_prekey != nullptr) && public_prekey->empty)) {
 			throw Exception(INCORRECT_BUFFER_SIZE, "Public key output has incorrect size.");
 		}
 
-		Buffer send_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-		Buffer send_message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-		Buffer send_ephemeral_key(PUBLIC_KEY_SIZE, 0);
+		HeaderKey send_header_key;
+		MessageKey send_message_key;
+		PublicKey send_ephemeral_key;
 		uint32_t send_message_number;
 		uint32_t previous_send_message_number;
 		this->ratchet->send(
@@ -293,7 +294,7 @@ namespace Molch {
 					this->ratchet->skipped_header_and_message_keys.keys.erase(std::begin(this->ratchet->skipped_header_and_message_keys.keys) + static_cast<ptrdiff_t>(index));
 					index--;
 
-					Buffer their_signed_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+					PublicKey their_signed_public_ephemeral;
 					header_extract(
 							their_signed_public_ephemeral,
 							receive_message_number,
@@ -331,8 +332,8 @@ namespace Molch {
 				return message;
 			}
 
-			Buffer current_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-			Buffer next_receive_header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
+			HeaderKey current_receive_header_key;
+			HeaderKey next_receive_header_key;
 			this->ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 
 			//try to decrypt the packet header with the current receive header key
@@ -361,7 +362,7 @@ namespace Molch {
 			}
 
 			//extract data from the header
-			Buffer their_signed_public_ephemeral(PUBLIC_KEY_SIZE, PUBLIC_KEY_SIZE);
+			PublicKey their_signed_public_ephemeral;
 			uint32_t local_receive_message_number;
 			uint32_t local_previous_receive_message_number;
 			header_extract(
@@ -373,7 +374,7 @@ namespace Molch {
 			//and now decrypt the message with the message key
 			//now we have all the data we need to advance the ratchet
 			//so let's do that
-			Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
+			MessageKey message_key;
 			this->ratchet->receive(
 				message_key,
 				their_signed_public_ephemeral,
@@ -403,7 +404,7 @@ namespace Molch {
 
 		//export the conversation id
 		id = throwing_zeroed_malloc<unsigned char>(CONVERSATION_ID_SIZE);
-		this->id.cloneToRaw(id, CONVERSATION_ID_SIZE);
+		this->id.copyTo(id, CONVERSATION_ID_SIZE);
 		exported_conversation->id.data = id;
 		exported_conversation->id.len = CONVERSATION_ID_SIZE;
 
@@ -412,7 +413,7 @@ namespace Molch {
 
 	Conversation::Conversation(const ProtobufCConversation& conversation_protobuf) {
 		//copy the id
-		this->id.cloneFromRaw(conversation_protobuf.id.data, conversation_protobuf.id.len);
+		this->id.set(conversation_protobuf.id.data, conversation_protobuf.id.len);
 
 		//import the ratchet
 		this->ratchet = std::make_unique<Ratchet>(conversation_protobuf);

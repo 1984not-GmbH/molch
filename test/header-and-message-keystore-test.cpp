@@ -146,10 +146,10 @@ int main(void) {
 		//add keys to the keystore
 		for (size_t i = 0; i < 6; i++) {
 			//create new keys
-			Buffer header_key(HEADER_KEY_SIZE, HEADER_KEY_SIZE);
-			header_key.fillRandom(header_key.capacity());
-			Buffer message_key(MESSAGE_KEY_SIZE, MESSAGE_KEY_SIZE);
-			message_key.fillRandom(message_key.capacity());
+			HeaderKey header_key;
+			header_key.fillRandom();
+			MessageKey message_key;
+			message_key.fillRandom();
 
 			//print the new header key
 			printf("New Header Key No. %zu:\n", i);

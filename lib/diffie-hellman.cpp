@@ -27,34 +27,31 @@
 
 namespace Molch {
 	void diffie_hellman(
-			Buffer& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
-			const Buffer& our_private_key, //needs to be PRIVATE_KEY_SIZE long
-			const Buffer& our_public_key, //needs to be PUBLIC_KEY_SIZE long
-			const Buffer& their_public_key, //needs to be PUBLIC_KEY_SIZE long
+			Key<DIFFIE_HELLMAN_SIZE>& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
+			const PrivateKey& our_private_key, //needs to be PRIVATE_KEY_SIZE long
+			const PublicKey& our_public_key, //needs to be PUBLIC_KEY_SIZE long
+			const PublicKey& their_public_key, //needs to be PUBLIC_KEY_SIZE long
 			const Ratchet::Role role) {
 		//make sure that the assumptions are correct
 		static_assert(PUBLIC_KEY_SIZE == crypto_scalarmult_SCALARBYTES, "crypto_scalarmult_SCALARBYTES is not PUBLIC_KEY_SIZE");
 		static_assert(PRIVATE_KEY_SIZE == crypto_scalarmult_SCALARBYTES, "crypto_scalarmult_SCALARBYTES is not PRIVATE_KEY_BYTES");
 		static_assert(DIFFIE_HELLMAN_SIZE == crypto_generichash_BYTES, "crypto_generichash_bytes is not DIFFIE_HELLMAN_SIZE");
 
-		//set size of output to 0 (can prevent use on failure)
-		derived_key.size = 0;
-
 		//check buffer sizes
-		if (!derived_key.fits(DIFFIE_HELLMAN_SIZE)
-				|| !our_private_key.contains(PRIVATE_KEY_SIZE)
-				|| !our_public_key.contains(PUBLIC_KEY_SIZE)
-				|| !their_public_key.contains(PUBLIC_KEY_SIZE)) {
+		if (our_private_key.empty
+				|| our_public_key.empty
+				|| their_public_key.empty) {
 			throw Exception(INVALID_INPUT, "Invalid input to diffie_hellman.");
 		}
 
 		//buffer for diffie hellman shared secret
-		Buffer dh_secret(crypto_scalarmult_SCALARBYTES, crypto_scalarmult_SCALARBYTES);
+		Key<crypto_scalarmult_SCALARBYTES> dh_secret;
 
 		//do the diffie hellman key exchange
-		if (crypto_scalarmult(dh_secret.content, our_private_key.content, their_public_key.content) != 0) {
+		if (crypto_scalarmult(dh_secret.data(), our_private_key.data(), their_public_key.data()) != 0) {
 			throw Exception(KEYDERIVATION_FAILED, "Failed to do crypto_scalarmult.");
 		}
+		dh_secret.empty = false;
 
 		//initialize hashing
 		autozero<crypto_generichash_state> hash_state;
@@ -68,7 +65,7 @@ namespace Molch {
 		}
 
 		//start input to hash with diffie hellman secret
-		if (crypto_generichash_update(hash_state.pointer(), dh_secret.content, dh_secret.size) != 0) {
+		if (crypto_generichash_update(hash_state.pointer(), dh_secret.data(), dh_secret.size()) != 0) {
 			throw Exception(GENERIC_ERROR, "Failed to add the diffie hellman secret to the hash input.");
 		}
 
@@ -76,24 +73,24 @@ namespace Molch {
 		switch (role) {
 			case Ratchet::Role::ALICE: //Alice (our_public_key|their_public_key)
 				//add our_public_key to the input of the hash
-				if (crypto_generichash_update(hash_state.pointer(), our_public_key.content, our_public_key.size) != 0) {
+				if (crypto_generichash_update(hash_state.pointer(), our_public_key.data(), our_public_key.size()) != 0) {
 					throw Exception(GENERIC_ERROR, "Failed to add Alice' public key to the hash input.");
 				}
 
 				//add their_public_key to the input of the hash
-				if (crypto_generichash_update(hash_state.pointer(), their_public_key.content, their_public_key.size) != 0) {
+				if (crypto_generichash_update(hash_state.pointer(), their_public_key.data(), their_public_key.size()) != 0) {
 					throw Exception(GENERIC_ERROR, "Failed to add Bob's public key to the hash input.");
 				}
 				break;
 
 			case Ratchet::Role::BOB: //Bob (their_public_key|our_public_key)
 				//add their_public_key to the input of the hash
-				if (crypto_generichash_update(hash_state.pointer(), their_public_key.content, their_public_key.size) != 0) {
+				if (crypto_generichash_update(hash_state.pointer(), their_public_key.data(), their_public_key.size()) != 0) {
 					throw Exception(GENERIC_ERROR, "Failed to add Alice's public key to the hash input.");
 				}
 
 				//add our_public_key to the input of the hash
-				if (crypto_generichash_update(hash_state.pointer(), our_public_key.content, our_public_key.size) != 0) {
+				if (crypto_generichash_update(hash_state.pointer(), our_public_key.data(), our_public_key.size()) != 0) {
 					throw Exception(GENERIC_ERROR, "Failed to add Bob's public key to the hash input.");
 				}
 				break;
@@ -103,39 +100,35 @@ namespace Molch {
 		}
 
 		//finally write the hash to derived_key
-		if (crypto_generichash_final(hash_state.pointer(), derived_key.content, DIFFIE_HELLMAN_SIZE) != 0) {
+		if (crypto_generichash_final(hash_state.pointer(), derived_key.data(), derived_key.size()) != 0) {
 			throw Exception(GENERIC_ERROR, "Failed to finalize hash.");
 		}
-		derived_key.size = DIFFIE_HELLMAN_SIZE;
+		derived_key.empty = false;
 	}
 
 	void triple_diffie_hellman(
-			Buffer& derived_key,
-			const Buffer& our_private_identity,
-			const Buffer& our_public_identity,
-			const Buffer& our_private_ephemeral,
-			const Buffer& our_public_ephemeral,
-			const Buffer& their_public_identity,
-			const Buffer& their_public_ephemeral,
+			Key<DIFFIE_HELLMAN_SIZE>& derived_key,
+			const PrivateKey& our_private_identity,
+			const PublicKey& our_public_identity,
+			const PrivateKey& our_private_ephemeral,
+			const PublicKey& our_public_ephemeral,
+			const PublicKey& their_public_identity,
+			const PublicKey& their_public_ephemeral,
 			const Ratchet::Role role) {
-		//set content length of output to 0 (can prevent use on failure)
-		derived_key.size = 0;
-
 		//check buffer sizes
-		if (!derived_key.fits(DIFFIE_HELLMAN_SIZE)
-				|| !our_private_identity.contains(PRIVATE_KEY_SIZE)
-				|| !our_public_identity.contains(PUBLIC_KEY_SIZE)
-				|| !their_public_identity.contains(PUBLIC_KEY_SIZE)
-				|| !our_private_ephemeral.contains(PRIVATE_KEY_SIZE)
-				|| !our_public_ephemeral.contains(PUBLIC_KEY_SIZE)
-				|| !their_public_ephemeral.contains(PUBLIC_KEY_SIZE)) {
+		if (our_private_identity.empty
+				|| our_public_identity.empty
+				|| their_public_identity.empty
+				|| our_private_ephemeral.empty
+				|| our_public_ephemeral.empty
+				|| their_public_ephemeral.empty) {
 			throw Exception(INVALID_INPUT, "Invalid input to triple_diffie_hellman.");
 		}
 
 		//buffers for all 3 Diffie Hellman exchanges
-		Buffer dh1(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-		Buffer dh2(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
-		Buffer dh3(DIFFIE_HELLMAN_SIZE, DIFFIE_HELLMAN_SIZE);
+		Key<DIFFIE_HELLMAN_SIZE> dh1;
+		Key<DIFFIE_HELLMAN_SIZE> dh2;
+		Key<DIFFIE_HELLMAN_SIZE> dh3;
 		switch (role) {
 			case Ratchet::Role::ALICE:
 				//DH(our_identity, their_ephemeral)
@@ -201,24 +194,24 @@ namespace Molch {
 		}
 
 		//add dh1 to hash input
-		if (crypto_generichash_update(hash_state.pointer(), dh1.content, DIFFIE_HELLMAN_SIZE) != 0) {
+		if (crypto_generichash_update(hash_state.pointer(), dh1.data(), dh1.size()) != 0) {
 			throw Exception(GENERIC_ERROR, "Failed to add dh1 to the hash input.");
 		}
 
 		//add dh2 to hash input
-		if (crypto_generichash_update(hash_state.pointer(), dh2.content, DIFFIE_HELLMAN_SIZE) != 0) {
+		if (crypto_generichash_update(hash_state.pointer(), dh2.data(), dh2.size()) != 0) {
 			throw Exception(GENERIC_ERROR, "Failed to add dh2 to the hash input.");
 		}
 
 		//add dh3 to hash input
-		if (crypto_generichash_update(hash_state.pointer(), dh3.content, DIFFIE_HELLMAN_SIZE) != 0) {
+		if (crypto_generichash_update(hash_state.pointer(), dh3.data(), dh3.size()) != 0) {
 			throw Exception(GENERIC_ERROR, "Failed to add dh3 to the hash input.");
 		}
 
 		//write final hash to output (derived_key)
-		if (crypto_generichash_final(hash_state.pointer(), derived_key.content, DIFFIE_HELLMAN_SIZE) != 0) {
+		if (crypto_generichash_final(hash_state.pointer(), derived_key.data(), derived_key.size()) != 0) {
 			throw Exception(GENERIC_ERROR, "Failed to finalize hash");
 		}
-		derived_key.size = DIFFIE_HELLMAN_SIZE;
+		derived_key.empty = false;
 	}
 }

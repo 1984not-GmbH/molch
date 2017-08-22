@@ -387,7 +387,7 @@ namespace Molch {
 		//buffer for the hex string
 		const size_t hex_length = this->size * 2 + sizeof("");
 		auto hex = std::make_unique<char[]>(hex_length);
-		if (sodium_bin2hex(hex.get(), hex_length, this->content, this->size) == NULL) {
+		if (sodium_bin2hex(hex.get(), hex_length, this->content, this->size) == nullptr) {
 			throw Exception(BUFFER_ERROR, "Failed to converst binary to hex with sodium_bin2hex.");
 		}
 

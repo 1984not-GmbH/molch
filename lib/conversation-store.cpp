@@ -31,7 +31,7 @@ namespace Molch {
 	}
 
 	void ConversationStore::add(Conversation&& conversation) {
-		const Buffer& id = conversation.id;
+		const Key<CONVERSATION_ID_SIZE>& id = conversation.id;
 		//search if a conversation with this id already exists
 		auto existing_conversation = std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
 				[&id](const Conversation& conversation) {
@@ -71,7 +71,7 @@ namespace Molch {
 	 *
 	 * The conversation is identified by it's id.
 	 */
-	void ConversationStore::remove(const Buffer& id) {
+	void ConversationStore::remove(const Key<CONVERSATION_ID_SIZE>& id) {
 		auto found_node = std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
 				[&id](const Conversation& conversation) {
 					if (conversation.id == id) {
@@ -91,7 +91,7 @@ namespace Molch {
 	 *
 	 * Returns nullptr if no conversation was found.
 	 */
-	Conversation* ConversationStore::find(const Buffer& id) {
+	Conversation* ConversationStore::find(const Key<CONVERSATION_ID_SIZE>& id) {
 		auto node = std::find_if(std::begin(this->conversations), std::end(this->conversations),
 				[&id](const Conversation& conversation) {
 					if (conversation.id == id) {
@@ -129,11 +129,11 @@ namespace Molch {
 
 		for (const auto& conversation : this->conversations) {
 			size_t index = static_cast<size_t>(&conversation - &(*this->conversations.cbegin()));
-			list.copyFrom(
+			list.copyFromRaw(
 				CONVERSATION_ID_SIZE * index,
-				conversation.id,
+				conversation.id.data(),
 				0,
-				conversation.id.size);
+				conversation.id.size());
 		}
 
 		return list;

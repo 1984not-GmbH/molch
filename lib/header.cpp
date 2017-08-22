@@ -28,20 +28,20 @@
 namespace Molch {
 	Buffer header_construct(
 			//inputs
-			const Buffer& our_public_ephemeral, //PUBLIC_KEY_SIZE
+			const PublicKey& our_public_ephemeral, //PUBLIC_KEY_SIZE
 			const uint32_t message_number,
 			const uint32_t previous_message_number) {
 		ProtobufCHeader header_struct;
 		header__init(&header_struct);
 
 		//check input
-		if (our_public_ephemeral.size != PUBLIC_KEY_SIZE) {
+		if (our_public_ephemeral.empty) {
 			throw Exception(INVALID_INPUT, "Invalid input to header_construct.");
 		}
 		//create buffer for our public ephemeral
 		ProtobufCBinaryData protobuf_our_public_ephemeral;
-		protobuf_our_public_ephemeral.len = our_public_ephemeral.size;
-		protobuf_our_public_ephemeral.data = our_public_ephemeral.content;
+		protobuf_our_public_ephemeral.len = our_public_ephemeral.size();
+		protobuf_our_public_ephemeral.data = const_cast<uint8_t*>(our_public_ephemeral.data());
 
 		//fill the struct
 		header_struct.message_number = message_number;
@@ -66,16 +66,11 @@ namespace Molch {
 
 	void header_extract(
 			//outputs
-			Buffer& their_public_ephemeral, //PUBLIC_KEY_SIZE
+			PublicKey& their_public_ephemeral, //PUBLIC_KEY_SIZE
 			uint32_t& message_number,
 			uint32_t& previous_message_number,
 			//intput
 			const Buffer& header) {
-		//check input
-		if (!their_public_ephemeral.fits(PUBLIC_KEY_SIZE)) {
-			throw Exception(INVALID_INPUT, "Invalid input to header_extract.");
-		}
-
 		//unpack the message
 		auto header_struct = std::unique_ptr<ProtobufCHeader,HeaderDeleter>(header__unpack(&protobuf_c_allocators, header.size, header.content));
 		if (!header_struct) {
@@ -93,6 +88,6 @@ namespace Molch {
 		message_number = header_struct->message_number;
 		previous_message_number = header_struct->previous_message_number;
 
-		their_public_ephemeral.cloneFromRaw(header_struct->public_ephemeral_key.data, header_struct->public_ephemeral_key.len);
+		their_public_ephemeral.set(header_struct->public_ephemeral_key.data, header_struct->public_ephemeral_key.len);
 	}
 }
