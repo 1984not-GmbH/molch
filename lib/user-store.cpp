@@ -233,7 +233,7 @@ namespace Molch {
 	}
 
 	std::unique_ptr<ProtobufCUser,UserDeleter> User::exportProtobuf() {
-		auto user = std::unique_ptr<ProtobufCUser,UserDeleter>(throwing_zeroed_malloc<ProtobufCUser>(sizeof(ProtobufCUser)));
+		auto user = std::unique_ptr<ProtobufCUser,UserDeleter>(throwing_zeroed_malloc<ProtobufCUser>(1));
 		user__init(user.get());
 
 		//export master keys
@@ -281,7 +281,7 @@ namespace Molch {
 		}
 
 		//allocate the output array
-		users = throwing_zeroed_malloc<ProtobufCUser*>(this->users.size() * sizeof(ProtobufCUser*));
+		users = throwing_zeroed_malloc<ProtobufCUser*>(this->users.size());
 		size_t index = 0;
 		for (auto&& user : user_pointers) {
 			users[index] = user.release();

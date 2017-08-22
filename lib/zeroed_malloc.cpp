@@ -23,6 +23,7 @@
 #include <cstdlib>
 #include <sodium.h>
 #include <cstddef>
+#include <limits>
 
 #include "zeroed_malloc.hpp"
 
@@ -35,8 +36,13 @@
 
 namespace Molch {
 	void *zeroed_malloc(size_t size) {
+		size_t elements = size / sizeof(max_align_t);
+		if ((size % sizeof(max_align_t)) != 0) {
+			elements++;
+		}
+
 		try {
-			return reinterpret_cast<void*>(throwing_zeroed_malloc<max_align_t>(size));
+			return reinterpret_cast<void*>(throwing_zeroed_malloc<max_align_t>(elements));
 		} catch (const std::exception& exception) {
 			return nullptr;
 		}

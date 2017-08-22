@@ -156,7 +156,7 @@ namespace Molch {
 		}
 
 		//allocate the output array
-		conversations = throwing_zeroed_malloc<ProtobufCConversation*>(this->conversations.size() * sizeof(ProtobufCConversation*));
+		conversations = throwing_zeroed_malloc<ProtobufCConversation*>(this->conversations.size());
 		size_t index = 0;
 		for (auto&& conversation : conversation_pointers) {
 			conversations[index] = conversation.release();

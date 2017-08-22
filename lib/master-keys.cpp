@@ -84,7 +84,7 @@ namespace Molch {
 
 	void MasterKeys::init() {
 		//allocate the private key storage
-		this->private_keys = std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>>(throwing_sodium_malloc<PrivateMasterKeyStorage>(sizeof(PrivateMasterKeyStorage)));
+		this->private_keys = std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>>(throwing_sodium_malloc<PrivateMasterKeyStorage>(1));
 
 		//initialize the Buffers
 		//private, initialize with pointers to private key storage
@@ -197,13 +197,13 @@ namespace Molch {
 			std::unique_ptr<ProtobufCKey,KeyDeleter>& public_identity_key,
 			std::unique_ptr<ProtobufCKey,KeyDeleter>& private_identity_key) const {
 		//create and initialize the structs
-		public_signing_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(throwing_zeroed_malloc<ProtobufCKey>(sizeof(ProtobufCKey)));
+		public_signing_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(throwing_zeroed_malloc<ProtobufCKey>(1));
 		key__init(public_signing_key.get());
-		private_signing_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(throwing_zeroed_malloc<ProtobufCKey>(sizeof(ProtobufCKey)));
+		private_signing_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(throwing_zeroed_malloc<ProtobufCKey>(1));
 		key__init(private_signing_key.get());
-		public_identity_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(throwing_zeroed_malloc<ProtobufCKey>(sizeof(ProtobufCKey)));
+		public_identity_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(throwing_zeroed_malloc<ProtobufCKey>(1));
 		key__init(public_identity_key.get());
-		private_identity_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(throwing_zeroed_malloc<ProtobufCKey>(sizeof(ProtobufCKey)));
+		private_identity_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(throwing_zeroed_malloc<ProtobufCKey>(1));
 		key__init(private_identity_key.get());
 
 		//allocate the key buffers

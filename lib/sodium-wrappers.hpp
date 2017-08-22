@@ -24,14 +24,24 @@
 
 #include <sodium.h>
 #include <memory>
+#include <limits>
 
 namespace Molch {
 	/*
 	 * Calls sodium_malloc and throws std::bad_alloc if allocation fails
 	 */
 	template <typename T>
-	T* throwing_sodium_malloc(size_t size) {
-		void* memory = sodium_malloc(size);
+	T* throwing_sodium_malloc(size_t elements) {
+		if (elements == 0) {
+			throw std::bad_alloc();
+		}
+
+		//check for overflow
+		if ((std::numeric_limits<size_t>::max() / elements) < sizeof(T)) {
+			throw std::bad_alloc();
+		}
+
+		void* memory = sodium_malloc(elements * sizeof(T));
 		if (memory == nullptr) {
 			throw std::bad_alloc();
 		}
@@ -49,7 +59,7 @@ namespace Molch {
 		constexpr SodiumAllocator(const SodiumAllocator<U>&) noexcept {}
 
 		T* allocate(size_t elements) {
-			return throwing_sodium_malloc<T>(elements * sizeof(T));
+			return throwing_sodium_malloc<T>(elements);
 		}
 		void deallocate(T* pointer, size_t elements) noexcept {
 			(void)elements;

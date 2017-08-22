@@ -30,7 +30,7 @@
 
 namespace Molch {
 	void Ratchet::init() {
-		this->storage = std::unique_ptr<RatchetStorage,SodiumDeleter<RatchetStorage>>(throwing_sodium_malloc<RatchetStorage>(sizeof(RatchetStorage)));
+		this->storage = std::unique_ptr<RatchetStorage,SodiumDeleter<RatchetStorage>>(throwing_sodium_malloc<RatchetStorage>(1));
 		new (this->storage.get()) RatchetStorage{};
 	}
 
@@ -428,7 +428,7 @@ namespace Molch {
 	}
 
 	std::unique_ptr<ProtobufCConversation,ConversationDeleter> Ratchet::exportProtobuf() const {
-		auto conversation = std::unique_ptr<ProtobufCConversation,ConversationDeleter>(throwing_zeroed_malloc<ProtobufCConversation>(sizeof(ProtobufCConversation)));
+		auto conversation = std::unique_ptr<ProtobufCConversation,ConversationDeleter>(throwing_zeroed_malloc<ProtobufCConversation>(1));
 		conversation__init(conversation.get());
 
 		//root keys

@@ -96,16 +96,16 @@ namespace Molch {
 	}
 
 	std::unique_ptr<ProtobufCKeyBundle,KeyBundleDeleter> HeaderAndMessageKey::exportProtobuf() const {
-		auto key_bundle = std::unique_ptr<ProtobufCKeyBundle,KeyBundleDeleter>(throwing_zeroed_malloc<ProtobufCKeyBundle>(sizeof(ProtobufCKeyBundle)));
+		auto key_bundle = std::unique_ptr<ProtobufCKeyBundle,KeyBundleDeleter>(throwing_zeroed_malloc<ProtobufCKeyBundle>(1));
 		key_bundle__init(key_bundle.get());
 
 		//header key
-		key_bundle->header_key = throwing_zeroed_malloc<ProtobufCKey>(sizeof(ProtobufCKey));
+		key_bundle->header_key = throwing_zeroed_malloc<ProtobufCKey>(1);
 		key__init(key_bundle->header_key);
 		key_bundle->header_key->key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
 
 		//message key
-		key_bundle->message_key = throwing_zeroed_malloc<ProtobufCKey>(sizeof(ProtobufCKey));
+		key_bundle->message_key = throwing_zeroed_malloc<ProtobufCKey>(1);
 		key__init(key_bundle->message_key);
 		key_bundle->message_key->key.data = throwing_zeroed_malloc<unsigned char>(MESSAGE_KEY_SIZE);
 
@@ -155,7 +155,7 @@ namespace Molch {
 		}
 
 		//allocate output array
-		key_bundles = throwing_zeroed_malloc<ProtobufCKeyBundle*>(this->keys.size() * sizeof(ProtobufCKeyBundle*));
+		key_bundles = throwing_zeroed_malloc<ProtobufCKeyBundle*>(this->keys.size());
 		size_t index = 0;
 		for (auto&& bundle : bundles) {
 			key_bundles[index] = bundle.release();

@@ -29,6 +29,7 @@
 #define LIB_ZEROED_MALLOC_H
 
 #include <memory>
+#include <limits>
 #include <protobuf-c/protobuf-c.h>
 
 #include "molch-exception.hpp"
@@ -54,7 +55,18 @@ namespace Molch {
 	 * \throws std::bad_alloc
 	 */
 	template <typename T>
-	T *throwing_zeroed_malloc(size_t size) {
+	T *throwing_zeroed_malloc(size_t elements) {
+		if (elements == 0) {
+			throw std::bad_alloc();
+		}
+
+		//check for overflow
+		if ((std::numeric_limits<size_t>::max() / elements) < sizeof(T)) {
+			throw std::bad_alloc();
+		}
+
+		size_t size = elements * sizeof(T);
+
 		// start_pointer:size:padding:allocated_memory
 		// the size is needed in order to overwrite it with zeroes later
 		// the start_pointer has to be passed to free later

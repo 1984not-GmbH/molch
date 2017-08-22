@@ -96,18 +96,18 @@ namespace Molch {
 	}
 
 	std::unique_ptr<ProtobufCPrekey,PrekeyDeleter> Prekey::exportProtobuf() const {
-		auto prekey = std::unique_ptr<ProtobufCPrekey,PrekeyDeleter>(throwing_zeroed_malloc<ProtobufCPrekey>(sizeof(ProtobufCPrekey)));
+		auto prekey = std::unique_ptr<ProtobufCPrekey,PrekeyDeleter>(throwing_zeroed_malloc<ProtobufCPrekey>(1));
 		prekey__init(prekey.get());
 
 		//export the private key
-		prekey->private_key = throwing_zeroed_malloc<ProtobufCKey>(sizeof(ProtobufCKey));
+		prekey->private_key = throwing_zeroed_malloc<ProtobufCKey>(1);
 		key__init(prekey->private_key);
 		prekey->private_key->key.data = throwing_zeroed_malloc<uint8_t>(PRIVATE_KEY_SIZE);
 		prekey->private_key->key.len = PRIVATE_KEY_SIZE;
 		this->private_key.copyTo(prekey->private_key->key.data, prekey->private_key->key.len);
 
 		//export the public key
-		prekey->public_key = throwing_zeroed_malloc<ProtobufCKey>(sizeof(ProtobufCKey));
+		prekey->public_key = throwing_zeroed_malloc<ProtobufCKey>(1);
 		key__init(prekey->public_key);
 		prekey->public_key->key.data = throwing_zeroed_malloc<uint8_t>(PUBLIC_KEY_SIZE);
 		prekey->public_key->key.len = PUBLIC_KEY_SIZE;
@@ -143,7 +143,7 @@ namespace Molch {
 	}
 
 	void PrekeyStore::init() {
-		this->prekeys = std::unique_ptr<std::array<Prekey,PREKEY_AMOUNT>,SodiumDeleter<std::array<Prekey,PREKEY_AMOUNT>>>(throwing_sodium_malloc<std::array<Prekey,PREKEY_AMOUNT>>(sizeof(std::array<Prekey,PREKEY_AMOUNT>)));
+		this->prekeys = std::unique_ptr<std::array<Prekey,PREKEY_AMOUNT>,SodiumDeleter<std::array<Prekey,PREKEY_AMOUNT>>>(throwing_sodium_malloc<std::array<Prekey,PREKEY_AMOUNT>>(1));
 		new (this->prekeys.get()) std::array<Prekey,PREKEY_AMOUNT>;
 	}
 
@@ -336,7 +336,7 @@ namespace Molch {
 		}
 
 		//allocate output array
-		keypairs = throwing_zeroed_malloc<ProtobufCPrekey*>(container.size() * sizeof(ProtobufCPrekey*));
+		keypairs = throwing_zeroed_malloc<ProtobufCPrekey*>(container.size());
 		size_t index = 0;
 		for (auto&& bundle : prekeys) {
 			keypairs[index] = bundle.release();

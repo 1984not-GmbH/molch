@@ -41,7 +41,11 @@ int main(void) noexcept {
 	{
 		size_t size = 0;
 		std::copy(pointer - sizeof(size_t), pointer, reinterpret_cast<unsigned char*>(&size));
-		if (size != 100) {
+		size_t expected_elements = (100 / sizeof(max_align_t));
+		if ((100 % sizeof(max_align_t)) != 0) {
+			++expected_elements;
+		}
+		if (size != (expected_elements * sizeof(max_align_t))) {
 			THROW(INCORRECT_DATA, "Size stored in the memory location is incorrect.");
 		}
 		printf("size = %zu\n", size);

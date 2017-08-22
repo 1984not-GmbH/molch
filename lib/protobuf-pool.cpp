@@ -24,10 +24,7 @@
 #include "protobuf-pool.hpp"
 
 namespace Molch {
-	ProtobufPoolBlock::ProtobufPoolBlock() {
-		//allocate the block
-		this->block = std::unique_ptr<unsigned char,SodiumDeleter<unsigned char>>(throwing_sodium_malloc<unsigned char>(this->default_block_size));
-	}
+	ProtobufPoolBlock::ProtobufPoolBlock() : ProtobufPoolBlock(default_block_size) {}
 
 	ProtobufPoolBlock::ProtobufPoolBlock(size_t block_size) {
 		//allocate the block
