@@ -38,46 +38,48 @@ static void protobuf_export(
 		Buffer& private_signing_key_buffer,
 		Buffer& public_identity_key_buffer,
 		Buffer& private_identity_key_buffer) {
-	std::unique_ptr<ProtobufCKey,KeyDeleter> public_signing_key;
-	std::unique_ptr<ProtobufCKey,KeyDeleter> private_signing_key;
-	std::unique_ptr<ProtobufCKey,KeyDeleter> public_identity_key;
-	std::unique_ptr<ProtobufCKey,KeyDeleter> private_identity_key;
+	ProtobufCKey* public_signing_key;
+	ProtobufCKey* private_signing_key;
+	ProtobufCKey* public_identity_key;
+	ProtobufCKey* private_identity_key;
 
+	ProtobufPool pool;
 	keys.exportProtobuf(
-				public_signing_key,
-				private_signing_key,
-				public_identity_key,
-				private_identity_key);
+			pool,
+			public_signing_key,
+			private_signing_key,
+			public_identity_key,
+			private_identity_key);
 
 	//copy keys to buffer
 	//public signing key
-	size_t public_signing_key_proto_size = key__get_packed_size(public_signing_key.get());
+	auto public_signing_key_proto_size = key__get_packed_size(public_signing_key);
 	public_signing_key_buffer = Buffer(public_signing_key_proto_size, 0);
-	public_signing_key_buffer.size = key__pack(public_signing_key.get(), public_signing_key_buffer.content);
+	public_signing_key_buffer.size = key__pack(public_signing_key, public_signing_key_buffer.content);
 	if (!public_signing_key_buffer.contains(public_signing_key_proto_size)) {
 		throw Molch::Exception(EXPORT_ERROR, "Failed to export public signing key.");
 	}
 
 	//private signing key
-	size_t private_signing_key_proto_size = key__get_packed_size(private_signing_key.get());
+	auto private_signing_key_proto_size = key__get_packed_size(private_signing_key);
 	private_signing_key_buffer = Buffer(private_signing_key_proto_size, 0);
-	private_signing_key_buffer.size = key__pack(private_signing_key.get(), private_signing_key_buffer.content);
+	private_signing_key_buffer.size = key__pack(private_signing_key, private_signing_key_buffer.content);
 	if (!private_signing_key_buffer.contains(private_signing_key_proto_size)) {
 		throw Molch::Exception(EXPORT_ERROR, "Failed to export private signing key.");
 	}
 
 	//public identity key
-	size_t public_identity_key_proto_size = key__get_packed_size(public_identity_key.get());
+	auto public_identity_key_proto_size = key__get_packed_size(public_identity_key);
 	public_identity_key_buffer = Buffer(public_identity_key_proto_size, 0);
-	public_identity_key_buffer.size = key__pack(public_identity_key.get(), public_identity_key_buffer.content);
+	public_identity_key_buffer.size = key__pack(public_identity_key, public_identity_key_buffer.content);
 	if (!public_identity_key_buffer.contains(public_identity_key_proto_size)) {
 		throw Molch::Exception(EXPORT_ERROR, "Failed to export public identity key.");
 	}
 
 	//private identity key
-	size_t private_identity_key_proto_size = key__get_packed_size(private_identity_key.get());
+	auto private_identity_key_proto_size = key__get_packed_size(private_identity_key);
 	private_identity_key_buffer = Buffer(private_identity_key_proto_size, 0);
-	private_identity_key_buffer.size = key__pack(private_identity_key.get(), private_identity_key_buffer.content);
+	private_identity_key_buffer.size = key__pack(private_identity_key, private_identity_key_buffer.content);
 	if (!private_identity_key_buffer.contains(private_identity_key_proto_size)) {
 		throw Molch::Exception(EXPORT_ERROR, "Failed to export private identity key.");
 	}

@@ -33,6 +33,7 @@
 #include "sodium-wrappers.hpp"
 #include "protobuf.hpp"
 #include "key.hpp"
+#include "protobuf-pool.hpp"
 
 namespace Molch {
 	class HeaderAndMessageKey {
@@ -59,7 +60,7 @@ namespace Molch {
 		HeaderAndMessageKey& operator=(const HeaderAndMessageKey& node);
 		HeaderAndMessageKey& operator=(HeaderAndMessageKey&& node);
 
-		std::unique_ptr<ProtobufCKeyBundle,KeyBundleDeleter> exportProtobuf() const;
+		ProtobufCKeyBundle* exportProtobuf(ProtobufPool& pool) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};
@@ -83,7 +84,7 @@ namespace Molch {
 		 * \param key_bundles Pointer to a pointer of protobuf-c key bundle structs, it will be allocated in this function.
 		 * \param bundle_size Size of the outputted array.
 		 */
-		void exportProtobuf(ProtobufCKeyBundle**& key_bundles, size_t& bundles_size) const;
+		void exportProtobuf(ProtobufPool& pool, ProtobufCKeyBundle**& key_bundles, size_t& bundles_size) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

@@ -19,8 +19,6 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <algorithm>
-#include <iterator>
 #include "protobuf-pool.hpp"
 
 namespace Molch {
@@ -45,62 +43,20 @@ namespace Molch {
 		return this->block_size - this->offset;
 	}
 
-	void* ProtobufPoolBlock::allocateAligned(const size_t size, const size_t alignment) {
-			if (!this->block) {
-				throw std::bad_alloc();
-			}
-
-			size_t space = this->remainingSpace();
-
-			if (space < (size + alignment - 1)) {
-				throw std::bad_alloc();
-			}
-
-			void* offset_pointer = reinterpret_cast<void*>(this->block.get() + this->offset);
-
-			//align the pointer
-			if (std::align(alignment, size, offset_pointer, space) == nullptr) {
-				throw std::bad_alloc();
-			}
-
-			if (reinterpret_cast<unsigned char*>(offset_pointer) < this->block.get()) {
-				throw std::bad_alloc();
-			}
-
-			//update the offset
-			this->offset = static_cast<size_t>(reinterpret_cast<unsigned char*>(offset_pointer) - this->block.get()) + size;
-
-			return offset_pointer;
-	}
-
 	template <>
 	void* ProtobufPoolBlock::allocate<void>(size_t size) {
-		return reinterpret_cast<void*>(this->allocateAligned(size, alignof(max_align_t)));
-	}
-
-	void* ProtobufPool::allocateAligned(const size_t size, const size_t alignment) {
-		if (size > ProtobufPoolBlock::default_block_size) {
-			this->blocks.emplace_back(size + alignment);
-			return this->blocks.back().allocateAligned(size, alignment);
+		size_t elements = size / sizeof(max_align_t);
+		if ((size % sizeof(max_align_t)) != 0) {
+			elements++;
 		}
 
-		//find a block with enough space
-		auto block = std::find_if(std::begin(this->blocks), std::end(this->blocks),
-				[size, alignment](const ProtobufPoolBlock& block) {
-					return block.remainingSpace() >= (alignment - 1 + size);
-				});
-		if (block != std::end(this->blocks)) {
-			return block->allocateAligned(size, alignment);
-		}
-
-		//create a new block if no block was found
-		this->blocks.emplace_back();
-		return this->blocks.back().allocateAligned(size, alignment);
+		//check for overflow
+		return reinterpret_cast<void*>(this->allocate<max_align_t>(elements));
 	}
 
 	template <>
 	void* ProtobufPool::allocate<void>(size_t size) {
-		return this->allocateAligned(size, alignof(max_align_t));
+		return this->allocate<void>(size);
 	}
 
 	void* ProtobufPool::poolAllocate(void* pool, size_t size) noexcept {

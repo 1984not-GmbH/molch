@@ -34,62 +34,42 @@
 
 using namespace Molch;
 
-static void free_prekey_array(ProtobufCPrekey**& prekeys, size_t length) {
-	if (prekeys != nullptr) {
-		for (size_t i = 0; i < length; i++) {
-			if (prekeys[i] != nullptr) {
-				prekey__free_unpacked(prekeys[i], &protobuf_c_allocators);
-				prekeys[i] = nullptr;
-			}
-		}
-		zeroed_free_and_null_if_valid(prekeys);
-	}
-}
-
 static void protobuf_export(
 		PrekeyStore& store,
 		std::vector<Buffer>& key_buffers,
 		std::vector<Buffer>& deprecated_key_buffers) {
 		ProtobufCPrekey** keypairs = nullptr;
 		ProtobufCPrekey** deprecated_keypairs = nullptr;
+
+	ProtobufPool pool;
 	size_t keypairs_size;
 	size_t deprecated_keypairs_size;
+	store.exportProtobuf(
+		pool,
+		keypairs,
+		keypairs_size,
+		deprecated_keypairs,
+		deprecated_keypairs_size);
 
-	try {
-		store.exportProtobuf(
-			keypairs,
-			keypairs_size,
-			deprecated_keypairs,
-			deprecated_keypairs_size);
+	//export all the keypairs
+	key_buffers = std::vector<Buffer>();
+	key_buffers.reserve(keypairs_size);
+	for (size_t i = 0; i < keypairs_size; i++) {
+		size_t export_size = prekey__get_packed_size(keypairs[i]);
+		key_buffers.emplace_back(export_size, 0);
 
-		//export all the keypairs
-		key_buffers = std::vector<Buffer>();
-		key_buffers.reserve(keypairs_size);
-		for (size_t i = 0; i < keypairs_size; i++) {
-			size_t export_size = prekey__get_packed_size(keypairs[i]);
-			key_buffers.emplace_back(export_size, 0);
-
-			key_buffers[i].size = prekey__pack(keypairs[i], key_buffers[i].content);
-		}
-
-		//export all the deprecated keypairs
-		deprecated_key_buffers = std::vector<Buffer>();
-		deprecated_key_buffers.reserve(deprecated_keypairs_size);
-		for (size_t i = 0; i < deprecated_keypairs_size; i++) {
-			size_t export_size = prekey__get_packed_size(deprecated_keypairs[i]);
-			deprecated_key_buffers.emplace_back(export_size, 0);
-
-			deprecated_key_buffers[i].size = prekey__pack(deprecated_keypairs[i], deprecated_key_buffers[i].content);
-		}
-	} catch (const std::exception& exception) {
-		free_prekey_array(keypairs, keypairs_size);
-		free_prekey_array(deprecated_keypairs, deprecated_keypairs_size);
-
-		throw exception;
+		key_buffers[i].size = prekey__pack(keypairs[i], key_buffers[i].content);
 	}
 
-	free_prekey_array(keypairs, keypairs_size);
-	free_prekey_array(deprecated_keypairs, deprecated_keypairs_size);
+	//export all the deprecated keypairs
+	deprecated_key_buffers = std::vector<Buffer>();
+	deprecated_key_buffers.reserve(deprecated_keypairs_size);
+	for (size_t i = 0; i < deprecated_keypairs_size; i++) {
+		size_t export_size = prekey__get_packed_size(deprecated_keypairs[i]);
+		deprecated_key_buffers.emplace_back(export_size, 0);
+
+		deprecated_key_buffers[i].size = prekey__pack(deprecated_keypairs[i], deprecated_key_buffers[i].content);
+	}
 }
 
 static void protobuf_import(
@@ -148,37 +128,28 @@ static void protobuf_import(
 
 void protobuf_no_deprecated_keys(void) {
 	printf("Testing im-/export of prekey store without deprecated keys.\n");
+	PrekeyStore store;
 
+	//export it
+	ProtobufPool pool;
 	ProtobufCPrekey **exported = nullptr;
 	size_t exported_length = 0;
-	try {
-		ProtobufCPrekey **deprecated = nullptr;
-		size_t deprecated_length = 0;
+	ProtobufCPrekey **deprecated = nullptr;
+	size_t deprecated_length = 0;
+	store.exportProtobuf(pool, exported, exported_length, deprecated, deprecated_length);
 
-		PrekeyStore store;
-
-		//export it
-		store.exportProtobuf(exported, exported_length, deprecated, deprecated_length);
-
-		if ((deprecated != nullptr) || (deprecated_length != 0)) {
-			throw Molch::Exception(INCORRECT_DATA, "Exported deprecated prekeys are not empty.");
-		}
-
-		//import it
-		store = PrekeyStore(
-			exported,
-			exported_length,
-			deprecated,
-			deprecated_length);
-
-		printf("Successful.\n");
-	} catch (const std::exception& exception) {
-		free_prekey_array(exported, exported_length);
-
-		throw exception;
+	if ((deprecated != nullptr) || (deprecated_length != 0)) {
+		throw Molch::Exception(INCORRECT_DATA, "Exported deprecated prekeys are not empty.");
 	}
 
-	free_prekey_array(exported, exported_length);
+	//import it
+	store = PrekeyStore(
+		exported,
+		exported_length,
+		deprecated,
+		deprecated_length);
+
+	printf("Successful.\n");
 }
 
 int main(void) {

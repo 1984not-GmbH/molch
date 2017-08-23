@@ -30,6 +30,7 @@
 #include "zeroed_malloc.hpp"
 #include "protobuf.hpp"
 #include "key.hpp"
+#include "protobuf-pool.hpp"
 
 namespace Molch {
 	class RatchetStorage {
@@ -179,7 +180,7 @@ namespace Molch {
 		 * NOTE: This doesn't fill the Id field of the struct.
 		 * \return conversation The Conversation Protobuf-C struct.
 		 */
-		std::unique_ptr<ProtobufCConversation,ConversationDeleter> exportProtobuf() const;
+		ProtobufCConversation* exportProtobuf(ProtobufPool& pool) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

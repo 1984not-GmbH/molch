@@ -37,11 +37,12 @@ using namespace Molch;
 
 Buffer protobuf_export(const Molch::Conversation& conversation) {
 	//export the conversation
-	auto exported_conversation = conversation.exportProtobuf();
+	ProtobufPool pool;
+	auto exported_conversation = conversation.exportProtobuf(pool);
 
-	size_t export_size = conversation__get_packed_size(exported_conversation.get());
+	size_t export_size = conversation__get_packed_size(exported_conversation);
 	Buffer export_buffer(export_size, 0);
-	export_buffer.size = conversation__pack(exported_conversation.get(), export_buffer.content);
+	export_buffer.size = conversation__pack(exported_conversation, export_buffer.content);
 	if (export_size != export_buffer.size) {
 		throw Molch::Exception(PROTOBUF_PACK_ERROR, "Failed to pack protobuf-c struct into buffer.");
 	}

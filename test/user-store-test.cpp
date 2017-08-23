@@ -32,41 +32,22 @@
 
 using namespace Molch;
 
-static void free_user_array(ProtobufCUser**& users, size_t length) {
-	if (users != nullptr) {
-		for (size_t i = 0; i < length; i++) {
-			if (users[i] != nullptr) {
-				user__free_unpacked(users[i], &protobuf_c_allocators);
-				users[i] = nullptr;
-			}
-		}
-		zeroed_free_and_null_if_valid(users);
-	}
-}
-
 static std::vector<Buffer> protobuf_export(UserStore& store) {
-	ProtobufCUser** users = nullptr;
+	ProtobufPool pool;
 	size_t length = 0;
+	ProtobufCUser** users = nullptr;
+	store.exportProtobuf(pool, users, length);
 
 	std::vector<Buffer> export_buffers;
+	export_buffers.reserve(length);
 
-	try {
-		store.exportProtobuf(users, length);
-
-		export_buffers.reserve(length);
-
-		//unpack all the users
-		for (size_t i = 0; i < length; i++) {
-			size_t unpacked_size = user__get_packed_size(users[i]);
-			export_buffers.push_back(Buffer(unpacked_size, 0));
-			export_buffers.back().size = user__pack(users[i], export_buffers.back().content);
-		}
-	} catch (const std::exception& exception) {
-		free_user_array(users, length);
-		throw exception;
+	//unpack all the users
+	for (size_t i = 0; i < length; i++) {
+		size_t unpacked_size = user__get_packed_size(users[i]);
+		export_buffers.push_back(Buffer(unpacked_size, 0));
+		export_buffers.back().size = user__pack(users[i], export_buffers.back().content);
 	}
 
-	free_user_array(users, length);
 	return export_buffers;
 }
 
@@ -108,7 +89,8 @@ void protobuf_empty_store(void) {
 	UserStore store;
 
 	//export it
-	store.exportProtobuf(exported, exported_length);
+	ProtobufPool pool;
+	store.exportProtobuf(pool, exported, exported_length);
 
 	if ((exported != nullptr) || (exported_length != 0)) {
 		throw Molch::Exception(INCORRECT_DATA, "Exported data is not empty.");

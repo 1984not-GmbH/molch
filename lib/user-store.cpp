@@ -232,30 +232,26 @@ namespace Molch {
 		this->users.clear();
 	}
 
-	std::unique_ptr<ProtobufCUser,UserDeleter> User::exportProtobuf() {
-		auto user = std::unique_ptr<ProtobufCUser,UserDeleter>(throwing_zeroed_malloc<ProtobufCUser>(1));
-		user__init(user.get());
+	ProtobufCUser* User::exportProtobuf(ProtobufPool& pool) const {
+		auto user = pool.allocate<ProtobufCUser>(1);
+		user__init(user);
 
-		//export master keys
-		std::unique_ptr<ProtobufCKey,KeyDeleter> public_signing_key;
-		std::unique_ptr<ProtobufCKey,KeyDeleter> private_signing_key;
-		std::unique_ptr<ProtobufCKey,KeyDeleter> public_identity_key;
-		std::unique_ptr<ProtobufCKey,KeyDeleter> private_identity_key;
 		this->master_keys.exportProtobuf(
-			public_signing_key,
-			private_signing_key,
-			public_identity_key,
-			private_identity_key);
-		user->public_signing_key = public_signing_key.release();
-		user->private_signing_key = private_signing_key.release();
-		user->public_identity_key = public_identity_key.release();
-		user->private_identity_key = private_identity_key.release();
+			pool,
+			user->public_signing_key,
+			user->private_signing_key,
+			user->public_identity_key,
+			user->private_identity_key);
 
 		//export the conversation store
-		this->conversations.exportProtobuf(user->conversations, user->n_conversations);
+		this->conversations.exportProtobuf(
+				pool,
+				user->conversations,
+				user->n_conversations);
 
 		//export the prekeys
 		this->prekeys.exportProtobuf(
+			pool,
 			user->prekeys,
 			user->n_prekeys,
 			user->deprecated_prekeys,
@@ -264,7 +260,7 @@ namespace Molch {
 		return user;
 	}
 
-	void UserStore::exportProtobuf(ProtobufCUser**& users, size_t& users_length) {
+	void UserStore::exportProtobuf(ProtobufPool& pool, ProtobufCUser**& users, size_t& users_length) const {
 		if (this->users.empty()) {
 			users = nullptr;
 			users_length = 0;
@@ -272,19 +268,11 @@ namespace Molch {
 			return;
 		}
 
-		auto user_pointers = std::vector<std::unique_ptr<ProtobufCUser,UserDeleter>>();
-		user_pointers.reserve(this->users.size());
-
 		//export the conversations
-		for (auto&& user : this->users) {
-			user_pointers.push_back(user.exportProtobuf());
-		}
-
-		//allocate the output array
-		users = throwing_zeroed_malloc<ProtobufCUser*>(this->users.size());
+		users = pool.allocate<ProtobufCUser*>(this->users.size());
 		size_t index = 0;
-		for (auto&& user : user_pointers) {
-			users[index] = user.release();
+		for (auto&& user : this->users) {
+			users[index] = user.exportProtobuf(pool);
 			index++;
 		}
 		users_length = this->users.size();

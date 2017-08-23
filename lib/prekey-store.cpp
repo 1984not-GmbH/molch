@@ -95,21 +95,21 @@ namespace Molch {
 		this->expiration_date = static_cast<int64_t>(keypair.expiration_time);
 	}
 
-	std::unique_ptr<ProtobufCPrekey,PrekeyDeleter> Prekey::exportProtobuf() const {
-		auto prekey = std::unique_ptr<ProtobufCPrekey,PrekeyDeleter>(throwing_zeroed_malloc<ProtobufCPrekey>(1));
-		prekey__init(prekey.get());
+	ProtobufCPrekey* Prekey::exportProtobuf(ProtobufPool& pool) const {
+		auto prekey = pool.allocate<ProtobufCPrekey>(1);
+		prekey__init(prekey);
 
 		//export the private key
-		prekey->private_key = throwing_zeroed_malloc<ProtobufCKey>(1);
+		prekey->private_key = pool.allocate<ProtobufCKey>(1);
 		key__init(prekey->private_key);
-		prekey->private_key->key.data = throwing_zeroed_malloc<uint8_t>(PRIVATE_KEY_SIZE);
+		prekey->private_key->key.data = pool.allocate<uint8_t>(PRIVATE_KEY_SIZE);
 		prekey->private_key->key.len = PRIVATE_KEY_SIZE;
 		this->private_key.copyTo(prekey->private_key->key.data, prekey->private_key->key.len);
 
 		//export the public key
-		prekey->public_key = throwing_zeroed_malloc<ProtobufCKey>(1);
+		prekey->public_key = pool.allocate<ProtobufCKey>(1);
 		key__init(prekey->public_key);
-		prekey->public_key->key.data = throwing_zeroed_malloc<uint8_t>(PUBLIC_KEY_SIZE);
+		prekey->public_key->key.data = pool.allocate<uint8_t>(PUBLIC_KEY_SIZE);
 		prekey->public_key->key.len = PUBLIC_KEY_SIZE;
 		this->public_key.copyTo(prekey->public_key->key.data, prekey->public_key->key.len);
 
@@ -320,41 +320,34 @@ namespace Molch {
 	}
 
 	template <class Container>
-	static void export_keypairs(Container& container, ProtobufCPrekey**& keypairs, size_t& keypairs_length) {
+	static void export_keypairs(ProtobufPool& pool, Container& container, ProtobufCPrekey**& keypairs, size_t& keypairs_length) {
+		keypairs = nullptr;
+		keypairs_length = 0;
 		if (container.size() == 0) {
-			keypairs = nullptr;
-			keypairs_length = 0;
 			return;
 		}
 
-		auto prekeys = std::vector<std::unique_ptr<ProtobufCPrekey,PrekeyDeleter>>();
-		prekeys.reserve(container.size());
-
 		//export all buffers
-		for (auto&& key : container) {
-			prekeys.push_back(key.exportProtobuf());
-		}
-
-		//allocate output array
-		keypairs = throwing_zeroed_malloc<ProtobufCPrekey*>(container.size());
+		keypairs = pool.allocate<ProtobufCPrekey*>(container.size());
 		size_t index = 0;
-		for (auto&& bundle : prekeys) {
-			keypairs[index] = bundle.release();
+		for (auto&& key : container) {
+			keypairs[index] = key.exportProtobuf(pool);
 			index++;
 		}
 		keypairs_length = container.size();
 	}
 
 	void PrekeyStore::exportProtobuf(
+			ProtobufPool& pool,
 			ProtobufCPrekey**& keypairs,
 			size_t& keypairs_length,
 			ProtobufCPrekey**& deprecated_keypairs,
 			size_t& deprecated_keypairs_length) const {
 		//export prekeys
-		export_keypairs(*this->prekeys, keypairs, keypairs_length);
+		export_keypairs(pool, *this->prekeys, keypairs, keypairs_length);
 
 		//export deprecated prekeys
-		export_keypairs(this->deprecated_prekeys, deprecated_keypairs, deprecated_keypairs_length);
+		export_keypairs(pool, this->deprecated_prekeys, deprecated_keypairs, deprecated_keypairs_length);
 	}
 
 	std::ostream& PrekeyStore::print(std::ostream& stream) const {

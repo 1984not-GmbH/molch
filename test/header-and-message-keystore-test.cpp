@@ -37,46 +37,26 @@
 
 using namespace Molch;
 
-static void free_keybundle_array(ProtobufCKeyBundle**& bundles, size_t length) {
-	if (bundles != nullptr) {
-		for (size_t i = 0; i < length; i++) {
-			if (bundles[i] != nullptr) {
-				key_bundle__free_unpacked(bundles[i], &protobuf_c_allocators);
-				bundles[i] = nullptr;
-			}
-		}
-		zeroed_free_and_null_if_valid(bundles);
-	}
-}
-
 static void protobuf_export(
 			HeaderAndMessageKeyStore& keystore,
 			std::vector<Buffer>& export_buffers) {
 			ProtobufCKeyBundle** key_bundles = nullptr;
+	ProtobufPool pool;
 	size_t bundles_size;
+	keystore.exportProtobuf(pool, key_bundles, bundles_size);
 
-	try {
-		keystore.exportProtobuf(key_bundles, bundles_size);
+	export_buffers = std::vector<Buffer>();
 
-		export_buffers = std::vector<Buffer>();
-
-		//create all the export buffers
-		for (size_t i = 0; i < bundles_size; i++) {
-			size_t export_size = key_bundle__get_packed_size(key_bundles[i]);
-			Buffer export_buffer(export_size, 0);
-			export_buffer.size = key_bundle__pack(key_bundles[i], export_buffer.content);
-			if (export_buffer.size != export_size) {
-				throw Molch::Exception(PROTOBUF_PACK_ERROR, "Packed buffer has incorrect length.");
-			}
-			export_buffers.push_back(export_buffer);
+	//create all the export buffers
+	for (size_t i = 0; i < bundles_size; i++) {
+		size_t export_size = key_bundle__get_packed_size(key_bundles[i]);
+		Buffer export_buffer(export_size, 0);
+		export_buffer.size = key_bundle__pack(key_bundles[i], export_buffer.content);
+		if (export_buffer.size != export_size) {
+			throw Molch::Exception(PROTOBUF_PACK_ERROR, "Packed buffer has incorrect length.");
 		}
-	} catch (const std::exception& exception) {
-		free_keybundle_array(key_bundles, bundles_size);
-
-		throw exception;
+		export_buffers.push_back(export_buffer);
 	}
-
-	free_keybundle_array(key_bundles, bundles_size);
 }
 
 static void protobuf_import(
@@ -117,7 +97,8 @@ void protobuf_empty_store(void) {
 	size_t exported_length = 0;
 
 	//export it
-	store.exportProtobuf(exported, exported_length);
+	ProtobufPool pool;
+	store.exportProtobuf(pool, exported, exported_length);
 
 	if ((exported != nullptr) || (exported_length != 0)) {
 		throw Molch::Exception(INCORRECT_DATA, "Exported data is not empty.");

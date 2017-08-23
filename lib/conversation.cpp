@@ -395,15 +395,12 @@ namespace Molch {
 		}
 	}
 
-	std::unique_ptr<ProtobufCConversation,ConversationDeleter> Conversation::exportProtobuf() const {
-		std::unique_ptr<ProtobufCConversation,ConversationDeleter> exported_conversation;
-		unsigned char *id = nullptr;
-
+	ProtobufCConversation* Conversation::exportProtobuf(ProtobufPool& pool) const {
 		//export the ratchet
-		exported_conversation = this->ratchet->exportProtobuf();
+		auto exported_conversation = this->ratchet->exportProtobuf(pool);
 
 		//export the conversation id
-		id = throwing_zeroed_malloc<unsigned char>(CONVERSATION_ID_SIZE);
+		auto id = pool.allocate<unsigned char>(CONVERSATION_ID_SIZE);
 		this->id.copyTo(id, CONVERSATION_ID_SIZE);
 		exported_conversation->id.data = id;
 		exported_conversation->id.len = CONVERSATION_ID_SIZE;

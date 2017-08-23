@@ -35,6 +35,7 @@
 #include "protobuf.hpp"
 #include "sodium-wrappers.hpp"
 #include "key.hpp"
+#include "protobuf-pool.hpp"
 
 namespace Molch {
 	class Prekey {
@@ -64,7 +65,7 @@ namespace Molch {
 		/* move assignment */
 		Prekey& operator=(Prekey&& node);
 
-		std::unique_ptr<ProtobufCPrekey,PrekeyDeleter> exportProtobuf() const;
+		ProtobufCPrekey* exportProtobuf(ProtobufPool& pool) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};
@@ -132,6 +133,7 @@ namespace Molch {
 		 * \param deprecated_keypairs_length The length of the array of deprecated keypairs.
 		 */
 		void exportProtobuf(
+				ProtobufPool& pool,
 				ProtobufCPrekey**& keypairs,
 				size_t& keypairs_length,
 				ProtobufCPrekey**& deprecated_keypairs,

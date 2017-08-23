@@ -1039,13 +1039,14 @@ cleanup:
 			}
 
 			//export the conversation
-			auto conversation_struct = conversation->exportProtobuf();
+			ProtobufPool pool;
+			auto conversation_struct = conversation->exportProtobuf(pool);
 
 			//pack the struct
-			auto conversation_size = conversation__get_packed_size(conversation_struct.get());
+			auto conversation_size = conversation__get_packed_size(conversation_struct);
 			Buffer conversation_buffer(conversation_size, 0, &zeroed_malloc, &zeroed_free);
 
-			conversation_buffer.size = conversation__pack(conversation_struct.get(), conversation_buffer.content);
+			conversation_buffer.size = conversation__pack(conversation_struct, conversation_buffer.content);
 			if (conversation_buffer.size != conversation_size) {
 				throw Exception(PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c.");
 			}
@@ -1246,17 +1247,18 @@ cleanup:
 				throw Exception(INCORRECT_DATA, "No backup key found.");
 			}
 
-			auto backup_struct = std::unique_ptr<ProtobufCBackup,BackupDeleter>(throwing_zeroed_malloc<ProtobufCBackup>(1));
-			backup__init(backup_struct.get());
+			ProtobufPool pool;
+			auto backup_struct = pool.allocate<ProtobufCBackup>(1);
+			backup__init(backup_struct);
 
 			//export the conversation
-			users->exportProtobuf(backup_struct->users, backup_struct->n_users);
+			users->exportProtobuf(pool, backup_struct->users, backup_struct->n_users);
 
 			//pack the struct
-			auto backup_struct_size = backup__get_packed_size(backup_struct.get());
+			auto backup_struct_size = backup__get_packed_size(backup_struct);
 			Buffer users_buffer(backup_struct_size, 0, &zeroed_malloc, &zeroed_free);
 
-			users_buffer.size = backup__pack(backup_struct.get(), users_buffer.content);
+			users_buffer.size = backup__pack(backup_struct, users_buffer.content);
 			if (users_buffer.size != backup_struct_size) {
 				throw Exception(PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c.");
 			}

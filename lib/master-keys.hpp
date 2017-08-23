@@ -32,6 +32,7 @@
 #include "sodium-wrappers.hpp"
 #include "protobuf.hpp"
 #include "key.hpp"
+#include "protobuf-pool.hpp"
 
 namespace Molch {
 	class PrivateMasterKeyStorage {
@@ -119,10 +120,11 @@ namespace Molch {
 		 * \param private_identity_key Private part of the idenity keypair.
 		 */
 		void exportProtobuf(
-				std::unique_ptr<ProtobufCKey,KeyDeleter>& public_signing_key,
-				std::unique_ptr<ProtobufCKey,KeyDeleter>& private_signing_key,
-				std::unique_ptr<ProtobufCKey,KeyDeleter>& public_identity_key,
-				std::unique_ptr<ProtobufCKey,KeyDeleter>& private_identity_key) const;
+				ProtobufPool& pool,
+				ProtobufCKey*& public_signing_key,
+				ProtobufCKey*& private_signing_key,
+				ProtobufCKey*& public_identity_key,
+				ProtobufCKey*& private_identity_key) const;
 
 		/*! Readonly unlocks the private keys when created and
 		 * automatically locks them if destroyed.

@@ -33,41 +33,22 @@
 
 using namespace Molch;
 
-static void free_conversation_array(ProtobufCConversation**& conversations, size_t length) {
-	if (conversations != nullptr) {
-		for (size_t i = 0; i < length; i++) {
-			if (conversations[i] != nullptr) {
-				conversation__free_unpacked(conversations[i], &protobuf_c_allocators);
-				conversations[i] = nullptr;
-			}
-		}
-		zeroed_free_and_null_if_valid(conversations);
-	}
-}
-
 static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
+	ProtobufPool pool;
 	ProtobufCConversation ** conversations = nullptr;
 	size_t length = 0;
+	store.exportProtobuf(pool, conversations, length);
 
 	std::vector<Buffer> export_buffers;
+	export_buffers.reserve(length);
 
-	try {
-		store.exportProtobuf(conversations, length);
-
-		export_buffers.reserve(length);
-
-		//unpack all the conversations
-		for (size_t i = 0; i < length; i++) {
-			size_t unpacked_size = conversation__get_packed_size(conversations[i]);
-			export_buffers.emplace_back(unpacked_size, 0);
-			export_buffers.back().size = conversation__pack(conversations[i], export_buffers.back().content);
-		}
-	} catch (const std::exception& exception) {
-		free_conversation_array(conversations, length);
-		throw exception;
+	//unpack all the conversations
+	for (size_t i = 0; i < length; i++) {
+		size_t unpacked_size = conversation__get_packed_size(conversations[i]);
+		export_buffers.emplace_back(unpacked_size, 0);
+		export_buffers.back().size = conversation__pack(conversations[i], export_buffers.back().content);
 	}
 
-	free_conversation_array(conversations, length);
 	return export_buffers;
 }
 ConversationStore protobuf_import(const std::vector<Buffer> buffers) {
@@ -145,7 +126,8 @@ void protobuf_empty_store(void) {
 	ConversationStore store;
 
 	//export it
-	store.exportProtobuf(exported, exported_length);
+	ProtobufPool pool;
+	store.exportProtobuf(pool, exported, exported_length);
 
 	if ((exported != nullptr) || (exported_length != 0)) {
 		throw Molch::Exception(INCORRECT_DATA, "Exported data is not empty.");

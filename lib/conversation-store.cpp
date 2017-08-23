@@ -139,7 +139,7 @@ namespace Molch {
 		return list;
 	}
 
-	void ConversationStore::exportProtobuf(ProtobufCConversation**& conversations, size_t& length) const {
+	void ConversationStore::exportProtobuf(ProtobufPool& pool, ProtobufCConversation**& conversations, size_t& length) const {
 		if (this->conversations.empty()) {
 			conversations = nullptr;
 			length = 0;
@@ -147,19 +147,11 @@ namespace Molch {
 			return;
 		}
 
-		auto conversation_pointers = std::vector<std::unique_ptr<ProtobufCConversation,ConversationDeleter>>();
-		conversation_pointers.reserve(this->conversations.size());
-
 		//export the conversations
-		for (const auto& conversation : this->conversations) {
-			conversation_pointers.push_back(conversation.exportProtobuf());
-		}
-
-		//allocate the output array
-		conversations = throwing_zeroed_malloc<ProtobufCConversation*>(this->conversations.size());
+		conversations = pool.allocate<ProtobufCConversation*>(this->conversations.size());
 		size_t index = 0;
-		for (auto&& conversation : conversation_pointers) {
-			conversations[index] = conversation.release();
+		for (const auto& conversation : this->conversations) {
+			conversations[index] = conversation.exportProtobuf(pool);
 			index++;
 		}
 		length = this->conversations.size();

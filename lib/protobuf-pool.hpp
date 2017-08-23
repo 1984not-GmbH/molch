@@ -32,8 +32,10 @@
 
 #include <vector>
 #include <memory>
-#include <protobuf-c/protobuf-c.h>
+#include <algorithm>
+#include <iterator>
 #include <cstddef>
+#include <protobuf-c/protobuf-c.h>
 
 #include "sodium-wrappers.hpp"
 
@@ -47,26 +49,54 @@ namespace Molch {
 		ProtobufPoolBlock& move(ProtobufPoolBlock&& block);
 
 	public:
-		static constexpr size_t default_block_size{100000}; //100KB
+		static constexpr size_t default_block_size{102400}; //100KiB
 
-		ProtobufPoolBlock(); //uses the default block size
+		ProtobufPoolBlock();
 		ProtobufPoolBlock(size_t block_size);
-		ProtobufPoolBlock(ProtobufPoolBlock&& block) = default;
-		ProtobufPoolBlock(const ProtobufPoolBlock& block) = delete;
+		ProtobufPoolBlock(ProtobufPoolBlock&&) = default;
+		ProtobufPoolBlock(const ProtobufPoolBlock&) = delete;
 
-		ProtobufPoolBlock& operator=(ProtobufPoolBlock&& block) = default;
-		ProtobufPoolBlock& operator=(const ProtobufPoolBlock& block) = delete;
-
-		void* allocateAligned(const size_t size, const size_t alignment);
+		ProtobufPoolBlock& operator=(ProtobufPoolBlock&&) = delete;
+		ProtobufPoolBlock& operator=(const ProtobufPoolBlock&) = delete;
 
 		template <typename T>
-		T* allocate(size_t size) {
-			return reinterpret_cast<T*>(this->allocateAligned(size, alignof(T)));
+		T* allocate(const size_t elements) {
+			if (!this->block || (elements == 0)) {
+				throw std::bad_alloc();
+			}
+
+			//check for overflow
+			if ((std::numeric_limits<size_t>::max() / elements) < sizeof(T)) {
+				throw std::bad_alloc();
+			}
+
+			size_t size = elements * sizeof(T);
+			size_t space = this->remainingSpace();
+
+			if (space <= (size + alignof(T))) {
+				throw std::bad_alloc();
+			}
+
+			auto offset_pointer = reinterpret_cast<void*>(this->block.get() + this->offset);
+
+			//align the pointer
+			if (std::align(alignof(T), size, offset_pointer, space) == nullptr) {
+				throw std::bad_alloc();
+			}
+
+			if (reinterpret_cast<unsigned char*>(offset_pointer) < this->block.get()) {
+				throw std::bad_alloc();
+			}
+
+			this->offset = static_cast<size_t>(reinterpret_cast<unsigned char*>(offset_pointer) - this->block.get()) + size;
+
+			return reinterpret_cast<T*>(offset_pointer);
 		}
 
 		size_t size() const;
 		size_t remainingSpace() const;
 	};
+
 	template <>
 	void* ProtobufPoolBlock::allocate<void>(size_t size);
 
@@ -77,11 +107,32 @@ namespace Molch {
 	public:
 		ProtobufPool() = default;
 
-		void* allocateAligned(const size_t size, const size_t alignment);
-
 		template <typename T>
-		T* allocate(size_t size) {
-			return reinterpret_cast<T*>(this->allocateAligned(size, alignof(T)));
+		T* allocate(size_t elements) {
+			//check for overflow
+			if ((std::numeric_limits<size_t>::max() / elements) < sizeof(T)) {
+				throw std::bad_alloc();
+			}
+
+			size_t size = elements * sizeof(T);
+
+			if (size > ProtobufPoolBlock::default_block_size) {
+				this->blocks.emplace_back(size + alignof(T));
+				return this->blocks.back().allocate<T>(size);
+			}
+
+			//find a block with enough space
+			auto block = std::find_if(std::begin(this->blocks), std::end(this->blocks),
+					[size](const ProtobufPoolBlock& block) {
+						return block.remainingSpace() >= (alignof(T) - 1 + size);
+					});
+			if (block != std::end(this->blocks)) {
+				return block->template allocate<T>(elements);
+			}
+
+			//create a new block if no block was found
+			this->blocks.emplace_back();
+			return this->blocks.back().allocate<T>(elements);
 		}
 
 		/* functions for Protobuf-C */

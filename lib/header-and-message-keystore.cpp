@@ -95,19 +95,19 @@ namespace Molch {
 		this->expiration_date = static_cast<int64_t>(key_bundle.expiration_time);
 	}
 
-	std::unique_ptr<ProtobufCKeyBundle,KeyBundleDeleter> HeaderAndMessageKey::exportProtobuf() const {
-		auto key_bundle = std::unique_ptr<ProtobufCKeyBundle,KeyBundleDeleter>(throwing_zeroed_malloc<ProtobufCKeyBundle>(1));
-		key_bundle__init(key_bundle.get());
+	ProtobufCKeyBundle* HeaderAndMessageKey::exportProtobuf(ProtobufPool& pool) const {
+		auto key_bundle = pool.allocate<ProtobufCKeyBundle>(1);
+		key_bundle__init(key_bundle);
 
 		//header key
-		key_bundle->header_key = throwing_zeroed_malloc<ProtobufCKey>(1);
+		key_bundle->header_key = pool.allocate<ProtobufCKey>(1);
 		key__init(key_bundle->header_key);
-		key_bundle->header_key->key.data = throwing_zeroed_malloc<unsigned char>(HEADER_KEY_SIZE);
+		key_bundle->header_key->key.data = pool.allocate<unsigned char>(HEADER_KEY_SIZE);
 
 		//message key
-		key_bundle->message_key = throwing_zeroed_malloc<ProtobufCKey>(1);
+		key_bundle->message_key = pool.allocate<ProtobufCKey>(1);
 		key__init(key_bundle->message_key);
-		key_bundle->message_key->key.data = throwing_zeroed_malloc<unsigned char>(MESSAGE_KEY_SIZE);
+		key_bundle->message_key->key.data = pool.allocate<unsigned char>(MESSAGE_KEY_SIZE);
 
 		//export the header key
 		this->header_key.copyTo(key_bundle->header_key->key.data, HEADER_KEY_SIZE);
@@ -139,28 +139,21 @@ namespace Molch {
 		this->keys.emplace_back(header_key, message_key);
 	}
 
-	void HeaderAndMessageKeyStore::exportProtobuf(ProtobufCKeyBundle**& key_bundles, size_t& bundles_size) const {
+	void HeaderAndMessageKeyStore::exportProtobuf(ProtobufPool& pool, ProtobufCKeyBundle**& key_bundles, size_t& bundles_size) const {
 		if (this->keys.size() == 0) {
 			key_bundles = nullptr;
 			bundles_size = 0;
 			return;
 		}
 
-		auto bundles = std::vector<std::unique_ptr<ProtobufCKeyBundle,KeyBundleDeleter>>();
-		bundles.reserve(this->keys.size());
-
 		//export all buffers
-		for (auto&& key : this->keys) {
-			bundles.push_back(key.exportProtobuf());
-		}
-
-		//allocate output array
-		key_bundles = throwing_zeroed_malloc<ProtobufCKeyBundle*>(this->keys.size());
+		key_bundles = pool.allocate<ProtobufCKeyBundle*>(this->keys.size());
 		size_t index = 0;
-		for (auto&& bundle : bundles) {
-			key_bundles[index] = bundle.release();
+		for (auto&& key : this->keys) {
+			key_bundles[index] = key.exportProtobuf(pool);
 			index++;
 		}
+
 		bundles_size = this->keys.size();
 	}
 

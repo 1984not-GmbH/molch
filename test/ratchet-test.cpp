@@ -34,11 +34,12 @@
 using namespace Molch;
 
 Buffer protobuf_export(Ratchet& ratchet) {
-	std::unique_ptr<ProtobufCConversation,ConversationDeleter> conversation = ratchet.exportProtobuf();
+	ProtobufPool pool;
+	auto conversation = ratchet.exportProtobuf(pool);
 
-	size_t export_size = conversation__get_packed_size(conversation.get());
+	size_t export_size = conversation__get_packed_size(conversation);
 	Buffer export_buffer(export_size, 0);
-	export_buffer.size = conversation__pack(conversation.get(), export_buffer.content);
+	export_buffer.size = conversation__pack(conversation, export_buffer.content);
 	if (export_size != export_buffer.size) {
 		throw Molch::Exception(EXPORT_ERROR, "Failed to export ratchet.");
 	}

@@ -91,7 +91,7 @@ namespace Molch {
 		 * \param conversations An array of Protobuf-C structs to export it to.
 		 * \return The status.
 		 */
-		void exportProtobuf(ProtobufCConversation**& conversations, size_t& length) const;
+		void exportProtobuf(ProtobufPool& pool, ProtobufCConversation**& conversations, size_t& length) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

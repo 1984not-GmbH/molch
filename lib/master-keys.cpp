@@ -192,28 +192,29 @@ namespace Molch {
 	}
 
 	void MasterKeys::exportProtobuf(
-			std::unique_ptr<ProtobufCKey,KeyDeleter>& public_signing_key,
-			std::unique_ptr<ProtobufCKey,KeyDeleter>& private_signing_key,
-			std::unique_ptr<ProtobufCKey,KeyDeleter>& public_identity_key,
-			std::unique_ptr<ProtobufCKey,KeyDeleter>& private_identity_key) const {
+			ProtobufPool& pool,
+			ProtobufCKey*& public_signing_key,
+			ProtobufCKey*& private_signing_key,
+			ProtobufCKey*& public_identity_key,
+			ProtobufCKey*& private_identity_key) const {
 		//create and initialize the structs
-		public_signing_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(throwing_zeroed_malloc<ProtobufCKey>(1));
-		key__init(public_signing_key.get());
-		private_signing_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(throwing_zeroed_malloc<ProtobufCKey>(1));
-		key__init(private_signing_key.get());
-		public_identity_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(throwing_zeroed_malloc<ProtobufCKey>(1));
-		key__init(public_identity_key.get());
-		private_identity_key = std::unique_ptr<ProtobufCKey,KeyDeleter>(throwing_zeroed_malloc<ProtobufCKey>(1));
-		key__init(private_identity_key.get());
+		public_signing_key = pool.allocate<ProtobufCKey>(1);
+		key__init(public_signing_key);
+		private_signing_key = pool.allocate<ProtobufCKey>(1);
+		key__init(private_signing_key);
+		public_identity_key = pool.allocate<ProtobufCKey>(1);
+		key__init(public_identity_key);
+		private_identity_key = pool.allocate<ProtobufCKey>(1);
+		key__init(private_identity_key);
 
 		//allocate the key buffers
-		public_signing_key->key.data = throwing_zeroed_malloc<uint8_t>(PUBLIC_MASTER_KEY_SIZE);
+		public_signing_key->key.data = pool.allocate<uint8_t>(PUBLIC_MASTER_KEY_SIZE);
 		public_signing_key->key.len = PUBLIC_MASTER_KEY_SIZE;
-		private_signing_key->key.data = throwing_zeroed_malloc<uint8_t>(PRIVATE_MASTER_KEY_SIZE);
+		private_signing_key->key.data = pool.allocate<uint8_t>(PRIVATE_MASTER_KEY_SIZE);
 		private_signing_key->key.len = PRIVATE_MASTER_KEY_SIZE;
-		public_identity_key->key.data = throwing_zeroed_malloc<uint8_t>(PUBLIC_KEY_SIZE);
+		public_identity_key->key.data = pool.allocate<uint8_t>(PUBLIC_KEY_SIZE);
 		public_identity_key->key.len = PUBLIC_KEY_SIZE;
-		private_identity_key->key.data = throwing_zeroed_malloc<uint8_t>(PRIVATE_KEY_SIZE);
+		private_identity_key->key.data = pool.allocate<uint8_t>(PRIVATE_KEY_SIZE);
 		private_identity_key->key.len = PRIVATE_KEY_SIZE;
 
 		//copy the keys
