@@ -55,11 +55,11 @@ namespace Molch {
 
 		//initialize hashing
 		autozero<crypto_generichash_state> hash_state;
-		int status_int = crypto_generichash_init(
+		auto status_int{crypto_generichash_init(
 				hash_state.pointer(),
 				nullptr, //key
 				0, //key_length
-				DIFFIE_HELLMAN_SIZE); //output length
+				DIFFIE_HELLMAN_SIZE)}; //output length
 		if (status_int != 0) {
 			throw Exception(GENERIC_ERROR, "Failed to initialize hash.");
 		}
@@ -184,11 +184,11 @@ namespace Molch {
 
 		//initialize hashing
 		autozero<crypto_generichash_state> hash_state;
-		int status_int = crypto_generichash_init(
+		auto status_int{crypto_generichash_init(
 				hash_state.pointer(),
 				nullptr, //key
 				0, //key_length
-				DIFFIE_HELLMAN_SIZE); //output_length
+				DIFFIE_HELLMAN_SIZE)}; //output_length
 		if (status_int != 0) {
 			throw Exception(GENERIC_ERROR, "Failed to initialize hash.");
 		}

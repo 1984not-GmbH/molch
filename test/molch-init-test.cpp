@@ -38,7 +38,7 @@ using namespace Molch;
 
 int main(int argc, char *args[]) noexcept {
 	try {
-		bool recreate = false;
+		auto recreate{false};
 		if (argc == 2) {
 			if (strcmp(args[1], "--recreate") == 0) {
 				recreate = true;
@@ -52,23 +52,23 @@ int main(int argc, char *args[]) noexcept {
 		unsigned char backup_key[BACKUP_KEY_SIZE];
 		if (!recreate) {
 			//load the backup from a file
-			auto backup_file = read_file("test-data/molch-init.backup");
+			auto backup_file{read_file("test-data/molch-init.backup")};
 
 			//load the backup key from a file
-			auto backup_key_file = read_file("test-data/molch-init-backup.key");
+			auto backup_key_file{read_file("test-data/molch-init-backup.key")};
 			if (backup_key_file.size != BACKUP_KEY_SIZE) {
 				throw Molch::Exception(INCORRECT_BUFFER_SIZE, "Backup key from file has an incorrect length.");
 			}
 
 			//try to import the backup
 			{
-				return_status status = molch_import(
+				auto status{molch_import(
 						backup_key,
 						BACKUP_KEY_SIZE,
 						backup_file.content,
 						backup_file.size,
 						backup_key_file.content,
-						backup_key_file.size);
+						backup_key_file.size)};
 				on_error {
 					throw Molch::Exception(status);
 				}
@@ -81,13 +81,13 @@ int main(int argc, char *args[]) noexcept {
 		//create a new user
 		std::unique_ptr<unsigned char,MallocDeleter<unsigned char>> backup;
 		std::unique_ptr<unsigned char,MallocDeleter<unsigned char>> prekey_list;
-		Buffer user_id(PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE);
+		Buffer user_id{PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE};
 		size_t backup_length;
 		size_t prekey_list_length;
 		{
-			unsigned char *backup_ptr = nullptr;
-			unsigned char *prekey_list_ptr = nullptr;
-			return_status status = molch_create_user(
+			unsigned char *backup_ptr{nullptr};
+			unsigned char *prekey_list_ptr{nullptr};
+			auto status{molch_create_user(
 					user_id.content,
 					user_id.size,
 					&prekey_list_ptr,
@@ -97,7 +97,7 @@ int main(int argc, char *args[]) noexcept {
 					&backup_ptr,
 					&backup_length,
 					reinterpret_cast<const unsigned char*>("random"),
-					sizeof("random"));
+					sizeof("random"))};
 			on_error {
 				throw Molch::Exception(status);
 			}
@@ -109,8 +109,8 @@ int main(int argc, char *args[]) noexcept {
 		}
 
 		//print the backup to a file
-		Buffer backup_buffer(backup.get(), backup_length);
-		Buffer backup_key_buffer(backup_key, BACKUP_KEY_SIZE);
+		Buffer backup_buffer{backup.get(), backup_length};
+		Buffer backup_key_buffer{backup_key, BACKUP_KEY_SIZE};
 		print_to_file(backup_buffer, "molch-init.backup");
 		print_to_file(backup_key_buffer, "molch-init-backup.key");
 	} catch (const Molch::Exception& exception) {

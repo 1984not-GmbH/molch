@@ -28,8 +28,8 @@
 #include "molch-exception.hpp"
 
 namespace Molch {
-	constexpr int64_t PREKEY_EXPIRATION_TIME = 3600 * 24 * 31; //one month
-	constexpr int64_t DEPRECATED_PREKEY_EXPIRATION_TIME = 3600; //one hour
+	constexpr int64_t PREKEY_EXPIRATION_TIME{3600 * 24 * 31}; //one month
+	constexpr int64_t DEPRECATED_PREKEY_EXPIRATION_TIME{3600}; //one hour
 
 	void Prekey::fill(const PublicKey& public_key, const PrivateKey& private_key, const int64_t expiration_date) {
 		this->expiration_date = expiration_date;
@@ -96,7 +96,7 @@ namespace Molch {
 	}
 
 	ProtobufCPrekey* Prekey::exportProtobuf(ProtobufPool& pool) const {
-		auto prekey = pool.allocate<ProtobufCPrekey>(1);
+		auto prekey{pool.allocate<ProtobufCPrekey>(1)};
 		prekey__init(prekey);
 
 		//export the private key
@@ -121,9 +121,9 @@ namespace Molch {
 	}
 
 	void Prekey::generate() {
-		int status = crypto_box_keypair(
+		auto status{crypto_box_keypair(
 			this->public_key.data(),
-			this->private_key.data());
+			this->private_key.data())};
 		if (status != 0) {
 			throw Exception(KEYGENERATION_FAILED, "Failed to generate prekey pair.");
 		}
@@ -174,14 +174,14 @@ namespace Molch {
 
 		this->init();
 
-		for (size_t index = 0; index < keypairs_length; index++) {
+		for (size_t index{0}; index < keypairs_length; index++) {
 			if (keypairs[index] == nullptr) {
 				throw Exception(PROTOBUF_MISSING_ERROR, "Prekey missing.");
 			}
 			new (&(*this->prekeys)[index]) Prekey(*keypairs[index]);
 		}
 
-		for (size_t index = 0; index < deprecated_keypairs_length; index++) {
+		for (size_t index{0}; index < deprecated_keypairs_length; index++) {
 			if (deprecated_keypairs[index] == nullptr) {
 				throw Exception(PROTOBUF_MISSING_ERROR, "Deprecated prekey missing.");
 			}
@@ -201,7 +201,7 @@ namespace Molch {
 	}
 
 	void PrekeyStore::updateExpirationDate() {
-		const auto& oldest = std::min_element(std::cbegin(*this->prekeys), std::cend(*this->prekeys), compare_expiration_dates);
+		const auto& oldest{std::min_element(std::cbegin(*this->prekeys), std::cend(*this->prekeys), compare_expiration_dates)};
 		this->oldest_expiration_date = oldest->expiration_date;
 	}
 
@@ -216,7 +216,7 @@ namespace Molch {
 	}
 
 	void PrekeyStore::deprecate(const size_t index) {
-		auto& at_index = (*this->prekeys)[index];
+		auto& at_index{(*this->prekeys)[index]};
 		at_index.expiration_date = time(nullptr) + DEPRECATED_PREKEY_EXPIRATION_TIME;
 		this->deprecated_prekeys.push_back(at_index);
 
@@ -234,23 +234,23 @@ namespace Molch {
 		}
 
 		//lambda for comparing PrekeyNodes to public_key
-		auto key_comparer = [&public_key] (const Prekey& node) -> bool {
+		auto key_comparer{[&public_key] (const Prekey& node) -> bool {
 			return public_key == node.public_key;
-		};
+		}};
 
-		auto found_prekey = std::find_if(std::cbegin(*this->prekeys), std::cend(*this->prekeys), key_comparer);
+		auto found_prekey{std::find_if(std::cbegin(*this->prekeys), std::cend(*this->prekeys), key_comparer)};
 		if (found_prekey != this->prekeys->end()) {
 			//copy the private key
 			private_key = found_prekey->private_key;
 
 			//and deprecate key
-			size_t index = static_cast<size_t>(found_prekey - std::begin(*this->prekeys));
+			auto index{static_cast<size_t>(found_prekey - std::begin(*this->prekeys))};
 			this->deprecate(index);
 
 			return;
 		}
 
-		auto found_deprecated_prekey = std::find_if(std::cbegin(this->deprecated_prekeys), std::cend(this->deprecated_prekeys), key_comparer);
+		auto found_deprecated_prekey{std::find_if(std::cbegin(this->deprecated_prekeys), std::cend(this->deprecated_prekeys), key_comparer)};
 		if (found_deprecated_prekey == this->deprecated_prekeys.end()) {
 			private_key.empty = true;
 			throw Exception(NOT_FOUND, "No matching prekey found.");
@@ -265,7 +265,7 @@ namespace Molch {
 			throw Exception(INVALID_INPUT, "Invalid input to PrekeyStore_list.");
 		}
 
-		size_t index = 0;
+		size_t index{0};
 		for (const auto& key_bundle : *this->prekeys) {
 			list.copyFromRaw(
 					PUBLIC_KEY_SIZE * index,
@@ -277,7 +277,7 @@ namespace Molch {
 	}
 
 	void PrekeyStore::rotate() {
-		int64_t current_time = time(nullptr);
+		int64_t current_time{time(nullptr)};
 
 		//Is the expiration date too far into the future?
 		if ((current_time + PREKEY_EXPIRATION_TIME) < this->oldest_expiration_date) {
@@ -300,7 +300,7 @@ namespace Molch {
 		if (this->oldest_expiration_date < current_time) {
 			for (auto&& prekey : *this->prekeys) {
 				if (prekey.expiration_date < current_time) {
-					size_t index = static_cast<size_t>(&prekey - &(*std::begin(*this->prekeys)));
+					auto index{static_cast<size_t>(&prekey - &(*std::begin(*this->prekeys)))};
 					this->deprecate(index);
 				}
 			}
@@ -308,7 +308,7 @@ namespace Molch {
 
 		//At least one key to be removed
 		if (this->oldest_deprecated_expiration_date < current_time) {
-			for (size_t index = 0; index < this->deprecated_prekeys.size(); index++) {
+			for (size_t index{0}; index < this->deprecated_prekeys.size(); index++) {
 				auto& prekey = this->deprecated_prekeys[index];
 				if (prekey.expiration_date < current_time) {
 					this->deprecated_prekeys.erase(std::cbegin(this->deprecated_prekeys) + static_cast<ptrdiff_t>(index));
@@ -329,7 +329,7 @@ namespace Molch {
 
 		//export all buffers
 		keypairs = pool.allocate<ProtobufCPrekey*>(container.size());
-		size_t index = 0;
+		size_t index{0};
 		for (auto&& key : container) {
 			keypairs[index] = key.exportProtobuf(pool);
 			index++;

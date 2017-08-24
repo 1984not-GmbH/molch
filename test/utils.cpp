@@ -48,7 +48,7 @@ void print_to_file(const Buffer& data, const std::string& filename) {
 void print_errors(const return_status& status) {
 	fprintf(stderr, "ERROR STACK:\n");
 	error_message *error = status.error;
-	for (size_t i = 1; error != nullptr; i++, error = error->next) {
+	for (size_t i{1}; error != nullptr; i++, error = error->next) {
 		fprintf(stderr, "%zu: %s\n", i, error->message);
 	}
 }
@@ -64,17 +64,17 @@ Buffer read_file(const std::string& filename) {
 
 	//get the filesize
 	filestream.seekg(0, std::ios_base::end);
-	auto filesize = filestream.tellg();
+	auto filesize{filestream.tellg()};
 	if (filesize < 0) {
 		throw Molch::Exception(GENERIC_ERROR, "Filesize is smaller than 0.");
 	}
 	if (filesize > std::numeric_limits<std::streamsize>::max()) {
 		throw Molch::Exception(GENERIC_ERROR, "Filesize is larger than representable by std::streamsize.");
 	}
-	auto size = static_cast<size_t>(filesize);
+	auto size{static_cast<size_t>(filesize)};
 	filestream.seekg(0);
 
-	Buffer data(size, size);
+	Buffer data{size, size};
 	filestream.read(reinterpret_cast<char*>(data.content), static_cast<std::streamsize>(filesize));
 
 	return data;

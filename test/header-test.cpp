@@ -45,17 +45,17 @@ int main(void) {
 		our_public_ephemeral_key.printHex(std::cout);
 
 		//message numbers
-		uint32_t message_number = 2;
-		uint32_t previous_message_number = 10;
+		uint32_t message_number{2};
+		uint32_t previous_message_number{10};
 		printf("Message number: %u\n", message_number);
 		printf("Previous message number: %u\n", previous_message_number);
 		putchar('\n');
 
 		//create the header
-		auto header = header_construct(
+		auto header{header_construct(
 				our_public_ephemeral_key,
 				message_number,
-				previous_message_number);
+				previous_message_number)};
 
 		//print the header
 		printf("Header (%zu Bytes):\n", header.size);

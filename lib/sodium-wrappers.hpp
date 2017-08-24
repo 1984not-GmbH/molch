@@ -41,7 +41,7 @@ namespace Molch {
 			throw std::bad_alloc();
 		}
 
-		void* memory = sodium_malloc(elements * sizeof(T));
+		auto memory{sodium_malloc(elements * sizeof(T))};
 		if (memory == nullptr) {
 			throw std::bad_alloc();
 		}

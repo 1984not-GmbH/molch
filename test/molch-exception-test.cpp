@@ -50,7 +50,7 @@ int main(void) noexcept {
 			std::cerr << "Molch::Exception is not a Molch::Exception. Terminating" << std::endl;
 			return EXIT_FAILURE;
 		}
-		return_status status = static_cast<const Molch::Exception&>(exception).toReturnStatus();
+		auto status{static_cast<const Molch::Exception&>(exception).toReturnStatus()};
 		if (strcmp(status.error->message, "Error on the first level!") != 0) {
 			fprintf(stderr, "ERROR: First error message is incorrect!\n");
 			return EXIT_FAILURE;
@@ -63,7 +63,7 @@ int main(void) noexcept {
 
 		std::stringstream stream;
 		static_cast<const Molch::Exception&>(exception).print(stream);
-		auto error_message = stream.str();
+		auto error_message{stream.str()};
 		if (error_message != "ERROR\nerror stack trace:\n0: GENERIC_ERROR, Error on the first level!\n1: GENERIC_ERROR, Error on the second level!\n") {
 			std::cerr << error_message << std::endl;
 			std::cerr << "Failed to correctly print error stack." << std::endl;

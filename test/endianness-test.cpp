@@ -38,8 +38,8 @@ int main(void) {
 		}
 
 		//uint32_t -> big endian
-		Buffer buffer32(4, 4);
-		uint32_t uint32 = 67305985ULL;
+		Buffer buffer32{4, 4};
+		uint32_t uint32{67305985ULL};
 		uint32_t uint32_from_big_endian;
 		to_big_endian(uint32, buffer32);
 		printf("uint32_t %llu to big endian:\n", static_cast<unsigned long long>(uint32));
@@ -57,7 +57,7 @@ int main(void) {
 		printf("Successfully converted back!\n\n");
 
 		//int32_t -> big endian
-		int32_t int32 = -66052LL;
+		int32_t int32{-66052LL};
 		int32_t int32_from_big_endian;
 		to_big_endian(int32, buffer32);
 		printf("int32_t %lli to big endian:\n", static_cast<signed long long>(int32));
@@ -75,8 +75,8 @@ int main(void) {
 		printf("Successfully converted back!\n\n");
 
 		//uint64_t -> big endian
-		Buffer buffer64(8, 8);
-		uint64_t uint64 = 578437695752307201ULL;
+		Buffer buffer64{8, 8};
+		uint64_t uint64{578437695752307201ULL};
 		uint64_t uint64_from_big_endian;
 		to_big_endian(uint64, buffer64);
 		printf("uint64_t %llu to big endian:\n", static_cast<unsigned long long>(uint64));
@@ -94,7 +94,7 @@ int main(void) {
 		printf("Successfully converted back!\n\n");
 
 		//int64_t -> big endian
-		int64_t int64 = -283686952306184LL;
+		int64_t int64{-283686952306184LL};
 		int64_t int64_from_big_endian;
 		to_big_endian(int64, buffer64);
 		printf("int64_t %lli to big endian:\n", static_cast<signed long long>(int64));

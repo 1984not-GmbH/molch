@@ -70,14 +70,14 @@ namespace Molch {
 				throw std::bad_alloc();
 			}
 
-			size_t size = elements * sizeof(T);
-			size_t space = this->remainingSpace();
+			size_t size{elements * sizeof(T)};
+			size_t space{this->remainingSpace()};
 
 			if (space <= (size + alignof(T))) {
 				throw std::bad_alloc();
 			}
 
-			auto offset_pointer = reinterpret_cast<void*>(this->block.get() + this->offset);
+			auto offset_pointer{reinterpret_cast<void*>(this->block.get() + this->offset)};
 
 			//align the pointer
 			if (std::align(alignof(T), size, offset_pointer, space) == nullptr) {
@@ -114,7 +114,7 @@ namespace Molch {
 				throw std::bad_alloc();
 			}
 
-			size_t size = elements * sizeof(T);
+			size_t size{elements * sizeof(T)};
 
 			if (size > ProtobufPoolBlock::default_block_size) {
 				this->blocks.emplace_back(size + alignof(T));
@@ -122,10 +122,10 @@ namespace Molch {
 			}
 
 			//find a block with enough space
-			auto block = std::find_if(std::begin(this->blocks), std::end(this->blocks),
+			auto block{std::find_if(std::begin(this->blocks), std::end(this->blocks),
 					[size](const ProtobufPoolBlock& block) {
 						return block.remainingSpace() >= (alignof(T) - 1 + size);
-					});
+					})};
 			if (block != std::end(this->blocks)) {
 				return block->template allocate<T>(elements);
 			}

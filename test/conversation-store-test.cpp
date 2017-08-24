@@ -35,16 +35,16 @@ using namespace Molch;
 
 static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
 	ProtobufPool pool;
-	ProtobufCConversation ** conversations = nullptr;
-	size_t length = 0;
+	ProtobufCConversation ** conversations{nullptr};
+	size_t length{0};
 	store.exportProtobuf(pool, conversations, length);
 
 	std::vector<Buffer> export_buffers;
 	export_buffers.reserve(length);
 
 	//unpack all the conversations
-	for (size_t i = 0; i < length; i++) {
-		size_t unpacked_size = conversation__get_packed_size(conversations[i]);
+	for (size_t i{0}; i < length; i++) {
+		auto unpacked_size{conversation__get_packed_size(conversations[i])};
 		export_buffers.emplace_back(unpacked_size, 0);
 		export_buffers.back().size = conversation__pack(conversations[i], export_buffers.back().content);
 	}
@@ -57,9 +57,9 @@ ConversationStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> 
 		conversation_array = std::unique_ptr<ProtobufCConversation*[]>(new ProtobufCConversation*[buffers.size()]);
 	}
 
-	auto pool_protoc_allocator = pool.getProtobufCAllocator();
+	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 	//unpack all the conversations
-	size_t index = 0;
+	size_t index{0};
 	for (const auto& buffer : buffers) {
 		conversation_array[index] = conversation__unpack(&pool_protoc_allocator, buffer.size, buffer.content);
 		if (conversation_array[index] == nullptr) {
@@ -75,7 +75,7 @@ ConversationStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> 
 static void test_add_conversation(ConversationStore& store) {
 	PrivateKey our_private_identity;
 	PublicKey our_public_identity;
-	int status = crypto_box_keypair(our_public_identity.data(), our_private_identity.data());
+	auto status{crypto_box_keypair(our_public_identity.data(), our_private_identity.data())};
 	if (status != 0) {
 		throw Molch::Exception(KEYGENERATION_FAILED, "Failed to generate our identity keys.");
 	}
@@ -98,13 +98,13 @@ static void test_add_conversation(ConversationStore& store) {
 	their_public_ephemeral.fillRandom();
 
 	//create the conversation manually
-	Molch::Conversation conversation(
-			our_private_identity,
-			our_public_identity,
-			their_public_identity,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_ephemeral);
+	Molch::Conversation conversation{
+		our_private_identity,
+		our_public_identity,
+		their_public_identity,
+		our_private_ephemeral,
+		our_public_ephemeral,
+		their_public_ephemeral};
 
 	store.add(std::move(conversation));
 }
@@ -113,7 +113,7 @@ void protobuf_empty_store(void) {
 	printf("Testing im-/export of empty conversation store.\n");
 
 	ProtobufCConversation **exported = nullptr;
-	size_t exported_length = 0;
+	size_t exported_length{0};
 
 	ConversationStore store;
 
@@ -126,7 +126,7 @@ void protobuf_empty_store(void) {
 	}
 
 	//import it
-	store = ConversationStore(exported, exported_length);
+	store = ConversationStore{exported, exported_length};
 	printf("Successful.\n");
 }
 
@@ -138,14 +138,14 @@ int main(void) {
 
 		// list an empty conversation store
 		ConversationStore store;
-		auto empty_list = store.list();
+		auto empty_list{store.list()};
 		if (!empty_list.isNone()) {
 			throw Molch::Exception(INCORRECT_DATA, "List of empty conversation store is not nullptr.");
 		}
 
 		// add five conversations
 		printf("Add five conversations.\n");
-		for (size_t i = 0; i < 5; i++) {
+		for (size_t i{0}; i < 5; i++) {
 			printf("%zu\n", i);
 			test_add_conversation(store);
 			if (store.size() != (i + 1)) {
@@ -154,7 +154,7 @@ int main(void) {
 		}
 
 		//test list export feature
-		auto conversation_list = store.list();
+		auto conversation_list{store.list()};
 		if (!conversation_list.contains(CONVERSATION_ID_SIZE * store.size())) {
 			throw Molch::Exception(DATA_FETCH_ERROR, "Failed to get list of conversations.");
 		}
@@ -163,10 +163,10 @@ int main(void) {
 		Molch::Key<CONVERSATION_ID_SIZE,Molch::KeyType::Key> first_id;
 		Molch::Key<CONVERSATION_ID_SIZE,Molch::KeyType::Key> middle_id;
 		Molch::Key<CONVERSATION_ID_SIZE,Molch::KeyType::Key> last_id;
-		for (size_t i = 0; i < (conversation_list.size / CONVERSATION_ID_SIZE); i++) {
+		for (size_t i{0}; i < (conversation_list.size / CONVERSATION_ID_SIZE); i++) {
 			Molch::Key<CONVERSATION_ID_SIZE,Molch::KeyType::Key> current_id;
 			current_id.set(conversation_list.content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
-			auto found_node = store.find(current_id);
+			auto found_node{store.find(current_id)};
 			if (found_node == nullptr) {
 				throw Molch::Exception(INCORRECT_DATA, "Exported list of conversations was incorrect.");
 			}
@@ -182,12 +182,12 @@ int main(void) {
 
 		//test protobuf export
 		printf("Export to Protobuf-C\n");
-		auto protobuf_export_buffers = protobuf_export(store);
+		auto protobuf_export_buffers{protobuf_export(store)};
 
 		printf("protobuf_export_buffers_length = %zu\n", protobuf_export_buffers.size());
 		//print
 		puts("[\n");
-		for (size_t i = 0; i < protobuf_export_buffers.size(); i++) {
+		for (size_t i{0}; i < protobuf_export_buffers.size(); i++) {
 			protobuf_export_buffers[i].printHex(std::cout);
 			puts(",\n");
 		}
@@ -200,7 +200,7 @@ int main(void) {
 		store = protobuf_import(pool, protobuf_export_buffers);
 
 		//export the imported
-		auto protobuf_second_export_buffers = protobuf_export(store);
+		auto protobuf_second_export_buffers{protobuf_export(store)};
 
 		//compare to previous export
 		if (protobuf_export_buffers != protobuf_second_export_buffers) {
@@ -209,7 +209,7 @@ int main(void) {
 		printf("Exported Protobuf-C strings match.\n");
 
 		//remove nodes
-		auto first = store.find(first_id);
+		auto first{store.find(first_id)};
 		store.remove(first);
 		printf("Removed head.\n");
 		store.remove(middle_id);

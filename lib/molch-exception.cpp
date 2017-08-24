@@ -72,7 +72,7 @@ namespace Molch {
 	}
 
 	Exception::Exception(return_status& status) {
-		error_message *error = status.error;
+		auto *error{status.error};
 		while (error != nullptr) {
 			this->error_stack.push_back(Error(error->status, error->message));
 		}
@@ -81,7 +81,7 @@ namespace Molch {
 	}
 
 	const char* Exception::what() const noexcept {
-		static const char* what = "Molch::Exception";
+		static const auto* what{"Molch::Exception"};
 		return what;
 	}
 
@@ -100,11 +100,11 @@ namespace Molch {
 	}
 
 	return_status Exception::toReturnStatus() const {
-		return_status status = return_status_init();
+		auto status{return_status_init()};
 
 		// add the error messages in reverse order
 		for (auto&& error = std::crbegin(this->error_stack); error != std::crend(this->error_stack); ++error) {
-			status_type add_status = return_status_add_error_message(&status, error->message.c_str(), error->type);
+			auto add_status{return_status_add_error_message(&status, error->message.c_str(), error->type)};
 			if (add_status != SUCCESS) {
 				return_status_destroy_errors(&status);
 				status.status = add_status;
@@ -118,7 +118,7 @@ namespace Molch {
 	std::ostream& Exception::print(std::ostream& stream) const {
 		stream << "ERROR\nerror stack trace:\n";
 
-		size_t i = 0;
+		size_t i{0};
 		for (const auto& error : this->error_stack) {
 			stream << i << ": " << return_status_get_name(error.type) << ", " << error.message << '\n';
 			i++;

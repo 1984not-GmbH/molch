@@ -38,8 +38,8 @@ namespace Molch {
 	 * Determine the current endianness at runtime.
 	 */
 	static bool endianness_is_little_endian() {
-		const uint16_t number = 0x1;
-		const unsigned char* const number_pointer = reinterpret_cast<const unsigned char* const>(&number);
+		const uint16_t number{0x1};
+		const auto* const number_pointer{reinterpret_cast<const unsigned char* const>(&number)};
 		return (number_pointer[0] == 0x1);
 	}
 
@@ -48,7 +48,7 @@ namespace Molch {
 	 */
 	template <typename IntegerType>
 	void to_big_endian(IntegerType integer, Buffer& output) {
-		unsigned char& reference = reinterpret_cast<unsigned char&>(integer);
+		auto& reference{reinterpret_cast<unsigned char&>(integer)};
 
 		if (!output.fits(sizeof(IntegerType))) {
 			throw Exception(INVALID_INPUT, "Invalid input to endianness to big endian.");
@@ -70,7 +70,7 @@ namespace Molch {
 			throw Exception(INVALID_INPUT, "Invalid input to from_big_endian.");
 		}
 
-		unsigned char& reference = reinterpret_cast<unsigned char&>(integer);
+		auto& reference{reinterpret_cast<unsigned char&>(integer)};
 
 		buffer.cloneToRaw(&reference, sizeof(IntegerType));
 

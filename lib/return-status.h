@@ -26,6 +26,7 @@
 extern "C" {
 #else
 	#define noexcept
+	#define constexpr
 	#define nullptr NULL
 #endif
 

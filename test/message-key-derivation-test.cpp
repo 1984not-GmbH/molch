@@ -47,7 +47,7 @@ int main(void) {
 		chain_key.printHex(std::cout) << std::endl;
 
 		//derive message key from chain key
-		auto message_key = chain_key.deriveMessageKey();
+		auto message_key{chain_key.deriveMessageKey()};
 		chain_key.clear();
 
 		//print message key

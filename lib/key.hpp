@@ -69,7 +69,7 @@ namespace Molch {
 				return *this;
 			}
 
-			for (size_t i = 0; i < length; ++i) {
+			for (size_t i{0}; i < length; ++i) {
 				(*this)[i] = key[i];
 			}
 
@@ -162,20 +162,20 @@ namespace Molch {
 			}
 
 			//create a salt that contains the number of the subkey
-			Buffer salt(crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES);
+			Buffer salt{crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES};
 			salt.clear(); //fill with zeroes
 			salt.size = crypto_generichash_blake2b_SALTBYTES;
 
 			//fill the salt with a big endian representation of the subkey counter
-			Buffer big_endian_subkey_counter(salt.content + salt.size - sizeof(uint32_t), sizeof(uint32_t));
+			Buffer big_endian_subkey_counter{salt.content + salt.size - sizeof(uint32_t), sizeof(uint32_t)};
 			to_big_endian(subkey_counter, big_endian_subkey_counter);
 
-			const char personal_string[] = "molch_cryptolib";
+			const char personal_string[]{"molch_cryptolib"};
 			static_assert(sizeof(personal_string) == crypto_generichash_blake2b_PERSONALBYTES, "personal string is not crypto_generichash_blake2b_PERSONALBYTES long");
 			Buffer personal(personal_string);
 
 			//set length of output
-			int status_int = crypto_generichash_blake2b_salt_personal(
+			auto status{crypto_generichash_blake2b_salt_personal(
 					derived_key.data(),
 					derived_length,
 					nullptr, //input
@@ -183,8 +183,8 @@ namespace Molch {
 					this->data(),
 					length,
 					salt.content,
-					personal.content);
-			if (status_int != 0) {
+					personal.content)};
+			if (status != 0) {
 				throw Exception(KEYDERIVATION_FAILED, "Failed to derive key via crypto_generichash_blake2b_salt_personal");
 			}
 
@@ -229,19 +229,19 @@ namespace Molch {
 		}
 
 		std::ostream& printHex(std::ostream& stream) const {
-			static constexpr size_t width = 30;
+			static constexpr size_t width{30};
 
 			if (this->empty) {
 				return stream << "(empty)";
 			}
 
-			const size_t hex_length = this->size() * 2 + sizeof("");
-			auto hex = std::make_unique<char[]>(hex_length);
+			const size_t hex_length{this->size() * 2 + sizeof("")};
+			auto hex{std::make_unique<char[]>(hex_length)};
 			if (sodium_bin2hex(hex.get(), hex_length, this->data(), this->size()) == nullptr) {
 				throw Exception(BUFFER_ERROR, "Failed to converst binary to hex with sodium_bin2hex.");
 			}
 
-			for (size_t i = 0; i < hex_length; i++) {
+			for (size_t i{0}; i < hex_length; i++) {
 				if ((width != 0) && ((i % width) == 0) && (i != 0)) {
 					stream << '\n';
 				} else if ((i % 2 == 0) && (i != 0)) {

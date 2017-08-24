@@ -118,15 +118,14 @@ namespace Molch {
 		//create an ephemeral keypair
 		PublicKey sender_public_ephemeral;
 		PrivateKey sender_private_ephemeral;
-		int status = crypto_box_keypair(sender_public_ephemeral.data(), sender_private_ephemeral.data());
-		if (status != 0) {
+		if (crypto_box_keypair(sender_public_ephemeral.data(), sender_private_ephemeral.data()) != 0) {
 			throw Exception(KEYGENERATION_FAILED, "Failed to generate ephemeral keypair.");
 		}
 		sender_public_ephemeral.empty = false;
 		sender_private_ephemeral.empty = false;
 
 		//choose a prekey
-		uint32_t prekey_number = randombytes_uniform(PREKEY_AMOUNT);
+		auto prekey_number{randombytes_uniform(PREKEY_AMOUNT)};
 		PublicKey receiver_public_prekey;
 		receiver_public_prekey.set(
 				&receiver_prekey_list.content[prekey_number * PUBLIC_KEY_SIZE],
@@ -160,8 +159,8 @@ namespace Molch {
 			const PublicKey& receiver_public_identity,
 			const PrivateKey& receiver_private_identity,
 			PrekeyStore& receiver_prekeys) { //prekeys of the receiver
-		uint32_t receive_message_number = 0;
-		uint32_t previous_receive_message_number = 0;
+		uint32_t receive_message_number{0};
+		uint32_t previous_receive_message_number{0};
 
 		if (receiver_public_identity.empty
 				|| receiver_private_identity.empty) {
@@ -239,12 +238,12 @@ namespace Molch {
 				send_ephemeral_key,
 				send_message_key);
 
-		auto header = header_construct(
+		auto header{header_construct(
 				send_ephemeral_key,
 				send_message_number,
-				previous_send_message_number);
+				previous_send_message_number)};
 
-		auto packet_type = NORMAL_MESSAGE;
+		auto packet_type{NORMAL_MESSAGE};
 		//check if this is a prekey message
 		if (public_identity_key != nullptr) {
 			packet_type = PREKEY_MESSAGE;
@@ -275,10 +274,10 @@ namespace Molch {
 			uint32_t& previous_receive_message_number) {
 		//create buffers
 
-		for (size_t index = 0; index < this->ratchet->skipped_header_and_message_keys.keys.size(); index++) {
-			HeaderAndMessageKey& node = this->ratchet->skipped_header_and_message_keys.keys[index];
+		for (size_t index{0}; index < this->ratchet->skipped_header_and_message_keys.keys.size(); index++) {
+			auto& node = this->ratchet->skipped_header_and_message_keys.keys[index];
 			Buffer header;
-			bool decryption_successful = true;
+			auto decryption_successful{true};
 			try {
 				header = packet_decrypt_header(packet, node.header_key);
 			} catch (const Exception& exception) {
@@ -319,14 +318,14 @@ namespace Molch {
 			uint32_t& receive_message_number,
 			uint32_t& previous_receive_message_number) {
 		try {
-			bool decryptable = true;
+			auto decryptable{true};
 
 			Buffer message;
-			int status = trySkippedHeaderAndMessageKeys(
+			auto status{trySkippedHeaderAndMessageKeys(
 					packet,
 					message,
 					receive_message_number,
-					previous_receive_message_number);
+					previous_receive_message_number)};
 			if (status == SUCCESS) {
 				// found a key and successfully decrypted the message
 				return message;
@@ -397,10 +396,10 @@ namespace Molch {
 
 	ProtobufCConversation* Conversation::exportProtobuf(ProtobufPool& pool) const {
 		//export the ratchet
-		auto exported_conversation = this->ratchet->exportProtobuf(pool);
+		auto exported_conversation{this->ratchet->exportProtobuf(pool)};
 
 		//export the conversation id
-		auto id = pool.allocate<unsigned char>(CONVERSATION_ID_SIZE);
+		auto id{pool.allocate<unsigned char>(CONVERSATION_ID_SIZE)};
 		this->id.copyTo(id, CONVERSATION_ID_SIZE);
 		exported_conversation->id.data = id;
 		exported_conversation->id.len = CONVERSATION_ID_SIZE;

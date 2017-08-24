@@ -61,13 +61,15 @@ namespace Molch {
 
 		//find out if we are alice by comparing both public keys
 		//the one with the bigger public key is alice
-		if (our_public_identity > their_public_identity) {
-			this->role = Role::ALICE;
-		} else if (our_public_identity < their_public_identity) {
-			this->role = Role::BOB;
-		} else {
-			throw Exception(SHOULDNT_HAPPEN, "This mustn't happen, both conversation partners have the same public key!");
-		}
+		this->role = [&our_public_identity, &their_public_identity] () {
+			if (our_public_identity > their_public_identity) {
+				return Role::ALICE;
+			} else if (our_public_identity < their_public_identity) {
+				return Role::BOB;
+			} else {
+				throw Exception(SHOULDNT_HAPPEN, "This mustn't happen, both conversation partners have the same public key!");
+			}
+		}();
 
 		//derive initial chain, root and header keys
 		derive_initial_root_chain_and_header_keys(
@@ -118,9 +120,9 @@ namespace Molch {
 			MessageKey& message_key) { //MESSAGE_KEY_SIZE, MK
 		if (this->ratchet_flag) {
 			//DHRs = generateECDH()
-			int status = crypto_box_keypair(
+			auto status{crypto_box_keypair(
 					this->storage->our_public_ephemeral.data(),
-					this->storage->our_private_ephemeral.data());
+					this->storage->our_private_ephemeral.data())};
 			if (status != 0) {
 				throw Exception(KEYGENERATION_FAILED, "Failed to generate new ephemeral keypair.");
 			}
@@ -235,7 +237,7 @@ namespace Molch {
 
 		ChainKey next_chain_key;
 		MessageKey current_message_key;
-		for (uint32_t pos = current_message_number; pos < future_message_number; pos++) {
+		for (uint32_t pos{current_message_number}; pos < future_message_number; pos++) {
 			current_message_key = current_chain_key.deriveMessageKey();
 			staging_area.add(current_header_key, current_message_key);
 			next_chain_key = current_chain_key.deriveChainKey();
@@ -325,16 +327,6 @@ namespace Molch {
 			//DHRp = read(): get the purported ephemeral from the input
 			this->storage->their_purported_public_ephemeral = their_purported_public_ephemeral;
 
-			switch (this->role) {
-				case Role::ALICE:
-					break;
-
-				case Role::BOB:
-					break;
-
-				default:
-					break;
-			}
 			//stage_skipped_header_and_message_keys(HKr, Nr, PNp, CKr)
 			Ratchet::stageSkippedHeaderAndMessageKeys(
 					this->staged_header_and_message_keys,
@@ -385,7 +377,7 @@ namespace Molch {
 		this->received_valid = true;
 
 		//backup header decryptability
-		HeaderDecryptability header_decryptable = this->header_decryptable;
+		auto header_decryptable{this->header_decryptable};
 		this->header_decryptable = HeaderDecryptability::NOT_TRIED;
 
 		if (!valid) { //message couldn't be decrypted
@@ -428,7 +420,7 @@ namespace Molch {
 	}
 
 	ProtobufCConversation* Ratchet::exportProtobuf(ProtobufPool& pool) const {
-		auto conversation = pool.allocate<ProtobufCConversation>(1);
+		auto conversation{pool.allocate<ProtobufCConversation>(1)};
 		conversation__init(conversation);
 
 		//root keys
@@ -601,31 +593,26 @@ namespace Molch {
 		conversation->received_valid = this->received_valid;
 
 		//header decryptability
-		switch (this->header_decryptable) {
-			case HeaderDecryptability::CURRENT_DECRYPTABLE:
-				conversation->has_header_decryptable = true;
-				conversation->header_decryptable = CONVERSATION__HEADER_DECRYPTABILITY__CURRENT_DECRYPTABLE;
-				break;
+		conversation->has_header_decryptable = false;
+		conversation->header_decryptable = [&] () {
+				switch (this->header_decryptable) {
+					case HeaderDecryptability::CURRENT_DECRYPTABLE:
+						return CONVERSATION__HEADER_DECRYPTABILITY__CURRENT_DECRYPTABLE;
 
-			case HeaderDecryptability::NEXT_DECRYPTABLE:
-				conversation->has_header_decryptable = true;
-				conversation->header_decryptable = CONVERSATION__HEADER_DECRYPTABILITY__NEXT_DECRYPTABLE;
-				break;
+					case HeaderDecryptability::NEXT_DECRYPTABLE:
+						return CONVERSATION__HEADER_DECRYPTABILITY__NEXT_DECRYPTABLE;
 
-			case HeaderDecryptability::UNDECRYPTABLE:
-				conversation->has_header_decryptable = true;
-				conversation->header_decryptable = CONVERSATION__HEADER_DECRYPTABILITY__UNDECRYPTABLE;
-				break;
+					case HeaderDecryptability::UNDECRYPTABLE:
+						return CONVERSATION__HEADER_DECRYPTABILITY__UNDECRYPTABLE;
 
-			case HeaderDecryptability::NOT_TRIED:
-				conversation->has_header_decryptable = true;
-				conversation->header_decryptable = CONVERSATION__HEADER_DECRYPTABILITY__NOT_TRIED;
-				break;
+					case HeaderDecryptability::NOT_TRIED:
+						return CONVERSATION__HEADER_DECRYPTABILITY__NOT_TRIED;
 
-			default:
-				conversation->has_header_decryptable = false;
-				throw Exception(INVALID_VALUE, "Invalid value of ratchet->header_decryptable.");
-		}
+					default:
+						throw Exception(INVALID_VALUE, "Invalid value of ratchet->header_decryptable.");
+			}
+		}();
+		conversation->has_header_decryptable = true;
 
 		//keystores
 		//skipped header and message keystore
@@ -696,26 +683,24 @@ namespace Molch {
 		if (!conversation.has_header_decryptable) {
 			throw Exception(PROTOBUF_MISSING_ERROR, "No header decryptable enum in Protobuf-C struct.");
 		}
-		switch (conversation.header_decryptable) {
-			case CONVERSATION__HEADER_DECRYPTABILITY__CURRENT_DECRYPTABLE:
-				this->header_decryptable = HeaderDecryptability::CURRENT_DECRYPTABLE;
-				break;
+		this->header_decryptable = [&] () {
+			switch (conversation.header_decryptable) {
+				case CONVERSATION__HEADER_DECRYPTABILITY__CURRENT_DECRYPTABLE:
+					return HeaderDecryptability::CURRENT_DECRYPTABLE;
 
-			case CONVERSATION__HEADER_DECRYPTABILITY__NEXT_DECRYPTABLE:
-				this->header_decryptable = HeaderDecryptability::NEXT_DECRYPTABLE;
-				break;
+				case CONVERSATION__HEADER_DECRYPTABILITY__NEXT_DECRYPTABLE:
+					return HeaderDecryptability::NEXT_DECRYPTABLE;
 
-			case CONVERSATION__HEADER_DECRYPTABILITY__UNDECRYPTABLE:
-				this->header_decryptable = HeaderDecryptability::UNDECRYPTABLE;
-				break;
+				case CONVERSATION__HEADER_DECRYPTABILITY__UNDECRYPTABLE:
+					return HeaderDecryptability::UNDECRYPTABLE;
 
-			case CONVERSATION__HEADER_DECRYPTABILITY__NOT_TRIED:
-				this->header_decryptable = HeaderDecryptability::NOT_TRIED;
-				break;
+				case CONVERSATION__HEADER_DECRYPTABILITY__NOT_TRIED:
+					return HeaderDecryptability::NOT_TRIED;
 
-			default:
-				throw Exception(INVALID_VALUE, "header_decryptable has an invalid value.");
-		}
+				default:
+					throw Exception(INVALID_VALUE, "header_decryptable has an invalid value.");
+			}
+		}();
 
 		//root keys
 		//root key
@@ -813,13 +798,13 @@ namespace Molch {
 
 		//header and message keystores
 		//skipped header and message keys
-		this->skipped_header_and_message_keys = HeaderAndMessageKeyStore(
-				conversation.skipped_header_and_message_keys,
-				conversation.n_skipped_header_and_message_keys);
+		this->skipped_header_and_message_keys = HeaderAndMessageKeyStore{
+			conversation.skipped_header_and_message_keys,
+			conversation.n_skipped_header_and_message_keys};
 		//staged heeader and message keys
-		this->staged_header_and_message_keys = HeaderAndMessageKeyStore(
-				conversation.staged_header_and_message_keys,
-				conversation.n_staged_header_and_message_keys);
+		this->staged_header_and_message_keys = HeaderAndMessageKeyStore{
+			conversation.staged_header_and_message_keys,
+			conversation.n_staged_header_and_message_keys};
 	}
 
 	std::ostream& Ratchet::print(std::ostream& stream) const {

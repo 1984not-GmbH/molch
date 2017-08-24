@@ -41,8 +41,8 @@ int main(void) {
 		}
 
 		//generate keys and message
-		molch_message_type packet_type = NORMAL_MESSAGE;
-		Buffer header(4, 4);
+		molch_message_type packet_type{NORMAL_MESSAGE};
+		Buffer header{4, 4};
 		header.content[0] = 0x01;
 		header.content[1] = 0x02;
 		header.content[2] = 0x03;
@@ -52,7 +52,7 @@ int main(void) {
 
 		//NORMAL MESSAGE
 		printf("NORMAL MESSAGE\n");
-		Buffer message("Hello world!\n");
+		Buffer message{"Hello world!\n"};
 		HeaderKey header_key;
 		MessageKey message_key;
 		Buffer packet;

@@ -95,7 +95,7 @@ namespace Molch {
 	}
 
 	ProtobufCKeyBundle* HeaderAndMessageKey::exportProtobuf(ProtobufPool& pool) const {
-		auto key_bundle = pool.allocate<ProtobufCKeyBundle>(1);
+		auto key_bundle{pool.allocate<ProtobufCKeyBundle>(1)};
 		key_bundle__init(key_bundle);
 
 		//header key
@@ -147,7 +147,7 @@ namespace Molch {
 
 		//export all buffers
 		key_bundles = pool.allocate<ProtobufCKeyBundle*>(this->keys.size());
-		size_t index = 0;
+		size_t index{0};
 		for (auto&& key : this->keys) {
 			key_bundles[index] = key.exportProtobuf(pool);
 			index++;
@@ -157,7 +157,7 @@ namespace Molch {
 	}
 
 	HeaderAndMessageKeyStore::HeaderAndMessageKeyStore(ProtobufCKeyBundle** const & key_bundles, const size_t bundles_size) {
-		for (size_t index = 0; index < bundles_size; index++) {
+		for (size_t index{0}; index < bundles_size; index++) {
 			if (key_bundles[index] == nullptr) {
 				throw Exception(PROTOBUF_MISSING_ERROR, "Invalid KeyBundle.");
 			}
@@ -170,7 +170,7 @@ namespace Molch {
 		stream << "KEYSTORE-START-----------------------------------------------------------------\n";
 		stream << "Length: " + std::to_string(this->keys.size()) + "\n\n";
 
-		size_t index = 0;
+		size_t index{0};
 		for (const auto& key_bundle : this->keys) {
 			stream << "Entry " << index << '\n';
 			index++;

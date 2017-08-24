@@ -83,22 +83,22 @@ namespace Molch {
 		}
 
 		//master keys
-		this->master_keys = MasterKeys(
+		this->master_keys = MasterKeys{
 			*user.public_signing_key,
 			*user.private_signing_key,
 			*user.public_identity_key,
-			*user.private_identity_key);
+			*user.private_identity_key};
 
 		//public signing key
 		this->public_signing_key.set(user.public_signing_key->key.data, user.public_signing_key->key.len);
 
-		this->conversations = ConversationStore(user.conversations, user.n_conversations);
+		this->conversations = ConversationStore{user.conversations, user.n_conversations};
 
-		this->prekeys = PrekeyStore(
+		this->prekeys = PrekeyStore{
 			user.prekeys,
 			user.n_prekeys,
 			user.deprecated_prekeys,
-			user.n_deprecated_prekeys);
+			user.n_deprecated_prekeys};
 	}
 
 	std::ostream& User::print(std::ostream& stream) const {
@@ -121,7 +121,7 @@ namespace Molch {
 			throw Exception(INVALID_INPUT, "Invalid input to user_store_import.");
 		}
 
-		for (size_t i = 0; i < users_length; i++) {
+		for (size_t i{0}; i < users_length; i++) {
 			if (users[i] == nullptr) {
 				throw Exception(PROTOBUF_MISSING_ERROR, "Array of users is missing a user.");
 			}
@@ -131,12 +131,12 @@ namespace Molch {
 	}
 
 	void UserStore::add(User&& user) {
-		const PublicSigningKey& public_signing_key = user.public_signing_key;
+		const auto& public_signing_key{user.public_signing_key};
 		//search if a user with this public_signing_key already exists
-		auto existing_user = std::find_if(std::cbegin(this->users), std::cend(this->users),
+		auto existing_user{std::find_if(std::cbegin(this->users), std::cend(this->users),
 				[public_signing_key](const User& user) {
 					return user.public_signing_key == public_signing_key;
-				});
+				})};
 		//if none exists, just add the conversation
 		if (existing_user == std::cend(this->users)) {
 			this->users.emplace_back(std::move(user));
@@ -144,7 +144,7 @@ namespace Molch {
 		}
 
 		//otherwise replace the existing one
-		size_t existing_index = static_cast<size_t>(existing_user - std::cbegin(this->users));
+		auto existing_index{static_cast<size_t>(existing_user - std::cbegin(this->users))};
 		this->users[existing_index] = std::move(user);
 	}
 
@@ -153,10 +153,10 @@ namespace Molch {
 			throw Exception(INVALID_INPUT, "Invalid input to UserStore::find.");
 		}
 
-		auto user = std::find_if(std::begin(this->users), std::end(this->users),
+		auto user{std::find_if(std::begin(this->users), std::end(this->users),
 				[public_signing_key](const User& user) {
 					return user.public_signing_key == public_signing_key;
-				});
+				})};
 		if (user == std::end(this->users)) {
 			return nullptr;
 		}
@@ -169,12 +169,12 @@ namespace Molch {
 			throw Exception(INVALID_INPUT, "Invalid input to UserStore::findConversation.");
 		}
 
-		Conversation* conversation = nullptr;
-		auto containing_user = std::find_if(std::begin(this->users), std::end(this->users),
+		Conversation* conversation{nullptr};
+		auto containing_user{std::find_if(std::begin(this->users), std::end(this->users),
 				[&conversation_id, &conversation](User& user) {
 					conversation = user.conversations.find(conversation_id);
 					return conversation != nullptr;
-				});
+				})};
 		if (conversation != nullptr) {
 			user = &(*containing_user);
 			return conversation;
@@ -185,10 +185,10 @@ namespace Molch {
 	}
 
 	Buffer UserStore::list() {
-		Buffer list(this->users.size() * PUBLIC_MASTER_KEY_SIZE, 0);
+		Buffer list{this->users.size() * PUBLIC_MASTER_KEY_SIZE, 0};
 
 		for (const auto& user : this->users) {
-			size_t index = static_cast<size_t>(&user - &(*std::cbegin(this->users)));
+			auto index{static_cast<size_t>(&user - &(*std::cbegin(this->users)))};
 			list.copyFromRaw(
 				PUBLIC_MASTER_KEY_SIZE * index,
 				user.public_signing_key.data(),
@@ -204,24 +204,24 @@ namespace Molch {
 			return;
 		}
 
-		auto found_node = std::find_if(std::cbegin(this->users), std::cend(this->users),
+		auto found_node{std::find_if(std::cbegin(this->users), std::cend(this->users),
 				[node](const User& user) {
 					if (&user == node) {
 						return true;
 					}
 
 					return false;
-				});
+				})};
 		if (found_node != std::cend(this->users)) {
 			this->users.erase(found_node);
 		}
 	}
 
 	void UserStore::remove(const PublicSigningKey& public_signing_key) {
-		auto found_node = std::find_if(std::cbegin(this->users), std::cend(this->users),
+		auto found_node{std::find_if(std::cbegin(this->users), std::cend(this->users),
 				[public_signing_key](const User& user) {
 					return user.public_signing_key == public_signing_key;
-				});
+				})};
 
 		if (found_node != std::cend(this->users)) {
 			this->users.erase(found_node);
@@ -233,7 +233,7 @@ namespace Molch {
 	}
 
 	ProtobufCUser* User::exportProtobuf(ProtobufPool& pool) const {
-		auto user = pool.allocate<ProtobufCUser>(1);
+		auto user{pool.allocate<ProtobufCUser>(1)};
 		user__init(user);
 
 		this->master_keys.exportProtobuf(
@@ -270,7 +270,7 @@ namespace Molch {
 
 		//export the conversations
 		users = pool.allocate<ProtobufCUser*>(this->users.size());
-		size_t index = 0;
+		size_t index{0};
 		for (auto&& user : this->users) {
 			users[index] = user.exportProtobuf(pool);
 			index++;

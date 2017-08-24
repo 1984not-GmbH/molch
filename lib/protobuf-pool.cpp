@@ -45,7 +45,7 @@ namespace Molch {
 
 	template <>
 	void* ProtobufPoolBlock::allocate<void>(size_t size) {
-		size_t elements = size / sizeof(max_align_t);
+		size_t elements{size / sizeof(max_align_t)};
 		if ((size % sizeof(max_align_t)) != 0) {
 			elements++;
 		}
@@ -56,7 +56,7 @@ namespace Molch {
 
 	template <>
 	void* ProtobufPool::allocate<void>(size_t size) {
-		size_t elements = size / sizeof(max_align_t);
+		size_t elements{size / sizeof(max_align_t)};
 		if ((size % sizeof(max_align_t)) != 0) {
 			elements++;
 		}

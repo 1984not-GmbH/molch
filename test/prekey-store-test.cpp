@@ -54,8 +54,8 @@ static void protobuf_export(
 	//export all the keypairs
 	key_buffers = std::vector<Buffer>();
 	key_buffers.reserve(keypairs_size);
-	for (size_t i = 0; i < keypairs_size; i++) {
-		size_t export_size = prekey__get_packed_size(keypairs[i]);
+	for (size_t i{0}; i < keypairs_size; i++) {
+		auto export_size{prekey__get_packed_size(keypairs[i])};
 		key_buffers.emplace_back(export_size, 0);
 
 		key_buffers[i].size = prekey__pack(keypairs[i], key_buffers[i].content);
@@ -64,8 +64,8 @@ static void protobuf_export(
 	//export all the deprecated keypairs
 	deprecated_key_buffers = std::vector<Buffer>();
 	deprecated_key_buffers.reserve(deprecated_keypairs_size);
-	for (size_t i = 0; i < deprecated_keypairs_size; i++) {
-		size_t export_size = prekey__get_packed_size(deprecated_keypairs[i]);
+	for (size_t i{0}; i < deprecated_keypairs_size; i++) {
+		auto export_size{prekey__get_packed_size(deprecated_keypairs[i])};
 		deprecated_key_buffers.emplace_back(export_size, 0);
 
 		deprecated_key_buffers[i].size = prekey__pack(deprecated_keypairs[i], deprecated_key_buffers[i].content);
@@ -77,10 +77,10 @@ static void protobuf_import(
 		std::unique_ptr<PrekeyStore>& store,
 		const std::vector<Buffer>& keypair_buffers,
 		const std::vector<Buffer>& deprecated_keypair_buffers) {
-	auto pool_protoc_allocator = pool.getProtobufCAllocator();
+	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 	//parse the normal prekey protobufs
-	auto keypairs_array = std::unique_ptr<ProtobufCPrekey*[]>(new ProtobufCPrekey*[keypair_buffers.size()]);
-	size_t index = 0;
+	auto keypairs_array{std::unique_ptr<ProtobufCPrekey*[]>(new ProtobufCPrekey*[keypair_buffers.size()])};
+	size_t index{0};
 	for (const auto& keypair_buffer : keypair_buffers) {
 		keypairs_array[index] = prekey__unpack(
 				&pool_protoc_allocator,
@@ -94,7 +94,7 @@ static void protobuf_import(
 	}
 
 	//parse the deprecated prekey protobufs
-	auto deprecated_keypairs_array = std::unique_ptr<ProtobufCPrekey*[]>(new ProtobufCPrekey*[deprecated_keypair_buffers.size()]);
+	auto deprecated_keypairs_array{std::unique_ptr<ProtobufCPrekey*[]>(new ProtobufCPrekey*[deprecated_keypair_buffers.size()])};
 	index = 0;
 	for (const auto& keypair_buffer : deprecated_keypair_buffers) {
 		deprecated_keypairs_array[index] = prekey__unpack(
@@ -122,10 +122,10 @@ void protobuf_no_deprecated_keys(void) {
 
 	//export it
 	ProtobufPool pool;
-	ProtobufCPrekey **exported = nullptr;
-	size_t exported_length = 0;
-	ProtobufCPrekey **deprecated = nullptr;
-	size_t deprecated_length = 0;
+	ProtobufCPrekey **exported{nullptr};
+	size_t exported_length{0};
+	ProtobufCPrekey **deprecated{nullptr};
+	size_t deprecated_length{0};
 	store.exportProtobuf(pool, exported, exported_length, deprecated, deprecated_length);
 
 	if ((deprecated != nullptr) || (deprecated_length != 0)) {
@@ -148,14 +148,14 @@ int main(void) {
 			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
-		auto store = std::make_unique<PrekeyStore>();
-		Buffer prekey_list(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
+		auto store{std::make_unique<PrekeyStore>()};
+		Buffer prekey_list{PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE};
 		store->list(prekey_list);
 		printf("Prekey list:\n");
 		prekey_list.printHex(std::cout) << std::endl;
 
 		//compare the public keys with the ones in the prekey store
-		for (size_t i = 0; i < PREKEY_AMOUNT; i++) {
+		for (size_t i{0}; i < PREKEY_AMOUNT; i++) {
 			if (prekey_list.compareToRawPartial(PUBLIC_KEY_SIZE * i, (*store->prekeys)[i].public_key.data(), (*store->prekeys)[i].public_key.size(), 0, PUBLIC_KEY_SIZE) != 0) {
 				throw Molch::Exception(INCORRECT_DATA, "Key list doesn't match the prekey store.");
 			}
@@ -163,7 +163,7 @@ int main(void) {
 		printf("Prekey list matches the prekey store!\n");
 
 		//get a private key
-		const size_t prekey_index = 10;
+		const size_t prekey_index{10};
 		PublicKey public_prekey{(*store->prekeys)[prekey_index].public_key};
 
 		PrivateKey private_prekey1;
@@ -199,7 +199,7 @@ int main(void) {
 
 		//try to get a nonexistent key
 		public_prekey.fillRandom();
-		bool found = true;
+		auto found{true};
 		try {
 			store->getPrekey(public_prekey, private_prekey1);
 		} catch (const Molch::Exception& exception) {
@@ -221,14 +221,14 @@ int main(void) {
 
 		printf("Prekeys:\n");
 		puts("[\n");
-		for (size_t i = 0; i < protobuf_export_prekeys_buffers.size(); i++) {
+		for (size_t i{0}; i < protobuf_export_prekeys_buffers.size(); i++) {
 			protobuf_export_prekeys_buffers[i].printHex(std::cout) << ",\n";
 		}
 		puts("]\n\n");
 
 		printf("Deprecated Prekeys:\n");
 		puts("[\n");
-		for (size_t i = 0; i < protobuf_export_deprecated_prekeys_buffers.size(); i++) {
+		for (size_t i{0}; i < protobuf_export_deprecated_prekeys_buffers.size(); i++) {
 			protobuf_export_deprecated_prekeys_buffers[i].printHex(std::cout) << ",\n";
 		}
 		puts("]\n\n");
@@ -256,7 +256,7 @@ int main(void) {
 		if (protobuf_export_prekeys_buffers.size() != protobuf_second_export_prekeys_buffers.size()) {
 			throw Molch::Exception(INCORRECT_DATA, "Both prekey exports contain different amounts of keys.");
 		}
-		for (size_t i = 0; i < protobuf_export_prekeys_buffers.size(); i++) {
+		for (size_t i{0}; i < protobuf_export_prekeys_buffers.size(); i++) {
 			if (protobuf_export_prekeys_buffers[i] != protobuf_second_export_prekeys_buffers[i]) {
 				throw Molch::Exception(INCORRECT_DATA, "First and second prekey export are not identical.");
 			}
@@ -267,7 +267,7 @@ int main(void) {
 		if (protobuf_export_deprecated_prekeys_buffers.size() != protobuf_second_export_deprecated_prekeys_buffers.size()) {
 			throw Molch::Exception(INCORRECT_DATA, "Both depcated prekey exports contain different amounts of keys.");
 		}
-		for (size_t i = 0; i < protobuf_export_deprecated_prekeys_buffers.size(); i++) {
+		for (size_t i{0}; i < protobuf_export_deprecated_prekeys_buffers.size(); i++) {
 			if (protobuf_export_deprecated_prekeys_buffers[i] != protobuf_second_export_deprecated_prekeys_buffers[i]) {
 				throw Molch::Exception(INCORRECT_DATA, "First and second deprecated prekey export are not identical.");
 			}

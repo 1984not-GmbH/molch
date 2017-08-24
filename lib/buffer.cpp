@@ -28,20 +28,17 @@
 #include "molch-exception.hpp"
 
 namespace Molch {
-	Buffer::Buffer(const std::string& string) {
-		this->buffer_length = string.length() + sizeof("");
-		this->size = string.length() + sizeof("");
-
-		this->content = new unsigned char[string.length() + sizeof("")];
-
+	Buffer::Buffer(const std::string& string) :
+			buffer_length{string.length() + sizeof("")},
+			size{string.length() + sizeof("")},
+			content{new unsigned char[string.length() + sizeof("")]} {
 		std::copy(std::begin(string), std::end(string), this->content);
 		this->content[string.length()] = '\0';
 	}
 
-	Buffer::Buffer(const size_t capacity, const size_t size) {
-		this->buffer_length = capacity;
-		this->size = size;
-
+	Buffer::Buffer(const size_t capacity, const size_t size) :
+			buffer_length{capacity},
+			size{size} {
 		if (capacity == 0) {
 			this->content = nullptr;
 		} else {
@@ -49,11 +46,10 @@ namespace Molch {
 		}
 	}
 
-	Buffer::Buffer(const size_t capacity, const size_t size, void* (*allocator)(size_t), void (*deallocator)(void*)) {
-		this->buffer_length = capacity;
-		this->size = size;
-		this->deallocator = deallocator;
-
+	Buffer::Buffer(const size_t capacity, const size_t size, void* (*allocator)(size_t), void (*deallocator)(void*)) :
+			buffer_length{capacity},
+			deallocator{deallocator},
+			size{size} {
 		if (capacity == 0) {
 			this->content = nullptr;
 		} else {
@@ -67,14 +63,13 @@ namespace Molch {
 		}
 	}
 
-	Buffer::Buffer(unsigned char * const content, const size_t capacity, const size_t size) {
-		this->buffer_length = capacity;
-		this->manage_memory = false;
-
+	Buffer::Buffer(unsigned char * const content, const size_t capacity, const size_t size) :
+			buffer_length{capacity},
+			manage_memory{false},
+			readonly{false} {
 		this->size = (size > capacity)
 			? capacity
 			: size;
-		this->readonly = false;
 
 		if (capacity == 0) {
 			this->content = nullptr;
@@ -82,11 +77,11 @@ namespace Molch {
 			this->content = content;
 		}
 	}
-	Buffer::Buffer(unsigned char * const content, const size_t capacity)
-		: Buffer{content, capacity, capacity} {}
+	Buffer::Buffer(unsigned char * const content, const size_t capacity) :
+		Buffer{content, capacity, capacity} {}
 
-	Buffer::Buffer(const unsigned char * const content, const size_t capacity, const size_t size)
-		: Buffer{const_cast<unsigned char*>(content), capacity, size} {
+	Buffer::Buffer(const unsigned char * const content, const size_t capacity, const size_t size) :
+			Buffer{const_cast<unsigned char*>(content), capacity, size} {
 		this->readonly = false;
 	}
 	Buffer::Buffer(const unsigned char * const content, const size_t capacity)
@@ -128,8 +123,8 @@ namespace Molch {
 		this->destruct();
 
 		//copy the buffer
-		unsigned char& source_reference = reinterpret_cast<unsigned char&>(buffer);
-		unsigned char& destination_reference = reinterpret_cast<unsigned char&>(*this);
+		auto& source_reference{reinterpret_cast<unsigned char&>(buffer)};
+		auto& destination_reference{reinterpret_cast<unsigned char&>(*this)};
 		std::copy(&source_reference, &source_reference + sizeof(Buffer), &destination_reference);
 
 		//steal resources from the source buffer
@@ -362,13 +357,13 @@ namespace Molch {
 		}
 
 		//xor source onto destination
-		for (size_t i = 0; i < this->size; i++) {
+		for (size_t i{0}; i < this->size; i++) {
 			this->content[i] ^= source.content[i];
 		}
 	}
 
 	unsigned char* Buffer::release() {
-		unsigned char* content = this->content;
+		auto content{this->content};
 		this->content = nullptr;
 		this->size = 0;
 		this->buffer_length = 0;
@@ -383,15 +378,15 @@ namespace Molch {
 	}
 
 	std::ostream& Buffer::printHex(std::ostream& stream) const {
-		static const size_t width = 30;
+		static const size_t width{30};
 		//buffer for the hex string
-		const size_t hex_length = this->size * 2 + sizeof("");
-		auto hex = std::make_unique<char[]>(hex_length);
+		const size_t hex_length{this->size * 2 + sizeof("")};
+		auto hex{std::make_unique<char[]>(hex_length)};
 		if (sodium_bin2hex(hex.get(), hex_length, this->content, this->size) == nullptr) {
 			throw Exception(BUFFER_ERROR, "Failed to converst binary to hex with sodium_bin2hex.");
 		}
 
-		for (size_t i = 0; i < hex_length; i++) {
+		for (size_t i{0}; i < hex_length; i++) {
 			if ((width != 0) && ((i % width) == 0) && (i != 0)) {
 				stream << '\n';
 			} else if ((i % 2 == 0) && (i != 0)) {

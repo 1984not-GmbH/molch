@@ -51,11 +51,11 @@ namespace Molch {
 		header_struct.has_public_ephemeral_key = true;
 
 		//allocate the header buffer
-		size_t header_length = header__get_packed_size(&header_struct);
-		Buffer header(header_length, header_length);
+		auto header_length{header__get_packed_size(&header_struct)};
+		Buffer header{header_length, header_length};
 
 		//pack it
-		size_t packed_length = header__pack(&header_struct, header.content);
+		auto packed_length{header__pack(&header_struct, header.content)};
 		if (packed_length != header_length) {
 			throw Exception(PROTOBUF_PACK_ERROR, "Packed header has incorrect length.");
 		}
@@ -71,7 +71,7 @@ namespace Molch {
 			//intput
 			const Buffer& header) {
 		//unpack the message
-		auto header_struct = std::unique_ptr<ProtobufCHeader,HeaderDeleter>(header__unpack(&protobuf_c_allocator, header.size, header.content));
+		auto header_struct{std::unique_ptr<ProtobufCHeader,HeaderDeleter>(header__unpack(&protobuf_c_allocator, header.size, header.content))};
 		if (!header_struct) {
 			throw Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack header.");
 		}

@@ -41,8 +41,8 @@ int main(void) {
 		}
 
 		//generate message
-		molch_message_type packet_type = NORMAL_MESSAGE;
-		Buffer header(4, 4);
+		molch_message_type packet_type{NORMAL_MESSAGE};
+		Buffer header{4, 4};
 		header.content[0] = 0x01;
 		header.content[1] = 0x02;
 		header.content[2] = 0x03;
@@ -53,7 +53,7 @@ int main(void) {
 		//NORMAL MESSAGE
 		printf("NORMAL MESSAGE\n");
 		Buffer packet;
-		Buffer message("Hello world!\n");
+		Buffer message{"Hello world!\n"};
 		HeaderKey header_key;
 		MessageKey message_key;
 		create_and_print_message(
@@ -68,7 +68,7 @@ int main(void) {
 			nullptr);
 
 		//now decrypt the header
-		auto decrypted_header = packet_decrypt_header(packet, header_key);
+		auto decrypted_header{packet_decrypt_header(packet, header_key)};
 
 
 		if (!decrypted_header.contains(header.size)) {
@@ -85,7 +85,7 @@ int main(void) {
 		//check if it decrypts manipulated packets (manipulated metadata)
 		printf("Manipulating header length.\n");
 		packet.content[2]++;
-		bool decryption_failed = false;
+		auto decryption_failed{false};
 		try {
 			decrypted_header = packet_decrypt_header(packet, header_key);
 		} catch (const Molch::Exception& exception) {

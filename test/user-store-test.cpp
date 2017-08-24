@@ -34,16 +34,16 @@ using namespace Molch;
 
 static std::vector<Buffer> protobuf_export(UserStore& store) {
 	ProtobufPool pool;
-	size_t length = 0;
-	ProtobufCUser** users = nullptr;
+	size_t length{0};
+	ProtobufCUser** users{nullptr};
 	store.exportProtobuf(pool, users, length);
 
 	std::vector<Buffer> export_buffers;
 	export_buffers.reserve(length);
 
 	//unpack all the users
-	for (size_t i = 0; i < length; i++) {
-		size_t unpacked_size = user__get_packed_size(users[i]);
+	for (size_t i{0}; i < length; i++) {
+		auto unpacked_size{user__get_packed_size(users[i])};
 		export_buffers.push_back(Buffer(unpacked_size, 0));
 		export_buffers.back().size = user__pack(users[i], export_buffers.back().content);
 	}
@@ -58,9 +58,9 @@ UserStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> buffers)
 		user_array = std::unique_ptr<ProtobufCUser*[]>(new ProtobufCUser*[buffers.size()]);
 	}
 
-	auto pool_protoc_allocator = pool.getProtobufCAllocator();
+	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 	//unpack all the conversations
-	size_t index = 0;
+	size_t index{0};
 	for (const auto& buffer : buffers) {
 		user_array[index] = user__unpack(&pool_protoc_allocator, buffer.size, buffer.content);
 		if (user_array[index] == nullptr) {
@@ -76,8 +76,8 @@ UserStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> buffers)
 void protobuf_empty_store(void) {
 	printf("Testing im-/export of empty user store.\n");
 
-	ProtobufCUser **exported = nullptr;
-	size_t exported_length = 0;
+	ProtobufCUser **exported{nullptr};
+	size_t exported_length{0};
 
 	UserStore store;
 
@@ -104,7 +104,7 @@ int main(void) {
 		UserStore store;
 
 		//check the content
-		auto list = store.list();
+		auto list{store.list()};
 		if (list.size != 0) {
 			throw Molch::Exception(INCORRECT_DATA, "List of users is not empty.");
 		}
@@ -114,7 +114,7 @@ int main(void) {
 		PublicSigningKey alice_public_signing_key;
 		store.add(Molch::User(&alice_public_signing_key));
 		{
-			auto alice_user = store.find(alice_public_signing_key);
+			auto alice_user{store.find(alice_public_signing_key)};
 			MasterKeys::Unlocker unlocker{alice_user->master_keys};
 			alice_user->master_keys.print(std::cout) << std::endl;
 		}
@@ -177,7 +177,7 @@ int main(void) {
 
 		//find node
 		{
-			Molch::User *bob_node = nullptr;
+			Molch::User *bob_node{nullptr};
 			bob_node = store.find(bob_public_signing_key);
 			if (bob_node == nullptr) {
 				throw Molch::Exception(NOT_FOUND, "Failed to find Bob's node.");
@@ -228,11 +228,11 @@ int main(void) {
 
 		//test Protobuf-C export
 		printf("Export to Protobuf-C\n");
-		auto protobuf_export_buffers = protobuf_export(store);
+		auto protobuf_export_buffers{protobuf_export(store)};
 
 		//print the exported data
 		puts("[\n");
-		for (size_t i = 0; i < protobuf_export_buffers.size(); i++) {
+		for (size_t i{0}; i < protobuf_export_buffers.size(); i++) {
 			protobuf_export_buffers[i].printHex(std::cout);
 			puts(",\n");
 		}
@@ -247,13 +247,13 @@ int main(void) {
 
 		//export again
 		printf("Export to Protobuf-C\n");
-		auto protobuf_second_export_buffers = protobuf_export(store);
+		auto protobuf_second_export_buffers{protobuf_export(store)};
 
 		//compare
 		if (protobuf_export_buffers.size() != protobuf_second_export_buffers.size()) {
 			throw Molch::Exception(INCORRECT_DATA, "Both exports have different sizes.");
 		}
-		for (size_t i = 0; i < protobuf_export_buffers.size(); i++) {
+		for (size_t i{0}; i < protobuf_export_buffers.size(); i++) {
 			if (protobuf_export_buffers[i] != protobuf_second_export_buffers[i]) {
 				throw Molch::Exception(INCORRECT_DATA, "Buffers don't match.");
 			}

@@ -60,12 +60,12 @@ int main(void) {
 			"identity");
 
 		//get the prekey list
-		Buffer prekey_list(PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
+		Buffer prekey_list{PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE};
 		PrekeyStore bob_prekeys;
 		bob_prekeys.list(prekey_list);
 
 		//start a send conversation
-		Buffer send_message("Hello there!");
+		Buffer send_message{"Hello there!"};
 		Buffer packet;
 		Molch::Conversation alice_send_conversation(
 				send_message,
@@ -80,12 +80,12 @@ int main(void) {
 
 		//let bob receive the packet
 		Buffer received_message;
-		Molch::Conversation bob_receive_conversation(
-				packet,
-				received_message,
-				bob_public_identity,
-				bob_private_identity,
-				bob_prekeys);
+		Molch::Conversation bob_receive_conversation{
+			packet,
+			received_message,
+			bob_public_identity,
+			bob_private_identity,
+			bob_prekeys};
 
 		if (send_message != received_message) {
 			throw Molch::Exception(INVALID_VALUE, "Message was decrypted incorrectly.");
@@ -94,24 +94,24 @@ int main(void) {
 
 		//send and receive some more messages
 		//first one
-		Buffer alice_send_message2("How are you Bob?");
-		auto alice_send_packet2 = alice_send_conversation.send(
+		Buffer alice_send_message2{"How are you Bob?"};
+		auto alice_send_packet2{alice_send_conversation.send(
 				alice_send_message2,
 				nullptr,
 				nullptr,
-				nullptr);
+				nullptr)};
 
 		printf("Sent message: %.*s\n", static_cast<int>(alice_send_message2.size), reinterpret_cast<const char*>(alice_send_message2.content));
 		printf("Packet:\n");
 		alice_send_packet2.printHex(std::cout) << std::endl;
 
 		//bob receives the message
-		uint32_t bob_receive_message_number = UINT32_MAX;
-		uint32_t bob_previous_receive_message_number = UINT32_MAX;
-		auto bob_receive_message2 = bob_receive_conversation.receive(
+		uint32_t bob_receive_message_number{UINT32_MAX};
+		uint32_t bob_previous_receive_message_number{UINT32_MAX};
+		auto bob_receive_message2{bob_receive_conversation.receive(
 				alice_send_packet2,
 				bob_receive_message_number,
-				bob_previous_receive_message_number);
+				bob_previous_receive_message_number)};
 
 		// check the message numbers
 		if ((bob_receive_message_number != 1) || (bob_previous_receive_message_number != 0)) {
@@ -125,24 +125,24 @@ int main(void) {
 		printf("Alice' second message has been sent correctly!\n");
 
 		//Bob responds to alice
-		Buffer bob_response_message("I'm fine, thanks. How are you?");
-		auto bob_response_packet = bob_receive_conversation.send(
+		Buffer bob_response_message{"I'm fine, thanks. How are you?"};
+		auto bob_response_packet{bob_receive_conversation.send(
 				bob_response_message,
 				nullptr,
 				nullptr,
-				nullptr);
+				nullptr)};
 
 		printf("Sent message: %.*s\n", static_cast<int>(bob_response_message.size), reinterpret_cast<const char*>(bob_response_message.content));
 		printf("Packet:\n");
 		bob_response_packet.printHex(std::cout) << std::endl;
 
 		//Alice receives the response
-		uint32_t alice_receive_message_number = UINT32_MAX;
-		uint32_t alice_previous_receive_message_number = UINT32_MAX;
-		auto alice_received_response = alice_send_conversation.receive(
+		uint32_t alice_receive_message_number{UINT32_MAX};
+		uint32_t alice_previous_receive_message_number{UINT32_MAX};
+		auto alice_received_response{alice_send_conversation.receive(
 				bob_response_packet,
 				alice_receive_message_number,
-				alice_previous_receive_message_number);
+				alice_previous_receive_message_number)};
 
 		// check the message numbers
 		if ((alice_receive_message_number != 0) || (alice_previous_receive_message_number != 0)) {
@@ -165,13 +165,13 @@ int main(void) {
 
 		//destroy the old packet
 		packet.clear();
-		Molch::Conversation bob_send_conversation(
-				send_message,
-				packet,
-				bob_public_identity,
-				bob_private_identity,
-				alice_public_identity,
-				prekey_list);
+		Molch::Conversation bob_send_conversation{
+			send_message,
+			packet,
+			bob_public_identity,
+			bob_private_identity,
+			alice_public_identity,
+			prekey_list};
 
 		printf("Sent message: %.*s\n", static_cast<int>(send_message.size), reinterpret_cast<const char*>(send_message.content));
 		printf("Packet:\n");
@@ -179,12 +179,12 @@ int main(void) {
 
 		//let alice receive the packet
 		received_message.clear();
-		Molch::Conversation alice_receive_conversation(
-				packet,
-				received_message,
-				alice_public_identity,
-				alice_private_identity,
-				alice_prekeys);
+		Molch::Conversation alice_receive_conversation{
+			packet,
+			received_message,
+			alice_public_identity,
+			alice_private_identity,
+			alice_prekeys};
 
 		if (send_message != received_message) {
 			throw Molch::Exception(INVALID_VALUE, "Message incorrectly decrypted.");
@@ -193,22 +193,22 @@ int main(void) {
 
 		//send and receive some more messages
 		//first one
-		Buffer bob_send_message2("How are you Alice?");
-		auto bob_send_packet2 = bob_send_conversation.send(
+		Buffer bob_send_message2{"How are you Alice?"};
+		auto bob_send_packet2{bob_send_conversation.send(
 				bob_send_message2,
 				nullptr,
 				nullptr,
-				nullptr);
+				nullptr)};
 
 		printf("Sent message: %.*s\n", static_cast<int>(bob_send_message2.size), reinterpret_cast<const char*>(bob_send_message2.content));
 		printf("Packet:\n");
 		bob_send_packet2.printHex(std::cout) << std::endl;
 
 		//alice receives the message
-		auto alice_receive_message2 = alice_receive_conversation.receive(
+		auto alice_receive_message2{alice_receive_conversation.receive(
 				bob_send_packet2,
 				alice_receive_message_number,
-				alice_previous_receive_message_number);
+				alice_previous_receive_message_number)};
 
 		// check message numbers
 		if ((alice_receive_message_number != 1) || (alice_previous_receive_message_number != 0)) {
@@ -222,22 +222,22 @@ int main(void) {
 		printf("Bobs second message has been sent correctly!.\n");
 
 		//Alice responds to Bob
-		Buffer alice_response_message("I'm fine, thanks. How are you?");
-		auto alice_response_packet = alice_receive_conversation.send(
+		Buffer alice_response_message{"I'm fine, thanks. How are you?"};
+		auto alice_response_packet{alice_receive_conversation.send(
 				alice_response_message,
 				nullptr,
 				nullptr,
-				nullptr);
+				nullptr)};
 
 		printf("Sent message: %.*s\n", static_cast<int>(alice_response_message.size), reinterpret_cast<const char*>(alice_response_message.content));
 		printf("Packet:\n");
 		alice_response_packet.printHex(std::cout) << std::endl;
 
 		//Bob receives the response
-		auto bob_received_response = bob_send_conversation.receive(
+		auto bob_received_response{bob_send_conversation.receive(
 				alice_response_packet,
 				bob_receive_message_number,
-				bob_previous_receive_message_number);
+				bob_previous_receive_message_number)};
 
 		// check message numbers
 		if ((bob_receive_message_number != 0) || (bob_previous_receive_message_number != 0)) {

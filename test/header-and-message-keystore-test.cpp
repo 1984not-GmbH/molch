@@ -47,9 +47,9 @@ static void protobuf_export(
 	export_buffers = std::vector<Buffer>();
 
 	//create all the export buffers
-	for (size_t i = 0; i < bundles_size; i++) {
-		size_t export_size = key_bundle__get_packed_size(key_bundles[i]);
-		Buffer export_buffer(export_size, 0);
+	for (size_t i{0}; i < bundles_size; i++) {
+		auto export_size{key_bundle__get_packed_size(key_bundles[i])};
+		Buffer export_buffer{export_size, 0};
 		export_buffer.size = key_bundle__pack(key_bundles[i], export_buffer.content);
 		if (export_buffer.size != export_size) {
 			throw Molch::Exception(PROTOBUF_PACK_ERROR, "Packed buffer has incorrect length.");
@@ -63,10 +63,10 @@ static void protobuf_import(
 		HeaderAndMessageKeyStore& keystore,
 		const std::vector<Buffer>& exported_buffers) {
 
-	auto pool_protoc_allocator = pool.getProtobufCAllocator();
-	auto key_bundles_array = std::unique_ptr<ProtobufCKeyBundle*[]>(new ProtobufCKeyBundle*[exported_buffers.size()]);
+	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
+	auto key_bundles_array{std::unique_ptr<ProtobufCKeyBundle*[]>(new ProtobufCKeyBundle*[exported_buffers.size()])};
 	//parse all the exported protobuf buffers
-	size_t index = 0;
+	size_t index{0};
 	for (const auto& exported_buffer : exported_buffers) {
 		key_bundles_array[index] = key_bundle__unpack(
 						&pool_protoc_allocator,
@@ -80,7 +80,7 @@ static void protobuf_import(
 	}
 
 	//now do the actual import
-	keystore = HeaderAndMessageKeyStore(key_bundles_array.get(), exported_buffers.size());
+	keystore = HeaderAndMessageKeyStore{key_bundles_array.get(), exported_buffers.size()};
 }
 
 void protobuf_empty_store(void) {
@@ -88,8 +88,8 @@ void protobuf_empty_store(void) {
 
 	HeaderAndMessageKeyStore store;
 
-	ProtobufCKeyBundle **exported = nullptr;
-	size_t exported_length = 0;
+	ProtobufCKeyBundle **exported{nullptr};
+	size_t exported_length{0};
 
 	//export it
 	ProtobufPool pool;
@@ -100,7 +100,7 @@ void protobuf_empty_store(void) {
 	}
 
 	//import it
-	store = HeaderAndMessageKeyStore(exported, exported_length);
+	store = HeaderAndMessageKeyStore{exported, exported_length};
 
 	printf("Successful.\n");
 }
@@ -120,7 +120,7 @@ int main(void) {
 		assert(keystore.keys.size() == 0);
 
 		//add keys to the keystore
-		for (size_t i = 0; i < 6; i++) {
+		for (size_t i{0}; i < 6; i++) {
 			//create new keys
 			HeaderKey header_key;
 			header_key.fillRandom();

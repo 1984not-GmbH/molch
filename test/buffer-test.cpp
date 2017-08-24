@@ -37,10 +37,10 @@ int main(void) {
 			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
-		Buffer string1("1234");
-		Buffer string2("1234");
-		Buffer string3("2234");
-		Buffer string4("12345");
+		Buffer string1{"1234"};
+		Buffer string2{"1234"};
+		Buffer string3{"2234"};
+		Buffer string4{"12345"};
 		if ((string1 != string2)
 				|| (string1 == string3)
 				|| (string1 == string4)) {
@@ -54,10 +54,10 @@ int main(void) {
 		std::cout << "Successfully tested buffer comparison ..." << std::endl;
 
 		//test buffer with custom allocator
-		Buffer custom(10, 2, &sodium_malloc, &sodium_free);
+		Buffer custom{10, 2, &sodium_malloc, &sodium_free};
 
 		//create a new buffer
-		Buffer buffer1(14, 10);
+		Buffer buffer1{14, 10};
 		unsigned char buffer1_content[10];
 		randombytes_buf(buffer1_content, sizeof(buffer1_content));
 		std::copy(buffer1_content, buffer1_content + sizeof(buffer1_content), buffer1.content);
@@ -73,19 +73,19 @@ int main(void) {
 		printf("Second buffer (%zu Bytes):\n", buffer2.size);
 		buffer2.printHex(std::cout) << std::endl;
 
-		Buffer empty(static_cast<size_t>(0), 0);
-		Buffer empty2(static_cast<size_t>(0), 0);
+		Buffer empty{static_cast<size_t>(0), 0};
+		Buffer empty2{static_cast<size_t>(0), 0};
 		empty2.cloneFrom(empty);
 
 		//copy buffer
-		Buffer buffer3(5, 0);
+		Buffer buffer3{5, 0};
 		buffer3.copyFrom(0, buffer2, 0, buffer2.size);
 		if (buffer2 != buffer3) {
 			throw Molch::Exception(BUFFER_ERROR, "Failed to copy buffer.");
 		}
 		printf("Buffer successfully copied.\n");
 
-		bool detected = false;
+		auto detected{false};
 		try {
 			buffer3.copyFrom(buffer2.size, buffer2, 0, buffer2.size);
 		} catch (...) {
@@ -126,7 +126,7 @@ int main(void) {
 		printf("Successfully detected out of bounds read.\n");
 
 		//copy from raw array
-		unsigned char heeelo[14] = "Hello World!\n";
+		unsigned char heeelo[14]{"Hello World!\n"};
 		buffer1.copyFromRaw(
 				0, //offset
 				heeelo, //source
@@ -153,7 +153,7 @@ int main(void) {
 		printf("Out of bounds read detected.\n");
 
 		//create a buffer from a string
-		Buffer string("This is a string!");
+		Buffer string{"This is a string!"};
 		if (string.size != sizeof("This is a string!")) {
 			throw Molch::Exception(BUFFER_ERROR, "Buffer created from string has incorrect length.");
 		}
@@ -167,8 +167,7 @@ int main(void) {
 		buffer1.clear();
 
 		//check if the buffer was properly cleared
-		size_t i;
-		for (i = 0; i < buffer1.capacity(); i++) {
+		for (size_t i{0}; i < buffer1.capacity(); i++) {
 			if (buffer1.content[i] != '\0') {
 				throw Molch::Exception(BUFFER_ERROR, "Buffer hasn't been erased properly.");
 			}
@@ -180,7 +179,7 @@ int main(void) {
 		printf("Buffer successfully erased.\n");
 
 		//fill a buffer with random numbers
-		Buffer random(10, 0);
+		Buffer random{10, 0};
 		random.fillRandom(5);
 
 		if (random.size != 5) {
@@ -211,11 +210,11 @@ int main(void) {
 		}
 
 		//test xor
-		Buffer text("Hello World!");
-		Buffer to_xor(text.size, text.size);
+		Buffer text{"Hello World!"};
+		Buffer to_xor{text.size, text.size};
 		to_xor.cloneFrom(text);
 
-		Buffer random2(text.size, text.size);
+		Buffer random2{text.size, text.size};
 		random2.fillRandom(random2.capacity());
 
 		//xor random data to xor-buffer
@@ -236,8 +235,8 @@ int main(void) {
 		printf("Successfully tested xor.\n");
 
 		//test creating a buffer with an existing array
-		unsigned char array[] = "Hello World!\n";
-		Buffer buffer_with_array(array, sizeof(array));
+		unsigned char array[]{"Hello World!\n"};
+		Buffer buffer_with_array{array, sizeof(array)};
 		if ((buffer_with_array.content != array)
 				|| (buffer_with_array.size != sizeof(array))
 				|| (buffer_with_array.capacity() != sizeof(array))) {
@@ -245,28 +244,28 @@ int main(void) {
 		}
 
 		//compare buffer to an array
-		Buffer true_buffer("true");
-		int status = true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("true"), sizeof("true"));
-		if (status != 0) {
+		Buffer true_buffer{"true"};
+		auto comparison{true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("true"), sizeof("true"))};
+		if (comparison != 0) {
 			throw Molch::Exception(BUFFER_ERROR, "Failed to compare buffer to array.");
 		}
-		status = true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("fals"), sizeof("fals"));
-		if (status == 0) {
+		comparison = true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("fals"), sizeof("fals"));
+		if (comparison == 0) {
 			throw Molch::Exception(BUFFER_ERROR, "Failed to detect difference in buffer and array.");
 		}
-		status = true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("false"), sizeof("false"));
-		if (status == 0) {
+		comparison = true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("false"), sizeof("false"));
+		if (comparison == 0) {
 			throw Molch::Exception(BUFFER_ERROR, "ERROR: Failed to detect difference in buffer and array.");
 		}
 
 		//test custom allocator
-		Buffer custom_allocated(10, 10, sodium_malloc, sodium_free);
-		Buffer custom_allocated_empty_buffer(0, 0, malloc, free);
+		Buffer custom_allocated{10, 10, sodium_malloc, sodium_free};
+		Buffer custom_allocated_empty_buffer{0, 0, malloc, free};
 		if (custom_allocated_empty_buffer.content != nullptr) {
 			throw Molch::Exception(BUFFER_ERROR, "Customly allocated empty buffer has content.");
 		}
 
-		Buffer four_two(4, 2);
+		Buffer four_two{4, 2};
 		if ((!four_two.fits(4)) || (!four_two.fits(2)) || four_two.fits(5)) {
 			throw Molch::Exception(BUFFER_ERROR, "Buffer doesn't detect correctly what fits in it.");
 		}

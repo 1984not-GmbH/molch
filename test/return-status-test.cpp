@@ -30,7 +30,7 @@
 using namespace Molch;
 
 static return_status second_level(void) noexcept {
-	return_status status = return_status_init();
+	auto status{return_status_init()};
 
 	THROW(GENERIC_ERROR, "Error on the second level!");
 
@@ -39,7 +39,7 @@ cleanup:
 }
 
 static return_status first_level(void) noexcept {
-	return_status status = return_status_init();
+	auto status{return_status_init()};
 
 	status = second_level();
 	THROW_on_error(GENERIC_ERROR, "Error on the first level!");
@@ -49,10 +49,10 @@ cleanup:
 }
 
 int main(void) noexcept {
-	return_status status = return_status_init();
+	auto status{return_status_init()};
 
-	char *error_stack = nullptr;
-	unsigned char *printed_status = nullptr;
+	char *error_stack{nullptr};
+	unsigned char *printed_status{nullptr};
 
 	//check if it was correctly initialized
 	if ((status.status != SUCCESS) || (status.error != nullptr)) {
@@ -76,7 +76,7 @@ int main(void) noexcept {
 	printf("Successfully created error stack.\n");
 
 	{
-		size_t stack_print_length = 0;
+		size_t stack_print_length{0};
 		error_stack = return_status_print(&status, &stack_print_length);
 		if (error_stack == nullptr) {
 			fprintf(stderr, "ERROR: Failed to print error stack.\n");
@@ -85,7 +85,7 @@ int main(void) noexcept {
 		}
 		printf("%s\n", error_stack);
 
-		Buffer stack_trace("ERROR\nerror stack trace:\n0: GENERIC_ERROR, Error on the first level!\n1: GENERIC_ERROR, Error on the second level!\n");
+		Buffer stack_trace{"ERROR\nerror stack trace:\n0: GENERIC_ERROR, Error on the first level!\n1: GENERIC_ERROR, Error on the second level!\n"};
 		if (stack_trace.compareToRaw(reinterpret_cast<unsigned char*>(error_stack), stack_print_length) != 0) {
 			THROW(INCORRECT_DATA, "Stack trace looks differently than expected.");
 		}
@@ -96,9 +96,9 @@ int main(void) noexcept {
 
 	//more tests for return_status_print()
 	{
-		return_status successful_status = return_status_init();
-		Buffer success_buffer("SUCCESS");
-		size_t printed_status_length = 0;
+		auto successful_status{return_status_init()};
+		Buffer success_buffer{"SUCCESS"};
+		size_t printed_status_length{0};
 		printed_status = reinterpret_cast<unsigned char*>(return_status_print(&successful_status, &printed_status_length));
 		if (success_buffer.compareToRaw(printed_status, printed_status_length) != 0) {
 			THROW(INCORRECT_DATA, "molch_print_status produces incorrect output.");

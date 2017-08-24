@@ -33,7 +33,7 @@
 using namespace Molch;
 
 static void keypair(PrivateKey& private_key, PublicKey& public_key) {
-	int status = crypto_box_keypair(public_key.data(), private_key.data());
+	auto status{crypto_box_keypair(public_key.data(), private_key.data())};
 	if (status != 0) {
 		throw Molch::Exception(KEYGENERATION_FAILED, "Failed to generate keypair.");
 	}
@@ -43,7 +43,7 @@ static void keypair(PrivateKey& private_key, PublicKey& public_key) {
 
 int main(void) {
 	try {
-		int status = sodium_init();
+		auto status{sodium_init()};
 		if (status != 0) {
 			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
@@ -75,35 +75,35 @@ int main(void) {
 
 		//initialise the ratchets
 		//Alice
-		auto alice_send_ratchet = std::make_unique<Ratchet>(
+		auto alice_send_ratchet{std::make_unique<Ratchet>(
 			alice_private_identity,
 			alice_public_identity,
 			bob_public_identity,
 			alice_private_ephemeral,
 			alice_public_ephemeral,
-			bob_public_ephemeral);
-		auto alice_receive_ratchet = std::make_unique<Ratchet>(
+			bob_public_ephemeral)};
+		auto alice_receive_ratchet{std::make_unique<Ratchet>(
 			alice_private_identity,
 			alice_public_identity,
 			bob_public_identity,
 			alice_private_ephemeral,
 			alice_public_ephemeral,
-			bob_public_ephemeral);
+			bob_public_ephemeral)};
 		//Bob
-		auto bob_send_ratchet = std::make_unique<Ratchet>(
+		auto bob_send_ratchet{std::make_unique<Ratchet>(
 			bob_private_identity,
 			bob_public_identity,
 			alice_public_identity,
 			bob_private_ephemeral,
 			bob_public_ephemeral,
-			alice_public_ephemeral);
-		auto bob_receive_ratchet = std::make_unique<Ratchet>(
+			alice_public_ephemeral)};
+		auto bob_receive_ratchet{std::make_unique<Ratchet>(
 			bob_private_identity,
 			bob_public_identity,
 			alice_public_identity,
 			bob_private_ephemeral,
 			bob_public_ephemeral,
-			alice_public_ephemeral);
+			alice_public_ephemeral)};
 
 		// FIRST SCENARIO: ALICE SENDS A MESSAGE TO BOB
 		HeaderKey send_header_key;
@@ -123,15 +123,15 @@ int main(void) {
 		HeaderKey next_receive_header_key;
 		bob_receive_ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 
-		Ratchet::HeaderDecryptability decryptability = [&]() {
+		auto decryptability{[&]() {
 			if (send_header_key == current_receive_header_key) {
 				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
 			} else if (send_header_key == next_receive_header_key) {
 				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
-			} else {
-				return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 			}
-		}();
+
+			return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
+		}()};
 		bob_receive_ratchet->setHeaderDecryptability(decryptability);
 
 		MessageKey receive_message_key;
@@ -161,11 +161,15 @@ int main(void) {
 		//alice receives
 		alice_receive_ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 
-		if (send_header_key == current_receive_header_key) {
-			decryptability = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-		} else if (send_header_key == next_receive_header_key) {
-			decryptability = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
-		}
+		decryptability = [&]() {
+			if (send_header_key == current_receive_header_key) {
+				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
+			} else if (send_header_key == next_receive_header_key) {
+				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
+			}
+
+			return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
+		}();
 		alice_receive_ratchet->setHeaderDecryptability(decryptability);
 
 		alice_receive_ratchet->receive(
@@ -193,13 +197,15 @@ int main(void) {
 		//alice receives
 		alice_send_ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 
-		if (send_header_key == current_receive_header_key) {
-			decryptability = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-		} else if (send_header_key == next_receive_header_key) {
-			decryptability = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
-		} else {
-			decryptability = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
-		}
+		decryptability = [&]() {
+			if (send_header_key == current_receive_header_key) {
+				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
+			} else if (send_header_key == next_receive_header_key) {
+				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
+			}
+
+			return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
+		}();
 		alice_send_ratchet->setHeaderDecryptability(decryptability);
 
 		alice_send_ratchet->receive(
@@ -227,13 +233,15 @@ int main(void) {
 		//bob receives
 		bob_send_ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 
-		if (send_header_key == current_receive_header_key) {
-			decryptability = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-		} else if (send_header_key == next_receive_header_key) {
-			decryptability = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
-		} else {
-			decryptability = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
-		}
+		decryptability = [&]() {
+			if (send_header_key == current_receive_header_key) {
+				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
+			} else if (send_header_key == next_receive_header_key) {
+				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
+			}
+
+			return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
+		}();
 		bob_send_ratchet->setHeaderDecryptability(decryptability);
 
 		bob_send_ratchet->receive(

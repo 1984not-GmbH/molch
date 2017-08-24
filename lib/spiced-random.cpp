@@ -45,16 +45,16 @@ namespace Molch {
 		}
 
 		//buffer that contains the random data from the OS
-		Buffer os_random(output_length, output_length, &sodium_malloc, &sodium_free);
+		Buffer os_random{output_length, output_length, &sodium_malloc, &sodium_free};
 		os_random.fillRandom(output_length);
 
 		//buffer that contains a random salt
-		Buffer salt(crypto_pwhash_SALTBYTES, 0);
+		Buffer salt{crypto_pwhash_SALTBYTES, 0};
 		salt.fillRandom(crypto_pwhash_SALTBYTES);
 
 		//derive random data from the random spice
-		Buffer spice(output_length, output_length, &sodium_malloc, &sodium_free);
-		int status_int = crypto_pwhash(
+		Buffer spice{output_length, output_length, &sodium_malloc, &sodium_free};
+		auto status_int{crypto_pwhash(
 				spice.content,
 				spice.size,
 				reinterpret_cast<const char*>(low_entropy_spice.content),
@@ -62,7 +62,7 @@ namespace Molch {
 				salt.content,
 				crypto_pwhash_OPSLIMIT_INTERACTIVE,
 				crypto_pwhash_MEMLIMIT_INTERACTIVE,
-				crypto_pwhash_ALG_DEFAULT);
+				crypto_pwhash_ALG_DEFAULT)};
 		if (status_int != 0) {
 			throw Exception(GENERIC_ERROR, "Failed to derive random data from spice.");
 		}

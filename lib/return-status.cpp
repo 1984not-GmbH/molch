@@ -37,11 +37,10 @@
 using namespace Molch;
 
 extern return_status return_status_init() noexcept {
-	return_status status = {
+	return {
 		SUCCESS,
 		nullptr
 	};
-	return status;
 }
 
 status_type return_status_add_error_message(
@@ -59,7 +58,7 @@ status_type return_status_add_error_message(
 
 	std::unique_ptr<error_message> error;
 	std::unique_ptr<char> copied_message;
-	size_t message_length = strlen(message) + sizeof("");
+	size_t message_length{strlen(message) + sizeof("")};
 
 	// allocate the memory
 	try {
@@ -225,9 +224,9 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 			throw Exception(INVALID_INPUT, "Invalid input return_status_print.");
 		}
 
-		static const unsigned char success_string[] = "SUCCESS";
-		static const unsigned char error_string[] = "ERROR\nerror stack trace:\n";
-		static const unsigned char null_string[] = "(nullptr)";
+		static const unsigned char success_string[]{"SUCCESS"};
+		static const unsigned char error_string[]{"ERROR\nerror stack trace:\n"};
+		static const unsigned char null_string[]{"(nullptr)"};
 
 		// now fill the output
 		if (status_to_print->status == SUCCESS) {
@@ -236,7 +235,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 			stream << error_string;
 
 			// iterate over error stack
-			size_t i = 0;
+			size_t i{0};
 			for (error_message *current_error = status_to_print->error;
 					current_error != nullptr;
 					current_error = current_error->next, i++) {
@@ -257,8 +256,8 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 
 		//Copy the string to the output
 		//TODO Stream directly to malloced vector of unsigned char?
-		auto output_string = stream.str();
-		auto output_ptr = std::unique_ptr<char,MallocDeleter<char>>(throwing_malloc<char>(output_string.size() + sizeof("")));
+		auto output_string{stream.str()};
+		auto output_ptr{std::unique_ptr<char,MallocDeleter<char>>(throwing_malloc<char>(output_string.size() + sizeof("")))};
 		std::copy(output_string.data(), output_string.data() + output_string.size() + sizeof(""), output_ptr.get());
 
 		*length = output_string.size() + sizeof("");
@@ -269,19 +268,4 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 		}
 		return nullptr;
 	}
-
-	/*if (output.isNone()) {
-		if (length != nullptr) {
-			*length = 0;
-		}
-		return nullptr;
-	}*/
-
-	/*char *output_string = nullptr;
-	if (length != nullptr) {
-		*length = output.size;
-	}*/
-	//output_string = reinterpret_cast<char*>(output.release());
-
-	//return output_string;
 }

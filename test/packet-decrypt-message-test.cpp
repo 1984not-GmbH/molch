@@ -41,13 +41,13 @@ int main(void) {
 		}
 
 		//generate keys and message
-		Buffer message("Hello world!\n");
-		Buffer header(4, 4);
+		Buffer message{"Hello world!\n"};
+		Buffer header{4, 4};
 		header.content[0] = 0x01;
 		header.content[1] = 0x02;
 		header.content[2] = 0x03;
 		header.content[3] = 0x04;
-		molch_message_type packet_type = NORMAL_MESSAGE;
+		molch_message_type packet_type{NORMAL_MESSAGE};
 		printf("Packet type: %02x\n", packet_type);
 		putchar('\n');
 
@@ -68,7 +68,7 @@ int main(void) {
 			nullptr);
 
 		//now decrypt the message
-		Buffer decrypted_message = packet_decrypt_message(packet, message_key);
+		Buffer decrypted_message{packet_decrypt_message(packet, message_key)};
 
 		//check the message size
 		if (!decrypted_message.contains(message.size)) {
@@ -89,7 +89,7 @@ int main(void) {
 		decrypted_message.clear();
 
 		//try to decrypt
-		bool decryption_failed = false;
+		auto decryption_failed{false};
 		try {
 			decrypted_message = packet_decrypt_message(packet, message_key);
 		} catch (const Molch::Exception& exception) {

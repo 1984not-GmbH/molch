@@ -35,10 +35,10 @@ using namespace Molch;
 
 Buffer protobuf_export(Ratchet& ratchet) {
 	ProtobufPool pool;
-	auto conversation = ratchet.exportProtobuf(pool);
+	auto conversation{ratchet.exportProtobuf(pool)};
 
-	size_t export_size = conversation__get_packed_size(conversation);
-	Buffer export_buffer(export_size, 0);
+	auto export_size{conversation__get_packed_size(conversation)};
+	Buffer export_buffer{export_size, 0};
 	export_buffer.size = conversation__pack(conversation, export_buffer.content);
 	if (export_size != export_buffer.size) {
 		throw Molch::Exception(EXPORT_ERROR, "Failed to export ratchet.");
@@ -48,12 +48,12 @@ Buffer protobuf_export(Ratchet& ratchet) {
 }
 
 std::unique_ptr<Ratchet> protobuf_import(ProtobufPool& pool, const Buffer& export_buffer) {
-	auto pool_protoc_allocator = pool.getProtobufCAllocator();
+	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 	//unpack the buffer
-	auto conversation = conversation__unpack(
+	auto conversation{conversation__unpack(
 			&pool_protoc_allocator,
 			export_buffer.size,
-			export_buffer.content);
+			export_buffer.content)};
 	if (conversation == nullptr) {
 		throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
 	}
@@ -106,13 +106,13 @@ int main(void) {
 
 		//start new ratchet for alice
 		printf("Creating new ratchet for Alice ...\n");
-		auto alice_state = std::make_unique<Ratchet>(
+		auto alice_state{std::make_unique<Ratchet>(
 				alice_private_identity,
 				alice_public_identity,
 				bob_public_identity,
 				alice_private_ephemeral,
 				alice_public_ephemeral,
-				bob_public_ephemeral);
+				bob_public_ephemeral)};
 		alice_private_ephemeral.clear();
 		alice_private_identity.clear();
 		putchar('\n');
@@ -125,13 +125,13 @@ int main(void) {
 
 		//start new ratchet for bob
 		printf("Creating new ratchet for Bob ...\n");
-		auto bob_state = std::make_unique<Ratchet>(
+		auto bob_state{std::make_unique<Ratchet>(
 				bob_private_identity,
 				bob_public_identity,
 				alice_public_identity,
 				bob_private_ephemeral,
 				bob_public_ephemeral,
-				alice_public_ephemeral);
+				alice_public_ephemeral)};
 		putchar('\n');
 		//print Bob's initial root and chain keys
 		printf("Bob's initial root key (%zu Bytes):\n", bob_state->storage->root_key.size());
@@ -224,17 +224,18 @@ int main(void) {
 		bob_next_receive_header_key.printHex(std::cout) << std::endl;
 
 		//check header decryptability
-		Ratchet::HeaderDecryptability decryptable = Ratchet::HeaderDecryptability::NOT_TRIED;
-		if (bob_current_receive_header_key == alice_send_header_key1) {
-			decryptable = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-			printf("Header decryptable with current header key.\n");
-		} else if (bob_next_receive_header_key == alice_send_header_key1) {
-			decryptable = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
-			printf("Header decryptable with next header key.\n");
-		} else {
-			decryptable = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
-			fprintf(stderr, "Failed to decrypt header.");
-		}
+		auto decryptable{[&]() {
+			if (bob_current_receive_header_key == alice_send_header_key1) {
+				printf("Header decryptable with current header key.\n");
+				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
+			} else if (bob_next_receive_header_key == alice_send_header_key1) {
+				printf("Header decryptable with next header key.\n");
+				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
+			} else {
+				fprintf(stderr, "Failed to decrypt header.");
+				return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
+			}
+		}()};
 
 		//now the receive end, Bob recreates the message keys
 
@@ -304,16 +305,18 @@ int main(void) {
 		putchar('\n');
 
 		//check header decryptability
-		if (bob_current_receive_header_key == alice_send_header_key3) {
-			decryptable = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-			printf("Header decryptable with current header key.\n");
-		} else if (bob_next_receive_header_key == alice_send_header_key3) {
-			decryptable = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
-			printf("Header decryptable with next header key.\n");
-		} else {
-			decryptable = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
-			fprintf(stderr, "Failed to decrypt header.");
-		}
+		decryptable = [&]() {
+			if (bob_current_receive_header_key == alice_send_header_key3) {
+				printf("Header decryptable with current header key.\n");
+				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
+			} else if (bob_next_receive_header_key == alice_send_header_key3) {
+				printf("Header decryptable with next header key.\n");
+				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
+			} else {
+				fprintf(stderr, "Failed to decrypt header.");
+				return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
+			}
+		}();
 
 		//set the header decryptability
 		bob_state->setHeaderDecryptability(decryptable);
@@ -462,16 +465,18 @@ int main(void) {
 		alice_next_receive_header_key.printHex(std::cout) << std::endl;
 
 		//check header decryptability
-		if (alice_current_receive_header_key == bob_send_header_key3) {
-			decryptable = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-			printf("Header decryptable with current header key.\n");
-		} else if (alice_next_receive_header_key == bob_send_header_key3) {
-			decryptable = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
-			printf("Header decryptable with next header key.\n");
-		} else {
-			decryptable = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
-			fprintf(stderr, "Failed to decrypt header.");
-		}
+		decryptable = [&]() {
+			if (alice_current_receive_header_key == bob_send_header_key3) {
+				printf("Header decryptable with current header key.\n");
+				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
+			} else if (alice_next_receive_header_key == bob_send_header_key3) {
+				printf("Header decryptable with next header key.\n");
+				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
+			} else {
+				fprintf(stderr, "Failed to decrypt header.");
+				return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
+			}
+		}();
 		bob_send_header_key3.clear();
 		alice_current_receive_header_key.clear();
 		alice_next_receive_header_key.clear();
@@ -545,7 +550,7 @@ int main(void) {
 		alice_state = protobuf_import(pool, protobuf_export_buffer);
 
 		//export again
-		auto protobuf_second_export_buffer = protobuf_export(*alice_state);
+		auto protobuf_second_export_buffer{protobuf_export(*alice_state)};
 
 		//compare both exports
 		if (protobuf_export_buffer != protobuf_second_export_buffer) {

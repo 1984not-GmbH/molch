@@ -27,7 +27,7 @@
 namespace Molch {
 	template <typename T>
 	T *throwing_malloc(size_t elements) {
-		T* pointer = reinterpret_cast<T*>(calloc(elements, sizeof(T)));
+		auto pointer = reinterpret_cast<T*>(calloc(elements, sizeof(T)));
 		if (pointer == nullptr) {
 			throw std::bad_alloc();
 		}

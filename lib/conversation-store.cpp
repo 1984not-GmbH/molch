@@ -31,12 +31,12 @@ namespace Molch {
 	}
 
 	void ConversationStore::add(Conversation&& conversation) {
-		const Key<CONVERSATION_ID_SIZE,KeyType::Key>& id = conversation.id;
+		const auto& id{conversation.id};
 		//search if a conversation with this id already exists
-		auto existing_conversation = std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
+		auto existing_conversation{std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
 				[&id](const Conversation& conversation) {
 					return conversation.id == id;
-				});
+				})};
 		//if none exists, just add the conversation
 		if (existing_conversation == std::cend(this->conversations)) {
 			this->conversations.push_back(std::move(conversation));
@@ -44,7 +44,7 @@ namespace Molch {
 		}
 
 		//otherwise replace the exiting one
-		size_t existing_index = static_cast<size_t>(existing_conversation - std::begin(this->conversations));
+		auto existing_index{static_cast<size_t>(existing_conversation - std::begin(this->conversations))};
 		this->conversations[existing_index] = std::move(conversation);
 	}
 
@@ -53,14 +53,14 @@ namespace Molch {
 			return;
 		}
 
-		auto found_node = std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
+		auto found_node{std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
 				[&node](const Conversation& conversation) {
 					if (&conversation == node) {
 						return true;
 					}
 
 					return false;
-				});
+				})};
 		if (found_node != std::cend(this->conversations)) {
 			this->conversations.erase(found_node);
 		}
@@ -72,14 +72,14 @@ namespace Molch {
 	 * The conversation is identified by it's id.
 	 */
 	void ConversationStore::remove(const Key<CONVERSATION_ID_SIZE,KeyType::Key>& id) {
-		auto found_node = std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
+		auto found_node{std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
 				[&id](const Conversation& conversation) {
 					if (conversation.id == id) {
 						return true;
 					}
 
 					return false;
-				});
+				})};
 
 		if (found_node != std::cend(this->conversations)) {
 			this->conversations.erase(found_node);
@@ -92,14 +92,14 @@ namespace Molch {
 	 * Returns nullptr if no conversation was found.
 	 */
 	Conversation* ConversationStore::find(const Key<CONVERSATION_ID_SIZE,KeyType::Key>& id) {
-		auto node = std::find_if(std::begin(this->conversations), std::end(this->conversations),
+		auto node{std::find_if(std::begin(this->conversations), std::end(this->conversations),
 				[&id](const Conversation& conversation) {
 					if (conversation.id == id) {
 						return true;
 					}
 
 					return false;
-				});
+				})};
 
 		if (node == std::end(this->conversations)) {
 			return nullptr;
@@ -125,10 +125,10 @@ namespace Molch {
 			return Buffer();
 		}
 
-		Buffer list(this->conversations.size() * CONVERSATION_ID_SIZE, 0);
+		Buffer list{this->conversations.size() * CONVERSATION_ID_SIZE, 0};
 
 		for (const auto& conversation : this->conversations) {
-			size_t index = static_cast<size_t>(&conversation - &(*this->conversations.cbegin()));
+			auto index{static_cast<size_t>(&conversation - &(*this->conversations.cbegin()))};
 			list.copyFromRaw(
 				CONVERSATION_ID_SIZE * index,
 				conversation.id.data(),
@@ -149,7 +149,7 @@ namespace Molch {
 
 		//export the conversations
 		conversations = pool.allocate<ProtobufCConversation*>(this->conversations.size());
-		size_t index = 0;
+		size_t index{0};
 		for (const auto& conversation : this->conversations) {
 			conversations[index] = conversation.exportProtobuf(pool);
 			index++;
@@ -165,7 +165,7 @@ namespace Molch {
 		}
 
 		//import all the conversations
-		for (size_t i = 0; i < length; i++) {
+		for (size_t i{0}; i < length; i++) {
 			if (conversations[i] == nullptr) {
 				throw Exception(PROTOBUF_MISSING_ERROR, "Array of conversation has an empty element.");
 			}

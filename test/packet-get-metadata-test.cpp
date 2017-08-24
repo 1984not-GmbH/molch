@@ -40,8 +40,8 @@ int main(void) {
 			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
 		}
 
-		molch_message_type packet_type = NORMAL_MESSAGE;
-		Buffer header(4, 4);
+		molch_message_type packet_type{NORMAL_MESSAGE};
+		Buffer header{4, 4};
 		header.content[0] = 0x01;
 		header.content[1] = 0x02;
 		header.content[2] = 0x03;
@@ -52,7 +52,7 @@ int main(void) {
 		printf("NORMAL MESSAGE:\n");
 		MessageKey message_key;
 		HeaderKey header_key;
-		Buffer message("Hello world!\n");
+		Buffer message{"Hello world!\n"};
 		Buffer packet;
 		create_and_print_message(
 			packet,
