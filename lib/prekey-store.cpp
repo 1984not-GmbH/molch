@@ -71,7 +71,7 @@ namespace Molch {
 		//import private key
 		if ((keypair.private_key == nullptr)
 				|| (keypair.private_key->key.len != PRIVATE_KEY_SIZE)) {
-			throw Exception(PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a private key.");
+			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a private key."};
 		}
 		this->private_key.set(keypair.private_key->key.data, keypair.private_key->key.len);
 
@@ -79,18 +79,18 @@ namespace Molch {
 		if (keypair.public_key == nullptr) {
 			//public key is missing -> derive it from the private key
 			if (crypto_scalarmult_base(this->public_key.data(), this->private_key.data()) != 0) {
-				throw Exception(KEYDERIVATION_FAILED, "Failed to derive public prekey from private one.");
+				throw Exception{status_type::KEYDERIVATION_FAILED, "Failed to derive public prekey from private one."};
 			}
 			this->public_key.empty = false;
 		} else if (keypair.public_key->key.len != PUBLIC_KEY_SIZE) {
-			throw Exception(PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a public key.");
+			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a public key."};
 		} else {
 			this->public_key.set(keypair.public_key->key.data, keypair.public_key->key.len);
 		}
 
 		//import expiration_date
 		if (!keypair.has_expiration_time) {
-			throw Exception(PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing an expiration time.");
+			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing an expiration time."};
 		}
 		this->expiration_date = static_cast<int64_t>(keypair.expiration_time);
 	}
@@ -125,7 +125,7 @@ namespace Molch {
 			this->public_key.data(),
 			this->private_key.data())};
 		if (status != 0) {
-			throw Exception(KEYGENERATION_FAILED, "Failed to generate prekey pair.");
+			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate prekey pair."};
 		}
 		this->public_key.empty = false;
 		this->private_key.empty = false;
@@ -169,21 +169,21 @@ namespace Molch {
 				|| (keypairs_length != PREKEY_AMOUNT)
 				|| ((deprecated_keypairs_length == 0) && (deprecated_keypairs != nullptr))
 				|| ((deprecated_keypairs_length > 0) && (deprecated_keypairs == nullptr))) {
-			throw Exception(INVALID_INPUT, "Invalid input to PrekeyStore_import");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to PrekeyStore_import"};
 		}
 
 		this->init();
 
 		for (size_t index{0}; index < keypairs_length; index++) {
 			if (keypairs[index] == nullptr) {
-				throw Exception(PROTOBUF_MISSING_ERROR, "Prekey missing.");
+				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey missing."};
 			}
 			new (&(*this->prekeys)[index]) Prekey(*keypairs[index]);
 		}
 
 		for (size_t index{0}; index < deprecated_keypairs_length; index++) {
 			if (deprecated_keypairs[index] == nullptr) {
-				throw Exception(PROTOBUF_MISSING_ERROR, "Deprecated prekey missing.");
+				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Deprecated prekey missing."};
 			}
 			this->deprecated_prekeys.emplace_back(*deprecated_keypairs[index]);
 		}
@@ -230,7 +230,7 @@ namespace Molch {
 	void PrekeyStore::getPrekey(const PublicKey& public_key, PrivateKey& private_key) {
 		//check buffers sizes
 		if (public_key.empty) {
-			throw Exception(INVALID_INPUT, "Invalid input to PrekeyStore::getPrekey.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to PrekeyStore::getPrekey."};
 		}
 
 		//lambda for comparing PrekeyNodes to public_key
@@ -253,7 +253,7 @@ namespace Molch {
 		auto found_deprecated_prekey{std::find_if(std::cbegin(this->deprecated_prekeys), std::cend(this->deprecated_prekeys), key_comparer)};
 		if (found_deprecated_prekey == this->deprecated_prekeys.end()) {
 			private_key.empty = true;
-			throw Exception(NOT_FOUND, "No matching prekey found.");
+			throw Exception{status_type::NOT_FOUND, "No matching prekey found."};
 		}
 
 		private_key = found_deprecated_prekey->private_key;
@@ -262,7 +262,7 @@ namespace Molch {
 	void PrekeyStore::list(Buffer& list) const { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 		//check input
 		if (!list.fits(PREKEY_AMOUNT * PUBLIC_KEY_SIZE)) {
-			throw Exception(INVALID_INPUT, "Invalid input to PrekeyStore_list.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to PrekeyStore_list."};
 		}
 
 		size_t index{0};

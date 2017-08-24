@@ -37,7 +37,7 @@ using namespace Molch;
 int main(void) {
 	try {
 		if(sodium_init() == -1) {
-			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
 		}
 
 		//generate message
@@ -72,13 +72,13 @@ int main(void) {
 
 
 		if (!decrypted_header.contains(header.size)) {
-			throw Molch::Exception(INVALID_VALUE, "Decrypted header isn't of the same length.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length."};
 		}
 		printf("Decrypted header has the same length.\n\n");
 
 		//compare headers
 		if (header != decrypted_header) {
-			throw Molch::Exception(INVALID_VALUE, "Decrypted header doesn't match.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header doesn't match."};
 		}
 		printf("Decrypted header matches.\n\n");
 
@@ -92,7 +92,7 @@ int main(void) {
 			decryption_failed = true;
 		}
 		if (!decryption_failed) {
-			throw Molch::Exception(GENERIC_ERROR, "Manipulated packet was accepted.");
+			throw Molch::Exception{status_type::GENERIC_ERROR, "Manipulated packet was accepted."};
 		}
 
 		printf("Header manipulation detected.\n\n");
@@ -108,7 +108,7 @@ int main(void) {
 			decryption_failed = true;
 		}
 		if (!decryption_failed) {
-			throw Molch::Exception(GENERIC_ERROR, "Manipulated packet was accepted.");
+			throw Molch::Exception{status_type::GENERIC_ERROR, "Manipulated packet was accepted."};
 		}
 
 		printf("Header manipulation detected!\n\n");
@@ -145,13 +145,13 @@ int main(void) {
 		decrypted_header = packet_decrypt_header(packet, header_key);
 
 		if (!decrypted_header.contains(header.size)) {
-			throw Molch::Exception(INVALID_VALUE, "Decrypted header isn't of the same length.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length."};
 		}
 		printf("Decrypted header has the same length.\n\n");
 
 		//compare headers
 		if (header != decrypted_header) {
-			throw Molch::Exception(INVALID_VALUE, "Decrypted header doesn't match.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header doesn't match."};
 		}
 		printf("Decrypted header matches.\n");
 	} catch (const Molch::Exception& exception) {

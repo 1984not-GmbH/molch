@@ -34,7 +34,7 @@ using namespace Molch;
 int main(void) noexcept {
 	try {
 		if (sodium_init() == -1) {
-			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
 		}
 
 		//create Alice's keypair
@@ -85,7 +85,7 @@ int main(void) noexcept {
 
 		//compare both shared secrets
 		if (alice_shared_secret != bob_shared_secret) {
-			throw Molch::Exception(INCORRECT_DATA, "Diffie Hellman didn't produce the same shared secret.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Diffie Hellman didn't produce the same shared secret."};
 		}
 
 		printf("Both shared secrets match!\n");

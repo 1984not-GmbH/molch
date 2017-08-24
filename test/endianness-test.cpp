@@ -46,13 +46,13 @@ int main(void) {
 		buffer32.printHex(std::cout);
 
 		if (buffer32.compareToRaw(reinterpret_cast<const unsigned char*>("\x04\x03\x02\x01"), sizeof(uint32_t)) != 0) {
-			throw Molch::Exception(INCORRECT_DATA, "Big endian of uint32_t is incorrect.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of uint32_t is incorrect."};
 		}
 
 		//uint32_t <- big endian
 		from_big_endian(uint32_from_big_endian, buffer32);
 		if (uint32 != uint32_from_big_endian) {
-			throw Molch::Exception(INCORRECT_DATA, "uint32_t from big endian is incorrect.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "uint32_t from big endian is incorrect."};
 		}
 		printf("Successfully converted back!\n\n");
 
@@ -64,13 +64,13 @@ int main(void) {
 		buffer32.printHex(std::cout);
 
 		if (buffer32.compareToRaw(reinterpret_cast<const unsigned char*>("\xFF\xFE\xFD\xFC"), sizeof(int32_t)) != 0) {
-			throw Molch::Exception(INCORRECT_DATA, "Big endian of int32_t is incorrect.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of int32_t is incorrect."};
 		}
 
 		//int32_t <- big endian
 		from_big_endian(int32_from_big_endian, buffer32);
 		if (int32 != int32_from_big_endian) {
-			throw Molch::Exception(INCORRECT_DATA, "uint32_t from big endian is incorrect.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "uint32_t from big endian is incorrect."};
 		}
 		printf("Successfully converted back!\n\n");
 
@@ -83,13 +83,13 @@ int main(void) {
 		buffer64.printHex(std::cout);
 
 		if (buffer64.compareToRaw(reinterpret_cast<const unsigned char*>("\x08\x07\x06\x05\x04\x03\x02\x01"), sizeof(uint64_t)) != 0) {
-			throw Molch::Exception(INCORRECT_DATA, "Big endian of uint64_t is incorrect.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of uint64_t is incorrect."};
 		}
 
 		//uint64_t <- big endian
 		from_big_endian(uint64_from_big_endian, buffer64);
 		if (uint64 != uint64_from_big_endian) {
-			throw Molch::Exception(INCORRECT_DATA, "uint64_t from big endian is incorrect.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "uint64_t from big endian is incorrect."};
 		}
 		printf("Successfully converted back!\n\n");
 
@@ -101,13 +101,13 @@ int main(void) {
 		buffer64.printHex(std::cout);
 
 		if (buffer64.compareToRaw(reinterpret_cast<const unsigned char*>("\xFF\xFE\xFD\xFC\xFB\xFA\xF9\xF8"), sizeof(int64_t)) != 0) {
-			throw Molch::Exception(INCORRECT_DATA, "Big endian of int64_t is incorrect.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of int64_t is incorrect."};
 		}
 
 		//int64_t <- big endian
 		from_big_endian(int64_from_big_endian, buffer64);
 		if (int64 != int64_from_big_endian) {
-			throw Molch::Exception(INCORRECT_DATA, "unit64_t from big endian is incorrect.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "unit64_t from big endian is incorrect."};
 		}
 		printf("Successfully converted back!\n\n");
 	} catch (const Molch::Exception& exception) {

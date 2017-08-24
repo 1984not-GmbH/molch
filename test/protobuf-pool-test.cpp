@@ -31,7 +31,7 @@ using namespace Molch;
 int main(void) {
 	try {
 		if (sodium_init() != 0) {
-			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
 		}
 
 		ProtobufPool pool;
@@ -42,14 +42,14 @@ int main(void) {
 		std::cout << "buffer2 = " << reinterpret_cast<void*>(buffer2) << std::endl;
 
 		if (buffer2 != (buffer1 + ProtobufPoolBlock::default_block_size - 10)) {
-			throw Molch::Exception(INCORRECT_DATA, "Allocation wasn't following the previous.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Allocation wasn't following the previous."};
 		}
 		std::cout << "Successfully allocated consecutive regions." << std::endl;
 
 		auto in_new_block{pool.allocate<unsigned char>(1)};
 		std::cout << "in_new_block = " << reinterpret_cast<void*>(in_new_block) << std::endl;
 		if (in_new_block == (buffer2 + 10)) {
-			throw Molch::Exception(INCORRECT_DATA, "Allocation didn't use a new block.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Allocation didn't use a new block."};
 		}
 		std::cout << "Successfully created new block for allocations." << std::endl;
 
@@ -58,26 +58,26 @@ int main(void) {
 		auto fill_gap{pool.allocate<unsigned char>(2)};
 		std::cout << "fill_gap = " << reinterpret_cast<void*>(fill_gap) << std::endl;
 		if ((in_new_block + 1) != fill_gap) {
-			throw Molch::Exception(INCORRECT_DATA, "Failed to fill gap in block.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Failed to fill gap in block."};
 		}
 		std::cout << "Filled the gap." << std::endl;
 
 		auto integer{pool.allocate<uint32_t>(sizeof(uint32_t))};
 		std::cout << "integer = " << reinterpret_cast<void*>(integer) << std::endl;
 		if (reinterpret_cast<unsigned char*>(integer) != (in_new_block + alignof(uint32_t))) {
-			throw Molch::Exception(INCORRECT_DATA, "Failed to align new allocation.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Failed to align new allocation."};
 		}
 		std::cout << "Properly aligned new allocation." << std::endl;
 
 		auto allocator{pool.getProtobufCAllocator()};
 		if (allocator.alloc != &ProtobufPool::poolAllocate) {
-			throw Molch::Exception(INCORRECT_DATA, "allocator.alloc is incorrect.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "allocator.alloc is incorrect."};
 		}
 		if (allocator.free != &ProtobufPool::poolFree) {
-			throw Molch::Exception(INCORRECT_DATA, "allocator.free is incorrect.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "allocator.free is incorrect."};
 		}
 		if (allocator.allocator_data != reinterpret_cast<void*>(&pool)) {
-			throw Molch::Exception(INCORRECT_DATA, "allocator.allocator_data isn't a pointer to the pool");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "allocator.allocator_data isn't a pointer to the pool"};
 		}
 		std::cout << "ProtobufCAllocator struct is correct." << std::endl;
 	} catch (const Molch::Exception& exception) {

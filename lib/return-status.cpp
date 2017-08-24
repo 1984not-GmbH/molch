@@ -38,7 +38,7 @@ using namespace Molch;
 
 extern return_status return_status_init() noexcept {
 	return {
-		SUCCESS,
+		status_type::SUCCESS,
 		nullptr
 	};
 }
@@ -49,11 +49,11 @@ status_type return_status_add_error_message(
 		const status_type status_to_add) noexcept {
 
 	if (status_object == nullptr) {
-		return INVALID_INPUT;
+		return status_type::INVALID_INPUT;
 	}
 
 	if (message == nullptr) {
-		return SUCCESS;
+		return status_type::SUCCESS;
 	}
 
 	std::unique_ptr<error_message> error;
@@ -65,7 +65,7 @@ status_type return_status_add_error_message(
 		error = std::make_unique<error_message>();
 		copied_message = std::unique_ptr<char>(new char[message_length]);
 	} catch (const std::bad_alloc& exception) {
-		return ALLOCATION_FAILED;
+		return status_type::ALLOCATION_FAILED;
 	}
 
 	error->message = copied_message.release();
@@ -77,7 +77,7 @@ status_type return_status_add_error_message(
 	status_object->error = error.release();
 	status_object->status = status_to_add;
 
-	return SUCCESS;
+	return status_type::SUCCESS;
 }
 
 void return_status_destroy_errors(return_status * const status) noexcept {
@@ -100,109 +100,109 @@ void return_status_destroy_errors(return_status * const status) noexcept {
  */
 const char *return_status_get_name(status_type status) noexcept {
 	switch (status) {
-		case SUCCESS:
+		case status_type::SUCCESS:
 			return "SUCCESS";
 
-		case GENERIC_ERROR:
+		case status_type::GENERIC_ERROR:
 			return "GENERIC_ERROR";
 
-		case INVALID_INPUT:
+		case status_type::INVALID_INPUT:
 			return "INVALID_INPUT";
 
-		case INVALID_VALUE:
+		case status_type::INVALID_VALUE:
 			return "INVALID_VALUE";
 
-		case INCORRECT_BUFFER_SIZE:
+		case status_type::INCORRECT_BUFFER_SIZE:
 			return "INCORRECT_BUFFER_SIZE";
 
-		case BUFFER_ERROR:
+		case status_type::BUFFER_ERROR:
 			return "BUFFER_ERROR";
 
-		case INCORRECT_DATA:
+		case status_type::INCORRECT_DATA:
 			return "INCORRECT_DATA";
 
-		case INIT_ERROR:
+		case status_type::INIT_ERROR:
 			return "INIT_ERROR";
 
-		case CREATION_ERROR:
+		case status_type::CREATION_ERROR:
 			return "CREATION_ERROR";
 
-		case ADDITION_ERROR:
+		case status_type::ADDITION_ERROR:
 			return "ADDITION_ERROR";
 
-		case ALLOCATION_FAILED:
+		case status_type::ALLOCATION_FAILED:
 			return "ALLOCATION_FAILED";
 
-		case NOT_FOUND:
+		case status_type::NOT_FOUND:
 			return "NOT_FOUND";
 
-		case VERIFICATION_FAILED:
+		case status_type::VERIFICATION_FAILED:
 			return "VERIFICATION_FAILED";
 
-		case EXPORT_ERROR:
+		case status_type::EXPORT_ERROR:
 			return "EXPORT_ERROR";
 
-		case IMPORT_ERROR:
+		case status_type::IMPORT_ERROR:
 			return "IMPORT_ERROR";
 
-		case KEYGENERATION_FAILED:
+		case status_type::KEYGENERATION_FAILED:
 			return "KEYGENERATION_FAILED";
 
-		case KEYDERIVATION_FAILED:
+		case status_type::KEYDERIVATION_FAILED:
 			return "KEYDERIVATION_FAILED";
 
-		case SEND_ERROR:
+		case status_type::SEND_ERROR:
 			return "SEND_ERROR";
 
-		case RECEIVE_ERROR:
+		case status_type::RECEIVE_ERROR:
 			return "RECEIVE_ERROR";
 
-		case DATA_FETCH_ERROR:
+		case status_type::DATA_FETCH_ERROR:
 			return "DATA_FETCH_ERROR";
 
-		case DATA_SET_ERROR:
+		case status_type::DATA_SET_ERROR:
 			return "DATA_SET_ERROR";
 
-		case ENCRYPT_ERROR:
+		case status_type::ENCRYPT_ERROR:
 			return "ENCRYPT_ERROR";
 
-		case DECRYPT_ERROR:
+		case status_type::DECRYPT_ERROR:
 			return "DECRYPT_ERROR";
 
-		case CONVERSION_ERROR:
+		case status_type::CONVERSION_ERROR:
 			return "CONVERSION_ERROR";
 
-		case SIGN_ERROR:
+		case status_type::SIGN_ERROR:
 			return "SIGN_ERROR";
 
-		case VERIFY_ERROR:
+		case status_type::VERIFY_ERROR:
 			return "VERIFY_ERROR";
 
-		case REMOVE_ERROR:
+		case status_type::REMOVE_ERROR:
 			return "REMOVE_ERROR";
 
-		case SHOULDNT_HAPPEN:
+		case status_type::SHOULDNT_HAPPEN:
 			return "SHOULDNT_HAPPEN";
 
-		case INVALID_STATE:
+		case status_type::INVALID_STATE:
 			return "INVALID_STATE";
 
-		case OUTDATED:
+		case status_type::OUTDATED:
 			return "OUTDATED";
 
-		case PROTOBUF_PACK_ERROR:
+		case status_type::PROTOBUF_PACK_ERROR:
 			return "PROTOBUF_PACK_ERROR";
 
-		case PROTOBUF_UNPACK_ERROR:
+		case status_type::PROTOBUF_UNPACK_ERROR:
 			return "PROTOBUF_UNPACK_ERROR";
 
-		case PROTOBUF_MISSING_ERROR:
+		case status_type::PROTOBUF_MISSING_ERROR:
 			return "PROTOBUF_MISSING_ERROR";
 
-		case UNSUPPORTED_PROTOCOL_VERSION:
+		case status_type::UNSUPPORTED_PROTOCOL_VERSION:
 			return "UNSUPPORTED_PROTOCOL_VERSION";
 
-		case EXCEPTION:
+		case status_type::EXCEPTION:
 			return "EXCEPTION";
 
 		default:
@@ -221,7 +221,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 	try {
 		//check input
 		if (status_to_print == nullptr) {
-			throw Exception(INVALID_INPUT, "Invalid input return_status_print.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input return_status_print."};
 		}
 
 		static const unsigned char success_string[]{"SUCCESS"};
@@ -229,7 +229,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 		static const unsigned char null_string[]{"(nullptr)"};
 
 		// now fill the output
-		if (status_to_print->status == SUCCESS) {
+		if (status_to_print->status == status_type::SUCCESS) {
 			stream << success_string;
 		} else {
 			stream << error_string;

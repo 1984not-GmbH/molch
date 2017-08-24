@@ -63,7 +63,7 @@ namespace Molch {
 				|| our_public_ephemeral.empty
 				|| our_public_ephemeral.empty
 				|| their_public_ephemeral.empty) {
-			throw Exception(INVALID_INPUT, "Invalid input for conversation_create.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input for conversation_create."};
 		}
 
 		//create random id
@@ -112,14 +112,14 @@ namespace Molch {
 				|| sender_public_identity.empty
 				|| sender_private_identity.empty
 				|| !receiver_prekey_list.contains((PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
-			throw Exception(INVALID_INPUT, "Invalid input to Conversation::Conversation.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to Conversation::Conversation."};
 		}
 
 		//create an ephemeral keypair
 		PublicKey sender_public_ephemeral;
 		PrivateKey sender_private_ephemeral;
 		if (crypto_box_keypair(sender_public_ephemeral.data(), sender_private_ephemeral.data()) != 0) {
-			throw Exception(KEYGENERATION_FAILED, "Failed to generate ephemeral keypair.");
+			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate ephemeral keypair."};
 		}
 		sender_public_ephemeral.empty = false;
 		sender_private_ephemeral.empty = false;
@@ -164,7 +164,7 @@ namespace Molch {
 
 		if (receiver_public_identity.empty
 				|| receiver_private_identity.empty) {
-			throw Exception(INVALID_INPUT, "Invalid input to conversation_start_receive_conversation.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to conversation_start_receive_conversation."};
 		}
 
 		//get the senders keys and our public prekey from the packet
@@ -184,7 +184,7 @@ namespace Molch {
 			&receiver_public_prekey);
 
 		if (packet_type != PREKEY_MESSAGE) {
-			throw Exception(INVALID_VALUE, "Packet is not a prekey message.");
+			throw Exception{status_type::INVALID_VALUE, "Packet is not a prekey message."};
 		}
 
 		//get the private prekey that corresponds to the public prekey used in the message
@@ -218,12 +218,12 @@ namespace Molch {
 			const PublicKey * const public_prekey) { //can be nullptr, if not nullptr, this will be a prekey message
 		//ensure that either both public keys are nullptr or set
 		if (((public_identity_key == nullptr) && (public_prekey != nullptr)) || ((public_prekey == nullptr) && (public_identity_key != nullptr))) {
-			throw Exception(INVALID_INPUT, "Invalid combination of provided key buffers.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid combination of provided key buffers."};
 		}
 
 		//check the size of the public keys
 		if (((public_identity_key != nullptr) && public_identity_key->empty) || ((public_prekey != nullptr) && public_prekey->empty)) {
-			throw Exception(INCORRECT_BUFFER_SIZE, "Public key output has incorrect size.");
+			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Public key output has incorrect size."};
 		}
 
 		HeaderKey send_header_key;
@@ -299,12 +299,12 @@ namespace Molch {
 							receive_message_number,
 							previous_receive_message_number,
 							header);
-					return SUCCESS;
+					return static_cast<int>(status_type::SUCCESS);
 				}
 			}
 		}
 
-		return NOT_FOUND;
+		return static_cast<int>(status_type::NOT_FOUND);
 	}
 
 	/*
@@ -326,7 +326,7 @@ namespace Molch {
 					message,
 					receive_message_number,
 					previous_receive_message_number)};
-			if (status == SUCCESS) {
+			if (status == static_cast<int>(status_type::SUCCESS)) {
 				// found a key and successfully decrypted the message
 				return message;
 			}
@@ -356,7 +356,7 @@ namespace Molch {
 					this->ratchet->setHeaderDecryptability(Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE);
 				} else {
 					this->ratchet->setHeaderDecryptability(Ratchet::HeaderDecryptability::UNDECRYPTABLE);
-					throw Exception(DECRYPT_ERROR, "Failed to decrypt the message.");
+					throw Exception{status_type::DECRYPT_ERROR, "Failed to decrypt the message."};
 				}
 			}
 

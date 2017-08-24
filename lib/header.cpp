@@ -35,7 +35,7 @@ namespace Molch {
 
 		//check input
 		if (our_public_ephemeral.empty) {
-			throw Exception(INVALID_INPUT, "Invalid input to header_construct.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to header_construct."};
 		}
 		//create buffer for our public ephemeral
 		ProtobufCBinaryData protobuf_our_public_ephemeral;
@@ -57,7 +57,7 @@ namespace Molch {
 		//pack it
 		auto packed_length{header__pack(&header_struct, header.content)};
 		if (packed_length != header_length) {
-			throw Exception(PROTOBUF_PACK_ERROR, "Packed header has incorrect length.");
+			throw Exception{status_type::PROTOBUF_PACK_ERROR, "Packed header has incorrect length."};
 		}
 
 		return header;
@@ -73,15 +73,15 @@ namespace Molch {
 		//unpack the message
 		auto header_struct{std::unique_ptr<ProtobufCHeader,HeaderDeleter>(header__unpack(&protobuf_c_allocator, header.size, header.content))};
 		if (!header_struct) {
-			throw Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack header.");
+			throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack header."};
 		}
 
 		if (!header_struct->has_message_number || !header_struct->has_previous_message_number || !header_struct->has_public_ephemeral_key) {
-			throw Exception(PROTOBUF_MISSING_ERROR, "Missing fields in header.");
+			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Missing fields in header."};
 		}
 
 		if (header_struct->public_ephemeral_key.len != PUBLIC_KEY_SIZE) {
-			throw Exception(INCORRECT_BUFFER_SIZE, "The public ephemeral key in the header has an incorrect size.");
+			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The public ephemeral key in the header has an incorrect size."};
 		}
 
 		message_number = header_struct->message_number;

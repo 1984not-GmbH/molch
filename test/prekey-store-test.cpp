@@ -87,7 +87,7 @@ static void protobuf_import(
 				keypair_buffer.size,
 				keypair_buffer.content);
 		if (keypairs_array[index] == nullptr) {
-			throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack prekey from protobuf.");
+			throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack prekey from protobuf."};
 		}
 
 		index++;
@@ -102,7 +102,7 @@ static void protobuf_import(
 				keypair_buffer.size,
 				keypair_buffer.content);
 		if (deprecated_keypairs_array[index] == nullptr) {
-			throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack deprecated prekey from protobuf.");
+			throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack deprecated prekey from protobuf."};
 		}
 
 		index++;
@@ -129,7 +129,7 @@ void protobuf_no_deprecated_keys(void) {
 	store.exportProtobuf(pool, exported, exported_length, deprecated, deprecated_length);
 
 	if ((deprecated != nullptr) || (deprecated_length != 0)) {
-		throw Molch::Exception(INCORRECT_DATA, "Exported deprecated prekeys are not empty.");
+		throw Molch::Exception{status_type::INCORRECT_DATA, "Exported deprecated prekeys are not empty."};
 	}
 
 	//import it
@@ -145,7 +145,7 @@ void protobuf_no_deprecated_keys(void) {
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
 		}
 
 		auto store{std::make_unique<PrekeyStore>()};
@@ -157,7 +157,7 @@ int main(void) {
 		//compare the public keys with the ones in the prekey store
 		for (size_t i{0}; i < PREKEY_AMOUNT; i++) {
 			if (prekey_list.compareToRawPartial(PUBLIC_KEY_SIZE * i, (*store->prekeys)[i].public_key.data(), (*store->prekeys)[i].public_key.size(), 0, PUBLIC_KEY_SIZE) != 0) {
-				throw Molch::Exception(INCORRECT_DATA, "Key list doesn't match the prekey store.");
+				throw Molch::Exception{status_type::INCORRECT_DATA, "Key list doesn't match the prekey store."};
 			}
 		}
 		printf("Prekey list matches the prekey store!\n");
@@ -175,16 +175,16 @@ int main(void) {
 		private_prekey1.printHex(std::cout) << std::endl;
 
 		if (store->deprecated_prekeys.empty()) {
-			throw Molch::Exception(GENERIC_ERROR, "Failed to deprecate requested key.");
+			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to deprecate requested key."};
 		}
 
 		if ((public_prekey != store->deprecated_prekeys[0].public_key)
 				|| (private_prekey1 != store->deprecated_prekeys[0].private_key)) {
-			throw Molch::Exception(INCORRECT_DATA, "Deprecated key is incorrect.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Deprecated key is incorrect."};
 		}
 
 		if ((*store->prekeys)[prekey_index].public_key == public_prekey) {
-			throw Molch::Exception(KEYGENERATION_FAILED, "Failed to generate new key for deprecated one.");
+			throw Molch::Exception{status_type::KEYGENERATION_FAILED, "Failed to generate new key for deprecated one."};
 		}
 		printf("Successfully deprecated requested key!\n");
 
@@ -193,7 +193,7 @@ int main(void) {
 		store->getPrekey(public_prekey, private_prekey2);
 
 		if (private_prekey1 != private_prekey2) {
-			throw Molch::Exception(INCORRECT_DATA, "Prekey from the deprecated area didn't match.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Prekey from the deprecated area didn't match."};
 		}
 		printf("Successfully got prekey from the deprecated area!\n");
 
@@ -206,7 +206,7 @@ int main(void) {
 			found = false;
 		}
 		if (found) {
-			throw Molch::Exception(GENERIC_ERROR, "Didn't complain about invalid public key.");
+			throw Molch::Exception{status_type::GENERIC_ERROR, "Didn't complain about invalid public key."};
 		}
 		printf("Detected invalid public prekey!\n");
 
@@ -254,22 +254,22 @@ int main(void) {
 		//compare both prekey lists
 		printf("Compare normal prekeys\n");
 		if (protobuf_export_prekeys_buffers.size() != protobuf_second_export_prekeys_buffers.size()) {
-			throw Molch::Exception(INCORRECT_DATA, "Both prekey exports contain different amounts of keys.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Both prekey exports contain different amounts of keys."};
 		}
 		for (size_t i{0}; i < protobuf_export_prekeys_buffers.size(); i++) {
 			if (protobuf_export_prekeys_buffers[i] != protobuf_second_export_prekeys_buffers[i]) {
-				throw Molch::Exception(INCORRECT_DATA, "First and second prekey export are not identical.");
+				throw Molch::Exception{status_type::INCORRECT_DATA, "First and second prekey export are not identical."};
 			}
 		}
 
 		//compare both deprecated prekey lists
 		printf("Compare deprecated prekeys\n");
 		if (protobuf_export_deprecated_prekeys_buffers.size() != protobuf_second_export_deprecated_prekeys_buffers.size()) {
-			throw Molch::Exception(INCORRECT_DATA, "Both depcated prekey exports contain different amounts of keys.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Both depcated prekey exports contain different amounts of keys."};
 		}
 		for (size_t i{0}; i < protobuf_export_deprecated_prekeys_buffers.size(); i++) {
 			if (protobuf_export_deprecated_prekeys_buffers[i] != protobuf_second_export_deprecated_prekeys_buffers[i]) {
-				throw Molch::Exception(INCORRECT_DATA, "First and second deprecated prekey export are not identical.");
+				throw Molch::Exception{status_type::INCORRECT_DATA, "First and second deprecated prekey export are not identical."};
 			}
 		}
 
@@ -282,7 +282,7 @@ int main(void) {
 		store->rotate();
 
 		if (store->deprecated_prekeys.back().public_key != public_prekey) {
-			throw Molch::Exception(GENERIC_ERROR, "Failed to deprecate outdated key.");
+			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to deprecate outdated key."};
 		}
 		printf("Successfully deprecated outdated key!\n");
 
@@ -295,7 +295,7 @@ int main(void) {
 		store->rotate();
 
 		if (store->deprecated_prekeys.size() != 1) {
-			throw Molch::Exception(GENERIC_ERROR, "Failed to remove outdated key.");
+			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to remove outdated key."};
 		}
 		printf("Successfully removed outdated deprecated key!\n");
 

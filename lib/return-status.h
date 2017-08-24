@@ -25,13 +25,14 @@
 #ifdef __cplusplus
 extern "C" {
 #else
+	#define class
 	#define noexcept
 	#define constexpr
 	#define nullptr NULL
 #endif
 
 // possible status types, either SUCCESS or a variety of error types.
-typedef enum status_type { //TODO add more error types
+typedef enum class status_type { //TODO add more error types
 	SUCCESS = 0,
 	GENERIC_ERROR,
 	INVALID_INPUT,
@@ -108,10 +109,10 @@ char *return_status_print(const return_status * const status, size_t *length) no
 	status.status = status_type_value;\
 	if (message != nullptr) {\
 		status_type THROW_type = return_status_add_error_message(&status, message, status_type_value);\
-		if (THROW_type != SUCCESS) {\
+		if (THROW_type != status_type::SUCCESS) {\
 			status.status = THROW_type;\
 		} else {\
-			status.status = SHOULDNT_HAPPEN; /*I hope this makes clang analyzer accept my code!*/\
+			status.status = status_type::SHOULDNT_HAPPEN; /*I hope this makes clang analyzer accept my code!*/\
 		}\
 	} else {\
 		status.error = nullptr;\
@@ -121,7 +122,7 @@ char *return_status_print(const return_status * const status, size_t *length) no
 }
 
 //Execute code on error
-#define on_error if (status.status != SUCCESS)
+#define on_error if (status.status != status_type::SUCCESS)
 
 #define THROW_on_error(status_type_value, message) on_error{THROW(status_type_value, message)}
 

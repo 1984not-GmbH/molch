@@ -69,7 +69,7 @@ namespace Molch {
 		this->init();
 
 		if ((this->private_signing_key == nullptr) || (this->private_identity_key == nullptr)) {
-			throw Exception(INCORRECT_DATA, "One of the private key pointers is nullptr.");
+			throw Exception{status_type::INCORRECT_DATA, "One of the private key pointers is nullptr."};
 		}
 
 		ReadWriteUnlocker unlocker{*this};
@@ -112,7 +112,7 @@ namespace Molch {
 					this->private_signing_key->data(),
 					high_entropy_seed.content)};
 			if (status != 0) {
-				throw Exception(KEYGENERATION_FAILED, "Failed to generate signing keypair with seed.");
+				throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate signing keypair with seed."};
 			}
 			this->public_signing_key.empty = false;
 			this->private_signing_key->empty = false;
@@ -123,7 +123,7 @@ namespace Molch {
 					this->private_identity_key->data(),
 					high_entropy_seed.content + crypto_sign_SEEDBYTES);
 			if (status != 0) {
-				throw Exception(KEYGENERATION_FAILED, "Failed to generate identity keypair with seed.");
+				throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate identity keypair with seed."};
 			}
 			this->public_identity_key.empty = false;
 			this->private_identity_key->empty = false;
@@ -133,7 +133,7 @@ namespace Molch {
 					this->public_signing_key.data(),
 					this->private_signing_key->data())};
 			if (status != 0) {
-				throw Exception(KEYGENERATION_FAILED, "Failed to generate signing keypair.");
+				throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate signing keypair."};
 			}
 			this->public_signing_key.empty = false;
 			this->private_signing_key->empty = false;
@@ -143,7 +143,7 @@ namespace Molch {
 					this->public_identity_key.data(),
 					this->private_identity_key->data());
 			if (status != 0) {
-				throw Exception(KEYGENERATION_FAILED, "Failed to generate identity keypair.");
+				throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate identity keypair."};
 			}
 			this->public_identity_key.empty = false;
 			this->private_identity_key->empty = false;
@@ -171,7 +171,7 @@ namespace Molch {
 			const Buffer& data,
 			Buffer& signed_data) const { //output, length of data + SIGNATURE_SIZE
 		if (!signed_data.fits(data.size + SIGNATURE_SIZE)) {
-			throw Exception(INVALID_INPUT, "MasterKeys::sign: Output buffer is too short.");
+			throw Exception{status_type::INVALID_INPUT, "MasterKeys::sign: Output buffer is too short."};
 		}
 
 		signed_data.size = 0;
@@ -185,7 +185,7 @@ namespace Molch {
 			data.size,
 			this->private_signing_key->data())};
 		if (status != 0) {
-			throw Exception(SIGN_ERROR, "Failed to sign message.");
+			throw Exception{status_type::SIGN_ERROR, "Failed to sign message."};
 		}
 
 		signed_data.size = static_cast<size_t>(signed_message_length);
@@ -228,21 +228,21 @@ namespace Molch {
 	void MasterKeys::lock() const {
 		auto status{sodium_mprotect_noaccess(this->private_keys.get())};
 		if (status != 0) {
-			throw Exception(GENERIC_ERROR, "Failed to lock memory.");
+			throw Exception{status_type::GENERIC_ERROR, "Failed to lock memory."};
 		}
 	}
 
 	void MasterKeys::unlock() const {
 		auto status{sodium_mprotect_readonly(this->private_keys.get())};
 		if (status != 0) {
-			throw Exception(GENERIC_ERROR, "Failed to make memory readonly.");
+			throw Exception{status_type::GENERIC_ERROR, "Failed to make memory readonly."};
 		}
 	}
 
 	void MasterKeys::unlock_readwrite() const {
 		auto status{sodium_mprotect_readwrite(this->private_keys.get())};
 		if (status != 0) {
-			throw Exception(GENERIC_ERROR, "Failed to make memory readwrite.");
+			throw Exception{status_type::GENERIC_ERROR, "Failed to make memory readwrite."};
 		}
 	}
 

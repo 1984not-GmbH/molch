@@ -32,7 +32,7 @@ using namespace Molch;
 static return_status second_level(void) noexcept {
 	auto status{return_status_init()};
 
-	THROW(GENERIC_ERROR, "Error on the second level!");
+	THROW(status_type::GENERIC_ERROR, "Error on the second level!");
 
 cleanup:
 	return status;
@@ -42,7 +42,7 @@ static return_status first_level(void) noexcept {
 	auto status{return_status_init()};
 
 	status = second_level();
-	THROW_on_error(GENERIC_ERROR, "Error on the first level!");
+	THROW_on_error(status_type::GENERIC_ERROR, "Error on the first level!");
 
 cleanup:
 	return status;
@@ -55,7 +55,7 @@ int main(void) noexcept {
 	unsigned char *printed_status{nullptr};
 
 	//check if it was correctly initialized
-	if ((status.status != SUCCESS) || (status.error != nullptr)) {
+	if ((status.status != status_type::SUCCESS) || (status.error != nullptr)) {
 		fprintf(stderr, "ERROR: Failed to initialize return statu!\n");
 		return EXIT_FAILURE;
 	}
@@ -65,12 +65,12 @@ int main(void) noexcept {
 	status = first_level();
 	if (strcmp(status.error->message, "Error on the first level!") != 0) {
 		fprintf(stderr, "ERROR: First error message is incorrect!\n");
-		status.status = GENERIC_ERROR;
+		status.status = status_type::GENERIC_ERROR;
 		goto cleanup;
 	}
 	if (strcmp(status.error->next->message, "Error on the second level!") != 0) {
 		fprintf(stderr, "ERROR: Second error message is incorrect!\n");
-		status.status = GENERIC_ERROR;
+		status.status = status_type::GENERIC_ERROR;
 		goto cleanup;
 	}
 	printf("Successfully created error stack.\n");
@@ -80,18 +80,18 @@ int main(void) noexcept {
 		error_stack = return_status_print(&status, &stack_print_length);
 		if (error_stack == nullptr) {
 			fprintf(stderr, "ERROR: Failed to print error stack.\n");
-			status.status = GENERIC_ERROR;
+			status.status = status_type::GENERIC_ERROR;
 			goto cleanup;
 		}
 		printf("%s\n", error_stack);
 
 		Buffer stack_trace{"ERROR\nerror stack trace:\n0: GENERIC_ERROR, Error on the first level!\n1: GENERIC_ERROR, Error on the second level!\n"};
 		if (stack_trace.compareToRaw(reinterpret_cast<unsigned char*>(error_stack), stack_print_length) != 0) {
-			THROW(INCORRECT_DATA, "Stack trace looks differently than expected.");
+			THROW(status_type::INCORRECT_DATA, "Stack trace looks differently than expected.");
 		}
 	}
 
-	status.status = SUCCESS;
+	status.status = status_type::SUCCESS;
 	return_status_destroy_errors(&status);
 
 	//more tests for return_status_print()
@@ -101,7 +101,7 @@ int main(void) noexcept {
 		size_t printed_status_length{0};
 		printed_status = reinterpret_cast<unsigned char*>(return_status_print(&successful_status, &printed_status_length));
 		if (success_buffer.compareToRaw(printed_status, printed_status_length) != 0) {
-			THROW(INCORRECT_DATA, "molch_print_status produces incorrect output.");
+			THROW(status_type::INCORRECT_DATA, "molch_print_status produces incorrect output.");
 		}
 	}
 
@@ -114,5 +114,5 @@ cleanup:
 
 	free_and_null_if_valid(error_stack);
 
-	return status.status;
+	return static_cast<int>(status.status);
 }

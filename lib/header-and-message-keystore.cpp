@@ -75,7 +75,7 @@ namespace Molch {
 		if ((key_bundle.header_key == nullptr)
 			|| (key_bundle.header_key->key.data == nullptr)
 			|| (key_bundle.header_key->key.len != HEADER_KEY_SIZE)) {
-			throw Exception(PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect header key.");
+			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect header key."};
 		}
 		this->header_key.set(key_bundle.header_key->key.data, key_bundle.header_key->key.len);
 
@@ -83,13 +83,13 @@ namespace Molch {
 		if ((key_bundle.message_key == nullptr)
 			|| (key_bundle.message_key->key.data == nullptr)
 			|| (key_bundle.message_key->key.len != MESSAGE_KEY_SIZE)) {
-			throw Exception(PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect message key.");
+			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect message key."};
 		}
 		this->message_key.set(key_bundle.message_key->key.data, key_bundle.message_key->key.len);
 
 		//import the expiration date
 		if (!key_bundle.has_expiration_time) {
-			throw Exception(PROTOBUF_MISSING_ERROR, "KeyBundle has no expiration time.");
+			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has no expiration time."};
 		}
 		this->expiration_date = static_cast<int64_t>(key_bundle.expiration_time);
 	}
@@ -159,7 +159,7 @@ namespace Molch {
 	HeaderAndMessageKeyStore::HeaderAndMessageKeyStore(ProtobufCKeyBundle** const & key_bundles, const size_t bundles_size) {
 		for (size_t index{0}; index < bundles_size; index++) {
 			if (key_bundles[index] == nullptr) {
-				throw Exception(PROTOBUF_MISSING_ERROR, "Invalid KeyBundle.");
+				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Invalid KeyBundle."};
 			}
 
 			this->keys.emplace_back(*key_bundles[index]);

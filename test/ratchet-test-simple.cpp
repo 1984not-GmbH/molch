@@ -35,7 +35,7 @@ using namespace Molch;
 static void keypair(PrivateKey& private_key, PublicKey& public_key) {
 	auto status{crypto_box_keypair(public_key.data(), private_key.data())};
 	if (status != 0) {
-		throw Molch::Exception(KEYGENERATION_FAILED, "Failed to generate keypair.");
+		throw Molch::Exception{status_type::KEYGENERATION_FAILED, "Failed to generate keypair."};
 	}
 	private_key.empty = false;
 	public_key.empty = false;
@@ -45,7 +45,7 @@ int main(void) {
 	try {
 		auto status{sodium_init()};
 		if (status != 0) {
-			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
 		}
 
 		//generate the keys
@@ -143,7 +143,7 @@ int main(void) {
 
 		//now check if the message key is the same
 		if (send_message_key != receive_message_key) {
-			throw Molch::Exception(INCORRECT_DATA, "Bobs receive message key isn't the same as Alice' send message key.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Bobs receive message key isn't the same as Alice' send message key."};
 		}
 		printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
 
@@ -180,7 +180,7 @@ int main(void) {
 
 		//now check if the message key is the same
 		if (send_message_key != receive_message_key) {
-			throw Molch::Exception(INCORRECT_DATA, "Alice' receive message key isn't the same as Bobs send message key.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice' receive message key isn't the same as Bobs send message key."};
 		}
 		printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
 
@@ -216,7 +216,7 @@ int main(void) {
 
 		//now check if the message key is the same
 		if (send_message_key != receive_message_key) {
-			throw Molch::Exception(INCORRECT_DATA, "Alice' receive message key isn't the same as Bobs send message key.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice' receive message key isn't the same as Bobs send message key."};
 		}
 		printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
 
@@ -252,7 +252,7 @@ int main(void) {
 
 		//now check if the message key is the same
 		if (send_message_key != receive_message_key) {
-			throw Molch::Exception(INCORRECT_DATA, "Bobs receive message key isn't the same as Alice' send message key.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Bobs receive message key isn't the same as Alice' send message key."};
 		}
 		printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
 

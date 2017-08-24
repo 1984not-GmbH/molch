@@ -37,7 +37,7 @@ using namespace Molch;
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
 		}
 
 		//generate keys and message
@@ -72,13 +72,13 @@ int main(void) {
 
 		//check the message size
 		if (!decrypted_message.contains(message.size)) {
-			throw Molch::Exception(INVALID_VALUE, "Decrypted message length isn't the same.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message length isn't the same."};
 		}
 		printf("Decrypted message length is the same.\n");
 
 		//compare the message
 		if (message != decrypted_message) {
-			throw Molch::Exception(INVALID_VALUE, "Decrypted message doesn't match.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message doesn't match."};
 		}
 		printf("Decrypted message is the same.\n\n");
 
@@ -96,7 +96,7 @@ int main(void) {
 			decryption_failed = true;
 		}
 		if (!decryption_failed) { //message was decrypted although it shouldn't
-			throw Molch::Exception(GENERIC_ERROR, "Decrypted manipulated message.");
+			throw Molch::Exception{status_type::GENERIC_ERROR, "Decrypted manipulated message."};
 		}
 		printf("Manipulation detected.\n\n");
 
@@ -129,13 +129,13 @@ int main(void) {
 
 		//check the message size
 		if (!decrypted_message.contains(message.size)) {
-			throw Molch::Exception(INVALID_VALUE, "Decrypted message length isn't the same.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message length isn't the same."};
 		}
 		printf("Decrypted message length is the same.\n");
 
 		//compare the message
 		if (message != decrypted_message) {
-			throw Molch::Exception(INVALID_VALUE, "Decrypted message doesn't match.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message doesn't match."};
 		}
 		printf("Decrypted message is the same.\n");
 	} catch (const Molch::Exception& exception) {

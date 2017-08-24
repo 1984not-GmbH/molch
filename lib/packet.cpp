@@ -71,11 +71,11 @@ namespace Molch {
 		//unpack the packet
 		auto packet_struct{std::unique_ptr<ProtobufCPacket,PacketDeleter>(packet__unpack(&protobuf_c_allocator, packet.size, packet.content))};
 		if (!packet_struct) {
-			throw Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
+			throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack packet."};
 		}
 
 		if (packet_struct->packet_header->current_protocol_version != 0) {
-			throw Exception(UNSUPPORTED_PROTOCOL_VERSION, "The packet has an unsuported protocol version.");
+			throw Exception{status_type::UNSUPPORTED_PROTOCOL_VERSION, "The packet has an unsuported protocol version."};
 		}
 
 		//check if the packet contains the necessary fields
@@ -84,13 +84,13 @@ namespace Molch {
 			|| !packet_struct->packet_header->has_packet_type
 			|| !packet_struct->packet_header->has_header_nonce
 			|| !packet_struct->packet_header->has_message_nonce) {
-			throw Exception(PROTOBUF_MISSING_ERROR, "Some fields are missing in the packet.");
+			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Some fields are missing in the packet."};
 		}
 
 		//check the size of the nonces
 		if ((packet_struct->packet_header->header_nonce.len != HEADER_NONCE_SIZE)
 			|| (packet_struct->packet_header->message_nonce.len != MESSAGE_NONCE_SIZE)) {
-			throw Exception(INCORRECT_BUFFER_SIZE, "At least one of the nonces has an incorrect length.");
+			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "At least one of the nonces has an incorrect length."};
 		}
 
 		if (packet_struct->packet_header->packet_type == PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
@@ -98,14 +98,14 @@ namespace Molch {
 			if (!packet_struct->packet_header->has_public_identity_key
 				|| !packet_struct->packet_header->has_public_ephemeral_key
 				|| !packet_struct->packet_header->has_public_prekey) {
-				throw Exception(PROTOBUF_MISSING_ERROR, "The prekey packet misses at least one public key.");
+				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "The prekey packet misses at least one public key."};
 			}
 
 			//check the sizes of the public keys
 			if ((packet_struct->packet_header->public_identity_key.len != PUBLIC_KEY_SIZE)
 				|| (packet_struct->packet_header->public_ephemeral_key.len != PUBLIC_KEY_SIZE)
 				|| (packet_struct->packet_header->public_prekey.len != PUBLIC_KEY_SIZE)) {
-				throw Exception(INCORRECT_BUFFER_SIZE, "At least one of the public keys of the prekey packet has an incorrect length.");
+				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "At least one of the public keys of the prekey packet has an incorrect length."};
 			}
 		}
 
@@ -134,7 +134,7 @@ namespace Molch {
 		if ((packet_type == INVALID)
 			|| axolotl_header_key.empty
 			|| message_key.empty) {
-			throw Exception(INVALID_INPUT, "Invalid input to packet_encrypt.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to packet_encrypt."};
 		}
 
 		//set the protocol version
@@ -150,7 +150,7 @@ namespace Molch {
 			if ((public_identity_key == nullptr) || public_identity_key->empty
 				|| (public_ephemeral_key == nullptr) || public_ephemeral_key->empty
 				|| (public_prekey == nullptr) || public_prekey->empty) {
-				throw Exception(INVALID_INPUT, "Invalid public key to packet_encrypt for prekey message.");
+				throw Exception{status_type::INVALID_INPUT, "Invalid public key to packet_encrypt for prekey message."};
 			}
 
 			//set the public identity key
@@ -187,7 +187,7 @@ namespace Molch {
 				header_nonce.content,
 				axolotl_header_key.data())};
 		if (status != 0) {
-			throw Exception(ENCRYPT_ERROR, "Failed to encrypt header.");
+			throw Exception{status_type::ENCRYPT_ERROR, "Failed to encrypt header."};
 		}
 
 		//add the encrypted header to the protobuf struct
@@ -222,7 +222,7 @@ namespace Molch {
 				message_nonce.content,
 				message_key.data());
 		if (status != 0) {
-			throw Exception(ENCRYPT_ERROR, "Failed to encrypt message.");
+			throw Exception{status_type::ENCRYPT_ERROR, "Failed to encrypt message."};
 		}
 
 		//add the encrypted message to the protobuf struct
@@ -236,7 +236,7 @@ namespace Molch {
 		Buffer packet{packed_length, 0};
 		packet.size = packet__pack(&packet_struct, packet.content);
 		if (packet.size != packed_length) {
-			throw Exception(PROTOBUF_PACK_ERROR, "Packet packet has incorrect length.");
+			throw Exception{status_type::PROTOBUF_PACK_ERROR, "Packet packet has incorrect length."};
 		}
 
 		return packet;
@@ -312,13 +312,13 @@ namespace Molch {
 
 		//check input
 		if (axolotl_header_key.empty) {
-			throw Exception(INVALID_INPUT, "Invalid input to packet_decrypt_header.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to packet_decrypt_header."};
 		}
 
 		packet_struct = packet_unpack(packet);
 
 		if (packet_struct->encrypted_axolotl_header.len < crypto_secretbox_MACBYTES) {
-			throw Exception(INCORRECT_BUFFER_SIZE, "The ciphertext of the axolotl header is too short.");
+			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The ciphertext of the axolotl header is too short."};
 		}
 
 		const size_t axolotl_header_length{packet_struct->encrypted_axolotl_header.len - crypto_secretbox_MACBYTES};
@@ -331,7 +331,7 @@ namespace Molch {
 				packet_struct->packet_header->header_nonce.data,
 				axolotl_header_key.data())};
 		if (status != 0) {
-			throw Exception(DECRYPT_ERROR, "Failed to decrypt axolotl header.");
+			throw Exception{status_type::DECRYPT_ERROR, "Failed to decrypt axolotl header."};
 		}
 
 		return axolotl_header;
@@ -340,18 +340,18 @@ namespace Molch {
 	Buffer packet_decrypt_message(const Buffer& packet, const MessageKey& message_key) {
 		//check input
 		if (message_key.empty) {
-			throw Exception(INVALID_INPUT, "Invalid input to packet_decrypt_message.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to packet_decrypt_message."};
 		}
 
 		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct{packet_unpack(packet)};
 
 		if (packet_struct->encrypted_message.len < crypto_secretbox_MACBYTES) {
-			throw Exception(INCORRECT_BUFFER_SIZE, "The ciphertext of the message is too short.");
+			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The ciphertext of the message is too short."};
 		}
 
 		const size_t padded_message_length{packet_struct->encrypted_message.len - crypto_secretbox_MACBYTES};
 		if (padded_message_length < 255) {
-			throw Exception(INCORRECT_BUFFER_SIZE, "The padded message is too short.");
+			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The padded message is too short."};
 		}
 		Buffer padded_message{padded_message_length, padded_message_length};
 
@@ -362,13 +362,13 @@ namespace Molch {
 				packet_struct->packet_header->message_nonce.data,
 				message_key.data())};
 		if (status != 0) {
-			throw Exception(DECRYPT_ERROR, "Failed to decrypt message.");
+			throw Exception{status_type::DECRYPT_ERROR, "Failed to decrypt message."};
 		}
 
 		//get the padding (last byte)
 		auto padding{padded_message.content[padded_message.size - 1]};
 		if (padding > padded_message.size) {
-			throw Exception(INCORRECT_BUFFER_SIZE, "The padded message is too short.");
+			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The padded message is too short."};
 		}
 
 		//extract the message

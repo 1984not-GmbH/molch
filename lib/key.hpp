@@ -111,7 +111,7 @@ namespace Molch {
 		 */
 		int compare(const Key& key) const {
 			if (this->empty || key.empty) {
-				throw Exception(INVALID_INPUT, "One of the keys is empty.");
+				throw Exception{status_type::INVALID_INPUT, "One of the keys is empty."};
 			}
 
 			return sodium_compare(
@@ -158,7 +158,7 @@ namespace Molch {
 			static_assert(length >= crypto_generichash_blake2b_KEYBYTES_MIN, "The length to derive from is smaller than crypto_generichash_blake2b_KEYBYTES_MIN");
 
 			if (this->empty) {
-				throw Exception(INVALID_INPUT, "Key to derive from is empty.");
+				throw Exception{status_type::INVALID_INPUT, "Key to derive from is empty."};
 			}
 
 			//create a salt that contains the number of the subkey
@@ -185,7 +185,7 @@ namespace Molch {
 					salt.content,
 					personal.content)};
 			if (status != 0) {
-				throw Exception(KEYDERIVATION_FAILED, "Failed to derive key via crypto_generichash_blake2b_salt_personal");
+				throw Exception{status_type::KEYDERIVATION_FAILED, "Failed to derive key via crypto_generichash_blake2b_salt_personal"};
 			}
 
 			derived_key.empty = false;
@@ -208,7 +208,7 @@ namespace Molch {
 		//copy from a raw unsigned char pointer
 		void set(const unsigned char* data, const size_t data_length) {
 			if (data_length != length) {
-				throw Exception(INVALID_INPUT, "Data to set Key to has an invalid length.");
+				throw Exception{status_type::INVALID_INPUT, "Data to set Key to has an invalid length."};
 			}
 
 			std::copy(data, data + data_length, this->data());
@@ -217,7 +217,7 @@ namespace Molch {
 		//copy to a raw unsigned char pointer
 		void copyTo(unsigned char* data, const size_t data_length) const {
 			if (data_length != length) {
-				throw Exception(INVALID_INPUT, "Data to copy the Key to has an invalid length.");
+				throw Exception{status_type::INVALID_INPUT, "Data to copy the Key to has an invalid length."};
 			}
 
 			std::copy(std::cbegin(*this), std::cend(*this), data);
@@ -238,7 +238,7 @@ namespace Molch {
 			const size_t hex_length{this->size() * 2 + sizeof("")};
 			auto hex{std::make_unique<char[]>(hex_length)};
 			if (sodium_bin2hex(hex.get(), hex_length, this->data(), this->size()) == nullptr) {
-				throw Exception(BUFFER_ERROR, "Failed to converst binary to hex with sodium_bin2hex.");
+				throw Exception{status_type::BUFFER_ERROR, "Failed to converst binary to hex with sodium_bin2hex."};
 			}
 
 			for (size_t i{0}; i < hex_length; i++) {

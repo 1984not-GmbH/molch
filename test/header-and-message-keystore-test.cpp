@@ -52,7 +52,7 @@ static void protobuf_export(
 		Buffer export_buffer{export_size, 0};
 		export_buffer.size = key_bundle__pack(key_bundles[i], export_buffer.content);
 		if (export_buffer.size != export_size) {
-			throw Molch::Exception(PROTOBUF_PACK_ERROR, "Packed buffer has incorrect length.");
+			throw Molch::Exception{status_type::PROTOBUF_PACK_ERROR, "Packed buffer has incorrect length."};
 		}
 		export_buffers.push_back(export_buffer);
 	}
@@ -73,7 +73,7 @@ static void protobuf_import(
 						exported_buffer.size,
 						exported_buffer.content);
 		if (key_bundles_array[index] == nullptr) {
-			throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack key bundle.");
+			throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack key bundle."};
 		}
 
 		index++;
@@ -96,7 +96,7 @@ void protobuf_empty_store(void) {
 	store.exportProtobuf(pool, exported, exported_length);
 
 	if ((exported != nullptr) || (exported_length != 0)) {
-		throw Molch::Exception(INCORRECT_DATA, "Exported data is not empty.");
+		throw Molch::Exception{status_type::INCORRECT_DATA, "Exported data is not empty."};
 	}
 
 	//import it
@@ -108,7 +108,7 @@ void protobuf_empty_store(void) {
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
 		}
 
 		// buffers for exporting protobuf-c
@@ -167,11 +167,11 @@ int main(void) {
 		//compare both exports
 		printf("Compare\n");
 		if (protobuf_export_buffers.size() != protobuf_second_export_buffers.size()) {
-			throw Molch::Exception(INCORRECT_DATA, "Both exports contain different amounts of keys.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Both exports contain different amounts of keys."};
 		}
 		for (size_t index = 0; index < protobuf_export_buffers.size(); index++) {
 			if (protobuf_export_buffers[index] != protobuf_second_export_buffers[index]) {
-				throw Molch::Exception(INCORRECT_DATA, "First and second export are not identical.");
+				throw Molch::Exception{status_type::INCORRECT_DATA, "First and second export are not identical."};
 			}
 		}
 

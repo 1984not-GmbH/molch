@@ -36,7 +36,7 @@ using namespace Molch;
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
 		}
 
 		//create Alice's identity keypair
@@ -161,7 +161,7 @@ int main(void) {
 
 		//compare Alice's and Bob's initial root key
 		if (alice_root_key != bob_root_key) {
-			throw Molch::Exception(INCORRECT_DATA, "Alice's and Bob's initial root keys don't match.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's and Bob's initial root keys don't match."};
 		}
 		printf("Alice's and Bob's initial root keys match.\n");
 
@@ -170,7 +170,7 @@ int main(void) {
 
 		//compare Alice's and Bob's initial chain keys
 		if (alice_send_chain_key != bob_receive_chain_key) {
-			throw Molch::Exception(INCORRECT_DATA, "Alice's and Bob's initial chain keys don't match.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's and Bob's initial chain keys don't match."};
 		}
 		printf("Alice's and Bob's initial chain keys match.\n");
 
@@ -178,13 +178,13 @@ int main(void) {
 		bob_receive_chain_key.clear();
 
 		if (alice_receive_chain_key != bob_send_chain_key) {
-			throw Molch::Exception(INCORRECT_DATA, "Alice's and Bob's initial chain keys don't match.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's and Bob's initial chain keys don't match."};
 		}
 		printf("Alice's and Bob's initial chain keys match.\n");
 
 		//compare Alice's and Bob's initial header keys 1/2
 		if (alice_send_header_key != bob_receive_header_key) {
-			throw Molch::Exception(INCORRECT_DATA, "Alice's initial send and Bob's initial receive header keys don't match.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's initial send and Bob's initial receive header keys don't match."};
 		}
 		printf("Alice's initial send and Bob's initial receive header keys match.\n");
 
@@ -193,7 +193,7 @@ int main(void) {
 
 		//compare Alice's and Bob's initial header keys 2/2
 		if (alice_receive_header_key != bob_send_header_key) {
-			throw Molch::Exception(INCORRECT_DATA, "Alice's initial receive and Bob's initial send header keys don't match.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's initial receive and Bob's initial send header keys don't match."};
 		}
 		printf("Alice's initial receive and Bob's initial send header keys match.\n");
 
@@ -202,7 +202,7 @@ int main(void) {
 
 		//compare Alice's and Bob's initial next header keys 1/2
 		if (alice_next_send_header_key != bob_next_receive_header_key) {
-			throw Molch::Exception(INCORRECT_DATA, "Alice's initial next send and Bob's initial next receive header keys don't match.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's initial next send and Bob's initial next receive header keys don't match."};
 		}
 		printf("Alice's initial next send and Bob's initial next receive header keys match.\n");
 		alice_next_send_header_key.clear();
@@ -210,7 +210,7 @@ int main(void) {
 
 		//compare Alice's and Bob's initial next header keys 2/2
 		if (alice_next_receive_header_key != bob_next_send_header_key) {
-			throw Molch::Exception(INCORRECT_DATA, "Alice's initial next receive and Bob's initial next send header keys don't match.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's initial next receive and Bob's initial next send header keys don't match."};
 		}
 		printf("Alice's initial next receive and Bob's initial next send header keys match.\n");
 	} catch (const Molch::Exception& exception) {

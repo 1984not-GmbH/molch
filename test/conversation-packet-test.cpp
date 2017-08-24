@@ -35,7 +35,7 @@ using namespace Molch;
 int main(void) {
 	try {
 		if (sodium_init() != 0) {
-			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium!");
+			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium!"};
 		}
 
 		//create keys
@@ -88,7 +88,7 @@ int main(void) {
 			bob_prekeys};
 
 		if (send_message != received_message) {
-			throw Molch::Exception(INVALID_VALUE, "Message was decrypted incorrectly.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Message was decrypted incorrectly."};
 		}
 		printf("Decrypted message matches with the original message.\n");
 
@@ -115,12 +115,12 @@ int main(void) {
 
 		// check the message numbers
 		if ((bob_receive_message_number != 1) || (bob_previous_receive_message_number != 0)) {
-			throw Molch::Exception(INCORRECT_DATA, "Incorrect receive message number for Bob.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Incorrect receive message number for Bob."};
 		}
 
 		//now check if the received message was correctly decrypted
 		if (bob_receive_message2 != alice_send_message2) {
-			throw Molch::Exception(INVALID_VALUE, "Received message doesn't match.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Received message doesn't match."};
 		}
 		printf("Alice' second message has been sent correctly!\n");
 
@@ -146,12 +146,12 @@ int main(void) {
 
 		// check the message numbers
 		if ((alice_receive_message_number != 0) || (alice_previous_receive_message_number != 0)) {
-			throw Molch::Exception(INCORRECT_DATA, "Incorrect receive message number for Alice.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Incorrect receive message number for Alice."};
 		}
 
 		//compare sent and received messages
 		if (bob_response_message != alice_received_response) {
-			throw Molch::Exception(INVALID_VALUE, "Received response doesn't match.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Received response doesn't match."};
 		}
 		printf("Successfully received Bob's response!\n");
 
@@ -187,7 +187,7 @@ int main(void) {
 			alice_prekeys};
 
 		if (send_message != received_message) {
-			throw Molch::Exception(INVALID_VALUE, "Message incorrectly decrypted.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Message incorrectly decrypted."};
 		}
 		printf("Decrypted message matched with the original message.\n");
 
@@ -212,12 +212,12 @@ int main(void) {
 
 		// check message numbers
 		if ((alice_receive_message_number != 1) || (alice_previous_receive_message_number != 0)) {
-			throw Molch::Exception(INCORRECT_DATA, "Incorrect receive message numbers for Alice.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Incorrect receive message numbers for Alice."};
 		}
 
 		//now check if the received message was correctly decrypted
 		if (alice_receive_message2 != bob_send_message2) {
-			throw Molch::Exception(INVALID_VALUE, "Received message doesn't match.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Received message doesn't match."};
 		}
 		printf("Bobs second message has been sent correctly!.\n");
 
@@ -241,12 +241,12 @@ int main(void) {
 
 		// check message numbers
 		if ((bob_receive_message_number != 0) || (bob_previous_receive_message_number != 0)) {
-			throw Molch::Exception(INCORRECT_DATA, "Incorrect receive message numbers for Alice.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Incorrect receive message numbers for Alice."};
 		}
 
 		//compare sent and received messages
 		if (alice_response_message != bob_received_response) {
-			throw Molch::Exception(INVALID_VALUE, "Received response doesn't match.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Received response doesn't match."};
 		}
 		printf("Successfully received Alice' response!\n");
 	} catch (const Molch::Exception& exception) {

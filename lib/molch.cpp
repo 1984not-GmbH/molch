@@ -47,7 +47,7 @@ class GlobalBackupKeyUnlocker {
 public:
 	GlobalBackupKeyUnlocker() {
 		if (!global_backup_key) {
-			throw Exception(GENERIC_ERROR, "No backup key to unlock!");
+			throw Exception{status_type::GENERIC_ERROR, "No backup key to unlock!"};
 		}
 		sodium_mprotect_readonly(global_backup_key.get());
 	}
@@ -61,7 +61,7 @@ class GlobalBackupKeyWriteUnlocker {
 public:
 	GlobalBackupKeyWriteUnlocker() {
 		if (!global_backup_key) {
-			throw Exception(GENERIC_ERROR, "No backup key to unlock!");
+			throw Exception{status_type::GENERIC_ERROR, "No backup key to unlock!"};
 		}
 		sodium_mprotect_readwrite(global_backup_key.get());
 	}
@@ -78,7 +78,7 @@ static Buffer create_prekey_list(const PublicSigningKey& public_signing_key) {
 	//get the user
 	auto user{users->find(public_signing_key)};
 	if (user == nullptr) {
-		throw Exception(NOT_FOUND, "Couldn't find the user to create a prekey list from.");
+		throw Exception{status_type::NOT_FOUND, "Couldn't find the user to create a prekey list from."};
 	}
 
 	//rotate the prekeys
@@ -157,21 +157,21 @@ return_status molch_create_user(
 	try {
 		if ((public_master_key == nullptr)
 			|| (prekey_list == nullptr) || (prekey_list_length == nullptr)) {
-			throw Exception(INVALID_INPUT, "Invalid input to molch_create_user.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_create_user."};
 		}
 
 		if (backup_key_length != BACKUP_KEY_SIZE) {
-			throw Exception(INCORRECT_BUFFER_SIZE, "Backup key has incorrect length.");
+			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Backup key has incorrect length."};
 		}
 
 		if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-			throw Exception(INCORRECT_BUFFER_SIZE, "Public master key has incorrect length.");
+			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Public master key has incorrect length."};
 		}
 
 		//initialise libsodium and create user store
 		if (!users) {
 			if (sodium_init() == -1) {
-				throw Exception(INIT_ERROR, "Failed to init libsodium.");
+				throw Exception{status_type::INIT_ERROR, "Failed to init libsodium."};
 			}
 			users = std::make_unique<UserStore>();
 		}
@@ -180,7 +180,7 @@ return_status molch_create_user(
 		{
 			auto status{molch_update_backup_key(backup_key, backup_key_length)};
 			on_error {
-				throw Exception(status);
+				throw Exception{status};
 			}
 		}
 
@@ -203,7 +203,7 @@ return_status molch_create_user(
 			if (backup_length != nullptr) {
 				return_status status = molch_export(backup, backup_length);
 				on_error {
-					throw Exception(status);
+					throw Exception{status};
 				}
 			}
 		}
@@ -215,7 +215,7 @@ return_status molch_create_user(
 		status = exception.toReturnStatus();
 		goto cleanup;
 	} catch (const std::exception& exception) {
-		THROW(EXCEPTION, exception.what());
+		THROW(status_type::EXCEPTION, exception.what());
 	}
 
 cleanup:
@@ -246,11 +246,11 @@ return_status molch_destroy_user(
 
 	try {
 		if (!users) {
-			throw Exception(INIT_ERROR, "Molch hasn't been initialised yet.");
+			throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialised yet."};
 		}
 
 		if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-			throw Exception(INCORRECT_BUFFER_SIZE, "Public master key has incorrect size.");
+			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Public master key has incorrect size."};
 		}
 
 		PublicSigningKey public_master_key_key;
@@ -262,7 +262,7 @@ return_status molch_destroy_user(
 			if (backup_length != nullptr) {
 				auto status{molch_export(backup, backup_length)};
 				on_error {
-					throw Exception(status);
+					throw Exception{status};
 				}
 			}
 		}
@@ -270,7 +270,7 @@ return_status molch_destroy_user(
 		status = exception.toReturnStatus();
 		goto cleanup;
 	} catch (const std::exception& exception) {
-		THROW(EXCEPTION, exception.what());
+		THROW(status_type::EXCEPTION, exception.what());
 	}
 
 cleanup:
@@ -314,7 +314,7 @@ return_status molch_list_users(
 
 	try {
 		if (!users || (user_list_length == nullptr)) {
-			throw Exception(INVALID_INPUT, "Invalid input to molch_list_users.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_list_users."};
 		}
 
 		//get the list of users and copy it
@@ -399,12 +399,12 @@ static void verify_prekey_list(
 			static_cast<unsigned long long>(prekey_list_length),
 			public_signing_key.data())};
 	if (status != 0) {
-		throw Exception(VERIFICATION_FAILED, "Failed to verify prekey list signature.");
+		throw Exception{status_type::VERIFICATION_FAILED, "Failed to verify prekey list signature."};
 	}
 	public_signing_key.empty = false;
 	if (verified_length > SIZE_MAX)
 	{
-		throw Exception(CONVERSION_ERROR, "Length is bigger than size_t.");
+		throw Exception{status_type::CONVERSION_ERROR, "Length is bigger than size_t."};
 	}
 	verified_prekey_list.size = static_cast<size_t>(verified_length);
 
@@ -416,7 +416,7 @@ static void verify_prekey_list(
 	//make sure the prekey list isn't too old
 	int64_t current_time{time(nullptr)};
 	if (expiration_date < current_time) {
-		throw Exception(OUTDATED, "Prekey list has expired (older than 3 months).");
+		throw Exception{status_type::OUTDATED, "Prekey list has expired (older than 3 months)."};
 	}
 
 	//copy the public identity key
@@ -458,7 +458,7 @@ return_status molch_start_send_conversation(
 
 	try {
 		if (!users) {
-			throw Exception(INIT_ERROR, "Molch hasn't been initialised yet.");
+			throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialised yet."};
 		}
 
 		//check input
@@ -468,19 +468,19 @@ return_status molch_start_send_conversation(
 				|| (prekey_list == nullptr)
 				|| (sender_public_master_key == nullptr)
 				|| (receiver_public_master_key == nullptr)) {
-			throw Exception(INVALID_INPUT, "Invalid input to molch_start_send_conversation.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_start_send_conversation."};
 		}
 
 		if (conversation_id_length != CONVERSATION_ID_SIZE) {
-			throw Exception(INCORRECT_BUFFER_SIZE, "conversation id has incorrect size.");
+			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "conversation id has incorrect size."};
 		}
 
 		if (sender_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-			throw Exception(INCORRECT_BUFFER_SIZE, "sender public master key has incorrect size.");
+			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "sender public master key has incorrect size."};
 		}
 
 		if (receiver_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-			throw Exception(INCORRECT_BUFFER_SIZE, "receiver public master key has incorrect size.");
+			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "receiver public master key has incorrect size."};
 		}
 
 		//get the user that matches the public signing key of the sender
@@ -488,7 +488,7 @@ return_status molch_start_send_conversation(
 		sender_public_master_key_key.set(sender_public_master_key, PUBLIC_MASTER_KEY_SIZE);
 		auto user{users->find(sender_public_master_key_key)};
 		if (user == nullptr) {
-			throw Exception(NOT_FOUND, "User not found.");
+			throw Exception{status_type::NOT_FOUND, "User not found."};
 		}
 
 		//get the receivers public ephemeral and identity
@@ -531,7 +531,7 @@ return_status molch_start_send_conversation(
 			if (backup_length != nullptr) {
 				auto status{molch_export(backup, backup_length)};
 				on_error {
-					throw Exception(status);
+					throw Exception{status};
 				}
 			}
 		}
@@ -542,7 +542,7 @@ return_status molch_start_send_conversation(
 		status = exception.toReturnStatus();
 		goto cleanup;
 	} catch (const std::exception& exception) {
-		THROW(EXCEPTION, exception.what());
+		THROW(status_type::EXCEPTION, exception.what());
 	}
 
 cleanup:
@@ -583,7 +583,7 @@ cleanup:
 
 		try {
 			if (!users) {
-				throw Exception(INIT_ERROR, "Molch hasn't been initialized yet.");
+				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
 			}
 
 			if ((conversation_id == nullptr)
@@ -592,19 +592,19 @@ cleanup:
 				|| (prekey_list == nullptr) || (prekey_list_length == nullptr)
 				|| (sender_public_master_key == nullptr)
 				|| (receiver_public_master_key == nullptr)) {
-				throw Exception(INVALID_INPUT, "Invalid input to molch_start_receive_conversation.");
+				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_start_receive_conversation."};
 			}
 
 			if (conversation_id_length != CONVERSATION_ID_SIZE) {
-				throw Exception(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size.");
+				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size."};
 			}
 
 			if (sender_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-				throw Exception(INCORRECT_BUFFER_SIZE, "Senders public master key has an incorrect size.");
+				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Senders public master key has an incorrect size."};
 			}
 
 			if (receiver_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-				throw Exception(INCORRECT_BUFFER_SIZE, "Receivers public master key has an incorrect size.");
+				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Receivers public master key has an incorrect size."};
 			}
 
 			//get the user that matches the public signing key of the receiver
@@ -612,7 +612,7 @@ cleanup:
 			receiver_public_master_key_key.set(receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
 			auto user{users->find(receiver_public_master_key_key)};
 			if (user == nullptr) {
-				throw Exception(NOT_FOUND, "User not found in the user store.");
+				throw Exception{status_type::NOT_FOUND, "User not found in the user store."};
 			}
 
 			//unlock the master keys
@@ -646,7 +646,7 @@ cleanup:
 				if (backup_length != nullptr) {
 					auto status{molch_export(backup, backup_length)};
 					on_error {
-						throw Exception(status);
+						throw Exception{status};
 					}
 				}
 			}
@@ -660,7 +660,7 @@ cleanup:
 			status = exception.toReturnStatus();
 			goto cleanup;
 		} catch (const std::exception& exception) {
-			THROW(EXCEPTION, exception.what());
+			THROW(status_type::EXCEPTION, exception.what());
 		}
 
 	cleanup:
@@ -690,17 +690,17 @@ cleanup:
 
 		try {
 			if (!users) {
-				throw Exception(INIT_ERROR, "Molch hasn't been initialized yet.");
+				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
 			}
 
 			if ((packet == nullptr) || (packet_length == nullptr)
 				|| (message == nullptr)
 				|| (conversation_id == nullptr)) {
-				throw Exception(INVALID_INPUT, "Invalid input to molch_encrypt_message.");
+				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_encrypt_message."};
 			}
 
 			if (conversation_id_length != CONVERSATION_ID_SIZE) {
-				throw Exception(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size.");
+				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size."};
 			}
 
 			//find the conversation
@@ -709,7 +709,7 @@ cleanup:
 			Molch::User *user;
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
-				throw Exception(NOT_FOUND, "Failed to find a conversation for the given ID.");
+				throw Exception{status_type::NOT_FOUND, "Failed to find a conversation for the given ID."};
 			}
 
 			Buffer message_buffer{message, message_length};
@@ -728,7 +728,7 @@ cleanup:
 				if (conversation_backup_length != nullptr) {
 					auto status{molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id.data(), conversation->id.size())};
 					on_error {
-						throw Exception(status);
+						throw Exception{status};
 					}
 				}
 			}
@@ -739,7 +739,7 @@ cleanup:
 			status = exception.toReturnStatus();
 			goto cleanup;
 		} catch (const std::exception& exception) {
-			THROW(EXCEPTION, exception.what());
+			THROW(status_type::EXCEPTION, exception.what());
 		}
 
 	cleanup:
@@ -771,7 +771,7 @@ cleanup:
 
 		try {
 			if (!users) {
-				throw Exception(INIT_ERROR, "Molch hasn't been initialized yet.");
+				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
 			}
 
 			if ((message == nullptr) || (message_length == nullptr)
@@ -779,11 +779,11 @@ cleanup:
 				|| (conversation_id == nullptr)
 				|| (receive_message_number == nullptr)
 				|| (previous_receive_message_number == nullptr)) {
-				throw Exception(INVALID_INPUT, "Invalid input to molch_decrypt_message.");
+				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_decrypt_message."};
 			}
 
 			if (conversation_id_length != CONVERSATION_ID_SIZE) {
-				throw Exception(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size.");
+				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size."};
 			}
 
 			//find the conversation
@@ -792,7 +792,7 @@ cleanup:
 			Molch::User* user;
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
-				throw Exception(NOT_FOUND, "Failed to find conversation with the given ID.");
+				throw Exception{status_type::NOT_FOUND, "Failed to find conversation with the given ID."};
 			}
 
 			Buffer packet_buffer{packet, packet_length};
@@ -810,7 +810,7 @@ cleanup:
 				if (conversation_backup_length != nullptr) {
 					auto status{molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id.data(), conversation->id.size())};
 					on_error {
-						throw Exception(status);
+						throw Exception{status};
 					}
 				}
 			}
@@ -821,7 +821,7 @@ cleanup:
 			status = exception.toReturnStatus();
 			goto cleanup;
 		} catch (const std::exception& exception) {
-			THROW(EXCEPTION, exception.what());
+			THROW(status_type::EXCEPTION, exception.what());
 		}
 
 	cleanup:
@@ -840,15 +840,15 @@ cleanup:
 
 		try {
 			if (!users) {
-				throw Exception(INIT_ERROR, "Molch hasn't been initialized yet.");
+				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
 			}
 
 			if (conversation_id == nullptr) {
-				throw Exception(INVALID_INPUT, "Invalid input to molch_end_conversation.");
+				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_end_conversation."};
 			}
 
 			if (conversation_id_length != CONVERSATION_ID_SIZE) {
-				throw Exception(INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect length.");
+				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect length."};
 			}
 
 			//find the conversation
@@ -857,7 +857,7 @@ cleanup:
 			conversation_id_key.set(conversation_id, CONVERSATION_ID_SIZE);
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
-				throw Exception(NOT_FOUND, "Couldn't find conversation.");
+				throw Exception{status_type::NOT_FOUND, "Couldn't find conversation."};
 			}
 
 			user->conversations.remove(conversation_id_key);
@@ -867,7 +867,7 @@ cleanup:
 				if (backup_length != nullptr) {
 					auto status{molch_export(backup, backup_length)};
 					on_error {
-						throw Exception(status);
+						throw Exception{status};
 					}
 				}
 			}
@@ -875,7 +875,7 @@ cleanup:
 			status = exception.toReturnStatus();
 			goto cleanup;
 		} catch (const std::exception& exception) {
-			THROW(EXCEPTION, exception.what());
+			THROW(status_type::EXCEPTION, exception.what());
 		}
 
 	cleanup:
@@ -909,22 +909,22 @@ cleanup:
 			}
 
 			if (!users) {
-				throw Exception(INIT_ERROR, "Molch hasn't been initialized yet.");
+				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
 			}
 
 			if ((user_public_master_key == nullptr) || (conversation_list == nullptr) || (conversation_list_length == nullptr) || (number == nullptr)) {
-				throw Exception(INVALID_INPUT, "Invalid input to molch_list_conversations.");
+				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_list_conversations."};
 			}
 
 			if (user_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-				throw Exception(INCORRECT_BUFFER_SIZE, "Public master key has an incorrect length.");
+				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Public master key has an incorrect length."};
 			}
 
 			PublicSigningKey user_public_master_key_key;
 			user_public_master_key_key.set(user_public_master_key, PUBLIC_MASTER_KEY_SIZE);
 			auto user{users->find(user_public_master_key_key)};
 			if (user == nullptr) {
-				throw Exception(NOT_FOUND, "No user found for the given public identity.");
+				throw Exception{status_type::NOT_FOUND, "No user found for the given public identity."};
 			}
 
 			auto conversation_list_buffer{user->conversations.list()};
@@ -934,7 +934,7 @@ cleanup:
 				*number = 0;
 			} else {
 				if ((conversation_list_buffer.size % CONVERSATION_ID_SIZE) != 0) {
-					throw Exception(INCORRECT_BUFFER_SIZE, "The conversation ID buffer has an incorrect length.");
+					throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The conversation ID buffer has an incorrect length."};
 				}
 				*number = conversation_list_buffer.size / CONVERSATION_ID_SIZE;
 
@@ -948,7 +948,7 @@ cleanup:
 			status = exception.toReturnStatus();
 			goto cleanup;
 		} catch (const std::exception& exception) {
-			THROW(EXCEPTION, exception.what());
+			THROW(status_type::EXCEPTION, exception.what());
 		}
 
 	cleanup:
@@ -1012,20 +1012,20 @@ cleanup:
 			encrypted_backup__init(&encrypted_backup_struct);
 
 			if (!users) {
-				throw Exception(INIT_ERROR, "Molch hasn't been initialized yet.");
+				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
 			}
 
 			//check input
 			if ((backup == nullptr) || (backup_length == nullptr)
 					|| (conversation_id == nullptr)) {
-				throw Exception(INVALID_INPUT, "Invalid input to molch_conversation_export");
+				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_conversation_export"};
 			}
 			if ((conversation_id_length != CONVERSATION_ID_SIZE)) {
-				throw Exception(INVALID_INPUT, "Conversation ID has an invalid size.");
+				throw Exception{status_type::INVALID_INPUT, "Conversation ID has an invalid size."};
 			}
 
 			if ((global_backup_key == nullptr) || (global_backup_key->size() != BACKUP_KEY_SIZE)) {
-				throw Exception(INCORRECT_DATA, "No backup key found.");
+				throw Exception{status_type::INCORRECT_DATA, "No backup key found."};
 			}
 
 			//find the conversation
@@ -1034,7 +1034,7 @@ cleanup:
 			conversation_id_key.set(conversation_id, CONVERSATION_ID_SIZE);
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
-				throw Exception(NOT_FOUND, "Failed to find the conversation.");
+				throw Exception{status_type::NOT_FOUND, "Failed to find the conversation."};
 			}
 
 			//export the conversation
@@ -1048,7 +1048,7 @@ cleanup:
 
 			conversation_buffer.size = conversation__pack(conversation_struct, conversation_buffer.content);
 			if (conversation_buffer.size != conversation_size) {
-				throw Exception(PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c.");
+				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c."};
 			}
 
 			//generate the nonce
@@ -1068,7 +1068,7 @@ cleanup:
 					global_backup_key->data())};
 			if (status != 0) {
 				backup_buffer.size = 0;
-				throw Exception(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
+				throw Exception{status_type::ENCRYPT_ERROR, "Failed to enrypt conversation state."};
 			}
 
 			//fill in the encrypted backup struct
@@ -1090,7 +1090,7 @@ cleanup:
 			Buffer malloced_encrypted_backup{encrypted_backup_size, 0, &malloc, &free};
 			malloced_encrypted_backup.size = encrypted_backup__pack(&encrypted_backup_struct, malloced_encrypted_backup.content);
 			if (malloced_encrypted_backup.size != encrypted_backup_size) {
-				throw Exception(PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
+				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation."};
 			}
 			*backup_length = malloced_encrypted_backup.size;
 			*backup = malloced_encrypted_backup.release();
@@ -1098,7 +1098,7 @@ cleanup:
 			status = exception.toReturnStatus();
 			goto cleanup;
 		} catch (const std::exception& exception) {
-			THROW(EXCEPTION, exception.what());
+			THROW(status_type::EXCEPTION, exception.what());
 		}
 
 	cleanup:
@@ -1134,38 +1134,38 @@ cleanup:
 
 		try {
 			if (!users) {
-				throw Exception(INIT_ERROR, "Molch hasn't been initialized yet.");
+				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
 			}
 
 			//check input
 			if ((backup == nullptr) || (backup_key == nullptr)) {
-				throw Exception(INVALID_INPUT, "Invalid input to molch_import.");
+				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_import."};
 			}
 			if (backup_key_length != BACKUP_KEY_SIZE) {
-				throw Exception(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
+				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length."};
 			}
 			if (new_backup_key_length != BACKUP_KEY_SIZE) {
-				throw Exception(INCORRECT_BUFFER_SIZE, "New backup key has an incorrect length.");
+				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "New backup key has an incorrect length."};
 			}
 
 			//unpack the encrypted backup
 			auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup))};
 			if (encrypted_backup_struct == nullptr) {
-				throw Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
+				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf."};
 			}
 
 			//check the backup
 			if (encrypted_backup_struct->backup_version != 0) {
-				throw Exception(INCORRECT_DATA, "Incompatible backup.");
+				throw Exception{status_type::INCORRECT_DATA, "Incompatible backup."};
 			}
 			if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP)) {
-				throw Exception(INCORRECT_DATA, "Backup is not a conversation backup.");
+				throw Exception{status_type::INCORRECT_DATA, "Backup is not a conversation backup."};
 			}
 			if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
-				throw Exception(PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state.");
+				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state."};
 			}
 			if (!encrypted_backup_struct->has_encrypted_backup_nonce || (encrypted_backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
-				throw Exception(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
+				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
 			}
 
 			ProtobufPool pool;
@@ -1184,14 +1184,14 @@ cleanup:
 					encrypted_backup_struct->encrypted_backup_nonce.data,
 					backup_key)};
 			if (status_int != 0) {
-				throw Exception(DECRYPT_ERROR, "Failed to decrypt conversation backup.");
+				throw Exception{status_type::DECRYPT_ERROR, "Failed to decrypt conversation backup."};
 			}
 
 			//unpack the struct
 			auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 			auto conversation_struct{conversation__unpack(&pool_protoc_allocator, decrypted_backup.size, decrypted_backup.content)};
 			if (conversation_struct == nullptr) {
-				throw Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversations protobuf-c.");
+				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack conversations protobuf-c."};
 			}
 
 			//import the conversation
@@ -1201,7 +1201,7 @@ cleanup:
 			conversation_id_key.set(conversation_struct->id.data, conversation_struct->id.len);
 			auto existing_conversation{users->findConversation(containing_user, conversation_id_key)};
 			if (existing_conversation == nullptr) {
-				throw Exception(NOT_FOUND, "Containing store not found.");
+				throw Exception{status_type::NOT_FOUND, "Containing store not found."};
 			}
 
 			containing_user->conversations.add(std::move(conversation));
@@ -1209,13 +1209,13 @@ cleanup:
 			//update the backup key
 			auto status{molch_update_backup_key(new_backup_key, new_backup_key_length)};
 			on_error {
-				throw Exception(KEYGENERATION_FAILED, "Failed to update backup key.");
+				throw Exception{status_type::KEYGENERATION_FAILED, "Failed to update backup key."};
 			}
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
 			goto cleanup;
 		} catch (const std::exception& exception) {
-			THROW(EXCEPTION, exception.what());
+			THROW(status_type::EXCEPTION, exception.what());
 		}
 
 	cleanup:
@@ -1237,17 +1237,17 @@ cleanup:
 
 		try {
 			if (!users) {
-				throw Exception(INIT_ERROR, "Molch hasn't been initialized yet.");
+				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
 			}
 
 			//check input
 			if ((backup == nullptr) || (backup_length == nullptr)) {
-				throw Exception(INVALID_INPUT, "Invalid input to molch_export");
+				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_export"};
 			}
 
 			GlobalBackupKeyUnlocker unlocker;
 			if ((global_backup_key == nullptr) || global_backup_key->empty) {
-				throw Exception(INCORRECT_DATA, "No backup key found.");
+				throw Exception{status_type::INCORRECT_DATA, "No backup key found."};
 			}
 
 			ProtobufPool pool;
@@ -1264,7 +1264,7 @@ cleanup:
 
 			users_buffer.size = backup__pack(backup_struct, users_buffer.content);
 			if (users_buffer.size != backup_struct_size) {
-				throw Exception(PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c.");
+				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c."};
 			}
 
 			//generate the nonce
@@ -1282,7 +1282,7 @@ cleanup:
 					backup_nonce.content,
 					global_backup_key->data())};
 			if (status != 0) {
-				throw Exception(ENCRYPT_ERROR, "Failed to enrypt conversation state.");
+				throw Exception{status_type::ENCRYPT_ERROR, "Failed to enrypt conversation state."};
 			}
 
 			//fill in the encrypted backup struct
@@ -1306,7 +1306,7 @@ cleanup:
 			Buffer malloced_encrypted_backup{encrypted_backup_size, 0, &malloc, &free};
 			malloced_encrypted_backup.size = encrypted_backup__pack(&encrypted_backup_struct, malloced_encrypted_backup.content);
 			if (malloced_encrypted_backup.size != encrypted_backup_size) {
-				throw Exception(PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
+				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation."};
 			}
 			*backup_length = malloced_encrypted_backup.size;
 			*backup = malloced_encrypted_backup.release();
@@ -1314,7 +1314,7 @@ cleanup:
 			status = exception.toReturnStatus();
 			goto cleanup;
 		} catch (const std::exception& exception) {
-			THROW(EXCEPTION, exception.what());
+			THROW(status_type::EXCEPTION, exception.what());
 		}
 
 	cleanup:
@@ -1355,39 +1355,39 @@ cleanup:
 		try {
 			//check input
 			if ((backup == nullptr) || (backup_key == nullptr)) {
-				throw Exception(INVALID_INPUT, "Invalid input to molch_import.");
+				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_import."};
 			}
 			if (backup_key_length != BACKUP_KEY_SIZE) {
-				throw Exception(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
+				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length."};
 			}
 			if (new_backup_key_length != BACKUP_KEY_SIZE) {
-				throw Exception(INCORRECT_BUFFER_SIZE, "New backup key has an incorrect length.");
+				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "New backup key has an incorrect length."};
 			}
 
 			if (!users) {
 				if (sodium_init() == -1) {
-					throw Exception(INIT_ERROR, "Failed to init libsodium.");
+					throw Exception{status_type::INIT_ERROR, "Failed to init libsodium."};
 				}
 			}
 
 			//unpack the encrypted backup
 			auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup))};
 			if (encrypted_backup_struct == nullptr) {
-				throw Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
+				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf."};
 			}
 
 			//check the backup
 			if (encrypted_backup_struct->backup_version != 0) {
-				throw Exception(INCORRECT_DATA, "Incompatible backup.");
+				throw Exception{status_type::INCORRECT_DATA, "Incompatible backup."};
 			}
 			if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP)) {
-				throw Exception(INCORRECT_DATA, "Backup is not a full backup.");
+				throw Exception{status_type::INCORRECT_DATA, "Backup is not a full backup."};
 			}
 			if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
-				throw Exception(PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted state.");
+				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted state."};
 			}
 			if (!encrypted_backup_struct->has_encrypted_backup_nonce || (encrypted_backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
-				throw Exception(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
+				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
 			}
 
 			ProtobufPool pool;
@@ -1406,14 +1406,14 @@ cleanup:
 					encrypted_backup_struct->encrypted_backup_nonce.data,
 					backup_key)};
 			if (status_int != 0) {
-				throw Exception(DECRYPT_ERROR, "Failed to decrypt backup.");
+				throw Exception{status_type::DECRYPT_ERROR, "Failed to decrypt backup."};
 			}
 
 			//unpack the struct
 			auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 			auto backup_struct{backup__unpack(&pool_protoc_allocator, decrypted_backup.size, decrypted_backup.content)};
 			if (backup_struct == nullptr) {
-				throw Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack backups protobuf-c.");
+				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack backups protobuf-c."};
 			}
 
 			//import the user store
@@ -1422,7 +1422,7 @@ cleanup:
 			//update the backup key
 			auto status{molch_update_backup_key(new_backup_key, new_backup_key_length)};
 			on_error {
-				throw Exception(status);
+				throw Exception{status};
 			}
 
 			//everyting worked, switch to the new user store
@@ -1431,7 +1431,7 @@ cleanup:
 			status = exception.toReturnStatus();
 			goto cleanup;
 		} catch (const std::exception& exception) {
-			THROW(EXCEPTION, exception.what());
+			THROW(status_type::EXCEPTION, exception.what());
 		}
 
 	cleanup:
@@ -1455,16 +1455,16 @@ cleanup:
 
 		try {
 			if (!users) {
-				throw Exception(INIT_ERROR, "Molch hasn't been initialized yet.");
+				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
 			}
 
 			// check input
 			if ((public_master_key == nullptr) || (prekey_list == nullptr) || (prekey_list_length == nullptr)) {
-				throw Exception(INVALID_INPUT, "Invalid input to molch_get_prekey_list.");
+				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_get_prekey_list."};
 			}
 
 			if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-				throw Exception(INCORRECT_BUFFER_SIZE, "Public master key has an incorrect length.");
+				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Public master key has an incorrect length."};
 			}
 
 			PublicSigningKey public_signing_key_key;
@@ -1478,7 +1478,7 @@ cleanup:
 			status = exception.toReturnStatus();
 			goto cleanup;
 		} catch (const std::exception& exception) {
-			THROW(EXCEPTION, exception.what());
+			THROW(status_type::EXCEPTION, exception.what());
 		}
 
 	cleanup:
@@ -1499,17 +1499,17 @@ cleanup:
 		try {
 			if (!users) {
 				if (sodium_init() == -1) {
-					throw Exception(INIT_ERROR, "Failed to initialize libsodium.");
+					throw Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
 				}
 				users = std::make_unique<UserStore>();
 			}
 
 			if (new_key == nullptr) {
-				throw Exception(INVALID_INPUT, "Invalid input to molch_update_backup_key.");
+				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_update_backup_key."};
 			}
 
 			if (new_key_length != BACKUP_KEY_SIZE) {
-				throw Exception(INCORRECT_BUFFER_SIZE, "New key has an incorrect length.");
+				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "New key has an incorrect length."};
 			}
 
 			// create a backup key buffer if it doesnt exist already
@@ -1528,7 +1528,7 @@ cleanup:
 			status = exception.toReturnStatus();
 			goto cleanup;
 		} catch (const std::exception& exception) {
-			THROW(EXCEPTION, exception.what());
+			THROW(status_type::EXCEPTION, exception.what());
 		}
 
 	cleanup:

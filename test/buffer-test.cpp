@@ -34,7 +34,7 @@ using namespace Molch;
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
 		}
 
 		Buffer string1{"1234"};
@@ -44,12 +44,12 @@ int main(void) {
 		if ((string1 != string2)
 				|| (string1 == string3)
 				|| (string1 == string4)) {
-			throw Molch::Exception(BUFFER_ERROR, "buffer_compare doesn't work as expected.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "buffer_compare doesn't work as expected."};
 		}
 
 		if ((string1.comparePartial(0, string4, 0, 4) != 0)
 				|| (string1.comparePartial(2, string3, 2, 2) != 0)) {
-			throw Molch::Exception(BUFFER_ERROR, "buffer_compare_partial doesn't work as expected.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "buffer_compare_partial doesn't work as expected."};
 		}
 		std::cout << "Successfully tested buffer comparison ..." << std::endl;
 
@@ -81,7 +81,7 @@ int main(void) {
 		Buffer buffer3{5, 0};
 		buffer3.copyFrom(0, buffer2, 0, buffer2.size);
 		if (buffer2 != buffer3) {
-			throw Molch::Exception(BUFFER_ERROR, "Failed to copy buffer.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy buffer."};
 		}
 		printf("Buffer successfully copied.\n");
 
@@ -92,13 +92,13 @@ int main(void) {
 			detected = true;
 		}
 		if (!detected) {
-			throw Molch::Exception(GENERIC_ERROR, "Failed to detect out of bounds buffer copying.");
+			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to detect out of bounds buffer copying."};
 		}
 		printf("Detected out of bounds buffer copying.\n");
 
 		buffer3.copyFrom(1, buffer2, 0, buffer2.size);
 		if ((buffer3.content[0] != buffer2.content[0]) || (sodium_memcmp(buffer2.content, buffer3.content + 1, buffer2.size) != 0)) {
-			throw Molch::Exception(BUFFER_ERROR, "Failed to copy buffer.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy buffer."};
 		}
 		printf("Successfully copied buffer.\n");
 
@@ -110,7 +110,7 @@ int main(void) {
 				1, //source offset
 				4); //length
 		if (sodium_memcmp(raw_array, buffer1.content + 1, 4) != 0) {
-			throw Molch::Exception(BUFFER_ERROR, "Failed to copy buffer to raw array.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy buffer to raw array."};
 		}
 		printf("Successfully copied buffer to raw array.\n");
 
@@ -121,7 +121,7 @@ int main(void) {
 			detected = true;
 		}
 		if (!detected) {
-			throw Molch::Exception(GENERIC_ERROR, "Failed to detect out of bounds read.");
+			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to detect out of bounds read."};
 		}
 		printf("Successfully detected out of bounds read.\n");
 
@@ -133,7 +133,7 @@ int main(void) {
 				0, //offset
 				sizeof(heeelo)); //length
 		if (sodium_memcmp(heeelo, buffer1.content, sizeof(heeelo))) {
-			throw Molch::Exception(BUFFER_ERROR, "Failed to copy from raw array to buffer.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy from raw array to buffer."};
 		}
 		printf("Successfully copied raw array to buffer.\n");
 
@@ -148,17 +148,17 @@ int main(void) {
 			detected = true;
 		}
 		if (!detected) {
-			throw Molch::Exception(GENERIC_ERROR, "Failed to detect out of bounds read.");
+			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to detect out of bounds read."};
 		}
 		printf("Out of bounds read detected.\n");
 
 		//create a buffer from a string
 		Buffer string{"This is a string!"};
 		if (string.size != sizeof("This is a string!")) {
-			throw Molch::Exception(BUFFER_ERROR, "Buffer created from string has incorrect length.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "Buffer created from string has incorrect length."};
 		}
 		if (sodium_memcmp(string.content, "This is a string!", string.size) != 0) {
-			throw Molch::Exception(BUFFER_ERROR, "Failed to create buffer from string.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to create buffer from string."};
 		}
 		printf("Successfully created buffer from string.\n");
 
@@ -169,12 +169,12 @@ int main(void) {
 		//check if the buffer was properly cleared
 		for (size_t i{0}; i < buffer1.capacity(); i++) {
 			if (buffer1.content[i] != '\0') {
-				throw Molch::Exception(BUFFER_ERROR, "Buffer hasn't been erased properly.");
+				throw Molch::Exception{status_type::BUFFER_ERROR, "Buffer hasn't been erased properly."};
 			}
 		}
 
 		if (buffer1.size != 0) {
-			throw Molch::Exception(BUFFER_ERROR, "The content length of the buffer hasn't been set to zero.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "The content length of the buffer hasn't been set to zero."};
 		}
 		printf("Buffer successfully erased.\n");
 
@@ -183,7 +183,7 @@ int main(void) {
 		random.fillRandom(5);
 
 		if (random.size != 5) {
-			throw Molch::Exception(BUFFER_ERROR, "Wrong content length.\n");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "Wrong content length.\n"};
 		}
 		printf("Buffer with %zu random bytes:\n", random.size);
 		random.printHex(std::cout);
@@ -195,7 +195,7 @@ int main(void) {
 			detected = true;
 		}
 		if (!detected) {
-			throw Molch::Exception(BUFFER_ERROR, "Failed to detect too long write to buffer.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to detect too long write to buffer."};
 		}
 
 		random.setReadOnly(true);
@@ -206,7 +206,7 @@ int main(void) {
 			detected = true;
 		}
 		if (!detected) {
-			throw Molch::Exception(BUFFER_ERROR, "Failed to prevent write to readonly buffer.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to prevent write to readonly buffer."};
 		}
 
 		//test xor
@@ -222,7 +222,7 @@ int main(void) {
 
 		//make sure that xor doesn't contain either 'text' or 'random2'
 		if ((to_xor == text) || (to_xor == random2)) {
-			throw Molch::Exception(BUFFER_ERROR, "ERROR: xor buffer contains 'text' or 'random2'.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "ERROR: xor buffer contains 'text' or 'random2'."};
 		}
 
 		//xor the buffer with text again to get out the random data
@@ -230,7 +230,7 @@ int main(void) {
 
 		//xor should now contain the same as random2
 		if (to_xor != random2) {
-			throw Molch::Exception(BUFFER_ERROR, "ERROR: Failed to xor buffers properly.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "ERROR: Failed to xor buffers properly."};
 		}
 		printf("Successfully tested xor.\n");
 
@@ -240,38 +240,38 @@ int main(void) {
 		if ((buffer_with_array.content != array)
 				|| (buffer_with_array.size != sizeof(array))
 				|| (buffer_with_array.capacity() != sizeof(array))) {
-			throw Molch::Exception(BUFFER_ERROR, "Failed to create buffer with existing array.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to create buffer with existing array."};
 		}
 
 		//compare buffer to an array
 		Buffer true_buffer{"true"};
 		auto comparison{true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("true"), sizeof("true"))};
 		if (comparison != 0) {
-			throw Molch::Exception(BUFFER_ERROR, "Failed to compare buffer to array.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to compare buffer to array."};
 		}
 		comparison = true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("fals"), sizeof("fals"));
 		if (comparison == 0) {
-			throw Molch::Exception(BUFFER_ERROR, "Failed to detect difference in buffer and array.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to detect difference in buffer and array."};
 		}
 		comparison = true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("false"), sizeof("false"));
 		if (comparison == 0) {
-			throw Molch::Exception(BUFFER_ERROR, "ERROR: Failed to detect difference in buffer and array.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "ERROR: Failed to detect difference in buffer and array."};
 		}
 
 		//test custom allocator
 		Buffer custom_allocated{10, 10, sodium_malloc, sodium_free};
 		Buffer custom_allocated_empty_buffer{0, 0, malloc, free};
 		if (custom_allocated_empty_buffer.content != nullptr) {
-			throw Molch::Exception(BUFFER_ERROR, "Customly allocated empty buffer has content.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "Customly allocated empty buffer has content."};
 		}
 
 		Buffer four_two{4, 2};
 		if ((!four_two.fits(4)) || (!four_two.fits(2)) || four_two.fits(5)) {
-			throw Molch::Exception(BUFFER_ERROR, "Buffer doesn't detect correctly what fits in it.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "Buffer doesn't detect correctly what fits in it."};
 		}
 
 		if ((!four_two.contains(2)) || four_two.contains(1) || four_two.contains(3)) {
-			throw Molch::Exception(BUFFER_ERROR, "Buffer doesn't detect correctly what it contains.");
+			throw Molch::Exception{status_type::BUFFER_ERROR, "Buffer doesn't detect correctly what it contains."};
 		}
 	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;

@@ -41,30 +41,30 @@ static Buffer decrypt_conversation_backup(
 		const size_t backup_key_length) {
 	//check input
 	if ((backup == nullptr) || (backup_key == nullptr)) {
-		throw Molch::Exception(INVALID_INPUT, "Invalid input to molch_import.");
+		throw Molch::Exception{status_type::INVALID_INPUT, "Invalid input to molch_import."};
 	}
 	if (backup_key_length != BACKUP_KEY_SIZE) {
-		throw Molch::Exception(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
+		throw Molch::Exception{status_type::INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length."};
 	}
 
 	//unpack the encrypted backup
 	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup))};
 	if (encrypted_backup_struct == nullptr) {
-		throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
+		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf."};
 	}
 
 	//check the backup
 	if (encrypted_backup_struct->backup_version != 0) {
-		throw Molch::Exception(INCORRECT_DATA, "Incompatible backup.");
+		throw Molch::Exception{status_type::INCORRECT_DATA, "Incompatible backup."};
 	}
 	if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP)) {
-		throw Molch::Exception(INCORRECT_DATA, "Backup is not a conversation backup.");
+		throw Molch::Exception{status_type::INCORRECT_DATA, "Backup is not a conversation backup."};
 	}
 	if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
-		throw Molch::Exception(PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state.");
+		throw Molch::Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state."};
 	}
 	if (!encrypted_backup_struct->has_encrypted_backup_nonce || (encrypted_backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
-		throw Molch::Exception(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
+		throw Molch::Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
 	}
 
 	auto decrypted_backup_content{pool.allocate<unsigned char>(
@@ -82,7 +82,7 @@ static Buffer decrypt_conversation_backup(
 			encrypted_backup_struct->encrypted_backup_nonce.data,
 			backup_key)};
 	if (status != 0) {
-		throw Molch::Exception(DECRYPT_ERROR, "Failed to decrypt conversation backup.");
+		throw Molch::Exception{status_type::DECRYPT_ERROR, "Failed to decrypt conversation backup."};
 	}
 
 	return decrypted_backup;
@@ -96,30 +96,30 @@ static Buffer decrypt_full_backup(
 		const size_t backup_key_length) {
 	//check input
 	if ((backup == nullptr) || (backup_key == nullptr)) {
-		throw Molch::Exception(INVALID_INPUT, "Invalid input to molch_import.");
+		throw Molch::Exception{status_type::INVALID_INPUT, "Invalid input to molch_import."};
 	}
 	if (backup_key_length != BACKUP_KEY_SIZE) {
-		throw Molch::Exception(INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length.");
+		throw Molch::Exception{status_type::INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length."};
 	}
 
 	//unpack the encrypted backup
 	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup))};
 	if (encrypted_backup_struct == nullptr) {
-		throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
+		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf."};
 	}
 
 	//check the backup
 	if (encrypted_backup_struct->backup_version != 0) {
-		throw Molch::Exception(INCORRECT_DATA, "Incompatible backup.");
+		throw Molch::Exception{status_type::INCORRECT_DATA, "Incompatible backup."};
 	}
 	if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP)) {
-		throw Molch::Exception(INCORRECT_DATA, "Backup is not a conversation backup.");
+		throw Molch::Exception{status_type::INCORRECT_DATA, "Backup is not a conversation backup."};
 	}
 	if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
-		throw Molch::Exception(PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state.");
+		throw Molch::Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state."};
 	}
 	if (!encrypted_backup_struct->has_encrypted_backup_nonce || (encrypted_backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
-		throw Molch::Exception(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
+		throw Molch::Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
 	}
 
 	auto decrypted_backup_content{pool.allocate<unsigned char>(
@@ -137,7 +137,7 @@ static Buffer decrypt_full_backup(
 			encrypted_backup_struct->encrypted_backup_nonce.data,
 			backup_key)};
 	if (status != 0) {
-		throw Molch::Exception(DECRYPT_ERROR, "Failed to decrypt conversation backup.");
+		throw Molch::Exception{status_type::DECRYPT_ERROR, "Failed to decrypt conversation backup."};
 	}
 
 	return decrypted_backup;
@@ -146,7 +146,7 @@ static Buffer decrypt_full_backup(
 int main(void) {
 	try {
 		if (sodium_init() == -1) {
-			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium.");
+			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
 		}
 
 		//mustn't crash here!
@@ -156,13 +156,13 @@ int main(void) {
 		{
 			return_status status = molch_update_backup_key(backup_key.content, backup_key.size);
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 		}
 
 		//check user count
 		if (molch_user_count() != 0) {
-			throw Molch::Exception(INVALID_VALUE, "Wrong user count.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Wrong user count."};
 		}
 
 		//create a new user
@@ -188,14 +188,14 @@ int main(void) {
 					alice_head_on_keyboard.content,
 					alice_head_on_keyboard.size)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 			complete_export.reset(complete_export_ptr);
 			alice_public_prekeys.reset(alice_public_prekeys_ptr);
 		}
 
 		if (backup_key == new_backup_key) {
-			throw Molch::Exception(INCORRECT_DATA, "New backup key is the same as the old one.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "New backup key is the same as the old one."};
 		}
 
 		backup_key.cloneFrom(new_backup_key);
@@ -203,20 +203,20 @@ int main(void) {
 		printf("Alice public identity (%zu Bytes):\n", alice_public_identity.size);
 		alice_public_identity.printHex(std::cout) << std::endl;
 		if (!complete_export) {
-			throw Molch::Exception(EXPORT_ERROR, "Failed to export the librarys state after creating alice.");
+			throw Molch::Exception{status_type::EXPORT_ERROR, "Failed to export the librarys state after creating alice."};
 		}
 
 
 		//check user count
 		if (molch_user_count() != 1) {
-			throw Molch::Exception(INVALID_VALUE, "Wrong user count.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Wrong user count."};
 		}
 
 		//create a new backup key
 		{
 			return_status status = molch_update_backup_key(backup_key.content, backup_key.size);
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 		}
 
@@ -242,7 +242,7 @@ int main(void) {
 					bob_head_on_keyboard.content,
 					bob_head_on_keyboard.size)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 			bob_public_prekeys.reset(bob_public_prekeys_ptr);
 		}
@@ -252,7 +252,7 @@ int main(void) {
 
 		//check user count
 		if (molch_user_count() != 2) {
-			throw Molch::Exception(INVALID_VALUE, "Wrong user count.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Wrong user count."};
 		}
 
 		//check user list
@@ -263,14 +263,14 @@ int main(void) {
 			unsigned char *user_list_ptr{nullptr};
 			auto status{molch_list_users(&user_list_ptr, &user_list_length, &user_count)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 			user_list.reset(user_list_ptr);
 		}
 		if ((user_count != 2) || (user_list_length != user_count * PUBLIC_KEY_SIZE)
 				|| (sodium_memcmp(alice_public_identity.content, user_list.get(), alice_public_identity.size) != 0)
 				|| (sodium_memcmp(bob_public_identity.content, user_list.get() + PUBLIC_KEY_SIZE, alice_public_identity.size) != 0)) {
-			throw Molch::Exception(INCORRECT_DATA, "User list is incorrect.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "User list is incorrect."};
 		}
 
 		//create a new send conversation (alice sends to bob)
@@ -296,7 +296,7 @@ int main(void) {
 					nullptr,
 					nullptr)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 			alice_send_packet.reset(alice_send_packet_ptr);
 		}
@@ -314,17 +314,17 @@ int main(void) {
 					alice_public_identity.content,
 					alice_public_identity.size)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 			conversation_list.reset(conversation_list_ptr);
 		}
 		if ((number_of_conversations != 1) || (alice_conversation.compareToRaw(conversation_list.get(), conversation_list_length) != 0)) {
-			throw Molch::Exception(GENERIC_ERROR, "Failed to list conversations.");
+			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to list conversations."};
 		}
 
 		//check the message type
 		if (molch_get_message_type(alice_send_packet.get(), alice_send_packet_length) != PREKEY_MESSAGE) {
-			throw Molch::Exception(INVALID_VALUE, "Wrong message type.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Wrong message type."};
 		}
 
 		// export the prekeys again
@@ -336,7 +336,7 @@ int main(void) {
 					alice_public_identity.content,
 					alice_public_identity.size)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 			alice_public_prekeys.reset(alice_public_prekeys_ptr);
 		}
@@ -364,7 +364,7 @@ int main(void) {
 					nullptr,
 					nullptr)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 			bob_receive_message.reset(bob_receive_message_ptr);
 			bob_public_prekeys.reset(bob_public_prekeys_ptr);
@@ -375,7 +375,7 @@ int main(void) {
 		printf("received (Bob): %.*s\n", static_cast<int>(bob_receive_message_length), bob_receive_message.get());
 		if ((alice_send_message.size != bob_receive_message_length)
 				|| (sodium_memcmp(alice_send_message.content, bob_receive_message.get(), bob_receive_message_length) != 0)) {
-			throw Molch::Exception(GENERIC_ERROR, "Incorrect message received.");
+			throw Molch::Exception{status_type::GENERIC_ERROR, "Incorrect message received."};
 		}
 
 		//bob replies
@@ -397,19 +397,19 @@ int main(void) {
 					&conversation_export_ptr,
 					&conversation_export_length)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 			conversation_export.reset(conversation_export_ptr);
 			bob_send_packet.reset(bob_send_packet_ptr);
 		}
 
 		if (conversation_export == nullptr) {
-			throw Molch::Exception(EXPORT_ERROR, "Failed to export the conversation after encrypting a message.");
+			throw Molch::Exception{status_type::EXPORT_ERROR, "Failed to export the conversation after encrypting a message."};
 		}
 
 		//check the message type
 		if (molch_get_message_type(bob_send_packet.get(), bob_send_packet_length) != NORMAL_MESSAGE) {
-			throw Molch::Exception(INVALID_VALUE, "Wrong message type.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Wrong message type."};
 		}
 
 		//alice receives reply
@@ -431,13 +431,13 @@ int main(void) {
 					nullptr,
 					nullptr)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 			alice_receive_message.reset(alice_receive_message_ptr);
 		}
 
 		if ((alice_receive_message_number != 0) || (alice_previous_receive_message_number != 0)) {
-			throw Molch::Exception(INCORRECT_DATA, "Incorrect receive message number for Alice.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Incorrect receive message number for Alice."};
 		}
 
 		//compare sent and received messages
@@ -445,7 +445,7 @@ int main(void) {
 		printf("received (Alice): %.*s\n", static_cast<int>(alice_receive_message_length), alice_receive_message.get());
 		if ((bob_send_message.size != alice_receive_message_length)
 				|| (sodium_memcmp(bob_send_message.content, alice_receive_message.get(), alice_receive_message_length) != 0)) {
-			throw Molch::Exception(GENERIC_ERROR, "Incorrect message received.");
+			throw Molch::Exception{status_type::GENERIC_ERROR, "Incorrect message received."};
 		}
 
 		//test export
@@ -456,7 +456,7 @@ int main(void) {
 			unsigned char *backup_ptr{nullptr};
 			auto status{molch_export(&backup_ptr, &backup_length)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 			backup.reset(backup_ptr);
 		}
@@ -472,7 +472,7 @@ int main(void) {
 					backup_key.content,
 					backup_key.size)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 		}
 
@@ -481,7 +481,7 @@ int main(void) {
 
 		//compare the keys
 		if (backup_key == new_backup_key) {
-			throw Molch::Exception(INCORRECT_DATA, "New backup key expected.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "New backup key expected."};
 		}
 
 		//copy the backup key
@@ -494,7 +494,7 @@ int main(void) {
 			unsigned char* imported_backup_ptr{nullptr};
 			auto status{molch_export(&imported_backup_ptr, &imported_backup_length)};
 			on_error {
-				throw Molch::Exception(EXPORT_ERROR, "Failed to export imported backup.");
+				throw Molch::Exception{status_type::EXPORT_ERROR, "Failed to export imported backup."};
 			}
 			imported_backup.reset(imported_backup_ptr);
 		}
@@ -503,7 +503,7 @@ int main(void) {
 
 		//compare
 		if (decrypted_backup != decrypted_imported_backup) {
-			throw Molch::Exception(IMPORT_ERROR, "Imported backup is incorrect.");
+			throw Molch::Exception{status_type::IMPORT_ERROR, "Imported backup is incorrect."};
 		}
 
 		//test conversation export
@@ -515,7 +515,7 @@ int main(void) {
 					alice_conversation.content,
 					alice_conversation.size)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 			backup.reset(backup_ptr);
 		}
@@ -532,7 +532,7 @@ int main(void) {
 					backup_key.content,
 					backup_key.size)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 		}
 
@@ -556,7 +556,7 @@ int main(void) {
 					alice_conversation.content,
 					alice_conversation.size)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 			imported_backup.reset(imported_backup_ptr);
 		}
@@ -570,20 +570,20 @@ int main(void) {
 
 		//compare
 		if (decrypted_conversation_backup != decrypted_imported_conversation_backup) {
-			throw Molch::Exception(IMPORT_ERROR, "Protobuf of imported conversation is incorrect.");
+			throw Molch::Exception{status_type::IMPORT_ERROR, "Protobuf of imported conversation is incorrect."};
 		}
 
 		//destroy the conversations
 		{
 			auto status{molch_end_conversation(alice_conversation.content, alice_conversation.size, nullptr, nullptr)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 		}
 		{
 			auto status{molch_end_conversation(bob_conversation.content, bob_conversation.size, nullptr, nullptr)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 		}
 
@@ -599,12 +599,12 @@ int main(void) {
 					alice_public_identity.content,
 					alice_public_identity.size)};
 			on_error {
-				throw Molch::Exception(status);
+				throw Molch::Exception{status};
 			}
 			conversation_list.reset(conversation_list_ptr);
 		}
 		if ((number_of_conversations != 0) || conversation_list) {
-			throw Molch::Exception(GENERIC_ERROR, "Failed to end conversation.");
+			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to end conversation."};
 		}
 		printf("Alice' conversation has ended successfully.\n");
 
@@ -613,7 +613,7 @@ int main(void) {
 
 		//check user count
 		if (molch_user_count() != 0) {
-			throw Molch::Exception(INVALID_VALUE, "Wrong user count.");
+			throw Molch::Exception{status_type::INVALID_VALUE, "Wrong user count."};
 		}
 
 		//TODO check detection of invalid prekey list signatures and old timestamps + more scenarios
@@ -622,7 +622,7 @@ int main(void) {
 		size_t printed_status_length{0};
 		auto printed_status{std::unique_ptr<unsigned char,MallocDeleter<unsigned char>>(reinterpret_cast<unsigned char*>(molch_print_status(&printed_status_length, return_status_init())))};
 		if (success_buffer.compareToRaw(printed_status.get(), printed_status_length) != 0) {
-			throw Molch::Exception(INCORRECT_DATA, "molch_print_status produces incorrect output.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "molch_print_status produces incorrect output."};
 		}
 	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;

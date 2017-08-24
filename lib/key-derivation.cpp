@@ -50,7 +50,7 @@ namespace Molch {
 				|| our_public_ephemeral.empty
 				|| their_public_ephemeral.empty
 				|| previous_root_key.empty) {
-			throw Exception(INVALID_INPUT, "Invalid input to derive_root_next_header_and_chain_keys.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to derive_root_next_header_and_chain_keys."};
 		}
 
 		//create buffers
@@ -75,7 +75,7 @@ namespace Molch {
 				previous_root_key.data(),
 				previous_root_key.size())};
 		if (status_int != 0) {
-			throw Exception(GENERIC_ERROR, "Failed to hash diffie hellman and previous root key.");
+			throw Exception{status_type::GENERIC_ERROR, "Failed to hash diffie hellman and previous root key."};
 		}
 		derivation_key.empty = false;
 
@@ -117,7 +117,7 @@ namespace Molch {
 				|| our_private_ephemeral.empty
 				|| our_public_ephemeral.empty
 				|| their_public_ephemeral.empty) {
-			throw Exception(INVALID_INPUT, "Invalid input to derive_initial_root_chain_and_header_keys.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to derive_initial_root_chain_and_header_keys."};
 		}
 
 		Key<crypto_secretbox_KEYBYTES,KeyType::Key> master_key;

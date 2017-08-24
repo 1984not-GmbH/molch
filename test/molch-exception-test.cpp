@@ -30,14 +30,14 @@
 using namespace Molch;
 
 static void second_level(void) {
-	throw Molch::Exception(GENERIC_ERROR, "Error on the second level!");
+	throw Molch::Exception{status_type::GENERIC_ERROR, "Error on the second level!"};
 }
 
 static void first_level(void) {
 	try {
 		second_level();
 	} catch(Molch::Exception& exception) {
-		throw exception.add(Molch::Error(GENERIC_ERROR, "Error on the first level!"));
+		throw exception.add(Molch::Error{status_type::GENERIC_ERROR, "Error on the first level!"});
 	}
 }
 

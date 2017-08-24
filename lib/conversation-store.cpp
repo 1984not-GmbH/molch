@@ -161,13 +161,13 @@ namespace Molch {
 		//check input
 		if (((length > 0) && (conversations == nullptr))
 				|| ((length == 0) && (conversations != nullptr))) {
-			throw Exception(INVALID_INPUT, "Invalid input to conversation_store_import");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to conversation_store_import"};
 		}
 
 		//import all the conversations
 		for (size_t i{0}; i < length; i++) {
 			if (conversations[i] == nullptr) {
-				throw Exception(PROTOBUF_MISSING_ERROR, "Array of conversation has an empty element.");
+				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Array of conversation has an empty element."};
 			}
 
 			this->conversations.emplace_back(*conversations[i]);

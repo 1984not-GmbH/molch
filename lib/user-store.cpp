@@ -79,7 +79,7 @@ namespace Molch {
 				|| (user.private_signing_key == nullptr)
 				|| (user.public_identity_key == nullptr)
 				|| (user.private_identity_key == nullptr)) {
-			throw Exception(PROTOBUF_MISSING_ERROR, "Missing keys.");
+			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Missing keys."};
 		}
 
 		//master keys
@@ -118,12 +118,12 @@ namespace Molch {
 		//check input
 		if (((users_length == 0) && (users != nullptr))
 				|| ((users_length > 0) && (users == nullptr))) {
-			throw Exception(INVALID_INPUT, "Invalid input to user_store_import.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to user_store_import."};
 		}
 
 		for (size_t i{0}; i < users_length; i++) {
 			if (users[i] == nullptr) {
-				throw Exception(PROTOBUF_MISSING_ERROR, "Array of users is missing a user.");
+				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Array of users is missing a user."};
 			}
 
 			this->add(User(*users[i]));
@@ -150,7 +150,7 @@ namespace Molch {
 
 	User* UserStore::find(const PublicSigningKey& public_signing_key) {
 		if (public_signing_key.empty) {
-			throw Exception(INVALID_INPUT, "Invalid input to UserStore::find.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to UserStore::find."};
 		}
 
 		auto user{std::find_if(std::begin(this->users), std::end(this->users),
@@ -166,7 +166,7 @@ namespace Molch {
 
 	Conversation* UserStore::findConversation(User*& user, const Key<CONVERSATION_ID_SIZE,KeyType::Key>& conversation_id) {
 		if (conversation_id.empty) {
-			throw Exception(INVALID_INPUT, "Invalid input to UserStore::findConversation.");
+			throw Exception{status_type::INVALID_INPUT, "Invalid input to UserStore::findConversation."};
 		}
 
 		Conversation* conversation{nullptr};

@@ -44,7 +44,7 @@ Buffer protobuf_export(const Molch::Conversation& conversation) {
 	Buffer export_buffer{export_size, 0};
 	export_buffer.size = conversation__pack(exported_conversation, export_buffer.content);
 	if (export_size != export_buffer.size) {
-		throw Molch::Exception(PROTOBUF_PACK_ERROR, "Failed to pack protobuf-c struct into buffer.");
+		throw Molch::Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack protobuf-c struct into buffer."};
 	}
 
 	return export_buffer;
@@ -57,7 +57,7 @@ std::unique_ptr<Molch::Conversation> protobuf_import(ProtobufPool& pool, const B
 		import_buffer.size,
 		import_buffer.content)};
 	if (!conversation_protobuf) {
-		throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
+		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf."};
 	}
 
 	return std::make_unique<Molch::Conversation>(*conversation_protobuf);
@@ -66,7 +66,7 @@ std::unique_ptr<Molch::Conversation> protobuf_import(ProtobufPool& pool, const B
 int main(void) noexcept {
 	try {
 		if (sodium_init() == -1) {
-			throw Molch::Exception(INIT_ERROR, "Failed to initialize libsodium!\n");
+			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium!\n"};
 		}
 
 		//creating charlie's identity keypair
@@ -114,7 +114,7 @@ int main(void) noexcept {
 				charlie_public_ephemeral,
 				dora_public_ephemeral)};
 		if (!charlie_conversation || charlie_conversation->id.empty) {
-			throw Molch::Exception(INCORRECT_DATA, "Charlie's conversation has an incorrect ID length.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Charlie's conversation has an incorrect ID length."};
 		}
 
 		//create Dora's conversation
@@ -126,7 +126,7 @@ int main(void) noexcept {
 				dora_public_ephemeral,
 				charlie_public_ephemeral)};
 		if (!dora_conversation || dora_conversation->id.empty) {
-			throw Molch::Exception(INCORRECT_DATA, "Dora's conversation has an incorrect ID length.");
+			throw Molch::Exception{status_type::INCORRECT_DATA, "Dora's conversation has an incorrect ID length."};
 		}
 
 		//test protobuf-c export
@@ -149,7 +149,7 @@ int main(void) noexcept {
 
 		//compare
 		if (protobuf_export_buffer != protobuf_second_export_buffer) {
-			throw Molch::Exception(EXPORT_ERROR, "Both exported buffers are not the same.");
+			throw Molch::Exception{status_type::EXPORT_ERROR, "Both exported buffers are not the same."};
 		}
 		printf("Both exported buffers are identitcal.\n\n");
 	} catch (const Molch::Exception& exception) {

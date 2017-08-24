@@ -41,7 +41,7 @@ void generate_and_print_keypair(
 	//generate keypair
 	auto status{crypto_box_keypair(public_key.data(), private_key.data())};
 	if (status != 0) {
-		throw Molch::Exception(KEYGENERATION_FAILED, "Failed to generate keypair.");
+		throw Molch::Exception{status_type::KEYGENERATION_FAILED, "Failed to generate keypair."};
 	}
 	public_key.empty = false;
 	private_key.empty = false;

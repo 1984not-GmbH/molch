@@ -48,7 +48,7 @@ void create_and_print_message(
 		PublicKey * const public_prekey) {
 	//check input
 	if (packet_type == INVALID) {
-		throw Molch::Exception(INVALID_INPUT, "Invalid input to create_and_print_message.");
+		throw Molch::Exception{status_type::INVALID_INPUT, "Invalid input to create_and_print_message."};
 	}
 
 	//create header key
