@@ -75,6 +75,7 @@ namespace Molch {
 		auto *error{status.error};
 		while (error != nullptr) {
 			this->error_stack.push_back(Error(error->status, error->message));
+			error = error->next;
 		}
 
 		return_status_destroy_errors(&status);

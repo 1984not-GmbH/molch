@@ -22,9 +22,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <string.h>
+#include <iostream>
 
 #include "../lib/return-status.h"
 #include "../lib/destroyers.hpp"
+#include "../lib/molch-exception.hpp"
 #include "utils.hpp"
 
 using namespace Molch;
@@ -103,6 +105,13 @@ int main(void) noexcept {
 		if (success_buffer.compareToRaw(printed_status, printed_status_length) != 0) {
 			THROW(status_type::INCORRECT_DATA, "molch_print_status produces incorrect output.");
 		}
+	}
+
+	//test converting return_status to Molch::Exception
+	{
+		std::cout << "Test Molch::Exception:\n";
+		auto local_status{first_level()};
+		Molch::Exception{local_status}.print(std::cout) << std::endl;
 	}
 
 cleanup:

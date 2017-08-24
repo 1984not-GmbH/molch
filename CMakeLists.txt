@@ -96,7 +96,7 @@ find_package(sodium 1.0.13 REQUIRED)
 find_package(Protobuf-C REQUIRED)
 find_package(Protoc-C REQUIRED)
 
-include_directories(${SODIUM_INCLUDE_DIR} ${PROTOBUFC_INCLUDE_DIR})
+include_directories(${SODIUM_INCLUDE_DIR} ${PROTOBUFC_INCLUDE_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/gsl/include")
 SET(libs ${libs} sodium ${PROTOBUFC_LIBRARY})
 
 
