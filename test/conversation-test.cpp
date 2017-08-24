@@ -50,11 +50,12 @@ Buffer protobuf_export(const Molch::Conversation& conversation) {
 	return export_buffer;
 }
 
-std::unique_ptr<Molch::Conversation> protobuf_import(const Buffer& import_buffer) {
-	auto conversation_protobuf = std::unique_ptr<ProtobufCConversation,ConversationDeleter>(conversation__unpack(
-		&protobuf_c_allocators,
+std::unique_ptr<Molch::Conversation> protobuf_import(ProtobufPool& pool, const Buffer& import_buffer) {
+	auto pool_protoc_allocator = pool.getProtobufCAllocator();
+	auto conversation_protobuf = conversation__unpack(
+		&pool_protoc_allocator,
 		import_buffer.size,
-		import_buffer.content));
+		import_buffer.content);
 	if (!conversation_protobuf) {
 		throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
 	}
@@ -141,7 +142,8 @@ int main(void) noexcept {
 
 		//import
 		printf("Import from Protobuf-C\n");
-		charlie_conversation = protobuf_import(protobuf_export_buffer);
+		ProtobufPool pool;
+		charlie_conversation = protobuf_import(pool, protobuf_export_buffer);
 
 		//export again
 		printf("Export again\n");

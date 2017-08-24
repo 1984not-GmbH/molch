@@ -23,7 +23,6 @@
 
 #include "constants.h"
 #include "header-and-message-keystore.hpp"
-#include "zeroed_malloc.hpp"
 #include "molch-exception.hpp"
 
 namespace Molch {

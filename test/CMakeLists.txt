@@ -41,7 +41,6 @@ if (RUN_TESTS)
               endianness-test
               return-status-test
               molch-init-test
-              zeroed_malloc-test
               buffer-test
               molch-exception-test
               protobuf-pool-test

@@ -73,57 +73,47 @@ static void protobuf_export(
 }
 
 static void protobuf_import(
+		ProtobufPool& pool,
 		std::unique_ptr<PrekeyStore>& store,
 		const std::vector<Buffer>& keypair_buffers,
 		const std::vector<Buffer>& deprecated_keypair_buffers) {
+	auto pool_protoc_allocator = pool.getProtobufCAllocator();
 	//parse the normal prekey protobufs
-	auto keypairs = std::vector<std::unique_ptr<ProtobufCPrekey,PrekeyDeleter>>();
-	keypairs.reserve(keypair_buffers.size());
+	auto keypairs_array = std::unique_ptr<ProtobufCPrekey*[]>(new ProtobufCPrekey*[keypair_buffers.size()]);
+	size_t index = 0;
 	for (const auto& keypair_buffer : keypair_buffers) {
-		auto keypair = std::unique_ptr<ProtobufCPrekey,PrekeyDeleter>(
-			prekey__unpack(
-				&protobuf_c_allocators,
+		keypairs_array[index] = prekey__unpack(
+				&pool_protoc_allocator,
 				keypair_buffer.size,
-				keypair_buffer.content));
-		if (!keypair) {
+				keypair_buffer.content);
+		if (keypairs_array[index] == nullptr) {
 			throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack prekey from protobuf.");
 		}
 
-		keypairs.push_back(std::move(keypair));
+		index++;
 	}
 
 	//parse the deprecated prekey protobufs
-	auto deprecated_keypairs = std::vector<std::unique_ptr<ProtobufCPrekey,PrekeyDeleter>>();
-	deprecated_keypairs.reserve(deprecated_keypair_buffers.size());
+	auto deprecated_keypairs_array = std::unique_ptr<ProtobufCPrekey*[]>(new ProtobufCPrekey*[deprecated_keypair_buffers.size()]);
+	index = 0;
 	for (const auto& keypair_buffer : deprecated_keypair_buffers) {
-		auto keypair = std::unique_ptr<ProtobufCPrekey,PrekeyDeleter>(
-			prekey__unpack(
-				&protobuf_c_allocators,
+		deprecated_keypairs_array[index] = prekey__unpack(
+				&pool_protoc_allocator,
 				keypair_buffer.size,
-				keypair_buffer.content));
-		if (!keypair) {
+				keypair_buffer.content);
+		if (deprecated_keypairs_array[index] == nullptr) {
 			throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack deprecated prekey from protobuf.");
 		}
 
-		deprecated_keypairs.push_back(std::move(keypair));
-	}
-
-	//make arrays with the pointers
-	auto keypairs_array = std::unique_ptr<ProtobufCPrekey*[]>(new ProtobufCPrekey*[keypair_buffers.size()]);
-	for (size_t i = 0; i < keypair_buffers.size(); i++) {
-		keypairs_array[i] = keypairs[i].get();
-	}
-	auto deprecated_keypairs_array = std::unique_ptr<ProtobufCPrekey*[]>(new ProtobufCPrekey*[deprecated_keypair_buffers.size()]);
-	for (size_t i = 0; i < deprecated_keypair_buffers.size(); i++) {
-		deprecated_keypairs_array[i] = deprecated_keypairs[i].get();
+		index++;
 	}
 
 	//now do the import
 	store.reset(new PrekeyStore(
 		keypairs_array.get(),
-		keypairs.size(),
+		keypair_buffers.size(),
 		deprecated_keypairs_array.get(),
-		deprecated_keypairs.size()));
+		deprecated_keypair_buffers.size()));
 }
 
 void protobuf_no_deprecated_keys(void) {
@@ -246,7 +236,9 @@ int main(void) {
 		store.reset();
 
 		printf("Import from Protobuf-C\n");
+		ProtobufPool pool;
 		protobuf_import(
+			pool,
 			store,
 			protobuf_export_prekeys_buffers,
 			protobuf_export_deprecated_prekeys_buffers);

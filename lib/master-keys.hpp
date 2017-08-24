@@ -28,7 +28,6 @@
 #include "constants.h"
 #include "buffer.hpp"
 #include "return-status.h"
-#include "zeroed_malloc.hpp"
 #include "sodium-wrappers.hpp"
 #include "protobuf.hpp"
 #include "key.hpp"

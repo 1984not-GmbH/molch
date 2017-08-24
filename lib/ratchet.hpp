@@ -27,7 +27,6 @@
 #include "constants.h"
 #include "header-and-message-keystore.hpp"
 #include "return-status.h"
-#include "zeroed_malloc.hpp"
 #include "protobuf.hpp"
 #include "key.hpp"
 #include "protobuf-pool.hpp"

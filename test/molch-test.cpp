@@ -28,14 +28,13 @@
 #include "utils.hpp"
 #include "../lib/molch.h"
 #include "../lib/user-store.hpp" //for PREKEY_AMOUNT
-#include "../lib/zeroed_malloc.hpp"
 #include "../lib/destroyers.hpp"
 #include "../lib/malloc.hpp"
 
 using namespace Molch;
 
 static Buffer decrypt_conversation_backup(
-		//inputs
+		ProtobufPool& pool,
 		const unsigned char * const backup,
 		const size_t backup_length,
 		const unsigned char * backup_key,
@@ -49,7 +48,7 @@ static Buffer decrypt_conversation_backup(
 	}
 
 	//unpack the encrypted backup
-	auto encrypted_backup_struct = std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup));
+	auto encrypted_backup_struct = std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup));
 	if (encrypted_backup_struct == nullptr) {
 		throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
 	}
@@ -68,11 +67,12 @@ static Buffer decrypt_conversation_backup(
 		throw Molch::Exception(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
 	}
 
+	auto decrypted_backup_content = pool.allocate<unsigned char>(
+			encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES);
 	Buffer decrypted_backup(
+			decrypted_backup_content,
 			encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES,
-			encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES,
-			zeroed_malloc,
-			zeroed_free);
+			encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES);
 
 	//decrypt the backup
 	int status = crypto_secretbox_open_easy(
@@ -89,7 +89,7 @@ static Buffer decrypt_conversation_backup(
 }
 
 static Buffer decrypt_full_backup(
-		//inputs
+		ProtobufPool& pool,
 		const unsigned char * const backup,
 		const size_t backup_length,
 		const unsigned char * backup_key,
@@ -103,7 +103,7 @@ static Buffer decrypt_full_backup(
 	}
 
 	//unpack the encrypted backup
-	auto encrypted_backup_struct = std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup));
+	auto encrypted_backup_struct = std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup));
 	if (encrypted_backup_struct == nullptr) {
 		throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
 	}
@@ -122,7 +122,12 @@ static Buffer decrypt_full_backup(
 		throw Molch::Exception(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
 	}
 
-	Buffer decrypted_backup(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES, zeroed_malloc, zeroed_free);
+	auto decrypted_backup_content = pool.allocate<unsigned char>(
+		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES);
+	Buffer decrypted_backup(
+			decrypted_backup_content,
+			encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES,
+			encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES);
 
 	//decrypt the backup
 	int status_int = crypto_secretbox_open_easy(
@@ -471,7 +476,8 @@ int main(void) {
 			}
 		}
 
-		auto decrypted_backup = decrypt_full_backup(backup.get(), backup_length, backup_key.content, backup_key.size);
+		ProtobufPool pool;
+		auto decrypted_backup = decrypt_full_backup(pool, backup.get(), backup_length, backup_key.content, backup_key.size);
 
 		//compare the keys
 		if (backup_key == new_backup_key) {
@@ -493,7 +499,7 @@ int main(void) {
 			imported_backup.reset(imported_backup_ptr);
 		}
 
-		auto decrypted_imported_backup = decrypt_full_backup(imported_backup.get(), imported_backup_length, backup_key.content, backup_key.size);
+		auto decrypted_imported_backup = decrypt_full_backup(pool, imported_backup.get(), imported_backup_length, backup_key.content, backup_key.size);
 
 		//compare
 		if (decrypted_backup != decrypted_imported_backup) {
@@ -531,6 +537,7 @@ int main(void) {
 		}
 
 		auto decrypted_conversation_backup = decrypt_conversation_backup(
+				pool,
 				backup.get(),
 				backup_length,
 				backup_key.content,
@@ -555,6 +562,7 @@ int main(void) {
 		}
 
 		auto decrypted_imported_conversation_backup = decrypt_conversation_backup(
+				pool,
 				imported_backup.get(),
 				imported_backup_length,
 				backup_key.content,

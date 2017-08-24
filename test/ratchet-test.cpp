@@ -47,14 +47,14 @@ Buffer protobuf_export(Ratchet& ratchet) {
 	return export_buffer;
 }
 
-std::unique_ptr<Ratchet> protobuf_import(const Buffer& export_buffer) {
+std::unique_ptr<Ratchet> protobuf_import(ProtobufPool& pool, const Buffer& export_buffer) {
+	auto pool_protoc_allocator = pool.getProtobufCAllocator();
 	//unpack the buffer
-	auto conversation = std::unique_ptr<ProtobufCConversation,ConversationDeleter>(
-		conversation__unpack(
-			&protobuf_c_allocators,
+	auto conversation = conversation__unpack(
+			&pool_protoc_allocator,
 			export_buffer.size,
-			export_buffer.content));
-	if (!conversation) {
+			export_buffer.content);
+	if (conversation == nullptr) {
 		throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
 	}
 
@@ -541,7 +541,8 @@ int main(void) {
 
 		//import again
 		printf("Import from Protobuf-C!\n");
-		alice_state = protobuf_import(protobuf_export_buffer);
+		ProtobufPool pool;
+		alice_state = protobuf_import(pool, protobuf_export_buffer);
 
 		//export again
 		auto protobuf_second_export_buffer = protobuf_export(*alice_state);

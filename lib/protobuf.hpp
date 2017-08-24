@@ -19,8 +19,6 @@
 #ifndef LIB_PROTOBUF_DELETERS_H
 #define LIB_PROTOBUF_DELETERS_H
 
-#include "zeroed_malloc.hpp"
-
 extern "C" {
 	#include <backup.pb-c.h>
 	#include <conversation.pb-c.h>
@@ -95,6 +93,11 @@ namespace Molch {
 		public:
 			void operator ()(ProtobufCUser *user);
 	};
+
+	void *protobuf_c_new(void *allocator_data, size_t size);
+	void protobuf_c_delete(void *allocator_data, void *pointer);
+
+	extern ProtobufCAllocator protobuf_c_allocator;
 }
 
 #endif /* LIB_PROTOBUF_DELETERS_H */

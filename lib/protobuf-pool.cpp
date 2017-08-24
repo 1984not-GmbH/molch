@@ -56,7 +56,12 @@ namespace Molch {
 
 	template <>
 	void* ProtobufPool::allocate<void>(size_t size) {
-		return this->allocate<void>(size);
+		size_t elements = size / sizeof(max_align_t);
+		if ((size % sizeof(max_align_t)) != 0) {
+			elements++;
+		}
+
+		return this->allocate<max_align_t>(elements);
 	}
 
 	void* ProtobufPool::poolAllocate(void* pool, size_t size) noexcept {
@@ -78,5 +83,14 @@ namespace Molch {
 			&ProtobufPool::poolFree,
 			reinterpret_cast<void*>(this)
 		};
+	}
+
+	void *protobuf_c_new(void *allocator_data, size_t size) {
+		(void)allocator_data;
+		return reinterpret_cast<void*>(new unsigned char[size]);
+	}
+	void protobuf_c_delete(void *allocator_data, void *pointer) {
+		(void)allocator_data;
+		delete[] reinterpret_cast<unsigned char*>(pointer);
 	}
 }

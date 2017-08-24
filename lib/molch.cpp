@@ -32,7 +32,6 @@
 #include "buffer.hpp"
 #include "user-store.hpp"
 #include "endianness.hpp"
-#include "zeroed_malloc.hpp"
 #include "destroyers.hpp"
 #include "malloc.hpp"
 #include "protobuf.hpp"
@@ -1044,7 +1043,8 @@ cleanup:
 
 			//pack the struct
 			auto conversation_size = conversation__get_packed_size(conversation_struct);
-			Buffer conversation_buffer(conversation_size, 0, &zeroed_malloc, &zeroed_free);
+			auto conversation_buffer_content = pool.allocate<unsigned char>(conversation_size);
+			Buffer conversation_buffer(conversation_buffer_content, conversation_size, 0);
 
 			conversation_buffer.size = conversation__pack(conversation_struct, conversation_buffer.content);
 			if (conversation_buffer.size != conversation_size) {
@@ -1149,7 +1149,7 @@ cleanup:
 			}
 
 			//unpack the encrypted backup
-			auto encrypted_backup_struct = std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup));
+			auto encrypted_backup_struct = std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup));
 			if (encrypted_backup_struct == nullptr) {
 				throw Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
 			}
@@ -1168,11 +1168,13 @@ cleanup:
 				throw Exception(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
 			}
 
+			ProtobufPool pool;
+			auto decrypted_backup_content = pool.allocate<unsigned char>(
+						encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES);
 			Buffer decrypted_backup(
+					decrypted_backup_content,
 					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES,
-					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES,
-					&zeroed_malloc,
-					&zeroed_free);
+					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES);
 
 			//decrypt the backup
 			int status_int = crypto_secretbox_open_easy(
@@ -1186,7 +1188,8 @@ cleanup:
 			}
 
 			//unpack the struct
-			auto conversation_struct = std::unique_ptr<ProtobufCConversation,ConversationDeleter>(conversation__unpack(&protobuf_c_allocators, decrypted_backup.size, decrypted_backup.content));
+			auto pool_protoc_allocator = pool.getProtobufCAllocator();
+			auto conversation_struct = conversation__unpack(&pool_protoc_allocator, decrypted_backup.size, decrypted_backup.content);
 			if (conversation_struct == nullptr) {
 				throw Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversations protobuf-c.");
 			}
@@ -1256,7 +1259,8 @@ cleanup:
 
 			//pack the struct
 			auto backup_struct_size = backup__get_packed_size(backup_struct);
-			Buffer users_buffer(backup_struct_size, 0, &zeroed_malloc, &zeroed_free);
+			auto users_buffer_content = pool.allocate<unsigned char>(backup_struct_size);
+			Buffer users_buffer(users_buffer_content, backup_struct_size, 0);
 
 			users_buffer.size = backup__pack(backup_struct, users_buffer.content);
 			if (users_buffer.size != backup_struct_size) {
@@ -1367,7 +1371,7 @@ cleanup:
 			}
 
 			//unpack the encrypted backup
-			auto encrypted_backup_struct = std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocators, backup_length, backup));
+			auto encrypted_backup_struct = std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup));
 			if (encrypted_backup_struct == nullptr) {
 				throw Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
 			}
@@ -1386,10 +1390,13 @@ cleanup:
 				throw Exception(PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
 			}
 
+			ProtobufPool pool;
+			auto decrypted_backup_content = pool.allocate<unsigned char>(
+					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES);
 			Buffer decrypted_backup(
+					decrypted_backup_content,
 					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES,
-					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES,
-					zeroed_malloc, zeroed_free);
+					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES);
 
 			//decrypt the backup
 			int status_int = crypto_secretbox_open_easy(
@@ -1403,7 +1410,8 @@ cleanup:
 			}
 
 			//unpack the struct
-			auto backup_struct = std::unique_ptr<ProtobufCBackup,BackupDeleter>(backup__unpack(&protobuf_c_allocators, decrypted_backup.size, decrypted_backup.content));
+			auto pool_protoc_allocator = pool.getProtobufCAllocator();
+			auto backup_struct = backup__unpack(&pool_protoc_allocator, decrypted_backup.size, decrypted_backup.content);
 			if (backup_struct == nullptr) {
 				throw Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack backups protobuf-c.");
 			}

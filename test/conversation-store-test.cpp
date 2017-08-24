@@ -51,28 +51,20 @@ static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
 
 	return export_buffers;
 }
-ConversationStore protobuf_import(const std::vector<Buffer> buffers) {
-	auto conversations = std::vector<std::unique_ptr<ProtobufCConversation,ConversationDeleter>>();
-	conversations.reserve(buffers.size());
-
-	//unpack all the conversations
-	for (const auto& buffer : buffers) {
-		conversations.emplace_back(
-					conversation__unpack(&protobuf_c_allocators, buffer.size, buffer.content));
-		if (!conversations.back()) {
-			throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
-		}
-	}
-
-	//allocate the conversation array output array
+ConversationStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> buffers) {
 	std::unique_ptr<ProtobufCConversation*[]> conversation_array;
 	if (!buffers.empty()) {
 		conversation_array = std::unique_ptr<ProtobufCConversation*[]>(new ProtobufCConversation*[buffers.size()]);
 	}
 
+	auto pool_protoc_allocator = pool.getProtobufCAllocator();
+	//unpack all the conversations
 	size_t index = 0;
-	for (const auto& conversation : conversations) {
-		conversation_array[index] = conversation.get();
+	for (const auto& buffer : buffers) {
+		conversation_array[index] = conversation__unpack(&pool_protoc_allocator, buffer.size, buffer.content);
+		if (conversation_array[index] == nullptr) {
+			throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf.");
+		}
 		index++;
 	}
 
@@ -204,7 +196,8 @@ int main(void) {
 		store.clear();
 
 		//import again
-		store = protobuf_import(protobuf_export_buffers);
+		ProtobufPool pool;
+		store = protobuf_import(pool, protobuf_export_buffers);
 
 		//export the imported
 		auto protobuf_second_export_buffers = protobuf_export(store);

@@ -29,7 +29,6 @@
 #include <iterator>
 
 #include "../lib/header-and-message-keystore.hpp"
-#include "../lib/zeroed_malloc.hpp"
 #include "../lib/molch-exception.hpp"
 #include "../lib/destroyers.hpp"
 #include "utils.hpp"
@@ -60,28 +59,24 @@ static void protobuf_export(
 }
 
 static void protobuf_import(
+		ProtobufPool& pool,
 		HeaderAndMessageKeyStore& keystore,
 		const std::vector<Buffer>& exported_buffers) {
-	auto key_bundles = std::vector<std::unique_ptr<ProtobufCKeyBundle,KeyBundleDeleter>>();
-	key_bundles.reserve(exported_buffers.size());
 
+	auto pool_protoc_allocator = pool.getProtobufCAllocator();
+	auto key_bundles_array = std::unique_ptr<ProtobufCKeyBundle*[]>(new ProtobufCKeyBundle*[exported_buffers.size()]);
 	//parse all the exported protobuf buffers
+	size_t index = 0;
 	for (const auto& exported_buffer : exported_buffers) {
-		auto key_bundle = std::unique_ptr<ProtobufCKeyBundle,KeyBundleDeleter>(
-					key_bundle__unpack(
-						&protobuf_c_allocators,
+		key_bundles_array[index] = key_bundle__unpack(
+						&pool_protoc_allocator,
 						exported_buffer.size,
-						exported_buffer.content));
-		if (!key_bundle) {
+						exported_buffer.content);
+		if (key_bundles_array[index] == nullptr) {
 			throw Molch::Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack key bundle.");
 		}
 
-		key_bundles.push_back(std::move(key_bundle));
-	}
-
-	auto key_bundles_array = std::unique_ptr<ProtobufCKeyBundle*[]>(new ProtobufCKeyBundle*[exported_buffers.size()]);
-	for (size_t i = 0; i < exported_buffers.size(); i++) {
-		key_bundles_array[i] = key_bundles[i].get();
+		index++;
 	}
 
 	//now do the actual import
@@ -162,7 +157,8 @@ int main(void) {
 
 		printf("Import from Protobuf-C\n");
 		keystore.keys.clear();
-		protobuf_import(keystore, protobuf_export_buffers);
+		ProtobufPool pool;
+		protobuf_import(pool, keystore, protobuf_export_buffers);
 
 		//now export again
 		printf("Export imported as Protobuf-C\n");

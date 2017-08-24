@@ -21,7 +21,6 @@
 
 #include "header.hpp"
 #include "constants.h"
-#include "zeroed_malloc.hpp"
 #include "molch-exception.hpp"
 #include "protobuf.hpp"
 
@@ -72,7 +71,7 @@ namespace Molch {
 			//intput
 			const Buffer& header) {
 		//unpack the message
-		auto header_struct = std::unique_ptr<ProtobufCHeader,HeaderDeleter>(header__unpack(&protobuf_c_allocators, header.size, header.content));
+		auto header_struct = std::unique_ptr<ProtobufCHeader,HeaderDeleter>(header__unpack(&protobuf_c_allocator, header.size, header.content));
 		if (!header_struct) {
 			throw Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack header.");
 		}

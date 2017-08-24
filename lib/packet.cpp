@@ -24,7 +24,6 @@
 
 #include "packet.hpp"
 #include "constants.h"
-#include "zeroed_malloc.hpp"
 #include "molch-exception.hpp"
 #include "protobuf.hpp"
 
@@ -70,7 +69,7 @@ namespace Molch {
 	 */
 	static std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_unpack(const Buffer& packet) {
 		//unpack the packet
-		auto packet_struct = std::unique_ptr<ProtobufCPacket,PacketDeleter>(packet__unpack(&protobuf_c_allocators, packet.size, packet.content));
+		auto packet_struct = std::unique_ptr<ProtobufCPacket,PacketDeleter>(packet__unpack(&protobuf_c_allocator, packet.size, packet.content));
 		if (!packet_struct) {
 			throw Exception(PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
 		}
