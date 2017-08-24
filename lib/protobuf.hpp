@@ -44,16 +44,6 @@ typedef Prekey ProtobufCPrekey;
 typedef User ProtobufCUser;
 
 namespace Molch {
-	class BackupDeleter {
-		public:
-			void operator ()(ProtobufCBackup* backup);
-	};
-
-	class ConversationDeleter {
-		public:
-			void operator ()(ProtobufCConversation* conversation);
-	};
-
 	class EncryptedBackupDeleter {
 		public:
 			void operator ()(ProtobufCEncryptedBackup* backup);
@@ -64,34 +54,9 @@ namespace Molch {
 			void operator ()(ProtobufCHeader* header);
 	};
 
-	class KeyDeleter {
-	public:
-		void operator ()(ProtobufCKey *key);
-	};
-
-	class KeyBundleDeleter {
-		public:
-			void operator ()(ProtobufCKeyBundle *key_bundle);
-	};
-
 	class PacketDeleter {
 		public:
 			void operator ()(ProtobufCPacket *packet);
-	};
-
-	class PacketHeaderDeleter {
-		public:
-			void operator ()(ProtobufCPacketHeader *packet_header);
-	};
-
-	class PrekeyDeleter {
-	public:
-		void operator ()(ProtobufCPrekey *prekey);
-	};
-
-	class UserDeleter {
-		public:
-			void operator ()(ProtobufCUser *user);
 	};
 
 	void *protobuf_c_new(void *allocator_data, size_t size);

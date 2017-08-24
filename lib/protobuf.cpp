@@ -22,14 +22,6 @@
 #include "protobuf.hpp"
 
 namespace Molch {
-	void BackupDeleter::operator ()(ProtobufCBackup* backup) {
-				backup__free_unpacked(backup, &protobuf_c_allocator);
-	}
-
-	void ConversationDeleter::operator ()(ProtobufCConversation* conversation) {
-		conversation__free_unpacked(conversation, &protobuf_c_allocator);
-	}
-
 	void EncryptedBackupDeleter::operator ()(ProtobufCEncryptedBackup* backup) {
 		encrypted_backup__free_unpacked(backup, &protobuf_c_allocator);
 	}
@@ -38,28 +30,8 @@ namespace Molch {
 		header__free_unpacked(header, &protobuf_c_allocator);
 	}
 
-	void KeyDeleter::operator ()(ProtobufCKey *key) {
-		key__free_unpacked(key, &protobuf_c_allocator);
-	}
-
-	void KeyBundleDeleter::operator ()(ProtobufCKeyBundle *key_bundle) {
-		key_bundle__free_unpacked(key_bundle, &protobuf_c_allocator);
-	}
-
 	void PacketDeleter::operator ()(ProtobufCPacket *packet) {
 		packet__free_unpacked(packet, &protobuf_c_allocator);
-	}
-
-	void PacketHeaderDeleter::operator ()(ProtobufCPacketHeader *packet_header) {
-		packet_header__free_unpacked(packet_header, &protobuf_c_allocator);
-	}
-
-	void PrekeyDeleter::operator ()(ProtobufCPrekey *prekey) {
-		prekey__free_unpacked(prekey, &protobuf_c_allocator);
-	}
-
-	void UserDeleter::operator ()(ProtobufCUser *user) {
-		user__free_unpacked(user, &protobuf_c_allocator);
 	}
 
 	ProtobufCAllocator protobuf_c_allocator = {
