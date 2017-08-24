@@ -41,13 +41,13 @@ int main(void) {
 		}
 
 		//generate message
-		molch_message_type packet_type{NORMAL_MESSAGE};
+		molch_message_type packet_type{molch_message_type::NORMAL_MESSAGE};
 		Buffer header{4, 4};
 		header.content[0] = 0x01;
 		header.content[1] = 0x02;
 		header.content[2] = 0x03;
 		header.content[3] = 0x04;
-		printf("Packet type: %02x\n", packet_type);
+		printf("Packet type: %02x\n", static_cast<int>(packet_type));
 		putchar('\n');
 
 		//NORMAL MESSAGE
@@ -129,7 +129,7 @@ int main(void) {
 		packet.clear();
 		decrypted_header.clear();
 
-		packet_type = PREKEY_MESSAGE;
+		packet_type = molch_message_type::PREKEY_MESSAGE;
 		create_and_print_message(
 			packet,
 			header_key,

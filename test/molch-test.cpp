@@ -323,7 +323,7 @@ int main(void) {
 		}
 
 		//check the message type
-		if (molch_get_message_type(alice_send_packet.get(), alice_send_packet_length) != PREKEY_MESSAGE) {
+		if (molch_get_message_type(alice_send_packet.get(), alice_send_packet_length) != molch_message_type::PREKEY_MESSAGE) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Wrong message type."};
 		}
 
@@ -408,7 +408,7 @@ int main(void) {
 		}
 
 		//check the message type
-		if (molch_get_message_type(bob_send_packet.get(), bob_send_packet_length) != NORMAL_MESSAGE) {
+		if (molch_get_message_type(bob_send_packet.get(), bob_send_packet_length) != molch_message_type::NORMAL_MESSAGE) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Wrong message type."};
 		}
 

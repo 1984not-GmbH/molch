@@ -47,7 +47,7 @@ void create_and_print_message(
 		PublicKey * const public_ephemeral_key,
 		PublicKey * const public_prekey) {
 	//check input
-	if (packet_type == INVALID) {
+	if (packet_type == molch_message_type::INVALID) {
 		throw Molch::Exception{status_type::INVALID_INPUT, "Invalid input to create_and_print_message."};
 	}
 

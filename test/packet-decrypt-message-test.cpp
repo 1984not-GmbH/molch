@@ -47,8 +47,8 @@ int main(void) {
 		header.content[1] = 0x02;
 		header.content[2] = 0x03;
 		header.content[3] = 0x04;
-		molch_message_type packet_type{NORMAL_MESSAGE};
-		printf("Packet type: %02x\n", packet_type);
+		molch_message_type packet_type{molch_message_type::NORMAL_MESSAGE};
+		printf("Packet type: %02x\n", static_cast<int>(packet_type));
 		putchar('\n');
 
 		//NORMAL MESSAGE
@@ -112,7 +112,7 @@ int main(void) {
 
 		packet.clear();
 
-		packet_type = PREKEY_MESSAGE;
+		packet_type = molch_message_type::PREKEY_MESSAGE;
 		create_and_print_message(
 			packet,
 			header_key,

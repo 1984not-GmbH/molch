@@ -33,9 +33,9 @@ namespace Molch {
 	 */
 	static constexpr PacketHeader__PacketType to_packet_header_packet_type(const molch_message_type packet_type) {
 		switch (packet_type) {
-			case PREKEY_MESSAGE:
+			case molch_message_type::PREKEY_MESSAGE:
 				return PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE;
-			case NORMAL_MESSAGE:
+			case molch_message_type::NORMAL_MESSAGE:
 				return PACKET_HEADER__PACKET_TYPE__NORMAL_MESSAGE;
 			default:
 				//fallback to normal message
@@ -49,11 +49,11 @@ namespace Molch {
 	static constexpr molch_message_type to_molch_message_type(const PacketHeader__PacketType packet_type) {
 		switch (packet_type) {
 			case PACKET_HEADER__PACKET_TYPE__NORMAL_MESSAGE:
-				return NORMAL_MESSAGE;
+				return molch_message_type::NORMAL_MESSAGE;
 			case PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE:
-				return PREKEY_MESSAGE;
+				return molch_message_type::PREKEY_MESSAGE;
 			default:
-				return INVALID;
+				return molch_message_type::INVALID;
 		}
 	}
 
@@ -131,7 +131,7 @@ namespace Molch {
 		packet_struct.packet_header = &packet_header_struct;
 
 		//check the input
-		if ((packet_type == INVALID)
+		if ((packet_type == molch_message_type::INVALID)
 			|| axolotl_header_key.empty
 			|| message_key.empty) {
 			throw Exception{status_type::INVALID_INPUT, "Invalid input to packet_encrypt."};
@@ -145,7 +145,7 @@ namespace Molch {
 		packet_header_struct.has_packet_type = true;
 		packet_header_struct.packet_type = to_packet_header_packet_type(packet_type);
 
-		if (packet_type == PREKEY_MESSAGE) {
+		if (packet_type == molch_message_type::PREKEY_MESSAGE) {
 			//check input
 			if ((public_identity_key == nullptr) || public_identity_key->empty
 				|| (public_ephemeral_key == nullptr) || public_ephemeral_key->empty

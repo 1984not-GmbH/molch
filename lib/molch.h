@@ -27,6 +27,8 @@
 /* although molch is C++, it exports a C interface */
 #ifdef __cplusplus
 extern "C" {
+#else
+	#define class
 #endif
 
 /*
@@ -109,7 +111,7 @@ return_status molch_list_users(
  */
 void molch_destroy_all_users(void);
 
-typedef enum molch_message_type { PREKEY_MESSAGE, NORMAL_MESSAGE, INVALID } molch_message_type;
+typedef enum class molch_message_type { PREKEY_MESSAGE, NORMAL_MESSAGE, INVALID } molch_message_type;
 
 /*
  * Get the type of a message.

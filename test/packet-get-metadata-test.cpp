@@ -40,13 +40,13 @@ int main(void) {
 			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
 		}
 
-		molch_message_type packet_type{NORMAL_MESSAGE};
+		molch_message_type packet_type{molch_message_type::NORMAL_MESSAGE};
 		Buffer header{4, 4};
 		header.content[0] = 0x01;
 		header.content[1] = 0x02;
 		header.content[2] = 0x03;
 		header.content[3] = 0x04;
-		printf("Packet type: %02x\n\n", packet_type);
+		printf("Packet type: %02x\n\n", static_cast<int>(packet_type));
 
 		//A NORMAL MESSAGE
 		printf("NORMAL MESSAGE:\n");
@@ -78,7 +78,7 @@ int main(void) {
 			nullptr,
 			nullptr);
 
-		printf("extracted_packet_type = %u\n", extracted_packet_type);
+		printf("extracted_packet_type = %u\n", static_cast<int>(extracted_packet_type));
 		if (packet_type != extracted_packet_type) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted packet type doesn't match."};
 		}
@@ -106,7 +106,7 @@ int main(void) {
 
 		packet.clear();
 
-		packet_type = PREKEY_MESSAGE;
+		packet_type = molch_message_type::PREKEY_MESSAGE;
 		create_and_print_message(
 			packet,
 			header_key,
@@ -131,7 +131,7 @@ int main(void) {
 			&extracted_public_ephemeral_key,
 			&extracted_public_prekey);
 
-		printf("extracted_type = %u\n", extracted_packet_type);
+		printf("extracted_type = %u\n", static_cast<int>(extracted_packet_type));
 		if (packet_type != extracted_packet_type) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted packet type doesn't match."};
 		}

@@ -374,7 +374,7 @@ molch_message_type molch_get_message_type(
 			nullptr,
 			nullptr);
 	} catch (const std::exception& exception) {
-		return INVALID;
+		return molch_message_type::INVALID;
 	}
 
 	return packet_type;

@@ -183,7 +183,7 @@ namespace Molch {
 			&sender_public_ephemeral,
 			&receiver_public_prekey);
 
-		if (packet_type != PREKEY_MESSAGE) {
+		if (packet_type != molch_message_type::PREKEY_MESSAGE) {
 			throw Exception{status_type::INVALID_VALUE, "Packet is not a prekey message."};
 		}
 
@@ -243,10 +243,10 @@ namespace Molch {
 				send_message_number,
 				previous_send_message_number)};
 
-		auto packet_type{NORMAL_MESSAGE};
+		auto packet_type{molch_message_type::NORMAL_MESSAGE};
 		//check if this is a prekey message
 		if (public_identity_key != nullptr) {
-			packet_type = PREKEY_MESSAGE;
+			packet_type = molch_message_type::PREKEY_MESSAGE;
 		}
 
 		return packet_encrypt(
