@@ -390,7 +390,7 @@ namespace Molch {
 			return message;
 		} catch (const std::exception& exception) {
 			this->ratchet->setLastMessageAuthenticity(false);
-			throw exception;
+			throw;
 		}
 	}
 
