@@ -27,6 +27,7 @@
 #include "buffer.hpp"
 #include "molch.h"
 #include "key.hpp"
+#include "optional.hpp"
 
 /*! \file
  * Theses functions create a packet from a packet header, encryption keys, an azolotl header and a
@@ -100,8 +101,8 @@ namespace Molch {
 			uint32_t& current_protocol_version,
 			uint32_t& highest_supported_protocol_version,
 			molch_message_type& packet_type,
-			Buffer& axolotl_header,
-			Buffer& message,
+			optional<Buffer>& axolotl_header,
+			optional<Buffer>& message,
 			//inputs
 			const Buffer& packet,
 			const HeaderKey& axolotl_header_key,
@@ -152,7 +153,7 @@ namespace Molch {
 	 * \return
 	 *   A buffer for the decrypted axolotl header.
 	 */
-	Buffer packet_decrypt_header(
+	optional<Buffer> packet_decrypt_header(
 			const Buffer& packet,
 			const HeaderKey& axolotl_header_key);
 
@@ -167,6 +168,6 @@ namespace Molch {
 	 * \return
 	 *   A buffer for the decrypted message.
 	 */
-	Buffer packet_decrypt_message(const Buffer& packet, const MessageKey& message_key);
+	optional<Buffer> packet_decrypt_message(const Buffer& packet, const MessageKey& message_key);
 }
 #endif

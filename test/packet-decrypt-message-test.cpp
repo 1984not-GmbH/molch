@@ -68,16 +68,16 @@ int main(void) {
 			nullptr);
 
 		//now decrypt the message
-		Buffer decrypted_message{packet_decrypt_message(packet, message_key)};
+		auto decrypted_message{packet_decrypt_message(packet, message_key)};
 
 		//check the message size
-		if (!decrypted_message.contains(message.size)) {
+		if (!decrypted_message.value().contains(message.size)) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message length isn't the same."};
 		}
 		printf("Decrypted message length is the same.\n");
 
 		//compare the message
-		if (message != decrypted_message) {
+		if (message != decrypted_message.value()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message doesn't match."};
 		}
 		printf("Decrypted message is the same.\n\n");
@@ -86,7 +86,7 @@ int main(void) {
 		packet.content[packet.size - crypto_secretbox_MACBYTES - 1] ^= 0xf0;
 		printf("Manipulating message.\n");
 
-		decrypted_message.clear();
+		decrypted_message.value().clear();
 
 		//try to decrypt
 		auto decryption_failed{false};
@@ -95,7 +95,7 @@ int main(void) {
 		} catch (const Molch::Exception& exception) {
 			decryption_failed = true;
 		}
-		if (!decryption_failed) { //message was decrypted although it shouldn't
+		if (!decryption_failed && decrypted_message) { //message was decrypted although it shouldn't
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Decrypted manipulated message."};
 		}
 		printf("Manipulation detected.\n\n");
@@ -128,13 +128,13 @@ int main(void) {
 		decrypted_message = packet_decrypt_message(packet, message_key);
 
 		//check the message size
-		if (!decrypted_message.contains(message.size)) {
+		if (!decrypted_message.value().contains(message.size)) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message length isn't the same."};
 		}
 		printf("Decrypted message length is the same.\n");
 
 		//compare the message
-		if (message != decrypted_message) {
+		if (message != decrypted_message.value()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message doesn't match."};
 		}
 		printf("Decrypted message is the same.\n");

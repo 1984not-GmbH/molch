@@ -247,8 +247,8 @@ namespace Molch {
 			uint32_t& current_protocol_version,
 			uint32_t& highest_supported_protocol_version,
 			molch_message_type& packet_type,
-			Buffer& axolotl_header,
-			Buffer& message,
+			optional<Buffer>& axolotl_header,
+			optional<Buffer>& message,
 			//inputs
 			const Buffer& packet,
 			const HeaderKey& axolotl_header_key,
@@ -305,14 +305,14 @@ namespace Molch {
 		packet_type = to_molch_message_type(packet_struct->packet_header->packet_type);
 	}
 
-	Buffer packet_decrypt_header(
+	optional<Buffer> packet_decrypt_header(
 			const Buffer& packet,
 			const HeaderKey& axolotl_header_key) {
 		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct;
 
 		//check input
 		if (axolotl_header_key.empty) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to packet_decrypt_header."};
+			return optional<Buffer>();
 		}
 
 		packet_struct = packet_unpack(packet);
@@ -322,25 +322,25 @@ namespace Molch {
 		}
 
 		const size_t axolotl_header_length{packet_struct->encrypted_axolotl_header.len - crypto_secretbox_MACBYTES};
-		Buffer axolotl_header{axolotl_header_length, axolotl_header_length};
+		optional<Buffer> axolotl_header{in_place_t(), axolotl_header_length, axolotl_header_length};
 
 		auto status{crypto_secretbox_open_easy(
-				axolotl_header.content,
+				axolotl_header->content,
 				packet_struct->encrypted_axolotl_header.data,
 				packet_struct->encrypted_axolotl_header.len,
 				packet_struct->packet_header->header_nonce.data,
 				axolotl_header_key.data())};
 		if (status != 0) {
-			throw Exception{status_type::DECRYPT_ERROR, "Failed to decrypt axolotl header."};
+			return optional<Buffer>();
 		}
 
 		return axolotl_header;
 	}
 
-	Buffer packet_decrypt_message(const Buffer& packet, const MessageKey& message_key) {
+	optional<Buffer> packet_decrypt_message(const Buffer& packet, const MessageKey& message_key) {
 		//check input
 		if (message_key.empty) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to packet_decrypt_message."};
+			return optional<Buffer>();
 		}
 
 		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct{packet_unpack(packet)};
@@ -362,7 +362,7 @@ namespace Molch {
 				packet_struct->packet_header->message_nonce.data,
 				message_key.data())};
 		if (status != 0) {
-			throw Exception{status_type::DECRYPT_ERROR, "Failed to decrypt message."};
+			return optional<Buffer>();
 		}
 
 		//get the padding (last byte)
@@ -373,9 +373,9 @@ namespace Molch {
 
 		//extract the message
 		const size_t message_length{padded_message.size - padding};
-		Buffer message{message_length, 0};
+		optional<Buffer> message{in_place_t(), message_length, 0U};
 		//TODO this doesn't need to be copied, setting the length should be enough
-		message.copyFrom(0, padded_message, 0, message_length);
+		message->copyFrom(0, padded_message, 0, message_length);
 
 		return message;
 	}

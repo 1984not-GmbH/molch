@@ -71,13 +71,13 @@ int main(void) {
 		auto decrypted_header{packet_decrypt_header(packet, header_key)};
 
 
-		if (!decrypted_header.contains(header.size)) {
+		if (!decrypted_header.value().contains(header.size)) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length."};
 		}
 		printf("Decrypted header has the same length.\n\n");
 
 		//compare headers
-		if (header != decrypted_header) {
+		if (header != decrypted_header.value()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header doesn't match."};
 		}
 		printf("Decrypted header matches.\n\n");
@@ -127,7 +127,6 @@ int main(void) {
 		public_prekey.fillRandom();
 
 		packet.clear();
-		decrypted_header.clear();
 
 		packet_type = molch_message_type::PREKEY_MESSAGE;
 		create_and_print_message(
@@ -143,14 +142,13 @@ int main(void) {
 
 		//now decrypt the header
 		decrypted_header = packet_decrypt_header(packet, header_key);
-
-		if (!decrypted_header.contains(header.size)) {
+		if (!decrypted_header.value().contains(header.size)) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length."};
 		}
 		printf("Decrypted header has the same length.\n\n");
 
 		//compare headers
-		if (header != decrypted_header) {
+		if (header != decrypted_header.value()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header doesn't match."};
 		}
 		printf("Decrypted header matches.\n");

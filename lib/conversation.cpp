@@ -276,28 +276,25 @@ namespace Molch {
 
 		for (size_t index{0}; index < this->ratchet->skipped_header_and_message_keys.keys.size(); index++) {
 			auto& node = this->ratchet->skipped_header_and_message_keys.keys[index];
-			Buffer header;
-			auto decryption_successful{true};
-			try {
-				uint32_t current_protocol_version;
-				uint32_t highest_supported_protocol_version;
-				molch_message_type packet_type;
-				packet_decrypt(
-						current_protocol_version,
-						highest_supported_protocol_version,
-						packet_type,
-						header,
-						message,
-						packet,
-						node.header_key,
-						node.message_key,
-						nullptr,
-						nullptr,
-						nullptr);
-			} catch (const Exception& exception) {
-				decryption_successful = false;
-			}
-			if (decryption_successful) {
+			optional<Buffer> header;
+			optional<Buffer> message_optional;
+			uint32_t current_protocol_version;
+			uint32_t highest_supported_protocol_version;
+			molch_message_type packet_type;
+			packet_decrypt(
+					current_protocol_version,
+					highest_supported_protocol_version,
+					packet_type,
+					header,
+					message_optional,
+					packet,
+					node.header_key,
+					node.message_key,
+					nullptr,
+					nullptr,
+					nullptr);
+			if (header && message_optional) {
+				message = std::move(*message_optional);
 				this->ratchet->skipped_header_and_message_keys.keys.erase(std::begin(this->ratchet->skipped_header_and_message_keys.keys) + static_cast<ptrdiff_t>(index));
 				index--;
 
@@ -306,7 +303,7 @@ namespace Molch {
 						their_signed_public_ephemeral,
 						receive_message_number,
 						previous_receive_message_number,
-						header);
+						*header);
 				return static_cast<int>(status_type::SUCCESS);
 			}
 		}
@@ -325,8 +322,6 @@ namespace Molch {
 			uint32_t& receive_message_number,
 			uint32_t& previous_receive_message_number) {
 		try {
-			auto decryptable{true};
-
 			Buffer message;
 			auto status{trySkippedHeaderAndMessageKeys(
 					packet,
@@ -343,23 +338,12 @@ namespace Molch {
 			this->ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 
 			//try to decrypt the packet header with the current receive header key
-			Buffer header;
-			try {
-				header = packet_decrypt_header(packet, current_receive_header_key);
-			} catch (const Exception& exception) {
-				decryptable = false;
-			}
-			if (decryptable) {
+			auto header{packet_decrypt_header(packet, current_receive_header_key)};
+			if (header) {
 				this->ratchet->setHeaderDecryptability(Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE);
 			} else {
-				//since this failed, try to decrypt it with the next receive header key
-				decryptable = true;
-				try {
-					header = packet_decrypt_header(packet, next_receive_header_key);
-				} catch (const Exception& exception) {
-					decryptable = false;
-				}
-				if (decryptable) {
+				header = packet_decrypt_header(packet, next_receive_header_key);
+				if (header) {
 					this->ratchet->setHeaderDecryptability(Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE);
 				} else {
 					this->ratchet->setHeaderDecryptability(Ratchet::HeaderDecryptability::UNDECRYPTABLE);
@@ -375,7 +359,7 @@ namespace Molch {
 					their_signed_public_ephemeral,
 					local_receive_message_number,
 					local_previous_receive_message_number,
-					header);
+					*header);
 
 			//and now decrypt the message with the message key
 			//now we have all the data we need to advance the ratchet
@@ -387,7 +371,11 @@ namespace Molch {
 				local_receive_message_number,
 				local_previous_receive_message_number);
 
-			message = packet_decrypt_message(packet, message_key);
+			optional<Buffer> message_optional{packet_decrypt_message(packet, message_key)};
+			if (!message_optional) {
+				throw Exception{status_type::DECRYPT_ERROR, "Failed to decrypt the message."};
+			}
+			message = std::move(*message_optional);
 
 			this->ratchet->setLastMessageAuthenticity(true);
 
