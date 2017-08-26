@@ -279,28 +279,35 @@ namespace Molch {
 			Buffer header;
 			auto decryption_successful{true};
 			try {
-				header = packet_decrypt_header(packet, node.header_key);
+				uint32_t current_protocol_version;
+				uint32_t highest_supported_protocol_version;
+				molch_message_type packet_type;
+				packet_decrypt(
+						current_protocol_version,
+						highest_supported_protocol_version,
+						packet_type,
+						header,
+						message,
+						packet,
+						node.header_key,
+						node.message_key,
+						nullptr,
+						nullptr,
+						nullptr);
 			} catch (const Exception& exception) {
 				decryption_successful = false;
 			}
 			if (decryption_successful) {
-				try {
-					message = packet_decrypt_message(packet, node.message_key);
-				} catch (const Exception& exception) {
-					decryption_successful = false;
-				}
-				if (decryption_successful) {
-					this->ratchet->skipped_header_and_message_keys.keys.erase(std::begin(this->ratchet->skipped_header_and_message_keys.keys) + static_cast<ptrdiff_t>(index));
-					index--;
+				this->ratchet->skipped_header_and_message_keys.keys.erase(std::begin(this->ratchet->skipped_header_and_message_keys.keys) + static_cast<ptrdiff_t>(index));
+				index--;
 
-					PublicKey their_signed_public_ephemeral;
-					header_extract(
-							their_signed_public_ephemeral,
-							receive_message_number,
-							previous_receive_message_number,
-							header);
-					return static_cast<int>(status_type::SUCCESS);
-				}
+				PublicKey their_signed_public_ephemeral;
+				header_extract(
+						their_signed_public_ephemeral,
+						receive_message_number,
+						previous_receive_message_number,
+						header);
+				return static_cast<int>(status_type::SUCCESS);
 			}
 		}
 
