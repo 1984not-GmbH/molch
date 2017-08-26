@@ -44,6 +44,7 @@ if (RUN_TESTS)
               buffer-test
               molch-exception-test
               protobuf-pool-test
+              optional-test
     )
 
     foreach(test ${tests})
