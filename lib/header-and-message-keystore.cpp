@@ -24,6 +24,7 @@
 #include "constants.h"
 #include "header-and-message-keystore.hpp"
 #include "molch-exception.hpp"
+#include "gsl.hpp"
 
 namespace Molch {
 	constexpr int64_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
@@ -91,7 +92,7 @@ namespace Molch {
 		if (!key_bundle.has_expiration_time) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has no expiration time."};
 		}
-		this->expiration_date = static_cast<int64_t>(key_bundle.expiration_time);
+		this->expiration_date = gsl::narrow<int64_t>(key_bundle.expiration_time);
 	}
 
 	ProtobufCKeyBundle* HeaderAndMessageKey::exportProtobuf(ProtobufPool& pool) const {
@@ -118,7 +119,7 @@ namespace Molch {
 
 
 		//set expiration time
-		key_bundle->expiration_time = static_cast<uint64_t>(this->expiration_date);
+		key_bundle->expiration_time = gsl::narrow<uint64_t>(this->expiration_date);
 		key_bundle->has_expiration_time = true;
 
 		return key_bundle;

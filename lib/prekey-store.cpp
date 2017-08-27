@@ -26,6 +26,7 @@
 
 #include "prekey-store.hpp"
 #include "molch-exception.hpp"
+#include "gsl.hpp"
 
 namespace Molch {
 	constexpr int64_t PREKEY_EXPIRATION_TIME{3600 * 24 * 31}; //one month
@@ -92,7 +93,7 @@ namespace Molch {
 		if (!keypair.has_expiration_time) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing an expiration time."};
 		}
-		this->expiration_date = static_cast<int64_t>(keypair.expiration_time);
+		this->expiration_date = gsl::narrow<int64_t>(keypair.expiration_time);
 	}
 
 	ProtobufCPrekey* Prekey::exportProtobuf(ProtobufPool& pool) const {
@@ -114,7 +115,7 @@ namespace Molch {
 		this->public_key.copyTo(prekey->public_key->key.data, prekey->public_key->key.len);
 
 		//export the expiration date
-		prekey->expiration_time = static_cast<uint64_t>(this->expiration_date);
+		prekey->expiration_time = gsl::narrow<uint64_t>(this->expiration_date);
 		prekey->has_expiration_time = true;
 
 		return prekey;
@@ -238,7 +239,7 @@ namespace Molch {
 			private_key = found_prekey->private_key;
 
 			//and deprecate key
-			auto index{static_cast<size_t>(found_prekey - std::begin(*this->prekeys))};
+			auto index{gsl::narrow<size_t>(found_prekey - std::begin(*this->prekeys))};
 			this->deprecate(index);
 
 			return;
@@ -291,7 +292,7 @@ namespace Molch {
 		if (this->oldest_expiration_date < current_time) {
 			for (auto&& prekey : *this->prekeys) {
 				if (prekey.expiration_date < current_time) {
-					auto index{static_cast<size_t>(&prekey - &(*std::begin(*this->prekeys)))};
+					auto index{gsl::narrow<size_t>(&prekey - &(*std::begin(*this->prekeys)))};
 					this->deprecate(index);
 				}
 			}
@@ -302,7 +303,7 @@ namespace Molch {
 			for (size_t index{0}; index < this->deprecated_prekeys.size(); index++) {
 				auto& prekey = this->deprecated_prekeys[index];
 				if (prekey.expiration_date < current_time) {
-					this->deprecated_prekeys.erase(std::cbegin(this->deprecated_prekeys) + static_cast<ptrdiff_t>(index));
+					this->deprecated_prekeys.erase(std::cbegin(this->deprecated_prekeys) + gsl::narrow<ptrdiff_t>(index));
 					index--;
 				}
 			}

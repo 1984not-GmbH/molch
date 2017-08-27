@@ -187,7 +187,7 @@ namespace Molch {
 			throw Exception{status_type::SIGN_ERROR, "Failed to sign message."};
 		}
 
-		signed_data.size = static_cast<size_t>(signed_message_length);
+		signed_data.size = gsl::narrow<size_t>(signed_message_length);
 	}
 
 	void MasterKeys::exportProtobuf(

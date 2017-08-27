@@ -141,7 +141,7 @@ namespace Molch {
 		}
 
 		//otherwise replace the existing one
-		auto existing_index{static_cast<size_t>(existing_user - std::cbegin(this->users))};
+		auto existing_index{gsl::narrow<size_t>(existing_user - std::cbegin(this->users))};
 		this->users[existing_index] = std::move(user);
 	}
 
@@ -181,7 +181,7 @@ namespace Molch {
 		Buffer list{this->users.size() * PUBLIC_MASTER_KEY_SIZE, 0};
 
 		for (const auto& user : this->users) {
-			auto index{static_cast<size_t>(&user - &(*std::cbegin(this->users)))};
+			auto index{gsl::narrow<size_t>(&user - &(*std::cbegin(this->users)))};
 			list.copyFromRaw(
 				PUBLIC_MASTER_KEY_SIZE * index,
 				user.public_signing_key.data(),

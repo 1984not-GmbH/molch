@@ -38,6 +38,7 @@
 #include <protobuf-c/protobuf-c.h>
 
 #include "sodium-wrappers.hpp"
+#include "gsl.hpp"
 
 namespace Molch {
 	class ProtobufPoolBlock {
@@ -88,7 +89,7 @@ namespace Molch {
 				throw std::bad_alloc();
 			}
 
-			this->offset = static_cast<size_t>(reinterpret_cast<unsigned char*>(offset_pointer) - this->block.get()) + size;
+			this->offset = gsl::narrow<size_t>(reinterpret_cast<unsigned char*>(offset_pointer) - this->block.get()) + size;
 
 			return reinterpret_cast<T*>(offset_pointer);
 		}

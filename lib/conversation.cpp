@@ -283,7 +283,7 @@ namespace Molch {
 					nullptr);
 			if (header && message_optional) {
 				message = std::move(*message_optional);
-				this->ratchet->skipped_header_and_message_keys.keys.erase(std::begin(this->ratchet->skipped_header_and_message_keys.keys) + static_cast<ptrdiff_t>(index));
+				this->ratchet->skipped_header_and_message_keys.keys.erase(std::begin(this->ratchet->skipped_header_and_message_keys.keys) + gsl::narrow<ptrdiff_t>(index));
 				index--;
 
 				PublicKey their_signed_public_ephemeral;

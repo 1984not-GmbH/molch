@@ -24,6 +24,7 @@
 
 #include "conversation-store.hpp"
 #include "destroyers.hpp"
+#include "gsl.hpp"
 
 namespace Molch {
 	size_t ConversationStore::size() const {
@@ -44,7 +45,7 @@ namespace Molch {
 		}
 
 		//otherwise replace the exiting one
-		auto existing_index{static_cast<size_t>(existing_conversation - std::begin(this->conversations))};
+		auto existing_index{gsl::narrow<size_t>(existing_conversation - std::begin(this->conversations))};
 		this->conversations[existing_index] = std::move(conversation);
 	}
 
@@ -128,7 +129,7 @@ namespace Molch {
 		Buffer list{this->conversations.size() * CONVERSATION_ID_SIZE, 0};
 
 		for (const auto& conversation : this->conversations) {
-			auto index{static_cast<size_t>(&conversation - &(*this->conversations.cbegin()))};
+			auto index{gsl::narrow<size_t>(&conversation - &(*this->conversations.cbegin()))};
 			list.copyFromRaw(
 				CONVERSATION_ID_SIZE * index,
 				conversation.id.data(),

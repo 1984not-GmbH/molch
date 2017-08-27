@@ -26,6 +26,7 @@
 #include "constants.h"
 #include "molch-exception.hpp"
 #include "protobuf.hpp"
+#include "gsl.hpp"
 
 namespace Molch {
 	/*!
@@ -197,7 +198,7 @@ namespace Molch {
 		packet_header_struct.message_nonce.len = message_nonce.size;
 
 		//pad the message (PKCS7 padding to 255 byte blocks, see RFC5652 section 6.3)
-		auto padding{static_cast<unsigned char>(255 - (message.size % 255))};
+		auto padding{gsl::narrow<unsigned char>(255 - (message.size % 255))};
 		Buffer padded_message{message.size + padding, 0};
 		//copy the message
 		padded_message.cloneFrom(message);

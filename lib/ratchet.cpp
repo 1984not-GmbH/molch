@@ -27,6 +27,7 @@
 #include "ratchet.hpp"
 #include "key-derivation.hpp"
 #include "molch-exception.hpp"
+#include "gsl.hpp"
 
 namespace Molch {
 	void Ratchet::init() {

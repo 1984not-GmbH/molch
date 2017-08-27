@@ -36,6 +36,7 @@
 #include "malloc.hpp"
 #include "protobuf.hpp"
 #include "key.hpp"
+#include "gsl.hpp"
 
 using namespace Molch;
 
@@ -387,7 +388,7 @@ static void verify_prekey_list(
 			verified_prekey_list.content,
 			&verified_length,
 			prekey_list,
-			static_cast<unsigned long long>(prekey_list_length),
+			gsl::narrow<unsigned long long>(prekey_list_length),
 			public_signing_key.data())};
 	if (status != 0) {
 		throw Exception{status_type::VERIFICATION_FAILED, "Failed to verify prekey list signature."};
@@ -397,7 +398,7 @@ static void verify_prekey_list(
 	{
 		throw Exception{status_type::CONVERSION_ERROR, "Length is bigger than size_t."};
 	}
-	verified_prekey_list.size = static_cast<size_t>(verified_length);
+	verified_prekey_list.size = gsl::narrow<size_t>(verified_length);
 
 	//get the expiration date
 	int64_t expiration_date;
