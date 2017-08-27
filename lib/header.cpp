@@ -30,13 +30,11 @@ namespace Molch {
 			const PublicKey& our_public_ephemeral, //PUBLIC_KEY_SIZE
 			const uint32_t message_number,
 			const uint32_t previous_message_number) {
+		Expects(!our_public_ephemeral.empty);
+
 		ProtobufCHeader header_struct;
 		header__init(&header_struct);
 
-		//check input
-		if (our_public_ephemeral.empty) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to header_construct."};
-		}
 		//create buffer for our public ephemeral
 		ProtobufCBinaryData protobuf_our_public_ephemeral;
 		protobuf_our_public_ephemeral.len = our_public_ephemeral.size();

@@ -47,15 +47,12 @@ namespace Molch {
 			const PrivateKey& our_private_ephemeral,
 			const PublicKey& our_public_ephemeral,
 			const PublicKey& their_public_ephemeral) {
-		//check buffer sizes
-		if (our_private_identity.empty
-				|| our_public_identity.empty
-				|| their_public_identity.empty
-				|| our_private_ephemeral.empty
-				|| our_public_ephemeral.empty
-				|| their_public_ephemeral.empty) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to ratchet_create."};
-		}
+		Expects(!our_private_identity.empty
+				&& !our_public_identity.empty
+				&& !their_public_identity.empty
+				&& !our_private_ephemeral.empty
+				&& !our_public_ephemeral.empty
+				&& !their_public_ephemeral.empty);
 
 		this->init();
 
@@ -198,15 +195,8 @@ namespace Molch {
 	 * or next (next_receive_header_key) header key, or isn't decryptable.
 	 */
 	void Ratchet::setHeaderDecryptability(const HeaderDecryptability header_decryptable) {
-		if (this->header_decryptable != HeaderDecryptability::NOT_TRIED) {
-			//if the last message hasn't been properly handled yet, abort
-			throw Exception{status_type::GENERIC_ERROR, "Message hasn't been handled yet."};
-		}
-
-		if (header_decryptable == HeaderDecryptability::NOT_TRIED) {
-			//can't set to "NOT_TRIED"
-			throw Exception{status_type::INVALID_INPUT, "Can't set to \"NOT_TRIED\""};
-		}
+		Expects((this->header_decryptable == HeaderDecryptability::NOT_TRIED)
+				&& (header_decryptable != HeaderDecryptability::NOT_TRIED));
 
 		this->header_decryptable = header_decryptable;
 	}
@@ -286,10 +276,7 @@ namespace Molch {
 			const PublicKey& their_purported_public_ephemeral,
 			const uint32_t purported_message_number,
 			const uint32_t purported_previous_message_number) {
-		//check input
-		if (their_purported_public_ephemeral.empty) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to ratchet_receive."};
-		}
+		Expects(!their_purported_public_ephemeral.empty);
 
 		if (!this->received_valid) {
 			//abort because the previously received message hasn't been verified yet.

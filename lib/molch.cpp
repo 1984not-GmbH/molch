@@ -155,18 +155,11 @@ return_status molch_create_user(
 	auto user_store_created{false};
 
 	try {
-		if ((public_master_key == nullptr)
-			|| (prekey_list == nullptr) || (prekey_list_length == nullptr)) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_create_user."};
-		}
-
-		if (backup_key_length != BACKUP_KEY_SIZE) {
-			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Backup key has incorrect length."};
-		}
-
-		if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Public master key has incorrect length."};
-		}
+		Expects((public_master_key != nullptr)
+			&& (prekey_list != nullptr)
+			&& (prekey_list_length != nullptr)
+			&& (backup_key_length == BACKUP_KEY_SIZE)
+			&& (public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
 
 		//initialise libsodium and create user store
 		if (!users) {
@@ -313,9 +306,7 @@ return_status molch_list_users(
 	auto status{return_status_init()};
 
 	try {
-		if (!users || (user_list_length == nullptr)) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_list_users."};
-		}
+		Expects(users && (user_list_length != nullptr));
 
 		//get the list of users and copy it
 		auto list{users->list()};
@@ -457,30 +448,18 @@ return_status molch_start_send_conversation(
 	auto status{return_status_init()};
 
 	try {
+		Expects((conversation_id != nullptr)
+				&& (packet != nullptr)
+				&& (packet_length != nullptr)
+				&& (prekey_list != nullptr)
+				&& (sender_public_master_key != nullptr)
+				&& (receiver_public_master_key != nullptr)
+				&& (conversation_id_length == CONVERSATION_ID_SIZE)
+				&& (sender_public_master_key_length == PUBLIC_MASTER_KEY_SIZE)
+				&& (receiver_public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
+
 		if (!users) {
 			throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialised yet."};
-		}
-
-		//check input
-		if ((conversation_id == nullptr)
-				|| (packet == nullptr)
-				|| (packet_length == nullptr)
-				|| (prekey_list == nullptr)
-				|| (sender_public_master_key == nullptr)
-				|| (receiver_public_master_key == nullptr)) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_start_send_conversation."};
-		}
-
-		if (conversation_id_length != CONVERSATION_ID_SIZE) {
-			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "conversation id has incorrect size."};
-		}
-
-		if (sender_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "sender public master key has incorrect size."};
-		}
-
-		if (receiver_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "receiver public master key has incorrect size."};
 		}
 
 		//get the user that matches the public signing key of the sender
@@ -582,29 +561,18 @@ cleanup:
 		auto status{return_status_init()};
 
 		try {
+			Expects((conversation_id != nullptr)
+				&& (message != nullptr) && (message_length != nullptr)
+				&& (packet != nullptr)
+				&& (prekey_list != nullptr) && (prekey_list_length != nullptr)
+				&& (sender_public_master_key != nullptr)
+				&& (receiver_public_master_key != nullptr)
+				&& (conversation_id_length == CONVERSATION_ID_SIZE)
+				&& (sender_public_master_key_length == PUBLIC_MASTER_KEY_SIZE)
+				&& (receiver_public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
+
 			if (!users) {
 				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
-
-			if ((conversation_id == nullptr)
-				|| (message == nullptr) || (message_length == nullptr)
-				|| (packet == nullptr)
-				|| (prekey_list == nullptr) || (prekey_list_length == nullptr)
-				|| (sender_public_master_key == nullptr)
-				|| (receiver_public_master_key == nullptr)) {
-				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_start_receive_conversation."};
-			}
-
-			if (conversation_id_length != CONVERSATION_ID_SIZE) {
-				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size."};
-			}
-
-			if (sender_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Senders public master key has an incorrect size."};
-			}
-
-			if (receiver_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Receivers public master key has an incorrect size."};
 			}
 
 			//get the user that matches the public signing key of the receiver
@@ -689,18 +657,13 @@ cleanup:
 		auto status{return_status_init()};
 
 		try {
+			Expects((packet != nullptr) && (packet_length != nullptr)
+				&& (message != nullptr)
+				&& (conversation_id != nullptr)
+				&& (conversation_id_length == CONVERSATION_ID_SIZE));
+
 			if (!users) {
 				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
-
-			if ((packet == nullptr) || (packet_length == nullptr)
-				|| (message == nullptr)
-				|| (conversation_id == nullptr)) {
-				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_encrypt_message."};
-			}
-
-			if (conversation_id_length != CONVERSATION_ID_SIZE) {
-				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size."};
 			}
 
 			//find the conversation
@@ -770,20 +733,16 @@ cleanup:
 		auto status{return_status_init()};
 
 		try {
+			Expects((message != nullptr)
+					&& (message_length != nullptr)
+					&& (packet != nullptr)
+					&& (conversation_id != nullptr)
+					&& (receive_message_number != nullptr)
+					&& (previous_receive_message_number != nullptr)
+					&& (conversation_id_length == CONVERSATION_ID_SIZE));
+
 			if (!users) {
 				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
-
-			if ((message == nullptr) || (message_length == nullptr)
-				|| (packet == nullptr)
-				|| (conversation_id == nullptr)
-				|| (receive_message_number == nullptr)
-				|| (previous_receive_message_number == nullptr)) {
-				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_decrypt_message."};
-			}
-
-			if (conversation_id_length != CONVERSATION_ID_SIZE) {
-				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect size."};
 			}
 
 			//find the conversation
@@ -839,16 +798,11 @@ cleanup:
 		auto status{return_status_init()};
 
 		try {
+			Expects((conversation_id != nullptr)
+					&& (conversation_id_length == CONVERSATION_ID_SIZE));
+
 			if (!users) {
 				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
-
-			if (conversation_id == nullptr) {
-				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_end_conversation."};
-			}
-
-			if (conversation_id_length != CONVERSATION_ID_SIZE) {
-				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Conversation ID has an incorrect length."};
 			}
 
 			//find the conversation
@@ -908,16 +862,14 @@ cleanup:
 				*conversation_list = nullptr;
 			}
 
+			Expects((user_public_master_key != nullptr)
+					&& (conversation_list != nullptr)
+					&& (conversation_list_length != nullptr)
+					&& (number != nullptr)
+					&& (user_public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
+
 			if (!users) {
 				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
-
-			if ((user_public_master_key == nullptr) || (conversation_list == nullptr) || (conversation_list_length == nullptr) || (number == nullptr)) {
-				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_list_conversations."};
-			}
-
-			if (user_public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Public master key has an incorrect length."};
 			}
 
 			PublicSigningKey user_public_master_key_key;
@@ -1008,20 +960,17 @@ cleanup:
 		auto status{return_status_init()};
 
 		try {
+			Expects(
+					(backup != nullptr)
+					&& (backup_length != nullptr)
+					&& (conversation_id != nullptr)
+					&& (conversation_id_length == CONVERSATION_ID_SIZE));
+
 			ProtobufCEncryptedBackup encrypted_backup_struct;
 			encrypted_backup__init(&encrypted_backup_struct);
 
 			if (!users) {
 				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
-
-			//check input
-			if ((backup == nullptr) || (backup_length == nullptr)
-					|| (conversation_id == nullptr)) {
-				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_conversation_export"};
-			}
-			if ((conversation_id_length != CONVERSATION_ID_SIZE)) {
-				throw Exception{status_type::INVALID_INPUT, "Conversation ID has an invalid size."};
 			}
 
 			if ((global_backup_key == nullptr) || (global_backup_key->size() != BACKUP_KEY_SIZE)) {
@@ -1133,19 +1082,13 @@ cleanup:
 		auto status{return_status_init()};
 
 		try {
+			Expects((backup != nullptr)
+					&& (backup_key != nullptr)
+					&& (backup_key_length == BACKUP_KEY_SIZE)
+					&& (new_backup_key_length == BACKUP_KEY_SIZE));
+
 			if (!users) {
 				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
-
-			//check input
-			if ((backup == nullptr) || (backup_key == nullptr)) {
-				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_import."};
-			}
-			if (backup_key_length != BACKUP_KEY_SIZE) {
-				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length."};
-			}
-			if (new_backup_key_length != BACKUP_KEY_SIZE) {
-				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "New backup key has an incorrect length."};
 			}
 
 			//unpack the encrypted backup
@@ -1236,18 +1179,15 @@ cleanup:
 		auto status{return_status_init()};
 
 		try {
-			if (!users) {
-				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
-
-			//check input
-			if ((backup == nullptr) || (backup_length == nullptr)) {
-				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_export"};
-			}
+			Expects((backup != nullptr) && (backup_length != nullptr));
 
 			GlobalBackupKeyUnlocker unlocker;
 			if ((global_backup_key == nullptr) || global_backup_key->empty) {
 				throw Exception{status_type::INCORRECT_DATA, "No backup key found."};
+			}
+
+			if (!users) {
+				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
 			}
 
 			ProtobufPool pool;
@@ -1353,16 +1293,10 @@ cleanup:
 		auto status{return_status_init()};
 
 		try {
-			//check input
-			if ((backup == nullptr) || (backup_key == nullptr)) {
-				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_import."};
-			}
-			if (backup_key_length != BACKUP_KEY_SIZE) {
-				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length."};
-			}
-			if (new_backup_key_length != BACKUP_KEY_SIZE) {
-				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "New backup key has an incorrect length."};
-			}
+			Expects((backup != nullptr)
+					&& (backup_key != nullptr)
+					&& (backup_key_length == BACKUP_KEY_SIZE)
+					&& (new_backup_key_length == BACKUP_KEY_SIZE));
 
 			if (!users) {
 				if (sodium_init() == -1) {
@@ -1454,17 +1388,13 @@ cleanup:
 		auto status{return_status_init()};
 
 		try {
+			Expects((public_master_key != nullptr)
+					&& (prekey_list != nullptr)
+					&& (prekey_list_length != nullptr)
+					&& (public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
+
 			if (!users) {
 				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
-
-			// check input
-			if ((public_master_key == nullptr) || (prekey_list == nullptr) || (prekey_list_length == nullptr)) {
-				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_get_prekey_list."};
-			}
-
-			if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Public master key has an incorrect length."};
 			}
 
 			PublicSigningKey public_signing_key_key;
@@ -1497,19 +1427,13 @@ cleanup:
 		auto status{return_status_init()};
 
 		try {
+			Expects((new_key != nullptr) && (new_key_length == BACKUP_KEY_SIZE));
+
 			if (!users) {
 				if (sodium_init() == -1) {
 					throw Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
 				}
 				users = std::make_unique<UserStore>();
-			}
-
-			if (new_key == nullptr) {
-				throw Exception{status_type::INVALID_INPUT, "Invalid input to molch_update_backup_key."};
-			}
-
-			if (new_key_length != BACKUP_KEY_SIZE) {
-				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "New key has an incorrect length."};
 			}
 
 			// create a backup key buffer if it doesnt exist already

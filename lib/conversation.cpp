@@ -29,6 +29,7 @@
 #include "header.hpp"
 #include "molch-exception.hpp"
 #include "destroyers.hpp"
+#include "gsl.hpp"
 
 namespace Molch {
 	Conversation& Conversation::move(Conversation&& conversation) {
@@ -56,15 +57,12 @@ namespace Molch {
 			const PrivateKey& our_private_ephemeral,
 			const PublicKey& our_public_ephemeral,
 			const PublicKey& their_public_ephemeral) {
-		//check input
-		if (our_private_identity.empty
-				|| our_public_identity.empty
-				|| their_public_identity.empty
-				|| our_public_ephemeral.empty
-				|| our_public_ephemeral.empty
-				|| their_public_ephemeral.empty) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input for conversation_create."};
-		}
+		Expects(!our_private_identity.empty
+				&& !our_public_identity.empty
+				&& !their_public_identity.empty
+				&& !our_public_ephemeral.empty
+				&& !our_public_ephemeral.empty
+				&& !their_public_ephemeral.empty);
 
 		//create random id
 		this->id.fillRandom();
@@ -107,13 +105,10 @@ namespace Molch {
 			const PrivateKey& sender_private_identity,
 			const PublicKey& receiver_public_identity,
 			Buffer& receiver_prekey_list) { //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
-		//check many error conditions
-		if (receiver_public_identity.empty
-				|| sender_public_identity.empty
-				|| sender_private_identity.empty
-				|| !receiver_prekey_list.contains((PREKEY_AMOUNT * PUBLIC_KEY_SIZE))) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to Conversation::Conversation."};
-		}
+		Expects(!receiver_public_identity.empty
+				&& !sender_public_identity.empty
+				&& !sender_private_identity.empty
+				&& receiver_prekey_list.contains((PREKEY_AMOUNT * PUBLIC_KEY_SIZE)));
 
 		//create an ephemeral keypair
 		PublicKey sender_public_ephemeral;
@@ -159,13 +154,11 @@ namespace Molch {
 			const PublicKey& receiver_public_identity,
 			const PrivateKey& receiver_private_identity,
 			PrekeyStore& receiver_prekeys) { //prekeys of the receiver
+		Expects(!receiver_public_identity.empty
+				&& !receiver_private_identity.empty);
+
 		uint32_t receive_message_number{0};
 		uint32_t previous_receive_message_number{0};
-
-		if (receiver_public_identity.empty
-				|| receiver_private_identity.empty) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to conversation_start_receive_conversation."};
-		}
 
 		//get the senders keys and our public prekey from the packet
 		PublicKey sender_public_identity;
@@ -216,15 +209,10 @@ namespace Molch {
 			const PublicKey * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
 			const PublicKey * const public_ephemeral_key, //can be nullptr, if not nullptr, this will be a prekey message
 			const PublicKey * const public_prekey) { //can be nullptr, if not nullptr, this will be a prekey message
-		//ensure that either both public keys are nullptr or set
-		if (((public_identity_key == nullptr) && (public_prekey != nullptr)) || ((public_prekey == nullptr) && (public_identity_key != nullptr))) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid combination of provided key buffers."};
-		}
-
-		//check the size of the public keys
-		if (((public_identity_key != nullptr) && public_identity_key->empty) || ((public_prekey != nullptr) && public_prekey->empty)) {
-			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Public key output has incorrect size."};
-		}
+		Expects((((public_identity_key != nullptr) && (public_prekey != nullptr))
+					|| ((public_prekey == nullptr) && (public_identity_key == nullptr)))
+				&& ((public_identity_key == nullptr) || !public_identity_key->empty)
+				&& ((public_prekey == nullptr) || !public_prekey->empty));
 
 		HeaderKey send_header_key;
 		MessageKey send_message_key;

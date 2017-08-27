@@ -123,19 +123,16 @@ namespace Molch {
 			const PublicKey * const public_identity_key,
 			const PublicKey * const public_ephemeral_key,
 			const PublicKey * const public_prekey) {
+		Expects((packet_type != molch_message_type::INVALID)
+			&& !axolotl_header_key.empty
+			&& !message_key.empty);
+
 		//initialize the protobuf structs
 		ProtobufCPacket packet_struct;
 		packet__init(&packet_struct);
 		ProtobufCPacketHeader packet_header_struct;
 		packet_header__init(&packet_header_struct);
 		packet_struct.packet_header = &packet_header_struct;
-
-		//check the input
-		if ((packet_type == molch_message_type::INVALID)
-			|| axolotl_header_key.empty
-			|| message_key.empty) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to packet_encrypt."};
-		}
 
 		//set the protocol version
 		packet_header_struct.current_protocol_version = 0;
@@ -146,12 +143,9 @@ namespace Molch {
 		packet_header_struct.packet_type = to_packet_header_packet_type(packet_type);
 
 		if (packet_type == molch_message_type::PREKEY_MESSAGE) {
-			//check input
-			if ((public_identity_key == nullptr) || public_identity_key->empty
-				|| (public_ephemeral_key == nullptr) || public_ephemeral_key->empty
-				|| (public_prekey == nullptr) || public_prekey->empty) {
-				throw Exception{status_type::INVALID_INPUT, "Invalid public key to packet_encrypt for prekey message."};
-			}
+			Expects((public_identity_key != nullptr) && !public_identity_key->empty
+				&& (public_ephemeral_key != nullptr) && !public_ephemeral_key->empty
+				&& (public_prekey != nullptr) && !public_prekey->empty);
 
 			//set the public identity key
 			packet_header_struct.has_public_identity_key = true;

@@ -110,9 +110,7 @@ namespace Molch {
 		 *  throws an exception if either is empty.
 		 */
 		int compare(const Key& key) const {
-			if (this->empty || key.empty) {
-				throw Exception{status_type::INVALID_INPUT, "One of the keys is empty."};
-			}
+			Expects(!this->empty && !key.empty);
 
 			return sodium_compare(
 					this->data(),
@@ -152,14 +150,12 @@ namespace Molch {
 
 		template <size_t derived_length,KeyType derived_type>
 		void deriveTo(Key<derived_length,derived_type>& derived_key, const uint32_t subkey_counter) const {
+			Expects(!this->empty);
+
 			static_assert(derived_length <= crypto_generichash_blake2b_BYTES_MAX, "The derived length is greater than crypto_generichas_blake2b_BYTES_MAX");
 			static_assert(derived_length >= crypto_generichash_blake2b_BYTES_MIN, "The derived length is smaller than crypto_generichash_blake2b_BYTES_MAX");
 			static_assert(length <= crypto_generichash_blake2b_KEYBYTES_MAX, "The length to derive from is greater than crypto_generichash_blake2b_KEYBYTES_MAX");
 			static_assert(length >= crypto_generichash_blake2b_KEYBYTES_MIN, "The length to derive from is smaller than crypto_generichash_blake2b_KEYBYTES_MIN");
-
-			if (this->empty) {
-				throw Exception{status_type::INVALID_INPUT, "Key to derive from is empty."};
-			}
 
 			//create a salt that contains the number of the subkey
 			Buffer salt{crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES};
@@ -207,18 +203,15 @@ namespace Molch {
 
 		//copy from a raw unsigned char pointer
 		void set(const unsigned char* data, const size_t data_length) {
-			if (data_length != length) {
-				throw Exception{status_type::INVALID_INPUT, "Data to set Key to has an invalid length."};
-			}
+			Expects(data_length == length);
 
 			std::copy(data, data + data_length, this->data());
 			this->empty = false;
 		}
+
 		//copy to a raw unsigned char pointer
 		void copyTo(unsigned char* data, const size_t data_length) const {
-			if (data_length != length) {
-				throw Exception{status_type::INVALID_INPUT, "Data to copy the Key to has an invalid length."};
-			}
+			Expects(data_length == length);
 
 			std::copy(std::cbegin(*this), std::cend(*this), data);
 		}

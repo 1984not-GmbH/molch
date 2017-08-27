@@ -44,14 +44,10 @@ namespace Molch {
 			const PublicKey& their_public_ephemeral,
 			const RootKey& previous_root_key,
 			const Ratchet::Role role) {
-
-		//check input
-		if (our_private_ephemeral.empty
-				|| our_public_ephemeral.empty
-				|| their_public_ephemeral.empty
-				|| previous_root_key.empty) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to derive_root_next_header_and_chain_keys."};
-		}
+		Expects(!our_private_ephemeral.empty
+				&& !our_public_ephemeral.empty
+				&& !their_public_ephemeral.empty
+				&& !previous_root_key.empty);
 
 		//create buffers
 		Key<DIFFIE_HELLMAN_SIZE,KeyType::Key> diffie_hellman_secret;
@@ -110,15 +106,12 @@ namespace Molch {
 			const PublicKey& our_public_ephemeral,
 			const PublicKey& their_public_ephemeral,
 			const Ratchet::Role role) {
-		//check buffer sizes
-		if (our_private_identity.empty
-				|| our_public_identity.empty
-				|| their_public_identity.empty
-				|| our_private_ephemeral.empty
-				|| our_public_ephemeral.empty
-				|| their_public_ephemeral.empty) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to derive_initial_root_chain_and_header_keys."};
-		}
+		Expects(!our_private_identity.empty
+				&& !our_public_identity.empty
+				&& !their_public_identity.empty
+				&& !our_private_ephemeral.empty
+				&& !our_public_ephemeral.empty
+				&& !their_public_ephemeral.empty);
 
 		Key<crypto_secretbox_KEYBYTES,KeyType::Key> master_key;
 

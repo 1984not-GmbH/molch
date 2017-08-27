@@ -32,6 +32,7 @@
 
 #include "buffer.hpp"
 #include "molch-exception.hpp"
+#include "gsl.hpp"
 
 namespace Molch {
 	/*
@@ -48,11 +49,9 @@ namespace Molch {
 	 */
 	template <typename IntegerType>
 	void to_big_endian(IntegerType integer, Buffer& output) {
-		auto& reference{reinterpret_cast<unsigned char&>(integer)};
+		Expects(output.fits(sizeof(IntegerType)));
 
-		if (!output.fits(sizeof(IntegerType))) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to endianness to big endian."};
-		}
+		auto& reference{reinterpret_cast<unsigned char&>(integer)};
 
 		if (endianness_is_little_endian()) {
 			std::reverse(&reference, &reference + sizeof(integer));
@@ -66,9 +65,7 @@ namespace Molch {
 	 */
 	template <typename IntegerType>
 	void from_big_endian(IntegerType& integer, Buffer& buffer) {
-		if (!buffer.contains(sizeof(IntegerType))) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to from_big_endian."};
-		}
+		Expects(buffer.contains(sizeof(IntegerType)));
 
 		auto& reference{reinterpret_cast<unsigned char&>(integer)};
 

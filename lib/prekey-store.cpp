@@ -164,13 +164,10 @@ namespace Molch {
 			const size_t keypairs_length,
 			ProtobufCPrekey ** const& deprecated_keypairs,
 			const size_t deprecated_keypairs_length) {
-		//check input
-		if ((keypairs == nullptr)
-				|| (keypairs_length != PREKEY_AMOUNT)
-				|| ((deprecated_keypairs_length == 0) && (deprecated_keypairs != nullptr))
-				|| ((deprecated_keypairs_length > 0) && (deprecated_keypairs == nullptr))) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to PrekeyStore_import"};
-		}
+		Expects((keypairs != nullptr)
+				&& (keypairs_length == PREKEY_AMOUNT)
+				&& (((deprecated_keypairs_length == 0) && (deprecated_keypairs == nullptr))
+					|| ((deprecated_keypairs_length > 0) && (deprecated_keypairs != nullptr))));
 
 		this->init();
 
@@ -228,10 +225,7 @@ namespace Molch {
 	}
 
 	void PrekeyStore::getPrekey(const PublicKey& public_key, PrivateKey& private_key) {
-		//check buffers sizes
-		if (public_key.empty) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to PrekeyStore::getPrekey."};
-		}
+		Expects(!public_key.empty);
 
 		//lambda for comparing PrekeyNodes to public_key
 		auto key_comparer{[&public_key] (const Prekey& node) -> bool {
@@ -260,10 +254,7 @@ namespace Molch {
 	}
 
 	void PrekeyStore::list(Buffer& list) const { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
-		//check input
-		if (!list.fits(PREKEY_AMOUNT * PUBLIC_KEY_SIZE)) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to PrekeyStore_list."};
-		}
+		Expects(list.fits(PREKEY_AMOUNT * PUBLIC_KEY_SIZE));
 
 		size_t index{0};
 		for (const auto& key_bundle : *this->prekeys) {

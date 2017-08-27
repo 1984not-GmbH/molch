@@ -115,11 +115,8 @@ namespace Molch {
 	}
 
 	UserStore::UserStore(ProtobufCUser ** const& users, const size_t users_length) {
-		//check input
-		if (((users_length == 0) && (users != nullptr))
-				|| ((users_length > 0) && (users == nullptr))) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to user_store_import."};
-		}
+		Expects(((users_length == 0) && (users == nullptr))
+				|| ((users_length > 0) && (users != nullptr)));
 
 		for (size_t i{0}; i < users_length; i++) {
 			if (users[i] == nullptr) {
@@ -149,9 +146,7 @@ namespace Molch {
 	}
 
 	User* UserStore::find(const PublicSigningKey& public_signing_key) {
-		if (public_signing_key.empty) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to UserStore::find."};
-		}
+		Expects(!public_signing_key.empty);
 
 		auto user{std::find_if(std::begin(this->users), std::end(this->users),
 				[public_signing_key](const User& user) {
@@ -165,9 +160,7 @@ namespace Molch {
 	}
 
 	Conversation* UserStore::findConversation(User*& user, const Key<CONVERSATION_ID_SIZE,KeyType::Key>& conversation_id) {
-		if (conversation_id.empty) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to UserStore::findConversation."};
-		}
+		Expects(!conversation_id.empty);
 
 		Conversation* conversation{nullptr};
 		auto containing_user{std::find_if(std::begin(this->users), std::end(this->users),

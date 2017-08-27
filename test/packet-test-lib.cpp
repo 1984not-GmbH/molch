@@ -28,6 +28,7 @@
 #include "../lib/packet.hpp"
 #include "../lib/constants.h"
 #include "../lib/molch-exception.hpp"
+#include "../lib/gsl.hpp"
 #include "utils.hpp"
 #include "packet-test-lib.hpp"
 
@@ -47,9 +48,7 @@ void create_and_print_message(
 		PublicKey * const public_ephemeral_key,
 		PublicKey * const public_prekey) {
 	//check input
-	if (packet_type == molch_message_type::INVALID) {
-		throw Molch::Exception{status_type::INVALID_INPUT, "Invalid input to create_and_print_message."};
-	}
+	Expects(packet_type != molch_message_type::INVALID);
 
 	//create header key
 	header_key.fillRandom();

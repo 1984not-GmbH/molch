@@ -24,6 +24,7 @@
 #include "diffie-hellman.hpp"
 #include "molch-exception.hpp"
 #include "autozero.hpp"
+#include "gsl.hpp"
 
 namespace Molch {
 	void diffie_hellman(
@@ -32,17 +33,14 @@ namespace Molch {
 			const PublicKey& our_public_key, //needs to be PUBLIC_KEY_SIZE long
 			const PublicKey& their_public_key, //needs to be PUBLIC_KEY_SIZE long
 			const Ratchet::Role role) {
+		Expects(!our_private_key.empty
+				&& !our_public_key.empty
+				&& !their_public_key.empty);
+
 		//make sure that the assumptions are correct
 		static_assert(PUBLIC_KEY_SIZE == crypto_scalarmult_SCALARBYTES, "crypto_scalarmult_SCALARBYTES is not PUBLIC_KEY_SIZE");
 		static_assert(PRIVATE_KEY_SIZE == crypto_scalarmult_SCALARBYTES, "crypto_scalarmult_SCALARBYTES is not PRIVATE_KEY_BYTES");
 		static_assert(DIFFIE_HELLMAN_SIZE == crypto_generichash_BYTES, "crypto_generichash_bytes is not DIFFIE_HELLMAN_SIZE");
-
-		//check buffer sizes
-		if (our_private_key.empty
-				|| our_public_key.empty
-				|| their_public_key.empty) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to diffie_hellman."};
-		}
 
 		//buffer for diffie hellman shared secret
 		Key<crypto_scalarmult_SCALARBYTES,KeyType::Key> dh_secret;
@@ -115,15 +113,12 @@ namespace Molch {
 			const PublicKey& their_public_identity,
 			const PublicKey& their_public_ephemeral,
 			const Ratchet::Role role) {
-		//check buffer sizes
-		if (our_private_identity.empty
-				|| our_public_identity.empty
-				|| their_public_identity.empty
-				|| our_private_ephemeral.empty
-				|| our_public_ephemeral.empty
-				|| their_public_ephemeral.empty) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to triple_diffie_hellman."};
-		}
+		Expects(!our_private_identity.empty
+				&& !our_public_identity.empty
+				&& !their_public_identity.empty
+				&& !our_private_ephemeral.empty
+				&& !our_public_ephemeral.empty
+				&& !their_public_ephemeral.empty);
 
 		//buffers for all 3 Diffie Hellman exchanges
 		Key<DIFFIE_HELLMAN_SIZE,KeyType::Key> dh1;

@@ -33,6 +33,7 @@
 #include "destroyers.hpp"
 #include "molch-exception.hpp"
 #include "malloc.hpp"
+#include "gsl.hpp"
 
 using namespace Molch;
 
@@ -219,10 +220,7 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 	std::stringstream stream;
 	//Buffer output;
 	try {
-		//check input
-		if (status_to_print == nullptr) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input return_status_print."};
-		}
+		Expects(status_to_print != nullptr);
 
 		static const unsigned char success_string[]{"SUCCESS"};
 		static const unsigned char error_string[]{"ERROR\nerror stack trace:\n"};

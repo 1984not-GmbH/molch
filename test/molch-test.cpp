@@ -35,20 +35,12 @@ using namespace Molch;
 
 static Buffer decrypt_conversation_backup(
 		ProtobufPool& pool,
-		const unsigned char * const backup,
-		const size_t backup_length,
-		const unsigned char * backup_key,
-		const size_t backup_key_length) {
-	//check input
-	if ((backup == nullptr) || (backup_key == nullptr)) {
-		throw Molch::Exception{status_type::INVALID_INPUT, "Invalid input to molch_import."};
-	}
-	if (backup_key_length != BACKUP_KEY_SIZE) {
-		throw Molch::Exception{status_type::INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length."};
-	}
+		const gsl::span<const unsigned char> backup,
+		const gsl::span<const unsigned char> backup_key) {
+	Expects(!backup.empty() && (backup_key.size() == BACKUP_KEY_SIZE));
 
 	//unpack the encrypted backup
-	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup))};
+	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, gsl::narrow<size_t>(backup.size()), backup.data()))};
 	if (encrypted_backup_struct == nullptr) {
 		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf."};
 	}
@@ -80,7 +72,7 @@ static Buffer decrypt_conversation_backup(
 			encrypted_backup_struct->encrypted_backup.data,
 			encrypted_backup_struct->encrypted_backup.len,
 			encrypted_backup_struct->encrypted_backup_nonce.data,
-			backup_key)};
+			backup_key.data())};
 	if (status != 0) {
 		throw Molch::Exception{status_type::DECRYPT_ERROR, "Failed to decrypt conversation backup."};
 	}
@@ -90,20 +82,13 @@ static Buffer decrypt_conversation_backup(
 
 static Buffer decrypt_full_backup(
 		ProtobufPool& pool,
-		const unsigned char * const backup,
-		const size_t backup_length,
-		const unsigned char * backup_key,
-		const size_t backup_key_length) {
+		const gsl::span<const unsigned char> backup,
+		const gsl::span<const unsigned char> backup_key) {
 	//check input
-	if ((backup == nullptr) || (backup_key == nullptr)) {
-		throw Molch::Exception{status_type::INVALID_INPUT, "Invalid input to molch_import."};
-	}
-	if (backup_key_length != BACKUP_KEY_SIZE) {
-		throw Molch::Exception{status_type::INCORRECT_BUFFER_SIZE, "Backup key has an incorrect length."};
-	}
+	Expects(!backup.empty() && (backup_key.size() == BACKUP_KEY_SIZE));
 
 	//unpack the encrypted backup
-	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup))};
+	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, gsl::narrow<size_t>(backup.size()), backup.data()))};
 	if (encrypted_backup_struct == nullptr) {
 		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf."};
 	}
@@ -135,7 +120,7 @@ static Buffer decrypt_full_backup(
 			encrypted_backup_struct->encrypted_backup.data,
 			encrypted_backup_struct->encrypted_backup.len,
 			encrypted_backup_struct->encrypted_backup_nonce.data,
-			backup_key)};
+			backup_key.data())};
 	if (status != 0) {
 		throw Molch::Exception{status_type::DECRYPT_ERROR, "Failed to decrypt conversation backup."};
 	}
@@ -477,7 +462,10 @@ int main(void) {
 		}
 
 		ProtobufPool pool;
-		auto decrypted_backup{decrypt_full_backup(pool, backup.get(), backup_length, backup_key.content, backup_key.size)};
+		auto decrypted_backup{decrypt_full_backup(
+				pool,
+				{backup.get(), gsl::narrow<ssize_t>(backup_length)},
+				{backup_key.content, gsl::narrow<ssize_t>(backup_key.size)})};
 
 		//compare the keys
 		if (backup_key == new_backup_key) {
@@ -499,7 +487,10 @@ int main(void) {
 			imported_backup.reset(imported_backup_ptr);
 		}
 
-		auto decrypted_imported_backup{decrypt_full_backup(pool, imported_backup.get(), imported_backup_length, backup_key.content, backup_key.size)};
+		auto decrypted_imported_backup{decrypt_full_backup(
+				pool,
+				{imported_backup.get(), gsl::narrow<ssize_t>(imported_backup_length)},
+				{backup_key.content, gsl::narrow<ssize_t>(backup_key.size)})};
 
 		//compare
 		if (decrypted_backup != decrypted_imported_backup) {
@@ -538,10 +529,8 @@ int main(void) {
 
 		auto decrypted_conversation_backup{decrypt_conversation_backup(
 				pool,
-				backup.get(),
-				backup_length,
-				backup_key.content,
-				backup_key.size)};
+				{backup.get(), gsl::narrow<ssize_t>(backup_length)},
+				{backup_key.content, gsl::narrow<ssize_t>(backup_key.size)})};
 
 		//copy the backup key
 		backup_key.cloneFrom(new_backup_key);
@@ -563,10 +552,8 @@ int main(void) {
 
 		auto decrypted_imported_conversation_backup{decrypt_conversation_backup(
 				pool,
-				imported_backup.get(),
-				imported_backup_length,
-				backup_key.content,
-				backup_key.size)};
+				{imported_backup.get(), gsl::narrow<ssize_t>(imported_backup_length)},
+				{backup_key.content, gsl::narrow<ssize_t>(backup_key.size)})};
 
 		//compare
 		if (decrypted_conversation_backup != decrypted_imported_conversation_backup) {

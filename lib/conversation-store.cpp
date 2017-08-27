@@ -158,11 +158,8 @@ namespace Molch {
 	}
 
 	ConversationStore::ConversationStore(ProtobufCConversation** const& conversations, const size_t length) {
-		//check input
-		if (((length > 0) && (conversations == nullptr))
-				|| ((length == 0) && (conversations != nullptr))) {
-			throw Exception{status_type::INVALID_INPUT, "Invalid input to conversation_store_import"};
-		}
+		Expects(((length > 0) && (conversations != nullptr))
+				|| ((length == 0) && (conversations == nullptr)));
 
 		//import all the conversations
 		for (size_t i{0}; i < length; i++) {

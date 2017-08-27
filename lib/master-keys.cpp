@@ -29,6 +29,7 @@
 #include "spiced-random.hpp"
 #include "sodium-wrappers.hpp"
 #include "autozero.hpp"
+#include "gsl.hpp"
 
 namespace Molch {
 	MasterKeys& MasterKeys::move(MasterKeys&& master_keys) {
@@ -170,9 +171,7 @@ namespace Molch {
 	void MasterKeys::sign(
 			const Buffer& data,
 			Buffer& signed_data) const { //output, length of data + SIGNATURE_SIZE
-		if (!signed_data.fits(data.size + SIGNATURE_SIZE)) {
-			throw Exception{status_type::INVALID_INPUT, "MasterKeys::sign: Output buffer is too short."};
-		}
+		Expects(signed_data.fits(data.size + SIGNATURE_SIZE));
 
 		signed_data.size = 0;
 
