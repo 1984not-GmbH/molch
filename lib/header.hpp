@@ -33,7 +33,7 @@
 #include <memory>
 
 #include "buffer.hpp"
-#include "return-status.h"
+#include "return-status.hpp"
 #include "key.hpp"
 
 namespace Molch {

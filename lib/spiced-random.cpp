@@ -23,7 +23,6 @@
 
 #include "constants.h"
 #include "spiced-random.hpp"
-#include "return-status.h"
 #include "molch-exception.hpp"
 
 namespace Molch {

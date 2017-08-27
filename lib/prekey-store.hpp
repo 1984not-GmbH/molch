@@ -30,7 +30,7 @@
 
 #include "constants.h"
 #include "buffer.hpp"
-#include "return-status.h"
+#include "return-status.hpp"
 #include "protobuf.hpp"
 #include "sodium-wrappers.hpp"
 #include "key.hpp"

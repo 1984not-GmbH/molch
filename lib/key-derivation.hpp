@@ -24,7 +24,7 @@
 
 #include "buffer.hpp"
 #include "ratchet.hpp"
-#include "return-status.h"
+#include "return-status.hpp"
 
 namespace Molch {
 	/*

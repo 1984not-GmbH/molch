@@ -23,7 +23,7 @@
 #define LIB_SPICED_RANDOM_H
 
 #include "buffer.hpp"
-#include "return-status.h"
+#include "return-status.hpp"
 
 namespace Molch {
 	/*

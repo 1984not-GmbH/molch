@@ -27,7 +27,7 @@
 
 #include "constants.h"
 #include "buffer.hpp"
-#include "return-status.h"
+#include "return-status.hpp"
 #include "sodium-wrappers.hpp"
 #include "protobuf.hpp"
 #include "key.hpp"

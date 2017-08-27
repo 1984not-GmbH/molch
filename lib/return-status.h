@@ -26,9 +26,6 @@
 extern "C" {
 #else
 	#define class
-	#define noexcept
-	#define constexpr
-	#define nullptr NULL
 #endif
 
 // possible status types, either SUCCESS or a variety of error types.
@@ -82,62 +79,8 @@ typedef struct return_status {
 	error_message *error;
 } return_status;
 
-return_status return_status_init(void) noexcept;
-
-status_type return_status_add_error_message(
-		return_status *const status_object,
-		const char *const message,
-		const status_type status) noexcept __attribute__((warn_unused_result));
-
-void return_status_destroy_errors(return_status * const status) noexcept;
-
-/*
- * Get the name of a status type as a string.
- */
-const char *return_status_get_name(status_type status) noexcept;
-
-/*
- * Pretty print the error stack into a buffer.
- *
- * Don't forget to free with "free" after usage.
- */
-char *return_status_print(const return_status * const status, size_t *length) noexcept __attribute__((warn_unused_result));
-
-
-//This assumes that there is a return_status struct and there is a "cleanup" label to jump to.
-#define THROW(status_type_value, message) {\
-	status.status = status_type_value;\
-	if (message != nullptr) {\
-		status_type THROW_type = return_status_add_error_message(&status, message, status_type_value);\
-		if (THROW_type != status_type::SUCCESS) {\
-			status.status = THROW_type;\
-		} else {\
-			status.status = status_type::SHOULDNT_HAPPEN; /*I hope this makes clang analyzer accept my code!*/\
-		}\
-	} else {\
-		status.error = nullptr;\
-	}\
-\
-	goto cleanup;\
-}
-
-//Execute code on error
-#define on_error if (status.status != status_type::SUCCESS)
-
-#define THROW_on_error(status_type_value, message) on_error{THROW(status_type_value, message)}
-
-#define THROW_on_failed_alloc(pointer) \
-	if (pointer == nullptr) {\
-		THROW(ALLOCATION_FAILED, "Failed to allocate memory.");\
-	}
-
-#define throw_on_invalid_buffer(buffer) \
-	if (!(buffer).isValid()) {\
-		THROW(BUFFER_ERROR, "Buffer is invalid");\
-	}
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif
+#endif /* LIB_RETURN_STATUS_H */
