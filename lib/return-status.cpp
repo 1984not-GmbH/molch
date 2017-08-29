@@ -45,14 +45,9 @@ extern return_status return_status_init() noexcept {
 }
 
 status_type return_status_add_error_message(
-		return_status *const status_object,
+		return_status& status_object,
 		const char *const message,
 		const status_type status_to_add) noexcept {
-
-	if (status_object == nullptr) {
-		return status_type::INVALID_INPUT;
-	}
-
 	if (message == nullptr) {
 		return status_type::SUCCESS;
 	}
@@ -72,27 +67,23 @@ status_type return_status_add_error_message(
 	error->message = copied_message.release();
 	std::copy(message, message + message_length, error->message);
 
-	error->next = status_object->error;
+	error->next = status_object.error;
 	error->status = status_to_add;
 
-	status_object->error = error.release();
-	status_object->status = status_to_add;
+	status_object.error = error.release();
+	status_object.status = status_to_add;
 
 	return status_type::SUCCESS;
 }
 
-void return_status_destroy_errors(return_status * const status) noexcept {
-	if (status == nullptr) {
-		return;
-	}
+void return_status_destroy_errors(return_status& status) noexcept {
+	while (status.error != nullptr) {
+		error_message *next_error = status.error->next;
 
-	while (status->error != nullptr) {
-		error_message *next_error = status->error->next;
+		delete[] status.error->message;
+		delete status.error;
 
-		delete[] status->error->message;
-		delete status->error;
-
-		status->error = next_error;
+		status.error = next_error;
 	}
 }
 
@@ -106,9 +97,6 @@ const char *return_status_get_name(status_type status) noexcept {
 
 		case status_type::GENERIC_ERROR:
 			return "GENERIC_ERROR";
-
-		case status_type::INVALID_INPUT:
-			return "INVALID_INPUT";
 
 		case status_type::INVALID_VALUE:
 			return "INVALID_VALUE";
@@ -216,25 +204,22 @@ const char *return_status_get_name(status_type status) noexcept {
  *
  * Don't forget to free with "free" after usage.
  */
-char *return_status_print(const return_status * const status_to_print, size_t *length) noexcept {
-	std::stringstream stream;
-	//Buffer output;
+gsl::span<char> return_status_print(const return_status& status_to_print) noexcept {
 	try {
-		Expects(status_to_print != nullptr);
-
+		std::stringstream stream;
 		static const unsigned char success_string[]{"SUCCESS"};
 		static const unsigned char error_string[]{"ERROR\nerror stack trace:\n"};
 		static const unsigned char null_string[]{"(nullptr)"};
 
 		// now fill the output
-		if (status_to_print->status == status_type::SUCCESS) {
+		if (status_to_print.status == status_type::SUCCESS) {
 			stream << success_string;
 		} else {
 			stream << error_string;
 
 			// iterate over error stack
 			size_t i{0};
-			for (error_message *current_error = status_to_print->error;
+			for (error_message *current_error = status_to_print.error;
 					current_error != nullptr;
 					current_error = current_error->next, i++) {
 
@@ -258,12 +243,8 @@ char *return_status_print(const return_status * const status_to_print, size_t *l
 		auto output_ptr{std::unique_ptr<char,MallocDeleter<char>>(throwing_malloc<char>(output_string.size() + sizeof("")))};
 		std::copy(output_string.data(), output_string.data() + output_string.size() + sizeof(""), output_ptr.get());
 
-		*length = output_string.size() + sizeof("");
-		return output_ptr.release();
+		return {output_ptr.release(), narrow(output_string.size() + sizeof(""))};
 	} catch (const std::exception& exception) {
-		if (length != nullptr) {
-			*length = 0;
-		}
-		return nullptr;
+		return {nullptr};
 	}
 }

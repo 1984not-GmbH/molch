@@ -36,9 +36,9 @@ int main(void) {
 
 		ProtobufPool pool;
 
-		auto buffer1{pool.allocate<unsigned char>(ProtobufPoolBlock::default_block_size - 10)};
+		auto buffer1{pool.allocate<gsl::byte>(ProtobufPoolBlock::default_block_size - 10)};
 		std::cout << "buffer1 = " << reinterpret_cast<void*>(buffer1) << std::endl;
-		auto buffer2{pool.allocate<unsigned char>(10)};
+		auto buffer2{pool.allocate<gsl::byte>(10)};
 		std::cout << "buffer2 = " << reinterpret_cast<void*>(buffer2) << std::endl;
 
 		if (buffer2 != (buffer1 + ProtobufPoolBlock::default_block_size - 10)) {
@@ -46,16 +46,16 @@ int main(void) {
 		}
 		std::cout << "Successfully allocated consecutive regions." << std::endl;
 
-		auto in_new_block{pool.allocate<unsigned char>(1)};
+		auto in_new_block{pool.allocate<gsl::byte>(1)};
 		std::cout << "in_new_block = " << reinterpret_cast<void*>(in_new_block) << std::endl;
 		if (in_new_block == (buffer2 + 10)) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Allocation didn't use a new block."};
 		}
 		std::cout << "Successfully created new block for allocations." << std::endl;
 
-		auto large{pool.allocate<unsigned char>(2 * ProtobufPoolBlock::default_block_size)};
+		auto large{pool.allocate<gsl::byte>(2 * ProtobufPoolBlock::default_block_size)};
 		std::cout << "large = " << reinterpret_cast<void*>(large) << std::endl;
-		auto fill_gap{pool.allocate<unsigned char>(2)};
+		auto fill_gap{pool.allocate<gsl::byte>(2)};
 		std::cout << "fill_gap = " << reinterpret_cast<void*>(fill_gap) << std::endl;
 		if ((in_new_block + 1) != fill_gap) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Failed to fill gap in block."};
@@ -64,7 +64,7 @@ int main(void) {
 
 		auto integer{pool.allocate<uint32_t>(sizeof(uint32_t))};
 		std::cout << "integer = " << reinterpret_cast<void*>(integer) << std::endl;
-		if (reinterpret_cast<unsigned char*>(integer) != (in_new_block + alignof(uint32_t))) {
+		if (reinterpret_cast<gsl::byte*>(integer) != (in_new_block + alignof(uint32_t))) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Failed to align new allocation."};
 		}
 		std::cout << "Properly aligned new allocation." << std::endl;

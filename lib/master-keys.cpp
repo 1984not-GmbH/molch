@@ -54,12 +54,12 @@ namespace Molch {
 
 	MasterKeys::MasterKeys() {
 		this->init();
-		this->generate(nullptr);
+		this->generate();
 	}
 
-	MasterKeys::MasterKeys(const Buffer& low_entropy_seed) {
+	MasterKeys::MasterKeys(const gsl::span<const gsl::byte> low_entropy_seed) {
 		this->init();
-		this->generate(&low_entropy_seed);
+		this->generate(low_entropy_seed);
 	}
 
 	MasterKeys::MasterKeys(
@@ -76,10 +76,18 @@ namespace Molch {
 		ReadWriteUnlocker unlocker{*this};
 
 		//copy the keys
-		this->public_signing_key.set(public_signing_key.key.data, public_signing_key.key.len);
-		this->public_identity_key.set(public_identity_key.key.data, public_identity_key.key.len);
-		this->private_signing_key->set(private_signing_key.key.data, private_signing_key.key.len);
-		this->private_identity_key->set(private_identity_key.key.data, private_identity_key.key.len);
+		this->public_signing_key.set({
+				uchar_to_byte(public_signing_key.key.data),
+				narrow(public_signing_key.key.len)});
+		this->public_identity_key.set({
+				uchar_to_byte(public_identity_key.key.data),
+				narrow(public_identity_key.key.len)});
+		this->private_signing_key->set({
+				uchar_to_byte(private_signing_key.key.data),
+				narrow(private_signing_key.key.len)});
+		this->private_identity_key->set({
+				uchar_to_byte(private_identity_key.key.data),
+				narrow(private_identity_key.key.len)});
 	}
 
 
@@ -96,59 +104,63 @@ namespace Molch {
 		this->lock();
 	}
 
-	void MasterKeys::generate(const Buffer* low_entropy_seed) {
+	void MasterKeys::generate() {
 		ReadWriteUnlocker unlocker{*this};
 
-		if (low_entropy_seed != nullptr) {
-			Buffer high_entropy_seed{
-					crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES,
-					crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES,
-					&sodium_malloc,
-					&sodium_free};
-			spiced_random(high_entropy_seed, *low_entropy_seed, high_entropy_seed.capacity());
-
-			//generate the signing keypair
-			auto status{crypto_sign_seed_keypair(
-					this->public_signing_key.data(),
-					this->private_signing_key->data(),
-					high_entropy_seed.content)};
-			if (status != 0) {
-				throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate signing keypair with seed."};
-			}
-			this->public_signing_key.empty = false;
-			this->private_signing_key->empty = false;
-
-			//generate the identity keypair
-			status = crypto_box_seed_keypair(
-					this->public_identity_key.data(),
-					this->private_identity_key->data(),
-					high_entropy_seed.content + crypto_sign_SEEDBYTES);
-			if (status != 0) {
-				throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate identity keypair with seed."};
-			}
-			this->public_identity_key.empty = false;
-			this->private_identity_key->empty = false;
-		} else { //don't use external seed
-			//generate the signing keypair
-			auto status{crypto_sign_keypair(
-					this->public_signing_key.data(),
-					this->private_signing_key->data())};
-			if (status != 0) {
-				throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate signing keypair."};
-			}
-			this->public_signing_key.empty = false;
-			this->private_signing_key->empty = false;
-
-			//generate the identity keypair
-			status = crypto_box_keypair(
-					this->public_identity_key.data(),
-					this->private_identity_key->data());
-			if (status != 0) {
-				throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate identity keypair."};
-			}
-			this->public_identity_key.empty = false;
-			this->private_identity_key->empty = false;
+		//generate the signing keypair
+		auto status{crypto_sign_keypair(
+				byte_to_uchar(this->public_signing_key.data()),
+				byte_to_uchar(this->private_signing_key->data()))};
+		if (status != 0) {
+			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate signing keypair."};
 		}
+		this->public_signing_key.empty = false;
+		this->private_signing_key->empty = false;
+
+		//generate the identity keypair
+		status = crypto_box_keypair(
+				byte_to_uchar(this->public_identity_key.data()),
+				byte_to_uchar(this->private_identity_key->data()));
+		if (status != 0) {
+			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate identity keypair."};
+		}
+		this->public_identity_key.empty = false;
+		this->private_identity_key->empty = false;
+	}
+
+	void MasterKeys::generate(const gsl::span<const gsl::byte> low_entropy_seed) {
+		Expects(!low_entropy_seed.empty());
+
+		ReadWriteUnlocker unlocker{*this};
+
+		Buffer high_entropy_seed{
+				crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES,
+				crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES,
+				&sodium_malloc,
+				&sodium_free};
+		spiced_random(high_entropy_seed.span(), low_entropy_seed);
+
+		//generate the signing keypair
+		auto status{crypto_sign_seed_keypair(
+				byte_to_uchar(this->public_signing_key.data()),
+				byte_to_uchar(this->private_signing_key->data()),
+				byte_to_uchar(high_entropy_seed.content))};
+		if (status != 0) {
+			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate signing keypair with seed."};
+		}
+		this->public_signing_key.empty = false;
+		this->private_signing_key->empty = false;
+
+		//generate the identity keypair
+		status = crypto_box_seed_keypair(
+				byte_to_uchar(this->public_identity_key.data()),
+				byte_to_uchar(this->private_identity_key->data()),
+				byte_to_uchar(high_entropy_seed.content + crypto_sign_SEEDBYTES));
+		if (status != 0) {
+			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate identity keypair with seed."};
+		}
+		this->public_identity_key.empty = false;
+		this->private_identity_key->empty = false;
 	}
 
 	/*
@@ -169,20 +181,20 @@ namespace Molch {
 	 * Sign a piece of data. Returns the data and signature in one output buffer.
 	 */
 	void MasterKeys::sign(
-			const Buffer& data,
+			const gsl::span<const gsl::byte> data,
 			Buffer& signed_data) const { //output, length of data + SIGNATURE_SIZE
-		Expects(signed_data.fits(data.size + SIGNATURE_SIZE));
+		Expects(signed_data.fits(narrow(data.size()) + SIGNATURE_SIZE));
 
 		signed_data.size = 0;
 
 		Unlocker unlocker{*this};
 		unsigned long long signed_message_length;
 		auto status{crypto_sign(
-			signed_data.content,
+			byte_to_uchar(signed_data.content),
 			&signed_message_length,
-			data.content,
-			data.size,
-			this->private_signing_key->data())};
+			byte_to_uchar(data.data()),
+			narrow(data.size()),
+			byte_to_uchar(this->private_signing_key->data()))};
 		if (status != 0) {
 			throw Exception{status_type::SIGN_ERROR, "Failed to sign message."};
 		}
@@ -217,11 +229,11 @@ namespace Molch {
 		private_identity_key->key.len = PRIVATE_KEY_SIZE;
 
 		//copy the keys
-		this->public_signing_key.copyTo(public_signing_key->key.data, PUBLIC_MASTER_KEY_SIZE);
-		this->public_identity_key.copyTo(public_identity_key->key.data, PUBLIC_KEY_SIZE);
+		this->public_signing_key.copyTo({uchar_to_byte(public_signing_key->key.data), PUBLIC_MASTER_KEY_SIZE});
+		this->public_identity_key.copyTo({uchar_to_byte(public_identity_key->key.data), PUBLIC_KEY_SIZE});
 		Unlocker unlocker{*this};
-		this->private_signing_key->copyTo(private_signing_key->key.data, PRIVATE_MASTER_KEY_SIZE);
-		this->private_identity_key->copyTo(private_identity_key->key.data, PRIVATE_KEY_SIZE);
+		this->private_signing_key->copyTo({uchar_to_byte(private_signing_key->key.data), PRIVATE_MASTER_KEY_SIZE});
+		this->private_identity_key->copyTo({uchar_to_byte(private_identity_key->key.data), PRIVATE_KEY_SIZE});
 	}
 
 	void MasterKeys::lock() const {

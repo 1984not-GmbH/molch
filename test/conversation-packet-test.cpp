@@ -68,7 +68,7 @@ int main(void) {
 		Buffer send_message{"Hello there!"};
 		Buffer packet;
 		Molch::Conversation alice_send_conversation(
-				send_message,
+				send_message.span(),
 				packet,
 				alice_public_identity,
 				alice_private_identity,
@@ -81,7 +81,7 @@ int main(void) {
 		//let bob receive the packet
 		Buffer received_message;
 		Molch::Conversation bob_receive_conversation{
-			packet,
+			packet.span(),
 			received_message,
 			bob_public_identity,
 			bob_private_identity,
@@ -96,10 +96,7 @@ int main(void) {
 		//first one
 		Buffer alice_send_message2{"How are you Bob?"};
 		auto alice_send_packet2{alice_send_conversation.send(
-				alice_send_message2,
-				nullptr,
-				nullptr,
-				nullptr)};
+				alice_send_message2.span(), nullptr, nullptr, nullptr)};
 
 		printf("Sent message: %.*s\n", static_cast<int>(alice_send_message2.size), reinterpret_cast<const char*>(alice_send_message2.content));
 		printf("Packet:\n");
@@ -109,7 +106,7 @@ int main(void) {
 		uint32_t bob_receive_message_number{UINT32_MAX};
 		uint32_t bob_previous_receive_message_number{UINT32_MAX};
 		auto bob_receive_message2{bob_receive_conversation.receive(
-				alice_send_packet2,
+				alice_send_packet2.span(),
 				bob_receive_message_number,
 				bob_previous_receive_message_number)};
 
@@ -127,7 +124,7 @@ int main(void) {
 		//Bob responds to alice
 		Buffer bob_response_message{"I'm fine, thanks. How are you?"};
 		auto bob_response_packet{bob_receive_conversation.send(
-				bob_response_message,
+				bob_response_message.span(),
 				nullptr,
 				nullptr,
 				nullptr)};
@@ -140,7 +137,7 @@ int main(void) {
 		uint32_t alice_receive_message_number{UINT32_MAX};
 		uint32_t alice_previous_receive_message_number{UINT32_MAX};
 		auto alice_received_response{alice_send_conversation.receive(
-				bob_response_packet,
+				bob_response_packet.span(),
 				alice_receive_message_number,
 				alice_previous_receive_message_number)};
 
@@ -166,7 +163,7 @@ int main(void) {
 		//destroy the old packet
 		packet.clear();
 		Molch::Conversation bob_send_conversation{
-			send_message,
+			send_message.span(),
 			packet,
 			bob_public_identity,
 			bob_private_identity,
@@ -180,7 +177,7 @@ int main(void) {
 		//let alice receive the packet
 		received_message.clear();
 		Molch::Conversation alice_receive_conversation{
-			packet,
+			packet.span(),
 			received_message,
 			alice_public_identity,
 			alice_private_identity,
@@ -195,7 +192,7 @@ int main(void) {
 		//first one
 		Buffer bob_send_message2{"How are you Alice?"};
 		auto bob_send_packet2{bob_send_conversation.send(
-				bob_send_message2,
+				bob_send_message2.span(),
 				nullptr,
 				nullptr,
 				nullptr)};
@@ -206,7 +203,7 @@ int main(void) {
 
 		//alice receives the message
 		auto alice_receive_message2{alice_receive_conversation.receive(
-				bob_send_packet2,
+				bob_send_packet2.span(),
 				alice_receive_message_number,
 				alice_previous_receive_message_number)};
 
@@ -224,7 +221,7 @@ int main(void) {
 		//Alice responds to Bob
 		Buffer alice_response_message{"I'm fine, thanks. How are you?"};
 		auto alice_response_packet{alice_receive_conversation.send(
-				alice_response_message,
+				alice_response_message.span(),
 				nullptr,
 				nullptr,
 				nullptr)};
@@ -235,7 +232,7 @@ int main(void) {
 
 		//Bob receives the response
 		auto bob_received_response{bob_send_conversation.receive(
-				alice_response_packet,
+				alice_response_packet.span(),
 				bob_receive_message_number,
 				bob_previous_receive_message_number)};
 

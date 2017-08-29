@@ -42,7 +42,7 @@ Buffer protobuf_export(const Molch::Conversation& conversation) {
 
 	auto export_size{conversation__get_packed_size(exported_conversation)};
 	Buffer export_buffer{export_size, 0};
-	export_buffer.size = conversation__pack(exported_conversation, export_buffer.content);
+	export_buffer.size = conversation__pack(exported_conversation, byte_to_uchar(export_buffer.content));
 	if (export_size != export_buffer.size) {
 		throw Molch::Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack protobuf-c struct into buffer."};
 	}
@@ -55,7 +55,7 @@ std::unique_ptr<Molch::Conversation> protobuf_import(ProtobufPool& pool, const B
 	auto conversation_protobuf{conversation__unpack(
 		&pool_protoc_allocator,
 		import_buffer.size,
-		import_buffer.content)};
+		byte_to_uchar(import_buffer.content))};
 	if (!conversation_protobuf) {
 		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf."};
 	}

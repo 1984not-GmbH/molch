@@ -74,19 +74,26 @@ namespace Molch {
 				|| (keypair.private_key->key.len != PRIVATE_KEY_SIZE)) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a private key."};
 		}
-		this->private_key.set(keypair.private_key->key.data, keypair.private_key->key.len);
+		this->private_key.set({
+				uchar_to_byte(keypair.private_key->key.data),
+				narrow(keypair.private_key->key.len)});
 
 		//import public key
 		if (keypair.public_key == nullptr) {
 			//public key is missing -> derive it from the private key
-			if (crypto_scalarmult_base(this->public_key.data(), this->private_key.data()) != 0) {
+			auto status{crypto_scalarmult_base(
+					byte_to_uchar(this->public_key.data()),
+					byte_to_uchar(this->private_key.data()))};
+			if (status != 0) {
 				throw Exception{status_type::KEYDERIVATION_FAILED, "Failed to derive public prekey from private one."};
 			}
 			this->public_key.empty = false;
 		} else if (keypair.public_key->key.len != PUBLIC_KEY_SIZE) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a public key."};
 		} else {
-			this->public_key.set(keypair.public_key->key.data, keypair.public_key->key.len);
+			this->public_key.set({
+					uchar_to_byte(keypair.public_key->key.data),
+					narrow(keypair.public_key->key.len)});
 		}
 
 		//import expiration_date
@@ -105,14 +112,18 @@ namespace Molch {
 		key__init(prekey->private_key);
 		prekey->private_key->key.data = pool.allocate<uint8_t>(PRIVATE_KEY_SIZE);
 		prekey->private_key->key.len = PRIVATE_KEY_SIZE;
-		this->private_key.copyTo(prekey->private_key->key.data, prekey->private_key->key.len);
+		this->private_key.copyTo({
+				uchar_to_byte(prekey->private_key->key.data),
+				narrow(prekey->private_key->key.len)});
 
 		//export the public key
 		prekey->public_key = pool.allocate<ProtobufCKey>(1);
 		key__init(prekey->public_key);
 		prekey->public_key->key.data = pool.allocate<uint8_t>(PUBLIC_KEY_SIZE);
 		prekey->public_key->key.len = PUBLIC_KEY_SIZE;
-		this->public_key.copyTo(prekey->public_key->key.data, prekey->public_key->key.len);
+		this->public_key.copyTo({
+				uchar_to_byte(prekey->public_key->key.data),
+				narrow(prekey->public_key->key.len)});
 
 		//export the expiration date
 		prekey->expiration_time = gsl::narrow<uint64_t>(this->expiration_date);
@@ -123,8 +134,8 @@ namespace Molch {
 
 	void Prekey::generate() {
 		auto status{crypto_box_keypair(
-			this->public_key.data(),
-			this->private_key.data())};
+			byte_to_uchar(this->public_key.data()),
+			byte_to_uchar(this->private_key.data()))};
 		if (status != 0) {
 			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate prekey pair."};
 		}
@@ -161,29 +172,26 @@ namespace Molch {
 	}
 
 	PrekeyStore::PrekeyStore(
-			ProtobufCPrekey ** const& keypairs,
-			const size_t keypairs_length,
-			ProtobufCPrekey ** const& deprecated_keypairs,
-			const size_t deprecated_keypairs_length) {
-		Expects((keypairs != nullptr)
-				&& (keypairs_length == PREKEY_AMOUNT)
-				&& (((deprecated_keypairs_length == 0) && (deprecated_keypairs == nullptr))
-					|| ((deprecated_keypairs_length > 0) && (deprecated_keypairs != nullptr))));
+			const gsl::span<ProtobufCPrekey*> keypairs,
+			const gsl::span<ProtobufCPrekey*> deprecated_keypairs) {
+		Expects(keypairs.size() == PREKEY_AMOUNT);
 
 		this->init();
 
-		for (size_t index{0}; index < keypairs_length; index++) {
-			if (keypairs[index] == nullptr) {
+		size_t index{0};
+		for (auto const& keypair : keypairs) {
+			if (keypair == nullptr) {
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey missing."};
 			}
-			new (&(*this->prekeys)[index]) Prekey(*keypairs[index]);
+			new (&(*this->prekeys)[index]) Prekey(*keypair);
+			++index;
 		}
 
-		for (size_t index{0}; index < deprecated_keypairs_length; index++) {
-			if (deprecated_keypairs[index] == nullptr) {
+		for (auto const& keypair : deprecated_keypairs) {
+			if (keypair == nullptr) {
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Deprecated prekey missing."};
 			}
-			this->deprecated_prekeys.emplace_back(*deprecated_keypairs[index]);
+			this->deprecated_prekeys.emplace_back(*keypair);
 		}
 
 		this->updateExpirationDate();
@@ -239,7 +247,7 @@ namespace Molch {
 			private_key = found_prekey->private_key;
 
 			//and deprecate key
-			auto index{gsl::narrow<size_t>(found_prekey - std::begin(*this->prekeys))};
+			auto index{narrow(found_prekey - std::begin(*this->prekeys))};
 			this->deprecate(index);
 
 			return;
@@ -292,7 +300,7 @@ namespace Molch {
 		if (this->oldest_expiration_date < current_time) {
 			for (auto&& prekey : *this->prekeys) {
 				if (prekey.expiration_date < current_time) {
-					auto index{gsl::narrow<size_t>(&prekey - &(*std::begin(*this->prekeys)))};
+					auto index{narrow(&prekey - &(*std::begin(*this->prekeys)))};
 					this->deprecate(index);
 				}
 			}
@@ -303,7 +311,7 @@ namespace Molch {
 			for (size_t index{0}; index < this->deprecated_prekeys.size(); index++) {
 				auto& prekey = this->deprecated_prekeys[index];
 				if (prekey.expiration_date < current_time) {
-					this->deprecated_prekeys.erase(std::cbegin(this->deprecated_prekeys) + gsl::narrow<ptrdiff_t>(index));
+					this->deprecated_prekeys.erase(std::cbegin(this->deprecated_prekeys) + narrow(index));
 					index--;
 				}
 			}
@@ -312,34 +320,32 @@ namespace Molch {
 	}
 
 	template <class Container>
-	static void export_keypairs(ProtobufPool& pool, Container& container, ProtobufCPrekey**& keypairs, size_t& keypairs_length) {
-		keypairs = nullptr;
-		keypairs_length = 0;
+	static void export_keypairs(ProtobufPool& pool, Container& container, gsl::span<ProtobufCPrekey*>& keypairs) {
 		if (container.size() == 0) {
+			keypairs = {nullptr};
 			return;
 		}
 
 		//export all buffers
-		keypairs = pool.allocate<ProtobufCPrekey*>(container.size());
+		auto keypairs_array{pool.allocate<ProtobufCPrekey*>(container.size())};
 		size_t index{0};
 		for (auto&& key : container) {
-			keypairs[index] = key.exportProtobuf(pool);
+			keypairs_array[index] = key.exportProtobuf(pool);
 			index++;
 		}
-		keypairs_length = container.size();
+		keypairs = {keypairs_array, narrow(container.size())};
+		return;
 	}
 
 	void PrekeyStore::exportProtobuf(
 			ProtobufPool& pool,
-			ProtobufCPrekey**& keypairs,
-			size_t& keypairs_length,
-			ProtobufCPrekey**& deprecated_keypairs,
-			size_t& deprecated_keypairs_length) const {
+			gsl::span<ProtobufCPrekey*>& keypairs,
+			gsl::span<ProtobufCPrekey*>& deprecated_keypairs) const {
 		//export prekeys
-		export_keypairs(pool, *this->prekeys, keypairs, keypairs_length);
+		export_keypairs(pool, *this->prekeys, keypairs);
 
 		//export deprecated prekeys
-		export_keypairs(pool, this->deprecated_prekeys, deprecated_keypairs, deprecated_keypairs_length);
+		export_keypairs(pool, this->deprecated_prekeys, deprecated_keypairs);
 	}
 
 	std::ostream& PrekeyStore::print(std::ostream& stream) const {

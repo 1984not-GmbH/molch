@@ -32,6 +32,7 @@
 #include "constants.h"
 #include "molch-exception.hpp"
 #include "endianness.hpp"
+#include "gsl.hpp"
 
 namespace Molch {
 
@@ -51,7 +52,7 @@ namespace Molch {
 	};
 
 	template <size_t length, KeyType keytype>
-	class Key : public std::array<unsigned char,length> {
+	class Key : public std::array<gsl::byte,length> {
 	private:
 		Key& copy(const Key& key) {
 			this->empty = key.empty;
@@ -113,8 +114,8 @@ namespace Molch {
 			Expects(!this->empty && !key.empty);
 
 			return sodium_compare(
-					this->data(),
-					key.data(),
+					byte_to_uchar(this->data()),
+					byte_to_uchar(key.data()),
 					length);
 		}
 
@@ -163,28 +164,34 @@ namespace Molch {
 			salt.size = crypto_generichash_blake2b_SALTBYTES;
 
 			//fill the salt with a big endian representation of the subkey counter
-			Buffer big_endian_subkey_counter{salt.content + salt.size - sizeof(uint32_t), sizeof(uint32_t)};
-			to_big_endian(subkey_counter, big_endian_subkey_counter);
+			to_big_endian(subkey_counter, {salt.content + salt.size - sizeof(uint32_t), sizeof(uint32_t)});
 
-			const char personal_string[]{"molch_cryptolib"};
-			static_assert(sizeof(personal_string) == crypto_generichash_blake2b_PERSONALBYTES, "personal string is not crypto_generichash_blake2b_PERSONALBYTES long");
-			Buffer personal(personal_string);
+			const unsigned char personal[]{"molch_cryptolib"};
+			static_assert(sizeof(personal) == crypto_generichash_blake2b_PERSONALBYTES, "personal string is not crypto_generichash_blake2b_PERSONALBYTES long");
 
 			//set length of output
 			auto status{crypto_generichash_blake2b_salt_personal(
-					derived_key.data(),
+					byte_to_uchar(derived_key.data()),
 					derived_length,
 					nullptr, //input
 					0, //input length
-					this->data(),
+					byte_to_uchar(this->data()),
 					length,
-					salt.content,
-					personal.content)};
+					byte_to_uchar(salt.content),
+					personal)};
 			if (status != 0) {
 				throw Exception{status_type::KEYDERIVATION_FAILED, "Failed to derive key via crypto_generichash_blake2b_salt_personal"};
 			}
 
 			derived_key.empty = false;
+		}
+
+		gsl::span<gsl::byte> span() {
+			return {this->data(), length};
+		}
+
+		const gsl::span<const gsl::byte> span() const {
+			return {this->data(), length};
 		}
 
 		void fillRandom() {
@@ -198,22 +205,22 @@ namespace Molch {
 				return true;
 			}
 
-			return sodium_is_zero(this->data(), length);
+			return sodium_is_zero(byte_to_uchar(this->data()), length);
 		}
 
-		//copy from a raw unsigned char pointer
-		void set(const unsigned char* data, const size_t data_length) {
-			Expects(data_length == length);
+		//copy from a raw byte array
+		void set(const gsl::span<const gsl::byte> data) {
+			Expects(data.size() == length);
 
-			std::copy(data, data + data_length, this->data());
+			std::copy(std::cbegin(data), std::cend(data), this->data());
 			this->empty = false;
 		}
 
-		//copy to a raw unsigned char pointer
-		void copyTo(unsigned char* data, const size_t data_length) const {
-			Expects(data_length == length);
+		//copy to a raw byte array
+		void copyTo(gsl::span<gsl::byte> data) const {
+			Expects(data.size() == length);
 
-			std::copy(std::cbegin(*this), std::cend(*this), data);
+			std::copy(std::cbegin(*this), std::cend(*this), std::begin(data));
 		}
 
 		void clear() {
@@ -230,7 +237,7 @@ namespace Molch {
 
 			const size_t hex_length{this->size() * 2 + sizeof("")};
 			auto hex{std::make_unique<char[]>(hex_length)};
-			if (sodium_bin2hex(hex.get(), hex_length, this->data(), this->size()) == nullptr) {
+			if (sodium_bin2hex(hex.get(), hex_length, byte_to_uchar(this->data()), this->size()) == nullptr) {
 				throw Exception{status_type::BUFFER_ERROR, "Failed to converst binary to hex with sodium_bin2hex."};
 			}
 

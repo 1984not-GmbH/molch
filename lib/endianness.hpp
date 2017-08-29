@@ -29,6 +29,7 @@
 
 #include <cstdbool>
 #include <algorithm>
+#include <iterator>
 
 #include "buffer.hpp"
 #include "molch-exception.hpp"
@@ -48,28 +49,28 @@ namespace Molch {
 	 * Convert any integer type to a buffer in big endian format.
 	 */
 	template <typename IntegerType>
-	void to_big_endian(IntegerType integer, Buffer& output) {
-		Expects(output.fits(sizeof(IntegerType)));
+	void to_big_endian(IntegerType integer, gsl::span<gsl::byte> output) {
+		Expects(output.size() == sizeof(IntegerType));
 
-		auto& reference{reinterpret_cast<unsigned char&>(integer)};
+		auto& reference{reinterpret_cast<gsl::byte&>(integer)};
 
 		if (endianness_is_little_endian()) {
 			std::reverse(&reference, &reference + sizeof(integer));
 		}
 
-		output.cloneFromRaw(&reference, sizeof(integer));
+		std::copy(&reference, &reference + sizeof(integer), output.data());
 	}
 
 	/*
 	 * Get an integer from a buffer in big endian format.
 	 */
 	template <typename IntegerType>
-	void from_big_endian(IntegerType& integer, Buffer& buffer) {
-		Expects(buffer.contains(sizeof(IntegerType)));
+	void from_big_endian(IntegerType& integer, const gsl::span<const gsl::byte> input) {
+		Expects(input.size() == sizeof(IntegerType));
 
-		auto& reference{reinterpret_cast<unsigned char&>(integer)};
+		auto& reference{reinterpret_cast<gsl::byte&>(integer)};
 
-		buffer.cloneToRaw(&reference, sizeof(IntegerType));
+		std::copy(std::cbegin(input), std::cend(input), &reference);
 
 		if (endianness_is_little_endian()) {
 			std::reverse(&reference, &reference + sizeof(IntegerType));

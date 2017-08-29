@@ -59,7 +59,7 @@ namespace Molch {
 	}
 
 	User::User(
-			const Buffer& seed,
+			const gsl::span<const gsl::byte> seed,
 			PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
 			PublicKey * const public_identity_key//output, optional, can be nullptr
 			) : master_keys(seed) {
@@ -90,15 +90,15 @@ namespace Molch {
 			*user.private_identity_key};
 
 		//public signing key
-		this->public_signing_key.set(user.public_signing_key->key.data, user.public_signing_key->key.len);
+		this->public_signing_key.set({
+				uchar_to_byte(user.public_signing_key->key.data),
+				narrow(user.public_signing_key->key.len)});
 
-		this->conversations = ConversationStore{user.conversations, user.n_conversations};
+		this->conversations = ConversationStore{{user.conversations, narrow(user.n_conversations)}};
 
 		this->prekeys = PrekeyStore{
-			user.prekeys,
-			user.n_prekeys,
-			user.deprecated_prekeys,
-			user.n_deprecated_prekeys};
+			{user.prekeys, narrow(user.n_prekeys)},
+			{user.deprecated_prekeys, narrow(user.n_deprecated_prekeys)}};
 	}
 
 	std::ostream& User::print(std::ostream& stream) const {
@@ -114,16 +114,13 @@ namespace Molch {
 		return stream;
 	}
 
-	UserStore::UserStore(ProtobufCUser ** const& users, const size_t users_length) {
-		Expects(((users_length == 0) && (users == nullptr))
-				|| ((users_length > 0) && (users != nullptr)));
-
-		for (size_t i{0}; i < users_length; i++) {
-			if (users[i] == nullptr) {
+	UserStore::UserStore(const gsl::span<ProtobufCUser*> users) {
+		for (const auto& user : users) {
+			if (user == nullptr) {
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Array of users is missing a user."};
 			}
 
-			this->add(User(*users[i]));
+			this->add({*user});
 		}
 	}
 
@@ -141,8 +138,8 @@ namespace Molch {
 		}
 
 		//otherwise replace the existing one
-		auto existing_index{gsl::narrow<size_t>(existing_user - std::cbegin(this->users))};
-		this->users[existing_index] = std::move(user);
+		auto existing_index{existing_user - std::cbegin(this->users)};
+		this->users[narrow(existing_index)] = std::move(user);
 	}
 
 	User* UserStore::find(const PublicSigningKey& public_signing_key) {
@@ -181,9 +178,9 @@ namespace Molch {
 		Buffer list{this->users.size() * PUBLIC_MASTER_KEY_SIZE, 0};
 
 		for (const auto& user : this->users) {
-			auto index{gsl::narrow<size_t>(&user - &(*std::cbegin(this->users)))};
+			auto index{&user - &(*std::cbegin(this->users))};
 			list.copyFromRaw(
-				PUBLIC_MASTER_KEY_SIZE * index,
+				PUBLIC_MASTER_KEY_SIZE * narrow(index),
 				user.public_signing_key.data(),
 				0,
 				user.public_signing_key.size());
@@ -237,38 +234,38 @@ namespace Molch {
 			user->private_identity_key);
 
 		//export the conversation store
-		this->conversations.exportProtobuf(
-				pool,
-				user->conversations,
-				user->n_conversations);
+		auto exported_conversations{this->conversations.exportProtobuf(pool)};
+		user->conversations = exported_conversations.data();
+		user->n_conversations = narrow(exported_conversations.size());
 
 		//export the prekeys
+		gsl::span<ProtobufCPrekey*> exported_prekeys;
+		gsl::span<ProtobufCPrekey*> exported_deprecated_prekeys;
 		this->prekeys.exportProtobuf(
 			pool,
-			user->prekeys,
-			user->n_prekeys,
-			user->deprecated_prekeys,
-			user->n_deprecated_prekeys);
+			exported_prekeys,
+			exported_deprecated_prekeys);
+		user->prekeys = exported_prekeys.data();
+		user->n_prekeys = narrow(exported_prekeys.size());
+		user->deprecated_prekeys = exported_deprecated_prekeys.data();
+		user->n_deprecated_prekeys = narrow(exported_deprecated_prekeys.size());
 
 		return user;
 	}
 
-	void UserStore::exportProtobuf(ProtobufPool& pool, ProtobufCUser**& users, size_t& users_length) const {
+	gsl::span<ProtobufCUser*> UserStore::exportProtobuf(ProtobufPool& pool) const {
 		if (this->users.empty()) {
-			users = nullptr;
-			users_length = 0;
-
-			return;
+			return {nullptr};
 		}
 
 		//export the conversations
-		users = pool.allocate<ProtobufCUser*>(this->users.size());
+		auto users_array{pool.allocate<ProtobufCUser*>(this->users.size())};
 		size_t index{0};
 		for (auto&& user : this->users) {
-			users[index] = user.exportProtobuf(pool);
+			users_array[index] = user.exportProtobuf(pool);
 			index++;
 		}
-		users_length = this->users.size();
+		return {users_array, narrow(this->users.size())};
 	}
 
 	size_t UserStore::size() const {

@@ -25,6 +25,8 @@
 #include <cstdlib>
 #include <ostream>
 
+#include "gsl.hpp"
+
 namespace Molch {
 	class Buffer {
 	private:
@@ -43,7 +45,7 @@ namespace Molch {
 
 	public:
 		size_t size{0};
-		unsigned char *content{nullptr};
+		gsl::byte *content{nullptr};
 
 		Buffer() = default; // does nothing
 		/* move and copy constructors */
@@ -55,13 +57,13 @@ namespace Molch {
 		 * initialize a buffer with a pointer to the character array.
 		 * Won't zero out the data automatically!
 		 */
-		Buffer(unsigned char * const content, const size_t capacity);
-		Buffer(unsigned char * const content, const size_t capacity, const size_t size);
+		Buffer(const gsl::span<gsl::byte> content);
+		Buffer(const gsl::span<gsl::byte> content, const size_t content_size);
 		/*
 		 * initialize a buffer with a pointer to an array of const characters.
 		 */
-		Buffer(const unsigned char * const content, const size_t capacity);
-		Buffer(const unsigned char * const content, const size_t capacity, const size_t size);
+		Buffer(const gsl::span<const gsl::byte> content);
+		Buffer(const gsl::span<const gsl::byte> content, const size_t content_size);
 		Buffer(const size_t capacity, const size_t size, void* (*allocator)(size_t), void (*deallocator)(void*));
 		~Buffer();
 
@@ -111,7 +113,7 @@ namespace Molch {
 		 *
 		 * Returns 0 if both buffers match.
 		 */
-		int compareToRaw(const unsigned char * const array, const size_t array_length) const;
+		int compareToRaw(const gsl::span<const gsl::byte> array) const;
 
 
 		/*
@@ -121,8 +123,7 @@ namespace Molch {
 		 */
 		int compareToRawPartial(
 				const size_t position1,
-				const unsigned char * const array,
-				const size_t array_length,
+				const gsl::span<const gsl::byte> array,
 				const size_t position2,
 				const size_t comparison_length) const;
 
@@ -147,7 +148,7 @@ namespace Molch {
 		 */
 		void copyFromRaw(
 				const size_t destination_offset,
-				const unsigned char * const source,
+				const gsl::byte * const source,
 				const size_t source_offset,
 				const size_t copy_length);
 
@@ -156,13 +157,13 @@ namespace Molch {
 		 * beginning of a buffer, setting the buffers
 		 * content length to the length that was copied.
 		 */
-		void cloneFromRaw(const unsigned char * const source, const size_t length);
+		void cloneFromRaw(const gsl::span<const gsl::byte> source);
 
 		/*
 		 * Copy from a buffer to a raw array.
 		 */
 		void copyToRaw(
-				unsigned char * const destination,
+				gsl::byte * const destination,
 				const size_t destination_offset,
 				const size_t source_offset,
 				const size_t copy_length) const;
@@ -171,12 +172,15 @@ namespace Molch {
 		 * Copy the entire content of a buffer
 		 * to a raw array.
 		 */
-		void cloneToRaw(unsigned char * const destination, const size_t destination_length) const;
+		void cloneToRaw(const gsl::span<gsl::byte> destination) const;
 
 		/*
 		 * Return the content and set the capacity to 0 and size to 0.
 		 */
-		unsigned char* release();
+		gsl::byte* release();
+
+		gsl::span<gsl::byte> span();
+		gsl::span<const gsl::byte> span() const;
 
 		std::ostream& print(std::ostream& stream) const;
 		std::ostream& printHex(std::ostream& stream) const;

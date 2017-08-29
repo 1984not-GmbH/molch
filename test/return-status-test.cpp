@@ -54,7 +54,7 @@ int main(void) noexcept {
 	auto status{return_status_init()};
 
 	char *error_stack{nullptr};
-	unsigned char *printed_status{nullptr};
+	char *printed_status{nullptr};
 
 	//check if it was correctly initialized
 	if ((status.status != status_type::SUCCESS) || (status.error != nullptr)) {
@@ -78,8 +78,9 @@ int main(void) noexcept {
 	printf("Successfully created error stack.\n");
 
 	{
-		size_t stack_print_length{0};
-		error_stack = return_status_print(&status, &stack_print_length);
+		auto printed{return_status_print(status)};
+		auto stack_print_length{printed.size()};
+		error_stack = printed.data();
 		if (error_stack == nullptr) {
 			fprintf(stderr, "ERROR: Failed to print error stack.\n");
 			status.status = status_type::GENERIC_ERROR;
@@ -88,21 +89,22 @@ int main(void) noexcept {
 		printf("%s\n", error_stack);
 
 		Buffer stack_trace{"ERROR\nerror stack trace:\n0: GENERIC_ERROR, Error on the first level!\n1: GENERIC_ERROR, Error on the second level!\n"};
-		if (stack_trace.compareToRaw(reinterpret_cast<unsigned char*>(error_stack), stack_print_length) != 0) {
+		if (stack_trace.compareToRaw({reinterpret_cast<gsl::byte*>(error_stack), stack_print_length}) != 0) {
 			THROW(status_type::INCORRECT_DATA, "Stack trace looks differently than expected.");
 		}
 	}
 
 	status.status = status_type::SUCCESS;
-	return_status_destroy_errors(&status);
+	return_status_destroy_errors(status);
 
 	//more tests for return_status_print()
 	{
 		auto successful_status{return_status_init()};
 		Buffer success_buffer{"SUCCESS"};
-		size_t printed_status_length{0};
-		printed_status = reinterpret_cast<unsigned char*>(return_status_print(&successful_status, &printed_status_length));
-		if (success_buffer.compareToRaw(printed_status, printed_status_length) != 0) {
+		auto printed{return_status_print(successful_status)};
+		auto printed_status_length{printed.size()};
+		printed_status = printed.data();
+		if (success_buffer.compareToRaw({reinterpret_cast<gsl::byte*>(printed_status), printed_status_length}) != 0) {
 			THROW(status_type::INCORRECT_DATA, "molch_print_status produces incorrect output.");
 		}
 	}
@@ -119,7 +121,7 @@ cleanup:
 		print_errors(status);
 	}
 	free_and_null_if_valid(printed_status);
-	return_status_destroy_errors(&status);
+	return_status_destroy_errors(status);
 
 	free_and_null_if_valid(error_stack);
 

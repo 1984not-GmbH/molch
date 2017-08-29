@@ -24,6 +24,7 @@
 #include <sodium.h>
 #include <iostream>
 #include <exception>
+#include <iostream>
 
 #include "../lib/packet.hpp"
 #include "../lib/constants.h"
@@ -68,14 +69,14 @@ void create_and_print_message(
 	putchar('\n');
 
 	//print the message (as string):
-	printf("Message (%zu Bytes):\n%.*s\n\n", message.size, static_cast<int>(message.size), message.content);
+	printf("Message (%zu Bytes):\n%.*s\n\n", message.size, static_cast<int>(message.size), byte_to_uchar(message.content));
 
 	//now encrypt the message
 	packet = packet_encrypt(
 			packet_type,
-			header,
+			header.span(),
 			header_key,
-			message,
+			message.span(),
 			message_key,
 			public_identity_key,
 			public_ephemeral_key,

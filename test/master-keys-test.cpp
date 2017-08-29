@@ -55,7 +55,7 @@ static void protobuf_export(
 	//public signing key
 	auto public_signing_key_proto_size{key__get_packed_size(public_signing_key)};
 	public_signing_key_buffer = Buffer{public_signing_key_proto_size, 0};
-	public_signing_key_buffer.size = key__pack(public_signing_key, public_signing_key_buffer.content);
+	public_signing_key_buffer.size = key__pack(public_signing_key, byte_to_uchar(public_signing_key_buffer.content));
 	if (!public_signing_key_buffer.contains(public_signing_key_proto_size)) {
 		throw Molch::Exception{status_type::EXPORT_ERROR, "Failed to export public signing key."};
 	}
@@ -63,7 +63,7 @@ static void protobuf_export(
 	//private signing key
 	auto private_signing_key_proto_size{key__get_packed_size(private_signing_key)};
 	private_signing_key_buffer = Buffer{private_signing_key_proto_size, 0};
-	private_signing_key_buffer.size = key__pack(private_signing_key, private_signing_key_buffer.content);
+	private_signing_key_buffer.size = key__pack(private_signing_key, byte_to_uchar(private_signing_key_buffer.content));
 	if (!private_signing_key_buffer.contains(private_signing_key_proto_size)) {
 		throw Molch::Exception{status_type::EXPORT_ERROR, "Failed to export private signing key."};
 	}
@@ -71,7 +71,7 @@ static void protobuf_export(
 	//public identity key
 	auto public_identity_key_proto_size{key__get_packed_size(public_identity_key)};
 	public_identity_key_buffer = Buffer{public_identity_key_proto_size, 0};
-	public_identity_key_buffer.size = key__pack(public_identity_key, public_identity_key_buffer.content);
+	public_identity_key_buffer.size = key__pack(public_identity_key, byte_to_uchar(public_identity_key_buffer.content));
 	if (!public_identity_key_buffer.contains(public_identity_key_proto_size)) {
 		throw Molch::Exception{status_type::EXPORT_ERROR, "Failed to export public identity key."};
 	}
@@ -79,7 +79,7 @@ static void protobuf_export(
 	//private identity key
 	auto private_identity_key_proto_size{key__get_packed_size(private_identity_key)};
 	private_identity_key_buffer = Buffer{private_identity_key_proto_size, 0};
-	private_identity_key_buffer.size = key__pack(private_identity_key, private_identity_key_buffer.content);
+	private_identity_key_buffer.size = key__pack(private_identity_key, byte_to_uchar(private_identity_key_buffer.content));
 	if (!private_identity_key_buffer.contains(private_identity_key_proto_size)) {
 		throw Molch::Exception{status_type::EXPORT_ERROR, "Failed to export private identity key."};
 	}
@@ -99,28 +99,28 @@ static void protobuf_import(
 	auto public_signing_key{key__unpack(
 			&pool_protoc_allocator,
 			public_signing_key_buffer.size,
-			public_signing_key_buffer.content)};
+			byte_to_uchar(public_signing_key_buffer.content))};
 	if (public_signing_key == nullptr) {
 		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack public signing key from protobuf."};
 	}
 	auto private_signing_key{key__unpack(
 			&pool_protoc_allocator,
 			private_signing_key_buffer.size,
-			private_signing_key_buffer.content)};
+			byte_to_uchar(private_signing_key_buffer.content))};
 	if (private_signing_key == nullptr) {
 		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack private signing key from protobuf."};
 	}
 	auto public_identity_key{key__unpack(
 			&pool_protoc_allocator,
 			public_identity_key_buffer.size,
-			public_identity_key_buffer.content)};
+			byte_to_uchar(public_identity_key_buffer.content))};
 	if (public_identity_key == nullptr) {
 		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack public identity key from protobuf."};
 	}
 	auto private_identity_key{key__unpack(
 			&pool_protoc_allocator,
 			private_identity_key_buffer.size,
-			private_identity_key_buffer.content)};
+			byte_to_uchar(private_identity_key_buffer.content))};
 	if (private_identity_key == nullptr) {
 		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack private identity key from protobuf."};
 	}
@@ -179,7 +179,7 @@ int main(void) {
 
 		//create the spiced master keys
 		Buffer seed{";a;awoeih]]pquw4t[spdif\\aslkjdf;'ihdg#)%!@))%)#)(*)@)#)h;kuhe[orih;o's':ke';sa'd;kfa';;.calijv;a/orq930u[sd9f0u;09[02;oasijd;adk"};
-		MasterKeys spiced_master_keys{seed};
+		MasterKeys spiced_master_keys{seed.span()};
 		spiced_master_keys.getSigningKey(public_signing_key);
 		spiced_master_keys.getIdentityKey(public_identity_key);
 
@@ -217,7 +217,7 @@ int main(void) {
 		printf("Data to be signed.\n");
 		printf("%.*s\n", static_cast<int>(data.size), reinterpret_cast<char*>(data.content));
 		Buffer signed_data{100, 0};
-		spiced_master_keys.sign(data, signed_data);
+		spiced_master_keys.sign(data.span(), signed_data);
 		printf("Signed data:\n");
 		signed_data.printHex(std::cout);
 
@@ -225,11 +225,11 @@ int main(void) {
 		Buffer unwrapped_data{100, 0};
 		unsigned long long unwrapped_data_length;
 		auto status{crypto_sign_open(
-				unwrapped_data.content,
+				byte_to_uchar(unwrapped_data.content),
 				&unwrapped_data_length,
-				signed_data.content,
+				byte_to_uchar(signed_data.content),
 				signed_data.size,
-				public_signing_key.data())};
+				byte_to_uchar(public_signing_key.data()))};
 		if (status != 0) {
 			throw Molch::Exception{status_type::VERIFY_ERROR, "Failed to verify signature."};
 		}

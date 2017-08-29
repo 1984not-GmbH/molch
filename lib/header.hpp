@@ -35,6 +35,7 @@
 #include "buffer.hpp"
 #include "return-status.hpp"
 #include "key.hpp"
+#include "gsl.hpp"
 
 namespace Molch {
 	/*!
@@ -76,7 +77,7 @@ namespace Molch {
 			uint32_t& message_number,
 			uint32_t& previous_message_number,
 			//input
-			const Buffer& header);
+			const gsl::span<const gsl::byte> header);
 }
 
 #endif

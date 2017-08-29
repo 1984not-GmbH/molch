@@ -32,7 +32,6 @@ extern "C" {
 typedef enum class status_type { //TODO add more error types
 	SUCCESS = 0,
 	GENERIC_ERROR,
-	INVALID_INPUT,
 	INVALID_VALUE,
 	INCORRECT_BUFFER_SIZE,
 	BUFFER_ERROR,

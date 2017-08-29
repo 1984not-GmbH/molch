@@ -27,7 +27,7 @@
 #include "gsl.hpp"
 
 namespace Molch {
-	constexpr int64_t EXPIRATION_TIME = 3600 * 24 * 31; //one month
+	constexpr int64_t EXPIRATION_TIME{3600 * 24 * 31}; //one month
 
 	void HeaderAndMessageKey::fill(const HeaderKey& header_key, const MessageKey& message_key, const int64_t expiration_date) {
 		this->header_key = header_key;
@@ -78,7 +78,9 @@ namespace Molch {
 			|| (key_bundle.header_key->key.len != HEADER_KEY_SIZE)) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect header key."};
 		}
-		this->header_key.set(key_bundle.header_key->key.data, key_bundle.header_key->key.len);
+		this->header_key.set({
+				uchar_to_byte(key_bundle.header_key->key.data),
+				narrow(key_bundle.header_key->key.len)});
 
 		//import the message key
 		if ((key_bundle.message_key == nullptr)
@@ -86,7 +88,9 @@ namespace Molch {
 			|| (key_bundle.message_key->key.len != MESSAGE_KEY_SIZE)) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect message key."};
 		}
-		this->message_key.set(key_bundle.message_key->key.data, key_bundle.message_key->key.len);
+		this->message_key.set({
+				uchar_to_byte(key_bundle.message_key->key.data),
+				narrow(key_bundle.message_key->key.len)});
 
 		//import the expiration date
 		if (!key_bundle.has_expiration_time) {
@@ -110,11 +114,11 @@ namespace Molch {
 		key_bundle->message_key->key.data = pool.allocate<unsigned char>(MESSAGE_KEY_SIZE);
 
 		//export the header key
-		this->header_key.copyTo(key_bundle->header_key->key.data, HEADER_KEY_SIZE);
+		this->header_key.copyTo({uchar_to_byte(key_bundle->header_key->key.data), HEADER_KEY_SIZE});
 		key_bundle->header_key->key.len = this->header_key.size();
 
 		//export the message key
-		this->message_key.copyTo(key_bundle->message_key->key.data, MESSAGE_KEY_SIZE);
+		this->message_key.copyTo({uchar_to_byte(key_bundle->message_key->key.data), MESSAGE_KEY_SIZE});
 		key_bundle->message_key->key.len = this->message_key.size();
 
 
@@ -139,31 +143,29 @@ namespace Molch {
 		this->keys.emplace_back(header_key, message_key);
 	}
 
-	void HeaderAndMessageKeyStore::exportProtobuf(ProtobufPool& pool, ProtobufCKeyBundle**& key_bundles, size_t& bundles_size) const {
+	gsl::span<ProtobufCKeyBundle*> HeaderAndMessageKeyStore::exportProtobuf(ProtobufPool& pool) const {
 		if (this->keys.size() == 0) {
-			key_bundles = nullptr;
-			bundles_size = 0;
-			return;
+			return {nullptr};
 		}
 
 		//export all buffers
-		key_bundles = pool.allocate<ProtobufCKeyBundle*>(this->keys.size());
+		auto key_bundles{pool.allocate<ProtobufCKeyBundle*>(this->keys.size())};
 		size_t index{0};
 		for (auto&& key : this->keys) {
 			key_bundles[index] = key.exportProtobuf(pool);
 			index++;
 		}
 
-		bundles_size = this->keys.size();
+		return {key_bundles, narrow(this->keys.size())};
 	}
 
-	HeaderAndMessageKeyStore::HeaderAndMessageKeyStore(ProtobufCKeyBundle** const & key_bundles, const size_t bundles_size) {
-		for (size_t index{0}; index < bundles_size; index++) {
-			if (key_bundles[index] == nullptr) {
+	HeaderAndMessageKeyStore::HeaderAndMessageKeyStore(const gsl::span<ProtobufCKeyBundle*> key_bundles) {
+		for (const auto& key_bundle : key_bundles) {
+			if (key_bundle == nullptr) {
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Invalid KeyBundle."};
 			}
 
-			this->keys.emplace_back(*key_bundles[index]);
+			this->keys.emplace_back(*key_bundle);
 		}
 	}
 

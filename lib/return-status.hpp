@@ -23,15 +23,16 @@
 #define LIB_RETURN_STATUS_HPP
 
 #include "return-status.h"
+#include "gsl.hpp"
 
 return_status return_status_init(void) noexcept;
 
 status_type return_status_add_error_message(
-		return_status *const status_object,
+		return_status& status_object,
 		const char *const message,
 		const status_type status) noexcept __attribute__((warn_unused_result));
 
-void return_status_destroy_errors(return_status * const status) noexcept;
+void return_status_destroy_errors(return_status& status) noexcept;
 
 /*
  * Get the name of a status type as a string.
@@ -43,14 +44,14 @@ const char *return_status_get_name(status_type status) noexcept;
  *
  * Don't forget to free with "free" after usage.
  */
-char *return_status_print(const return_status * const status, size_t *length) noexcept __attribute__((warn_unused_result));
+gsl::span<char> return_status_print(const return_status& status) noexcept __attribute__((warn_unused_result));
 
 
 //This assumes that there is a return_status struct and there is a "cleanup" label to jump to.
 #define THROW(status_type_value, message) {\
 	status.status = status_type_value;\
 	if (message != nullptr) {\
-		status_type THROW_type = return_status_add_error_message(&status, message, status_type_value);\
+		status_type THROW_type = return_status_add_error_message(status, message, status_type_value);\
 		if (THROW_type != status_type::SUCCESS) {\
 			status.status = THROW_type;\
 		} else {\
@@ -67,15 +68,5 @@ char *return_status_print(const return_status * const status, size_t *length) no
 #define on_error if (status.status != status_type::SUCCESS)
 
 #define THROW_on_error(status_type_value, message) on_error{THROW(status_type_value, message)}
-
-#define THROW_on_failed_alloc(pointer) \
-	if (pointer == nullptr) {\
-		THROW(ALLOCATION_FAILED, "Failed to allocate memory.");\
-	}
-
-#define throw_on_invalid_buffer(buffer) \
-	if (!(buffer).isValid()) {\
-		THROW(BUFFER_ERROR, "Buffer is invalid");\
-	}
 
 #endif /* LIB_RETURN_STATUS_HPP */

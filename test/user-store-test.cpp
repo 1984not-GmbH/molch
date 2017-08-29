@@ -34,9 +34,9 @@ using namespace Molch;
 
 static std::vector<Buffer> protobuf_export(UserStore& store) {
 	ProtobufPool pool;
-	size_t length{0};
-	ProtobufCUser** users{nullptr};
-	store.exportProtobuf(pool, users, length);
+	auto exported_users{store.exportProtobuf(pool)};
+	auto users{exported_users.data()};
+	auto length{narrow(exported_users.size())};
 
 	std::vector<Buffer> export_buffers;
 	export_buffers.reserve(length);
@@ -45,7 +45,7 @@ static std::vector<Buffer> protobuf_export(UserStore& store) {
 	for (size_t i{0}; i < length; i++) {
 		auto unpacked_size{user__get_packed_size(users[i])};
 		export_buffers.push_back(Buffer(unpacked_size, 0));
-		export_buffers.back().size = user__pack(users[i], export_buffers.back().content);
+		export_buffers.back().size = user__pack(users[i], byte_to_uchar(export_buffers.back().content));
 	}
 
 	return export_buffers;
@@ -62,7 +62,7 @@ UserStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> buffers)
 	//unpack all the conversations
 	size_t index{0};
 	for (const auto& buffer : buffers) {
-		user_array[index] = user__unpack(&pool_protoc_allocator, buffer.size, buffer.content);
+		user_array[index] = user__unpack(&pool_protoc_allocator, buffer.size, byte_to_uchar(buffer.content));
 		if (user_array[index] == nullptr) {
 			throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack user from protobuf."};
 		}
@@ -70,27 +70,23 @@ UserStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> buffers)
 	}
 
 	//import
-	return UserStore(user_array.get(), buffers.size());
+	return UserStore({user_array.get(), narrow(buffers.size())});
 }
 
 void protobuf_empty_store(void) {
 	printf("Testing im-/export of empty user store.\n");
-
-	ProtobufCUser **exported{nullptr};
-	size_t exported_length{0};
-
 	UserStore store;
 
 	//export it
 	ProtobufPool pool;
-	store.exportProtobuf(pool, exported, exported_length);
+	auto exported{store.exportProtobuf(pool)};
 
-	if ((exported != nullptr) || (exported_length != 0)) {
+	if (!exported.empty()) {
 		throw Molch::Exception{status_type::INCORRECT_DATA, "Exported data is not empty."};
 	}
 
 	//import it
-	store = UserStore(exported, exported_length);
+	store = UserStore(exported);
 	printf("Successful.\n");
 }
 
@@ -128,7 +124,7 @@ int main(void) {
 
 		//list user store
 		list = store.list();
-		if (list.compareToRaw(alice_public_signing_key.data(), alice_public_signing_key.size()) != 0) {
+		if (list.compareToRaw(alice_public_signing_key.span()) != 0) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Failed to list users."};
 		}
 		list.clear();
@@ -147,8 +143,8 @@ int main(void) {
 
 		//list user store
 		list = store.list();
-		if ((list.compareToRawPartial(0, alice_public_signing_key.data(), alice_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key.data(), bob_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+		if ((list.compareToRawPartial(0, alice_public_signing_key.span(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key.span(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Failed to list users."};
 		}
 		list.clear();
@@ -167,9 +163,9 @@ int main(void) {
 
 		//list user store
 		list = store.list();
-		if ((list.compareToRawPartial(0, alice_public_signing_key.data(), alice_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key.data(), bob_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list.compareToRawPartial(2 * PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key.data(), charlie_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+		if ((list.compareToRawPartial(0, alice_public_signing_key.span(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key.span(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list.compareToRawPartial(2 * PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key.span(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Failed to list users."};
 		}
 		list.clear();
@@ -198,8 +194,8 @@ int main(void) {
 			printf("Length of the user store matches.");
 			//check the user list
 			list = store.list();
-			if ((list.compareToRawPartial(0, alice_public_signing_key.data(), alice_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-					|| (list.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key.data(), charlie_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+			if ((list.compareToRawPartial(0, alice_public_signing_key.span(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+					|| (list.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key.span(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Removing user failed."};
 			}
 			list.clear();
@@ -262,8 +258,8 @@ int main(void) {
 
 		//check the user list
 		list = store.list();
-		if ((list.compareToRawPartial(0, alice_public_signing_key.data(), alice_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)
-				|| (list.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key.data(), charlie_public_signing_key.size(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
+		if ((list.compareToRawPartial(0, alice_public_signing_key.span(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)
+				|| (list.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key.span(), 0, PUBLIC_MASTER_KEY_SIZE) != 0)) {
 			throw Molch::Exception{status_type::REMOVE_ERROR, "Removing user failed."};
 		}
 		list.clear();

@@ -26,7 +26,7 @@ namespace Molch {
 
 	ProtobufPoolBlock::ProtobufPoolBlock(size_t block_size) {
 		//allocate the block
-		this->block = std::unique_ptr<unsigned char,SodiumDeleter<unsigned char>>(throwing_sodium_malloc<unsigned char>(block_size));
+		this->block = std::unique_ptr<gsl::byte,SodiumDeleter<gsl::byte>>(throwing_sodium_malloc<gsl::byte>(block_size));
 
 		this->block_size = block_size;
 	}
@@ -87,10 +87,10 @@ namespace Molch {
 
 	void *protobuf_c_new(void *allocator_data, size_t size) {
 		(void)allocator_data;
-		return reinterpret_cast<void*>(new unsigned char[size]);
+		return reinterpret_cast<void*>(new gsl::byte[size]);
 	}
 	void protobuf_c_delete(void *allocator_data, void *pointer) {
 		(void)allocator_data;
-		delete[] reinterpret_cast<unsigned char*>(pointer);
+		delete[] reinterpret_cast<gsl::byte*>(pointer);
 	}
 }

@@ -28,6 +28,7 @@
 #include "molch.h"
 #include "key.hpp"
 #include "optional.hpp"
+#include "gsl.hpp"
 
 /*! \file
  * Theses functions create a packet from a packet header, encryption keys, an azolotl header and a
@@ -61,9 +62,9 @@ namespace Molch {
 	Buffer packet_encrypt(
 			//inputs
 			const molch_message_type packet_type,
-			const Buffer& axolotl_header,
+			const gsl::span<const gsl::byte> axolotl_header,
 			const HeaderKey& axolotl_header_key,
-			const Buffer& message,
+			const gsl::span<const gsl::byte> message,
 			const MessageKey& message_key,
 			//optional inputs (prekey messages only)
 			const PublicKey * const public_identity_key,
@@ -104,7 +105,7 @@ namespace Molch {
 			optional<Buffer>& axolotl_header,
 			optional<Buffer>& message,
 			//inputs
-			const Buffer& packet,
+			const gsl::span<const gsl::byte> packet,
 			const HeaderKey& axolotl_header_key,
 			const MessageKey& message_key,
 			//optional outputs (prekey messages only)
@@ -136,7 +137,7 @@ namespace Molch {
 			uint32_t& highest_supported_protocol_version,
 			molch_message_type& packet_type,
 			//input
-			const Buffer& packet,
+			const gsl::span<const gsl::byte> packet,
 			//optional outputs (prekey messages only)
 			PublicKey * const public_identity_key,
 			PublicKey * const public_ephemeral_key,
@@ -154,7 +155,7 @@ namespace Molch {
 	 *   A buffer for the decrypted axolotl header.
 	 */
 	optional<Buffer> packet_decrypt_header(
-			const Buffer& packet,
+			const gsl::span<const gsl::byte> packet,
 			const HeaderKey& axolotl_header_key);
 
 	/*!
@@ -168,6 +169,6 @@ namespace Molch {
 	 * \return
 	 *   A buffer for the decrypted message.
 	 */
-	optional<Buffer> packet_decrypt_message(const Buffer& packet, const MessageKey& message_key);
+	optional<Buffer> packet_decrypt_message(const gsl::span<const gsl::byte> packet, const MessageKey& message_key);
 }
 #endif

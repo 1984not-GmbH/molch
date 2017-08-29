@@ -31,7 +31,7 @@
 
 using namespace Molch;
 
-void print_to_file(const Buffer& data, const std::string& filename) {
+void print_to_file(const gsl::span<const gsl::byte> data, const std::string& filename) {
 	std::ofstream filestream{filename, std::ios_base::out | std::ios_base::binary};
 	if (!filestream.is_open()) {
 		throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to open output file."};
@@ -39,10 +39,10 @@ void print_to_file(const Buffer& data, const std::string& filename) {
 
 	filestream.exceptions(~std::ios_base::goodbit);
 
-	if (data.size > std::numeric_limits<std::streamsize>::max()) {
+	if (data.size() > std::numeric_limits<std::streamsize>::max()) {
 		throw Molch::Exception{status_type::GENERIC_ERROR, "The buffer size exceeds std::streamsize."};
 	}
-	filestream.write(reinterpret_cast<const char*>(data.content), static_cast<std::streamsize>(data.size));
+	filestream.write(reinterpret_cast<const char*>(data.data()), gsl::narrow<std::streamsize>(data.size()));
 }
 
 void print_errors(const return_status& status) {
@@ -71,11 +71,11 @@ Buffer read_file(const std::string& filename) {
 	if (filesize > std::numeric_limits<std::streamsize>::max()) {
 		throw Molch::Exception{status_type::GENERIC_ERROR, "Filesize is larger than representable by std::streamsize."};
 	}
-	auto size{static_cast<size_t>(filesize)};
+	auto size{filesize};
 	filestream.seekg(0);
 
-	Buffer data{size, size};
-	filestream.read(reinterpret_cast<char*>(data.content), static_cast<std::streamsize>(filesize));
+	Buffer data{gsl::narrow<size_t>(size), gsl::narrow<size_t>(size)};
+	filestream.read(reinterpret_cast<char*>(data.content), gsl::narrow<std::streamsize>(filesize));
 
 	return data;
 }

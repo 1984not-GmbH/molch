@@ -78,7 +78,7 @@ namespace Molch {
 			error = error->next;
 		}
 
-		return_status_destroy_errors(&status);
+		return_status_destroy_errors(status);
 	}
 
 	const char* Exception::what() const noexcept {
@@ -105,9 +105,9 @@ namespace Molch {
 
 		// add the error messages in reverse order
 		for (auto&& error = std::crbegin(this->error_stack); error != std::crend(this->error_stack); ++error) {
-			auto add_status{return_status_add_error_message(&status, error->message.c_str(), error->type)};
+			auto add_status{return_status_add_error_message(status, error->message.c_str(), error->type)};
 			if (add_status != status_type::SUCCESS) {
-				return_status_destroy_errors(&status);
+				return_status_destroy_errors(status);
 				status.status = add_status;
 				return status;
 			}

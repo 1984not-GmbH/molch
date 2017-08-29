@@ -39,18 +39,16 @@ using namespace Molch;
 static void protobuf_export(
 			HeaderAndMessageKeyStore& keystore,
 			std::vector<Buffer>& export_buffers) {
-			ProtobufCKeyBundle** key_bundles = nullptr;
 	ProtobufPool pool;
-	size_t bundles_size;
-	keystore.exportProtobuf(pool, key_bundles, bundles_size);
+	auto exported_bundles{keystore.exportProtobuf(pool)};
 
 	export_buffers = std::vector<Buffer>();
 
 	//create all the export buffers
-	for (size_t i{0}; i < bundles_size; i++) {
-		auto export_size{key_bundle__get_packed_size(key_bundles[i])};
+	for (const auto& key_bundle : exported_bundles) {
+		auto export_size{key_bundle__get_packed_size(key_bundle)};
 		Buffer export_buffer{export_size, 0};
-		export_buffer.size = key_bundle__pack(key_bundles[i], export_buffer.content);
+		export_buffer.size = key_bundle__pack(key_bundle, byte_to_uchar(export_buffer.content));
 		if (export_buffer.size != export_size) {
 			throw Molch::Exception{status_type::PROTOBUF_PACK_ERROR, "Packed buffer has incorrect length."};
 		}
@@ -62,7 +60,6 @@ static void protobuf_import(
 		ProtobufPool& pool,
 		HeaderAndMessageKeyStore& keystore,
 		const std::vector<Buffer>& exported_buffers) {
-
 	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 	auto key_bundles_array{std::unique_ptr<ProtobufCKeyBundle*[]>(new ProtobufCKeyBundle*[exported_buffers.size()])};
 	//parse all the exported protobuf buffers
@@ -71,7 +68,7 @@ static void protobuf_import(
 		key_bundles_array[index] = key_bundle__unpack(
 						&pool_protoc_allocator,
 						exported_buffer.size,
-						exported_buffer.content);
+						byte_to_uchar(exported_buffer.content));
 		if (key_bundles_array[index] == nullptr) {
 			throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack key bundle."};
 		}
@@ -80,7 +77,7 @@ static void protobuf_import(
 	}
 
 	//now do the actual import
-	keystore = HeaderAndMessageKeyStore{key_bundles_array.get(), exported_buffers.size()};
+	keystore = HeaderAndMessageKeyStore{{key_bundles_array.get(), narrow(exported_buffers.size())}};
 }
 
 void protobuf_empty_store(void) {
@@ -88,19 +85,16 @@ void protobuf_empty_store(void) {
 
 	HeaderAndMessageKeyStore store;
 
-	ProtobufCKeyBundle **exported{nullptr};
-	size_t exported_length{0};
-
 	//export it
 	ProtobufPool pool;
-	store.exportProtobuf(pool, exported, exported_length);
+	auto exported_bundles{store.exportProtobuf(pool)};
 
-	if ((exported != nullptr) || (exported_length != 0)) {
+	if (!exported_bundles.empty()) {
 		throw Molch::Exception{status_type::INCORRECT_DATA, "Exported data is not empty."};
 	}
 
 	//import it
-	store = HeaderAndMessageKeyStore{exported, exported_length};
+	store = HeaderAndMessageKeyStore{exported_bundles};
 
 	printf("Successful.\n");
 }

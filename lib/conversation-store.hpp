@@ -36,12 +36,8 @@ namespace Molch {
 
 		ConversationStore() = default;
 
-		/*! Import a conversation store from a Protobuf-C struct.
-		 * \param conversations An array of Protobuf-C structs to import from.
-		 * \param length The number of array elements.
-		 * \param public_identity_key The public identity key of the user.
-		 */
-		ConversationStore(ProtobufCConversation** const& conversations, const size_t length);
+		/*! Import a conversation store from a Protobuf-C struct.  */
+		ConversationStore(const gsl::span<ProtobufCConversation*> conversations);
 
 		ConversationStore(const ConversationStore& store) = delete;
 		ConversationStore(ConversationStore&& store) = default;
@@ -86,12 +82,8 @@ namespace Molch {
 		 */
 		Buffer list() const;
 
-		/*! Export a conversation store to Protobuf-C
-		 * \param conversation_store The conversation store to export.
-		 * \param conversations An array of Protobuf-C structs to export it to.
-		 * \return The status.
-		 */
-		void exportProtobuf(ProtobufPool& pool, ProtobufCConversation**& conversations, size_t& length) const;
+		/*! Export a conversation store to Protobuf-C */
+		gsl::span<ProtobufCConversation*> exportProtobuf(ProtobufPool& pool) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

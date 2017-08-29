@@ -31,9 +31,9 @@ namespace Molch {
 	Buffer::Buffer(const std::string& string) :
 			buffer_length{string.length() + sizeof("")},
 			size{string.length() + sizeof("")},
-			content{new unsigned char[string.length() + sizeof("")]} {
-		std::copy(std::begin(string), std::end(string), this->content);
-		this->content[string.length()] = '\0';
+			content{new gsl::byte[string.length() + sizeof("")]} {
+		std::copy(std::begin(string), std::end(string), reinterpret_cast<char*>(this->content));
+		this->content[string.length()] = static_cast<gsl::byte>('\0');
 	}
 
 	Buffer::Buffer(const size_t capacity, const size_t size) :
@@ -42,7 +42,7 @@ namespace Molch {
 		if (capacity == 0) {
 			this->content = nullptr;
 		} else {
-			this->content = new unsigned char[capacity];
+			this->content = new gsl::byte[capacity];
 		}
 	}
 
@@ -53,7 +53,7 @@ namespace Molch {
 		if (capacity == 0) {
 			this->content = nullptr;
 		} else {
-			this->content = reinterpret_cast<unsigned char*>(allocator(capacity));
+			this->content = reinterpret_cast<gsl::byte*>(allocator(capacity));
 			if (this->content == nullptr) {
 				this->buffer_length = 0;
 				this->size = 0;
@@ -63,29 +63,29 @@ namespace Molch {
 		}
 	}
 
-	Buffer::Buffer(unsigned char * const content, const size_t capacity, const size_t size) :
-			buffer_length{capacity},
+	Buffer::Buffer(const gsl::span<gsl::byte> content, const size_t content_size) :
+			buffer_length{narrow(content.size())},
 			manage_memory{false},
 			readonly{false} {
-		this->size = (size > capacity)
-			? capacity
-			: size;
+		this->size = (content_size > narrow(content.size()))
+			? narrow(content.size())
+			: content_size;
 
-		if (capacity == 0) {
+		if (content.empty()) {
 			this->content = nullptr;
 		} else {
-			this->content = content;
+			this->content = content.data();
 		}
 	}
-	Buffer::Buffer(unsigned char * const content, const size_t capacity) :
-		Buffer{content, capacity, capacity} {}
+	Buffer::Buffer(const gsl::span<gsl::byte> content) :
+		Buffer{content, narrow(content.size())} {}
 
-	Buffer::Buffer(const unsigned char * const content, const size_t capacity, const size_t size) :
-			Buffer{const_cast<unsigned char*>(content), capacity, size} {
+	Buffer::Buffer(const gsl::span<const gsl::byte> content, const size_t size) :
+			Buffer{gsl::span<gsl::byte>{const_cast<gsl::byte*>(content.data()), content.size()}, size} {
 		this->readonly = false;
 	}
-	Buffer::Buffer(const unsigned char * const content, const size_t capacity)
-		: Buffer{content, capacity, capacity} {}
+	Buffer::Buffer(const gsl::span<const gsl::byte> content)
+		: Buffer{content, narrow(content.size())} {}
 
 	void Buffer::destruct() {
 		//only do something if this was created using a constructor
@@ -113,7 +113,7 @@ namespace Molch {
 		this->deallocator = nullptr;
 		this->size = buffer.size;
 
-		this->content = new unsigned char[buffer.buffer_length];
+		this->content = new gsl::byte[buffer.buffer_length];
 		std::copy(buffer.content, buffer.content + buffer.size, this->content);
 
 		return *this;
@@ -123,8 +123,8 @@ namespace Molch {
 		this->destruct();
 
 		//copy the buffer
-		auto& source_reference{reinterpret_cast<unsigned char&>(buffer)};
-		auto& destination_reference{reinterpret_cast<unsigned char&>(*this)};
+		auto& source_reference{reinterpret_cast<gsl::byte&>(buffer)};
+		auto& destination_reference{reinterpret_cast<gsl::byte&>(*this)};
 		std::copy(&source_reference, &source_reference + sizeof(Buffer), &destination_reference);
 
 		//steal resources from the source buffer
@@ -175,28 +175,15 @@ namespace Molch {
 			const Buffer& source,
 			const size_t source_offset,
 			const size_t copy_length) {
-		if (this->readonly) {
-			throw Exception{status_type::BUFFER_ERROR, "Can't copy to readonly buffer."};
-		}
-
-		if ((this->buffer_length < this->size) || (source.buffer_length < source.size)) {
-			throw Exception{status_type::BUFFER_ERROR, "The content is larger than the buffer."};
-		}
-
-		if ((destination_offset > this->size) || (copy_length > (this->buffer_length - destination_offset))) {
-			throw Exception{status_type::BUFFER_ERROR, "Can't copy to buffer that is too small."};
-		}
-
-		if ((source_offset > source.size) || (copy_length > (source.size - source_offset))) {
-			throw Exception{status_type::BUFFER_ERROR, "Can't copy more than buffer_length bytes."};
-		}
+		Expects(!this->readonly
+				&& (this->buffer_length >= this->size) && (source.buffer_length >= source.size)
+				&& (destination_offset <= this->size) && (copy_length <= (this->buffer_length - destination_offset))
+				&& (source_offset <= source.size) && (copy_length <= (source.size - source_offset))
+				&& ((this->size == 0) || (this->content != nullptr))
+				&& ((source.size == 0) || (source.content != nullptr)));
 
 		if (source.buffer_length == 0) {
 			return; //nothing to do
-		}
-
-		if ((this->content == nullptr) || (source.content == nullptr)) {
-			throw Exception{status_type::BUFFER_ERROR, "The source or destination buffer has no content."};
 		}
 
 		std::copy(source.content + source_offset, source.content + source_offset + copy_length, this->content + destination_offset);
@@ -206,13 +193,7 @@ namespace Molch {
 	}
 
 	void Buffer::cloneFrom(const Buffer& source) {
-		if (this->readonly) {
-			throw Exception{status_type::BUFFER_ERROR, "Can't clone to readonly buffer."};
-		}
-
-		if (this->buffer_length < source.size) {
-			throw Exception{status_type::BUFFER_ERROR, "The source doesn't fit into the destination."};
-		}
+		Expects(!this->readonly && (this->buffer_length >= source.size));
 
 		this->size = source.size;
 
@@ -221,20 +202,12 @@ namespace Molch {
 
 	void Buffer::copyFromRaw(
 			const size_t destination_offset,
-			const unsigned char * const source,
+			const gsl::byte * const source,
 			const size_t source_offset,
 			const size_t copy_length) {
-		if (this->readonly) {
-			throw Exception{status_type::BUFFER_ERROR, "Can't copy to readonly buffer."};
-		}
-
-		if (this->buffer_length < this->size) {
-			throw Exception{status_type::BUFFER_ERROR, "The content is longer than the buffer."};
-		}
-
-		if ((this->buffer_length < destination_offset) || (copy_length > (this->buffer_length - destination_offset))) {
-			throw Exception{status_type::BUFFER_ERROR, "The source doesn't fit into the destination."};
-		}
+		Expects(!this->readonly
+				&& (this->buffer_length >= destination_offset)
+				&& (copy_length <= (this->buffer_length - destination_offset)));
 
 		if (copy_length == 0) {
 			return;
@@ -246,32 +219,21 @@ namespace Molch {
 			: destination_offset + copy_length;
 	}
 
-	void Buffer::cloneFromRaw(const unsigned char * const source, const size_t length) {
-		if (this->readonly) {
-			throw Exception{status_type::BUFFER_ERROR, "Can't clone to readonly buffer."};
-		}
+	void Buffer::cloneFromRaw(const gsl::span<const gsl::byte> source) {
+		Expects(!this->readonly && (this->buffer_length >= narrow(source.size())));
 
-		if (this->buffer_length < length) {
-			throw Exception{status_type::BUFFER_ERROR, "The source doesn't fit into the destination."};
-		}
+		this->size = narrow(source.size());
 
-		this->size = length;
-
-		this->copyFromRaw(0, source, 0, length);
+		this->copyFromRaw(0, source.data(), 0, narrow(source.size()));
 	}
 
 	void Buffer::copyToRaw(
-			unsigned char * const destination,
+			gsl::byte * const destination,
 			const size_t destination_offset,
 			const size_t source_offset,
 			const size_t copy_length) const {
-		if ((source_offset > this->size) || (copy_length > (this->size - source_offset))) {
-			throw Exception{status_type::BUFFER_ERROR, "The source doesn't fit into the destination."};
-		}
-
-		if (this->buffer_length < this->size) {
-			throw Exception{status_type::BUFFER_ERROR, "The content is longer than the buffer."};
-		}
+		Expects((source_offset <= this->size) && (copy_length <= (this->size - source_offset))
+				&& (this->buffer_length >= this->size));
 
 		if (this->buffer_length == 0) {
 			return;
@@ -280,20 +242,18 @@ namespace Molch {
 		std::copy(this->content + source_offset, this->content + source_offset + copy_length, destination + destination_offset);
 	}
 
-	void Buffer::cloneToRaw(unsigned char * const destination, const size_t destination_length) const {
-		if (destination_length < this->size) {
-			throw Exception{status_type::BUFFER_ERROR, "Can't clone to raw buffer that is to small."};
-		}
+	void Buffer::cloneToRaw(const gsl::span<gsl::byte> destination) const {
+		Expects(narrow(destination.size()) >= this->size);
 
-		this->copyToRaw(destination, 0, 0, this->size);
+		this->copyToRaw(destination.data(), 0, 0, this->size);
 	}
 
 	int Buffer::compare(const Buffer& buffer) const {
-		return this->compareToRaw(buffer.content, buffer.size);
+		return this->compareToRaw({buffer.content, narrow(buffer.size)});
 	}
 
-	int Buffer::compareToRaw(const unsigned char * const array, const size_t array_length) const {
-		return this->compareToRawPartial(0, array, array_length, 0, this->size);
+	int Buffer::compareToRaw(const gsl::span<const gsl::byte> array) const {
+		return this->compareToRawPartial(0, array, 0, this->size);
 	}
 
 	int Buffer::comparePartial(
@@ -301,22 +261,21 @@ namespace Molch {
 			const Buffer& buffer2,
 			const size_t position2,
 			const size_t length) const {
-		return this->compareToRawPartial(position1, buffer2.content, buffer2.size, position2, length);
+		return this->compareToRawPartial(position1, {buffer2.content, narrow(buffer2.size)}, position2, length);
 	}
 
 	int Buffer::compareToRawPartial(
 			const size_t position1,
-			const unsigned char * const array,
-			const size_t array_length,
+			const gsl::span<const gsl::byte> array,
 			const size_t position2,
 			const size_t comparison_length) const {
-		if (((this->size - position1) < comparison_length) || ((array_length - position2) < comparison_length)) {
+		if (((this->size - position1) < comparison_length) || ((narrow(array.size()) - position2) < comparison_length)) {
 			//FIXME: Does this introduce a timing sidechannel? This leaks the information that two buffers don't have the same length
 			//buffers are too short
 			return -6; //TODO: Is this an exception?
 		}
 
-		if ((this->buffer_length == 0) || (array_length == 0)) {
+		if ((this->buffer_length == 0) || (array.empty())) {
 			if (comparison_length == 0) {
 				return 0;
 			} else {
@@ -324,17 +283,12 @@ namespace Molch {
 			}
 		}
 
-		return sodium_memcmp(this->content + position1, array + position2, comparison_length);
+		return sodium_memcmp(this->content + position1, array.data() + position2, comparison_length);
 	}
 
 	void Buffer::fillRandom(const size_t length) {
-		if (length > this->buffer_length) {
-			throw Exception{status_type::BUFFER_ERROR, "Can't fill more than the entire buffer."};
-		}
-
-		if (this->readonly) {
-			throw Exception{status_type::BUFFER_ERROR, "Can't fill readonly buffer with random numbers."};
-		}
+		Expects((length <= this->buffer_length)
+				&& !this->readonly);
 
 		if (this->buffer_length == 0) {
 			return;
@@ -346,15 +300,7 @@ namespace Molch {
 
 	//FIXME: Make sure this doesn't introduce any sidechannels
 	void Buffer::xorWith(const Buffer& source) {
-		if (this->readonly) {
-			throw Exception{status_type::BUFFER_ERROR, "Can't xor to readonly buffer."};
-		}
-
-		if ((this->size != source.size)
-				|| (this->buffer_length < this->size)
-				|| (source.buffer_length < source.size)) {
-			throw Exception{status_type::BUFFER_ERROR, "Buffer length mismatch."};
-		}
+		Expects(!this->readonly && (this->size == source.size));
 
 		//xor source onto destination
 		for (size_t i{0}; i < this->size; i++) {
@@ -362,13 +308,21 @@ namespace Molch {
 		}
 	}
 
-	unsigned char* Buffer::release() {
+	gsl::byte* Buffer::release() {
 		auto content{this->content};
 		this->content = nullptr;
 		this->size = 0;
 		this->buffer_length = 0;
 
 		return content;
+	}
+
+	gsl::span<gsl::byte> Buffer::span() {
+		return {this->content, narrow(this->size)};
+	}
+
+	gsl::span<const gsl::byte> Buffer::span() const {
+		return {this->content, narrow(this->size)};
 	}
 
 	std::ostream& Buffer::print(std::ostream& stream) const {
@@ -378,12 +332,12 @@ namespace Molch {
 	}
 
 	std::ostream& Buffer::printHex(std::ostream& stream) const {
-		static const size_t width{30};
+		static const int width{30};
 		//buffer for the hex string
 		const size_t hex_length{this->size * 2 + sizeof("")};
 		auto hex{std::make_unique<char[]>(hex_length)};
-		if (sodium_bin2hex(hex.get(), hex_length, this->content, this->size) == nullptr) {
-			throw Exception{status_type::BUFFER_ERROR, "Failed to converst binary to hex with sodium_bin2hex."};
+		if (sodium_bin2hex(hex.get(), hex_length, byte_to_uchar(this->content), this->size) == nullptr) {
+			throw Exception{status_type::BUFFER_ERROR, "Failed to convert binary to hex with sodium_bin2hex."};
 		}
 
 		for (size_t i{0}; i < hex_length; i++) {
@@ -399,7 +353,7 @@ namespace Molch {
 	}
 
 	bool Buffer::isNone() const {
-		return (this->size == 0) || sodium_is_zero(this->content, this->size);
+		return (this->size == 0) || sodium_is_zero(byte_to_uchar(this->content), this->size);
 	}
 
 	bool Buffer::operator ==(const Buffer& buffer) const {

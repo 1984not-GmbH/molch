@@ -41,16 +41,16 @@ int main(void) {
 		Buffer buffer32{4, 4};
 		uint32_t uint32{67305985ULL};
 		uint32_t uint32_from_big_endian;
-		to_big_endian(uint32, buffer32);
+		to_big_endian(uint32, buffer32.span());
 		printf("uint32_t %llu to big endian:\n", static_cast<unsigned long long>(uint32));
 		buffer32.printHex(std::cout);
 
-		if (buffer32.compareToRaw(reinterpret_cast<const unsigned char*>("\x04\x03\x02\x01"), sizeof(uint32_t)) != 0) {
+		if (buffer32.compareToRaw({reinterpret_cast<const gsl::byte*>("\x04\x03\x02\x01"), sizeof(uint32_t)}) != 0) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of uint32_t is incorrect."};
 		}
 
 		//uint32_t <- big endian
-		from_big_endian(uint32_from_big_endian, buffer32);
+		from_big_endian(uint32_from_big_endian, buffer32.span());
 		if (uint32 != uint32_from_big_endian) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "uint32_t from big endian is incorrect."};
 		}
@@ -59,16 +59,16 @@ int main(void) {
 		//int32_t -> big endian
 		int32_t int32{-66052LL};
 		int32_t int32_from_big_endian;
-		to_big_endian(int32, buffer32);
+		to_big_endian(int32, buffer32.span());
 		printf("int32_t %lli to big endian:\n", static_cast<signed long long>(int32));
 		buffer32.printHex(std::cout);
 
-		if (buffer32.compareToRaw(reinterpret_cast<const unsigned char*>("\xFF\xFE\xFD\xFC"), sizeof(int32_t)) != 0) {
+		if (buffer32.compareToRaw({reinterpret_cast<const gsl::byte*>("\xFF\xFE\xFD\xFC"), sizeof(int32_t)}) != 0) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of int32_t is incorrect."};
 		}
 
 		//int32_t <- big endian
-		from_big_endian(int32_from_big_endian, buffer32);
+		from_big_endian(int32_from_big_endian, buffer32.span());
 		if (int32 != int32_from_big_endian) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "uint32_t from big endian is incorrect."};
 		}
@@ -78,16 +78,16 @@ int main(void) {
 		Buffer buffer64{8, 8};
 		uint64_t uint64{578437695752307201ULL};
 		uint64_t uint64_from_big_endian;
-		to_big_endian(uint64, buffer64);
+		to_big_endian(uint64, buffer64.span());
 		printf("uint64_t %llu to big endian:\n", static_cast<unsigned long long>(uint64));
 		buffer64.printHex(std::cout);
 
-		if (buffer64.compareToRaw(reinterpret_cast<const unsigned char*>("\x08\x07\x06\x05\x04\x03\x02\x01"), sizeof(uint64_t)) != 0) {
+		if (buffer64.compareToRaw({reinterpret_cast<const gsl::byte*>("\x08\x07\x06\x05\x04\x03\x02\x01"), sizeof(uint64_t)}) != 0) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of uint64_t is incorrect."};
 		}
 
 		//uint64_t <- big endian
-		from_big_endian(uint64_from_big_endian, buffer64);
+		from_big_endian(uint64_from_big_endian, buffer64.span());
 		if (uint64 != uint64_from_big_endian) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "uint64_t from big endian is incorrect."};
 		}
@@ -96,16 +96,16 @@ int main(void) {
 		//int64_t -> big endian
 		int64_t int64{-283686952306184LL};
 		int64_t int64_from_big_endian;
-		to_big_endian(int64, buffer64);
+		to_big_endian(int64, buffer64.span());
 		printf("int64_t %lli to big endian:\n", static_cast<signed long long>(int64));
 		buffer64.printHex(std::cout);
 
-		if (buffer64.compareToRaw(reinterpret_cast<const unsigned char*>("\xFF\xFE\xFD\xFC\xFB\xFA\xF9\xF8"), sizeof(int64_t)) != 0) {
+		if (buffer64.compareToRaw({reinterpret_cast<const gsl::byte*>("\xFF\xFE\xFD\xFC\xFB\xFA\xF9\xF8"), sizeof(int64_t)}) != 0) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of int64_t is incorrect."};
 		}
 
 		//int64_t <- big endian
-		from_big_endian(int64_from_big_endian, buffer64);
+		from_big_endian(int64_from_big_endian, buffer64.span());
 		if (int64 != int64_from_big_endian) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "unit64_t from big endian is incorrect."};
 		}

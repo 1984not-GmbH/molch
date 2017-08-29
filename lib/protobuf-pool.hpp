@@ -43,7 +43,7 @@
 namespace Molch {
 	class ProtobufPoolBlock {
 	private:
-		std::unique_ptr<unsigned char,SodiumDeleter<unsigned char>> block;
+		std::unique_ptr<gsl::byte,SodiumDeleter<gsl::byte>> block;
 		size_t block_size{default_block_size};
 		size_t offset{0}; //offset of the next available pointer
 
@@ -85,11 +85,11 @@ namespace Molch {
 				throw std::bad_alloc();
 			}
 
-			if (reinterpret_cast<unsigned char*>(offset_pointer) < this->block.get()) {
+			if (reinterpret_cast<gsl::byte*>(offset_pointer) < this->block.get()) {
 				throw std::bad_alloc();
 			}
 
-			this->offset = gsl::narrow<size_t>(reinterpret_cast<unsigned char*>(offset_pointer) - this->block.get()) + size;
+			this->offset = narrow(reinterpret_cast<gsl::byte*>(offset_pointer) - this->block.get()) + size;
 
 			return reinterpret_cast<T*>(offset_pointer);
 		}

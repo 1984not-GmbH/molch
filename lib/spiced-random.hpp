@@ -24,6 +24,7 @@
 
 #include "buffer.hpp"
 #include "return-status.hpp"
+#include "gsl.hpp"
 
 namespace Molch {
 	/*
@@ -34,10 +35,7 @@ namespace Molch {
 	 * WARNING: Don't feed this with random numbers from the OSs random
 	 * source because it might annihilate the randomness.
 	 */
-	void spiced_random(
-			Buffer& random_output,
-			const Buffer& low_entropy_spice,
-			const size_t output_length);
+	void spiced_random(gsl::span<gsl::byte> output, const gsl::span<const gsl::byte> low_entropy_spice);
 }
 
 #endif

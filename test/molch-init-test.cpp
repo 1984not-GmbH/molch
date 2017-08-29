@@ -65,9 +65,9 @@ int main(int argc, char *args[]) noexcept {
 				auto status{molch_import(
 						backup_key,
 						BACKUP_KEY_SIZE,
-						backup_file.content,
+						byte_to_uchar(backup_file.content),
 						backup_file.size,
-						backup_key_file.content,
+						byte_to_uchar(backup_key_file.content),
 						backup_key_file.size)};
 				on_error {
 					throw Molch::Exception{status};
@@ -88,7 +88,7 @@ int main(int argc, char *args[]) noexcept {
 			unsigned char *backup_ptr{nullptr};
 			unsigned char *prekey_list_ptr{nullptr};
 			auto status{molch_create_user(
-					user_id.content,
+					byte_to_uchar(user_id.content),
 					user_id.size,
 					&prekey_list_ptr,
 					&prekey_list_length,
@@ -109,10 +109,10 @@ int main(int argc, char *args[]) noexcept {
 		}
 
 		//print the backup to a file
-		Buffer backup_buffer{backup.get(), backup_length};
-		Buffer backup_key_buffer{backup_key, BACKUP_KEY_SIZE};
-		print_to_file(backup_buffer, "molch-init.backup");
-		print_to_file(backup_key_buffer, "molch-init-backup.key");
+		Buffer backup_buffer{gsl::span<gsl::byte>{uchar_to_byte(backup.get()), narrow(backup_length)}};
+		Buffer backup_key_buffer{gsl::span<gsl::byte>{uchar_to_byte(backup_key), BACKUP_KEY_SIZE}};
+		print_to_file(backup_buffer.span(), "molch-init.backup");
+		print_to_file(backup_key_buffer.span(), "molch-init-backup.key");
 	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;

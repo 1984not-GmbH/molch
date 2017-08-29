@@ -58,7 +58,7 @@ int main(void) {
 
 		//create a new buffer
 		Buffer buffer1{14, 10};
-		unsigned char buffer1_content[10];
+		gsl::byte buffer1_content[10];
 		randombytes_buf(buffer1_content, sizeof(buffer1_content));
 		std::copy(buffer1_content, buffer1_content + sizeof(buffer1_content), buffer1.content);
 		printf("Here\n");
@@ -68,7 +68,7 @@ int main(void) {
 
 		unsigned char buffer2_content[]{0xde, 0xad, 0xbe, 0xef, 0x00};
 		Buffer buffer2;
-		new (&buffer2) Buffer{buffer2_content, 5, 4};
+		new (&buffer2) Buffer{gsl::span<gsl::byte>{uchar_to_byte(buffer2_content), 5}, 4};
 
 		printf("Second buffer (%zu Bytes):\n", buffer2.size);
 		buffer2.printHex(std::cout) << std::endl;
@@ -103,7 +103,7 @@ int main(void) {
 		printf("Successfully copied buffer.\n");
 
 		//copy to a raw array
-		unsigned char raw_array[4];
+		gsl::byte raw_array[4];
 		buffer1.copyToRaw(
 				raw_array, //destination
 				0, //destination offset
@@ -129,7 +129,7 @@ int main(void) {
 		unsigned char heeelo[14]{"Hello World!\n"};
 		buffer1.copyFromRaw(
 				0, //offset
-				heeelo, //source
+				uchar_to_byte(heeelo), //source
 				0, //offset
 				sizeof(heeelo)); //length
 		if (sodium_memcmp(heeelo, buffer1.content, sizeof(heeelo))) {
@@ -141,7 +141,7 @@ int main(void) {
 		try {
 			buffer1.copyFromRaw(
 					1,
-					heeelo,
+					uchar_to_byte(heeelo),
 					0,
 					sizeof(heeelo));
 		} catch (...) {
@@ -168,7 +168,7 @@ int main(void) {
 
 		//check if the buffer was properly cleared
 		for (size_t i{0}; i < buffer1.capacity(); i++) {
-			if (buffer1.content[i] != '\0') {
+			if (buffer1.content[i] != uchar_to_byte('\0')) {
 				throw Molch::Exception{status_type::BUFFER_ERROR, "Buffer hasn't been erased properly."};
 			}
 		}
@@ -236,8 +236,8 @@ int main(void) {
 
 		//test creating a buffer with an existing array
 		unsigned char array[]{"Hello World!\n"};
-		Buffer buffer_with_array{array, sizeof(array)};
-		if ((buffer_with_array.content != array)
+		Buffer buffer_with_array{gsl::span<gsl::byte>{uchar_to_byte(array), narrow(sizeof(array))}};
+		if ((buffer_with_array.content != uchar_to_byte(array))
 				|| (buffer_with_array.size != sizeof(array))
 				|| (buffer_with_array.capacity() != sizeof(array))) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to create buffer with existing array."};
@@ -245,15 +245,15 @@ int main(void) {
 
 		//compare buffer to an array
 		Buffer true_buffer{"true"};
-		auto comparison{true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("true"), sizeof("true"))};
+		auto comparison{true_buffer.compareToRaw({reinterpret_cast<const gsl::byte*>("true"), sizeof("true")})};
 		if (comparison != 0) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to compare buffer to array."};
 		}
-		comparison = true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("fals"), sizeof("fals"));
+		comparison = true_buffer.compareToRaw({reinterpret_cast<const gsl::byte*>("fals"), sizeof("fals")});
 		if (comparison == 0) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to detect difference in buffer and array."};
 		}
-		comparison = true_buffer.compareToRaw(reinterpret_cast<const unsigned char*>("false"), sizeof("false"));
+		comparison = true_buffer.compareToRaw({reinterpret_cast<const gsl::byte*>("false"), sizeof("false")});
 		if (comparison == 0) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "ERROR: Failed to detect difference in buffer and array."};
 		}

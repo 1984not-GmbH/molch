@@ -35,12 +35,12 @@ using namespace Molch;
 
 static Buffer decrypt_conversation_backup(
 		ProtobufPool& pool,
-		const gsl::span<const unsigned char> backup,
-		const gsl::span<const unsigned char> backup_key) {
+		const gsl::span<const gsl::byte> backup,
+		const gsl::span<const gsl::byte> backup_key) {
 	Expects(!backup.empty() && (backup_key.size() == BACKUP_KEY_SIZE));
 
 	//unpack the encrypted backup
-	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, gsl::narrow<size_t>(backup.size()), backup.data()))};
+	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, narrow(backup.size()), byte_to_uchar(backup.data())))};
 	if (encrypted_backup_struct == nullptr) {
 		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf."};
 	}
@@ -59,20 +59,20 @@ static Buffer decrypt_conversation_backup(
 		throw Molch::Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
 	}
 
-	auto decrypted_backup_content{pool.allocate<unsigned char>(
+	auto decrypted_backup_content{pool.allocate<gsl::byte>(
 			encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
 	Buffer decrypted_backup{
-		decrypted_backup_content,
-		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES,
+		gsl::span<gsl::byte>{decrypted_backup_content,
+		narrow(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)},
 		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES};
 
 	//decrypt the backup
 	auto status{crypto_secretbox_open_easy(
-			decrypted_backup.content,
+			byte_to_uchar(decrypted_backup.content),
 			encrypted_backup_struct->encrypted_backup.data,
 			encrypted_backup_struct->encrypted_backup.len,
 			encrypted_backup_struct->encrypted_backup_nonce.data,
-			backup_key.data())};
+			byte_to_uchar(backup_key.data()))};
 	if (status != 0) {
 		throw Molch::Exception{status_type::DECRYPT_ERROR, "Failed to decrypt conversation backup."};
 	}
@@ -82,13 +82,13 @@ static Buffer decrypt_conversation_backup(
 
 static Buffer decrypt_full_backup(
 		ProtobufPool& pool,
-		const gsl::span<const unsigned char> backup,
-		const gsl::span<const unsigned char> backup_key) {
+		const gsl::span<const gsl::byte> backup,
+		const gsl::span<const gsl::byte> backup_key) {
 	//check input
 	Expects(!backup.empty() && (backup_key.size() == BACKUP_KEY_SIZE));
 
 	//unpack the encrypted backup
-	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, gsl::narrow<size_t>(backup.size()), backup.data()))};
+	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, narrow(backup.size()), byte_to_uchar(backup.data())))};
 	if (encrypted_backup_struct == nullptr) {
 		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf."};
 	}
@@ -107,20 +107,20 @@ static Buffer decrypt_full_backup(
 		throw Molch::Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
 	}
 
-	auto decrypted_backup_content{pool.allocate<unsigned char>(
+	auto decrypted_backup_content{pool.allocate<gsl::byte>(
 		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
 	Buffer decrypted_backup{
-		decrypted_backup_content,
-		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES,
+		gsl::span<gsl::byte>{decrypted_backup_content,
+		narrow(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)},
 		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES};
 
 	//decrypt the backup
 	auto status{crypto_secretbox_open_easy(
-			decrypted_backup.content,
+			byte_to_uchar(decrypted_backup.content),
 			encrypted_backup_struct->encrypted_backup.data,
 			encrypted_backup_struct->encrypted_backup.len,
 			encrypted_backup_struct->encrypted_backup_nonce.data,
-			backup_key.data())};
+			byte_to_uchar(backup_key.data()))};
 	if (status != 0) {
 		throw Molch::Exception{status_type::DECRYPT_ERROR, "Failed to decrypt conversation backup."};
 	}
@@ -139,7 +139,7 @@ int main(void) {
 
 		Buffer backup_key{BACKUP_KEY_SIZE, BACKUP_KEY_SIZE};
 		{
-			return_status status = molch_update_backup_key(backup_key.content, backup_key.size);
+			return_status status{molch_update_backup_key(byte_to_uchar(backup_key.content), backup_key.size)};
 			on_error {
 				throw Molch::Exception{status};
 			}
@@ -162,15 +162,15 @@ int main(void) {
 			unsigned char *complete_export_ptr{nullptr};
 			unsigned char *alice_public_prekeys_ptr{nullptr};
 			auto status{molch_create_user(
-					alice_public_identity.content,
+					byte_to_uchar(alice_public_identity.content),
 					alice_public_identity.size,
 					&alice_public_prekeys_ptr,
 					&alice_public_prekeys_length,
-					new_backup_key.content,
+					byte_to_uchar(new_backup_key.content),
 					new_backup_key.size,
 					&complete_export_ptr,
 					&complete_export_length,
-					alice_head_on_keyboard.content,
+					byte_to_uchar(alice_head_on_keyboard.content),
 					alice_head_on_keyboard.size)};
 			on_error {
 				throw Molch::Exception{status};
@@ -199,7 +199,7 @@ int main(void) {
 
 		//create a new backup key
 		{
-			return_status status = molch_update_backup_key(backup_key.content, backup_key.size);
+			return_status status{molch_update_backup_key(byte_to_uchar(backup_key.content), backup_key.size)};
 			on_error {
 				throw Molch::Exception{status};
 			}
@@ -216,15 +216,15 @@ int main(void) {
 		{
 			unsigned char *bob_public_prekeys_ptr{nullptr};
 			auto status{molch_create_user(
-					bob_public_identity.content,
+					byte_to_uchar(bob_public_identity.content),
 					bob_public_identity.size,
 					&bob_public_prekeys_ptr,
 					&bob_public_prekeys_length,
-					backup_key.content,
+					byte_to_uchar(backup_key.content),
 					backup_key.size,
 					nullptr,
 					nullptr,
-					bob_head_on_keyboard.content,
+					byte_to_uchar(bob_head_on_keyboard.content),
 					bob_head_on_keyboard.size)};
 			on_error {
 				throw Molch::Exception{status};
@@ -266,17 +266,17 @@ int main(void) {
 		{
 			unsigned char * alice_send_packet_ptr{nullptr};
 			auto status{molch_start_send_conversation(
-					alice_conversation.content,
+					byte_to_uchar(alice_conversation.content),
 					alice_conversation.size,
 					&alice_send_packet_ptr,
 					&alice_send_packet_length,
-					alice_public_identity.content,
+					byte_to_uchar(alice_public_identity.content),
 					alice_public_identity.size,
-					bob_public_identity.content,
+					byte_to_uchar(bob_public_identity.content),
 					bob_public_identity.size,
 					bob_public_prekeys.get(),
 					bob_public_prekeys_length,
-					alice_send_message.content,
+					byte_to_uchar(alice_send_message.content),
 					alice_send_message.size,
 					nullptr,
 					nullptr)};
@@ -296,14 +296,14 @@ int main(void) {
 					&conversation_list_ptr,
 					&conversation_list_length,
 					&number_of_conversations,
-					alice_public_identity.content,
+					byte_to_uchar(alice_public_identity.content),
 					alice_public_identity.size)};
 			on_error {
 				throw Molch::Exception{status};
 			}
 			conversation_list.reset(conversation_list_ptr);
 		}
-		if ((number_of_conversations != 1) || (alice_conversation.compareToRaw(conversation_list.get(), conversation_list_length) != 0)) {
+		if ((number_of_conversations != 1) || (alice_conversation.compareToRaw({uchar_to_byte(conversation_list.get()), narrow(conversation_list_length)}) != 0)) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to list conversations."};
 		}
 
@@ -318,7 +318,7 @@ int main(void) {
 			auto status{molch_get_prekey_list(
 					&alice_public_prekeys_ptr,
 					&alice_public_prekeys_length,
-					alice_public_identity.content,
+					byte_to_uchar(alice_public_identity.content),
 					alice_public_identity.size)};
 			on_error {
 				throw Molch::Exception{status};
@@ -334,15 +334,15 @@ int main(void) {
 			unsigned char *bob_receive_message_ptr{nullptr};
 			unsigned char *bob_public_prekeys_ptr{nullptr};
 			auto status{molch_start_receive_conversation(
-					bob_conversation.content,
+					byte_to_uchar(bob_conversation.content),
 					bob_conversation.size,
 					&bob_public_prekeys_ptr,
 					&bob_public_prekeys_length,
 					&bob_receive_message_ptr,
 					&bob_receive_message_length,
-					bob_public_identity.content,
+					byte_to_uchar(bob_public_identity.content),
 					bob_public_identity.size,
-					alice_public_identity.content,
+					byte_to_uchar(alice_public_identity.content),
 					alice_public_identity.size,
 					alice_send_packet.get(),
 					alice_send_packet_length,
@@ -356,7 +356,7 @@ int main(void) {
 		}
 
 		//compare sent and received messages
-		printf("sent (Alice): %.*s\n", static_cast<int>(alice_send_message.size), alice_send_message.content);
+		printf("sent (Alice): %.*s\n", static_cast<int>(alice_send_message.size), byte_to_uchar(alice_send_message.content));
 		printf("received (Bob): %.*s\n", static_cast<int>(bob_receive_message_length), bob_receive_message.get());
 		if ((alice_send_message.size != bob_receive_message_length)
 				|| (sodium_memcmp(alice_send_message.content, bob_receive_message.get(), bob_receive_message_length) != 0)) {
@@ -375,9 +375,9 @@ int main(void) {
 			auto status{molch_encrypt_message(
 					&bob_send_packet_ptr,
 					&bob_send_packet_length,
-					bob_conversation.content,
+					byte_to_uchar(bob_conversation.content),
 					bob_conversation.size,
-					bob_send_message.content,
+					byte_to_uchar(bob_send_message.content),
 					bob_send_message.size,
 					&conversation_export_ptr,
 					&conversation_export_length)};
@@ -409,7 +409,7 @@ int main(void) {
 					&alice_receive_message_length,
 					&alice_receive_message_number,
 					&alice_previous_receive_message_number,
-					alice_conversation.content,
+					byte_to_uchar(alice_conversation.content),
 					alice_conversation.size,
 					bob_send_packet.get(),
 					bob_send_packet_length,
@@ -426,7 +426,7 @@ int main(void) {
 		}
 
 		//compare sent and received messages
-		printf("sent (Bob): %.*s\n", static_cast<int>(bob_send_message.size), bob_send_message.content);
+		printf("sent (Bob): %.*s\n", static_cast<int>(bob_send_message.size), byte_to_uchar(bob_send_message.content));
 		printf("received (Alice): %.*s\n", static_cast<int>(alice_receive_message_length), alice_receive_message.get());
 		if ((bob_send_message.size != alice_receive_message_length)
 				|| (sodium_memcmp(bob_send_message.content, alice_receive_message.get(), alice_receive_message_length) != 0)) {
@@ -450,11 +450,11 @@ int main(void) {
 		printf("Test import!\n");
 		{
 			auto status{molch_import(
-					new_backup_key.content,
+					byte_to_uchar(new_backup_key.content),
 					new_backup_key.size,
 					backup.get(),
 					backup_length,
-					backup_key.content,
+					byte_to_uchar(backup_key.content),
 					backup_key.size)};
 			on_error {
 				throw Molch::Exception{status};
@@ -464,8 +464,8 @@ int main(void) {
 		ProtobufPool pool;
 		auto decrypted_backup{decrypt_full_backup(
 				pool,
-				{backup.get(), gsl::narrow<ssize_t>(backup_length)},
-				{backup_key.content, gsl::narrow<ssize_t>(backup_key.size)})};
+				{uchar_to_byte(backup.get()), narrow(backup_length)},
+				backup_key.span())};
 
 		//compare the keys
 		if (backup_key == new_backup_key) {
@@ -489,8 +489,8 @@ int main(void) {
 
 		auto decrypted_imported_backup{decrypt_full_backup(
 				pool,
-				{imported_backup.get(), gsl::narrow<ssize_t>(imported_backup_length)},
-				{backup_key.content, gsl::narrow<ssize_t>(backup_key.size)})};
+				{uchar_to_byte(imported_backup.get()), narrow(imported_backup_length)},
+				backup_key.span())};
 
 		//compare
 		if (decrypted_backup != decrypted_imported_backup) {
@@ -503,7 +503,7 @@ int main(void) {
 			auto status{molch_conversation_export(
 					&backup_ptr,
 					&backup_length,
-					alice_conversation.content,
+					byte_to_uchar(alice_conversation.content),
 					alice_conversation.size)};
 			on_error {
 				throw Molch::Exception{status};
@@ -516,11 +516,11 @@ int main(void) {
 		//import again
 		{
 			auto status{molch_conversation_import(
-					new_backup_key.content,
+					byte_to_uchar(new_backup_key.content),
 					new_backup_key.size,
 					backup.get(),
 					backup_length,
-					backup_key.content,
+					byte_to_uchar(backup_key.content),
 					backup_key.size)};
 			on_error {
 				throw Molch::Exception{status};
@@ -529,8 +529,8 @@ int main(void) {
 
 		auto decrypted_conversation_backup{decrypt_conversation_backup(
 				pool,
-				{backup.get(), gsl::narrow<ssize_t>(backup_length)},
-				{backup_key.content, gsl::narrow<ssize_t>(backup_key.size)})};
+				{uchar_to_byte(backup.get()), narrow(backup_length)},
+				backup_key.span())};
 
 		//copy the backup key
 		backup_key.cloneFrom(new_backup_key);
@@ -542,7 +542,7 @@ int main(void) {
 			auto status{molch_conversation_export(
 					&imported_backup_ptr,
 					&imported_backup_length,
-					alice_conversation.content,
+					byte_to_uchar(alice_conversation.content),
 					alice_conversation.size)};
 			on_error {
 				throw Molch::Exception{status};
@@ -552,8 +552,8 @@ int main(void) {
 
 		auto decrypted_imported_conversation_backup{decrypt_conversation_backup(
 				pool,
-				{imported_backup.get(), gsl::narrow<ssize_t>(imported_backup_length)},
-				{backup_key.content, gsl::narrow<ssize_t>(backup_key.size)})};
+				{uchar_to_byte(imported_backup.get()), narrow(imported_backup_length)},
+				backup_key.span())};
 
 		//compare
 		if (decrypted_conversation_backup != decrypted_imported_conversation_backup) {
@@ -562,13 +562,13 @@ int main(void) {
 
 		//destroy the conversations
 		{
-			auto status{molch_end_conversation(alice_conversation.content, alice_conversation.size, nullptr, nullptr)};
+			auto status{molch_end_conversation(byte_to_uchar(alice_conversation.content), alice_conversation.size, nullptr, nullptr)};
 			on_error {
 				throw Molch::Exception{status};
 			}
 		}
 		{
-			auto status{molch_end_conversation(bob_conversation.content, bob_conversation.size, nullptr, nullptr)};
+			auto status{molch_end_conversation(byte_to_uchar(bob_conversation.content), bob_conversation.size, nullptr, nullptr)};
 			on_error {
 				throw Molch::Exception{status};
 			}
@@ -583,7 +583,7 @@ int main(void) {
 					&conversation_list_ptr,
 					&conversation_list_length,
 					&number_of_conversations,
-					alice_public_identity.content,
+					byte_to_uchar(alice_public_identity.content),
 					alice_public_identity.size)};
 			on_error {
 				throw Molch::Exception{status};
@@ -608,7 +608,7 @@ int main(void) {
 		Buffer success_buffer{"SUCCESS"};
 		size_t printed_status_length{0};
 		auto printed_status{std::unique_ptr<unsigned char,MallocDeleter<unsigned char>>(reinterpret_cast<unsigned char*>(molch_print_status(&printed_status_length, return_status_init())))};
-		if (success_buffer.compareToRaw(printed_status.get(), printed_status_length) != 0) {
+		if (success_buffer.compareToRaw({uchar_to_byte(printed_status.get()), narrow(printed_status_length)}) != 0) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "molch_print_status produces incorrect output."};
 		}
 	} catch (const Molch::Exception& exception) {

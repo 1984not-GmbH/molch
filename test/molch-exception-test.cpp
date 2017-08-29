@@ -59,7 +59,7 @@ int main(void) noexcept {
 			std::cerr << "ERROR: Second error message is incorrect!" << std::endl;
 			return EXIT_FAILURE;
 		}
-		return_status_destroy_errors(&status);
+		return_status_destroy_errors(status);
 
 		std::stringstream stream;
 		static_cast<const Molch::Exception&>(exception).print(stream);

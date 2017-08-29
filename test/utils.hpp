@@ -27,8 +27,9 @@
 
 #include "../lib/buffer.hpp"
 #include "../lib/return-status.h"
+#include "../lib/gsl.hpp"
 
-void print_to_file(const Molch::Buffer& data, const std::string& filename);
+void print_to_file(const gsl::span<const gsl::byte> data, const std::string& filename);
 
 void print_errors(const return_status&  status);
 

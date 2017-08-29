@@ -74,17 +74,12 @@ namespace Molch {
 		//! Import a header_and_message_keystore form a Protobuf-C struct.
 		/*
 		 * \param key_bundles An array of Protobuf-C key-bundles to import from.
-		 * \param bundles_size Size of the array.
 		 */
-		HeaderAndMessageKeyStore(ProtobufCKeyBundle** const & key_bundles, const size_t bundles_size);
+		HeaderAndMessageKeyStore(const gsl::span<ProtobufCKeyBundle*> key_bundles);
 
 		void add(const HeaderKey& header_key, const MessageKey& message_key);
 		//! Export a header_and_message_keystore as Protobuf-C struct.
-		/*!
-		 * \param key_bundles Pointer to a pointer of protobuf-c key bundle structs, it will be allocated in this function.
-		 * \param bundle_size Size of the outputted array.
-		 */
-		void exportProtobuf(ProtobufPool& pool, ProtobufCKeyBundle**& key_bundles, size_t& bundles_size) const;
+		gsl::span<ProtobufCKeyBundle*> exportProtobuf(ProtobufPool& pool) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

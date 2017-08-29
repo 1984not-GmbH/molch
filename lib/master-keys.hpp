@@ -32,6 +32,7 @@
 #include "protobuf.hpp"
 #include "key.hpp"
 #include "protobuf-pool.hpp"
+#include "gsl.hpp"
 
 namespace Molch {
 	class PrivateMasterKeyStorage {
@@ -45,7 +46,8 @@ namespace Molch {
 		mutable std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>> private_keys;
 		/* Internally does the intialization of the buffers creation of the keys */
 		void init();
-		void generate(const Buffer* low_entropy_seed);
+		void generate();
+		void generate(const gsl::span<const gsl::byte> low_entropy_seed);
 
 		/* Manage the memory for the private keys */
 		void lock() const;
@@ -80,7 +82,7 @@ namespace Molch {
 		 * WARNING: Don't use Entropy from the OSs CPRNG as seed!
 		 */
 		MasterKeys();
-		MasterKeys(const Buffer& low_entropy_seed);
+		MasterKeys(const gsl::span<const gsl::byte> low_entropy_seed);
 
 		/*
 		 * import from Protobuf-C
@@ -110,7 +112,7 @@ namespace Molch {
 		/*
 		 * Sign a piece of data. Returns the data and signature in one output buffer.
 		 */
-		void sign(const Buffer& data, Buffer& signed_data) const; //output, length of data + SIGNATURE_SIZE
+		void sign(const gsl::span<const gsl::byte> data, Buffer& signed_data) const; //output, length of data + SIGNATURE_SIZE
 
 		/*! Export a set of master keys into a user Protobuf-C struct
 		 * \param public_signing_key Public pasrt of the signing keypair.

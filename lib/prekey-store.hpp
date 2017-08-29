@@ -35,6 +35,7 @@
 #include "sodium-wrappers.hpp"
 #include "key.hpp"
 #include "protobuf-pool.hpp"
+#include "gsl.hpp"
 
 namespace Molch {
 	class Prekey {
@@ -101,10 +102,8 @@ namespace Molch {
 		 * \returns The status.
 		 */
 		PrekeyStore(
-				ProtobufCPrekey** const& keypairs,
-				const size_t keypairs_length,
-				ProtobufCPrekey** const& deprecated_keypairs,
-				const size_t deprecated_keypairs_length);
+				const gsl::span<ProtobufCPrekey*> keypairs,
+				const gsl::span<ProtobufCPrekey*> deprecated_keypairs);
 
 		/*
 		 * Get a private prekey from it's public key. This will automatically
@@ -133,10 +132,8 @@ namespace Molch {
 		 */
 		void exportProtobuf(
 				ProtobufPool& pool,
-				ProtobufCPrekey**& keypairs,
-				size_t& keypairs_length,
-				ProtobufCPrekey**& deprecated_keypairs,
-				size_t& deprecated_keypairs_length) const;
+				gsl::span<ProtobufCPrekey*>& keypairs,
+				gsl::span<ProtobufCPrekey*>& deprecated_keypairs) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

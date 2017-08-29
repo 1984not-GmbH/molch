@@ -35,22 +35,21 @@ using namespace Molch;
 
 static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
 	ProtobufPool pool;
-	ProtobufCConversation ** conversations{nullptr};
-	size_t length{0};
-	store.exportProtobuf(pool, conversations, length);
+	auto exported_conversations{store.exportProtobuf(pool)};
 
 	std::vector<Buffer> export_buffers;
-	export_buffers.reserve(length);
+	export_buffers.reserve(narrow(exported_conversations.size()));
 
 	//unpack all the conversations
-	for (size_t i{0}; i < length; i++) {
-		auto unpacked_size{conversation__get_packed_size(conversations[i])};
+	for (const auto& conversation : exported_conversations) {
+		auto unpacked_size{conversation__get_packed_size(conversation)};
 		export_buffers.emplace_back(unpacked_size, 0);
-		export_buffers.back().size = conversation__pack(conversations[i], export_buffers.back().content);
+		export_buffers.back().size = conversation__pack(conversation, byte_to_uchar(export_buffers.back().content));
 	}
 
 	return export_buffers;
 }
+
 ConversationStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> buffers) {
 	std::unique_ptr<ProtobufCConversation*[]> conversation_array;
 	if (!buffers.empty()) {
@@ -61,7 +60,7 @@ ConversationStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> 
 	//unpack all the conversations
 	size_t index{0};
 	for (const auto& buffer : buffers) {
-		conversation_array[index] = conversation__unpack(&pool_protoc_allocator, buffer.size, buffer.content);
+		conversation_array[index] = conversation__unpack(&pool_protoc_allocator, buffer.size, byte_to_uchar(buffer.content));
 		if (conversation_array[index] == nullptr) {
 			throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf."};
 		}
@@ -69,13 +68,13 @@ ConversationStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> 
 	}
 
 	//import
-	return ConversationStore(conversation_array.get(), buffers.size());
+	return ConversationStore({conversation_array.get(), narrow(buffers.size())});
 }
 
 static void test_add_conversation(ConversationStore& store) {
 	PrivateKey our_private_identity;
 	PublicKey our_public_identity;
-	auto status{crypto_box_keypair(our_public_identity.data(), our_private_identity.data())};
+	auto status{crypto_box_keypair(byte_to_uchar(our_public_identity.data()), byte_to_uchar(our_private_identity.data()))};
 	if (status != 0) {
 		throw Molch::Exception{status_type::KEYGENERATION_FAILED, "Failed to generate our identity keys."};
 	}
@@ -84,7 +83,7 @@ static void test_add_conversation(ConversationStore& store) {
 
 	PrivateKey our_private_ephemeral;
 	PublicKey our_public_ephemeral;
-	status = crypto_box_keypair(our_public_ephemeral.data(), our_private_ephemeral.data());
+	status = crypto_box_keypair(byte_to_uchar(our_public_ephemeral.data()), byte_to_uchar(our_private_ephemeral.data()));
 	if (status != 0) {
 		throw Molch::Exception{status_type::KEYGENERATION_FAILED, "Failed to generate our ephemeral keys."};
 	}
@@ -119,14 +118,14 @@ void protobuf_empty_store(void) {
 
 	//export it
 	ProtobufPool pool;
-	store.exportProtobuf(pool, exported, exported_length);
+	auto exported_conversations{store.exportProtobuf(pool)};
 
 	if ((exported != nullptr) || (exported_length != 0)) {
 		throw Molch::Exception{status_type::INCORRECT_DATA, "Exported data is not empty."};
 	}
 
 	//import it
-	store = ConversationStore{exported, exported_length};
+	store = ConversationStore{exported_conversations};
 	printf("Successful.\n");
 }
 
@@ -165,7 +164,7 @@ int main(void) {
 		Molch::Key<CONVERSATION_ID_SIZE,Molch::KeyType::Key> last_id;
 		for (size_t i{0}; i < (conversation_list.size / CONVERSATION_ID_SIZE); i++) {
 			Molch::Key<CONVERSATION_ID_SIZE,Molch::KeyType::Key> current_id;
-			current_id.set(conversation_list.content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE);
+			current_id.set({conversation_list.content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE});
 			auto found_node{store.find(current_id)};
 			if (found_node == nullptr) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Exported list of conversations was incorrect."};

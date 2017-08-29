@@ -40,21 +40,21 @@ int main(void) noexcept {
 		//some random user input (idiot bashing his head on the keyboard)
 		Buffer spice{"aäipoewur+ü 093+2ß3+2ü+ ß09234rt #2ß 0iw4eräp9ui23+ 03943"};
 		printf("\"Random\" input from the user (%zu Bytes):\n", spice.size);
-		printf("String: %.*s\n", static_cast<int>(spice.size), spice.content);
+		printf("String: %.*s\n", static_cast<int>(spice.size), byte_to_uchar(spice.content));
 		printf("Hex:\n");
 		spice.printHex(std::cout) << std::endl;
 
 		//fill buffer with spiced random data
-		Buffer output1{42, 0};
-		spiced_random(output1, spice, output1.capacity());
+		Buffer output1{42, 42};
+		spiced_random(output1.span(), spice.span());
 
 		printf("Spiced random data 1 (%zu Bytes):\n", output1.size);
 		output1.printHex(std::cout) << std::endl;
 
 
 		//fill buffer with spiced random data
-		Buffer output2{42, 0};
-		spiced_random(output2, spice, output2.capacity());
+		Buffer output2{42, 42};
+		spiced_random(output2.span(), spice.span());
 
 		printf("Spiced random data 2 (%zu Bytes):\n", output2.size);
 		output2.printHex(std::cout);
@@ -67,8 +67,8 @@ int main(void) noexcept {
 
 		//don't crash with output length 0
 		try {
-			spiced_random(output1, spice, 0);
-		} catch (const Molch::Exception& exception) {
+			spiced_random({nullptr}, spice.span());
+		} catch (const std::exception& exception) {
 			//on newer libsodium versions, output lengths of zero aren't supported
 		}
 	} catch (const Molch::Exception& exception) {

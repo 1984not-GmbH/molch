@@ -45,8 +45,8 @@ namespace Molch {
 		}
 
 		//otherwise replace the exiting one
-		auto existing_index{gsl::narrow<size_t>(existing_conversation - std::begin(this->conversations))};
-		this->conversations[existing_index] = std::move(conversation);
+		auto existing_index{existing_conversation - std::begin(this->conversations)};
+		this->conversations[narrow(existing_index)] = std::move(conversation);
 	}
 
 	void ConversationStore::remove(const Conversation * const node) {
@@ -129,9 +129,9 @@ namespace Molch {
 		Buffer list{this->conversations.size() * CONVERSATION_ID_SIZE, 0};
 
 		for (const auto& conversation : this->conversations) {
-			auto index{gsl::narrow<size_t>(&conversation - &(*this->conversations.cbegin()))};
+			auto index{&conversation - &(*this->conversations.cbegin())};
 			list.copyFromRaw(
-				CONVERSATION_ID_SIZE * index,
+				CONVERSATION_ID_SIZE * narrow(index),
 				conversation.id.data(),
 				0,
 				conversation.id.size());
@@ -140,35 +140,30 @@ namespace Molch {
 		return list;
 	}
 
-	void ConversationStore::exportProtobuf(ProtobufPool& pool, ProtobufCConversation**& conversations, size_t& length) const {
+	gsl::span<ProtobufCConversation*> ConversationStore::exportProtobuf(ProtobufPool& pool) const {
 		if (this->conversations.empty()) {
-			conversations = nullptr;
-			length = 0;
-
-			return;
+			return {nullptr};
 		}
 
 		//export the conversations
-		conversations = pool.allocate<ProtobufCConversation*>(this->conversations.size());
+		auto conversations{pool.allocate<ProtobufCConversation*>(this->conversations.size())};
 		size_t index{0};
 		for (const auto& conversation : this->conversations) {
 			conversations[index] = conversation.exportProtobuf(pool);
 			index++;
 		}
-		length = this->conversations.size();
+
+		return {conversations, narrow(this->conversations.size())};
 	}
 
-	ConversationStore::ConversationStore(ProtobufCConversation** const& conversations, const size_t length) {
-		Expects(((length > 0) && (conversations != nullptr))
-				|| ((length == 0) && (conversations == nullptr)));
-
+	ConversationStore::ConversationStore(const gsl::span<ProtobufCConversation*> conversations) {
 		//import all the conversations
-		for (size_t i{0}; i < length; i++) {
-			if (conversations[i] == nullptr) {
+		for (const auto& conversation : conversations) {
+			if (conversation == nullptr) {
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Array of conversation has an empty element."};
 			}
 
-			this->conversations.emplace_back(*conversations[i]);
+			this->conversations.emplace_back(*conversation);
 		}
 	}
 

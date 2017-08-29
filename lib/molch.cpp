@@ -98,12 +98,12 @@ static Buffer create_prekey_list(const PublicSigningKey& public_signing_key) {
 	unsigned_prekey_list.copyFromRaw(0, public_identity_key.data(), 0, PUBLIC_KEY_SIZE);
 
 	//get the prekeys
-	Buffer prekeys{unsigned_prekey_list.content + PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE};
+	Buffer prekeys{gsl::span<gsl::byte>{unsigned_prekey_list.content + PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE}};
 	user->prekeys.list(prekeys);
 
 	//add the expiration date
 	int64_t expiration_date{time(nullptr) + 3600 * 24 * 31 * 3}; //the prekey list will expire in 3 months
-	Buffer big_endian_expiration_date{unsigned_prekey_list.content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t)};
+	gsl::span<gsl::byte> big_endian_expiration_date{unsigned_prekey_list.content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t)};
 	to_big_endian(expiration_date, big_endian_expiration_date);
 	unsigned_prekey_list.size = unsigned_prekey_list.capacity();
 
@@ -113,7 +113,7 @@ static Buffer create_prekey_list(const PublicSigningKey& public_signing_key) {
 			0,
 			&malloc,
 			&free};
-	user->master_keys.sign(unsigned_prekey_list, prekey_list);
+	user->master_keys.sign(unsigned_prekey_list.span(), prekey_list);
 
 	return prekey_list;
 }
@@ -179,14 +179,13 @@ return_status molch_create_user(
 		}
 
 		//create the user
-		Buffer random_data_buffer{random_data, random_data_length};
 		PublicSigningKey public_master_key_key;
 		if (random_data_length != 0) {
-			users->add(Molch::User(random_data_buffer, &public_master_key_key));
+			users->add(Molch::User({uchar_to_byte(random_data), narrow(random_data_length)}, &public_master_key_key));
 		} else {
 			users->add(Molch::User(&public_master_key_key));
 		}
-		public_master_key_key.copyTo(public_master_key, PUBLIC_MASTER_KEY_SIZE);
+		public_master_key_key.copyTo({uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE});
 
 		user_store_created = true;
 
@@ -204,7 +203,7 @@ return_status molch_create_user(
 
 		//move the prekey list out of the buffer
 		*prekey_list_length = prekey_list_buffer.size;
-		*prekey_list = prekey_list_buffer.release();
+		*prekey_list = byte_to_uchar(prekey_list_buffer.release());
 	} catch (const Exception& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
@@ -216,7 +215,7 @@ cleanup:
 	on_error {
 		if (user_store_created) {
 			return_status new_status = molch_destroy_user(public_master_key, public_master_key_length, nullptr, nullptr);
-			return_status_destroy_errors(&new_status);
+			return_status_destroy_errors(new_status);
 		}
 	}
 
@@ -248,7 +247,7 @@ return_status molch_destroy_user(
 		}
 
 		PublicSigningKey public_master_key_key;
-		public_master_key_key.set(public_master_key, PUBLIC_MASTER_KEY_SIZE);
+		public_master_key_key.set({uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE});
 		users->remove(public_master_key_key);
 
 		if (backup != nullptr) {
@@ -318,7 +317,7 @@ return_status molch_list_users(
 			*user_list = nullptr;
 		} else {
 			*user_list = throwing_malloc<unsigned char>(*count * PUBLIC_MASTER_KEY_SIZE);
-			std::copy(list.content, list.content + list.size, *user_list);
+			std::copy(list.content, list.content + list.size, uchar_to_byte(*user_list));
 		}
 
 		*user_list_length = list.size;
@@ -348,20 +347,16 @@ cleanup:
 molch_message_type molch_get_message_type(
 		const unsigned char * const packet,
 		const size_t packet_length) {
-
 	molch_message_type packet_type;
 
 	try {
-		//create a buffer for the packet
-		Buffer packet_buffer{packet, packet_length};
-
 		uint32_t current_protocol_version;
 		uint32_t highest_supported_protocol_version;
 		packet_get_metadata_without_verification(
 			current_protocol_version,
 			highest_supported_protocol_version,
 			packet_type,
-			packet_buffer,
+			{uchar_to_byte(packet), narrow(packet_length)},
 			nullptr,
 			nullptr,
 			nullptr);
@@ -377,19 +372,18 @@ molch_message_type molch_get_message_type(
  * and choose a prekey.
  */
 static void verify_prekey_list(
-		const unsigned char * const prekey_list,
-		const size_t prekey_list_length,
+		const gsl::span<const gsl::byte> prekey_list,
 		PublicKey& public_identity_key, //output, PUBLIC_KEY_SIZE
 		PublicSigningKey& public_signing_key) {
 	//verify the signature
-	Buffer verified_prekey_list{prekey_list_length - SIGNATURE_SIZE, prekey_list_length - SIGNATURE_SIZE};
+	Buffer verified_prekey_list{narrow(prekey_list.size()) - SIGNATURE_SIZE, narrow(prekey_list.size()) - SIGNATURE_SIZE};
 	unsigned long long verified_length;
 	auto status{crypto_sign_open(
-			verified_prekey_list.content,
+			byte_to_uchar(verified_prekey_list.content),
 			&verified_length,
-			prekey_list,
-			gsl::narrow<unsigned long long>(prekey_list_length),
-			public_signing_key.data())};
+			byte_to_uchar(prekey_list.data()),
+			gsl::narrow<unsigned long long>(prekey_list.size()),
+			byte_to_uchar(public_signing_key.data()))};
 	if (status != 0) {
 		throw Exception{status_type::VERIFICATION_FAILED, "Failed to verify prekey list signature."};
 	}
@@ -402,7 +396,7 @@ static void verify_prekey_list(
 
 	//get the expiration date
 	int64_t expiration_date;
-	Buffer big_endian_expiration_date{verified_prekey_list.content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t)};
+	gsl::span<gsl::byte> big_endian_expiration_date{verified_prekey_list.content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t)};
 	from_big_endian(expiration_date, big_endian_expiration_date);
 
 	//make sure the prekey list isn't too old
@@ -465,7 +459,7 @@ return_status molch_start_send_conversation(
 
 		//get the user that matches the public signing key of the sender
 		PublicSigningKey sender_public_master_key_key;
-		sender_public_master_key_key.set(sender_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+		sender_public_master_key_key.set({uchar_to_byte(sender_public_master_key), PUBLIC_MASTER_KEY_SIZE});
 		auto user{users->find(sender_public_master_key_key)};
 		if (user == nullptr) {
 			throw Exception{status_type::NOT_FOUND, "User not found."};
@@ -473,12 +467,11 @@ return_status molch_start_send_conversation(
 
 		//get the receivers public ephemeral and identity
 		PublicKey receiver_public_identity;
-		Buffer receiver_public_master_key_buffer{receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE};
+		Buffer receiver_public_master_key_buffer{{uchar_to_byte(receiver_public_master_key), PUBLIC_MASTER_KEY_SIZE}};
 		PublicSigningKey receiver_public_master_key_key;
-		receiver_public_master_key_key.set(receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+		receiver_public_master_key_key.set({uchar_to_byte(receiver_public_master_key), PUBLIC_MASTER_KEY_SIZE});
 		verify_prekey_list(
-				prekey_list,
-				prekey_list_length,
+				{uchar_to_byte(prekey_list), narrow(prekey_list_length)},
 				receiver_public_identity,
 				receiver_public_master_key_key);
 
@@ -486,11 +479,10 @@ return_status molch_start_send_conversation(
 		MasterKeys::Unlocker unlocker{user->master_keys};
 
 		//create the conversation and encrypt the message
-		Buffer prekeys{prekey_list + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t)};
-		Buffer message_buffer{message, message_length};
+		Buffer prekeys{{uchar_to_byte(prekey_list) + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, gsl::narrow<ptrdiff_t>(prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t))}};
 		Buffer packet_buffer;
 		Molch::Conversation conversation{
-			message_buffer,
+			{uchar_to_byte(message), narrow(message_length)},
 			packet_buffer,
 			user->master_keys.public_identity_key,
 			*user->master_keys.private_identity_key,
@@ -498,7 +490,7 @@ return_status molch_start_send_conversation(
 			prekeys};
 
 		//copy the conversation id
-		conversation.id.copyTo(conversation_id, CONVERSATION_ID_SIZE);
+		conversation.id.copyTo({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
 
 		user->conversations.add(std::move(conversation));
 
@@ -517,7 +509,7 @@ return_status molch_start_send_conversation(
 		}
 
 		*packet_length = malloced_packet.size;
-		*packet = malloced_packet.release();
+		*packet = byte_to_uchar(malloced_packet.release());
 	} catch (const Exception& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
@@ -578,7 +570,9 @@ cleanup:
 
 			//get the user that matches the public signing key of the receiver
 			PublicSigningKey receiver_public_master_key_key;
-			receiver_public_master_key_key.set(receiver_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+			receiver_public_master_key_key.set({
+					uchar_to_byte(receiver_public_master_key),
+					PUBLIC_MASTER_KEY_SIZE});
 			auto user{users->find(receiver_public_master_key_key)};
 			if (user == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "User not found in the user store."};
@@ -588,17 +582,16 @@ cleanup:
 			MasterKeys::Unlocker unlocker{user->master_keys};
 
 			//create the conversation
-			Buffer packet_buffer{packet, packet_length};
 			Buffer message_buffer;
 			Molch::Conversation conversation{
-				packet_buffer,
+				{uchar_to_byte(packet), narrow(packet_length)},
 				message_buffer,
 				user->master_keys.public_identity_key,
 				*user->master_keys.private_identity_key,
 				user->prekeys};
 
 			//copy the conversation id
-			conversation.id.copyTo(conversation_id, CONVERSATION_ID_SIZE);
+			conversation.id.copyTo({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
 
 			//create the prekey list
 			auto prekey_list_buffer{create_prekey_list(receiver_public_master_key_key)};
@@ -621,10 +614,10 @@ cleanup:
 			}
 
 			*message_length = malloced_message.size;
-			*message = malloced_message.release();
+			*message = byte_to_uchar(malloced_message.release());
 
 			*prekey_list_length = prekey_list_buffer.size;
-			*prekey_list = prekey_list_buffer.release();
+			*prekey_list = byte_to_uchar(prekey_list_buffer.release());
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
 			goto cleanup;
@@ -669,16 +662,15 @@ cleanup:
 
 			//find the conversation
 			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
-			conversation_id_key.set(conversation_id, CONVERSATION_ID_SIZE);
+			conversation_id_key.set({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
 			Molch::User *user;
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "Failed to find a conversation for the given ID."};
 			}
 
-			Buffer message_buffer{message, message_length};
 			auto packet_buffer{conversation->send(
-					message_buffer,
+					{uchar_to_byte(message), narrow(message_length)},
 					nullptr,
 					nullptr,
 					nullptr)};
@@ -690,7 +682,7 @@ cleanup:
 			if (conversation_backup != nullptr) {
 				*conversation_backup = nullptr;
 				if (conversation_backup_length != nullptr) {
-					auto status{molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id.data(), conversation->id.size())};
+					auto status{molch_conversation_export(conversation_backup, conversation_backup_length, byte_to_uchar(conversation->id.data()), conversation->id.size())};
 					on_error {
 						throw Exception{status};
 					}
@@ -698,7 +690,7 @@ cleanup:
 			}
 
 			*packet_length = malloced_packet.size;
-			*packet = malloced_packet.release();
+			*packet = byte_to_uchar(malloced_packet.release());
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
 			goto cleanup;
@@ -748,16 +740,15 @@ cleanup:
 
 			//find the conversation
 			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
-			conversation_id_key.set(conversation_id, CONVERSATION_ID_SIZE);
+			conversation_id_key.set({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
 			Molch::User* user;
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "Failed to find conversation with the given ID."};
 			}
 
-			Buffer packet_buffer{packet, packet_length};
 			auto message_buffer{conversation->receive(
-					packet_buffer,
+					{uchar_to_byte(packet), narrow(packet_length)},
 					*receive_message_number,
 					*previous_receive_message_number)};
 
@@ -768,7 +759,7 @@ cleanup:
 			if (conversation_backup != nullptr) {
 				*conversation_backup = nullptr;
 				if (conversation_backup_length != nullptr) {
-					auto status{molch_conversation_export(conversation_backup, conversation_backup_length, conversation->id.data(), conversation->id.size())};
+					auto status{molch_conversation_export(conversation_backup, conversation_backup_length, byte_to_uchar(conversation->id.data()), conversation->id.size())};
 					on_error {
 						throw Exception{status};
 					}
@@ -776,7 +767,7 @@ cleanup:
 			}
 
 			*message_length = malloced_message.size;
-			*message = malloced_message.release();
+			*message = byte_to_uchar(malloced_message.release());
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
 			goto cleanup;
@@ -809,7 +800,7 @@ cleanup:
 			//find the conversation
 			Molch::User *user{nullptr};
 			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
-			conversation_id_key.set(conversation_id, CONVERSATION_ID_SIZE);
+			conversation_id_key.set({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "Couldn't find conversation."};
@@ -874,7 +865,7 @@ cleanup:
 			}
 
 			PublicSigningKey user_public_master_key_key;
-			user_public_master_key_key.set(user_public_master_key, PUBLIC_MASTER_KEY_SIZE);
+			user_public_master_key_key.set({uchar_to_byte(user_public_master_key), PUBLIC_MASTER_KEY_SIZE});
 			auto user{users->find(user_public_master_key_key)};
 			if (user == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "No user found for the given public identity."};
@@ -895,7 +886,7 @@ cleanup:
 				Buffer malloced_conversation_list{conversation_list_buffer.size, 0, &malloc, &free};
 				malloced_conversation_list.cloneFrom(conversation_list_buffer);
 				*conversation_list_length = malloced_conversation_list.size;
-				*conversation_list = malloced_conversation_list.release();
+				*conversation_list = byte_to_uchar(malloced_conversation_list.release());
 			}
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
@@ -924,7 +915,13 @@ cleanup:
 	 * Don't forget to free the output after use.
 	 */
 	char *molch_print_status(size_t * const output_length, return_status status) {
-		return return_status_print(&status, output_length);
+		if (output_length == nullptr) {
+			return nullptr;
+		}
+
+		auto printed{return_status_print(status)};
+		*output_length = narrow(printed.size());
+		return printed.data();
 	}
 
 	/*
@@ -940,7 +937,11 @@ cleanup:
 	 * Destroy a return status (only needs to be called if there was an error).
 	 */
 	void molch_destroy_return_status(return_status * const status) {
-		return_status_destroy_errors(status);
+		if (status == nullptr) {
+			return;
+		}
+
+		return_status_destroy_errors(*status);
 	}
 
 	/*
@@ -981,7 +982,7 @@ cleanup:
 			//find the conversation
 			Molch::User *user{nullptr};
 			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
-			conversation_id_key.set(conversation_id, CONVERSATION_ID_SIZE);
+			conversation_id_key.set({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "Failed to find the conversation."};
@@ -993,10 +994,10 @@ cleanup:
 
 			//pack the struct
 			auto conversation_size{conversation__get_packed_size(conversation_struct)};
-			auto conversation_buffer_content{pool.allocate<unsigned char>(conversation_size)};
-			Buffer conversation_buffer{conversation_buffer_content, conversation_size, 0};
+			auto conversation_buffer_content{pool.allocate<gsl::byte>(conversation_size)};
+			Buffer conversation_buffer{gsl::span<gsl::byte>{conversation_buffer_content, narrow(conversation_size)}, 0};
 
-			conversation_buffer.size = conversation__pack(conversation_struct, conversation_buffer.content);
+			conversation_buffer.size = conversation__pack(conversation_struct, byte_to_uchar(conversation_buffer.content));
 			if (conversation_buffer.size != conversation_size) {
 				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c."};
 			}
@@ -1011,11 +1012,11 @@ cleanup:
 			//encrypt the backup
 			GlobalBackupKeyUnlocker unlocker;
 			auto status{crypto_secretbox_easy(
-					backup_buffer.content,
-					conversation_buffer.content,
+					byte_to_uchar(backup_buffer.content),
+					byte_to_uchar(conversation_buffer.content),
 					conversation_buffer.size,
-					backup_nonce.content,
-					global_backup_key->data())};
+					byte_to_uchar(backup_nonce.content),
+					byte_to_uchar(global_backup_key->data()))};
 			if (status != 0) {
 				backup_buffer.size = 0;
 				throw Exception{status_type::ENCRYPT_ERROR, "Failed to enrypt conversation state."};
@@ -1028,22 +1029,22 @@ cleanup:
 			encrypted_backup_struct.backup_type = ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP;
 			//nonce
 			encrypted_backup_struct.has_encrypted_backup_nonce = true;
-			encrypted_backup_struct.encrypted_backup_nonce.data = backup_nonce.content;
+			encrypted_backup_struct.encrypted_backup_nonce.data = byte_to_uchar(backup_nonce.content);
 			encrypted_backup_struct.encrypted_backup_nonce.len = backup_nonce.size;
 			//encrypted backup
 			encrypted_backup_struct.has_encrypted_backup = true;
-			encrypted_backup_struct.encrypted_backup.data = backup_buffer.content;
+			encrypted_backup_struct.encrypted_backup.data = byte_to_uchar(backup_buffer.content);
 			encrypted_backup_struct.encrypted_backup.len = backup_buffer.size;
 
 			//now pack the entire backup
 			const auto encrypted_backup_size{encrypted_backup__get_packed_size(&encrypted_backup_struct)};
 			Buffer malloced_encrypted_backup{encrypted_backup_size, 0, &malloc, &free};
-			malloced_encrypted_backup.size = encrypted_backup__pack(&encrypted_backup_struct, malloced_encrypted_backup.content);
+			malloced_encrypted_backup.size = encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.content));
 			if (malloced_encrypted_backup.size != encrypted_backup_size) {
 				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation."};
 			}
 			*backup_length = malloced_encrypted_backup.size;
-			*backup = malloced_encrypted_backup.release();
+			*backup = byte_to_uchar(malloced_encrypted_backup.release());
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
 			goto cleanup;
@@ -1113,16 +1114,16 @@ cleanup:
 			}
 
 			ProtobufPool pool;
-			auto decrypted_backup_content{pool.allocate<unsigned char>(
+			auto decrypted_backup_content{pool.allocate<gsl::byte>(
 						encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
 			Buffer decrypted_backup{
-				decrypted_backup_content,
-				encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES,
+				gsl::span<gsl::byte>{decrypted_backup_content,
+				narrow(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)},
 				encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES};
 
 			//decrypt the backup
 			auto status_int{crypto_secretbox_open_easy(
-					decrypted_backup.content,
+					byte_to_uchar(decrypted_backup.content),
 					encrypted_backup_struct->encrypted_backup.data,
 					encrypted_backup_struct->encrypted_backup.len,
 					encrypted_backup_struct->encrypted_backup_nonce.data,
@@ -1133,7 +1134,7 @@ cleanup:
 
 			//unpack the struct
 			auto pool_protoc_allocator{pool.getProtobufCAllocator()};
-			auto conversation_struct{conversation__unpack(&pool_protoc_allocator, decrypted_backup.size, decrypted_backup.content)};
+			auto conversation_struct{conversation__unpack(&pool_protoc_allocator, decrypted_backup.size, byte_to_uchar(decrypted_backup.content))};
 			if (conversation_struct == nullptr) {
 				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack conversations protobuf-c."};
 			}
@@ -1142,7 +1143,9 @@ cleanup:
 			ProtobufCConversation conversation{*conversation_struct};
 			Molch::User* containing_user{nullptr};
 			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
-			conversation_id_key.set(conversation_struct->id.data, conversation_struct->id.len);
+			conversation_id_key.set({
+					uchar_to_byte(conversation_struct->id.data),
+					narrow(conversation_struct->id.len)});
 			auto existing_conversation{users->findConversation(containing_user, conversation_id_key)};
 			if (existing_conversation == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "Containing store not found."};
@@ -1196,14 +1199,16 @@ cleanup:
 			backup__init(backup_struct);
 
 			//export the conversation
-			users->exportProtobuf(pool, backup_struct->users, backup_struct->n_users);
+			auto exported_users{users->exportProtobuf(pool)};
+			backup_struct->users = exported_users.data();
+			backup_struct->n_users = narrow(exported_users.size());
 
 			//pack the struct
 			auto backup_struct_size{backup__get_packed_size(backup_struct)};
-			auto users_buffer_content{pool.allocate<unsigned char>(backup_struct_size)};
-			Buffer users_buffer{users_buffer_content, backup_struct_size, 0};
+			auto users_buffer_content{pool.allocate<gsl::byte>(backup_struct_size)};
+			Buffer users_buffer{gsl::span<gsl::byte>{users_buffer_content, narrow(backup_struct_size)}, 0};
 
-			users_buffer.size = backup__pack(backup_struct, users_buffer.content);
+			users_buffer.size = backup__pack(backup_struct, byte_to_uchar(users_buffer.content));
 			if (users_buffer.size != backup_struct_size) {
 				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c."};
 			}
@@ -1217,11 +1222,11 @@ cleanup:
 
 			//encrypt the backup
 			auto status{crypto_secretbox_easy(
-					backup_buffer.content,
-					users_buffer.content,
+					byte_to_uchar(backup_buffer.content),
+					byte_to_uchar(users_buffer.content),
 					users_buffer.size,
-					backup_nonce.content,
-					global_backup_key->data())};
+					byte_to_uchar(backup_nonce.content),
+					byte_to_uchar(global_backup_key->data()))};
 			if (status != 0) {
 				throw Exception{status_type::ENCRYPT_ERROR, "Failed to enrypt conversation state."};
 			}
@@ -1235,22 +1240,22 @@ cleanup:
 			encrypted_backup_struct.backup_type = ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP;
 			//nonce
 			encrypted_backup_struct.has_encrypted_backup_nonce = true;
-			encrypted_backup_struct.encrypted_backup_nonce.data = backup_nonce.content;
+			encrypted_backup_struct.encrypted_backup_nonce.data = byte_to_uchar(backup_nonce.content);
 			encrypted_backup_struct.encrypted_backup_nonce.len = backup_nonce.size;
 			//encrypted backup
 			encrypted_backup_struct.has_encrypted_backup = true;
-			encrypted_backup_struct.encrypted_backup.data = backup_buffer.content;
+			encrypted_backup_struct.encrypted_backup.data = byte_to_uchar(backup_buffer.content);
 			encrypted_backup_struct.encrypted_backup.len = backup_buffer.size;
 
 			//now pack the entire backup
 			const auto encrypted_backup_size{encrypted_backup__get_packed_size(&encrypted_backup_struct)};
 			Buffer malloced_encrypted_backup{encrypted_backup_size, 0, &malloc, &free};
-			malloced_encrypted_backup.size = encrypted_backup__pack(&encrypted_backup_struct, malloced_encrypted_backup.content);
+			malloced_encrypted_backup.size = encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.content));
 			if (malloced_encrypted_backup.size != encrypted_backup_size) {
 				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation."};
 			}
 			*backup_length = malloced_encrypted_backup.size;
-			*backup = malloced_encrypted_backup.release();
+			*backup = byte_to_uchar(malloced_encrypted_backup.release());
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
 			goto cleanup;
@@ -1326,16 +1331,16 @@ cleanup:
 			}
 
 			ProtobufPool pool;
-			auto decrypted_backup_content{pool.allocate<unsigned char>(
+			auto decrypted_backup_content{pool.allocate<gsl::byte>(
 					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
-			Buffer decrypted_backup{
+			Buffer decrypted_backup{gsl::span<gsl::byte>{
 				decrypted_backup_content,
-				encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES,
+				narrow(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)},
 				encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES};
 
 			//decrypt the backup
 			auto status_int{crypto_secretbox_open_easy(
-					decrypted_backup.content,
+					byte_to_uchar(decrypted_backup.content),
 					encrypted_backup_struct->encrypted_backup.data,
 					encrypted_backup_struct->encrypted_backup.len,
 					encrypted_backup_struct->encrypted_backup_nonce.data,
@@ -1346,13 +1351,13 @@ cleanup:
 
 			//unpack the struct
 			auto pool_protoc_allocator{pool.getProtobufCAllocator()};
-			auto backup_struct{backup__unpack(&pool_protoc_allocator, decrypted_backup.size, decrypted_backup.content)};
+			auto backup_struct{backup__unpack(&pool_protoc_allocator, decrypted_backup.size, byte_to_uchar(decrypted_backup.content))};
 			if (backup_struct == nullptr) {
 				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack backups protobuf-c."};
 			}
 
 			//import the user store
-			auto store{std::make_unique<UserStore>(backup_struct->users, backup_struct->n_users)};
+			auto store{std::make_unique<UserStore>(gsl::span<ProtobufCUser*>{backup_struct->users, narrow(backup_struct->n_users)})};
 
 			//update the backup key
 			auto status{molch_update_backup_key(new_backup_key, new_backup_key_length)};
@@ -1399,12 +1404,14 @@ cleanup:
 			}
 
 			PublicSigningKey public_signing_key_key;
-			public_signing_key_key.set(public_master_key, PUBLIC_MASTER_KEY_SIZE);
+			public_signing_key_key.set({
+					uchar_to_byte(public_master_key),
+					PUBLIC_MASTER_KEY_SIZE});
 			auto prekey_list_buffer{create_prekey_list(public_signing_key_key)};
 			Buffer malloced_prekey_list{prekey_list_buffer.size, 0, &malloc, &free};
 			malloced_prekey_list.cloneFrom(prekey_list_buffer);
 			*prekey_list_length = malloced_prekey_list.size;
-			*prekey_list = malloced_prekey_list.release();
+			*prekey_list = byte_to_uchar(malloced_prekey_list.release());
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
 			goto cleanup;
@@ -1448,7 +1455,7 @@ cleanup:
 
 			global_backup_key->fillRandom();
 
-			global_backup_key->copyTo(new_key, BACKUP_KEY_SIZE);
+			global_backup_key->copyTo({uchar_to_byte(new_key), BACKUP_KEY_SIZE});
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
 			goto cleanup;

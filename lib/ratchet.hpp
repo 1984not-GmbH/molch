@@ -63,8 +63,8 @@ namespace Molch {
 
 		static void stageSkippedHeaderAndMessageKeys(
 			HeaderAndMessageKeyStore& staging_area,
-			ChainKey * const output_chain_key, //output, CHAIN_KEY_SIZE
-			MessageKey * const output_message_key, //output, MESSAGE_KEY_SIZE
+			ChainKey * const output_chain_key, //output, optional
+			MessageKey * const output_message_key, //output, optional
 			const HeaderKey& current_header_key,
 			const uint32_t current_message_number,
 			const uint32_t future_message_number,
