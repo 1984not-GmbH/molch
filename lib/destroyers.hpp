@@ -24,29 +24,11 @@
 #ifndef LIB_DESTROYERS_H
 #define LIB_DESTROYERS_H
 
-#include "buffer.hpp"
-
 namespace Molch {
 	template <typename T>
 	inline void free_and_null_if_valid(T*& pointer) {
 		if (pointer != nullptr) {
 			free(pointer);
-			pointer = nullptr;
-		}
-	}
-
-	template <typename T>
-	inline void sodium_free_and_null_if_valid(T*& pointer) {
-		if (pointer != nullptr) {
-			sodium_free(pointer);
-			pointer = nullptr;
-		}
-	}
-
-	template <typename T>
-	inline void zeroed_free_and_null_if_valid(T*& pointer) {
-		if (pointer != nullptr) {
-			zeroed_free(pointer);
 			pointer = nullptr;
 		}
 	}
