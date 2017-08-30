@@ -198,7 +198,7 @@ int main(void) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to detect too long write to buffer."};
 		}
 
-		random.setReadOnly(true);
+		random.setReadOnly();
 		detected = false;
 		try {
 			random.fillRandom(4);
