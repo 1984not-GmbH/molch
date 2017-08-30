@@ -39,7 +39,7 @@ namespace Molch {
 		Expects(!output.empty() && !low_entropy_spice.empty());
 
 		//buffer that contains the random data from the OS
-		Buffer os_random{narrow(output.size()), narrow(output.size()), &sodium_malloc, &sodium_free};
+		SodiumBuffer os_random{narrow(output.size()), narrow(output.size())};
 		os_random.fillRandom(narrow(output.size()));
 
 		//buffer that contains a random salt
@@ -47,7 +47,7 @@ namespace Molch {
 		salt.fillRandom();
 
 		//derive random data from the random spice
-		Buffer spice{narrow(output.size()), narrow(output.size()), &sodium_malloc, &sodium_free};
+		SodiumBuffer spice{narrow(output.size()), narrow(output.size())};
 		auto status_int{crypto_pwhash(
 				byte_to_uchar(spice.data()),
 				spice.size(),
@@ -62,7 +62,11 @@ namespace Molch {
 		}
 
 		//now combine the spice with the OS provided random data.
-		os_random.xorWith(spice);
+		auto spice_iterator{std::cbegin(spice)};
+		for (auto& byte : os_random) {
+			byte ^= *spice_iterator;
+			++spice_iterator;
+		}
 
 		//copy the random data to the output
 		os_random.cloneToRaw(output);

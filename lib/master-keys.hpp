@@ -112,7 +112,7 @@ namespace Molch {
 		/*
 		 * Sign a piece of data. Returns the data and signature in one output buffer.
 		 */
-		void sign(const gsl::span<const gsl::byte> data, Buffer& signed_data) const; //output, length of data + SIGNATURE_SIZE
+		void sign(const gsl::span<const gsl::byte> data, gsl::span<gsl::byte> signed_data) const; //output, length of data + SIGNATURE_SIZE
 
 		/*! Export a set of master keys into a user Protobuf-C struct
 		 * \param public_signing_key Public pasrt of the signing keypair.

@@ -52,13 +52,14 @@ namespace Molch {
 	template <class T>
 	class SodiumAllocator {
 	public:
-		typedef T value_type;
+		using value_type = T;
 
 		SodiumAllocator() = default;
 		template <class U>
 		constexpr SodiumAllocator(const SodiumAllocator<U>&) noexcept {}
 
-		T* allocate(size_t elements) {
+		T* allocate(size_t elements, const T* hint = nullptr) {
+			(void)hint;
 			return throwing_sodium_malloc<T>(elements);
 		}
 		void deallocate(T* pointer, size_t elements) noexcept {

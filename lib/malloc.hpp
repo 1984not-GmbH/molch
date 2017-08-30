@@ -44,7 +44,8 @@ namespace Molch {
 		template <typename U>
 		constexpr MallocAllocator(const MallocAllocator<U>&) noexcept {}
 
-		T* allocate(size_t elements) {
+		T* allocate(size_t elements, const T* hint = nullptr) {
+			(void)hint;
 			return throwing_malloc<T>(elements);
 		}
 

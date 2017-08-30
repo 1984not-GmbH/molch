@@ -133,11 +133,9 @@ namespace Molch {
 
 		ReadWriteUnlocker unlocker{*this};
 
-		Buffer high_entropy_seed{
+		SodiumBuffer high_entropy_seed{
 				crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES,
-				crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES,
-				&sodium_malloc,
-				&sodium_free};
+				crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES};
 		spiced_random(high_entropy_seed.span(), low_entropy_seed);
 
 		//generate the signing keypair
@@ -182,10 +180,8 @@ namespace Molch {
 	 */
 	void MasterKeys::sign(
 			const gsl::span<const gsl::byte> data,
-			Buffer& signed_data) const { //output, length of data + SIGNATURE_SIZE
-		Expects(signed_data.fits(narrow(data.size()) + SIGNATURE_SIZE));
-
-		signed_data.setSize(0);
+			gsl::span<gsl::byte> signed_data) const { //output, length of data + SIGNATURE_SIZE
+		Expects(signed_data.size() == (data.size() + SIGNATURE_SIZE));
 
 		Unlocker unlocker{*this};
 		unsigned long long signed_message_length;
@@ -198,8 +194,6 @@ namespace Molch {
 		if (status != 0) {
 			throw Exception{status_type::SIGN_ERROR, "Failed to sign message."};
 		}
-
-		signed_data.setSize(gsl::narrow<size_t>(signed_message_length));
 	}
 
 	void MasterKeys::exportProtobuf(

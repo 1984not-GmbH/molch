@@ -54,7 +54,7 @@ int main(void) {
 		std::cout << "Successfully tested buffer comparison ..." << std::endl;
 
 		//test buffer with custom allocator
-		Buffer custom{10, 2, &sodium_malloc, &sodium_free};
+		SodiumBuffer custom{10, 2};
 
 		//create a new buffer
 		Buffer buffer1{14, 10};
@@ -209,31 +209,6 @@ int main(void) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to prevent write to readonly buffer."};
 		}
 
-		//test xor
-		Buffer text{"Hello World!"};
-		Buffer to_xor{text.size(), text.size()};
-		to_xor.cloneFrom(text);
-
-		Buffer random2{text.size(), text.size()};
-		random2.fillRandom(random2.capacity());
-
-		//xor random data to xor-buffer
-		to_xor.xorWith(random2);
-
-		//make sure that xor doesn't contain either 'text' or 'random2'
-		if ((to_xor == text) || (to_xor == random2)) {
-			throw Molch::Exception{status_type::BUFFER_ERROR, "ERROR: xor buffer contains 'text' or 'random2'."};
-		}
-
-		//xor the buffer with text again to get out the random data
-		to_xor.xorWith(text);
-
-		//xor should now contain the same as random2
-		if (to_xor != random2) {
-			throw Molch::Exception{status_type::BUFFER_ERROR, "ERROR: Failed to xor buffers properly."};
-		}
-		printf("Successfully tested xor.\n");
-
 		//compare buffer to an array
 		Buffer true_buffer{"true"};
 		auto comparison{true_buffer.compareToRaw({reinterpret_cast<const gsl::byte*>("true"), sizeof("true")})};
@@ -250,8 +225,8 @@ int main(void) {
 		}
 
 		//test custom allocator
-		Buffer custom_allocated{10, 10, sodium_malloc, sodium_free};
-		Buffer custom_allocated_empty_buffer{0, 0, malloc, free};
+		SodiumBuffer custom_allocated{10, 10};
+		MallocBuffer custom_allocated_empty_buffer{0, 0};
 		if (custom_allocated_empty_buffer.data() != nullptr) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Customly allocated empty buffer has content."};
 		}

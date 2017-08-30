@@ -76,7 +76,7 @@ public:
 /*
  * Create a prekey list.
  */
-static Buffer create_prekey_list(const PublicSigningKey& public_signing_key) {
+static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_key) {
 	//get the user
 	auto user{users->find(public_signing_key)};
 	if (user == nullptr) {
@@ -91,11 +91,9 @@ static Buffer create_prekey_list(const PublicSigningKey& public_signing_key) {
 	user->master_keys.getIdentityKey(public_identity_key);
 
 	//copy the public identity to the prekey list
-	Buffer unsigned_prekey_list{
+	MallocBuffer unsigned_prekey_list{
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t),
-			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t),
-			&malloc,
-			&free};
+			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t)};
 	unsigned_prekey_list.copyFromRaw(0, public_identity_key.data(), 0, PUBLIC_KEY_SIZE);
 
 	//get the prekeys
@@ -108,12 +106,10 @@ static Buffer create_prekey_list(const PublicSigningKey& public_signing_key) {
 	to_big_endian(expiration_date, big_endian_expiration_date);
 
 	//sign the prekey list with the current identity key
-	Buffer prekey_list{
-			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t) + SIGNATURE_SIZE,
-			0,
-			&malloc,
-			&free};
-	user->master_keys.sign(unsigned_prekey_list.span(), prekey_list);
+	MallocBuffer prekey_list{
+			unsigned_prekey_list.size() + SIGNATURE_SIZE,
+			unsigned_prekey_list.size() + SIGNATURE_SIZE};
+	user->master_keys.sign(unsigned_prekey_list.span(), prekey_list.span());
 
 	return prekey_list;
 }
@@ -494,7 +490,7 @@ return_status molch_start_send_conversation(
 		user->conversations.add(std::move(conversation));
 
 		//copy the packet to a malloced buffer output
-		Buffer malloced_packet{packet_buffer.size(), 0, &malloc, &free};
+		MallocBuffer malloced_packet{packet_buffer.size(), 0};
 		malloced_packet.cloneFrom(packet_buffer);
 
 		if (backup != nullptr) {
@@ -599,7 +595,7 @@ cleanup:
 			user->conversations.add(std::move(conversation));
 
 			//copy the message
-			Buffer malloced_message{message_buffer.size(), 0, &malloc, &free};
+			MallocBuffer malloced_message{message_buffer.size(), 0};
 			malloced_message.cloneFrom(message_buffer);
 
 			if (backup != nullptr) {
@@ -675,7 +671,7 @@ cleanup:
 					nullptr)};
 
 			//copy the packet content
-			Buffer malloced_packet{packet_buffer.size(), 0, &malloc, &free};
+			MallocBuffer malloced_packet{packet_buffer.size(), 0};
 			malloced_packet.cloneFrom(packet_buffer);
 
 			if (conversation_backup != nullptr) {
@@ -752,7 +748,7 @@ cleanup:
 					*previous_receive_message_number)};
 
 			//copy the message
-			Buffer malloced_message{message_buffer.size(), 0, &malloc, &free};
+			MallocBuffer malloced_message{message_buffer.size(), 0};
 			malloced_message.cloneFrom(message_buffer);
 
 			if (conversation_backup != nullptr) {
@@ -882,7 +878,7 @@ cleanup:
 				*number = conversation_list_buffer.size() / CONVERSATION_ID_SIZE;
 
 				//allocate the conversation list output and copy it over
-				Buffer malloced_conversation_list{conversation_list_buffer.size(), 0, &malloc, &free};
+				MallocBuffer malloced_conversation_list{conversation_list_buffer.size(), 0};
 				malloced_conversation_list.cloneFrom(conversation_list_buffer);
 				*conversation_list_length = malloced_conversation_list.size();
 				*conversation_list = byte_to_uchar(malloced_conversation_list.release());
@@ -1033,7 +1029,7 @@ cleanup:
 
 			//now pack the entire backup
 			const auto encrypted_backup_size{encrypted_backup__get_packed_size(&encrypted_backup_struct)};
-			Buffer malloced_encrypted_backup{encrypted_backup_size, 0, &malloc, &free};
+			MallocBuffer malloced_encrypted_backup{encrypted_backup_size, 0};
 			malloced_encrypted_backup.setSize(encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data())));
 			if (malloced_encrypted_backup.size() != encrypted_backup_size) {
 				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation."};
@@ -1239,7 +1235,7 @@ cleanup:
 
 			//now pack the entire backup
 			const auto encrypted_backup_size{encrypted_backup__get_packed_size(&encrypted_backup_struct)};
-			Buffer malloced_encrypted_backup{encrypted_backup_size, 0, &malloc, &free};
+			MallocBuffer malloced_encrypted_backup{encrypted_backup_size, 0};
 			malloced_encrypted_backup.setSize(encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data())));
 			if (malloced_encrypted_backup.size() != encrypted_backup_size) {
 				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation."};
@@ -1397,7 +1393,7 @@ cleanup:
 					uchar_to_byte(public_master_key),
 					PUBLIC_MASTER_KEY_SIZE});
 			auto prekey_list_buffer{create_prekey_list(public_signing_key_key)};
-			Buffer malloced_prekey_list{prekey_list_buffer.size(), 0, &malloc, &free};
+			MallocBuffer malloced_prekey_list{prekey_list_buffer.size(), 0};
 			malloced_prekey_list.cloneFrom(prekey_list_buffer);
 			*prekey_list_length = malloced_prekey_list.size();
 			*prekey_list = byte_to_uchar(malloced_prekey_list.release());

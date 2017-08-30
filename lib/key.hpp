@@ -159,9 +159,9 @@ namespace Molch {
 			static_assert(length >= crypto_generichash_blake2b_KEYBYTES_MIN, "The length to derive from is smaller than crypto_generichash_blake2b_KEYBYTES_MIN");
 
 			//create a salt that contains the number of the subkey
-			Buffer salt{crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES};
+			Key<crypto_generichash_blake2b_SALTBYTES,KeyType::Key> salt;
 			salt.clear(); //fill with zeroes
-			salt.setSize(crypto_generichash_blake2b_SALTBYTES);
+			salt.empty = false;
 
 			//fill the salt with a big endian representation of the subkey counter
 			to_big_endian(subkey_counter, {salt.data()+ salt.size() - sizeof(uint32_t), sizeof(uint32_t)});

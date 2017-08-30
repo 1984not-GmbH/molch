@@ -32,48 +32,48 @@
 
 #include "gsl.hpp"
 #include "molch-exception.hpp"
+#include "malloc.hpp"
+#include "sodium-wrappers.hpp"
 
 namespace Molch {
-	class Buffer {
+	template <typename Allocator>
+	class BaseBuffer {
 	private:
+		Allocator allocator;
 		size_t buffer_length{0};
-		bool manage_memory{true}; //should the destructor manage memory?
 		bool readonly{false}; //if set, this buffer shouldn't be written to.
-		void (*deallocator)(void*){nullptr}; //a deallocator if the buffer has been allocated with a custom allocator
 
 		size_t content_length{0};
-		gsl::byte *content{nullptr};
+		gsl::byte* content{nullptr};
+
 
 		/* implementation of copy construction and assignment */
-		Buffer& copy(const Buffer& buffer) {
+		template <typename OtherAllocator>
+		BaseBuffer& copy(const BaseBuffer<OtherAllocator>& buffer) {
 			this->destruct();
 
-			this->buffer_length = buffer.buffer_length;
-			this->manage_memory = true;
-			this->readonly = buffer.readonly;
-			this->deallocator = nullptr;
-			this->content_length = buffer.content_length;
+			this->buffer_length = buffer.capacity();
+			this->readonly = buffer.isReadOnly();
+			this->content_length = buffer.size();
 
-			this->content = new gsl::byte[buffer.buffer_length];
-			std::copy(buffer.content, buffer.content + buffer.content_length, this->content);
+			this->content = allocator.allocate(buffer.capacity(), nullptr);
+			std::copy(std::cbegin(buffer), std::cend(buffer), std::begin(*this));
 
 			return *this;
 		}
 
 		/* implementation of move construction and assignment */
-		Buffer& move(Buffer&& buffer) {
+		BaseBuffer& move(BaseBuffer&& buffer) {
 			this->destruct();
 
 			//copy the buffer
 			auto& source_reference{reinterpret_cast<gsl::byte&>(buffer)};
 			auto& destination_reference{reinterpret_cast<gsl::byte&>(*this)};
-			std::copy(&source_reference, &source_reference + sizeof(Buffer), &destination_reference);
+			std::copy(&source_reference, &source_reference + sizeof(BaseBuffer), &destination_reference);
 
 			//steal resources from the source buffer
 			buffer.buffer_length = 0;
-			buffer.manage_memory = false;
 			buffer.readonly = false;
-			buffer.deallocator = nullptr;
 			buffer.content_length = 0;
 			buffer.content = nullptr;
 
@@ -84,74 +84,55 @@ namespace Molch {
 		 * Deallocate all dynamically allocated memory
 		 */
 		void destruct() {
-			//only do something if this was created using a constructor
-			if (this->manage_memory) {
-				this->clear();
-				if ((this->deallocator != nullptr) && (this->content != nullptr)) {
-					deallocator(this->content);
-					return;
-				}
-
-				delete[] this->content;
-			}
+			this->clear();
+			allocator.deallocate(this->content, this->content_length);
 		}
 
 	public:
-		Buffer() = default; // does nothing
+		BaseBuffer() = default; // does nothing
 		/* move constructor */
-		Buffer(Buffer&& buffer) {
+		BaseBuffer(BaseBuffer&& buffer) {
 			this->move(std::move(buffer));
 		}
 
 		/* copy constructor */
-		Buffer(const Buffer& buffer) {
+		/*template <typename OtherAllocator>
+		BaseBuffer(const BaseBuffer<OtherAllocator>& buffer) {
+			this->copy(buffer);
+		}*/
+		BaseBuffer(const BaseBuffer& buffer) {
 			this->copy(buffer);
 		}
 
-		Buffer(const std::string& string) :
+		BaseBuffer(const std::string& string) :
 				buffer_length{string.length() + sizeof("")},
 				content_length{string.length() + sizeof("")},
-				content{new gsl::byte[string.length() + sizeof("")]} {
+				content{allocator.allocate(string.length() + sizeof(""), nullptr)} {
 			std::copy(std::begin(string), std::end(string), reinterpret_cast<char*>(this->content));
 			this->content[string.length()] = static_cast<gsl::byte>('\0');
 		}
 
-		Buffer(const size_t capacity, const size_t size) :
+		BaseBuffer(const size_t capacity, const size_t size) :
 				buffer_length{capacity},
 				content_length{size} {
 			if (capacity == 0) {
 				this->content = nullptr;
 			} else {
-				this->content = new gsl::byte[capacity];
+				this->content = allocator.allocate(capacity, nullptr);
 			}
 		}
 
-		Buffer(const size_t capacity, const size_t size, void* (*allocator)(size_t), void (*deallocator)(void*)) :
-				buffer_length{capacity},
-				deallocator{deallocator},
-				content_length{size} {
-			if (capacity == 0) {
-				this->content = nullptr;
-			} else {
-				this->content = reinterpret_cast<gsl::byte*>(allocator(capacity));
-				if (this->content == nullptr) {
-					this->buffer_length = 0;
-					this->content_length = 0;
-
-					throw std::bad_alloc{};
-				}
-			}
-		}
-		~Buffer() {
+		~BaseBuffer() {
 			this->destruct();
 		}
 
 		//move assignment
-		Buffer& operator=(Buffer&& buffer) {
+		BaseBuffer& operator=(BaseBuffer&& buffer) {
 			return this->move(std::move(buffer));
 		}
 		//copy assignment
-		Buffer& operator=(const Buffer& buffer) {
+		template <typename OtherAllocator>
+		BaseBuffer& operator=(const BaseBuffer<OtherAllocator>& buffer) {
 			return this->copy(buffer);
 		}
 
@@ -215,18 +196,6 @@ namespace Molch {
 		}
 
 		/*
-		 * Xor another buffer with the same length onto this one.
-		 */
-		void xorWith(const Buffer& source) {
-			Expects(!this->readonly && (this->content_length == source.content_length));
-
-			//xor source onto destination
-			for (size_t i{0}; i < this->content_length; i++) {
-				this->content[i] ^= source.content[i];
-			}
-		}
-
-		/*
 		 * Fill a buffer with random numbers.
 		 */
 		void fillRandom(const size_t length) {
@@ -246,8 +215,9 @@ namespace Molch {
 		 *
 		 * Returns 0 if both buffers match.
 		 */
-		int compare(const Buffer& buffer) const {
-			return this->compareToRaw({buffer.content, narrow(buffer.content_length)});
+		template <typename OtherAllocator>
+		int compare(const BaseBuffer<OtherAllocator>& buffer) const {
+			return this->compareToRaw(buffer.span());
 		}
 
 		/*
@@ -255,12 +225,13 @@ namespace Molch {
 		 *
 		 * Returns 0 if both buffers match.
 		 */
+		template <typename OtherAllocator>
 		int comparePartial(
 				const size_t position1,
-				const Buffer& buffer2,
+				const BaseBuffer<OtherAllocator>& buffer2,
 				const size_t position2,
 				const size_t length) const {
-			return this->compareToRawPartial(position1, {buffer2.content, narrow(buffer2.content_length)}, position2, length);
+			return this->compareToRawPartial(position1, buffer2.span(), position2, length);
 		}
 
 		/*
@@ -303,26 +274,27 @@ namespace Molch {
 		/*
 		 * Copy parts of a buffer to another buffer.
 		 */
+		template <typename OtherAllocator>
 		void copyFrom(
 				const size_t destination_offset,
-				const Buffer& source,
+				const BaseBuffer<OtherAllocator>& source,
 				const size_t source_offset,
 				const size_t copy_length) {
 			Expects(!this->readonly
 					&& (this->buffer_length >= this->content_length)
-					&& (source.buffer_length >= source.content_length)
+					&& (source.capacity() >= source.size())
 					&& (destination_offset <= this->content_length)
 					&& (copy_length <= (this->buffer_length - destination_offset))
-					&& (source_offset <= source.content_length)
-					&& (copy_length <= (source.content_length - source_offset))
+					&& (source_offset <= source.size())
+					&& (copy_length <= (source.size() - source_offset))
 					&& ((this->content_length == 0) || (this->content != nullptr))
-					&& ((source.content_length == 0) || (source.content != nullptr)));
+					&& ((source.size() == 0) || (source.data() != nullptr)));
 
-			if (source.buffer_length == 0) {
+			if (source.empty()) {
 				return; //nothing to do
 			}
 
-			std::copy(source.content + source_offset, source.content + source_offset + copy_length, this->content + destination_offset);
+			std::copy(std::cbegin(source) + source_offset, std::cbegin(source) + source_offset + copy_length, std::begin(*this) + destination_offset);
 			this->content_length = (this->content_length > destination_offset + copy_length)
 				? this->content_length
 				: destination_offset + copy_length;
@@ -333,12 +305,13 @@ namespace Molch {
 		 * buffer and set the destinations content length to the
 		 * same length as the source.
 		 */
-		void cloneFrom(const Buffer& source) {
-			Expects(!this->readonly && (this->buffer_length >= source.content_length));
+		template <typename OtherAllocator>
+		void cloneFrom(const BaseBuffer<OtherAllocator>& source) {
+			Expects(!this->readonly && (this->buffer_length >= source.size()));
 
-			this->content_length = source.content_length;
+			this->content_length = source.size();
 
-			this->copyFrom(0, source, 0, source.content_length);
+			this->copyFrom(0, source, 0, source.size());
 		}
 
 		/*
@@ -450,10 +423,12 @@ namespace Molch {
 			return stream;
 		}
 
-		bool operator ==(const Buffer& buffer) const {
+		template <typename OtherAllocator>
+		bool operator ==(const BaseBuffer<OtherAllocator>& buffer) const {
 			return this->compare(buffer) == 0;
 		}
-		bool operator !=(const Buffer& buffer) const {
+		template <typename OtherAllocator>
+		bool operator !=(const BaseBuffer<OtherAllocator>& buffer) const {
 			return !(*this == buffer);
 		}
 
@@ -469,6 +444,10 @@ namespace Molch {
 			this->readonly = true;
 		}
 
+		bool isReadOnly() const noexcept {
+			return this->readonly;
+		}
+
 		bool fits(const size_t size) const {
 			return this->buffer_length >= size;
 		}
@@ -476,5 +455,9 @@ namespace Molch {
 			return this->fits(size) && (this->content_length == size);
 		}
 	};
+
+	using Buffer = BaseBuffer<std::allocator<gsl::byte>>;
+	using SodiumBuffer = BaseBuffer<SodiumAllocator<gsl::byte>>;
+	using MallocBuffer = BaseBuffer<MallocAllocator<gsl::byte>>;
 }
 #endif
