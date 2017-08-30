@@ -161,10 +161,10 @@ namespace Molch {
 			//create a salt that contains the number of the subkey
 			Buffer salt{crypto_generichash_blake2b_SALTBYTES, crypto_generichash_blake2b_SALTBYTES};
 			salt.clear(); //fill with zeroes
-			salt.size = crypto_generichash_blake2b_SALTBYTES;
+			salt.setSize(crypto_generichash_blake2b_SALTBYTES);
 
 			//fill the salt with a big endian representation of the subkey counter
-			to_big_endian(subkey_counter, {salt.content + salt.size - sizeof(uint32_t), sizeof(uint32_t)});
+			to_big_endian(subkey_counter, {salt.data()+ salt.size() - sizeof(uint32_t), sizeof(uint32_t)});
 
 			const unsigned char personal[]{"molch_cryptolib"};
 			static_assert(sizeof(personal) == crypto_generichash_blake2b_PERSONALBYTES, "personal string is not crypto_generichash_blake2b_PERSONALBYTES long");
@@ -177,7 +177,7 @@ namespace Molch {
 					0, //input length
 					byte_to_uchar(this->data()),
 					length,
-					byte_to_uchar(salt.content),
+					byte_to_uchar(salt.data()),
 					personal)};
 			if (status != 0) {
 				throw Exception{status_type::KEYDERIVATION_FAILED, "Failed to derive key via crypto_generichash_blake2b_salt_personal"};

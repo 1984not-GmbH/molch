@@ -53,7 +53,7 @@ namespace Molch {
 		Buffer header{header_length, header_length};
 
 		//pack it
-		auto packed_length{header__pack(&header_struct, byte_to_uchar(header.content))};
+		auto packed_length{header__pack(&header_struct, byte_to_uchar(header.data()))};
 		if (packed_length != header_length) {
 			throw Exception{status_type::PROTOBUF_PACK_ERROR, "Packed header has incorrect length."};
 		}

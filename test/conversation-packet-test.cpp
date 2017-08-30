@@ -62,7 +62,7 @@ int main(void) {
 		//get the prekey list
 		Buffer prekey_list{PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE};
 		PrekeyStore bob_prekeys;
-		bob_prekeys.list(prekey_list);
+		bob_prekeys.list(prekey_list.span());
 
 		//start a send conversation
 		Buffer send_message{"Hello there!"};
@@ -98,7 +98,7 @@ int main(void) {
 		auto alice_send_packet2{alice_send_conversation.send(
 				alice_send_message2.span(), nullptr, nullptr, nullptr)};
 
-		printf("Sent message: %.*s\n", static_cast<int>(alice_send_message2.size), reinterpret_cast<const char*>(alice_send_message2.content));
+		printf("Sent message: %.*s\n", static_cast<int>(alice_send_message2.size()), reinterpret_cast<const char*>(alice_send_message2.data()));
 		printf("Packet:\n");
 		alice_send_packet2.printHex(std::cout) << std::endl;
 
@@ -129,7 +129,7 @@ int main(void) {
 				nullptr,
 				nullptr)};
 
-		printf("Sent message: %.*s\n", static_cast<int>(bob_response_message.size), reinterpret_cast<const char*>(bob_response_message.content));
+		printf("Sent message: %.*s\n", static_cast<int>(bob_response_message.size()), reinterpret_cast<const char*>(bob_response_message.data()));
 		printf("Packet:\n");
 		bob_response_packet.printHex(std::cout) << std::endl;
 
@@ -158,7 +158,7 @@ int main(void) {
 
 		//get alice prekey list
 		PrekeyStore alice_prekeys;
-		alice_prekeys.list(prekey_list);
+		alice_prekeys.list(prekey_list.span());
 
 		//destroy the old packet
 		packet.clear();
@@ -170,7 +170,7 @@ int main(void) {
 			alice_public_identity,
 			prekey_list};
 
-		printf("Sent message: %.*s\n", static_cast<int>(send_message.size), reinterpret_cast<const char*>(send_message.content));
+		printf("Sent message: %.*s\n", static_cast<int>(send_message.size()), reinterpret_cast<const char*>(send_message.data()));
 		printf("Packet:\n");
 		packet.printHex(std::cout) << std::endl;
 
@@ -197,7 +197,7 @@ int main(void) {
 				nullptr,
 				nullptr)};
 
-		printf("Sent message: %.*s\n", static_cast<int>(bob_send_message2.size), reinterpret_cast<const char*>(bob_send_message2.content));
+		printf("Sent message: %.*s\n", static_cast<int>(bob_send_message2.size()), reinterpret_cast<const char*>(bob_send_message2.data()));
 		printf("Packet:\n");
 		bob_send_packet2.printHex(std::cout) << std::endl;
 
@@ -226,7 +226,7 @@ int main(void) {
 				nullptr,
 				nullptr)};
 
-		printf("Sent message: %.*s\n", static_cast<int>(alice_response_message.size), reinterpret_cast<const char*>(alice_response_message.content));
+		printf("Sent message: %.*s\n", static_cast<int>(alice_response_message.size()), reinterpret_cast<const char*>(alice_response_message.data()));
 		printf("Packet:\n");
 		alice_response_packet.printHex(std::cout) << std::endl;
 

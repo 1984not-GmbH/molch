@@ -123,7 +123,7 @@ namespace Molch {
 		auto prekey_number{randombytes_uniform(PREKEY_AMOUNT)};
 		PublicKey receiver_public_prekey;
 		receiver_public_prekey.set({
-				&receiver_prekey_list.content[prekey_number * PUBLIC_KEY_SIZE],
+				&receiver_prekey_list[prekey_number * PUBLIC_KEY_SIZE],
 				PUBLIC_KEY_SIZE});
 
 		//initialize the conversation

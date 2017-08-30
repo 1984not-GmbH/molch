@@ -64,12 +64,12 @@ void create_and_print_message(
 	putchar('\n');
 
 	//print the header (as hex):
-	printf("Header (%zu Bytes):\n", header.size);
+	printf("Header (%zu Bytes):\n", header.size());
 	header.printHex(std::cout);
 	putchar('\n');
 
 	//print the message (as string):
-	printf("Message (%zu Bytes):\n%.*s\n\n", message.size, static_cast<int>(message.size), byte_to_uchar(message.content));
+	printf("Message (%zu Bytes):\n%.*s\n\n", message.size(), static_cast<int>(message.size()), byte_to_uchar(message.data()));
 
 	//now encrypt the message
 	packet = packet_encrypt(
@@ -83,7 +83,7 @@ void create_and_print_message(
 			public_prekey);
 
 	//print encrypted packet
-	printf("Encrypted Packet (%zu Bytes):\n", packet.size);
+	printf("Encrypted Packet (%zu Bytes):\n", packet.size());
 	packet.printHex(std::cout);
 	putchar('\n');
 }

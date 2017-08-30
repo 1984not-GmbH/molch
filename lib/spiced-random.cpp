@@ -49,8 +49,8 @@ namespace Molch {
 		//derive random data from the random spice
 		Buffer spice{narrow(output.size()), narrow(output.size()), &sodium_malloc, &sodium_free};
 		auto status_int{crypto_pwhash(
-				byte_to_uchar(spice.content),
-				spice.size,
+				byte_to_uchar(spice.data()),
+				spice.size(),
 				reinterpret_cast<const char*>(low_entropy_spice.data()),
 				narrow(low_entropy_spice.size()),
 				byte_to_uchar(salt.data()),

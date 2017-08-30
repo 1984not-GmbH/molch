@@ -43,10 +43,10 @@ int main(void) {
 		//generate keys and message
 		Buffer message{"Hello world!\n"};
 		Buffer header{4, 4};
-		header.content[0] = uchar_to_byte(0x01);
-		header.content[1] = uchar_to_byte(0x02);
-		header.content[2] = uchar_to_byte(0x03);
-		header.content[3] = uchar_to_byte(0x04);
+		header[0] = uchar_to_byte(0x01);
+		header[1] = uchar_to_byte(0x02);
+		header[2] = uchar_to_byte(0x03);
+		header[3] = uchar_to_byte(0x04);
 		molch_message_type packet_type{molch_message_type::NORMAL_MESSAGE};
 		printf("Packet type: %02x\n", static_cast<int>(packet_type));
 		putchar('\n');
@@ -71,7 +71,7 @@ int main(void) {
 		auto decrypted_message{packet_decrypt_message(packet.span(), message_key)};
 
 		//check the message size
-		if (!decrypted_message.value().contains(message.size)) {
+		if (!decrypted_message.value().contains(message.size())) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message length isn't the same."};
 		}
 		printf("Decrypted message length is the same.\n");
@@ -83,7 +83,7 @@ int main(void) {
 		printf("Decrypted message is the same.\n\n");
 
 		//manipulate the message
-		packet.content[packet.size - crypto_secretbox_MACBYTES - 1] ^= uchar_to_byte(0xf0);
+		packet[packet.size() - crypto_secretbox_MACBYTES - 1] ^= uchar_to_byte(0xf0);
 		printf("Manipulating message.\n");
 
 		decrypted_message.value().clear();
@@ -128,7 +128,7 @@ int main(void) {
 		decrypted_message = packet_decrypt_message(packet.span(), message_key);
 
 		//check the message size
-		if (!decrypted_message.value().contains(message.size)) {
+		if (!decrypted_message.value().contains(message.size())) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message length isn't the same."};
 		}
 		printf("Decrypted message length is the same.\n");

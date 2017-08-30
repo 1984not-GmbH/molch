@@ -39,8 +39,8 @@ Buffer protobuf_export(Ratchet& ratchet) {
 
 	auto export_size{conversation__get_packed_size(conversation)};
 	Buffer export_buffer{export_size, 0};
-	export_buffer.size = conversation__pack(conversation, byte_to_uchar(export_buffer.content));
-	if (export_size != export_buffer.size) {
+	export_buffer.setSize(conversation__pack(conversation, byte_to_uchar(export_buffer.data())));
+	if (export_size != export_buffer.size()) {
 		throw Molch::Exception{status_type::EXPORT_ERROR, "Failed to export ratchet."};
 	}
 
@@ -52,8 +52,8 @@ std::unique_ptr<Ratchet> protobuf_import(ProtobufPool& pool, const Buffer& expor
 	//unpack the buffer
 	auto conversation{conversation__unpack(
 			&pool_protoc_allocator,
-			export_buffer.size,
-			byte_to_uchar(export_buffer.content))};
+			export_buffer.size(),
+			byte_to_uchar(export_buffer.data()))};
 	if (conversation == nullptr) {
 		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf."};
 	}

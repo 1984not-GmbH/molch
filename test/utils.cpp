@@ -74,8 +74,8 @@ Buffer read_file(const std::string& filename) {
 	auto size{filesize};
 	filestream.seekg(0);
 
-	Buffer data{gsl::narrow<size_t>(size), gsl::narrow<size_t>(size)};
-	filestream.read(reinterpret_cast<char*>(data.content), gsl::narrow<std::streamsize>(filesize));
+	Buffer data{gsl::narrow_cast<size_t>(size), gsl::narrow_cast<size_t>(size)};
+	filestream.read(reinterpret_cast<char*>(data.data()), gsl::narrow<std::streamsize>(filesize));
 
 	return data;
 }

@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <iterator>
 
 #include "constants.h"
 #include "molch.h"
@@ -92,20 +93,19 @@ static Buffer create_prekey_list(const PublicSigningKey& public_signing_key) {
 	//copy the public identity to the prekey list
 	Buffer unsigned_prekey_list{
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t),
-			0,
+			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t),
 			&malloc,
 			&free};
 	unsigned_prekey_list.copyFromRaw(0, public_identity_key.data(), 0, PUBLIC_KEY_SIZE);
 
 	//get the prekeys
-	Buffer prekeys{gsl::span<gsl::byte>{unsigned_prekey_list.content + PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE}};
+	gsl::span<gsl::byte> prekeys{&unsigned_prekey_list[PUBLIC_KEY_SIZE], PREKEY_AMOUNT * PUBLIC_KEY_SIZE};
 	user->prekeys.list(prekeys);
 
 	//add the expiration date
 	int64_t expiration_date{time(nullptr) + 3600 * 24 * 31 * 3}; //the prekey list will expire in 3 months
-	gsl::span<gsl::byte> big_endian_expiration_date{unsigned_prekey_list.content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t)};
+	gsl::span<gsl::byte> big_endian_expiration_date{&unsigned_prekey_list[PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE], sizeof(int64_t)};
 	to_big_endian(expiration_date, big_endian_expiration_date);
-	unsigned_prekey_list.size = unsigned_prekey_list.capacity();
 
 	//sign the prekey list with the current identity key
 	Buffer prekey_list{
@@ -202,7 +202,7 @@ return_status molch_create_user(
 		}
 
 		//move the prekey list out of the buffer
-		*prekey_list_length = prekey_list_buffer.size;
+		*prekey_list_length = prekey_list_buffer.size();
 		*prekey_list = byte_to_uchar(prekey_list_buffer.release());
 	} catch (const Exception& exception) {
 		status = exception.toReturnStatus();
@@ -317,10 +317,10 @@ return_status molch_list_users(
 			*user_list = nullptr;
 		} else {
 			*user_list = throwing_malloc<unsigned char>(*count * PUBLIC_MASTER_KEY_SIZE);
-			std::copy(list.content, list.content + list.size, uchar_to_byte(*user_list));
+			std::copy(std::cbegin(list), std::cend(list), uchar_to_byte(*user_list));
 		}
 
-		*user_list_length = list.size;
+		*user_list_length = list.size();
 	} catch (const Exception& exception) {
 		status = exception.toReturnStatus();
 		goto cleanup;
@@ -379,7 +379,7 @@ static void verify_prekey_list(
 	Buffer verified_prekey_list{narrow(prekey_list.size()) - SIGNATURE_SIZE, narrow(prekey_list.size()) - SIGNATURE_SIZE};
 	unsigned long long verified_length;
 	auto status{crypto_sign_open(
-			byte_to_uchar(verified_prekey_list.content),
+			byte_to_uchar(verified_prekey_list.data()),
 			&verified_length,
 			byte_to_uchar(prekey_list.data()),
 			gsl::narrow<unsigned long long>(prekey_list.size()),
@@ -392,11 +392,11 @@ static void verify_prekey_list(
 	{
 		throw Exception{status_type::CONVERSION_ERROR, "Length is bigger than size_t."};
 	}
-	verified_prekey_list.size = gsl::narrow<size_t>(verified_length);
+	verified_prekey_list.setSize(gsl::narrow<size_t>(verified_length));
 
 	//get the expiration date
 	int64_t expiration_date;
-	gsl::span<gsl::byte> big_endian_expiration_date{verified_prekey_list.content + PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE, sizeof(int64_t)};
+	gsl::span<gsl::byte> big_endian_expiration_date{&verified_prekey_list[PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE], sizeof(int64_t)};
 	from_big_endian(expiration_date, big_endian_expiration_date);
 
 	//make sure the prekey list isn't too old
@@ -495,7 +495,7 @@ return_status molch_start_send_conversation(
 		user->conversations.add(std::move(conversation));
 
 		//copy the packet to a malloced buffer output
-		Buffer malloced_packet{packet_buffer.size, 0, &malloc, &free};
+		Buffer malloced_packet{packet_buffer.size(), 0, &malloc, &free};
 		malloced_packet.cloneFrom(packet_buffer);
 
 		if (backup != nullptr) {
@@ -508,7 +508,7 @@ return_status molch_start_send_conversation(
 			}
 		}
 
-		*packet_length = malloced_packet.size;
+		*packet_length = malloced_packet.size();
 		*packet = byte_to_uchar(malloced_packet.release());
 	} catch (const Exception& exception) {
 		status = exception.toReturnStatus();
@@ -600,7 +600,7 @@ cleanup:
 			user->conversations.add(std::move(conversation));
 
 			//copy the message
-			Buffer malloced_message{message_buffer.size, 0, &malloc, &free};
+			Buffer malloced_message{message_buffer.size(), 0, &malloc, &free};
 			malloced_message.cloneFrom(message_buffer);
 
 			if (backup != nullptr) {
@@ -613,10 +613,10 @@ cleanup:
 				}
 			}
 
-			*message_length = malloced_message.size;
+			*message_length = malloced_message.size();
 			*message = byte_to_uchar(malloced_message.release());
 
-			*prekey_list_length = prekey_list_buffer.size;
+			*prekey_list_length = prekey_list_buffer.size();
 			*prekey_list = byte_to_uchar(prekey_list_buffer.release());
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
@@ -676,7 +676,7 @@ cleanup:
 					nullptr)};
 
 			//copy the packet content
-			Buffer malloced_packet{packet_buffer.size, 0, &malloc, &free};
+			Buffer malloced_packet{packet_buffer.size(), 0, &malloc, &free};
 			malloced_packet.cloneFrom(packet_buffer);
 
 			if (conversation_backup != nullptr) {
@@ -689,7 +689,7 @@ cleanup:
 				}
 			}
 
-			*packet_length = malloced_packet.size;
+			*packet_length = malloced_packet.size();
 			*packet = byte_to_uchar(malloced_packet.release());
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
@@ -753,7 +753,7 @@ cleanup:
 					*previous_receive_message_number)};
 
 			//copy the message
-			Buffer malloced_message{message_buffer.size, 0, &malloc, &free};
+			Buffer malloced_message{message_buffer.size(), 0, &malloc, &free};
 			malloced_message.cloneFrom(message_buffer);
 
 			if (conversation_backup != nullptr) {
@@ -766,7 +766,7 @@ cleanup:
 				}
 			}
 
-			*message_length = malloced_message.size;
+			*message_length = malloced_message.size();
 			*message = byte_to_uchar(malloced_message.release());
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
@@ -877,15 +877,15 @@ cleanup:
 				*conversation_list = nullptr;
 				*number = 0;
 			} else {
-				if ((conversation_list_buffer.size % CONVERSATION_ID_SIZE) != 0) {
+				if ((conversation_list_buffer.size() % CONVERSATION_ID_SIZE) != 0) {
 					throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The conversation ID buffer has an incorrect length."};
 				}
-				*number = conversation_list_buffer.size / CONVERSATION_ID_SIZE;
+				*number = conversation_list_buffer.size() / CONVERSATION_ID_SIZE;
 
 				//allocate the conversation list output and copy it over
-				Buffer malloced_conversation_list{conversation_list_buffer.size, 0, &malloc, &free};
+				Buffer malloced_conversation_list{conversation_list_buffer.size(), 0, &malloc, &free};
 				malloced_conversation_list.cloneFrom(conversation_list_buffer);
-				*conversation_list_length = malloced_conversation_list.size;
+				*conversation_list_length = malloced_conversation_list.size();
 				*conversation_list = byte_to_uchar(malloced_conversation_list.release());
 			}
 		} catch (const Exception& exception) {
@@ -997,8 +997,8 @@ cleanup:
 			auto conversation_buffer_content{pool.allocate<gsl::byte>(conversation_size)};
 			Buffer conversation_buffer{gsl::span<gsl::byte>{conversation_buffer_content, narrow(conversation_size)}, 0};
 
-			conversation_buffer.size = conversation__pack(conversation_struct, byte_to_uchar(conversation_buffer.content));
-			if (conversation_buffer.size != conversation_size) {
+			conversation_buffer.setSize(conversation__pack(conversation_struct, byte_to_uchar(conversation_buffer.data())));
+			if (conversation_buffer.size() != conversation_size) {
 				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c."};
 			}
 
@@ -1012,13 +1012,13 @@ cleanup:
 			//encrypt the backup
 			GlobalBackupKeyUnlocker unlocker;
 			auto status{crypto_secretbox_easy(
-					byte_to_uchar(backup_buffer.content),
-					byte_to_uchar(conversation_buffer.content),
-					conversation_buffer.size,
-					byte_to_uchar(backup_nonce.content),
+					byte_to_uchar(backup_buffer.data()),
+					byte_to_uchar(conversation_buffer.data()),
+					conversation_buffer.size(),
+					byte_to_uchar(backup_nonce.data()),
 					byte_to_uchar(global_backup_key->data()))};
 			if (status != 0) {
-				backup_buffer.size = 0;
+				backup_buffer.setSize(0);
 				throw Exception{status_type::ENCRYPT_ERROR, "Failed to enrypt conversation state."};
 			}
 
@@ -1029,21 +1029,21 @@ cleanup:
 			encrypted_backup_struct.backup_type = ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP;
 			//nonce
 			encrypted_backup_struct.has_encrypted_backup_nonce = true;
-			encrypted_backup_struct.encrypted_backup_nonce.data = byte_to_uchar(backup_nonce.content);
-			encrypted_backup_struct.encrypted_backup_nonce.len = backup_nonce.size;
+			encrypted_backup_struct.encrypted_backup_nonce.data = byte_to_uchar(backup_nonce.data());
+			encrypted_backup_struct.encrypted_backup_nonce.len = backup_nonce.size();
 			//encrypted backup
 			encrypted_backup_struct.has_encrypted_backup = true;
-			encrypted_backup_struct.encrypted_backup.data = byte_to_uchar(backup_buffer.content);
-			encrypted_backup_struct.encrypted_backup.len = backup_buffer.size;
+			encrypted_backup_struct.encrypted_backup.data = byte_to_uchar(backup_buffer.data());
+			encrypted_backup_struct.encrypted_backup.len = backup_buffer.size();
 
 			//now pack the entire backup
 			const auto encrypted_backup_size{encrypted_backup__get_packed_size(&encrypted_backup_struct)};
 			Buffer malloced_encrypted_backup{encrypted_backup_size, 0, &malloc, &free};
-			malloced_encrypted_backup.size = encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.content));
-			if (malloced_encrypted_backup.size != encrypted_backup_size) {
+			malloced_encrypted_backup.setSize(encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data())));
+			if (malloced_encrypted_backup.size() != encrypted_backup_size) {
 				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation."};
 			}
-			*backup_length = malloced_encrypted_backup.size;
+			*backup_length = malloced_encrypted_backup.size();
 			*backup = byte_to_uchar(malloced_encrypted_backup.release());
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
@@ -1123,7 +1123,7 @@ cleanup:
 
 			//decrypt the backup
 			auto status_int{crypto_secretbox_open_easy(
-					byte_to_uchar(decrypted_backup.content),
+					byte_to_uchar(decrypted_backup.data()),
 					encrypted_backup_struct->encrypted_backup.data,
 					encrypted_backup_struct->encrypted_backup.len,
 					encrypted_backup_struct->encrypted_backup_nonce.data,
@@ -1134,7 +1134,7 @@ cleanup:
 
 			//unpack the struct
 			auto pool_protoc_allocator{pool.getProtobufCAllocator()};
-			auto conversation_struct{conversation__unpack(&pool_protoc_allocator, decrypted_backup.size, byte_to_uchar(decrypted_backup.content))};
+			auto conversation_struct{conversation__unpack(&pool_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
 			if (conversation_struct == nullptr) {
 				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack conversations protobuf-c."};
 			}
@@ -1208,8 +1208,8 @@ cleanup:
 			auto users_buffer_content{pool.allocate<gsl::byte>(backup_struct_size)};
 			Buffer users_buffer{gsl::span<gsl::byte>{users_buffer_content, narrow(backup_struct_size)}, 0};
 
-			users_buffer.size = backup__pack(backup_struct, byte_to_uchar(users_buffer.content));
-			if (users_buffer.size != backup_struct_size) {
+			users_buffer.setSize(backup__pack(backup_struct, byte_to_uchar(users_buffer.data())));
+			if (users_buffer.size() != backup_struct_size) {
 				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c."};
 			}
 
@@ -1222,10 +1222,10 @@ cleanup:
 
 			//encrypt the backup
 			auto status{crypto_secretbox_easy(
-					byte_to_uchar(backup_buffer.content),
-					byte_to_uchar(users_buffer.content),
-					users_buffer.size,
-					byte_to_uchar(backup_nonce.content),
+					byte_to_uchar(backup_buffer.data()),
+					byte_to_uchar(users_buffer.data()),
+					users_buffer.size(),
+					byte_to_uchar(backup_nonce.data()),
 					byte_to_uchar(global_backup_key->data()))};
 			if (status != 0) {
 				throw Exception{status_type::ENCRYPT_ERROR, "Failed to enrypt conversation state."};
@@ -1240,21 +1240,21 @@ cleanup:
 			encrypted_backup_struct.backup_type = ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP;
 			//nonce
 			encrypted_backup_struct.has_encrypted_backup_nonce = true;
-			encrypted_backup_struct.encrypted_backup_nonce.data = byte_to_uchar(backup_nonce.content);
-			encrypted_backup_struct.encrypted_backup_nonce.len = backup_nonce.size;
+			encrypted_backup_struct.encrypted_backup_nonce.data = byte_to_uchar(backup_nonce.data());
+			encrypted_backup_struct.encrypted_backup_nonce.len = backup_nonce.size();
 			//encrypted backup
 			encrypted_backup_struct.has_encrypted_backup = true;
-			encrypted_backup_struct.encrypted_backup.data = byte_to_uchar(backup_buffer.content);
-			encrypted_backup_struct.encrypted_backup.len = backup_buffer.size;
+			encrypted_backup_struct.encrypted_backup.data = byte_to_uchar(backup_buffer.data());
+			encrypted_backup_struct.encrypted_backup.len = backup_buffer.size();
 
 			//now pack the entire backup
 			const auto encrypted_backup_size{encrypted_backup__get_packed_size(&encrypted_backup_struct)};
 			Buffer malloced_encrypted_backup{encrypted_backup_size, 0, &malloc, &free};
-			malloced_encrypted_backup.size = encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.content));
-			if (malloced_encrypted_backup.size != encrypted_backup_size) {
+			malloced_encrypted_backup.setSize(encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data())));
+			if (malloced_encrypted_backup.size() != encrypted_backup_size) {
 				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation."};
 			}
-			*backup_length = malloced_encrypted_backup.size;
+			*backup_length = malloced_encrypted_backup.size();
 			*backup = byte_to_uchar(malloced_encrypted_backup.release());
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
@@ -1340,7 +1340,7 @@ cleanup:
 
 			//decrypt the backup
 			auto status_int{crypto_secretbox_open_easy(
-					byte_to_uchar(decrypted_backup.content),
+					byte_to_uchar(decrypted_backup.data()),
 					encrypted_backup_struct->encrypted_backup.data,
 					encrypted_backup_struct->encrypted_backup.len,
 					encrypted_backup_struct->encrypted_backup_nonce.data,
@@ -1351,7 +1351,7 @@ cleanup:
 
 			//unpack the struct
 			auto pool_protoc_allocator{pool.getProtobufCAllocator()};
-			auto backup_struct{backup__unpack(&pool_protoc_allocator, decrypted_backup.size, byte_to_uchar(decrypted_backup.content))};
+			auto backup_struct{backup__unpack(&pool_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
 			if (backup_struct == nullptr) {
 				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack backups protobuf-c."};
 			}
@@ -1408,9 +1408,9 @@ cleanup:
 					uchar_to_byte(public_master_key),
 					PUBLIC_MASTER_KEY_SIZE});
 			auto prekey_list_buffer{create_prekey_list(public_signing_key_key)};
-			Buffer malloced_prekey_list{prekey_list_buffer.size, 0, &malloc, &free};
+			Buffer malloced_prekey_list{prekey_list_buffer.size(), 0, &malloc, &free};
 			malloced_prekey_list.cloneFrom(prekey_list_buffer);
-			*prekey_list_length = malloced_prekey_list.size;
+			*prekey_list_length = malloced_prekey_list.size();
 			*prekey_list = byte_to_uchar(malloced_prekey_list.release());
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();

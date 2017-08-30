@@ -44,7 +44,7 @@ static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
 	for (const auto& conversation : exported_conversations) {
 		auto unpacked_size{conversation__get_packed_size(conversation)};
 		export_buffers.emplace_back(unpacked_size, 0);
-		export_buffers.back().size = conversation__pack(conversation, byte_to_uchar(export_buffers.back().content));
+		export_buffers.back().setSize(conversation__pack(conversation, byte_to_uchar(export_buffers.back().data())));
 	}
 
 	return export_buffers;
@@ -60,7 +60,7 @@ ConversationStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> 
 	//unpack all the conversations
 	size_t index{0};
 	for (const auto& buffer : buffers) {
-		conversation_array[index] = conversation__unpack(&pool_protoc_allocator, buffer.size, byte_to_uchar(buffer.content));
+		conversation_array[index] = conversation__unpack(&pool_protoc_allocator, buffer.size(), byte_to_uchar(buffer.data()));
 		if (conversation_array[index] == nullptr) {
 			throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf."};
 		}
@@ -162,9 +162,9 @@ int main(void) {
 		Molch::Key<CONVERSATION_ID_SIZE,Molch::KeyType::Key> first_id;
 		Molch::Key<CONVERSATION_ID_SIZE,Molch::KeyType::Key> middle_id;
 		Molch::Key<CONVERSATION_ID_SIZE,Molch::KeyType::Key> last_id;
-		for (size_t i{0}; i < (conversation_list.size / CONVERSATION_ID_SIZE); i++) {
+		for (size_t i{0}; i < (conversation_list.size() / CONVERSATION_ID_SIZE); i++) {
 			Molch::Key<CONVERSATION_ID_SIZE,Molch::KeyType::Key> current_id;
-			current_id.set({conversation_list.content + CONVERSATION_ID_SIZE * i, CONVERSATION_ID_SIZE});
+			current_id.set({&conversation_list[CONVERSATION_ID_SIZE * i], CONVERSATION_ID_SIZE});
 			auto found_node{store.find(current_id)};
 			if (found_node == nullptr) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Exported list of conversations was incorrect."};

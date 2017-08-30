@@ -56,7 +56,7 @@ int main(int argc, char *args[]) noexcept {
 
 			//load the backup key from a file
 			auto backup_key_file{read_file("test-data/molch-init-backup.key")};
-			if (backup_key_file.size != BACKUP_KEY_SIZE) {
+			if (!backup_key_file.contains(BACKUP_KEY_SIZE)) {
 				throw Molch::Exception{status_type::INCORRECT_BUFFER_SIZE, "Backup key from file has an incorrect length."};
 			}
 
@@ -65,10 +65,10 @@ int main(int argc, char *args[]) noexcept {
 				auto status{molch_import(
 						backup_key,
 						BACKUP_KEY_SIZE,
-						byte_to_uchar(backup_file.content),
-						backup_file.size,
-						byte_to_uchar(backup_key_file.content),
-						backup_key_file.size)};
+						byte_to_uchar(backup_file.data()),
+						backup_file.size(),
+						byte_to_uchar(backup_key_file.data()),
+						backup_key_file.size())};
 				on_error {
 					throw Molch::Exception{status};
 				}
@@ -88,8 +88,8 @@ int main(int argc, char *args[]) noexcept {
 			unsigned char *backup_ptr{nullptr};
 			unsigned char *prekey_list_ptr{nullptr};
 			auto status{molch_create_user(
-					byte_to_uchar(user_id.content),
-					user_id.size,
+					byte_to_uchar(user_id.data()),
+					user_id.size(),
 					&prekey_list_ptr,
 					&prekey_list_length,
 					backup_key,

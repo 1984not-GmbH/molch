@@ -43,10 +43,10 @@ int main(void) {
 		//generate message
 		molch_message_type packet_type{molch_message_type::NORMAL_MESSAGE};
 		Buffer header{4, 4};
-		header.content[0] = uchar_to_byte(0x01);
-		header.content[1] = uchar_to_byte(0x02);
-		header.content[2] = uchar_to_byte(0x03);
-		header.content[3] = uchar_to_byte(0x04);
+		header[0] = uchar_to_byte(0x01);
+		header[1] = uchar_to_byte(0x02);
+		header[2] = uchar_to_byte(0x03);
+		header[3] = uchar_to_byte(0x04);
 		printf("Packet type: %02x\n", static_cast<int>(packet_type));
 		putchar('\n');
 
@@ -71,7 +71,7 @@ int main(void) {
 		auto decrypted_header{packet_decrypt_header(packet.span(), header_key)};
 
 
-		if (!decrypted_header.value().contains(header.size)) {
+		if (!decrypted_header.value().contains(header.size())) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length."};
 		}
 		printf("Decrypted header has the same length.\n\n");
@@ -84,9 +84,9 @@ int main(void) {
 
 		//check if it decrypts manipulated packets (manipulated metadata)
 		printf("Manipulating header length.\n");
-		unsigned char manipulated_byte{byte_to_uchar(packet.content[2])};
+		unsigned char manipulated_byte{byte_to_uchar(packet[2])};
 		++manipulated_byte;
-		packet.content[2] = uchar_to_byte(manipulated_byte);
+		packet[2] = uchar_to_byte(manipulated_byte);
 		auto decryption_failed{false};
 		try {
 			decrypted_header = packet_decrypt_header(packet.span(), header_key);
@@ -101,10 +101,10 @@ int main(void) {
 
 		//repair manipulation
 		--manipulated_byte;
-		packet.content[2] = uchar_to_byte(manipulated_byte);
+		packet[2] = uchar_to_byte(manipulated_byte);
 		//check if it decrypts manipulated packets (manipulated header)
 		printf("Manipulate header.\n");
-		packet.content[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= uchar_to_byte(0x12);
+		packet[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= uchar_to_byte(0x12);
 		try {
 			decrypted_header = packet_decrypt_header(packet.span(), header_key);
 		} catch (const Molch::Exception& exception) {
@@ -117,7 +117,7 @@ int main(void) {
 		printf("Header manipulation detected!\n\n");
 
 		//undo header manipulation
-		packet.content[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= uchar_to_byte(0x12);
+		packet[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= uchar_to_byte(0x12);
 
 		//PREKEY MESSAGE
 		printf("PREKEY_MESSAGE\n");
@@ -145,7 +145,7 @@ int main(void) {
 
 		//now decrypt the header
 		decrypted_header = packet_decrypt_header(packet.span(), header_key);
-		if (!decrypted_header.value().contains(header.size)) {
+		if (!decrypted_header.value().contains(header.size())) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length."};
 		}
 		printf("Decrypted header has the same length.\n\n");

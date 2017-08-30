@@ -168,18 +168,18 @@ namespace Molch {
 		Buffer header_nonce{HEADER_NONCE_SIZE, 0};
 		header_nonce.fillRandom(HEADER_NONCE_SIZE);
 		packet_header_struct.has_header_nonce = true;
-		packet_header_struct.header_nonce.data = byte_to_uchar(header_nonce.content);
-		packet_header_struct.header_nonce.len = header_nonce.size;
+		packet_header_struct.header_nonce.data = byte_to_uchar(header_nonce.data());
+		packet_header_struct.header_nonce.len = header_nonce.size();
 
 		//encrypt the header
 		Buffer encrypted_axolotl_header{
 			narrow(axolotl_header.size()) + crypto_secretbox_MACBYTES,
 			narrow(axolotl_header.size()) + crypto_secretbox_MACBYTES};
 		auto status{crypto_secretbox_easy(
-				byte_to_uchar(encrypted_axolotl_header.content),
+				byte_to_uchar(encrypted_axolotl_header.data()),
 				byte_to_uchar(axolotl_header.data()),
 				narrow(axolotl_header.size()),
-				byte_to_uchar(header_nonce.content),
+				byte_to_uchar(header_nonce.data()),
 				byte_to_uchar(axolotl_header_key.data()))};
 		if (status != 0) {
 			throw Exception{status_type::ENCRYPT_ERROR, "Failed to encrypt header."};
@@ -187,15 +187,15 @@ namespace Molch {
 
 		//add the encrypted header to the protobuf struct
 		packet_struct.has_encrypted_axolotl_header = true;
-		packet_struct.encrypted_axolotl_header.data = byte_to_uchar(encrypted_axolotl_header.content);
-		packet_struct.encrypted_axolotl_header.len = encrypted_axolotl_header.size;
+		packet_struct.encrypted_axolotl_header.data = byte_to_uchar(encrypted_axolotl_header.data());
+		packet_struct.encrypted_axolotl_header.len = encrypted_axolotl_header.size();
 
 		//generate the message nonce and add it to the packet header
 		Buffer message_nonce{MESSAGE_NONCE_SIZE, 0};
 		message_nonce.fillRandom(MESSAGE_NONCE_SIZE);
 		packet_header_struct.has_message_nonce = true;
-		packet_header_struct.message_nonce.data = byte_to_uchar(message_nonce.content);
-		packet_header_struct.message_nonce.len = message_nonce.size;
+		packet_header_struct.message_nonce.data = byte_to_uchar(message_nonce.data());
+		packet_header_struct.message_nonce.len = message_nonce.size();
 
 		//pad the message (PKCS7 padding to 255 byte blocks, see RFC5652 section 6.3)
 		auto padding{gsl::narrow<unsigned char>(255 - (message.size() % 255))};
@@ -203,18 +203,18 @@ namespace Molch {
 		//copy the message
 		padded_message.cloneFrom(message);
 		//pad it
-		std::fill(padded_message.content + padded_message.size, padded_message.content + padded_message.size + padding, uchar_to_byte(padding));
-		padded_message.size += padding;
+		std::fill(padded_message.data() + padded_message.size(), padded_message.data() + padded_message.size() + padding, uchar_to_byte(padding));
+		padded_message.setSize(padded_message.size() + padding);
 
 		//encrypt the message
 		Buffer encrypted_message{
-			padded_message.size + crypto_secretbox_MACBYTES,
-			padded_message.size + crypto_secretbox_MACBYTES};
+			padded_message.size() + crypto_secretbox_MACBYTES,
+			padded_message.size() + crypto_secretbox_MACBYTES};
 		status = crypto_secretbox_easy(
-				byte_to_uchar(encrypted_message.content),
-				byte_to_uchar(padded_message.content),
-				padded_message.size,
-				byte_to_uchar(message_nonce.content),
+				byte_to_uchar(encrypted_message.data()),
+				byte_to_uchar(padded_message.data()),
+				padded_message.size(),
+				byte_to_uchar(message_nonce.data()),
 				byte_to_uchar(message_key.data()));
 		if (status != 0) {
 			throw Exception{status_type::ENCRYPT_ERROR, "Failed to encrypt message."};
@@ -222,15 +222,15 @@ namespace Molch {
 
 		//add the encrypted message to the protobuf struct
 		packet_struct.has_encrypted_message = true;
-		packet_struct.encrypted_message.data = byte_to_uchar(encrypted_message.content);
-		packet_struct.encrypted_message.len = encrypted_message.size;
+		packet_struct.encrypted_message.data = byte_to_uchar(encrypted_message.data());
+		packet_struct.encrypted_message.len = encrypted_message.size();
 
 		//calculate the required length
 		const size_t packed_length{packet__get_packed_size(&packet_struct)};
 		//pack the packet
 		Buffer packet{packed_length, 0};
-		packet.size = packet__pack(&packet_struct, byte_to_uchar(packet.content));
-		if (packet.size != packed_length) {
+		packet.setSize(packet__pack(&packet_struct, byte_to_uchar(packet.data())));
+		if (packet.size() != packed_length) {
 			throw Exception{status_type::PROTOBUF_PACK_ERROR, "Packet packet has incorrect length."};
 		}
 
@@ -326,7 +326,7 @@ namespace Molch {
 		optional<Buffer> axolotl_header{in_place_t(), axolotl_header_length, axolotl_header_length};
 
 		auto status{crypto_secretbox_open_easy(
-				byte_to_uchar(axolotl_header->content),
+				byte_to_uchar(axolotl_header->data()),
 				packet_struct->encrypted_axolotl_header.data,
 				packet_struct->encrypted_axolotl_header.len,
 				packet_struct->packet_header->header_nonce.data,
@@ -357,7 +357,7 @@ namespace Molch {
 		Buffer padded_message{padded_message_length, padded_message_length};
 
 		auto status{crypto_secretbox_open_easy(
-				byte_to_uchar(padded_message.content),
+				byte_to_uchar(padded_message.data()),
 				packet_struct->encrypted_message.data,
 				packet_struct->encrypted_message.len,
 				packet_struct->packet_header->message_nonce.data,
@@ -367,13 +367,13 @@ namespace Molch {
 		}
 
 		//get the padding (last byte)
-		auto padding{byte_to_uchar(padded_message.content[padded_message.size - 1])};
-		if (padding > padded_message.size) {
+		auto padding{byte_to_uchar(*(std::cend(padded_message) - 1))};
+		if (padding > padded_message.size()) {
 			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The padded message is too short."};
 		}
 
 		//extract the message
-		const auto message_length{padded_message.size - padding};
+		const auto message_length{padded_message.size() - padding};
 		optional<Buffer> message{in_place_t(), message_length, 0U};
 		//TODO this doesn't need to be copied, setting the length should be enough
 		message->copyFrom(0, padded_message, 0, message_length);

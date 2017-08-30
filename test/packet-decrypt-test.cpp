@@ -43,10 +43,10 @@ int main(void) {
 		//generate keys and message
 		molch_message_type packet_type{molch_message_type::NORMAL_MESSAGE};
 		Buffer header{4, 4};
-		header.content[0] = uchar_to_byte(0x01);
-		header.content[1] = uchar_to_byte(0x02);
-		header.content[2] = uchar_to_byte(0x03);
-		header.content[3] = uchar_to_byte(0x04);
+		header[0] = uchar_to_byte(0x01);
+		header[1] = uchar_to_byte(0x02);
+		header[2] = uchar_to_byte(0x03);
+		header[3] = uchar_to_byte(0x04);
 		printf("Packet type: %02x\n", static_cast<int>(packet_type));
 		putchar('\n');
 
@@ -93,7 +93,7 @@ int main(void) {
 		}
 
 
-		if (decrypted_header.value().size != header.size) {
+		if (decrypted_header.value().size() != header.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length!"};
 		}
 		printf("Decrypted header has the same length.\n");
@@ -104,7 +104,7 @@ int main(void) {
 		}
 		printf("Decrypted header matches.\n\n");
 
-		if (!decrypted_message.value().contains(message.size)) {
+		if (!decrypted_message.value().contains(message.size())) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message isn't of the same length."};
 		}
 		printf("Decrypted message has the same length.\n");
@@ -165,7 +165,7 @@ int main(void) {
 			throw Molch::Exception{status_type::DATA_FETCH_ERROR, "Failed to retrieve metadata."};
 		}
 
-		if (!decrypted_header.value().contains(header.size)) {
+		if (!decrypted_header.value().contains(header.size())) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length."};
 		}
 		printf("Decrypted header has the same length!\n");
@@ -176,7 +176,7 @@ int main(void) {
 		}
 		printf("Decrypted header matches!\n");
 
-		if (!decrypted_message.value().contains(message.size)) {
+		if (!decrypted_message.value().contains(message.size())) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message isn't of the same length."};
 		}
 		printf("Decrypted message has the same length.\n");

@@ -262,16 +262,13 @@ namespace Molch {
 		private_key = found_deprecated_prekey->private_key;
 	}
 
-	void PrekeyStore::list(Buffer& list) const { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
-		Expects(list.fits(PREKEY_AMOUNT * PUBLIC_KEY_SIZE));
+	void PrekeyStore::list(gsl::span<gsl::byte> list) const { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+		Expects(list.size() == PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
 		size_t index{0};
 		for (const auto& key_bundle : *this->prekeys) {
-			list.copyFromRaw(
-					PUBLIC_KEY_SIZE * index,
-					key_bundle.public_key.data(),
-					0,
-					PUBLIC_KEY_SIZE);
+			auto key_span{key_bundle.public_key.span()};
+			std::copy(std::cbegin(key_span), std::cend(key_span), std::begin(list) + narrow(PUBLIC_KEY_SIZE * index));
 			index++;
 		}
 	}

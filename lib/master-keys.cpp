@@ -144,7 +144,7 @@ namespace Molch {
 		auto status{crypto_sign_seed_keypair(
 				byte_to_uchar(this->public_signing_key.data()),
 				byte_to_uchar(this->private_signing_key->data()),
-				byte_to_uchar(high_entropy_seed.content))};
+				byte_to_uchar(high_entropy_seed.data()))};
 		if (status != 0) {
 			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate signing keypair with seed."};
 		}
@@ -155,7 +155,7 @@ namespace Molch {
 		status = crypto_box_seed_keypair(
 				byte_to_uchar(this->public_identity_key.data()),
 				byte_to_uchar(this->private_identity_key->data()),
-				byte_to_uchar(high_entropy_seed.content + crypto_sign_SEEDBYTES));
+				byte_to_uchar(&high_entropy_seed[crypto_sign_SEEDBYTES]));
 		if (status != 0) {
 			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate identity keypair with seed."};
 		}
@@ -185,12 +185,12 @@ namespace Molch {
 			Buffer& signed_data) const { //output, length of data + SIGNATURE_SIZE
 		Expects(signed_data.fits(narrow(data.size()) + SIGNATURE_SIZE));
 
-		signed_data.size = 0;
+		signed_data.setSize(0);
 
 		Unlocker unlocker{*this};
 		unsigned long long signed_message_length;
 		auto status{crypto_sign(
-			byte_to_uchar(signed_data.content),
+			byte_to_uchar(signed_data.data()),
 			&signed_message_length,
 			byte_to_uchar(data.data()),
 			narrow(data.size()),
@@ -199,7 +199,7 @@ namespace Molch {
 			throw Exception{status_type::SIGN_ERROR, "Failed to sign message."};
 		}
 
-		signed_data.size = gsl::narrow<size_t>(signed_message_length);
+		signed_data.setSize(gsl::narrow<size_t>(signed_message_length));
 	}
 
 	void MasterKeys::exportProtobuf(

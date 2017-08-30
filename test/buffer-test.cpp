@@ -60,17 +60,17 @@ int main(void) {
 		Buffer buffer1{14, 10};
 		gsl::byte buffer1_content[10];
 		randombytes_buf(buffer1_content, sizeof(buffer1_content));
-		std::copy(buffer1_content, buffer1_content + sizeof(buffer1_content), buffer1.content);
+		std::copy(std::cbegin(buffer1_content), std::cend(buffer1_content), std::begin(buffer1));
 		printf("Here\n");
 
-		std::cout << "Random buffer (" << buffer1.size << " Bytes):\n";
+		std::cout << "Random buffer (" << buffer1.size() << " Bytes):\n";
 		buffer1.printHex(std::cout) << '\n';
 
 		unsigned char buffer2_content[]{0xde, 0xad, 0xbe, 0xef, 0x00};
 		Buffer buffer2;
 		new (&buffer2) Buffer{gsl::span<gsl::byte>{uchar_to_byte(buffer2_content), 5}, 4};
 
-		printf("Second buffer (%zu Bytes):\n", buffer2.size);
+		printf("Second buffer (%zu Bytes):\n", buffer2.size());
 		buffer2.printHex(std::cout) << std::endl;
 
 		Buffer empty{static_cast<size_t>(0), 0};
@@ -79,7 +79,7 @@ int main(void) {
 
 		//copy buffer
 		Buffer buffer3{5, 0};
-		buffer3.copyFrom(0, buffer2, 0, buffer2.size);
+		buffer3.copyFrom(0, buffer2, 0, buffer2.size());
 		if (buffer2 != buffer3) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy buffer."};
 		}
@@ -87,7 +87,7 @@ int main(void) {
 
 		auto detected{false};
 		try {
-			buffer3.copyFrom(buffer2.size, buffer2, 0, buffer2.size);
+			buffer3.copyFrom(buffer2.size(), buffer2, 0, buffer2.size());
 		} catch (...) {
 			detected = true;
 		}
@@ -96,8 +96,8 @@ int main(void) {
 		}
 		printf("Detected out of bounds buffer copying.\n");
 
-		buffer3.copyFrom(1, buffer2, 0, buffer2.size);
-		if ((buffer3.content[0] != buffer2.content[0]) || (sodium_memcmp(buffer2.content, buffer3.content + 1, buffer2.size) != 0)) {
+		buffer3.copyFrom(1, buffer2, 0, buffer2.size());
+		if ((buffer3[0] != buffer2[0]) || (sodium_memcmp(buffer2.data(), buffer3.data() + 1, buffer2.size()) != 0)) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy buffer."};
 		}
 		printf("Successfully copied buffer.\n");
@@ -109,7 +109,7 @@ int main(void) {
 				0, //destination offset
 				1, //source offset
 				4); //length
-		if (sodium_memcmp(raw_array, buffer1.content + 1, 4) != 0) {
+		if (sodium_memcmp(raw_array, &buffer1[1], 4) != 0) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy buffer to raw array."};
 		}
 		printf("Successfully copied buffer to raw array.\n");
@@ -132,7 +132,7 @@ int main(void) {
 				uchar_to_byte(heeelo), //source
 				0, //offset
 				sizeof(heeelo)); //length
-		if (sodium_memcmp(heeelo, buffer1.content, sizeof(heeelo))) {
+		if (sodium_memcmp(heeelo, buffer1.data(), sizeof(heeelo))) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy from raw array to buffer."};
 		}
 		printf("Successfully copied raw array to buffer.\n");
@@ -154,10 +154,10 @@ int main(void) {
 
 		//create a buffer from a string
 		Buffer string{"This is a string!"};
-		if (string.size != sizeof("This is a string!")) {
+		if (string.size() != sizeof("This is a string!")) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Buffer created from string has incorrect length."};
 		}
-		if (sodium_memcmp(string.content, "This is a string!", string.size) != 0) {
+		if (sodium_memcmp(string.data(), "This is a string!", string.size()) != 0) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to create buffer from string."};
 		}
 		printf("Successfully created buffer from string.\n");
@@ -168,12 +168,12 @@ int main(void) {
 
 		//check if the buffer was properly cleared
 		for (size_t i{0}; i < buffer1.capacity(); i++) {
-			if (buffer1.content[i] != uchar_to_byte('\0')) {
+			if (buffer1.data()[i] != static_cast<gsl::byte>('\0')) {
 				throw Molch::Exception{status_type::BUFFER_ERROR, "Buffer hasn't been erased properly."};
 			}
 		}
 
-		if (buffer1.size != 0) {
+		if (!buffer1.empty()) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "The content length of the buffer hasn't been set to zero."};
 		}
 		printf("Buffer successfully erased.\n");
@@ -182,10 +182,10 @@ int main(void) {
 		Buffer random{10, 0};
 		random.fillRandom(5);
 
-		if (random.size != 5) {
+		if (!random.contains(5)) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Wrong content length.\n"};
 		}
-		printf("Buffer with %zu random bytes:\n", random.size);
+		printf("Buffer with %zu random bytes:\n", random.size());
 		random.printHex(std::cout);
 
 		detected = false;
@@ -211,10 +211,10 @@ int main(void) {
 
 		//test xor
 		Buffer text{"Hello World!"};
-		Buffer to_xor{text.size, text.size};
+		Buffer to_xor{text.size(), text.size()};
 		to_xor.cloneFrom(text);
 
-		Buffer random2{text.size, text.size};
+		Buffer random2{text.size(), text.size()};
 		random2.fillRandom(random2.capacity());
 
 		//xor random data to xor-buffer
@@ -237,9 +237,9 @@ int main(void) {
 		//test creating a buffer with an existing array
 		unsigned char array[]{"Hello World!\n"};
 		Buffer buffer_with_array{gsl::span<gsl::byte>{uchar_to_byte(array), narrow(sizeof(array))}};
-		if ((buffer_with_array.content != uchar_to_byte(array))
-				|| (buffer_with_array.size != sizeof(array))
-				|| (buffer_with_array.capacity() != sizeof(array))) {
+		if ((buffer_with_array.data() != uchar_to_byte(array))
+				|| !buffer_with_array.contains(sizeof(array))
+				|| !buffer_with_array.fits(sizeof(array))) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to create buffer with existing array."};
 		}
 
@@ -261,7 +261,7 @@ int main(void) {
 		//test custom allocator
 		Buffer custom_allocated{10, 10, sodium_malloc, sodium_free};
 		Buffer custom_allocated_empty_buffer{0, 0, malloc, free};
-		if (custom_allocated_empty_buffer.content != nullptr) {
+		if (custom_allocated_empty_buffer.data() != nullptr) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Customly allocated empty buffer has content."};
 		}
 

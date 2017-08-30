@@ -58,7 +58,7 @@ int main(void) {
 				previous_message_number)};
 
 		//print the header
-		printf("Header (%zu Bytes):\n", header.size);
+		printf("Header (%zu Bytes):\n", header.size());
 		header.printHex(std::cout);
 		putchar('\n');
 

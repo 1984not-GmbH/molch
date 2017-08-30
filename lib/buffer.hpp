@@ -35,6 +35,9 @@ namespace Molch {
 		bool readonly{false}; //if set, this buffer shouldn't be written to.
 		void (*deallocator)(void*){nullptr}; //a deallocator if the buffer has been allocated with a custom allocator
 
+		size_t content_length{0};
+		gsl::byte *content{nullptr};
+
 		Buffer& copy(const Buffer& buffer);
 		Buffer& move(Buffer&& buffer);
 
@@ -44,9 +47,6 @@ namespace Molch {
 		void destruct();
 
 	public:
-		size_t size{0};
-		gsl::byte *content{nullptr};
-
 		Buffer() = default; // does nothing
 		/* move and copy constructors */
 		Buffer(Buffer&& buffer);
@@ -72,13 +72,28 @@ namespace Molch {
 		//copy assignment
 		Buffer& operator=(const Buffer& buffer);
 
+		gsl::byte& operator[](size_t index);
+		const gsl::byte& operator[](size_t index) const;
+
+		gsl::byte* data() noexcept;
+		const gsl::byte* data() const noexcept;
+		size_t size() const noexcept;
+		bool empty() const noexcept;
+
+		void setSize(size_t size);
+
+		gsl::byte* begin() noexcept;
+		const gsl::byte* begin() const noexcept;
+		gsl::byte* end() noexcept;
+		const gsl::byte* end() const noexcept;
+
 		/*
 		 * Clear a buffer.
 		 *
 		 * Overwrites the buffer with zeroes and
 		 * resets the content size.
 		 */
-		void clear();
+		void clear() noexcept;
 
 		/*
 		 * Xor another buffer with the same length onto this one.
@@ -190,7 +205,7 @@ namespace Molch {
 
 		bool isNone() const;
 
-		size_t capacity() const;
+		size_t capacity() const noexcept;
 		void setReadOnly(bool readonly);
 
 		bool fits(const size_t size) const;

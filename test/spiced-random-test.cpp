@@ -39,8 +39,8 @@ int main(void) noexcept {
 
 		//some random user input (idiot bashing his head on the keyboard)
 		Buffer spice{"aäipoewur+ü 093+2ß3+2ü+ ß09234rt #2ß 0iw4eräp9ui23+ 03943"};
-		printf("\"Random\" input from the user (%zu Bytes):\n", spice.size);
-		printf("String: %.*s\n", static_cast<int>(spice.size), byte_to_uchar(spice.content));
+		printf("\"Random\" input from the user (%zu Bytes):\n", spice.size());
+		printf("String: %.*s\n", static_cast<int>(spice.size()), byte_to_uchar(spice.data()));
 		printf("Hex:\n");
 		spice.printHex(std::cout) << std::endl;
 
@@ -48,7 +48,7 @@ int main(void) noexcept {
 		Buffer output1{42, 42};
 		spiced_random(output1.span(), spice.span());
 
-		printf("Spiced random data 1 (%zu Bytes):\n", output1.size);
+		printf("Spiced random data 1 (%zu Bytes):\n", output1.size());
 		output1.printHex(std::cout) << std::endl;
 
 
@@ -56,7 +56,7 @@ int main(void) noexcept {
 		Buffer output2{42, 42};
 		spiced_random(output2.span(), spice.span());
 
-		printf("Spiced random data 2 (%zu Bytes):\n", output2.size);
+		printf("Spiced random data 2 (%zu Bytes):\n", output2.size());
 		output2.printHex(std::cout);
 		putchar('\n');
 

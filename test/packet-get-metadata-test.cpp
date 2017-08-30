@@ -42,10 +42,10 @@ int main(void) {
 
 		molch_message_type packet_type{molch_message_type::NORMAL_MESSAGE};
 		Buffer header{4, 4};
-		header.content[0] = uchar_to_byte(0x01);
-		header.content[1] = uchar_to_byte(0x02);
-		header.content[2] = uchar_to_byte(0x03);
-		header.content[3] = uchar_to_byte(0x04);
+		header[0] = uchar_to_byte(0x01);
+		header[1] = uchar_to_byte(0x02);
+		header[2] = uchar_to_byte(0x03);
+		header[3] = uchar_to_byte(0x04);
 		printf("Packet type: %02x\n\n", static_cast<int>(packet_type));
 
 		//A NORMAL MESSAGE

@@ -53,7 +53,7 @@ static void protobuf_export(
 		auto export_size{prekey__get_packed_size(keypair)};
 		key_buffers.emplace_back(export_size, 0);
 
-		key_buffers.back().size = prekey__pack(keypair, byte_to_uchar(key_buffers.back().content));
+		key_buffers.back().setSize(prekey__pack(keypair, byte_to_uchar(key_buffers.back().data())));
 	}
 
 	//export all the deprecated keypairs
@@ -63,7 +63,7 @@ static void protobuf_export(
 		auto export_size{prekey__get_packed_size(keypair)};
 		deprecated_key_buffers.emplace_back(export_size, 0);
 
-		deprecated_key_buffers.back().size = prekey__pack(keypair, byte_to_uchar(deprecated_key_buffers.back().content));
+		deprecated_key_buffers.back().setSize(prekey__pack(keypair, byte_to_uchar(deprecated_key_buffers.back().data())));
 	}
 }
 
@@ -79,8 +79,8 @@ static void protobuf_import(
 	for (const auto& keypair_buffer : keypair_buffers) {
 		keypairs_array[index] = prekey__unpack(
 				&pool_protoc_allocator,
-				keypair_buffer.size,
-				byte_to_uchar(keypair_buffer.content));
+				keypair_buffer.size(),
+				byte_to_uchar(keypair_buffer.data()));
 		if (keypairs_array[index] == nullptr) {
 			throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack prekey from protobuf."};
 		}
@@ -94,8 +94,8 @@ static void protobuf_import(
 	for (const auto& keypair_buffer : deprecated_keypair_buffers) {
 		deprecated_keypairs_array[index] = prekey__unpack(
 				&pool_protoc_allocator,
-				keypair_buffer.size,
-				byte_to_uchar(keypair_buffer.content));
+				keypair_buffer.size(),
+				byte_to_uchar(keypair_buffer.data()));
 		if (deprecated_keypairs_array[index] == nullptr) {
 			throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack deprecated prekey from protobuf."};
 		}
@@ -137,7 +137,7 @@ int main(void) {
 
 		auto store{std::make_unique<PrekeyStore>()};
 		Buffer prekey_list{PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE};
-		store->list(prekey_list);
+		store->list(prekey_list.span());
 		printf("Prekey list:\n");
 		prekey_list.printHex(std::cout) << std::endl;
 
