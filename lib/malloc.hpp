@@ -36,6 +36,33 @@ namespace Molch {
 	}
 
 	template <typename T>
+	class MallocAllocator {
+	public:
+		using value_type = T;
+
+		MallocAllocator() = default;
+		template <typename U>
+		constexpr MallocAllocator(const MallocAllocator<U>&) noexcept {}
+
+		T* allocate(size_t elements) {
+			return throwing_malloc<T>(elements);
+		}
+
+		void deallocate(T* pointer, size_t elements) noexcept {
+			(void)elements;
+			free(pointer);
+		}
+	};
+	template <typename T, typename U>
+	bool operator==(const MallocAllocator<T>&, const MallocAllocator<U>&) {
+		return true;
+	}
+	template <typename T, typename U>
+	bool operator!=(const MallocAllocator<T>&, const MallocAllocator<U>&) {
+		return false;
+	}
+
+	template <typename T>
 	class MallocDeleter {
 	public:
 		void operator()(T* object) {

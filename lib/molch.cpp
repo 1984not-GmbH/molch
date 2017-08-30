@@ -467,7 +467,6 @@ return_status molch_start_send_conversation(
 
 		//get the receivers public ephemeral and identity
 		PublicKey receiver_public_identity;
-		Buffer receiver_public_master_key_buffer{{uchar_to_byte(receiver_public_master_key), PUBLIC_MASTER_KEY_SIZE}};
 		PublicSigningKey receiver_public_master_key_key;
 		receiver_public_master_key_key.set({uchar_to_byte(receiver_public_master_key), PUBLIC_MASTER_KEY_SIZE});
 		verify_prekey_list(
@@ -479,7 +478,7 @@ return_status molch_start_send_conversation(
 		MasterKeys::Unlocker unlocker{user->master_keys};
 
 		//create the conversation and encrypt the message
-		Buffer prekeys{{uchar_to_byte(prekey_list) + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, gsl::narrow<ptrdiff_t>(prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t))}};
+		gsl::span<const gsl::byte> prekeys{uchar_to_byte(prekey_list) + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, gsl::narrow<ptrdiff_t>(prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t))};
 		Buffer packet_buffer;
 		Molch::Conversation conversation{
 			{uchar_to_byte(message), narrow(message_length)},
@@ -995,12 +994,8 @@ cleanup:
 			//pack the struct
 			auto conversation_size{conversation__get_packed_size(conversation_struct)};
 			auto conversation_buffer_content{pool.allocate<gsl::byte>(conversation_size)};
-			Buffer conversation_buffer{gsl::span<gsl::byte>{conversation_buffer_content, narrow(conversation_size)}, 0};
-
-			conversation_buffer.setSize(conversation__pack(conversation_struct, byte_to_uchar(conversation_buffer.data())));
-			if (conversation_buffer.size() != conversation_size) {
-				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c."};
-			}
+			gsl::span<gsl::byte> conversation_buffer{conversation_buffer_content, narrow(conversation_size)};
+			conversation__pack(conversation_struct, byte_to_uchar(conversation_buffer.data()));
 
 			//generate the nonce
 			Buffer backup_nonce{BACKUP_NONCE_SIZE, 0};
@@ -1014,7 +1009,7 @@ cleanup:
 			auto status{crypto_secretbox_easy(
 					byte_to_uchar(backup_buffer.data()),
 					byte_to_uchar(conversation_buffer.data()),
-					conversation_buffer.size(),
+					narrow(conversation_buffer.size()),
 					byte_to_uchar(backup_nonce.data()),
 					byte_to_uchar(global_backup_key->data()))};
 			if (status != 0) {
@@ -1116,10 +1111,9 @@ cleanup:
 			ProtobufPool pool;
 			auto decrypted_backup_content{pool.allocate<gsl::byte>(
 						encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
-			Buffer decrypted_backup{
-				gsl::span<gsl::byte>{decrypted_backup_content,
-				narrow(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)},
-				encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES};
+			gsl::span<gsl::byte> decrypted_backup{
+					decrypted_backup_content,
+					narrow(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
 
 			//decrypt the backup
 			auto status_int{crypto_secretbox_open_easy(
@@ -1134,7 +1128,7 @@ cleanup:
 
 			//unpack the struct
 			auto pool_protoc_allocator{pool.getProtobufCAllocator()};
-			auto conversation_struct{conversation__unpack(&pool_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
+			auto conversation_struct{conversation__unpack(&pool_protoc_allocator, narrow(decrypted_backup.size()), byte_to_uchar(decrypted_backup.data()))};
 			if (conversation_struct == nullptr) {
 				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack conversations protobuf-c."};
 			}
@@ -1206,12 +1200,8 @@ cleanup:
 			//pack the struct
 			auto backup_struct_size{backup__get_packed_size(backup_struct)};
 			auto users_buffer_content{pool.allocate<gsl::byte>(backup_struct_size)};
-			Buffer users_buffer{gsl::span<gsl::byte>{users_buffer_content, narrow(backup_struct_size)}, 0};
-
-			users_buffer.setSize(backup__pack(backup_struct, byte_to_uchar(users_buffer.data())));
-			if (users_buffer.size() != backup_struct_size) {
-				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack conversation to protobuf-c."};
-			}
+			gsl::span<gsl::byte> users_buffer{users_buffer_content, narrow(backup_struct_size)};
+			backup__pack(backup_struct, byte_to_uchar(users_buffer.data()));
 
 			//generate the nonce
 			Buffer backup_nonce{BACKUP_NONCE_SIZE, 0};
@@ -1224,7 +1214,7 @@ cleanup:
 			auto status{crypto_secretbox_easy(
 					byte_to_uchar(backup_buffer.data()),
 					byte_to_uchar(users_buffer.data()),
-					users_buffer.size(),
+					narrow(users_buffer.size()),
 					byte_to_uchar(backup_nonce.data()),
 					byte_to_uchar(global_backup_key->data()))};
 			if (status != 0) {
@@ -1333,10 +1323,9 @@ cleanup:
 			ProtobufPool pool;
 			auto decrypted_backup_content{pool.allocate<gsl::byte>(
 					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
-			Buffer decrypted_backup{gsl::span<gsl::byte>{
-				decrypted_backup_content,
-				narrow(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)},
-				encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES};
+			gsl::span<gsl::byte> decrypted_backup{
+					decrypted_backup_content,
+					narrow(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
 
 			//decrypt the backup
 			auto status_int{crypto_secretbox_open_easy(
@@ -1351,7 +1340,7 @@ cleanup:
 
 			//unpack the struct
 			auto pool_protoc_allocator{pool.getProtobufCAllocator()};
-			auto backup_struct{backup__unpack(&pool_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
+			auto backup_struct{backup__unpack(&pool_protoc_allocator, narrow(decrypted_backup.size()), byte_to_uchar(decrypted_backup.data()))};
 			if (backup_struct == nullptr) {
 				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack backups protobuf-c."};
 			}

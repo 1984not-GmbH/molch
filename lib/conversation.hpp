@@ -72,7 +72,7 @@ namespace Molch {
 				const PublicKey& sender_public_identity, //who is sending this message?
 				const PrivateKey& sender_private_identity,
 				const PublicKey& receiver_public_identity,
-				Buffer& receiver_prekey_list); //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+				const gsl::span<const gsl::byte> receiver_prekey_list); //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 
 		/*
 		 * Start a new conversation where we are the receiver.

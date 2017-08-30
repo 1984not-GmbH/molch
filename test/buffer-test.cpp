@@ -67,8 +67,8 @@ int main(void) {
 		buffer1.printHex(std::cout) << '\n';
 
 		unsigned char buffer2_content[]{0xde, 0xad, 0xbe, 0xef, 0x00};
-		Buffer buffer2;
-		new (&buffer2) Buffer{gsl::span<gsl::byte>{uchar_to_byte(buffer2_content), 5}, 4};
+		Buffer buffer2{sizeof(buffer2_content), sizeof(buffer2_content)};
+		buffer2.cloneFromRaw({uchar_to_byte(buffer2_content), sizeof(buffer2_content)});
 
 		printf("Second buffer (%zu Bytes):\n", buffer2.size());
 		buffer2.printHex(std::cout) << std::endl;
@@ -96,8 +96,8 @@ int main(void) {
 		}
 		printf("Detected out of bounds buffer copying.\n");
 
-		buffer3.copyFrom(1, buffer2, 0, buffer2.size());
-		if ((buffer3[0] != buffer2[0]) || (sodium_memcmp(buffer2.data(), buffer3.data() + 1, buffer2.size()) != 0)) {
+		buffer3.copyFrom(1, buffer2, 0, buffer2.size() - 1);
+		if ((buffer3[0] != buffer2[0]) || (sodium_memcmp(buffer2.data(), buffer3.data() + 1, buffer2.size() - 1) != 0)) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy buffer."};
 		}
 		printf("Successfully copied buffer.\n");
@@ -233,15 +233,6 @@ int main(void) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "ERROR: Failed to xor buffers properly."};
 		}
 		printf("Successfully tested xor.\n");
-
-		//test creating a buffer with an existing array
-		unsigned char array[]{"Hello World!\n"};
-		Buffer buffer_with_array{gsl::span<gsl::byte>{uchar_to_byte(array), narrow(sizeof(array))}};
-		if ((buffer_with_array.data() != uchar_to_byte(array))
-				|| !buffer_with_array.contains(sizeof(array))
-				|| !buffer_with_array.fits(sizeof(array))) {
-			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to create buffer with existing array."};
-		}
 
 		//compare buffer to an array
 		Buffer true_buffer{"true"};

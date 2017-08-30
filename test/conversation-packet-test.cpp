@@ -73,7 +73,7 @@ int main(void) {
 				alice_public_identity,
 				alice_private_identity,
 				bob_public_identity,
-				prekey_list);
+				prekey_list.span());
 
 		printf("Packet:\n");
 		packet.printHex(std::cout) << std::endl;
@@ -168,7 +168,7 @@ int main(void) {
 			bob_public_identity,
 			bob_private_identity,
 			alice_public_identity,
-			prekey_list};
+			prekey_list.span()};
 
 		printf("Sent message: %.*s\n", static_cast<int>(send_message.size()), reinterpret_cast<const char*>(send_message.data()));
 		printf("Packet:\n");

@@ -109,10 +109,10 @@ int main(int argc, char *args[]) noexcept {
 		}
 
 		//print the backup to a file
-		Buffer backup_buffer{gsl::span<gsl::byte>{uchar_to_byte(backup.get()), narrow(backup_length)}};
-		Buffer backup_key_buffer{gsl::span<gsl::byte>{uchar_to_byte(backup_key), BACKUP_KEY_SIZE}};
-		print_to_file(backup_buffer.span(), "molch-init.backup");
-		print_to_file(backup_key_buffer.span(), "molch-init-backup.key");
+		gsl::span<gsl::byte> backup_buffer{uchar_to_byte(backup.get()), narrow(backup_length)};
+		gsl::span<gsl::byte> backup_key_buffer{uchar_to_byte(backup_key), BACKUP_KEY_SIZE};
+		print_to_file(backup_buffer, "molch-init.backup");
+		print_to_file(backup_key_buffer, "molch-init-backup.key");
 	} catch (const Molch::Exception& exception) {
 		exception.print(std::cerr) << std::endl;
 		return EXIT_FAILURE;

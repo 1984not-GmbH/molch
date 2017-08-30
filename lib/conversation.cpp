@@ -104,11 +104,11 @@ namespace Molch {
 			const PublicKey& sender_public_identity, //who is sending this message?
 			const PrivateKey& sender_private_identity,
 			const PublicKey& receiver_public_identity,
-			Buffer& receiver_prekey_list) { //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+			const gsl::span<const gsl::byte> receiver_prekey_list) { //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 		Expects(!receiver_public_identity.empty
 				&& !sender_public_identity.empty
 				&& !sender_private_identity.empty
-				&& receiver_prekey_list.contains((PREKEY_AMOUNT * PUBLIC_KEY_SIZE)));
+				&& (receiver_prekey_list.size() == (PREKEY_AMOUNT * PUBLIC_KEY_SIZE)));
 
 		//create an ephemeral keypair
 		PublicKey sender_public_ephemeral;
@@ -123,7 +123,7 @@ namespace Molch {
 		auto prekey_number{randombytes_uniform(PREKEY_AMOUNT)};
 		PublicKey receiver_public_prekey;
 		receiver_public_prekey.set({
-				&receiver_prekey_list[prekey_number * PUBLIC_KEY_SIZE],
+				&receiver_prekey_list[gsl::narrow<ptrdiff_t>(prekey_number * PUBLIC_KEY_SIZE)],
 				PUBLIC_KEY_SIZE});
 
 		//initialize the conversation

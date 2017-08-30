@@ -126,36 +126,6 @@ namespace Molch {
 			}
 		}
 
-		/*
-		 * initialize a buffer with a pointer to the character array.
-		 * Won't zero out the data automatically!
-		 */
-		Buffer(const gsl::span<gsl::byte> content) :
-			Buffer{content, narrow(content.size())} {}
-		Buffer(const gsl::span<gsl::byte> content, const size_t content_size) :
-				buffer_length{narrow(content.size())},
-				manage_memory{false},
-				readonly{false} {
-			this->content_length = (content_size > narrow(content.size()))
-				? narrow(content.size())
-				: content_size;
-
-			if (content.empty()) {
-				this->content = nullptr;
-			} else {
-				this->content = content.data();
-			}
-		}
-
-		/*
-		 * initialize a buffer with a pointer to an array of const characters.
-		 */
-		Buffer(const gsl::span<const gsl::byte> content) :
-			Buffer{content, narrow(content.size())} {}
-		Buffer(const gsl::span<const gsl::byte> content, const size_t size) :
-				Buffer{gsl::span<gsl::byte>{const_cast<gsl::byte*>(content.data()), content.size()}, size} {
-			this->readonly = false;
-		}
 		Buffer(const size_t capacity, const size_t size, void* (*allocator)(size_t), void (*deallocator)(void*)) :
 				buffer_length{capacity},
 				deallocator{deallocator},
@@ -339,9 +309,12 @@ namespace Molch {
 				const size_t source_offset,
 				const size_t copy_length) {
 			Expects(!this->readonly
-					&& (this->buffer_length >= this->content_length) && (source.buffer_length >= source.content_length)
-					&& (destination_offset <= this->content_length) && (copy_length <= (this->buffer_length - destination_offset))
-					&& (source_offset <= source.content_length) && (copy_length <= (source.content_length - source_offset))
+					&& (this->buffer_length >= this->content_length)
+					&& (source.buffer_length >= source.content_length)
+					&& (destination_offset <= this->content_length)
+					&& (copy_length <= (this->buffer_length - destination_offset))
+					&& (source_offset <= source.content_length)
+					&& (copy_length <= (source.content_length - source_offset))
 					&& ((this->content_length == 0) || (this->content != nullptr))
 					&& ((source.content_length == 0) || (source.content != nullptr)));
 

@@ -33,7 +33,7 @@
 
 using namespace Molch;
 
-static Buffer decrypt_conversation_backup(
+static gsl::span<gsl::byte> decrypt_conversation_backup(
 		ProtobufPool& pool,
 		const gsl::span<const gsl::byte> backup,
 		const gsl::span<const gsl::byte> backup_key) {
@@ -61,10 +61,9 @@ static Buffer decrypt_conversation_backup(
 
 	auto decrypted_backup_content{pool.allocate<gsl::byte>(
 			encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
-	Buffer decrypted_backup{
-		gsl::span<gsl::byte>{decrypted_backup_content,
-		narrow(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)},
-		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES};
+	gsl::span<gsl::byte> decrypted_backup{
+		decrypted_backup_content,
+		narrow(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
 
 	//decrypt the backup
 	auto status{crypto_secretbox_open_easy(
@@ -80,7 +79,7 @@ static Buffer decrypt_conversation_backup(
 	return decrypted_backup;
 }
 
-static Buffer decrypt_full_backup(
+static gsl::span<gsl::byte> decrypt_full_backup(
 		ProtobufPool& pool,
 		const gsl::span<const gsl::byte> backup,
 		const gsl::span<const gsl::byte> backup_key) {
@@ -109,10 +108,9 @@ static Buffer decrypt_full_backup(
 
 	auto decrypted_backup_content{pool.allocate<gsl::byte>(
 		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
-	Buffer decrypted_backup{
-		gsl::span<gsl::byte>{decrypted_backup_content,
-		narrow(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)},
-		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES};
+	gsl::span<gsl::byte> decrypted_backup{
+		decrypted_backup_content,
+		narrow(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
 
 	//decrypt the backup
 	auto status{crypto_secretbox_open_easy(

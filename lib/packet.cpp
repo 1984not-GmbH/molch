@@ -201,7 +201,7 @@ namespace Molch {
 		auto padding{gsl::narrow<unsigned char>(255 - (message.size() % 255))};
 		Buffer padded_message{narrow(message.size()) + padding, 0};
 		//copy the message
-		padded_message.cloneFrom(message);
+		padded_message.cloneFromRaw(message);
 		//pad it
 		std::fill(padded_message.data() + padded_message.size(), padded_message.data() + padded_message.size() + padding, uchar_to_byte(padding));
 		padded_message.setSize(padded_message.size() + padding);
