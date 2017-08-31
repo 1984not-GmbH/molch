@@ -267,7 +267,7 @@ namespace Molch {
 
 		size_t index{0};
 		for (const auto& key_bundle : *this->prekeys) {
-			auto key_span{key_bundle.public_key.span()};
+			auto key_span{key_bundle.public_key};
 			std::copy(std::cbegin(key_span), std::cend(key_span), std::begin(list) + narrow(PUBLIC_KEY_SIZE * index));
 			index++;
 		}

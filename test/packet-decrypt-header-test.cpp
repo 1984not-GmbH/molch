@@ -68,7 +68,7 @@ int main(void) {
 			nullptr);
 
 		//now decrypt the header
-		auto decrypted_header{packet_decrypt_header(packet.span(), header_key)};
+		auto decrypted_header{packet_decrypt_header(packet, header_key)};
 
 
 		if (!decrypted_header.value().contains(header.size())) {
@@ -89,7 +89,7 @@ int main(void) {
 		packet[2] = uchar_to_byte(manipulated_byte);
 		auto decryption_failed{false};
 		try {
-			decrypted_header = packet_decrypt_header(packet.span(), header_key);
+			decrypted_header = packet_decrypt_header(packet, header_key);
 		} catch (const Molch::Exception& exception) {
 			decryption_failed = true;
 		}
@@ -106,7 +106,7 @@ int main(void) {
 		printf("Manipulate header.\n");
 		packet[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= uchar_to_byte(0x12);
 		try {
-			decrypted_header = packet_decrypt_header(packet.span(), header_key);
+			decrypted_header = packet_decrypt_header(packet, header_key);
 		} catch (const Molch::Exception& exception) {
 			decryption_failed = true;
 		}
@@ -144,7 +144,7 @@ int main(void) {
 			&public_prekey);
 
 		//now decrypt the header
-		decrypted_header = packet_decrypt_header(packet.span(), header_key);
+		decrypted_header = packet_decrypt_header(packet, header_key);
 		if (!decrypted_header.value().contains(header.size())) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length."};
 		}

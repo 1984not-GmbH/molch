@@ -137,7 +137,7 @@ int main(void) {
 
 		auto store{std::make_unique<PrekeyStore>()};
 		Buffer prekey_list{PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE};
-		store->list(prekey_list.span());
+		store->list(prekey_list);
 		printf("Prekey list:\n");
 		prekey_list.printHex(std::cout) << std::endl;
 

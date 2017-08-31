@@ -179,7 +179,7 @@ int main(void) {
 
 		//create the spiced master keys
 		Buffer seed{";a;awoeih]]pquw4t[spdif\\aslkjdf;'ihdg#)%!@))%)#)(*)@)#)h;kuhe[orih;o's':ke';sa'd;kfa';;.calijv;a/orq930u[sd9f0u;09[02;oasijd;adk"};
-		MasterKeys spiced_master_keys{seed.span()};
+		MasterKeys spiced_master_keys{seed};
 		spiced_master_keys.getSigningKey(public_signing_key);
 		spiced_master_keys.getIdentityKey(public_identity_key);
 
@@ -217,7 +217,7 @@ int main(void) {
 		printf("Data to be signed.\n");
 		printf("%.*s\n", static_cast<int>(data.size()), reinterpret_cast<char*>(data.data()));
 		Buffer signed_data{100, data.size() + SIGNATURE_SIZE};
-		spiced_master_keys.sign(data.span(), signed_data.span());
+		spiced_master_keys.sign(data, signed_data);
 		printf("Signed data:\n");
 		signed_data.printHex(std::cout);
 

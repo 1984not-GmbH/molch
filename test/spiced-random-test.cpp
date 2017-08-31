@@ -46,7 +46,7 @@ int main(void) noexcept {
 
 		//fill buffer with spiced random data
 		Buffer output1{42, 42};
-		spiced_random(output1.span(), spice.span());
+		spiced_random(output1, spice);
 
 		printf("Spiced random data 1 (%zu Bytes):\n", output1.size());
 		output1.printHex(std::cout) << std::endl;
@@ -54,7 +54,7 @@ int main(void) noexcept {
 
 		//fill buffer with spiced random data
 		Buffer output2{42, 42};
-		spiced_random(output2.span(), spice.span());
+		spiced_random(output2, spice);
 
 		printf("Spiced random data 2 (%zu Bytes):\n", output2.size());
 		output2.printHex(std::cout);
@@ -67,7 +67,7 @@ int main(void) noexcept {
 
 		//don't crash with output length 0
 		try {
-			spiced_random({nullptr}, spice.span());
+			spiced_random({nullptr}, spice);
 		} catch (const std::exception& exception) {
 			//on newer libsodium versions, output lengths of zero aren't supported
 		}

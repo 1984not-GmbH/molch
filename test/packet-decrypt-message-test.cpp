@@ -68,7 +68,7 @@ int main(void) {
 			nullptr);
 
 		//now decrypt the message
-		auto decrypted_message{packet_decrypt_message(packet.span(), message_key)};
+		auto decrypted_message{packet_decrypt_message(packet, message_key)};
 
 		//check the message size
 		if (!decrypted_message.value().contains(message.size())) {
@@ -91,7 +91,7 @@ int main(void) {
 		//try to decrypt
 		auto decryption_failed{false};
 		try {
-			decrypted_message = packet_decrypt_message(packet.span(), message_key);
+			decrypted_message = packet_decrypt_message(packet, message_key);
 		} catch (const Molch::Exception& exception) {
 			decryption_failed = true;
 		}
@@ -125,7 +125,7 @@ int main(void) {
 			&public_prekey);
 
 		//now decrypt the message
-		decrypted_message = packet_decrypt_message(packet.span(), message_key);
+		decrypted_message = packet_decrypt_message(packet, message_key);
 
 		//check the message size
 		if (!decrypted_message.value().contains(message.size())) {

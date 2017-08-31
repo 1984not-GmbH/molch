@@ -73,7 +73,7 @@ int main(void) {
 			extracted_current_protocol_version,
 			extracted_highest_supported_protocol_version,
 			extracted_packet_type,
-			packet.span(),
+			packet,
 			nullptr,
 			nullptr,
 			nullptr);
@@ -126,7 +126,7 @@ int main(void) {
 			extracted_current_protocol_version,
 			extracted_highest_supported_protocol_version,
 			extracted_packet_type,
-			packet.span(),
+			packet,
 			&extracted_public_identity_key,
 			&extracted_public_ephemeral_key,
 			&extracted_public_prekey);

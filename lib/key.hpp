@@ -186,14 +186,6 @@ namespace Molch {
 			derived_key.empty = false;
 		}
 
-		gsl::span<gsl::byte> span() {
-			return {this->data(), length};
-		}
-
-		const gsl::span<const gsl::byte> span() const {
-			return {this->data(), length};
-		}
-
 		void fillRandom() {
 			randombytes_buf(reinterpret_cast<void*>(this->data()), this->size());
 			this->empty = false;

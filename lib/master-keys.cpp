@@ -136,7 +136,7 @@ namespace Molch {
 		SodiumBuffer high_entropy_seed{
 				crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES,
 				crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES};
-		spiced_random(high_entropy_seed.span(), low_entropy_seed);
+		spiced_random(high_entropy_seed, low_entropy_seed);
 
 		//generate the signing keypair
 		auto status{crypto_sign_seed_keypair(

@@ -463,7 +463,7 @@ int main(void) {
 		auto decrypted_backup{decrypt_full_backup(
 				pool,
 				{uchar_to_byte(backup.get()), narrow(backup_length)},
-				backup_key.span())};
+				backup_key)};
 
 		//compare the keys
 		if (backup_key == new_backup_key) {
@@ -488,7 +488,7 @@ int main(void) {
 		auto decrypted_imported_backup{decrypt_full_backup(
 				pool,
 				{uchar_to_byte(imported_backup.get()), narrow(imported_backup_length)},
-				backup_key.span())};
+				backup_key)};
 
 		//compare
 		if (decrypted_backup != decrypted_imported_backup) {
@@ -528,7 +528,7 @@ int main(void) {
 		auto decrypted_conversation_backup{decrypt_conversation_backup(
 				pool,
 				{uchar_to_byte(backup.get()), narrow(backup_length)},
-				backup_key.span())};
+				backup_key)};
 
 		//copy the backup key
 		backup_key.cloneFrom(new_backup_key);
@@ -551,7 +551,7 @@ int main(void) {
 		auto decrypted_imported_conversation_backup{decrypt_conversation_backup(
 				pool,
 				{uchar_to_byte(imported_backup.get()), narrow(imported_backup_length)},
-				backup_key.span())};
+				backup_key)};
 
 		//compare
 		if (decrypted_conversation_backup != decrypted_imported_conversation_backup) {

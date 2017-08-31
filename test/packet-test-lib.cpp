@@ -74,9 +74,9 @@ void create_and_print_message(
 	//now encrypt the message
 	packet = packet_encrypt(
 			packet_type,
-			header.span(),
+			header,
 			header_key,
-			message.span(),
+			message,
 			message_key,
 			public_identity_key,
 			public_ephemeral_key,

@@ -70,7 +70,7 @@ int main(void) {
 				extracted_public_ephemeral_key,
 				extracted_message_number,
 				extracted_previous_message_number,
-				header.span());
+				header);
 
 		printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key.size());
 		extracted_public_ephemeral_key.printHex(std::cout);

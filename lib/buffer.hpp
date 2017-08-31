@@ -86,6 +86,17 @@ namespace Molch {
 		}
 
 	public:
+		using value_type = gsl::byte;
+		using allocator_type = Allocator;
+		using size_type = size_t;
+		using difference_type = ptrdiff_t;
+		using reference = value_type&;
+		using const_reference = const value_type&;
+		using pointer = value_type*;
+		using const_pointer = const value_type*;
+		using iterator = pointer;
+		using const_iterator = const_pointer;
+
 		BaseBuffer() = default; // does nothing
 		/* move constructor */
 		BaseBuffer(BaseBuffer&& buffer) {
@@ -93,10 +104,6 @@ namespace Molch {
 		}
 
 		/* copy constructor */
-		/*template <typename OtherAllocator>
-		BaseBuffer(const BaseBuffer<OtherAllocator>& buffer) {
-			this->copy(buffer);
-		}*/
 		BaseBuffer(const BaseBuffer& buffer) {
 			this->copy(buffer);
 		}
@@ -213,7 +220,7 @@ namespace Molch {
 		 */
 		template <typename OtherAllocator>
 		int compare(const BaseBuffer<OtherAllocator>& buffer) const {
-			return this->compareToRaw(buffer.span());
+			return this->compareToRaw(buffer);
 		}
 
 		/*
@@ -227,7 +234,7 @@ namespace Molch {
 				const BaseBuffer<OtherAllocator>& buffer2,
 				const size_t position2,
 				const size_t length) const {
-			return this->compareToRawPartial(position1, buffer2.span(), position2, length);
+			return this->compareToRawPartial(position1, buffer2, position2, length);
 		}
 
 		/*
@@ -381,13 +388,6 @@ namespace Molch {
 			this->buffer_length = 0;
 
 			return content;
-		}
-
-		gsl::span<gsl::byte> span() {
-			return {this->content, narrow(this->content_length)};
-		}
-		gsl::span<const gsl::byte> span() const {
-			return {this->content, narrow(this->content_length)};
 		}
 
 		std::ostream& print(std::ostream& stream) const {

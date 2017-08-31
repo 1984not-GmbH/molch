@@ -239,7 +239,7 @@ namespace Molch {
 
 		return packet_encrypt(
 				packet_type,
-				header.span(),
+				header,
 				send_header_key,
 				message,
 				send_message_key,
@@ -291,7 +291,7 @@ namespace Molch {
 						their_signed_public_ephemeral,
 						receive_message_number,
 						previous_receive_message_number,
-						header->span());
+						*header);
 				return static_cast<int>(status_type::SUCCESS);
 			}
 		}
@@ -347,7 +347,7 @@ namespace Molch {
 					their_signed_public_ephemeral,
 					local_receive_message_number,
 					local_previous_receive_message_number,
-					header->span());
+					*header);
 
 			//and now decrypt the message with the message key
 			//now we have all the data we need to advance the ratchet

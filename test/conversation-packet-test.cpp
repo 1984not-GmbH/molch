@@ -62,18 +62,18 @@ int main(void) {
 		//get the prekey list
 		Buffer prekey_list{PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE};
 		PrekeyStore bob_prekeys;
-		bob_prekeys.list(prekey_list.span());
+		bob_prekeys.list(prekey_list);
 
 		//start a send conversation
 		Buffer send_message{"Hello there!"};
 		Buffer packet;
 		Molch::Conversation alice_send_conversation(
-				send_message.span(),
+				send_message,
 				packet,
 				alice_public_identity,
 				alice_private_identity,
 				bob_public_identity,
-				prekey_list.span());
+				prekey_list);
 
 		printf("Packet:\n");
 		packet.printHex(std::cout) << std::endl;
@@ -81,7 +81,7 @@ int main(void) {
 		//let bob receive the packet
 		Buffer received_message;
 		Molch::Conversation bob_receive_conversation{
-			packet.span(),
+			packet,
 			received_message,
 			bob_public_identity,
 			bob_private_identity,
@@ -96,7 +96,7 @@ int main(void) {
 		//first one
 		Buffer alice_send_message2{"How are you Bob?"};
 		auto alice_send_packet2{alice_send_conversation.send(
-				alice_send_message2.span(), nullptr, nullptr, nullptr)};
+				alice_send_message2, nullptr, nullptr, nullptr)};
 
 		printf("Sent message: %.*s\n", static_cast<int>(alice_send_message2.size()), reinterpret_cast<const char*>(alice_send_message2.data()));
 		printf("Packet:\n");
@@ -106,7 +106,7 @@ int main(void) {
 		uint32_t bob_receive_message_number{UINT32_MAX};
 		uint32_t bob_previous_receive_message_number{UINT32_MAX};
 		auto bob_receive_message2{bob_receive_conversation.receive(
-				alice_send_packet2.span(),
+				alice_send_packet2,
 				bob_receive_message_number,
 				bob_previous_receive_message_number)};
 
@@ -124,7 +124,7 @@ int main(void) {
 		//Bob responds to alice
 		Buffer bob_response_message{"I'm fine, thanks. How are you?"};
 		auto bob_response_packet{bob_receive_conversation.send(
-				bob_response_message.span(),
+				bob_response_message,
 				nullptr,
 				nullptr,
 				nullptr)};
@@ -137,7 +137,7 @@ int main(void) {
 		uint32_t alice_receive_message_number{UINT32_MAX};
 		uint32_t alice_previous_receive_message_number{UINT32_MAX};
 		auto alice_received_response{alice_send_conversation.receive(
-				bob_response_packet.span(),
+				bob_response_packet,
 				alice_receive_message_number,
 				alice_previous_receive_message_number)};
 
@@ -158,17 +158,17 @@ int main(void) {
 
 		//get alice prekey list
 		PrekeyStore alice_prekeys;
-		alice_prekeys.list(prekey_list.span());
+		alice_prekeys.list(prekey_list);
 
 		//destroy the old packet
 		packet.clear();
 		Molch::Conversation bob_send_conversation{
-			send_message.span(),
+			send_message,
 			packet,
 			bob_public_identity,
 			bob_private_identity,
 			alice_public_identity,
-			prekey_list.span()};
+			prekey_list};
 
 		printf("Sent message: %.*s\n", static_cast<int>(send_message.size()), reinterpret_cast<const char*>(send_message.data()));
 		printf("Packet:\n");
@@ -177,7 +177,7 @@ int main(void) {
 		//let alice receive the packet
 		received_message.clear();
 		Molch::Conversation alice_receive_conversation{
-			packet.span(),
+			packet,
 			received_message,
 			alice_public_identity,
 			alice_private_identity,
@@ -192,7 +192,7 @@ int main(void) {
 		//first one
 		Buffer bob_send_message2{"How are you Alice?"};
 		auto bob_send_packet2{bob_send_conversation.send(
-				bob_send_message2.span(),
+				bob_send_message2,
 				nullptr,
 				nullptr,
 				nullptr)};
@@ -203,7 +203,7 @@ int main(void) {
 
 		//alice receives the message
 		auto alice_receive_message2{alice_receive_conversation.receive(
-				bob_send_packet2.span(),
+				bob_send_packet2,
 				alice_receive_message_number,
 				alice_previous_receive_message_number)};
 
@@ -221,7 +221,7 @@ int main(void) {
 		//Alice responds to Bob
 		Buffer alice_response_message{"I'm fine, thanks. How are you?"};
 		auto alice_response_packet{alice_receive_conversation.send(
-				alice_response_message.span(),
+				alice_response_message,
 				nullptr,
 				nullptr,
 				nullptr)};
@@ -232,7 +232,7 @@ int main(void) {
 
 		//Bob receives the response
 		auto bob_received_response{bob_send_conversation.receive(
-				alice_response_packet.span(),
+				alice_response_packet,
 				bob_receive_message_number,
 				bob_previous_receive_message_number)};
 
