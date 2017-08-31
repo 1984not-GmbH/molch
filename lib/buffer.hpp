@@ -41,7 +41,6 @@ namespace Molch {
 	private:
 		Allocator allocator;
 		size_t buffer_length{0};
-		bool readonly{false}; //if set, this buffer shouldn't be written to.
 
 		size_t content_length{0};
 		gsl::byte* content{nullptr};
@@ -53,7 +52,6 @@ namespace Molch {
 			this->destruct();
 
 			this->buffer_length = buffer.capacity();
-			this->readonly = buffer.isReadOnly();
 			this->content_length = buffer.size();
 
 			this->content = allocator.allocate(buffer.capacity(), nullptr);
@@ -73,7 +71,6 @@ namespace Molch {
 
 			//steal resources from the source buffer
 			buffer.buffer_length = 0;
-			buffer.readonly = false;
 			buffer.content_length = 0;
 			buffer.content = nullptr;
 
@@ -199,8 +196,7 @@ namespace Molch {
 		 * Fill a buffer with random numbers.
 		 */
 		void fillRandom(const size_t length) {
-			Expects((length <= this->buffer_length)
-					&& !this->readonly);
+			Expects(length <= this->buffer_length);
 
 			if (this->buffer_length == 0) {
 				return;
@@ -280,8 +276,7 @@ namespace Molch {
 				const BaseBuffer<OtherAllocator>& source,
 				const size_t source_offset,
 				const size_t copy_length) {
-			Expects(!this->readonly
-					&& (this->buffer_length >= this->content_length)
+			Expects((this->buffer_length >= this->content_length)
 					&& (source.capacity() >= source.size())
 					&& (destination_offset <= this->content_length)
 					&& (copy_length <= (this->buffer_length - destination_offset))
@@ -307,7 +302,7 @@ namespace Molch {
 		 */
 		template <typename OtherAllocator>
 		void cloneFrom(const BaseBuffer<OtherAllocator>& source) {
-			Expects(!this->readonly && (this->buffer_length >= source.size()));
+			Expects(this->buffer_length >= source.size());
 
 			this->content_length = source.size();
 
@@ -322,8 +317,7 @@ namespace Molch {
 				const gsl::byte * const source,
 				const size_t source_offset,
 				const size_t copy_length) {
-			Expects(!this->readonly
-					&& (this->buffer_length >= destination_offset)
+			Expects(this->buffer_length >= destination_offset
 					&& (copy_length <= (this->buffer_length - destination_offset)));
 
 			if (copy_length == 0) {
@@ -342,7 +336,7 @@ namespace Molch {
 		 * content length to the length that was copied.
 		 */
 		void cloneFromRaw(const gsl::span<const gsl::byte> source) {
-			Expects(!this->readonly && (this->buffer_length >= narrow(source.size())));
+			Expects(this->buffer_length >= narrow(source.size()));
 
 			this->content_length = narrow(source.size());
 
@@ -438,14 +432,6 @@ namespace Molch {
 
 		size_t capacity() const noexcept {
 			return this->buffer_length;
-		}
-
-		void setReadOnly() noexcept {
-			this->readonly = true;
-		}
-
-		bool isReadOnly() const noexcept {
-			return this->readonly;
 		}
 
 		bool fits(const size_t size) const {

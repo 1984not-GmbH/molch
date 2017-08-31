@@ -198,17 +198,6 @@ int main(void) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to detect too long write to buffer."};
 		}
 
-		random.setReadOnly();
-		detected = false;
-		try {
-			random.fillRandom(4);
-		} catch (...) {
-			detected = true;
-		}
-		if (!detected) {
-			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to prevent write to readonly buffer."};
-		}
-
 		//compare buffer to an array
 		Buffer true_buffer{"true"};
 		auto comparison{true_buffer.compareToRaw({reinterpret_cast<const gsl::byte*>("true"), sizeof("true")})};
