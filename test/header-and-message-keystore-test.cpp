@@ -77,7 +77,7 @@ static void protobuf_import(
 	}
 
 	//now do the actual import
-	keystore = HeaderAndMessageKeyStore{{key_bundles_array.get(), narrow(exported_buffers.size())}};
+	keystore = HeaderAndMessageKeyStore{{key_bundles_array.get(), exported_buffers.size()}};
 }
 
 void protobuf_empty_store(void) {

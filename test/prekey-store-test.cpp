@@ -39,8 +39,8 @@ static void protobuf_export(
 		std::vector<Buffer>& key_buffers,
 		std::vector<Buffer>& deprecated_key_buffers) {
 	ProtobufPool pool;
-	gsl::span<ProtobufCPrekey*> exported_keypairs;
-	gsl::span<ProtobufCPrekey*> exported_deprecated_keypairs;
+	span<ProtobufCPrekey*> exported_keypairs;
+	span<ProtobufCPrekey*> exported_deprecated_keypairs;
 	store.exportProtobuf(
 		pool,
 		exported_keypairs,
@@ -48,7 +48,7 @@ static void protobuf_export(
 
 	//export all the keypairs
 	key_buffers = std::vector<Buffer>();
-	key_buffers.reserve(narrow(exported_keypairs.size()));
+	key_buffers.reserve(exported_keypairs.size());
 	for (const auto& keypair : exported_keypairs) {
 		auto export_size{prekey__get_packed_size(keypair)};
 		key_buffers.emplace_back(export_size, 0);
@@ -58,7 +58,7 @@ static void protobuf_export(
 
 	//export all the deprecated keypairs
 	deprecated_key_buffers = std::vector<Buffer>();
-	deprecated_key_buffers.reserve(narrow(exported_deprecated_keypairs.size()));
+	deprecated_key_buffers.reserve(exported_deprecated_keypairs.size());
 	for (const auto& keypair : exported_deprecated_keypairs) {
 		auto export_size{prekey__get_packed_size(keypair)};
 		deprecated_key_buffers.emplace_back(export_size, 0);
@@ -105,8 +105,8 @@ static void protobuf_import(
 
 	//now do the import
 	store.reset(new PrekeyStore(
-			{keypairs_array.get(), narrow(keypair_buffers.size())},
-			{deprecated_keypairs_array.get(), narrow(deprecated_keypair_buffers.size())}));
+			{keypairs_array.get(), keypair_buffers.size()},
+			{deprecated_keypairs_array.get(), deprecated_keypair_buffers.size()}));
 }
 
 void protobuf_no_deprecated_keys(void) {
@@ -115,8 +115,8 @@ void protobuf_no_deprecated_keys(void) {
 
 	//export it
 	ProtobufPool pool;
-	gsl::span<ProtobufCPrekey*> exported;
-	gsl::span<ProtobufCPrekey*> deprecated;
+	span<ProtobufCPrekey*> exported;
+	span<ProtobufCPrekey*> deprecated;
 	store.exportProtobuf(pool, exported, deprecated);
 
 	if (!deprecated.empty()) {
@@ -143,7 +143,7 @@ int main(void) {
 
 		//compare the public keys with the ones in the prekey store
 		for (size_t i{0}; i < PREKEY_AMOUNT; i++) {
-			if (prekey_list.compareToRawPartial(PUBLIC_KEY_SIZE * i, {(*store->prekeys)[i].public_key.data(), narrow((*store->prekeys)[i].public_key.size())}, 0, PUBLIC_KEY_SIZE) != 0) {
+			if (prekey_list.compareToRawPartial(PUBLIC_KEY_SIZE * i, {(*store->prekeys)[i].public_key.data(), (*store->prekeys)[i].public_key.size()}, 0, PUBLIC_KEY_SIZE) != 0) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Key list doesn't match the prekey store."};
 			}
 		}

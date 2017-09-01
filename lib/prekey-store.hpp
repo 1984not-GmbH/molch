@@ -102,8 +102,8 @@ namespace Molch {
 		 * \returns The status.
 		 */
 		PrekeyStore(
-				const gsl::span<ProtobufCPrekey*> keypairs,
-				const gsl::span<ProtobufCPrekey*> deprecated_keypairs);
+				const span<ProtobufCPrekey*> keypairs,
+				const span<ProtobufCPrekey*> deprecated_keypairs);
 
 		/*
 		 * Get a private prekey from it's public key. This will automatically
@@ -116,7 +116,7 @@ namespace Molch {
 		 * Generate a list containing all public prekeys.
 		 * (this list can then be stored on a public server).
 		 */
-		void list(gsl::span<gsl::byte> list) const; //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+		void list(span<gsl::byte> list) const; //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 
 		/*
 		 * Automatically deprecate old keys and generate new ones
@@ -132,8 +132,8 @@ namespace Molch {
 		 */
 		void exportProtobuf(
 				ProtobufPool& pool,
-				gsl::span<ProtobufCPrekey*>& keypairs,
-				gsl::span<ProtobufCPrekey*>& deprecated_keypairs) const;
+				span<ProtobufCPrekey*>& keypairs,
+				span<ProtobufCPrekey*>& deprecated_keypairs) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

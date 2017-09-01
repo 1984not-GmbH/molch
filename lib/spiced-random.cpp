@@ -35,24 +35,24 @@ namespace Molch {
 	 * WARNING: Don't feed this with random numbers from the OSs random
 	 * source because it might annihilate the randomness.
 	 */
-	void spiced_random(gsl::span<gsl::byte> output, const gsl::span<const gsl::byte> low_entropy_spice) {
+	void spiced_random(span<gsl::byte> output, const span<const gsl::byte> low_entropy_spice) {
 		Expects(!output.empty() && !low_entropy_spice.empty());
 
 		//buffer that contains the random data from the OS
-		SodiumBuffer os_random{narrow(output.size()), narrow(output.size())};
-		os_random.fillRandom(narrow(output.size()));
+		SodiumBuffer os_random{output.size(), output.size()};
+		os_random.fillRandom(output.size());
 
 		//buffer that contains a random salt
 		Key<crypto_pwhash_SALTBYTES,KeyType::Key> salt;
 		salt.fillRandom();
 
 		//derive random data from the random spice
-		SodiumBuffer spice{narrow(output.size()), narrow(output.size())};
+		SodiumBuffer spice{output.size(), output.size()};
 		auto status_int{crypto_pwhash(
 				byte_to_uchar(spice.data()),
 				spice.size(),
 				reinterpret_cast<const char*>(low_entropy_spice.data()),
-				narrow(low_entropy_spice.size()),
+				low_entropy_spice.size(),
 				byte_to_uchar(salt.data()),
 				crypto_pwhash_OPSLIMIT_INTERACTIVE,
 				crypto_pwhash_MEMLIMIT_INTERACTIVE,

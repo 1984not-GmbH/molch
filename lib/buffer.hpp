@@ -242,7 +242,7 @@ namespace Molch {
 		 *
 		 * Returns 0 if both buffers match.
 		 */
-		int compareToRaw(const gsl::span<const gsl::byte> array) const {
+		int compareToRaw(const span<const gsl::byte> array) const {
 			return this->compareToRawPartial(0, array, 0, this->content_length);
 		}
 
@@ -254,10 +254,10 @@ namespace Molch {
 		 */
 		int compareToRawPartial(
 				const size_t position1,
-				const gsl::span<const gsl::byte> array,
+				const span<const gsl::byte> array,
 				const size_t position2,
 				const size_t comparison_length) const {
-			if (((this->content_length - position1) < comparison_length) || ((narrow(array.size()) - position2) < comparison_length)) {
+			if (((this->content_length - position1) < comparison_length) || ((array.size() - position2) < comparison_length)) {
 				//FIXME: Does this introduce a timing sidechannel? This leaks the information that two buffers don't have the same length
 				//buffers are too short
 				return -6; //TODO: Is this an exception?
@@ -342,12 +342,12 @@ namespace Molch {
 		 * beginning of a buffer, setting the buffers
 		 * content length to the length that was copied.
 		 */
-		void cloneFromRaw(const gsl::span<const gsl::byte> source) {
-			Expects(this->buffer_length >= narrow(source.size()));
+		void cloneFromRaw(const span<const gsl::byte> source) {
+			Expects(this->buffer_length >= source.size());
 
-			this->content_length = narrow(source.size());
+			this->content_length = source.size();
 
-			this->copyFromRaw(0, source.data(), 0, narrow(source.size()));
+			this->copyFromRaw(0, source.data(), 0, source.size());
 		}
 
 		/*
@@ -372,8 +372,8 @@ namespace Molch {
 		 * Copy the entire content of a buffer
 		 * to a raw array.
 		 */
-		void cloneToRaw(const gsl::span<gsl::byte> destination) const {
-			Expects(narrow(destination.size()) >= this->content_length);
+		void cloneToRaw(const span<gsl::byte> destination) const {
+			Expects(destination.size() >= this->content_length);
 
 			this->copyToRaw(destination.data(), 0, 0, this->content_length);
 		}

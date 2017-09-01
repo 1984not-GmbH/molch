@@ -37,7 +37,7 @@ namespace Molch {
 		ConversationStore() = default;
 
 		/*! Import a conversation store from a Protobuf-C struct.  */
-		ConversationStore(const gsl::span<ProtobufCConversation*> conversations);
+		ConversationStore(const span<ProtobufCConversation*> conversations);
 
 		ConversationStore(const ConversationStore& store) = delete;
 		ConversationStore(ConversationStore&& store) = default;
@@ -83,7 +83,7 @@ namespace Molch {
 		Buffer list() const;
 
 		/*! Export a conversation store to Protobuf-C */
-		gsl::span<ProtobufCConversation*> exportProtobuf(ProtobufPool& pool) const;
+		span<ProtobufCConversation*> exportProtobuf(ProtobufPool& pool) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

@@ -68,9 +68,9 @@ namespace Molch {
 	 * \return
 	 *   The unpacked struct.
 	 */
-	static std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_unpack(const gsl::span<const gsl::byte> packet) {
+	static std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_unpack(const span<const gsl::byte> packet) {
 		//unpack the packet
-		auto packet_struct{std::unique_ptr<ProtobufCPacket,PacketDeleter>(packet__unpack(&protobuf_c_allocator, narrow(packet.size()), byte_to_uchar(packet.data())))};
+		auto packet_struct{std::unique_ptr<ProtobufCPacket,PacketDeleter>(packet__unpack(&protobuf_c_allocator, packet.size(), byte_to_uchar(packet.data())))};
 		if (!packet_struct) {
 			throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack packet."};
 		}
@@ -116,9 +116,9 @@ namespace Molch {
 	Buffer packet_encrypt(
 			//inputs
 			const molch_message_type packet_type,
-			const gsl::span<const gsl::byte> axolotl_header,
+			const span<const gsl::byte> axolotl_header,
 			const HeaderKey& axolotl_header_key,
-			const gsl::span<const gsl::byte> message,
+			const span<const gsl::byte> message,
 			const MessageKey& message_key,
 			//optional inputs (prekey messages only)
 			const PublicKey * const public_identity_key,
@@ -173,12 +173,12 @@ namespace Molch {
 
 		//encrypt the header
 		Buffer encrypted_axolotl_header{
-			narrow(axolotl_header.size()) + crypto_secretbox_MACBYTES,
-			narrow(axolotl_header.size()) + crypto_secretbox_MACBYTES};
+			axolotl_header.size() + crypto_secretbox_MACBYTES,
+			axolotl_header.size() + crypto_secretbox_MACBYTES};
 		auto status{crypto_secretbox_easy(
 				byte_to_uchar(encrypted_axolotl_header.data()),
 				byte_to_uchar(axolotl_header.data()),
-				narrow(axolotl_header.size()),
+				axolotl_header.size(),
 				byte_to_uchar(header_nonce.data()),
 				byte_to_uchar(axolotl_header_key.data()))};
 		if (status != 0) {
@@ -198,8 +198,8 @@ namespace Molch {
 		packet_header_struct.message_nonce.len = message_nonce.size();
 
 		//pad the message (PKCS7 padding to 255 byte blocks, see RFC5652 section 6.3)
-		auto padding{gsl::narrow<unsigned char>(255 - (message.size() % 255))};
-		Buffer padded_message{narrow(message.size()) + padding, 0};
+		auto padding{gsl::narrow_cast<unsigned char>(255 - (message.size() % 255))};
+		Buffer padded_message{message.size() + padding, 0};
 		//copy the message
 		padded_message.cloneFromRaw(message);
 		//pad it
@@ -245,7 +245,7 @@ namespace Molch {
 			optional<Buffer>& axolotl_header,
 			optional<Buffer>& message,
 			//inputs
-			const gsl::span<const gsl::byte> packet,
+			const span<const gsl::byte> packet,
 			const HeaderKey& axolotl_header_key,
 			const MessageKey& message_key, //MESSAGE_KEY_SIZE
 			//optional outputs (prekey messages only)
@@ -275,7 +275,7 @@ namespace Molch {
 			uint32_t& highest_supported_protocol_version,
 			molch_message_type& packet_type,
 			//input
-			const gsl::span<const gsl::byte> packet,
+			const span<const gsl::byte> packet,
 			//optional outputs (prekey messages only)
 			PublicKey * const public_identity_key,
 			PublicKey * const public_ephemeral_key,
@@ -287,17 +287,17 @@ namespace Molch {
 			if (public_identity_key != nullptr) {
 				public_identity_key->set({
 						uchar_to_byte(packet_struct->packet_header->public_identity_key.data),
-						narrow(packet_struct->packet_header->public_identity_key.len)});
+						packet_struct->packet_header->public_identity_key.len});
 			}
 			if (public_ephemeral_key != nullptr) {
 				public_ephemeral_key->set({
 						uchar_to_byte(packet_struct->packet_header->public_ephemeral_key.data),
-						narrow(packet_struct->packet_header->public_ephemeral_key.len)});
+						packet_struct->packet_header->public_ephemeral_key.len});
 			}
 			if (public_prekey != nullptr) {
 				public_prekey->set({
 						uchar_to_byte(packet_struct->packet_header->public_prekey.data),
-						narrow(packet_struct->packet_header->public_prekey.len)});
+						packet_struct->packet_header->public_prekey.len});
 			}
 		}
 
@@ -307,7 +307,7 @@ namespace Molch {
 	}
 
 	optional<Buffer> packet_decrypt_header(
-			const gsl::span<const gsl::byte> packet,
+			const span<const gsl::byte> packet,
 			const HeaderKey& axolotl_header_key) {
 		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct;
 
@@ -338,7 +338,7 @@ namespace Molch {
 		return axolotl_header;
 	}
 
-	optional<Buffer> packet_decrypt_message(const gsl::span<const gsl::byte> packet, const MessageKey& message_key) {
+	optional<Buffer> packet_decrypt_message(const span<const gsl::byte> packet, const MessageKey& message_key) {
 		//check input
 		if (message_key.empty) {
 			return optional<Buffer>();

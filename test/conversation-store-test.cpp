@@ -38,7 +38,7 @@ static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
 	auto exported_conversations{store.exportProtobuf(pool)};
 
 	std::vector<Buffer> export_buffers;
-	export_buffers.reserve(narrow(exported_conversations.size()));
+	export_buffers.reserve(exported_conversations.size());
 
 	//unpack all the conversations
 	for (const auto& conversation : exported_conversations) {
@@ -68,7 +68,7 @@ ConversationStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> 
 	}
 
 	//import
-	return ConversationStore({conversation_array.get(), narrow(buffers.size())});
+	return ConversationStore({conversation_array.get(), buffers.size()});
 }
 
 static void test_add_conversation(ConversationStore& store) {

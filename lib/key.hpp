@@ -201,7 +201,7 @@ namespace Molch {
 		}
 
 		//copy from a raw byte array
-		void set(const gsl::span<const gsl::byte> data) {
+		void set(const span<const gsl::byte> data) {
 			Expects(data.size() == length);
 
 			std::copy(std::cbegin(data), std::cend(data), this->data());
@@ -209,7 +209,7 @@ namespace Molch {
 		}
 
 		//copy to a raw byte array
-		void copyTo(gsl::span<gsl::byte> data) const {
+		void copyTo(span<gsl::byte> data) const {
 			Expects(data.size() == length);
 
 			std::copy(std::cbegin(*this), std::cend(*this), std::begin(data));

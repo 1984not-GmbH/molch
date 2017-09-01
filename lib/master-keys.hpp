@@ -47,7 +47,7 @@ namespace Molch {
 		/* Internally does the intialization of the buffers creation of the keys */
 		void init();
 		void generate();
-		void generate(const gsl::span<const gsl::byte> low_entropy_seed);
+		void generate(const span<const gsl::byte> low_entropy_seed);
 
 		/* Manage the memory for the private keys */
 		void lock() const;
@@ -82,7 +82,7 @@ namespace Molch {
 		 * WARNING: Don't use Entropy from the OSs CPRNG as seed!
 		 */
 		MasterKeys();
-		MasterKeys(const gsl::span<const gsl::byte> low_entropy_seed);
+		MasterKeys(const span<const gsl::byte> low_entropy_seed);
 
 		/*
 		 * import from Protobuf-C
@@ -112,7 +112,7 @@ namespace Molch {
 		/*
 		 * Sign a piece of data. Returns the data and signature in one output buffer.
 		 */
-		void sign(const gsl::span<const gsl::byte> data, gsl::span<gsl::byte> signed_data) const; //output, length of data + SIGNATURE_SIZE
+		void sign(const span<const gsl::byte> data, span<gsl::byte> signed_data) const; //output, length of data + SIGNATURE_SIZE
 
 		/*! Export a set of master keys into a user Protobuf-C struct
 		 * \param public_signing_key Public pasrt of the signing keypair.

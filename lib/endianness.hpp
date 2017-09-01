@@ -49,7 +49,7 @@ namespace Molch {
 	 * Convert any integer type to a buffer in big endian format.
 	 */
 	template <typename IntegerType>
-	void to_big_endian(IntegerType integer, gsl::span<gsl::byte> output) {
+	void to_big_endian(IntegerType integer, span<gsl::byte> output) {
 		Expects(output.size() == sizeof(IntegerType));
 
 		auto& reference{reinterpret_cast<gsl::byte&>(integer)};
@@ -65,7 +65,7 @@ namespace Molch {
 	 * Get an integer from a buffer in big endian format.
 	 */
 	template <typename IntegerType>
-	void from_big_endian(IntegerType& integer, const gsl::span<const gsl::byte> input) {
+	void from_big_endian(IntegerType& integer, const span<const gsl::byte> input) {
 		Expects(input.size() == sizeof(IntegerType));
 
 		auto& reference{reinterpret_cast<gsl::byte&>(integer)};

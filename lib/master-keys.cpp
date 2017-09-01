@@ -57,7 +57,7 @@ namespace Molch {
 		this->generate();
 	}
 
-	MasterKeys::MasterKeys(const gsl::span<const gsl::byte> low_entropy_seed) {
+	MasterKeys::MasterKeys(const span<const gsl::byte> low_entropy_seed) {
 		this->init();
 		this->generate(low_entropy_seed);
 	}
@@ -78,16 +78,16 @@ namespace Molch {
 		//copy the keys
 		this->public_signing_key.set({
 				uchar_to_byte(public_signing_key.key.data),
-				narrow(public_signing_key.key.len)});
+				public_signing_key.key.len});
 		this->public_identity_key.set({
 				uchar_to_byte(public_identity_key.key.data),
-				narrow(public_identity_key.key.len)});
+				public_identity_key.key.len});
 		this->private_signing_key->set({
 				uchar_to_byte(private_signing_key.key.data),
-				narrow(private_signing_key.key.len)});
+				private_signing_key.key.len});
 		this->private_identity_key->set({
 				uchar_to_byte(private_identity_key.key.data),
-				narrow(private_identity_key.key.len)});
+				private_identity_key.key.len});
 	}
 
 
@@ -128,7 +128,7 @@ namespace Molch {
 		this->private_identity_key->empty = false;
 	}
 
-	void MasterKeys::generate(const gsl::span<const gsl::byte> low_entropy_seed) {
+	void MasterKeys::generate(const span<const gsl::byte> low_entropy_seed) {
 		Expects(!low_entropy_seed.empty());
 
 		ReadWriteUnlocker unlocker{*this};
@@ -179,8 +179,8 @@ namespace Molch {
 	 * Sign a piece of data. Returns the data and signature in one output buffer.
 	 */
 	void MasterKeys::sign(
-			const gsl::span<const gsl::byte> data,
-			gsl::span<gsl::byte> signed_data) const { //output, length of data + SIGNATURE_SIZE
+			const span<const gsl::byte> data,
+			span<gsl::byte> signed_data) const { //output, length of data + SIGNATURE_SIZE
 		Expects(signed_data.size() == (data.size() + SIGNATURE_SIZE));
 
 		Unlocker unlocker{*this};
@@ -189,7 +189,7 @@ namespace Molch {
 			byte_to_uchar(signed_data.data()),
 			&signed_message_length,
 			byte_to_uchar(data.data()),
-			narrow(data.size()),
+			data.size(),
 			byte_to_uchar(this->private_signing_key->data()))};
 		if (status != 0) {
 			throw Exception{status_type::SIGN_ERROR, "Failed to sign message."};

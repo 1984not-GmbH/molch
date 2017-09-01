@@ -26,26 +26,38 @@
 
 #include <sodium.h>
 
-#define CONVERSATION_ID_SIZE 32U //length of a conversation id in bytes
-#define PREKEY_AMOUNT 100U //number of prekeys that are used
+#ifdef __cplusplus
+#else
+#endif
 
-#define DIFFIE_HELLMAN_SIZE crypto_generichash_BYTES
+//use C style cast only in C code
+#ifdef __cplusplus
+	#define CONSTANT(number) static_cast<size_t>(number)
+#else
+	#define CONSTANT(number) number //NOTE: This can't be casted, otherwise SWIG won't pick it up
+#endif
 
-#define SIGNATURE_SIZE crypto_sign_BYTES
+#define CONVERSATION_ID_SIZE CONSTANT(32U) //length of a conversation id in bytes
+#define PREKEY_AMOUNT CONSTANT(100U) //number of prekeys that are used
+
+#define DIFFIE_HELLMAN_SIZE CONSTANT(crypto_generichash_BYTES)
+
+#define SIGNATURE_SIZE CONSTANT(crypto_sign_BYTES)
 
 //key sizes
-#define CHAIN_KEY_SIZE crypto_secretbox_KEYBYTES
-#define MESSAGE_KEY_SIZE crypto_secretbox_KEYBYTES
-#define HEADER_KEY_SIZE crypto_secretbox_KEYBYTES
-#define ROOT_KEY_SIZE crypto_secretbox_KEYBYTES
-#define PRIVATE_KEY_SIZE crypto_box_SECRETKEYBYTES
-#define PUBLIC_KEY_SIZE crypto_box_PUBLICKEYBYTES
-#define PUBLIC_MASTER_KEY_SIZE crypto_sign_PUBLICKEYBYTES
-#define PRIVATE_MASTER_KEY_SIZE crypto_sign_SECRETKEYBYTES
-#define BACKUP_KEY_SIZE crypto_secretbox_KEYBYTES
+#define CHAIN_KEY_SIZE CONSTANT(crypto_secretbox_KEYBYTES)
+#define MESSAGE_KEY_SIZE CONSTANT(crypto_secretbox_KEYBYTES)
+#define HEADER_KEY_SIZE CONSTANT(crypto_secretbox_KEYBYTES)
+#define ROOT_KEY_SIZE CONSTANT(crypto_secretbox_KEYBYTES)
+#define PRIVATE_KEY_SIZE CONSTANT(crypto_box_SECRETKEYBYTES)
+#define PUBLIC_KEY_SIZE CONSTANT(crypto_box_PUBLICKEYBYTES)
+#define PUBLIC_MASTER_KEY_SIZE CONSTANT(crypto_sign_PUBLICKEYBYTES)
+#define PRIVATE_MASTER_KEY_SIZE CONSTANT(crypto_sign_SECRETKEYBYTES)
+#define BACKUP_KEY_SIZE CONSTANT(crypto_secretbox_KEYBYTES)
 
 //nonce sizes
-#define MESSAGE_NONCE_SIZE crypto_secretbox_NONCEBYTES
-#define HEADER_NONCE_SIZE crypto_secretbox_NONCEBYTES
-#define BACKUP_NONCE_SIZE crypto_secretbox_NONCEBYTES
+#define MESSAGE_NONCE_SIZE CONSTANT(crypto_secretbox_NONCEBYTES)
+#define HEADER_NONCE_SIZE CONSTANT(crypto_secretbox_NONCEBYTES)
+#define BACKUP_NONCE_SIZE CONSTANT(crypto_secretbox_NONCEBYTES)
+
 #endif

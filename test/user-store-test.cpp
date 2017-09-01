@@ -36,7 +36,7 @@ static std::vector<Buffer> protobuf_export(UserStore& store) {
 	ProtobufPool pool;
 	auto exported_users{store.exportProtobuf(pool)};
 	auto users{exported_users.data()};
-	auto length{narrow(exported_users.size())};
+	auto length{exported_users.size()};
 
 	std::vector<Buffer> export_buffers;
 	export_buffers.reserve(length);
@@ -70,7 +70,7 @@ UserStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> buffers)
 	}
 
 	//import
-	return UserStore({user_array.get(), narrow(buffers.size())});
+	return UserStore({user_array.get(), buffers.size()});
 }
 
 void protobuf_empty_store(void) {

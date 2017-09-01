@@ -80,7 +80,7 @@ namespace Molch {
 		}
 		this->header_key.set({
 				uchar_to_byte(key_bundle.header_key->key.data),
-				narrow(key_bundle.header_key->key.len)});
+				key_bundle.header_key->key.len});
 
 		//import the message key
 		if ((key_bundle.message_key == nullptr)
@@ -90,7 +90,7 @@ namespace Molch {
 		}
 		this->message_key.set({
 				uchar_to_byte(key_bundle.message_key->key.data),
-				narrow(key_bundle.message_key->key.len)});
+				key_bundle.message_key->key.len});
 
 		//import the expiration date
 		if (!key_bundle.has_expiration_time) {
@@ -143,7 +143,7 @@ namespace Molch {
 		this->keys.emplace_back(header_key, message_key);
 	}
 
-	gsl::span<ProtobufCKeyBundle*> HeaderAndMessageKeyStore::exportProtobuf(ProtobufPool& pool) const {
+	span<ProtobufCKeyBundle*> HeaderAndMessageKeyStore::exportProtobuf(ProtobufPool& pool) const {
 		if (this->keys.size() == 0) {
 			return {nullptr};
 		}
@@ -156,10 +156,10 @@ namespace Molch {
 			index++;
 		}
 
-		return {key_bundles, narrow(this->keys.size())};
+		return {key_bundles, this->keys.size()};
 	}
 
-	HeaderAndMessageKeyStore::HeaderAndMessageKeyStore(const gsl::span<ProtobufCKeyBundle*> key_bundles) {
+	HeaderAndMessageKeyStore::HeaderAndMessageKeyStore(const span<ProtobufCKeyBundle*> key_bundles) {
 		for (const auto& key_bundle : key_bundles) {
 			if (key_bundle == nullptr) {
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Invalid KeyBundle."};

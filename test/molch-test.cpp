@@ -33,14 +33,14 @@
 
 using namespace Molch;
 
-static gsl::span<gsl::byte> decrypt_conversation_backup(
+static span<gsl::byte> decrypt_conversation_backup(
 		ProtobufPool& pool,
-		const gsl::span<const gsl::byte> backup,
-		const gsl::span<const gsl::byte> backup_key) {
+		const span<const gsl::byte> backup,
+		const span<const gsl::byte> backup_key) {
 	Expects(!backup.empty() && (backup_key.size() == BACKUP_KEY_SIZE));
 
 	//unpack the encrypted backup
-	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, narrow(backup.size()), byte_to_uchar(backup.data())))};
+	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, backup.size(), byte_to_uchar(backup.data())))};
 	if (encrypted_backup_struct == nullptr) {
 		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf."};
 	}
@@ -61,9 +61,9 @@ static gsl::span<gsl::byte> decrypt_conversation_backup(
 
 	auto decrypted_backup_content{pool.allocate<gsl::byte>(
 			encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
-	gsl::span<gsl::byte> decrypted_backup{
+	span<gsl::byte> decrypted_backup{
 		decrypted_backup_content,
-		narrow(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
+		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES};
 
 	//decrypt the backup
 	auto status{crypto_secretbox_open_easy(
@@ -79,15 +79,15 @@ static gsl::span<gsl::byte> decrypt_conversation_backup(
 	return decrypted_backup;
 }
 
-static gsl::span<gsl::byte> decrypt_full_backup(
+static span<gsl::byte> decrypt_full_backup(
 		ProtobufPool& pool,
-		const gsl::span<const gsl::byte> backup,
-		const gsl::span<const gsl::byte> backup_key) {
+		const span<const gsl::byte> backup,
+		const span<const gsl::byte> backup_key) {
 	//check input
 	Expects(!backup.empty() && (backup_key.size() == BACKUP_KEY_SIZE));
 
 	//unpack the encrypted backup
-	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, narrow(backup.size()), byte_to_uchar(backup.data())))};
+	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, backup.size(), byte_to_uchar(backup.data())))};
 	if (encrypted_backup_struct == nullptr) {
 		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf."};
 	}
@@ -108,9 +108,9 @@ static gsl::span<gsl::byte> decrypt_full_backup(
 
 	auto decrypted_backup_content{pool.allocate<gsl::byte>(
 		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
-	gsl::span<gsl::byte> decrypted_backup{
+	span<gsl::byte> decrypted_backup{
 		decrypted_backup_content,
-		narrow(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
+		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES};
 
 	//decrypt the backup
 	auto status{crypto_secretbox_open_easy(
@@ -301,7 +301,7 @@ int main(void) {
 			}
 			conversation_list.reset(conversation_list_ptr);
 		}
-		if ((number_of_conversations != 1) || (alice_conversation.compareToRaw({uchar_to_byte(conversation_list.get()), narrow(conversation_list_length)}) != 0)) {
+		if ((number_of_conversations != 1) || (alice_conversation.compareToRaw({uchar_to_byte(conversation_list.get()), conversation_list_length}) != 0)) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to list conversations."};
 		}
 
@@ -462,7 +462,7 @@ int main(void) {
 		ProtobufPool pool;
 		auto decrypted_backup{decrypt_full_backup(
 				pool,
-				{uchar_to_byte(backup.get()), narrow(backup_length)},
+				{uchar_to_byte(backup.get()), backup_length},
 				backup_key)};
 
 		//compare the keys
@@ -487,7 +487,7 @@ int main(void) {
 
 		auto decrypted_imported_backup{decrypt_full_backup(
 				pool,
-				{uchar_to_byte(imported_backup.get()), narrow(imported_backup_length)},
+				{uchar_to_byte(imported_backup.get()), imported_backup_length},
 				backup_key)};
 
 		//compare
@@ -527,7 +527,7 @@ int main(void) {
 
 		auto decrypted_conversation_backup{decrypt_conversation_backup(
 				pool,
-				{uchar_to_byte(backup.get()), narrow(backup_length)},
+				{uchar_to_byte(backup.get()), backup_length},
 				backup_key)};
 
 		//copy the backup key
@@ -550,7 +550,7 @@ int main(void) {
 
 		auto decrypted_imported_conversation_backup{decrypt_conversation_backup(
 				pool,
-				{uchar_to_byte(imported_backup.get()), narrow(imported_backup_length)},
+				{uchar_to_byte(imported_backup.get()), imported_backup_length},
 				backup_key)};
 
 		//compare
@@ -606,7 +606,7 @@ int main(void) {
 		Buffer success_buffer{"SUCCESS"};
 		size_t printed_status_length{0};
 		auto printed_status{std::unique_ptr<unsigned char,MallocDeleter<unsigned char>>(reinterpret_cast<unsigned char*>(molch_print_status(&printed_status_length, return_status_init())))};
-		if (success_buffer.compareToRaw({uchar_to_byte(printed_status.get()), narrow(printed_status_length)}) != 0) {
+		if (success_buffer.compareToRaw({uchar_to_byte(printed_status.get()), printed_status_length}) != 0) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "molch_print_status produces incorrect output."};
 		}
 	} catch (const Molch::Exception& exception) {

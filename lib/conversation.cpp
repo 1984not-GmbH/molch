@@ -99,12 +99,12 @@ namespace Molch {
 	 * if an error has occurred.
 	 */
 	Conversation::Conversation(
-			const gsl::span<const gsl::byte> message, //message we want to send to the receiver
+			const span<const gsl::byte> message, //message we want to send to the receiver
 			Buffer& packet, //output
 			const PublicKey& sender_public_identity, //who is sending this message?
 			const PrivateKey& sender_private_identity,
 			const PublicKey& receiver_public_identity,
-			const gsl::span<const gsl::byte> receiver_prekey_list) { //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+			const span<const gsl::byte> receiver_prekey_list) { //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 		Expects(!receiver_public_identity.empty
 				&& !sender_public_identity.empty
 				&& !sender_private_identity.empty
@@ -123,7 +123,7 @@ namespace Molch {
 		auto prekey_number{randombytes_uniform(PREKEY_AMOUNT)};
 		PublicKey receiver_public_prekey;
 		receiver_public_prekey.set({
-				&receiver_prekey_list[gsl::narrow<ptrdiff_t>(prekey_number * PUBLIC_KEY_SIZE)],
+				&receiver_prekey_list[gsl::narrow_cast<ptrdiff_t>(prekey_number * PUBLIC_KEY_SIZE)],
 				PUBLIC_KEY_SIZE});
 
 		//initialize the conversation
@@ -149,7 +149,7 @@ namespace Molch {
 	 * if an error has occurred.
 	 */
 	Conversation::Conversation(
-			const gsl::span<const gsl::byte> packet, //received packet
+			const span<const gsl::byte> packet, //received packet
 			Buffer& message, //output
 			const PublicKey& receiver_public_identity,
 			const PrivateKey& receiver_private_identity,
@@ -205,7 +205,7 @@ namespace Molch {
 	 * if an error has occurred.
 	 */
 	Buffer Conversation::send(
-			const gsl::span<const gsl::byte> message,
+			const span<const gsl::byte> message,
 			const PublicKey * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
 			const PublicKey * const public_ephemeral_key, //can be nullptr, if not nullptr, this will be a prekey message
 			const PublicKey * const public_prekey) { //can be nullptr, if not nullptr, this will be a prekey message
@@ -256,7 +256,7 @@ namespace Molch {
 	 * Returns 0, if it was able to decrypt the packet.
 	 */
 	int Conversation::trySkippedHeaderAndMessageKeys(
-			const gsl::span<const gsl::byte> packet,
+			const span<const gsl::byte> packet,
 			Buffer& message,
 			uint32_t& receive_message_number,
 			uint32_t& previous_receive_message_number) {
@@ -283,7 +283,7 @@ namespace Molch {
 					nullptr);
 			if (header && message_optional) {
 				message = std::move(*message_optional);
-				this->ratchet->skipped_header_and_message_keys.keys.erase(std::begin(this->ratchet->skipped_header_and_message_keys.keys) + narrow(index));
+				this->ratchet->skipped_header_and_message_keys.keys.erase(std::begin(this->ratchet->skipped_header_and_message_keys.keys) + gsl::narrow_cast<ptrdiff_t>(index));
 				index--;
 
 				PublicKey their_signed_public_ephemeral;
@@ -306,7 +306,7 @@ namespace Molch {
 	 * if an error has occurred.
 	 */
 	Buffer Conversation::receive(
-			const gsl::span<const gsl::byte> packet, //received packet
+			const span<const gsl::byte> packet, //received packet
 			uint32_t& receive_message_number,
 			uint32_t& previous_receive_message_number) {
 		try {
@@ -394,7 +394,7 @@ namespace Molch {
 		//copy the id
 		this->id.set({
 				uchar_to_byte(conversation_protobuf.id.data),
-				narrow(conversation_protobuf.id.len)});
+				conversation_protobuf.id.len});
 
 		//import the ratchet
 		this->ratchet = std::make_unique<Ratchet>(conversation_protobuf);

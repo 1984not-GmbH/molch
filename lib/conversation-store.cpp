@@ -45,8 +45,8 @@ namespace Molch {
 		}
 
 		//otherwise replace the exiting one
-		auto existing_index{existing_conversation - std::begin(this->conversations)};
-		this->conversations[narrow(existing_index)] = std::move(conversation);
+		auto existing_index{gsl::narrow_cast<size_t>(existing_conversation - std::cbegin(this->conversations))};
+		this->conversations[existing_index] = std::move(conversation);
 	}
 
 	void ConversationStore::remove(const Conversation * const node) {
@@ -128,19 +128,20 @@ namespace Molch {
 
 		Buffer list{this->conversations.size() * CONVERSATION_ID_SIZE, 0};
 
+		size_t index{0};
 		for (const auto& conversation : this->conversations) {
-			auto index{&conversation - &(*this->conversations.cbegin())};
 			list.copyFromRaw(
-				CONVERSATION_ID_SIZE * narrow(index),
+				CONVERSATION_ID_SIZE * index,
 				conversation.id.data(),
 				0,
 				conversation.id.size());
+			index++;
 		}
 
 		return list;
 	}
 
-	gsl::span<ProtobufCConversation*> ConversationStore::exportProtobuf(ProtobufPool& pool) const {
+	span<ProtobufCConversation*> ConversationStore::exportProtobuf(ProtobufPool& pool) const {
 		if (this->conversations.empty()) {
 			return {nullptr};
 		}
@@ -153,10 +154,10 @@ namespace Molch {
 			index++;
 		}
 
-		return {conversations, narrow(this->conversations.size())};
+		return {conversations, this->conversations.size()};
 	}
 
-	ConversationStore::ConversationStore(const gsl::span<ProtobufCConversation*> conversations) {
+	ConversationStore::ConversationStore(const span<ProtobufCConversation*> conversations) {
 		//import all the conversations
 		for (const auto& conversation : conversations) {
 			if (conversation == nullptr) {

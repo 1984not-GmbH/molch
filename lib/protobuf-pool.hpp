@@ -89,7 +89,7 @@ namespace Molch {
 				throw std::bad_alloc();
 			}
 
-			this->offset = narrow(reinterpret_cast<gsl::byte*>(offset_pointer) - this->block.get()) + size;
+			this->offset = gsl::narrow_cast<size_t>(reinterpret_cast<gsl::byte*>(offset_pointer) - this->block.get()) + size;
 
 			return reinterpret_cast<T*>(offset_pointer);
 		}
