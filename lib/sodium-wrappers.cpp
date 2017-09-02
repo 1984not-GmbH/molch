@@ -19,34 +19,18 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <cstdio>
-#include <cstdlib>
-#include <sodium.h>
-#include <iostream>
+#include "sodium-wrappers.hpp"
+#include "molch-exception.hpp"
 
-#include "../lib/molch-exception.hpp"
-#include "common.hpp"
-#include "utils.hpp"
+namespace Molch {
+	void crypto_box_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key) {
+		Expects((public_key.size() == crypto_box_PUBLICKEYBYTES) && (private_key.size() == crypto_box_SECRETKEYBYTES));
 
-using namespace Molch;
-
-/*
- * Generates and prints a crypto_box keypair.
- */
-void generate_and_print_keypair(
-		PublicKey& public_key,
-		PrivateKey& private_key,
-		const std::string& name, //Name of the key owner (e.g. "Alice")
-		const std::string& type) { //type of the key (e.g. "ephemeral")
-	//generate keypair
-	crypto_box_keypair(public_key, private_key);
-	public_key.empty = false;
-	private_key.empty = false;
-
-	//print keypair
-	std::cout << name << "'s public " << type << " key (" << public_key.size() << ":" << std::endl;
-	public_key.printHex(std::cout);
-	putchar('\n');
-	std::cout << std::endl << name << "'s private " << type << " key (" << private_key.size() << ":" << std::endl;
-	private_key.printHex(std::cout) << std::endl;
+		auto status{::crypto_box_keypair(
+				byte_to_uchar(public_key.data()),
+				byte_to_uchar(private_key.data()))};
+		if (status != 0) {
+			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate crypto_box keypair."};
+		}
+	}
 }

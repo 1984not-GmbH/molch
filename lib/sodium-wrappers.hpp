@@ -26,6 +26,9 @@
 #include <memory>
 #include <limits>
 
+#include "gsl.hpp"
+#include "constants.h"
+
 namespace Molch {
 	/*
 	 * Calls sodium_malloc and throws std::bad_alloc if allocation fails
@@ -85,6 +88,8 @@ namespace Molch {
 			}
 		}
 	};
+
+	void crypto_box_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key);
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */

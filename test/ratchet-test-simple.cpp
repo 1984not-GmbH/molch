@@ -33,10 +33,7 @@
 using namespace Molch;
 
 static void keypair(PrivateKey& private_key, PublicKey& public_key) {
-	auto status{crypto_box_keypair(byte_to_uchar(public_key.data()), byte_to_uchar(private_key.data()))};
-	if (status != 0) {
-		throw Molch::Exception{status_type::KEYGENERATION_FAILED, "Failed to generate keypair."};
-	}
+	crypto_box_keypair(public_key, private_key);
 	private_key.empty = false;
 	public_key.empty = false;
 }

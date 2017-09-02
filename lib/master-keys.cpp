@@ -110,12 +110,7 @@ namespace Molch {
 		this->private_signing_key->empty = false;
 
 		//generate the identity keypair
-		status = crypto_box_keypair(
-				byte_to_uchar(this->public_identity_key.data()),
-				byte_to_uchar(this->private_identity_key->data()));
-		if (status != 0) {
-			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate identity keypair."};
-		}
+		crypto_box_keypair(this->public_identity_key, *this->private_identity_key);
 		this->public_identity_key.empty = false;
 		this->private_identity_key->empty = false;
 	}

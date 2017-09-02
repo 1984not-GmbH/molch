@@ -115,12 +115,9 @@ namespace Molch {
 	}
 
 	void Prekey::generate() {
-		auto status{crypto_box_keypair(
-			byte_to_uchar(this->public_key.data()),
-			byte_to_uchar(this->private_key.data()))};
-		if (status != 0) {
-			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate prekey pair."};
-		}
+		crypto_box_keypair(
+				this->public_key,
+				this->private_key);
 		this->public_key.empty = false;
 		this->private_key.empty = false;
 		this->expiration_date = time(nullptr) + PREKEY_EXPIRATION_TIME;
