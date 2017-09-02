@@ -23,6 +23,13 @@
 #include "molch-exception.hpp"
 
 namespace Molch {
+	void sodium_init() {
+		auto status{::sodium_init()};
+		if (status == -1) {
+			throw Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
+		}
+	}
+
 	void crypto_box_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key) {
 		Expects((public_key.size() == crypto_box_PUBLICKEYBYTES) && (private_key.size() == crypto_box_SECRETKEYBYTES));
 

@@ -131,9 +131,7 @@ void protobuf_no_deprecated_keys(void) {
 
 int main(void) {
 	try {
-		if (sodium_init() == -1) {
-			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
-		}
+		Molch::sodium_init();
 
 		auto store{std::make_unique<PrekeyStore>()};
 		Buffer prekey_list{PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE};

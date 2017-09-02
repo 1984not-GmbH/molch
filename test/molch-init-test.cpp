@@ -45,9 +45,7 @@ int main(int argc, char *args[]) noexcept {
 			}
 		}
 
-		if (sodium_init() != 0) {
-			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
-		}
+		Molch::sodium_init();
 
 		unsigned char backup_key[BACKUP_KEY_SIZE];
 		if (!recreate) {

@@ -33,9 +33,7 @@ using namespace Molch;
 
 int main(void) noexcept {
 	try {
-		if (sodium_init() == -1) {
-			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
-		}
+		Molch::sodium_init();
 
 		//some random user input (idiot bashing his head on the keyboard)
 		Buffer spice{"aäipoewur+ü 093+2ß3+2ü+ ß09234rt #2ß 0iw4eräp9ui23+ 03943"};

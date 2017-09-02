@@ -89,6 +89,8 @@ namespace Molch {
 		}
 	};
 
+	void sodium_init();
+
 	void crypto_box_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key);
 }
 

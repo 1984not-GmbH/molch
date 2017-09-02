@@ -160,9 +160,7 @@ return_status molch_create_user(
 
 		//initialise libsodium and create user store
 		if (!users) {
-			if (sodium_init() == -1) {
-				throw Exception{status_type::INIT_ERROR, "Failed to init libsodium."};
-			}
+			Molch::sodium_init();
 			users = std::make_unique<UserStore>();
 		}
 
@@ -1291,9 +1289,7 @@ cleanup:
 					&& (new_backup_key_length == BACKUP_KEY_SIZE));
 
 			if (!users) {
-				if (sodium_init() == -1) {
-					throw Exception{status_type::INIT_ERROR, "Failed to init libsodium."};
-				}
+				Molch::sodium_init();
 			}
 
 			//unpack the encrypted backup
@@ -1423,9 +1419,7 @@ cleanup:
 			Expects((new_key != nullptr) && (new_key_length == BACKUP_KEY_SIZE));
 
 			if (!users) {
-				if (sodium_init() == -1) {
-					throw Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
-				}
+				Molch::sodium_init();
 				users = std::make_unique<UserStore>();
 			}
 

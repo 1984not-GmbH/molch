@@ -135,9 +135,7 @@ static void protobuf_import(
 
 int main(void) {
 	try {
-		if (sodium_init() == -1) {
-			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium"};
-		}
+		Molch::sodium_init();
 		//create the unspiced master keys
 		MasterKeys unspiced_master_keys;
 

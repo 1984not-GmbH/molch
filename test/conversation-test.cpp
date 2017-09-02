@@ -65,9 +65,7 @@ std::unique_ptr<Molch::Conversation> protobuf_import(ProtobufPool& pool, const B
 
 int main(void) noexcept {
 	try {
-		if (sodium_init() == -1) {
-			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium!\n"};
-		}
+		Molch::sodium_init();
 
 		//creating charlie's identity keypair
 		PrivateKey charlie_private_identity;

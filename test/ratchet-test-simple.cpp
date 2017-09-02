@@ -40,10 +40,7 @@ static void keypair(PrivateKey& private_key, PublicKey& public_key) {
 
 int main(void) {
 	try {
-		auto status{sodium_init()};
-		if (status != 0) {
-			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
-		}
+		Molch::sodium_init();
 
 		//generate the keys
 		//Alice:

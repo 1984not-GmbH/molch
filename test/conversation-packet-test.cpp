@@ -34,9 +34,7 @@ using namespace Molch;
 
 int main(void) {
 	try {
-		if (sodium_init() != 0) {
-			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium!"};
-		}
+		Molch::sodium_init();
 
 		//create keys
 		//alice
