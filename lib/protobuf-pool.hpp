@@ -74,7 +74,7 @@ namespace Molch {
 			size_t size{elements * sizeof(T)};
 			size_t space{this->remainingSpace()};
 
-			if (space <= (size + alignof(T))) {
+			if (space < (size + alignof(T) - 1)) {
 				throw std::bad_alloc();
 			}
 
