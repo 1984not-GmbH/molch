@@ -213,9 +213,6 @@ int main(void) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's initial next receive and Bob's initial next send header keys don't match."};
 		}
 		printf("Alice's initial next receive and Bob's initial next send header keys match.\n");
-	} catch (const Molch::Exception& exception) {
-		exception.print(std::cerr) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

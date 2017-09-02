@@ -93,9 +93,6 @@ int main(void) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Previous message number doesn't match."};
 		}
 		printf("Previous message numbers match.\n");
-	} catch (const Molch::Exception& exception) {
-		exception.print(std::cerr) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

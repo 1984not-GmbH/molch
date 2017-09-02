@@ -131,9 +131,6 @@ int main(void) {
 		} else {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's and Bob's header keys don't match."};
 		}
-	} catch (const Molch::Exception& exception) {
-		exception.print(std::cerr) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

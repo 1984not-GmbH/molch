@@ -287,9 +287,6 @@ int main(void) {
 		printf("Successfully removed outdated deprecated key!\n");
 
 		protobuf_no_deprecated_keys();
-	} catch (const Molch::Exception& exception) {
-		exception.print(std::cerr) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

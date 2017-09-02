@@ -53,9 +53,6 @@ int main(void) {
 		//print message key
 		printf("Message key (%zu Bytes):\n", message_key.size());
 		message_key.printHex(std::cout) << std::endl;
-	} catch (const Molch::Exception& exception) {
-		exception.print(std::cerr) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

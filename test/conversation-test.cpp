@@ -152,9 +152,6 @@ int main(void) noexcept {
 			throw Molch::Exception{status_type::EXPORT_ERROR, "Both exported buffers are not the same."};
 		}
 		printf("Both exported buffers are identitcal.\n\n");
-	} catch (const Molch::Exception& exception) {
-		exception.print(std::cerr) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

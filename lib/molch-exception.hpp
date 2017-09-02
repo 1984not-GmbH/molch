@@ -46,6 +46,7 @@ namespace Molch {
 	class Exception : public std::exception {
 	private:
 		std::deque<Error> error_stack;
+		mutable std::string printed;
 
 	public:
 

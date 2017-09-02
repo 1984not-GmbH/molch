@@ -63,9 +63,6 @@ int main(void) {
 		if (subkey1 != subkey1_copy) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Failed to reproduce subkey."};
 		}
-	} catch (const Molch::Exception& exception) {
-		exception.print(std::cerr) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

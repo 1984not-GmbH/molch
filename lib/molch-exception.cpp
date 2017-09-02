@@ -23,6 +23,7 @@
 #include <new>
 #include <memory>
 #include <iterator>
+#include <sstream>
 
 #include "molch-exception.hpp"
 
@@ -82,8 +83,13 @@ namespace Molch {
 	}
 
 	const char* Exception::what() const noexcept {
-		static const auto* what{"Molch::Exception"};
-		return what;
+		if (this->printed.empty()) {
+			std::stringstream sstream;
+			this->print(sstream);
+			this->printed = sstream.str();
+		}
+
+		return this->printed.c_str();
 	}
 
 	Exception& Exception::add(const Exception& exception) {

@@ -64,9 +64,8 @@ int main(void) {
 			//move next_chain_key to last_chain_key
 			last_chain_key = next_chain_key;
 		}
-	} catch (const Molch::Exception& exception) {
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
+		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;
 	}
 

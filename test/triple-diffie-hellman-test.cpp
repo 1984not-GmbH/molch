@@ -118,9 +118,6 @@ int main(void) {
 		}
 
 		printf("Both shared secrets match!\n");
-	} catch (const Molch::Exception& exception) {
-		exception.print(std::cout) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cout << exception.what() << std::endl;
 		return EXIT_FAILURE;

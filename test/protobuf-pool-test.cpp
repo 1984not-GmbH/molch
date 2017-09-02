@@ -80,11 +80,9 @@ int main(void) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "allocator.allocator_data isn't a pointer to the pool"};
 		}
 		std::cout << "ProtobufCAllocator struct is correct." << std::endl;
-	} catch (const Molch::Exception& exception) {
-		exception.print(std::cerr) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
+		return EXIT_FAILURE;
 	}
 	return EXIT_SUCCESS;
 }

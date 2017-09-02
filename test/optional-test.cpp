@@ -190,9 +190,6 @@ int main() {
 		if (copy_and_move_assigned_from->number != 0) {
 			throw Exception{status_type::GENERIC_ERROR, "Failed to invalidate assignment moved from optional content."};
 		}
-	} catch (const Exception& exception) {
-		exception.print(std::cerr) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

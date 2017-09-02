@@ -194,9 +194,6 @@ int main(void) {
 		keystore.keys.clear();
 		assert(keystore.keys.size() == 0);
 		keystore.print(std::cout);
-	} catch (const Molch::Exception& exception) {
-		exception.print(std::cerr) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

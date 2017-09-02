@@ -110,9 +110,6 @@ int main(void) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "unit64_t from big endian is incorrect."};
 		}
 		printf("Successfully converted back!\n\n");
-	} catch (const Molch::Exception& exception) {
-		exception.print(std::cerr) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cout << exception.what() << std::endl;
 		return EXIT_FAILURE;

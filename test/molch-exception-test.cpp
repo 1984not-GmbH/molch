@@ -46,10 +46,8 @@ int main(void) noexcept {
 	try {
 		first_level();
 	} catch(const std::exception& exception) {
-		if (strcmp(exception.what(), "Molch::Exception") != 0) {
-			std::cerr << "Molch::Exception is not a Molch::Exception. Terminating" << std::endl;
-			return EXIT_FAILURE;
-		}
+		//make sure that it is Molch::Exception
+		const Exception& molch_exception = dynamic_cast<const Exception&>(exception);
 		auto status{static_cast<const Molch::Exception&>(exception).toReturnStatus()};
 		if (strcmp(status.error->message, "Error on the first level!") != 0) {
 			fprintf(stderr, "ERROR: First error message is incorrect!\n");
@@ -67,6 +65,12 @@ int main(void) noexcept {
 		if (error_message != "ERROR\nerror stack trace:\n0: GENERIC_ERROR, Error on the first level!\n1: GENERIC_ERROR, Error on the second level!\n") {
 			std::cerr << error_message << std::endl;
 			std::cerr << "Failed to correctly print error stack." << std::endl;
+			return EXIT_FAILURE;
+		}
+
+		auto what{molch_exception.what()};
+		if (error_message != what) {
+			std::cerr << "Failed to get error message via ->what()\n";
 			return EXIT_FAILURE;
 		}
 	}

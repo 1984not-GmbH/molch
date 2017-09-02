@@ -246,10 +246,10 @@ int main(void) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Received response doesn't match."};
 		}
 		printf("Successfully received Alice' response!\n");
-	} catch (const Molch::Exception& exception) {
-		exception.print(std::cerr) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
+		return EXIT_FAILURE;
 	}
+
+	return EXIT_SUCCESS;
 }

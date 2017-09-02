@@ -609,9 +609,6 @@ int main(void) {
 		if (success_buffer.compareToRaw({uchar_to_byte(printed_status.get()), printed_status_length}) != 0) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "molch_print_status produces incorrect output."};
 		}
-	} catch (const Molch::Exception& exception) {
-		exception.print(std::cerr) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

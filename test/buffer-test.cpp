@@ -228,9 +228,6 @@ int main(void) {
 		if ((!four_two.contains(2)) || four_two.contains(1) || four_two.contains(3)) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Buffer doesn't detect correctly what it contains."};
 		}
-	} catch (const Molch::Exception& exception) {
-		exception.print(std::cerr) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

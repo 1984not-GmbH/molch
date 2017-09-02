@@ -257,9 +257,6 @@ int main(void) {
 		printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
 
 		bob_send_ratchet->setLastMessageAuthenticity(true);
-	} catch (const Molch::Exception& exception) {
-		exception.print(std::cerr) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

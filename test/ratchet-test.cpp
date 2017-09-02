@@ -564,9 +564,6 @@ int main(void) {
 		alice_state.reset();
 		printf("Destroying Bob's ratchet ...\n");
 		bob_state.reset();
-	} catch (const Molch::Exception& exception) {
-		exception.print(std::cerr) << std::endl;
-		return EXIT_FAILURE;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;
