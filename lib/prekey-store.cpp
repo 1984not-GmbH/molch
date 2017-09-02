@@ -74,9 +74,7 @@ namespace Molch {
 				|| (keypair.private_key->key.len != PRIVATE_KEY_SIZE)) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a private key."};
 		}
-		this->private_key.set({
-				uchar_to_byte(keypair.private_key->key.data),
-				keypair.private_key->key.len});
+		this->private_key = PrivateKey{*keypair.private_key};
 
 		//import public key
 		if (keypair.public_key == nullptr) {
@@ -91,9 +89,7 @@ namespace Molch {
 		} else if (keypair.public_key->key.len != PUBLIC_KEY_SIZE) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a public key."};
 		} else {
-			this->public_key.set({
-					uchar_to_byte(keypair.public_key->key.data),
-					keypair.public_key->key.len});
+			this->public_key = PublicKey{*keypair.public_key};
 		}
 
 		//import expiration_date
@@ -107,24 +103,10 @@ namespace Molch {
 		auto prekey{pool.allocate<ProtobufCPrekey>(1)};
 		prekey__init(prekey);
 
-		//export the private key
-		prekey->private_key = pool.allocate<ProtobufCKey>(1);
-		key__init(prekey->private_key);
-		prekey->private_key->key.data = pool.allocate<uint8_t>(PRIVATE_KEY_SIZE);
-		prekey->private_key->key.len = PRIVATE_KEY_SIZE;
-		this->private_key.copyTo({
-				uchar_to_byte(prekey->private_key->key.data),
-				prekey->private_key->key.len});
+		prekey->private_key = this->private_key.exportProtobuf(pool);
 
 		//export the public key
-		prekey->public_key = pool.allocate<ProtobufCKey>(1);
-		key__init(prekey->public_key);
-		prekey->public_key->key.data = pool.allocate<uint8_t>(PUBLIC_KEY_SIZE);
-		prekey->public_key->key.len = PUBLIC_KEY_SIZE;
-		this->public_key.copyTo({
-				uchar_to_byte(prekey->public_key->key.data),
-				prekey->public_key->key.len});
-
+		prekey->public_key = this->public_key.exportProtobuf(pool);
 		//export the expiration date
 		prekey->expiration_time = gsl::narrow<uint64_t>(this->expiration_date);
 		prekey->has_expiration_time = true;

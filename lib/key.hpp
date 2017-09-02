@@ -33,6 +33,8 @@
 #include "molch-exception.hpp"
 #include "endianness.hpp"
 #include "gsl.hpp"
+#include "protobuf-pool.hpp"
+#include "protobuf.hpp"
 
 namespace Molch {
 
@@ -87,6 +89,10 @@ namespace Molch {
 
 		Key(Key&& key) {
 			this->move(std::move(key));
+		}
+
+		Key(const ProtobufCKey& key) {
+			this->set({uchar_to_byte(key.key.data), key.key.len});
 		}
 
 		~Key() {
@@ -220,6 +226,20 @@ namespace Molch {
 			this->empty = true;
 		}
 
+		ProtobufCKey* exportProtobuf(ProtobufPool& pool) const {
+			auto key{pool.allocate<ProtobufCKey>(1)};
+			key__init(key);
+
+			key->key.data = pool.allocate<uint8_t>(length);
+			key->key.len = length;
+			this->copyTo({
+					uchar_to_byte(key->key.data),
+					key->key.len
+					});
+
+			return key;
+		}
+
 		std::ostream& printHex(std::ostream& stream) const {
 			static constexpr size_t width{30};
 
@@ -247,10 +267,16 @@ namespace Molch {
 	};
 
 	class MessageKey : public Key<MESSAGE_KEY_SIZE,KeyType::MessageKey> {
+	public:
+		//inherit constructors
+		using Key<MESSAGE_KEY_SIZE,KeyType::MessageKey>::Key;
 	};
 
 	class ChainKey : public Key<CHAIN_KEY_SIZE,KeyType::ChainKey> {
 	public:
+		//inherit constructors
+		using Key<CHAIN_KEY_SIZE,KeyType::ChainKey>::Key;
+
 		MessageKey deriveMessageKey() const {
 			MessageKey message_key;
 			this->deriveTo(message_key, 0);
@@ -266,17 +292,45 @@ namespace Molch {
 		}
 	};
 
-	class HeaderKey : public Key<HEADER_KEY_SIZE,KeyType::HeaderKey> {};
+	class HeaderKey : public Key<HEADER_KEY_SIZE,KeyType::HeaderKey> {
+	public:
+		//inherit constructors
+		using Key<HEADER_KEY_SIZE,KeyType::HeaderKey>::Key;
+	};
 
-	class RootKey : public Key<ROOT_KEY_SIZE,KeyType::RootKey> {};
+	class RootKey : public Key<ROOT_KEY_SIZE,KeyType::RootKey> {
+	public:
+		//inherit constructors
+		using Key<ROOT_KEY_SIZE,KeyType::RootKey>::Key;
+	};
 
-	class BackupKey : public Key<BACKUP_KEY_SIZE,KeyType::BackupKey> {};
+	class BackupKey : public Key<BACKUP_KEY_SIZE,KeyType::BackupKey> {
+	public:
+		//inherit constructors
+		using Key<BACKUP_KEY_SIZE,KeyType::BackupKey>::Key;
+	};
 
-	class PublicKey : public Key<PUBLIC_KEY_SIZE,KeyType::PublicKey> {};
-	class PrivateKey : public Key<PRIVATE_KEY_SIZE,KeyType::PrivateKey> {};
+	class PublicKey : public Key<PUBLIC_KEY_SIZE,KeyType::PublicKey> {
+	public:
+		//inherit constructors
+		using Key<PUBLIC_KEY_SIZE,KeyType::PublicKey>::Key;
+	};
+	class PrivateKey : public Key<PRIVATE_KEY_SIZE,KeyType::PrivateKey> {
+	public:
+		//inherit constructors
+		using Key<PRIVATE_KEY_SIZE,KeyType::PrivateKey>::Key;
+	};
 
-	class PublicSigningKey : public Key<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey> {};
-	class PrivateSigningKey : public Key<PRIVATE_MASTER_KEY_SIZE,KeyType::PrivateSigningKey> {};
+	class PublicSigningKey : public Key<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey> {
+	public:
+		//inherit constructors
+		using Key<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey>::Key;
+	};
+	class PrivateSigningKey : public Key<PRIVATE_MASTER_KEY_SIZE,KeyType::PrivateSigningKey> {
+	public:
+		//inherit constructors
+		using Key<PRIVATE_MASTER_KEY_SIZE,KeyType::PrivateSigningKey>::Key;
+	};
 }
 
 #endif /* LIB_KEY_HPP */

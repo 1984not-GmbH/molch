@@ -76,18 +76,10 @@ namespace Molch {
 		ReadWriteUnlocker unlocker{*this};
 
 		//copy the keys
-		this->public_signing_key.set({
-				uchar_to_byte(public_signing_key.key.data),
-				public_signing_key.key.len});
-		this->public_identity_key.set({
-				uchar_to_byte(public_identity_key.key.data),
-				public_identity_key.key.len});
-		this->private_signing_key->set({
-				uchar_to_byte(private_signing_key.key.data),
-				private_signing_key.key.len});
-		this->private_identity_key->set({
-				uchar_to_byte(private_identity_key.key.data),
-				private_identity_key.key.len});
+		this->public_signing_key = PublicSigningKey{public_signing_key};
+		*this->private_signing_key = PrivateSigningKey{private_signing_key};
+		this->public_identity_key = PublicKey{public_identity_key};
+		*this->private_identity_key = PrivateKey{private_identity_key};
 	}
 
 
@@ -202,32 +194,12 @@ namespace Molch {
 			ProtobufCKey*& private_signing_key,
 			ProtobufCKey*& public_identity_key,
 			ProtobufCKey*& private_identity_key) const {
-		//create and initialize the structs
-		public_signing_key = pool.allocate<ProtobufCKey>(1);
-		key__init(public_signing_key);
-		private_signing_key = pool.allocate<ProtobufCKey>(1);
-		key__init(private_signing_key);
-		public_identity_key = pool.allocate<ProtobufCKey>(1);
-		key__init(public_identity_key);
-		private_identity_key = pool.allocate<ProtobufCKey>(1);
-		key__init(private_identity_key);
-
-		//allocate the key buffers
-		public_signing_key->key.data = pool.allocate<uint8_t>(PUBLIC_MASTER_KEY_SIZE);
-		public_signing_key->key.len = PUBLIC_MASTER_KEY_SIZE;
-		private_signing_key->key.data = pool.allocate<uint8_t>(PRIVATE_MASTER_KEY_SIZE);
-		private_signing_key->key.len = PRIVATE_MASTER_KEY_SIZE;
-		public_identity_key->key.data = pool.allocate<uint8_t>(PUBLIC_KEY_SIZE);
-		public_identity_key->key.len = PUBLIC_KEY_SIZE;
-		private_identity_key->key.data = pool.allocate<uint8_t>(PRIVATE_KEY_SIZE);
-		private_identity_key->key.len = PRIVATE_KEY_SIZE;
-
-		//copy the keys
-		this->public_signing_key.copyTo({uchar_to_byte(public_signing_key->key.data), PUBLIC_MASTER_KEY_SIZE});
-		this->public_identity_key.copyTo({uchar_to_byte(public_identity_key->key.data), PUBLIC_KEY_SIZE});
 		Unlocker unlocker{*this};
-		this->private_signing_key->copyTo({uchar_to_byte(private_signing_key->key.data), PRIVATE_MASTER_KEY_SIZE});
-		this->private_identity_key->copyTo({uchar_to_byte(private_identity_key->key.data), PRIVATE_KEY_SIZE});
+
+		public_signing_key = this->public_signing_key.exportProtobuf(pool);
+		private_signing_key = this->private_signing_key->exportProtobuf(pool);
+		public_identity_key = this->public_identity_key.exportProtobuf(pool);
+		private_identity_key = this->private_identity_key->exportProtobuf(pool);
 	}
 
 	void MasterKeys::lock() const {

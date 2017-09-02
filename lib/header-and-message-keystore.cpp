@@ -78,9 +78,7 @@ namespace Molch {
 			|| (key_bundle.header_key->key.len != HEADER_KEY_SIZE)) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect header key."};
 		}
-		this->header_key.set({
-				uchar_to_byte(key_bundle.header_key->key.data),
-				key_bundle.header_key->key.len});
+		this->header_key = HeaderKey{*key_bundle.header_key};
 
 		//import the message key
 		if ((key_bundle.message_key == nullptr)
@@ -88,9 +86,7 @@ namespace Molch {
 			|| (key_bundle.message_key->key.len != MESSAGE_KEY_SIZE)) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect message key."};
 		}
-		this->message_key.set({
-				uchar_to_byte(key_bundle.message_key->key.data),
-				key_bundle.message_key->key.len});
+		this->message_key = MessageKey{*key_bundle.message_key};
 
 		//import the expiration date
 		if (!key_bundle.has_expiration_time) {
@@ -103,24 +99,9 @@ namespace Molch {
 		auto key_bundle{pool.allocate<ProtobufCKeyBundle>(1)};
 		key_bundle__init(key_bundle);
 
-		//header key
-		key_bundle->header_key = pool.allocate<ProtobufCKey>(1);
-		key__init(key_bundle->header_key);
-		key_bundle->header_key->key.data = pool.allocate<unsigned char>(HEADER_KEY_SIZE);
-
-		//message key
-		key_bundle->message_key = pool.allocate<ProtobufCKey>(1);
-		key__init(key_bundle->message_key);
-		key_bundle->message_key->key.data = pool.allocate<unsigned char>(MESSAGE_KEY_SIZE);
-
-		//export the header key
-		this->header_key.copyTo({uchar_to_byte(key_bundle->header_key->key.data), HEADER_KEY_SIZE});
-		key_bundle->header_key->key.len = this->header_key.size();
-
-		//export the message key
-		this->message_key.copyTo({uchar_to_byte(key_bundle->message_key->key.data), MESSAGE_KEY_SIZE});
-		key_bundle->message_key->key.len = this->message_key.size();
-
+		//export the keys
+		key_bundle->header_key = this->header_key.exportProtobuf(pool);
+		key_bundle->message_key = this->message_key.exportProtobuf(pool);
 
 		//set expiration time
 		key_bundle->expiration_time = gsl::narrow<uint64_t>(this->expiration_date);
