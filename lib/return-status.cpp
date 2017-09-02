@@ -113,12 +113,6 @@ namespace Molch {
 			case status_type::INIT_ERROR:
 				return "INIT_ERROR";
 
-			case status_type::CREATION_ERROR:
-				return "CREATION_ERROR";
-
-			case status_type::ADDITION_ERROR:
-				return "ADDITION_ERROR";
-
 			case status_type::ALLOCATION_FAILED:
 				return "ALLOCATION_FAILED";
 
