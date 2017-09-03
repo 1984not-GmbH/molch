@@ -54,4 +54,30 @@ namespace Molch {
 			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate crypto_box keypair from seed."};
 		}
 	}
+
+	void crypto_sign_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key) {
+		Expects((public_key.size() == crypto_sign_PUBLICKEYBYTES)
+				&& (private_key.size() == crypto_sign_SECRETKEYBYTES));
+
+		auto status{::crypto_sign_keypair(
+				byte_to_uchar(public_key.data()),
+				byte_to_uchar(private_key.data()))};
+		if (status != 0) {
+			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate crypto_sign keypair."};
+		}
+
+	}
+	void crypto_sign_seed_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key, const span<const gsl::byte> seed) {
+		Expects((public_key.size() == crypto_sign_PUBLICKEYBYTES)
+				&& (private_key.size() == crypto_sign_SECRETKEYBYTES)
+				&& (seed.size() == crypto_sign_SEEDBYTES));
+
+		auto status{::crypto_sign_seed_keypair(
+				byte_to_uchar(public_key.data()),
+				byte_to_uchar(private_key.data()),
+				byte_to_uchar(seed.data()))};
+		if (status != 0) {
+			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate crypto_sign keypair from seed."};
+		}
+	}
 }

@@ -100,12 +100,9 @@ namespace Molch {
 		ReadWriteUnlocker unlocker{*this};
 
 		//generate the signing keypair
-		auto status{crypto_sign_keypair(
-				byte_to_uchar(this->public_signing_key.data()),
-				byte_to_uchar(this->private_signing_key->data()))};
-		if (status != 0) {
-			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate signing keypair."};
-		}
+		crypto_sign_keypair(
+				this->public_signing_key,
+				*this->private_signing_key);
 		this->public_signing_key.empty = false;
 		this->private_signing_key->empty = false;
 
@@ -126,13 +123,10 @@ namespace Molch {
 		spiced_random(high_entropy_seed, low_entropy_seed);
 
 		//generate the signing keypair
-		auto status{crypto_sign_seed_keypair(
-				byte_to_uchar(this->public_signing_key.data()),
-				byte_to_uchar(this->private_signing_key->data()),
-				byte_to_uchar(high_entropy_seed.data()))};
-		if (status != 0) {
-			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate signing keypair with seed."};
-		}
+		crypto_sign_seed_keypair(
+				this->public_signing_key,
+				*this->private_signing_key,
+				span<gsl::byte>(high_entropy_seed).subspan(0, crypto_sign_SEEDBYTES));
 		this->public_signing_key.empty = false;
 		this->private_signing_key->empty = false;
 
