@@ -23,7 +23,6 @@
 #include "constants.h"
 #include "diffie-hellman.hpp"
 #include "molch-exception.hpp"
-#include "autozero.hpp"
 #include "gsl.hpp"
 
 namespace Molch {
@@ -56,65 +55,19 @@ namespace Molch {
 		dh_secret.empty = false;
 
 		//initialize hashing
-		autozero<crypto_generichash_state> hash_state;
-		status = crypto_generichash_init(
-				hash_state.pointer(),
-				nullptr, //key
-				0, //key_length
-				DIFFIE_HELLMAN_SIZE); //output length
-		if (status != 0) {
-			throw Exception{status_type::GENERIC_ERROR, "Failed to initialize hash."};
-		}
-
-		//start input to hash with diffie hellman secret
-		status = crypto_generichash_update(
-				hash_state.pointer(),
-				byte_to_uchar(dh_secret.data()),
-				dh_secret.size());
-		if (status != 0) {
-			throw Exception{status_type::GENERIC_ERROR, "Failed to add the diffie hellman secret to the hash input."};
-		}
+		CryptoGenerichash hash{{nullptr}, DIFFIE_HELLMAN_SIZE};
+		hash.update(dh_secret);
 
 		//add public keys to the input of the hash
 		switch (role) {
 			case Ratchet::Role::ALICE: //Alice (our_public_key|their_public_key)
-				//add our_public_key to the input of the hash
-				status = crypto_generichash_update(
-						hash_state.pointer(),
-						byte_to_uchar(our_public_key.data()),
-						our_public_key.size());
-				if (status != 0) {
-					throw Exception{status_type::GENERIC_ERROR, "Failed to add Alice' public key to the hash input."};
-				}
-
-				//add their_public_key to the input of the hash
-				status = crypto_generichash_update(
-						hash_state.pointer(),
-						byte_to_uchar(their_public_key.data()),
-						their_public_key.size());
-				if (status != 0) {
-					throw Exception{status_type::GENERIC_ERROR, "Failed to add Bob's public key to the hash input."};
-				}
+				hash.update(our_public_key);
+				hash.update(their_public_key);
 				break;
 
 			case Ratchet::Role::BOB: //Bob (their_public_key|our_public_key)
-				//add their_public_key to the input of the hash
-				status = crypto_generichash_update(
-						hash_state.pointer(),
-						byte_to_uchar(their_public_key.data()),
-						their_public_key.size());
-				if (status != 0) {
-					throw Exception{status_type::GENERIC_ERROR, "Failed to add Alice's public key to the hash input."};
-				}
-
-				//add our_public_key to the input of the hash
-				status = crypto_generichash_update(
-						hash_state.pointer(),
-						byte_to_uchar(our_public_key.data()),
-						our_public_key.size());
-				if (status != 0) {
-					throw Exception{status_type::GENERIC_ERROR, "Failed to add Bob's public key to the hash input."};
-				}
+				hash.update(their_public_key);
+				hash.update(our_public_key);
 				break;
 
 			default:
@@ -122,13 +75,7 @@ namespace Molch {
 		}
 
 		//finally write the hash to derived_key
-		status = crypto_generichash_final(
-				hash_state.pointer(),
-				byte_to_uchar(derived_key.data()),
-				derived_key.size());
-		if (status != 0) {
-			throw Exception{status_type::GENERIC_ERROR, "Failed to finalize hash."};
-		}
+		hash.final(derived_key);
 		derived_key.empty = false;
 	}
 
@@ -204,53 +151,11 @@ namespace Molch {
 
 		//now calculate HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0))
 		//( HASH(dh1|| dh2 || dh3) )
-
-		//initialize hashing
-		autozero<crypto_generichash_state> hash_state;
-		auto status{crypto_generichash_init(
-				hash_state.pointer(),
-				nullptr, //key
-				0, //key_length
-				DIFFIE_HELLMAN_SIZE)}; //output_length
-		if (status != 0) {
-			throw Exception{status_type::GENERIC_ERROR, "Failed to initialize hash."};
-		}
-
-		//add dh1 to hash input
-		status = crypto_generichash_update(
-				hash_state.pointer(),
-				byte_to_uchar(dh1.data()),
-				dh1.size());
-		if (status != 0) {
-			throw Exception{status_type::GENERIC_ERROR, "Failed to add dh1 to the hash input."};
-		}
-
-		//add dh2 to hash input
-		status = crypto_generichash_update(
-				hash_state.pointer(),
-				byte_to_uchar(dh2.data()),
-				dh2.size());
-		if (status != 0) {
-			throw Exception{status_type::GENERIC_ERROR, "Failed to add dh2 to the hash input."};
-		}
-
-		//add dh3 to hash input
-		status = crypto_generichash_update(
-				hash_state.pointer(),
-				byte_to_uchar(dh3.data()),
-				dh3.size());
-		if (status != 0) {
-			throw Exception{status_type::GENERIC_ERROR, "Failed to add dh3 to the hash input."};
-		}
-
-		//write final hash to output (derived_key)
-		status = crypto_generichash_final(
-				hash_state.pointer(),
-				byte_to_uchar(derived_key.data()),
-				derived_key.size());
-		if (status != 0) {
-			throw Exception{status_type::GENERIC_ERROR, "Failed to finalize hash"};
-		}
+		CryptoGenerichash hash{{nullptr}, DIFFIE_HELLMAN_SIZE};
+		hash.update(dh1);
+		hash.update(dh2);
+		hash.update(dh3);
+		hash.final(derived_key);
 		derived_key.empty = false;
 	}
 }

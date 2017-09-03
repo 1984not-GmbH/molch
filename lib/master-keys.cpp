@@ -28,7 +28,6 @@
 #include "master-keys.hpp"
 #include "spiced-random.hpp"
 #include "sodium-wrappers.hpp"
-#include "autozero.hpp"
 #include "gsl.hpp"
 
 namespace Molch {

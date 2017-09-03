@@ -80,4 +80,61 @@ namespace Molch {
 			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate crypto_sign keypair from seed."};
 		}
 	}
+
+	void crypto_generichash(const span<gsl::byte> output, const span<const gsl::byte> input, const span<const gsl::byte> key) {
+		Expects((output.size() >= crypto_generichash_BYTES_MIN)
+				&& (output.size() <= crypto_generichash_BYTES_MAX)
+				&& (key.empty()
+					|| ((key.size() >= crypto_generichash_KEYBYTES_MIN)
+						&& (key.size() <= crypto_generichash_KEYBYTES_MAX))));
+
+		auto status{::crypto_generichash(
+				byte_to_uchar(output.data()), output.size(),
+				byte_to_uchar(input.data()), input.size(),
+				byte_to_uchar(key.data()), key.size())};
+		if (status != 0) {
+			throw Exception{status_type::GENERIC_ERROR, "Failed to hash data."};
+		}
+	}
+
+	CryptoGenerichash::CryptoGenerichash(const span<const gsl::byte> key, size_t output_length)  :
+			output_length{output_length} {
+		Expects((output_length >= crypto_generichash_BYTES_MIN)
+				&& (output_length <= crypto_generichash_BYTES_MAX)
+				&& (key.empty()
+					|| ((key.size() >= crypto_generichash_KEYBYTES_MIN)
+						&& (key.size() <= crypto_generichash_KEYBYTES_MAX))));
+
+		auto status{::crypto_generichash_init(
+				&this->state,
+				byte_to_uchar(key.data()), key.size(),
+				output_length)};
+		if (status != 0) {
+			throw Exception{status_type::GENERIC_ERROR, "Failed to initialize generichash state."};
+		}
+	}
+
+	void CryptoGenerichash::update(const span<const gsl::byte> input) {
+		auto status{::crypto_generichash_update(
+				&this->state,
+				byte_to_uchar(input.data()), input.size())};
+		if (status != 0) {
+			throw Exception{status_type::GENERIC_ERROR, "Failed to update generichash state."};
+		}
+	}
+
+	void CryptoGenerichash::final(const span<gsl::byte> output) {
+		Expects(output.size() == this->output_length);
+
+		auto status{::crypto_generichash_final(
+				&this->state,
+				byte_to_uchar(output.data()), output.size())};
+		if (status != 0) {
+			throw Exception{status_type::GENERIC_ERROR, "Failed to finish generichash."};
+		}
+	}
+
+	CryptoGenerichash::~CryptoGenerichash() {
+		sodium_memzero(&this->state, sizeof(this->state));
+	}
 }

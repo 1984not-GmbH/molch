@@ -96,6 +96,20 @@ namespace Molch {
 
 	void crypto_sign_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key);
 	void crypto_sign_seed_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key, const span<const gsl::byte> seed);
+
+	void crypto_generichash(const span<gsl::byte> output, const span<const gsl::byte> input, const span<const gsl::byte> key);
+
+	struct CryptoGenerichash {
+		crypto_generichash_state state;
+		const size_t output_length;
+
+		CryptoGenerichash(const span<const gsl::byte> key, size_t output_length);
+
+		void update(const span<const gsl::byte> input);
+		void final(const span<gsl::byte> output);
+
+		~CryptoGenerichash();
+	};
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */
