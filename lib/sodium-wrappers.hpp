@@ -92,6 +92,7 @@ namespace Molch {
 	void sodium_init();
 
 	void crypto_box_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key);
+	void crypto_box_seed_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key, const span<const gsl::byte> seed);
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */
