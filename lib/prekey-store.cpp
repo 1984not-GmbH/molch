@@ -134,7 +134,7 @@ namespace Molch {
 	}
 
 	void PrekeyStore::init() {
-		this->prekeys = std::unique_ptr<std::array<Prekey,PREKEY_AMOUNT>,SodiumDeleter<std::array<Prekey,PREKEY_AMOUNT>>>(throwing_sodium_malloc<std::array<Prekey,PREKEY_AMOUNT>>(1));
+		this->prekeys = std::unique_ptr<std::array<Prekey,PREKEY_AMOUNT>,SodiumDeleter<std::array<Prekey,PREKEY_AMOUNT>>>(sodium_malloc<std::array<Prekey,PREKEY_AMOUNT>>(1));
 		new (this->prekeys.get()) std::array<Prekey,PREKEY_AMOUNT>;
 	}
 

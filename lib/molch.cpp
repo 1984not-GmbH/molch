@@ -1425,7 +1425,7 @@ cleanup:
 
 			// create a backup key buffer if it doesnt exist already
 			if (global_backup_key == nullptr) {
-				global_backup_key = std::unique_ptr<BackupKey,SodiumDeleter<BackupKey>>(throwing_sodium_malloc<BackupKey>(1));
+				global_backup_key = std::unique_ptr<BackupKey,SodiumDeleter<BackupKey>>(sodium_malloc<BackupKey>(1));
 				new (global_backup_key.get()) BackupKey();
 			}
 

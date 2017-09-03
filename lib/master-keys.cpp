@@ -85,7 +85,7 @@ namespace Molch {
 
 	void MasterKeys::init() {
 		//allocate the private key storage
-		this->private_keys = std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>>(throwing_sodium_malloc<PrivateMasterKeyStorage>(1));
+		this->private_keys = std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>>(sodium_malloc<PrivateMasterKeyStorage>(1));
 
 		//initialize the Buffers
 		//private, initialize with pointers to private key storage

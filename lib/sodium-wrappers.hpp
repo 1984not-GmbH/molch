@@ -34,7 +34,7 @@ namespace Molch {
 	 * Calls sodium_malloc and throws std::bad_alloc if allocation fails
 	 */
 	template <typename T>
-	T* throwing_sodium_malloc(size_t elements) {
+	T* sodium_malloc(size_t elements) {
 		if (elements == 0) {
 			throw std::bad_alloc();
 		}
@@ -44,7 +44,7 @@ namespace Molch {
 			throw std::bad_alloc();
 		}
 
-		auto memory{sodium_malloc(elements * sizeof(T))};
+		auto memory{::sodium_malloc(elements * sizeof(T))};
 		if (memory == nullptr) {
 			throw std::bad_alloc();
 		}
@@ -63,7 +63,7 @@ namespace Molch {
 
 		T* allocate(size_t elements, const T* hint = nullptr) {
 			(void)hint;
-			return throwing_sodium_malloc<T>(elements);
+			return sodium_malloc<T>(elements);
 		}
 		void deallocate(T* pointer, size_t elements) noexcept {
 			(void)elements;

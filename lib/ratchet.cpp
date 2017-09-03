@@ -31,7 +31,7 @@
 
 namespace Molch {
 	void Ratchet::init() {
-		this->storage = std::unique_ptr<RatchetStorage,SodiumDeleter<RatchetStorage>>(throwing_sodium_malloc<RatchetStorage>(1));
+		this->storage = std::unique_ptr<RatchetStorage,SodiumDeleter<RatchetStorage>>(sodium_malloc<RatchetStorage>(1));
 		new (this->storage.get()) RatchetStorage{};
 	}
 
