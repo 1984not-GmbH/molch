@@ -407,9 +407,7 @@ namespace Molch {
 			//buffer for the hex string
 			const size_t hex_length{this->content_length * 2 + sizeof("")};
 			auto hex{std::make_unique<char[]>(hex_length)};
-			if (sodium_bin2hex(hex.get(), hex_length, byte_to_uchar(this->content), this->content_length) == nullptr) {
-				throw Exception{status_type::BUFFER_ERROR, "Failed to convert binary to hex with sodium_bin2hex."};
-			}
+			sodium_bin2hex({hex.get(), hex_length}, *this);
 
 			for (size_t i{0}; i < hex_length; i++) {
 				if ((width != 0) && ((i % width) == 0) && (i != 0)) {

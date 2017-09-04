@@ -142,6 +142,8 @@ namespace Molch {
 	int sodium_compare(const span<const gsl::byte> b1, const span<const gsl::byte> b2);
 
 	void sodium_memzero(const span<gsl::byte> buffer);
+
+	void sodium_bin2hex(const span<char> hex, const span<const gsl::byte> bin);
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */

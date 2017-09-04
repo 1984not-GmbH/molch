@@ -240,4 +240,12 @@ namespace Molch {
 	void sodium_memzero(const span<gsl::byte> buffer) {
 		::sodium_memzero(buffer.data(), buffer.size());
 	}
+
+	void sodium_bin2hex(const span<char> hex, const span<const gsl::byte> bin) {
+		Expects(hex.size() == (2 * bin.size() + sizeof('\0')));
+
+		::sodium_bin2hex(
+				hex.data(), hex.size(),
+				byte_to_uchar(bin.data()), bin.size());
+	}
 }

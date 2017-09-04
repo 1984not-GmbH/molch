@@ -240,9 +240,7 @@ namespace Molch {
 
 			const size_t hex_length{this->size() * 2 + sizeof("")};
 			auto hex{std::make_unique<char[]>(hex_length)};
-			if (sodium_bin2hex(hex.get(), hex_length, byte_to_uchar(this->data()), this->size()) == nullptr) {
-				throw Exception{status_type::BUFFER_ERROR, "Failed to converst binary to hex with sodium_bin2hex."};
-			}
+			sodium_bin2hex({hex.get(), hex_length}, *this);
 
 			for (size_t i{0}; i < hex_length; i++) {
 				if ((width != 0) && ((i % width) == 0) && (i != 0)) {
