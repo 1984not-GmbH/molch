@@ -144,6 +144,12 @@ namespace Molch {
 	void sodium_memzero(const span<gsl::byte> buffer);
 
 	void sodium_bin2hex(const span<char> hex, const span<const gsl::byte> bin);
+
+	void crypto_secretbox_easy(
+			const span<gsl::byte> ciphertext,
+			const span<const gsl::byte> message,
+			const span<const gsl::byte> nonce,
+			const span<const gsl::byte> key);
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */

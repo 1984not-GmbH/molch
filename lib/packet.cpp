@@ -175,15 +175,11 @@ namespace Molch {
 		Buffer encrypted_axolotl_header{
 			axolotl_header.size() + crypto_secretbox_MACBYTES,
 			axolotl_header.size() + crypto_secretbox_MACBYTES};
-		auto status{crypto_secretbox_easy(
-				byte_to_uchar(encrypted_axolotl_header.data()),
-				byte_to_uchar(axolotl_header.data()),
-				axolotl_header.size(),
-				byte_to_uchar(header_nonce.data()),
-				byte_to_uchar(axolotl_header_key.data()))};
-		if (status != 0) {
-			throw Exception{status_type::ENCRYPT_ERROR, "Failed to encrypt header."};
-		}
+		crypto_secretbox_easy(
+				encrypted_axolotl_header,
+				axolotl_header,
+				header_nonce,
+				axolotl_header_key);
 
 		//add the encrypted header to the protobuf struct
 		packet_struct.has_encrypted_axolotl_header = true;
@@ -210,15 +206,11 @@ namespace Molch {
 		Buffer encrypted_message{
 			padded_message.size() + crypto_secretbox_MACBYTES,
 			padded_message.size() + crypto_secretbox_MACBYTES};
-		status = crypto_secretbox_easy(
-				byte_to_uchar(encrypted_message.data()),
-				byte_to_uchar(padded_message.data()),
-				padded_message.size(),
-				byte_to_uchar(message_nonce.data()),
-				byte_to_uchar(message_key.data()));
-		if (status != 0) {
-			throw Exception{status_type::ENCRYPT_ERROR, "Failed to encrypt message."};
-		}
+		crypto_secretbox_easy(
+				encrypted_message,
+				padded_message,
+				message_nonce,
+				message_key);
 
 		//add the encrypted message to the protobuf struct
 		packet_struct.has_encrypted_message = true;
