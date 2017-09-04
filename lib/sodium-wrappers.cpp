@@ -165,4 +165,30 @@ namespace Molch {
 	void randombytes_buf(const span<gsl::byte> buffer) {
 		::randombytes_buf(buffer.data(), buffer.size());
 	}
+
+	void crypto_pwhash(
+			const span<gsl::byte> output,
+			const span<const gsl::byte> password,
+			const span<const gsl::byte> salt,
+			unsigned long long opslimit,
+			size_t memlimit,
+			int algorithm) {
+		static_assert(crypto_pwhash_PASSWD_MIN == 0, "Minimum password size is not 0.");
+		Expects((output.size() >= crypto_pwhash_BYTES_MIN)
+				&& (output.size() <= crypto_pwhash_BYTES_MAX)
+				//&& (password.size() >= crypto_pwhash_PASSWD_MIN) //see static_assert above
+				&& (password.size() <= crypto_pwhash_PASSWD_MAX)
+				&& (salt.size() == crypto_pwhash_SALTBYTES));
+
+		auto status{::crypto_pwhash(
+				byte_to_uchar(output.data()), output.size(),
+				reinterpret_cast<const char*>(password.data()), password.size(),
+				byte_to_uchar(salt.data()),
+				opslimit,
+				memlimit,
+				algorithm)};
+		if (status != 0) {
+			throw Exception{status_type::GENERIC_ERROR, "Failed to derive key from password."};
+		}
+	}
 }

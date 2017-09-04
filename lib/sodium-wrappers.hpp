@@ -119,6 +119,14 @@ namespace Molch {
 			const span<const gsl::byte> personal);
 
 	void randombytes_buf(const span<gsl::byte> buffer);
+
+	void crypto_pwhash(
+			const span<gsl::byte> output,
+			const span<const gsl::byte> password,
+			const span<const gsl::byte> salt,
+			unsigned long long opslimit,
+			size_t memlimit,
+			int algorithm);
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */
