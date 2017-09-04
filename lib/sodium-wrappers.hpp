@@ -130,6 +130,11 @@ namespace Molch {
 
 	//TODO find out how to use PublicKey and PrivateKey as parameters here
 	void crypto_scalarmult_base(const span<gsl::byte> public_key, const span<const gsl::byte> private_key);
+
+	void crypto_scalarmult(
+			const span<gsl::byte> shared_secret,
+			const span<const gsl::byte> our_private_key,
+			const span<const gsl::byte> their_public_key);
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */

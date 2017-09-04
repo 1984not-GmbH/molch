@@ -203,4 +203,21 @@ namespace Molch {
 			throw Exception{status_type::GENERIC_ERROR, "Failed to calculate public key from private key."};
 		}
 	}
+
+	void crypto_scalarmult(
+			const span<gsl::byte> shared_secret,
+			const span<const gsl::byte> our_private_key,
+			const span<const gsl::byte> their_public_key) {
+		Expects((shared_secret.size() == crypto_scalarmult_BYTES)
+				&& (our_private_key.size() == crypto_scalarmult_SCALARBYTES)
+				&& (their_public_key.size() == crypto_scalarmult_BYTES));
+
+		auto status{::crypto_scalarmult(
+				byte_to_uchar(shared_secret.data()),
+				byte_to_uchar(our_private_key.data()),
+				byte_to_uchar(their_public_key.data()))};
+		if (status != 0) {
+			throw Exception{status_type::GENERIC_ERROR, "Failed to calculate shared secret."};
+		}
+	}
 }

@@ -45,13 +45,7 @@ namespace Molch {
 		Key<crypto_scalarmult_SCALARBYTES,KeyType::Key> dh_secret;
 
 		//do the diffie hellman key exchange
-		auto status{crypto_scalarmult(
-				byte_to_uchar(dh_secret.data()),
-				byte_to_uchar(our_private_key.data()),
-				byte_to_uchar(their_public_key.data()))};
-		if (status != 0) {
-			throw Exception{status_type::KEYDERIVATION_FAILED, "Failed to do crypto_scalarmult."};
-		}
+		crypto_scalarmult(dh_secret, our_private_key, their_public_key);
 		dh_secret.empty = false;
 
 		//initialize hashing
