@@ -161,4 +161,8 @@ namespace Molch {
 			throw Exception{status_type::GENERIC_ERROR, "Failed to calculate personal Blake2b hash."};
 		}
 	}
+
+	void randombytes_buf(const span<gsl::byte> buffer) {
+		::randombytes_buf(buffer.data(), buffer.size());
+	}
 }

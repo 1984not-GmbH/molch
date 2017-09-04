@@ -117,6 +117,8 @@ namespace Molch {
 			const span<const gsl::byte> key,
 			const span<const gsl::byte> salt,
 			const span<const gsl::byte> personal);
+
+	void randombytes_buf(const span<gsl::byte> buffer);
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */

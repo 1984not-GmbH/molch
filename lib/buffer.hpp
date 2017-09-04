@@ -210,7 +210,7 @@ namespace Molch {
 			}
 
 			this->content_length = length;
-			randombytes_buf(this->content, length);
+			randombytes_buf({this->content, length});
 		}
 
 		/*

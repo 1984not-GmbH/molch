@@ -187,7 +187,7 @@ namespace Molch {
 		}
 
 		void fillRandom() {
-			randombytes_buf(reinterpret_cast<void*>(this->data()), this->size());
+			randombytes_buf(*this);
 			this->empty = false;
 		}
 
