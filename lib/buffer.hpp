@@ -195,7 +195,7 @@ namespace Molch {
 			if (this->buffer_length == 0) {
 				return;
 			}
-			sodium_memzero(this->content, this->buffer_length);
+			sodium_memzero(*this);
 			this->content_length = 0;
 		}
 

@@ -216,7 +216,7 @@ namespace Molch {
 		}
 
 		void clear() {
-			sodium_memzero(reinterpret_cast<void*>(this->data()), length);
+			sodium_memzero(*this);
 			this->empty = true;
 		}
 
