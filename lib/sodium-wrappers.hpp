@@ -110,6 +110,13 @@ namespace Molch {
 
 		~CryptoGenerichash();
 	};
+
+	void crypto_generichash_blake2b_salt_personal(
+			const span<gsl::byte> output,
+			const span<const gsl::byte> input,
+			const span<const gsl::byte> key,
+			const span<const gsl::byte> salt,
+			const span<const gsl::byte> personal);
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */

@@ -137,4 +137,28 @@ namespace Molch {
 	CryptoGenerichash::~CryptoGenerichash() {
 		sodium_memzero(&this->state, sizeof(this->state));
 	}
+
+	void crypto_generichash_blake2b_salt_personal(
+			const span<gsl::byte> output,
+			const span<const gsl::byte> input,
+			const span<const gsl::byte> key,
+			const span<const gsl::byte> salt,
+			const span<const gsl::byte> personal) {
+		Expects((output.size() >= crypto_generichash_blake2b_BYTES_MIN)
+				&& (output.size() <= crypto_generichash_blake2b_BYTES_MAX)
+				&& (key.size() >= crypto_generichash_blake2b_KEYBYTES_MIN)
+				&& (key.size() <= crypto_generichash_blake2b_KEYBYTES_MAX)
+				&& (salt.size() == crypto_generichash_blake2b_SALTBYTES)
+				&& (personal.size() == crypto_generichash_blake2b_PERSONALBYTES));
+
+		auto status{::crypto_generichash_blake2b_salt_personal(
+				byte_to_uchar(output.data()), output.size(),
+				byte_to_uchar(input.data()), input.size(),
+				byte_to_uchar(key.data()), key.size(),
+				byte_to_uchar(salt.data()),
+				byte_to_uchar(personal.data()))};
+		if (status != 0) {
+			throw Exception{status_type::GENERIC_ERROR, "Failed to calculate personal Blake2b hash."};
+		}
+	}
 }

@@ -176,18 +176,12 @@ namespace Molch {
 			static_assert(sizeof(personal) == crypto_generichash_blake2b_PERSONALBYTES, "personal string is not crypto_generichash_blake2b_PERSONALBYTES long");
 
 			//set length of output
-			auto status{crypto_generichash_blake2b_salt_personal(
-					byte_to_uchar(derived_key.data()),
-					derived_length,
-					nullptr, //input
-					0, //input length
-					byte_to_uchar(this->data()),
-					length,
-					byte_to_uchar(salt.data()),
-					personal)};
-			if (status != 0) {
-				throw Exception{status_type::KEYDERIVATION_FAILED, "Failed to derive key via crypto_generichash_blake2b_salt_personal"};
-			}
+			crypto_generichash_blake2b_salt_personal(
+					derived_key,
+					{nullptr}, //input
+					*this,
+					salt,
+					{uchar_to_byte(personal), sizeof(personal)});
 
 			derived_key.empty = false;
 		}
