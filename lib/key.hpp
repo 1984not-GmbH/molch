@@ -119,10 +119,7 @@ namespace Molch {
 		int compare(const Key& key) const {
 			Expects(!this->empty && !key.empty);
 
-			return sodium_compare(
-					byte_to_uchar(this->data()),
-					byte_to_uchar(key.data()),
-					length);
+			return sodium_compare(*this, key);
 		}
 
 		//comparison operators

@@ -231,6 +231,12 @@ namespace Molch {
 		return ::sodium_memcmp(b1.data(), b2.data(), b1.size()) == 0;
 	}
 
+	int sodium_compare(const span<const gsl::byte> b1, const span<const gsl::byte> b2) {
+		Expects(b1.size() == b2.size());
+
+		return ::sodium_compare(byte_to_uchar(b1.data()), byte_to_uchar(b2.data()), b1.size());
+	}
+
 	void sodium_memzero(const span<gsl::byte> buffer) {
 		::sodium_memzero(buffer.data(), buffer.size());
 	}
