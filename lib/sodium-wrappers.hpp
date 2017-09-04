@@ -137,6 +137,8 @@ namespace Molch {
 			const span<const gsl::byte> their_public_key);
 
 	bool sodium_is_zero(const span<const gsl::byte> buffer);
+
+	bool sodium_memcmp(const span<const gsl::byte> b1, const span<const gsl::byte> b2);
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */

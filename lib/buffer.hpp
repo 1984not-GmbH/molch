@@ -271,7 +271,13 @@ namespace Molch {
 				}
 			}
 
-			return sodium_memcmp(this->content + position1, array.data() + position2, comparison_length);
+			bool comparison{sodium_memcmp({this->content + position1, comparison_length}, {array.data() + position2, comparison_length})};
+
+			if (comparison) {
+				return 0;
+			}
+
+			return -1;
 		}
 
 		/*
