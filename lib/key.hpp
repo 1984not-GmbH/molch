@@ -197,7 +197,7 @@ namespace Molch {
 				return true;
 			}
 
-			return sodium_is_zero(byte_to_uchar(this->data()), length);
+			return sodium_is_zero(*this);
 		}
 
 		//copy from a raw byte array

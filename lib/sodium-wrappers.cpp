@@ -220,4 +220,8 @@ namespace Molch {
 			throw Exception{status_type::GENERIC_ERROR, "Failed to calculate shared secret."};
 		}
 	}
+
+	bool sodium_is_zero(const span<const gsl::byte> buffer) {
+		return ::sodium_is_zero(byte_to_uchar(buffer.data()), buffer.size());
+	}
 }

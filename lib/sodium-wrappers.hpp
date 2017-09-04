@@ -135,6 +135,8 @@ namespace Molch {
 			const span<gsl::byte> shared_secret,
 			const span<const gsl::byte> our_private_key,
 			const span<const gsl::byte> their_public_key);
+
+	bool sodium_is_zero(const span<const gsl::byte> buffer);
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */
