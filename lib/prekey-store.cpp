@@ -79,12 +79,7 @@ namespace Molch {
 		//import public key
 		if (keypair.public_key == nullptr) {
 			//public key is missing -> derive it from the private key
-			auto status{crypto_scalarmult_base(
-					byte_to_uchar(this->public_key.data()),
-					byte_to_uchar(this->private_key.data()))};
-			if (status != 0) {
-				throw Exception{status_type::KEYDERIVATION_FAILED, "Failed to derive public prekey from private one."};
-			}
+			crypto_scalarmult_base(this->public_key, this->private_key);
 			this->public_key.empty = false;
 		} else if (keypair.public_key->key.len != PUBLIC_KEY_SIZE) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a public key."};

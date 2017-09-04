@@ -191,4 +191,16 @@ namespace Molch {
 			throw Exception{status_type::GENERIC_ERROR, "Failed to derive key from password."};
 		}
 	}
+
+	void crypto_scalarmult_base(const span<gsl::byte> public_key, const span<const gsl::byte> private_key) {
+		Expects((public_key.size() == crypto_scalarmult_BYTES)
+				&& (private_key.size() == crypto_scalarmult_SCALARBYTES));
+
+		auto status{::crypto_scalarmult_base(
+				byte_to_uchar(public_key.data()),
+				byte_to_uchar(private_key.data()))};
+		if (status != 0) {
+			throw Exception{status_type::GENERIC_ERROR, "Failed to calculate public key from private key."};
+		}
+	}
 }

@@ -127,6 +127,9 @@ namespace Molch {
 			unsigned long long opslimit,
 			size_t memlimit,
 			int algorithm);
+
+	//TODO find out how to use PublicKey and PrivateKey as parameters here
+	void crypto_scalarmult_base(const span<gsl::byte> public_key, const span<const gsl::byte> private_key);
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */
