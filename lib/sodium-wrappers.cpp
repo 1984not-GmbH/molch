@@ -267,4 +267,24 @@ namespace Molch {
 			throw Exception{status_type::GENERIC_ERROR, "Failed to encrypt message."};
 		}
 	}
+
+	void crypto_secretbox_open_easy(
+			const span<gsl::byte> message,
+			const span<const gsl::byte> ciphertext,
+			const span<const gsl::byte> nonce,
+			const span<const gsl::byte> key) {
+		Expects((ciphertext.size() >= crypto_secretbox_MACBYTES)
+				&& (message.size() == (ciphertext.size() - crypto_secretbox_MACBYTES))
+				&& (nonce.size() == crypto_secretbox_NONCEBYTES)
+				&& (key.size() == crypto_secretbox_KEYBYTES));
+
+		auto status{::crypto_secretbox_open_easy(
+				byte_to_uchar(message.data()),
+				byte_to_uchar(ciphertext.data()), ciphertext.size(),
+				byte_to_uchar(nonce.data()),
+				byte_to_uchar(key.data()))};
+		if (status != 0) {
+			throw Exception{status_type::GENERIC_ERROR, "Failed to decrypt message."};
+		}
+	}
 }

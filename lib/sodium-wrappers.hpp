@@ -150,6 +150,12 @@ namespace Molch {
 			const span<const gsl::byte> message,
 			const span<const gsl::byte> nonce,
 			const span<const gsl::byte> key);
+
+	void crypto_secretbox_open_easy(
+			const span<gsl::byte> message,
+			const span<const gsl::byte> ciphertext,
+			const span<const gsl::byte> nonce,
+			const span<const gsl::byte> key);
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */
