@@ -320,4 +320,23 @@ namespace Molch {
 			throw Exception{status_type::VERIFICATION_FAILED, "Failed to verify signed message."};
 		}
 	}
+
+	void sodium_mprotect_noaccess(void *pointer) {
+		auto status{::sodium_mprotect_noaccess(pointer)};
+		if (status != 0) {
+			throw Exception{status_type::GENERIC_ERROR, "Failed to lock memory."};
+		}
+	}
+	void sodium_mprotect_readonly(void *pointer) {
+		auto status{::sodium_mprotect_readonly(pointer)};
+		if (status != 0) {
+			throw Exception{status_type::GENERIC_ERROR, "Failed to make memory readonly."};
+		}
+	}
+	void sodium_mprotect_readwrite(void *pointer) {
+		auto status{::sodium_mprotect_readwrite(pointer)};
+		if (status != 0) {
+			throw Exception{status_type::GENERIC_ERROR, "Failed to make memory readwrite."};
+		}
+	}
 }

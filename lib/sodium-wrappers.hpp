@@ -166,6 +166,10 @@ namespace Molch {
 			const span<gsl::byte> verified_message,
 			const span<const gsl::byte> signed_message,
 			const span<const gsl::byte> signing_key);
+
+	void sodium_mprotect_noaccess(void *pointer);
+	void sodium_mprotect_readonly(void *pointer);
+	void sodium_mprotect_readwrite(void *pointer);
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */

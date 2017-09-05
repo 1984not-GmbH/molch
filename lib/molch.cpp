@@ -51,11 +51,11 @@ public:
 		if (!global_backup_key) {
 			throw Exception{status_type::GENERIC_ERROR, "No backup key to unlock!"};
 		}
-		sodium_mprotect_readonly(global_backup_key.get());
+		Molch::sodium_mprotect_readonly(global_backup_key.get());
 	}
 
 	~GlobalBackupKeyUnlocker() {
-		sodium_mprotect_noaccess(global_backup_key.get());
+		Molch::sodium_mprotect_noaccess(global_backup_key.get());
 	}
 };
 
@@ -65,11 +65,11 @@ public:
 		if (!global_backup_key) {
 			throw Exception{status_type::GENERIC_ERROR, "No backup key to unlock!"};
 		}
-		sodium_mprotect_readwrite(global_backup_key.get());
+		Molch::sodium_mprotect_readwrite(global_backup_key.get());
 	}
 
 	~GlobalBackupKeyWriteUnlocker() {
-		sodium_mprotect_noaccess(global_backup_key.get());
+		Molch::sodium_mprotect_noaccess(global_backup_key.get());
 	}
 };
 

@@ -182,24 +182,15 @@ namespace Molch {
 	}
 
 	void MasterKeys::lock() const {
-		auto status{sodium_mprotect_noaccess(this->private_keys.get())};
-		if (status != 0) {
-			throw Exception{status_type::GENERIC_ERROR, "Failed to lock memory."};
-		}
+		sodium_mprotect_noaccess(this->private_keys.get());
 	}
 
 	void MasterKeys::unlock() const {
-		auto status{sodium_mprotect_readonly(this->private_keys.get())};
-		if (status != 0) {
-			throw Exception{status_type::GENERIC_ERROR, "Failed to make memory readonly."};
-		}
+		sodium_mprotect_readonly(this->private_keys.get());
 	}
 
 	void MasterKeys::unlock_readwrite() const {
-		auto status{sodium_mprotect_readwrite(this->private_keys.get())};
-		if (status != 0) {
-			throw Exception{status_type::GENERIC_ERROR, "Failed to make memory readwrite."};
-		}
+		sodium_mprotect_readwrite(this->private_keys.get());
 	}
 
 	std::ostream& MasterKeys::print(std::ostream& stream) const {
