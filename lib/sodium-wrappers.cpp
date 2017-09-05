@@ -287,4 +287,20 @@ namespace Molch {
 			throw Exception{status_type::GENERIC_ERROR, "Failed to decrypt message."};
 		}
 	}
+
+	void crypto_sign(
+			const span<gsl::byte> signed_message,
+			const span<const gsl::byte> message,
+			const span<const gsl::byte> signing_key) {
+		Expects((signed_message.size() == (message.size() + crypto_sign_BYTES))
+				&& (signing_key.size() == crypto_sign_SECRETKEYBYTES));
+
+		auto status{::crypto_sign(
+				byte_to_uchar(signed_message.data()), nullptr,
+				byte_to_uchar(message.data()), message.size(),
+				byte_to_uchar(signing_key.data()))};
+		if (status != 0) {
+			throw Exception{status_type::SIGN_ERROR, "Failed to sign message."};
+		}
+	}
 }

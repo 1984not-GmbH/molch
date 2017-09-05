@@ -156,6 +156,11 @@ namespace Molch {
 			const span<const gsl::byte> ciphertext,
 			const span<const gsl::byte> nonce,
 			const span<const gsl::byte> key);
+
+	void crypto_sign(
+			const span<gsl::byte> signed_message,
+			const span<const gsl::byte> message,
+			const span<const gsl::byte> signing_key);
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */

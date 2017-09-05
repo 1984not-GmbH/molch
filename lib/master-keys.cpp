@@ -161,16 +161,10 @@ namespace Molch {
 		Expects(signed_data.size() == (data.size() + SIGNATURE_SIZE));
 
 		Unlocker unlocker{*this};
-		unsigned long long signed_message_length;
-		auto status{crypto_sign(
-			byte_to_uchar(signed_data.data()),
-			&signed_message_length,
-			byte_to_uchar(data.data()),
-			data.size(),
-			byte_to_uchar(this->private_signing_key->data()))};
-		if (status != 0) {
-			throw Exception{status_type::SIGN_ERROR, "Failed to sign message."};
-		}
+		crypto_sign(
+				signed_data,
+				data,
+				*this->private_signing_key);
 	}
 
 	void MasterKeys::exportProtobuf(
