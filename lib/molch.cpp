@@ -371,22 +371,10 @@ static void verify_prekey_list(
 		PublicSigningKey& public_signing_key) {
 	//verify the signature
 	Buffer verified_prekey_list{prekey_list.size() - SIGNATURE_SIZE, prekey_list.size() - SIGNATURE_SIZE};
-	unsigned long long verified_length;
-	auto status{crypto_sign_open(
-			byte_to_uchar(verified_prekey_list.data()),
-			&verified_length,
-			byte_to_uchar(prekey_list.data()),
-			prekey_list.size(),
-			byte_to_uchar(public_signing_key.data()))};
-	if (status != 0) {
-		throw Exception{status_type::VERIFICATION_FAILED, "Failed to verify prekey list signature."};
-	}
-	public_signing_key.empty = false;
-	if (verified_length > SIZE_MAX)
-	{
-		throw Exception{status_type::CONVERSION_ERROR, "Length is bigger than size_t."};
-	}
-	verified_prekey_list.setSize(gsl::narrow<size_t>(verified_length));
+	crypto_sign_open(
+			verified_prekey_list,
+			prekey_list,
+			public_signing_key);
 
 	//get the expiration date
 	int64_t expiration_date;

@@ -303,4 +303,21 @@ namespace Molch {
 			throw Exception{status_type::SIGN_ERROR, "Failed to sign message."};
 		}
 	}
+
+	void crypto_sign_open(
+			const span<gsl::byte> verified_message,
+			const span<const gsl::byte> signed_message,
+			const span<const gsl::byte> signing_key) {
+		Expects((signed_message.size() >= crypto_sign_BYTES)
+				&& (verified_message.size() == (signed_message.size() - crypto_sign_BYTES))
+				&& (signing_key.size() == crypto_sign_PUBLICKEYBYTES));
+
+		auto status{::crypto_sign_open(
+				byte_to_uchar(verified_message.data()), nullptr,
+				byte_to_uchar(signed_message.data()), signed_message.size(),
+				byte_to_uchar(signing_key.data()))};
+		if (status != 0) {
+			throw Exception{status_type::VERIFICATION_FAILED, "Failed to verify signed message."};
+		}
+	}
 }
