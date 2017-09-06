@@ -19,10 +19,17 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "common.h"
-
 #ifndef LIB_MOLCH_H
 #define LIB_MOLCH_H
+
+#include "return-status.h"
+
+/* although molch is C++, it exports a C interface */
+#ifdef __cplusplus
+extern "C" {
+#else
+	#define class
+#endif
 
 /*
  * THIS HEADER IS ONLY AN EARLY PREVIEW. IT WILL MOST CERTAINLY CHANGE IN THE FUTURE.
@@ -104,7 +111,7 @@ return_status molch_list_users(
  */
 void molch_destroy_all_users(void);
 
-typedef enum molch_message_type { PREKEY_MESSAGE, NORMAL_MESSAGE, INVALID } molch_message_type;
+typedef enum class molch_message_type { PREKEY_MESSAGE, NORMAL_MESSAGE, INVALID } molch_message_type;
 
 /*
  * Get the type of a message.
@@ -363,4 +370,9 @@ return_status molch_get_prekey_list(
 return_status molch_update_backup_key(
 		unsigned char * const new_key, //output, BACKUP_KEY_SIZE
 		const size_t new_key_length) __attribute__((warn_unused_result));
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif

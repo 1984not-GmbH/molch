@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.8.12)
 
-project (molch C)
+project (molch C CXX)
 
 subdirs(test lib bindings)
 
@@ -10,18 +10,14 @@ enable_testing()
 
 #Setup compiler flags
 list(APPEND custom_compiler_flag_candidates
-    -std=c99
+    -std=c++14
     -pedantic
     -Wall
     -Wextra
     -Werror
-    -Wstrict-prototypes
     -Wwrite-strings
-    -Wshadow
     -Winit-self
-    -Wcast-align
     -Wformat=2
-    -Wmissing-prototypes
     -Wstrict-overflow=2
     -Wcast-qual
     -Wundef
@@ -34,7 +30,35 @@ list(APPEND custom_compiler_flag_candidates
     -fPIC
     -Wunused-macros
     -Wmissing-variable-declarations
-    -Wc++-compat
+    -Wchkp
+    -Wnull-dereference
+    -Wimplicit-fallthrough
+    -Wunused-parameter
+    -Wstrict-aliasing=1
+    -Walloc-zero
+    -Walloca
+    -Wduplicated-branches
+    -Wduplicated-cond
+    -Wfloat-equal
+    -Wtrampolines
+    -Wunsafe-loop-optimizations
+    -Wredundant-decls
+    -Wlogical-op
+    #C++ options
+    -Wnoexcept
+    -Wstrict-null-sentinel
+    -Wold-style-cast
+    -Woverloaded-virtual
+    -Wsign-promo
+    -Wmultiple-inheritance
+    -Wvirtual-inheritance
+    -Wuninitialized
+    -Wsuggest-final-types
+    -Wsuggest-final-methods
+    -Wsuggest-override
+    -Wc++1z-compat
+    -Wconditionally-supported
+    -Wzero-as-null-pointer-constant
     )
 
 if(NOT ${CMAKE_BUILD_TYPE} MATCHES "Debug")
@@ -47,35 +71,37 @@ else()
 endif()
 
 # apply custom compiler flags
-include(CheckCCompilerFlag)
+include(CheckCXXCompilerFlag)
 foreach(compiler_flag ${custom_compiler_flag_candidates})
     #remove problematic characters
     string(REGEX REPLACE "[^a-zA-Z0-9]" "" current_variable ${compiler_flag})
 
-    CHECK_C_COMPILER_FLAG(${compiler_flag} "FLAG_SUPPORTED_${current_variable}")
+    CHECK_CXX_COMPILER_FLAG(${compiler_flag} "FLAG_SUPPORTED_${current_variable}")
     if (FLAG_SUPPORTED_${current_variable})
         set(custom_compiler_flags "${custom_compiler_flags} ${compiler_flag}")
     endif()
 endforeach()
 
-set(CMAKE_C_FLAGS "${custom_compiler_flags} ${CMAKE_C_FLAGS}")
+set(CMAKE_C_FLAGS "-fPIC ${CMAKE_C_FLAGS}")
+set(CMAKE_CXX_FLAGS "${custom_compiler_flags} ${CMAKE_CXX_FLAGS}")
 
 #Set linker flags
 if(NOT APPLE)
     set(SECURITY_LINK_FLAGS "-z relro -z now -z noexecstack -z noexecheap -pie")
 endif()
-set(CMAKE_C_LINK_FLAGS "${CMAKE_C_LINK_FLAGS} ${SECURITY_LINK_FLAGS}")
+set(CMAKE_CXX_LINK_FLAGS "${SECURITY_LINK_FLAGS} ${CMAKE_CXX_LINK_FLAGS}")
+set(CMAKE_C_LINK_FLAGS "${SECURITY_LINK_FLAGS} ${CMAKE_C_LINK_FLAGS}")
 
-find_package(sodium 1.0.12 REQUIRED)
+find_package(sodium 1.0.13 REQUIRED)
 find_package(Protobuf-C REQUIRED)
 find_package(Protoc-C REQUIRED)
 
-include_directories(${SODIUM_INCLUDE_DIR} ${PROTOBUFC_INCLUDE_DIR})
+include_directories(${SODIUM_INCLUDE_DIR} ${PROTOBUFC_INCLUDE_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/gsl/include")
 SET(libs ${libs} sodium ${PROTOBUFC_LIBRARY})
 
 
 find_program(MEMORYCHECK_COMMAND valgrind)
-set(MEMORYCHECK_COMMAND_OPTIONS --trace-children=yes --leak-check=full --error-exitcode=10)
+set(MEMORYCHECK_COMMAND_OPTIONS --suppressions=${CMAKE_CURRENT_SOURCE_DIR}/valgrind.supp --trace-children=yes --leak-check=full --error-exitcode=10)
 
 if("${MEMORYCHECK_COMMAND}" MATCHES "MEMORYCHECK_COMMAND-NOTFOUND")
     message(WARNING "valgrind not found")

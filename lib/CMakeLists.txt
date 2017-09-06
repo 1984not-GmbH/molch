@@ -16,10 +16,11 @@ add_library(molch
 	conversation-store
 	prekey-store
 	master-keys
-	endianness
 	return-status
-	alignment
-	zeroed_malloc
-	buffer
+	molch-exception
+	protobuf.cpp #file extension required to distinguish from the protobuf directory
+	protobuf-pool
+	optional
+	sodium-wrappers
 )
 target_link_libraries(molch ${libs} protocol-buffers)

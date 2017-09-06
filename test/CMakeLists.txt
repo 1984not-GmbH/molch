@@ -7,9 +7,10 @@ if (RUN_TESTS)
     add_subdirectory(test-data)
 
     add_library(utils utils)
+    target_link_libraries(utils molch)
 
     add_library(common common)
-    target_link_libraries(common utils)
+    target_link_libraries(common molch utils)
 
     add_library(packet-test-lib packet-test-lib)
     target_link_libraries(packet-test-lib molch utils)
@@ -40,9 +41,10 @@ if (RUN_TESTS)
               endianness-test
               return-status-test
               molch-init-test
-              alignment-test
-              zeroed_malloc-test
               buffer-test
+              molch-exception-test
+              protobuf-pool-test
+              optional-test
     )
 
     foreach(test ${tests})

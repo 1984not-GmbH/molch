@@ -22,20 +22,21 @@
 #ifndef LIB_RETURN_STATUS_H
 #define LIB_RETURN_STATUS_H
 
-#include "common.h"
+#ifdef __cplusplus
+extern "C" {
+#else
+	#define class
+#endif
 
 // possible status types, either SUCCESS or a variety of error types.
-typedef enum status_type { //TODO add more error types
+typedef enum class status_type { //TODO add more error types
 	SUCCESS = 0,
 	GENERIC_ERROR,
-	INVALID_INPUT,
 	INVALID_VALUE,
 	INCORRECT_BUFFER_SIZE,
 	BUFFER_ERROR,
 	INCORRECT_DATA,
 	INIT_ERROR,
-	CREATION_ERROR,
-	ADDITION_ERROR,
 	ALLOCATION_FAILED,
 	NOT_FOUND,
 	VERIFICATION_FAILED,
@@ -59,12 +60,13 @@ typedef enum status_type { //TODO add more error types
 	PROTOBUF_PACK_ERROR,
 	PROTOBUF_UNPACK_ERROR,
 	PROTOBUF_MISSING_ERROR,
-	UNSUPPORTED_PROTOCOL_VERSION
+	UNSUPPORTED_PROTOCOL_VERSION,
+	EXCEPTION
 } status_type;
 
 typedef struct error_message error_message;
 struct error_message {
-	const char * message;
+	char * message;
 	status_type status;
 	error_message *next;
 };
@@ -74,51 +76,8 @@ typedef struct return_status {
 	error_message *error;
 } return_status;
 
-return_status return_status_init(void);
-
-status_type return_status_add_error_message(
-		return_status *const status_object,
-		const char *const message,
-		const status_type status) __attribute__((warn_unused_result));
-
-void return_status_destroy_errors(return_status * const status);
-
-/*
- * Get the name of a status type as a string.
- */
-const char *return_status_get_name(status_type status);
-
-/*
- * Pretty print the error stack into a buffer.
- *
- * Don't forget to free with "free" after usage.
- */
-char *return_status_print(const return_status * const status, size_t *length) __attribute__((warn_unused_result));
-
-
-//This assumes that there is a return_status struct and there is a "cleanup" label to jump to.
-#define throw(status_type_value, message) {\
-	status.status = status_type_value;\
-	if (message != NULL) {\
-		status_type throw_type = return_status_add_error_message(&status, message, status_type_value);\
-		if (throw_type != SUCCESS) {\
-			status.status = throw_type;\
-		}\
-	} else {\
-		status.error = NULL;\
-	}\
-\
-	goto cleanup;\
+#ifdef __cplusplus
 }
-
-//Execute code on error
-#define on_error if (status.status != SUCCESS)
-
-#define throw_on_error(status_type_value, message) on_error{throw(status_type_value, message)}
-
-#define throw_on_failed_alloc(pointer) \
-	if (pointer == NULL) {\
-		throw(ALLOCATION_FAILED, "Failed to allocate memory.");\
-	}
-
 #endif
+
+#endif /* LIB_RETURN_STATUS_H */
