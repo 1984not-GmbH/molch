@@ -435,7 +435,11 @@ namespace Molch {
 		}
 
 		bool isNone() const noexcept {
-			return (this->content_length == 0) || sodium_is_zero(*this);
+			try {
+				return (this->content_length == 0) || sodium_is_zero(*this);
+			} catch (...) {
+				std::terminate();
+			}
 		}
 
 		size_t capacity() const noexcept {
