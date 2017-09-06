@@ -96,11 +96,7 @@ namespace Molch {
 		}
 
 		~Key() {
-			try {
-				this->clear();
-			} catch (...) {
-				std::terminate();
-			}
+			this->clear();
 		}
 
 		Key& operator=(const Key& key) {
@@ -216,9 +212,13 @@ namespace Molch {
 			std::copy(std::cbegin(*this), std::cend(*this), std::begin(data));
 		}
 
-		void clear() {
-			sodium_memzero(*this);
-			this->empty = true;
+		void clear() noexcept {
+			try {
+				sodium_memzero(*this);
+				this->empty = true;
+			} catch (...) {
+				std::terminate();
+			}
 		}
 
 		ProtobufCKey* exportProtobuf(ProtobufPool& pool) const {
