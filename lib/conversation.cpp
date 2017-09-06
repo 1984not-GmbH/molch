@@ -113,9 +113,7 @@ namespace Molch {
 		//create an ephemeral keypair
 		PublicKey sender_public_ephemeral;
 		PrivateKey sender_private_ephemeral;
-		if (crypto_box_keypair(byte_to_uchar(sender_public_ephemeral.data()), byte_to_uchar(sender_private_ephemeral.data())) != 0) {
-			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate ephemeral keypair."};
-		}
+		crypto_box_keypair(sender_public_ephemeral, sender_private_ephemeral);
 		sender_public_ephemeral.empty = false;
 		sender_private_ephemeral.empty = false;
 

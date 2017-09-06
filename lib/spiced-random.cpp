@@ -48,18 +48,13 @@ namespace Molch {
 
 		//derive random data from the random spice
 		SodiumBuffer spice{output.size(), output.size()};
-		auto status_int{crypto_pwhash(
-				byte_to_uchar(spice.data()),
-				spice.size(),
-				reinterpret_cast<const char*>(low_entropy_spice.data()),
-				low_entropy_spice.size(),
-				byte_to_uchar(salt.data()),
+		crypto_pwhash(
+				spice,
+				low_entropy_spice,
+				salt,
 				crypto_pwhash_OPSLIMIT_INTERACTIVE,
 				crypto_pwhash_MEMLIMIT_INTERACTIVE,
-				crypto_pwhash_ALG_DEFAULT)};
-		if (status_int != 0) {
-			throw Exception{status_type::GENERIC_ERROR, "Failed to derive random data from spice."};
-		}
+				crypto_pwhash_ALG_DEFAULT);
 
 		//now combine the spice with the OS provided random data.
 		auto spice_iterator{std::cbegin(spice)};

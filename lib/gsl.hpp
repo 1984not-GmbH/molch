@@ -47,6 +47,8 @@ namespace Molch {
 		constexpr span(ElementType* pointer, size_t count)
 			: base_class{pointer, gsl::narrow<ptrdiff_t>(count)} {}
 
+		constexpr span(gsl::span<ElementType> gsl_span) : base_class{gsl_span} {}
+
 		constexpr size_t size() const {
 			return gsl::narrow<size_t>(this->base_class::size());
 		}

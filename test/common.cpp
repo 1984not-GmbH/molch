@@ -39,10 +39,7 @@ void generate_and_print_keypair(
 		const std::string& name, //Name of the key owner (e.g. "Alice")
 		const std::string& type) { //type of the key (e.g. "ephemeral")
 	//generate keypair
-	auto status{crypto_box_keypair(byte_to_uchar(public_key.data()), byte_to_uchar(private_key.data()))};
-	if (status != 0) {
-		throw Molch::Exception{status_type::KEYGENERATION_FAILED, "Failed to generate keypair."};
-	}
+	crypto_box_keypair(public_key, private_key);
 	public_key.empty = false;
 	private_key.empty = false;
 

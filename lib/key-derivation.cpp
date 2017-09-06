@@ -63,16 +63,10 @@ namespace Molch {
 
 		//key to derive from
 		//HMAC-HASH(RK, DH(..., ...))
-		auto status_int{crypto_generichash(
-				byte_to_uchar(derivation_key.data()),
-				derivation_key.size(),
-				byte_to_uchar(diffie_hellman_secret.data()),
-				diffie_hellman_secret.size(),
-				byte_to_uchar(previous_root_key.data()),
-				previous_root_key.size())};
-		if (status_int != 0) {
-			throw Exception{status_type::GENERIC_ERROR, "Failed to hash diffie hellman and previous root key."};
-		}
+		crypto_generichash(
+				derivation_key,
+				diffie_hellman_secret,
+				previous_root_key);
 		derivation_key.empty = false;
 
 		//now derive the different keys from the derivation key

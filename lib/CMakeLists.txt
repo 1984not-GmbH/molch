@@ -21,5 +21,6 @@ add_library(molch
 	protobuf.cpp #file extension required to distinguish from the protobuf directory
 	protobuf-pool
 	optional
+	sodium-wrappers
 )
 target_link_libraries(molch ${libs} protocol-buffers)

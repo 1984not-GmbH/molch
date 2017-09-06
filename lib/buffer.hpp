@@ -195,7 +195,7 @@ namespace Molch {
 			if (this->buffer_length == 0) {
 				return;
 			}
-			sodium_memzero(this->content, this->buffer_length);
+			sodium_memzero(*this);
 			this->content_length = 0;
 		}
 
@@ -210,7 +210,7 @@ namespace Molch {
 			}
 
 			this->content_length = length;
-			randombytes_buf(this->content, length);
+			randombytes_buf({this->content, length});
 		}
 
 		/*
@@ -271,7 +271,13 @@ namespace Molch {
 				}
 			}
 
-			return sodium_memcmp(this->content + position1, array.data() + position2, comparison_length);
+			bool comparison{sodium_memcmp({this->content + position1, comparison_length}, {array.data() + position2, comparison_length})};
+
+			if (comparison) {
+				return 0;
+			}
+
+			return -1;
 		}
 
 		/*
@@ -401,9 +407,7 @@ namespace Molch {
 			//buffer for the hex string
 			const size_t hex_length{this->content_length * 2 + sizeof("")};
 			auto hex{std::make_unique<char[]>(hex_length)};
-			if (sodium_bin2hex(hex.get(), hex_length, byte_to_uchar(this->content), this->content_length) == nullptr) {
-				throw Exception{status_type::BUFFER_ERROR, "Failed to convert binary to hex with sodium_bin2hex."};
-			}
+			sodium_bin2hex({hex.get(), hex_length}, *this);
 
 			for (size_t i{0}; i < hex_length; i++) {
 				if ((width != 0) && ((i % width) == 0) && (i != 0)) {
@@ -427,7 +431,7 @@ namespace Molch {
 		}
 
 		bool isNone() const noexcept {
-			return (this->content_length == 0) || sodium_is_zero(byte_to_uchar(this->content), this->content_length);
+			return (this->content_length == 0) || sodium_is_zero(*this);
 		}
 
 		size_t capacity() const noexcept {

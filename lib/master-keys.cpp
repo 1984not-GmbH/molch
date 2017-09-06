@@ -28,7 +28,6 @@
 #include "master-keys.hpp"
 #include "spiced-random.hpp"
 #include "sodium-wrappers.hpp"
-#include "autozero.hpp"
 #include "gsl.hpp"
 
 namespace Molch {
@@ -85,7 +84,7 @@ namespace Molch {
 
 	void MasterKeys::init() {
 		//allocate the private key storage
-		this->private_keys = std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>>(throwing_sodium_malloc<PrivateMasterKeyStorage>(1));
+		this->private_keys = std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>>(sodium_malloc<PrivateMasterKeyStorage>(1));
 
 		//initialize the Buffers
 		//private, initialize with pointers to private key storage
@@ -100,22 +99,14 @@ namespace Molch {
 		ReadWriteUnlocker unlocker{*this};
 
 		//generate the signing keypair
-		auto status{crypto_sign_keypair(
-				byte_to_uchar(this->public_signing_key.data()),
-				byte_to_uchar(this->private_signing_key->data()))};
-		if (status != 0) {
-			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate signing keypair."};
-		}
+		crypto_sign_keypair(
+				this->public_signing_key,
+				*this->private_signing_key);
 		this->public_signing_key.empty = false;
 		this->private_signing_key->empty = false;
 
 		//generate the identity keypair
-		status = crypto_box_keypair(
-				byte_to_uchar(this->public_identity_key.data()),
-				byte_to_uchar(this->private_identity_key->data()));
-		if (status != 0) {
-			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate identity keypair."};
-		}
+		crypto_box_keypair(this->public_identity_key, *this->private_identity_key);
 		this->public_identity_key.empty = false;
 		this->private_identity_key->empty = false;
 	}
@@ -131,24 +122,18 @@ namespace Molch {
 		spiced_random(high_entropy_seed, low_entropy_seed);
 
 		//generate the signing keypair
-		auto status{crypto_sign_seed_keypair(
-				byte_to_uchar(this->public_signing_key.data()),
-				byte_to_uchar(this->private_signing_key->data()),
-				byte_to_uchar(high_entropy_seed.data()))};
-		if (status != 0) {
-			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate signing keypair with seed."};
-		}
+		crypto_sign_seed_keypair(
+				this->public_signing_key,
+				*this->private_signing_key,
+				span<gsl::byte>(high_entropy_seed).subspan(0, crypto_sign_SEEDBYTES));
 		this->public_signing_key.empty = false;
 		this->private_signing_key->empty = false;
 
 		//generate the identity keypair
-		status = crypto_box_seed_keypair(
-				byte_to_uchar(this->public_identity_key.data()),
-				byte_to_uchar(this->private_identity_key->data()),
-				byte_to_uchar(&high_entropy_seed[crypto_sign_SEEDBYTES]));
-		if (status != 0) {
-			throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate identity keypair with seed."};
-		}
+		crypto_box_seed_keypair(
+				this->public_identity_key,
+				*this->private_identity_key,
+				span<const gsl::byte>{high_entropy_seed}.subspan(crypto_sign_SEEDBYTES));
 		this->public_identity_key.empty = false;
 		this->private_identity_key->empty = false;
 	}
@@ -176,16 +161,10 @@ namespace Molch {
 		Expects(signed_data.size() == (data.size() + SIGNATURE_SIZE));
 
 		Unlocker unlocker{*this};
-		unsigned long long signed_message_length;
-		auto status{crypto_sign(
-			byte_to_uchar(signed_data.data()),
-			&signed_message_length,
-			byte_to_uchar(data.data()),
-			data.size(),
-			byte_to_uchar(this->private_signing_key->data()))};
-		if (status != 0) {
-			throw Exception{status_type::SIGN_ERROR, "Failed to sign message."};
-		}
+		crypto_sign(
+				signed_data,
+				data,
+				*this->private_signing_key);
 	}
 
 	void MasterKeys::exportProtobuf(
@@ -203,24 +182,15 @@ namespace Molch {
 	}
 
 	void MasterKeys::lock() const {
-		auto status{sodium_mprotect_noaccess(this->private_keys.get())};
-		if (status != 0) {
-			throw Exception{status_type::GENERIC_ERROR, "Failed to lock memory."};
-		}
+		sodium_mprotect_noaccess(this->private_keys.get());
 	}
 
 	void MasterKeys::unlock() const {
-		auto status{sodium_mprotect_readonly(this->private_keys.get())};
-		if (status != 0) {
-			throw Exception{status_type::GENERIC_ERROR, "Failed to make memory readonly."};
-		}
+		sodium_mprotect_readonly(this->private_keys.get());
 	}
 
 	void MasterKeys::unlock_readwrite() const {
-		auto status{sodium_mprotect_readwrite(this->private_keys.get())};
-		if (status != 0) {
-			throw Exception{status_type::GENERIC_ERROR, "Failed to make memory readwrite."};
-		}
+		sodium_mprotect_readwrite(this->private_keys.get());
 	}
 
 	std::ostream& MasterKeys::print(std::ostream& stream) const {

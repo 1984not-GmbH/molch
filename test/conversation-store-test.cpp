@@ -74,19 +74,13 @@ ConversationStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> 
 static void test_add_conversation(ConversationStore& store) {
 	PrivateKey our_private_identity;
 	PublicKey our_public_identity;
-	auto status{crypto_box_keypair(byte_to_uchar(our_public_identity.data()), byte_to_uchar(our_private_identity.data()))};
-	if (status != 0) {
-		throw Molch::Exception{status_type::KEYGENERATION_FAILED, "Failed to generate our identity keys."};
-	}
+	crypto_box_keypair(our_public_identity, our_private_identity);
 	our_private_identity.empty = false;
 	our_public_identity.empty = false;
 
 	PrivateKey our_private_ephemeral;
 	PublicKey our_public_ephemeral;
-	status = crypto_box_keypair(byte_to_uchar(our_public_ephemeral.data()), byte_to_uchar(our_private_ephemeral.data()));
-	if (status != 0) {
-		throw Molch::Exception{status_type::KEYGENERATION_FAILED, "Failed to generate our ephemeral keys."};
-	}
+	crypto_box_keypair(our_public_ephemeral, our_private_ephemeral);
 	our_private_ephemeral.empty = false;
 	our_public_ephemeral.empty = false;
 
@@ -131,9 +125,7 @@ void protobuf_empty_store(void) {
 
 int main(void) {
 	try {
-		if (sodium_init() == -1) {
-			throw Molch::Exception{status_type::INIT_ERROR, "Failed to iniitialize libsodium."};
-		}
+		Molch::sodium_init();
 
 		// list an empty conversation store
 		ConversationStore store;

@@ -35,9 +35,7 @@ using namespace Molch;
 
 int main(void) {
 	try {
-		if (sodium_init() == -1) {
-			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
-		}
+		Molch::sodium_init();
 
 		//create Alice's identity keypair
 		PublicKey alice_public_identity;

@@ -31,7 +31,7 @@
 
 namespace Molch {
 	void Ratchet::init() {
-		this->storage = std::unique_ptr<RatchetStorage,SodiumDeleter<RatchetStorage>>(throwing_sodium_malloc<RatchetStorage>(1));
+		this->storage = std::unique_ptr<RatchetStorage,SodiumDeleter<RatchetStorage>>(sodium_malloc<RatchetStorage>(1));
 		new (this->storage.get()) RatchetStorage{};
 	}
 
@@ -118,12 +118,9 @@ namespace Molch {
 			MessageKey& message_key) { //MESSAGE_KEY_SIZE, MK
 		if (this->ratchet_flag) {
 			//DHRs = generateECDH()
-			auto status{crypto_box_keypair(
-					byte_to_uchar(this->storage->our_public_ephemeral.data()),
-					byte_to_uchar(this->storage->our_private_ephemeral.data()))};
-			if (status != 0) {
-				throw Exception{status_type::KEYGENERATION_FAILED, "Failed to generate new ephemeral keypair."};
-			}
+			crypto_box_keypair(
+					this->storage->our_public_ephemeral,
+					this->storage->our_private_ephemeral);
 			this->storage->our_public_ephemeral.empty = false;
 			this->storage->our_private_ephemeral.empty = false;
 

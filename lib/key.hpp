@@ -119,10 +119,7 @@ namespace Molch {
 		int compare(const Key& key) const {
 			Expects(!this->empty && !key.empty);
 
-			return sodium_compare(
-					byte_to_uchar(this->data()),
-					byte_to_uchar(key.data()),
-					length);
+			return sodium_compare(*this, key);
 		}
 
 		//comparison operators
@@ -176,24 +173,18 @@ namespace Molch {
 			static_assert(sizeof(personal) == crypto_generichash_blake2b_PERSONALBYTES, "personal string is not crypto_generichash_blake2b_PERSONALBYTES long");
 
 			//set length of output
-			auto status{crypto_generichash_blake2b_salt_personal(
-					byte_to_uchar(derived_key.data()),
-					derived_length,
-					nullptr, //input
-					0, //input length
-					byte_to_uchar(this->data()),
-					length,
-					byte_to_uchar(salt.data()),
-					personal)};
-			if (status != 0) {
-				throw Exception{status_type::KEYDERIVATION_FAILED, "Failed to derive key via crypto_generichash_blake2b_salt_personal"};
-			}
+			crypto_generichash_blake2b_salt_personal(
+					derived_key,
+					{nullptr}, //input
+					*this,
+					salt,
+					{uchar_to_byte(personal), sizeof(personal)});
 
 			derived_key.empty = false;
 		}
 
 		void fillRandom() {
-			randombytes_buf(reinterpret_cast<void*>(this->data()), this->size());
+			randombytes_buf(*this);
 			this->empty = false;
 		}
 
@@ -203,7 +194,7 @@ namespace Molch {
 				return true;
 			}
 
-			return sodium_is_zero(byte_to_uchar(this->data()), length);
+			return sodium_is_zero(*this);
 		}
 
 		//copy from a raw byte array
@@ -222,7 +213,7 @@ namespace Molch {
 		}
 
 		void clear() {
-			sodium_memzero(reinterpret_cast<void*>(this->data()), length);
+			sodium_memzero(*this);
 			this->empty = true;
 		}
 
@@ -249,9 +240,7 @@ namespace Molch {
 
 			const size_t hex_length{this->size() * 2 + sizeof("")};
 			auto hex{std::make_unique<char[]>(hex_length)};
-			if (sodium_bin2hex(hex.get(), hex_length, byte_to_uchar(this->data()), this->size()) == nullptr) {
-				throw Exception{status_type::BUFFER_ERROR, "Failed to converst binary to hex with sodium_bin2hex."};
-			}
+			sodium_bin2hex({hex.get(), hex_length}, *this);
 
 			for (size_t i{0}; i < hex_length; i++) {
 				if ((width != 0) && ((i % width) == 0) && (i != 0)) {

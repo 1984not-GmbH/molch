@@ -128,9 +128,7 @@ static span<gsl::byte> decrypt_full_backup(
 
 int main(void) {
 	try {
-		if (sodium_init() == -1) {
-			throw Molch::Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
-		}
+		Molch::sodium_init();
 
 		//mustn't crash here!
 		molch_destroy_all_users();

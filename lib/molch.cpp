@@ -51,11 +51,11 @@ public:
 		if (!global_backup_key) {
 			throw Exception{status_type::GENERIC_ERROR, "No backup key to unlock!"};
 		}
-		sodium_mprotect_readonly(global_backup_key.get());
+		Molch::sodium_mprotect_readonly(global_backup_key.get());
 	}
 
 	~GlobalBackupKeyUnlocker() {
-		sodium_mprotect_noaccess(global_backup_key.get());
+		Molch::sodium_mprotect_noaccess(global_backup_key.get());
 	}
 };
 
@@ -65,11 +65,11 @@ public:
 		if (!global_backup_key) {
 			throw Exception{status_type::GENERIC_ERROR, "No backup key to unlock!"};
 		}
-		sodium_mprotect_readwrite(global_backup_key.get());
+		Molch::sodium_mprotect_readwrite(global_backup_key.get());
 	}
 
 	~GlobalBackupKeyWriteUnlocker() {
-		sodium_mprotect_noaccess(global_backup_key.get());
+		Molch::sodium_mprotect_noaccess(global_backup_key.get());
 	}
 };
 
@@ -160,9 +160,7 @@ return_status molch_create_user(
 
 		//initialise libsodium and create user store
 		if (!users) {
-			if (sodium_init() == -1) {
-				throw Exception{status_type::INIT_ERROR, "Failed to init libsodium."};
-			}
+			Molch::sodium_init();
 			users = std::make_unique<UserStore>();
 		}
 
@@ -373,22 +371,10 @@ static void verify_prekey_list(
 		PublicSigningKey& public_signing_key) {
 	//verify the signature
 	Buffer verified_prekey_list{prekey_list.size() - SIGNATURE_SIZE, prekey_list.size() - SIGNATURE_SIZE};
-	unsigned long long verified_length;
-	auto status{crypto_sign_open(
-			byte_to_uchar(verified_prekey_list.data()),
-			&verified_length,
-			byte_to_uchar(prekey_list.data()),
-			prekey_list.size(),
-			byte_to_uchar(public_signing_key.data()))};
-	if (status != 0) {
-		throw Exception{status_type::VERIFICATION_FAILED, "Failed to verify prekey list signature."};
-	}
-	public_signing_key.empty = false;
-	if (verified_length > SIZE_MAX)
-	{
-		throw Exception{status_type::CONVERSION_ERROR, "Length is bigger than size_t."};
-	}
-	verified_prekey_list.setSize(gsl::narrow<size_t>(verified_length));
+	crypto_sign_open(
+			verified_prekey_list,
+			prekey_list,
+			public_signing_key);
 
 	//get the expiration date
 	int64_t expiration_date;
@@ -1291,9 +1277,7 @@ cleanup:
 					&& (new_backup_key_length == BACKUP_KEY_SIZE));
 
 			if (!users) {
-				if (sodium_init() == -1) {
-					throw Exception{status_type::INIT_ERROR, "Failed to init libsodium."};
-				}
+				Molch::sodium_init();
 			}
 
 			//unpack the encrypted backup
@@ -1423,15 +1407,13 @@ cleanup:
 			Expects((new_key != nullptr) && (new_key_length == BACKUP_KEY_SIZE));
 
 			if (!users) {
-				if (sodium_init() == -1) {
-					throw Exception{status_type::INIT_ERROR, "Failed to initialize libsodium."};
-				}
+				Molch::sodium_init();
 				users = std::make_unique<UserStore>();
 			}
 
 			// create a backup key buffer if it doesnt exist already
 			if (global_backup_key == nullptr) {
-				global_backup_key = std::unique_ptr<BackupKey,SodiumDeleter<BackupKey>>(throwing_sodium_malloc<BackupKey>(1));
+				global_backup_key = std::unique_ptr<BackupKey,SodiumDeleter<BackupKey>>(sodium_malloc<BackupKey>(1));
 				new (global_backup_key.get()) BackupKey();
 			}
 
