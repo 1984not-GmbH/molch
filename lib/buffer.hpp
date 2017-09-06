@@ -64,10 +64,10 @@ namespace Molch {
 		BaseBuffer& move(BaseBuffer&& buffer) {
 			this->destruct();
 
-			//copy the buffer
-			auto& source_reference{reinterpret_cast<gsl::byte&>(buffer)};
-			auto& destination_reference{reinterpret_cast<gsl::byte&>(*this)};
-			std::copy(&source_reference, &source_reference + sizeof(BaseBuffer), &destination_reference);
+			//move the buffer over
+			this->buffer_length = buffer.buffer_length;
+			this->content_length = buffer.content_length;
+			this->content = buffer.content;
 
 			//steal resources from the source buffer
 			buffer.buffer_length = 0;
@@ -195,8 +195,12 @@ namespace Molch {
 			if (this->buffer_length == 0) {
 				return;
 			}
-			sodium_memzero(*this);
-			this->content_length = 0;
+			try {
+				sodium_memzero(*this);
+				this->content_length = 0;
+			} catch (...) {
+				std::terminate();
+			}
 		}
 
 		/*
@@ -431,7 +435,11 @@ namespace Molch {
 		}
 
 		bool isNone() const noexcept {
-			return (this->content_length == 0) || sodium_is_zero(*this);
+			try {
+				return (this->content_length == 0) || sodium_is_zero(*this);
+			} catch (...) {
+				std::terminate();
+			}
 		}
 
 		size_t capacity() const noexcept {

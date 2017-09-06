@@ -55,7 +55,11 @@ public:
 	}
 
 	~GlobalBackupKeyUnlocker() {
-		Molch::sodium_mprotect_noaccess(global_backup_key.get());
+		try {
+			Molch::sodium_mprotect_noaccess(global_backup_key.get());
+		} catch (...) {
+			std::terminate();
+		}
 	}
 };
 
@@ -69,7 +73,11 @@ public:
 	}
 
 	~GlobalBackupKeyWriteUnlocker() {
-		Molch::sodium_mprotect_noaccess(global_backup_key.get());
+		try {
+			Molch::sodium_mprotect_noaccess(global_backup_key.get());
+		} catch (...) {
+			std::terminate();
+		}
 	}
 };
 
