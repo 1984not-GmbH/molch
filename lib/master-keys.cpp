@@ -213,7 +213,11 @@ namespace Molch {
 	}
 
 	MasterKeys::Unlocker::~Unlocker() {
-		this->keys.lock();
+		try {
+			this->keys.lock();
+		} catch (...) {
+			std::terminate();
+		}
 	}
 
 	MasterKeys::ReadWriteUnlocker::ReadWriteUnlocker(const MasterKeys& keys) : keys{keys} {
@@ -221,6 +225,10 @@ namespace Molch {
 	}
 
 	MasterKeys::ReadWriteUnlocker::~ReadWriteUnlocker() {
-		this->keys.lock();
+		try {
+			this->keys.lock();
+		} catch (...) {
+			std::terminate();
+		}
 	}
 }
