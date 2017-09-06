@@ -195,8 +195,12 @@ namespace Molch {
 			if (this->buffer_length == 0) {
 				return;
 			}
-			sodium_memzero(*this);
-			this->content_length = 0;
+			try {
+				sodium_memzero(*this);
+				this->content_length = 0;
+			} catch (...) {
+				std::terminate();
+			}
 		}
 
 		/*
