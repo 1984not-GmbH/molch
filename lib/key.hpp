@@ -96,7 +96,11 @@ namespace Molch {
 		}
 
 		~Key() {
-			this->clear();
+			try {
+				this->clear();
+			} catch (...) {
+				std::terminate();
+			}
 		}
 
 		Key& operator=(const Key& key) {
