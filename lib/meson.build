@@ -1,4 +1,7 @@
-libsodium = dependency('libsodium', version: '>=1.0.13')
+libsodium = dependency('libsodium', version: '>=1.0.13', required: false)
+if not libsodium.found()
+	libsodium = subproject('libsodium').get_variable('libsodium')
+endif
 
 subdir('protobuf')
 

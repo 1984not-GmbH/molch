@@ -1,0 +1,5 @@
+sodium.h
+sodium
+*.so
+*.dll
+*.dylib
