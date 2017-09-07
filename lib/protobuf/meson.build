@@ -1,4 +1,7 @@
-protobuf_c = dependency('libprotobuf-c')
+protobuf_c = dependency('libprotobuf-c', required: false)
+if not protobuf_c.found()
+	protobuf_c = subproject('protobuf-c').get_variable('protobuf_c')
+endif
 protoc_c = find_program('protoc-c')
 
 protobuf_definitions = [
