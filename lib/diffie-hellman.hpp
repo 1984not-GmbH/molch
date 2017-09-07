@@ -22,8 +22,6 @@
 #ifndef LIB_DIFFIE_HELLMAN_H
 #define LIB_DIFFIE_HELLMAN_H
 
-#include <cstdbool>
-
 #include "buffer.hpp"
 #include "ratchet.hpp"
 

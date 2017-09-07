@@ -21,7 +21,6 @@
 #ifndef LIB_BUFFER_H
 #define LIB_BUFFER_H
 
-#include <cstdbool>
 #include <cstdlib>
 #include <ostream>
 #include <memory>

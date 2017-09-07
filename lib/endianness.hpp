@@ -27,7 +27,6 @@
 #ifndef LIB_ENDIANNESS_H
 #define LIB_ENDIANNESS_H
 
-#include <cstdbool>
 #include <algorithm>
 #include <iterator>
 
