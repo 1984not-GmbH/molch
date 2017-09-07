@@ -16,6 +16,19 @@ if get_option('lua_bindings')
 
 	liblua = dependency('lua', version: '>=5.2')
 
+	proposed_swig_flags = [
+		'-Wno-conversion',
+		'-Wno-unused-macros',
+		'-Wno-cast-qual',
+		'-Wno-missing-prototypes'
+	]
+	swig_flags = []
+	foreach flag : proposed_swig_flags
+		if c_compiler.has_argument(flag)
+			swig_flags += flag
+		endif
+	endforeach
+
 	root_includes = include_directories('../')
 	molch_interface = library(
 			'molch-interface',
@@ -24,7 +37,8 @@ if get_option('lua_bindings')
 			link_with: molch,
 			dependencies: [liblua, libsodium],
 			name_prefix: '', #so that lua loads the correct library file
-			override_options: 'werror=false')
+			override_options: 'werror=false',
+			c_args: swig_flags)
 
 	#install molch.lua
 	empty_configuration = configuration_data()
