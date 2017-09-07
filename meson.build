@@ -87,3 +87,4 @@ endforeach
 
 subdir('lib')
 subdir('test')
+subdir('bindings')

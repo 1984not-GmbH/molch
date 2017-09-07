@@ -1,0 +1,1 @@
+option('lua_bindings', type: 'boolean', value: true, description: 'Enable Lua bindings')
