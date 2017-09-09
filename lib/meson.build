@@ -27,10 +27,11 @@ lib_sources = files(
 		'sodium-wrappers.cpp'
 )
 
+gsl_include = include_directories('../gsl/include')
 molch = library(
 		'molch',
 		lib_sources,
 		dependencies: libsodium,
 		link_with: protobufs,
-		include_directories: protobuf_include,
+		include_directories: [protobuf_include, gsl_include, protobuf_c_includes],
 		install: true)

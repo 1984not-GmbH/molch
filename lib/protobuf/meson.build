@@ -1,6 +1,8 @@
 protobuf_c = dependency('libprotobuf-c', required: false)
+protobuf_c_includes = include_directories()
 if not protobuf_c.found()
 	protobuf_c = subproject('protobuf-c').get_variable('protobuf_c')
+	protobuf_c_includes = include_directories('../../subprojects/protobuf-c')
 endif
 protoc_c = find_program('protoc-c')
 
