@@ -85,6 +85,21 @@ foreach cpp_flag : cpp_flags
 	endif
 endforeach
 
+#valgrind
+valgrind = find_program('valgrind', required: false)
+if valgrind.found()
+	add_test_setup(
+			'valgrind',
+			exe_wrapper: [
+				valgrind,
+				'--suppressions=' + join_paths(meson.current_source_dir(), 'valgrind.supp'),
+				'--trace-children=yes',
+				'--leak-check=full',
+				'--error-exitcode=10'
+			],
+			timeout_multiplier: 10)
+endif
+
 subdir('lib')
 subdir('test')
 subdir('bindings')
