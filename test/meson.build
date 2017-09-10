@@ -38,7 +38,7 @@ test_library = library(
 			'common.cpp',
 			'packet-test-lib.cpp'
 		],
-		include_directories: protobuf_include,
+		include_directories: [protobuf_include, gsl_include],
 		link_with: [molch, protobufs],
 		dependencies: [
 			libsodium,
@@ -50,7 +50,7 @@ foreach test : tests
 			test,
 			test + '.cpp',
 			link_with: [test_library, molch, protobufs],
-			include_directories: protobuf_include,
+			include_directories: [protobuf_include, gsl_include],
 			dependencies: [
 				libsodium,
 				protobuf_c
