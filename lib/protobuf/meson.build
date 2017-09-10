@@ -34,7 +34,7 @@ foreach protobuf_definition : protobuf_definitions
 			output: ['@BASENAME@.pb-c.h', '@BASENAME@.pb-c.c'])
 endforeach
 
-protobufs = library(
+protobufs = static_library(
 		'protobufs',
 		generated_protobufs,
 		dependencies: protobuf_c,
