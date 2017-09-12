@@ -18,9 +18,9 @@ pkgconfig = '/usr/bin/false'
 
 [properties]
 c_link_args = ['-pie'${linker_flags}]
-cpp_link_args = ['-static-libstdc++', '-pie'${linker_flags}]
+cpp_link_args = ['-pie'${linker_flags}]
 c_args = [${compiler_flags}]
-cpp_args = [${compiler_flags}]
+cpp_args = ['-fexceptions', '-frtti', ${compiler_flags}]
 lua_bindings=false
 
 [host_machine]

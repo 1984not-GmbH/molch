@@ -37,6 +37,7 @@ static void first_level(void) {
 	try {
 		second_level();
 	} catch(Molch::Exception& exception) {
+		//FIXME: This line fails on Android
 		throw exception.add(Molch::Error{status_type::GENERIC_ERROR, "Error on the first level!"});
 	}
 }

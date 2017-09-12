@@ -261,7 +261,7 @@ namespace Molch {
 		//export the conversations
 		auto users_array{pool.allocate<ProtobufCUser*>(this->users.size())};
 		size_t index{0};
-		for (auto&& user : this->users) {
+		for (const auto& user : this->users) {
 			users_array[index] = user.exportProtobuf(pool);
 			index++;
 		}
@@ -274,7 +274,7 @@ namespace Molch {
 
 	std::ostream& UserStore::print(std::ostream& stream) const {
 		stream << "Users: [\n";
-		for (auto&& user : this->users) {
+		for (const auto& user : this->users) {
 			user.print(stream) << ",\n";
 		}
 		stream << "]\n";

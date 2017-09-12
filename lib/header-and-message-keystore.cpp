@@ -132,7 +132,7 @@ namespace Molch {
 		//export all buffers
 		auto key_bundles{pool.allocate<ProtobufCKeyBundle*>(this->keys.size())};
 		size_t index{0};
-		for (auto&& key : this->keys) {
+		for (const auto& key : this->keys) {
 			key_bundles[index] = key.exportProtobuf(pool);
 			index++;
 		}

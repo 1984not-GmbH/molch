@@ -134,7 +134,7 @@ namespace Molch {
 	}
 
 	void PrekeyStore::generateKeys() {
-		for (auto&& key : *this->prekeys) {
+		for (auto& key : *this->prekeys) {
 			key.generate();
 		}
 		this->updateExpirationDate();
@@ -254,7 +254,7 @@ namespace Molch {
 		if ((current_time + PREKEY_EXPIRATION_TIME) < this->oldest_expiration_date) {
 			//TODO: Is this correct behavior?
 			//Set the expiration date of everything to the current time + PREKEY_EXPIRATION_TIME
-			for (auto&& prekey : *this->prekeys) {
+			for (auto& prekey : *this->prekeys) {
 				prekey.expiration_date = current_time + PREKEY_EXPIRATION_TIME;
 			}
 		}
@@ -262,7 +262,7 @@ namespace Molch {
 		//Is the deprecated expiration date too far into the future?
 		if ((current_time + DEPRECATED_PREKEY_EXPIRATION_TIME) < this->oldest_deprecated_expiration_date) {
 			//Set the expiration date of everything to the current time + DEPRECATED_PREKEY_EXPIRATION_TIME
-			for (auto&& prekey : this->deprecated_prekeys) {
+			for (auto& prekey : this->deprecated_prekeys) {
 				prekey.expiration_date = current_time + DEPRECATED_PREKEY_EXPIRATION_TIME;
 			}
 		}
@@ -270,7 +270,9 @@ namespace Molch {
 		//At least one outdated prekey
 		if (this->oldest_expiration_date < current_time) {
 			size_t index{0};
-			for (auto&& prekey : *this->prekeys) {
+			for (size_t index{0}; index < this->prekeys->size(); ++index) {
+			}
+			for (const auto& prekey : *this->prekeys) {
 				if (prekey.expiration_date < current_time) {
 					this->deprecate(index);
 				}
@@ -301,7 +303,7 @@ namespace Molch {
 		//export all buffers
 		auto keypairs_array{pool.allocate<ProtobufCPrekey*>(container.size())};
 		size_t index{0};
-		for (auto&& key : container) {
+		for (const auto& key : container) {
 			keypairs_array[index] = key.exportProtobuf(pool);
 			index++;
 		}
