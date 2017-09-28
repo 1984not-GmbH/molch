@@ -1,9 +1,9 @@
 protobuf_c = dependency('libprotobuf-c', required: false)
-protobuf_c_includes = include_directories()
+protobuf_c_include = include_directories()
 if not protobuf_c.found()
 	protobuf_c_project = subproject('protobuf-c')
 	protobuf_c = protobuf_c_project.get_variable('protobuf_c')
-	protobuf_c_includes = protobuf_c_project.get_variable('includes')
+	protobuf_c_include = protobuf_c_project.get_variable('includes')
 endif
 protoc_c = find_program('protoc-c')
 
@@ -39,6 +39,6 @@ protobufs = static_library(
 		generated_protobufs,
 		dependencies: protobuf_c,
 		override_options: 'werror=false',
-		include_directories: [protobuf_c_includes])
+		include_directories: [protobuf_c_include])
 
 protobuf_include = include_directories('.')
