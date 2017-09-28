@@ -9,7 +9,7 @@ function make_cross_file() {
 	local linker_flags="$6"
 
 	local crossfile="[binaries]
-c = '${PWD}/${architecture}/bin/clang'
+c = '${PWD}/${architecture}/bin/workaround-clang'
 cpp = '${PWD}/${architecture}/bin/workaround-clang++'
 strip = '${PWD}/${architecture}/bin/${isa}-linux-${abi}-strip'
 ar = '${PWD}/${architecture}/bin/${isa}-linux-${abi}-ar'
@@ -34,7 +34,7 @@ endian = 'little'"
 
 function make_files() {
 	make_cross_file "arm" "arm" "armv6" "androideabi" "'-Os', '-fPIC', '-mthumb', '-marm', '-march=armv6'"
-	make_cross_file "arm" "arm" "armv7-a" "androideabi" "'-Os', '-fPIC', '-mfloat-abi=softfp', '-mfpu=vfpv3-d16', '-mthumb', '-marm', '-march=armv7-a'" ", '-march=armv7-a -Wl,--fix-cortex-a8'"
+	make_cross_file "arm" "arm" "armv7-a" "androideabi" "'-Os', '-fPIC', '-mfloat-abi=softfp', '-mfpu=vfpv3-d16', '-mthumb', '-marm', '-march=armv7-a'" ", '-march=armv7-a'"
 	make_cross_file "arm64" "aarch64" "armv8-a" "android" "'-Os', '-fPIC', '-march=armv8-a'"
 	make_cross_file "mips" "mipsel" "mips32" "android" "'-Os', '-fPIC'"
 	make_cross_file "mips64" "mips64el" "mips64r6" "android" "'-Os', '-fPIC', '-march=mips64r6'"

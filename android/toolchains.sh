@@ -8,7 +8,8 @@ function make_toolchain() {
 	echo "Creating standalone toolchain for $architecture"
 	"$make_toolchain_command" --arch "$architecture" --api "$api_level" --stl libc++ --install-dir "$architecture"
 
-	cp meson-workaround-clang-wrapper.sh "$architecture/bin/workaround-clang++"
+	cp meson-workaround-clang-wrapper.sh "$architecture/bin/workaround-clang"
+	cp meson-workaround-clang++-wrapper.sh "$architecture/bin/workaround-clang++"
 }
 
 API_LEVEL32=16
