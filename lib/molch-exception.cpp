@@ -28,15 +28,13 @@
 #include "molch-exception.hpp"
 
 namespace Molch {
-	Error::Error() {
-		this->type = status_type::SUCCESS;
-		this->message = "";
-	}
+	Error::Error() :
+		type{status_type::SUCCESS},
+		message{""} {}
 
-	Error::Error(const status_type type, const std::string& message) {
-		this->type = type;
-		this->message = message;
-	}
+	Error::Error(const status_type type, const std::string& message) :
+		type{type},
+		message{message} {}
 
 	error_message* Error::toErrorMessage() {
 		std::unique_ptr<error_message> error;
@@ -93,7 +91,7 @@ namespace Molch {
 	}
 
 	Exception& Exception::add(const Exception& exception) {
-		for (auto&& error : exception.error_stack) {
+		for (const auto& error : exception.error_stack) {
 			this->error_stack.push_back(error);
 		}
 

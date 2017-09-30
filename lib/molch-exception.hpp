@@ -32,7 +32,7 @@ namespace Molch {
 	class Error {
 	public:
 		status_type type{status_type::SUCCESS};
-		std::string message;
+		const std::string message;
 
 		Error();
 		Error(const status_type type, const std::string& message);

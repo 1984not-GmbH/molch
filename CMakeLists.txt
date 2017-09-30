@@ -44,6 +44,7 @@ list(APPEND custom_compiler_flag_candidates
     -Wunsafe-loop-optimizations
     -Wredundant-decls
     -Wlogical-op
+    -Wno-type-limits
     #C++ options
     -Wnoexcept
     -Wstrict-null-sentinel

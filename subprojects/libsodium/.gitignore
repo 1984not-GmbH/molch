@@ -3,3 +3,10 @@ sodium
 *.so
 *.dll
 *.dylib
+armv6
+armv7-a
+armv8-a
+mips32
+mips64r6
+i686
+westmere
