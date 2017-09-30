@@ -36,7 +36,7 @@ int main(void) noexcept {
 		Molch::sodium_init();
 
 		//some random user input (idiot bashing his head on the keyboard)
-		Buffer spice{"aäipoewur+ü 093+2ß3+2ü+ ß09234rt #2ß 0iw4eräp9ui23+ 03943"};
+		Buffer spice{"aaeipoewur+ue 093+2ss3+2ue+ ss09234rt #2ss 0iw4eraep9ui23+ 03943"};
 		printf("\"Random\" input from the user (%zu Bytes):\n", spice.size());
 		printf("String: %.*s\n", static_cast<int>(spice.size()), byte_to_uchar(spice.data()));
 		printf("Hex:\n");

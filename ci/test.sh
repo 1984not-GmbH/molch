@@ -1,18 +1,27 @@
 #!/bin/bash
-[ ! -e build ] && mkdir build
-cd build || exit 1
-if cmake .. -DGENERATE_LUA_BINDINGS=ON -DRUN_TESTS=ON; then
+output_dir=build
+[ -e build ] && rm -r "$output_dir"
+mkdir "$output_dir"
+cd "$output_dir" || exit 1
+if meson ..; then
     # This has to be done with else because with '!' it won't work on Mac OS X
-    echo
+    true
 else
     exit $? #abort on failure
 fi
-make clean
-if make; then
-    # This has to be done with else because with '!' it won't work on Mac OS X
-    echo
+
+if ninja test; then
+    true
 else
-    exit $? #abort on failure
+    exit $?
 fi
-export CTEST_OUTPUT_ON_FAILURE=1
-make test
+
+if hash valgrind 2> /dev/null; then
+    if meson test --setup valgrind; then
+        true
+    else
+        exit $?
+    fi
+else
+    true
+fi

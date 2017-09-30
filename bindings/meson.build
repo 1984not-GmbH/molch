@@ -1,4 +1,4 @@
-if get_option('lua_bindings')
+if get_option('lua_bindings') and not ['address', 'undefined', 'address,undefined'].contains(get_option('b_sanitize')) and not (build_machine.system() == 'darwin')
 	swig = find_program('swig', required: true)
 
 	molch_interface_source = custom_target(

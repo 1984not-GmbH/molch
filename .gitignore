@@ -2,11 +2,8 @@ build/
 static-analysis/
 .idea/
 *.orig
-address-sanitizer
-undefined-behavior-sanitizer
+sanitizers
 *.swp
-tracing/
-dummy
 molch.config
 molch.files
 molch.includes
