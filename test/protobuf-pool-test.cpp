@@ -62,7 +62,7 @@ int main(void) {
 
 		auto integer{pool.allocate<uint32_t>(sizeof(uint32_t))};
 		std::cout << "integer = " << reinterpret_cast<void*>(integer) << std::endl;
-		if (reinterpret_cast<gsl::byte*>(integer) != (in_new_block + alignof(uint32_t))) {
+		if (reinterpret_cast<unsigned char*>(integer) != reinterpret_cast<unsigned char*>(in_new_block + alignof(uint32_t))) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Failed to align new allocation."};
 		}
 		std::cout << "Properly aligned new allocation." << std::endl;

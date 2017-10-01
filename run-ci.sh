@@ -1,5 +1,5 @@
 #!/bin/bash
-TESTS=("ci/test.sh" "ci/static-analysis.sh" "ci/sanitizers.sh" "ci/doxygen.sh")
+TESTS=("./release.sh" "ci/test.sh" "ci/static-analysis.sh" "ci/sanitizers.sh" "ci/doxygen.sh")
 STATUS="OK"
 
 for TEST in "${TESTS[@]}"; do
