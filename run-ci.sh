@@ -1,10 +1,11 @@
 #!/bin/bash
-TESTS=("./release.sh" "ci/test.sh" "ci/static-analysis.sh" "ci/sanitizers.sh" "ci/doxygen.sh")
+basedir=$(dirname "$0")
+TESTS=("release.sh" "ci/test.sh" "ci/static-analysis.sh" "ci/sanitizers.sh" "ci/doxygen.sh")
 STATUS="OK"
 
 for TEST in "${TESTS[@]}"; do
     echo "$TEST"
-    if ! "$TEST"; then
+    if ! "$basedir/$TEST"; then
         STATUS="FAILED"
     fi
 done

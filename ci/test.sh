@@ -1,4 +1,7 @@
 #!/bin/bash
+basedir=$(dirname "$0")
+source "$basedir/ninja.sh" || exit 1
+
 function valgrind_works {
     if ! hash valgrind 2> /dev/null; then
         return 1
@@ -22,7 +25,7 @@ if [[ ! -z ${MOLCH_CI_DISABLE_LUA+x} ]]; then
 fi
 
 output_dir=build
-[ -e build ] && rm -r "$output_dir"
+[[ -e "$output_dir" ]] && rm -r "$output_dir"
 mkdir "$output_dir"
 cd "$output_dir" || exit 1
 if meson .. -Dlua_bindings="$lua_bindings"; then

@@ -1,11 +1,14 @@
 #!/bin/bash
+basedir=$(dirname "$0")
+source "$basedir/ninja.sh" || exit 1
+
 if [[ ! -z ${MOLCH_CI_DISABLE_SANITIZERS+x} ]]; then
     echo "Sanitizers are disabled!"
     exit 0
 fi
 
 output_dir="sanitizers"
-[ -e "$output_dir" ] && rm -r "$output_dir"
+[[ -e "$output_dir" ]] && rm -r "$output_dir"
 mkdir "$output_dir"
 cd "$output_dir" || exit 1
 #check if address sanitizer is available
