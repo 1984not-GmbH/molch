@@ -1,4 +1,9 @@
 #!/bin/bash
+if [[ ! -z ${MOLCH_CI_DISABLE_SANITIZERS+x} ]]; then
+    echo "Sanitizers are disabled!"
+    exit 0
+fi
+
 output_dir="sanitizers"
 [ -e "$output_dir" ] && rm -r "$output_dir"
 mkdir "$output_dir"
