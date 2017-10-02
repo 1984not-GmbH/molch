@@ -17,14 +17,12 @@ $ git clone https://github.com/FSMaxB/molch
 $ git submodule update --init --recursive
 ```
 
-You might also have to run `git submodule update` when changing branches or after pulling in new changes.
-
 dependencies
 --------------------
 Molch depends on the following:
 * [libsodium](https://github.com/jedisct1/libsodium)
 * [protobuf-c](https://github.com/protobuf-c/protobuf-c)
-* CMake (build and tests)
+* Meson (build and tests)
 * C-Compiler (build)
 * C++-Compiler (build)
 * Clang Static Analyzer (tests)
@@ -39,17 +37,17 @@ Molch depends on the following:
 
 On Ubuntu:
 ```
-sudo apt-get install libsodium18 libsodium-dev libprotobuf-c-dev libprotobuf-c1 libprotobuf-c1-dbg libprotobuf9v5:armhf protobuf-c-compiler cmake clang libubsan0 libasan0 libasan1 libasan2 valgrind liblua5.3 lua5.3 liblua5.3-dev swig doxygen graphviz
+sudo apt-get install libsodium18 libsodium-dev libprotobuf-c-dev libprotobuf-c1 libprotobuf-c1-dbg libprotobuf9v5:armhf protobuf-c-compiler clang libubsan0 libasan0 libasan1 libasan2 valgrind liblua5.3 lua5.3 liblua5.3-dev swig doxygen graphviz meson
 ```
 
 On Arch:
 ```
-sudo pacman -S cmake clang-analyzer libsodium valgrind swig lua doxygen graphviz protobuf-c
+sudo pacman -S clang-analyzer libsodium valgrind swig lua doxygen graphviz protobuf-c meson
 ```
 
 On Max OS X (via homebrew):
 ```
-brew install libsodium valgrind swig lua graphviz doxygen protobuf-c
+brew install libsodium valgrind swig lua graphviz doxygen protobuf-c meson
 ```
 
 supported platforms
@@ -59,16 +57,23 @@ Molch is constantly tested on the following platforms:
 | processor        | os                          |
 |:-----------------|:----------------------------|
 | x86_64           | Archlinux                   |
-| i686             | Archlinux                   |
-| ARMv7hf          | Ubuntu 16.04 (Xenial Xerus) |
-| PowerPC Apple G4 | Debian Stretch (Testing)    |
-| x86_64           | Mac OS X 10.9 Mavericks     |
+| i686             | Ubuntu 16.04                |
+| ARMv7hf          | Archlinux ARM               |
+| AArch64          | Archlinux ARM               |
+| PowerPC Apple G4 | Gentoo                      |
+| x86_64           | Mac OS X 10.11 El Capitan   |
 
 how to build
 ------------
-Run the script `ci/test.sh` from the project root to build Molch and run the tests.
 
-Run the script `ci/clang-static-analysis.sh` from the project root to run static analysis.
+To build Molch run the script `release.sh` from the project root.
+
+To run all tests, run `./run-ci.sh` from the project root.
+Or you can run the scripts separately:
+* `test.sh`: For normal build and tests with and without valgrind
+* `sanitizers.sh`: To build and run with AddressSanitizer and UndefinedBehaviorSanitizer
+* `static-analysis.`: To run clang static analyzer
+* `doxygen.sh`: To create the documentation
 
 format of a packet
 ----------------
