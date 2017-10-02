@@ -339,4 +339,37 @@ namespace Molch {
 			throw Exception{status_type::GENERIC_ERROR, "Failed to make memory readwrite."};
 		}
 	}
+
+	span<gsl::byte> sodium_pad(span<gsl::byte> buffer, const size_t unpadded_length, const size_t blocksize) {
+		Expects((unpadded_length < buffer.size()) && (blocksize <= buffer.size()));
+
+		size_t padded_length{0};
+		auto status{::sodium_pad(
+				&padded_length,
+				byte_to_uchar(buffer.data()),
+				unpadded_length,
+				blocksize,
+				buffer.size())};
+		if (status != 0) {
+			throw Exception{status_type::GENERIC_ERROR, "Failed to pad buffer."};
+		}
+
+		return {buffer.data(), padded_length};
+	}
+
+	span<gsl::byte> sodium_unpad(span<gsl::byte> buffer, const size_t blocksize) {
+		Expects(blocksize <= buffer.size());
+
+		size_t unpadded_length{0};
+		auto status{::sodium_unpad(
+				&unpadded_length,
+				byte_to_uchar(buffer.data()),
+				buffer.size(),
+				blocksize)};
+		if (status != 0) {
+			throw Exception{status_type::GENERIC_ERROR, "Failed to unpad buffer."};
+		}
+
+		return {buffer.data(), unpadded_length};
+	}
 }

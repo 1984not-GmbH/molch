@@ -1,4 +1,4 @@
-project('libsodium', 'c', version: '1.0.13')
+project('libsodium', 'c', version: '1.0.14')
 
 compiler = meson.get_compiler('c')
 

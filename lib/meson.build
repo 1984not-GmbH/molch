@@ -1,4 +1,4 @@
-libsodium = dependency('libsodium', version: '>=1.0.13', required: false)
+libsodium = dependency('libsodium', version: '>=1.0.14', required: false)
 sodium_include = include_directories()
 if not libsodium.found()
 	libsodium_project = subproject('libsodium')

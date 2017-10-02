@@ -170,6 +170,9 @@ namespace Molch {
 	void sodium_mprotect_noaccess(void *pointer);
 	void sodium_mprotect_readonly(void *pointer);
 	void sodium_mprotect_readwrite(void *pointer);
+
+	span<gsl::byte> sodium_pad(span<gsl::byte> buffer, const size_t unpadded_length, size_t blocksize);
+	span<gsl::byte> sodium_unpad(span<gsl::byte> buffer, const size_t blocksize);
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */

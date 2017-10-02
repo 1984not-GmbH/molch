@@ -29,6 +29,8 @@
 #include "gsl.hpp"
 
 namespace Molch {
+	constexpr size_t padding_blocksize{255};
+
 	/*!
 	 * Convert molch_message_type to PacketHeader__PacketType.
 	 */
@@ -193,14 +195,15 @@ namespace Molch {
 		packet_header_struct.message_nonce.data = byte_to_uchar(message_nonce.data());
 		packet_header_struct.message_nonce.len = message_nonce.size();
 
-		//pad the message (PKCS7 padding to 255 byte blocks, see RFC5652 section 6.3)
-		auto padding{gsl::narrow_cast<unsigned char>(255 - (message.size() % 255))};
-		Buffer padded_message{message.size() + padding, 0};
-		//copy the message
+		//pad the message (ISO/IEC 7816-4 padding to 255 byte blocks)
+		size_t padding_amount{padding_blocksize - (message.size() % padding_blocksize)};
+		Buffer padded_message{message.size() + padding_amount, 0};
 		padded_message.cloneFromRaw(message);
-		//pad it
-		std::fill(padded_message.data() + padded_message.size(), padded_message.data() + padded_message.size() + padding, uchar_to_byte(padding));
-		padded_message.setSize(padded_message.size() + padding);
+		padded_message.setSize(padded_message.capacity());
+		auto padded_span{sodium_pad(padded_message, message.size(), 255)};
+		if (padded_span.size() != padded_message.size()) {
+			throw Exception{status_type::GENERIC_ERROR, "Padding doesn't have the expected size."};
+		}
 
 		//encrypt the message
 		Buffer encrypted_message{
@@ -343,14 +346,14 @@ namespace Molch {
 		}
 
 		const size_t padded_message_length{packet_struct->encrypted_message.len - crypto_secretbox_MACBYTES};
-		if (padded_message_length < 255) {
+		if (padded_message_length < padding_blocksize) {
 			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The padded message is too short."};
 		}
-		Buffer padded_message{padded_message_length, padded_message_length};
+		optional<Buffer> padded_message{in_place_t(), padded_message_length, padded_message_length};
 
 		try {
 			crypto_secretbox_open_easy(
-					padded_message,
+					*padded_message,
 					{uchar_to_byte(packet_struct->encrypted_message.data), packet_struct->encrypted_message.len},
 					{uchar_to_byte(packet_struct->packet_header->message_nonce.data), packet_struct->packet_header->message_nonce.len},
 					message_key);
@@ -358,18 +361,10 @@ namespace Molch {
 			return optional<Buffer>();
 		}
 
-		//get the padding (last byte)
-		auto padding{byte_to_uchar(*(std::cend(padded_message) - 1))};
-		if (padding > padded_message.size()) {
-			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The padded message is too short."};
-		}
+		//undo the padding
+		auto unpadded_span{sodium_unpad(*padded_message, padding_blocksize)};
+		padded_message->setSize(unpadded_span.size());
 
-		//extract the message
-		const auto message_length{padded_message.size() - padding};
-		optional<Buffer> message{in_place_t(), message_length, 0U};
-		//TODO this doesn't need to be copied, setting the length should be enough
-		message->copyFrom(0, padded_message, 0, message_length);
-
-		return message;
+		return padded_message;
 	}
 }
