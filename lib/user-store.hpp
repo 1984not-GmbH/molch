@@ -23,7 +23,6 @@
 #define LIB_USER_STORE_H
 
 #include <sodium.h>
-#include <ctime>
 #include <memory>
 #include <ostream>
 

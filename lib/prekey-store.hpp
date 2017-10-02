@@ -22,7 +22,6 @@
 #ifndef LIB_PrekeyStore
 #define LIB_PrekeyStore
 
-#include <ctime>
 #include <memory>
 #include <array>
 #include <vector>
@@ -36,12 +35,13 @@
 #include "key.hpp"
 #include "protobuf-pool.hpp"
 #include "gsl.hpp"
+#include "time.hpp"
 
 namespace Molch {
 	class Prekey {
 		friend class PrekeyStore;
 	private:
-		void fill(const PublicKey& public_key, const PrivateKey& private_key, const int64_t expiration_date);
+		void fill(const PublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date);
 		void generate();
 
 		Prekey& copy(const Prekey& node);
@@ -50,10 +50,10 @@ namespace Molch {
 	public:
 		PublicKey public_key;
 		PrivateKey private_key;
-		int64_t expiration_date{0};
+		seconds expiration_date{0};
 
 		Prekey() = default;
-		Prekey(const PublicKey& public_key, const PrivateKey& private_key, int64_t expiration_date);
+		Prekey(const PublicKey& public_key, const PrivateKey& private_key, seconds expiration_date);
 		/* copy constructor */
 		Prekey(const Prekey& node);
 		/* move constructor */
@@ -84,8 +84,8 @@ namespace Molch {
 		void deprecate(const size_t index);
 
 	public:
-		int64_t oldest_expiration_date{0};
-		int64_t oldest_deprecated_expiration_date{0};
+		seconds oldest_expiration_date{0};
+		seconds oldest_deprecated_expiration_date{0};
 		std::unique_ptr<std::array<Prekey,PREKEY_AMOUNT>,SodiumDeleter<std::array<Prekey,PREKEY_AMOUNT>>> prekeys;
 		std::vector<Prekey,SodiumAllocator<Prekey>> deprecated_prekeys;
 

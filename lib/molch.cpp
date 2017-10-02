@@ -109,7 +109,7 @@ static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_ke
 	user->prekeys.list(prekeys);
 
 	//add the expiration date
-	int64_t expiration_date{time(nullptr) + 3600 * 24 * 31 * 3}; //the prekey list will expire in 3 months
+	int64_t expiration_date{now().count() + seconds{3_months}.count()};
 	span<gsl::byte> big_endian_expiration_date{&unsigned_prekey_list[PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE], sizeof(int64_t)};
 	to_big_endian(expiration_date, big_endian_expiration_date);
 
@@ -390,7 +390,7 @@ static void verify_prekey_list(
 	from_big_endian(expiration_date, big_endian_expiration_date);
 
 	//make sure the prekey list isn't too old
-	int64_t current_time{time(nullptr)};
+	int64_t current_time{now().count()};
 	if (expiration_date < current_time) {
 		throw Exception{status_type::OUTDATED, "Prekey list has expired (older than 3 months)."};
 	}

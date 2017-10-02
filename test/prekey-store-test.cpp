@@ -261,7 +261,7 @@ int main(void) {
 		//test the automatic deprecation of old keys
 		public_prekey = (*store->prekeys)[PREKEY_AMOUNT-1].public_key;
 
-		(*store->prekeys)[PREKEY_AMOUNT-1].expiration_date -= 365 * 24 * 3600; //one year
+		(*store->prekeys)[PREKEY_AMOUNT-1].expiration_date -= months{12};
 		store->oldest_expiration_date = (*store->prekeys)[PREKEY_AMOUNT - 1].expiration_date;
 
 		store->rotate();
@@ -274,7 +274,7 @@ int main(void) {
 		//test the automatic removal of old deprecated keys!
 		public_prekey = store->deprecated_prekeys[1].public_key;
 
-		store->deprecated_prekeys[1].expiration_date -= 24 * 3600;
+		store->deprecated_prekeys[1].expiration_date -= days{1};
 		store->oldest_deprecated_expiration_date = store->deprecated_prekeys[1].expiration_date;
 
 		store->rotate();

@@ -23,7 +23,6 @@
 #define LIB_HEADER_AND_MESSAGE_KEY_STORE_H
 
 #include <sodium.h>
-#include <ctime>
 #include <vector>
 #include <ostream>
 
@@ -34,11 +33,12 @@
 #include "protobuf.hpp"
 #include "key.hpp"
 #include "protobuf-pool.hpp"
+#include "time.hpp"
 
 namespace Molch {
 	class HeaderAndMessageKey {
 	private:
-		void fill(const HeaderKey& header_key, const MessageKey& message_key, const int64_t expiration_date);
+		void fill(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date);
 
 		HeaderAndMessageKey& copy(const HeaderAndMessageKey& node);
 		HeaderAndMessageKey& move(HeaderAndMessageKey&& node);
@@ -46,11 +46,11 @@ namespace Molch {
 	public:
 		MessageKey message_key;
 		HeaderKey header_key;
-		int64_t expiration_date{0};
+		seconds expiration_date{0};
 
 		HeaderAndMessageKey() = default;
 		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key);
-		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key, const int64_t expiration_date);
+		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date);
 		/* copy and move constructors */
 		HeaderAndMessageKey(const HeaderAndMessageKey& node);
 		HeaderAndMessageKey(HeaderAndMessageKey&& node);

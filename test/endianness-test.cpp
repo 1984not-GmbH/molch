@@ -21,7 +21,6 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <ctime>
 #include <iostream>
 
 #include "../lib/endianness.hpp"

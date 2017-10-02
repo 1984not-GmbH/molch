@@ -27,19 +27,19 @@
 #include "gsl.hpp"
 
 namespace Molch {
-	constexpr int64_t EXPIRATION_TIME{3600 * 24 * 31}; //one month
+	constexpr auto expiration_time{1_months};
 
-	void HeaderAndMessageKey::fill(const HeaderKey& header_key, const MessageKey& message_key, const int64_t expiration_date) {
+	void HeaderAndMessageKey::fill(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) {
 		this->header_key = header_key;
 		this->message_key = message_key;
 		this->expiration_date = expiration_date;
 	}
 
 	HeaderAndMessageKey::HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key) {
-		this->fill(header_key, message_key, time(nullptr) + EXPIRATION_TIME);
+		this->fill(header_key, message_key, now() + expiration_time);
 	}
 
-	HeaderAndMessageKey::HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key, const int64_t expiration_date) {
+	HeaderAndMessageKey::HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) {
 		this->fill(header_key, message_key, expiration_date);
 	}
 
@@ -92,7 +92,7 @@ namespace Molch {
 		if (!key_bundle.has_expiration_time) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has no expiration time."};
 		}
-		this->expiration_date = gsl::narrow<int64_t>(key_bundle.expiration_time);
+		this->expiration_date = seconds{key_bundle.expiration_time};
 	}
 
 	ProtobufCKeyBundle* HeaderAndMessageKey::exportProtobuf(ProtobufPool& pool) const {
@@ -104,7 +104,7 @@ namespace Molch {
 		key_bundle->message_key = this->message_key.exportProtobuf(pool);
 
 		//set expiration time
-		key_bundle->expiration_time = gsl::narrow<uint64_t>(this->expiration_date);
+		key_bundle->expiration_time = gsl::narrow<uint64_t>(this->expiration_date.count());
 		key_bundle->has_expiration_time = true;
 
 		return key_bundle;
@@ -115,7 +115,7 @@ namespace Molch {
 		this->header_key.printHex(stream) << '\n';
 		stream << "Message key:\n";
 		this->message_key.printHex(stream) << '\n';
-		stream << "Expiration date:\n" << this->expiration_date << '\n';
+		stream << "Expiration date:\n" << this->expiration_date.count() << 's' << '\n';
 
 		return stream;
 	}

@@ -29,16 +29,16 @@
 #include "gsl.hpp"
 
 namespace Molch {
-	constexpr int64_t PREKEY_EXPIRATION_TIME{3600 * 24 * 31}; //one month
-	constexpr int64_t DEPRECATED_PREKEY_EXPIRATION_TIME{3600}; //one hour
+	constexpr auto prekey_expiration_time{1_months};
+	constexpr auto deprecated_prekey_expiration_time{1h};
 
-	void Prekey::fill(const PublicKey& public_key, const PrivateKey& private_key, const int64_t expiration_date) {
+	void Prekey::fill(const PublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date) {
 		this->expiration_date = expiration_date;
 		this->public_key = public_key;
 		this->private_key = private_key;
 	}
 
-	Prekey::Prekey(const PublicKey& public_key, const PrivateKey& private_key, int64_t expiration_date) {
+	Prekey::Prekey(const PublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date) {
 		this->fill(public_key, private_key, expiration_date);
 	}
 
@@ -91,7 +91,7 @@ namespace Molch {
 		if (!keypair.has_expiration_time) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing an expiration time."};
 		}
-		this->expiration_date = gsl::narrow<int64_t>(keypair.expiration_time);
+		this->expiration_date = seconds{keypair.expiration_time};
 	}
 
 	ProtobufCPrekey* Prekey::exportProtobuf(ProtobufPool& pool) const {
@@ -103,7 +103,7 @@ namespace Molch {
 		//export the public key
 		prekey->public_key = this->public_key.exportProtobuf(pool);
 		//export the expiration date
-		prekey->expiration_time = gsl::narrow<uint64_t>(this->expiration_date);
+		prekey->expiration_time = gsl::narrow<uint64_t>(this->expiration_date.count());
 		prekey->has_expiration_time = true;
 
 		return prekey;
@@ -115,11 +115,11 @@ namespace Molch {
 				this->private_key);
 		this->public_key.empty = false;
 		this->private_key.empty = false;
-		this->expiration_date = time(nullptr) + PREKEY_EXPIRATION_TIME;
+		this->expiration_date = now() + prekey_expiration_time;
 	}
 
 	std::ostream& Prekey::print(std::ostream& stream) const {
-		stream << "Expiration Date = " << std::to_string(this->expiration_date) << '\n';
+		stream << "Expiration Date = " << this->expiration_date.count() << "s" << '\n';
 		stream << "Public Prekey:\n";
 		this->public_key.printHex(stream) << '\n';
 		stream << "Private Prekey:\n";
@@ -187,7 +187,7 @@ namespace Molch {
 
 	void PrekeyStore::updateDeprecatedExpirationDate() {
 		if (this->deprecated_prekeys.empty()) {
-			this->oldest_deprecated_expiration_date = 0;
+			this->oldest_deprecated_expiration_date = 0s;
 			return;
 		}
 
@@ -197,7 +197,7 @@ namespace Molch {
 
 	void PrekeyStore::deprecate(const size_t index) {
 		auto& at_index{(*this->prekeys)[index]};
-		at_index.expiration_date = time(nullptr) + DEPRECATED_PREKEY_EXPIRATION_TIME;
+		at_index.expiration_date = now() + deprecated_prekey_expiration_time;
 		this->deprecated_prekeys.push_back(at_index);
 
 		this->updateExpirationDate();
@@ -248,22 +248,22 @@ namespace Molch {
 	}
 
 	void PrekeyStore::rotate() {
-		int64_t current_time{time(nullptr)};
+		seconds current_time{now()};
 
 		//Is the expiration date too far into the future?
-		if ((current_time + PREKEY_EXPIRATION_TIME) < this->oldest_expiration_date) {
+		if ((current_time + prekey_expiration_time) < this->oldest_expiration_date) {
 			//TODO: Is this correct behavior?
 			//Set the expiration date of everything to the current time + PREKEY_EXPIRATION_TIME
 			for (auto& prekey : *this->prekeys) {
-				prekey.expiration_date = current_time + PREKEY_EXPIRATION_TIME;
+				prekey.expiration_date = current_time + prekey_expiration_time;
 			}
 		}
 
 		//Is the deprecated expiration date too far into the future?
-		if ((current_time + DEPRECATED_PREKEY_EXPIRATION_TIME) < this->oldest_deprecated_expiration_date) {
+		if ((current_time + deprecated_prekey_expiration_time) < this->oldest_deprecated_expiration_date) {
 			//Set the expiration date of everything to the current time + DEPRECATED_PREKEY_EXPIRATION_TIME
 			for (auto& prekey : this->deprecated_prekeys) {
-				prekey.expiration_date = current_time + DEPRECATED_PREKEY_EXPIRATION_TIME;
+				prekey.expiration_date = current_time + deprecated_prekey_expiration_time;
 			}
 		}
 
