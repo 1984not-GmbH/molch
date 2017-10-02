@@ -51,13 +51,14 @@ namespace Molch {
 	void to_big_endian(IntegerType integer, span<gsl::byte> output) {
 		Expects(output.size() == sizeof(IntegerType));
 
-		auto& reference{reinterpret_cast<gsl::byte&>(integer)};
+		//uses unsigned char instead of gsl::byte because of the aliasing rules
+		auto& reference{reinterpret_cast<unsigned char&>(integer)};
 
 		if (endianness_is_little_endian()) {
 			std::reverse(&reference, &reference + sizeof(integer));
 		}
 
-		std::copy(&reference, &reference + sizeof(integer), output.data());
+		std::copy(&reference, &reference + sizeof(integer), reinterpret_cast<unsigned char*>(output.data()));
 	}
 
 	/*
@@ -67,9 +68,10 @@ namespace Molch {
 	void from_big_endian(IntegerType& integer, const span<const gsl::byte> input) {
 		Expects(input.size() == sizeof(IntegerType));
 
-		auto& reference{reinterpret_cast<gsl::byte&>(integer)};
+		//uses unsigned char instead of gsl::byte because of the aliasing rules
+		auto& reference{reinterpret_cast<unsigned char&>(integer)};
 
-		std::copy(std::cbegin(input), std::cend(input), &reference);
+		std::copy(std::cbegin(input), std::cend(input), reinterpret_cast<gsl::byte*>(&reference));
 
 		if (endianness_is_little_endian()) {
 			std::reverse(&reference, &reference + sizeof(IntegerType));

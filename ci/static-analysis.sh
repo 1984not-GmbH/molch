@@ -1,15 +1,19 @@
 #!/bin/bash
+basedir=$(dirname "$0")
+source "$basedir/ninja.sh" || exit 1
+
 if ! hash scan-build; then
     echo Clang static analyzer not installed. Skipping ...
     exit 0
 fi
-[ ! -e static-analysis ] && mkdir static-analysis
-cd static-analysis || exit 1
-if scan-build --status-bugs cmake .. -DRUN_TESTS=ON; then
+output_dir=static-analysis
+[[ -e "$output_dir" ]] && rm -r "$output_dir"
+mkdir "$output_dir"
+cd "$output_dir" || exit 1
+if meson ..; then
     # This has to be done with else because with '!' it won't work on Mac OS X
     echo
 else
     exit $? #abort on failure
 fi
-make clean
-scan-build --status-bugs make
+ninja scan-build
