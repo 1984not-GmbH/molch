@@ -41,7 +41,8 @@ common_flags = [
 	'-Wtrampolines',
 	'-Wredundant-decls',
 	'-Wlogical-op',
-	'-Wno-type-limits'
+	'-Wno-type-limits',
+	'-fno-sanitize-recover=all'
 ]
 
 cpp_flags = [

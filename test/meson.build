@@ -52,3 +52,13 @@ foreach test : tests
 			include_directories: [protobuf_include, gsl_include, sodium_include, protobuf_c_include])
 	test(test, test_exe, workdir: meson.current_source_dir())
 endforeach
+
+if ['undefined', 'address,undefined'].contains(get_option('b_sanitize'))
+	ubsan_test = executable('ubsan-test', 'ubsan-test.cpp')
+	test('ubsan-test', ubsan_test, should_fail: true)
+endif
+
+if ['address', 'address,undefined'].contains(get_option('b_sanitize'))
+	asan_test = executable('asan-test', 'asan-test.cpp')
+	test('asan-test', asan_test, should_fail: true)
+endif
