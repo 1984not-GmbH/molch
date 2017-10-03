@@ -25,7 +25,7 @@
 #include <memory>
 
 #include "buffer.hpp"
-#include "molch.h"
+#include "../include/molch.h"
 #include "key.hpp"
 #include "optional.hpp"
 #include "gsl.hpp"

@@ -24,7 +24,7 @@
 #include <string.h>
 #include <iostream>
 
-#include "../lib/return-status.h"
+#include "../include/molch/return-status.h"
 #include "../lib/destroyers.hpp"
 #include "../lib/molch-exception.hpp"
 #include "utils.hpp"

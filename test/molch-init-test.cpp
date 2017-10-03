@@ -28,7 +28,7 @@
 #include <string>
 
 #include "utils.hpp"
-#include "../lib/molch.h"
+#include "../include/molch.h"
 #include "../lib/constants.h"
 #include "../lib/destroyers.hpp"
 #include "../lib/molch-exception.hpp"

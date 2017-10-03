@@ -28,7 +28,7 @@
 #include <exception>
 #include <sstream>
 
-#include "return-status.h"
+#include "return-status.hpp"
 #include "buffer.hpp"
 #include "destroyers.hpp"
 #include "molch-exception.hpp"

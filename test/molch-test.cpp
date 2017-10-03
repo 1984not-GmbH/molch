@@ -26,7 +26,7 @@
 #include <iostream>
 
 #include "utils.hpp"
-#include "../lib/molch.h"
+#include "../include/molch.h"
 #include "../lib/user-store.hpp" //for PREKEY_AMOUNT
 #include "../lib/destroyers.hpp"
 #include "../lib/malloc.hpp"

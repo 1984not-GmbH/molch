@@ -24,7 +24,6 @@
 
 #include "constants.h"
 #include "conversation.hpp"
-#include "molch.h"
 #include "packet.hpp"
 #include "header.hpp"
 #include "molch-exception.hpp"

@@ -22,7 +22,7 @@
 #ifndef TEST_PACKET_TEST_LIB_H
 #define TEST_PACKET_TEST_LIB_H
 
-#include "../lib/molch.h"
+#include "../lib/buffer.hpp"
 
 /*!
  * Create message and header keys, encrypt header and message

@@ -22,7 +22,7 @@
 %module molch
 
 %{
-#include <lib/molch.h>
+#include <include/molch.h>
 #include <lib/constants.h>
 #include <stdlib.h>
 #include <string.h>

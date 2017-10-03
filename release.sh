@@ -18,3 +18,4 @@ fi
 
 ninja
 ninja test
+DESTDIR="$output_dir/installation" ninja install

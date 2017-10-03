@@ -28,7 +28,7 @@
 #include <iterator>
 
 #include "constants.h"
-#include "molch.h"
+#include "../include/molch.h"
 #include "packet.hpp"
 #include "buffer.hpp"
 #include "user-store.hpp"
