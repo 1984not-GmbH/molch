@@ -49,7 +49,7 @@ protobufs = static_library(
 		generated_protobufs,
 		c_args: protobuf_flags,
 		dependencies: protobuf_c,
-		override_options: 'werror=false',
+		override_options: ['werror=false', 'b_lto=false'],
 		include_directories: [protobuf_c_include])
 
 protobuf_include = include_directories('.')
