@@ -13,7 +13,7 @@ output_dir="release"
 mkdir "$output_dir"
 cd "$output_dir" || exit 1
 if [[ ! -e "$output_dir" ]]; then
-    meson --buildtype release -Dlua_bindings="$lua_bindings" .. || exit 1
+    meson --buildtype release -Db_lto=true -Dlua_bindings="$lua_bindings" .. || exit 1
 fi
 
 ninja
