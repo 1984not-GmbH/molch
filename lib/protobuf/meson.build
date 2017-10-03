@@ -34,9 +34,20 @@ foreach protobuf_definition : protobuf_definitions
 			output: ['@BASENAME@.pb-c.h', '@BASENAME@.pb-c.c'])
 endforeach
 
+proposed_protobuf_flags = [
+	'-Wno-strict-aliasing'
+]
+protobuf_flags = []
+foreach flag : proposed_protobuf_flags
+	if c_compiler.has_argument(flag)
+		protobuf_flags += flag
+	endif
+endforeach
+
 protobufs = static_library(
 		'protobufs',
 		generated_protobufs,
+		c_args: protobuf_flags,
 		dependencies: protobuf_c,
 		override_options: 'werror=false',
 		include_directories: [protobuf_c_include])
