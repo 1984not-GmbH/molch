@@ -141,7 +141,7 @@ int main(void) {
 
 		//compare the public keys with the ones in the prekey store
 		for (size_t i{0}; i < PREKEY_AMOUNT; i++) {
-			if (prekey_list.compareToRawPartial(PUBLIC_KEY_SIZE * i, {(*store->prekeys)[i].public_key.data(), (*store->prekeys)[i].public_key.size()}, 0, PUBLIC_KEY_SIZE) != 0) {
+			if (prekey_list.compareToRawPartial(PUBLIC_KEY_SIZE * i, {store->prekeys()[i].publicKey().data(), store->prekeys()[i].publicKey().size()}, 0, PUBLIC_KEY_SIZE) != 0) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Key list doesn't match the prekey store."};
 			}
 		}
@@ -149,7 +149,7 @@ int main(void) {
 
 		//get a private key
 		const size_t prekey_index{10};
-		PublicKey public_prekey{(*store->prekeys)[prekey_index].public_key};
+		PublicKey public_prekey{store->prekeys()[prekey_index].publicKey()};
 
 		PrivateKey private_prekey1;
 		store->getPrekey(public_prekey, private_prekey1);
@@ -159,16 +159,16 @@ int main(void) {
 		printf("Private key:\n");
 		private_prekey1.printHex(std::cout) << std::endl;
 
-		if (store->deprecated_prekeys.empty()) {
+		if (store->deprecatedPrekeys().empty()) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to deprecate requested key."};
 		}
 
-		if ((public_prekey != store->deprecated_prekeys[0].public_key)
-				|| (private_prekey1 != store->deprecated_prekeys[0].private_key)) {
+		if ((public_prekey != store->deprecatedPrekeys()[0].publicKey())
+				|| (private_prekey1 != store->deprecatedPrekeys()[0].privateKey())) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Deprecated key is incorrect."};
 		}
 
-		if ((*store->prekeys)[prekey_index].public_key == public_prekey) {
+		if (store->prekeys()[prekey_index].publicKey() == public_prekey) {
 			throw Molch::Exception{status_type::KEYGENERATION_FAILED, "Failed to generate new key for deprecated one."};
 		}
 		printf("Successfully deprecated requested key!\n");
@@ -259,27 +259,25 @@ int main(void) {
 		}
 
 		//test the automatic deprecation of old keys
-		public_prekey = (*store->prekeys)[PREKEY_AMOUNT-1].public_key;
+		public_prekey = store->prekeys()[PREKEY_AMOUNT-1].publicKey();
 
-		(*store->prekeys)[PREKEY_AMOUNT-1].expiration_date -= months{12};
-		store->oldest_expiration_date = (*store->prekeys)[PREKEY_AMOUNT - 1].expiration_date;
+		store->timeshiftForTestingOnly(PREKEY_AMOUNT - 1, -12_months);
 
 		store->rotate();
 
-		if (store->deprecated_prekeys.back().public_key != public_prekey) {
+		if (store->deprecatedPrekeys().back().publicKey() != public_prekey) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to deprecate outdated key."};
 		}
 		printf("Successfully deprecated outdated key!\n");
 
 		//test the automatic removal of old deprecated keys!
-		public_prekey = store->deprecated_prekeys[1].public_key;
+		public_prekey = store->deprecatedPrekeys()[1].publicKey();
 
-		store->deprecated_prekeys[1].expiration_date -= days{1};
-		store->oldest_deprecated_expiration_date = store->deprecated_prekeys[1].expiration_date;
+		store->timeshiftDeprecatedForTestingOnly(1, -1_days);
 
 		store->rotate();
 
-		if (store->deprecated_prekeys.size() != 1) {
+		if (store->deprecatedPrekeys().size() != 1) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to remove outdated key."};
 		}
 		printf("Successfully removed outdated deprecated key!\n");
