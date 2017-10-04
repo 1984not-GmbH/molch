@@ -51,10 +51,10 @@ namespace Molch {
 			PublicKey * const public_identity_key) { //output, optional, can be nullptr
 		//get the public keys
 		if (public_signing_key != nullptr) {
-			this->master_keys.getSigningKey(*public_signing_key);
+			*public_signing_key = this->master_keys.getSigningKey();
 		}
 		if (public_identity_key != nullptr) {
-			this->master_keys.getIdentityKey(*public_identity_key);
+			*public_identity_key = this->master_keys.getIdentityKey();
 		}
 	}
 
@@ -64,14 +64,14 @@ namespace Molch {
 			PublicKey * const public_identity_key//output, optional, can be nullptr
 			) : master_keys(seed) {
 		this->exportPublicKeys(public_signing_key, public_identity_key);
-		this->master_keys.getSigningKey(this->public_signing_key);
+		this->public_signing_key = this->master_keys.getSigningKey();
 	}
 
 	User::User(
 			PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
 			PublicKey * const public_identity_key) { //output, optional, can be nullptr
 		this->exportPublicKeys(public_signing_key, public_identity_key);
-		this->master_keys.getSigningKey(this->public_signing_key);
+		this->public_signing_key = this->master_keys.getSigningKey();
 	}
 
 	User::User(const ProtobufCUser& user) {

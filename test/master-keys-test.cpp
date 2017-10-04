@@ -140,37 +140,35 @@ int main(void) {
 		MasterKeys unspiced_master_keys;
 
 		//get the public keys
-		PublicSigningKey public_signing_key;
-		unspiced_master_keys.getSigningKey(public_signing_key);
-		PublicKey public_identity_key;
-		unspiced_master_keys.getIdentityKey(public_identity_key);
+		PublicSigningKey public_signing_key{unspiced_master_keys.getSigningKey()};
+		PublicKey public_identity_key{unspiced_master_keys.getIdentityKey()};
 
 		//print the keys
 		printf("Signing keypair:\n");
 		printf("Public:\n");
-		unspiced_master_keys.public_signing_key.printHex(std::cout);
+		unspiced_master_keys.getSigningKey().printHex(std::cout);
 
 		printf("\nPrivate:\n");
 		{
 			MasterKeys::Unlocker unlocker{unspiced_master_keys};
-			unspiced_master_keys.private_signing_key->printHex(std::cout);
+			unspiced_master_keys.getPrivateSigningKey().printHex(std::cout);
 		}
 
 		printf("\n\nIdentity keys:\n");
 		printf("Public:\n");
-		unspiced_master_keys.public_identity_key.printHex(std::cout);
+		unspiced_master_keys.getIdentityKey().printHex(std::cout);
 
 		printf("\nPrivate:\n");
 		{
 			MasterKeys::Unlocker unlocker{unspiced_master_keys};
-			unspiced_master_keys.private_identity_key->printHex(std::cout);
+			unspiced_master_keys.getPrivateIdentityKey().printHex(std::cout);
 		}
 
 		//check the exported public keys
-		if (public_signing_key != unspiced_master_keys.public_signing_key) {
+		if (public_signing_key != unspiced_master_keys.getSigningKey()) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Exported public signing key doesn't match."};
 		}
-		if (public_identity_key != unspiced_master_keys.public_identity_key) {
+		if (public_identity_key != unspiced_master_keys.getIdentityKey()) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Exported public identity key doesn't match."};
 		}
 
@@ -178,35 +176,35 @@ int main(void) {
 		//create the spiced master keys
 		Buffer seed{";a;awoeih]]pquw4t[spdif\\aslkjdf;'ihdg#)%!@))%)#)(*)@)#)h;kuhe[orih;o's':ke';sa'd;kfa';;.calijv;a/orq930u[sd9f0u;09[02;oasijd;adk"};
 		MasterKeys spiced_master_keys{seed};
-		spiced_master_keys.getSigningKey(public_signing_key);
-		spiced_master_keys.getIdentityKey(public_identity_key);
+		public_signing_key = spiced_master_keys.getSigningKey();
+		public_identity_key = spiced_master_keys.getIdentityKey();
 
 		//print the keys
 		printf("Signing keypair:\n");
 		printf("Public:\n");
-		spiced_master_keys.public_signing_key.printHex(std::cout) << std::endl;
+		spiced_master_keys.getSigningKey().printHex(std::cout) << std::endl;
 
 		printf("Private:\n");
 		{
 			MasterKeys::Unlocker unlocker{spiced_master_keys};
-			spiced_master_keys.private_signing_key->printHex(std::cout) << std::endl;
+			spiced_master_keys.getPrivateSigningKey().printHex(std::cout) << std::endl;
 		}
 
 		printf("\nIdentity keys:\n");
 		printf("Public:\n");
-		spiced_master_keys.public_identity_key.printHex(std::cout) << std::endl;
+		spiced_master_keys.getIdentityKey().printHex(std::cout) << std::endl;
 
 		printf("Private:\n");
 		{
 			MasterKeys::Unlocker unlocker{spiced_master_keys};
-			spiced_master_keys.private_identity_key->printHex(std::cout);
+			spiced_master_keys.getPrivateIdentityKey().printHex(std::cout);
 		}
 
 		//check the exported public keys
-		if (public_signing_key != spiced_master_keys.public_signing_key) {
+		if (public_signing_key != spiced_master_keys.getSigningKey()) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Exported public signing key doesn't match."};
 		}
-		if (public_identity_key != spiced_master_keys.public_identity_key) {
+		if (public_identity_key != spiced_master_keys.getIdentityKey()) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Exported public identity key doesn't match."};
 		}
 

@@ -44,6 +44,13 @@ namespace Molch {
 	class MasterKeys {
 	private:
 		mutable std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>> private_keys;
+		//Ed25519 key for signing
+		PublicSigningKey public_signing_key;
+		PrivateSigningKey *private_signing_key{nullptr};
+		//X25519 key for deriving axolotl root keys
+		PublicKey public_identity_key;
+		PrivateKey *private_identity_key{nullptr};
+
 		/* Internally does the intialization of the buffers creation of the keys */
 		void init();
 		void generate();
@@ -65,13 +72,6 @@ namespace Molch {
 		MasterKeys& move(MasterKeys&& master_keys);
 
 	public:
-		//Ed25519 key for signing
-		PublicSigningKey public_signing_key;
-		PrivateSigningKey *private_signing_key{nullptr};
-		//X25519 key for deriving axolotl root keys
-		PublicKey public_identity_key;
-		PrivateKey *private_identity_key{nullptr};
-
 		/*
 		 * Create a new set of master keys.
 		 *
@@ -99,15 +99,10 @@ namespace Molch {
 		MasterKeys& operator=(const MasterKeys& master_keys) = delete;
 		MasterKeys& operator=(MasterKeys&& master_keys);
 
-		/*
-		 * Get the public signing key.
-		 */
-		void getSigningKey(PublicSigningKey& public_signing_key) const;
-
-		/*
-		 * Get the public identity key.
-		 */
-		void getIdentityKey(PublicKey& public_identity_key) const;
+		const PublicSigningKey& getSigningKey() const;
+		const PrivateSigningKey& getPrivateSigningKey() const;
+		const PublicKey& getIdentityKey() const;
+		const PrivateKey& getPrivateIdentityKey() const;
 
 		/*
 		 * Sign a piece of data. Returns the data and signature in one output buffer.

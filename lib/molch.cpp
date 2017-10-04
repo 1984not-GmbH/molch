@@ -94,15 +94,11 @@ static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_ke
 	//rotate the prekeys
 	user->prekeys.rotate();
 
-	//get the public identity key
-	PublicKey public_identity_key;
-	user->master_keys.getIdentityKey(public_identity_key);
-
 	//copy the public identity to the prekey list
 	MallocBuffer unsigned_prekey_list{
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t),
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t)};
-	unsigned_prekey_list.copyFromRaw(0, public_identity_key.data(), 0, PUBLIC_KEY_SIZE);
+	unsigned_prekey_list.copyFromRaw(0, user->master_keys.getIdentityKey().data(), 0, PUBLIC_KEY_SIZE);
 
 	//get the prekeys
 	span<gsl::byte> prekeys{&unsigned_prekey_list[PUBLIC_KEY_SIZE], PREKEY_AMOUNT * PUBLIC_KEY_SIZE};
@@ -473,8 +469,8 @@ return_status molch_start_send_conversation(
 		Molch::Conversation conversation{
 			{uchar_to_byte(message), message_length},
 			packet_buffer,
-			user->master_keys.public_identity_key,
-			*user->master_keys.private_identity_key,
+			user->master_keys.getIdentityKey(),
+			user->master_keys.getPrivateIdentityKey(),
 			receiver_public_identity,
 			prekeys};
 
@@ -575,8 +571,8 @@ cleanup:
 			Molch::Conversation conversation{
 				{uchar_to_byte(packet), packet_length},
 				message_buffer,
-				user->master_keys.public_identity_key,
-				*user->master_keys.private_identity_key,
+				user->master_keys.getIdentityKey(),
+				user->master_keys.getPrivateIdentityKey(),
 				user->prekeys};
 
 			//copy the conversation id
