@@ -32,8 +32,8 @@ namespace Molch {
 	User& User::move(User&& node) {
 		this->public_signing_key = node.public_signing_key;
 		this->master_keys = std::move(node.master_keys);
-		this->prekeys = std::move(node.prekeys);
-		this->conversations = std::move(node.conversations);
+		this->prekey_store = std::move(node.prekey_store);
+		this->conversation_store = std::move(node.conversation_store);
 
 		return *this;
 	}
@@ -94,9 +94,9 @@ namespace Molch {
 				uchar_to_byte(user.public_signing_key->key.data),
 				user.public_signing_key->key.len});
 
-		this->conversations = ConversationStore{{user.conversations, user.n_conversations}};
+		this->conversation_store = ConversationStore{{user.conversations, user.n_conversations}};
 
-		this->prekeys = PrekeyStore{
+		this->prekey_store = PrekeyStore{
 			{user.prekeys, user.n_prekeys},
 			{user.deprecated_prekeys, user.n_deprecated_prekeys}};
 	}
@@ -107,11 +107,24 @@ namespace Molch {
 		stream << "\nMaster Keys:\n";
 		this->master_keys.print(stream);
 		stream << "\nPrekeys:\n";
-		this->prekeys.print(stream);
+		this->prekey_store.print(stream);
 		stream << "\nConversations:\n";
-		this->conversations.print(stream);
+		this->conversation_store.print(stream);
 
 		return stream;
+	}
+
+	const PublicSigningKey& User::id() const {
+		return this->public_signing_key;
+	}
+	const MasterKeys& User::masterKeys() const {
+		return this->master_keys;
+	}
+	PrekeyStore& User::prekeys() {
+		return this->prekey_store;
+	}
+	ConversationStore& User::conversations() {
+		return this->conversation_store;
 	}
 
 	UserStore::UserStore(const span<ProtobufCUser*> users) {
@@ -162,7 +175,7 @@ namespace Molch {
 		Conversation* conversation{nullptr};
 		auto containing_user{std::find_if(std::begin(this->users), std::end(this->users),
 				[&conversation_id, &conversation](User& user) {
-					conversation = user.conversations.find(conversation_id);
+					conversation = user.conversation_store.find(conversation_id);
 					return conversation != nullptr;
 				})};
 		if (conversation != nullptr) {
@@ -234,14 +247,14 @@ namespace Molch {
 			user->private_identity_key);
 
 		//export the conversation store
-		auto exported_conversations{this->conversations.exportProtobuf(pool)};
+		auto exported_conversations{this->conversation_store.exportProtobuf(pool)};
 		user->conversations = exported_conversations.data();
 		user->n_conversations = exported_conversations.size();
 
 		//export the prekeys
 		span<ProtobufCPrekey*> exported_prekeys;
 		span<ProtobufCPrekey*> exported_deprecated_prekeys;
-		this->prekeys.exportProtobuf(
+		this->prekey_store.exportProtobuf(
 			pool,
 			exported_prekeys,
 			exported_deprecated_prekeys);

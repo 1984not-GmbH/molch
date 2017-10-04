@@ -109,8 +109,8 @@ int main(void) {
 		store.add(Molch::User(&alice_public_signing_key));
 		{
 			auto alice_user{store.find(alice_public_signing_key)};
-			MasterKeys::Unlocker unlocker{alice_user->master_keys};
-			alice_user->master_keys.print(std::cout) << std::endl;
+			MasterKeys::Unlocker unlocker{alice_user->masterKeys()};
+			alice_user->masterKeys().print(std::cout) << std::endl;
 		}
 		printf("Successfully created Alice to the user store.\n");
 
@@ -178,7 +178,7 @@ int main(void) {
 			}
 			printf("Node found.\n");
 
-			if (bob_node->public_signing_key != bob_public_signing_key) {
+			if (bob_node->id() != bob_public_signing_key) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Bob's data from the user store doesn't match."};
 			}
 			printf("Data from the node matches.\n");
