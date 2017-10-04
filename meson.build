@@ -98,6 +98,7 @@ if valgrind.found()
 			timeout_multiplier: 10)
 endif
 
+subdir('include')
 subdir('lib')
 subdir('test')
 subdir('bindings')

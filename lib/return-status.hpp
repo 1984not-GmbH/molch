@@ -22,7 +22,7 @@
 #ifndef LIB_RETURN_STATUS_HPP
 #define LIB_RETURN_STATUS_HPP
 
-#include "return-status.h"
+#include "../include/molch/return-status.h"
 #include "gsl.hpp"
 
 namespace Molch {

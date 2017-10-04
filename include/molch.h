@@ -22,7 +22,7 @@
 #ifndef LIB_MOLCH_H
 #define LIB_MOLCH_H
 
-#include "return-status.h"
+#include "molch/return-status.h"
 
 /* although molch is C++, it exports a C interface */
 #ifdef __cplusplus

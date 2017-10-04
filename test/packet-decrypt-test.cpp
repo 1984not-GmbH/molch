@@ -27,7 +27,6 @@
 
 #include "../lib/packet.hpp"
 #include "../lib/constants.h"
-#include "../lib/molch.h"
 #include "../lib/molch-exception.hpp"
 #include "utils.hpp"
 #include "packet-test-lib.hpp"
