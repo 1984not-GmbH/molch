@@ -48,10 +48,10 @@ namespace Molch {
 			uint32_t& receive_message_number,
 			uint32_t& previous_receive_message_number);
 
-	public:
-		Key<CONVERSATION_ID_SIZE,KeyType::Key> id; //unique id of a conversation, generated randomly
-		std::unique_ptr<Ratchet> ratchet;
+		Key<CONVERSATION_ID_SIZE,KeyType::Key> id_storage; //unique id of a conversation, generated randomly
+		std::unique_ptr<Ratchet> ratchet_pointer;
 
+	public:
 		/*
 		 * Create a new conversation without sending or receiving anything.
 		 */
@@ -97,6 +97,9 @@ namespace Molch {
 
 		Conversation& operator=(Conversation&& conversation);
 		Conversation& operator=(const Conversation& conversation) = delete;
+
+		const Key<CONVERSATION_ID_SIZE,KeyType::Key>& id() const;
+		Ratchet& ratchet();
 
 		/*
 		 * Send a message using an existing conversation.

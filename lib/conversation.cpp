@@ -32,8 +32,8 @@
 
 namespace Molch {
 	Conversation& Conversation::move(Conversation&& conversation) {
-		this->id = conversation.id;
-		this->ratchet = std::move(conversation.ratchet);
+		this->id_storage = conversation.id_storage;
+		this->ratchet_pointer = std::move(conversation.ratchet_pointer);
 
 		return *this;
 	}
@@ -64,9 +64,9 @@ namespace Molch {
 				&& !their_public_ephemeral.empty);
 
 		//create random id
-		this->id.fillRandom();
+		this->id_storage.fillRandom();
 
-		this->ratchet = std::make_unique<Ratchet>(
+		this->ratchet_pointer = std::make_unique<Ratchet>(
 				our_private_identity,
 				our_public_identity,
 				their_public_identity,
@@ -216,7 +216,7 @@ namespace Molch {
 		PublicKey send_ephemeral_key;
 		uint32_t send_message_number;
 		uint32_t previous_send_message_number;
-		this->ratchet->send(
+		this->ratchet_pointer->send(
 				send_header_key,
 				send_message_number,
 				previous_send_message_number,
@@ -259,8 +259,8 @@ namespace Molch {
 			uint32_t& previous_receive_message_number) {
 		//create buffers
 
-		for (size_t index{0}; index < this->ratchet->skipped_header_and_message_keys.keys.size(); index++) {
-			auto& node = this->ratchet->skipped_header_and_message_keys.keys[index];
+		for (size_t index{0}; index < this->ratchet_pointer->skipped_header_and_message_keys.keys.size(); index++) {
+			auto& node = this->ratchet_pointer->skipped_header_and_message_keys.keys[index];
 			optional<Buffer> header;
 			optional<Buffer> message_optional;
 			uint32_t current_protocol_version;
@@ -280,7 +280,7 @@ namespace Molch {
 					nullptr);
 			if (header && message_optional) {
 				message = std::move(*message_optional);
-				this->ratchet->skipped_header_and_message_keys.keys.erase(std::begin(this->ratchet->skipped_header_and_message_keys.keys) + gsl::narrow_cast<ptrdiff_t>(index));
+				this->ratchet_pointer->skipped_header_and_message_keys.keys.erase(std::begin(this->ratchet_pointer->skipped_header_and_message_keys.keys) + gsl::narrow_cast<ptrdiff_t>(index));
 				index--;
 
 				PublicKey their_signed_public_ephemeral;
@@ -320,18 +320,18 @@ namespace Molch {
 
 			HeaderKey current_receive_header_key;
 			HeaderKey next_receive_header_key;
-			this->ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
+			this->ratchet_pointer->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 
 			//try to decrypt the packet header with the current receive header key
 			auto header{packet_decrypt_header(packet, current_receive_header_key)};
 			if (header) {
-				this->ratchet->setHeaderDecryptability(Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE);
+				this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE);
 			} else {
 				header = packet_decrypt_header(packet, next_receive_header_key);
 				if (header) {
-					this->ratchet->setHeaderDecryptability(Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE);
+					this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE);
 				} else {
-					this->ratchet->setHeaderDecryptability(Ratchet::HeaderDecryptability::UNDECRYPTABLE);
+					this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::UNDECRYPTABLE);
 					throw Exception{status_type::DECRYPT_ERROR, "Failed to decrypt the message."};
 				}
 			}
@@ -350,7 +350,7 @@ namespace Molch {
 			//now we have all the data we need to advance the ratchet
 			//so let's do that
 			MessageKey message_key;
-			this->ratchet->receive(
+			this->ratchet_pointer->receive(
 				message_key,
 				their_signed_public_ephemeral,
 				local_receive_message_number,
@@ -362,25 +362,25 @@ namespace Molch {
 			}
 			message = std::move(*message_optional);
 
-			this->ratchet->setLastMessageAuthenticity(true);
+			this->ratchet_pointer->setLastMessageAuthenticity(true);
 
 			receive_message_number = local_receive_message_number;
 			previous_receive_message_number = local_previous_receive_message_number;
 
 			return message;
 		} catch (const std::exception& exception) {
-			this->ratchet->setLastMessageAuthenticity(false);
+			this->ratchet_pointer->setLastMessageAuthenticity(false);
 			throw;
 		}
 	}
 
 	ProtobufCConversation* Conversation::exportProtobuf(ProtobufPool& pool) const {
 		//export the ratchet
-		auto exported_conversation{this->ratchet->exportProtobuf(pool)};
+		auto exported_conversation{this->ratchet_pointer->exportProtobuf(pool)};
 
 		//export the conversation id
 		auto id{pool.allocate<gsl::byte>(CONVERSATION_ID_SIZE)};
-		this->id.copyTo({id, CONVERSATION_ID_SIZE});
+		this->id_storage.copyTo({id, CONVERSATION_ID_SIZE});
 		exported_conversation->id.data = byte_to_uchar(id);
 		exported_conversation->id.len = CONVERSATION_ID_SIZE;
 
@@ -389,17 +389,29 @@ namespace Molch {
 
 	Conversation::Conversation(const ProtobufCConversation& conversation_protobuf) {
 		//copy the id
-		this->id.set({
+		this->id_storage.set({
 				uchar_to_byte(conversation_protobuf.id.data),
 				conversation_protobuf.id.len});
 
 		//import the ratchet
-		this->ratchet = std::make_unique<Ratchet>(conversation_protobuf);
+		this->ratchet_pointer = std::make_unique<Ratchet>(conversation_protobuf);
+	}
+
+	const Key<CONVERSATION_ID_SIZE,KeyType::Key>& Conversation::id() const {
+		return this->id_storage;
+	}
+
+	Ratchet& Conversation::ratchet() {
+		if (!this->ratchet_pointer) {
+			throw Exception{status_type::INCORRECT_DATA, "The ratchet doesn't point to anything."};
+		}
+
+		return *this->ratchet_pointer;
 	}
 
 	std::ostream& Conversation::print(std::ostream& stream) const {
 		stream << "Conversation-ID:\n";
-		this->id.printHex(stream) << "\n";
+		this->id_storage.printHex(stream) << "\n";
 
 		return stream;
 	}

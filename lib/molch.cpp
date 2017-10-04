@@ -475,7 +475,7 @@ return_status molch_start_send_conversation(
 			prekeys};
 
 		//copy the conversation id
-		conversation.id.copyTo({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
+		conversation.id().copyTo({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
 
 		user->conversations.add(std::move(conversation));
 
@@ -576,7 +576,7 @@ cleanup:
 				user->prekeys};
 
 			//copy the conversation id
-			conversation.id.copyTo({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
+			conversation.id().copyTo({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
 
 			//create the prekey list
 			auto prekey_list_buffer{create_prekey_list(receiver_public_master_key_key)};
@@ -667,7 +667,7 @@ cleanup:
 			if (conversation_backup != nullptr) {
 				*conversation_backup = nullptr;
 				if (conversation_backup_length != nullptr) {
-					auto status{molch_conversation_export(conversation_backup, conversation_backup_length, byte_to_uchar(conversation->id.data()), conversation->id.size())};
+					auto status{molch_conversation_export(conversation_backup, conversation_backup_length, byte_to_uchar(conversation->id().data()), conversation->id().size())};
 					on_error {
 						throw Exception{status};
 					}
@@ -744,7 +744,7 @@ cleanup:
 			if (conversation_backup != nullptr) {
 				*conversation_backup = nullptr;
 				if (conversation_backup_length != nullptr) {
-					auto status{molch_conversation_export(conversation_backup, conversation_backup_length, byte_to_uchar(conversation->id.data()), conversation->id.size())};
+					auto status{molch_conversation_export(conversation_backup, conversation_backup_length, byte_to_uchar(conversation->id().data()), conversation->id().size())};
 					on_error {
 						throw Exception{status};
 					}

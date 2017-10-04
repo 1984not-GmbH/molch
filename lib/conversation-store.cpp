@@ -32,11 +32,11 @@ namespace Molch {
 	}
 
 	void ConversationStore::add(Conversation&& conversation) {
-		const auto& id{conversation.id};
+		const auto& id{conversation.id()};
 		//search if a conversation with this id already exists
 		auto existing_conversation{std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
 				[&id](const Conversation& conversation) {
-					return conversation.id == id;
+					return conversation.id() == id;
 				})};
 		//if none exists, just add the conversation
 		if (existing_conversation == std::cend(this->conversations)) {
@@ -75,7 +75,7 @@ namespace Molch {
 	void ConversationStore::remove(const Key<CONVERSATION_ID_SIZE,KeyType::Key>& id) {
 		auto found_node{std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
 				[&id](const Conversation& conversation) {
-					if (conversation.id == id) {
+					if (conversation.id() == id) {
 						return true;
 					}
 
@@ -95,7 +95,7 @@ namespace Molch {
 	Conversation* ConversationStore::find(const Key<CONVERSATION_ID_SIZE,KeyType::Key>& id) {
 		auto node{std::find_if(std::begin(this->conversations), std::end(this->conversations),
 				[&id](const Conversation& conversation) {
-					if (conversation.id == id) {
+					if (conversation.id() == id) {
 						return true;
 					}
 
@@ -132,9 +132,9 @@ namespace Molch {
 		for (const auto& conversation : this->conversations) {
 			list.copyFromRaw(
 				CONVERSATION_ID_SIZE * index,
-				conversation.id.data(),
+				conversation.id().data(),
 				0,
-				conversation.id.size());
+				conversation.id().size());
 			index++;
 		}
 
