@@ -132,11 +132,32 @@ namespace Molch {
 	}
 
 	void HeaderAndMessageKeyStore::add(const HeaderKey& header_key, const MessageKey& message_key) {
-		this->key_storage.emplace_back(header_key, message_key);
+		HeaderAndMessageKey key_bundle{header_key, message_key};
+		this->add(key_bundle);
 	}
 
 	void HeaderAndMessageKeyStore::add(const HeaderAndMessageKey& key) {
-		this->key_storage.push_back(key);
+		//common shortpath
+		if (this->key_storage.empty() || (this->key_storage.back().expirationDate() <= key.expirationDate())) {
+			this->key_storage.push_back(key);
+			return;
+		}
+
+		//find the position to insert at
+		auto bound{std::upper_bound(
+				std::cbegin(this->key_storage),
+				std::cend(this->key_storage),
+				key,
+				//comparator
+				[](const HeaderAndMessageKey& a, const HeaderAndMessageKey& b) {
+					if (a.expirationDate() < b.expirationDate()) {
+						return true;
+					}
+
+					return false;
+				})};
+
+		this->key_storage.insert(bound, key);
 	}
 
 	void HeaderAndMessageKeyStore::remove(size_t index) {

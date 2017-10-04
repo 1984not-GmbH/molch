@@ -72,6 +72,7 @@ namespace Molch {
 	//header of the key store
 	class HeaderAndMessageKeyStore {
 	private:
+		//Vector of Header and message keys, sorted in ascending order by expiration date
 		std::vector<HeaderAndMessageKey,SodiumAllocator<HeaderAndMessageKey>> key_storage;
 
 	public:
