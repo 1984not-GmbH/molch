@@ -95,6 +95,17 @@ namespace Molch {
 		this->expiration_date = seconds{key_bundle.expiration_time};
 	}
 
+	const MessageKey& HeaderAndMessageKey::messageKey() const {
+		return this->message_key;
+	}
+
+	const HeaderKey& HeaderAndMessageKey::headerKey() const {
+		return this->header_key;
+	}
+	seconds HeaderAndMessageKey::expirationDate() const {
+		return this->expiration_date;
+	}
+
 	ProtobufCKeyBundle* HeaderAndMessageKey::exportProtobuf(ProtobufPool& pool) const {
 		auto key_bundle{pool.allocate<ProtobufCKeyBundle>(1)};
 		key_bundle__init(key_bundle);
@@ -121,23 +132,39 @@ namespace Molch {
 	}
 
 	void HeaderAndMessageKeyStore::add(const HeaderKey& header_key, const MessageKey& message_key) {
-		this->keys.emplace_back(header_key, message_key);
+		this->key_storage.emplace_back(header_key, message_key);
+	}
+
+	void HeaderAndMessageKeyStore::add(const HeaderAndMessageKey& key) {
+		this->key_storage.push_back(key);
+	}
+
+	void HeaderAndMessageKeyStore::remove(size_t index) {
+		this->key_storage.erase(std::begin(this->key_storage) + gsl::narrow<ptrdiff_t>(index));
+	}
+
+	void HeaderAndMessageKeyStore::clear() {
+		this->key_storage.clear();
+	}
+
+	const std::vector<HeaderAndMessageKey,SodiumAllocator<HeaderAndMessageKey>>& HeaderAndMessageKeyStore::keys() const {
+		return this->key_storage;
 	}
 
 	span<ProtobufCKeyBundle*> HeaderAndMessageKeyStore::exportProtobuf(ProtobufPool& pool) const {
-		if (this->keys.size() == 0) {
+		if (this->key_storage.size() == 0) {
 			return {nullptr};
 		}
 
 		//export all buffers
-		auto key_bundles{pool.allocate<ProtobufCKeyBundle*>(this->keys.size())};
+		auto key_bundles{pool.allocate<ProtobufCKeyBundle*>(this->key_storage.size())};
 		size_t index{0};
-		for (const auto& key : this->keys) {
+		for (const auto& key : this->key_storage) {
 			key_bundles[index] = key.exportProtobuf(pool);
 			index++;
 		}
 
-		return {key_bundles, this->keys.size()};
+		return {key_bundles, this->key_storage.size()};
 	}
 
 	HeaderAndMessageKeyStore::HeaderAndMessageKeyStore(const span<ProtobufCKeyBundle*> key_bundles) {
@@ -146,16 +173,16 @@ namespace Molch {
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Invalid KeyBundle."};
 			}
 
-			this->keys.emplace_back(*key_bundle);
+			this->key_storage.emplace_back(*key_bundle);
 		}
 	}
 
 	std::ostream& HeaderAndMessageKeyStore::print(std::ostream& stream) const {
 		stream << "KEYSTORE-START-----------------------------------------------------------------\n";
-		stream << "Length: " + std::to_string(this->keys.size()) + "\n\n";
+		stream << "Length: " + std::to_string(this->key_storage.size()) + "\n\n";
 
 		size_t index{0};
-		for (const auto& key_bundle : this->keys) {
+		for (const auto& key_bundle : this->key_storage) {
 			stream << "Entry " << index << '\n';
 			index++;
 			key_bundle.print(stream) << '\n';

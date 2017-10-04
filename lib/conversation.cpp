@@ -259,8 +259,8 @@ namespace Molch {
 			uint32_t& previous_receive_message_number) {
 		//create buffers
 
-		for (size_t index{0}; index < this->ratchet_pointer->skipped_header_and_message_keys.keys.size(); index++) {
-			auto& node = this->ratchet_pointer->skipped_header_and_message_keys.keys[index];
+		for (size_t index{0}; index < this->ratchet_pointer->skipped_header_and_message_keys.keys().size(); index++) {
+			auto& node = this->ratchet_pointer->skipped_header_and_message_keys.keys()[index];
 			optional<Buffer> header;
 			optional<Buffer> message_optional;
 			uint32_t current_protocol_version;
@@ -273,15 +273,14 @@ namespace Molch {
 					header,
 					message_optional,
 					packet,
-					node.header_key,
-					node.message_key,
+					node.headerKey(),
+					node.messageKey(),
 					nullptr,
 					nullptr,
 					nullptr);
 			if (header && message_optional) {
 				message = std::move(*message_optional);
-				this->ratchet_pointer->skipped_header_and_message_keys.keys.erase(std::begin(this->ratchet_pointer->skipped_header_and_message_keys.keys) + gsl::narrow_cast<ptrdiff_t>(index));
-				index--;
+				this->ratchet_pointer->skipped_header_and_message_keys.remove(index);
 
 				PublicKey their_signed_public_ephemeral;
 				header_extract(

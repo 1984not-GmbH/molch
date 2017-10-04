@@ -109,7 +109,7 @@ int main(void) {
 
 		//initialise message keystore
 		HeaderAndMessageKeyStore keystore;
-		assert(keystore.keys.size() == 0);
+		assert(keystore.keys().size() == 0);
 
 		//add keys to the keystore
 		for (size_t i{0}; i < 6; i++) {
@@ -134,7 +134,7 @@ int main(void) {
 
 			keystore.print(std::cout);
 
-			assert(keystore.keys.size() == (i + 1));
+			assert(keystore.keys().size() == (i + 1));
 		}
 
 		//Protobuf-C export
@@ -148,7 +148,7 @@ int main(void) {
 		puts("]\n\n");
 
 		printf("Import from Protobuf-C\n");
-		keystore.keys.clear();
+		keystore.clear();
 		ProtobufPool pool;
 		protobuf_import(pool, keystore, protobuf_export_buffers);
 
@@ -169,28 +169,28 @@ int main(void) {
 
 		//remove key from the head
 		printf("Remove head!\n");
-		keystore.keys.erase(std::cbegin(keystore.keys));
-		assert(keystore.keys.size() == (protobuf_export_buffers.size() - 1));
+		keystore.remove(0);
+		assert(keystore.keys().size() == (protobuf_export_buffers.size() - 1));
 		keystore.print(std::cout);
 
 		//remove key from the tail
 		printf("Remove Tail:\n");
-		keystore.keys.pop_back();
-		assert(keystore.keys.size() == (protobuf_export_buffers.size() - 2));
+		keystore.remove(keystore.keys().size() - 1);
+		assert(keystore.keys().size() == (protobuf_export_buffers.size() - 2));
 		keystore.print(std::cout);
 
 		//remove from inside
 		printf("Remove from inside:\n");
-		keystore.keys.erase(std::cbegin(keystore.keys) + 1);
-		assert(keystore.keys.size() == (protobuf_export_buffers.size() - 3));
+		keystore.remove(1);
+		assert(keystore.keys().size() == (protobuf_export_buffers.size() - 3));
 		keystore.print(std::cout);
 
 		protobuf_empty_store();
 
 		//clear the keystore
 		printf("Clear the keystore:\n");
-		keystore.keys.clear();
-		assert(keystore.keys.size() == 0);
+		keystore.clear();
+		assert(keystore.keys().size() == 0);
 		keystore.print(std::cout);
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
