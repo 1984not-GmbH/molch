@@ -51,7 +51,7 @@ static std::vector<Buffer> protobuf_export(UserStore& store) {
 	return export_buffers;
 }
 
-UserStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> buffers) {
+static UserStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> buffers) {
 	//allocate the user array output array
 	std::unique_ptr<ProtobufCUser*[]> user_array;
 	if (!buffers.empty()) {
@@ -73,7 +73,7 @@ UserStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> buffers)
 	return UserStore({user_array.get(), buffers.size()});
 }
 
-void protobuf_empty_store(void) {
+static void protobuf_empty_store(void) {
 	printf("Testing im-/export of empty user store.\n");
 	UserStore store;
 

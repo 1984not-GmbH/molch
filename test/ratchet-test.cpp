@@ -33,7 +33,7 @@
 
 using namespace Molch;
 
-Buffer protobuf_export(Ratchet& ratchet) {
+static Buffer protobuf_export(Ratchet& ratchet) {
 	ProtobufPool pool;
 	auto conversation{ratchet.exportProtobuf(pool)};
 
@@ -47,7 +47,7 @@ Buffer protobuf_export(Ratchet& ratchet) {
 	return export_buffer;
 }
 
-std::unique_ptr<Ratchet> protobuf_import(ProtobufPool& pool, const Buffer& export_buffer) {
+static std::unique_ptr<Ratchet> protobuf_import(ProtobufPool& pool, const Buffer& export_buffer) {
 	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 	//unpack the buffer
 	auto conversation{conversation__unpack(

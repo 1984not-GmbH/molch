@@ -20,6 +20,7 @@
  */
 
 #include "protobuf.hpp"
+#include "gsl.hpp"
 
 namespace Molch {
 	void EncryptedBackupDeleter::operator ()(ProtobufCEncryptedBackup* backup) {
@@ -32,6 +33,15 @@ namespace Molch {
 
 	void PacketDeleter::operator ()(ProtobufCPacket *packet) {
 		packet__free_unpacked(packet, &protobuf_c_allocator);
+	}
+
+	void *protobuf_c_new(void *allocator_data, size_t size) {
+		(void)allocator_data;
+		return reinterpret_cast<void*>(new gsl::byte[size]);
+	}
+	void protobuf_c_delete(void *allocator_data, void *pointer) {
+		(void)allocator_data;
+		delete[] reinterpret_cast<gsl::byte*>(pointer);
 	}
 
 	ProtobufCAllocator protobuf_c_allocator = {

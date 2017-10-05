@@ -45,6 +45,10 @@ common_flags = [
 	'-fno-sanitize-recover=all',
 ]
 
+c_flags = [
+	'-Wmissing-prototypes',
+]
+
 cpp_flags = [
 	'-Wnoexcept',
 	'-Wstrict-null-sentinel',
@@ -76,6 +80,12 @@ foreach common_flag : common_flags
 	endif
 	if cpp_compiler.has_argument(common_flag)
 		add_project_arguments(common_flag, language: 'cpp')
+	endif
+endforeach
+
+foreach flag : c_flags
+	if c_compiler.has_argument(flag)
+		add_project_arguments(flag, language: 'c')
 	endif
 endforeach
 

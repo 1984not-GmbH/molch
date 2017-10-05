@@ -80,7 +80,7 @@ static void protobuf_import(
 	keystore = HeaderAndMessageKeyStore{{key_bundles_array.get(), exported_buffers.size()}};
 }
 
-void protobuf_empty_store(void) {
+static void protobuf_empty_store(void) {
 	printf("Testing im-/export of empty header and message keystore.\n");
 
 	HeaderAndMessageKeyStore store;

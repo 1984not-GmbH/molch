@@ -84,13 +84,4 @@ namespace Molch {
 			reinterpret_cast<void*>(this)
 		};
 	}
-
-	void *protobuf_c_new(void *allocator_data, size_t size) {
-		(void)allocator_data;
-		return reinterpret_cast<void*>(new gsl::byte[size]);
-	}
-	void protobuf_c_delete(void *allocator_data, void *pointer) {
-		(void)allocator_data;
-		delete[] reinterpret_cast<gsl::byte*>(pointer);
-	}
 }

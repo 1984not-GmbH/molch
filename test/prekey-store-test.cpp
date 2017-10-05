@@ -109,7 +109,7 @@ static void protobuf_import(
 			{deprecated_keypairs_array.get(), deprecated_keypair_buffers.size()}));
 }
 
-void protobuf_no_deprecated_keys(void) {
+static void protobuf_no_deprecated_keys(void) {
 	printf("Testing im-/export of prekey store without deprecated keys.\n");
 	PrekeyStore store;
 
