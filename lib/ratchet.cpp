@@ -253,9 +253,7 @@ namespace Molch {
 	 * to actually decrypt late messages.
 	 */
 	void Ratchet::commitSkippedHeaderAndMessageKeys() {
-		for (const auto& key_bundle : this->staged_header_and_message_keys.keys()) {
-			this->skipped_header_and_message_keys.add(key_bundle);
-		}
+		this->skipped_header_and_message_keys.add(this->staged_header_and_message_keys);
 		this->staged_header_and_message_keys.clear();
 	}
 

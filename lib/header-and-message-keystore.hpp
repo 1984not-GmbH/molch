@@ -84,6 +84,7 @@ namespace Molch {
 		HeaderAndMessageKeyStore(const span<ProtobufCKeyBundle*> key_bundles);
 
 		const HeaderAndMessageKey& operator[](size_t index) const;
+		void add(const HeaderAndMessageKeyStore& keystore);
 		void add(const HeaderKey& header_key, const MessageKey& message_key);
 		void add(const HeaderAndMessageKey& key);
 		void remove(size_t index);

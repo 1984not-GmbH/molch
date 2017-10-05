@@ -131,6 +131,12 @@ namespace Molch {
 		return stream;
 	}
 
+	void HeaderAndMessageKeyStore::add(const HeaderAndMessageKeyStore& keystore) {
+		for (const auto key_bundle : keystore.keys()) {
+			this->add(key_bundle);
+		}
+	}
+
 	void HeaderAndMessageKeyStore::add(const HeaderKey& header_key, const MessageKey& message_key) {
 		HeaderAndMessageKey key_bundle{header_key, message_key};
 		this->add(key_bundle);
