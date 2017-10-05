@@ -199,6 +199,8 @@ namespace Molch {
 		this->header_decryptable = header_decryptable;
 	}
 
+	constexpr size_t maximum_skipped_messages{500};
+
 	/*
 	 * This corresponds to "stage_skipped_header_and_message_keys" from the
 	 * axolotl protocol description.
@@ -217,6 +219,10 @@ namespace Molch {
 		//when chain key is <none>, do nothing
 		if (chain_key.isNone()) {
 			return;
+		}
+
+		if (future_message_number > (current_message_number + maximum_skipped_messages)) {
+			throw Exception{status_type::RECEIVE_ERROR, "Too many messagges in this message chain have been skipped."};
 		}
 
 		//set current_chain_key to chain key to initialize it for the calculation that's
