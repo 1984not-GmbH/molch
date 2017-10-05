@@ -95,7 +95,7 @@ if valgrind.found()
 				'--leak-check=full',
 				'--error-exitcode=10'
 			],
-			timeout_multiplier: 10)
+			timeout_multiplier: 100)
 endif
 
 subdir('include')
