@@ -43,6 +43,7 @@ common_flags = [
 	'-Wlogical-op',
 	'-Wno-type-limits',
 	'-fno-sanitize-recover=all',
+	'-Wunreachable-code',
 ]
 
 c_flags = [
