@@ -47,11 +47,11 @@ namespace Molch {
 		Prekey& copy(const Prekey& node);
 		Prekey& move(Prekey&& node);
 
-	public:
 		PublicKey public_key;
 		PrivateKey private_key;
 		seconds expiration_date{0};
 
+	public:
 		Prekey() = default;
 		Prekey(const PublicKey& public_key, const PrivateKey& private_key, seconds expiration_date);
 		/* copy constructor */
@@ -65,6 +65,11 @@ namespace Molch {
 		/* move assignment */
 		Prekey& operator=(Prekey&& node);
 
+		seconds expirationDate() const;
+		const PublicKey& publicKey() const;
+		const PrivateKey& privateKey() const;
+
+
 		ProtobufCPrekey* exportProtobuf(ProtobufPool& pool) const;
 
 		std::ostream& print(std::ostream& stream) const;
@@ -72,6 +77,9 @@ namespace Molch {
 
 	class PrekeyStore {
 	private:
+		seconds oldest_expiration_date{0};
+		seconds oldest_deprecated_expiration_date{0};
+
 		void init();
 		void generateKeys();
 
@@ -83,12 +91,10 @@ namespace Molch {
 		 */
 		void deprecate(const size_t index);
 
-	public:
-		seconds oldest_expiration_date{0};
-		seconds oldest_deprecated_expiration_date{0};
-		std::unique_ptr<std::array<Prekey,PREKEY_AMOUNT>,SodiumDeleter<std::array<Prekey,PREKEY_AMOUNT>>> prekeys;
-		std::vector<Prekey,SodiumAllocator<Prekey>> deprecated_prekeys;
+		std::unique_ptr<std::array<Prekey,PREKEY_AMOUNT>,SodiumDeleter<std::array<Prekey,PREKEY_AMOUNT>>> prekeys_storage;
+		std::vector<Prekey,SodiumAllocator<Prekey>> deprecated_prekeys_storage;
 
+	public:
 		/*
 		 * Initialise a new keystore. Generates all the keys.
 		 */
@@ -135,7 +141,16 @@ namespace Molch {
 				span<ProtobufCPrekey*>& keypairs,
 				span<ProtobufCPrekey*>& deprecated_keypairs) const;
 
+		const std::array<Prekey,PREKEY_AMOUNT>& prekeys() const;
+		const std::vector<Prekey,SodiumAllocator<Prekey>>& deprecatedPrekeys() const;
+		const seconds& oldestExpirationDate() const;
+		const seconds& oldestDeprecatedExpirationDate() const;
+
 		std::ostream& print(std::ostream& stream) const;
+
+		//DON'T USE, THIS IS ONLY FOR TESTING!
+		void timeshiftForTestingOnly(size_t index, seconds timeshift);
+		void timeshiftDeprecatedForTestingOnly(size_t index, seconds timeshift);
 	};
 }
 #endif

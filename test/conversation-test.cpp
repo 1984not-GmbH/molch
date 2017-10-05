@@ -111,7 +111,7 @@ int main(void) noexcept {
 				charlie_private_ephemeral,
 				charlie_public_ephemeral,
 				dora_public_ephemeral)};
-		if (!charlie_conversation || charlie_conversation->id.empty) {
+		if (!charlie_conversation || charlie_conversation->id().empty) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Charlie's conversation has an incorrect ID length."};
 		}
 
@@ -123,7 +123,7 @@ int main(void) noexcept {
 				dora_private_ephemeral,
 				dora_public_ephemeral,
 				charlie_public_ephemeral)};
-		if (!dora_conversation || dora_conversation->id.empty) {
+		if (!dora_conversation || dora_conversation->id().empty) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Dora's conversation has an incorrect ID length."};
 		}
 

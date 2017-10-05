@@ -109,6 +109,16 @@ namespace Molch {
 		return prekey;
 	}
 
+	seconds Prekey::expirationDate() const {
+		return this->expiration_date;
+	}
+	const PublicKey& Prekey::publicKey() const {
+		return this->public_key;
+	}
+	const PrivateKey& Prekey::privateKey() const {
+		return this->private_key;
+	}
+
 	void Prekey::generate() {
 		crypto_box_keypair(
 				this->public_key,
@@ -129,12 +139,12 @@ namespace Molch {
 	}
 
 	void PrekeyStore::init() {
-		this->prekeys = std::unique_ptr<std::array<Prekey,PREKEY_AMOUNT>,SodiumDeleter<std::array<Prekey,PREKEY_AMOUNT>>>(sodium_malloc<std::array<Prekey,PREKEY_AMOUNT>>(1));
-		new (this->prekeys.get()) std::array<Prekey,PREKEY_AMOUNT>;
+		this->prekeys_storage = std::unique_ptr<std::array<Prekey,PREKEY_AMOUNT>,SodiumDeleter<std::array<Prekey,PREKEY_AMOUNT>>>(sodium_malloc<std::array<Prekey,PREKEY_AMOUNT>>(1));
+		new (this->prekeys_storage.get()) std::array<Prekey,PREKEY_AMOUNT>;
 	}
 
 	void PrekeyStore::generateKeys() {
-		for (auto& key : *this->prekeys) {
+		for (auto& key : *this->prekeys_storage) {
 			key.generate();
 		}
 		this->updateExpirationDate();
@@ -157,7 +167,7 @@ namespace Molch {
 			if (keypair == nullptr) {
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey missing."};
 			}
-			new (&(*this->prekeys)[index]) Prekey(*keypair);
+			new (&(*this->prekeys_storage)[index]) Prekey(*keypair);
 			++index;
 		}
 
@@ -165,7 +175,7 @@ namespace Molch {
 			if (keypair == nullptr) {
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Deprecated prekey missing."};
 			}
-			this->deprecated_prekeys.emplace_back(*keypair);
+			this->deprecated_prekeys_storage.emplace_back(*keypair);
 		}
 
 		this->updateExpirationDate();
@@ -173,7 +183,7 @@ namespace Molch {
 	}
 
 	static bool compare_expiration_dates(const Prekey& a, const Prekey& b) {
-		if (a.expiration_date < b.expiration_date) {
+		if (a.expirationDate() < b.expirationDate()) {
 			return true;
 		}
 
@@ -181,24 +191,24 @@ namespace Molch {
 	}
 
 	void PrekeyStore::updateExpirationDate() {
-		const auto& oldest{std::min_element(std::cbegin(*this->prekeys), std::cend(*this->prekeys), compare_expiration_dates)};
+		const auto& oldest{std::min_element(std::cbegin(*this->prekeys_storage), std::cend(*this->prekeys_storage), compare_expiration_dates)};
 		this->oldest_expiration_date = oldest->expiration_date;
 	}
 
 	void PrekeyStore::updateDeprecatedExpirationDate() {
-		if (this->deprecated_prekeys.empty()) {
+		if (this->deprecated_prekeys_storage.empty()) {
 			this->oldest_deprecated_expiration_date = 0s;
 			return;
 		}
 
-		const auto& oldest = std::min_element(std::cbegin(this->deprecated_prekeys), std::cend(this->deprecated_prekeys), compare_expiration_dates);
+		const auto& oldest = std::min_element(std::cbegin(this->deprecated_prekeys_storage), std::cend(this->deprecated_prekeys_storage), compare_expiration_dates);
 		this->oldest_deprecated_expiration_date = oldest->expiration_date;
 	}
 
 	void PrekeyStore::deprecate(const size_t index) {
-		auto& at_index{(*this->prekeys)[index]};
+		auto& at_index{(*this->prekeys_storage)[index]};
 		at_index.expiration_date = now() + deprecated_prekey_expiration_time;
-		this->deprecated_prekeys.push_back(at_index);
+		this->deprecated_prekeys_storage.push_back(at_index);
 
 		this->updateExpirationDate();
 		this->updateDeprecatedExpirationDate();
@@ -215,20 +225,20 @@ namespace Molch {
 			return public_key == node.public_key;
 		}};
 
-		auto found_prekey{std::find_if(std::cbegin(*this->prekeys), std::cend(*this->prekeys), key_comparer)};
-		if (found_prekey != this->prekeys->end()) {
+		auto found_prekey{std::find_if(std::cbegin(*this->prekeys_storage), std::cend(*this->prekeys_storage), key_comparer)};
+		if (found_prekey != this->prekeys_storage->end()) {
 			//copy the private key
 			private_key = found_prekey->private_key;
 
 			//and deprecate key
-			auto index{gsl::narrow_cast<size_t>(found_prekey - std::begin(*this->prekeys))};
+			auto index{gsl::narrow_cast<size_t>(found_prekey - std::begin(*this->prekeys_storage))};
 			this->deprecate(index);
 
 			return;
 		}
 
-		auto found_deprecated_prekey{std::find_if(std::cbegin(this->deprecated_prekeys), std::cend(this->deprecated_prekeys), key_comparer)};
-		if (found_deprecated_prekey == this->deprecated_prekeys.end()) {
+		auto found_deprecated_prekey{std::find_if(std::cbegin(this->deprecated_prekeys_storage), std::cend(this->deprecated_prekeys_storage), key_comparer)};
+		if (found_deprecated_prekey == this->deprecated_prekeys_storage.end()) {
 			private_key.empty = true;
 			throw Exception{status_type::NOT_FOUND, "No matching prekey found."};
 		}
@@ -240,7 +250,7 @@ namespace Molch {
 		Expects(list.size() == PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
 		size_t index{0};
-		for (const auto& key_bundle : *this->prekeys) {
+		for (const auto& key_bundle : *this->prekeys_storage) {
 			auto key_span{key_bundle.public_key};
 			std::copy(std::cbegin(key_span), std::cend(key_span), std::begin(list) + gsl::narrow_cast<ptrdiff_t>(PUBLIC_KEY_SIZE * index));
 			index++;
@@ -254,7 +264,7 @@ namespace Molch {
 		if ((current_time + prekey_expiration_time) < this->oldest_expiration_date) {
 			//TODO: Is this correct behavior?
 			//Set the expiration date of everything to the current time + PREKEY_EXPIRATION_TIME
-			for (auto& prekey : *this->prekeys) {
+			for (auto& prekey : *this->prekeys_storage) {
 				prekey.expiration_date = current_time + prekey_expiration_time;
 			}
 		}
@@ -262,7 +272,7 @@ namespace Molch {
 		//Is the deprecated expiration date too far into the future?
 		if ((current_time + deprecated_prekey_expiration_time) < this->oldest_deprecated_expiration_date) {
 			//Set the expiration date of everything to the current time + DEPRECATED_PREKEY_EXPIRATION_TIME
-			for (auto& prekey : this->deprecated_prekeys) {
+			for (auto& prekey : this->deprecated_prekeys_storage) {
 				prekey.expiration_date = current_time + deprecated_prekey_expiration_time;
 			}
 		}
@@ -270,9 +280,9 @@ namespace Molch {
 		//At least one outdated prekey
 		if (this->oldest_expiration_date < current_time) {
 			size_t index{0};
-			for (size_t index{0}; index < this->prekeys->size(); ++index) {
+			for (size_t index{0}; index < this->prekeys_storage->size(); ++index) {
 			}
-			for (const auto& prekey : *this->prekeys) {
+			for (const auto& prekey : *this->prekeys_storage) {
 				if (prekey.expiration_date < current_time) {
 					this->deprecate(index);
 				}
@@ -282,10 +292,10 @@ namespace Molch {
 
 		//At least one key to be removed
 		if (this->oldest_deprecated_expiration_date < current_time) {
-			for (size_t index{0}; index < this->deprecated_prekeys.size(); index++) {
-				auto& prekey = this->deprecated_prekeys[index];
+			for (size_t index{0}; index < this->deprecated_prekeys_storage.size(); index++) {
+				auto& prekey = this->deprecated_prekeys_storage[index];
 				if (prekey.expiration_date < current_time) {
-					this->deprecated_prekeys.erase(std::cbegin(this->deprecated_prekeys) + gsl::narrow_cast<ptrdiff_t>(index));
+					this->deprecated_prekeys_storage.erase(std::cbegin(this->deprecated_prekeys_storage) + gsl::narrow_cast<ptrdiff_t>(index));
 					index--;
 				}
 			}
@@ -316,26 +326,52 @@ namespace Molch {
 			span<ProtobufCPrekey*>& keypairs,
 			span<ProtobufCPrekey*>& deprecated_keypairs) const {
 		//export prekeys
-		export_keypairs(pool, *this->prekeys, keypairs);
+		export_keypairs(pool, *this->prekeys_storage, keypairs);
 
 		//export deprecated prekeys
-		export_keypairs(pool, this->deprecated_prekeys, deprecated_keypairs);
+		export_keypairs(pool, this->deprecated_prekeys_storage, deprecated_keypairs);
 	}
 
 	std::ostream& PrekeyStore::print(std::ostream& stream) const {
 
 		stream << "Prekeys: [\n";
-		for (const auto& prekey : *this->prekeys) {
+		for (const auto& prekey : *this->prekeys_storage) {
 			prekey.print(stream) <<  ",\n";
 		}
 		stream << "]\n";
 
 		stream << "Deprecated Prekeys: [\n";
-		for (const auto& prekey : this->deprecated_prekeys) {
+		for (const auto& prekey : this->deprecated_prekeys_storage) {
 			prekey.print(stream) << ",\n";
 		}
 		stream << "]\n";
 
 		return stream;
+	}
+
+	const std::array<Prekey,PREKEY_AMOUNT>& PrekeyStore::prekeys() const {
+		return *this->prekeys_storage.get();
+	}
+	const std::vector<Prekey,SodiumAllocator<Prekey>>& PrekeyStore::deprecatedPrekeys() const {
+		return this->deprecated_prekeys_storage;
+	}
+	const seconds& PrekeyStore::oldestExpirationDate() const {
+		return this->oldest_expiration_date;
+	}
+	const seconds& PrekeyStore::oldestDeprecatedExpirationDate() const {
+		return this->oldest_deprecated_expiration_date;
+	}
+
+	void PrekeyStore::timeshiftForTestingOnly(size_t index, seconds timeshift) {
+		if (!this->prekeys_storage) {
+			throw Exception{status_type::INCORRECT_DATA, "The prekey storage is null."};
+		}
+		(*this->prekeys_storage)[index].expiration_date += timeshift;
+		this->updateExpirationDate();
+	}
+
+	void PrekeyStore::timeshiftDeprecatedForTestingOnly(size_t index, seconds timeshift) {
+		this->deprecated_prekeys_storage[index].expiration_date += timeshift;
+		this->updateDeprecatedExpirationDate();
 	}
 }

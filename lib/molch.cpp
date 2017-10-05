@@ -92,21 +92,17 @@ static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_ke
 	}
 
 	//rotate the prekeys
-	user->prekeys.rotate();
-
-	//get the public identity key
-	PublicKey public_identity_key;
-	user->master_keys.getIdentityKey(public_identity_key);
+	user->prekeys().rotate();
 
 	//copy the public identity to the prekey list
 	MallocBuffer unsigned_prekey_list{
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t),
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t)};
-	unsigned_prekey_list.copyFromRaw(0, public_identity_key.data(), 0, PUBLIC_KEY_SIZE);
+	unsigned_prekey_list.copyFromRaw(0, user->masterKeys().getIdentityKey().data(), 0, PUBLIC_KEY_SIZE);
 
 	//get the prekeys
 	span<gsl::byte> prekeys{&unsigned_prekey_list[PUBLIC_KEY_SIZE], PREKEY_AMOUNT * PUBLIC_KEY_SIZE};
-	user->prekeys.list(prekeys);
+	user->prekeys().list(prekeys);
 
 	//add the expiration date
 	int64_t expiration_date{now().count() + seconds{3_months}.count()};
@@ -117,7 +113,7 @@ static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_ke
 	MallocBuffer prekey_list{
 			unsigned_prekey_list.size() + SIGNATURE_SIZE,
 			unsigned_prekey_list.size() + SIGNATURE_SIZE};
-	user->master_keys.sign(unsigned_prekey_list, prekey_list);
+	user->masterKeys().sign(unsigned_prekey_list, prekey_list);
 
 	return prekey_list;
 }
@@ -465,7 +461,7 @@ return_status molch_start_send_conversation(
 				receiver_public_master_key_key);
 
 		//unlock the master keys
-		MasterKeys::Unlocker unlocker{user->master_keys};
+		MasterKeys::Unlocker unlocker{user->masterKeys()};
 
 		//create the conversation and encrypt the message
 		span<const gsl::byte> prekeys{uchar_to_byte(prekey_list) + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t)};
@@ -473,15 +469,15 @@ return_status molch_start_send_conversation(
 		Molch::Conversation conversation{
 			{uchar_to_byte(message), message_length},
 			packet_buffer,
-			user->master_keys.public_identity_key,
-			*user->master_keys.private_identity_key,
+			user->masterKeys().getIdentityKey(),
+			user->masterKeys().getPrivateIdentityKey(),
 			receiver_public_identity,
 			prekeys};
 
 		//copy the conversation id
-		conversation.id.copyTo({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
+		conversation.id().copyTo({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
 
-		user->conversations.add(std::move(conversation));
+		user->conversations().add(std::move(conversation));
 
 		//copy the packet to a malloced buffer output
 		MallocBuffer malloced_packet{packet_buffer.size(), 0};
@@ -568,25 +564,25 @@ cleanup:
 			}
 
 			//unlock the master keys
-			MasterKeys::Unlocker unlocker{user->master_keys};
+			MasterKeys::Unlocker unlocker{user->masterKeys()};
 
 			//create the conversation
 			Buffer message_buffer;
 			Molch::Conversation conversation{
 				{uchar_to_byte(packet), packet_length},
 				message_buffer,
-				user->master_keys.public_identity_key,
-				*user->master_keys.private_identity_key,
-				user->prekeys};
+				user->masterKeys().getIdentityKey(),
+				user->masterKeys().getPrivateIdentityKey(),
+				user->prekeys()};
 
 			//copy the conversation id
-			conversation.id.copyTo({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
+			conversation.id().copyTo({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
 
 			//create the prekey list
 			auto prekey_list_buffer{create_prekey_list(receiver_public_master_key_key)};
 
 			//add the conversation to the conversation store
-			user->conversations.add(std::move(conversation));
+			user->conversations().add(std::move(conversation));
 
 			//copy the message
 			MallocBuffer malloced_message{message_buffer.size(), 0};
@@ -671,7 +667,7 @@ cleanup:
 			if (conversation_backup != nullptr) {
 				*conversation_backup = nullptr;
 				if (conversation_backup_length != nullptr) {
-					auto status{molch_conversation_export(conversation_backup, conversation_backup_length, byte_to_uchar(conversation->id.data()), conversation->id.size())};
+					auto status{molch_conversation_export(conversation_backup, conversation_backup_length, byte_to_uchar(conversation->id().data()), conversation->id().size())};
 					on_error {
 						throw Exception{status};
 					}
@@ -748,7 +744,7 @@ cleanup:
 			if (conversation_backup != nullptr) {
 				*conversation_backup = nullptr;
 				if (conversation_backup_length != nullptr) {
-					auto status{molch_conversation_export(conversation_backup, conversation_backup_length, byte_to_uchar(conversation->id.data()), conversation->id.size())};
+					auto status{molch_conversation_export(conversation_backup, conversation_backup_length, byte_to_uchar(conversation->id().data()), conversation->id().size())};
 					on_error {
 						throw Exception{status};
 					}
@@ -795,7 +791,7 @@ cleanup:
 				throw Exception{status_type::NOT_FOUND, "Couldn't find conversation."};
 			}
 
-			user->conversations.remove(conversation_id_key);
+			user->conversations().remove(conversation_id_key);
 
 			if (backup != nullptr) {
 				*backup = nullptr;
@@ -860,7 +856,7 @@ cleanup:
 				throw Exception{status_type::NOT_FOUND, "No user found for the given public identity."};
 			}
 
-			auto conversation_list_buffer{user->conversations.list()};
+			auto conversation_list_buffer{user->conversations().list()};
 			if (conversation_list_buffer.isNone()) {
 				// list is empty
 				*conversation_list = nullptr;
@@ -1135,7 +1131,7 @@ cleanup:
 				throw Exception{status_type::NOT_FOUND, "Containing store not found."};
 			}
 
-			containing_user->conversations.add(std::move(conversation));
+			containing_user->conversations().add(std::move(conversation));
 
 			//update the backup key
 			auto status{molch_update_backup_key(new_backup_key, new_backup_key_length)};

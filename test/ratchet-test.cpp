@@ -489,23 +489,23 @@ int main(void) {
 		printf("Alice Ratchet 2 receive message key 3:\n");
 		alice_receive_message_key3.printHex(std::cout) << std::endl;
 
-		assert(alice_state->staged_header_and_message_keys.keys.size() == 1);
+		assert(alice_state->staged_header_and_message_keys.keys().size() == 1);
 
 		//confirm validity of the message key
 		alice_state->setLastMessageAuthenticity(true);
 
-		assert(alice_state->staged_header_and_message_keys.keys.size() == 0);
-		assert(alice_state->skipped_header_and_message_keys.keys.size() == 1);
+		assert(alice_state->staged_header_and_message_keys.keys().size() == 0);
+		assert(alice_state->skipped_header_and_message_keys.keys().size() == 1);
 
 		//get the second receive message key from the message and header keystore
 		MessageKey alice_receive_message_key2;
-		alice_receive_message_key2 = alice_state->skipped_header_and_message_keys.keys.back().message_key;
+		alice_receive_message_key2 = alice_state->skipped_header_and_message_keys.keys().back().messageKey();
 		printf("Alice Ratchet 2 receive message key 2:\n");
 		alice_receive_message_key2.printHex(std::cout) << std::endl;
 
 		//get the second receive header key from the message and header keystore
 		HeaderKey alice_receive_header_key2;
-		alice_receive_header_key2 = alice_state->skipped_header_and_message_keys.keys.back().header_key;
+		alice_receive_header_key2 = alice_state->skipped_header_and_message_keys.keys().back().headerKey();
 		printf("Alice Ratchet 2 receive header key 2:\n");
 		alice_receive_header_key2.printHex(std::cout) << std::endl;
 

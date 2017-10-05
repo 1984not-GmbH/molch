@@ -43,11 +43,11 @@ namespace Molch {
 		HeaderAndMessageKey& copy(const HeaderAndMessageKey& node);
 		HeaderAndMessageKey& move(HeaderAndMessageKey&& node);
 
-	public:
 		MessageKey message_key;
 		HeaderKey header_key;
 		seconds expiration_date{0};
 
+	public:
 		HeaderAndMessageKey() = default;
 		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key);
 		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date);
@@ -60,6 +60,10 @@ namespace Molch {
 		HeaderAndMessageKey& operator=(const HeaderAndMessageKey& node);
 		HeaderAndMessageKey& operator=(HeaderAndMessageKey&& node);
 
+		const MessageKey& messageKey() const;
+		const HeaderKey& headerKey() const;
+		seconds expirationDate() const;
+
 		ProtobufCKeyBundle* exportProtobuf(ProtobufPool& pool) const;
 
 		std::ostream& print(std::ostream& stream) const;
@@ -67,9 +71,11 @@ namespace Molch {
 
 	//header of the key store
 	class HeaderAndMessageKeyStore {
-	public:
-		std::vector<HeaderAndMessageKey,SodiumAllocator<HeaderAndMessageKey>> keys;
+	private:
+		//Vector of Header and message keys, sorted in ascending order by expiration date
+		std::vector<HeaderAndMessageKey,SodiumAllocator<HeaderAndMessageKey>> key_storage;
 
+	public:
 		HeaderAndMessageKeyStore() = default;
 		//! Import a header_and_message_keystore form a Protobuf-C struct.
 		/*
@@ -77,7 +83,15 @@ namespace Molch {
 		 */
 		HeaderAndMessageKeyStore(const span<ProtobufCKeyBundle*> key_bundles);
 
+		const HeaderAndMessageKey& operator[](size_t index) const;
+		void add(const HeaderAndMessageKeyStore& keystore);
 		void add(const HeaderKey& header_key, const MessageKey& message_key);
+		void add(const HeaderAndMessageKey& key);
+		void remove(size_t index);
+		void clear();
+
+		const std::vector<HeaderAndMessageKey,SodiumAllocator<HeaderAndMessageKey>>& keys() const;
+
 		//! Export a header_and_message_keystore as Protobuf-C struct.
 		span<ProtobufCKeyBundle*> exportProtobuf(ProtobufPool& pool) const;
 

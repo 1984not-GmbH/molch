@@ -253,10 +253,8 @@ namespace Molch {
 	 * to actually decrypt late messages.
 	 */
 	void Ratchet::commitSkippedHeaderAndMessageKeys() {
-		for (auto& key_bundle : this->staged_header_and_message_keys.keys) {
-			this->skipped_header_and_message_keys.keys.push_back(key_bundle);
-		}
-		this->staged_header_and_message_keys.keys.clear();
+		this->skipped_header_and_message_keys.add(this->staged_header_and_message_keys);
+		this->staged_header_and_message_keys.clear();
 	}
 
 	/*
@@ -366,7 +364,7 @@ namespace Molch {
 		this->header_decryptable = HeaderDecryptability::NOT_TRIED;
 
 		if (!valid) { //message couldn't be decrypted
-			this->staged_header_and_message_keys.keys.clear();
+			this->staged_header_and_message_keys.clear();
 			return;
 		}
 
@@ -374,7 +372,7 @@ namespace Molch {
 			if (this->ratchet_flag || (header_decryptable != HeaderDecryptability::NEXT_DECRYPTABLE)) {
 				//if ratchet_flag or not Dec(NHKr, header)
 				//clear purported message and header keys
-				this->staged_header_and_message_keys.keys.clear();
+				this->staged_header_and_message_keys.clear();
 				return;
 			}
 
