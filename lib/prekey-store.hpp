@@ -101,11 +101,8 @@ namespace Molch {
 		PrekeyStore();
 
 		/*! Import a prekey store from a protobuf-c struct.
-		 * \param keypairs An array of prekeys pairs.
-		 * \param keypais_length The length of the array of prekey pairs.
+		 * \param keypairs An array of prekey pairs.
 		 * \param deprecated_keypairs An array of deprecated prekey pairs.
-		 * \param deprecated_keypairs_length The length of the array of deprecated prekey pairs.
-		 * \returns The status.
 		 */
 		PrekeyStore(
 				const span<ProtobufCPrekey*> keypairs,
@@ -131,10 +128,9 @@ namespace Molch {
 		void rotate();
 
 		/*! Serialise a prekey store as protobuf-c struct.
+		 * \param pool A memory pool to allocate from.
 		 * \param keypairs An array of keypairs, allocated by the function.
-		 * \param keypairs_length The length of the array of keypairs.
 		 * \param deprecated_keypairs An array of deprecated keypairs, allocated by the function.
-		 * \param deprecated_keypairs_length The length of the array of deprecated keypairs.
 		 */
 		void exportProtobuf(
 				ProtobufPool& pool,

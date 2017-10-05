@@ -44,6 +44,7 @@ common_flags = [
 	'-Wno-type-limits',
 	'-fno-sanitize-recover=all',
 	'-Wunreachable-code',
+	'-Wdocumentation',
 ]
 
 c_flags = [

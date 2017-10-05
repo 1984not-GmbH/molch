@@ -42,7 +42,7 @@
  *   The message to encrypt.
  * \param public_identity_key
  *   Optional. Public identity key of the sender. For prekey messages only.
- * \param public_epheneral_key
+ * \param public_ephemeral_key
  *   Optional. Public ephemeral key of the sender. For prekey messages only.
  * \param public_prekey
  *   Optional. Prekey of the receiver. For prekey messages only.
@@ -58,7 +58,7 @@ void create_and_print_message(
 		const Molch::Buffer& message,
 		//optional inputs (prekey messages only)
 		Molch::PublicKey * const public_identity_key,
-		Molch::PublicKey * const public_epehemeral_key,
+		Molch::PublicKey * const public_ephemeral_key,
 		Molch::PublicKey * const public_prekey);
 
 #endif
