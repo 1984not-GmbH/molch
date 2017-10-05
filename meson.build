@@ -42,7 +42,7 @@ common_flags = [
 	'-Wredundant-decls',
 	'-Wlogical-op',
 	'-Wno-type-limits',
-	'-fno-sanitize-recover=all'
+	'-fno-sanitize-recover=all',
 ]
 
 cpp_flags = [
@@ -58,6 +58,7 @@ cpp_flags = [
 	'-Wc++1z-compat',
 	'-Wconditionally-supported',
 	'-Wzero-as-null-pointer-constant',
+	'-Wrange-loop-analysis'
 ]
 
 if ['debugoptimized', 'release'].contains(get_option('buildtype'))
