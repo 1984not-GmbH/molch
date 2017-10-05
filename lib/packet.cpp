@@ -326,7 +326,7 @@ namespace Molch {
 					{uchar_to_byte(packet_struct->encrypted_axolotl_header.data), packet_struct->encrypted_axolotl_header.len},
 					{uchar_to_byte(packet_struct->packet_header->header_nonce.data), packet_struct->packet_header->header_nonce.len},
 					axolotl_header_key);
-		} catch (const Exception& exception) {
+		} catch (const Exception&) {
 			return optional<Buffer>();
 		}
 
@@ -357,7 +357,7 @@ namespace Molch {
 					{uchar_to_byte(packet_struct->encrypted_message.data), packet_struct->encrypted_message.len},
 					{uchar_to_byte(packet_struct->packet_header->message_nonce.data), packet_struct->packet_header->message_nonce.len},
 					message_key);
-		} catch (const Exception& exception) {
+		} catch (const Exception&) {
 			return optional<Buffer>();
 		}
 

@@ -44,7 +44,7 @@ namespace Molch {
 		try {
 			error = std::unique_ptr<error_message>(new error_message);
 			copied_message = std::unique_ptr<char>(new char[message.length() + sizeof("")]);
-		} catch (const std::bad_alloc& exception) {
+		} catch (const std::bad_alloc&) {
 			return nullptr;
 		}
 

@@ -58,7 +58,8 @@ cpp_flags = [
 	'-Wc++1z-compat',
 	'-Wconditionally-supported',
 	'-Wzero-as-null-pointer-constant',
-	'-Wrange-loop-analysis'
+	'-Wrange-loop-analysis',
+	'-Wunused-exception-parameter',
 ]
 
 if ['debugoptimized', 'release'].contains(get_option('buildtype'))

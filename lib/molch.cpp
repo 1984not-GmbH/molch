@@ -358,7 +358,7 @@ molch_message_type molch_get_message_type(
 			nullptr,
 			nullptr,
 			nullptr);
-	} catch (const std::exception& exception) {
+	} catch (const std::exception&) {
 		return molch_message_type::INVALID;
 	}
 

@@ -89,7 +89,7 @@ int main(void) {
 		auto decryption_failed{false};
 		try {
 			decrypted_message = packet_decrypt_message(packet, message_key);
-		} catch (const Molch::Exception& exception) {
+		} catch (const Molch::Exception&) {
 			decryption_failed = true;
 		}
 		if (!decryption_failed && decrypted_message) { //message was decrypted although it shouldn't

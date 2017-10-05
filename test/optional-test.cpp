@@ -70,7 +70,7 @@ int main() {
 		bool has_thrown{false};
 		try {
 			(void)empty.value();
-		} catch (const bad_optional_access& exception) {
+		} catch (const bad_optional_access&) {
 			has_thrown = true;
 		}
 		if (!has_thrown) {
@@ -91,7 +91,7 @@ int main() {
 		has_thrown = false;
 		try {
 			(void)const_empty.value();
-		} catch (const bad_optional_access& exception) {
+		} catch (const bad_optional_access&) {
 			has_thrown = true;
 		}
 		if (!has_thrown) {

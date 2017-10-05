@@ -367,7 +367,7 @@ namespace Molch {
 			previous_receive_message_number = local_previous_receive_message_number;
 
 			return message;
-		} catch (const std::exception& exception) {
+		} catch (const std::exception&) {
 			this->ratchet_pointer->setLastMessageAuthenticity(false);
 			throw;
 		}

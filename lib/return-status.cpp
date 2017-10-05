@@ -60,7 +60,7 @@ namespace Molch {
 		try {
 			error = std::make_unique<error_message>();
 			copied_message = std::unique_ptr<char>(new char[message_length]);
-		} catch (const std::bad_alloc& exception) {
+		} catch (const std::bad_alloc&) {
 			return status_type::ALLOCATION_FAILED;
 		}
 
@@ -238,7 +238,7 @@ namespace Molch {
 			std::copy(output_string.data(), output_string.data() + output_string.size() + sizeof(""), output_ptr.get());
 
 			return {output_ptr.release(), output_string.size() + sizeof("")};
-		} catch (const std::exception& exception) {
+		} catch (const std::exception&) {
 			return {nullptr};
 		}
 	}

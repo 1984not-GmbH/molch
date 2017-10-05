@@ -187,7 +187,7 @@ int main(void) {
 		auto found{true};
 		try {
 			store->getPrekey(public_prekey, private_prekey1);
-		} catch (const Molch::Exception& exception) {
+		} catch (const Molch::Exception&) {
 			found = false;
 		}
 		if (found) {
