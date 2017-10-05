@@ -69,6 +69,9 @@ namespace Molch {
 		std::ostream& print(std::ostream& stream) const;
 	};
 
+	static constexpr size_t header_and_message_store_maximum_keys{1000};
+	static constexpr seconds header_and_message_store_maximum_age{1_months};
+
 	//header of the key store
 	class HeaderAndMessageKeyStore {
 	private:
@@ -89,6 +92,8 @@ namespace Molch {
 		void add(const HeaderAndMessageKey& key);
 		void remove(size_t index);
 		void clear();
+
+		void removeOutdatedAndTrimSize();
 
 		const std::vector<HeaderAndMessageKey,SodiumAllocator<HeaderAndMessageKey>>& keys() const;
 

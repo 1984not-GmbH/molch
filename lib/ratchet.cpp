@@ -255,6 +255,7 @@ namespace Molch {
 	void Ratchet::commitSkippedHeaderAndMessageKeys() {
 		this->skipped_header_and_message_keys.add(this->staged_header_and_message_keys);
 		this->staged_header_and_message_keys.clear();
+		this->skipped_header_and_message_keys.removeOutdatedAndTrimSize();
 	}
 
 	/*
