@@ -10,3 +10,14 @@
 	...
 	obj:*/vgpreload_memcheck*.so
 }
+{
+	ignore_ld
+	Memcheck:Cond
+	obj:*/ld-*.so
+}
+{
+	ignore_readline
+	Memcheck:Addr4
+	obj:*/libreadline.so*
+}
+
