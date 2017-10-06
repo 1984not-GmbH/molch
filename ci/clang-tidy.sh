@@ -24,4 +24,4 @@ else
     cd "$output_dir" || exit 1
 fi
 
-clang-tidy -p='.' '../lib/'*.cpp '../test/'*.cpp -checks='-clang-diagnostic-*' -warnings-as-errors='*' -header-filter='(.*lib/.*\\.h(pp)?|.*test/.*\\.h(pp)?)'
+clang-tidy -p='.' '../lib/'*.cpp '../test/'*.cpp -checks='-clang-diagnostic-*,modernize-*,-modernize-raw-string-literal,-modernize-pass-by-value' -warnings-as-errors='*' -header-filter='(.*lib/.*\\.h(pp)?|.*test/.*\\.h(pp)?)'

@@ -27,7 +27,7 @@
 
 using namespace Molch;
 
-int main(void) noexcept {
+int main() noexcept {
 	try {
 		seconds ten_seconds{10};
 

@@ -31,7 +31,7 @@
 
 using namespace Molch;
 
-int main(void) noexcept {
+int main() noexcept {
 	try {
 		Molch::sodium_init();
 

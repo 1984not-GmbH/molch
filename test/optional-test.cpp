@@ -47,10 +47,7 @@ class Test {
 			destructed = true;
 		}
 
-		Test& operator=(const Test& test) {
-			this->number = test.number;
-			return *this;
-		}
+		Test& operator=(const Test& test) = default;
 
 		Test& operator=(Test&& test) {
 			this->number = test.number;

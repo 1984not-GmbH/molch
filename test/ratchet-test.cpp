@@ -62,7 +62,7 @@ static std::unique_ptr<Ratchet> protobuf_import(ProtobufPool& pool, const Buffer
 	return std::make_unique<Ratchet>(*conversation);
 }
 
-int main(void) {
+int main() {
 	try {
 		Molch::sodium_init();
 

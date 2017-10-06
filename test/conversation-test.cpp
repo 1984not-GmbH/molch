@@ -63,7 +63,7 @@ static std::unique_ptr<Molch::Conversation> protobuf_import(ProtobufPool& pool, 
 	return std::make_unique<Molch::Conversation>(*conversation_protobuf);
 }
 
-int main(void) noexcept {
+int main() noexcept {
 	try {
 		Molch::sodium_init();
 

@@ -38,12 +38,12 @@ namespace Molch {
 
 	error_message* Error::toErrorMessage() {
 		std::unique_ptr<error_message> error;
-		std::unique_ptr<char> copied_message;
+		std::unique_ptr<char[]> copied_message;
 
 		//allocate memory
 		try {
-			error = std::unique_ptr<error_message>(new error_message);
-			copied_message = std::unique_ptr<char>(new char[message.length() + sizeof("")]);
+			error = std::make_unique<error_message>();
+			copied_message = std::make_unique<char[]>(message.length() + sizeof(""));
 		} catch (const std::bad_alloc&) {
 			return nullptr;
 		}
@@ -73,7 +73,7 @@ namespace Molch {
 	Exception::Exception(return_status& status) {
 		auto *error{status.error};
 		while (error != nullptr) {
-			this->error_stack.push_back(Error(error->status, error->message));
+			this->error_stack.emplace_back(error->status, error->message);
 			error = error->next;
 		}
 

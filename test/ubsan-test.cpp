@@ -22,7 +22,7 @@
 #include <iostream>
 #include <limits>
 
-int main(void) noexcept {
+int main() noexcept {
 	int test{std::numeric_limits<int>::max()};
 	test++;
 	std::cout << "Test has overflowed: " << test << std::endl;

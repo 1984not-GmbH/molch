@@ -102,7 +102,7 @@ static void test_add_conversation(ConversationStore& store) {
 	store.add(std::move(conversation));
 }
 
-static void protobuf_empty_store(void) {
+static void protobuf_empty_store() {
 	printf("Testing im-/export of empty conversation store.\n");
 
 	ProtobufCConversation **exported = nullptr;
@@ -123,7 +123,7 @@ static void protobuf_empty_store(void) {
 	printf("Successful.\n");
 }
 
-int main(void) {
+int main() {
 	try {
 		Molch::sodium_init();
 

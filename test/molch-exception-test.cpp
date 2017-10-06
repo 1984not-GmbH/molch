@@ -22,18 +22,18 @@
 #include <iostream>
 #include <cstdlib>
 #include <sstream>
-#include <string.h>
+#include <cstring>
 
 #include "../lib/molch-exception.hpp"
 #include "utils.hpp"
 
 using namespace Molch;
 
-static void second_level(void) {
+static void second_level() {
 	throw Molch::Exception{status_type::GENERIC_ERROR, "Error on the second level!"};
 }
 
-static void first_level(void) {
+static void first_level() {
 	try {
 		second_level();
 	} catch(Molch::Exception& exception) {
@@ -42,13 +42,13 @@ static void first_level(void) {
 	}
 }
 
-int main(void) noexcept {
+int main() noexcept {
 	// check the error stack
 	try {
 		first_level();
 	} catch(const std::exception& exception) {
 		//make sure that it is Molch::Exception
-		const Exception& molch_exception = dynamic_cast<const Exception&>(exception);
+		const auto& molch_exception = dynamic_cast<const Exception&>(exception);
 		auto status{static_cast<const Molch::Exception&>(exception).toReturnStatus()};
 		if (strcmp(status.error->message, "Error on the first level!") != 0) {
 			fprintf(stderr, "ERROR: First error message is incorrect!\n");

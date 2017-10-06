@@ -53,13 +53,13 @@ namespace Molch {
 		}
 
 		std::unique_ptr<error_message> error;
-		std::unique_ptr<char> copied_message;
+		std::unique_ptr<char[]> copied_message;
 		size_t message_length{strlen(message) + sizeof("")};
 
 		// allocate the memory
 		try {
 			error = std::make_unique<error_message>();
-			copied_message = std::unique_ptr<char>(new char[message_length]);
+			copied_message = std::make_unique<char[]>(message_length);
 		} catch (const std::bad_alloc&) {
 			return status_type::ALLOCATION_FAILED;
 		}

@@ -28,7 +28,7 @@
 
 using namespace Molch;
 
-int main(void) {
+int main() {
 	try {
 		if (endianness_is_little_endian()) {
 			printf("Current byte order: Little Endian!\n");
