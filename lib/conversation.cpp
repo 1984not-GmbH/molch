@@ -43,7 +43,8 @@ namespace Molch {
 	}
 
 	Conversation& Conversation::operator=(Conversation&& conversation) {
-		return this->move(std::move(conversation));
+		this->move(std::move(conversation));
+		return *this;
 	}
 
 	/*

@@ -49,7 +49,7 @@ int main() noexcept {
 	} catch(const std::exception& exception) {
 		//make sure that it is Molch::Exception
 		const auto& molch_exception = dynamic_cast<const Exception&>(exception);
-		auto status{static_cast<const Molch::Exception&>(exception).toReturnStatus()};
+		auto status{dynamic_cast<const Molch::Exception&>(exception).toReturnStatus()};
 		if (strcmp(status.error->message, "Error on the first level!") != 0) {
 			fprintf(stderr, "ERROR: First error message is incorrect!\n");
 			return EXIT_FAILURE;
@@ -61,7 +61,7 @@ int main() noexcept {
 		return_status_destroy_errors(status);
 
 		std::stringstream stream;
-		static_cast<const Molch::Exception&>(exception).print(stream);
+		dynamic_cast<const Molch::Exception&>(exception).print(stream);
 		auto error_message{stream.str()};
 		if (error_message != "ERROR\nerror stack trace:\n0: GENERIC_ERROR, Error on the first level!\n1: GENERIC_ERROR, Error on the second level!\n") {
 			std::cerr << error_message << std::endl;

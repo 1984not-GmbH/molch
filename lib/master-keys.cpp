@@ -48,7 +48,8 @@ namespace Molch {
 	}
 
 	MasterKeys& MasterKeys::operator=(MasterKeys&& master_keys) {
-		return this->move(std::move(master_keys));
+		this->move(std::move(master_keys));
+		return *this;
 	}
 
 	MasterKeys::MasterKeys() {

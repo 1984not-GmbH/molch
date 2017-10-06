@@ -54,6 +54,11 @@ public:
 		Molch::sodium_mprotect_readonly(global_backup_key.get());
 	}
 
+	GlobalBackupKeyUnlocker(const GlobalBackupKeyUnlocker&) = default;
+	GlobalBackupKeyUnlocker(GlobalBackupKeyUnlocker&&) = default;
+	GlobalBackupKeyUnlocker& operator=(const GlobalBackupKeyUnlocker&) = default;
+	GlobalBackupKeyUnlocker& operator=(GlobalBackupKeyUnlocker&&) = default;
+
 	~GlobalBackupKeyUnlocker() {
 		try {
 			Molch::sodium_mprotect_noaccess(global_backup_key.get());
@@ -71,6 +76,11 @@ public:
 		}
 		Molch::sodium_mprotect_readwrite(global_backup_key.get());
 	}
+
+	GlobalBackupKeyWriteUnlocker(const GlobalBackupKeyWriteUnlocker&) = default;
+	GlobalBackupKeyWriteUnlocker(GlobalBackupKeyWriteUnlocker&&) = default;
+	GlobalBackupKeyWriteUnlocker& operator=(const GlobalBackupKeyWriteUnlocker&) = default;
+	GlobalBackupKeyWriteUnlocker& operator=(GlobalBackupKeyWriteUnlocker&&) = default;
 
 	~GlobalBackupKeyWriteUnlocker() {
 		try {

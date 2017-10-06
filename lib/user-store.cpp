@@ -43,7 +43,8 @@ namespace Molch {
 	}
 
 	User& User::operator=(User&& node) {
-		return this->move(std::move(node));
+		this->move(std::move(node));
+		return *this;
 	}
 
 	void User::exportPublicKeys(

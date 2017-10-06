@@ -64,11 +64,13 @@ namespace Molch {
 	}
 
 	HeaderAndMessageKey& HeaderAndMessageKey::operator=(const HeaderAndMessageKey& node) {
-		return this->copy(node);
+		this->copy(node);
+		return *this;
 	}
 
 	HeaderAndMessageKey& HeaderAndMessageKey::operator=(HeaderAndMessageKey&& node) {
-		return this->move(std::move(node));
+		this->move(std::move(node));
+		return *this;
 	}
 
 	HeaderAndMessageKey::HeaderAndMessageKey(const ProtobufCKeyBundle& key_bundle) {

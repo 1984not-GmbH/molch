@@ -61,11 +61,13 @@ namespace Molch {
 	}
 
 	Prekey& Prekey::operator=(const Prekey& node) {
-		return this->copy(node);
+		this->copy(node);
+		return *this;
 	}
 
 	Prekey& Prekey::operator=(Prekey&& node) {
-		return this->move(std::move(node));
+		this->move(std::move(node));
+		return *this;
 	}
 
 	Prekey::Prekey(const ProtobufCPrekey& keypair) {
