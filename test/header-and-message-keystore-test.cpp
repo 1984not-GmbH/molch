@@ -99,6 +99,60 @@ void protobuf_empty_store(void) {
 	printf("Successful.\n");
 }
 
+static void testSortingAndDeprecation() {
+	HeaderAndMessageKeyStore sorted_store;
+
+	std::cout << "Check if Keystore is sorted properly" << std::endl;
+	for (seconds index{10}; index > 0s; --index) {
+		HeaderKey header_key;
+		header_key.fillRandom();
+		MessageKey message_key;
+		message_key.fillRandom();
+		sorted_store.add(HeaderAndMessageKey{header_key, message_key, index});
+	}
+
+	std::cout << "Sorted store:" << std::endl;
+	sorted_store.print(std::cout) << std::endl;
+
+	auto last_date{0s};
+	for (const auto& key_bundle : sorted_store.keys()) {
+		if (last_date >= key_bundle.expirationDate()) {
+			throw Exception{status_type::INCORRECT_DATA, "The header and message keystore ist not sorted."};
+		}
+
+		last_date = key_bundle.expirationDate();
+	}
+
+	std::cout << "Test removing outdated keys:" << std::endl;
+	sorted_store.add(HeaderAndMessageKey(HeaderKey{}, MessageKey{}));
+	sorted_store.removeOutdatedAndTrimSize();
+	sorted_store.print(std::cout) << std::endl;
+	if (sorted_store.keys().size() != 1) {
+		throw Exception{status_type::INCORRECT_DATA, "The old keys weren't removed properly."};
+	}
+	std::cout << "Outdated keys successfully removed" << std::endl;
+}
+
+static void testSizeLimit() {
+	HeaderAndMessageKeyStore too_big;
+
+	std::cout << "Try to make too big header and message keystore:" << std::endl;
+	for (size_t i{0}; i < (2 * header_and_message_store_maximum_keys); ++i) {
+		too_big.add(HeaderAndMessageKey{HeaderKey{}, MessageKey{}});
+	}
+
+	if (too_big.keys().size() != header_and_message_store_maximum_keys) {
+		throw Exception{status_type::INCORRECT_DATA, "The key store is too big (1)."};
+	}
+
+	too_big.add(too_big);
+	if (too_big.keys().size() != header_and_message_store_maximum_keys) {
+		throw Exception{status_type::INCORRECT_DATA, "The key store is too big (2)."};
+	}
+
+	std::cout << "Successfully prevented too big keystore" << std::endl;
+}
+
 int main(void) {
 	try {
 		Molch::sodium_init();
@@ -192,6 +246,9 @@ int main(void) {
 		keystore.clear();
 		assert(keystore.keys().size() == 0);
 		keystore.print(std::cout);
+
+		testSortingAndDeprecation();
+		testSizeLimit();
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

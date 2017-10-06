@@ -131,10 +131,26 @@ namespace Molch {
 		return stream;
 	}
 
-	void HeaderAndMessageKeyStore::add(const HeaderAndMessageKeyStore& keystore) {
-		for (const auto key_bundle : keystore.keys()) {
-			this->add(key_bundle);
+	static bool compareHeaderAndMessageKeyExpirationDates(const HeaderAndMessageKey& a, const HeaderAndMessageKey& b) {
+		if (a.expirationDate() < b.expirationDate()) {
+			return true;
 		}
+
+		return false;
+	}
+
+	void HeaderAndMessageKeyStore::add(const HeaderAndMessageKeyStore& keystore) {
+		decltype(this->key_storage) merged;
+		merged.resize(this->key_storage.size() + keystore.key_storage.size());
+
+		std::merge(
+				std::cbegin(this->key_storage), std::cend(this->key_storage),
+				std::cbegin(keystore.key_storage), std::cend(keystore.key_storage),
+				std::begin(merged),
+				compareHeaderAndMessageKeyExpirationDates);
+
+		this->key_storage = std::move(merged);
+		this->removeOutdatedAndTrimSize();
 	}
 
 	void HeaderAndMessageKeyStore::add(const HeaderKey& header_key, const MessageKey& message_key) {
@@ -143,27 +159,29 @@ namespace Molch {
 	}
 
 	void HeaderAndMessageKeyStore::add(const HeaderAndMessageKey& key) {
-		//common shortpath
-		if (this->key_storage.empty() || (this->key_storage.back().expirationDate() <= key.expirationDate())) {
-			this->key_storage.push_back(key);
+		if (key.expirationDate() <= (now() - header_and_message_store_maximum_age)) {
+			//don't add outdated keys
 			return;
 		}
 
-		//find the position to insert at
-		auto bound{std::upper_bound(
-				std::cbegin(this->key_storage),
-				std::cend(this->key_storage),
-				key,
-				//comparator
-				[](const HeaderAndMessageKey& a, const HeaderAndMessageKey& b) {
-					if (a.expirationDate() < b.expirationDate()) {
-						return true;
-					}
+		if (this->key_storage.size() == header_and_message_store_maximum_keys) {
+			//remove the oldest key
+			this->key_storage.erase(std::begin(this->key_storage));
+		}
 
-					return false;
-				})};
+		//common shortpath
+		if (this->key_storage.empty() || (this->key_storage.back().expirationDate() <= key.expirationDate())) {
+			this->key_storage.push_back(key);
+		} else {
+			//find the position to insert at
+			auto bound{std::upper_bound(
+					std::cbegin(this->key_storage),
+					std::cend(this->key_storage),
+					key,
+					compareHeaderAndMessageKeyExpirationDates)};
 
-		this->key_storage.insert(bound, key);
+			this->key_storage.insert(bound, key);
+		}
 	}
 
 	void HeaderAndMessageKeyStore::remove(size_t index) {
@@ -172,6 +190,28 @@ namespace Molch {
 
 	void HeaderAndMessageKeyStore::clear() {
 		this->key_storage.clear();
+	}
+
+	void HeaderAndMessageKeyStore::removeOutdatedAndTrimSize() {
+		//find the first non-outdated element
+		auto outdated{now() - header_and_message_store_maximum_age};
+		auto first_not_outdated{std::cbegin(this->key_storage)};
+		for (; (first_not_outdated != std::cend(this->key_storage))
+				&& ((first_not_outdated->expirationDate() <= outdated));
+				++first_not_outdated) {}
+
+		//if there are too many keys, get rid of them as well
+		auto keys_left{gsl::narrow<size_t>(std::cend(this->key_storage) - first_not_outdated)};
+		if (keys_left > header_and_message_store_maximum_keys) {
+			first_not_outdated += gsl::narrow_cast<ptrdiff_t>(keys_left - header_and_message_store_maximum_keys);
+		}
+
+		if (first_not_outdated == std::cbegin(this->key_storage)) {
+			//nothing outdated
+			return;
+		}
+
+		this->key_storage.erase(std::cbegin(this->key_storage), first_not_outdated);
 	}
 
 	const std::vector<HeaderAndMessageKey,SodiumAllocator<HeaderAndMessageKey>>& HeaderAndMessageKeyStore::keys() const {
