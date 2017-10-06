@@ -6,7 +6,9 @@
 #define LIB_GSL_HPP
 
 #define GSL_THROW_ON_CONTRACT_VIOLATION //throw exception when contract is violated (instead of std::terminate)!
-#include <gsl/gsl>
+#include <gsl/gsl_assert>
+#include <gsl/gsl_byte>
+#include <gsl/span>
 
 namespace Molch {
 	inline unsigned char* byte_to_uchar(gsl::byte* byte) {
