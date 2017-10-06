@@ -1,6 +1,7 @@
 release/
 build/
 build-clang/
+clang-tidy/
 static-analysis/
 .idea/
 *.orig
