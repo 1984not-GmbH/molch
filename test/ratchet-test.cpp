@@ -494,7 +494,7 @@ int main() {
 		//confirm validity of the message key
 		alice_state->setLastMessageAuthenticity(true);
 
-		assert(alice_state->staged_header_and_message_keys.keys().size() == 0);
+		assert(alice_state->staged_header_and_message_keys.keys().empty());
 		assert(alice_state->skipped_header_and_message_keys.keys().size() == 1);
 
 		//get the second receive message key from the message and header keystore

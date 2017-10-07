@@ -185,11 +185,7 @@ namespace Molch {
 	}
 
 	static bool compare_expiration_dates(const Prekey& a, const Prekey& b) {
-		if (a.expirationDate() < b.expirationDate()) {
-			return true;
-		}
-
-		return false;
+		return a.expirationDate() < b.expirationDate();
 	}
 
 	void PrekeyStore::updateExpirationDate() {
@@ -307,7 +303,7 @@ namespace Molch {
 
 	template <class Container>
 	static void export_keypairs(ProtobufPool& pool, Container& container, span<ProtobufCPrekey*>& keypairs) {
-		if (container.size() == 0) {
+		if (container.empty()) {
 			keypairs = {nullptr};
 			return;
 		}
@@ -320,7 +316,6 @@ namespace Molch {
 			index++;
 		}
 		keypairs = {keypairs_array, container.size()};
-		return;
 	}
 
 	void PrekeyStore::exportProtobuf(
@@ -352,7 +347,7 @@ namespace Molch {
 	}
 
 	const std::array<Prekey,PREKEY_AMOUNT>& PrekeyStore::prekeys() const {
-		return *this->prekeys_storage.get();
+		return *this->prekeys_storage;
 	}
 	const std::vector<Prekey,SodiumAllocator<Prekey>>& PrekeyStore::deprecatedPrekeys() const {
 		return this->deprecated_prekeys_storage;

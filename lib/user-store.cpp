@@ -203,18 +203,14 @@ namespace Molch {
 		return list;
 	}
 
-	void UserStore::remove(const User* const node) {
-		if (node == nullptr) {
+	void UserStore::remove(const User* const user) {
+		if (user == nullptr) {
 			return;
 		}
 
 		auto found_node{std::find_if(std::cbegin(this->users), std::cend(this->users),
-				[node](const User& user) {
-					if (&user == node) {
-						return true;
-					}
-
-					return false;
+				[user](const User& node) {
+					return &node == user;
 				})};
 		if (found_node != std::cend(this->users)) {
 			this->users.erase(found_node);

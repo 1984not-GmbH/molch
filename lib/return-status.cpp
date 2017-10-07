@@ -198,7 +198,7 @@ namespace Molch {
 	 *
 	 * Don't forget to free with "free" after usage.
 	 */
-	span<char> return_status_print(const return_status& status_to_print) noexcept {
+	span<char> return_status_print(const return_status& status) noexcept {
 		try {
 			std::stringstream stream;
 			static const unsigned char success_string[]{"SUCCESS"};
@@ -206,14 +206,14 @@ namespace Molch {
 			static const unsigned char null_string[]{"(nullptr)"};
 
 			// now fill the output
-			if (status_to_print.status == status_type::SUCCESS) {
+			if (status.status == status_type::SUCCESS) {
 				stream << success_string;
 			} else {
 				stream << error_string;
 
 				// iterate over error stack
 				size_t i{0};
-				for (error_message *current_error = status_to_print.error;
+				for (error_message *current_error = status.error;
 						current_error != nullptr;
 						current_error = current_error->next, i++) {
 

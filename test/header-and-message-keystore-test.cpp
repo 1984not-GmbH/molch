@@ -163,7 +163,7 @@ int main() {
 
 		//initialise message keystore
 		HeaderAndMessageKeyStore keystore;
-		assert(keystore.keys().size() == 0);
+		assert(keystore.keys().empty());
 
 		//add keys to the keystore
 		for (size_t i{0}; i < 6; i++) {
@@ -244,7 +244,7 @@ int main() {
 		//clear the keystore
 		printf("Clear the keystore:\n");
 		keystore.clear();
-		assert(keystore.keys().size() == 0);
+		assert(keystore.keys().empty());
 		keystore.print(std::cout);
 
 		testSortingAndDeprecation();

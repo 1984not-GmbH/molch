@@ -56,11 +56,7 @@ namespace Molch {
 
 		auto found_node{std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
 				[&node](const Conversation& conversation) {
-					if (&conversation == node) {
-						return true;
-					}
-
-					return false;
+					return &conversation == node;
 				})};
 		if (found_node != std::cend(this->conversations)) {
 			this->conversations.erase(found_node);
@@ -75,11 +71,7 @@ namespace Molch {
 	void ConversationStore::remove(const Key<CONVERSATION_ID_SIZE,KeyType::Key>& id) {
 		auto found_node{std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
 				[&id](const Conversation& conversation) {
-					if (conversation.id() == id) {
-						return true;
-					}
-
-					return false;
+					return conversation.id() == id;
 				})};
 
 		if (found_node != std::cend(this->conversations)) {
@@ -95,11 +87,7 @@ namespace Molch {
 	Conversation* ConversationStore::find(const Key<CONVERSATION_ID_SIZE,KeyType::Key>& id) {
 		auto node{std::find_if(std::begin(this->conversations), std::end(this->conversations),
 				[&id](const Conversation& conversation) {
-					if (conversation.id() == id) {
-						return true;
-					}
-
-					return false;
+					return conversation.id() == id;
 				})};
 
 		if (node == std::end(this->conversations)) {

@@ -134,11 +134,7 @@ namespace Molch {
 	}
 
 	static bool compareHeaderAndMessageKeyExpirationDates(const HeaderAndMessageKey& a, const HeaderAndMessageKey& b) {
-		if (a.expirationDate() < b.expirationDate()) {
-			return true;
-		}
-
-		return false;
+		return a.expirationDate() < b.expirationDate();
 	}
 
 	void HeaderAndMessageKeyStore::add(const HeaderAndMessageKeyStore& keystore) {
@@ -221,7 +217,7 @@ namespace Molch {
 	}
 
 	span<ProtobufCKeyBundle*> HeaderAndMessageKeyStore::exportProtobuf(ProtobufPool& pool) const {
-		if (this->key_storage.size() == 0) {
+		if (this->key_storage.empty()) {
 			return {nullptr};
 		}
 
