@@ -40,7 +40,7 @@ namespace Molch {
 		ConversationStore(const span<ProtobufCConversation*> conversations);
 
 		ConversationStore(const ConversationStore& store) = delete;
-		ConversationStore(ConversationStore&& store) = default;
+		ConversationStore(ConversationStore&& store) noexcept = default;
 
 		ConversationStore& operator=(const ConversationStore& store) = delete;
 		ConversationStore& operator=(ConversationStore&& store) = default;

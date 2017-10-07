@@ -31,18 +31,18 @@
 #include "gsl.hpp"
 
 namespace Molch {
-	Conversation& Conversation::move(Conversation&& conversation) {
+	Conversation& Conversation::move(Conversation&& conversation) noexcept {
 		this->id_storage = conversation.id_storage;
 		this->ratchet_pointer = std::move(conversation.ratchet_pointer);
 
 		return *this;
 	}
 
-	Conversation::Conversation(Conversation&& conversation) {
+	Conversation::Conversation(Conversation&& conversation) noexcept {
 		this->move(std::move(conversation));
 	}
 
-	Conversation& Conversation::operator=(Conversation&& conversation) {
+	Conversation& Conversation::operator=(Conversation&& conversation) noexcept {
 		this->move(std::move(conversation));
 		return *this;
 	}

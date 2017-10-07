@@ -31,7 +31,7 @@
 #include "gsl.hpp"
 
 namespace Molch {
-	MasterKeys& MasterKeys::move(MasterKeys&& master_keys) {
+	MasterKeys& MasterKeys::move(MasterKeys&& master_keys) noexcept {
 		//move the private keys
 		this->private_keys = std::move(master_keys.private_keys);
 		this->private_identity_key = master_keys.private_identity_key;
@@ -43,11 +43,11 @@ namespace Molch {
 		return *this;
 	}
 
-	MasterKeys::MasterKeys(MasterKeys&& master_keys) {
+	MasterKeys::MasterKeys(MasterKeys&& master_keys) noexcept {
 		this->move(std::move(master_keys));
 	}
 
-	MasterKeys& MasterKeys::operator=(MasterKeys&& master_keys) {
+	MasterKeys& MasterKeys::operator=(MasterKeys&& master_keys) noexcept {
 		this->move(std::move(master_keys));
 		return *this;
 	}

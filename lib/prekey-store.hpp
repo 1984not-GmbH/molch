@@ -44,8 +44,8 @@ namespace Molch {
 		void fill(const PublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date);
 		void generate();
 
-		Prekey& copy(const Prekey& node);
-		Prekey& move(Prekey&& node);
+		Prekey& copy(const Prekey& node) noexcept;
+		Prekey& move(Prekey&& node) noexcept;
 
 		PublicKey public_key;
 		PrivateKey private_key;
@@ -57,13 +57,13 @@ namespace Molch {
 		/* copy constructor */
 		Prekey(const Prekey& node);
 		/* move constructor */
-		Prekey(Prekey&& node);
+		Prekey(Prekey&& node) noexcept;
 		Prekey(const ProtobufCPrekey& keypair);
 
 		/* copy assignment */
-		Prekey& operator=(const Prekey& node);
+		Prekey& operator=(const Prekey& node) noexcept;
 		/* move assignment */
-		Prekey& operator=(Prekey&& node);
+		Prekey& operator=(Prekey&& node) noexcept;
 
 		seconds expirationDate() const;
 		const PublicKey& publicKey() const;

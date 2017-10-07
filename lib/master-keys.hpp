@@ -69,7 +69,7 @@ namespace Molch {
 			~ReadWriteUnlocker();
 		};
 
-		MasterKeys& move(MasterKeys&& master_keys);
+		MasterKeys& move(MasterKeys&& master_keys) noexcept;
 
 	public:
 		/*
@@ -94,10 +94,10 @@ namespace Molch {
 			const ProtobufCKey& private_identity_key);
 
 		MasterKeys(const MasterKeys& master_keys) = delete;
-		MasterKeys(MasterKeys&& master_keys);
+		MasterKeys(MasterKeys&& master_keys) noexcept;
 
 		MasterKeys& operator=(const MasterKeys& master_keys) = delete;
-		MasterKeys& operator=(MasterKeys&& master_keys);
+		MasterKeys& operator=(MasterKeys&& master_keys) noexcept;
 
 		const PublicSigningKey& getSigningKey() const;
 		const PrivateSigningKey& getPrivateSigningKey() const;

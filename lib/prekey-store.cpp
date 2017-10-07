@@ -42,13 +42,13 @@ namespace Molch {
 		this->fill(public_key, private_key, expiration_date);
 	}
 
-	Prekey& Prekey::copy(const Prekey& node) {
+	Prekey& Prekey::copy(const Prekey& node) noexcept {
 		this->fill(node.public_key, node.private_key, node.expiration_date);
 
 		return *this;
 	}
 
-	Prekey& Prekey::move(Prekey&& node) {
+	Prekey& Prekey::move(Prekey&& node) noexcept {
 		return this->copy(node);
 	}
 
@@ -56,16 +56,16 @@ namespace Molch {
 		this->copy(node);
 	}
 
-	Prekey::Prekey(Prekey&& node) {
+	Prekey::Prekey(Prekey&& node) noexcept {
 		this->move(std::move(node));
 	}
 
-	Prekey& Prekey::operator=(const Prekey& node) {
+	Prekey& Prekey::operator=(const Prekey& node) noexcept {
 		this->copy(node);
 		return *this;
 	}
 
-	Prekey& Prekey::operator=(Prekey&& node) {
+	Prekey& Prekey::operator=(Prekey&& node) noexcept {
 		this->move(std::move(node));
 		return *this;
 	}

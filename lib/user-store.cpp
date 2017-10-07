@@ -29,7 +29,7 @@
 #include "destroyers.hpp"
 
 namespace Molch {
-	User& User::move(User&& node) {
+	User& User::move(User&& node) noexcept {
 		this->public_signing_key = node.public_signing_key;
 		this->master_keys = std::move(node.master_keys);
 		this->prekey_store = std::move(node.prekey_store);
@@ -38,11 +38,11 @@ namespace Molch {
 		return *this;
 	}
 
-	User::User(User&& node) {
+	User::User(User&& node) noexcept {
 		this->move(std::move(node));
 	}
 
-	User& User::operator=(User&& node) {
+	User& User::operator=(User&& node) noexcept {
 		this->move(std::move(node));
 		return *this;
 	}

@@ -1141,7 +1141,7 @@ cleanup:
 				throw Exception{status_type::NOT_FOUND, "Containing store not found."};
 			}
 
-			containing_user->conversations().add(std::move(conversation));
+			containing_user->conversations().add(conversation);
 
 			//update the backup key
 			auto status{molch_update_backup_key(new_backup_key, new_backup_key_length)};

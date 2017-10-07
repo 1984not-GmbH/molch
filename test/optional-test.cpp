@@ -37,7 +37,7 @@ class Test {
 		Test(const Test& test) {
 			this->number = test.number;
 		}
-		Test(Test&& test) {
+		Test(Test&& test) noexcept {
 			this->number = test.number;
 			test.number = 0;
 		}
@@ -49,7 +49,7 @@ class Test {
 
 		Test& operator=(const Test& test) = default;
 
-		Test& operator=(Test&& test) {
+		Test& operator=(Test&& test) noexcept {
 			this->number = test.number;
 			test.number = 0;
 			return *this;
