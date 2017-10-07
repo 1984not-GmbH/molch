@@ -3,6 +3,24 @@ basedir=$(dirname "$0")
 cd "$basedir/.." || exit 1
 source "ci/ninja.sh" || exit 1
 
+function clang_tidy_works {
+    if ! hash clang-tidy 2> /dev/null; then
+        return 1
+    fi
+
+    return 0
+}
+
+if [[ ! -z ${MOLCH_CI_DISABLE_CLANG_TIDY+x} ]]; then
+    echo "Clang Tidy is disabled!"
+    exit 0
+fi
+
+if ! clang_tidy_works; then
+    echo "Clang Tidy isn't available!"
+    exit 0
+fi
+
 export CC=clang
 export CXX=clang++
 
