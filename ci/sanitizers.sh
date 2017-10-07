@@ -1,6 +1,7 @@
 #!/bin/bash
 basedir=$(dirname "$0")
-source "$basedir/ninja.sh" || exit 1
+cd "$basedir/.." || exit 1
+source "ci/ninja.sh" || exit 1
 
 if [[ ! -z ${MOLCH_CI_DISABLE_SANITIZERS+x} ]]; then
     echo "Sanitizers are disabled!"
