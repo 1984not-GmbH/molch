@@ -29,25 +29,12 @@ output_dir=build
 [[ -e "$output_dir" ]] && rm -r "$output_dir"
 mkdir "$output_dir"
 cd "$output_dir" || exit 1
-if meson .. -Dlua_bindings="$lua_bindings"; then
-    # This has to be done with else because with '!' it won't work on Mac OS X
-    true
-else
-    exit $? #abort on failure
-fi
+meson .. -Dlua_bindings="$lua_bindings" || exit $?
 
-if ninja test; then
-    true
-else
-    exit $?
-fi
+meson test --print-errorlogs || exit $?
 
 if valgrind_works; then
-    if meson test --setup valgrind; then
-        true
-    else
-        exit $?
-    fi
+    meson test --setup valgrind --print-errorlogs || exit $?
 else
     echo "Valgrind doesn't work!"
     true

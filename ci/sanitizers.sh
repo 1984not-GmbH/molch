@@ -21,12 +21,7 @@ if ! gcc -fsanitize=address,undefined test.c -o sanitizers-test > /dev/null || !
 fi
 rm test.c sanitizers-test
 
-if meson .. -Db_sanitize=address,undefined; then
-    # This has to be done with else because with '!' it won't work on Mac OS X
-    true
-else
-    exit $? #abort on failure
-fi
+meson .. -Db_sanitize=address,undefined || exit $?
 export ASAN_OPTIONS="$ASAN_OPTIONS:detect_stack_use_after_return=1:check_initialization_order=1"
 export CTEST_OUTPUT_ON_FAILURE=1
-ninja test
+meson test --print-errorlogs

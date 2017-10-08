@@ -17,6 +17,6 @@ if [[ ! -e "$output_dir" ]]; then
     meson --buildtype release -Db_lto=true -Dlua_bindings="$lua_bindings" .. || exit 1
 fi
 
-ninja
-ninja test
+ninja || exit $?
+meson test --print-errorlogs || exit $?
 DESTDIR="$output_dir/installation" ninja install

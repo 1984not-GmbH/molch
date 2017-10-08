@@ -29,12 +29,7 @@ if [[ "$1" != "tidy-only" ]]; then
     [[ -e "$output_dir" ]] && rm -r "$output_dir"
     mkdir "$output_dir"
     cd "$output_dir" || exit 1
-    if meson .. --buildtype plain -Dlua_bindings=false; then
-        # This has to be done with else because with '!' it won't work on Mac OS X
-        true
-    else
-        exit $? #abort on failure
-    fi
+    meson .. --buildtype plain -Dlua_bindings=false || exit $?
 
     ninja
 
