@@ -237,8 +237,8 @@ namespace Molch {
 			uint32_t& current_protocol_version,
 			uint32_t& highest_supported_protocol_version,
 			molch_message_type& packet_type,
-			optional<Buffer>& axolotl_header,
-			optional<Buffer>& message,
+			std::optional<Buffer>& axolotl_header,
+			std::optional<Buffer>& message,
 			//inputs
 			const span<const gsl::byte> packet,
 			const HeaderKey& axolotl_header_key,
@@ -301,14 +301,14 @@ namespace Molch {
 		packet_type = to_molch_message_type(packet_struct->packet_header->packet_type);
 	}
 
-	optional<Buffer> packet_decrypt_header(
+	std::optional<Buffer> packet_decrypt_header(
 			const span<const gsl::byte> packet,
 			const HeaderKey& axolotl_header_key) {
 		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct;
 
 		//check input
 		if (axolotl_header_key.empty) {
-			return optional<Buffer>();
+			return std::optional<Buffer>();
 		}
 
 		packet_struct = packet_unpack(packet);
@@ -318,7 +318,7 @@ namespace Molch {
 		}
 
 		const size_t axolotl_header_length{packet_struct->encrypted_axolotl_header.len - crypto_secretbox_MACBYTES};
-		optional<Buffer> axolotl_header{in_place_t(), axolotl_header_length, axolotl_header_length};
+		std::optional<Buffer> axolotl_header{std::in_place_t(), axolotl_header_length, axolotl_header_length};
 
 		try {
 			crypto_secretbox_open_easy(
@@ -327,16 +327,16 @@ namespace Molch {
 					{uchar_to_byte(packet_struct->packet_header->header_nonce.data), packet_struct->packet_header->header_nonce.len},
 					axolotl_header_key);
 		} catch (const Exception&) {
-			return optional<Buffer>();
+			return std::optional<Buffer>();
 		}
 
 		return axolotl_header;
 	}
 
-	optional<Buffer> packet_decrypt_message(const span<const gsl::byte> packet, const MessageKey& message_key) {
+	std::optional<Buffer> packet_decrypt_message(const span<const gsl::byte> packet, const MessageKey& message_key) {
 		//check input
 		if (message_key.empty) {
-			return optional<Buffer>();
+			return std::optional<Buffer>();
 		}
 
 		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct{packet_unpack(packet)};
@@ -349,7 +349,7 @@ namespace Molch {
 		if (padded_message_length < padding_blocksize) {
 			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The padded message is too short."};
 		}
-		optional<Buffer> padded_message{in_place_t(), padded_message_length, padded_message_length};
+		std::optional<Buffer> padded_message{std::in_place_t(), padded_message_length, padded_message_length};
 
 		try {
 			crypto_secretbox_open_easy(
@@ -358,7 +358,7 @@ namespace Molch {
 					{uchar_to_byte(packet_struct->packet_header->message_nonce.data), packet_struct->packet_header->message_nonce.len},
 					message_key);
 		} catch (const Exception&) {
-			return optional<Buffer>();
+			return std::optional<Buffer>();
 		}
 
 		//undo the padding

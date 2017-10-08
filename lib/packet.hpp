@@ -23,11 +23,11 @@
 #define LIB_PACKET_H
 
 #include <memory>
+#include <optional>
 
 #include "buffer.hpp"
 #include "../include/molch.h"
 #include "key.hpp"
-#include "optional.hpp"
 #include "gsl.hpp"
 
 /*! \file
@@ -102,8 +102,8 @@ namespace Molch {
 			uint32_t& current_protocol_version,
 			uint32_t& highest_supported_protocol_version,
 			molch_message_type& packet_type,
-			optional<Buffer>& axolotl_header,
-			optional<Buffer>& message,
+			std::optional<Buffer>& axolotl_header,
+			std::optional<Buffer>& message,
 			//inputs
 			const span<const gsl::byte> packet,
 			const HeaderKey& axolotl_header_key,
@@ -154,7 +154,7 @@ namespace Molch {
 	 * \return
 	 *   A buffer for the decrypted axolotl header.
 	 */
-	optional<Buffer> packet_decrypt_header(
+	std::optional<Buffer> packet_decrypt_header(
 			const span<const gsl::byte> packet,
 			const HeaderKey& axolotl_header_key);
 
@@ -169,6 +169,6 @@ namespace Molch {
 	 * \return
 	 *   A buffer for the decrypted message.
 	 */
-	optional<Buffer> packet_decrypt_message(const span<const gsl::byte> packet, const MessageKey& message_key);
+	std::optional<Buffer> packet_decrypt_message(const span<const gsl::byte> packet, const MessageKey& message_key);
 }
 #endif
