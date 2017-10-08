@@ -42,7 +42,13 @@ common_flags = [
 	'-Wredundant-decls',
 	'-Wlogical-op',
 	'-Wno-type-limits',
-	'-fno-sanitize-recover=all'
+	'-fno-sanitize-recover=all',
+	'-Wunreachable-code',
+	'-Wdocumentation',
+]
+
+c_flags = [
+	'-Wmissing-prototypes',
 ]
 
 cpp_flags = [
@@ -58,6 +64,8 @@ cpp_flags = [
 	'-Wc++1z-compat',
 	'-Wconditionally-supported',
 	'-Wzero-as-null-pointer-constant',
+	'-Wrange-loop-analysis',
+	'-Wunused-exception-parameter',
 ]
 
 if ['debugoptimized', 'release'].contains(get_option('buildtype'))
@@ -74,6 +82,12 @@ foreach common_flag : common_flags
 	endif
 	if cpp_compiler.has_argument(common_flag)
 		add_project_arguments(common_flag, language: 'cpp')
+	endif
+endforeach
+
+foreach flag : c_flags
+	if c_compiler.has_argument(flag)
+		add_project_arguments(flag, language: 'c')
 	endif
 endforeach
 

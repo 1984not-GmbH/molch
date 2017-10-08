@@ -44,8 +44,8 @@ namespace Molch {
 		void fill(const PublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date);
 		void generate();
 
-		Prekey& copy(const Prekey& node);
-		Prekey& move(Prekey&& node);
+		Prekey& copy(const Prekey& node) noexcept;
+		Prekey& move(Prekey&& node) noexcept;
 
 		PublicKey public_key;
 		PrivateKey private_key;
@@ -57,13 +57,13 @@ namespace Molch {
 		/* copy constructor */
 		Prekey(const Prekey& node);
 		/* move constructor */
-		Prekey(Prekey&& node);
+		Prekey(Prekey&& node) noexcept;
 		Prekey(const ProtobufCPrekey& keypair);
 
 		/* copy assignment */
-		Prekey& operator=(const Prekey& node);
+		Prekey& operator=(const Prekey& node) noexcept;
 		/* move assignment */
-		Prekey& operator=(Prekey&& node);
+		Prekey& operator=(Prekey&& node) noexcept;
 
 		seconds expirationDate() const;
 		const PublicKey& publicKey() const;
@@ -101,11 +101,8 @@ namespace Molch {
 		PrekeyStore();
 
 		/*! Import a prekey store from a protobuf-c struct.
-		 * \param keypairs An array of prekeys pairs.
-		 * \param keypais_length The length of the array of prekey pairs.
+		 * \param keypairs An array of prekey pairs.
 		 * \param deprecated_keypairs An array of deprecated prekey pairs.
-		 * \param deprecated_keypairs_length The length of the array of deprecated prekey pairs.
-		 * \returns The status.
 		 */
 		PrekeyStore(
 				const span<ProtobufCPrekey*> keypairs,
@@ -131,10 +128,9 @@ namespace Molch {
 		void rotate();
 
 		/*! Serialise a prekey store as protobuf-c struct.
+		 * \param pool A memory pool to allocate from.
 		 * \param keypairs An array of keypairs, allocated by the function.
-		 * \param keypairs_length The length of the array of keypairs.
 		 * \param deprecated_keypairs An array of deprecated keypairs, allocated by the function.
-		 * \param deprecated_keypairs_length The length of the array of deprecated keypairs.
 		 */
 		void exportProtobuf(
 				ProtobufPool& pool,

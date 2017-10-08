@@ -38,7 +38,7 @@ static void keypair(PrivateKey& private_key, PublicKey& public_key) {
 	public_key.empty = false;
 }
 
-int main(void) {
+int main() {
 	try {
 		Molch::sodium_init();
 

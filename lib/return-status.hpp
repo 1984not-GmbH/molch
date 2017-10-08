@@ -31,7 +31,7 @@ namespace Molch {
 	status_type return_status_add_error_message(
 			return_status& status_object,
 			const char *const message,
-			const status_type status) noexcept __attribute__((warn_unused_result));
+			const status_type status_to_add) noexcept __attribute__((warn_unused_result));
 
 	void return_status_destroy_errors(return_status& status) noexcept;
 

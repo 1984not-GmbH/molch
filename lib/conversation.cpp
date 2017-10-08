@@ -31,19 +31,20 @@
 #include "gsl.hpp"
 
 namespace Molch {
-	Conversation& Conversation::move(Conversation&& conversation) {
+	Conversation& Conversation::move(Conversation&& conversation) noexcept {
 		this->id_storage = conversation.id_storage;
 		this->ratchet_pointer = std::move(conversation.ratchet_pointer);
 
 		return *this;
 	}
 
-	Conversation::Conversation(Conversation&& conversation) {
+	Conversation::Conversation(Conversation&& conversation) noexcept {
 		this->move(std::move(conversation));
 	}
 
-	Conversation& Conversation::operator=(Conversation&& conversation) {
-		return this->move(std::move(conversation));
+	Conversation& Conversation::operator=(Conversation&& conversation) noexcept {
+		this->move(std::move(conversation));
+		return *this;
 	}
 
 	/*
@@ -367,7 +368,7 @@ namespace Molch {
 			previous_receive_message_number = local_previous_receive_message_number;
 
 			return message;
-		} catch (const std::exception& exception) {
+		} catch (const std::exception&) {
 			this->ratchet_pointer->setLastMessageAuthenticity(false);
 			throw;
 		}

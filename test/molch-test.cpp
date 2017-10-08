@@ -126,7 +126,7 @@ static span<gsl::byte> decrypt_full_backup(
 	return decrypted_backup;
 }
 
-int main(void) {
+int main() {
 	try {
 		Molch::sodium_init();
 

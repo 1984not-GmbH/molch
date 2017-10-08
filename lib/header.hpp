@@ -67,9 +67,6 @@ namespace Molch {
 	 *   The number of the messages in the previous message chain.
 	 * \param header
 	 *   A buffer containing the Axolotl-Header.
-	 *
-	 * \return
-	 *   Error status, destroy with return_status_destroy_errors if an error occurs.
 	 */
 	void header_extract(
 			//outputs

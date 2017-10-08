@@ -28,7 +28,7 @@
 
 using namespace Molch;
 
-int main(void) {
+int main() {
 	try {
 		Molch::sodium_init();
 

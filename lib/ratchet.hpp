@@ -119,7 +119,6 @@ namespace Molch {
 		 * NOTE: The public identity key is needed separately,
 		 * because it is not contained in the Conversation
 		 * Protobuf-C struct
-		 * \param ratchet The Ratchet to imports
 		 * \param conversation The Protobuf-C buffer.
 		 */
 		Ratchet(const ProtobufCConversation& conversation);

@@ -29,7 +29,7 @@
 namespace Molch {
 	constexpr auto expiration_time{1_months};
 
-	void HeaderAndMessageKey::fill(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) {
+	void HeaderAndMessageKey::fill(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) noexcept {
 		this->header_key = header_key;
 		this->message_key = message_key;
 		this->expiration_date = expiration_date;
@@ -43,32 +43,34 @@ namespace Molch {
 		this->fill(header_key, message_key, expiration_date);
 	}
 
-	HeaderAndMessageKey& HeaderAndMessageKey::copy(const HeaderAndMessageKey& node) {
+	HeaderAndMessageKey& HeaderAndMessageKey::copy(const HeaderAndMessageKey& node) noexcept {
 		this->fill(node.header_key, node.message_key, node.expiration_date);
 
 		return *this;
 	}
 
-	HeaderAndMessageKey& HeaderAndMessageKey::move(HeaderAndMessageKey&& node) {
+	HeaderAndMessageKey& HeaderAndMessageKey::move(HeaderAndMessageKey&& node) noexcept {
 		this->fill(node.header_key, node.message_key, node.expiration_date);
 
 		return *this;
 	}
 
-	HeaderAndMessageKey::HeaderAndMessageKey(const HeaderAndMessageKey& node) {
+	HeaderAndMessageKey::HeaderAndMessageKey(const HeaderAndMessageKey& node) noexcept {
 		this->copy(node);
 	}
 
-	HeaderAndMessageKey::HeaderAndMessageKey(HeaderAndMessageKey&& node) {
+	HeaderAndMessageKey::HeaderAndMessageKey(HeaderAndMessageKey&& node) noexcept {
 		this->move(std::move(node));
 	}
 
-	HeaderAndMessageKey& HeaderAndMessageKey::operator=(const HeaderAndMessageKey& node) {
-		return this->copy(node);
+	HeaderAndMessageKey& HeaderAndMessageKey::operator=(const HeaderAndMessageKey& node) noexcept {
+		this->copy(node);
+		return *this;
 	}
 
-	HeaderAndMessageKey& HeaderAndMessageKey::operator=(HeaderAndMessageKey&& node) {
-		return this->move(std::move(node));
+	HeaderAndMessageKey& HeaderAndMessageKey::operator=(HeaderAndMessageKey&& node) noexcept {
+		this->move(std::move(node));
+		return *this;
 	}
 
 	HeaderAndMessageKey::HeaderAndMessageKey(const ProtobufCKeyBundle& key_bundle) {
@@ -132,11 +134,7 @@ namespace Molch {
 	}
 
 	static bool compareHeaderAndMessageKeyExpirationDates(const HeaderAndMessageKey& a, const HeaderAndMessageKey& b) {
-		if (a.expirationDate() < b.expirationDate()) {
-			return true;
-		}
-
-		return false;
+		return a.expirationDate() < b.expirationDate();
 	}
 
 	void HeaderAndMessageKeyStore::add(const HeaderAndMessageKeyStore& keystore) {
@@ -219,7 +217,7 @@ namespace Molch {
 	}
 
 	span<ProtobufCKeyBundle*> HeaderAndMessageKeyStore::exportProtobuf(ProtobufPool& pool) const {
-		if (this->key_storage.size() == 0) {
+		if (this->key_storage.empty()) {
 			return {nullptr};
 		}
 

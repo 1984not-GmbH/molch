@@ -33,7 +33,7 @@
 
 using namespace Molch;
 
-int main(void) {
+int main() {
 	try {
 		Molch::sodium_init();
 
@@ -87,7 +87,7 @@ int main(void) {
 		auto decryption_failed{false};
 		try {
 			decrypted_header = packet_decrypt_header(packet, header_key);
-		} catch (const Molch::Exception& exception) {
+		} catch (const Molch::Exception&) {
 			decryption_failed = true;
 		}
 		if (!decryption_failed) {
@@ -104,7 +104,7 @@ int main(void) {
 		packet[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= uchar_to_byte(0x12);
 		try {
 			decrypted_header = packet_decrypt_header(packet, header_key);
-		} catch (const Molch::Exception& exception) {
+		} catch (const Molch::Exception&) {
 			decryption_failed = true;
 		}
 		if (!decryption_failed) {

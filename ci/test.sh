@@ -1,6 +1,7 @@
 #!/bin/bash
 basedir=$(dirname "$0")
-source "$basedir/ninja.sh" || exit 1
+cd "$basedir/.." || exit 1
+source "ci/ninja.sh" || exit 1
 
 function valgrind_works {
     if ! hash valgrind 2> /dev/null; then

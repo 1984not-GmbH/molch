@@ -23,7 +23,8 @@ if get_option('lua_bindings') and not ['address', 'undefined', 'address,undefine
 		'-Wno-missing-prototypes',
 		'-Wno-strict-aliasing',
 		'-Wno-maybe-uninitialized',
-		'-Wno-missing-variable-declarations'
+		'-Wno-missing-variable-declarations',
+		'-Wno-unreachable-code',
 	]
 	swig_flags = []
 	foreach flag : proposed_swig_flags

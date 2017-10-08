@@ -21,7 +21,7 @@
 
 #include <cstdio>
 #include <cstdlib>
-#include <string.h>
+#include <cstring>
 #include <iostream>
 
 #include "../include/molch/return-status.h"
@@ -31,7 +31,7 @@
 
 using namespace Molch;
 
-static return_status second_level(void) noexcept {
+static return_status second_level() noexcept {
 	auto status{return_status_init()};
 
 	THROW(status_type::GENERIC_ERROR, "Error on the second level!");
@@ -40,7 +40,7 @@ cleanup:
 	return status;
 }
 
-static return_status first_level(void) noexcept {
+static return_status first_level() noexcept {
 	auto status{return_status_init()};
 
 	status = second_level();
@@ -50,7 +50,7 @@ cleanup:
 	return status;
 }
 
-int main(void) noexcept {
+int main() noexcept {
 	auto status{return_status_init()};
 
 	char *error_stack{nullptr};

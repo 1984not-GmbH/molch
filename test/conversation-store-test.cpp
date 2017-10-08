@@ -50,7 +50,7 @@ static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
 	return export_buffers;
 }
 
-ConversationStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> buffers) {
+static ConversationStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> buffers) {
 	std::unique_ptr<ProtobufCConversation*[]> conversation_array;
 	if (!buffers.empty()) {
 		conversation_array = std::unique_ptr<ProtobufCConversation*[]>(new ProtobufCConversation*[buffers.size()]);
@@ -102,7 +102,7 @@ static void test_add_conversation(ConversationStore& store) {
 	store.add(std::move(conversation));
 }
 
-void protobuf_empty_store(void) {
+static void protobuf_empty_store() {
 	printf("Testing im-/export of empty conversation store.\n");
 
 	ProtobufCConversation **exported = nullptr;
@@ -123,7 +123,7 @@ void protobuf_empty_store(void) {
 	printf("Successful.\n");
 }
 
-int main(void) {
+int main() {
 	try {
 		Molch::sodium_init();
 

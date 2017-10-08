@@ -44,14 +44,14 @@ static std::vector<Buffer> protobuf_export(UserStore& store) {
 	//unpack all the users
 	for (size_t i{0}; i < length; i++) {
 		auto unpacked_size{user__get_packed_size(users[i])};
-		export_buffers.push_back(Buffer(unpacked_size, 0));
+		export_buffers.emplace_back(unpacked_size, 0);
 		export_buffers.back().setSize(user__pack(users[i], byte_to_uchar(export_buffers.back().data())));
 	}
 
 	return export_buffers;
 }
 
-UserStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> buffers) {
+static UserStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> buffers) {
 	//allocate the user array output array
 	std::unique_ptr<ProtobufCUser*[]> user_array;
 	if (!buffers.empty()) {
@@ -73,7 +73,7 @@ UserStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> buffers)
 	return UserStore({user_array.get(), buffers.size()});
 }
 
-void protobuf_empty_store(void) {
+static void protobuf_empty_store() {
 	printf("Testing im-/export of empty user store.\n");
 	UserStore store;
 
@@ -90,7 +90,7 @@ void protobuf_empty_store(void) {
 	printf("Successful.\n");
 }
 
-int main(void) {
+int main() {
 	try {
 		Molch::sodium_init();
 

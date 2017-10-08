@@ -33,7 +33,7 @@
 
 using namespace Molch;
 
-Buffer protobuf_export(Ratchet& ratchet) {
+static Buffer protobuf_export(Ratchet& ratchet) {
 	ProtobufPool pool;
 	auto conversation{ratchet.exportProtobuf(pool)};
 
@@ -47,7 +47,7 @@ Buffer protobuf_export(Ratchet& ratchet) {
 	return export_buffer;
 }
 
-std::unique_ptr<Ratchet> protobuf_import(ProtobufPool& pool, const Buffer& export_buffer) {
+static std::unique_ptr<Ratchet> protobuf_import(ProtobufPool& pool, const Buffer& export_buffer) {
 	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 	//unpack the buffer
 	auto conversation{conversation__unpack(
@@ -62,7 +62,7 @@ std::unique_ptr<Ratchet> protobuf_import(ProtobufPool& pool, const Buffer& expor
 	return std::make_unique<Ratchet>(*conversation);
 }
 
-int main(void) {
+int main() {
 	try {
 		Molch::sodium_init();
 
@@ -494,7 +494,7 @@ int main(void) {
 		//confirm validity of the message key
 		alice_state->setLastMessageAuthenticity(true);
 
-		assert(alice_state->staged_header_and_message_keys.keys().size() == 0);
+		assert(alice_state->staged_header_and_message_keys.keys().empty());
 		assert(alice_state->skipped_header_and_message_keys.keys().size() == 1);
 
 		//get the second receive message key from the message and header keystore

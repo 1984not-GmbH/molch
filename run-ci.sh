@@ -1,12 +1,14 @@
 #!/bin/bash
 basedir=$(dirname "$0")
-TESTS=("release.sh" "ci/test.sh" "ci/clang.sh" "ci/static-analysis.sh" "ci/sanitizers.sh" "ci/doxygen.sh")
+cd "$basedir" || exit 1
+
+TESTS=("release.sh" "ci/test.sh" "ci/clang.sh" "ci/clang-tidy.sh" "ci/static-analysis.sh" "ci/sanitizers.sh" "ci/doxygen.sh")
 STATUS="OK"
 
 FAILED_TESTS=""
 for TEST in "${TESTS[@]}"; do
     echo "$TEST"
-    if ! "$basedir/$TEST"; then
+    if ! "./$TEST"; then
         STATUS="FAILED"
         FAILED_TESTS="${FAILED_TESTS}${TEST};"
     fi

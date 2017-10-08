@@ -32,7 +32,7 @@ namespace Molch {
 	class Conversation {
 		friend class ConversationStore;
 	private:
-		Conversation& move(Conversation&& conversation);
+		Conversation& move(Conversation&& conversation) noexcept;
 
 		void create(
 			const PrivateKey& our_private_identity,
@@ -92,10 +92,10 @@ namespace Molch {
 		 */
 		Conversation(const ProtobufCConversation& conversation_protobuf);
 
-		Conversation(Conversation&& conversation);
+		Conversation(Conversation&& conversation) noexcept;
 		Conversation(const Conversation& conversation) = delete;
 
-		Conversation& operator=(Conversation&& conversation);
+		Conversation& operator=(Conversation&& conversation) noexcept;
 		Conversation& operator=(const Conversation& conversation) = delete;
 
 		const Key<CONVERSATION_ID_SIZE,KeyType::Key>& id() const;

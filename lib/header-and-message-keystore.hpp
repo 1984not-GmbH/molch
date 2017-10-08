@@ -38,10 +38,10 @@
 namespace Molch {
 	class HeaderAndMessageKey {
 	private:
-		void fill(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date);
+		void fill(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) noexcept;
 
-		HeaderAndMessageKey& copy(const HeaderAndMessageKey& node);
-		HeaderAndMessageKey& move(HeaderAndMessageKey&& node);
+		HeaderAndMessageKey& copy(const HeaderAndMessageKey& node) noexcept;
+		HeaderAndMessageKey& move(HeaderAndMessageKey&& node) noexcept;
 
 		MessageKey message_key;
 		HeaderKey header_key;
@@ -52,13 +52,13 @@ namespace Molch {
 		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key);
 		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date);
 		/* copy and move constructors */
-		HeaderAndMessageKey(const HeaderAndMessageKey& node);
-		HeaderAndMessageKey(HeaderAndMessageKey&& node);
+		HeaderAndMessageKey(const HeaderAndMessageKey& node) noexcept;
+		HeaderAndMessageKey(HeaderAndMessageKey&& node) noexcept;
 		HeaderAndMessageKey(const ProtobufCKeyBundle& key_bundle);
 
 		/* copy and move assignment operators */
-		HeaderAndMessageKey& operator=(const HeaderAndMessageKey& node);
-		HeaderAndMessageKey& operator=(HeaderAndMessageKey&& node);
+		HeaderAndMessageKey& operator=(const HeaderAndMessageKey& node) noexcept;
+		HeaderAndMessageKey& operator=(HeaderAndMessageKey&& node) noexcept;
 
 		const MessageKey& messageKey() const;
 		const HeaderKey& headerKey() const;

@@ -57,7 +57,7 @@ namespace Molch {
 
 		ProtobufCUser* exportProtobuf(ProtobufPool& pool) const;
 
-		User& move(User&& node);
+		User& move(User&& node) noexcept;
 
 	public:
 		/*
@@ -76,10 +76,10 @@ namespace Molch {
 				PublicKey * const public_identity_key = nullptr); //output, optional, can be nullptr
 
 		User(const User& node) = delete;
-		User(User&& node);
+		User(User&& node) noexcept;
 
 		User& operator=(const User& node) = delete;
-		User& operator=(User&& node);
+		User& operator=(User&& node) noexcept;
 
 		const PublicSigningKey& id() const;
 		const MasterKeys& masterKeys() const;

@@ -133,7 +133,7 @@ static void protobuf_import(
 }
 
 
-int main(void) {
+int main() {
 	try {
 		Molch::sodium_init();
 		//create the unspiced master keys

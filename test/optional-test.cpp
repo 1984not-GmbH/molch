@@ -37,7 +37,7 @@ class Test {
 		Test(const Test& test) {
 			this->number = test.number;
 		}
-		Test(Test&& test) {
+		Test(Test&& test) noexcept {
 			this->number = test.number;
 			test.number = 0;
 		}
@@ -47,12 +47,9 @@ class Test {
 			destructed = true;
 		}
 
-		Test& operator=(const Test& test) {
-			this->number = test.number;
-			return *this;
-		}
+		Test& operator=(const Test& test) = default;
 
-		Test& operator=(Test&& test) {
+		Test& operator=(Test&& test) noexcept {
 			this->number = test.number;
 			test.number = 0;
 			return *this;
@@ -70,7 +67,7 @@ int main() {
 		bool has_thrown{false};
 		try {
 			(void)empty.value();
-		} catch (const bad_optional_access& exception) {
+		} catch (const bad_optional_access&) {
 			has_thrown = true;
 		}
 		if (!has_thrown) {
@@ -91,7 +88,7 @@ int main() {
 		has_thrown = false;
 		try {
 			(void)const_empty.value();
-		} catch (const bad_optional_access& exception) {
+		} catch (const bad_optional_access&) {
 			has_thrown = true;
 		}
 		if (!has_thrown) {

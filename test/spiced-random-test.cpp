@@ -31,7 +31,7 @@
 
 using namespace Molch;
 
-int main(void) noexcept {
+int main() noexcept {
 	try {
 		Molch::sodium_init();
 
@@ -66,7 +66,7 @@ int main(void) noexcept {
 		//don't crash with output length 0
 		try {
 			spiced_random({nullptr}, spice);
-		} catch (const std::exception& exception) {
+		} catch (const std::exception&) {
 			//on newer libsodium versions, output lengths of zero aren't supported
 		}
 	} catch (const std::exception& exception) {

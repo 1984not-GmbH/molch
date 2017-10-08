@@ -80,7 +80,7 @@ static void protobuf_import(
 	keystore = HeaderAndMessageKeyStore{{key_bundles_array.get(), exported_buffers.size()}};
 }
 
-void protobuf_empty_store(void) {
+static void protobuf_empty_store() {
 	printf("Testing im-/export of empty header and message keystore.\n");
 
 	HeaderAndMessageKeyStore store;
@@ -153,7 +153,7 @@ static void testSizeLimit() {
 	std::cout << "Successfully prevented too big keystore" << std::endl;
 }
 
-int main(void) {
+int main() {
 	try {
 		Molch::sodium_init();
 
@@ -163,7 +163,7 @@ int main(void) {
 
 		//initialise message keystore
 		HeaderAndMessageKeyStore keystore;
-		assert(keystore.keys().size() == 0);
+		assert(keystore.keys().empty());
 
 		//add keys to the keystore
 		for (size_t i{0}; i < 6; i++) {
@@ -244,7 +244,7 @@ int main(void) {
 		//clear the keystore
 		printf("Clear the keystore:\n");
 		keystore.clear();
-		assert(keystore.keys().size() == 0);
+		assert(keystore.keys().empty());
 		keystore.print(std::cout);
 
 		testSortingAndDeprecation();

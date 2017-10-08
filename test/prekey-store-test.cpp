@@ -104,12 +104,12 @@ static void protobuf_import(
 	}
 
 	//now do the import
-	store.reset(new PrekeyStore(
-			{keypairs_array.get(), keypair_buffers.size()},
-			{deprecated_keypairs_array.get(), deprecated_keypair_buffers.size()}));
+	store = std::make_unique<PrekeyStore>(
+			span<ProtobufCPrekey*>{keypairs_array.get(), keypair_buffers.size()},
+			span<ProtobufCPrekey*>{deprecated_keypairs_array.get(), deprecated_keypair_buffers.size()});
 }
 
-void protobuf_no_deprecated_keys(void) {
+static void protobuf_no_deprecated_keys() {
 	printf("Testing im-/export of prekey store without deprecated keys.\n");
 	PrekeyStore store;
 
@@ -129,7 +129,7 @@ void protobuf_no_deprecated_keys(void) {
 	printf("Successful.\n");
 }
 
-int main(void) {
+int main() {
 	try {
 		Molch::sodium_init();
 
@@ -187,7 +187,7 @@ int main(void) {
 		auto found{true};
 		try {
 			store->getPrekey(public_prekey, private_prekey1);
-		} catch (const Molch::Exception& exception) {
+		} catch (const Molch::Exception&) {
 			found = false;
 		}
 		if (found) {
