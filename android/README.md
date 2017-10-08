@@ -3,7 +3,7 @@ Cross Compiling For Android
 
 Prerequisites
 -------------
-* Android-NDK
+* Android-NDK >= 16-beta1
 * Environment variable `ANDROID_NDK_HOME` set.
 * GNU/Linux host system. (might work on Mac OS and BSDs as well, not sure)
 * Meson

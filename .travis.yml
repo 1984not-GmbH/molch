@@ -1,5 +1,6 @@
 sudo: required
 language: c
+osx_image: xcode9.0
 os:
   - linux
   - osx
