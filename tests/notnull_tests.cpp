@@ -14,13 +14,20 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <catch/catch.hpp>
+#include <catch/catch.hpp> // for AssertionHandler, StringRef, CHECK, TEST_...
 
-#include <gsl/gsl>
+#include <gsl/pointers> // for not_null, operator<, operator<=, operator>
 
-#include <memory>
-#include <string>
-#include <vector>
+#include <algorithm> // for addressof
+#include <memory>    // for shared_ptr, make_shared, operator<, opera...
+#include <sstream>   // for operator<<, ostringstream, basic_ostream:...
+#include <stdint.h>  // for uint16_t
+#include <string>    // for basic_string, operator==, string, operator<<
+#include <typeinfo>  // for type_info
+
+namespace gsl {
+struct fail_fast;
+}  // namespace gsl
 
 using namespace gsl;
 
@@ -127,17 +134,54 @@ TEST_CASE("TestNotNullConstructors")
 
     not_null<std::shared_ptr<int>> x(
         std::make_shared<int>(10)); // shared_ptr<int> is nullptr assignable
+
+#ifdef GSL_THROW_ON_CONTRACT_VIOLATION
+    int* pi = nullptr;
+    CHECK_THROWS_AS(not_null<decltype(pi)>(pi), fail_fast);
+#endif    
 }
+
+template<typename T>
+void ostream_helper(T v)
+{
+    not_null<T*> p(&v);
+    {
+        std::ostringstream os;
+        std::ostringstream ref;
+        os << p;
+        ref << &v;
+        CHECK(os.str() == ref.str());
+    }
+    {
+        std::ostringstream os;
+        std::ostringstream ref;
+        os << *p;
+        ref << v;
+        CHECK(os.str() == ref.str());
+    }
+}
+
+TEST_CASE("TestNotNullostream")
+{
+    ostream_helper<int>(17);
+    ostream_helper<float>(21.5f);
+    ostream_helper<double>(3.4566e-7f);
+    ostream_helper<char>('c');
+    ostream_helper<uint16_t>(0x0123u);
+    ostream_helper<const char*>("cstring");
+    ostream_helper<std::string>("string");
+}
+
 
 TEST_CASE("TestNotNullCasting")
 {
     MyBase base;
     MyDerived derived;
     Unrelated unrelated;
-    not_null<Unrelated*> u = &unrelated;
+    not_null<Unrelated*> u{&unrelated};
     (void) u;
-    not_null<MyDerived*> p = &derived;
-    not_null<MyBase*> q = &base;
+    not_null<MyDerived*> p{&derived};
+    not_null<MyBase*> q(&base);
     q = p; // allowed with heterogeneous copy ctor
     CHECK(q == p);
 
@@ -148,18 +192,18 @@ TEST_CASE("TestNotNullCasting")
     not_null<Unrelated*> r = p;
     not_null<Unrelated*> s = reinterpret_cast<Unrelated*>(p);
 #endif
-    not_null<Unrelated*> t = reinterpret_cast<Unrelated*>(p.get());
+    not_null<Unrelated*> t(reinterpret_cast<Unrelated*>(p.get()));
     CHECK(reinterpret_cast<void*>(p.get()) == reinterpret_cast<void*>(t.get()));
 }
 
 TEST_CASE("TestNotNullAssignment")
 {
     int i = 12;
-    not_null<int*> p = &i;
+    not_null<int*> p(&i);
     CHECK(helper(p));
 
     int* q = nullptr;
-    CHECK_THROWS_AS(p = q, fail_fast);
+    CHECK_THROWS_AS(p = not_null<int*>(q), fail_fast);
 }
 
 TEST_CASE("TestNotNullRawPointerComparison")
@@ -283,3 +327,5 @@ TEST_CASE("TestNotNullCustomPtrComparison")
     CHECK((NotNull1(p1) >= NotNull2(p2)) == (p1 >= p2));
     CHECK((NotNull2(p2) >= NotNull1(p1)) == (p2 >= p1));
 }
+
+static_assert(std::is_nothrow_move_constructible<not_null<void *>>::value, "not_null must be no-throw move constructible");
