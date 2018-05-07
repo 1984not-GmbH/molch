@@ -14,13 +14,9 @@
 //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include <catch/catch.hpp>
+#include <catch/catch.hpp> // for AssertionHandler, StringRef, CHECK, TEST_...
 
-#include <gsl/gsl>
-
-#include <functional>
-
-#include <memory>
+#include <gsl/pointers> // for owner
 
 using namespace gsl;
 
