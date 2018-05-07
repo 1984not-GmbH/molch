@@ -40,7 +40,7 @@ namespace Molch {
 	 */
 	static bool endianness_is_little_endian() {
 		const uint16_t number{0x1};
-		const auto* const number_pointer{reinterpret_cast<const unsigned char* const>(&number)};
+		const auto* const number_pointer{reinterpret_cast<const unsigned char*>(&number)};
 		return (number_pointer[0] == 0x1);
 	}
 
