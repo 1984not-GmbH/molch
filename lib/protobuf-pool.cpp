@@ -44,24 +44,24 @@ namespace Molch {
 	}
 
 	template <>
-	void* ProtobufPoolBlock::allocate<void>(size_t size) {
-		size_t elements{size / sizeof(max_align_t)};
-		if ((size % sizeof(max_align_t)) != 0) {
-			elements++;
+	void* ProtobufPoolBlock::allocate<void>(size_t elements) {
+		size_t amount{elements / sizeof(max_align_t)};
+		if ((elements % sizeof(max_align_t)) != 0) {
+			amount++;
 		}
 
 		//check for overflow
-		return reinterpret_cast<void*>(this->allocate<max_align_t>(elements));
+		return reinterpret_cast<void*>(this->allocate<max_align_t>(amount));
 	}
 
 	template <>
-	void* ProtobufPool::allocate<void>(size_t size) {
-		size_t elements{size / sizeof(max_align_t)};
-		if ((size % sizeof(max_align_t)) != 0) {
-			elements++;
+	void* ProtobufPool::allocate<void>(size_t elements) {
+		size_t amount{elements / sizeof(max_align_t)};
+		if ((elements % sizeof(max_align_t)) != 0) {
+			amount++;
 		}
 
-		return this->allocate<max_align_t>(elements);
+		return this->allocate<max_align_t>(amount);
 	}
 
 	void* ProtobufPool::poolAllocate(void* pool, size_t size) noexcept {
