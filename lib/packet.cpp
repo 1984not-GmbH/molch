@@ -40,6 +40,7 @@ namespace Molch {
 				return PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE;
 			case molch_message_type::NORMAL_MESSAGE:
 				return PACKET_HEADER__PACKET_TYPE__NORMAL_MESSAGE;
+			case molch_message_type::INVALID:
 			default:
 				//fallback to normal message
 				return PACKET_HEADER__PACKET_TYPE__NORMAL_MESSAGE;
@@ -55,6 +56,7 @@ namespace Molch {
 				return molch_message_type::NORMAL_MESSAGE;
 			case PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE:
 				return molch_message_type::PREKEY_MESSAGE;
+			case _PACKET_HEADER__PACKET_TYPE_IS_INT_SIZE:
 			default:
 				return molch_message_type::INVALID;
 		}

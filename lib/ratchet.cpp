@@ -685,6 +685,7 @@ namespace Molch {
 				case CONVERSATION__HEADER_DECRYPTABILITY__NOT_TRIED:
 					return HeaderDecryptability::NOT_TRIED;
 
+				case _CONVERSATION__HEADER_DECRYPTABILITY_IS_INT_SIZE:
 				default:
 					throw Exception{status_type::INVALID_VALUE, "header_decryptable has an invalid value."};
 			}

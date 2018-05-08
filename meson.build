@@ -46,6 +46,7 @@ common_flags = [
 	'-Wunreachable-code',
 	'-Wdocumentation',
 	'-Wmissing-noreturn',
+	'-Wswitch-enum',
 ]
 
 c_flags = [
