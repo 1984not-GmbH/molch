@@ -76,26 +76,11 @@ if ['debugoptimized', 'release'].contains(get_option('buildtype'))
 	]
 endif
 
-foreach common_flag : common_flags
-	if c_compiler.has_argument(common_flag)
-		add_project_arguments(common_flag, language: 'c')
-	endif
-	if cpp_compiler.has_argument(common_flag)
-		add_project_arguments(common_flag, language: 'cpp')
-	endif
-endforeach
+supported_c_flags = c_compiler.get_supported_arguments(common_flags + c_flags)
+supported_cpp_flags = cpp_compiler.get_supported_arguments(common_flags + cpp_flags)
 
-foreach flag : c_flags
-	if c_compiler.has_argument(flag)
-		add_project_arguments(flag, language: 'c')
-	endif
-endforeach
-
-foreach cpp_flag : cpp_flags
-	if cpp_compiler.has_argument(cpp_flag)
-		add_project_arguments(cpp_flag, language: 'cpp')
-	endif
-endforeach
+add_project_arguments(supported_c_flags, language: 'c')
+add_project_arguments(supported_cpp_flags, language: 'cpp')
 
 #valgrind
 valgrind = find_program('valgrind', required: false)
