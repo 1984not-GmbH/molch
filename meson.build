@@ -82,6 +82,19 @@ supported_cpp_flags = cpp_compiler.get_supported_arguments(common_flags + cpp_fl
 add_project_arguments(supported_c_flags, language: 'c')
 add_project_arguments(supported_cpp_flags, language: 'cpp')
 
+linker_flags = [
+	'-znoexecstack',
+	'-znow',
+	'-zrelro',
+	'-ztext',
+]
+
+supported_c_linker_flags = c_compiler.get_supported_link_arguments(linker_flags)
+supported_cpp_linker_flags = cpp_compiler.get_supported_link_arguments(linker_flags)
+add_project_link_arguments(supported_c_linker_flags, language: 'c')
+add_project_link_arguments(supported_cpp_linker_flags, language: 'cpp')
+
+
 #valgrind
 valgrind = find_program('valgrind', required: false)
 if valgrind.found()
