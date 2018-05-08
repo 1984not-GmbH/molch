@@ -21,7 +21,7 @@ common_flags = [
 	'-Wundef',
 	'-Wswitch-default',
 	'-Wconversion',
-	'-fstack-protector-strong',
+	'-fstack-protector-all',
 	'-Wcomma',
 	'-Wdouble-promotion',
 	'-Wparentheses',
