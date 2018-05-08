@@ -175,7 +175,7 @@ namespace Molch {
 			//set length of output
 			crypto_generichash_blake2b_salt_personal(
 					derived_key,
-					{nullptr}, //input
+					{nullptr, static_cast<size_t>(0)}, //input
 					*this,
 					salt,
 					{uchar_to_byte(personal), sizeof(personal)});

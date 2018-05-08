@@ -49,7 +49,7 @@ namespace Molch {
 		dh_secret.empty = false;
 
 		//initialize hashing
-		CryptoGenerichash hash{{nullptr}, DIFFIE_HELLMAN_SIZE};
+		CryptoGenerichash hash{{nullptr, static_cast<size_t>(0)}, DIFFIE_HELLMAN_SIZE};
 		hash.update(dh_secret);
 
 		//add public keys to the input of the hash
@@ -145,7 +145,7 @@ namespace Molch {
 
 		//now calculate HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0))
 		//( HASH(dh1|| dh2 || dh3) )
-		CryptoGenerichash hash{{nullptr}, DIFFIE_HELLMAN_SIZE};
+		CryptoGenerichash hash{{nullptr, static_cast<size_t>(0)}, DIFFIE_HELLMAN_SIZE};
 		hash.update(dh1);
 		hash.update(dh2);
 		hash.update(dh3);

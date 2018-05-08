@@ -65,7 +65,7 @@ int main() noexcept {
 
 		//don't crash with output length 0
 		try {
-			spiced_random({nullptr}, spice);
+			spiced_random({nullptr, static_cast<size_t>(0)}, spice);
 		} catch (const std::exception&) {
 			//on newer libsodium versions, output lengths of zero aren't supported
 		}

@@ -304,7 +304,7 @@ namespace Molch {
 	template <class Container>
 	static void export_keypairs(ProtobufPool& pool, Container& container, span<ProtobufCPrekey*>& keypairs) {
 		if (container.empty()) {
-			keypairs = {nullptr};
+			keypairs = {nullptr, static_cast<size_t>(0)};
 			return;
 		}
 

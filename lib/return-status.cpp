@@ -239,7 +239,7 @@ namespace Molch {
 
 			return {output_ptr.release(), output_string.size() + sizeof("")};
 		} catch (const std::exception&) {
-			return {nullptr};
+			return {nullptr, static_cast<size_t>(0)};
 		}
 	}
 }

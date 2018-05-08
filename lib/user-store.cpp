@@ -265,7 +265,7 @@ namespace Molch {
 
 	span<ProtobufCUser*> UserStore::exportProtobuf(ProtobufPool& pool) const {
 		if (this->users.empty()) {
-			return {nullptr};
+			return {nullptr, static_cast<size_t>(0)};
 		}
 
 		//export the conversations

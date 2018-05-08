@@ -44,7 +44,7 @@ namespace Molch {
 		//make base class constructors available
 		using base_class::base_class;
 
-		constexpr span() : base_class{nullptr} {}
+		constexpr span() : base_class{nullptr, static_cast<ptrdiff_t>(0)} {}
 
 		constexpr span(ElementType* pointer, size_t count)
 			: base_class{pointer, gsl::narrow<ptrdiff_t>(count)} {}

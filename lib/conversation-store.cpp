@@ -131,7 +131,7 @@ namespace Molch {
 
 	span<ProtobufCConversation*> ConversationStore::exportProtobuf(ProtobufPool& pool) const {
 		if (this->conversations.empty()) {
-			return {nullptr};
+			return {nullptr, static_cast<size_t>(0)};
 		}
 
 		//export the conversations

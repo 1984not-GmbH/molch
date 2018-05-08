@@ -218,7 +218,7 @@ namespace Molch {
 
 	span<ProtobufCKeyBundle*> HeaderAndMessageKeyStore::exportProtobuf(ProtobufPool& pool) const {
 		if (this->key_storage.empty()) {
-			return {nullptr};
+			return {nullptr, static_cast<size_t>(0)};
 		}
 
 		//export all buffers
