@@ -45,6 +45,7 @@ common_flags = [
 	'-fno-sanitize-recover=all',
 	'-Wunreachable-code',
 	'-Wdocumentation',
+	'-Wmissing-noreturn',
 ]
 
 c_flags = [

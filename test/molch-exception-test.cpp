@@ -29,11 +29,11 @@
 
 using namespace Molch;
 
-static void second_level() {
+[[noreturn]] static void second_level() {
 	throw Molch::Exception{status_type::GENERIC_ERROR, "Error on the second level!"};
 }
 
-static void first_level() {
+[[noreturn]] static void first_level() {
 	try {
 		second_level();
 	} catch(Molch::Exception& exception) {
