@@ -262,8 +262,8 @@ namespace Molch {
 
 		for (size_t index{0}; index < this->ratchet_pointer->skipped_header_and_message_keys.keys().size(); index++) {
 			auto& node = this->ratchet_pointer->skipped_header_and_message_keys.keys()[index];
-			optional<Buffer> header;
-			optional<Buffer> message_optional;
+			std::optional<Buffer> header;
+			std::optional<Buffer> message_optional;
 			uint32_t current_protocol_version;
 			uint32_t highest_supported_protocol_version;
 			molch_message_type packet_type;
@@ -356,7 +356,7 @@ namespace Molch {
 				local_receive_message_number,
 				local_previous_receive_message_number);
 
-			optional<Buffer> message_optional{packet_decrypt_message(packet, message_key)};
+			std::optional<Buffer> message_optional{packet_decrypt_message(packet, message_key)};
 			if (!message_optional) {
 				throw Exception{status_type::DECRYPT_ERROR, "Failed to decrypt the message."};
 			}
