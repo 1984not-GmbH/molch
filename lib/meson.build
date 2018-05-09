@@ -1,9 +1,6 @@
 libsodium = dependency('libsodium', version: '>=1.0.14', required: false)
-sodium_include = include_directories()
 if not libsodium.found()
-	libsodium_project = subproject('libsodium')
-	libsodium = libsodium_project.get_variable('libsodium')
-	sodium_include = libsodium_project.get_variable('includes')
+	libsodium = subproject('libsodium').get_variable('libsodium')
 endif
 
 subdir('protobuf')
@@ -36,6 +33,6 @@ molch = library(
 		lib_sources,
 		dependencies: libsodium,
 		link_with: protobufs,
-		include_directories: [protobuf_include, gsl_include, sodium_include],
+		include_directories: [protobuf_include, gsl_include],
 		implicit_include_directories: false,
 		install: true)
