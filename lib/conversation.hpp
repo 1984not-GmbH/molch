@@ -43,7 +43,7 @@ namespace Molch {
 			const PublicKey& their_public_ephemeral);
 
 		int trySkippedHeaderAndMessageKeys(
-			const span<const gsl::byte> packet,
+			const span<const std::byte> packet,
 			Buffer& message,
 			uint32_t& receive_message_number,
 			uint32_t& previous_receive_message_number);
@@ -67,12 +67,12 @@ namespace Molch {
 		 * Start a new conversation where we are the sender.
 		 */
 		Conversation(
-				const span<const gsl::byte> message, //message we want to send to the receiver
+				const span<const std::byte> message, //message we want to send to the receiver
 				Buffer& packet, //output, free after use!
 				const PublicKey& sender_public_identity, //who is sending this message?
 				const PrivateKey& sender_private_identity,
 				const PublicKey& receiver_public_identity,
-				const span<const gsl::byte> receiver_prekey_list); //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+				const span<const std::byte> receiver_prekey_list); //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 
 		/*
 		 * Start a new conversation where we are the receiver.
@@ -81,7 +81,7 @@ namespace Molch {
 		 * if an error has occurred.
 		 */
 		Conversation(
-				const span<const gsl::byte> packet, //received packet
+				const span<const std::byte> packet, //received packet
 				Buffer& message, //output
 				const PublicKey& receiver_public_identity,
 				const PrivateKey& receiver_private_identity,
@@ -107,7 +107,7 @@ namespace Molch {
 		 * \return A packet containing the encrypted messge.
 		 */
 		Buffer send(
-				const span<const gsl::byte> message,
+				const span<const std::byte> message,
 				const PublicKey * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
 				const PublicKey * const public_ephemeral_key, //cann be nullptr, if not nullptr, this will be a prekey message
 				const PublicKey * const public_prekey); //can be nullptr, if not nullptr, this will be a prekey message
@@ -118,7 +118,7 @@ namespace Molch {
 		 * \return The message that has been decrypted.
 		 */
 		Buffer receive(
-			const span<const gsl::byte> packet, //received packet
+			const span<const std::byte> packet, //received packet
 			uint32_t& receive_message_number,
 			uint32_t& previous_receive_message_number);
 

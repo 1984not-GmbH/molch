@@ -28,7 +28,6 @@ tests = [
 		'buffer-test',
 		'molch-exception-test',
 		'protobuf-pool-test',
-		'optional-test',
 		'time-test'
 ]
 

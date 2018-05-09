@@ -244,7 +244,7 @@ namespace Molch {
 		private_key = found_deprecated_prekey->private_key;
 	}
 
-	void PrekeyStore::list(span<gsl::byte> list) const { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+	void PrekeyStore::list(span<std::byte> list) const { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 		Expects(list.size() == PREKEY_AMOUNT * PUBLIC_KEY_SIZE);
 
 		size_t index{0};

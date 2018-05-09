@@ -26,7 +26,6 @@ lib_sources = files(
 		'molch-exception.cpp',
 		'protobuf.cpp',
 		'protobuf-pool.cpp',
-		'optional.cpp',
 		'sodium-wrappers.cpp',
 		'time.cpp'
 )

@@ -66,8 +66,8 @@ int main() {
 
 		//now decrypt the packet
 		molch_message_type extracted_packet_type;
-		optional<Buffer> decrypted_header;
-		optional<Buffer> decrypted_message;
+		std::optional<Buffer> decrypted_header;
+		std::optional<Buffer> decrypted_message;
 		uint32_t extracted_current_protocol_version;
 		uint32_t extracted_highest_supported_protocol_version;
 		packet_decrypt(

@@ -33,10 +33,10 @@
 
 using namespace Molch;
 
-static span<gsl::byte> decrypt_conversation_backup(
+static span<std::byte> decrypt_conversation_backup(
 		ProtobufPool& pool,
-		const span<const gsl::byte> backup,
-		const span<const gsl::byte> backup_key) {
+		const span<const std::byte> backup,
+		const span<const std::byte> backup_key) {
 	Expects(!backup.empty() && (backup_key.size() == BACKUP_KEY_SIZE));
 
 	//unpack the encrypted backup
@@ -59,9 +59,9 @@ static span<gsl::byte> decrypt_conversation_backup(
 		throw Molch::Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
 	}
 
-	auto decrypted_backup_content{pool.allocate<gsl::byte>(
+	auto decrypted_backup_content{pool.allocate<std::byte>(
 			encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
-	span<gsl::byte> decrypted_backup{
+	span<std::byte> decrypted_backup{
 		decrypted_backup_content,
 		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES};
 
@@ -79,10 +79,10 @@ static span<gsl::byte> decrypt_conversation_backup(
 	return decrypted_backup;
 }
 
-static span<gsl::byte> decrypt_full_backup(
+static span<std::byte> decrypt_full_backup(
 		ProtobufPool& pool,
-		const span<const gsl::byte> backup,
-		const span<const gsl::byte> backup_key) {
+		const span<const std::byte> backup,
+		const span<const std::byte> backup_key) {
 	//check input
 	Expects(!backup.empty() && (backup_key.size() == BACKUP_KEY_SIZE));
 
@@ -106,9 +106,9 @@ static span<gsl::byte> decrypt_full_backup(
 		throw Molch::Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
 	}
 
-	auto decrypted_backup_content{pool.allocate<gsl::byte>(
+	auto decrypted_backup_content{pool.allocate<std::byte>(
 		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
-	span<gsl::byte> decrypted_backup{
+	span<std::byte> decrypted_backup{
 		decrypted_backup_content,
 		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES};
 

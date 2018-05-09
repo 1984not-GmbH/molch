@@ -60,7 +60,7 @@ namespace Molch {
 	}
 
 	User::User(
-			const span<const gsl::byte> seed,
+			const span<const std::byte> seed,
 			PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
 			PublicKey * const public_identity_key//output, optional, can be nullptr
 			) : master_keys(seed) {

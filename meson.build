@@ -1,6 +1,6 @@
 project('molch', ['cpp', 'c'],
 	default_options: [
-		'cpp_std=c++14',
+		'cpp_std=c++17',
 		'c_std=c99',
 		'werror=true',
 		'b_pch=true'
@@ -63,7 +63,6 @@ cpp_flags = [
 	'-Wvirtual-inheritance',
 	'-Wuninitialized',
 	'-Wsuggest-override',
-	'-Wc++1z-compat',
 	'-Wconditionally-supported',
 	'-Wzero-as-null-pointer-constant',
 	'-Wrange-loop-analysis',

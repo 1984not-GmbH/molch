@@ -67,7 +67,7 @@ namespace Molch {
 			uint32_t& message_number,
 			uint32_t& previous_message_number,
 			//intput
-			const span<const gsl::byte> header) {
+			const span<const std::byte> header) {
 		//unpack the message
 		auto header_struct{std::unique_ptr<ProtobufCHeader,HeaderDeleter>(header__unpack(&protobuf_c_allocator, header.size(), byte_to_uchar(header.data())))};
 		if (!header_struct) {

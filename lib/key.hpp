@@ -54,7 +54,7 @@ namespace Molch {
 	};
 
 	template <size_t length, KeyType keytype>
-	class Key : public std::array<gsl::byte,length> {
+	class Key : public std::array<std::byte,length> {
 	private:
 		Key& copy(const Key& key) {
 			this->empty = key.empty;
@@ -198,7 +198,7 @@ namespace Molch {
 		}
 
 		//copy from a raw byte array
-		void set(const span<const gsl::byte> data) {
+		void set(const span<const std::byte> data) {
 			Expects(data.size() == length);
 
 			std::copy(std::cbegin(data), std::cend(data), this->data());
@@ -206,7 +206,7 @@ namespace Molch {
 		}
 
 		//copy to a raw byte array
-		void copyTo(span<gsl::byte> data) const {
+		void copyTo(span<std::byte> data) const {
 			Expects(data.size() == length);
 
 			std::copy(std::cbegin(*this), std::cend(*this), std::begin(data));
