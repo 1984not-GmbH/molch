@@ -28,7 +28,7 @@
 #include "../lib/buffer.hpp"
 #include "../lib/gsl.hpp"
 
-void print_to_file(const gsl::span<const gsl::byte> data, const std::string& filename);
+void print_to_file(const gsl::span<const std::byte> data, const std::string& filename);
 
 void print_errors(const return_status&  status);
 

@@ -74,7 +74,7 @@ namespace Molch {
 			uint32_t& message_number,
 			uint32_t& previous_message_number,
 			//input
-			const span<const gsl::byte> header);
+			const span<const std::byte> header);
 }
 
 #endif

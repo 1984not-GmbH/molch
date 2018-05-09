@@ -26,7 +26,7 @@ namespace Molch {
 
 	ProtobufPoolBlock::ProtobufPoolBlock(size_t block_size) {
 		//allocate the block
-		this->block = std::unique_ptr<gsl::byte,SodiumDeleter<gsl::byte>>(sodium_malloc<gsl::byte>(block_size));
+		this->block = std::unique_ptr<std::byte,SodiumDeleter<std::byte>>(sodium_malloc<std::byte>(block_size));
 
 		this->block_size = block_size;
 	}

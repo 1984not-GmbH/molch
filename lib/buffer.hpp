@@ -42,7 +42,7 @@ namespace Molch {
 		size_t buffer_length{0};
 
 		size_t content_length{0};
-		gsl::byte* content{nullptr};
+		std::byte* content{nullptr};
 
 
 		/* implementation of copy construction and assignment */
@@ -85,7 +85,7 @@ namespace Molch {
 		}
 
 	public:
-		using value_type = gsl::byte;
+		using value_type = std::byte;
 		using allocator_type = Allocator;
 		using size_type = size_t;
 		using difference_type = ptrdiff_t;
@@ -112,7 +112,7 @@ namespace Molch {
 				content_length{string.length() + sizeof("")},
 				content{allocator.allocate(string.length() + sizeof(""), nullptr)} {
 			std::copy(std::begin(string), std::end(string), reinterpret_cast<char*>(this->content));
-			this->content[string.length()] = static_cast<gsl::byte>('\0');
+			this->content[string.length()] = static_cast<std::byte>('\0');
 		}
 
 		BaseBuffer(const size_t capacity, const size_t size) :
@@ -139,21 +139,21 @@ namespace Molch {
 			return this->copy(buffer);
 		}
 
-		gsl::byte& operator[](size_t index) {
+		std::byte& operator[](size_t index) {
 			Expects(index < this->content_length);
 
 			return this->content[index];
 		}
-		const gsl::byte& operator[](size_t index) const {
+		const std::byte& operator[](size_t index) const {
 			Expects(index < this->content_length);
 
 			return this->content[index];
 		}
 
-		gsl::byte* data() noexcept {
+		std::byte* data() noexcept {
 			return this->content;
 		}
-		const gsl::byte* data() const noexcept {
+		const std::byte* data() const noexcept {
 			return this->content;
 		}
 
@@ -171,16 +171,16 @@ namespace Molch {
 			this->content_length = size;
 		}
 
-		gsl::byte* begin() noexcept {
+		std::byte* begin() noexcept {
 			return this->content;
 		}
-		const gsl::byte* begin() const noexcept {
+		const std::byte* begin() const noexcept {
 			return this->content;
 		}
-		gsl::byte* end() noexcept {
+		std::byte* end() noexcept {
 			return this->content + this->content_length;
 		}
-		const gsl::byte* end() const noexcept {
+		const std::byte* end() const noexcept {
 			return this->content + this->content_length;
 		}
 
@@ -245,7 +245,7 @@ namespace Molch {
 		 *
 		 * Returns 0 if both buffers match.
 		 */
-		int compareToRaw(const span<const gsl::byte> array) const {
+		int compareToRaw(const span<const std::byte> array) const {
 			return this->compareToRawPartial(0, array, 0, this->content_length);
 		}
 
@@ -257,7 +257,7 @@ namespace Molch {
 		 */
 		int compareToRawPartial(
 				const size_t position1,
-				const span<const gsl::byte> array,
+				const span<const std::byte> array,
 				const size_t position2,
 				const size_t comparison_length) const {
 			if (((this->content_length - position1) < comparison_length) || ((array.size() - position2) < comparison_length)) {
@@ -330,7 +330,7 @@ namespace Molch {
 		 */
 		void copyFromRaw(
 				const size_t destination_offset,
-				const gsl::byte * const source,
+				const std::byte * const source,
 				const size_t source_offset,
 				const size_t copy_length) {
 			Expects(this->buffer_length >= destination_offset
@@ -351,7 +351,7 @@ namespace Molch {
 		 * beginning of a buffer, setting the buffers
 		 * content length to the length that was copied.
 		 */
-		void cloneFromRaw(const span<const gsl::byte> source) {
+		void cloneFromRaw(const span<const std::byte> source) {
 			Expects(this->buffer_length >= source.size());
 
 			this->content_length = source.size();
@@ -363,7 +363,7 @@ namespace Molch {
 		 * Copy from a buffer to a raw array.
 		 */
 		void copyToRaw(
-				gsl::byte * const destination,
+				std::byte * const destination,
 				const size_t destination_offset,
 				const size_t source_offset,
 				const size_t copy_length) const {
@@ -381,7 +381,7 @@ namespace Molch {
 		 * Copy the entire content of a buffer
 		 * to a raw array.
 		 */
-		void cloneToRaw(const span<gsl::byte> destination) const {
+		void cloneToRaw(const span<std::byte> destination) const {
 			Expects(destination.size() >= this->content_length);
 
 			this->copyToRaw(destination.data(), 0, 0, this->content_length);
@@ -390,7 +390,7 @@ namespace Molch {
 		/*
 		 * Return the content and set the capacity to 0 and size to 0.
 		 */
-		gsl::byte* release() {
+		std::byte* release() {
 			auto content{this->content};
 			this->content = nullptr;
 			this->content_length = 0;
@@ -453,8 +453,8 @@ namespace Molch {
 		}
 	};
 
-	using Buffer = BaseBuffer<std::allocator<gsl::byte>>;
-	using SodiumBuffer = BaseBuffer<SodiumAllocator<gsl::byte>>;
-	using MallocBuffer = BaseBuffer<MallocAllocator<gsl::byte>>;
+	using Buffer = BaseBuffer<std::allocator<std::byte>>;
+	using SodiumBuffer = BaseBuffer<SodiumAllocator<std::byte>>;
+	using MallocBuffer = BaseBuffer<MallocAllocator<std::byte>>;
 }
 #endif

@@ -30,7 +30,7 @@ namespace Molch {
 		}
 	}
 
-	void crypto_box_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key) {
+	void crypto_box_keypair(const span<std::byte> public_key, const span<std::byte> private_key) {
 		Expects((public_key.size() == crypto_box_PUBLICKEYBYTES) && (private_key.size() == crypto_box_SECRETKEYBYTES));
 
 		auto status{::crypto_box_keypair(
@@ -41,7 +41,7 @@ namespace Molch {
 		}
 	}
 
-	void crypto_box_seed_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key, const span<const gsl::byte> seed) {
+	void crypto_box_seed_keypair(const span<std::byte> public_key, const span<std::byte> private_key, const span<const std::byte> seed) {
 		Expects((public_key.size() == crypto_box_PUBLICKEYBYTES)
 				&& (private_key.size() == crypto_box_SECRETKEYBYTES)
 				&& (seed.size() == crypto_box_SEEDBYTES));
@@ -55,7 +55,7 @@ namespace Molch {
 		}
 	}
 
-	void crypto_sign_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key) {
+	void crypto_sign_keypair(const span<std::byte> public_key, const span<std::byte> private_key) {
 		Expects((public_key.size() == crypto_sign_PUBLICKEYBYTES)
 				&& (private_key.size() == crypto_sign_SECRETKEYBYTES));
 
@@ -67,7 +67,7 @@ namespace Molch {
 		}
 
 	}
-	void crypto_sign_seed_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key, const span<const gsl::byte> seed) {
+	void crypto_sign_seed_keypair(const span<std::byte> public_key, const span<std::byte> private_key, const span<const std::byte> seed) {
 		Expects((public_key.size() == crypto_sign_PUBLICKEYBYTES)
 				&& (private_key.size() == crypto_sign_SECRETKEYBYTES)
 				&& (seed.size() == crypto_sign_SEEDBYTES));
@@ -81,7 +81,7 @@ namespace Molch {
 		}
 	}
 
-	void crypto_generichash(const span<gsl::byte> output, const span<const gsl::byte> input, const span<const gsl::byte> key) {
+	void crypto_generichash(const span<std::byte> output, const span<const std::byte> input, const span<const std::byte> key) {
 		Expects((output.size() >= crypto_generichash_BYTES_MIN)
 				&& (output.size() <= crypto_generichash_BYTES_MAX)
 				&& (key.empty()
@@ -97,7 +97,7 @@ namespace Molch {
 		}
 	}
 
-	CryptoGenerichash::CryptoGenerichash(const span<const gsl::byte> key, size_t output_length)  :
+	CryptoGenerichash::CryptoGenerichash(const span<const std::byte> key, size_t output_length)  :
 			output_length{output_length} {
 		Expects((output_length >= crypto_generichash_BYTES_MIN)
 				&& (output_length <= crypto_generichash_BYTES_MAX)
@@ -114,7 +114,7 @@ namespace Molch {
 		}
 	}
 
-	void CryptoGenerichash::update(const span<const gsl::byte> input) {
+	void CryptoGenerichash::update(const span<const std::byte> input) {
 		auto status{::crypto_generichash_update(
 				&this->state,
 				byte_to_uchar(input.data()), input.size())};
@@ -123,7 +123,7 @@ namespace Molch {
 		}
 	}
 
-	void CryptoGenerichash::final(const span<gsl::byte> output) {
+	void CryptoGenerichash::final(const span<std::byte> output) {
 		Expects(output.size() == this->output_length);
 
 		auto status{::crypto_generichash_final(
@@ -139,11 +139,11 @@ namespace Molch {
 	}
 
 	void crypto_generichash_blake2b_salt_personal(
-			const span<gsl::byte> output,
-			const span<const gsl::byte> input,
-			const span<const gsl::byte> key,
-			const span<const gsl::byte> salt,
-			const span<const gsl::byte> personal) {
+			const span<std::byte> output,
+			const span<const std::byte> input,
+			const span<const std::byte> key,
+			const span<const std::byte> salt,
+			const span<const std::byte> personal) {
 		Expects((output.size() >= crypto_generichash_blake2b_BYTES_MIN)
 				&& (output.size() <= crypto_generichash_blake2b_BYTES_MAX)
 				&& (key.size() >= crypto_generichash_blake2b_KEYBYTES_MIN)
@@ -162,14 +162,14 @@ namespace Molch {
 		}
 	}
 
-	void randombytes_buf(const span<gsl::byte> buffer) {
+	void randombytes_buf(const span<std::byte> buffer) {
 		::randombytes_buf(buffer.data(), buffer.size());
 	}
 
 	void crypto_pwhash(
-			const span<gsl::byte> output,
-			const span<const gsl::byte> password,
-			const span<const gsl::byte> salt,
+			const span<std::byte> output,
+			const span<const std::byte> password,
+			const span<const std::byte> salt,
 			unsigned long long opslimit,
 			size_t memlimit,
 			int algorithm) {
@@ -192,7 +192,7 @@ namespace Molch {
 		}
 	}
 
-	void crypto_scalarmult_base(const span<gsl::byte> public_key, const span<const gsl::byte> private_key) {
+	void crypto_scalarmult_base(const span<std::byte> public_key, const span<const std::byte> private_key) {
 		Expects((public_key.size() == crypto_scalarmult_BYTES)
 				&& (private_key.size() == crypto_scalarmult_SCALARBYTES));
 
@@ -205,9 +205,9 @@ namespace Molch {
 	}
 
 	void crypto_scalarmult(
-			const span<gsl::byte> shared_secret,
-			const span<const gsl::byte> our_private_key,
-			const span<const gsl::byte> their_public_key) {
+			const span<std::byte> shared_secret,
+			const span<const std::byte> our_private_key,
+			const span<const std::byte> their_public_key) {
 		Expects((shared_secret.size() == crypto_scalarmult_BYTES)
 				&& (our_private_key.size() == crypto_scalarmult_SCALARBYTES)
 				&& (their_public_key.size() == crypto_scalarmult_BYTES));
@@ -221,27 +221,27 @@ namespace Molch {
 		}
 	}
 
-	bool sodium_is_zero(const span<const gsl::byte> buffer) {
+	bool sodium_is_zero(const span<const std::byte> buffer) {
 		return ::sodium_is_zero(byte_to_uchar(buffer.data()), buffer.size());
 	}
 
-	bool sodium_memcmp(const span<const gsl::byte> b1, const span<const gsl::byte> b2) {
+	bool sodium_memcmp(const span<const std::byte> b1, const span<const std::byte> b2) {
 		Expects(b1.size() == b2.size());
 
 		return ::sodium_memcmp(b1.data(), b2.data(), b1.size()) == 0;
 	}
 
-	int sodium_compare(const span<const gsl::byte> b1, const span<const gsl::byte> b2) {
+	int sodium_compare(const span<const std::byte> b1, const span<const std::byte> b2) {
 		Expects(b1.size() == b2.size());
 
 		return ::sodium_compare(byte_to_uchar(b1.data()), byte_to_uchar(b2.data()), b1.size());
 	}
 
-	void sodium_memzero(const span<gsl::byte> buffer) {
+	void sodium_memzero(const span<std::byte> buffer) {
 		::sodium_memzero(buffer.data(), buffer.size());
 	}
 
-	void sodium_bin2hex(const span<char> hex, const span<const gsl::byte> bin) {
+	void sodium_bin2hex(const span<char> hex, const span<const std::byte> bin) {
 		Expects(hex.size() == (2 * bin.size() + sizeof('\0')));
 
 		::sodium_bin2hex(
@@ -250,10 +250,10 @@ namespace Molch {
 	}
 
 	void crypto_secretbox_easy(
-			const span<gsl::byte> ciphertext,
-			const span<const gsl::byte> message,
-			const span<const gsl::byte> nonce,
-			const span<const gsl::byte> key) {
+			const span<std::byte> ciphertext,
+			const span<const std::byte> message,
+			const span<const std::byte> nonce,
+			const span<const std::byte> key) {
 		Expects((ciphertext.size() == (message.size() + crypto_secretbox_MACBYTES))
 				&& (nonce.size() == crypto_secretbox_NONCEBYTES)
 				&& (key.size() == crypto_secretbox_KEYBYTES));
@@ -269,10 +269,10 @@ namespace Molch {
 	}
 
 	void crypto_secretbox_open_easy(
-			const span<gsl::byte> message,
-			const span<const gsl::byte> ciphertext,
-			const span<const gsl::byte> nonce,
-			const span<const gsl::byte> key) {
+			const span<std::byte> message,
+			const span<const std::byte> ciphertext,
+			const span<const std::byte> nonce,
+			const span<const std::byte> key) {
 		Expects((ciphertext.size() >= crypto_secretbox_MACBYTES)
 				&& (message.size() == (ciphertext.size() - crypto_secretbox_MACBYTES))
 				&& (nonce.size() == crypto_secretbox_NONCEBYTES)
@@ -289,9 +289,9 @@ namespace Molch {
 	}
 
 	void crypto_sign(
-			const span<gsl::byte> signed_message,
-			const span<const gsl::byte> message,
-			const span<const gsl::byte> signing_key) {
+			const span<std::byte> signed_message,
+			const span<const std::byte> message,
+			const span<const std::byte> signing_key) {
 		Expects((signed_message.size() == (message.size() + crypto_sign_BYTES))
 				&& (signing_key.size() == crypto_sign_SECRETKEYBYTES));
 
@@ -305,9 +305,9 @@ namespace Molch {
 	}
 
 	void crypto_sign_open(
-			const span<gsl::byte> verified_message,
-			const span<const gsl::byte> signed_message,
-			const span<const gsl::byte> signing_key) {
+			const span<std::byte> verified_message,
+			const span<const std::byte> signed_message,
+			const span<const std::byte> signing_key) {
 		Expects((signed_message.size() >= crypto_sign_BYTES)
 				&& (verified_message.size() == (signed_message.size() - crypto_sign_BYTES))
 				&& (signing_key.size() == crypto_sign_PUBLICKEYBYTES));
@@ -340,7 +340,7 @@ namespace Molch {
 		}
 	}
 
-	span<gsl::byte> sodium_pad(span<gsl::byte> buffer, const size_t unpadded_length, const size_t blocksize) {
+	span<std::byte> sodium_pad(span<std::byte> buffer, const size_t unpadded_length, const size_t blocksize) {
 		Expects((unpadded_length < buffer.size()) && (blocksize <= buffer.size()));
 
 		size_t padded_length{0};
@@ -357,7 +357,7 @@ namespace Molch {
 		return {buffer.data(), padded_length};
 	}
 
-	span<gsl::byte> sodium_unpad(span<gsl::byte> buffer, const size_t blocksize) {
+	span<std::byte> sodium_unpad(span<std::byte> buffer, const size_t blocksize) {
 		Expects(blocksize <= buffer.size());
 
 		size_t unpadded_length{0};

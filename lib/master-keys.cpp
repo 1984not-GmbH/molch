@@ -57,7 +57,7 @@ namespace Molch {
 		this->generate();
 	}
 
-	MasterKeys::MasterKeys(const span<const gsl::byte> low_entropy_seed) {
+	MasterKeys::MasterKeys(const span<const std::byte> low_entropy_seed) {
 		this->init();
 		this->generate(low_entropy_seed);
 	}
@@ -112,7 +112,7 @@ namespace Molch {
 		this->private_identity_key->empty = false;
 	}
 
-	void MasterKeys::generate(const span<const gsl::byte> low_entropy_seed) {
+	void MasterKeys::generate(const span<const std::byte> low_entropy_seed) {
 		Expects(!low_entropy_seed.empty());
 
 		ReadWriteUnlocker unlocker{*this};
@@ -126,7 +126,7 @@ namespace Molch {
 		crypto_sign_seed_keypair(
 				this->public_signing_key,
 				*this->private_signing_key,
-				span<gsl::byte>(high_entropy_seed).subspan(0, crypto_sign_SEEDBYTES));
+				span<std::byte>(high_entropy_seed).subspan(0, crypto_sign_SEEDBYTES));
 		this->public_signing_key.empty = false;
 		this->private_signing_key->empty = false;
 
@@ -134,7 +134,7 @@ namespace Molch {
 		crypto_box_seed_keypair(
 				this->public_identity_key,
 				*this->private_identity_key,
-				span<const gsl::byte>{high_entropy_seed}.subspan(crypto_sign_SEEDBYTES));
+				span<const std::byte>{high_entropy_seed}.subspan(crypto_sign_SEEDBYTES));
 		this->public_identity_key.empty = false;
 		this->private_identity_key->empty = false;
 	}
@@ -167,8 +167,8 @@ namespace Molch {
 	 * Sign a piece of data. Returns the data and signature in one output buffer.
 	 */
 	void MasterKeys::sign(
-			const span<const gsl::byte> data,
-			span<gsl::byte> signed_data) const { //output, length of data + SIGNATURE_SIZE
+			const span<const std::byte> data,
+			span<std::byte> signed_data) const { //output, length of data + SIGNATURE_SIZE
 		Expects(signed_data.size() == (data.size() + SIGNATURE_SIZE));
 
 		Unlocker unlocker{*this};

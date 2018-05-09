@@ -35,7 +35,7 @@ namespace Molch {
 	 * WARNING: Don't feed this with random numbers from the OSs random
 	 * source because it might annihilate the randomness.
 	 */
-	void spiced_random(span<gsl::byte> output, const span<const gsl::byte> low_entropy_spice);
+	void spiced_random(span<std::byte> output, const span<const std::byte> low_entropy_spice);
 }
 
 #endif

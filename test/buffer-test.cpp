@@ -56,7 +56,7 @@ int main() {
 
 		//create a new buffer
 		Buffer buffer1{14, 10};
-		gsl::byte buffer1_content[10];
+		std::byte buffer1_content[10];
 		randombytes_buf(buffer1_content, sizeof(buffer1_content));
 		std::copy(std::cbegin(buffer1_content), std::cend(buffer1_content), std::begin(buffer1));
 		printf("Here\n");
@@ -101,7 +101,7 @@ int main() {
 		printf("Successfully copied buffer.\n");
 
 		//copy to a raw array
-		gsl::byte raw_array[4];
+		std::byte raw_array[4];
 		buffer1.copyToRaw(
 				raw_array, //destination
 				0, //destination offset
@@ -166,7 +166,7 @@ int main() {
 
 		//check if the buffer was properly cleared
 		for (size_t i{0}; i < buffer1.capacity(); i++) {
-			if (buffer1.data()[i] != static_cast<gsl::byte>('\0')) {
+			if (buffer1.data()[i] != static_cast<std::byte>('\0')) {
 				throw Molch::Exception{status_type::BUFFER_ERROR, "Buffer hasn't been erased properly."};
 			}
 		}
@@ -198,15 +198,15 @@ int main() {
 
 		//compare buffer to an array
 		Buffer true_buffer{"true"};
-		auto comparison{true_buffer.compareToRaw({reinterpret_cast<const gsl::byte*>("true"), sizeof("true")})};
+		auto comparison{true_buffer.compareToRaw({reinterpret_cast<const std::byte*>("true"), sizeof("true")})};
 		if (comparison != 0) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to compare buffer to array."};
 		}
-		comparison = true_buffer.compareToRaw({reinterpret_cast<const gsl::byte*>("fals"), sizeof("fals")});
+		comparison = true_buffer.compareToRaw({reinterpret_cast<const std::byte*>("fals"), sizeof("fals")});
 		if (comparison == 0) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to detect difference in buffer and array."};
 		}
-		comparison = true_buffer.compareToRaw({reinterpret_cast<const gsl::byte*>("false"), sizeof("false")});
+		comparison = true_buffer.compareToRaw({reinterpret_cast<const std::byte*>("false"), sizeof("false")});
 		if (comparison == 0) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "ERROR: Failed to detect difference in buffer and array."};
 		}

@@ -48,10 +48,10 @@ namespace Molch {
 	 * Convert any integer type to a buffer in big endian format.
 	 */
 	template <typename IntegerType>
-	void to_big_endian(IntegerType integer, span<gsl::byte> output) {
+	void to_big_endian(IntegerType integer, span<std::byte> output) {
 		Expects(output.size() == sizeof(IntegerType));
 
-		//uses unsigned char instead of gsl::byte because of the aliasing rules
+		//uses unsigned char instead of std::byte because of the aliasing rules
 		auto& reference{reinterpret_cast<unsigned char&>(integer)};
 
 		if (endianness_is_little_endian()) {
@@ -65,13 +65,13 @@ namespace Molch {
 	 * Get an integer from a buffer in big endian format.
 	 */
 	template <typename IntegerType>
-	void from_big_endian(IntegerType& integer, const span<const gsl::byte> input) {
+	void from_big_endian(IntegerType& integer, const span<const std::byte> input) {
 		Expects(input.size() == sizeof(IntegerType));
 
-		//uses unsigned char instead of gsl::byte because of the aliasing rules
+		//uses unsigned char instead of std::byte because of the aliasing rules
 		auto& reference{reinterpret_cast<unsigned char&>(integer)};
 
-		std::copy(std::cbegin(input), std::cend(input), reinterpret_cast<gsl::byte*>(&reference));
+		std::copy(std::cbegin(input), std::cend(input), reinterpret_cast<std::byte*>(&reference));
 
 		if (endianness_is_little_endian()) {
 			std::reverse(&reference, &reference + sizeof(IntegerType));

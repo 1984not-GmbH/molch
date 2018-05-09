@@ -72,7 +72,7 @@ namespace Molch {
 	 * \return
 	 *   The unpacked struct.
 	 */
-	static std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_unpack(const span<const gsl::byte> packet) {
+	static std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_unpack(const span<const std::byte> packet) {
 		//unpack the packet
 		auto packet_struct{std::unique_ptr<ProtobufCPacket,PacketDeleter>(packet__unpack(&protobuf_c_allocator, packet.size(), byte_to_uchar(packet.data())))};
 		if (!packet_struct) {
@@ -120,9 +120,9 @@ namespace Molch {
 	Buffer packet_encrypt(
 			//inputs
 			const molch_message_type packet_type,
-			const span<const gsl::byte> axolotl_header,
+			const span<const std::byte> axolotl_header,
 			const HeaderKey& axolotl_header_key,
-			const span<const gsl::byte> message,
+			const span<const std::byte> message,
 			const MessageKey& message_key,
 			//optional inputs (prekey messages only)
 			const PublicKey * const public_identity_key,
@@ -242,7 +242,7 @@ namespace Molch {
 			std::optional<Buffer>& axolotl_header,
 			std::optional<Buffer>& message,
 			//inputs
-			const span<const gsl::byte> packet,
+			const span<const std::byte> packet,
 			const HeaderKey& axolotl_header_key,
 			const MessageKey& message_key, //MESSAGE_KEY_SIZE
 			//optional outputs (prekey messages only)
@@ -272,7 +272,7 @@ namespace Molch {
 			uint32_t& highest_supported_protocol_version,
 			molch_message_type& packet_type,
 			//input
-			const span<const gsl::byte> packet,
+			const span<const std::byte> packet,
 			//optional outputs (prekey messages only)
 			PublicKey * const public_identity_key,
 			PublicKey * const public_ephemeral_key,
@@ -304,7 +304,7 @@ namespace Molch {
 	}
 
 	std::optional<Buffer> packet_decrypt_header(
-			const span<const gsl::byte> packet,
+			const span<const std::byte> packet,
 			const HeaderKey& axolotl_header_key) {
 		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct;
 
@@ -335,7 +335,7 @@ namespace Molch {
 		return axolotl_header;
 	}
 
-	std::optional<Buffer> packet_decrypt_message(const span<const gsl::byte> packet, const MessageKey& message_key) {
+	std::optional<Buffer> packet_decrypt_message(const span<const std::byte> packet, const MessageKey& message_key) {
 		//check input
 		if (message_key.empty) {
 			return std::nullopt;

@@ -111,12 +111,12 @@ static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_ke
 	unsigned_prekey_list.copyFromRaw(0, user->masterKeys().getIdentityKey().data(), 0, PUBLIC_KEY_SIZE);
 
 	//get the prekeys
-	span<gsl::byte> prekeys{&unsigned_prekey_list[PUBLIC_KEY_SIZE], PREKEY_AMOUNT * PUBLIC_KEY_SIZE};
+	span<std::byte> prekeys{&unsigned_prekey_list[PUBLIC_KEY_SIZE], PREKEY_AMOUNT * PUBLIC_KEY_SIZE};
 	user->prekeys().list(prekeys);
 
 	//add the expiration date
 	int64_t expiration_date{now().count() + seconds{3_months}.count()};
-	span<gsl::byte> big_endian_expiration_date{&unsigned_prekey_list[PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE], sizeof(int64_t)};
+	span<std::byte> big_endian_expiration_date{&unsigned_prekey_list[PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE], sizeof(int64_t)};
 	to_big_endian(expiration_date, big_endian_expiration_date);
 
 	//sign the prekey list with the current identity key
@@ -380,7 +380,7 @@ molch_message_type molch_get_message_type(
  * and choose a prekey.
  */
 static void verify_prekey_list(
-		const span<const gsl::byte> prekey_list,
+		const span<const std::byte> prekey_list,
 		PublicKey& public_identity_key, //output, PUBLIC_KEY_SIZE
 		PublicSigningKey& public_signing_key) {
 	//verify the signature
@@ -392,7 +392,7 @@ static void verify_prekey_list(
 
 	//get the expiration date
 	int64_t expiration_date;
-	span<gsl::byte> big_endian_expiration_date{&verified_prekey_list[PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE], sizeof(int64_t)};
+	span<std::byte> big_endian_expiration_date{&verified_prekey_list[PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE], sizeof(int64_t)};
 	from_big_endian(expiration_date, big_endian_expiration_date);
 
 	//make sure the prekey list isn't too old
@@ -474,7 +474,7 @@ return_status molch_start_send_conversation(
 		MasterKeys::Unlocker unlocker{user->masterKeys()};
 
 		//create the conversation and encrypt the message
-		span<const gsl::byte> prekeys{uchar_to_byte(prekey_list) + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t)};
+		span<const std::byte> prekeys{uchar_to_byte(prekey_list) + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t)};
 		Buffer packet_buffer;
 		Molch::Conversation conversation{
 			{uchar_to_byte(message), message_length},
@@ -989,8 +989,8 @@ cleanup:
 
 			//pack the struct
 			auto conversation_size{conversation__get_packed_size(conversation_struct)};
-			auto conversation_buffer_content{pool.allocate<gsl::byte>(conversation_size)};
-			span<gsl::byte> conversation_buffer{conversation_buffer_content, conversation_size};
+			auto conversation_buffer_content{pool.allocate<std::byte>(conversation_size)};
+			span<std::byte> conversation_buffer{conversation_buffer_content, conversation_size};
 			conversation__pack(conversation_struct, byte_to_uchar(conversation_buffer.data()));
 
 			//generate the nonce
@@ -1105,9 +1105,9 @@ cleanup:
 			}
 
 			ProtobufPool pool;
-			auto decrypted_backup_content{pool.allocate<gsl::byte>(
+			auto decrypted_backup_content{pool.allocate<std::byte>(
 						encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
-			span<gsl::byte> decrypted_backup{
+			span<std::byte> decrypted_backup{
 					decrypted_backup_content,
 					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES};
 
@@ -1195,8 +1195,8 @@ cleanup:
 
 			//pack the struct
 			auto backup_struct_size{backup__get_packed_size(backup_struct)};
-			auto users_buffer_content{pool.allocate<gsl::byte>(backup_struct_size)};
-			span<gsl::byte> users_buffer{users_buffer_content, backup_struct_size};
+			auto users_buffer_content{pool.allocate<std::byte>(backup_struct_size)};
+			span<std::byte> users_buffer{users_buffer_content, backup_struct_size};
 			backup__pack(backup_struct, byte_to_uchar(users_buffer.data()));
 
 			//generate the nonce
@@ -1315,9 +1315,9 @@ cleanup:
 			}
 
 			ProtobufPool pool;
-			auto decrypted_backup_content{pool.allocate<gsl::byte>(
+			auto decrypted_backup_content{pool.allocate<std::byte>(
 					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
-			span<gsl::byte> decrypted_backup{
+			span<std::byte> decrypted_backup{
 					decrypted_backup_content,
 					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES};
 

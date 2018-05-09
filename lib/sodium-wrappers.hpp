@@ -91,88 +91,88 @@ namespace Molch {
 
 	void sodium_init();
 
-	void crypto_box_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key);
-	void crypto_box_seed_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key, const span<const gsl::byte> seed);
+	void crypto_box_keypair(const span<std::byte> public_key, const span<std::byte> private_key);
+	void crypto_box_seed_keypair(const span<std::byte> public_key, const span<std::byte> private_key, const span<const std::byte> seed);
 
-	void crypto_sign_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key);
-	void crypto_sign_seed_keypair(const span<gsl::byte> public_key, const span<gsl::byte> private_key, const span<const gsl::byte> seed);
+	void crypto_sign_keypair(const span<std::byte> public_key, const span<std::byte> private_key);
+	void crypto_sign_seed_keypair(const span<std::byte> public_key, const span<std::byte> private_key, const span<const std::byte> seed);
 
-	void crypto_generichash(const span<gsl::byte> output, const span<const gsl::byte> input, const span<const gsl::byte> key);
+	void crypto_generichash(const span<std::byte> output, const span<const std::byte> input, const span<const std::byte> key);
 
 	struct CryptoGenerichash {
 		crypto_generichash_state state;
 		const size_t output_length;
 
-		CryptoGenerichash(const span<const gsl::byte> key, size_t output_length);
+		CryptoGenerichash(const span<const std::byte> key, size_t output_length);
 
-		void update(const span<const gsl::byte> input);
-		void final(const span<gsl::byte> output);
+		void update(const span<const std::byte> input);
+		void final(const span<std::byte> output);
 
 		~CryptoGenerichash();
 	};
 
 	void crypto_generichash_blake2b_salt_personal(
-			const span<gsl::byte> output,
-			const span<const gsl::byte> input,
-			const span<const gsl::byte> key,
-			const span<const gsl::byte> salt,
-			const span<const gsl::byte> personal);
+			const span<std::byte> output,
+			const span<const std::byte> input,
+			const span<const std::byte> key,
+			const span<const std::byte> salt,
+			const span<const std::byte> personal);
 
-	void randombytes_buf(const span<gsl::byte> buffer);
+	void randombytes_buf(const span<std::byte> buffer);
 
 	void crypto_pwhash(
-			const span<gsl::byte> output,
-			const span<const gsl::byte> password,
-			const span<const gsl::byte> salt,
+			const span<std::byte> output,
+			const span<const std::byte> password,
+			const span<const std::byte> salt,
 			unsigned long long opslimit,
 			size_t memlimit,
 			int algorithm);
 
 	//TODO find out how to use PublicKey and PrivateKey as parameters here
-	void crypto_scalarmult_base(const span<gsl::byte> public_key, const span<const gsl::byte> private_key);
+	void crypto_scalarmult_base(const span<std::byte> public_key, const span<const std::byte> private_key);
 
 	void crypto_scalarmult(
-			const span<gsl::byte> shared_secret,
-			const span<const gsl::byte> our_private_key,
-			const span<const gsl::byte> their_public_key);
+			const span<std::byte> shared_secret,
+			const span<const std::byte> our_private_key,
+			const span<const std::byte> their_public_key);
 
-	bool sodium_is_zero(const span<const gsl::byte> buffer);
+	bool sodium_is_zero(const span<const std::byte> buffer);
 
-	bool sodium_memcmp(const span<const gsl::byte> b1, const span<const gsl::byte> b2);
-	int sodium_compare(const span<const gsl::byte> b1, const span<const gsl::byte> b2);
+	bool sodium_memcmp(const span<const std::byte> b1, const span<const std::byte> b2);
+	int sodium_compare(const span<const std::byte> b1, const span<const std::byte> b2);
 
-	void sodium_memzero(const span<gsl::byte> buffer);
+	void sodium_memzero(const span<std::byte> buffer);
 
-	void sodium_bin2hex(const span<char> hex, const span<const gsl::byte> bin);
+	void sodium_bin2hex(const span<char> hex, const span<const std::byte> bin);
 
 	void crypto_secretbox_easy(
-			const span<gsl::byte> ciphertext,
-			const span<const gsl::byte> message,
-			const span<const gsl::byte> nonce,
-			const span<const gsl::byte> key);
+			const span<std::byte> ciphertext,
+			const span<const std::byte> message,
+			const span<const std::byte> nonce,
+			const span<const std::byte> key);
 
 	void crypto_secretbox_open_easy(
-			const span<gsl::byte> message,
-			const span<const gsl::byte> ciphertext,
-			const span<const gsl::byte> nonce,
-			const span<const gsl::byte> key);
+			const span<std::byte> message,
+			const span<const std::byte> ciphertext,
+			const span<const std::byte> nonce,
+			const span<const std::byte> key);
 
 	void crypto_sign(
-			const span<gsl::byte> signed_message,
-			const span<const gsl::byte> message,
-			const span<const gsl::byte> signing_key);
+			const span<std::byte> signed_message,
+			const span<const std::byte> message,
+			const span<const std::byte> signing_key);
 
 	void crypto_sign_open(
-			const span<gsl::byte> verified_message,
-			const span<const gsl::byte> signed_message,
-			const span<const gsl::byte> signing_key);
+			const span<std::byte> verified_message,
+			const span<const std::byte> signed_message,
+			const span<const std::byte> signing_key);
 
 	void sodium_mprotect_noaccess(void *pointer);
 	void sodium_mprotect_readonly(void *pointer);
 	void sodium_mprotect_readwrite(void *pointer);
 
-	span<gsl::byte> sodium_pad(span<gsl::byte> buffer, const size_t unpadded_length, size_t blocksize);
-	span<gsl::byte> sodium_unpad(span<gsl::byte> buffer, const size_t blocksize);
+	span<std::byte> sodium_pad(span<std::byte> buffer, const size_t unpadded_length, size_t blocksize);
+	span<std::byte> sodium_unpad(span<std::byte> buffer, const size_t blocksize);
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */

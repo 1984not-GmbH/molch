@@ -11,28 +11,28 @@
 #include <gsl/span>
 
 namespace Molch {
-	inline unsigned char* byte_to_uchar(gsl::byte* byte) {
+	inline unsigned char* byte_to_uchar(std::byte* byte) {
 		return reinterpret_cast<unsigned char*>(byte);
 	}
 
-	inline const unsigned char* byte_to_uchar(const gsl::byte* byte) {
+	inline const unsigned char* byte_to_uchar(const std::byte* byte) {
 		return reinterpret_cast<const unsigned char*>(byte);
 	}
 
-	constexpr unsigned char byte_to_uchar(const gsl::byte byte) {
+	constexpr unsigned char byte_to_uchar(const std::byte byte) {
 		return static_cast<unsigned char>(byte);
 	}
 
-	inline gsl::byte* uchar_to_byte(unsigned char* character) {
-		return reinterpret_cast<gsl::byte*>(character);
+	inline std::byte* uchar_to_byte(unsigned char* character) {
+		return reinterpret_cast<std::byte*>(character);
 	}
 
-	inline const gsl::byte* uchar_to_byte(const unsigned char* character) {
-		return reinterpret_cast<const gsl::byte*>(character);
+	inline const std::byte* uchar_to_byte(const unsigned char* character) {
+		return reinterpret_cast<const std::byte*>(character);
 	}
 
-	constexpr gsl::byte uchar_to_byte(const unsigned char character) {
-		return static_cast<gsl::byte>(character);
+	constexpr std::byte uchar_to_byte(const unsigned char character) {
+		return static_cast<std::byte>(character);
 	}
 
 	template <class ElementType>
