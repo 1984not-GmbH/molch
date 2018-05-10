@@ -1,3 +1,9 @@
+protobuf_lite = dependency('protobuf-lite', required: false)
+if not protobuf_lite.found()
+	protobuf_lite = subproject('protobuf').get_variable('protobuf_lite_dep')
+endif
+protoc = find_program('protoc')
+
 protobuf_c = dependency('libprotobuf-c', required: false)
 if not protobuf_c.found()
 	protobuf_c = subproject('protobuf-c').get_variable('protobuf_c')
@@ -46,8 +52,6 @@ protobufs = static_library(
 		generated_protobufs,
 		c_args: protobuf_flags,
 		dependencies: protobuf_c,
-		override_options: ['werror=false', 'b_lto=false'],
-		#include_directories: [protobuf_c_include]
-		)
+		override_options: ['werror=false', 'b_lto=false'])
 
-protobuf_include = include_directories('.')
+protobufs_include = include_directories('.')
