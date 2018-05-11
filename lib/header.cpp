@@ -33,7 +33,7 @@ namespace Molch {
 		Expects(!our_public_ephemeral.empty);
 
 		ProtobufCHeader header_struct;
-		header__init(&header_struct);
+		molch__protobuf__header__init(&header_struct);
 
 		//create buffer for our public ephemeral
 		ProtobufCBinaryData protobuf_our_public_ephemeral;
@@ -49,11 +49,11 @@ namespace Molch {
 		header_struct.has_public_ephemeral_key = true;
 
 		//allocate the header buffer
-		auto header_length{header__get_packed_size(&header_struct)};
+		auto header_length{molch__protobuf__header__get_packed_size(&header_struct)};
 		Buffer header{header_length, header_length};
 
 		//pack it
-		auto packed_length{header__pack(&header_struct, byte_to_uchar(header.data()))};
+		auto packed_length{molch__protobuf__header__pack(&header_struct, byte_to_uchar(header.data()))};
 		if (packed_length != header_length) {
 			throw Exception{status_type::PROTOBUF_PACK_ERROR, "Packed header has incorrect length."};
 		}
@@ -69,7 +69,7 @@ namespace Molch {
 			//intput
 			const span<const std::byte> header) {
 		//unpack the message
-		auto header_struct{std::unique_ptr<ProtobufCHeader,HeaderDeleter>(header__unpack(&protobuf_c_allocator, header.size(), byte_to_uchar(header.data())))};
+		auto header_struct{std::unique_ptr<ProtobufCHeader,HeaderDeleter>(molch__protobuf__header__unpack(&protobuf_c_allocator, header.size(), byte_to_uchar(header.data())))};
 		if (!header_struct) {
 			throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack header."};
 		}

@@ -42,9 +42,9 @@ static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
 
 	//unpack all the conversations
 	for (const auto& conversation : exported_conversations) {
-		auto unpacked_size{conversation__get_packed_size(conversation)};
+		auto unpacked_size{molch__protobuf__conversation__get_packed_size(conversation)};
 		export_buffers.emplace_back(unpacked_size, 0);
-		export_buffers.back().setSize(conversation__pack(conversation, byte_to_uchar(export_buffers.back().data())));
+		export_buffers.back().setSize(molch__protobuf__conversation__pack(conversation, byte_to_uchar(export_buffers.back().data())));
 	}
 
 	return export_buffers;
@@ -60,7 +60,7 @@ static ConversationStore protobuf_import(Arena& pool, const std::vector<Buffer> 
 	//unpack all the conversations
 	size_t index{0};
 	for (const auto& buffer : buffers) {
-		conversation_array[index] = conversation__unpack(&pool_protoc_allocator, buffer.size(), byte_to_uchar(buffer.data()));
+		conversation_array[index] = molch__protobuf__conversation__unpack(&pool_protoc_allocator, buffer.size(), byte_to_uchar(buffer.data()));
 		if (conversation_array[index] == nullptr) {
 			throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf."};
 		}

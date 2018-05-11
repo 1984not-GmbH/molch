@@ -50,20 +50,20 @@ static void protobuf_export(
 	key_buffers = std::vector<Buffer>();
 	key_buffers.reserve(exported_keypairs.size());
 	for (const auto& keypair : exported_keypairs) {
-		auto export_size{prekey__get_packed_size(keypair)};
+		auto export_size{molch__protobuf__prekey__get_packed_size(keypair)};
 		key_buffers.emplace_back(export_size, 0);
 
-		key_buffers.back().setSize(prekey__pack(keypair, byte_to_uchar(key_buffers.back().data())));
+		key_buffers.back().setSize(molch__protobuf__prekey__pack(keypair, byte_to_uchar(key_buffers.back().data())));
 	}
 
 	//export all the deprecated keypairs
 	deprecated_key_buffers = std::vector<Buffer>();
 	deprecated_key_buffers.reserve(exported_deprecated_keypairs.size());
 	for (const auto& keypair : exported_deprecated_keypairs) {
-		auto export_size{prekey__get_packed_size(keypair)};
+		auto export_size{molch__protobuf__prekey__get_packed_size(keypair)};
 		deprecated_key_buffers.emplace_back(export_size, 0);
 
-		deprecated_key_buffers.back().setSize(prekey__pack(keypair, byte_to_uchar(deprecated_key_buffers.back().data())));
+		deprecated_key_buffers.back().setSize(molch__protobuf__prekey__pack(keypair, byte_to_uchar(deprecated_key_buffers.back().data())));
 	}
 }
 
@@ -77,7 +77,7 @@ static void protobuf_import(
 	auto keypairs_array{std::unique_ptr<ProtobufCPrekey*[]>(new ProtobufCPrekey*[keypair_buffers.size()])};
 	size_t index{0};
 	for (const auto& keypair_buffer : keypair_buffers) {
-		keypairs_array[index] = prekey__unpack(
+		keypairs_array[index] = molch__protobuf__prekey__unpack(
 				&pool_protoc_allocator,
 				keypair_buffer.size(),
 				byte_to_uchar(keypair_buffer.data()));
@@ -92,7 +92,7 @@ static void protobuf_import(
 	auto deprecated_keypairs_array{std::unique_ptr<ProtobufCPrekey*[]>(new ProtobufCPrekey*[deprecated_keypair_buffers.size()])};
 	index = 0;
 	for (const auto& keypair_buffer : deprecated_keypair_buffers) {
-		deprecated_keypairs_array[index] = prekey__unpack(
+		deprecated_keypairs_array[index] = molch__protobuf__prekey__unpack(
 				&pool_protoc_allocator,
 				keypair_buffer.size(),
 				byte_to_uchar(keypair_buffer.data()));

@@ -34,29 +34,29 @@ namespace Molch {
 	/*!
 	 * Convert molch_message_type to PacketHeader__PacketType.
 	 */
-	static constexpr PacketHeader__PacketType to_packet_header_packet_type(const molch_message_type packet_type) {
+	static constexpr Molch__Protobuf__PacketHeader__PacketType to_packet_header_packet_type(const molch_message_type packet_type) {
 		switch (packet_type) {
 			case molch_message_type::PREKEY_MESSAGE:
-				return PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE;
+				return MOLCH__PROTOBUF__PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE;
 			case molch_message_type::NORMAL_MESSAGE:
-				return PACKET_HEADER__PACKET_TYPE__NORMAL_MESSAGE;
+				return MOLCH__PROTOBUF__PACKET_HEADER__PACKET_TYPE__NORMAL_MESSAGE;
 			case molch_message_type::INVALID:
 			default:
 				//fallback to normal message
-				return PACKET_HEADER__PACKET_TYPE__NORMAL_MESSAGE;
+				return MOLCH__PROTOBUF__PACKET_HEADER__PACKET_TYPE__NORMAL_MESSAGE;
 		}
 	}
 
 	/*!
 	 * Convert PacketHeader__PacketType to molch_message_type.
 	 */
-	static constexpr molch_message_type to_molch_message_type(const PacketHeader__PacketType packet_type) {
+	static constexpr molch_message_type to_molch_message_type(const Molch__Protobuf__PacketHeader__PacketType packet_type) {
 		switch (packet_type) {
-			case PACKET_HEADER__PACKET_TYPE__NORMAL_MESSAGE:
+			case MOLCH__PROTOBUF__PACKET_HEADER__PACKET_TYPE__NORMAL_MESSAGE:
 				return molch_message_type::NORMAL_MESSAGE;
-			case PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE:
+			case MOLCH__PROTOBUF__PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE:
 				return molch_message_type::PREKEY_MESSAGE;
-			case _PACKET_HEADER__PACKET_TYPE_IS_INT_SIZE:
+			case _MOLCH__PROTOBUF__PACKET_HEADER__PACKET_TYPE_IS_INT_SIZE:
 			default:
 				return molch_message_type::INVALID;
 		}
@@ -74,7 +74,7 @@ namespace Molch {
 	 */
 	static std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_unpack(const span<const std::byte> packet) {
 		//unpack the packet
-		auto packet_struct{std::unique_ptr<ProtobufCPacket,PacketDeleter>(packet__unpack(&protobuf_c_allocator, packet.size(), byte_to_uchar(packet.data())))};
+		auto packet_struct{std::unique_ptr<ProtobufCPacket,PacketDeleter>(molch__protobuf__packet__unpack(&protobuf_c_allocator, packet.size(), byte_to_uchar(packet.data())))};
 		if (!packet_struct) {
 			throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack packet."};
 		}
@@ -98,7 +98,7 @@ namespace Molch {
 			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "At least one of the nonces has an incorrect length."};
 		}
 
-		if (packet_struct->packet_header->packet_type == PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
+		if (packet_struct->packet_header->packet_type == MOLCH__PROTOBUF__PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
 			//check if the public keys for prekey messages are there
 			if (!packet_struct->packet_header->has_public_identity_key
 				|| !packet_struct->packet_header->has_public_ephemeral_key
@@ -134,9 +134,9 @@ namespace Molch {
 
 		//initialize the protobuf structs
 		ProtobufCPacket packet_struct;
-		packet__init(&packet_struct);
+		molch__protobuf__packet__init(&packet_struct);
 		ProtobufCPacketHeader packet_header_struct;
-		packet_header__init(&packet_header_struct);
+		molch__protobuf__packet_header__init(&packet_header_struct);
 		packet_struct.packet_header = &packet_header_struct;
 
 		//set the protocol version
@@ -223,10 +223,10 @@ namespace Molch {
 		packet_struct.encrypted_message.len = encrypted_message.size();
 
 		//calculate the required length
-		const size_t packed_length{packet__get_packed_size(&packet_struct)};
+		const size_t packed_length{molch__protobuf__packet__get_packed_size(&packet_struct)};
 		//pack the packet
 		Buffer packet{packed_length, 0};
-		packet.setSize(packet__pack(&packet_struct, byte_to_uchar(packet.data())));
+		packet.setSize(molch__protobuf__packet__pack(&packet_struct, byte_to_uchar(packet.data())));
 		if (packet.size() != packed_length) {
 			throw Exception{status_type::PROTOBUF_PACK_ERROR, "Packet packet has incorrect length."};
 		}
@@ -279,7 +279,7 @@ namespace Molch {
 			PublicKey * const public_prekey) {
 		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct{packet_unpack(packet)};
 
-		if (packet_struct->packet_header->packet_type == PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
+		if (packet_struct->packet_header->packet_type == MOLCH__PROTOBUF__PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
 			//copy the public keys
 			if (public_identity_key != nullptr) {
 				public_identity_key->set({

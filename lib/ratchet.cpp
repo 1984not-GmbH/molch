@@ -411,7 +411,7 @@ namespace Molch {
 
 	ProtobufCConversation* Ratchet::exportProtobuf(Arena& pool) const {
 		auto conversation{pool.allocate<ProtobufCConversation>(1)};
-		conversation__init(conversation);
+		molch__protobuf__conversation__init(conversation);
 
 		//root keys
 		//root key
@@ -587,16 +587,16 @@ namespace Molch {
 		conversation->header_decryptable = [&] () {
 				switch (this->header_decryptable) {
 					case HeaderDecryptability::CURRENT_DECRYPTABLE:
-						return CONVERSATION__HEADER_DECRYPTABILITY__CURRENT_DECRYPTABLE;
+						return MOLCH__PROTOBUF__CONVERSATION__HEADER_DECRYPTABILITY__CURRENT_DECRYPTABLE;
 
 					case HeaderDecryptability::NEXT_DECRYPTABLE:
-						return CONVERSATION__HEADER_DECRYPTABILITY__NEXT_DECRYPTABLE;
+						return MOLCH__PROTOBUF__CONVERSATION__HEADER_DECRYPTABILITY__NEXT_DECRYPTABLE;
 
 					case HeaderDecryptability::UNDECRYPTABLE:
-						return CONVERSATION__HEADER_DECRYPTABILITY__UNDECRYPTABLE;
+						return MOLCH__PROTOBUF__CONVERSATION__HEADER_DECRYPTABILITY__UNDECRYPTABLE;
 
 					case HeaderDecryptability::NOT_TRIED:
-						return CONVERSATION__HEADER_DECRYPTABILITY__NOT_TRIED;
+						return MOLCH__PROTOBUF__CONVERSATION__HEADER_DECRYPTABILITY__NOT_TRIED;
 
 					default:
 						throw Exception{status_type::INVALID_VALUE, "Invalid value of ratchet->header_decryptable."};
@@ -673,19 +673,19 @@ namespace Molch {
 		}
 		this->header_decryptable = [&] () {
 			switch (conversation.header_decryptable) {
-				case CONVERSATION__HEADER_DECRYPTABILITY__CURRENT_DECRYPTABLE:
+				case MOLCH__PROTOBUF__CONVERSATION__HEADER_DECRYPTABILITY__CURRENT_DECRYPTABLE:
 					return HeaderDecryptability::CURRENT_DECRYPTABLE;
 
-				case CONVERSATION__HEADER_DECRYPTABILITY__NEXT_DECRYPTABLE:
+				case MOLCH__PROTOBUF__CONVERSATION__HEADER_DECRYPTABILITY__NEXT_DECRYPTABLE:
 					return HeaderDecryptability::NEXT_DECRYPTABLE;
 
-				case CONVERSATION__HEADER_DECRYPTABILITY__UNDECRYPTABLE:
+				case MOLCH__PROTOBUF__CONVERSATION__HEADER_DECRYPTABILITY__UNDECRYPTABLE:
 					return HeaderDecryptability::UNDECRYPTABLE;
 
-				case CONVERSATION__HEADER_DECRYPTABILITY__NOT_TRIED:
+				case MOLCH__PROTOBUF__CONVERSATION__HEADER_DECRYPTABILITY__NOT_TRIED:
 					return HeaderDecryptability::NOT_TRIED;
 
-				case _CONVERSATION__HEADER_DECRYPTABILITY_IS_INT_SIZE:
+				case _MOLCH__PROTOBUF__CONVERSATION__HEADER_DECRYPTABILITY_IS_INT_SIZE:
 				default:
 					throw Exception{status_type::INVALID_VALUE, "header_decryptable has an invalid value."};
 			}

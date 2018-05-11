@@ -234,7 +234,7 @@ namespace Molch {
 
 	ProtobufCUser* User::exportProtobuf(Arena& pool) const {
 		auto user{pool.allocate<ProtobufCUser>(1)};
-		user__init(user);
+		molch__protobuf__user__init(user);
 
 		this->master_keys.exportProtobuf(
 			pool,

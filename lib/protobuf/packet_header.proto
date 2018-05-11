@@ -1,4 +1,10 @@
 syntax = "proto2";
+
+option cc_enable_arenas = true;
+option optimize_for = LITE_RUNTIME;
+
+package Molch.Protobuf;
+
 message PacketHeader {
 	required uint32 current_protocol_version = 1;
 	required uint32 highest_supported_protocol_version = 2;

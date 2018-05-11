@@ -1,4 +1,10 @@
 syntax = "proto2";
+
+option cc_enable_arenas = true;
+option optimize_for = LITE_RUNTIME;
+
+package Molch.Protobuf;
+
 import "key_bundle.proto";
 
 message Conversation {

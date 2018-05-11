@@ -43,9 +43,9 @@ static std::vector<Buffer> protobuf_export(UserStore& store) {
 
 	//unpack all the users
 	for (size_t i{0}; i < length; i++) {
-		auto unpacked_size{user__get_packed_size(users[i])};
+		auto unpacked_size{molch__protobuf__user__get_packed_size(users[i])};
 		export_buffers.emplace_back(unpacked_size, 0);
-		export_buffers.back().setSize(user__pack(users[i], byte_to_uchar(export_buffers.back().data())));
+		export_buffers.back().setSize(molch__protobuf__user__pack(users[i], byte_to_uchar(export_buffers.back().data())));
 	}
 
 	return export_buffers;
@@ -62,7 +62,7 @@ static UserStore protobuf_import(Arena& pool, const std::vector<Buffer> buffers)
 	//unpack all the conversations
 	size_t index{0};
 	for (const auto& buffer : buffers) {
-		user_array[index] = user__unpack(&pool_protoc_allocator, buffer.size(), byte_to_uchar(buffer.data()));
+		user_array[index] = molch__protobuf__user__unpack(&pool_protoc_allocator, buffer.size(), byte_to_uchar(buffer.data()));
 		if (user_array[index] == nullptr) {
 			throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack user from protobuf."};
 		}

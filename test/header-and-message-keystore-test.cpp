@@ -46,9 +46,9 @@ static void protobuf_export(
 
 	//create all the export buffers
 	for (const auto& key_bundle : exported_bundles) {
-		auto export_size{key_bundle__get_packed_size(key_bundle)};
+		auto export_size{molch__protobuf__key_bundle__get_packed_size(key_bundle)};
 		Buffer export_buffer{export_size, 0};
-		export_buffer.setSize(key_bundle__pack(key_bundle, byte_to_uchar(export_buffer.data())));
+		export_buffer.setSize(molch__protobuf__key_bundle__pack(key_bundle, byte_to_uchar(export_buffer.data())));
 		if (export_buffer.size() != export_size) {
 			throw Molch::Exception{status_type::PROTOBUF_PACK_ERROR, "Packed buffer has incorrect length."};
 		}
@@ -65,7 +65,7 @@ static void protobuf_import(
 	//parse all the exported protobuf buffers
 	size_t index{0};
 	for (const auto& exported_buffer : exported_buffers) {
-		key_bundles_array[index] = key_bundle__unpack(
+		key_bundles_array[index] = molch__protobuf__key_bundle__unpack(
 						&pool_protoc_allocator,
 						exported_buffer.size(),
 						byte_to_uchar(exported_buffer.data()));

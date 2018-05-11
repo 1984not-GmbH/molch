@@ -37,9 +37,9 @@ static Buffer protobuf_export(Ratchet& ratchet) {
 	Arena pool;
 	auto conversation{ratchet.exportProtobuf(pool)};
 
-	auto export_size{conversation__get_packed_size(conversation)};
+	auto export_size{molch__protobuf__conversation__get_packed_size(conversation)};
 	Buffer export_buffer{export_size, 0};
-	export_buffer.setSize(conversation__pack(conversation, byte_to_uchar(export_buffer.data())));
+	export_buffer.setSize(molch__protobuf__conversation__pack(conversation, byte_to_uchar(export_buffer.data())));
 	if (export_size != export_buffer.size()) {
 		throw Molch::Exception{status_type::EXPORT_ERROR, "Failed to export ratchet."};
 	}
@@ -50,7 +50,7 @@ static Buffer protobuf_export(Ratchet& ratchet) {
 static std::unique_ptr<Ratchet> protobuf_import(Arena& pool, const Buffer& export_buffer) {
 	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 	//unpack the buffer
-	auto conversation{conversation__unpack(
+	auto conversation{molch__protobuf__conversation__unpack(
 			&pool_protoc_allocator,
 			export_buffer.size(),
 			byte_to_uchar(export_buffer.data()))};

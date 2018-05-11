@@ -40,9 +40,9 @@ static Buffer protobuf_export(const Molch::Conversation& conversation) {
 	Arena pool;
 	auto exported_conversation{conversation.exportProtobuf(pool)};
 
-	auto export_size{conversation__get_packed_size(exported_conversation)};
+	auto export_size{molch__protobuf__conversation__get_packed_size(exported_conversation)};
 	Buffer export_buffer{export_size, 0};
-	export_buffer.setSize(conversation__pack(exported_conversation, byte_to_uchar(export_buffer.data())));
+	export_buffer.setSize(molch__protobuf__conversation__pack(exported_conversation, byte_to_uchar(export_buffer.data())));
 	if (export_size != export_buffer.size()) {
 		throw Molch::Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack protobuf-c struct into buffer."};
 	}
@@ -52,7 +52,7 @@ static Buffer protobuf_export(const Molch::Conversation& conversation) {
 
 static std::unique_ptr<Molch::Conversation> protobuf_import(Arena& pool, const Buffer& import_buffer) {
 	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
-	auto conversation_protobuf{conversation__unpack(
+	auto conversation_protobuf{molch__protobuf__conversation__unpack(
 		&pool_protoc_allocator,
 		import_buffer.size(),
 		byte_to_uchar(import_buffer.data()))};

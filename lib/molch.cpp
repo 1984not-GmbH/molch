@@ -965,7 +965,7 @@ cleanup:
 					&& (conversation_id_length == CONVERSATION_ID_SIZE));
 
 			ProtobufCEncryptedBackup encrypted_backup_struct;
-			encrypted_backup__init(&encrypted_backup_struct);
+			molch__protobuf__encrypted_backup__init(&encrypted_backup_struct);
 
 			if (!users) {
 				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
@@ -989,10 +989,10 @@ cleanup:
 			auto conversation_struct{conversation->exportProtobuf(pool)};
 
 			//pack the struct
-			auto conversation_size{conversation__get_packed_size(conversation_struct)};
+			auto conversation_size{molch__protobuf__conversation__get_packed_size(conversation_struct)};
 			auto conversation_buffer_content{pool.allocate<std::byte>(conversation_size)};
 			span<std::byte> conversation_buffer{conversation_buffer_content, conversation_size};
-			conversation__pack(conversation_struct, byte_to_uchar(conversation_buffer.data()));
+			molch__protobuf__conversation__pack(conversation_struct, byte_to_uchar(conversation_buffer.data()));
 
 			//generate the nonce
 			Buffer backup_nonce{BACKUP_NONCE_SIZE, 0};
@@ -1018,7 +1018,7 @@ cleanup:
 			//metadata
 			encrypted_backup_struct.backup_version = 0;
 			encrypted_backup_struct.has_backup_type = true;
-			encrypted_backup_struct.backup_type = ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP;
+			encrypted_backup_struct.backup_type = MOLCH__PROTOBUF__ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP;
 			//nonce
 			encrypted_backup_struct.has_encrypted_backup_nonce = true;
 			encrypted_backup_struct.encrypted_backup_nonce.data = byte_to_uchar(backup_nonce.data());
@@ -1029,9 +1029,9 @@ cleanup:
 			encrypted_backup_struct.encrypted_backup.len = backup_buffer.size();
 
 			//now pack the entire backup
-			const auto encrypted_backup_size{encrypted_backup__get_packed_size(&encrypted_backup_struct)};
+			const auto encrypted_backup_size{molch__protobuf__encrypted_backup__get_packed_size(&encrypted_backup_struct)};
 			MallocBuffer malloced_encrypted_backup{encrypted_backup_size, 0};
-			malloced_encrypted_backup.setSize(encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data())));
+			malloced_encrypted_backup.setSize(molch__protobuf__encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data())));
 			if (malloced_encrypted_backup.size() != encrypted_backup_size) {
 				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation."};
 			}
@@ -1086,7 +1086,7 @@ cleanup:
 			}
 
 			//unpack the encrypted backup
-			auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup))};
+			auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(molch__protobuf__encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup))};
 			if (encrypted_backup_struct == nullptr) {
 				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf."};
 			}
@@ -1095,7 +1095,7 @@ cleanup:
 			if (encrypted_backup_struct->backup_version != 0) {
 				throw Exception{status_type::INCORRECT_DATA, "Incompatible backup."};
 			}
-			if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP)) {
+			if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != MOLCH__PROTOBUF__ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP)) {
 				throw Exception{status_type::INCORRECT_DATA, "Backup is not a conversation backup."};
 			}
 			if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
@@ -1125,7 +1125,7 @@ cleanup:
 
 			//unpack the struct
 			auto pool_protoc_allocator{pool.getProtobufCAllocator()};
-			auto conversation_struct{conversation__unpack(&pool_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
+			auto conversation_struct{molch__protobuf__conversation__unpack(&pool_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
 			if (conversation_struct == nullptr) {
 				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack conversations protobuf-c."};
 			}
@@ -1187,7 +1187,7 @@ cleanup:
 
 			Arena pool;
 			auto backup_struct{pool.allocate<ProtobufCBackup>(1)};
-			backup__init(backup_struct);
+			molch__protobuf__backup__init(backup_struct);
 
 			//export the conversation
 			auto exported_users{users->exportProtobuf(pool)};
@@ -1195,10 +1195,10 @@ cleanup:
 			backup_struct->n_users = exported_users.size();
 
 			//pack the struct
-			auto backup_struct_size{backup__get_packed_size(backup_struct)};
+			auto backup_struct_size{molch__protobuf__backup__get_packed_size(backup_struct)};
 			auto users_buffer_content{pool.allocate<std::byte>(backup_struct_size)};
 			span<std::byte> users_buffer{users_buffer_content, backup_struct_size};
-			backup__pack(backup_struct, byte_to_uchar(users_buffer.data()));
+			molch__protobuf__backup__pack(backup_struct, byte_to_uchar(users_buffer.data()));
 
 			//generate the nonce
 			Buffer backup_nonce{BACKUP_NONCE_SIZE, 0};
@@ -1220,11 +1220,11 @@ cleanup:
 
 			//fill in the encrypted backup struct
 			ProtobufCEncryptedBackup encrypted_backup_struct;
-			encrypted_backup__init(&encrypted_backup_struct);
+			molch__protobuf__encrypted_backup__init(&encrypted_backup_struct);
 			//metadata
 			encrypted_backup_struct.backup_version = 0;
 			encrypted_backup_struct.has_backup_type = true;
-			encrypted_backup_struct.backup_type = ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP;
+			encrypted_backup_struct.backup_type = MOLCH__PROTOBUF__ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP;
 			//nonce
 			encrypted_backup_struct.has_encrypted_backup_nonce = true;
 			encrypted_backup_struct.encrypted_backup_nonce.data = byte_to_uchar(backup_nonce.data());
@@ -1235,9 +1235,9 @@ cleanup:
 			encrypted_backup_struct.encrypted_backup.len = backup_buffer.size();
 
 			//now pack the entire backup
-			const auto encrypted_backup_size{encrypted_backup__get_packed_size(&encrypted_backup_struct)};
+			const auto encrypted_backup_size{molch__protobuf__encrypted_backup__get_packed_size(&encrypted_backup_struct)};
 			MallocBuffer malloced_encrypted_backup{encrypted_backup_size, 0};
-			malloced_encrypted_backup.setSize(encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data())));
+			malloced_encrypted_backup.setSize(molch__protobuf__encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data())));
 			if (malloced_encrypted_backup.size() != encrypted_backup_size) {
 				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation."};
 			}
@@ -1296,7 +1296,7 @@ cleanup:
 			}
 
 			//unpack the encrypted backup
-			auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup))};
+			auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(molch__protobuf__encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup))};
 			if (encrypted_backup_struct == nullptr) {
 				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf."};
 			}
@@ -1305,7 +1305,7 @@ cleanup:
 			if (encrypted_backup_struct->backup_version != 0) {
 				throw Exception{status_type::INCORRECT_DATA, "Incompatible backup."};
 			}
-			if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP)) {
+			if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != MOLCH__PROTOBUF__ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP)) {
 				throw Exception{status_type::INCORRECT_DATA, "Backup is not a full backup."};
 			}
 			if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
@@ -1335,7 +1335,7 @@ cleanup:
 
 			//unpack the struct
 			auto pool_protoc_allocator{pool.getProtobufCAllocator()};
-			auto backup_struct{backup__unpack(&pool_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
+			auto backup_struct{molch__protobuf__backup__unpack(&pool_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
 			if (backup_struct == nullptr) {
 				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack backups protobuf-c."};
 			}

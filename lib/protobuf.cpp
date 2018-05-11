@@ -24,15 +24,15 @@
 
 namespace Molch {
 	void EncryptedBackupDeleter::operator ()(ProtobufCEncryptedBackup* backup) {
-		encrypted_backup__free_unpacked(backup, &protobuf_c_allocator);
+		molch__protobuf__encrypted_backup__free_unpacked(backup, &protobuf_c_allocator);
 	}
 
 	void HeaderDeleter::operator ()(ProtobufCHeader* header) {
-		header__free_unpacked(header, &protobuf_c_allocator);
+		molch__protobuf__header__free_unpacked(header, &protobuf_c_allocator);
 	}
 
 	void PacketDeleter::operator ()(ProtobufCPacket *packet) {
-		packet__free_unpacked(packet, &protobuf_c_allocator);
+		molch__protobuf__packet__free_unpacked(packet, &protobuf_c_allocator);
 	}
 
 	void *protobuf_c_new(void *allocator_data, size_t size) {

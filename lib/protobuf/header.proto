@@ -1,4 +1,10 @@
 syntax = "proto2";
+
+option cc_enable_arenas = true;
+option optimize_for = LITE_RUNTIME;
+
+package Molch.Protobuf;
+
 message Header {
 	optional bytes public_ephemeral_key = 1;
 	//fixed32 in order to not leak data from the length

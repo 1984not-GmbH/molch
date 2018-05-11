@@ -223,7 +223,7 @@ namespace Molch {
 
 		ProtobufCKey* exportProtobuf(Arena& pool) const {
 			auto key{pool.allocate<ProtobufCKey>(1)};
-			key__init(key);
+			molch__protobuf__key__init(key);
 
 			key->key.data = pool.allocate<uint8_t>(length);
 			key->key.len = length;

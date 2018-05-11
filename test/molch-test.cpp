@@ -40,7 +40,7 @@ static span<std::byte> decrypt_conversation_backup(
 	Expects(!backup.empty() && (backup_key.size() == BACKUP_KEY_SIZE));
 
 	//unpack the encrypted backup
-	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, backup.size(), byte_to_uchar(backup.data())))};
+	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(molch__protobuf__encrypted_backup__unpack(&protobuf_c_allocator, backup.size(), byte_to_uchar(backup.data())))};
 	if (encrypted_backup_struct == nullptr) {
 		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf."};
 	}
@@ -49,7 +49,7 @@ static span<std::byte> decrypt_conversation_backup(
 	if (encrypted_backup_struct->backup_version != 0) {
 		throw Molch::Exception{status_type::INCORRECT_DATA, "Incompatible backup."};
 	}
-	if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP)) {
+	if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != MOLCH__PROTOBUF__ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP)) {
 		throw Molch::Exception{status_type::INCORRECT_DATA, "Backup is not a conversation backup."};
 	}
 	if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
@@ -87,7 +87,7 @@ static span<std::byte> decrypt_full_backup(
 	Expects(!backup.empty() && (backup_key.size() == BACKUP_KEY_SIZE));
 
 	//unpack the encrypted backup
-	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(encrypted_backup__unpack(&protobuf_c_allocator, backup.size(), byte_to_uchar(backup.data())))};
+	auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(molch__protobuf__encrypted_backup__unpack(&protobuf_c_allocator, backup.size(), byte_to_uchar(backup.data())))};
 	if (encrypted_backup_struct == nullptr) {
 		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf."};
 	}
@@ -96,7 +96,7 @@ static span<std::byte> decrypt_full_backup(
 	if (encrypted_backup_struct->backup_version != 0) {
 		throw Molch::Exception{status_type::INCORRECT_DATA, "Incompatible backup."};
 	}
-	if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP)) {
+	if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != MOLCH__PROTOBUF__ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP)) {
 		throw Molch::Exception{status_type::INCORRECT_DATA, "Backup is not a conversation backup."};
 	}
 	if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {

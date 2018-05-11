@@ -98,7 +98,7 @@ namespace Molch {
 
 	ProtobufCPrekey* Prekey::exportProtobuf(Arena& pool) const {
 		auto prekey{pool.allocate<ProtobufCPrekey>(1)};
-		prekey__init(prekey);
+		molch__protobuf__prekey__init(prekey);
 
 		prekey->private_key = this->private_key.exportProtobuf(pool);
 
