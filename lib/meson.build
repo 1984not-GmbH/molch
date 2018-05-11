@@ -32,7 +32,7 @@ molch = library(
 		'molch',
 		lib_sources,
 		dependencies: [libsodium, protobuf_lite],
-		link_with: protobufs,
-		include_directories: [protobufs_include, gsl_include],
+		link_with: c_protobufs,
+		include_directories: [c_protobufs_include, gsl_include],
 		implicit_include_directories: false,
 		install: true)

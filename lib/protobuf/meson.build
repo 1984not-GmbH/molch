@@ -23,9 +23,9 @@ protobuf_definitions = [
 	'user'
 ]
 
-generated_protobufs = []
+generated_c_protobufs = []
 foreach protobuf_definition : protobuf_definitions
-	generated_protobufs += custom_target(
+	generated_c_protobufs += custom_target(
 			protobuf_definition,
 			command: [
 				protoc_c,
@@ -47,11 +47,11 @@ foreach flag : proposed_protobuf_flags
 	endif
 endforeach
 
-protobufs = static_library(
-		'protobufs',
-		generated_protobufs,
+c_protobufs = static_library(
+		'c_protobufs',
+		generated_c_protobufs,
 		c_args: protobuf_flags,
 		dependencies: protobuf_c,
 		override_options: ['werror=false', 'b_lto=false'])
 
-protobufs_include = include_directories('.')
+c_protobufs_include = include_directories('.')

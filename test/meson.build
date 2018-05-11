@@ -37,7 +37,7 @@ test_library = library(
 			'common.cpp',
 			'packet-test-lib.cpp'
 		],
-		include_directories: [protobufs_include, gsl_include],
+		include_directories: [c_protobufs_include, gsl_include],
 		link_with: molch,
 		dependencies: protobuf_lite
 )
@@ -46,9 +46,9 @@ foreach test : tests
 	test_exe = executable(
 			test,
 			test + '.cpp',
-			link_with: [test_library, molch, protobufs],
+			link_with: [test_library, molch, c_protobufs],
 			dependencies: [libsodium, protobuf_lite],
-			include_directories: [protobufs_include, gsl_include])
+			include_directories: [c_protobufs_include, gsl_include])
 	test(test, test_exe, workdir: meson.current_source_dir())
 endforeach
 
