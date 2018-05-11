@@ -56,7 +56,7 @@ static ConversationStore protobuf_import(Arena& pool, const std::vector<Buffer> 
 		conversation_array = std::unique_ptr<ProtobufCConversation*[]>(new ProtobufCConversation*[buffers.size()]);
 	}
 
-	auto pool_protoc_allocator{getProtobufCAllocator(pool)};
+	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 	//unpack all the conversations
 	size_t index{0};
 	for (const auto& buffer : buffers) {

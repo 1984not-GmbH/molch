@@ -48,7 +48,7 @@ static Buffer protobuf_export(Ratchet& ratchet) {
 }
 
 static std::unique_ptr<Ratchet> protobuf_import(Arena& pool, const Buffer& export_buffer) {
-	auto pool_protoc_allocator{getProtobufCAllocator(pool)};
+	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 	//unpack the buffer
 	auto conversation{conversation__unpack(
 			&pool_protoc_allocator,

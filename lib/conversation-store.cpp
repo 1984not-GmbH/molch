@@ -135,7 +135,7 @@ namespace Molch {
 		}
 
 		//export the conversations
-		auto conversations{Arena::CreateArray<ProtobufCConversation*>(&pool, this->conversations.size())};
+		auto conversations{pool.allocate<ProtobufCConversation*>(this->conversations.size())};
 		size_t index{0};
 		for (const auto& conversation : this->conversations) {
 			conversations[index] = conversation.exportProtobuf(pool);

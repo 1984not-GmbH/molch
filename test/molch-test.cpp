@@ -59,8 +59,7 @@ static span<std::byte> decrypt_conversation_backup(
 		throw Molch::Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
 	}
 
-	auto decrypted_backup_content{Arena::CreateArray<std::byte>(
-			&pool,
+	auto decrypted_backup_content{pool.allocate<std::byte>(
 			encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
 	span<std::byte> decrypted_backup{
 		decrypted_backup_content,
@@ -107,8 +106,7 @@ static span<std::byte> decrypt_full_backup(
 		throw Molch::Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
 	}
 
-	auto decrypted_backup_content{Arena::CreateArray<std::byte>(
-		&pool,
+	auto decrypted_backup_content{pool.allocate<std::byte>(
 		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
 	span<std::byte> decrypted_backup{
 		decrypted_backup_content,

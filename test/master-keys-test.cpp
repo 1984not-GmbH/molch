@@ -93,7 +93,7 @@ static void protobuf_import(
 		const Buffer& private_signing_key_buffer,
 		const Buffer& public_identity_key_buffer,
 		const Buffer& private_identity_key_buffer) {
-	auto pool_protoc_allocator{getProtobufCAllocator(pool)};
+	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 
 	//unpack the protobuf-c buffers
 	auto public_signing_key{key__unpack(

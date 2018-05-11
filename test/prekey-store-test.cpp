@@ -72,7 +72,7 @@ static void protobuf_import(
 		std::unique_ptr<PrekeyStore>& store,
 		const std::vector<Buffer>& keypair_buffers,
 		const std::vector<Buffer>& deprecated_keypair_buffers) {
-	auto pool_protoc_allocator{getProtobufCAllocator(pool)};
+	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 	//parse the normal prekey protobufs
 	auto keypairs_array{std::unique_ptr<ProtobufCPrekey*[]>(new ProtobufCPrekey*[keypair_buffers.size()])};
 	size_t index{0};

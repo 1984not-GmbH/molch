@@ -97,7 +97,7 @@ namespace Molch {
 	}
 
 	ProtobufCPrekey* Prekey::exportProtobuf(Arena& pool) const {
-		auto prekey{Arena::CreateArray<ProtobufCPrekey>(&pool, 1)};
+		auto prekey{pool.allocate<ProtobufCPrekey>(1)};
 		prekey__init(prekey);
 
 		prekey->private_key = this->private_key.exportProtobuf(pool);
@@ -309,7 +309,7 @@ namespace Molch {
 		}
 
 		//export all buffers
-		auto keypairs_array{Arena::CreateArray<ProtobufCPrekey*>(&pool, container.size())};
+		auto keypairs_array{pool.allocate<ProtobufCPrekey*>(container.size())};
 		size_t index{0};
 		for (const auto& key : container) {
 			keypairs_array[index] = key.exportProtobuf(pool);

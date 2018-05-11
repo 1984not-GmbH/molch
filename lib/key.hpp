@@ -222,10 +222,10 @@ namespace Molch {
 		}
 
 		ProtobufCKey* exportProtobuf(Arena& pool) const {
-			auto key{Arena::CreateArray<ProtobufCKey>(&pool, 1)};
+			auto key{pool.allocate<ProtobufCKey>(1)};
 			key__init(key);
 
-			key->key.data = Arena::CreateArray<uint8_t>(&pool, length);
+			key->key.data = pool.allocate<uint8_t>(length);
 			key->key.len = length;
 			this->copyTo({
 					uchar_to_byte(key->key.data),

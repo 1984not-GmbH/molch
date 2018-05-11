@@ -51,7 +51,7 @@ static Buffer protobuf_export(const Molch::Conversation& conversation) {
 }
 
 static std::unique_ptr<Molch::Conversation> protobuf_import(Arena& pool, const Buffer& import_buffer) {
-	auto pool_protoc_allocator{getProtobufCAllocator(pool)};
+	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 	auto conversation_protobuf{conversation__unpack(
 		&pool_protoc_allocator,
 		import_buffer.size(),

@@ -23,7 +23,7 @@
 #include "sodium-wrappers.hpp"
 
 namespace Molch {
-	const ArenaOptions& getArenaOptions() {
+	static google::protobuf::ArenaOptions& getArenaOptions() {
 		static constexpr size_t block_size{102400};
 		static auto initialized{false};
 		static google::protobuf::ArenaOptions arena_options;
@@ -47,18 +47,20 @@ namespace Molch {
 
 			return (size / sizeof(max_align_t)) + 1;
 		}();
-		auto pointer{Arena::CreateArray<max_align_t>(reinterpret_cast<Arena*>(arena), elements)};
+		auto pointer{reinterpret_cast<Arena*>(arena)->allocate<max_align_t>(elements)};
 
 		return reinterpret_cast<void*>(pointer);
 	}
 
 	static void protobufCDeallocate([[maybe_unused]] void* arena, [[maybe_unused]] void* pointer) {}
 
-	ProtobufCAllocator getProtobufCAllocator(Arena& arena) {
+	Arena::Arena() : google::protobuf::Arena(getArenaOptions()) {}
+
+	ProtobufCAllocator Arena::getProtobufCAllocator() {
 		return {
 			protobufCAllocate,
 			protobufCDeallocate,
-			reinterpret_cast<void*>(&arena)
+			reinterpret_cast<void*>(this)
 		};
 	}
 }

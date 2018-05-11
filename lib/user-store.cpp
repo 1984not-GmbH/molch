@@ -233,7 +233,7 @@ namespace Molch {
 	}
 
 	ProtobufCUser* User::exportProtobuf(Arena& pool) const {
-		auto user{Arena::CreateArray<ProtobufCUser>(&pool, 1)};
+		auto user{pool.allocate<ProtobufCUser>(1)};
 		user__init(user);
 
 		this->master_keys.exportProtobuf(
@@ -269,7 +269,7 @@ namespace Molch {
 		}
 
 		//export the conversations
-		auto users_array{Arena::CreateArray<ProtobufCUser*>(&pool, this->users.size())};
+		auto users_array{pool.allocate<ProtobufCUser*>(this->users.size())};
 		size_t index{0};
 		for (const auto& user : this->users) {
 			users_array[index] = user.exportProtobuf(pool);

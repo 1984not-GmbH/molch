@@ -985,12 +985,12 @@ cleanup:
 			}
 
 			//export the conversation
-			Arena pool(getArenaOptions());
+			Arena pool;
 			auto conversation_struct{conversation->exportProtobuf(pool)};
 
 			//pack the struct
 			auto conversation_size{conversation__get_packed_size(conversation_struct)};
-			auto conversation_buffer_content{Arena::CreateArray<std::byte>(&pool, conversation_size)};
+			auto conversation_buffer_content{pool.allocate<std::byte>(conversation_size)};
 			span<std::byte> conversation_buffer{conversation_buffer_content, conversation_size};
 			conversation__pack(conversation_struct, byte_to_uchar(conversation_buffer.data()));
 
@@ -1105,9 +1105,8 @@ cleanup:
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
 			}
 
-			Arena pool(getArenaOptions());
-			auto decrypted_backup_content{Arena::CreateArray<std::byte>(
-						&pool,
+			Arena pool;
+			auto decrypted_backup_content{pool.allocate<std::byte>(
 						encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
 			span<std::byte> decrypted_backup{
 					decrypted_backup_content,
@@ -1125,7 +1124,7 @@ cleanup:
 			}
 
 			//unpack the struct
-			auto pool_protoc_allocator{getProtobufCAllocator(pool)};
+			auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 			auto conversation_struct{conversation__unpack(&pool_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
 			if (conversation_struct == nullptr) {
 				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack conversations protobuf-c."};
@@ -1186,8 +1185,8 @@ cleanup:
 				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
 			}
 
-			Arena pool(getArenaOptions());
-			auto backup_struct{Arena::CreateArray<ProtobufCBackup>(&pool, 1)};
+			Arena pool;
+			auto backup_struct{pool.allocate<ProtobufCBackup>(1)};
 			backup__init(backup_struct);
 
 			//export the conversation
@@ -1197,7 +1196,7 @@ cleanup:
 
 			//pack the struct
 			auto backup_struct_size{backup__get_packed_size(backup_struct)};
-			auto users_buffer_content{Arena::CreateArray<std::byte>(&pool, backup_struct_size)};
+			auto users_buffer_content{pool.allocate<std::byte>(backup_struct_size)};
 			span<std::byte> users_buffer{users_buffer_content, backup_struct_size};
 			backup__pack(backup_struct, byte_to_uchar(users_buffer.data()));
 
@@ -1316,9 +1315,8 @@ cleanup:
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
 			}
 
-			Arena pool(getArenaOptions());
-			auto decrypted_backup_content{Arena::CreateArray<std::byte>(
-					&pool,
+			Arena pool;
+			auto decrypted_backup_content{pool.allocate<std::byte>(
 					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
 			span<std::byte> decrypted_backup{
 					decrypted_backup_content,
@@ -1336,7 +1334,7 @@ cleanup:
 			}
 
 			//unpack the struct
-			auto pool_protoc_allocator{getProtobufCAllocator(pool)};
+			auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 			auto backup_struct{backup__unpack(&pool_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
 			if (backup_struct == nullptr) {
 				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack backups protobuf-c."};

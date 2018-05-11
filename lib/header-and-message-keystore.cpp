@@ -109,7 +109,7 @@ namespace Molch {
 	}
 
 	ProtobufCKeyBundle* HeaderAndMessageKey::exportProtobuf(Arena& pool) const {
-		auto key_bundle{Arena::CreateArray<ProtobufCKeyBundle>(&pool, 1)};
+		auto key_bundle{pool.allocate<ProtobufCKeyBundle>(1)};
 		key_bundle__init(key_bundle);
 
 		//export the keys
@@ -222,7 +222,7 @@ namespace Molch {
 		}
 
 		//export all buffers
-		auto key_bundles{Arena::CreateArray<ProtobufCKeyBundle*>(&pool, this->key_storage.size())};
+		auto key_bundles{pool.allocate<ProtobufCKeyBundle*>(this->key_storage.size())};
 		size_t index{0};
 		for (const auto& key : this->key_storage) {
 			key_bundles[index] = key.exportProtobuf(pool);

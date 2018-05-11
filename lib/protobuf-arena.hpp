@@ -25,13 +25,21 @@
 #include <google/protobuf/arena.h>
 #include <protobuf-c/protobuf-c.h>
 
-using google::protobuf::Arena;
-using google::protobuf::ArenaOptions;
-
 namespace Molch {
-	const ArenaOptions& getArenaOptions();
+	class Arena : public google::protobuf::Arena {
+		public:
+			Arena();
 
-	ProtobufCAllocator getProtobufCAllocator(Arena& arena);
+			ProtobufCAllocator getProtobufCAllocator();
+
+			template<typename T>
+			T* CreateArray(size_t elements) = delete;
+
+			template<typename T>
+			T* allocate(size_t elements) {
+				return google::protobuf::Arena::CreateArray<T>(this, elements);
+			}
+	};
 }
 
 #endif /* LIB_PROTOBUF_ARENA_H */
