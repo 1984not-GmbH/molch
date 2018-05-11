@@ -32,7 +32,6 @@
 #include "sodium-wrappers.hpp"
 #include "protobuf.hpp"
 #include "key.hpp"
-#include "protobuf-pool.hpp"
 #include "time.hpp"
 
 namespace Molch {
@@ -64,7 +63,7 @@ namespace Molch {
 		const HeaderKey& headerKey() const;
 		seconds expirationDate() const;
 
-		ProtobufCKeyBundle* exportProtobuf(ProtobufPool& pool) const;
+		ProtobufCKeyBundle* exportProtobuf(Arena& pool) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};
@@ -98,7 +97,7 @@ namespace Molch {
 		const std::vector<HeaderAndMessageKey,SodiumAllocator<HeaderAndMessageKey>>& keys() const;
 
 		//! Export a header_and_message_keystore as Protobuf-C struct.
-		span<ProtobufCKeyBundle*> exportProtobuf(ProtobufPool& pool) const;
+		span<ProtobufCKeyBundle*> exportProtobuf(Arena& pool) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

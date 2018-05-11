@@ -34,7 +34,7 @@
 using namespace Molch;
 
 static Buffer protobuf_export(Ratchet& ratchet) {
-	ProtobufPool pool;
+	Arena pool;
 	auto conversation{ratchet.exportProtobuf(pool)};
 
 	auto export_size{conversation__get_packed_size(conversation)};
@@ -47,8 +47,8 @@ static Buffer protobuf_export(Ratchet& ratchet) {
 	return export_buffer;
 }
 
-static std::unique_ptr<Ratchet> protobuf_import(ProtobufPool& pool, const Buffer& export_buffer) {
-	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
+static std::unique_ptr<Ratchet> protobuf_import(Arena& pool, const Buffer& export_buffer) {
+	auto pool_protoc_allocator{getProtobufCAllocator(pool)};
 	//unpack the buffer
 	auto conversation{conversation__unpack(
 			&pool_protoc_allocator,
@@ -544,7 +544,7 @@ int main() {
 
 		//import again
 		printf("Import from Protobuf-C!\n");
-		ProtobufPool pool;
+		Arena pool;
 		alice_state = protobuf_import(pool, protobuf_export_buffer);
 
 		//export again

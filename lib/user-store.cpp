@@ -232,8 +232,8 @@ namespace Molch {
 		this->users.clear();
 	}
 
-	ProtobufCUser* User::exportProtobuf(ProtobufPool& pool) const {
-		auto user{pool.allocate<ProtobufCUser>(1)};
+	ProtobufCUser* User::exportProtobuf(Arena& pool) const {
+		auto user{Arena::CreateArray<ProtobufCUser>(&pool, 1)};
 		user__init(user);
 
 		this->master_keys.exportProtobuf(
@@ -263,13 +263,13 @@ namespace Molch {
 		return user;
 	}
 
-	span<ProtobufCUser*> UserStore::exportProtobuf(ProtobufPool& pool) const {
+	span<ProtobufCUser*> UserStore::exportProtobuf(Arena& pool) const {
 		if (this->users.empty()) {
 			return {nullptr, static_cast<size_t>(0)};
 		}
 
 		//export the conversations
-		auto users_array{pool.allocate<ProtobufCUser*>(this->users.size())};
+		auto users_array{Arena::CreateArray<ProtobufCUser*>(&pool, this->users.size())};
 		size_t index{0};
 		for (const auto& user : this->users) {
 			users_array[index] = user.exportProtobuf(pool);

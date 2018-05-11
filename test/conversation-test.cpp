@@ -37,7 +37,7 @@ using namespace Molch;
 
 static Buffer protobuf_export(const Molch::Conversation& conversation) {
 	//export the conversation
-	ProtobufPool pool;
+	Arena pool;
 	auto exported_conversation{conversation.exportProtobuf(pool)};
 
 	auto export_size{conversation__get_packed_size(exported_conversation)};
@@ -50,8 +50,8 @@ static Buffer protobuf_export(const Molch::Conversation& conversation) {
 	return export_buffer;
 }
 
-static std::unique_ptr<Molch::Conversation> protobuf_import(ProtobufPool& pool, const Buffer& import_buffer) {
-	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
+static std::unique_ptr<Molch::Conversation> protobuf_import(Arena& pool, const Buffer& import_buffer) {
+	auto pool_protoc_allocator{getProtobufCAllocator(pool)};
 	auto conversation_protobuf{conversation__unpack(
 		&pool_protoc_allocator,
 		import_buffer.size(),
@@ -138,7 +138,7 @@ int main() noexcept {
 
 		//import
 		printf("Import from Protobuf-C\n");
-		ProtobufPool pool;
+		Arena pool;
 		charlie_conversation = protobuf_import(pool, protobuf_export_buffer);
 
 		//export again

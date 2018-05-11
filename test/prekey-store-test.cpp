@@ -38,7 +38,7 @@ static void protobuf_export(
 		PrekeyStore& store,
 		std::vector<Buffer>& key_buffers,
 		std::vector<Buffer>& deprecated_key_buffers) {
-	ProtobufPool pool;
+	Arena pool;
 	span<ProtobufCPrekey*> exported_keypairs;
 	span<ProtobufCPrekey*> exported_deprecated_keypairs;
 	store.exportProtobuf(
@@ -68,11 +68,11 @@ static void protobuf_export(
 }
 
 static void protobuf_import(
-		ProtobufPool& pool,
+		Arena& pool,
 		std::unique_ptr<PrekeyStore>& store,
 		const std::vector<Buffer>& keypair_buffers,
 		const std::vector<Buffer>& deprecated_keypair_buffers) {
-	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
+	auto pool_protoc_allocator{getProtobufCAllocator(pool)};
 	//parse the normal prekey protobufs
 	auto keypairs_array{std::unique_ptr<ProtobufCPrekey*[]>(new ProtobufCPrekey*[keypair_buffers.size()])};
 	size_t index{0};
@@ -114,7 +114,7 @@ static void protobuf_no_deprecated_keys() {
 	PrekeyStore store;
 
 	//export it
-	ProtobufPool pool;
+	Arena pool;
 	span<ProtobufCPrekey*> exported;
 	span<ProtobufCPrekey*> deprecated;
 	store.exportProtobuf(pool, exported, deprecated);
@@ -221,7 +221,7 @@ int main() {
 		store.reset();
 
 		printf("Import from Protobuf-C\n");
-		ProtobufPool pool;
+		Arena pool;
 		protobuf_import(
 			pool,
 			store,

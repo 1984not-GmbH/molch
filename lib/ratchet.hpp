@@ -29,7 +29,7 @@
 #include "return-status.hpp"
 #include "protobuf.hpp"
 #include "key.hpp"
-#include "protobuf-pool.hpp"
+#include "protobuf-arena.hpp"
 
 namespace Molch {
 	class RatchetStorage {
@@ -178,7 +178,7 @@ namespace Molch {
 		 * NOTE: This doesn't fill the Id field of the struct.
 		 * \return conversation The Conversation Protobuf-C struct.
 		 */
-		ProtobufCConversation* exportProtobuf(ProtobufPool& pool) const;
+		ProtobufCConversation* exportProtobuf(Arena& pool) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

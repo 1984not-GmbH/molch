@@ -179,7 +179,7 @@ namespace Molch {
 	}
 
 	void MasterKeys::exportProtobuf(
-			ProtobufPool& pool,
+			Arena& pool,
 			ProtobufCKey*& public_signing_key,
 			ProtobufCKey*& private_signing_key,
 			ProtobufCKey*& public_identity_key,

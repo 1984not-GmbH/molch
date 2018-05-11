@@ -108,8 +108,8 @@ namespace Molch {
 		return this->expiration_date;
 	}
 
-	ProtobufCKeyBundle* HeaderAndMessageKey::exportProtobuf(ProtobufPool& pool) const {
-		auto key_bundle{pool.allocate<ProtobufCKeyBundle>(1)};
+	ProtobufCKeyBundle* HeaderAndMessageKey::exportProtobuf(Arena& pool) const {
+		auto key_bundle{Arena::CreateArray<ProtobufCKeyBundle>(&pool, 1)};
 		key_bundle__init(key_bundle);
 
 		//export the keys
@@ -216,13 +216,13 @@ namespace Molch {
 		return this->key_storage;
 	}
 
-	span<ProtobufCKeyBundle*> HeaderAndMessageKeyStore::exportProtobuf(ProtobufPool& pool) const {
+	span<ProtobufCKeyBundle*> HeaderAndMessageKeyStore::exportProtobuf(Arena& pool) const {
 		if (this->key_storage.empty()) {
 			return {nullptr, static_cast<size_t>(0)};
 		}
 
 		//export all buffers
-		auto key_bundles{pool.allocate<ProtobufCKeyBundle*>(this->key_storage.size())};
+		auto key_bundles{Arena::CreateArray<ProtobufCKeyBundle*>(&pool, this->key_storage.size())};
 		size_t index{0};
 		for (const auto& key : this->key_storage) {
 			key_bundles[index] = key.exportProtobuf(pool);

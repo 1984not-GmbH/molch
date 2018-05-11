@@ -34,7 +34,7 @@
 using namespace Molch;
 
 static span<std::byte> decrypt_conversation_backup(
-		ProtobufPool& pool,
+		Arena& pool,
 		const span<const std::byte> backup,
 		const span<const std::byte> backup_key) {
 	Expects(!backup.empty() && (backup_key.size() == BACKUP_KEY_SIZE));
@@ -59,7 +59,8 @@ static span<std::byte> decrypt_conversation_backup(
 		throw Molch::Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
 	}
 
-	auto decrypted_backup_content{pool.allocate<std::byte>(
+	auto decrypted_backup_content{Arena::CreateArray<std::byte>(
+			&pool,
 			encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
 	span<std::byte> decrypted_backup{
 		decrypted_backup_content,
@@ -80,7 +81,7 @@ static span<std::byte> decrypt_conversation_backup(
 }
 
 static span<std::byte> decrypt_full_backup(
-		ProtobufPool& pool,
+		Arena& pool,
 		const span<const std::byte> backup,
 		const span<const std::byte> backup_key) {
 	//check input
@@ -106,7 +107,8 @@ static span<std::byte> decrypt_full_backup(
 		throw Molch::Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
 	}
 
-	auto decrypted_backup_content{pool.allocate<std::byte>(
+	auto decrypted_backup_content{Arena::CreateArray<std::byte>(
+		&pool,
 		encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
 	span<std::byte> decrypted_backup{
 		decrypted_backup_content,
@@ -457,7 +459,7 @@ int main() {
 			}
 		}
 
-		ProtobufPool pool;
+		Arena pool;
 		auto decrypted_backup{decrypt_full_backup(
 				pool,
 				{uchar_to_byte(backup.get()), backup_length},

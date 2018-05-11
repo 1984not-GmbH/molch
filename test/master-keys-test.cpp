@@ -43,7 +43,7 @@ static void protobuf_export(
 	ProtobufCKey* public_identity_key;
 	ProtobufCKey* private_identity_key;
 
-	ProtobufPool pool;
+	Arena pool;
 	keys.exportProtobuf(
 			pool,
 			public_signing_key,
@@ -87,13 +87,13 @@ static void protobuf_export(
 
 
 static void protobuf_import(
-		ProtobufPool& pool,
+		Arena& pool,
 		std::unique_ptr<MasterKeys>& keys,
 		const Buffer& public_signing_key_buffer,
 		const Buffer& private_signing_key_buffer,
 		const Buffer& public_identity_key_buffer,
 		const Buffer& private_identity_key_buffer) {
-	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
+	auto pool_protoc_allocator{getProtobufCAllocator(pool)};
 
 	//unpack the protobuf-c buffers
 	auto public_signing_key{key__unpack(
@@ -263,7 +263,7 @@ int main() {
 		//import again
 		printf("Import from Protobuf-C:\n");
 		auto imported_master_keys{std::unique_ptr<MasterKeys>(nullptr)};
-		ProtobufPool pool;
+		Arena pool;
 		protobuf_import(
 			pool,
 			imported_master_keys,

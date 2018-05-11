@@ -39,7 +39,7 @@ using namespace Molch;
 static void protobuf_export(
 			HeaderAndMessageKeyStore& keystore,
 			std::vector<Buffer>& export_buffers) {
-	ProtobufPool pool;
+	Arena pool;
 	auto exported_bundles{keystore.exportProtobuf(pool)};
 
 	export_buffers = std::vector<Buffer>();
@@ -57,10 +57,10 @@ static void protobuf_export(
 }
 
 static void protobuf_import(
-		ProtobufPool& pool,
+		Arena& pool,
 		HeaderAndMessageKeyStore& keystore,
 		const std::vector<Buffer>& exported_buffers) {
-	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
+	auto pool_protoc_allocator{getProtobufCAllocator(pool)};
 	auto key_bundles_array{std::unique_ptr<ProtobufCKeyBundle*[]>(new ProtobufCKeyBundle*[exported_buffers.size()])};
 	//parse all the exported protobuf buffers
 	size_t index{0};
@@ -86,7 +86,7 @@ static void protobuf_empty_store() {
 	HeaderAndMessageKeyStore store;
 
 	//export it
-	ProtobufPool pool;
+	Arena pool;
 	auto exported_bundles{store.exportProtobuf(pool)};
 
 	if (!exported_bundles.empty()) {
@@ -203,7 +203,7 @@ int main() {
 
 		printf("Import from Protobuf-C\n");
 		keystore.clear();
-		ProtobufPool pool;
+		Arena pool;
 		protobuf_import(pool, keystore, protobuf_export_buffers);
 
 		//now export again

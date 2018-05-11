@@ -31,7 +31,6 @@
 #include "sodium-wrappers.hpp"
 #include "protobuf.hpp"
 #include "key.hpp"
-#include "protobuf-pool.hpp"
 #include "gsl.hpp"
 
 namespace Molch {
@@ -116,7 +115,7 @@ namespace Molch {
 		 * \param private_identity_key Private part of the idenity keypair.
 		 */
 		void exportProtobuf(
-				ProtobufPool& pool,
+				Arena& pool,
 				ProtobufCKey*& public_signing_key,
 				ProtobufCKey*& private_signing_key,
 				ProtobufCKey*& public_identity_key,

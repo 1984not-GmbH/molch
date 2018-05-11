@@ -409,8 +409,8 @@ namespace Molch {
 		this->storage->receive_chain_key = this->storage->purported_receive_chain_key;
 	}
 
-	ProtobufCConversation* Ratchet::exportProtobuf(ProtobufPool& pool) const {
-		auto conversation{pool.allocate<ProtobufCConversation>(1)};
+	ProtobufCConversation* Ratchet::exportProtobuf(Arena& pool) const {
+		auto conversation{Arena::CreateArray<ProtobufCConversation>(&pool, 1)};
 		conversation__init(conversation);
 
 		//root keys
@@ -418,13 +418,13 @@ namespace Molch {
 		if (this->storage->root_key.empty) {
 			throw Exception{status_type::EXPORT_ERROR, "root_key is missing or has an incorrect size."};
 		}
-		conversation->root_key.data = pool.allocate<unsigned char>(ROOT_KEY_SIZE);
+		conversation->root_key.data = Arena::CreateArray<unsigned char>(&pool, ROOT_KEY_SIZE);
 		this->storage->root_key.copyTo({uchar_to_byte(conversation->root_key.data), ROOT_KEY_SIZE});
 		conversation->root_key.len = ROOT_KEY_SIZE;
 		conversation->has_root_key = true;
 		//purported root key
 		if (!this->storage->purported_root_key.empty) {
-			conversation->purported_root_key.data = pool.allocate<unsigned char>(ROOT_KEY_SIZE);
+			conversation->purported_root_key.data = Arena::CreateArray<unsigned char>(&pool, ROOT_KEY_SIZE);
 			this->storage->purported_root_key.copyTo({uchar_to_byte(conversation->purported_root_key.data), ROOT_KEY_SIZE});
 			conversation->purported_root_key.len = ROOT_KEY_SIZE;
 			conversation->has_purported_root_key = true;
@@ -435,7 +435,7 @@ namespace Molch {
 		if ((this->role == Role::BOB) && this->storage->send_header_key.empty) {
 			throw Exception{status_type::EXPORT_ERROR, "send_header_key missing or has an incorrect size."};
 		}
-		conversation->send_header_key.data = pool.allocate<unsigned char>(HEADER_KEY_SIZE);
+		conversation->send_header_key.data = Arena::CreateArray<unsigned char>(&pool, HEADER_KEY_SIZE);
 		this->storage->send_header_key.copyTo({uchar_to_byte(conversation->send_header_key.data), HEADER_KEY_SIZE});
 		conversation->send_header_key.len = HEADER_KEY_SIZE;
 		conversation->has_send_header_key = true;
@@ -443,7 +443,7 @@ namespace Molch {
 		if ((this->role == Role::ALICE) && this->storage->receive_header_key.empty) {
 			throw Exception{status_type::EXPORT_ERROR, "receive_header_key missing or has an incorrect size."};
 		}
-		conversation->receive_header_key.data = pool.allocate<unsigned char>(HEADER_KEY_SIZE);
+		conversation->receive_header_key.data = Arena::CreateArray<unsigned char>(&pool, HEADER_KEY_SIZE);
 		this->storage->receive_header_key.copyTo({uchar_to_byte(conversation->receive_header_key.data), HEADER_KEY_SIZE});
 		conversation->receive_header_key.len = HEADER_KEY_SIZE;
 		conversation->has_receive_header_key = true;
@@ -451,7 +451,7 @@ namespace Molch {
 		if (this->storage->next_send_header_key.empty) {
 			throw Exception{status_type::EXPORT_ERROR, "next_send_header_key missing or has incorrect size."};
 		}
-		conversation->next_send_header_key.data = pool.allocate<unsigned char>(HEADER_KEY_SIZE);
+		conversation->next_send_header_key.data = Arena::CreateArray<unsigned char>(&pool, HEADER_KEY_SIZE);
 		this->storage->next_send_header_key.copyTo({uchar_to_byte(conversation->next_send_header_key.data), HEADER_KEY_SIZE});
 		conversation->next_send_header_key.len = HEADER_KEY_SIZE;
 		conversation->has_next_send_header_key = true;
@@ -459,20 +459,20 @@ namespace Molch {
 		if (this->storage->next_receive_header_key.empty) {
 			throw Exception{status_type::EXPORT_ERROR, "next_receive_header_key missinge or has an incorrect size."};
 		}
-		conversation->next_receive_header_key.data = pool.allocate<unsigned char>(HEADER_KEY_SIZE);
+		conversation->next_receive_header_key.data = Arena::CreateArray<unsigned char>(&pool, HEADER_KEY_SIZE);
 		this->storage->next_receive_header_key.copyTo({uchar_to_byte(conversation->next_receive_header_key.data), HEADER_KEY_SIZE});
 		conversation->next_receive_header_key.len = HEADER_KEY_SIZE;
 		conversation->has_next_receive_header_key = true;
 		//purported receive header key
 		if (!this->storage->purported_receive_header_key.empty) {
-			conversation->purported_receive_header_key.data = pool.allocate<unsigned char>(HEADER_KEY_SIZE);
+			conversation->purported_receive_header_key.data = Arena::CreateArray<unsigned char>(&pool, HEADER_KEY_SIZE);
 			this->storage->purported_receive_header_key.copyTo({uchar_to_byte(conversation->purported_receive_header_key.data), HEADER_KEY_SIZE});
 			conversation->purported_receive_header_key.len = HEADER_KEY_SIZE;
 			conversation->has_purported_receive_header_key = true;
 		}
 		//purported next receive header key
 		if (!this->storage->purported_next_receive_header_key.empty) {
-			conversation->purported_next_receive_header_key.data = pool.allocate<unsigned char>(HEADER_KEY_SIZE);
+			conversation->purported_next_receive_header_key.data = Arena::CreateArray<unsigned char>(&pool, HEADER_KEY_SIZE);
 			this->storage->purported_next_receive_header_key.copyTo({uchar_to_byte(conversation->purported_next_receive_header_key.data), HEADER_KEY_SIZE});
 			conversation->purported_next_receive_header_key.len = HEADER_KEY_SIZE;
 			conversation->has_purported_next_receive_header_key = true;
@@ -483,7 +483,7 @@ namespace Molch {
 		if ((this->role == Role::BOB) && this->storage->send_chain_key.empty) {
 			throw Exception{status_type::EXPORT_ERROR, "send_chain_key missing or has an invalid size."};
 		}
-		conversation->send_chain_key.data = pool.allocate<unsigned char>(CHAIN_KEY_SIZE);
+		conversation->send_chain_key.data = Arena::CreateArray<unsigned char>(&pool, CHAIN_KEY_SIZE);
 		this->storage->send_chain_key.copyTo({uchar_to_byte(conversation->send_chain_key.data), CHAIN_KEY_SIZE});
 		conversation->send_chain_key.len = CHAIN_KEY_SIZE;
 		conversation->has_send_chain_key = true;
@@ -491,13 +491,13 @@ namespace Molch {
 		if ((this->role == Role::ALICE) && this->storage->receive_chain_key.empty) {
 			throw Exception{status_type::EXPORT_ERROR, "receive_chain_key missing or has an incorrect size."};
 		}
-		conversation->receive_chain_key.data = pool.allocate<unsigned char>(CHAIN_KEY_SIZE);
+		conversation->receive_chain_key.data = Arena::CreateArray<unsigned char>(&pool, CHAIN_KEY_SIZE);
 		this->storage->receive_chain_key.copyTo({uchar_to_byte(conversation->receive_chain_key.data), CHAIN_KEY_SIZE});
 		conversation->receive_chain_key.len = CHAIN_KEY_SIZE;
 		conversation->has_receive_chain_key = true;
 		//purported receive chain key
 		if (!this->storage->purported_receive_chain_key.empty) {
-			conversation->purported_receive_chain_key.data = pool.allocate<unsigned char>(CHAIN_KEY_SIZE);
+			conversation->purported_receive_chain_key.data = Arena::CreateArray<unsigned char>(&pool, CHAIN_KEY_SIZE);
 			this->storage->purported_receive_chain_key.copyTo({uchar_to_byte(conversation->purported_receive_chain_key.data), CHAIN_KEY_SIZE});
 			conversation->purported_receive_chain_key.len = CHAIN_KEY_SIZE;
 			conversation->has_purported_receive_chain_key = true;
@@ -508,7 +508,7 @@ namespace Molch {
 		if (this->storage->our_public_identity.empty) {
 			throw Exception{status_type::EXPORT_ERROR, "our_public_identity missing or has an invalid size."};
 		}
-		conversation->our_public_identity_key.data = pool.allocate<unsigned char>(PUBLIC_KEY_SIZE);
+		conversation->our_public_identity_key.data = Arena::CreateArray<unsigned char>(&pool, PUBLIC_KEY_SIZE);
 		this->storage->our_public_identity.copyTo({uchar_to_byte(conversation->our_public_identity_key.data), PUBLIC_KEY_SIZE});
 		conversation->our_public_identity_key.len = PUBLIC_KEY_SIZE;
 		conversation->has_our_public_identity_key = true;
@@ -516,7 +516,7 @@ namespace Molch {
 		if (this->storage->their_public_identity.empty) {
 			throw Exception{status_type::EXPORT_ERROR, "their_public_identity missing or has an invalid size."};
 		}
-		conversation->their_public_identity_key.data = pool.allocate<unsigned char>(PUBLIC_KEY_SIZE);
+		conversation->their_public_identity_key.data = Arena::CreateArray<unsigned char>(&pool, PUBLIC_KEY_SIZE);
 		this->storage->their_public_identity.copyTo({uchar_to_byte(conversation->their_public_identity_key.data), PUBLIC_KEY_SIZE});
 		conversation->their_public_identity_key.len = PUBLIC_KEY_SIZE;
 		conversation->has_their_public_identity_key = true;
@@ -526,7 +526,7 @@ namespace Molch {
 		if (this->storage->our_private_ephemeral.empty) {
 			throw Exception{status_type::EXPORT_ERROR, "our_private_ephemeral missing or has an invalid size."};
 		}
-		conversation->our_private_ephemeral_key.data = pool.allocate<unsigned char>(PRIVATE_KEY_SIZE);
+		conversation->our_private_ephemeral_key.data = Arena::CreateArray<unsigned char>(&pool, PRIVATE_KEY_SIZE);
 		this->storage->our_private_ephemeral.copyTo({uchar_to_byte(conversation->our_private_ephemeral_key.data), PRIVATE_KEY_SIZE});
 		conversation->our_private_ephemeral_key.len = PRIVATE_KEY_SIZE;
 		conversation->has_our_private_ephemeral_key = true;
@@ -534,7 +534,7 @@ namespace Molch {
 		if (this->storage->our_public_ephemeral.empty) {
 			throw Exception{status_type::BUFFER_ERROR, "our_public_ephemeral missing or has an invalid size."};
 		}
-		conversation->our_public_ephemeral_key.data = pool.allocate<unsigned char>(PUBLIC_KEY_SIZE);
+		conversation->our_public_ephemeral_key.data = Arena::CreateArray<unsigned char>(&pool, PUBLIC_KEY_SIZE);
 		this->storage->our_public_ephemeral.copyTo({uchar_to_byte(conversation->our_public_ephemeral_key.data), PUBLIC_KEY_SIZE});
 		conversation->our_public_ephemeral_key.len = PUBLIC_KEY_SIZE;
 		conversation->has_our_public_ephemeral_key = true;
@@ -542,13 +542,13 @@ namespace Molch {
 		if (this->storage->their_public_ephemeral.empty) {
 			throw Exception{status_type::BUFFER_ERROR, "their_public_ephemeral missing or has an invalid size."};
 		}
-		conversation->their_public_ephemeral_key.data = pool.allocate<unsigned char>(PUBLIC_KEY_SIZE);
+		conversation->their_public_ephemeral_key.data = Arena::CreateArray<unsigned char>(&pool, PUBLIC_KEY_SIZE);
 		this->storage->their_public_ephemeral.copyTo({uchar_to_byte(conversation->their_public_ephemeral_key.data), PUBLIC_KEY_SIZE});
 		conversation->their_public_ephemeral_key.len = PUBLIC_KEY_SIZE;
 		conversation->has_their_public_ephemeral_key = true;
 		//their purported public ephemeral key
 		if (!this->storage->their_purported_public_ephemeral.empty) {
-			conversation->their_purported_public_ephemeral.data = pool.allocate<unsigned char>(PUBLIC_KEY_SIZE);
+			conversation->their_purported_public_ephemeral.data = Arena::CreateArray<unsigned char>(&pool, PUBLIC_KEY_SIZE);
 			this->storage->their_purported_public_ephemeral.copyTo({uchar_to_byte(conversation->their_purported_public_ephemeral.data), PUBLIC_KEY_SIZE});
 			conversation->their_purported_public_ephemeral.len = PUBLIC_KEY_SIZE;
 			conversation->has_their_purported_public_ephemeral = true;

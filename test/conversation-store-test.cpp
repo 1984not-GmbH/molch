@@ -34,7 +34,7 @@
 using namespace Molch;
 
 static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
-	ProtobufPool pool;
+	Arena pool;
 	auto exported_conversations{store.exportProtobuf(pool)};
 
 	std::vector<Buffer> export_buffers;
@@ -50,13 +50,13 @@ static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
 	return export_buffers;
 }
 
-static ConversationStore protobuf_import(ProtobufPool& pool, const std::vector<Buffer> buffers) {
+static ConversationStore protobuf_import(Arena& pool, const std::vector<Buffer> buffers) {
 	std::unique_ptr<ProtobufCConversation*[]> conversation_array;
 	if (!buffers.empty()) {
 		conversation_array = std::unique_ptr<ProtobufCConversation*[]>(new ProtobufCConversation*[buffers.size()]);
 	}
 
-	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
+	auto pool_protoc_allocator{getProtobufCAllocator(pool)};
 	//unpack all the conversations
 	size_t index{0};
 	for (const auto& buffer : buffers) {
@@ -111,7 +111,7 @@ static void protobuf_empty_store() {
 	ConversationStore store;
 
 	//export it
-	ProtobufPool pool;
+	Arena pool;
 	auto exported_conversations{store.exportProtobuf(pool)};
 
 	if ((exported != nullptr) || (exported_length != 0)) {
@@ -187,7 +187,7 @@ int main() {
 		store.clear();
 
 		//import again
-		ProtobufPool pool;
+		Arena pool;
 		store = protobuf_import(pool, protobuf_export_buffers);
 
 		//export the imported

@@ -33,8 +33,8 @@
 #include "molch-exception.hpp"
 #include "endianness.hpp"
 #include "gsl.hpp"
-#include "protobuf-pool.hpp"
 #include "protobuf.hpp"
+#include "protobuf-arena.hpp"
 
 namespace Molch {
 
@@ -221,11 +221,11 @@ namespace Molch {
 			}
 		}
 
-		ProtobufCKey* exportProtobuf(ProtobufPool& pool) const {
-			auto key{pool.allocate<ProtobufCKey>(1)};
+		ProtobufCKey* exportProtobuf(Arena& pool) const {
+			auto key{Arena::CreateArray<ProtobufCKey>(&pool, 1)};
 			key__init(key);
 
-			key->key.data = pool.allocate<uint8_t>(length);
+			key->key.data = Arena::CreateArray<uint8_t>(&pool, length);
 			key->key.len = length;
 			this->copyTo({
 					uchar_to_byte(key->key.data),

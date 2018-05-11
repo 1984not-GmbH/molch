@@ -374,12 +374,12 @@ namespace Molch {
 		}
 	}
 
-	ProtobufCConversation* Conversation::exportProtobuf(ProtobufPool& pool) const {
+	ProtobufCConversation* Conversation::exportProtobuf(Arena& pool) const {
 		//export the ratchet
 		auto exported_conversation{this->ratchet_pointer->exportProtobuf(pool)};
 
 		//export the conversation id
-		auto id{pool.allocate<std::byte>(CONVERSATION_ID_SIZE)};
+		auto id{Arena::CreateArray<std::byte>(&pool, CONVERSATION_ID_SIZE)};
 		this->id_storage.copyTo({id, CONVERSATION_ID_SIZE});
 		exported_conversation->id.data = byte_to_uchar(id);
 		exported_conversation->id.len = CONVERSATION_ID_SIZE;

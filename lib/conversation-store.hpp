@@ -24,6 +24,7 @@
 
 #include <ostream>
 #include "conversation.hpp"
+#include "protobuf-arena.hpp"
 
 namespace Molch {
 	class ConversationStore {
@@ -83,7 +84,7 @@ namespace Molch {
 		Buffer list() const;
 
 		/*! Export a conversation store to Protobuf-C */
-		span<ProtobufCConversation*> exportProtobuf(ProtobufPool& pool) const;
+		span<ProtobufCConversation*> exportProtobuf(Arena& pool) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

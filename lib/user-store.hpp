@@ -32,8 +32,8 @@
 #include "prekey-store.hpp"
 #include "master-keys.hpp"
 #include "protobuf.hpp"
-#include "protobuf-pool.hpp"
 #include "gsl.hpp"
+#include "protobuf-arena.hpp"
 
 //The user store stores a list of all users identified by their public keys
 
@@ -55,7 +55,7 @@ namespace Molch {
 		 */
 		User(const ProtobufCUser& user);
 
-		ProtobufCUser* exportProtobuf(ProtobufPool& pool) const;
+		ProtobufCUser* exportProtobuf(Arena& pool) const;
 
 		User& move(User&& node) noexcept;
 
@@ -138,7 +138,7 @@ namespace Molch {
 		void clear();
 
 		/*! Export a user store to an array of Protobuf-C structs */
-		span<ProtobufCUser*> exportProtobuf(ProtobufPool& pool) const;
+		span<ProtobufCUser*> exportProtobuf(Arena& pool) const;
 
 		size_t size() const;
 

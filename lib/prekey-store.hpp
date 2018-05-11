@@ -33,9 +33,9 @@
 #include "protobuf.hpp"
 #include "sodium-wrappers.hpp"
 #include "key.hpp"
-#include "protobuf-pool.hpp"
 #include "gsl.hpp"
 #include "time.hpp"
+#include "protobuf-arena.hpp"
 
 namespace Molch {
 	class Prekey {
@@ -70,7 +70,7 @@ namespace Molch {
 		const PrivateKey& privateKey() const;
 
 
-		ProtobufCPrekey* exportProtobuf(ProtobufPool& pool) const;
+		ProtobufCPrekey* exportProtobuf(Arena& pool) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};
@@ -133,7 +133,7 @@ namespace Molch {
 		 * \param deprecated_keypairs An array of deprecated keypairs, allocated by the function.
 		 */
 		void exportProtobuf(
-				ProtobufPool& pool,
+				Arena& pool,
 				span<ProtobufCPrekey*>& keypairs,
 				span<ProtobufCPrekey*>& deprecated_keypairs) const;
 

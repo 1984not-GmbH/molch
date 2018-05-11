@@ -27,7 +27,6 @@ tests = [
 		'molch-init-test',
 		'buffer-test',
 		'molch-exception-test',
-		'protobuf-pool-test',
 		'time-test'
 ]
 
@@ -39,7 +38,8 @@ test_library = library(
 			'packet-test-lib.cpp'
 		],
 		include_directories: [protobufs_include, gsl_include],
-		link_with: molch
+		link_with: molch,
+		dependencies: protobuf_lite
 )
 
 foreach test : tests
@@ -47,7 +47,7 @@ foreach test : tests
 			test,
 			test + '.cpp',
 			link_with: [test_library, molch, protobufs],
-			dependencies: libsodium,
+			dependencies: [libsodium, protobuf_lite],
 			include_directories: [protobufs_include, gsl_include])
 	test(test, test_exe, workdir: meson.current_source_dir())
 endforeach

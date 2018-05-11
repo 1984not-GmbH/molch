@@ -96,8 +96,8 @@ namespace Molch {
 		this->expiration_date = seconds{keypair.expiration_time};
 	}
 
-	ProtobufCPrekey* Prekey::exportProtobuf(ProtobufPool& pool) const {
-		auto prekey{pool.allocate<ProtobufCPrekey>(1)};
+	ProtobufCPrekey* Prekey::exportProtobuf(Arena& pool) const {
+		auto prekey{Arena::CreateArray<ProtobufCPrekey>(&pool, 1)};
 		prekey__init(prekey);
 
 		prekey->private_key = this->private_key.exportProtobuf(pool);
@@ -302,14 +302,14 @@ namespace Molch {
 	}
 
 	template <class Container>
-	static void export_keypairs(ProtobufPool& pool, Container& container, span<ProtobufCPrekey*>& keypairs) {
+	static void export_keypairs(Arena& pool, Container& container, span<ProtobufCPrekey*>& keypairs) {
 		if (container.empty()) {
 			keypairs = {nullptr, static_cast<size_t>(0)};
 			return;
 		}
 
 		//export all buffers
-		auto keypairs_array{pool.allocate<ProtobufCPrekey*>(container.size())};
+		auto keypairs_array{Arena::CreateArray<ProtobufCPrekey*>(&pool, container.size())};
 		size_t index{0};
 		for (const auto& key : container) {
 			keypairs_array[index] = key.exportProtobuf(pool);
@@ -319,7 +319,7 @@ namespace Molch {
 	}
 
 	void PrekeyStore::exportProtobuf(
-			ProtobufPool& pool,
+			Arena& pool,
 			span<ProtobufCPrekey*>& keypairs,
 			span<ProtobufCPrekey*>& deprecated_keypairs) const {
 		//export prekeys

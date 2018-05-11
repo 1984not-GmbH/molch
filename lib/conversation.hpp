@@ -125,7 +125,7 @@ namespace Molch {
 		/*! Export a conversation to a Protobuf-C struct.
 		 * \return exported_conversation The exported conversation protobuf-c struct.
 		 */
-		ProtobufCConversation* exportProtobuf(ProtobufPool& pool) const;
+		ProtobufCConversation* exportProtobuf(Arena& pool) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

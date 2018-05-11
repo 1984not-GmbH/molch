@@ -22,16 +22,16 @@ lib_sources = files(
 		'return-status.cpp',
 		'molch-exception.cpp',
 		'protobuf.cpp',
-		'protobuf-pool.cpp',
 		'sodium-wrappers.cpp',
-		'time.cpp'
+		'time.cpp',
+		'protobuf-arena.cpp'
 )
 
 gsl_include = include_directories('../gsl/include')
 molch = library(
 		'molch',
 		lib_sources,
-		dependencies: libsodium,
+		dependencies: [libsodium, protobuf_lite],
 		link_with: protobufs,
 		include_directories: [protobufs_include, gsl_include],
 		implicit_include_directories: false,
