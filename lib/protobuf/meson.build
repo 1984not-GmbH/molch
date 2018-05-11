@@ -26,12 +26,12 @@ protobuf_definitions = [
 generated_c_protobufs = []
 foreach protobuf_definition : protobuf_definitions
 	generated_c_protobufs += custom_target(
-			protobuf_definition,
+			'c_' + protobuf_definition,
 			command: [
 				protoc_c,
-				'--proto_path=' + meson.current_source_dir(),
+				'--proto_path=@CURRENT_SOURCE_DIR@',
 				'--c_out=@OUTDIR@',
-				join_paths(meson.current_source_dir(), protobuf_definition + '.proto')
+				'@INPUT@'
 			],
 			input: protobuf_definition + '.proto',
 			output: ['@BASENAME@.pb-c.h', '@BASENAME@.pb-c.c'])
