@@ -15,3 +15,4 @@ molch.creator*
 .browse.VC.db-wal
 .vscode
 *.pb-c.h
+*.pb.h
