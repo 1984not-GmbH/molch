@@ -32,16 +32,16 @@ extern "C" {
 	#include <user.pb-c.h>
 }
 
-typedef Molch__Protobuf__Backup ProtobufCBackup;
-typedef Molch__Protobuf__Conversation ProtobufCConversation;
-typedef Molch__Protobuf__EncryptedBackup ProtobufCEncryptedBackup;
-typedef Molch__Protobuf__Header ProtobufCHeader;
-typedef Molch__Protobuf__Key ProtobufCKey;
-typedef Molch__Protobuf__KeyBundle ProtobufCKeyBundle;
-typedef Molch__Protobuf__Packet ProtobufCPacket;
-typedef Molch__Protobuf__PacketHeader ProtobufCPacketHeader;
-typedef Molch__Protobuf__Prekey ProtobufCPrekey;
-typedef Molch__Protobuf__User ProtobufCUser;
+using ProtobufCBackup = Molch__Protobuf__Backup;
+using ProtobufCConversation = Molch__Protobuf__Conversation;
+using ProtobufCEncryptedBackup = Molch__Protobuf__EncryptedBackup;
+using ProtobufCHeader = Molch__Protobuf__Header;
+using ProtobufCKey = Molch__Protobuf__Key;
+using ProtobufCKeyBundle = Molch__Protobuf__KeyBundle;
+using ProtobufCPacket = Molch__Protobuf__Packet;
+using ProtobufCPacketHeader = Molch__Protobuf__PacketHeader;
+using ProtobufCPrekey = Molch__Protobuf__Prekey;
+using ProtobufCUser = Molch__Protobuf__User;
 
 namespace Molch {
 	class EncryptedBackupDeleter {
