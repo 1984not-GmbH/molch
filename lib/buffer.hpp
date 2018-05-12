@@ -399,6 +399,11 @@ namespace Molch {
 			return content;
 		}
 
+		span<std::byte> releaseSpan() {
+			auto size{this->size()};
+			return {this->release(), size};
+		}
+
 		std::ostream& print(std::ostream& stream) const {
 			stream << std::string(reinterpret_cast<char*>(this->content), this->content_length);
 

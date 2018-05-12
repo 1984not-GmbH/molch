@@ -298,6 +298,14 @@ return_status molch_conversation_export(
 		const unsigned char * const conversation_id,
 		const size_t conversation_id_length) __attribute__((warn_unused_result));
 
+return_status molch_conversation_export_cpp(
+		//output
+		unsigned char ** const backup,
+		size_t * const backup_length,
+		//input
+		const unsigned char * const conversation_id,
+		const size_t conversation_id_length) __attribute__((warn_unused_result));
+
 /*
  * Serialise molch's internal state. The output is encrypted with the backup key.
  *
