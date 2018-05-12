@@ -95,6 +95,10 @@ namespace Molch {
 			this->set({uchar_to_byte(key.key.data), key.key.len});
 		}
 
+		Key(const span<std::byte>& key) {
+			this->set(key);
+		}
+
 		~Key() {
 			this->clear();
 		}
