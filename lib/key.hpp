@@ -259,11 +259,7 @@ namespace Molch {
 		}
 	};
 
-	class MessageKey : public Key<MESSAGE_KEY_SIZE,KeyType::MessageKey> {
-	public:
-		//inherit constructors
-		using Key<MESSAGE_KEY_SIZE,KeyType::MessageKey>::Key;
-	};
+	using MessageKey = Key<MESSAGE_KEY_SIZE,KeyType::MessageKey>;
 
 	class ChainKey : public Key<CHAIN_KEY_SIZE,KeyType::ChainKey> {
 	public:
@@ -285,45 +281,13 @@ namespace Molch {
 		}
 	};
 
-	class HeaderKey : public Key<HEADER_KEY_SIZE,KeyType::HeaderKey> {
-	public:
-		//inherit constructors
-		using Key<HEADER_KEY_SIZE,KeyType::HeaderKey>::Key;
-	};
-
-	class RootKey : public Key<ROOT_KEY_SIZE,KeyType::RootKey> {
-	public:
-		//inherit constructors
-		using Key<ROOT_KEY_SIZE,KeyType::RootKey>::Key;
-	};
-
-	class BackupKey : public Key<BACKUP_KEY_SIZE,KeyType::BackupKey> {
-	public:
-		//inherit constructors
-		using Key<BACKUP_KEY_SIZE,KeyType::BackupKey>::Key;
-	};
-
-	class PublicKey : public Key<PUBLIC_KEY_SIZE,KeyType::PublicKey> {
-	public:
-		//inherit constructors
-		using Key<PUBLIC_KEY_SIZE,KeyType::PublicKey>::Key;
-	};
-	class PrivateKey : public Key<PRIVATE_KEY_SIZE,KeyType::PrivateKey> {
-	public:
-		//inherit constructors
-		using Key<PRIVATE_KEY_SIZE,KeyType::PrivateKey>::Key;
-	};
-
-	class PublicSigningKey : public Key<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey> {
-	public:
-		//inherit constructors
-		using Key<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey>::Key;
-	};
-	class PrivateSigningKey : public Key<PRIVATE_MASTER_KEY_SIZE,KeyType::PrivateSigningKey> {
-	public:
-		//inherit constructors
-		using Key<PRIVATE_MASTER_KEY_SIZE,KeyType::PrivateSigningKey>::Key;
-	};
+	using HeaderKey = Key<HEADER_KEY_SIZE,KeyType::HeaderKey>;
+	using RootKey = Key<ROOT_KEY_SIZE,KeyType::RootKey>;
+	using BackupKey = Key<BACKUP_KEY_SIZE,KeyType::BackupKey>;
+	using PublicKey = Key<PUBLIC_KEY_SIZE,KeyType::PublicKey>;
+	using PrivateKey = Key<PRIVATE_KEY_SIZE,KeyType::PrivateKey>;
+	using PublicSigningKey = Key<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey>;
+	using PrivateSigningKey = Key<PRIVATE_MASTER_KEY_SIZE,KeyType::PrivateSigningKey>;
 }
 
 #endif /* LIB_KEY_HPP */
