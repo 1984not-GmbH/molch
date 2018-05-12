@@ -92,6 +92,18 @@ public:
 	}
 };
 
+static void check_global_users_state() {
+	if (!users) {
+		throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
+	}
+}
+
+static void check_global_backup_key_state() {
+	if ((global_backup_key == nullptr) || (global_backup_key->size() != BACKUP_KEY_SIZE)) {
+		throw Exception{status_type::INCORRECT_DATA, "No backup key found."};
+	}
+}
+
 /*
  * Create a prekey list.
  */
@@ -247,9 +259,7 @@ return_status molch_destroy_user(
 	auto status{return_status_init()};
 
 	try {
-		if (!users) {
-			throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialised yet."};
-		}
+		check_global_users_state();
 
 		if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
 			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Public master key has incorrect size."};
@@ -450,9 +460,7 @@ return_status molch_start_send_conversation(
 				&& (sender_public_master_key_length == PUBLIC_MASTER_KEY_SIZE)
 				&& (receiver_public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
 
-		if (!users) {
-			throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialised yet."};
-		}
+		check_global_users_state();
 
 		//get the user that matches the public signing key of the sender
 		PublicSigningKey sender_public_master_key_key;
@@ -560,9 +568,7 @@ cleanup:
 				&& (sender_public_master_key_length == PUBLIC_MASTER_KEY_SIZE)
 				&& (receiver_public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
 
-			if (!users) {
-				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
+			check_global_users_state();
 
 			//get the user that matches the public signing key of the receiver
 			PublicSigningKey receiver_public_master_key_key;
@@ -652,9 +658,7 @@ cleanup:
 				&& (conversation_id != nullptr)
 				&& (conversation_id_length == CONVERSATION_ID_SIZE));
 
-			if (!users) {
-				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
+			check_global_users_state();
 
 			//find the conversation
 			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
@@ -730,9 +734,7 @@ cleanup:
 					&& (previous_receive_message_number != nullptr)
 					&& (conversation_id_length == CONVERSATION_ID_SIZE));
 
-			if (!users) {
-				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
+			check_global_users_state();
 
 			//find the conversation
 			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
@@ -789,9 +791,7 @@ cleanup:
 			Expects((conversation_id != nullptr)
 					&& (conversation_id_length == CONVERSATION_ID_SIZE));
 
-			if (!users) {
-				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
+			check_global_users_state();
 
 			//find the conversation
 			Molch::User *user{nullptr};
@@ -856,9 +856,7 @@ cleanup:
 					&& (number != nullptr)
 					&& (user_public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
 
-			if (!users) {
-				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
+			check_global_users_state();
 
 			PublicSigningKey user_public_master_key_key;
 			user_public_master_key_key.set({uchar_to_byte(user_public_master_key), PUBLIC_MASTER_KEY_SIZE});
@@ -967,13 +965,8 @@ cleanup:
 			ProtobufCEncryptedBackup encrypted_backup_struct;
 			molch__protobuf__encrypted_backup__init(&encrypted_backup_struct);
 
-			if (!users) {
-				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
-
-			if ((global_backup_key == nullptr) || (global_backup_key->size() != BACKUP_KEY_SIZE)) {
-				throw Exception{status_type::INCORRECT_DATA, "No backup key found."};
-			}
+			check_global_users_state();
+			check_global_backup_key_state();
 
 			//find the conversation
 			Molch::User *user{nullptr};
@@ -1081,9 +1074,7 @@ cleanup:
 					&& (backup_key_length == BACKUP_KEY_SIZE)
 					&& (new_backup_key_length == BACKUP_KEY_SIZE));
 
-			if (!users) {
-				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
+			check_global_users_state();
 
 			//unpack the encrypted backup
 			auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(molch__protobuf__encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup))};
@@ -1181,9 +1172,7 @@ cleanup:
 				throw Exception{status_type::INCORRECT_DATA, "No backup key found."};
 			}
 
-			if (!users) {
-				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
+			check_global_users_state();
 
 			Arena pool;
 			auto backup_struct{pool.allocate<ProtobufCBackup>(1)};
@@ -1383,9 +1372,7 @@ cleanup:
 					&& (prekey_list_length != nullptr)
 					&& (public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
 
-			if (!users) {
-				throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-			}
+			check_global_users_state();
 
 			PublicSigningKey public_signing_key_key;
 			public_signing_key_key.set({
