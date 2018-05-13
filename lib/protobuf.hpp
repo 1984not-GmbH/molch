@@ -65,4 +65,38 @@ namespace Molch {
 	extern ProtobufCAllocator protobuf_c_allocator;
 }
 
+#define protobuf_arena_create(arena, type, name) \
+	auto name{(arena).allocate<type>(1)}; \
+	molch__protobuf__##name##__init(name);
+
+#define protobuf_bytes_arena_export(arena, message, name, size) \
+	(message)->name.data = (arena).allocate<unsigned char>(size);\
+	name.copyTo({uchar_to_byte((message)->name.data), (size)});\
+	(message)->name.len = (size);
+
+/*
+ * Macro containing the steps to export a key 'name' of size 'size'
+ * to a protobuf message 'message' on the arena allocator 'arena'.
+ */
+#define protobuf_optional_bytes_arena_export(arena, message, name, size) \
+	protobuf_bytes_arena_export(arena, message, name, size)\
+	(message)->has_##name = true;
+
+
+/*
+ * Macro containing the steps to export an optional value
+ * to a protobuf message.
+ */
+#define protobuf_optional_export(message, name, value) \
+	(message)->has_##name = true;\
+	(message)->name = value;
+
+/*
+ * Macro containing the steps to export an array to a protobuf messsage.
+ */
+#define protobuf_array_arena_export(arena, message, name, value) \
+	auto exported_##name{(value).exportProtobuf(arena)};\
+	(message)->name = exported_##name.data();\
+	(message)->n_##name = exported_##name.size();
+
 #endif /* LIB_PROTOBUF_DELETERS_H */

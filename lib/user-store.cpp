@@ -232,27 +232,24 @@ namespace Molch {
 		this->users.clear();
 	}
 
-	ProtobufCUser* User::exportProtobuf(Arena& pool) const {
-		auto user{pool.allocate<ProtobufCUser>(1)};
-		molch__protobuf__user__init(user);
+	ProtobufCUser* User::exportProtobuf(Arena& arena) const {
+		protobuf_arena_create(arena, ProtobufCUser, user);
 
 		this->master_keys.exportProtobuf(
-			pool,
+			arena,
 			user->public_signing_key,
 			user->private_signing_key,
 			user->public_identity_key,
 			user->private_identity_key);
 
 		//export the conversation store
-		auto exported_conversations{this->conversation_store.exportProtobuf(pool)};
-		user->conversations = exported_conversations.data();
-		user->n_conversations = exported_conversations.size();
+		protobuf_array_arena_export(arena, user, conversations, this->conversation_store);
 
 		//export the prekeys
 		span<ProtobufCPrekey*> exported_prekeys;
 		span<ProtobufCPrekey*> exported_deprecated_prekeys;
 		this->prekey_store.exportProtobuf(
-			pool,
+			arena,
 			exported_prekeys,
 			exported_deprecated_prekeys);
 		user->prekeys = exported_prekeys.data();

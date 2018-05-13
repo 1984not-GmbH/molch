@@ -108,17 +108,15 @@ namespace Molch {
 		return this->expiration_date;
 	}
 
-	ProtobufCKeyBundle* HeaderAndMessageKey::exportProtobuf(Arena& pool) const {
-		auto key_bundle{pool.allocate<ProtobufCKeyBundle>(1)};
-		molch__protobuf__key_bundle__init(key_bundle);
+	ProtobufCKeyBundle* HeaderAndMessageKey::exportProtobuf(Arena& arena) const {
+		protobuf_arena_create(arena, ProtobufCKeyBundle, key_bundle);
 
 		//export the keys
-		key_bundle->header_key = this->header_key.exportProtobuf(pool);
-		key_bundle->message_key = this->message_key.exportProtobuf(pool);
+		key_bundle->header_key = this->header_key.exportProtobuf(arena);
+		key_bundle->message_key = this->message_key.exportProtobuf(arena);
 
 		//set expiration time
-		key_bundle->expiration_time = gsl::narrow<uint64_t>(this->expiration_date.count());
-		key_bundle->has_expiration_time = true;
+		protobuf_optional_export(key_bundle, expiration_time, gsl::narrow<uint64_t>(this->expiration_date.count()));
 
 		return key_bundle;
 	}

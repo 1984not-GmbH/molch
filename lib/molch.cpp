@@ -1174,18 +1174,16 @@ cleanup:
 
 			check_global_users_state();
 
-			Arena pool;
-			auto backup_struct{pool.allocate<ProtobufCBackup>(1)};
+			Arena arena;
+			auto backup_struct{arena.allocate<ProtobufCBackup>(1)};
 			molch__protobuf__backup__init(backup_struct);
 
 			//export the conversation
-			auto exported_users{users->exportProtobuf(pool)};
-			backup_struct->users = exported_users.data();
-			backup_struct->n_users = exported_users.size();
+			protobuf_array_arena_export(arena, backup_struct, users, *users);
 
 			//pack the struct
 			auto backup_struct_size{molch__protobuf__backup__get_packed_size(backup_struct)};
-			auto users_buffer_content{pool.allocate<std::byte>(backup_struct_size)};
+			auto users_buffer_content{arena.allocate<std::byte>(backup_struct_size)};
 			span<std::byte> users_buffer{users_buffer_content, backup_struct_size};
 			molch__protobuf__backup__pack(backup_struct, byte_to_uchar(users_buffer.data()));
 
