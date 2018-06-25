@@ -26,7 +26,6 @@
 #include "conversation.hpp"
 #include "packet.hpp"
 #include "header.hpp"
-#include "molch-exception.hpp"
 #include "destroyers.hpp"
 #include "gsl.hpp"
 

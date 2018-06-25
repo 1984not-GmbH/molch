@@ -26,7 +26,6 @@
 #include <iostream>
 
 #include "../lib/key-derivation.hpp"
-#include "../lib/molch-exception.hpp"
 #include "utils.hpp"
 
 using namespace Molch;

@@ -26,7 +26,6 @@
 #include <iostream>
 
 #include "../lib/diffie-hellman.hpp"
-#include "../lib/molch-exception.hpp"
 #include "utils.hpp"
 #include "common.hpp"
 

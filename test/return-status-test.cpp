@@ -26,7 +26,6 @@
 
 #include "../include/molch/return-status.h"
 #include "../lib/destroyers.hpp"
-#include "../lib/molch-exception.hpp"
 #include "utils.hpp"
 
 using namespace Molch;

@@ -29,7 +29,6 @@
 #include <iterator>
 
 #include "../lib/header-and-message-keystore.hpp"
-#include "../lib/molch-exception.hpp"
 #include "../lib/destroyers.hpp"
 #include "utils.hpp"
 #include "common.hpp"

@@ -28,7 +28,6 @@
 
 #include "../lib/prekey-store.hpp"
 #include "../lib/constants.h"
-#include "../lib/molch-exception.hpp"
 #include "../lib/destroyers.hpp"
 #include "utils.hpp"
 

@@ -28,7 +28,6 @@
 #include "common.hpp"
 #include "utils.hpp"
 #include "../lib/conversation.hpp"
-#include "../lib/molch-exception.hpp"
 
 using namespace Molch;
 

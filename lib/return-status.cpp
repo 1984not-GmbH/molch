@@ -31,7 +31,6 @@
 #include "return-status.hpp"
 #include "buffer.hpp"
 #include "destroyers.hpp"
-#include "molch-exception.hpp"
 #include "malloc.hpp"
 #include "gsl.hpp"
 

@@ -30,7 +30,7 @@
 
 #include "buffer.hpp"
 #include "constants.h"
-#include "molch-exception.hpp"
+#include "exception.hpp"
 #include "endianness.hpp"
 #include "gsl.hpp"
 #include "protobuf.hpp"

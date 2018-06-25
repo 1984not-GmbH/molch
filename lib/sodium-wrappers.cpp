@@ -20,7 +20,7 @@
  */
 
 #include "sodium-wrappers.hpp"
-#include "molch-exception.hpp"
+#include "exception.hpp"
 
 namespace Molch {
 	void sodium_init() {

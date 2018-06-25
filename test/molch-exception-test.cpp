@@ -24,7 +24,6 @@
 #include <sstream>
 #include <cstring>
 
-#include "../lib/molch-exception.hpp"
 #include "utils.hpp"
 
 using namespace Molch;

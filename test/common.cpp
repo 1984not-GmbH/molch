@@ -24,7 +24,6 @@
 #include <sodium.h>
 #include <iostream>
 
-#include "../lib/molch-exception.hpp"
 #include "common.hpp"
 #include "utils.hpp"
 

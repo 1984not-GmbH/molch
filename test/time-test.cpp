@@ -23,7 +23,7 @@
 #include <cstdlib>
 
 #include "../lib/time.hpp"
-#include "../lib/molch-exception.hpp"
+#include "../lib/exception.hpp"
 
 using namespace Molch;
 

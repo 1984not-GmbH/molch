@@ -24,7 +24,6 @@
 #include <memory>
 #include <sstream>
 
-#include "molch-exception.hpp"
 #include "master-keys.hpp"
 #include "spiced-random.hpp"
 #include "sodium-wrappers.hpp"

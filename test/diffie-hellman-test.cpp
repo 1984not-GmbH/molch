@@ -27,7 +27,6 @@
 #include "../lib/diffie-hellman.hpp"
 #include "utils.hpp"
 #include "common.hpp"
-#include "../lib/molch-exception.hpp"
 
 using namespace Molch;
 

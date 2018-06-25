@@ -30,7 +30,7 @@
 #include <iterator>
 
 #include "gsl.hpp"
-#include "molch-exception.hpp"
+#include "exception.hpp"
 #include "malloc.hpp"
 #include "sodium-wrappers.hpp"
 

@@ -27,7 +27,6 @@
 #include <iostream>
 
 #include "../lib/conversation-store.hpp"
-#include "../lib/molch-exception.hpp"
 #include "../lib/destroyers.hpp"
 #include "utils.hpp"
 

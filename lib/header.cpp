@@ -21,7 +21,6 @@
 
 #include "header.hpp"
 #include "constants.h"
-#include "molch-exception.hpp"
 #include "protobuf.hpp"
 
 namespace Molch {

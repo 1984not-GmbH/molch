@@ -28,7 +28,6 @@
 
 #include "common.hpp"
 #include "utils.hpp"
-#include "../lib/molch-exception.hpp"
 #include "../lib/conversation.hpp"
 #include "../lib/destroyers.hpp"
 #include "../lib/key.hpp"

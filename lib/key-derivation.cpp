@@ -25,7 +25,6 @@
 #include "constants.h"
 #include "key-derivation.hpp"
 #include "diffie-hellman.hpp"
-#include "molch-exception.hpp"
 
 namespace Molch {
 	/*

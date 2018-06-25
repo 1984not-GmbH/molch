@@ -28,7 +28,6 @@
 
 #include "../lib/packet.hpp"
 #include "../lib/constants.h"
-#include "../lib/molch-exception.hpp"
 #include "../lib/gsl.hpp"
 #include "utils.hpp"
 #include "packet-test-lib.hpp"

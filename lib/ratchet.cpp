@@ -26,7 +26,7 @@
 #include "constants.h"
 #include "ratchet.hpp"
 #include "key-derivation.hpp"
-#include "molch-exception.hpp"
+#include "exception.hpp"
 #include "gsl.hpp"
 
 namespace Molch {

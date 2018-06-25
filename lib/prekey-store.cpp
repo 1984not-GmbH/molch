@@ -25,7 +25,6 @@
 #include <iterator>
 
 #include "prekey-store.hpp"
-#include "molch-exception.hpp"
 #include "gsl.hpp"
 
 namespace Molch {

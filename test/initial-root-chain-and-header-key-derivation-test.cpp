@@ -27,7 +27,6 @@
 
 #include "../lib/key-derivation.hpp"
 #include "../lib/constants.h"
-#include "../lib/molch-exception.hpp"
 #include "utils.hpp"
 #include "common.hpp"
 

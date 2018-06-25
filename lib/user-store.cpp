@@ -23,7 +23,6 @@
 #include <exception>
 #include <iterator>
 
-#include "molch-exception.hpp"
 #include "constants.h"
 #include "user-store.hpp"
 #include "destroyers.hpp"

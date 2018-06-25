@@ -26,7 +26,6 @@
 
 #include "../lib/buffer.hpp"
 #include "../lib/destroyers.hpp"
-#include "../lib/molch-exception.hpp"
 #include "utils.hpp"
 
 using namespace Molch;

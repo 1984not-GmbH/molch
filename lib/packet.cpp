@@ -24,7 +24,6 @@
 
 #include "packet.hpp"
 #include "constants.h"
-#include "molch-exception.hpp"
 #include "protobuf.hpp"
 #include "gsl.hpp"
 

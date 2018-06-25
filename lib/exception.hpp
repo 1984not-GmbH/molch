@@ -19,30 +19,17 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LIB_MOLCH_EXCEPTION_H
-#define LIB_MOLCH_EXCEPTION_H
+#ifndef LIB_EXCEPTION_H
+#define LIB_EXCEPTION_H
 
 #include <exception>
 #include <ostream>
 #include <deque>
 
 #include "return-status.hpp"
+#include "error.hpp"
 
 namespace Molch {
-	class Error {
-	public:
-		status_type type{status_type::SUCCESS};
-		const std::string message;
-
-		Error();
-		Error(const status_type type, const std::string& message);
-
-		/*
-		 * \return An error message allocated with malloc
-		 */
-		error_message* toErrorMessage();
-	};
-
 	class Exception : public std::exception {
 	private:
 		std::deque<Error> error_stack;
@@ -71,4 +58,4 @@ namespace Molch {
 	}
 }
 
-#endif /* LIB_MOLCH_EXCEPTION_H */
+#endif /* LIB_EXCEPTION_H */
