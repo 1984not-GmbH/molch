@@ -1,0 +1,4 @@
+"Compiler","integer-returns","exception-throw","result-error-value","result-error-error","result-excpt-value","result-excpt-error"
+"msvc1912-noexcept",86.496450,,117.822014,139.957881,84.928535,1287.026667
+"msvc1912",99.475277,16940.706415,108.752081,140.905159,89.806485,1367.186145
+"msvc1912-ltcg",98.299343,16930.101232,109.111388,95.511941,91.515940,1457.253950

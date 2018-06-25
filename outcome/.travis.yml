@@ -1,0 +1,121 @@
+dist: trusty
+language: cpp
+compiler:
+ - g++-6
+ - clang-4.0
+sudo: false
+os:
+ - linux
+ - osx
+osx_image: xcode9
+branches:
+  only:
+    - develop
+notifications:
+  email:
+    recipients:
+      - nialldouglas14@gmail.com
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+#    - george-edison55-precise-backports
+#    - george-edison55-cmake-3.x
+    - llvm-toolchain-trusty-4.0
+    packages:
+    - g++-6
+    - clang-4.0
+    - cmake
+    - cmake-data
+
+env:
+# - __="Code bloat tests"
+ - __="Documentation" NAME=TravisDocumentation
+ - __="cmake tests" NAME=TravisLinuxWorker
+ - __="cmake tests osx" NAME=TravisOSXWorker
+ 
+matrix:
+  exclude:
+  - os: osx
+    compiler: g++-6
+  - os: linux
+    compiler: clang-4.0
+    env: __="Documentation" NAME=TravisDocumentation
+  - os: linux
+    env: __="cmake tests osx" NAME=TravisOSXWorker
+  - os: osx
+    env: __="Code bloat tests"
+  - os: osx
+    env: __="Documentation" NAME=TravisDocumentation
+  - os: osx
+    env: __="cmake tests" NAME=TravisLinuxWorker
+ 
+cache:
+  apt: true
+  directories:
+    - hugo_bin
+    
+before_install:
+ - if [ "$__" = "Documentation" ]; then
+     if [ ! -f "hugo_bin/hugo" ]; then
+       wget -O hugo.tar.gz https://github.com/gohugoio/hugo/releases/download/v0.32.4/hugo_0.32.4_Linux-64bit.tar.gz;
+       mkdir hugo_bin;
+       tar xf hugo.tar.gz -C hugo_bin;
+     fi;
+     ls -l hugo_bin;
+     export PATH=$PATH:`pwd`/hugo_bin;
+   fi
+
+script:
+ -
+   if [ "$__" = "Code bloat tests" ]; then
+     cd test/constexprs;
+     ./compile_and_count.py;
+     cat results.posix.xml;
+     if grep -q "failure message" results.posix.xml; then
+       exit 1;
+     fi;
+   fi
+ -
+   if [ "$__" = "cmake tests" ]; then
+     if [ "$CXX" = "g++" ]; then export CXX=g++-6; export NAME=TravisLinuxWorkerGCC; fi;
+     if [ "$CXX" = "clang++" ]; then export CXX=clang++-4.0; export NAME=TravisLinuxWorkerClang; fi;
+     ctest -S .ci.cmake -V;
+   fi
+ -
+   if [ "$__" = "cmake tests osx" ]; then
+     ctest -S .ci.cmake -V;
+   fi
+ - >
+   if [ "$__" = "Documentation" ]; then
+     exit 0;
+     git config --global push.default simple;
+     git config --global user.name "Jenkins nedprod CI";
+     git config --global user.email "foo@nowhere";
+     cd doc/html;
+     git checkout gh-pages;
+     cd ../..;
+     CXX=g++-6 ctest -S .docs.cmake -V;
+     cd doc/html;
+     echo "google-site-verification: google5fc8a1f8de4b73f0.html" > google5fc8a1f8de4b73f0.html;
+     git add . || true;
+     git commit -a -m "Travis CI updates documentation" || true;
+     git push -f https://jenkins-nedprod:$JENKINS_NEDPROD_PASSWORD@github.com/ned14/outcome gh-pages;
+     cd ../..;
+   fi
+ 
+after_success:
+ -
+   if [ "$__" = "cmake tests" ]; then
+     git clone https://github.com/ned14/boost-outcome;
+     python include/outcome/quickcpplib/scripts/boostify.py boost-outcome;
+     cd boost-outcome;
+     git add . || true;
+     git commit -a -m "Travis CI updates Boost.Outcome from Outcome" || true;
+     git push -f https://jenkins-nedprod:$JENKINS_NEDPROD_PASSWORD@github.com/ned14/boost-outcome master;  
+     cd ..;     
+   fi
+ - bash -x ./update_coveralls.sh `pwd`
+
+after_failure:

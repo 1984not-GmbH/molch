@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="generator" content="Hugo 0.32.4" />
+    <meta name="description" content="">
+
+
+    <title>Alternatives :: Outcome documentation</title>
+    <link rel="shortcut icon" href="/outcome/images/favicon.png" type="image/x-icon" />
+    <link href="/outcome/css/nucleus.css" rel="stylesheet">
+    <link href="/outcome/css/font-awesome.min.css" rel="stylesheet">
+    <link href="/outcome/css/hybrid.css" rel="stylesheet">
+    <link href="/outcome/css/featherlight.min.css" rel="stylesheet">
+    <link href="/outcome/css/horsey.css" rel="stylesheet">
+    
+    <link href="/outcome/css/theme.css" rel="stylesheet">
+    
+    
+    <link rel="stylesheet" href="/outcome/css/bootstrap.min.css">
+    <script src="/outcome/js/jquery-2.x.min.js"></script>
+    <style type="text/css">
+      :root #header + #content > #left > #rlblock_left {
+        display:none !important;
+      }
+    </style>
+
+    
+
+    <link href="/outcome/css/local.css" rel="stylesheet">
+
+  </head>
+  <body class="" data-url="/outcome/tutorial/constructors/metaprogrammg3/">
+    <nav id="sidebar" class=""><div class="highlightable">
+  <div id="header-wrapper">
+    <div id="header"> 
+	<p>Outcome 2.0 library documentation</p>
+ 
+
+
+    </div><div class="searchbox">
+    <label for="search-by"><i class="fa fa-search"></i></label>
+    <input data-search-input id="search-by" type="text" placeholder="Search...">
+    <span data-search-clear=""><i class="fa fa-close"></i></span>
+</div>
+<script type="text/javascript" src="/outcome/js/lunr.min.js"></script>
+<script type="text/javascript" src="/outcome/js/horsey.js"></script>
+<script type="text/javascript">
+    var baseurl = "https:\/\/ned14.github.io\/outcome\/";
+</script>
+<script type="text/javascript" src="/outcome/js/search.js"></script>
+
+  </div>
+
+
+    <ul class="topics">
+            <li data-nav-id="/outcome/" class="dd-item">
+            <a href="/outcome/"><i class="fa fa-fw fa-home"></i></a>
+            </li>
+    <li data-nav-id="/outcome/requirements/" class="dd-item">
+      <a href="/outcome/requirements/">
+        <span>Prerequisites</span>
+      </a>
+    </li>
+    <li data-nav-id="/outcome/build/" class="dd-item">
+      <a href="/outcome/build/">
+        <span>Build and install</span>
+      </a>
+    </li>
+    <li data-nav-id="/outcome/use-matrix/" class="dd-item">
+      <a href="/outcome/use-matrix/">
+        <span>Decision matrix</span>
+      </a>
+    </li>
+    <li data-nav-id="/outcome/tutorial/" class="dd-item parent">
+      <a href="/outcome/tutorial/">
+        <span>Tutorial</span>
+            <i class="fa fa-angle-down fa-lg category-icon"></i>
+      </a>
+        <ul>
+    <li data-nav-id="/outcome/tutorial/result/" class="dd-item">
+      <a href="/outcome/tutorial/result/">
+        <span>result&lt;T, EC&gt;</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/result/inspecting/" class="dd-item">
+        <a href="/outcome/tutorial/result/inspecting/">
+          <span>Inspecting result&lt;T, EC&gt;</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/result/try/" class="dd-item">
+        <a href="/outcome/tutorial/result/try/">
+          <span>TRY operations</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/tutorial/outcome/" class="dd-item">
+      <a href="/outcome/tutorial/outcome/">
+        <span>outcome&lt;T, EC, EP&gt;</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/outcome/inspecting/" class="dd-item">
+        <a href="/outcome/tutorial/outcome/inspecting/">
+          <span>Inspecting outcome&lt;T, EC, EP&gt;</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/tutorial/payload/" class="dd-item">
+      <a href="/outcome/tutorial/payload/">
+        <span>Custom payloads</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/payload/copy_file/" class="dd-item">
+        <a href="/outcome/tutorial/payload/copy_file/">
+          <span>The Filesystem TS</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/payload/copy_file2/" class="dd-item">
+        <a href="/outcome/tutorial/payload/copy_file2/">
+          <span>Upgrading the Filesystem TS</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/payload/copy_file3/" class="dd-item">
+        <a href="/outcome/tutorial/payload/copy_file3/">
+          <span>Auto-throwing filesystem_error</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/tutorial/default-actions/" class="dd-item">
+      <a href="/outcome/tutorial/default-actions/">
+        <span>Default actions</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/default-actions/udt-err/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/udt-err/">
+          <span>User defined error types</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/default-actions/happens1/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/happens1/">
+          <span>-- What happens?</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/default-actions/enums/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/enums/">
+          <span>Error code enums</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/default-actions/happens2/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/happens2/">
+          <span>-- What happens?</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/default-actions/happens3/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/happens3/">
+          <span>-- Now what happens?</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/default-actions/error-codes/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/error-codes/">
+          <span>error_code</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/default-actions/exception-ptr/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/exception-ptr/">
+          <span>exception_ptr</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/default-actions/void/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/void/">
+          <span>void</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/default-actions/unchecked/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/unchecked/">
+          <span>unchecked&lt;T, E&gt; and checked&lt;T, E&gt;</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/tutorial/constructors/" class="dd-item parent">
+      <a href="/outcome/tutorial/constructors/">
+        <span>Result returning constructors</span>
+            <i class="fa fa-angle-down fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/constructors/two-phase-init/" class="dd-item">
+        <a href="/outcome/tutorial/constructors/two-phase-init/">
+          <span>Two phase construction</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/constructors/file_handle/" class="dd-item">
+        <a href="/outcome/tutorial/constructors/file_handle/">
+          <span>A file handle</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/constructors/static-constructor/" class="dd-item">
+        <a href="/outcome/tutorial/constructors/static-constructor/">
+          <span>Phase 2 construction</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/constructors/metaprogrammg1/" class="dd-item">
+        <a href="/outcome/tutorial/constructors/metaprogrammg1/">
+          <span>Phase 3</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/constructors/metaprogrammg2/" class="dd-item">
+        <a href="/outcome/tutorial/constructors/metaprogrammg2/">
+          <span>construct&lt;T&gt;</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/constructors/metaprogrammg3/" class="dd-item active">
+        <a href="/outcome/tutorial/constructors/metaprogrammg3/">
+          <span>Alternatives</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/tutorial/hooks/" class="dd-item">
+      <a href="/outcome/tutorial/hooks/">
+        <span>Hooking events</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/hooks/keeping_state/" class="dd-item">
+        <a href="/outcome/tutorial/hooks/keeping_state/">
+          <span>Keeping state</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/hooks/adl_bridging/" class="dd-item">
+        <a href="/outcome/tutorial/hooks/adl_bridging/">
+          <span>ADL bridging</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/hooks/hook_result/" class="dd-item">
+        <a href="/outcome/tutorial/hooks/hook_result/">
+          <span>Hook result</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/hooks/poke_exception/" class="dd-item">
+        <a href="/outcome/tutorial/hooks/poke_exception/">
+          <span>Custom exception ptr</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/hooks/hook_outcome/" class="dd-item">
+        <a href="/outcome/tutorial/hooks/hook_outcome/">
+          <span>Hook outcome</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/tutorial/policies/" class="dd-item">
+      <a href="/outcome/tutorial/policies/">
+        <span>Policies</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/policies/anatomy/" class="dd-item">
+        <a href="/outcome/tutorial/policies/anatomy/">
+          <span>Anatomy of a policy</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/policies/cast/" class="dd-item">
+        <a href="/outcome/tutorial/policies/cast/">
+          <span>Casting workaround</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/policies/builtin/" class="dd-item">
+        <a href="/outcome/tutorial/policies/builtin/">
+          <span>Built-in policies</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/tutorial/c-api/" class="dd-item">
+      <a href="/outcome/tutorial/c-api/">
+        <span>Using result&lt;T&gt; from C code</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/c-api/limitations/" class="dd-item">
+        <a href="/outcome/tutorial/c-api/limitations/">
+          <span>Limitations</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/c-api/example/" class="dd-item">
+        <a href="/outcome/tutorial/c-api/example/">
+          <span>Example C&#43;&#43; function</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/c-api/example2/" class="dd-item">
+        <a href="/outcome/tutorial/c-api/example2/">
+          <span>Calling it from C</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/c-api/variations/" class="dd-item">
+        <a href="/outcome/tutorial/c-api/variations/">
+          <span>Variations</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/tutorial/interop/" class="dd-item">
+      <a href="/outcome/tutorial/interop/">
+        <span>Interoperation</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/interop/problem/" class="dd-item">
+        <a href="/outcome/tutorial/interop/problem/">
+          <span>Incommensurate E types</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/value-or-error/" class="dd-item">
+        <a href="/outcome/tutorial/interop/value-or-error/">
+          <span>ValueOrError Concept</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/httplib/" class="dd-item">
+        <a href="/outcome/tutorial/interop/httplib/">
+          <span>The HTTP library</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/tidylib/" class="dd-item">
+        <a href="/outcome/tutorial/interop/tidylib/">
+          <span>The HTMLTidy library</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/filelib/" class="dd-item">
+        <a href="/outcome/tutorial/interop/filelib/">
+          <span>The File I/O library</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/app/" class="dd-item">
+        <a href="/outcome/tutorial/interop/app/">
+          <span>The Application</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/app-map-httplib1/" class="dd-item">
+        <a href="/outcome/tutorial/interop/app-map-httplib1/">
+          <span>Mapping the HTTP library into the Application 1/2</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/app-map-httplib2/" class="dd-item">
+        <a href="/outcome/tutorial/interop/app-map-httplib2/">
+          <span>Mapping the HTTP library into the Application 2/2</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/app-map-filelib/" class="dd-item">
+        <a href="/outcome/tutorial/interop/app-map-filelib/">
+          <span>Mapping the File I/O library into the Application</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/app-map-tidylib/" class="dd-item">
+        <a href="/outcome/tutorial/interop/app-map-tidylib/">
+          <span>Mapping the HTMLTidy library into the Application</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/app-go/" class="dd-item">
+        <a href="/outcome/tutorial/interop/app-go/">
+          <span>In use</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/conclusion/" class="dd-item">
+        <a href="/outcome/tutorial/interop/conclusion/">
+          <span>Conclusion</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+      <li data-nav-id="/outcome/tutorial/error_code/" class="dd-item">
+        <a href="/outcome/tutorial/error_code/">
+          <span>Custom error codes</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/reference/" class="dd-item">
+      <a href="/outcome/reference/">
+        <span>API reference</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/reference/outcome/" class="dd-item">
+        <a href="/outcome/reference/outcome/">
+          <span>outcome&lt;R, S, P&gt;</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/result/" class="dd-item">
+        <a href="/outcome/reference/result/">
+          <span>result&lt;R, S&gt;</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/try/" class="dd-item">
+        <a href="/outcome/reference/try/">
+          <span>Try operations</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/success_failure/" class="dd-item">
+        <a href="/outcome/reference/success_failure/">
+          <span>Success/Failure</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/utils/" class="dd-item">
+        <a href="/outcome/reference/utils/">
+          <span>Utilities</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/convert/" class="dd-item">
+        <a href="/outcome/reference/convert/">
+          <span>Interoperation</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/bad_access/" class="dd-item">
+        <a href="/outcome/reference/bad_access/">
+          <span>Exceptions</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/iostream_support/" class="dd-item">
+        <a href="/outcome/reference/iostream_support/">
+          <span>iostream support</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/result_c/" class="dd-item">
+        <a href="/outcome/reference/result_c/">
+          <span>C API</span>
+        </a>
+    </li>
+    <li data-nav-id="/outcome/reference/policies/" class="dd-item">
+      <a href="/outcome/reference/policies/">
+        <span>Policies</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/reference/policies/all_narrow/" class="dd-item">
+        <a href="/outcome/reference/policies/all_narrow/">
+          <span>All narrow (hard UB)</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/policies/outcome_error_code_throw_as_system_error/" class="dd-item">
+        <a href="/outcome/reference/policies/outcome_error_code_throw_as_system_error/">
+          <span>error_code throw as system_error (Outcome)</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/policies/result_error_code_throw_as_system_error/" class="dd-item">
+        <a href="/outcome/reference/policies/result_error_code_throw_as_system_error/">
+          <span>error_code throw as system_error (Result)</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/policies/outcome_exception_ptr_rethrow/" class="dd-item">
+        <a href="/outcome/reference/policies/outcome_exception_ptr_rethrow/">
+          <span>exception_ptr rethrow (Outcome)</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/policies/result_exception_ptr_rethrow/" class="dd-item">
+        <a href="/outcome/reference/policies/result_exception_ptr_rethrow/">
+          <span>exception_ptr rethrow (Result)</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/policies/terminate/" class="dd-item">
+        <a href="/outcome/reference/policies/terminate/">
+          <span>Termimate</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/policies/throw_bad_result_access/" class="dd-item">
+        <a href="/outcome/reference/policies/throw_bad_result_access/">
+          <span>Throw bad_result_access</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/faq/" class="dd-item">
+      <a href="/outcome/faq/">
+        <span>Frequently asked questions</span>
+      </a>
+    </li>
+    <li data-nav-id="/outcome/videos/" class="dd-item">
+      <a href="/outcome/videos/">
+        <span>Videos</span>
+      </a>
+    </li>
+    <li data-nav-id="/outcome/history/" class="dd-item">
+      <a href="/outcome/history/">
+        <span>History</span>
+      </a>
+    </li>
+        <section id="shortcuts">
+                <li class="" role=""><h3>More</h3><a href="https://github.com/ned14/outcome" target="_blank" rel="noopener"><i class='fa fa-github'></i> Outcome 2.0 github repo</a></li>
+                <li class="" role=""><a href="/outcome/credits" target="_blank" rel="noopener"><i class='fa fa-bullhorn'></i> Acknowledgements</a></li>
+        </section>
+    </ul>
+
+
+    <section id="footer"><center>
+
+<a class="github-button" href="https://dedi4.nedprod.com/static/files/outcome-v2.0-source-latest.tar.xz" data-icon="octicon-cloud-download" aria-label="Download Outcome">Download</a>
+
+
+<a class="github-button" href="https://github.com/ned14/outcome" data-icon="octicon-star" data-show-count="false" aria-label="Star Outcome on GitHub">Star</a>
+
+
+<a class="github-button" href="https://github.com/ned14/outcome/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork Outcome on GitHub">Fork</a>
+
+</center>
+
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+    </section>
+  </div>
+</nav>
+
+
+
+        <section id="body">
+        <div id="overlay"></div>
+        <div class="padding highlightable">
+        
+          <div id="top-bar">
+            
+              
+              
+              
+            <div id="top-github-link">
+              <a class="github-link" href="https://github.com/ned14/outcome/edit/develop/doc/src/content/tutorial/constructors/metaprogrammg3.md" target="blank">
+                <i class="fa fa-code-fork"></i>
+                Edit page
+              </a>
+            </div><div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                <span id="sidebar-toggle-span">
+                  <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                    <i class="fa fa-bars"></i>
+                  </a>
+                </span>
+                <span id="toc-menu"><i class="fa fa-list-alt"></i></span>
+                <span class="links">
+                
+
+
+
+
+
+
+
+
+
+
+ <a href='/outcome/'>Home</a> > <a href='/outcome/tutorial/'>Tutorial</a> > <a href='/outcome/tutorial/constructors/'>Result returning constructors</a> > Alternatives
+
+ 
+
+ 
+
+ 
+
+   
+                </span>
+            </div>
+            <div class="progress">
+    <div class="wrapper">
+
+    </div>
+</div>
+
+          </div>
+        
+        
+        <div id="body-inner">
+          
+            <h1>Alternatives</h1>
+          
+
+
+
+
+<p>No doubt many will dislike the two-stage invocation pattern i.e.</p>
+<div class="highlight"><pre class="chroma"><code class="language-c++" data-lang="c++"><span class="n">construct</span><span class="o">&lt;</span><span class="n">file_handle</span><span class="o">&gt;</span><span class="p">{</span><span class="sa"></span><span class="s">&#34;hello&#34;</span><span class="p">}();</span></code></pre></div>
+<p>So let us examine the most obvious alternative: a templated free function <code>construct&lt;T&gt;</code>.</p>
+
+<p>Due to the inability to partially specialise templated functions in C++, you
+need to use tagged overloading e.g.</p>
+<div class="highlight"><pre class="chroma"><code class="language-c++" data-lang="c++"><span class="k">template</span><span class="o">&lt;</span><span class="n">class</span><span class="p">...</span> <span class="n">Args</span><span class="o">&gt;</span>
+<span class="kr">inline</span> <span class="n">outcome</span><span class="o">::</span><span class="n">result</span><span class="o">&lt;</span><span class="n">file_handle</span><span class="o">&gt;</span> <span class="n">construct</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">in_place_type_t</span><span class="o">&lt;</span><span class="n">file_handle</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">Args</span><span class="o">&amp;&amp;</span> <span class="p">...</span> <span class="n">args</span><span class="p">)</span>
+<span class="p">{</span>
+  <span class="k">return</span> <span class="n">file_handle</span><span class="o">::</span><span class="n">file</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">forward</span><span class="o">&lt;</span><span class="n">Args</span><span class="o">&gt;</span><span class="p">(</span><span class="n">args</span><span class="p">)...);</span>
+<span class="p">}</span>
+<span class="p">...</span>
+<span class="c1">// Now you must always write this:
+</span><span class="c1"></span><span class="n">construct</span><span class="p">(</span><span class="n">std</span><span class="o">::</span><span class="n">in_place_type</span><span class="o">&lt;</span><span class="n">file_handle</span><span class="o">&gt;</span><span class="p">,</span> <span class="sa"></span><span class="s">&#34;hello&#34;</span><span class="p">);</span></code></pre></div>
+<p>Tagged overloading is fine for smaller projects, but for larger code bases:</p>
+
+<ol>
+<li>It takes longer to type <code>construct(std::in_place_type&lt;file_handle&gt;, &quot;hello&quot;)</code>,
+and is possibly less intuitive to write,
+than it does <code>construct&lt;file_handle&gt;{&quot;hello&quot;}()</code>.</li>
+<li>Compiler error messages are enormously clearer if you encode the permitted
+overloads for construction into the <code>construct&lt;file_handle&gt;</code> type rather than
+letting a variadic free function fail to resolve an appropriate overload.</li>
+<li>Resolving variadic free function overloads is not constant time for the compiler,
+whereas resolving the type specialisation for <code>construct&lt;file_handle&gt;</code>
+is constant time.</li>
+<li>It actually turns out to be quite useful when writing generic code
+to pass around object constructing factory objects all of which have
+no parameters for their call operator. It becomes, effectively, a
+<em>lazy construction</em> mechanism.</li>
+</ol>
+
+
+<footer class=" footline" >
+	
+</footer>
+
+
+
+
+        
+
+      </div>
+    </div>
+
+    
+ 
+    
+
+    <div id="navigation">
+        <a class="nav nav-prev" href="/outcome/tutorial/constructors/metaprogrammg2/" title="construct&lt;T&gt;"> <i class="fa fa-chevron-left"></i></a>
+        <a class="nav nav-next" href="/outcome/tutorial/hooks/" title="Hooking events" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+    </div>
+
+    </section>
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>    
+
+    <script src="/outcome/js/clipboard.min.js"></script>
+<script src="/outcome/js/featherlight.min.js"></script>
+<script src="/outcome/js/html5shiv-printshiv.min.js"></script>
+
+
+<script src="/outcome/js/modernizr.custom.71422.js"></script>
+<script src="/outcome/js/learn.js"></script>
+<script src="/outcome/js/hugo-learn.js"></script>
+
+
+<link href="/outcome/mermaid/mermaid.css" type="text/css" rel="stylesheet"/>
+<script src="/outcome/mermaid/mermaid.js"></script>
+<script>mermaid.initialize({startOnLoad:true});</script>
+    
+
+  </body>
+</html>
+

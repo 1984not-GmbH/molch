@@ -1,0 +1,24 @@
+[submodule "doc/html"]
+	path = doc/html
+	url = https://github.com/ned14/quickcpplib.git
+	branch = gh-pages
+	fetchRecurseSubmodules = true
+	ignore = none
+[submodule "include/gsl-lite"]
+	path = include/gsl-lite
+	url = https://github.com/martinmoene/gsl-lite.git
+	branch = master
+	fetchRecurseSubmodules = true
+	ignore = untracked
+[submodule "pcpp"]
+	path = pcpp
+	url = https://github.com/ned14/pcpp.git
+	branch = master
+	fetchRecurseSubmodules = true
+	ignore = untracked
+[submodule "include/optional"]
+	path = include/optional
+	url = https://github.com/akrzemi1/Optional.git
+	branch = master
+	fetchRecurseSubmodules = true
+	ignore = untracked

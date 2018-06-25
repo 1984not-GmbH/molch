@@ -1,0 +1,727 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Home on Outcome documentation</title>
+    <link>https://ned14.github.io/outcome/</link>
+    <description>Recent content in Home on Outcome documentation</description>
+    <generator>Hugo -- gohugo.io</generator>
+    
+	<atom:link href="https://ned14.github.io/outcome/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Incommensurate E types</title>
+      <link>https://ned14.github.io/outcome/tutorial/interop/problem/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/interop/problem/</guid>
+      <description>Back in the tutorial section on Default Actions, we studied a likely very common initial choice of E type: a strongly typed enum. We saw how by marking up strongly typed enums to tell the C++ standard library what they are, they gain implicit convertibility into std::error_code, and we then pointed out that you might as well now set E = std::error_code as that comes with the enormous advantage that you can use the boilerplate saving OUTCOME_TRY macro when the E type is always the same.</description>
+    </item>
+    
+    <item>
+      <title>User defined error types</title>
+      <link>https://ned14.github.io/outcome/tutorial/default-actions/udt-err/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/default-actions/udt-err/</guid>
+      <description>Let us imagine a some user defined value type (udt) and some user defined error type (err):
+struct udt { int a{0}; explicit udt(int _a) : a(_a) { } udt() = default; int operator*() const { return a; } }; struct err { int a{0}; explicit err(int _a) : a(_a) { } err() = default; }; View this code on Github Firstly, note that both the udt and err types can be constructed from an int.</description>
+    </item>
+    
+    <item>
+      <title>ValueOrError Concept</title>
+      <link>https://ned14.github.io/outcome/tutorial/interop/value-or-error/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/interop/value-or-error/</guid>
+      <description>Something not really mentioned until now is how Outcome interoperates with the proposed std::expected&amp;lt;T, E&amp;gt;, whose design lands in between outcome::unchecked&amp;lt;T, E&amp;gt; and outcome::checked&amp;lt;T, E&amp;gt;, both of which are simplified aliases for outcome::result&amp;lt;T, E&amp;gt; hard coding the NoValuePolicy to a fixed policy.
+Expected and Outcome are isomorphic to one another in design intent, but interoperation for code using Expected and Outcome ought to be seamless thanks to the proposed ValueOrError concept framework, a subset of which Outcome implements.</description>
+    </item>
+    
+    <item>
+      <title>-- What happens?</title>
+      <link>https://ned14.github.io/outcome/tutorial/default-actions/happens1/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/default-actions/happens1/</guid>
+      <description>Let us run the code from the previous page:
+ned@lyta:~/outcome/build_posix$ bin/outcome-snippets_udts Segmentation fault (core dumped) ned@lyta:~/outcome/build_posix$  Apparently no exception was thrown? Correct. Nor was a value printed, though this will randomly vary depending on your compiler, libraries, the wind blowing on the day &amp;hellip;
+You will probably find this surprising. This is because the default action for a user-defined error type is undefined behaviour1.
+Let us demonstrate this by recompiling the code to use the undefined behaviour sanitiser and see what happens instead:</description>
+    </item>
+    
+    <item>
+      <title>All narrow (hard UB)</title>
+      <link>https://ned14.github.io/outcome/reference/policies/all_narrow/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/reference/policies/all_narrow/</guid>
+      <description>Header file all_narrow.hpp 
+#include&amp;nbsp;&amp;quot;detail&amp;#x2F;common.hpp&amp;quot; namespace&amp;nbsp;outcome_v2_xxx { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;namespace&amp;nbsp;policy &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;{ &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;struct all_narrow; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;} }  
+
+Struct outcome_v2_xxx::policy::all_narrow 
+struct&amp;nbsp;all_narrow { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_value_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_error_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_exception_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_value_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_error_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_exception_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; };  Policy which treats wide checks as narrow checks.
+Can be used in both result and outcome.
+Function outcome_v2_xxx::policy::throw_bad_result_access::narrow_value_check 
+template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; static&amp;nbsp;constexpr&amp;nbsp;void&amp;nbsp;narrow_value_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept;  Performs a narrow check of state, used in the assume_value() functions.</description>
+    </item>
+    
+    <item>
+      <title>Anatomy of a policy</title>
+      <link>https://ned14.github.io/outcome/tutorial/policies/anatomy/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/policies/anatomy/</guid>
+      <description>A NoValuePolicy is quite simple. This is a complete policy, only the top two thirds is needed if you never use the policy in an outcome.
+struct blank_policy { //! Performs a narrow check of state, used in the assume_value() functions.  template &amp;lt;class Impl&amp;gt; static constexpr void narrow_value_check(Impl &amp;amp;&amp;amp;self) noexcept; //! Performs a narrow check of state, used in the assume_error() functions.  template &amp;lt;class Impl&amp;gt; static constexpr void narrow_error_check(Impl &amp;amp;&amp;amp;self) noexcept; //!</description>
+    </item>
+    
+    <item>
+      <title>Keeping state</title>
+      <link>https://ned14.github.io/outcome/tutorial/hooks/keeping_state/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/hooks/keeping_state/</guid>
+      <description>The first thing we are going to need is somewhere to store the stack backtrace. We could take the easier route and simply store it into an allocated block and keep the pointer as a custom payload in a result&amp;lt;T, std::pair&amp;lt;error_code, std::unique_ptr&amp;lt;stack_backtrace&amp;gt;&amp;gt;&amp;gt; (see previous section on Custom payloads). But let us assume that we care so deeply about bounded execution times that ever calling malloc is unacceptable.
+We therefore are going to need some completely static and trivially typed storage perhaps kept per-thread to avoid the need to keep mutexes.</description>
+    </item>
+    
+    <item>
+      <title>Limitations</title>
+      <link>https://ned14.github.io/outcome/tutorial/c-api/limitations/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/c-api/limitations/</guid>
+      <description>C++ has excellent two-way compatibility with the C ABI, but there are some limitations you must observe to write C++ code which C code can call without marshalling at the ABI boundary:
+ A C++ function may not throw exceptions if it is safe to call from C, and so should always be marked noexcept. A C++ function should annotated with extern &amp;quot;C&amp;quot; to prevent its symbol being mangled, and thus give it the C rather than C++ ABI.</description>
+    </item>
+    
+    <item>
+      <title>The Filesystem TS</title>
+      <link>https://ned14.github.io/outcome/tutorial/payload/copy_file/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/payload/copy_file/</guid>
+      <description>Something which has long annoyed the purists in the C++ leadership is the problem of dual overloads in error_code capable standard library APIs.
+Consider the copy_file() API from the Filesystem TS:
+namespace filesystem { /*! Copies the file at path `from` to path `to`. \returns True if file was successfully copied. \throws On failure throws `filesystem_error(ec.message(), from, to, ec)` with `ec` being the error code reported by the operating system. */ bool copy_file(const path &amp;amp;from, const path &amp;amp;to); /*!</description>
+    </item>
+    
+    <item>
+      <title>The HTTP library</title>
+      <link>https://ned14.github.io/outcome/tutorial/interop/httplib/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/interop/httplib/</guid>
+      <description>Let us imagine a simple application: it fetches a HTTP page using a HTTP library, sends it through HTML tidy via the htmltidy library, and then writes it to disc using a filelib library. So three third party libraries, two using Outcome in incompatible ways, and the third being a C library just for kicks.
+Let us imagine that the HTTP library has the following public interface:
+// This is some standalone library implementing high level HTTP namespace httplib { // These are the error code that this HTTP library can return  enum class status_code { success = 0, // not the HTTP success code of 200  // A subset of all HTTP status codes for brevity  bad_request = 400, access_denied = 401, logon_failed = 402, forbidden = 403, not_found = 404, internal_error = 500 }; // This is the error type that this HTTP library can return  struct failure { status_code status{status_code::success}; std::string url{}; // The failing URL  }; // Localise a result implementation to this library  template &amp;lt;class T&amp;gt; using result = OUTCOME_V2_NAMESPACE::result&amp;lt;T, failure&amp;gt;; /* Performs a HTTP GET on the url, returning the body if successful, a failure with status_code if unsuccessful at the HTTP level, or a C++ exception throw if something catastrophic happened e.</description>
+    </item>
+    
+    <item>
+      <title>Two phase construction</title>
+      <link>https://ned14.github.io/outcome/tutorial/constructors/two-phase-init/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/constructors/two-phase-init/</guid>
+      <description>The first thing to do is to break your object&amp;rsquo;s construction into two phases:
+ Place the object into a state where it can be legally destructed without doing any initialisation which could throw an exception (i.e. everything done in phase 1 is constexpr). This phase usually involves initialising member variables to various default values, most often using default member initialisers. Most standard C++ library objects and containers have constexpr constructors, and thus can be initialised during phase 1.</description>
+    </item>
+    
+    <item>
+      <title>outcome&lt;R, S, P&gt;</title>
+      <link>https://ned14.github.io/outcome/reference/outcome/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/reference/outcome/</guid>
+      <description>Header file outcome.hpp 
+namespace&amp;nbsp;outcome_v2_xxx { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;using is_outcome&amp;nbsp;=&amp;nbsp;&amp;#x27;hidden&amp;#x27;; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T&amp;gt;static&amp;nbsp;constexpr&amp;nbsp;bool&amp;nbsp;is_outcome_v&amp;nbsp;=&amp;nbsp;detail::is_outcome&amp;lt;std::decay_t&amp;lt;T&amp;gt;&amp;gt;::value; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;namespace&amp;nbsp;hooks &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;{ &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;U&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;void hook_outcome_construction(T*,&amp;nbsp;U&amp;amp;&amp;amp;)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;U&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;void hook_outcome_copy_construction(T*,&amp;nbsp;U&amp;amp;&amp;amp;)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;U&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;void hook_outcome_move_construction(T*,&amp;nbsp;U&amp;amp;&amp;amp;)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;U,&amp;nbsp;class&amp;nbsp;...&amp;nbsp;Args&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;void hook_outcome_in_place_construction(T*, in_place_type_t&amp;lt;U&amp;gt;, Args &amp;amp;&amp;amp;...)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S,&amp;nbsp;class&amp;nbsp;P,&amp;nbsp;class&amp;nbsp;NoValuePolicy,&amp;nbsp;class&amp;nbsp;U&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;void override_outcome_exception(outcome&amp;lt;R, S, P, NoValuePolicy&amp;gt;*&amp;nbsp;o,&amp;nbsp;U&amp;amp;&amp;amp;&amp;nbsp;v)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;} &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class R,&amp;nbsp;class S,&amp;nbsp;class P,&amp;nbsp;class NoValuePolicy&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;class outcome; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;U,&amp;nbsp;class&amp;nbsp;V,&amp;nbsp;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S,&amp;nbsp;class&amp;nbsp;P,&amp;nbsp;class&amp;nbsp;N&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;bool operator==(result&amp;lt;T, U, V&amp;gt;&amp;nbsp;const&amp;amp; a, outcome&amp;lt;R, S, P, N&amp;gt;&amp;nbsp;const&amp;amp; b)&amp;nbsp;noexcept(&amp;#x27;hidden&amp;#x27;); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;U,&amp;nbsp;class&amp;nbsp;V,&amp;nbsp;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S,&amp;nbsp;class&amp;nbsp;P,&amp;nbsp;class&amp;nbsp;N&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;bool operator!=(result&amp;lt;T, U, V&amp;gt;&amp;nbsp;const&amp;amp; a, outcome&amp;lt;R, S, P, N&amp;gt;&amp;nbsp;const&amp;amp; b)&amp;nbsp;noexcept(&amp;#x27;hidden&amp;#x27;); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S,&amp;nbsp;class&amp;nbsp;P,&amp;nbsp;class&amp;nbsp;N&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;void swap(outcome&amp;lt;R, S, P, N&amp;gt;&amp;amp;&amp;nbsp;a, outcome&amp;lt;R, S, P, N&amp;gt;&amp;amp;&amp;nbsp;b)&amp;nbsp;noexcept(&amp;#x27;hidden&amp;#x27;); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;namespace&amp;nbsp;hooks &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;{ &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S,&amp;nbsp;class&amp;nbsp;P,&amp;nbsp;class&amp;nbsp;NoValuePolicy,&amp;nbsp;class&amp;nbsp;U&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;void override_outcome_exception(outcome&amp;lt;R, S, P, NoValuePolicy&amp;gt;* o,&amp;nbsp;U&amp;amp;&amp;amp; v)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;} }</description>
+    </item>
+    
+    <item>
+      <title>The HTMLTidy library</title>
+      <link>https://ned14.github.io/outcome/tutorial/interop/tidylib/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/interop/tidylib/</guid>
+      <description>// There actually is a library for tidying HTML into XHTML called HTMLTidy // See http://www.html-tidy.org/ // HTMLTidy is actually a great tool, I highly recommend it.  // This isn&amp;#39;t the API for Tidy, but let&amp;#39;s assume it&amp;#39;s a C library returning // errno domained error codes. out must be freed with free() after use. extern &amp;#34;C&amp;#34; int tidy_html(char **out, size_t *outlen, const char *in, size_t inlen); View this code on Github A C API may not initially appear to be a T|E based API, but if failure returns some domained error code and causes no other effects, and success returns some value, then it is effectively a &amp;ldquo;split&amp;rdquo; T|E API.</description>
+    </item>
+    
+    <item>
+      <title>A file handle</title>
+      <link>https://ned14.github.io/outcome/tutorial/constructors/file_handle/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/constructors/file_handle/</guid>
+      <description>Borrowing from afio::file_handle which uses this design pattern, here is a simplified file_handle implementation:
+class file_handle { int _fd{-1}; // file descriptor  struct stat _stat { 0 }; // stat of the fd at open  // Phase 1 private constexpr constructor  constexpr file_handle() {} public: using path_type = filesystem::path; //! The behaviour of the handle: does it read, read and write, or atomic append?  enum class mode : unsigned char // bit 0 set means writable  { unchanged = 0, none = 2, //!</description>
+    </item>
+    
+    <item>
+      <title>ADL bridging</title>
+      <link>https://ned14.github.io/outcome/tutorial/hooks/adl_bridging/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/hooks/adl_bridging/</guid>
+      <description>In a previous section, we used the failure_info type to create the ADL bridge into the namespace where the ADL discovered  throw_as_system_error_with_payload() function was to be found.
+Here we do the same, but more directly by creating a thin clone of std::error_code into the local namespace. This ensures that this namespace will be searched by the compiler when discovering the event hooks.
+namespace error_code_extended { // Use the error_code type as the ADL bridge for the hooks by creating a type here  // It can be any type that your localised result uses, including the value type but  // by localising the error code type here you prevent nasty surprises later when the  // value type you use doesn&amp;#39;t trigger the ADL bridge.</description>
+    </item>
+    
+    <item>
+      <title>Casting workaround</title>
+      <link>https://ned14.github.io/outcome/tutorial/policies/cast/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/policies/cast/</guid>
+      <description>The templated Impl type on each policy function is decltype(*this) of the part of Outcome&amp;rsquo;s internal implementation which calls the policy. It therefore may be quite removed from the actual outcome type in play, and thus the .exception() member function and others belonging to outcome only will not be immediately visible.
+Hence a very common thing you&amp;rsquo;ll need to do is static cast to a more derived form before use like this:</description>
+    </item>
+    
+    <item>
+      <title>Error code enums</title>
+      <link>https://ned14.github.io/outcome/tutorial/default-actions/enums/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/default-actions/enums/</guid>
+      <description>Let&amp;rsquo;s replace err with something likely in many people&amp;rsquo;s code, a strongly typed enum:
+struct udt { int a{0}; explicit udt(int _a) : a(_a) { } udt() = default; int operator*() const { return a; } }; enum class err { success, // REMEMBER it is best practice to always put &amp;#34;success&amp;#34;  failure1, // with value 0 as your first item in any error code  failure2 // enum, even if you never use it.</description>
+    </item>
+    
+    <item>
+      <title>Example C&#43;&#43; function</title>
+      <link>https://ned14.github.io/outcome/tutorial/c-api/example/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/c-api/example/</guid>
+      <description>Let us start with a simple C++ function which we wish to make available to C code:
+// Fill the supplied buffer with the integer v converted to a string, returning // length of string minus null terminator extern &amp;#34;C&amp;#34; outcome::result&amp;lt;size_t&amp;gt; to_string(char *buffer, size_t bufferlen, int v) noexcept { try { // Could throw an exception!  std::string temp(std::to_string(v)); // Will this string exceed the supplied buffer?  if(temp.size() + 1 &amp;gt; bufferlen) return std::errc::no_buffer_space; // Copy the string into the supplied buffer, and return length of string  memcpy(buffer, temp.</description>
+    </item>
+    
+    <item>
+      <title>Inspecting result&lt;T, EC&gt;</title>
+      <link>https://ned14.github.io/outcome/tutorial/result/inspecting/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/result/inspecting/</guid>
+      <description>Suppose we will be writing function print_half that takes an integral number (however big) represented as an std::string and outputs a number which is twice smaller:
+outcome::result&amp;lt;void&amp;gt; print_half(const std::string&amp;amp; text); View this code on Github Type result&amp;lt;void&amp;gt; means that there is no value to be retuned upon success, but that the operation might still fail, and we may be interested in inspecting the cause of the failure. Class template result&amp;lt;&amp;gt; is declared with attribute [[nodiscard]], which means compiler will warn you if you forget to inspect the returned object (in C++ 17 or later).</description>
+    </item>
+    
+    <item>
+      <title>The File I/O library</title>
+      <link>https://ned14.github.io/outcome/tutorial/interop/filelib/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/interop/filelib/</guid>
+      <description>The File I/O library we shall be using is very similar to the one we saw earlier in this tutorial:
+// You may remember this from the tutorial section on Custom Payloads namespace filelib { // Error code + paths related to a failure. Also causes ADL discovery to check this namespace.  struct failure_info { std::error_code ec; path path1{}, path2{}; }; // Tell Outcome that failure_info is to be treated as a std::error_code  inline const std::error_code &amp;amp;make_error_code(const failure_info &amp;amp;fi) { return fi.</description>
+    </item>
+    
+    <item>
+      <title>Upgrading the Filesystem TS</title>
+      <link>https://ned14.github.io/outcome/tutorial/payload/copy_file2/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/payload/copy_file2/</guid>
+      <description>An Outcome based solution to the dual overload problem is straightforward:
+namespace filesystem2 { // Error code + paths related to a failure. Also causes ADL discovery to check this namespace.  struct failure_info { std::error_code ec; path path1, path2; }; // Tell Outcome that failure_info is to be treated as a std::error_code  inline const std::error_code &amp;amp;make_error_code(const failure_info &amp;amp;fi) { return fi.ec; } // Localise an outcome implementation specific to this namespace.</description>
+    </item>
+    
+    <item>
+      <title>error_code throw as system_error (Outcome)</title>
+      <link>https://ned14.github.io/outcome/reference/policies/outcome_error_code_throw_as_system_error/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/reference/policies/outcome_error_code_throw_as_system_error/</guid>
+      <description>Header file outcome_error_code_throw_as_system_error.hpp 
+#include&amp;nbsp;&amp;quot;result_error_code_throw_as_system_error.hpp&amp;quot; namespace&amp;nbsp;outcome_v2_xxx { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;namespace&amp;nbsp;policy &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;{ &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;EC,&amp;nbsp;class&amp;nbsp;E&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;struct error_code_throw_as_system_error; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;} }  
+
+Struct outcome_v2_xxx::policy::error_code_throw_as_system_error 
+template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;EC,&amp;nbsp;class&amp;nbsp;E&amp;gt; struct&amp;nbsp;error_code_throw_as_system_error { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_value_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_error_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_exception_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_value_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_error_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_exception_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; };  Policy interpreting EC as a type for which trait::has_error_code_v&amp;lt;EC&amp;gt; is true.
+Any wide attempt to access the successful state where there is none causes an attempt to rethrow E if trait::has_exception_ptr_v&amp;lt;E&amp;gt; is true, else:</description>
+    </item>
+    
+    <item>
+      <title>result&lt;R, S&gt;</title>
+      <link>https://ned14.github.io/outcome/reference/result/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/reference/result/</guid>
+      <description>Header file result.hpp 
+namespace&amp;nbsp;outcome_v2_xxx { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;namespace policy &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;{ &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;EC,&amp;nbsp;class&amp;nbsp;E&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;using default_policy&amp;nbsp;=&amp;nbsp;std::conditional_t&amp;lt;std::is_void&amp;lt;EC&amp;gt;::value &amp;amp;&amp;amp; std::is_void&amp;lt;E&amp;gt;::value, terminate, std::conditional_t&amp;lt;trait::has_error_code_v&amp;lt;EC&amp;gt;, error_code_throw_as_system_error&amp;lt;T, EC, E&amp;gt;, std::conditional_t&amp;lt;trait::has_exception_ptr_v&amp;lt;EC&amp;gt; || trait::has_exception_ptr_v&amp;lt;E&amp;gt;, exception_ptr_rethrow&amp;lt;T, EC, E&amp;gt;, all_narrow&amp;gt; &amp;gt;&amp;gt;; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;} &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;using is_result&amp;nbsp;=&amp;nbsp;&amp;#x27;hidden&amp;#x27;; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T&amp;gt;static&amp;nbsp;constexpr&amp;nbsp;bool&amp;nbsp;is_result_v&amp;nbsp;=&amp;nbsp;detail::is_result&amp;lt;std::decay_t&amp;lt;T&amp;gt;&amp;gt;::value; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;namespace hooks &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;{ &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;U&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;void hook_result_construction(T*,&amp;nbsp;U&amp;amp;&amp;amp;)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;U&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;void hook_result_copy_construction(T*,&amp;nbsp;U&amp;amp;&amp;amp;)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;U&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;void hook_result_move_construction(T*,&amp;nbsp;U&amp;amp;&amp;amp;)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;U,&amp;nbsp;class&amp;nbsp;...&amp;nbsp;Args&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;void hook_result_in_place_construction(T*, in_place_type_t&amp;lt;U&amp;gt;, Args &amp;amp;&amp;amp;...)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S,&amp;nbsp;class&amp;nbsp;NoValuePolicy&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;uint16_t spare_storage(&amp;#x27;hidden&amp;#x27;&amp;nbsp;const*&amp;nbsp;r)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S,&amp;nbsp;class&amp;nbsp;NoValuePolicy&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;void set_spare_storage(&amp;#x27;hidden&amp;#x27;*&amp;nbsp;r,&amp;nbsp;uint16_t&amp;nbsp;v)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;} &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class R,&amp;nbsp;class S,&amp;nbsp;class NoValuePolicy&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;class result; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S,&amp;nbsp;class&amp;nbsp;P&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;void swap(result&amp;lt;R, S, P&amp;gt;&amp;amp;&amp;nbsp;a, result&amp;lt;R, S, P&amp;gt;&amp;amp;&amp;nbsp;b)&amp;nbsp;noexcept(&amp;#x27;hidden&amp;#x27;); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;bool&amp;nbsp;is_result_v&amp;nbsp;=&amp;nbsp;detail::is_result&amp;lt;std::decay_t&amp;lt;T&amp;gt;&amp;gt;::value; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;bool&amp;nbsp;is_result_v&amp;nbsp;=&amp;nbsp;detail::is_result&amp;lt;std::decay_t&amp;lt;T&amp;gt;&amp;gt;::value; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S&amp;nbsp;= std::error_code&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;using unchecked&amp;nbsp;= result&amp;lt;R, S, policy::all_narrow&amp;gt;; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S&amp;nbsp;= std::error_code&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;using checked&amp;nbsp;= result&amp;lt;R, S, policy::throw_bad_result_access&amp;lt;S&amp;gt;&amp;gt;; }</description>
+    </item>
+    
+    <item>
+      <title>-- What happens?</title>
+      <link>https://ned14.github.io/outcome/tutorial/default-actions/happens2/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/default-actions/happens2/</guid>
+      <description>Let us run the code from the previous page:
+ned@lyta:~/outcome/build_posix$ bin/outcome-snippets_error_code_enums1 Segmentation fault (core dumped) ned@lyta:~/outcome/build_posix$  Also undefined behaviour. This is because Outcome doesn&amp;rsquo;t know what to do with a strongly typed enum any more than some user defined struct.
+Let us register our error code enum with the C++ standard library. This causes Outcome to treat it quite differently.
+struct udt { int a{0}; explicit udt(int _a) : a(_a) { } udt() = default; int operator*() const { return a; } }; enum class err { success, failure1, failure2 }; // Tell the standard library that enum err is an error code enum // by specialising the is_error_code_enum trait.</description>
+    </item>
+    
+    <item>
+      <title>The Application</title>
+      <link>https://ned14.github.io/outcome/tutorial/interop/app/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/interop/app/</guid>
+      <description>The application is of course also based on Outcome, and like the HTTP library is also of mixed-failure design in that failure can be returned via error code, type erased exception_ptr or indeed a C++ exception throw.
+// This is the namespace of the application which is connecting together the httplib, // filelib and tidylib libraries into a solution. namespace app { // Create an ADL bridge so copy/move hooks will be searched for in this namespace  struct error_code : public std::error_code { // passthrough  using std::error_code::error_code; error_code() = default; error_code(std::error_code ec) : std::error_code(ec) { } }; // Localise an outcome implementation for this namespace  template &amp;lt;class T&amp;gt; using outcome = OUTCOME_V2_NAMESPACE::outcome&amp;lt;T, error_code /*, std::exception_ptr */&amp;gt;; using OUTCOME_V2_NAMESPACE::success; } View this code on Github Here we localise a passthrough error_code solely for the purpose of ADL bridging, otherwise the localised outcome configured is the default one which comes with Outcome.</description>
+    </item>
+    
+    <item>
+      <title>-- Now what happens?</title>
+      <link>https://ned14.github.io/outcome/tutorial/default-actions/happens3/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/default-actions/happens3/</guid>
+      <description>Let us run the code from the previous page:
+ned@lyta:~/outcome/build_posix$ bin/outcome-snippets_error_code_enums2 Exception thrown was failure1 ned@lyta:~/outcome/build_posix$  Ah so now we are throwing a C++ exception on no-value observation! This is because we registered our error code enum with the C++ standard library and in so doing, we also told the standard library how our error code interacts with std::error_code and thus std::system_error.
+Outcome&amp;rsquo;s default action when no-value observing a result or outcome with a EC type where some ADL discovered free function make_error_code(EC) returning a std::error_code exists1, is to throw a std::system_error(make_error_code(.</description>
+    </item>
+    
+    <item>
+      <title>Auto-throwing filesystem_error</title>
+      <link>https://ned14.github.io/outcome/tutorial/payload/copy_file3/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/payload/copy_file3/</guid>
+      <description>Something not mentioned at all until now (and properly described in the next section, Default actions) is that Outcome can be programmed take various actions when the user tries to observe .value() when there is no value, and so on for the other possible state observations.
+Seeing as we are replacing the throwing overload of copy_file() in the Filesystem TS with a result returning edition instead, it would make sense if an attempt to observe the value of an unsuccessful fs_result threw the exact same filesystem_error as the Filesystem TS does.</description>
+    </item>
+    
+    <item>
+      <title>Built-in policies</title>
+      <link>https://ned14.github.io/outcome/tutorial/policies/builtin/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/policies/builtin/</guid>
+      <description>These are the precanned policies built into Outcome:
+  all_narrow  Wide checks call their narrow check cousins only. Narrow checks call a function called _ub() which:
+ Is marked with any compiler-specific markup to say it will never return, which should cause the compiler&amp;rsquo;s optimiser to generate perfectly minimum code. Calls __builtin_unreachable() on compilers which support that intrinsic to further encourage perfectly minimum code (and to trigger the undefined behaviour sanitiser if execution ever reaches such a code path).</description>
+    </item>
+    
+    <item>
+      <title>Calling it from C</title>
+      <link>https://ned14.github.io/outcome/tutorial/c-api/example2/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/c-api/example2/</guid>
+      <description>Now let us call our result returning C++ function from C:
+#include &amp;lt;stdio.h&amp;gt;#include &amp;lt;string.h&amp;gt; // for strerror// This header in Outcome is pure C, it provides a suite of C helper macros #include &amp;#34;../../../include/outcome/result.h&amp;#34; // Declare our C++ function&amp;#39;s returning result type. Only needs to be done once. CXX_DECLARE_RESULT_EC(size_t, size_t); // Tell C about our C++ function extern CXX_RESULT_EC(size_t) to_string(char *buffer, size_t bufferlen, int v); void print(int v) { char buffer[4]; CXX_RESULT_EC(size_t) res; res = to_string(buffer, sizeof(buffer), v); if(CXX_RESULT_HAS_VALUE(res)) { printf(&amp;#34;to_string(%d) fills buffer with &amp;#39;%s&amp;#39; of %zu characters\n&amp;#34;, v, buffer, res.</description>
+    </item>
+    
+    <item>
+      <title>Hook result</title>
+      <link>https://ned14.github.io/outcome/tutorial/hooks/hook_result/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/hooks/hook_result/</guid>
+      <description>We now tell Outcome that for every instance of our localised result&amp;lt;T&amp;gt;, that on failure construction only, we want custom code to be run which increments the current slot in TLS storage and writes the current stack backtrace into it.
+namespace error_code_extended { // Specialise the result construction hook for our localised result  // We hook any non-copy, non-move, non-inplace construction, capturing a stack backtrace  // if the result is errored.</description>
+    </item>
+    
+    <item>
+      <title>Inspecting outcome&lt;T, EC, EP&gt;</title>
+      <link>https://ned14.github.io/outcome/tutorial/outcome/inspecting/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/outcome/inspecting/</guid>
+      <description>Continuing with the previous example, in Layer3 we have function z which again reports failures via exceptions. It will call function h from Layer2_old which returns outcome&amp;lt;int&amp;gt; (which may store a double or an std::error_code or an std::exception_ptr). The goal is to unpack it to either the successful return value int or to throw an appropriate exception: if we are storing an std::exception_ptr just rethrow it. If we are storing an std::error_code throw it as std::system_error, which is designed to store std::error_code&amp;rsquo;s:</description>
+    </item>
+    
+    <item>
+      <title>Mapping the HTTP library into the Application 1/2</title>
+      <link>https://ned14.github.io/outcome/tutorial/interop/app-map-httplib1/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/interop/app-map-httplib1/</guid>
+      <description>Firstly we are going to need to wrap up httplib::failure into a custom STL exception type before we can type erase it into an exception_ptr instance. Please note that this code is defined in the app namespace:
+namespace app { // Specialise an exception type for httplib errors  struct httplib_error : std::runtime_error { // passthrough  using std::runtime_error::runtime_error; httplib_error(httplib::failure _failure, std::string msg) : std::runtime_error(std::move(msg)) , failure(std::move(_failure)) { } // the original failure  httplib::failure failure; }; // Type erase httplib::result&amp;lt;U&amp;gt; into a httplib_error exception ptr  template &amp;lt;class U&amp;gt; inline std::exception_ptr make_httplib_exception(const httplib::result&amp;lt;U&amp;gt; &amp;amp;src) { std::string str(&amp;#34;httplib failed with error &amp;#34;); switch(src.</description>
+    </item>
+    
+    <item>
+      <title>Phase 2 construction</title>
+      <link>https://ned14.github.io/outcome/tutorial/constructors/static-constructor/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/constructors/static-constructor/</guid>
+      <description>Its phase 2 constructor:
+// Phase 2 static member constructor function, which cannot throw inline outcome::result&amp;lt;file_handle&amp;gt; file_handle::file(file_handle::path_type path, file_handle::mode mode) noexcept { // Perform phase 1 of object construction  file_handle ret; // Perform phase 2 of object construction  int flags = 0; switch(mode) { case mode::attr_read: case mode::read: flags = O_RDONLY; break; case mode::attr_write: case mode::write: flags = O_RDWR; break; case mode::append: flags = O_APPEND; break; default: return std::errc::invalid_argument; } ret.</description>
+    </item>
+    
+    <item>
+      <title>TRY operations</title>
+      <link>https://ned14.github.io/outcome/tutorial/result/try/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/result/try/</guid>
+      <description>In the implementation of function print_half we have seen the usage of the macro  OUTCOME_TRY :
+OUTCOME_TRY (i, BigInt::fromString(text)); This control statement is roughly equivalent to:
+auto&amp;amp;&amp;amp; __result = BigInt::fromString(text); if (!__result) return __result.as_failure(); auto&amp;amp;&amp;amp; i = __result.value(); Where __result is a unique name.
+Additionally, in GCC and Clang which provide an extension to C++ known as statement expressions it is possible to use an alternative macro: OUTCOME_TRYX, which is an expression.</description>
+    </item>
+    
+    <item>
+      <title>Try operations</title>
+      <link>https://ned14.github.io/outcome/reference/try/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/reference/try/</guid>
+      <description>Header file try.hpp 
+namespace&amp;nbsp;outcome_v2_xxx { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;auto try_operation_return_as(T&amp;amp;&amp;amp;&amp;nbsp;v); } #define OUTCOME_TRYV(...) #define OUTCOME_TRYX(...) #define OUTCOME_TRY(v,...)  
+Function outcome_v2_xxx::try_operation_return_as 
+template&amp;nbsp;&amp;lt;class&amp;nbsp;T&amp;gt; auto&amp;nbsp;try_operation_return_as(T&amp;amp;&amp;amp;&amp;nbsp;v);  Customisation point for changing what the OUTCOME_TRY macros do. This function defaults to returning std::forward&amp;lt;T&amp;gt;(v).as_failure().
+Effects: Extracts any state apart from value into a failure_type.
+Requires: The input value to have a .as_failure() member function.
+Macro OUTCOME_TRYV 
+#define&amp;nbsp;OUTCOME_TRYV(...)&amp;nbsp;OUTCOME_TRYV2(OUTCOME_TRY_UNIQUE_NAME, __VA_ARGS__)  If the outcome returned by expression … is not valued, propagate any failure by immediately returning that failure state immediately</description>
+    </item>
+    
+    <item>
+      <title>error_code</title>
+      <link>https://ned14.github.io/outcome/tutorial/default-actions/error-codes/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/default-actions/error-codes/</guid>
+      <description>Now that we have told the C++ standard library about our custom error code enum err, we actually no longer need to specify EC = err, we can just leave it default to std::error_code:
+result&amp;lt;udt /*, std::error_code */&amp;gt; res(err::failure1); // What happens here? What exception type is thrown?  try { std::cout &amp;lt;&amp;lt; *res.value() &amp;lt;&amp;lt; std::endl; } catch(const std::exception &amp;amp;e) { // Prints &amp;#34;Exception thrown was failure1&amp;#34;, exactly the same as before  std::cerr &amp;lt;&amp;lt; &amp;#34;Exception thrown was &amp;#34; &amp;lt;&amp;lt; e.</description>
+    </item>
+    
+    <item>
+      <title>error_code throw as system_error (Result)</title>
+      <link>https://ned14.github.io/outcome/reference/policies/result_error_code_throw_as_system_error/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/reference/policies/result_error_code_throw_as_system_error/</guid>
+      <description>Header file result_error_code_throw_as_system_error.hpp 
+#include&amp;nbsp;&amp;quot;detail&amp;#x2F;common.hpp&amp;quot; namespace&amp;nbsp;outcome_v2_xxx { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;namespace&amp;nbsp;policy &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;{ &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;EC&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;struct error_code_throw_as_system_error&amp;lt;T,&amp;nbsp;EC,&amp;nbsp;void&amp;gt;; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;} }  
+
+Struct outcome_v2_xxx::policy::error_code_throw_as_system_error 
+template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;EC&amp;gt; struct error_code_throw_as_system_error&amp;lt;T,&amp;nbsp;EC,&amp;nbsp;void&amp;gt; { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_value_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_error_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_value_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_error_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_exception_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; };  Policy interpreting EC as a type for which trait::has_error_code_v&amp;lt;EC&amp;gt; is true.
+Any wide attempt to access the successful state where there is none causes:
+ If trait::has_error_payload_v&amp;lt;EC&amp;gt; is true, it calls an ADL discovered free function throw_as_system_error_with_payload(.</description>
+    </item>
+    
+    <item>
+      <title>Mapping the HTTP library into the Application 2/2</title>
+      <link>https://ned14.github.io/outcome/tutorial/interop/app-map-httplib2/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/interop/app-map-httplib2/</guid>
+      <description>If you remember the tutorial section on the ValueOrError Concept, this is an example of how to implement a custom ValueOrError Concept converter in Outcome:
+// Inject custom ValueOrError conversion OUTCOME_V2_NAMESPACE_BEGIN namespace convert { // Provide custom ValueOrError conversion from httplib::result&amp;lt;U&amp;gt; into any app::outcome&amp;lt;T&amp;gt;  template &amp;lt;class T, class U&amp;gt; struct value_or_error&amp;lt;app::outcome&amp;lt;T&amp;gt;, httplib::result&amp;lt;U&amp;gt;&amp;gt; { // False to indicate that this converter wants `result`/`outcome` to NOT reject all other `result`  static constexpr bool enable_result_inputs = true; // False to indicate that this converter wants `outcome` to NOT reject all other `outcome`  static constexpr bool enable_outcome_inputs = true; template &amp;lt;class X, //  typename = std::enable_if_t&amp;lt;std::is_same&amp;lt;httplib::result&amp;lt;U&amp;gt;, std::decay_t&amp;lt;X&amp;gt;&amp;gt;::value //  &amp;amp;&amp;amp; std::is_constructible&amp;lt;T, U&amp;gt;::value&amp;gt;&amp;gt; //  constexpr app::outcome&amp;lt;T&amp;gt; operator()(X &amp;amp;&amp;amp;src) { // Forward any successful value, else synthesise an exception ptr  return src.</description>
+    </item>
+    
+    <item>
+      <title>Custom exception ptr</title>
+      <link>https://ned14.github.io/outcome/tutorial/hooks/poke_exception/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/hooks/poke_exception/</guid>
+      <description>If you merely want result to capture stack backtraces without calling a memory allocator and retaining any triviality of copy which is important for optimisation, you already have everything you need.
+But let&amp;rsquo;s keep going by intercepting any construction of our localised outcome from our localised result, retrieving any stored backtrace and using it to synthesise an exception ptr with a message text including the backtrace. Firstly let us look at the function which synthesises the exception ptr:</description>
+    </item>
+    
+    <item>
+      <title>Mapping the File I/O library into the Application</title>
+      <link>https://ned14.github.io/outcome/tutorial/interop/app-map-filelib/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/interop/app-map-filelib/</guid>
+      <description>To handle the File I/O library, once again we turn to custom ValueOrError converters:
+// Inject custom ValueOrError conversion OUTCOME_V2_NAMESPACE_BEGIN namespace convert { // Provide custom ValueOrError conversion from filelib::result&amp;lt;U&amp;gt; into any app::outcome&amp;lt;T&amp;gt;  template &amp;lt;class T, class U&amp;gt; struct value_or_error&amp;lt;app::outcome&amp;lt;T&amp;gt;, filelib::result&amp;lt;U&amp;gt;&amp;gt; { // True to indicate that this converter wants `result`/`outcome` to NOT reject all other `result`  static constexpr bool enable_result_inputs = true; // False to indicate that this converter wants `outcome` to NOT reject all other `outcome`  static constexpr bool enable_outcome_inputs = true; template &amp;lt;class X, //  typename = std::enable_if_t&amp;lt;std::is_same&amp;lt;filelib::result&amp;lt;U&amp;gt;, std::decay_t&amp;lt;X&amp;gt;&amp;gt;::value //  &amp;amp;&amp;amp; std::is_constructible&amp;lt;T, U&amp;gt;::value&amp;gt;&amp;gt; //  constexpr app::outcome&amp;lt;T&amp;gt; operator()(X &amp;amp;&amp;amp;src) { // Forward any successful value  if(src.</description>
+    </item>
+    
+    <item>
+      <title>Phase 3</title>
+      <link>https://ned14.github.io/outcome/tutorial/constructors/metaprogrammg1/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/constructors/metaprogrammg1/</guid>
+      <description>We have built our first two phases of construction for file_handle, and for some users they might be happy writing:
+outcome::result&amp;lt;file_handle&amp;gt; fh1 = file_handle::file(&amp;#34;hello&amp;#34; /*, file_handle::mode::read */); if(!fh1) { std::cerr &amp;lt;&amp;lt; &amp;#34;Opening file &amp;#39;hello&amp;#39; failed with &amp;#34; &amp;lt;&amp;lt; fh1.error().message() &amp;lt;&amp;lt; std::endl; } View this code on Github &amp;hellip; and be done with it.
+But wouldn&amp;rsquo;t it be nicer if we could instead write:
+outcome::result&amp;lt;file_handle&amp;gt; fh2 = construct&amp;lt;file_handle&amp;gt;{&amp;#34;hello&amp;#34; /*, file_handle::mode::read */}(); if(!</description>
+    </item>
+    
+    <item>
+      <title>Success/Failure</title>
+      <link>https://ned14.github.io/outcome/reference/success_failure/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/reference/success_failure/</guid>
+      <description>Header file success_failure.hpp 
+namespace&amp;nbsp;outcome_v2_xxx { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;namespace policy &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;{ &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;auto error_code(T&amp;amp;&amp;amp;&amp;nbsp;v); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;auto exception_ptr(T&amp;amp;&amp;amp;&amp;nbsp;v); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Error&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;void throw_as_system_error_with_payload(Error&amp;nbsp;const&amp;amp;&amp;nbsp;error); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;} &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;namespace trait &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;{ &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;struct has_error_code; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T&amp;gt;constexpr&amp;nbsp;bool&amp;nbsp;has_error_code_v&amp;nbsp;=&amp;nbsp;has_error_code&amp;lt;T&amp;gt;::value; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;struct has_exception_ptr; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T&amp;gt;constexpr&amp;nbsp;bool&amp;nbsp;has_exception_ptr_v&amp;nbsp;=&amp;nbsp;has_exception_ptr&amp;lt;T&amp;gt;::value; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;} &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;struct success_type; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;struct success_type&amp;lt;void&amp;gt;; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr success_type&amp;lt;void&amp;gt; success()&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr success_type&amp;lt;std::decay_t&amp;lt;T&amp;gt;&amp;gt; success(T&amp;amp;&amp;amp;&amp;nbsp;v); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;EC&amp;nbsp;= std::error_code,&amp;nbsp;class&amp;nbsp;E&amp;nbsp;= void&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;struct failure_type; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;EC&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;struct failure_type&amp;lt;EC,&amp;nbsp;void&amp;gt;; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;E&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;struct failure_type&amp;lt;void,&amp;nbsp;E&amp;gt;; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;EC&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr failure_type&amp;lt;std::decay_t&amp;lt;EC&amp;gt;&amp;gt; failure(EC&amp;amp;&amp;amp;&amp;nbsp;v); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;EC,&amp;nbsp;class&amp;nbsp;E&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr failure_type&amp;lt;std::decay_t&amp;lt;EC&amp;gt;, std::decay_t&amp;lt;E&amp;gt;&amp;gt; failure(EC&amp;amp;&amp;amp;&amp;nbsp;v,&amp;nbsp;E&amp;amp;&amp;amp;&amp;nbsp;w); }  
+
+Function outcome_v2_xxx::policy::error_code</description>
+    </item>
+    
+    <item>
+      <title>Variations</title>
+      <link>https://ned14.github.io/outcome/tutorial/c-api/variations/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/c-api/variations/</guid>
+      <description>You can of course choose your own E type so long as it has standard layout and is trivially copyable. You would declare that with  CXX_DECLARE_RESULT(t_ident, t_decl, e_ident, e_decl) , refer to it with  CXX_RESULT(t_ident, e_ident) and need to do your own decoding of errors from your E type. By using the _EC postfixed macros, you are in fact using E =
+struct cxx_error_code { int code; void *category; }; &amp;hellip; which is declared for you by result.</description>
+    </item>
+    
+    <item>
+      <title>exception_ptr</title>
+      <link>https://ned14.github.io/outcome/tutorial/default-actions/exception-ptr/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/default-actions/exception-ptr/</guid>
+      <description>Another default action exists for result&amp;lt;T, EC&amp;gt; where trait::has_exception_ptr&amp;lt;EC&amp;gt; is true, and for outcome&amp;lt;T, EC, EP&amp;gt; where either or both trait::has_exception_ptr&amp;lt;EC&amp;gt; and trait::has_exception_ptr&amp;lt;EP&amp;gt; is true.
+This default action simply rethrows the exception pointer via std::rethrow_exception(make_exception_ptr(.error())) for result and std::rethrow_exception(make_exception_ptr(.error())) and/or std::rethrow_exception(make_exception_ptr(.exception())) for outcome, if trait::has_exception_ptr&amp;lt;EC&amp;gt; and/or trait::has_exception_ptr&amp;lt;EP&amp;gt; is true.
+struct udt { int a{0}; explicit udt(int _a) : a(_a) { } udt() = default; int operator*() const { return a; } }; result&amp;lt;udt, std::exception_ptr&amp;gt; res(std::make_exception_ptr(std::runtime_error(&amp;#34;hello&amp;#34;))); // What happens here?</description>
+    </item>
+    
+    <item>
+      <title>exception_ptr rethrow (Outcome)</title>
+      <link>https://ned14.github.io/outcome/reference/policies/outcome_exception_ptr_rethrow/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/reference/policies/outcome_exception_ptr_rethrow/</guid>
+      <description>Header file outcome_exception_ptr_rethrow.hpp 
+#include&amp;nbsp;&amp;quot;result_exception_ptr_rethrow.hpp&amp;quot; namespace&amp;nbsp;outcome_v2_xxx { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;namespace&amp;nbsp;policy &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;{ &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;EC,&amp;nbsp;class&amp;nbsp;E&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;struct exception_ptr_rethrow; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;} }  
+
+Struct outcome_v2_xxx::policy::exception_ptr_rethrow 
+template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;EC,&amp;nbsp;class&amp;nbsp;E&amp;gt; struct&amp;nbsp;exception_ptr_rethrow { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_value_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_error_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_exception_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_value_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_error_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_exception_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; };  Policy interpreting EC or E as a type for which trait::has_exception_ptr_v&amp;lt;EC|E&amp;gt; is true.
+Any wide attempt to access the successful state where there is none causes: std::rethrow_exception(policy::exception_ptr(.</description>
+    </item>
+    
+    <item>
+      <title>Mapping the HTMLTidy library into the Application</title>
+      <link>https://ned14.github.io/outcome/tutorial/interop/app-map-tidylib/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/interop/app-map-tidylib/</guid>
+      <description>Once again, we create a custom STL exception type to represent failure from the HTMLTidy library. We also create an app namespace wrapper for the C tidy_html() function which is more C++ friendly.
+namespace app { // Specialise an exception type for tidylib errors  struct tidylib_error : std::system_error { // passthrough  using std::system_error::system_error; tidylib_error() = default; explicit tidylib_error(int c) : std::system_error(c, std::generic_category()) { } }; // Create a C++ invoking wrapper for the tidylib C API, modifying data with the returned data,  // returing a unique_ptr to release storage on scope exit.</description>
+    </item>
+    
+    <item>
+      <title>Hook outcome</title>
+      <link>https://ned14.github.io/outcome/tutorial/hooks/hook_outcome/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/hooks/hook_outcome/</guid>
+      <description>The final step is to add ADL discovered event hooks for the very specific case of when our localised outcome is copy or move constructed from our localised result. There isn&amp;rsquo;t really much to say about these, just be careful to mark them noexcept or not based on whether the types T, EC or EP could throw during copy or move construction. As poke_exception() creates a std::string and appends to it, it could indeed throw an exception and thus with the noexcept hooks below, the process would be terminated.</description>
+    </item>
+    
+    <item>
+      <title>In use</title>
+      <link>https://ned14.github.io/outcome/tutorial/interop/app-go/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/interop/app-go/</guid>
+      <description>This is how you might now write application code using these three libraries:
+namespace app { outcome&amp;lt;void&amp;gt; go() // NOT noexcept, this can throw STL exceptions e.g. bad_alloc  { // Note that explicit construction is required when converting between differing types  // of outcome and result. This makes it explicit what you intend to do as conversion  // may be a lot more expensive than moves.  // Try to GET this URL.</description>
+    </item>
+    
+    <item>
+      <title>Utilities</title>
+      <link>https://ned14.github.io/outcome/reference/utils/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/reference/utils/</guid>
+      <description>Header file utils.hpp 
+namespace&amp;nbsp;outcome_v2_xxx { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;std::error_code error_from_exception(std::exception_ptr&amp;amp;&amp;amp; ep&amp;nbsp;=&amp;nbsp;std::current_exception(,&amp;nbsp;std::error_code not_matched&amp;nbsp;=&amp;nbsp;std::make_error_code(std::errc::resource_unavailable_try_again)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;void try_throw_std_exception_from_error(std::error_code ec,&amp;nbsp;std::string&amp;nbsp;const&amp;amp; msg&amp;nbsp;=&amp;nbsp;std::string{); }  
+Function outcome_v2_xxx::error_from_exception 
+std::error_code&amp;nbsp;error_from_exception(std::exception_ptr&amp;amp;&amp;amp; ep&amp;nbsp;=&amp;nbsp;std::current_exception(,&amp;nbsp;std::error_code not_matched&amp;nbsp;=&amp;nbsp;std::make_error_code(std::errc::resource_unavailable_try_again)&amp;nbsp;noexcept;  Utility function which tries to match the exception in the pointer provided to an equivalent error code. Ought to work for all standard STL types.
+Effects: Rethrows the exception in the pointer, and via a long sequence of catch clauses attempts to match the equivalent error code.</description>
+    </item>
+    
+    <item>
+      <title>construct&lt;T&gt;</title>
+      <link>https://ned14.github.io/outcome/tutorial/constructors/metaprogrammg2/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/constructors/metaprogrammg2/</guid>
+      <description>First, we need a base definition for construct&amp;lt;T&amp;gt;:
+template &amp;lt;class T&amp;gt; struct construct { outcome::result&amp;lt;T&amp;gt; operator()() const noexcept { //  static_assert(!std::is_same&amp;lt;T, T&amp;gt;::value, &amp;#34;construct&amp;lt;T&amp;gt;() was not specialised for the type T supplied&amp;#34;); } }; View this code on Github This fails a static assert if the type is ever instantiated unspecialised.
+We then specialise for construct&amp;lt;file_handle&amp;gt;:
+template &amp;lt;&amp;gt; struct construct&amp;lt;file_handle&amp;gt; { file_handle::path_type _path; file_handle::mode _mode{file_handle::mode::read}; // Any other args, default initialised if necessary, follow here .</description>
+    </item>
+    
+    <item>
+      <title>exception_ptr rethrow (Result)</title>
+      <link>https://ned14.github.io/outcome/reference/policies/result_exception_ptr_rethrow/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/reference/policies/result_exception_ptr_rethrow/</guid>
+      <description>Header file result_exception_ptr_rethrow.hpp 
+#include&amp;nbsp;&amp;quot;detail&amp;#x2F;common.hpp&amp;quot; namespace&amp;nbsp;outcome_v2_xxx { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;namespace&amp;nbsp;policy &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;{ &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;EC,&amp;nbsp;class&amp;nbsp;E&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;struct exception_ptr_rethrow; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;EC&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;struct exception_ptr_rethrow&amp;lt;T,&amp;nbsp;EC,&amp;nbsp;void&amp;gt;; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;} }  
+
+Struct outcome_v2_xxx::policy::exception_ptr_rethrow 
+template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;EC,&amp;nbsp;class&amp;nbsp;E&amp;gt; struct&amp;nbsp;exception_ptr_rethrow;  Policy interpreting EC or E as a type for which trait::has_exception_ptr_v&amp;lt;EC|E&amp;gt; is true.
+Any wide attempt to access the successful state where there is none causes: std::rethrow_exception(policy::exception_ptr(.error()|.exception())) appropriately.</description>
+    </item>
+    
+    <item>
+      <title>void</title>
+      <link>https://ned14.github.io/outcome/tutorial/default-actions/void/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/default-actions/void/</guid>
+      <description>What about result&amp;lt;udt, void&amp;gt;? This is absolutely legal, it means that no error state is returned when there was an error. This can help with clarifying in code the use of std::optional&amp;lt;udt&amp;gt; as Optional more logically means value-or-nothing, not necessarily value-or-error.
+In contrast, result&amp;lt;udt, void&amp;gt; unambiguously does mean success-or-failure, just with an unspecified cause of failure.
+Outcome&amp;rsquo;s default action for EC = void is to call std::terminate:
+struct udt { int a{0}; explicit udt(int _a) : a(_a) { } udt() = default; int operator*() const { return a; } }; result&amp;lt;udt, void&amp;gt; res(in_place_type&amp;lt;void&amp;gt;); // What happens here?</description>
+    </item>
+    
+    <item>
+      <title>Conclusion</title>
+      <link>https://ned14.github.io/outcome/tutorial/interop/conclusion/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/interop/conclusion/</guid>
+      <description>This worked example was in fact excessively complex: a quicker route to achieving the same thing would be to add explicit converting constructors to app::error_code for each of the third party library E types. One then could have saved oneself with having to bother injecting custom converters into the OUTCOME_V2_NAMESPACE::convert namespace.
+However there are occasions when you don&amp;rsquo;t have control over the implementation of the destination E type e.g. in callbacks.</description>
+    </item>
+    
+    <item>
+      <title>Alternatives</title>
+      <link>https://ned14.github.io/outcome/tutorial/constructors/metaprogrammg3/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/constructors/metaprogrammg3/</guid>
+      <description>No doubt many will dislike the two-stage invocation pattern i.e.
+construct&amp;lt;file_handle&amp;gt;{&amp;#34;hello&amp;#34;}(); So let us examine the most obvious alternative: a templated free function construct&amp;lt;T&amp;gt;.
+Due to the inability to partially specialise templated functions in C++, you need to use tagged overloading e.g.
+template&amp;lt;class... Args&amp;gt; inline outcome::result&amp;lt;file_handle&amp;gt; construct(std::in_place_type_t&amp;lt;file_handle&amp;gt;, Args&amp;amp;&amp;amp; ... args) { return file_handle::file(std::forward&amp;lt;Args&amp;gt;(args)...); } ... // Now you must always write this: construct(std::in_place_type&amp;lt;file_handle&amp;gt;, &amp;#34;hello&amp;#34;); Tagged overloading is fine for smaller projects, but for larger code bases:</description>
+    </item>
+    
+    <item>
+      <title>Interoperation</title>
+      <link>https://ned14.github.io/outcome/reference/convert/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/reference/convert/</guid>
+      <description>Header file convert.hpp 
+namespace&amp;nbsp;outcome_v2_xxx { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;namespace convert &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;{ &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;U&amp;gt;static&amp;nbsp;constexpr&amp;nbsp;bool&amp;nbsp;ValueOrNone&amp;nbsp;=&amp;nbsp;detail::ValueOrNone&amp;lt;U&amp;gt;; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;U&amp;gt;static&amp;nbsp;constexpr&amp;nbsp;bool&amp;nbsp;ValueOrError&amp;nbsp;=&amp;nbsp;detail::ValueOrError&amp;lt;U&amp;gt;; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;U&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;struct value_or_error; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;} }  
+
+Struct outcome_v2_xxx::convert::value_or_error 
+template&amp;nbsp;&amp;lt;class&amp;nbsp;T,&amp;nbsp;class&amp;nbsp;U&amp;gt; struct&amp;nbsp;value_or_error { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;bool&amp;nbsp;const enable_result_inputs; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;bool&amp;nbsp;const enable_outcome_inputs; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;X,&amp;nbsp;typename&amp;nbsp;= std::enable_if_t&amp;lt;std::is_same&amp;lt;U,std::decay_t&amp;lt;X&amp;gt;&amp;gt;::value&amp;amp;&amp;amp;ValueOrError&amp;lt;U&amp;gt;&amp;amp;&amp;amp;(std::is_void&amp;lt;typename std::decay_t&amp;lt;X&amp;gt;::value_type&amp;gt;::value||outcome_v2_xxx::detail::is_explicitly_constructible&amp;lt;typename T::value_type,typename std::decay_t&amp;lt;X&amp;gt;::value_type&amp;gt;)&amp;amp;&amp;amp;(std::is_void&amp;lt;typename std::decay_t&amp;lt;X&amp;gt;::error_type&amp;gt;::value||outcome_v2_xxx::detail::is_explicitly_constructible&amp;lt;typename T::error_type,typename std::decay_t&amp;lt;X&amp;gt;::error_type&amp;gt;)&amp;gt;&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;constexpr&amp;nbsp;T operator()(X&amp;amp;&amp;amp;&amp;nbsp;v); };  Default converter for types matching the ValueOrError concept.
+You can partially or fully specialise this converter for your own user defined types by injecting specialisations into the convert namespace.</description>
+    </item>
+    
+    <item>
+      <title>Termimate</title>
+      <link>https://ned14.github.io/outcome/reference/policies/terminate/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/reference/policies/terminate/</guid>
+      <description>Header file terminate.hpp 
+#include&amp;nbsp;&amp;quot;detail&amp;#x2F;common.hpp&amp;quot; namespace&amp;nbsp;outcome_v2_xxx { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;namespace&amp;nbsp;policy &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;{ &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;struct terminate; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;} }  
+
+Struct outcome_v2_xxx::policy::terminate 
+struct&amp;nbsp;terminate { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_value_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_error_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_exception_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_value_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_error_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_exception_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; };  Policy implementing any wide attempt to access the successful state as calling std::terminate
+Can be used in both result and outcome.
+Function outcome_v2_xxx::policy::throw_bad_result_access::narrow_value_check 
+template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; static&amp;nbsp;constexpr&amp;nbsp;void&amp;nbsp;narrow_value_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept;  Performs a narrow check of state, used in the assume_value() functions.</description>
+    </item>
+    
+    <item>
+      <title>unchecked&lt;T, E&gt; and checked&lt;T, E&gt;</title>
+      <link>https://ned14.github.io/outcome/tutorial/default-actions/unchecked/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/default-actions/unchecked/</guid>
+      <description>We have now covered all of the default actions in Outcome whereby result&amp;lt;T, EC&amp;gt; and outcome&amp;lt;T, EC, EP&amp;gt; implement various default actions upon no-value observation according to traits defined upon the EC and EP chosen.
+If you don&amp;rsquo;t want all this clever automatic detection of traits, and just want a plain, always-undefined-behaviour-on-no-value-observation success-or-failure type, we provide a simplified template alias to result&amp;lt;T, E&amp;gt; called  unchecked&amp;lt;T, E&amp;gt; . It literally does no run time checking whatsoever, no-value observation is always undefined behaviour.</description>
+    </item>
+    
+    <item>
+      <title>Exceptions</title>
+      <link>https://ned14.github.io/outcome/reference/bad_access/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/reference/bad_access/</guid>
+      <description>Header file bad_access.hpp 
+namespace&amp;nbsp;outcome_v2_xxx { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;class bad_result_access; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;S&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;class bad_result_access_with; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;class bad_outcome_access; }  
+Class outcome_v2_xxx::bad_result_access 
+class&amp;nbsp;bad_result_access :&amp;nbsp;public&amp;nbsp;std::logic_error { public: &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;explicit&amp;nbsp;bad_result_access(char&amp;nbsp;const*&amp;nbsp;what); };  Thrown when you try to access state in a result&amp;lt;R, S&amp;gt; which isn’t present.
+Class outcome_v2_xxx::bad_result_access_with 
+template&amp;nbsp;&amp;lt;class&amp;nbsp;S&amp;gt; class&amp;nbsp;bad_result_access_with :&amp;nbsp;public&amp;nbsp;bad_result_access { public: &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;explicit&amp;nbsp;bad_result_access_with(S&amp;nbsp;v); &amp;#x2F;&amp;#x2F;=== result_error ===&amp;#x2F;&amp;#x2F; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;S&amp;nbsp;const&amp;amp; error()&amp;nbsp;const&amp;nbsp;&amp;amp;; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;S&amp;amp; error()&amp;nbsp;&amp;amp;; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;S&amp;nbsp;const&amp;amp;&amp;amp; error()&amp;nbsp;const&amp;nbsp;&amp;amp;&amp;amp;; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;S&amp;amp;&amp;amp; error()&amp;nbsp;&amp;amp;&amp;amp;; };  Thrown when you try to access a value in a result&amp;lt;R, S&amp;gt; which isn’t present.</description>
+    </item>
+    
+    <item>
+      <title>Throw bad_result_access</title>
+      <link>https://ned14.github.io/outcome/reference/policies/throw_bad_result_access/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/reference/policies/throw_bad_result_access/</guid>
+      <description>Header file throw_bad_result_access.hpp 
+#include&amp;nbsp;&amp;quot;detail&amp;#x2F;common.hpp&amp;quot; namespace&amp;nbsp;outcome_v2_xxx { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;namespace&amp;nbsp;policy &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;{ &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;EC&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;struct throw_bad_result_access; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;} }  
+
+Struct outcome_v2_xxx::policy::throw_bad_result_access 
+template&amp;nbsp;&amp;lt;class&amp;nbsp;EC&amp;gt; struct&amp;nbsp;throw_bad_result_access { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_value_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_error_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void wide_exception_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_value_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_error_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;static&amp;nbsp;constexpr&amp;nbsp;void narrow_exception_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept; };  Policy which throws bad_result_access_with&amp;lt;EC&amp;gt; or bad_result_access during wide checks.
+Can be used in result only.
+Function outcome_v2_xxx::policy::throw_bad_result_access::narrow_value_check 
+template&amp;nbsp;&amp;lt;class&amp;nbsp;Impl&amp;gt; static&amp;nbsp;constexpr&amp;nbsp;void&amp;nbsp;narrow_value_check(Impl&amp;amp;&amp;amp;&amp;nbsp;self)&amp;nbsp;noexcept;  Performs a narrow check of state, used in the assume_value() functions.</description>
+    </item>
+    
+    <item>
+      <title>iostream support</title>
+      <link>https://ned14.github.io/outcome/reference/iostream_support/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/reference/iostream_support/</guid>
+      <description>Header file iostream_support.hpp 
+namespace&amp;nbsp;outcome_v2_xxx { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S,&amp;nbsp;class&amp;nbsp;P&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;std::istream&amp;amp; operator&amp;gt;&amp;gt;(std::istream&amp;amp;&amp;nbsp;s, result&amp;lt;R, S, P&amp;gt;&amp;amp;&amp;nbsp;v); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S,&amp;nbsp;class&amp;nbsp;P&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;std::ostream&amp;amp; operator&amp;lt;&amp;lt;(std::ostream&amp;amp;&amp;nbsp;s, result&amp;lt;R, S, P&amp;gt;&amp;nbsp;const&amp;amp;&amp;nbsp;v); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S,&amp;nbsp;class&amp;nbsp;P&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;std::string print(&amp;#x27;hidden&amp;#x27;&amp;nbsp;const&amp;amp;&amp;nbsp;v); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;S,&amp;nbsp;class&amp;nbsp;P&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;std::string print(&amp;#x27;hidden&amp;#x27;&amp;nbsp;const&amp;amp;&amp;nbsp;v); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;P&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;std::string print(&amp;#x27;hidden&amp;#x27;&amp;nbsp;const&amp;amp;&amp;nbsp;v); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;P&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;std::string print(&amp;#x27;hidden&amp;#x27;&amp;nbsp;const&amp;amp;&amp;nbsp;v); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S,&amp;nbsp;class&amp;nbsp;P,&amp;nbsp;class&amp;nbsp;N&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;std::istream&amp;amp; operator&amp;gt;&amp;gt;(std::istream&amp;amp;&amp;nbsp;s, outcome&amp;lt;R, S, P, N&amp;gt;&amp;amp;&amp;nbsp;v); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S,&amp;nbsp;class&amp;nbsp;P,&amp;nbsp;class&amp;nbsp;N&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;std::ostream&amp;amp; operator&amp;lt;&amp;lt;(std::ostream&amp;amp;&amp;nbsp;s, outcome&amp;lt;R, S, P, N&amp;gt;&amp;nbsp;const&amp;amp;&amp;nbsp;v); &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;template&amp;nbsp;&amp;lt;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S,&amp;nbsp;class&amp;nbsp;P,&amp;nbsp;class&amp;nbsp;N&amp;gt; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;std::string print(outcome&amp;lt;R, S, P, N&amp;gt;&amp;nbsp;const&amp;amp;&amp;nbsp;v); }  
+Function outcome_v2_xxx::operator&amp;gt;&amp;gt; 
+template&amp;nbsp;&amp;lt;class&amp;nbsp;R,&amp;nbsp;class&amp;nbsp;S,&amp;nbsp;class&amp;nbsp;P&amp;gt; std::istream&amp;amp;&amp;nbsp;operator&amp;gt;&amp;gt;(std::istream&amp;amp;&amp;nbsp;s, result&amp;lt;R, S, P&amp;gt;&amp;amp;&amp;nbsp;v);  Deserialise a result. Format is status_unsigned [value][error]. Spare storage is preserved.</description>
+    </item>
+    
+    <item>
+      <title>C API</title>
+      <link>https://ned14.github.io/outcome/reference/result_c/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/reference/result_c/</guid>
+      <description>Header file result_c 
+struct cxx_error_code; #define CXX_DECLARE_RESULT(R,RD,S,SD) #define CXX_DECLARE_RESULT_EC(R,RD) #define CXX_RESULT(R,S) #define CXX_RESULT_EC(R) #define CXX_RESULT_HAS_VALUE(r) #define CXX_RESULT_HAS_ERROR(r) #define CXX_RESULT_ERROR_IS_ERRNO(r) #define CXX_RESULT_ERROR(r) #define CXX_RESULT_SET_ERRNO(r)  Struct cxx_error_code 
+struct&amp;nbsp;cxx_error_code { &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;int&amp;nbsp;code; &amp;nbsp;&amp;nbsp;&amp;nbsp;&amp;nbsp;void*&amp;nbsp;category; };  A C struct representation of std::error_code.
+Macro CXX_DECLARE_RESULT 
+#define&amp;nbsp;CXX_DECLARE_RESULT(R,RD,S,SD)&amp;nbsp;struct result_##R##_##S { RD value; unsigned flags; SD error; }  Declares a C struct representation of result&amp;lt;R, S&amp;gt;.
+Macro CXX_DECLARE_RESULT_EC 
+#define&amp;nbsp;CXX_DECLARE_RESULT_EC(R,RD)&amp;nbsp;CXX_DECLARE_RESULT(R, RD, errorcode, struct cxx_error_code)  Declares a C struct representation of result&amp;lt;R, std::error_code&amp;gt;.</description>
+    </item>
+    
+    <item>
+      <title>Custom error codes</title>
+      <link>https://ned14.github.io/outcome/tutorial/error_code/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/tutorial/error_code/</guid>
+      <description>This section illustrates how you can hook into the std::error_code system from the Standard Library in order to work with your own set of error codes. As is usually the case in C++, doing this is straightforward but requires typing boilerplate to tell the C++ STL about your custom error type. This is not part of Outcome library, but we still provide this short guide here, because how to do this is not well documented [1].</description>
+    </item>
+    
+    <item>
+      <title></title>
+      <link>https://ned14.github.io/outcome/_header/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/_header/</guid>
+      <description>Outcome 2.0 library documentation</description>
+    </item>
+    
+    <item>
+      <title>Acknowledgements</title>
+      <link>https://ned14.github.io/outcome/credits/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://ned14.github.io/outcome/credits/</guid>
+      <description>github contributors .ghContributors{ display:flex; flex-flow: wrap; align-content: flex-start } .ghContributors  div{ width: 50% ; display: inline-flex; margin-bottom: 5px; } .ghContributors  div label{ padding-left: 4px ; } .ghContributors  div span{ font-size: x-small; padding-left: 4px ; }  This pretty, modern C++ documentation  Hugo - static website generator of this documentation. hugo-theme-docdock - the Hugo theme used by this documentation. Standardese - the API reference generator  Special thanks for Outcome v2 For a second time, Charley Bay stepped up as review manager.</description>
+    </item>
+    
+  </channel>
+</rss>

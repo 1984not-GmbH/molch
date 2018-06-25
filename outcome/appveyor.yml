@@ -1,0 +1,33 @@
+# version format
+version: 2.00.{build}-{branch}
+ 
+# branches to build
+branches:
+  only:
+    - develop
+skip_tags: true
+ 
+image: Visual Studio 2017
+init:
+  - git config --global core.longpaths true
+
+clone_folder: c:\boost.outcome
+platform: x64 
+configuration: Release
+
+before_build:
+  - git checkout develop
+  - git submodule update --init --recursive
+  - pip install ply
+build_script:
+  - ctest -S .ci.cmake -V
+after_build:
+
+before_test:
+test_script:
+after_test:
+
+on_success:
+on_failure:
+on_finish:
+  - ps: (new-object net.webclient).UploadFile("https://ci.appveyor.com/api/testresults/junit/$($env:APPVEYOR_JOB_ID)", (Resolve-Path cmake_ci\merged_junit_results.xml))

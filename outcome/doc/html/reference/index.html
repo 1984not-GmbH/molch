@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="generator" content="Hugo 0.32.4" />
+    <meta name="description" content="">
+
+
+    <title>API reference :: Outcome documentation</title>
+    <link rel="shortcut icon" href="/outcome/images/favicon.png" type="image/x-icon" />
+    <link href="/outcome/css/nucleus.css" rel="stylesheet">
+    <link href="/outcome/css/font-awesome.min.css" rel="stylesheet">
+    <link href="/outcome/css/hybrid.css" rel="stylesheet">
+    <link href="/outcome/css/featherlight.min.css" rel="stylesheet">
+    <link href="/outcome/css/horsey.css" rel="stylesheet">
+    
+    <link href="/outcome/css/theme.css" rel="stylesheet">
+    
+    
+    <link rel="stylesheet" href="/outcome/css/bootstrap.min.css">
+    <script src="/outcome/js/jquery-2.x.min.js"></script>
+    <style type="text/css">
+      :root #header + #content > #left > #rlblock_left {
+        display:none !important;
+      }
+    </style>
+
+    
+
+    <link href="/outcome/css/local.css" rel="stylesheet">
+
+  </head>
+  <body class="" data-url="/outcome/reference/">
+    <nav id="sidebar" class=""><div class="highlightable">
+  <div id="header-wrapper">
+    <div id="header"> 
+	<p>Outcome 2.0 library documentation</p>
+ 
+
+
+    </div><div class="searchbox">
+    <label for="search-by"><i class="fa fa-search"></i></label>
+    <input data-search-input id="search-by" type="text" placeholder="Search...">
+    <span data-search-clear=""><i class="fa fa-close"></i></span>
+</div>
+<script type="text/javascript" src="/outcome/js/lunr.min.js"></script>
+<script type="text/javascript" src="/outcome/js/horsey.js"></script>
+<script type="text/javascript">
+    var baseurl = "https:\/\/ned14.github.io\/outcome\/";
+</script>
+<script type="text/javascript" src="/outcome/js/search.js"></script>
+
+  </div>
+
+
+    <ul class="topics">
+            <li data-nav-id="/outcome/" class="dd-item">
+            <a href="/outcome/"><i class="fa fa-fw fa-home"></i></a>
+            </li>
+    <li data-nav-id="/outcome/requirements/" class="dd-item">
+      <a href="/outcome/requirements/">
+        <span>Prerequisites</span>
+      </a>
+    </li>
+    <li data-nav-id="/outcome/build/" class="dd-item">
+      <a href="/outcome/build/">
+        <span>Build and install</span>
+      </a>
+    </li>
+    <li data-nav-id="/outcome/use-matrix/" class="dd-item">
+      <a href="/outcome/use-matrix/">
+        <span>Decision matrix</span>
+      </a>
+    </li>
+    <li data-nav-id="/outcome/tutorial/" class="dd-item">
+      <a href="/outcome/tutorial/">
+        <span>Tutorial</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+    <li data-nav-id="/outcome/tutorial/result/" class="dd-item">
+      <a href="/outcome/tutorial/result/">
+        <span>result&lt;T, EC&gt;</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/result/inspecting/" class="dd-item">
+        <a href="/outcome/tutorial/result/inspecting/">
+          <span>Inspecting result&lt;T, EC&gt;</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/result/try/" class="dd-item">
+        <a href="/outcome/tutorial/result/try/">
+          <span>TRY operations</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/tutorial/outcome/" class="dd-item">
+      <a href="/outcome/tutorial/outcome/">
+        <span>outcome&lt;T, EC, EP&gt;</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/outcome/inspecting/" class="dd-item">
+        <a href="/outcome/tutorial/outcome/inspecting/">
+          <span>Inspecting outcome&lt;T, EC, EP&gt;</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/tutorial/payload/" class="dd-item">
+      <a href="/outcome/tutorial/payload/">
+        <span>Custom payloads</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/payload/copy_file/" class="dd-item">
+        <a href="/outcome/tutorial/payload/copy_file/">
+          <span>The Filesystem TS</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/payload/copy_file2/" class="dd-item">
+        <a href="/outcome/tutorial/payload/copy_file2/">
+          <span>Upgrading the Filesystem TS</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/payload/copy_file3/" class="dd-item">
+        <a href="/outcome/tutorial/payload/copy_file3/">
+          <span>Auto-throwing filesystem_error</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/tutorial/default-actions/" class="dd-item">
+      <a href="/outcome/tutorial/default-actions/">
+        <span>Default actions</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/default-actions/udt-err/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/udt-err/">
+          <span>User defined error types</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/default-actions/happens1/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/happens1/">
+          <span>-- What happens?</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/default-actions/enums/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/enums/">
+          <span>Error code enums</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/default-actions/happens2/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/happens2/">
+          <span>-- What happens?</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/default-actions/happens3/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/happens3/">
+          <span>-- Now what happens?</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/default-actions/error-codes/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/error-codes/">
+          <span>error_code</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/default-actions/exception-ptr/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/exception-ptr/">
+          <span>exception_ptr</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/default-actions/void/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/void/">
+          <span>void</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/default-actions/unchecked/" class="dd-item">
+        <a href="/outcome/tutorial/default-actions/unchecked/">
+          <span>unchecked&lt;T, E&gt; and checked&lt;T, E&gt;</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/tutorial/constructors/" class="dd-item">
+      <a href="/outcome/tutorial/constructors/">
+        <span>Result returning constructors</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/constructors/two-phase-init/" class="dd-item">
+        <a href="/outcome/tutorial/constructors/two-phase-init/">
+          <span>Two phase construction</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/constructors/file_handle/" class="dd-item">
+        <a href="/outcome/tutorial/constructors/file_handle/">
+          <span>A file handle</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/constructors/static-constructor/" class="dd-item">
+        <a href="/outcome/tutorial/constructors/static-constructor/">
+          <span>Phase 2 construction</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/constructors/metaprogrammg1/" class="dd-item">
+        <a href="/outcome/tutorial/constructors/metaprogrammg1/">
+          <span>Phase 3</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/constructors/metaprogrammg2/" class="dd-item">
+        <a href="/outcome/tutorial/constructors/metaprogrammg2/">
+          <span>construct&lt;T&gt;</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/constructors/metaprogrammg3/" class="dd-item">
+        <a href="/outcome/tutorial/constructors/metaprogrammg3/">
+          <span>Alternatives</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/tutorial/hooks/" class="dd-item">
+      <a href="/outcome/tutorial/hooks/">
+        <span>Hooking events</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/hooks/keeping_state/" class="dd-item">
+        <a href="/outcome/tutorial/hooks/keeping_state/">
+          <span>Keeping state</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/hooks/adl_bridging/" class="dd-item">
+        <a href="/outcome/tutorial/hooks/adl_bridging/">
+          <span>ADL bridging</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/hooks/hook_result/" class="dd-item">
+        <a href="/outcome/tutorial/hooks/hook_result/">
+          <span>Hook result</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/hooks/poke_exception/" class="dd-item">
+        <a href="/outcome/tutorial/hooks/poke_exception/">
+          <span>Custom exception ptr</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/hooks/hook_outcome/" class="dd-item">
+        <a href="/outcome/tutorial/hooks/hook_outcome/">
+          <span>Hook outcome</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/tutorial/policies/" class="dd-item">
+      <a href="/outcome/tutorial/policies/">
+        <span>Policies</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/policies/anatomy/" class="dd-item">
+        <a href="/outcome/tutorial/policies/anatomy/">
+          <span>Anatomy of a policy</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/policies/cast/" class="dd-item">
+        <a href="/outcome/tutorial/policies/cast/">
+          <span>Casting workaround</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/policies/builtin/" class="dd-item">
+        <a href="/outcome/tutorial/policies/builtin/">
+          <span>Built-in policies</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/tutorial/c-api/" class="dd-item">
+      <a href="/outcome/tutorial/c-api/">
+        <span>Using result&lt;T&gt; from C code</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/c-api/limitations/" class="dd-item">
+        <a href="/outcome/tutorial/c-api/limitations/">
+          <span>Limitations</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/c-api/example/" class="dd-item">
+        <a href="/outcome/tutorial/c-api/example/">
+          <span>Example C&#43;&#43; function</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/c-api/example2/" class="dd-item">
+        <a href="/outcome/tutorial/c-api/example2/">
+          <span>Calling it from C</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/c-api/variations/" class="dd-item">
+        <a href="/outcome/tutorial/c-api/variations/">
+          <span>Variations</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/tutorial/interop/" class="dd-item">
+      <a href="/outcome/tutorial/interop/">
+        <span>Interoperation</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/tutorial/interop/problem/" class="dd-item">
+        <a href="/outcome/tutorial/interop/problem/">
+          <span>Incommensurate E types</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/value-or-error/" class="dd-item">
+        <a href="/outcome/tutorial/interop/value-or-error/">
+          <span>ValueOrError Concept</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/httplib/" class="dd-item">
+        <a href="/outcome/tutorial/interop/httplib/">
+          <span>The HTTP library</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/tidylib/" class="dd-item">
+        <a href="/outcome/tutorial/interop/tidylib/">
+          <span>The HTMLTidy library</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/filelib/" class="dd-item">
+        <a href="/outcome/tutorial/interop/filelib/">
+          <span>The File I/O library</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/app/" class="dd-item">
+        <a href="/outcome/tutorial/interop/app/">
+          <span>The Application</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/app-map-httplib1/" class="dd-item">
+        <a href="/outcome/tutorial/interop/app-map-httplib1/">
+          <span>Mapping the HTTP library into the Application 1/2</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/app-map-httplib2/" class="dd-item">
+        <a href="/outcome/tutorial/interop/app-map-httplib2/">
+          <span>Mapping the HTTP library into the Application 2/2</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/app-map-filelib/" class="dd-item">
+        <a href="/outcome/tutorial/interop/app-map-filelib/">
+          <span>Mapping the File I/O library into the Application</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/app-map-tidylib/" class="dd-item">
+        <a href="/outcome/tutorial/interop/app-map-tidylib/">
+          <span>Mapping the HTMLTidy library into the Application</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/app-go/" class="dd-item">
+        <a href="/outcome/tutorial/interop/app-go/">
+          <span>In use</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/tutorial/interop/conclusion/" class="dd-item">
+        <a href="/outcome/tutorial/interop/conclusion/">
+          <span>Conclusion</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+      <li data-nav-id="/outcome/tutorial/error_code/" class="dd-item">
+        <a href="/outcome/tutorial/error_code/">
+          <span>Custom error codes</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/reference/" class="dd-item parent active">
+      <a href="/outcome/reference/">
+        <span>API reference</span>
+            <i class="fa fa-angle-down fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/reference/outcome/" class="dd-item">
+        <a href="/outcome/reference/outcome/">
+          <span>outcome&lt;R, S, P&gt;</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/result/" class="dd-item">
+        <a href="/outcome/reference/result/">
+          <span>result&lt;R, S&gt;</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/try/" class="dd-item">
+        <a href="/outcome/reference/try/">
+          <span>Try operations</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/success_failure/" class="dd-item">
+        <a href="/outcome/reference/success_failure/">
+          <span>Success/Failure</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/utils/" class="dd-item">
+        <a href="/outcome/reference/utils/">
+          <span>Utilities</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/convert/" class="dd-item">
+        <a href="/outcome/reference/convert/">
+          <span>Interoperation</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/bad_access/" class="dd-item">
+        <a href="/outcome/reference/bad_access/">
+          <span>Exceptions</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/iostream_support/" class="dd-item">
+        <a href="/outcome/reference/iostream_support/">
+          <span>iostream support</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/result_c/" class="dd-item">
+        <a href="/outcome/reference/result_c/">
+          <span>C API</span>
+        </a>
+    </li>
+    <li data-nav-id="/outcome/reference/policies/" class="dd-item">
+      <a href="/outcome/reference/policies/">
+        <span>Policies</span><i class="fa fa-angle-right fa-lg category-icon"></i>
+      </a>
+        <ul>
+      <li data-nav-id="/outcome/reference/policies/all_narrow/" class="dd-item">
+        <a href="/outcome/reference/policies/all_narrow/">
+          <span>All narrow (hard UB)</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/policies/outcome_error_code_throw_as_system_error/" class="dd-item">
+        <a href="/outcome/reference/policies/outcome_error_code_throw_as_system_error/">
+          <span>error_code throw as system_error (Outcome)</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/policies/result_error_code_throw_as_system_error/" class="dd-item">
+        <a href="/outcome/reference/policies/result_error_code_throw_as_system_error/">
+          <span>error_code throw as system_error (Result)</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/policies/outcome_exception_ptr_rethrow/" class="dd-item">
+        <a href="/outcome/reference/policies/outcome_exception_ptr_rethrow/">
+          <span>exception_ptr rethrow (Outcome)</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/policies/result_exception_ptr_rethrow/" class="dd-item">
+        <a href="/outcome/reference/policies/result_exception_ptr_rethrow/">
+          <span>exception_ptr rethrow (Result)</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/policies/terminate/" class="dd-item">
+        <a href="/outcome/reference/policies/terminate/">
+          <span>Termimate</span>
+        </a>
+    </li>
+      <li data-nav-id="/outcome/reference/policies/throw_bad_result_access/" class="dd-item">
+        <a href="/outcome/reference/policies/throw_bad_result_access/">
+          <span>Throw bad_result_access</span>
+        </a>
+    </li>
+        </ul>
+    </li>
+        </ul>
+    </li>
+    <li data-nav-id="/outcome/faq/" class="dd-item">
+      <a href="/outcome/faq/">
+        <span>Frequently asked questions</span>
+      </a>
+    </li>
+    <li data-nav-id="/outcome/videos/" class="dd-item">
+      <a href="/outcome/videos/">
+        <span>Videos</span>
+      </a>
+    </li>
+    <li data-nav-id="/outcome/history/" class="dd-item">
+      <a href="/outcome/history/">
+        <span>History</span>
+      </a>
+    </li>
+        <section id="shortcuts">
+                <li class="" role=""><h3>More</h3><a href="https://github.com/ned14/outcome" target="_blank" rel="noopener"><i class='fa fa-github'></i> Outcome 2.0 github repo</a></li>
+                <li class="" role=""><a href="/outcome/credits" target="_blank" rel="noopener"><i class='fa fa-bullhorn'></i> Acknowledgements</a></li>
+        </section>
+    </ul>
+
+
+    <section id="footer"><center>
+
+<a class="github-button" href="https://dedi4.nedprod.com/static/files/outcome-v2.0-source-latest.tar.xz" data-icon="octicon-cloud-download" aria-label="Download Outcome">Download</a>
+
+
+<a class="github-button" href="https://github.com/ned14/outcome" data-icon="octicon-star" data-show-count="false" aria-label="Star Outcome on GitHub">Star</a>
+
+
+<a class="github-button" href="https://github.com/ned14/outcome/fork" data-icon="octicon-repo-forked" data-show-count="true" aria-label="Fork Outcome on GitHub">Fork</a>
+
+</center>
+
+<script async defer src="https://buttons.github.io/buttons.js"></script>
+    </section>
+  </div>
+</nav>
+
+
+
+        <section id="body">
+        <div id="overlay"></div>
+        <div class="padding highlightable">
+        
+          <div id="top-bar">
+            
+              
+              
+              
+            <div id="top-github-link">
+              <a class="github-link" href="https://github.com/ned14/outcome/edit/develop/doc/src/content/reference/_index.md" target="blank">
+                <i class="fa fa-code-fork"></i>
+                Edit page
+              </a>
+            </div><div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                <span id="sidebar-toggle-span">
+                  <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                    <i class="fa fa-bars"></i>
+                  </a>
+                </span>
+                <span id="toc-menu"><i class="fa fa-list-alt"></i></span>
+                <span class="links">
+                
+
+
+
+
+ <a href='/outcome/'>Home</a> > API reference
+
+ 
+
+   
+                </span>
+            </div>
+            <div class="progress">
+    <div class="wrapper">
+<nav id="TableOfContents">
+<ul>
+<li><a href="#project-index">Project index</a>
+<ul>
+<li><a href="#namespace-outcome-v2-xxx-convert">Namespace <code>outcome_v2_xxx::convert</code></a></li>
+<li><a href="#namespace-outcome-v2-xxx-hooks">Namespace <code>outcome_v2_xxx::hooks</code></a></li>
+<li><a href="#namespace-outcome-v2-xxx-policy">Namespace <code>outcome_v2_xxx::policy</code></a></li>
+<li><a href="#namespace-outcome-v2-xxx-trait">Namespace <code>outcome_v2_xxx::trait</code></a></li>
+<li><a href="#namespace-outcome-v2-xxx">Namespace <code>outcome_v2_xxx</code></a></li>
+</ul></li>
+</ul>
+</nav>
+    </div>
+</div>
+
+          </div>
+        
+        
+        <div id="body-inner">
+          
+            <h1>API reference</h1>
+          
+
+
+
+
+
+
+<h1 id="project-index">Project index</h1>
+
+<ul>
+<li><p><a href="result_c#standardese-CXX_DECLARE_RESULT"><code>CXX_DECLARE_RESULT</code></a> &mdash; Declares a C struct representation of <code>result&lt;R, S&gt;</code>.</p></li>
+
+<li><p><a href="result_c#standardese-CXX_DECLARE_RESULT_EC"><code>CXX_DECLARE_RESULT_EC</code></a> &mdash; Declares a C struct representation of <code>result&lt;R, std::error_code&gt;</code>.</p></li>
+
+<li><p><a href="result_c#standardese-CXX_RESULT"><code>CXX_RESULT</code></a> &mdash; A reference to a previously declared struct by <code>CXX_DECLARE_RESULT(R, RD, S, SD)</code></p></li>
+
+<li><p><a href="result_c#standardese-CXX_RESULT_EC"><code>CXX_RESULT_EC</code></a> &mdash; A reference to a previously declared struct by <code>CXX_DECLARE_RESULT_EC(R, RD)</code></p></li>
+
+<li><p><a href="result_c#standardese-CXX_RESULT_ERROR"><code>CXX_RESULT_ERROR</code></a> &mdash; C11 generic selecting a result struct’s <code>error</code> or <code>code</code> integer member.</p></li>
+
+<li><p><a href="result_c#standardese-CXX_RESULT_ERROR_IS_ERRNO"><code>CXX_RESULT_ERROR_IS_ERRNO</code></a> &mdash; True if a result struct’s <code>error</code> or <code>code</code> is an <code>errno</code> domain code suitable for setting <code>errno</code> with.</p></li>
+
+<li><p><a href="result_c#standardese-CXX_RESULT_HAS_ERROR"><code>CXX_RESULT_HAS_ERROR</code></a> &mdash; True if a result struct has a valid error</p></li>
+
+<li><p><a href="result_c#standardese-CXX_RESULT_HAS_VALUE"><code>CXX_RESULT_HAS_VALUE</code></a> &mdash; True if a result struct has a valid value</p></li>
+
+<li><p><a href="result_c#standardese-CXX_RESULT_SET_ERRNO"><code>CXX_RESULT_SET_ERRNO</code></a> &mdash; Convenience macro setting <code>errno</code> to a result struct’s <code>errno</code> compatible error if present, or <code>EAGAIN</code> if errored but incompatible.</p></li>
+
+<li><p><a href="try#standardese-OUTCOME_TRY"><code>OUTCOME_TRY</code></a> &mdash; If the outcome returned by expression … is not valued, propagate any failure by immediately returning that failure immediately, else set <em>v</em> to the unwrapped value.</p></li>
+
+<li><p><a href="try#standardese-OUTCOME_TRYV"><code>OUTCOME_TRYV</code></a> &mdash; If the outcome returned by expression … is not valued, propagate any failure by immediately returning that failure state immediately</p></li>
+
+<li><p><a href="try#standardese-OUTCOME_TRYX"><code>OUTCOME_TRYX</code></a> &mdash; If the outcome returned by expression … is not valued, propagate any failure by immediately returning that failure state immediately, else become the unwrapped value as an expression. This makes <code>OUTCOME_TRYX(expr)</code> an expression which can be used exactly like the <code>try</code> operator in other languages.</p></li>
+
+<li><p><a href="result_c#standardese-cxx_error_code"><code>cxx_error_code</code></a> &mdash; A C struct representation of <code>std::error_code</code>.</p></li>
+
+<li><h2 id="namespace-outcome-v2-xxx-convert">Namespace <code>outcome_v2_xxx::convert</code></h2>
+
+<p><span id="standardese-outcome_v2_xxx__convert"></span></p>
+
+<p>Namespace for injected convertibility</p>
+
+<ul>
+<li><p><a href="convert#standardese-outcome_v2_xxx__convert"><code>ValueOrError</code></a></p></li>
+
+<li><p><a href="convert#standardese-outcome_v2_xxx__convert"><code>ValueOrNone</code></a></p></li>
+
+<li><p><a href="convert#standardese-outcome_v2_xxx__convert__value_or_error-T-U-"><code>value_or_error</code></a> &mdash; Default converter for types matching the <code>ValueOrError</code> concept.</p></li>
+</ul></li>
+
+<li><h2 id="namespace-outcome-v2-xxx-hooks">Namespace <code>outcome_v2_xxx::hooks</code></h2>
+
+<p><span id="standardese-outcome_v2_xxx__hooks"></span></p>
+
+<p>Namespace containing hooks used for intercepting and manipulating result/outcome</p>
+
+<ul>
+<li><p><a href="outcome#standardese-outcome_v2_xxx__hooks__hook_outcome_construction-T-U--T--U---"><code>hook_outcome_construction</code></a> &mdash; The default instantiation hook implementation called when a <code>outcome</code> is first created by conversion from one of its possible types. Does nothing.</p></li>
+
+<li><p><a href="outcome#standardese-outcome_v2_xxx__hooks__hook_outcome_copy_construction-T-U--T--U---"><code>hook_outcome_copy_construction</code></a> &mdash; The default instantiation hook implementation called when a <code>outcome</code> is created by copying from another <code>outcome</code> or <code>result</code>. Does nothing.</p></li>
+
+<li><p><a href="outcome#standardese-outcome_v2_xxx__hooks__hook_outcome_in_place_construction-T-U-Args--T--in_place_type_t-U--Args------"><code>hook_outcome_in_place_construction</code></a> &mdash; The default instantiation hook implementation called when a <code>outcome</code> is created by in place construction. Does nothing.</p></li>
+
+<li><p><a href="outcome#standardese-outcome_v2_xxx__hooks__hook_outcome_move_construction-T-U--T--U---"><code>hook_outcome_move_construction</code></a> &mdash; The default instantiation hook implementation called when a <code>outcome</code> is created by moving from another <code>outcome</code> or <code>result</code>. Does nothing.</p></li>
+
+<li><p><a href="result#standardese-outcome_v2_xxx__hooks__hook_result_construction-T-U--T--U---"><code>hook_result_construction</code></a> &mdash; The default instantiation hook implementation called when a <code>result</code> is first created by conversion from one of its possible types. Does nothing.</p></li>
+
+<li><p><a href="result#standardese-outcome_v2_xxx__hooks__hook_result_copy_construction-T-U--T--U---"><code>hook_result_copy_construction</code></a> &mdash; The default instantiation hook implementation called when a <code>result</code> is created by copying from another <code>result</code>. Does nothing.</p></li>
+
+<li><p><a href="result#standardese-outcome_v2_xxx__hooks__hook_result_in_place_construction-T-U-Args--T--in_place_type_t-U--Args------"><code>hook_result_in_place_construction</code></a> &mdash; The default instantiation hook implementation called when a <code>result</code> is created by in place construction. Does nothing.</p></li>
+
+<li><p><a href="result#standardese-outcome_v2_xxx__hooks__hook_result_move_construction-T-U--T--U---"><code>hook_result_move_construction</code></a> &mdash; The default instantiation hook implementation called when a <code>result</code> is created by moving from another <code>result</code>. Does nothing.</p></li>
+
+<li><p><a href="outcome#standardese-outcome_v2_xxx__hooks__override_outcome_exception-R-S-P-NoValuePolicy-U--outcome-R-S-P-NoValuePolicy---U---"><code>override_outcome_exception</code></a> &mdash; Used in hook implementations to override the payload/exception to something other than what was constructed.</p></li>
+
+<li><p><a href="result#standardese-outcome_v2_xxx__hooks__set_spare_storage-R-S-NoValuePolicy--detail__result_final-R-S-NoValuePolicy---uint16_t-"><code>set_spare_storage</code></a> &mdash; Sets the sixteen bits of spare storage in a <code>result</code> or <code>outcome</code>.</p></li>
+
+<li><p><a href="result#standardese-outcome_v2_xxx__hooks__spare_storage-R-S-NoValuePolicy--detail__result_final-R-S-NoValuePolicy-const--"><code>spare_storage</code></a> &mdash; Get the sixteen bits of spare storage in a <code>result</code> or <code>outcome</code>.</p></li>
+</ul></li>
+
+<li><h2 id="namespace-outcome-v2-xxx-policy">Namespace <code>outcome_v2_xxx::policy</code></h2>
+
+<p><span id="standardese-outcome_v2_xxx__policy"></span></p>
+
+<p>Namespace for policies</p>
+
+<ul>
+<li><p><a href="policies/all_narrow#standardese-outcome_v2_xxx__policy__all_narrow"><code>all_narrow</code></a> &mdash; Policy which treats wide checks as narrow checks.</p></li>
+
+<li><p><a href="result#standardese-outcome_v2_xxx__policy__default_policy-T-EC-E-"><code>default_policy</code></a> &mdash; Default policy selector.</p></li>
+
+<li><p><a href="success_failure#standardese-outcome_v2_xxx__policy__error_code-T--T---"><code>error_code</code></a> &mdash; Used by policies to extract a <code>std::error_code</code> from some input <code>T</code> via ADL discovery of some <code>make_error_code(T)</code> function.</p></li>
+
+<li><p><a href="policies/result_error_code_throw_as_system_error#standardese-outcome_v2_xxx__policy__error_code_throw_as_system_error-T-EC-"><code>error_code_throw_as_system_error</code></a> &mdash; Policy interpreting <code>EC</code> as a type for which <code>trait::has_error_code_v&lt;EC&gt;</code> is true.</p></li>
+
+<li><p><a href="success_failure#standardese-outcome_v2_xxx__policy__exception_ptr-T--T---"><code>exception_ptr</code></a> &mdash; Used by policies to extract a <code>std::exception_ptr</code> from some input <code>T</code> via ADL discovery of some <code>make_exception_ptr(T)</code> function.</p></li>
+
+<li><p><a href="policies/outcome_exception_ptr_rethrow#standardese-outcome_v2_xxx__policy__exception_ptr_rethrow-T-EC-E-"><code>exception_ptr_rethrow</code></a> &mdash; Policy interpreting <code>EC</code> or <code>E</code> as a type for which <code>trait::has_exception_ptr_v&lt;EC|E&gt;</code> is true.</p></li>
+
+<li><p><a href="policies/terminate#standardese-outcome_v2_xxx__policy__terminate"><code>terminate</code></a> &mdash; Policy implementing any wide attempt to access the successful state as calling <code>std::terminate</code></p></li>
+
+<li><p><a href="success_failure#standardese-outcome_v2_xxx__policy__throw_as_system_error_with_payload-Error--Errorconst--"><code>throw_as_system_error_with_payload</code></a> &mdash; Override to define what the policies which throw a system error with payload ought to do for some particular <code>result.error()</code>.</p></li>
+
+<li><p><a href="policies/throw_bad_result_access#standardese-outcome_v2_xxx__policy__throw_bad_result_access-EC-"><code>throw_bad_result_access</code></a> &mdash; Policy which throws <code>bad_result_access_with&lt;EC&gt;</code> or <code>bad_result_access</code> during wide checks.</p></li>
+</ul></li>
+
+<li><h2 id="namespace-outcome-v2-xxx-trait">Namespace <code>outcome_v2_xxx::trait</code></h2>
+
+<p><span id="standardese-outcome_v2_xxx__trait"></span></p>
+
+<p>Namespace for traits</p>
+
+<ul>
+<li><p><a href="success_failure#standardese-outcome_v2_xxx__trait__has_error_code-T-"><code>has_error_code</code></a> &mdash; Trait for whether a free function <code>make_error_code(T)</code> returning a <code>std::error_code</code> exists or not.</p></li>
+
+<li><p><a href="success_failure#standardese-outcome_v2_xxx__trait__has_error_code_v"><code>has_error_code_v</code></a> &mdash; Trait for whether a free function <code>make_error_code(T)</code> returning a <code>std::error_code</code> exists or not.</p></li>
+
+<li><p><a href="success_failure#standardese-outcome_v2_xxx__trait__has_exception_ptr-T-"><code>has_exception_ptr</code></a> &mdash; Trait for whether a free function <code>make_exception_ptr(T)</code> returning a <code>std::exception_ptr</code> exists or not.</p></li>
+
+<li><p><a href="success_failure#standardese-outcome_v2_xxx__trait__has_exception_ptr_v"><code>has_exception_ptr_v</code></a> &mdash; Trait for whether a free function <code>make_exception_ptr(T)</code> returning a <code>std::exception_ptr</code> exists or not.</p></li>
+</ul></li>
+
+<li><h2 id="namespace-outcome-v2-xxx">Namespace <code>outcome_v2_xxx</code></h2>
+
+<p><span id="standardese-outcome_v2_xxx"></span></p>
+
+<ul>
+<li><p><a href="bad_access#standardese-outcome_v2_xxx__bad_outcome_access"><code>bad_outcome_access</code></a> &mdash; Thrown when you try to access state in a <code>outcome&lt;T, EC, E&gt;</code> which isn’t present.</p></li>
+
+<li><p><a href="bad_access#standardese-outcome_v2_xxx__bad_result_access"><code>bad_result_access</code></a> &mdash; Thrown when you try to access state in a <code>result&lt;R, S&gt;</code> which isn’t present.</p></li>
+
+<li><p><a href="bad_access#standardese-outcome_v2_xxx__bad_result_access_with-S-"><code>bad_result_access_with</code></a> &mdash; Thrown when you try to access a value in a <code>result&lt;R, S&gt;</code> which isn’t present.</p></li>
+
+<li><p><a href="result#standardese-outcome_v2_xxx__checked-R-S-"><code>checked</code></a> &mdash; A “checked” edition of <code>result&lt;T, E&gt;</code> which resembles fairly closely a <code>std::expected&lt;T, E&gt;</code>.</p></li>
+
+<li><p><a href="utils#standardese-outcome_v2_xxx__error_from_exception-std__exception_ptr---std__error_code-"><code>error_from_exception</code></a> &mdash; Utility function which tries to match the exception in the pointer provided to an equivalent error code. Ought to work for all standard STL types.</p></li>
+
+<li><p><a href="success_failure#standardese-outcome_v2_xxx__failure-EC--EC---"><code>failure</code></a> &mdash; Returns type sugar for implicitly constructing a <code>result&lt;T&gt;</code> with a failure state.</p></li>
+
+<li><p><a href="success_failure#standardese-outcome_v2_xxx__failure_type-EC-E-"><code>failure_type</code></a> &mdash; Type sugar for implicitly constructing a <code>result&lt;&gt;</code> with a failure state of error code and exception.</p></li>
+
+<li><p><code>in_place_type</code> &mdash; Aliases <code>std::in_place_type&lt;T&gt;</code> if on C++ 17 or later, else defined locally.</p></li>
+
+<li><p><code>in_place_type_t</code> &mdash; Aliases <code>std::in_place_type_t&lt;T&gt;</code> if on C++ 17 or later, else defined locally.</p></li>
+
+<li><p><a href="outcome#standardese-outcome_v2_xxx__is_outcome-T-"><code>is_outcome</code></a> &mdash; True if an outcome</p></li>
+
+<li><p><a href="outcome#standardese-outcome_v2_xxx__is_outcome_v"><code>is_outcome_v</code></a> &mdash; True if an outcome</p></li>
+
+<li><p><a href="result#standardese-outcome_v2_xxx__is_result-T-"><code>is_result</code></a> &mdash; True if a result</p></li>
+
+<li><p><a href="result#standardese-outcome_v2_xxx__is_result_v"><code>is_result_v</code></a> &mdash; True if a result</p></li>
+
+<li><p><a href="outcome#standardese-outcome_v2_xxx__operator---T-U-V-R-S-P-N---result-T-U-V-const--outcome-R-S-P-N-const--"><code>operator!=</code></a> &mdash; True if the result is not equal to the outcome</p></li>
+
+<li><p><a href="iostream_support#standardese-outcome_v2_xxx__operator---R-S-P----std__ostream--result-R-S-P-const--"><code>operator&lt;&lt;</code></a> &mdash; Serialise a result. Format is <code>status_unsigned [value][error]</code>. Spare storage is preserved.</p></li>
+
+<li><p><a href="outcome#standardese-outcome_v2_xxx__operator---T-U-V-R-S-P-N---result-T-U-V-const--outcome-R-S-P-N-const--"><code>operator==</code></a> &mdash; True if the result is equal to the outcome</p></li>
+
+<li><p><a href="iostream_support#standardese-outcome_v2_xxx__operator---R-S-P----std__istream--result-R-S-P---"><code>operator&gt;&gt;</code></a> &mdash; Deserialise a result. Format is <code>status_unsigned [value][error]</code>. Spare storage is preserved.</p></li>
+
+<li><p><a href="outcome#standardese-outcome_v2_xxx__outcome-R-S-P-NoValuePolicy-"><code>outcome</code></a> &mdash; Used to return from functions one of (i) a successful value (ii) a cause of failure (ii) a different cause of failure. <code>constexpr</code> capable.</p></li>
+
+<li><p><a href="iostream_support#standardese-outcome_v2_xxx__print-R-S-P--detail__result_final-R-S-P-const--"><code>print</code></a> &mdash; Debug print a result into a form suitable for human reading. Format is <code>value|error</code>. If the error type is <code>error_code</code>, appends <code>&quot; (ec.message())&quot;</code> afterwards.</p></li>
+
+<li><p><a href="result#standardese-outcome_v2_xxx__result-R-S-NoValuePolicy-"><code>result</code></a> &mdash; Used to return from functions either (i) a successful value (ii) a cause of failure. <code>constexpr</code> capable.</p></li>
+
+<li><p><a href="success_failure#standardese-outcome_v2_xxx__success-T--T---"><code>success</code></a> &mdash; Returns type sugar for implicitly constructing a <code>result&lt;T&gt;</code> with a successful state, default constructing <code>T</code> if necessary.</p></li>
+
+<li><p><a href="success_failure#standardese-outcome_v2_xxx__success_type-T-"><code>success_type</code></a> &mdash; Type sugar for implicitly constructing a <code>result&lt;&gt;</code> with a successful state.</p></li>
+
+<li><p><a href="result#standardese-outcome_v2_xxx__swap-R-S-P--result-R-S-P---result-R-S-P---"><code>swap</code></a> &mdash; Specialise swap for result.</p></li>
+
+<li><p><a href="try#standardese-outcome_v2_xxx__try_operation_return_as-T--T---"><code>try_operation_return_as</code></a> &mdash; Customisation point for changing what the <code>OUTCOME_TRY</code> macros do. This function defaults to returning <code>std::forward&lt;T&gt;(v).as_failure()</code>.</p></li>
+
+<li><p><a href="utils#standardese-outcome_v2_xxx__try_throw_std_exception_from_error-std__error_code-std__stringconst--"><code>try_throw_std_exception_from_error</code></a> &mdash; Utility function which tries to throw the equivalent STL exception type for some given error code, not including <code>system_error</code>.</p></li>
+
+<li><p><a href="result#standardese-outcome_v2_xxx__unchecked-R-S-"><code>unchecked</code></a> &mdash; An “unchecked” edition of <code>result&lt;T, E&gt;</code> which does no special handling of specific <code>E</code> types at all.</p></li>
+</ul></li>
+</ul>
+
+
+<footer class=" footline" >
+	
+</footer>
+
+
+
+
+
+
+        
+
+      </div>
+    </div>
+
+    
+ 
+    
+
+    <div id="navigation">
+        <a class="nav nav-prev" href="/outcome/tutorial/error_code/" title="Custom error codes"> <i class="fa fa-chevron-left"></i></a>
+        <a class="nav nav-next" href="/outcome/reference/outcome/" title="outcome&lt;R, S, P&gt;" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+    </div>
+
+    </section>
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>    
+
+    <script src="/outcome/js/clipboard.min.js"></script>
+<script src="/outcome/js/featherlight.min.js"></script>
+<script src="/outcome/js/html5shiv-printshiv.min.js"></script>
+
+
+<script src="/outcome/js/modernizr.custom.71422.js"></script>
+<script src="/outcome/js/learn.js"></script>
+<script src="/outcome/js/hugo-learn.js"></script>
+
+
+<link href="/outcome/mermaid/mermaid.css" type="text/css" rel="stylesheet"/>
+<script src="/outcome/mermaid/mermaid.js"></script>
+<script>mermaid.initialize({startOnLoad:true});</script>
+    
+
+  </body>
+</html>
