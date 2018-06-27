@@ -187,6 +187,9 @@ namespace Molch {
 			case status_type::EXCEPTION:
 				return "EXCEPTION";
 
+			case status_type::EXPECTATION_FAILED:
+				return "EXPECTATION_FAILED";
+
 			default:
 				return "(nullptr)";
 		}

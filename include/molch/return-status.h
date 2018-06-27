@@ -61,7 +61,8 @@ typedef enum class status_type { //TODO add more error types
 	PROTOBUF_UNPACK_ERROR,
 	PROTOBUF_MISSING_ERROR,
 	UNSUPPORTED_PROTOCOL_VERSION,
-	EXCEPTION
+	EXCEPTION,
+	EXPECTATION_FAILED
 } status_type;
 
 typedef struct error_message error_message;
