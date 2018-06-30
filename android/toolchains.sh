@@ -15,14 +15,12 @@ function make_toolchain() {
 API_LEVEL32=16
 ARCHITECTURES32=(
 	arm
-	mips
 	x86
 )
 
 API_LEVEL64=21
 ARCHITECTURES64=(
 	arm64
-	mips64
 	x86_64
 )
 
