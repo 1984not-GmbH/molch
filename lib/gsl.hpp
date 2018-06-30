@@ -6,9 +6,13 @@
 #define LIB_GSL_HPP
 
 #define GSL_THROW_ON_CONTRACT_VIOLATION //throw exception when contract is violated (instead of std::terminate)!
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wno-tautological-constant-compare"
 #include <gsl/gsl_assert>
 #include <gsl/gsl_byte>
 #include <gsl/span>
+#pragma GCC diagnostic pop
 
 namespace Molch {
 	inline unsigned char* byte_to_uchar(std::byte* byte) {

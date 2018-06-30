@@ -22,7 +22,14 @@
 #ifndef LIB_PROTOBUF_ARENA_H
 #define LIB_PROTOBUF_ARENA_H
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#pragma GCC diagnostic ignored "-Wmissing-variable-declarations"
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wtautological-constant-compare"
 #include <google/protobuf/arena.h>
+#pragma GCC diagnostic pop
 #include <protobuf-c/protobuf-c.h>
 
 namespace Molch {
