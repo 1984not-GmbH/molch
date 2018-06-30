@@ -10,6 +10,8 @@ flag_candidates = [
   '-Wno-class-memaccess',
   '-Wno-unused-function',
   '-Wno-unused-const-variable',
+  '-Wno-tautological-compare',
+  '-Wno-zero-as-null-pointer-constant',
 ]
 flags = cc.get_supported_arguments(flag_candidates)
 add_project_arguments(flags, language: 'cpp')
@@ -215,14 +217,14 @@ js_well_known_types_src = [
   'src/google/protobuf/compiler/js/well_known_types/struct.js',
   'src/google/protobuf/compiler/js/well_known_types/timestamp.js'
 ]
-js_embed = executable('js_embed',
-                      ['src/google/protobuf/compiler/js/embed.cc'])
-js_embed_file = custom_target('js_embed',
-                              output: 'well_known_types_embed.cc',
-                              input: js_well_known_types_src,
-                              capture: true,
-                              command: [js_embed, '@INPUT@'])
-libprotoc_src += js_embed_file
+#js_embed = executable('js_embed',
+#                      ['src/google/protobuf/compiler/js/embed.cc'])
+#js_embed_file = custom_target('js_embed',
+#                              output: 'well_known_types_embed.cc',
+#                              input: js_well_known_types_src,
+#                              capture: true,
+#                              command: [js_embed, '@INPUT@'])
+#libprotoc_src += js_embed_file
 #commented out because it makes the build of molch fail
 #libprotoc = library('protoc',
 #                    libprotoc_src,
@@ -233,7 +235,7 @@ libprotoc_src += js_embed_file
 #                                include_directories: include_directories('src'))
 
 
-protoc_src = [ 'src/google/protobuf/compiler/main.cc' ]
+#protoc_src = [ 'src/google/protobuf/compiler/main.cc' ]
 #protoc = executable('protoc',
 #                    protoc_src,
 #                    cpp_args: flags,
