@@ -978,12 +978,12 @@ cleanup:
 			}
 
 			//export the conversation
-			Arena pool;
-			auto conversation_struct{conversation->exportProtobuf(pool)};
+			Arena arena;
+			auto conversation_struct{conversation->exportProtobuf(arena)};
 
 			//pack the struct
 			auto conversation_size{molch__protobuf__conversation__get_packed_size(conversation_struct)};
-			auto conversation_buffer_content{pool.allocate<std::byte>(conversation_size)};
+			auto conversation_buffer_content{arena.allocate<std::byte>(conversation_size)};
 			span<std::byte> conversation_buffer{conversation_buffer_content, conversation_size};
 			molch__protobuf__conversation__pack(conversation_struct, byte_to_uchar(conversation_buffer.data()));
 
@@ -1096,8 +1096,8 @@ cleanup:
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
 			}
 
-			Arena pool;
-			auto decrypted_backup_content{pool.allocate<std::byte>(
+			Arena arena;
+			auto decrypted_backup_content{arena.allocate<std::byte>(
 						encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
 			span<std::byte> decrypted_backup{
 					decrypted_backup_content,
@@ -1115,8 +1115,8 @@ cleanup:
 			}
 
 			//unpack the struct
-			auto pool_protoc_allocator{pool.getProtobufCAllocator()};
-			auto conversation_struct{molch__protobuf__conversation__unpack(&pool_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
+			auto arena_protoc_allocator{arena.getProtobufCAllocator()};
+			auto conversation_struct{molch__protobuf__conversation__unpack(&arena_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
 			if (conversation_struct == nullptr) {
 				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack conversations protobuf-c."};
 			}
@@ -1302,8 +1302,8 @@ cleanup:
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
 			}
 
-			Arena pool;
-			auto decrypted_backup_content{pool.allocate<std::byte>(
+			Arena arena;
+			auto decrypted_backup_content{arena.allocate<std::byte>(
 					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
 			span<std::byte> decrypted_backup{
 					decrypted_backup_content,
@@ -1321,8 +1321,8 @@ cleanup:
 			}
 
 			//unpack the struct
-			auto pool_protoc_allocator{pool.getProtobufCAllocator()};
-			auto backup_struct{molch__protobuf__backup__unpack(&pool_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
+			auto arena_protoc_allocator{arena.getProtobufCAllocator()};
+			auto backup_struct{molch__protobuf__backup__unpack(&arena_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
 			if (backup_struct == nullptr) {
 				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack backups protobuf-c."};
 			}

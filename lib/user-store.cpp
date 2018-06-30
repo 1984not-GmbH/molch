@@ -260,16 +260,16 @@ namespace Molch {
 		return user;
 	}
 
-	span<ProtobufCUser*> UserStore::exportProtobuf(Arena& pool) const {
+	span<ProtobufCUser*> UserStore::exportProtobuf(Arena& arena) const {
 		if (this->users.empty()) {
 			return {nullptr, static_cast<size_t>(0)};
 		}
 
 		//export the conversations
-		auto users_array{pool.allocate<ProtobufCUser*>(this->users.size())};
+		auto users_array{arena.allocate<ProtobufCUser*>(this->users.size())};
 		size_t index{0};
 		for (const auto& user : this->users) {
-			users_array[index] = user.exportProtobuf(pool);
+			users_array[index] = user.exportProtobuf(arena);
 			index++;
 		}
 		return {users_array, this->users.size()};

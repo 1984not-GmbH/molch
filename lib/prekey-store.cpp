@@ -300,31 +300,31 @@ namespace Molch {
 	}
 
 	template <class Container>
-	static void export_keypairs(Arena& pool, Container& container, span<ProtobufCPrekey*>& keypairs) {
+	static void export_keypairs(Arena& arena, Container& container, span<ProtobufCPrekey*>& keypairs) {
 		if (container.empty()) {
 			keypairs = {nullptr, static_cast<size_t>(0)};
 			return;
 		}
 
 		//export all buffers
-		auto keypairs_array{pool.allocate<ProtobufCPrekey*>(container.size())};
+		auto keypairs_array{arena.allocate<ProtobufCPrekey*>(container.size())};
 		size_t index{0};
 		for (const auto& key : container) {
-			keypairs_array[index] = key.exportProtobuf(pool);
+			keypairs_array[index] = key.exportProtobuf(arena);
 			index++;
 		}
 		keypairs = {keypairs_array, container.size()};
 	}
 
 	void PrekeyStore::exportProtobuf(
-			Arena& pool,
+			Arena& arena,
 			span<ProtobufCPrekey*>& keypairs,
 			span<ProtobufCPrekey*>& deprecated_keypairs) const {
 		//export prekeys
-		export_keypairs(pool, *this->prekeys_storage, keypairs);
+		export_keypairs(arena, *this->prekeys_storage, keypairs);
 
 		//export deprecated prekeys
-		export_keypairs(pool, this->deprecated_prekeys_storage, deprecated_keypairs);
+		export_keypairs(arena, this->deprecated_prekeys_storage, deprecated_keypairs);
 	}
 
 	std::ostream& PrekeyStore::print(std::ostream& stream) const {

@@ -179,17 +179,17 @@ namespace Molch {
 	}
 
 	void MasterKeys::exportProtobuf(
-			Arena& pool,
+			Arena& arena,
 			ProtobufCKey*& public_signing_key,
 			ProtobufCKey*& private_signing_key,
 			ProtobufCKey*& public_identity_key,
 			ProtobufCKey*& private_identity_key) const {
 		Unlocker unlocker{*this};
 
-		public_signing_key = this->public_signing_key.exportProtobuf(pool);
-		private_signing_key = this->private_signing_key->exportProtobuf(pool);
-		public_identity_key = this->public_identity_key.exportProtobuf(pool);
-		private_identity_key = this->private_identity_key->exportProtobuf(pool);
+		public_signing_key = this->public_signing_key.exportProtobuf(arena);
+		private_signing_key = this->private_signing_key->exportProtobuf(arena);
+		public_identity_key = this->public_identity_key.exportProtobuf(arena);
+		private_identity_key = this->private_identity_key->exportProtobuf(arena);
 	}
 
 	void MasterKeys::lock() const {

@@ -225,11 +225,11 @@ namespace Molch {
 			}
 		}
 
-		ProtobufCKey* exportProtobuf(Arena& pool) const {
-			auto key{pool.allocate<ProtobufCKey>(1)};
+		ProtobufCKey* exportProtobuf(Arena& arena) const {
+			auto key{arena.allocate<ProtobufCKey>(1)};
 			molch__protobuf__key__init(key);
 
-			key->key.data = pool.allocate<uint8_t>(length);
+			key->key.data = arena.allocate<uint8_t>(length);
 			key->key.len = length;
 			this->copyTo({
 					uchar_to_byte(key->key.data),

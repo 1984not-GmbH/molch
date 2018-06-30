@@ -115,7 +115,7 @@ namespace Molch {
 		 * \param private_identity_key Private part of the idenity keypair.
 		 */
 		void exportProtobuf(
-				Arena& pool,
+				Arena& arena,
 				ProtobufCKey*& public_signing_key,
 				ProtobufCKey*& private_signing_key,
 				ProtobufCKey*& public_identity_key,

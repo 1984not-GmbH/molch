@@ -63,7 +63,7 @@ namespace Molch {
 		const HeaderKey& headerKey() const;
 		seconds expirationDate() const;
 
-		ProtobufCKeyBundle* exportProtobuf(Arena& pool) const;
+		ProtobufCKeyBundle* exportProtobuf(Arena& arena) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};
@@ -97,7 +97,7 @@ namespace Molch {
 		const std::vector<HeaderAndMessageKey,SodiumAllocator<HeaderAndMessageKey>>& keys() const;
 
 		//! Export a header_and_message_keystore as Protobuf-C struct.
-		span<ProtobufCKeyBundle*> exportProtobuf(Arena& pool) const;
+		span<ProtobufCKeyBundle*> exportProtobuf(Arena& arena) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

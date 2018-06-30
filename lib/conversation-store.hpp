@@ -84,7 +84,7 @@ namespace Molch {
 		Buffer list() const;
 
 		/*! Export a conversation store to Protobuf-C */
-		span<ProtobufCConversation*> exportProtobuf(Arena& pool) const;
+		span<ProtobufCConversation*> exportProtobuf(Arena& arena) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

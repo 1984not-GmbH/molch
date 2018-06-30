@@ -70,7 +70,7 @@ namespace Molch {
 		const PrivateKey& privateKey() const;
 
 
-		ProtobufCPrekey* exportProtobuf(Arena& pool) const;
+		ProtobufCPrekey* exportProtobuf(Arena& arena) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};
@@ -128,12 +128,12 @@ namespace Molch {
 		void rotate();
 
 		/*! Serialise a prekey store as protobuf-c struct.
-		 * \param pool A memory pool to allocate from.
+		 * \param arena A memory arena to allocate from.
 		 * \param keypairs An array of keypairs, allocated by the function.
 		 * \param deprecated_keypairs An array of deprecated keypairs, allocated by the function.
 		 */
 		void exportProtobuf(
-				Arena& pool,
+				Arena& arena,
 				span<ProtobufCPrekey*>& keypairs,
 				span<ProtobufCPrekey*>& deprecated_keypairs) const;
 
