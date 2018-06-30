@@ -42,7 +42,11 @@ test_library = library(
 		],
 		include_directories: [c_protobufs_include, gsl_include],
 		link_with: molch_internals,
-		dependencies: protobuf_lite
+		dependencies: [
+			libsodium,
+			protobuf_lite,
+			protobuf_c
+		]
 )
 
 foreach test : unit_tests
@@ -54,7 +58,11 @@ foreach test : unit_tests
 			c_protobufs,
 			molch_internals
 		],
-		dependencies: [libsodium, protobuf_lite],
+		dependencies: [
+			libsodium,
+			protobuf_lite,
+			protobuf_c,
+		],
 		include_directories: [c_protobufs_include, gsl_include]
 	)
 	test(test, test_exe, workdir: meson.current_source_dir())

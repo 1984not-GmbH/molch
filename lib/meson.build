@@ -33,6 +33,7 @@ molch_internals = static_library(
 	dependencies: [
 		libsodium,
 		protobuf_lite,
+		protobuf_c,
 	],
 	link_with: c_protobufs,
 	include_directories: [
@@ -44,9 +45,15 @@ molch_internals = static_library(
 molch = library(
 		'molch',
 		files('molch.cpp'),
+		dependencies: [
+			libsodium,
+			protobuf_c,
+			protobuf_lite,
+		],
 		link_with: molch_internals,
 		include_directories: [
 			c_protobufs_include,
+			gsl_include,
 		],
 		implicit_include_directories: false,
 		install: true)
