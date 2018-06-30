@@ -18,7 +18,6 @@ common_flags = [
 	'-Winit-self',
 	'-Wformat=2',
 	'-Wcast-qual',
-	'-Wundef',
 	'-Wswitch-default',
 	'-Wconversion',
 	'-fstack-protector-all',
