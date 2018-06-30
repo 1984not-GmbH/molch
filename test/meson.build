@@ -1,4 +1,4 @@
-tests = [
+unit_tests = [
 		'diffie-hellman-test',
 		'triple-diffie-hellman-test',
 		'key-derivation-test',
@@ -16,7 +16,6 @@ tests = [
 		'ratchet-test-simple',
 		'user-store-test',
 		'spiced-random-test',
-		'molch-test',
 		'conversation-test',
 		'conversation-packet-test',
 		'conversation-store-test',
@@ -24,10 +23,14 @@ tests = [
 		'master-keys-test',
 		'endianness-test',
 		'return-status-test',
-		'molch-init-test',
 		'buffer-test',
 		'molch-exception-test',
 		'time-test'
+]
+
+integration_tests = [
+	'molch-test',
+	'molch-init-test',
 ]
 
 test_library = library(
@@ -38,19 +41,36 @@ test_library = library(
 			'packet-test-lib.cpp'
 		],
 		include_directories: [c_protobufs_include, gsl_include],
-		link_with: molch,
+		link_with: molch_internals,
 		dependencies: protobuf_lite
 )
 
-foreach test : tests
+foreach test : unit_tests
 	test_exe = executable(
-			test,
-			test + '.cpp',
-			link_with: [test_library, molch, c_protobufs],
-			dependencies: [libsodium, protobuf_lite],
-			include_directories: [c_protobufs_include, gsl_include])
+		test,
+		test + '.cpp',
+		link_with: [
+			test_library,
+			c_protobufs,
+			molch_internals
+		],
+		dependencies: [libsodium, protobuf_lite],
+		include_directories: [c_protobufs_include, gsl_include]
+	)
 	test(test, test_exe, workdir: meson.current_source_dir())
 endforeach
+
+#foreach test : integration_tests
+#	test_exe = executable(
+#		test,
+#		test + '.cpp',
+#		link_with: [
+#			test_library,
+#			molch,
+#		]
+#	)
+#	test(test, test_exe, workdir: meson.current_source_dir())
+#endforeach
 
 if ['undefined', 'address,undefined'].contains(get_option('b_sanitize'))
 	ubsan_test = executable('ubsan-test', 'ubsan-test.cpp')

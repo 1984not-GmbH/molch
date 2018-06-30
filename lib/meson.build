@@ -14,7 +14,6 @@ lib_sources = files(
 		'ratchet.cpp',
 		'user-store.cpp',
 		'spiced-random.cpp',
-		'molch.cpp',
 		'conversation.cpp',
 		'conversation-store.cpp',
 		'prekey-store.cpp',
@@ -28,11 +27,26 @@ lib_sources = files(
 )
 
 gsl_include = include_directories('../gsl/include')
+molch_internals = static_library(
+	'molch_internals',
+	lib_sources,
+	dependencies: [
+		libsodium,
+		protobuf_lite,
+	],
+	link_with: c_protobufs,
+	include_directories: [
+		c_protobufs_include,
+		gsl_include,
+	],
+	implicit_include_directories: false,
+)
 molch = library(
 		'molch',
-		lib_sources,
-		dependencies: [libsodium, protobuf_lite],
-		link_with: c_protobufs,
-		include_directories: [c_protobufs_include, gsl_include],
+		files('molch.cpp'),
+		link_with: molch_internals,
+		include_directories: [
+			c_protobufs_include,
+		],
 		implicit_include_directories: false,
 		install: true)
