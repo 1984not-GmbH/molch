@@ -35,7 +35,7 @@
 
 using namespace Molch;
 
-void create_and_print_message(
+MOLCH_PUBLIC(void) create_and_print_message(
 		//output
 		Buffer& packet,
 		HeaderKey& header_key,

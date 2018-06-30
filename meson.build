@@ -47,6 +47,7 @@ common_flags = [
 	'-Wdocumentation',
 	'-Wmissing-noreturn',
 	'-Wswitch-enum',
+	'-fvisibility=hidden',
 ]
 
 c_flags = [

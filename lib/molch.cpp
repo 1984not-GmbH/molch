@@ -160,7 +160,7 @@ static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_ke
  * Don't forget to destroy the return status with molch_destroy_return_status()
  * if an error has occurred.
  */
-return_status molch_create_user(
+MOLCH_PUBLIC(return_status) molch_create_user(
 		//outputs
 		unsigned char *const public_master_key, //PUBLIC_MASTER_KEY_SIZE
 		const size_t public_master_key_length,
@@ -249,7 +249,7 @@ cleanup:
  * Don't forget to destroy the return status with return_status_destroy_errors()
  * if an error has occurred.
  */
-return_status molch_destroy_user(
+MOLCH_PUBLIC(return_status) molch_destroy_user(
 		const unsigned char *const public_master_key,
 		const size_t public_master_key_length,
 		//optional output (can be nullptr)
@@ -292,7 +292,7 @@ cleanup:
 /*
  * Get the number of users.
  */
-size_t molch_user_count() {
+MOLCH_PUBLIC(size_t) molch_user_count() {
 	if (!users) {
 		return 0;
 	}
@@ -303,7 +303,7 @@ size_t molch_user_count() {
 /*
  * Delete all users.
  */
-void molch_destroy_all_users() {
+MOLCH_PUBLIC(void) molch_destroy_all_users() {
 	if (users) {
 		users->clear();
 	}
@@ -318,7 +318,7 @@ void molch_destroy_all_users() {
  * Don't forget to destroy the return status with return_status_destroy_errors()
  * if an error has occurred.
  */
-return_status molch_list_users(
+MOLCH_PUBLIC(return_status) molch_list_users(
 		unsigned char **const user_list,
 		size_t * const user_list_length, //length in bytes
 		size_t * const count) {
@@ -363,7 +363,7 @@ cleanup:
  * This is either a normal message or a prekey message.
  * Prekey messages mark the start of a new conversation.
  */
-molch_message_type molch_get_message_type(
+MOLCH_PUBLIC(molch_message_type) molch_get_message_type(
 		const unsigned char * const packet,
 		const size_t packet_length) {
 	molch_message_type packet_type;
@@ -428,7 +428,7 @@ static void verify_prekey_list(
  * Don't forget to destroy the return status with return_status_destroy_errors()
  * if an error has occurred.
  */
-return_status molch_start_send_conversation(
+MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		//outputs
 		unsigned char *const conversation_id, //CONVERSATION_ID_SIZE long (from conversation.h)
 		const size_t conversation_id_length,
@@ -535,7 +535,7 @@ cleanup:
 	 * Don't forget to destroy the return status with return_status_destroy_errors()
 	 * if an error has occurred.
 	 */
-	return_status molch_start_receive_conversation(
+	MOLCH_PUBLIC(return_status) molch_start_receive_conversation(
 			//outputs
 			unsigned char * const conversation_id, //CONVERSATION_ID_SIZE long (from conversation.h)
 			const size_t conversation_id_length,
@@ -637,7 +637,7 @@ cleanup:
 	 * Don't forget to destroy the return status with return_status_destroy_errors()
 	 * if an error has occurred.
 	 */
-	return_status molch_encrypt_message(
+	MOLCH_PUBLIC(return_status) molch_encrypt_message(
 			//output
 			unsigned char ** const packet, //free after use
 			size_t *packet_length,
@@ -708,7 +708,7 @@ cleanup:
 	 * Don't forget to destroy the return status with return_status_destroy_errors()
 	 * if an error has occurred.
 	 */
-	return_status molch_decrypt_message(
+	MOLCH_PUBLIC(return_status) molch_decrypt_message(
 			//outputs
 			unsigned char ** const message, //free after use
 			size_t *message_length,
@@ -777,7 +777,7 @@ cleanup:
 		return status;
 	}
 
-	return_status molch_end_conversation(
+	MOLCH_PUBLIC(return_status) molch_end_conversation(
 			//input
 			const unsigned char * const conversation_id,
 			const size_t conversation_id_length,
@@ -835,7 +835,7 @@ cleanup:
 	 * Don't forget to destroy the return status with return_status_destroy_errors()
 	 * if an error has occurred.
 	 */
-	return_status molch_list_conversations(
+	MOLCH_PUBLIC(return_status) molch_list_conversations(
 			//outputs
 			unsigned char ** const conversation_list,
 			size_t * const conversation_list_length,
@@ -908,7 +908,7 @@ cleanup:
 	 *
 	 * Don't forget to free the output after use.
 	 */
-	char *molch_print_status(size_t * const output_length, return_status status) {
+	MOLCH_PUBLIC(char*) molch_print_status(size_t * const output_length, return_status status) {
 		if (output_length == nullptr) {
 			return nullptr;
 		}
@@ -923,14 +923,14 @@ cleanup:
 	 *
 	 * (return_status.status)
 	 */
-	const char *molch_print_status_type(status_type type) {
+	MOLCH_PUBLIC(const char*) molch_print_status_type(status_type type) {
 		return return_status_get_name(type);
 	}
 
 	/*
 	 * Destroy a return status (only needs to be called if there was an error).
 	 */
-	void molch_destroy_return_status(return_status * const status) {
+	MOLCH_PUBLIC(void) molch_destroy_return_status(return_status * const status) {
 		if (status == nullptr) {
 			return;
 		}
@@ -946,7 +946,7 @@ cleanup:
 	 * Don't forget to destroy the return status with molch_destroy_return_status()
 	 * if an error has occurred.
 	 */
-	return_status molch_conversation_export(
+	MOLCH_PUBLIC(return_status) molch_conversation_export(
 			//output
 			unsigned char ** const backup,
 			size_t * const backup_length,
@@ -1057,7 +1057,7 @@ cleanup:
 	 * Don't forget to destroy the return status with molch_destroy_return_status()
 	 * if an error has occurred.
 	 */
-	return_status molch_conversation_import(
+	MOLCH_PUBLIC(return_status) molch_conversation_import(
 			//output
 			unsigned char * new_backup_key,
 			const size_t new_backup_key_length,
@@ -1159,7 +1159,7 @@ cleanup:
 	 * Don't forget to destroy the return status with molch_destroy_return_status()
 	 * if an error has occured.
 	 */
-	return_status molch_export(
+	MOLCH_PUBLIC(return_status) molch_export(
 			unsigned char ** const backup,
 			size_t *backup_length) {
 		auto status{return_status_init()};
@@ -1260,7 +1260,7 @@ cleanup:
 	 * Don't forget to destroy the return status with molch_destroy_return_status()
 	 * if an error has occured.
 	 */
-	return_status molch_import(
+	MOLCH_PUBLIC(return_status) molch_import(
 			//output
 			unsigned char * const new_backup_key, //BACKUP_KEY_SIZE, can be the same pointer as the backup key
 			const size_t new_backup_key_length,
@@ -1355,7 +1355,7 @@ cleanup:
 	 * Don't forget to destroy the return status with molch_destroy_return_status()
 	 * if an error has occured.
 	 */
-	return_status molch_get_prekey_list(
+	MOLCH_PUBLIC(return_status) molch_get_prekey_list(
 			//output
 			unsigned char ** const prekey_list,  //free after use
 			size_t * const prekey_list_length,
@@ -1398,7 +1398,7 @@ cleanup:
 	 * Don't forget to destroy the return status with molch_destroy_return_status()
 	 * if an error has occured.
 	 */
-	return_status molch_update_backup_key(
+	MOLCH_PUBLIC(return_status) molch_update_backup_key(
 			unsigned char * const new_key, //output, BACKUP_KEY_SIZE
 			const size_t new_key_length) {
 		auto status{return_status_init()};

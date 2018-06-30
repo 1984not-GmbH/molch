@@ -29,10 +29,6 @@
 
 #include "utils.hpp"
 #include "../include/molch.h"
-#include "../lib/constants.h"
-#include "../lib/destroyers.hpp"
-#include "../lib/molch-exception.hpp"
-#include "../lib/malloc.hpp"
 
 using namespace Molch;
 

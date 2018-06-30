@@ -23,13 +23,14 @@
 #define TEST_COMMON_H
 
 #include <string>
+#include "../include/molch.h"
 #include "../lib/header-and-message-keystore.hpp"
 #include "../lib/key.hpp"
 
 /*
  * Generates and prints a crypto_box keypair.
  */
-void generate_and_print_keypair(
+MOLCH_PUBLIC(void) generate_and_print_keypair(
 		Molch::PublicKey& public_key,
 		Molch::PrivateKey& private_key,
 		const std::string& name, //Name of the key owner (e.g. "Alice")

@@ -25,12 +25,13 @@
 #include <string>
 #include <memory>
 
+#include "../include/molch.h"
 #include "../lib/buffer.hpp"
 #include "../lib/gsl.hpp"
 
-void print_to_file(const gsl::span<const std::byte> data, const std::string& filename);
+MOLCH_PUBLIC(void) print_to_file(const gsl::span<const std::byte> data, const std::string& filename);
 
-void print_errors(const return_status&  status);
+MOLCH_PUBLIC(void) print_errors(const return_status&  status);
 
-Molch::Buffer read_file(const std::string& filename);
+MOLCH_PUBLIC(Molch::Buffer) read_file(const std::string& filename);
 #endif

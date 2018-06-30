@@ -22,6 +22,7 @@
 #ifndef TEST_PACKET_TEST_LIB_H
 #define TEST_PACKET_TEST_LIB_H
 
+#include "../include/molch.h"
 #include "../lib/buffer.hpp"
 
 /*!
@@ -47,7 +48,7 @@
  * \param public_prekey
  *   Optional. Prekey of the receiver. For prekey messages only.
  */
-void create_and_print_message(
+MOLCH_PUBLIC(void) create_and_print_message(
 		//output
 		Molch::Buffer& packet,
 		Molch::HeaderKey& header_key, //HEADER_KEY_SIZE

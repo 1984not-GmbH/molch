@@ -28,7 +28,6 @@
 #include "utils.hpp"
 #include "../include/molch.h"
 #include "../lib/user-store.hpp" //for PREKEY_AMOUNT
-#include "../lib/destroyers.hpp"
 #include "../lib/malloc.hpp"
 
 using namespace Molch;
