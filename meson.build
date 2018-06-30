@@ -47,6 +47,8 @@ common_flags = [
 	'-Wmissing-noreturn',
 	'-Wswitch-enum',
 	'-fvisibility=hidden',
+	'-Wno-unknown-warning-option',
+	'-Wno-tautological-constant-compare',
 ]
 
 c_flags = [
