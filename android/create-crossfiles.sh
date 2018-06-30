@@ -17,8 +17,8 @@ ld = '${PWD}/${architecture}/bin/${isa}-linux-${abi}-ld.gold'
 pkgconfig = '/usr/bin/false'
 
 [properties]
-c_link_args = ['-pie'${linker_flags}]
-cpp_link_args = ['-pie'${linker_flags}]
+c_link_args = ['-pie', '-llog'${linker_flags}]
+cpp_link_args = ['-pie', '-llog'${linker_flags}]
 c_args = [${compiler_flags}]
 cpp_args = ['-fexceptions', '-frtti', ${compiler_flags}]
 lua_bindings=false
