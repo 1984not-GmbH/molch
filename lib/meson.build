@@ -28,6 +28,7 @@ lib_sources = files(
 )
 
 gsl_include = include_directories('../gsl/include')
+outcome_include = include_directories('../outcome/include')
 molch_internals = static_library(
 	'molch_internals',
 	lib_sources,
@@ -40,6 +41,7 @@ molch_internals = static_library(
 	include_directories: [
 		c_protobufs_include,
 		gsl_include,
+		outcome_include,
 	],
 	implicit_include_directories: false,
 )
@@ -55,6 +57,7 @@ molch = library(
 		include_directories: [
 			c_protobufs_include,
 			gsl_include,
+			outcome_include,
 		],
 		implicit_include_directories: false,
 		install: true)
