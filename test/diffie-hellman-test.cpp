@@ -32,7 +32,7 @@ using namespace Molch;
 
 int main() noexcept {
 	try {
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 
 		//create Alice's keypair
 		PublicKey alice_public_key;

@@ -112,7 +112,7 @@ namespace Molch {
 		//create an ephemeral keypair
 		PublicKey sender_public_ephemeral;
 		PrivateKey sender_private_ephemeral;
-		crypto_box_keypair(sender_public_ephemeral, sender_private_ephemeral);
+		TRY_VOID(crypto_box_keypair(sender_public_ephemeral, sender_private_ephemeral));
 		sender_public_ephemeral.empty = false;
 		sender_private_ephemeral.empty = false;
 

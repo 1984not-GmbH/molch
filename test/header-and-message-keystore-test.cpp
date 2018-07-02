@@ -154,7 +154,7 @@ static void testSizeLimit() {
 
 int main() {
 	try {
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 
 		// buffers for exporting protobuf-c
 		std::vector<Buffer> protobuf_export_buffers;

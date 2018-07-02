@@ -134,7 +134,7 @@ static void protobuf_import(
 
 int main() {
 	try {
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 		//create the unspiced master keys
 		MasterKeys unspiced_master_keys;
 

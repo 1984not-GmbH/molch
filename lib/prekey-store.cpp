@@ -80,7 +80,7 @@ namespace Molch {
 		//import public key
 		if (keypair.public_key == nullptr) {
 			//public key is missing -> derive it from the private key
-			crypto_scalarmult_base(this->public_key, this->private_key);
+			TRY_VOID(crypto_scalarmult_base(this->public_key, this->private_key));
 			this->public_key.empty = false;
 		} else if (keypair.public_key->key.len != PUBLIC_KEY_SIZE) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a public key."};
@@ -119,9 +119,9 @@ namespace Molch {
 	}
 
 	void Prekey::generate() {
-		crypto_box_keypair(
+		TRY_VOID(crypto_box_keypair(
 				this->public_key,
-				this->private_key);
+				this->private_key));
 		this->public_key.empty = false;
 		this->private_key.empty = false;
 		this->expiration_date = now() + prekey_expiration_time;

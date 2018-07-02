@@ -178,11 +178,11 @@ namespace Molch {
 		Buffer encrypted_axolotl_header{
 			axolotl_header.size() + crypto_secretbox_MACBYTES,
 			axolotl_header.size() + crypto_secretbox_MACBYTES};
-		crypto_secretbox_easy(
+		TRY_VOID(crypto_secretbox_easy(
 				encrypted_axolotl_header,
 				axolotl_header,
 				header_nonce,
-				axolotl_header_key);
+				axolotl_header_key));
 
 		//add the encrypted header to the protobuf struct
 		packet_struct.has_encrypted_axolotl_header = true;
@@ -201,7 +201,8 @@ namespace Molch {
 		Buffer padded_message{message.size() + padding_amount, 0};
 		padded_message.cloneFromRaw(message);
 		padded_message.setSize(padded_message.capacity());
-		auto padded_span{sodium_pad(padded_message, message.size(), 255)};
+		TRY_WITH_RESULT(result, sodium_pad(padded_message, message.size(), 255));
+		auto padded_span{result.value()};
 		if (padded_span.size() != padded_message.size()) {
 			throw Exception{status_type::GENERIC_ERROR, "Padding doesn't have the expected size."};
 		}
@@ -210,11 +211,11 @@ namespace Molch {
 		Buffer encrypted_message{
 			padded_message.size() + crypto_secretbox_MACBYTES,
 			padded_message.size() + crypto_secretbox_MACBYTES};
-		crypto_secretbox_easy(
+		TRY_VOID(crypto_secretbox_easy(
 				encrypted_message,
 				padded_message,
 				message_nonce,
-				message_key);
+				message_key));
 
 		//add the encrypted message to the protobuf struct
 		packet_struct.has_encrypted_message = true;
@@ -321,13 +322,11 @@ namespace Molch {
 		const size_t axolotl_header_length{packet_struct->encrypted_axolotl_header.len - crypto_secretbox_MACBYTES};
 		auto axolotl_header{std::make_optional<Buffer>(axolotl_header_length, axolotl_header_length)};
 
-		try {
-			crypto_secretbox_open_easy(
-					*axolotl_header,
-					{uchar_to_byte(packet_struct->encrypted_axolotl_header.data), packet_struct->encrypted_axolotl_header.len},
-					{uchar_to_byte(packet_struct->packet_header->header_nonce.data), packet_struct->packet_header->header_nonce.len},
-					axolotl_header_key);
-		} catch (const Exception&) {
+		if (!crypto_secretbox_open_easy(
+				*axolotl_header,
+				{uchar_to_byte(packet_struct->encrypted_axolotl_header.data), packet_struct->encrypted_axolotl_header.len},
+				{uchar_to_byte(packet_struct->packet_header->header_nonce.data), packet_struct->packet_header->header_nonce.len},
+				axolotl_header_key)) {
 			return std::nullopt;
 		}
 
@@ -352,18 +351,17 @@ namespace Molch {
 		}
 		auto padded_message{std::make_optional<Buffer>(padded_message_length, padded_message_length)};
 
-		try {
-			crypto_secretbox_open_easy(
-					*padded_message,
-					{uchar_to_byte(packet_struct->encrypted_message.data), packet_struct->encrypted_message.len},
-					{uchar_to_byte(packet_struct->packet_header->message_nonce.data), packet_struct->packet_header->message_nonce.len},
-					message_key);
-		} catch (const Exception&) {
+		if (!crypto_secretbox_open_easy(
+				*padded_message,
+				{uchar_to_byte(packet_struct->encrypted_message.data), packet_struct->encrypted_message.len},
+				{uchar_to_byte(packet_struct->packet_header->message_nonce.data), packet_struct->packet_header->message_nonce.len},
+				message_key)) {
 			return std::nullopt;
 		}
 
 		//undo the padding
-		auto unpadded_span{sodium_unpad(*padded_message, padding_blocksize)};
+		TRY_WITH_RESULT(result3, sodium_unpad(*padded_message, padding_blocksize));
+		auto unpadded_span{result3.value()};
 		padded_message->setSize(unpadded_span.size());
 
 		return padded_message;

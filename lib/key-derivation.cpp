@@ -62,10 +62,10 @@ namespace Molch {
 
 		//key to derive from
 		//HMAC-HASH(RK, DH(..., ...))
-		crypto_generichash(
+		TRY_VOID(crypto_generichash(
 				derivation_key,
 				diffie_hellman_secret,
-				previous_root_key);
+				previous_root_key));
 		derivation_key.empty = false;
 
 		//now derive the different keys from the derivation key

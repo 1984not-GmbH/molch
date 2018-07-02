@@ -118,9 +118,9 @@ namespace Molch {
 			MessageKey& message_key) { //MESSAGE_KEY_SIZE, MK
 		if (this->ratchet_flag) {
 			//DHRs = generateECDH()
-			crypto_box_keypair(
+			TRY_VOID(crypto_box_keypair(
 					this->storage->our_public_ephemeral,
-					this->storage->our_private_ephemeral);
+					this->storage->our_private_ephemeral));
 			this->storage->our_public_ephemeral.empty = false;
 			this->storage->our_private_ephemeral.empty = false;
 

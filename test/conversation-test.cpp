@@ -64,7 +64,7 @@ static std::unique_ptr<Molch::Conversation> protobuf_import(Arena& pool, const B
 
 int main() noexcept {
 	try {
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 
 		//creating charlie's identity keypair
 		PrivateKey charlie_private_identity;

@@ -63,7 +63,7 @@ static std::unique_ptr<Ratchet> protobuf_import(Arena& pool, const Buffer& expor
 
 int main() {
 	try {
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 
 		//creating Alice's identity keypair
 		PublicKey alice_public_identity;

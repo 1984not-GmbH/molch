@@ -33,7 +33,7 @@ using namespace Molch;
 
 int main() {
 	try {
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 
 		Molch::Key<50,Molch::KeyType::Key> master_key;
 		master_key.fillRandom();

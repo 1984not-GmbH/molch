@@ -92,7 +92,7 @@ static void protobuf_empty_store() {
 
 int main() {
 	try {
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 
 		//create a user_store
 		UserStore store;

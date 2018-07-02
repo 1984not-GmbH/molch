@@ -45,23 +45,24 @@ namespace Molch {
 		Key<crypto_scalarmult_SCALARBYTES,KeyType::Key> dh_secret;
 
 		//do the diffie hellman key exchange
-		crypto_scalarmult(dh_secret, our_private_key, their_public_key);
+		TRY_VOID(crypto_scalarmult(dh_secret, our_private_key, their_public_key));
 		dh_secret.empty = false;
 
 		//initialize hashing
-		CryptoGenerichash hash{{nullptr, static_cast<size_t>(0)}, DIFFIE_HELLMAN_SIZE};
-		hash.update(dh_secret);
+		TRY_WITH_RESULT(result, CryptoGenerichash::construct({nullptr, static_cast<size_t>(0)}, DIFFIE_HELLMAN_SIZE));
+		auto hash{result.value()};
+		TRY_VOID(hash.update(dh_secret));
 
 		//add public keys to the input of the hash
 		switch (role) {
 			case Ratchet::Role::ALICE: //Alice (our_public_key|their_public_key)
-				hash.update(our_public_key);
-				hash.update(their_public_key);
+				TRY_VOID(hash.update(our_public_key));
+				TRY_VOID(hash.update(their_public_key));
 				break;
 
 			case Ratchet::Role::BOB: //Bob (their_public_key|our_public_key)
-				hash.update(their_public_key);
-				hash.update(our_public_key);
+				TRY_VOID(hash.update(their_public_key));
+				TRY_VOID(hash.update(our_public_key));
 				break;
 
 			default:
@@ -69,7 +70,7 @@ namespace Molch {
 		}
 
 		//finally write the hash to derived_key
-		hash.final(derived_key);
+		TRY_VOID(hash.final(derived_key));
 		derived_key.empty = false;
 	}
 
@@ -145,11 +146,12 @@ namespace Molch {
 
 		//now calculate HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0))
 		//( HASH(dh1|| dh2 || dh3) )
-		CryptoGenerichash hash{{nullptr, static_cast<size_t>(0)}, DIFFIE_HELLMAN_SIZE};
-		hash.update(dh1);
-		hash.update(dh2);
-		hash.update(dh3);
-		hash.final(derived_key);
+		TRY_WITH_RESULT(result, CryptoGenerichash::construct({nullptr, static_cast<size_t>(0)}, DIFFIE_HELLMAN_SIZE));
+		auto hash{result.value()};
+		TRY_VOID(hash.update(dh1));
+		TRY_VOID(hash.update(dh2));
+		TRY_VOID(hash.update(dh3));
+		TRY_VOID(hash.final(derived_key));
 		derived_key.empty = false;
 	}
 }

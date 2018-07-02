@@ -34,7 +34,7 @@ using namespace Molch;
 
 int main() {
 	try {
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 
 		//generate keys and message
 		Buffer message{"Hello world!\n"};

@@ -194,12 +194,9 @@ namespace Molch {
 			if (this->buffer_length == 0) {
 				return;
 			}
-			try {
-				sodium_memzero(*this);
-				this->content_length = 0;
-			} catch (...) {
-				std::terminate();
-			}
+
+			sodium_memzero(*this);
+			this->content_length = 0;
 		}
 
 		/*
@@ -274,9 +271,8 @@ namespace Molch {
 				}
 			}
 
-			bool comparison{sodium_memcmp({this->content + position1, comparison_length}, {array.data() + position2, comparison_length})};
-
-			if (comparison) {
+			TRY_WITH_RESULT(result, sodium_memcmp({this->content + position1, comparison_length}, {array.data() + position2, comparison_length}));
+			if (result.value()) {
 				return 0;
 			}
 
@@ -415,7 +411,7 @@ namespace Molch {
 			//buffer for the hex string
 			const size_t hex_length{this->content_length * 2 + sizeof("")};
 			auto hex{std::make_unique<char[]>(hex_length)};
-			sodium_bin2hex({hex.get(), hex_length}, *this);
+			TRY_VOID(sodium_bin2hex({hex.get(), hex_length}, *this));
 
 			for (size_t i{0}; i < hex_length; i++) {
 				if ((width != 0) && ((i % width) == 0) && (i != 0)) {
@@ -439,11 +435,7 @@ namespace Molch {
 		}
 
 		bool isNone() const noexcept {
-			try {
-				return (this->content_length == 0) || sodium_is_zero(*this);
-			} catch (...) {
-				std::terminate();
-			}
+			return (this->content_length == 0) || sodium_is_zero(*this);
 		}
 
 		size_t capacity() const noexcept {

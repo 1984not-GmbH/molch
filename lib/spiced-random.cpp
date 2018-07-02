@@ -47,13 +47,13 @@ namespace Molch {
 
 		//derive random data from the random spice
 		SodiumBuffer spice{output.size(), output.size()};
-		crypto_pwhash(
+		TRY_VOID(crypto_pwhash(
 				spice,
 				low_entropy_spice,
 				salt,
 				crypto_pwhash_OPSLIMIT_INTERACTIVE,
 				crypto_pwhash_MEMLIMIT_INTERACTIVE,
-				crypto_pwhash_ALG_DEFAULT);
+				crypto_pwhash_ALG_DEFAULT));
 
 		//now combine the spice with the OS provided random data.
 		auto spice_iterator{std::cbegin(spice)};

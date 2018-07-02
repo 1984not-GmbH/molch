@@ -26,6 +26,7 @@
 #include <memory>
 #include <limits>
 
+#include "result.hpp"
 #include "gsl.hpp"
 #include "constants.h"
 
@@ -89,90 +90,93 @@ namespace Molch {
 		}
 	};
 
-	void sodium_init();
+	result<void> sodium_init() noexcept;
 
-	void crypto_box_keypair(const span<std::byte> public_key, const span<std::byte> private_key);
-	void crypto_box_seed_keypair(const span<std::byte> public_key, const span<std::byte> private_key, const span<const std::byte> seed);
+	result<void> crypto_box_keypair(const span<std::byte> public_key, const span<std::byte> private_key) noexcept;
+	result<void> crypto_box_seed_keypair(const span<std::byte> public_key, const span<std::byte> private_key, const span<const std::byte> seed) noexcept;
 
-	void crypto_sign_keypair(const span<std::byte> public_key, const span<std::byte> private_key);
-	void crypto_sign_seed_keypair(const span<std::byte> public_key, const span<std::byte> private_key, const span<const std::byte> seed);
+	result<void> crypto_sign_keypair(const span<std::byte> public_key, const span<std::byte> private_key) noexcept;
+	result<void> crypto_sign_seed_keypair(const span<std::byte> public_key, const span<std::byte> private_key, const span<const std::byte> seed) noexcept;
 
-	void crypto_generichash(const span<std::byte> output, const span<const std::byte> input, const span<const std::byte> key);
+	result<void> crypto_generichash(const span<std::byte> output, const span<const std::byte> input, const span<const std::byte> key) noexcept;
 
 	struct CryptoGenerichash {
 		crypto_generichash_state state;
 		const size_t output_length;
 
-		CryptoGenerichash(const span<const std::byte> key, size_t output_length);
+		static result<CryptoGenerichash> construct(const span<const std::byte> key, const size_t output_length);
 
-		void update(const span<const std::byte> input);
-		void final(const span<std::byte> output);
+		result<void> update(const span<const std::byte> input);
+		result<void> final(const span<std::byte> output);
 
-		~CryptoGenerichash();
+		~CryptoGenerichash() noexcept;
+
+	private:
+		CryptoGenerichash(const crypto_generichash_state state, const size_t output_length) noexcept;
 	};
 
-	void crypto_generichash_blake2b_salt_personal(
+	result<void> crypto_generichash_blake2b_salt_personal(
 			const span<std::byte> output,
 			const span<const std::byte> input,
 			const span<const std::byte> key,
 			const span<const std::byte> salt,
-			const span<const std::byte> personal);
+			const span<const std::byte> personal) noexcept;
 
-	void randombytes_buf(const span<std::byte> buffer);
+	void randombytes_buf(const span<std::byte> buffer) noexcept;
 
-	void crypto_pwhash(
+	result<void> crypto_pwhash(
 			const span<std::byte> output,
 			const span<const std::byte> password,
 			const span<const std::byte> salt,
 			unsigned long long opslimit,
 			size_t memlimit,
-			int algorithm);
+			int algorithm) noexcept;
 
 	//TODO find out how to use PublicKey and PrivateKey as parameters here
-	void crypto_scalarmult_base(const span<std::byte> public_key, const span<const std::byte> private_key);
+	result<void> crypto_scalarmult_base(const span<std::byte> public_key, const span<const std::byte> private_key) noexcept;
 
-	void crypto_scalarmult(
+	result<void> crypto_scalarmult(
 			const span<std::byte> shared_secret,
 			const span<const std::byte> our_private_key,
-			const span<const std::byte> their_public_key);
+			const span<const std::byte> their_public_key) noexcept;
 
-	bool sodium_is_zero(const span<const std::byte> buffer);
+	bool sodium_is_zero(const span<const std::byte> buffer) noexcept;
 
-	bool sodium_memcmp(const span<const std::byte> b1, const span<const std::byte> b2);
-	int sodium_compare(const span<const std::byte> b1, const span<const std::byte> b2);
+	result<bool> sodium_memcmp(const span<const std::byte> b1, const span<const std::byte> b2) noexcept;
+	result<int> sodium_compare(const span<const std::byte> b1, const span<const std::byte> b2) noexcept;
 
-	void sodium_memzero(const span<std::byte> buffer);
+	void sodium_memzero(const span<std::byte> buffer) noexcept;
 
-	void sodium_bin2hex(const span<char> hex, const span<const std::byte> bin);
+	result<void> sodium_bin2hex(const span<char> hex, const span<const std::byte> bin) noexcept;
 
-	void crypto_secretbox_easy(
+	result<void> crypto_secretbox_easy(
 			const span<std::byte> ciphertext,
 			const span<const std::byte> message,
 			const span<const std::byte> nonce,
-			const span<const std::byte> key);
+			const span<const std::byte> key) noexcept;
 
-	void crypto_secretbox_open_easy(
+	result<void> crypto_secretbox_open_easy(
 			const span<std::byte> message,
 			const span<const std::byte> ciphertext,
 			const span<const std::byte> nonce,
-			const span<const std::byte> key);
+			const span<const std::byte> key) noexcept;
 
-	void crypto_sign(
+	result<void> crypto_sign(
 			const span<std::byte> signed_message,
 			const span<const std::byte> message,
-			const span<const std::byte> signing_key);
+			const span<const std::byte> signing_key) noexcept;
 
-	void crypto_sign_open(
+	result<void> crypto_sign_open(
 			const span<std::byte> verified_message,
 			const span<const std::byte> signed_message,
-			const span<const std::byte> signing_key);
+			const span<const std::byte> signing_key) noexcept;
 
-	void sodium_mprotect_noaccess(void *pointer);
-	void sodium_mprotect_readonly(void *pointer);
-	void sodium_mprotect_readwrite(void *pointer);
+	result<void> sodium_mprotect_noaccess(void *pointer) noexcept;
+	result<void> sodium_mprotect_readonly(void *pointer) noexcept;
+	result<void> sodium_mprotect_readwrite(void *pointer) noexcept;
 
-	span<std::byte> sodium_pad(span<std::byte> buffer, const size_t unpadded_length, size_t blocksize);
-	span<std::byte> sodium_unpad(span<std::byte> buffer, const size_t blocksize);
+	result<span<std::byte>> sodium_pad(span<std::byte> buffer, const size_t unpadded_length, size_t blocksize) noexcept;
+	result<span<std::byte>> sodium_unpad(span<std::byte> buffer, const size_t blocksize) noexcept;
 }
 
 #endif /* LIB_SODIUM_WRAPPERS_H */

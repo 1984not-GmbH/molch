@@ -99,14 +99,14 @@ namespace Molch {
 		ReadWriteUnlocker unlocker{*this};
 
 		//generate the signing keypair
-		crypto_sign_keypair(
+		TRY_VOID(crypto_sign_keypair(
 				this->public_signing_key,
-				*this->private_signing_key);
+				*this->private_signing_key));
 		this->public_signing_key.empty = false;
 		this->private_signing_key->empty = false;
 
 		//generate the identity keypair
-		crypto_box_keypair(this->public_identity_key, *this->private_identity_key);
+		TRY_VOID(crypto_box_keypair(this->public_identity_key, *this->private_identity_key));
 		this->public_identity_key.empty = false;
 		this->private_identity_key->empty = false;
 	}
@@ -122,18 +122,18 @@ namespace Molch {
 		spiced_random(high_entropy_seed, low_entropy_seed);
 
 		//generate the signing keypair
-		crypto_sign_seed_keypair(
+		TRY_VOID(crypto_sign_seed_keypair(
 				this->public_signing_key,
 				*this->private_signing_key,
-				span<std::byte>(high_entropy_seed).subspan(0, crypto_sign_SEEDBYTES));
+				span<std::byte>(high_entropy_seed).subspan(0, crypto_sign_SEEDBYTES)));
 		this->public_signing_key.empty = false;
 		this->private_signing_key->empty = false;
 
 		//generate the identity keypair
-		crypto_box_seed_keypair(
+		TRY_VOID(crypto_box_seed_keypair(
 				this->public_identity_key,
 				*this->private_identity_key,
-				span<const std::byte>{high_entropy_seed}.subspan(crypto_sign_SEEDBYTES));
+				span<const std::byte>{high_entropy_seed}.subspan(crypto_sign_SEEDBYTES)));
 		this->public_identity_key.empty = false;
 		this->private_identity_key->empty = false;
 	}
@@ -171,10 +171,10 @@ namespace Molch {
 		Expects(signed_data.size() == (data.size() + SIGNATURE_SIZE));
 
 		Unlocker unlocker{*this};
-		crypto_sign(
+		TRY_VOID(crypto_sign(
 				signed_data,
 				data,
-				*this->private_signing_key);
+				*this->private_signing_key));
 	}
 
 	void MasterKeys::exportProtobuf(
@@ -192,15 +192,15 @@ namespace Molch {
 	}
 
 	void MasterKeys::lock() const {
-		sodium_mprotect_noaccess(this->private_keys.get());
+		TRY_VOID(sodium_mprotect_noaccess(this->private_keys.get()));
 	}
 
 	void MasterKeys::unlock() const {
-		sodium_mprotect_readonly(this->private_keys.get());
+		TRY_VOID(sodium_mprotect_readonly(this->private_keys.get()));
 	}
 
 	void MasterKeys::unlock_readwrite() const {
-		sodium_mprotect_readwrite(this->private_keys.get());
+		TRY_VOID(sodium_mprotect_readwrite(this->private_keys.get()));
 	}
 
 	std::ostream& MasterKeys::print(std::ostream& stream) const {

@@ -130,7 +130,7 @@ static void protobuf_no_deprecated_keys() {
 
 int main() {
 	try {
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 
 		auto store{std::make_unique<PrekeyStore>()};
 		Buffer prekey_list{PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE};

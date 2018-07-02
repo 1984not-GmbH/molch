@@ -38,7 +38,7 @@ MOLCH_PUBLIC(void) generate_and_print_keypair(
 		const std::string& name, //Name of the key owner (e.g. "Alice")
 		const std::string& type) { //type of the key (e.g. "ephemeral")
 	//generate keypair
-	crypto_box_keypair(public_key, private_key);
+	TRY_VOID(crypto_box_keypair(public_key, private_key));
 	public_key.empty = false;
 	private_key.empty = false;
 

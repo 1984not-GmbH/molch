@@ -32,7 +32,7 @@ using namespace Molch;
 
 int main() noexcept {
 	try {
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 
 		//some random user input (idiot bashing his head on the keyboard)
 		Buffer spice{"aaeipoewur+ue 093+2ss3+2ue+ ss09234rt #2ss 0iw4eraep9ui23+ 03943"};

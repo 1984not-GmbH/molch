@@ -123,7 +123,8 @@ namespace Molch {
 		int compare(const Key& key) const {
 			Expects(!this->empty && !key.empty);
 
-			return sodium_compare(*this, key);
+			TRY_WITH_RESULT(result, sodium_compare(*this, key));
+			return result.value();
 		}
 
 		//comparison operators
@@ -177,12 +178,12 @@ namespace Molch {
 			static_assert(sizeof(personal) == crypto_generichash_blake2b_PERSONALBYTES, "personal string is not crypto_generichash_blake2b_PERSONALBYTES long");
 
 			//set length of output
-			crypto_generichash_blake2b_salt_personal(
+			TRY_VOID(crypto_generichash_blake2b_salt_personal(
 					derived_key,
 					{nullptr, static_cast<size_t>(0)}, //input
 					*this,
 					salt,
-					{uchar_to_byte(personal), sizeof(personal)});
+					{uchar_to_byte(personal), sizeof(personal)}));
 
 			derived_key.empty = false;
 		}
@@ -193,7 +194,7 @@ namespace Molch {
 		}
 
 		//TODO get rid of this
-		bool isNone() const {
+		bool isNone() const noexcept {
 			if (this->empty) {
 				return true;
 			}
@@ -217,12 +218,8 @@ namespace Molch {
 		}
 
 		void clear() noexcept {
-			try {
-				sodium_memzero(*this);
-				this->empty = true;
-			} catch (...) {
-				std::terminate();
-			}
+			sodium_memzero(*this);
+			this->empty = true;
 		}
 
 		ProtobufCKey* exportProtobuf(Arena& arena) const {
@@ -248,7 +245,7 @@ namespace Molch {
 
 			const size_t hex_length{this->size() * 2 + sizeof("")};
 			auto hex{std::make_unique<char[]>(hex_length)};
-			sodium_bin2hex({hex.get(), hex_length}, *this);
+			TRY_VOID(sodium_bin2hex({hex.get(), hex_length}, *this));
 
 			for (size_t i{0}; i < hex_length; i++) {
 				if ((width != 0) && ((i % width) == 0) && (i != 0)) {

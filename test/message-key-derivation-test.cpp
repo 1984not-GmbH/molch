@@ -33,7 +33,7 @@ using namespace Molch;
 
 int main() {
 	try {
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 
 		//create random chain key
 		ChainKey chain_key;

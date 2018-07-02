@@ -34,7 +34,7 @@ using namespace Molch;
 
 int main() {
 	try {
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 
 		//generate message
 		molch_message_type packet_type{molch_message_type::NORMAL_MESSAGE};

@@ -52,7 +52,7 @@ public:
 		if (!global_backup_key) {
 			throw Exception{status_type::GENERIC_ERROR, "No backup key to unlock!"};
 		}
-		Molch::sodium_mprotect_readonly(global_backup_key.get());
+		TRY_VOID(Molch::sodium_mprotect_readonly(global_backup_key.get()));
 	}
 
 	GlobalBackupKeyUnlocker(const GlobalBackupKeyUnlocker&) = default;
@@ -62,7 +62,7 @@ public:
 
 	~GlobalBackupKeyUnlocker() {
 		try {
-			Molch::sodium_mprotect_noaccess(global_backup_key.get());
+			TRY_VOID(Molch::sodium_mprotect_noaccess(global_backup_key.get()));
 		} catch (...) {
 			std::terminate();
 		}
@@ -75,7 +75,7 @@ public:
 		if (!global_backup_key) {
 			throw Exception{status_type::GENERIC_ERROR, "No backup key to unlock!"};
 		}
-		Molch::sodium_mprotect_readwrite(global_backup_key.get());
+		TRY_VOID(Molch::sodium_mprotect_readwrite(global_backup_key.get()));
 	}
 
 	GlobalBackupKeyWriteUnlocker(const GlobalBackupKeyWriteUnlocker&) = default;
@@ -85,7 +85,7 @@ public:
 
 	~GlobalBackupKeyWriteUnlocker() {
 		try {
-			Molch::sodium_mprotect_noaccess(global_backup_key.get());
+			TRY_VOID(Molch::sodium_mprotect_noaccess(global_backup_key.get()));
 		} catch (...) {
 			std::terminate();
 		}
@@ -187,7 +187,7 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 
 		//initialise libsodium and create user store
 		if (!users) {
-			Molch::sodium_init();
+			TRY_VOID(Molch::sodium_init());
 			users = std::make_unique<UserStore>();
 		}
 
@@ -396,10 +396,10 @@ static void verify_prekey_list(
 		PublicSigningKey& public_signing_key) {
 	//verify the signature
 	Buffer verified_prekey_list{prekey_list.size() - SIGNATURE_SIZE, prekey_list.size() - SIGNATURE_SIZE};
-	crypto_sign_open(
+	TRY_VOID(crypto_sign_open(
 			verified_prekey_list,
 			prekey_list,
-			public_signing_key);
+			public_signing_key));
 
 	//get the expiration date
 	int64_t expiration_date;
@@ -1279,7 +1279,7 @@ cleanup:
 					&& (new_backup_key_length == BACKUP_KEY_SIZE));
 
 			if (!users) {
-				Molch::sodium_init();
+				TRY_VOID(Molch::sodium_init());
 			}
 
 			//unpack the encrypted backup
@@ -1407,7 +1407,7 @@ cleanup:
 			Expects((new_key != nullptr) && (new_key_length == BACKUP_KEY_SIZE));
 
 			if (!users) {
-				Molch::sodium_init();
+				TRY_VOID(Molch::sodium_init());
 				users = std::make_unique<UserStore>();
 			}
 

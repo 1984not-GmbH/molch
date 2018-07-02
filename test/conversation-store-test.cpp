@@ -73,13 +73,13 @@ static ConversationStore protobuf_import(Arena& pool, const std::vector<Buffer> 
 static void test_add_conversation(ConversationStore& store) {
 	PrivateKey our_private_identity;
 	PublicKey our_public_identity;
-	crypto_box_keypair(our_public_identity, our_private_identity);
+	TRY_VOID(crypto_box_keypair(our_public_identity, our_private_identity));
 	our_private_identity.empty = false;
 	our_public_identity.empty = false;
 
 	PrivateKey our_private_ephemeral;
 	PublicKey our_public_ephemeral;
-	crypto_box_keypair(our_public_ephemeral, our_private_ephemeral);
+	TRY_VOID(crypto_box_keypair(our_public_ephemeral, our_private_ephemeral));
 	our_private_ephemeral.empty = false;
 	our_public_ephemeral.empty = false;
 
@@ -124,7 +124,7 @@ static void protobuf_empty_store() {
 
 int main() {
 	try {
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 
 		// list an empty conversation store
 		ConversationStore store;

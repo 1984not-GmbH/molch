@@ -127,7 +127,7 @@ static span<std::byte> decrypt_full_backup(
 
 int main() {
 	try {
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 
 		//mustn't crash here!
 		molch_destroy_all_users();

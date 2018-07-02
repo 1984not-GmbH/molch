@@ -32,7 +32,7 @@ using namespace Molch;
 
 int main() {
 	try {
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 
 		Buffer string1{"1234"};
 		Buffer string2{"1234"};

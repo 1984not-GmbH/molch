@@ -41,7 +41,7 @@ int main(int argc, char *args[]) noexcept {
 			}
 		}
 
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 
 		unsigned char backup_key[BACKUP_KEY_SIZE];
 		if (!recreate) {

@@ -32,14 +32,14 @@
 using namespace Molch;
 
 static void keypair(PrivateKey& private_key, PublicKey& public_key) {
-	crypto_box_keypair(public_key, private_key);
+	TRY_VOID(crypto_box_keypair(public_key, private_key));
 	private_key.empty = false;
 	public_key.empty = false;
 }
 
 int main() {
 	try {
-		Molch::sodium_init();
+		TRY_VOID(Molch::sodium_init());
 
 		//generate the keys
 		//Alice:
