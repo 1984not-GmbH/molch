@@ -49,6 +49,7 @@ common_flags = [
 	'-fvisibility=hidden',
 	'-Wno-unknown-warning-option',
 	'-Wno-tautological-constant-compare',
+	'-Wno-pragmas',
 ]
 
 c_flags = [
