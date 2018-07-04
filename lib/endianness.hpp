@@ -38,7 +38,7 @@ namespace Molch {
 	/*
 	 * Determine the current endianness at runtime.
 	 */
-	static bool endianness_is_little_endian() {
+	static bool endianness_is_little_endian() noexcept {
 		const uint16_t number{0x1};
 		const auto* const number_pointer{reinterpret_cast<const unsigned char*>(&number)};
 		return (number_pointer[0] == 0x1);
@@ -48,8 +48,8 @@ namespace Molch {
 	 * Convert any integer type to a buffer in big endian format.
 	 */
 	template <typename IntegerType>
-	void to_big_endian(IntegerType integer, span<std::byte> output) {
-		Expects(output.size() == sizeof(IntegerType));
+	result<void> to_big_endian(IntegerType integer, span<std::byte> output) noexcept {
+		FulfillOrFail(output.size() == sizeof(IntegerType));
 
 		//uses unsigned char instead of std::byte because of the aliasing rules
 		auto& reference{reinterpret_cast<unsigned char&>(integer)};
@@ -59,14 +59,16 @@ namespace Molch {
 		}
 
 		std::copy(&reference, &reference + sizeof(integer), reinterpret_cast<unsigned char*>(output.data()));
+
+		return outcome::success();
 	}
 
 	/*
 	 * Get an integer from a buffer in big endian format.
 	 */
 	template <typename IntegerType>
-	void from_big_endian(IntegerType& integer, const span<const std::byte> input) {
-		Expects(input.size() == sizeof(IntegerType));
+	result<void> from_big_endian(IntegerType& integer, const span<const std::byte> input) noexcept {
+		FulfillOrFail(input.size() == sizeof(IntegerType));
 
 		//uses unsigned char instead of std::byte because of the aliasing rules
 		auto& reference{reinterpret_cast<unsigned char&>(integer)};
@@ -76,6 +78,8 @@ namespace Molch {
 		if (endianness_is_little_endian()) {
 			std::reverse(&reference, &reference + sizeof(IntegerType));
 		}
+
+		return outcome::success();
 	}
 }
 

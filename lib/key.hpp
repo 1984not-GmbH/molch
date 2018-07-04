@@ -172,7 +172,7 @@ namespace Molch {
 			salt.empty = false;
 
 			//fill the salt with a big endian representation of the subkey counter
-			to_big_endian(subkey_counter, {salt.data()+ salt.size() - sizeof(uint32_t), sizeof(uint32_t)});
+			TRY_VOID(to_big_endian(subkey_counter, {salt.data()+ salt.size() - sizeof(uint32_t), sizeof(uint32_t)}));
 
 			const unsigned char personal[]{"molch_cryptolib"};
 			static_assert(sizeof(personal) == crypto_generichash_blake2b_PERSONALBYTES, "personal string is not crypto_generichash_blake2b_PERSONALBYTES long");

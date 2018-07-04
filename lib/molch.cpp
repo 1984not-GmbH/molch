@@ -130,7 +130,7 @@ static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_ke
 	//add the expiration date
 	int64_t expiration_date{now().count() + seconds{3_months}.count()};
 	span<std::byte> big_endian_expiration_date{&unsigned_prekey_list[PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE], sizeof(int64_t)};
-	to_big_endian(expiration_date, big_endian_expiration_date);
+	TRY_VOID(to_big_endian(expiration_date, big_endian_expiration_date));
 
 	//sign the prekey list with the current identity key
 	MallocBuffer prekey_list{
@@ -402,9 +402,9 @@ static void verify_prekey_list(
 			public_signing_key));
 
 	//get the expiration date
-	int64_t expiration_date;
+	int64_t expiration_date{0};
 	span<std::byte> big_endian_expiration_date{&verified_prekey_list[PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE], sizeof(int64_t)};
-	from_big_endian(expiration_date, big_endian_expiration_date);
+	TRY_VOID(from_big_endian(expiration_date, big_endian_expiration_date));
 
 	//make sure the prekey list isn't too old
 	int64_t current_time{now().count()};
