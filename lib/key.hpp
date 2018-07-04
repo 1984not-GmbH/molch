@@ -72,11 +72,7 @@ namespace Molch {
 				return *this;
 			}
 
-			for (size_t i{0}; i < length; ++i) {
-				(*this)[i] = key[i];
-			}
-
-			return *this;
+			return this->copy(key);
 		}
 
 	public:
