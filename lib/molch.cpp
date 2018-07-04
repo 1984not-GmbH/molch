@@ -121,7 +121,7 @@ static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_ke
 	MallocBuffer unsigned_prekey_list{
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t),
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t)};
-	unsigned_prekey_list.copyFromRaw(0, user->masterKeys().getIdentityKey().data(), 0, PUBLIC_KEY_SIZE);
+	TRY_VOID(unsigned_prekey_list.copyFromRaw(0, user->masterKeys().getIdentityKey().data(), 0, PUBLIC_KEY_SIZE));
 
 	//get the prekeys
 	span<std::byte> prekeys{&unsigned_prekey_list[PUBLIC_KEY_SIZE], PREKEY_AMOUNT * PUBLIC_KEY_SIZE};
@@ -413,7 +413,7 @@ static void verify_prekey_list(
 	}
 
 	//copy the public identity key
-	verified_prekey_list.copyToRaw(public_identity_key.data(), 0, 0, PUBLIC_KEY_SIZE);
+	TRY_VOID(verified_prekey_list.copyToRaw(public_identity_key.data(), 0, 0, PUBLIC_KEY_SIZE));
 	public_identity_key.empty = false;
 }
 
@@ -500,7 +500,7 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 
 		//copy the packet to a malloced buffer output
 		MallocBuffer malloced_packet{packet_buffer.size(), 0};
-		malloced_packet.cloneFrom(packet_buffer);
+		TRY_VOID(malloced_packet.cloneFrom(packet_buffer));
 
 		if (backup != nullptr) {
 			*backup = nullptr;
@@ -603,7 +603,7 @@ cleanup:
 
 			//copy the message
 			MallocBuffer malloced_message{message_buffer.size(), 0};
-			malloced_message.cloneFrom(message_buffer);
+			TRY_VOID(malloced_message.cloneFrom(message_buffer));
 
 			if (backup != nullptr) {
 				*backup = nullptr;
@@ -677,7 +677,7 @@ cleanup:
 
 			//copy the packet content
 			MallocBuffer malloced_packet{packet_buffer.size(), 0};
-			malloced_packet.cloneFrom(packet_buffer);
+			TRY_VOID(malloced_packet.cloneFrom(packet_buffer));
 
 			if (conversation_backup != nullptr) {
 				*conversation_backup = nullptr;
@@ -752,7 +752,7 @@ cleanup:
 
 			//copy the message
 			MallocBuffer malloced_message{message_buffer.size(), 0};
-			malloced_message.cloneFrom(message_buffer);
+			TRY_VOID(malloced_message.cloneFrom(message_buffer));
 
 			if (conversation_backup != nullptr) {
 				*conversation_backup = nullptr;
@@ -878,7 +878,7 @@ cleanup:
 
 				//allocate the conversation list output and copy it over
 				MallocBuffer malloced_conversation_list{conversation_list_buffer.size(), 0};
-				malloced_conversation_list.cloneFrom(conversation_list_buffer);
+				TRY_VOID(malloced_conversation_list.cloneFrom(conversation_list_buffer));
 				*conversation_list_length = malloced_conversation_list.size();
 				*conversation_list = byte_to_uchar(malloced_conversation_list.release());
 			}
@@ -989,7 +989,7 @@ cleanup:
 
 			//generate the nonce
 			Buffer backup_nonce{BACKUP_NONCE_SIZE, 0};
-			backup_nonce.fillRandom(BACKUP_NONCE_SIZE);
+			TRY_VOID(backup_nonce.fillRandom(BACKUP_NONCE_SIZE));
 
 			//allocate the output
 			Buffer backup_buffer{conversation_size + crypto_secretbox_MACBYTES, conversation_size + crypto_secretbox_MACBYTES};
@@ -1003,7 +1003,7 @@ cleanup:
 					byte_to_uchar(backup_nonce.data()),
 					byte_to_uchar(global_backup_key->data()))};
 			if (status != 0) {
-				backup_buffer.setSize(0);
+				TRY_VOID(backup_buffer.setSize(0));
 				throw Exception{status_type::ENCRYPT_ERROR, "Failed to enrypt conversation state."};
 			}
 
@@ -1024,7 +1024,7 @@ cleanup:
 			//now pack the entire backup
 			const auto encrypted_backup_size{molch__protobuf__encrypted_backup__get_packed_size(&encrypted_backup_struct)};
 			MallocBuffer malloced_encrypted_backup{encrypted_backup_size, 0};
-			malloced_encrypted_backup.setSize(molch__protobuf__encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data())));
+			TRY_VOID(malloced_encrypted_backup.setSize(molch__protobuf__encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data()))));
 			if (malloced_encrypted_backup.size() != encrypted_backup_size) {
 				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation."};
 			}
@@ -1189,7 +1189,7 @@ cleanup:
 
 			//generate the nonce
 			Buffer backup_nonce{BACKUP_NONCE_SIZE, 0};
-			backup_nonce.fillRandom(BACKUP_NONCE_SIZE);
+			TRY_VOID(backup_nonce.fillRandom(BACKUP_NONCE_SIZE));
 
 			//allocate the output
 			Buffer backup_buffer{backup_struct_size + crypto_secretbox_MACBYTES, backup_struct_size + crypto_secretbox_MACBYTES};
@@ -1224,7 +1224,7 @@ cleanup:
 			//now pack the entire backup
 			const auto encrypted_backup_size{molch__protobuf__encrypted_backup__get_packed_size(&encrypted_backup_struct)};
 			MallocBuffer malloced_encrypted_backup{encrypted_backup_size, 0};
-			malloced_encrypted_backup.setSize(molch__protobuf__encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data())));
+			TRY_VOID(malloced_encrypted_backup.setSize(molch__protobuf__encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data()))));
 			if (malloced_encrypted_backup.size() != encrypted_backup_size) {
 				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation."};
 			}
@@ -1378,7 +1378,7 @@ cleanup:
 					PUBLIC_MASTER_KEY_SIZE});
 			auto prekey_list_buffer{create_prekey_list(public_signing_key_key)};
 			MallocBuffer malloced_prekey_list{prekey_list_buffer.size(), 0};
-			malloced_prekey_list.cloneFrom(prekey_list_buffer);
+			TRY_VOID(malloced_prekey_list.cloneFrom(prekey_list_buffer));
 			*prekey_list_length = malloced_prekey_list.size();
 			*prekey_list = byte_to_uchar(malloced_prekey_list.release());
 		} catch (const Exception& exception) {

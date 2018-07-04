@@ -67,7 +67,7 @@ int main() {
 		auto decrypted_message{packet_decrypt_message(packet, message_key)};
 
 		//check the message size
-		if (!decrypted_message.value().contains(message.size())) {
+		if (decrypted_message.value().size() != message.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message length isn't the same."};
 		}
 		printf("Decrypted message length is the same.\n");
@@ -124,7 +124,7 @@ int main() {
 		decrypted_message = packet_decrypt_message(packet, message_key);
 
 		//check the message size
-		if (!decrypted_message.value().contains(message.size())) {
+		if (decrypted_message.value().size() != message.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message length isn't the same."};
 		}
 		printf("Decrypted message length is the same.\n");

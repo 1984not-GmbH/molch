@@ -24,10 +24,10 @@
 #include <cstdlib>
 #include <ostream>
 #include <memory>
-#include <exception>
 #include <sodium.h>
 #include <algorithm>
 #include <iterator>
+#include <stdexcept>
 
 #include "gsl.hpp"
 #include "exception.hpp"
@@ -60,7 +60,7 @@ namespace Molch {
 		}
 
 		/* implementation of move construction and assignment */
-		BaseBuffer& move(BaseBuffer&& buffer) {
+		BaseBuffer& move(BaseBuffer&& buffer) noexcept {
 			this->destruct();
 
 			//move the buffer over
@@ -79,7 +79,7 @@ namespace Molch {
 		/*
 		 * Deallocate all dynamically allocated memory
 		 */
-		void destruct() {
+		void destruct() noexcept {
 			this->clear();
 			allocator.deallocate(this->content, this->content_length);
 		}
@@ -98,7 +98,7 @@ namespace Molch {
 
 		BaseBuffer() = default; // does nothing
 		/* move constructor */
-		BaseBuffer(BaseBuffer&& buffer) {
+		BaseBuffer(BaseBuffer&& buffer) noexcept {
 			this->move(std::move(buffer));
 		}
 
@@ -125,12 +125,12 @@ namespace Molch {
 			}
 		}
 
-		~BaseBuffer() {
+		~BaseBuffer() noexcept {
 			this->destruct();
 		}
 
 		//move assignment
-		BaseBuffer& operator=(BaseBuffer&& buffer) {
+		BaseBuffer& operator=(BaseBuffer&& buffer) noexcept {
 			return this->move(std::move(buffer));
 		}
 		//copy assignment
@@ -140,12 +140,16 @@ namespace Molch {
 		}
 
 		std::byte& operator[](size_t index) {
-			Expects(index < this->content_length);
+			if (index >= this->content_length) {
+				throw std::out_of_range("The buffer has been indexed out of range.");
+			}
 
 			return this->content[index];
 		}
 		const std::byte& operator[](size_t index) const {
-			Expects(index < this->content_length);
+			if (index >= this->content_length) {
+				throw std::out_of_range("The buffer has been indexed out of range.");
+			}
 
 			return this->content[index];
 		}
@@ -165,10 +169,11 @@ namespace Molch {
 			return this->content_length == 0;
 		}
 
-		void setSize(size_t size) {
-			Expects(size <= this->buffer_length);
+		result<void> setSize(size_t size) {
+			FulfillOrFail(size <= this->buffer_length);
 
 			this->content_length = size;
+			return outcome::success();
 		}
 
 		std::byte* begin() noexcept {
@@ -202,15 +207,17 @@ namespace Molch {
 		/*
 		 * Fill a buffer with random numbers.
 		 */
-		void fillRandom(const size_t length) {
-			Expects(length <= this->buffer_length);
+		result<void> fillRandom(const size_t length) noexcept {
+			FulfillOrFail(length <= this->buffer_length);
 
 			if (this->buffer_length == 0) {
-				return;
+				return outcome::success();
 			}
 
 			this->content_length = length;
 			randombytes_buf({this->content, length});
+
+			return outcome::success();
 		}
 
 		/*
@@ -219,7 +226,7 @@ namespace Molch {
 		 * Returns 0 if both buffers match.
 		 */
 		template <typename OtherAllocator>
-		int compare(const BaseBuffer<OtherAllocator>& buffer) const {
+		result<bool> compare(const BaseBuffer<OtherAllocator>& buffer) const noexcept {
 			return this->compareToRaw(buffer);
 		}
 
@@ -229,11 +236,11 @@ namespace Molch {
 		 * Returns 0 if both buffers match.
 		 */
 		template <typename OtherAllocator>
-		int comparePartial(
+		result<bool> comparePartial(
 				const size_t position1,
 				const BaseBuffer<OtherAllocator>& buffer2,
 				const size_t position2,
-				const size_t length) const {
+				const size_t length) const noexcept {
 			return this->compareToRawPartial(position1, buffer2, position2, length);
 		}
 
@@ -242,7 +249,7 @@ namespace Molch {
 		 *
 		 * Returns 0 if both buffers match.
 		 */
-		int compareToRaw(const span<const std::byte> array) const {
+		result<bool> compareToRaw(const span<const std::byte> array) const noexcept {
 			return this->compareToRawPartial(0, array, 0, this->content_length);
 		}
 
@@ -252,43 +259,37 @@ namespace Molch {
 		 *
 		 * Returns 0 if both buffers match.
 		 */
-		int compareToRawPartial(
+		result<bool> compareToRawPartial(
 				const size_t position1,
 				const span<const std::byte> array,
 				const size_t position2,
-				const size_t comparison_length) const {
+				const size_t comparison_length) const noexcept {
 			if (((this->content_length - position1) < comparison_length) || ((array.size() - position2) < comparison_length)) {
-				//FIXME: Does this introduce a timing sidechannel? This leaks the information that two buffers don't have the same length
 				//buffers are too short
-				return -6; //TODO: Is this an exception?
+				return Error(status_type::INCORRECT_BUFFER_SIZE, "Trying to compare a buffer with an incorrect length.");
 			}
 
 			if ((this->buffer_length == 0) || (array.empty())) {
 				if (comparison_length == 0) {
-					return 0;
+					return true;
 				} else {
-					return -1;
+					return false;
 				}
 			}
 
-			TRY_WITH_RESULT(result, sodium_memcmp({this->content + position1, comparison_length}, {array.data() + position2, comparison_length}));
-			if (result.value()) {
-				return 0;
-			}
-
-			return -1;
+			return sodium_memcmp({this->content + position1, comparison_length}, {array.data() + position2, comparison_length});
 		}
 
 		/*
 		 * Copy parts of a buffer to another buffer.
 		 */
 		template <typename OtherAllocator>
-		void copyFrom(
+		result<void> copyFrom(
 				const size_t destination_offset,
 				const BaseBuffer<OtherAllocator>& source,
 				const size_t source_offset,
-				const size_t copy_length) {
-			Expects((this->buffer_length >= this->content_length)
+				const size_t copy_length) noexcept {
+			FulfillOrFail((this->buffer_length >= this->content_length)
 					&& (source.capacity() >= source.size())
 					&& (destination_offset <= this->content_length)
 					&& (copy_length <= (this->buffer_length - destination_offset))
@@ -298,13 +299,13 @@ namespace Molch {
 					&& ((source.size() == 0) || (source.data() != nullptr)));
 
 			if (source.empty()) {
-				return; //nothing to do
+				return outcome::success();
 			}
 
 			std::copy(std::cbegin(source) + source_offset, std::cbegin(source) + source_offset + copy_length, std::begin(*this) + destination_offset);
-			this->content_length = (this->content_length > destination_offset + copy_length)
-				? this->content_length
-				: destination_offset + copy_length;
+			this->content_length = std::max(this->content_length, destination_offset + copy_length);
+
+			return outcome::success();
 		}
 
 		/*
@@ -313,33 +314,33 @@ namespace Molch {
 		 * same length as the source.
 		 */
 		template <typename OtherAllocator>
-		void cloneFrom(const BaseBuffer<OtherAllocator>& source) {
-			Expects(this->buffer_length >= source.size());
+		result<void> cloneFrom(const BaseBuffer<OtherAllocator>& source) noexcept {
+			FulfillOrFail(this->buffer_length >= source.size());
 
 			this->content_length = source.size();
 
-			this->copyFrom(0, source, 0, source.size());
+			return this->copyFrom(0, source, 0, source.size());
 		}
 
 		/*
 		 * Copy from a raw array to a buffer.
 		 */
-		void copyFromRaw(
+		result<void> copyFromRaw(
 				const size_t destination_offset,
 				const std::byte * const source,
 				const size_t source_offset,
-				const size_t copy_length) {
-			Expects(this->buffer_length >= destination_offset
+				const size_t copy_length) noexcept {
+			FulfillOrFail(this->buffer_length >= destination_offset
 					&& (copy_length <= (this->buffer_length - destination_offset)));
 
 			if (copy_length == 0) {
-				return;
+				return outcome::success();
 			}
 
 			std::copy(source + source_offset, source + source_offset + copy_length, this->content + destination_offset);
-			this->content_length = (this->content_length > destination_offset + copy_length)
-				? this->content_length
-				: destination_offset + copy_length;
+			this->content_length = std::max(this->content_length, destination_offset + copy_length);
+
+			return outcome::success();
 		}
 
 		/*
@@ -347,46 +348,48 @@ namespace Molch {
 		 * beginning of a buffer, setting the buffers
 		 * content length to the length that was copied.
 		 */
-		void cloneFromRaw(const span<const std::byte> source) {
-			Expects(this->buffer_length >= source.size());
+		result<void> cloneFromRaw(const span<const std::byte> source) noexcept {
+			FulfillOrFail(this->buffer_length >= source.size());
 
 			this->content_length = source.size();
 
-			this->copyFromRaw(0, source.data(), 0, source.size());
+			return this->copyFromRaw(0, source.data(), 0, source.size());
 		}
 
 		/*
 		 * Copy from a buffer to a raw array.
 		 */
-		void copyToRaw(
+		result<void> copyToRaw(
 				std::byte * const destination,
 				const size_t destination_offset,
 				const size_t source_offset,
-				const size_t copy_length) const {
-			Expects((source_offset <= this->content_length) && (copy_length <= (this->content_length - source_offset))
+				const size_t copy_length) const noexcept {
+			FulfillOrFail((source_offset <= this->content_length) && (copy_length <= (this->content_length - source_offset))
 					&& (this->buffer_length >= this->content_length));
 
 			if (this->buffer_length == 0) {
-				return;
+				return outcome::success();
 			}
 
 			std::copy(this->content + source_offset, this->content + source_offset + copy_length, destination + destination_offset);
+
+			return outcome::success();
 		}
 
 		/*
 		 * Copy the entire content of a buffer
 		 * to a raw array.
 		 */
-		void cloneToRaw(const span<std::byte> destination) const {
-			Expects(destination.size() >= this->content_length);
+		result<void> cloneToRaw(const span<std::byte> destination) const noexcept {
+			FulfillOrFail(destination.size() >= this->content_length);
 
-			this->copyToRaw(destination.data(), 0, 0, this->content_length);
+			return this->copyToRaw(destination.data(), 0, 0, this->content_length);
 		}
 
 		/*
 		 * Return the content and set the capacity to 0 and size to 0.
 		 */
-		std::byte* release() {
+		std::byte* release() noexcept {
 			auto content{this->content};
 			this->content = nullptr;
 			this->content_length = 0;
@@ -395,7 +398,7 @@ namespace Molch {
 			return content;
 		}
 
-		span<std::byte> releaseSpan() {
+		span<std::byte> releaseSpan() noexcept {
 			auto size{this->size()};
 			return {this->release(), size};
 		}
@@ -426,11 +429,16 @@ namespace Molch {
 		}
 
 		template <typename OtherAllocator>
-		bool operator ==(const BaseBuffer<OtherAllocator>& buffer) const {
-			return this->compare(buffer) == 0;
+		bool operator ==(const BaseBuffer<OtherAllocator>& buffer) const noexcept {
+			auto result{this->compare(buffer)};
+			if (!result) {
+				return false;
+			}
+
+			return result.value();
 		}
 		template <typename OtherAllocator>
-		bool operator !=(const BaseBuffer<OtherAllocator>& buffer) const {
+		bool operator !=(const BaseBuffer<OtherAllocator>& buffer) const noexcept {
 			return !(*this == buffer);
 		}
 
@@ -442,11 +450,8 @@ namespace Molch {
 			return this->buffer_length;
 		}
 
-		bool fits(const size_t size) const {
+		bool fits(const size_t size) const noexcept {
 			return this->buffer_length >= size;
-		}
-		bool contains(const size_t size) const {
-			return this->fits(size) && (this->content_length == size);
 		}
 	};
 

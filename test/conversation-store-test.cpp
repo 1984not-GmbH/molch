@@ -43,7 +43,7 @@ static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
 	for (const auto& conversation : exported_conversations) {
 		auto unpacked_size{molch__protobuf__conversation__get_packed_size(conversation)};
 		export_buffers.emplace_back(unpacked_size, 0);
-		export_buffers.back().setSize(molch__protobuf__conversation__pack(conversation, byte_to_uchar(export_buffers.back().data())));
+		TRY_VOID(export_buffers.back().setSize(molch__protobuf__conversation__pack(conversation, byte_to_uchar(export_buffers.back().data()))));
 	}
 
 	return export_buffers;
@@ -145,7 +145,7 @@ int main() {
 
 		//test list export feature
 		auto conversation_list{store.list()};
-		if (!conversation_list.contains(CONVERSATION_ID_SIZE * store.size())) {
+		if (conversation_list.size() != (CONVERSATION_ID_SIZE * store.size())) {
 			throw Molch::Exception{status_type::DATA_FETCH_ERROR, "Failed to get list of conversations."};
 		}
 

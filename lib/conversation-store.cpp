@@ -118,11 +118,11 @@ namespace Molch {
 
 		size_t index{0};
 		for (const auto& conversation : this->conversations) {
-			list.copyFromRaw(
+			TRY_VOID(list.copyFromRaw(
 				CONVERSATION_ID_SIZE * index,
 				conversation.id().data(),
 				0,
-				conversation.id().size());
+				conversation.id().size()));
 			index++;
 		}
 

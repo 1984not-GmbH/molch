@@ -67,7 +67,7 @@ int main() {
 		auto decrypted_header{packet_decrypt_header(packet, header_key)};
 
 
-		if (!decrypted_header.value().contains(header.size())) {
+		if (decrypted_header.value().size() != header.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length."};
 		}
 		printf("Decrypted header has the same length.\n\n");
@@ -141,7 +141,7 @@ int main() {
 
 		//now decrypt the header
 		decrypted_header = packet_decrypt_header(packet, header_key);
-		if (!decrypted_header.value().contains(header.size())) {
+		if (decrypted_header.value().size() != header.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length."};
 		}
 		printf("Decrypted header has the same length.\n\n");

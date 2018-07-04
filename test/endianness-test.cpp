@@ -44,7 +44,8 @@ int main() {
 		printf("uint32_t %llu to big endian:\n", static_cast<unsigned long long>(uint32));
 		buffer32.printHex(std::cout);
 
-		if (buffer32.compareToRaw({reinterpret_cast<const std::byte*>("\x04\x03\x02\x01"), sizeof(uint32_t)}) != 0) {
+		TRY_WITH_RESULT(big_endian_result, buffer32.compareToRaw({reinterpret_cast<const std::byte*>("\x04\x03\x02\x01"), sizeof(uint32_t)}));
+		if (!big_endian_result.value()) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of uint32_t is incorrect."};
 		}
 
@@ -62,8 +63,11 @@ int main() {
 		printf("int32_t %lli to big endian:\n", static_cast<signed long long>(int32));
 		buffer32.printHex(std::cout);
 
-		if (buffer32.compareToRaw({reinterpret_cast<const std::byte*>("\xFF\xFE\xFD\xFC"), sizeof(int32_t)}) != 0) {
-			throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of int32_t is incorrect."};
+		{
+			TRY_WITH_RESULT(buffer32_comparison, buffer32.compareToRaw({reinterpret_cast<const std::byte*>("\xFF\xFE\xFD\xFC"), sizeof(int32_t)}));
+			if (!buffer32_comparison.value()) {
+				throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of int32_t is incorrect."};
+			}
 		}
 
 		//int32_t <- big endian
@@ -81,8 +85,11 @@ int main() {
 		printf("uint64_t %llu to big endian:\n", static_cast<unsigned long long>(uint64));
 		buffer64.printHex(std::cout);
 
-		if (buffer64.compareToRaw({reinterpret_cast<const std::byte*>("\x08\x07\x06\x05\x04\x03\x02\x01"), sizeof(uint64_t)}) != 0) {
-			throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of uint64_t is incorrect."};
+		{
+			TRY_WITH_RESULT(buffer64_comparison, buffer64.compareToRaw({reinterpret_cast<const std::byte*>("\x08\x07\x06\x05\x04\x03\x02\x01"), sizeof(uint64_t)}));
+			if (!buffer64_comparison.value()) {
+				throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of uint64_t is incorrect."};
+			}
 		}
 
 		//uint64_t <- big endian
@@ -99,8 +106,11 @@ int main() {
 		printf("int64_t %lli to big endian:\n", static_cast<signed long long>(int64));
 		buffer64.printHex(std::cout);
 
-		if (buffer64.compareToRaw({reinterpret_cast<const std::byte*>("\xFF\xFE\xFD\xFC\xFB\xFA\xF9\xF8"), sizeof(int64_t)}) != 0) {
-			throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of int64_t is incorrect."};
+		{
+			TRY_WITH_RESULT(buffer64_comparison, buffer64.compareToRaw({reinterpret_cast<const std::byte*>("\xFF\xFE\xFD\xFC\xFB\xFA\xF9\xF8"), sizeof(int64_t)}));
+			if (!buffer64_comparison.value()) {
+				throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of int64_t is incorrect."};
+			}
 		}
 
 		//int64_t <- big endian

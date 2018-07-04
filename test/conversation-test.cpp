@@ -41,7 +41,7 @@ static Buffer protobuf_export(const Molch::Conversation& conversation) {
 
 	auto export_size{molch__protobuf__conversation__get_packed_size(exported_conversation)};
 	Buffer export_buffer{export_size, 0};
-	export_buffer.setSize(molch__protobuf__conversation__pack(exported_conversation, byte_to_uchar(export_buffer.data())));
+	TRY_VOID(export_buffer.setSize(molch__protobuf__conversation__pack(exported_conversation, byte_to_uchar(export_buffer.data()))));
 	if (export_size != export_buffer.size()) {
 		throw Molch::Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack protobuf-c struct into buffer."};
 	}

@@ -52,7 +52,7 @@ static void protobuf_export(
 		auto export_size{molch__protobuf__prekey__get_packed_size(keypair)};
 		key_buffers.emplace_back(export_size, 0);
 
-		key_buffers.back().setSize(molch__protobuf__prekey__pack(keypair, byte_to_uchar(key_buffers.back().data())));
+		TRY_VOID(key_buffers.back().setSize(molch__protobuf__prekey__pack(keypair, byte_to_uchar(key_buffers.back().data()))));
 	}
 
 	//export all the deprecated keypairs
@@ -62,7 +62,7 @@ static void protobuf_export(
 		auto export_size{molch__protobuf__prekey__get_packed_size(keypair)};
 		deprecated_key_buffers.emplace_back(export_size, 0);
 
-		deprecated_key_buffers.back().setSize(molch__protobuf__prekey__pack(keypair, byte_to_uchar(deprecated_key_buffers.back().data())));
+		TRY_VOID(deprecated_key_buffers.back().setSize(molch__protobuf__prekey__pack(keypair, byte_to_uchar(deprecated_key_buffers.back().data()))));
 	}
 }
 
@@ -140,7 +140,8 @@ int main() {
 
 		//compare the public keys with the ones in the prekey store
 		for (size_t i{0}; i < PREKEY_AMOUNT; i++) {
-			if (prekey_list.compareToRawPartial(PUBLIC_KEY_SIZE * i, {store->prekeys()[i].publicKey().data(), store->prekeys()[i].publicKey().size()}, 0, PUBLIC_KEY_SIZE) != 0) {
+			TRY_WITH_RESULT(comparison, prekey_list.compareToRawPartial(PUBLIC_KEY_SIZE * i, {store->prekeys()[i].publicKey().data(), store->prekeys()[i].publicKey().size()}, 0, PUBLIC_KEY_SIZE));
+			if (!comparison.value()) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Key list doesn't match the prekey store."};
 			}
 		}

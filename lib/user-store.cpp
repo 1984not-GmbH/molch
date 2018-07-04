@@ -192,11 +192,11 @@ namespace Molch {
 
 		for (const auto& user : this->users) {
 			auto index{gsl::narrow_cast<size_t>(&user - &(*std::cbegin(this->users)))};
-			list.copyFromRaw(
+			TRY_VOID(list.copyFromRaw(
 				PUBLIC_MASTER_KEY_SIZE * index,
 				user.public_signing_key.data(),
 				0,
-				user.public_signing_key.size());
+				user.public_signing_key.size()));
 		}
 
 		return list;

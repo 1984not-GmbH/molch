@@ -169,7 +169,7 @@ namespace Molch {
 
 		//generate the header nonce and add it to the packet header
 		Buffer header_nonce{HEADER_NONCE_SIZE, 0};
-		header_nonce.fillRandom(HEADER_NONCE_SIZE);
+		TRY_VOID(header_nonce.fillRandom(HEADER_NONCE_SIZE));
 		packet_header_struct.has_header_nonce = true;
 		packet_header_struct.header_nonce.data = byte_to_uchar(header_nonce.data());
 		packet_header_struct.header_nonce.len = header_nonce.size();
@@ -191,7 +191,7 @@ namespace Molch {
 
 		//generate the message nonce and add it to the packet header
 		Buffer message_nonce{MESSAGE_NONCE_SIZE, 0};
-		message_nonce.fillRandom(MESSAGE_NONCE_SIZE);
+		TRY_VOID(message_nonce.fillRandom(MESSAGE_NONCE_SIZE));
 		packet_header_struct.has_message_nonce = true;
 		packet_header_struct.message_nonce.data = byte_to_uchar(message_nonce.data());
 		packet_header_struct.message_nonce.len = message_nonce.size();
@@ -199,8 +199,8 @@ namespace Molch {
 		//pad the message (ISO/IEC 7816-4 padding to 255 byte blocks)
 		size_t padding_amount{padding_blocksize - (message.size() % padding_blocksize)};
 		Buffer padded_message{message.size() + padding_amount, 0};
-		padded_message.cloneFromRaw(message);
-		padded_message.setSize(padded_message.capacity());
+		TRY_VOID(padded_message.cloneFromRaw(message));
+		TRY_VOID(padded_message.setSize(padded_message.capacity()));
 		TRY_WITH_RESULT(result, sodium_pad(padded_message, message.size(), 255));
 		auto padded_span{result.value()};
 		if (padded_span.size() != padded_message.size()) {
@@ -226,7 +226,7 @@ namespace Molch {
 		const size_t packed_length{molch__protobuf__packet__get_packed_size(&packet_struct)};
 		//pack the packet
 		Buffer packet{packed_length, 0};
-		packet.setSize(molch__protobuf__packet__pack(&packet_struct, byte_to_uchar(packet.data())));
+		TRY_VOID(packet.setSize(molch__protobuf__packet__pack(&packet_struct, byte_to_uchar(packet.data()))));
 		if (packet.size() != packed_length) {
 			throw Exception{status_type::PROTOBUF_PACK_ERROR, "Packet packet has incorrect length."};
 		}
@@ -362,7 +362,7 @@ namespace Molch {
 		//undo the padding
 		TRY_WITH_RESULT(result3, sodium_unpad(*padded_message, padding_blocksize));
 		auto unpadded_span{result3.value()};
-		padded_message->setSize(unpadded_span.size());
+		TRY_VOID(padded_message->setSize(unpadded_span.size()));
 
 		return padded_message;
 	}

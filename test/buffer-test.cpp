@@ -44,8 +44,9 @@ int main() {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "buffer_compare doesn't work as expected."};
 		}
 
-		if ((string1.comparePartial(0, string4, 0, 4) != 0)
-				|| (string1.comparePartial(2, string3, 2, 2) != 0)) {
+		TRY_WITH_RESULT(string1_4_comparison, string1.comparePartial(0, string4, 0, 4));
+		TRY_WITH_RESULT(string1_3_comparison, string1.comparePartial(2, string3, 2, 2));
+		if (!string1_4_comparison.value() || !string1_3_comparison.value()) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "buffer_compare_partial doesn't work as expected."};
 		}
 		std::cout << "Successfully tested buffer comparison ..." << std::endl;
@@ -65,35 +66,29 @@ int main() {
 
 		unsigned char buffer2_content[]{0xde, 0xad, 0xbe, 0xef, 0x00};
 		Buffer buffer2{sizeof(buffer2_content), sizeof(buffer2_content)};
-		buffer2.cloneFromRaw({uchar_to_byte(buffer2_content), sizeof(buffer2_content)});
+		TRY_VOID(buffer2.cloneFromRaw({uchar_to_byte(buffer2_content), sizeof(buffer2_content)}));
 
 		printf("Second buffer (%zu Bytes):\n", buffer2.size());
 		buffer2.printHex(std::cout) << std::endl;
 
 		Buffer empty{static_cast<size_t>(0), 0};
 		Buffer empty2{static_cast<size_t>(0), 0};
-		empty2.cloneFrom(empty);
+		TRY_VOID(empty2.cloneFrom(empty));
 
 		//copy buffer
 		Buffer buffer3{5, 0};
-		buffer3.copyFrom(0, buffer2, 0, buffer2.size());
+		TRY_VOID(buffer3.copyFrom(0, buffer2, 0, buffer2.size()));
 		if (buffer2 != buffer3) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy buffer."};
 		}
 		printf("Buffer successfully copied.\n");
 
-		auto detected{false};
-		try {
-			buffer3.copyFrom(buffer2.size(), buffer2, 0, buffer2.size());
-		} catch (...) {
-			detected = true;
-		}
-		if (!detected) {
+		if (buffer3.copyFrom(buffer2.size(), buffer2, 0, buffer2.size())) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to detect out of bounds buffer copying."};
 		}
 		printf("Detected out of bounds buffer copying.\n");
 
-		buffer3.copyFrom(1, buffer2, 0, buffer2.size() - 1);
+		TRY_VOID(buffer3.copyFrom(1, buffer2, 0, buffer2.size() - 1));
 		if ((buffer3[0] != buffer2[0]) || (sodium_memcmp(buffer2.data(), buffer3.data() + 1, buffer2.size() - 1) != 0)) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy buffer."};
 		}
@@ -101,50 +96,34 @@ int main() {
 
 		//copy to a raw array
 		std::byte raw_array[4];
-		buffer1.copyToRaw(
+		TRY_VOID(buffer1.copyToRaw(
 				raw_array, //destination
 				0, //destination offset
 				1, //source offset
-				4); //length
+				4)); //length
 		if (sodium_memcmp(raw_array, &buffer1[1], 4) != 0) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy buffer to raw array."};
 		}
 		printf("Successfully copied buffer to raw array.\n");
 
-		detected = false;
-		try {
-			buffer2.copyToRaw(raw_array, 0, 3, 4);
-		} catch (...) {
-			detected = true;
-		}
-		if (!detected) {
+		if (buffer2.copyToRaw(raw_array, 0, 3, 4)) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to detect out of bounds read."};
 		}
 		printf("Successfully detected out of bounds read.\n");
 
 		//copy from raw array
 		unsigned char heeelo[14]{"Hello World!\n"};
-		buffer1.copyFromRaw(
+		TRY_VOID(buffer1.copyFromRaw(
 				0, //offset
 				uchar_to_byte(heeelo), //source
 				0, //offset
-				sizeof(heeelo)); //length
+				sizeof(heeelo))); //length
 		if (sodium_memcmp(heeelo, buffer1.data(), sizeof(heeelo))) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy from raw array to buffer."};
 		}
 		printf("Successfully copied raw array to buffer.\n");
 
-		detected = false;
-		try {
-			buffer1.copyFromRaw(
-					1,
-					uchar_to_byte(heeelo),
-					0,
-					sizeof(heeelo));
-		} catch (...) {
-			detected = true;
-		}
-		if (!detected) {
+		if (buffer1.copyFromRaw(1, uchar_to_byte(heeelo), 0, sizeof(heeelo))) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to detect out of bounds read."};
 		}
 		printf("Out of bounds read detected.\n");
@@ -177,37 +156,37 @@ int main() {
 
 		//fill a buffer with random numbers
 		Buffer random{10, 0};
-		random.fillRandom(5);
+		TRY_VOID(random.fillRandom(5));
 
-		if (!random.contains(5)) {
+		if (random.size() != 5) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Wrong content length.\n"};
 		}
 		printf("Buffer with %zu random bytes:\n", random.size());
 		random.printHex(std::cout);
 
-		detected = false;
-		try {
-			random.fillRandom(20);
-		} catch(...) {
-			detected = true;
-		}
-		if (!detected) {
-			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to detect too long write to buffer."};
+		if (random.fillRandom(20)) {
+			throw Molch::Exception(status_type::BUFFER_ERROR, "Failed to detect too long write to buffer.");
 		}
 
 		//compare buffer to an array
 		Buffer true_buffer{"true"};
-		auto comparison{true_buffer.compareToRaw({reinterpret_cast<const std::byte*>("true"), sizeof("true")})};
-		if (comparison != 0) {
-			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to compare buffer to array."};
+		{
+			TRY_WITH_RESULT(comparison, true_buffer.compareToRaw({reinterpret_cast<const std::byte*>("true"), sizeof("true")}));
+			if (!comparison.value()) {
+				throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to compare buffer to array."};
+			}
 		}
-		comparison = true_buffer.compareToRaw({reinterpret_cast<const std::byte*>("fals"), sizeof("fals")});
-		if (comparison == 0) {
-			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to detect difference in buffer and array."};
+		{
+			TRY_WITH_RESULT(comparison, true_buffer.compareToRaw({reinterpret_cast<const std::byte*>("fals"), sizeof("fals")}));
+			if (comparison.value()) {
+				throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to detect difference in buffer and array."};
+			}
 		}
-		comparison = true_buffer.compareToRaw({reinterpret_cast<const std::byte*>("false"), sizeof("false")});
-		if (comparison == 0) {
-			throw Molch::Exception{status_type::BUFFER_ERROR, "ERROR: Failed to detect difference in buffer and array."};
+		{
+			TRY_WITH_RESULT(comparison, true_buffer.compareToRaw({reinterpret_cast<const std::byte*>("false"), sizeof("false")}));
+			if (comparison.value()) {
+				throw Molch::Exception{status_type::BUFFER_ERROR, "ERROR: Failed to detect difference in buffer and array."};
+			}
 		}
 
 		//test custom allocator
@@ -220,10 +199,6 @@ int main() {
 		Buffer four_two{4, 2};
 		if ((!four_two.fits(4)) || (!four_two.fits(2)) || four_two.fits(5)) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Buffer doesn't detect correctly what fits in it."};
-		}
-
-		if ((!four_two.contains(2)) || four_two.contains(1) || four_two.contains(3)) {
-			throw Molch::Exception{status_type::BUFFER_ERROR, "Buffer doesn't detect correctly what it contains."};
 		}
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;

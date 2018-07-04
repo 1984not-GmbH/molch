@@ -54,32 +54,32 @@ static void protobuf_export(
 	//public signing key
 	auto public_signing_key_proto_size{molch__protobuf__key__get_packed_size(public_signing_key)};
 	public_signing_key_buffer = Buffer{public_signing_key_proto_size, 0};
-	public_signing_key_buffer.setSize(molch__protobuf__key__pack(public_signing_key, byte_to_uchar(public_signing_key_buffer.data())));
-	if (!public_signing_key_buffer.contains(public_signing_key_proto_size)) {
+	TRY_VOID(public_signing_key_buffer.setSize(molch__protobuf__key__pack(public_signing_key, byte_to_uchar(public_signing_key_buffer.data()))));
+	if (public_signing_key_buffer.size() != public_signing_key_proto_size) {
 		throw Molch::Exception{status_type::EXPORT_ERROR, "Failed to export public signing key."};
 	}
 
 	//private signing key
 	auto private_signing_key_proto_size{molch__protobuf__key__get_packed_size(private_signing_key)};
 	private_signing_key_buffer = Buffer{private_signing_key_proto_size, 0};
-	private_signing_key_buffer.setSize(molch__protobuf__key__pack(private_signing_key, byte_to_uchar(private_signing_key_buffer.data())));
-	if (!private_signing_key_buffer.contains(private_signing_key_proto_size)) {
+	TRY_VOID(private_signing_key_buffer.setSize(molch__protobuf__key__pack(private_signing_key, byte_to_uchar(private_signing_key_buffer.data()))));
+	if (private_signing_key_buffer.size() != private_signing_key_proto_size) {
 		throw Molch::Exception{status_type::EXPORT_ERROR, "Failed to export private signing key."};
 	}
 
 	//public identity key
 	auto public_identity_key_proto_size{molch__protobuf__key__get_packed_size(public_identity_key)};
 	public_identity_key_buffer = Buffer{public_identity_key_proto_size, 0};
-	public_identity_key_buffer.setSize(molch__protobuf__key__pack(public_identity_key, byte_to_uchar(public_identity_key_buffer.data())));
-	if (!public_identity_key_buffer.contains(public_identity_key_proto_size)) {
+	TRY_VOID(public_identity_key_buffer.setSize(molch__protobuf__key__pack(public_identity_key, byte_to_uchar(public_identity_key_buffer.data()))));
+	if (public_identity_key_buffer.size() != public_identity_key_proto_size) {
 		throw Molch::Exception{status_type::EXPORT_ERROR, "Failed to export public identity key."};
 	}
 
 	//private identity key
 	auto private_identity_key_proto_size{molch__protobuf__key__get_packed_size(private_identity_key)};
 	private_identity_key_buffer = Buffer{private_identity_key_proto_size, 0};
-	private_identity_key_buffer.setSize(molch__protobuf__key__pack(private_identity_key, byte_to_uchar(private_identity_key_buffer.data())));
-	if (!private_identity_key_buffer.contains(private_identity_key_proto_size)) {
+	TRY_VOID(private_identity_key_buffer.setSize(molch__protobuf__key__pack(private_identity_key, byte_to_uchar(private_identity_key_buffer.data()))));
+	if (private_identity_key_buffer.size() != private_identity_key_proto_size) {
 		throw Molch::Exception{status_type::EXPORT_ERROR, "Failed to export private identity key."};
 	}
 }
@@ -228,7 +228,7 @@ int main() {
 		if (status != 0) {
 			throw Molch::Exception{status_type::VERIFY_ERROR, "Failed to verify signature."};
 		}
-		unwrapped_data.setSize(static_cast<size_t>(unwrapped_data_length));
+		TRY_VOID(unwrapped_data.setSize(static_cast<size_t>(unwrapped_data_length)));
 
 		printf("\nSignature was successfully verified!\n");
 

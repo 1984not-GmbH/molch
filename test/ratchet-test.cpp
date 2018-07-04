@@ -38,7 +38,7 @@ static Buffer protobuf_export(Ratchet& ratchet) {
 
 	auto export_size{molch__protobuf__conversation__get_packed_size(conversation)};
 	Buffer export_buffer{export_size, 0};
-	export_buffer.setSize(molch__protobuf__conversation__pack(conversation, byte_to_uchar(export_buffer.data())));
+	TRY_VOID(export_buffer.setSize(molch__protobuf__conversation__pack(conversation, byte_to_uchar(export_buffer.data()))));
 	if (export_size != export_buffer.size()) {
 		throw Molch::Exception{status_type::EXPORT_ERROR, "Failed to export ratchet."};
 	}

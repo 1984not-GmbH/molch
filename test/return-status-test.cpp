@@ -11,7 +11,7 @@
  * copyright notice and this permission notice appear in all copies.
  *
  * THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+ * WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES O	F
  * MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
  * ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
  * WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
@@ -49,7 +49,7 @@ cleanup:
 	return status;
 }
 
-int main() noexcept {
+int main() {
 	auto status{return_status_init()};
 
 	char *error_stack{nullptr};
@@ -88,7 +88,8 @@ int main() noexcept {
 		printf("%s\n", error_stack);
 
 		Buffer stack_trace{"ERROR\nerror stack trace:\n0: GENERIC_ERROR, Error on the first level!\n1: GENERIC_ERROR, Error on the second level!\n"};
-		if (stack_trace.compareToRaw({reinterpret_cast<std::byte*>(error_stack), stack_print_length}) != 0) {
+		TRY_WITH_RESULT(comparison, stack_trace.compareToRaw({reinterpret_cast<std::byte*>(error_stack), stack_print_length}));
+		if (!comparison.value()) {
 			THROW(status_type::INCORRECT_DATA, "Stack trace looks differently than expected.");
 		}
 	}
@@ -103,7 +104,8 @@ int main() noexcept {
 		auto printed{return_status_print(successful_status)};
 		auto printed_status_length{printed.size()};
 		printed_status = printed.data();
-		if (success_buffer.compareToRaw({reinterpret_cast<std::byte*>(printed_status), printed_status_length}) != 0) {
+		TRY_WITH_RESULT(comparison, success_buffer.compareToRaw({reinterpret_cast<std::byte*>(printed_status), printed_status_length}));
+		if (!comparison.value()) {
 			THROW(status_type::INCORRECT_DATA, "molch_print_status produces incorrect output.");
 		}
 	}
