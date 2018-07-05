@@ -110,8 +110,6 @@ int main() {
 				alice_private_ephemeral,
 				alice_public_ephemeral,
 				bob_public_ephemeral)};
-		alice_private_ephemeral.clear();
-		alice_private_identity.clear();
 		putchar('\n');
 		//print Alice's initial root and chain keys
 		printf("Alice's initial root key (%zu Bytes):\n", alice_state->storage->root_key.size());
@@ -432,9 +430,6 @@ int main() {
 			decryptable = Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 			fprintf(stderr, "Failed to decrypt header.");
 		}
-		bob_send_header_key1.clear();
-		alice_current_receive_header_key.clear();
-		alice_next_receive_header_key.clear();
 
 		//now alice receives the first, then the third message (second message skipped)
 
@@ -474,9 +469,6 @@ int main() {
 				return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 			}
 		}();
-		bob_send_header_key3.clear();
-		alice_current_receive_header_key.clear();
-		alice_next_receive_header_key.clear();
 
 		//set the header decryptability
 		alice_state->setHeaderDecryptability(decryptable);

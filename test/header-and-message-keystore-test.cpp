@@ -182,8 +182,6 @@ int main() {
 
 			//add keys to the keystore
 			keystore.add(header_key, message_key);
-			message_key.clear();
-			header_key.clear();
 
 			keystore.print(std::cout);
 

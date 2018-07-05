@@ -60,7 +60,6 @@ int main() noexcept {
 			alice_public_key,
 			bob_public_key,
 			Ratchet::Role::ALICE);
-		alice_private_key.clear();
 
 		//print Alice's shared secret
 		printf("Alice's shared secret ECDH(A_priv, B_pub) (%zu Bytes):\n", alice_shared_secret.size());
@@ -74,7 +73,6 @@ int main() noexcept {
 			bob_public_key,
 			alice_public_key,
 			Ratchet::Role::BOB);
-		bob_private_key.clear();
 
 		//print Bob's shared secret
 		printf("Bob's shared secret ECDH(B_priv, A_pub) (%zu Bytes):\n", bob_shared_secret.size());

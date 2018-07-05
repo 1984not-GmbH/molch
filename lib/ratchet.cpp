@@ -394,9 +394,7 @@ namespace Molch {
 			//DHRr = DHRp
 			this->storage->their_public_ephemeral = this->storage->their_purported_public_ephemeral;
 			//erase(DHRs)
-			this->storage->our_private_ephemeral.clear();
-			//TODO: Get rid of this somedeay
-			this->storage->our_private_ephemeral.empty = false;
+			this->storage->our_private_ephemeral.zero();
 			//ratchet_flag = True
 			this->ratchet_flag = true;
 		}

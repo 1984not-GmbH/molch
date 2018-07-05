@@ -131,7 +131,7 @@ namespace Molch {
 			case Ratchet::Role::ALICE:
 				//HKs=<none>, HKr=KDF
 				//HKs=<none>
-				send_header_key.clear();
+				send_header_key.clearKey();
 				//HKr = KDF(master_key, 0x01)
 				master_key.deriveTo(receive_header_key, 1);
 
@@ -144,7 +144,7 @@ namespace Molch {
 
 				//CKs=<none>, CKr=KDF
 				//CKs=<none>
-				send_chain_key.clear();
+				send_chain_key.clearKey();
 				//CKr = KDF(master_key, 0x04)
 				master_key.deriveTo(receive_chain_key, 4);
 				break;
@@ -152,7 +152,7 @@ namespace Molch {
 			case Ratchet::Role::BOB:
 				//HKs=HKDF, HKr=<none>
 				//HKr = <none>
-				receive_header_key.clear();
+				receive_header_key.clearKey();
 				//HKs = KDF(master_key, 0x01)
 				master_key.deriveTo(send_header_key, 1);
 
@@ -164,7 +164,7 @@ namespace Molch {
 
 				//CKs=KDF, CKr=<none>
 				//CKr = <none>
-				receive_chain_key.clear();
+				receive_chain_key.clearKey();
 				//CKs = KDF(master_key, 0x04)
 				master_key.deriveTo(send_chain_key, 4);
 				break;

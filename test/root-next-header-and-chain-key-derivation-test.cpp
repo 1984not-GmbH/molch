@@ -112,8 +112,6 @@ int main() {
 		} else {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's and Bob's root keys don't match."};
 		}
-		alice_root_key.clear();
-		bob_root_key.clear();
 
 		//compare Alice's and Bob's chain keys
 		if (alice_chain_key == bob_chain_key) {

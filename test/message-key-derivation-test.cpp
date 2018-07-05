@@ -45,7 +45,6 @@ int main() {
 
 		//derive message key from chain key
 		auto message_key{chain_key.deriveMessageKey()};
-		chain_key.clear();
 
 		//print message key
 		printf("Message key (%zu Bytes):\n", message_key.size());

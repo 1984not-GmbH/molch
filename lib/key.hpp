@@ -68,7 +68,7 @@ namespace Molch {
 			this->empty = key.empty;
 
 			if (key.empty) {
-				key.clear();
+				key.zero();
 				return *this;
 			}
 
@@ -96,7 +96,7 @@ namespace Molch {
 		}
 
 		~Key() {
-			this->clear();
+			this->zero();
 		}
 
 		Key& operator=(const Key& key) {
@@ -164,8 +164,7 @@ namespace Molch {
 
 			//create a salt that contains the number of the subkey
 			Key<crypto_generichash_blake2b_SALTBYTES,KeyType::Key> salt;
-			salt.clear(); //fill with zeroes
-			salt.empty = false;
+			salt.zero(); //fill with zeroes
 
 			//fill the salt with a big endian representation of the subkey counter
 			TRY_VOID(to_big_endian(subkey_counter, {salt.data()+ salt.size() - sizeof(uint32_t), sizeof(uint32_t)}));
@@ -213,9 +212,13 @@ namespace Molch {
 			std::copy(std::cbegin(*this), std::cend(*this), std::begin(data));
 		}
 
-		void clear() noexcept {
-			sodium_memzero(*this);
+		void clearKey() noexcept {
+			this->zero();
 			this->empty = true;
+		}
+
+		void zero() noexcept {
+			sodium_memzero(*this);
 		}
 
 		ProtobufCKey* exportProtobuf(Arena& arena) const {
