@@ -37,7 +37,7 @@ namespace Molch {
 		RootKey root_key; //RK
 		RootKey purported_root_key; //RKp
 		//header keys
-		HeaderKey send_header_key;
+		std::optional<HeaderKey> send_header_key;
 		HeaderKey receive_header_key;
 		HeaderKey next_send_header_key;
 		HeaderKey next_receive_header_key;

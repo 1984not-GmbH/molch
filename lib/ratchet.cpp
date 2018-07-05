@@ -90,11 +90,7 @@ namespace Molch {
 		} else {
 			storage->receive_chain_key.clearKey();
 		}
-		if (derived_keys.send_header_key.has_value()) {
-			storage->send_header_key = derived_keys.send_header_key.value();
-		} else {
-			storage->send_header_key.clearKey();
-		}
+		storage->send_header_key = std::move(derived_keys.send_header_key);
 		if (derived_keys.receive_header_key.has_value()) {
 			storage->receive_header_key = derived_keys.receive_header_key.value();
 		} else {
@@ -176,7 +172,7 @@ namespace Molch {
 		//  msg = Enc(HKs, Ns || PNs || DHRs) || Enc(MK, plaintext)
 		//  in the axolotl specification)
 		//HKs:
-		send_header_key = this->storage->send_header_key;
+		send_header_key = this->storage->send_header_key.value();
 		//Ns
 		send_message_number = this->send_message_number;
 		//PNs
@@ -448,11 +444,13 @@ namespace Molch {
 		//header keys
 		//send header key
 		const auto& role = this->role;
-		const auto& send_header_key{storage.send_header_key};
-		if ((role == Role::BOB) && send_header_key.empty) {
-			throw Exception{status_type::EXPORT_ERROR, "send_header_key missing or has an incorrect size."};
+		if (role == Role::BOB) {
+			if (!storage.send_header_key.has_value()) {
+				throw Exception{status_type::EXPORT_ERROR, "send_header_key missing or has an incorrect size."};
+			}
+			const auto& send_header_key{storage.send_header_key.value()};
+			protobuf_optional_bytes_arena_export(arena, conversation, send_header_key, HEADER_KEY_SIZE);
 		}
-		protobuf_optional_bytes_arena_export(arena, conversation, send_header_key, HEADER_KEY_SIZE);
 		//receive header key
 		const auto& receive_header_key{storage.receive_header_key};
 		if ((role == Role::ALICE) && receive_header_key.empty) {
@@ -660,13 +658,16 @@ namespace Molch {
 
 		//header key
 		//send header key
-		if ((this->role == Role::BOB)
-				&& (!conversation.has_send_header_key || (conversation.send_header_key.len != HEADER_KEY_SIZE))) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "send_header_key is missing from the protobuf."};
+		if (!conversation.has_send_header_key || (conversation.send_header_key.len != HEADER_KEY_SIZE)) {
+			if (this->role == Role::BOB) {
+				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "send_header_key is missing from the protobuf."};
+			}
+			this->storage->send_header_key.reset();
+		} else {
+			this->storage->send_header_key.emplace(span<std::byte>(
+					uchar_to_byte(conversation.send_header_key.data),
+					conversation.send_header_key.len));
 		}
-		this->storage->send_header_key.set({
-				uchar_to_byte(conversation.send_header_key.data),
-				conversation.send_header_key.len});
 		//receive header key
 		if ((this->role == Role::ALICE) &&
 				(!conversation.has_receive_header_key || (conversation.receive_header_key.len != HEADER_KEY_SIZE))) {
@@ -783,49 +784,52 @@ namespace Molch {
 	}
 
 	std::ostream& Ratchet::print(std::ostream& stream) const {
+		const auto& storage{this->storage};
 		//root keys
 		stream << "Root key:\n";
-		this->storage->root_key.printHex(stream) << '\n';
+		storage->root_key.printHex(stream) << '\n';
 		stream << "Purported root key:\n";
-		this->storage->purported_root_key.printHex(stream) << '\n';
+		storage->purported_root_key.printHex(stream) << '\n';
 
 		//header keys
-		stream << "Send header key:\n";
-		this->storage->send_header_key.printHex(stream) << '\n';
+		if (storage->send_header_key.has_value()) {
+			stream << "Send header key:\n";
+			storage->send_header_key.value().printHex(stream) << '\n';
+		}
 		stream << "Receive header key:\n";
-		this->storage->receive_header_key.printHex(stream) << '\n';
+		storage->receive_header_key.printHex(stream) << '\n';
 		stream << "Next send header key:\n";
-		this->storage->next_send_header_key.printHex(stream) << '\n';
+		storage->next_send_header_key.printHex(stream) << '\n';
 		stream << "Next receive header key:\n";
-		this->storage->next_receive_header_key.printHex(stream) << '\n';
+		storage->next_receive_header_key.printHex(stream) << '\n';
 		stream << "Purported receive header key:\n";
-		this->storage->purported_receive_header_key.printHex(stream) << '\n';
+		storage->purported_receive_header_key.printHex(stream) << '\n';
 		stream << "Purported next receive header key:\n";
-		this->storage->purported_next_receive_header_key.printHex(stream) << '\n';
+		storage->purported_next_receive_header_key.printHex(stream) << '\n';
 
 		//chain keys
 		stream << "Send chain key:\n";
-		this->storage->send_chain_key.printHex(stream) << '\n';
+		storage->send_chain_key.printHex(stream) << '\n';
 		stream << "Receive chain key:\n";
-		this->storage->receive_chain_key.printHex(stream) << '\n';
+		storage->receive_chain_key.printHex(stream) << '\n';
 		stream << "Purported receive chain key:\n";
-		this->storage->purported_receive_chain_key.printHex(stream) << '\n';
+		storage->purported_receive_chain_key.printHex(stream) << '\n';
 
 		//identity keys
 		stream << "Our public identity key:\n";
-		this->storage->our_public_identity.printHex(stream) << '\n';
+		storage->our_public_identity.printHex(stream) << '\n';
 		stream << "Their public identity key:\n";
-		this->storage->their_public_identity.printHex(stream) << '\n';
+		storage->their_public_identity.printHex(stream) << '\n';
 
 		//ephemeral keys
 		stream << "Our private ephemeral key:\n";
-		this->storage->our_private_ephemeral.printHex(stream) << '\n';
+		storage->our_private_ephemeral.printHex(stream) << '\n';
 		stream << "Our public ephemeral key:\n";
-		this->storage->our_public_ephemeral.printHex(stream) << '\n';
+		storage->our_public_ephemeral.printHex(stream) << '\n';
 		stream << "Their public ephemeral key:\n";
-		this->storage->their_public_ephemeral.printHex(stream) << '\n';
+		storage->their_public_ephemeral.printHex(stream) << '\n';
 		stream << "Their purported public ephemeral key:\n";
-		this->storage->their_purported_public_ephemeral.printHex(stream) << '\n';
+		storage->their_purported_public_ephemeral.printHex(stream) << '\n';
 
 		//numbers
 		stream << "Send message number: " << this->send_message_number << '\n';
