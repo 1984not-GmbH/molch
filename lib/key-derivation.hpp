@@ -44,19 +44,22 @@ namespace Molch {
 			const RootKey& previous_root_key,
 			const Ratchet::Role role);
 
+	struct DerivedInitialRootChainAndHeaderKeys {
+		RootKey root_key;
+		std::optional<ChainKey> send_chain_key;
+		std::optional<ChainKey> receive_chain_key;
+		std::optional<HeaderKey> send_header_key;
+		std::optional<HeaderKey> receive_header_key;
+		HeaderKey next_send_header_key;
+		HeaderKey next_receive_header_key;
+	};
+
 	/*
 	 * Derive initial root, chain and header keys.
 	 *
 	 * RK, CKs/r, HKs/r = KDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
 	 */
-	void derive_initial_root_chain_and_header_keys(
-			RootKey& root_key, //ROOT_KEY_SIZE
-			ChainKey& send_chain_key, //CHAIN_KEY_SIZE
-			ChainKey& receive_chain_key, //CHAIN_KEY_SIZE
-			HeaderKey& send_header_key, //HEADER_KEY_SIZE
-			HeaderKey& receive_header_key, //HEADER_KEY_SIZE
-			HeaderKey& next_send_header_key, //HEADER_KEY_SIZE
-			HeaderKey& next_receive_header_key, //HEADER_KEY_SIZE
+	DerivedInitialRootChainAndHeaderKeys derive_initial_root_chain_and_header_keys(
 			const PrivateKey& our_private_identity,
 			const PublicKey& our_public_identity,
 			const PublicKey& their_public_identity,

@@ -84,14 +84,7 @@ namespace Molch {
 	 *
 	 * RK, CKs/r, HKs/r, NHKs/r = KDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
 	 */
-	void derive_initial_root_chain_and_header_keys(
-			RootKey& root_key, //ROOT_KEY_SIZE
-			ChainKey& send_chain_key, //CHAIN_KEY_SIZE
-			ChainKey& receive_chain_key, //CHAIN_KEY_SIZE
-			HeaderKey& send_header_key, //HEADER_KEY_SIZE
-			HeaderKey& receive_header_key, //HEADER_KEY_SIZE
-			HeaderKey& next_send_header_key, //HEADER_KEY_SIZE
-			HeaderKey& next_receive_header_key, //HEADER_KEY_SIZE
+	DerivedInitialRootChainAndHeaderKeys derive_initial_root_chain_and_header_keys(
 			const PrivateKey& our_private_identity,
 			const PublicKey& our_public_identity,
 			const PublicKey& their_public_identity,
@@ -122,55 +115,62 @@ namespace Molch {
 			their_public_ephemeral,
 			role);
 
+		DerivedInitialRootChainAndHeaderKeys output;
 		//derive root key
 		//RK = KDF(master_key, 0x00)
-		master_key.deriveTo(root_key, 0);
+		master_key.deriveTo(output.root_key, 0);
 
 		//derive chain keys and header keys
 		switch (role) {
 			case Ratchet::Role::ALICE:
 				//HKs=<none>, HKr=KDF
 				//HKs=<none>
-				send_header_key.clearKey();
+				output.send_header_key.reset();
 				//HKr = KDF(master_key, 0x01)
-				master_key.deriveTo(receive_header_key, 1);
+				output.receive_header_key.emplace();
+				master_key.deriveTo(output.receive_header_key.value(), 1);
 
 				//NHKs, NHKr
 				//NHKs = KDF(master_key, 0x02)
-				master_key.deriveTo(next_send_header_key, 2);
+				master_key.deriveTo(output.next_send_header_key, 2);
 
 				//NHKr = KDF(master_key, 0x03)
-				master_key.deriveTo(next_receive_header_key, 3);
+				master_key.deriveTo(output.next_receive_header_key, 3);
 
 				//CKs=<none>, CKr=KDF
 				//CKs=<none>
-				send_chain_key.clearKey();
+				output.send_chain_key.reset();
 				//CKr = KDF(master_key, 0x04)
-				master_key.deriveTo(receive_chain_key, 4);
+				output.receive_chain_key.emplace();
+				master_key.deriveTo(output.receive_chain_key.value(), 4);
 				break;
 
 			case Ratchet::Role::BOB:
 				//HKs=HKDF, HKr=<none>
 				//HKr = <none>
-				receive_header_key.clearKey();
+				output.receive_header_key.reset();
 				//HKs = KDF(master_key, 0x01)
-				master_key.deriveTo(send_header_key, 1);
+				output.send_header_key.emplace();
+				master_key.deriveTo(output.send_header_key.value(), 1);
 
 				//NHKr, NHKs
 				//NHKr = KDF(master_key, 0x02)
-				master_key.deriveTo(next_receive_header_key, 2);
+				master_key.deriveTo(output.next_receive_header_key, 2);
 				//NHKs = KDF(master_key, 0x03)
-				master_key.deriveTo(next_send_header_key, 3);
+				master_key.deriveTo(output.next_send_header_key, 3);
 
 				//CKs=KDF, CKr=<none>
 				//CKr = <none>
-				receive_chain_key.clearKey();
+				output.receive_chain_key.reset();
 				//CKs = KDF(master_key, 0x04)
-				master_key.deriveTo(send_chain_key, 4);
+				output.send_chain_key.emplace();
+				master_key.deriveTo(output.send_chain_key.value(), 4);
 				break;
 
 			default:
 				break;
 		}
+
+		return output;
 	}
 }

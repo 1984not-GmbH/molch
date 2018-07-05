@@ -70,33 +70,50 @@ namespace Molch {
 		}();
 
 		//derive initial chain, root and header keys
-		derive_initial_root_chain_and_header_keys(
-			this->storage->root_key,
-			this->storage->send_chain_key,
-			this->storage->receive_chain_key,
-			this->storage->send_header_key,
-			this->storage->receive_header_key,
-			this->storage->next_send_header_key,
-			this->storage->next_receive_header_key,
+		auto derived_keys{derive_initial_root_chain_and_header_keys(
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral,
-			this->role);
+			this->role)};
+		auto& storage{this->storage};
+		storage->root_key = derived_keys.root_key;
+		if (derived_keys.send_chain_key.has_value()) {
+			storage->send_chain_key = derived_keys.send_chain_key.value();
+		} else {
+			storage->send_chain_key.clearKey();
+		}
+		if (derived_keys.receive_chain_key.has_value()) {
+			storage->receive_chain_key = derived_keys.receive_chain_key.value();
+		} else {
+			storage->receive_chain_key.clearKey();
+		}
+		if (derived_keys.send_header_key.has_value()) {
+			storage->send_header_key = derived_keys.send_header_key.value();
+		} else {
+			storage->send_header_key.clearKey();
+		}
+		if (derived_keys.receive_header_key.has_value()) {
+			storage->receive_header_key = derived_keys.receive_header_key.value();
+		} else {
+			storage->receive_header_key.clearKey();
+		}
+		storage->next_send_header_key = derived_keys.next_send_header_key;
+		storage->next_receive_header_key = derived_keys.next_receive_header_key;
 
 		//copy keys into state
 		//our public identity
-		this->storage->our_public_identity = our_public_identity;
+		storage->our_public_identity = our_public_identity;
 		//their_public_identity
-		this->storage->their_public_identity = their_public_identity;
+		storage->their_public_identity = their_public_identity;
 		//our_private_ephemeral
-		this->storage->our_private_ephemeral = our_private_ephemeral;
+		storage->our_private_ephemeral = our_private_ephemeral;
 		//our_public_ephemeral
-		this->storage->our_public_ephemeral = our_public_ephemeral;
+		storage->our_public_ephemeral = our_public_ephemeral;
 		//their_public_ephemeral
-		this->storage->their_public_ephemeral = their_public_ephemeral;
+		storage->their_public_ephemeral = their_public_ephemeral;
 
 		//set other state
 		this->ratchet_flag = static_cast<bool>(this->role);
