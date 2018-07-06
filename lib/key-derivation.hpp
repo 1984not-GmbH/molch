@@ -27,6 +27,12 @@
 #include "return-status.hpp"
 
 namespace Molch {
+	struct DerivedRootNextHeadAndChainKey {
+		RootKey root_key;
+		HeaderKey next_header_key;
+		ChainKey chain_key;
+	};
+
 	/*
 	 * Derive a root, next header and initial chain key for a new ratchet.
 	 *
@@ -34,10 +40,7 @@ namespace Molch {
 	 * and
 	 * RK, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
 	 */
-	void derive_root_next_header_and_chain_keys(
-			RootKey& root_key, //ROOT_KEY_SIZE
-			HeaderKey& next_header_key, //HEADER_KEY_SIZE
-			ChainKey& chain_key, //CHAIN_KEY_SIZE
+	DerivedRootNextHeadAndChainKey derive_root_next_header_and_chain_keys(
 			const PrivateKey& our_private_ephemeral,
 			const PublicKey& our_public_ephemeral,
 			const PublicKey& their_public_ephemeral,

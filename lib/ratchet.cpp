@@ -129,30 +129,31 @@ namespace Molch {
 			uint32_t& previous_send_message_number, //PNs
 			PublicKey& our_public_ephemeral, //PUBLIC_KEY_SIZE, DHRs
 			MessageKey& message_key) { //MESSAGE_KEY_SIZE, MK
+		auto& storage{this->storage};
 		if (this->ratchet_flag) {
 			//DHRs = generateECDH()
 			TRY_VOID(crypto_box_keypair(
-					this->storage->our_public_ephemeral,
-					this->storage->our_private_ephemeral));
-			this->storage->our_public_ephemeral.empty = false;
-			this->storage->our_private_ephemeral.empty = false;
+					storage->our_public_ephemeral,
+					storage->our_private_ephemeral));
+			storage->our_public_ephemeral.empty = false;
+			storage->our_private_ephemeral.empty = false;
 
 			//HKs = NHKs
-			this->storage->send_header_key = this->storage->next_send_header_key;
+			storage->send_header_key = storage->next_send_header_key;
 
 			//clone the root key for it to not be overwritten in the next step
-			RootKey root_key_backup{this->storage->root_key};
+			RootKey root_key_backup{storage->root_key};
 
 			//RK, NHKs, CKs = KDF(HMAC-HASH(RK, DH(DHRs, DHRr)))
-			derive_root_next_header_and_chain_keys(
-				this->storage->root_key,
-				this->storage->next_send_header_key,
-				this->storage->send_chain_key,
-				this->storage->our_private_ephemeral,
-				this->storage->our_public_ephemeral,
-				this->storage->their_public_ephemeral,
+			auto derived_keys{derive_root_next_header_and_chain_keys(
+				storage->our_private_ephemeral,
+				storage->our_public_ephemeral,
+				storage->their_public_ephemeral,
 				root_key_backup,
-				this->role);
+				this->role)};
+			storage->root_key = derived_keys.root_key;
+			storage->next_send_header_key = derived_keys.next_header_key;
+			storage->send_chain_key = derived_keys.chain_key;
 
 			//PNs = Ns
 			this->previous_message_number = this->send_message_number;
@@ -165,29 +166,29 @@ namespace Molch {
 		}
 
 		//MK = HMAC-HASH(CKs, "0")
-		message_key = this->storage->send_chain_key.deriveMessageKey();
+		message_key = storage->send_chain_key.deriveMessageKey();
 
 		//copy the other data to the output
 		//(corresponds to
 		//  msg = Enc(HKs, Ns || PNs || DHRs) || Enc(MK, plaintext)
 		//  in the axolotl specification)
 		//HKs:
-		send_header_key = this->storage->send_header_key.value();
+		send_header_key = storage->send_header_key.value();
 		//Ns
 		send_message_number = this->send_message_number;
 		//PNs
 		previous_send_message_number = this->previous_message_number;
 		//DHRs
-		our_public_ephemeral = this->storage->our_public_ephemeral;
+		our_public_ephemeral = storage->our_public_ephemeral;
 
 		//Ns = Ns + 1
 		this->send_message_number++;
 
 		//clone the chain key for it to not be overwritten in the next step
-		ChainKey chain_key_backup{this->storage->send_chain_key};
+		ChainKey chain_key_backup{storage->send_chain_key};
 
 		//CKs = HMAC-HASH(CKs, "1")
-		this->storage->send_chain_key = chain_key_backup.deriveChainKey();
+		storage->send_chain_key = chain_key_backup.deriveChainKey();
 	}
 
 	/*
@@ -304,19 +305,21 @@ namespace Molch {
 			throw Exception{status_type::INVALID_STATE, "Header decryption hasn't been tried yet."};
 		}
 
-		if (!this->storage->receive_header_key.isNone() && (this->header_decryptable == HeaderDecryptability::CURRENT_DECRYPTABLE)) { //still the same message chain
+		auto& storage{this->storage};
+
+		if (!storage->receive_header_key.isNone() && (this->header_decryptable == HeaderDecryptability::CURRENT_DECRYPTABLE)) { //still the same message chain
 			//Np = read(): get the purported message number from the input
 			this->purported_message_number = purported_message_number;
 
 			//CKp, MK = stage_skipped_header_and_message_keys(HKr, Nr, Np, CKr)
 			Ratchet::stageSkippedHeaderAndMessageKeys(
 				this->staged_header_and_message_keys,
-				&this->storage->purported_receive_chain_key,
+				&storage->purported_receive_chain_key,
 				&message_key,
-				this->storage->receive_header_key,
+				storage->receive_header_key,
 				this->receive_message_number,
 				purported_message_number,
-				this->storage->receive_chain_key);
+				storage->receive_chain_key);
 		} else { //new message chain
 			//if ratchet_flag or not Dec(NHKr, header)
 			if (this->ratchet_flag || (this->header_decryptable != HeaderDecryptability::NEXT_DECRYPTABLE)) {
@@ -328,39 +331,39 @@ namespace Molch {
 			//PNp = read(): get the purported previous message number from the input
 			this->purported_previous_message_number = purported_previous_message_number;
 			//DHRp = read(): get the purported ephemeral from the input
-			this->storage->their_purported_public_ephemeral = their_purported_public_ephemeral;
+			storage->their_purported_public_ephemeral = their_purported_public_ephemeral;
 
 			//stage_skipped_header_and_message_keys(HKr, Nr, PNp, CKr)
 			Ratchet::stageSkippedHeaderAndMessageKeys(
 					this->staged_header_and_message_keys,
 					nullptr, //output_chain_key
 					nullptr, //output_message_key
-					this->storage->receive_header_key,
+					storage->receive_header_key,
 					this->receive_message_number,
 					purported_previous_message_number,
-					this->storage->receive_chain_key);
+					storage->receive_chain_key);
 
 			//HKp = NHKr
-			this->storage->purported_receive_header_key = this->storage->next_receive_header_key;
+			storage->purported_receive_header_key = storage->next_receive_header_key;
 
 			//RKp, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
-			derive_root_next_header_and_chain_keys(
-					this->storage->purported_root_key,
-					this->storage->purported_next_receive_header_key,
-					this->storage->purported_receive_chain_key,
-					this->storage->our_private_ephemeral,
-					this->storage->our_public_ephemeral,
+			auto derived_keys{derive_root_next_header_and_chain_keys(
+					storage->our_private_ephemeral,
+					storage->our_public_ephemeral,
 					their_purported_public_ephemeral,
-					this->storage->root_key,
-					this->role);
+					storage->root_key,
+					this->role)};
+			storage->purported_root_key = derived_keys.root_key;
+			storage->purported_next_receive_header_key = derived_keys.next_header_key;
+			storage->purported_receive_chain_key = derived_keys.chain_key;
 
 			//backup the purported chain key because it will get overwritten in the next step
-			ChainKey purported_chain_key_backup{this->storage->purported_receive_chain_key};
+			ChainKey purported_chain_key_backup{storage->purported_receive_chain_key};
 
 			//CKp, MK = staged_header_and_message_keys(HKp, 0, Np, CKp)
 			Ratchet::stageSkippedHeaderAndMessageKeys(
 					this->staged_header_and_message_keys,
-					&this->storage->purported_receive_chain_key,
+					&storage->purported_receive_chain_key,
 					&message_key,
 					this->storage->purported_receive_header_key,
 					0,

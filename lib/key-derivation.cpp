@@ -34,10 +34,7 @@ namespace Molch {
 	 * and
 	 * RK, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
 	 */
-	void derive_root_next_header_and_chain_keys(
-			RootKey& root_key, //ROOT_KEY_SIZE
-			HeaderKey& next_header_key, //HEADER_KEY_SIZE
-			ChainKey& chain_key, //CHAIN_KEY_SIZE
+	DerivedRootNextHeadAndChainKey derive_root_next_header_and_chain_keys(
 			const PrivateKey& our_private_ephemeral,
 			const PublicKey& our_public_ephemeral,
 			const PublicKey& their_public_ephemeral,
@@ -68,15 +65,19 @@ namespace Molch {
 				previous_root_key));
 		derivation_key.empty = false;
 
+		DerivedRootNextHeadAndChainKey output;
+
 		//now derive the different keys from the derivation key
 		//root key
-		derivation_key.deriveTo(root_key, 0);
+		derivation_key.deriveTo(output.root_key, 0);
 
 		//next header key
-		derivation_key.deriveTo(next_header_key, 1);
+		derivation_key.deriveTo(output.next_header_key, 1);
 
 		//chain key
-		derivation_key.deriveTo(chain_key, 2);
+		derivation_key.deriveTo(output.chain_key, 2);
+
+		return output;
 	}
 
 	/*
