@@ -25,7 +25,8 @@ unit_tests = [
 		'return-status-test',
 		'buffer-test',
 		'molch-exception-test',
-		'time-test'
+		'time-test',
+		'copy-test',
 ]
 
 integration_tests = [
