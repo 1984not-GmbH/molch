@@ -53,8 +53,8 @@ namespace Molch {
 		PrivateSigningKey
 	};
 
-	template <size_t length, KeyType keytype>
-	class Key : public std::array<std::byte,length> {
+	template <size_t key_length, KeyType keytype>
+	class Key : public std::array<std::byte,key_length> {
 	private:
 		Key& copy(const Key& key) {
 			this->empty = key.empty;
@@ -76,6 +76,8 @@ namespace Molch {
 		}
 
 	public:
+		static constexpr size_t length{key_length};
+
 		bool empty{true};
 
 		Key() = default;
@@ -153,12 +155,12 @@ namespace Molch {
 			return type;
 		}
 
-		template <size_t derived_length,KeyType derived_type>
-		void deriveTo(Key<derived_length,derived_type>& derived_key, const uint32_t subkey_counter) const {
+		template <typename DerivedKeyType>
+		void deriveTo(DerivedKeyType& derived_key, const uint32_t subkey_counter) const {
 			Expects(!this->empty);
 
-			static_assert(derived_length <= crypto_generichash_blake2b_BYTES_MAX, "The derived length is greater than crypto_generichas_blake2b_BYTES_MAX");
-			static_assert(derived_length >= crypto_generichash_blake2b_BYTES_MIN, "The derived length is smaller than crypto_generichash_blake2b_BYTES_MAX");
+			static_assert(derived_key.length <= crypto_generichash_blake2b_BYTES_MAX, "The derived length is greater than crypto_generichas_blake2b_BYTES_MAX");
+			static_assert(derived_key.length >= crypto_generichash_blake2b_BYTES_MIN, "The derived length is smaller than crypto_generichash_blake2b_BYTES_MAX");
 			static_assert(length <= crypto_generichash_blake2b_KEYBYTES_MAX, "The length to derive from is greater than crypto_generichash_blake2b_KEYBYTES_MAX");
 			static_assert(length >= crypto_generichash_blake2b_KEYBYTES_MIN, "The length to derive from is smaller than crypto_generichash_blake2b_KEYBYTES_MIN");
 
