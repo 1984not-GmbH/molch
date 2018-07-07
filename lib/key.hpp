@@ -156,11 +156,13 @@ namespace Molch {
 		}
 
 		template <typename DerivedKeyType>
-		void deriveTo(DerivedKeyType& derived_key, const uint32_t subkey_counter) const {
+		DerivedKeyType deriveSubkeyWithIndex(const uint32_t subkey_counter) const {
 			Expects(!this->empty);
 
-			static_assert(derived_key.length <= crypto_generichash_blake2b_BYTES_MAX, "The derived length is greater than crypto_generichas_blake2b_BYTES_MAX");
-			static_assert(derived_key.length >= crypto_generichash_blake2b_BYTES_MIN, "The derived length is smaller than crypto_generichash_blake2b_BYTES_MAX");
+			DerivedKeyType derived_key;
+			derived_key.empty = false;
+			static_assert(DerivedKeyType::length <= crypto_generichash_blake2b_BYTES_MAX, "The derived length is greater than crypto_generichas_blake2b_BYTES_MAX");
+			static_assert(DerivedKeyType::length >= crypto_generichash_blake2b_BYTES_MIN, "The derived length is smaller than crypto_generichash_blake2b_BYTES_MAX");
 			static_assert(length <= crypto_generichash_blake2b_KEYBYTES_MAX, "The length to derive from is greater than crypto_generichash_blake2b_KEYBYTES_MAX");
 			static_assert(length >= crypto_generichash_blake2b_KEYBYTES_MIN, "The length to derive from is smaller than crypto_generichash_blake2b_KEYBYTES_MIN");
 
@@ -182,7 +184,7 @@ namespace Molch {
 					salt,
 					{uchar_to_byte(personal), sizeof(personal)}));
 
-			derived_key.empty = false;
+			return derived_key;
 		}
 
 		void fillRandom() {
@@ -269,17 +271,11 @@ namespace Molch {
 		using Key<CHAIN_KEY_SIZE,KeyType::ChainKey>::Key;
 
 		MessageKey deriveMessageKey() const {
-			MessageKey message_key;
-			this->deriveTo(message_key, 0);
-
-			return message_key;
+			return this->deriveSubkeyWithIndex<MessageKey>(0);
 		}
 
 		ChainKey deriveChainKey() const {
-			ChainKey chain_key;
-			this->deriveTo(chain_key, 1);
-
-			return chain_key;
+			return this->deriveSubkeyWithIndex<ChainKey>(1);
 		}
 	};
 

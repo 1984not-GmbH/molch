@@ -69,13 +69,13 @@ namespace Molch {
 
 		//now derive the different keys from the derivation key
 		//root key
-		derivation_key.deriveTo(output.root_key, 0);
+		output.root_key = derivation_key.deriveSubkeyWithIndex<RootKey>(0);
 
 		//next header key
-		derivation_key.deriveTo(output.next_header_key, 1);
+		output.next_header_key = derivation_key.deriveSubkeyWithIndex<HeaderKey>(1);
 
 		//chain key
-		derivation_key.deriveTo(output.chain_key, 2);
+		output.chain_key = derivation_key.deriveSubkeyWithIndex<ChainKey>(2);
 
 		return output;
 	}
@@ -119,7 +119,7 @@ namespace Molch {
 		DerivedInitialRootChainAndHeaderKeys output;
 		//derive root key
 		//RK = KDF(master_key, 0x00)
-		master_key.deriveTo(output.root_key, 0);
+		output.root_key = master_key.deriveSubkeyWithIndex<RootKey>(0);
 
 		//derive chain keys and header keys
 		switch (role) {
@@ -128,22 +128,20 @@ namespace Molch {
 				//HKs=<none>
 				output.send_header_key.reset();
 				//HKr = KDF(master_key, 0x01)
-				output.receive_header_key.emplace();
-				master_key.deriveTo(output.receive_header_key.value(), 1);
+				output.receive_header_key.emplace(master_key.deriveSubkeyWithIndex<HeaderKey>(1));
 
 				//NHKs, NHKr
 				//NHKs = KDF(master_key, 0x02)
-				master_key.deriveTo(output.next_send_header_key, 2);
+				output.next_send_header_key = master_key.deriveSubkeyWithIndex<HeaderKey>(2);
 
 				//NHKr = KDF(master_key, 0x03)
-				master_key.deriveTo(output.next_receive_header_key, 3);
+				output.next_receive_header_key = master_key.deriveSubkeyWithIndex<HeaderKey>(3);
 
 				//CKs=<none>, CKr=KDF
 				//CKs=<none>
 				output.send_chain_key.reset();
 				//CKr = KDF(master_key, 0x04)
-				output.receive_chain_key.emplace();
-				master_key.deriveTo(output.receive_chain_key.value(), 4);
+				output.receive_chain_key.emplace(master_key.deriveSubkeyWithIndex<ChainKey>(4));
 				break;
 
 			case Ratchet::Role::BOB:
@@ -151,21 +149,19 @@ namespace Molch {
 				//HKr = <none>
 				output.receive_header_key.reset();
 				//HKs = KDF(master_key, 0x01)
-				output.send_header_key.emplace();
-				master_key.deriveTo(output.send_header_key.value(), 1);
+				output.send_header_key.emplace(master_key.deriveSubkeyWithIndex<HeaderKey>(1));
 
 				//NHKr, NHKs
 				//NHKr = KDF(master_key, 0x02)
-				master_key.deriveTo(output.next_receive_header_key, 2);
+				output.next_receive_header_key = master_key.deriveSubkeyWithIndex<HeaderKey>(2);
 				//NHKs = KDF(master_key, 0x03)
-				master_key.deriveTo(output.next_send_header_key, 3);
+				output.next_send_header_key = master_key.deriveSubkeyWithIndex<HeaderKey>(3);
 
 				//CKs=KDF, CKr=<none>
 				//CKr = <none>
 				output.receive_chain_key.reset();
 				//CKs = KDF(master_key, 0x04)
-				output.send_chain_key.emplace();
-				master_key.deriveTo(output.send_chain_key.value(), 4);
+				output.send_chain_key.emplace(master_key.deriveSubkeyWithIndex<ChainKey>(4));
 				break;
 
 			default:
