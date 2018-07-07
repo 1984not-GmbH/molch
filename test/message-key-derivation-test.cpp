@@ -44,7 +44,9 @@ int main() {
 		chain_key.printHex(std::cout) << std::endl;
 
 		//derive message key from chain key
-		auto message_key{chain_key.deriveMessageKey()};
+
+		TRY_WITH_RESULT(message_key_result, chain_key.deriveMessageKey());
+		const auto& message_key{message_key_result.value()};
 
 		//print message key
 		printf("Message key (%zu Bytes):\n", message_key.size());

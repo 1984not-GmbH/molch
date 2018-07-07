@@ -56,7 +56,7 @@ namespace Molch {
 	template <size_t key_length, KeyType keytype>
 	class Key : public std::array<std::byte,key_length> {
 	private:
-		Key& copy(const Key& key) {
+		Key& copy(const Key& key) noexcept {
 			this->empty = key.empty;
 
 			std::copy(std::cbegin(key), std::cend(key), std::begin(*this));
@@ -64,7 +64,7 @@ namespace Molch {
 			return *this;
 		}
 
-		Key& move(Key&& key) {
+		Key& move(Key&& key) noexcept {
 			this->empty = key.empty;
 
 			if (key.empty) {
@@ -81,11 +81,11 @@ namespace Molch {
 		bool empty{true};
 
 		Key() = default;
-		Key(const Key& key) {
+		Key(const Key& key) noexcept {
 			this->copy(key);
 		}
 
-		Key(Key&& key) {
+		Key(Key&& key) noexcept {
 			this->move(std::move(key));
 		}
 
@@ -97,14 +97,14 @@ namespace Molch {
 			this->set(key);
 		}
 
-		~Key() {
+		~Key() noexcept {
 			this->zero();
 		}
 
-		Key& operator=(const Key& key) {
+		Key& operator=(const Key& key) noexcept {
 			return this->copy(key);
 		}
-		Key& operator=(Key&& key) {
+		Key& operator=(Key&& key) noexcept {
 			return this->move(std::move(key));
 		}
 
@@ -112,52 +112,53 @@ namespace Molch {
 		 * Constant time comparison of two keys.
 		 *
 		 * returns:
+		 *  -2 if one of the keys is empty
 		 *  -1 if this is less than key
 		 *   0 if this is equal to key
 		 *  +1 if this is greater than key
 		 *
 		 *  throws an exception if either is empty.
 		 */
-		int compare(const Key& key) const {
-			Expects(!this->empty && !key.empty);
+		int compare(const Key& key) const noexcept {
+			if (this->empty || key.empty) {
+				return -2;
+			}
 
-			TRY_WITH_RESULT(result, sodium_compare(*this, key));
-			return result.value();
+			auto comparison{sodium_compare(*this, key)};
+			if (!comparison) {
+				//This can never happen because *this and key have the same length
+				std::terminate();
+			}
+			return comparison.value();
 		}
 
 		//comparison operators
-		bool operator>(const Key& key) const {
+		bool operator>(const Key& key) const noexcept {
 			return (this->compare(key) == 1);
 		}
-		bool operator<(const Key& key) const {
+		bool operator<(const Key& key) const noexcept {
 			return (this->compare(key) == -1);
 		}
-		bool operator>=(const Key& key) const {
+		bool operator>=(const Key& key) const noexcept {
 			return !(*this < key);
 		}
-		bool operator<=(const Key& key) const {
+		bool operator<=(const Key& key) const noexcept {
 			return !(*this > key);
 		}
-		bool operator==(const Key& key) const {
-			if (this->empty && key.empty) {
+		bool operator==(const Key& key) const noexcept {
+			if (this->empty && key.empty) { //TODO remove eventually
 				return true;
-			} else if (this->empty || key.empty) {
-				return false;
 			}
 
 			return (this->compare(key) == 0);
 		}
-		bool operator!=(const Key& key) const {
+		bool operator!=(const Key& key) const noexcept {
 			return !(*this == key);
 		}
 
-		KeyType type() {
-			return type;
-		}
-
 		template <typename DerivedKeyType>
-		DerivedKeyType deriveSubkeyWithIndex(const uint32_t subkey_counter) const {
-			Expects(!this->empty);
+		result<DerivedKeyType> deriveSubkeyWithIndex(const uint32_t subkey_counter) const {
+			FulfillOrFail(!this->empty);
 
 			DerivedKeyType derived_key;
 			derived_key.empty = false;
@@ -270,11 +271,11 @@ namespace Molch {
 		//inherit constructors
 		using Key<CHAIN_KEY_SIZE,KeyType::ChainKey>::Key;
 
-		MessageKey deriveMessageKey() const {
+		result<MessageKey> deriveMessageKey() const noexcept {
 			return this->deriveSubkeyWithIndex<MessageKey>(0);
 		}
 
-		ChainKey deriveChainKey() const {
+		result<ChainKey> deriveChainKey() const noexcept {
 			return this->deriveSubkeyWithIndex<ChainKey>(1);
 		}
 	};

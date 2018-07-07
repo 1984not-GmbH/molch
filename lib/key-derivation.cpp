@@ -69,13 +69,16 @@ namespace Molch {
 
 		//now derive the different keys from the derivation key
 		//root key
-		output.root_key = derivation_key.deriveSubkeyWithIndex<RootKey>(0);
+		TRY_WITH_RESULT(root_key_result, derivation_key.deriveSubkeyWithIndex<RootKey>(0));
+		output.root_key = root_key_result.value();
 
 		//next header key
-		output.next_header_key = derivation_key.deriveSubkeyWithIndex<HeaderKey>(1);
+		TRY_WITH_RESULT(next_header_key_result, derivation_key.deriveSubkeyWithIndex<HeaderKey>(1));
+		output.next_header_key = next_header_key_result.value();
 
 		//chain key
-		output.chain_key = derivation_key.deriveSubkeyWithIndex<ChainKey>(2);
+		TRY_WITH_RESULT(chain_key_result, derivation_key.deriveSubkeyWithIndex<ChainKey>(2));
+		output.chain_key = chain_key_result.value();
 
 		return output;
 	}
@@ -119,49 +122,62 @@ namespace Molch {
 		DerivedInitialRootChainAndHeaderKeys output;
 		//derive root key
 		//RK = KDF(master_key, 0x00)
-		output.root_key = master_key.deriveSubkeyWithIndex<RootKey>(0);
+		TRY_WITH_RESULT(root_key_result, master_key.deriveSubkeyWithIndex<RootKey>(0));
+		output.root_key = root_key_result.value();
 
 		//derive chain keys and header keys
 		switch (role) {
 			case Ratchet::Role::ALICE:
-				//HKs=<none>, HKr=KDF
-				//HKs=<none>
-				output.send_header_key.reset();
-				//HKr = KDF(master_key, 0x01)
-				output.receive_header_key.emplace(master_key.deriveSubkeyWithIndex<HeaderKey>(1));
+				{
+					//HKs=<none>, HKr=KDF
+					//HKs=<none>
+					output.send_header_key.reset();
+					//HKr = KDF(master_key, 0x01)
+					TRY_WITH_RESULT(receive_header_key_result, master_key.deriveSubkeyWithIndex<HeaderKey>(1));
+					output.receive_header_key.emplace(receive_header_key_result.value());
 
-				//NHKs, NHKr
-				//NHKs = KDF(master_key, 0x02)
-				output.next_send_header_key = master_key.deriveSubkeyWithIndex<HeaderKey>(2);
+					//NHKs, NHKr
+					//NHKs = KDF(master_key, 0x02)
+					TRY_WITH_RESULT(next_send_header_key_result, master_key.deriveSubkeyWithIndex<HeaderKey>(2));
+					output.next_send_header_key = next_send_header_key_result.value();
 
-				//NHKr = KDF(master_key, 0x03)
-				output.next_receive_header_key = master_key.deriveSubkeyWithIndex<HeaderKey>(3);
+					//NHKr = KDF(master_key, 0x03)
+					TRY_WITH_RESULT(next_receive_header_key_result, master_key.deriveSubkeyWithIndex<HeaderKey>(3));
+					output.next_receive_header_key = next_receive_header_key_result.value();
 
-				//CKs=<none>, CKr=KDF
-				//CKs=<none>
-				output.send_chain_key.reset();
-				//CKr = KDF(master_key, 0x04)
-				output.receive_chain_key.emplace(master_key.deriveSubkeyWithIndex<ChainKey>(4));
+					//CKs=<none>, CKr=KDF
+					//CKs=<none>
+					output.send_chain_key.reset();
+					//CKr = KDF(master_key, 0x04)
+					TRY_WITH_RESULT(receive_chain_key_result, master_key.deriveSubkeyWithIndex<ChainKey>(4));
+					output.receive_chain_key.emplace(receive_chain_key_result.value());
+				}
 				break;
 
 			case Ratchet::Role::BOB:
-				//HKs=HKDF, HKr=<none>
-				//HKr = <none>
-				output.receive_header_key.reset();
-				//HKs = KDF(master_key, 0x01)
-				output.send_header_key.emplace(master_key.deriveSubkeyWithIndex<HeaderKey>(1));
+				{
+					//HKs=HKDF, HKr=<none>
+					//HKr = <none>
+					output.receive_header_key.reset();
+					//HKs = KDF(master_key, 0x01)
+					TRY_WITH_RESULT(send_header_key_result, master_key.deriveSubkeyWithIndex<HeaderKey>(1));
+					output.send_header_key.emplace(send_header_key_result.value());
 
-				//NHKr, NHKs
-				//NHKr = KDF(master_key, 0x02)
-				output.next_receive_header_key = master_key.deriveSubkeyWithIndex<HeaderKey>(2);
-				//NHKs = KDF(master_key, 0x03)
-				output.next_send_header_key = master_key.deriveSubkeyWithIndex<HeaderKey>(3);
+					//NHKr, NHKs
+					//NHKr = KDF(master_key, 0x02)
+					TRY_WITH_RESULT(next_receive_header_key_result, master_key.deriveSubkeyWithIndex<HeaderKey>(2));
+					output.next_receive_header_key = next_receive_header_key_result.value();
+					//NHKs = KDF(master_key, 0x03)
+					TRY_WITH_RESULT(next_send_header_key_result, master_key.deriveSubkeyWithIndex<HeaderKey>(3));
+					output.next_send_header_key = next_send_header_key_result.value();
 
-				//CKs=KDF, CKr=<none>
-				//CKr = <none>
-				output.receive_chain_key.reset();
-				//CKs = KDF(master_key, 0x04)
-				output.send_chain_key.emplace(master_key.deriveSubkeyWithIndex<ChainKey>(4));
+					//CKs=KDF, CKr=<none>
+					//CKr = <none>
+					output.receive_chain_key.reset();
+					//CKs = KDF(master_key, 0x04)
+					TRY_WITH_RESULT(send_chain_key, master_key.deriveSubkeyWithIndex<ChainKey>(4));
+					output.send_chain_key.emplace(send_chain_key.value());
+				}
 				break;
 
 			default:

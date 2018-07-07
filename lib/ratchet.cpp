@@ -166,7 +166,8 @@ namespace Molch {
 		}
 
 		//MK = HMAC-HASH(CKs, "0")
-		message_key = storage->send_chain_key.deriveMessageKey();
+		TRY_WITH_RESULT(message_key_result, storage->send_chain_key.deriveMessageKey());
+		message_key = message_key_result.value();
 
 		//copy the other data to the output
 		//(corresponds to
@@ -184,11 +185,9 @@ namespace Molch {
 		//Ns = Ns + 1
 		this->send_message_number++;
 
-		//clone the chain key for it to not be overwritten in the next step
-		ChainKey chain_key_backup{storage->send_chain_key};
-
 		//CKs = HMAC-HASH(CKs, "1")
-		storage->send_chain_key = chain_key_backup.deriveChainKey();
+		TRY_WITH_RESULT(send_chain_key_result, storage->send_chain_key.deriveChainKey());
+		storage->send_chain_key = send_chain_key_result.value();
 	}
 
 	/*
@@ -246,9 +245,11 @@ namespace Molch {
 		ChainKey next_chain_key;
 		MessageKey current_message_key;
 		for (uint32_t pos{current_message_number}; pos < future_message_number; pos++) {
-			current_message_key = current_chain_key.deriveMessageKey();
+			TRY_WITH_RESULT(current_message_key_result, current_chain_key.deriveMessageKey());
+			current_message_key = current_message_key_result.value();
 			staging_area.add(current_header_key, current_message_key);
-			next_chain_key = current_chain_key.deriveChainKey();
+			TRY_WITH_RESULT(next_chain_key_result, current_chain_key.deriveChainKey());
+			next_chain_key = next_chain_key_result.value();
 
 			//shift chain keys
 			current_chain_key = next_chain_key;
@@ -256,12 +257,14 @@ namespace Molch {
 
 		//derive the message key that will be returned
 		if (output_message_key != nullptr) {
-			*output_message_key = current_chain_key.deriveMessageKey();
+			TRY_WITH_RESULT(output_message_key_result, current_chain_key.deriveMessageKey());
+			*output_message_key = output_message_key_result.value();
 		}
 
 		//derive the chain key that will be returned
 		if (output_chain_key != nullptr) {
-			*output_chain_key = current_chain_key.deriveChainKey();
+			TRY_WITH_RESULT(output_chain_key_result, current_chain_key.deriveChainKey());
+			*output_chain_key = output_chain_key_result.value();
 		}
 	}
 

@@ -47,7 +47,8 @@ int main() {
 		ChainKey next_chain_key;
 		unsigned int counter;
 		for (counter = 1; counter <= 5; counter++) {
-			next_chain_key = last_chain_key.deriveChainKey();
+			TRY_WITH_RESULT(next_chain_key_result, last_chain_key.deriveChainKey());
+			next_chain_key = next_chain_key_result.value();
 
 			//print the derived chain key
 			printf("Chain key Nr. %i:\n", counter);
