@@ -357,16 +357,6 @@ namespace Molch {
 		}
 
 		/*
-		 * Copy the entire content of a buffer
-		 * to a raw array.
-		 */
-		result<void> cloneToRaw(const span<std::byte> destination) const noexcept {
-			FulfillOrFail(destination.size() >= this->content_length);
-
-			return copyFromTo(*this, destination, this->content_length);
-		}
-
-		/*
 		 * Return the content and set the capacity to 0 and size to 0.
 		 */
 		std::byte* release() noexcept {

@@ -63,6 +63,6 @@ namespace Molch {
 		}
 
 		//copy the random data to the output
-		TRY_VOID(os_random.cloneToRaw(output));
+		TRY_VOID(copyFromTo(os_random, output));
 	}
 }
