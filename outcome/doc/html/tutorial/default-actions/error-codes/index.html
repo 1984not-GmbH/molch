@@ -479,6 +479,11 @@
         <span>Videos</span>
       </a>
     </li>
+    <li data-nav-id="/outcome/changelog/" class="dd-item">
+      <a href="/outcome/changelog/">
+        <span>Changelog</span>
+      </a>
+    </li>
     <li data-nav-id="/outcome/history/" class="dd-item">
       <a href="/outcome/history/">
         <span>History</span>
@@ -595,8 +600,9 @@ we actually no longer need to specify <code>EC = err</code>, we can just leave i
 from any type with the trait <code>std::is_error_code_enum&lt;&gt;</code> defined to be true, it uses
 the ADL discovered free function <code>make_error_code()</code> during that implicit construction.</p>
 
-<p>The big advantage of always using <code>EC = std::error_code</code> is that <code>OUTCOME_TRY</code> only works when the <code>EC</code> type is the
-same in the try expression as the calling function, so by leaving it at the default of <code>std::error_code</code>, we can use <code>OUTCOME_TRY</code>
+<p>The big advantage of always using <code>EC = std::error_code</code> is that <code>OUTCOME_TRY</code> only
+works when the <code>EC</code> type is the same (or convertible to) in the try expression as the
+calling function, so by leaving it at the default of <code>std::error_code</code>, we can use <code>OUTCOME_TRY</code>
 and save having to type boilerplate:</p>
 
 <p><div class="code-snippet"><div class="highlight"><pre class="chroma"><code class="language-c++" data-lang="c++">
@@ -606,7 +612,7 @@ and save having to type boilerplate:</p>
 <span class="p">}</span>
 <span class="n">result</span><span class="o">&lt;</span><span class="n">udt</span><span class="o">&gt;</span> <span class="n">foo</span><span class="p">()</span>
 <span class="p">{</span>
-  <span class="n">OUTCOME_TRY</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">boo</span><span class="p">());</span>
+  <span class="n">OUTCOME_TRY</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="n">boo</span><span class="p">()));</span>
   <span class="k">return</span> <span class="n">udt</span><span class="p">{</span><span class="mi">5</span><span class="p">};</span>  <span class="c1">// emplace construct udt with 5
 </span><span class="c1"></span><span class="p">}</span>
 </code></pre></div><a href="https://github.com/ned14/outcome/tree/master/doc/src/snippets/error_code_enums2.cpp#L125" class="code-snippet-url" target="_blank">View this code on Github</a></div>

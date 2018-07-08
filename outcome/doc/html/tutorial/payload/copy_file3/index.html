@@ -479,6 +479,11 @@
         <span>Videos</span>
       </a>
     </li>
+    <li data-nav-id="/outcome/changelog/" class="dd-item">
+      <a href="/outcome/changelog/">
+        <span>Changelog</span>
+      </a>
+    </li>
     <li data-nav-id="/outcome/history/" class="dd-item">
       <a href="/outcome/history/">
         <span>History</span>
@@ -604,7 +609,7 @@ failing paths is easy:</p>
 </span><span class="c1"></span>  <span class="c1">// copied from the result. That means we can overload once with value semantics,
 </span><span class="c1"></span>  <span class="c1">// and not need to overload for lvalue and rvalue situations unless we really feel
 </span><span class="c1"></span>  <span class="c1">// we need to for some reason.
-</span><span class="c1"></span>  <span class="kr">inline</span> <span class="kt">void</span> <span class="n">throw_as_system_error_with_payload</span><span class="p">(</span><span class="n">failure_info</span> <span class="n">fi</span><span class="p">)</span>
+</span><span class="c1"></span>  <span class="kr">inline</span> <span class="kt">void</span> <span class="n">outcome_throw_as_system_error_with_payload</span><span class="p">(</span><span class="n">failure_info</span> <span class="n">fi</span><span class="p">)</span>
   <span class="p">{</span>
     <span class="c1">// If the error code is not filesystem related e.g. ENOMEM, throw that as a standard STL exception.
 </span><span class="c1"></span>    <span class="n">outcome</span><span class="o">::</span><span class="n">try_throw_std_exception_from_error</span><span class="p">(</span><span class="n">fi</span><span class="p">.</span><span class="n">ec</span><span class="p">);</span>
@@ -631,7 +636,7 @@ failing paths is easy:</p>
 </span><span class="c1"></span>  <span class="k">try</span>
   <span class="p">{</span>
     <span class="c1">// Try to observe the successful value, thus triggering default actions which invokes
-</span><span class="c1"></span>    <span class="c1">// our throw_as_system_error_with_payload() above which then throws filesystem_error
+</span><span class="c1"></span>    <span class="c1">// our outcome_throw_as_system_error_with_payload() above which then throws filesystem_error
 </span><span class="c1"></span>    <span class="c1">// exactly like the Filesystem TS does for its throwing overload.
 </span><span class="c1"></span>    <span class="n">filesystem2</span><span class="o">::</span><span class="n">copy_file</span><span class="p">(</span><span class="sa"></span><span class="s">&#34;dontexist&#34;</span><span class="p">,</span> <span class="sa"></span><span class="s">&#34;alsodontexist&#34;</span><span class="p">).</span><span class="n">value</span><span class="p">();</span>
   <span class="p">}</span>

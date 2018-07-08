@@ -15,10 +15,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include "gsl-lite.t.h"
+#include "gsl-lite.t.hpp"
 #include <functional>
 
-#define gsl_CPP11_OR_GREATER_WRT_FINAL ( gsl_CPP11_OR_GREATER || gsl_COMPILER_MSVC_VERSION >= 11 )
+#define gsl_CPP11_OR_GREATER_WRT_FINAL ( gsl_CPP11_OR_GREATER || gsl_COMPILER_MSVC_VERSION >= 110 )
 
 CASE( "finally: Allows to run lambda on leaving scope" )
 {
@@ -69,14 +69,14 @@ CASE( "finally: Allows to run function (pointer) on leaving scope" )
 #else
     g_i = 0;
     {
-        final_act _ = finally( &F::incr );
+        final_action _ = finally( &F::incr );
         EXPECT( g_i == 0 );
     }
     EXPECT( g_i == 1 );
 #endif
 }
 
-CASE( "finally: Allows to move final_act" )
+CASE( "finally: Allows to move final_action" )
 {
 #if gsl_CPP11_OR_GREATER_WRT_FINAL
     struct F { static void incr( int & i ) { i += 1; } };
@@ -101,14 +101,14 @@ CASE( "finally: Allows to move final_act" )
 
     g_i = 0;
     {
-        final_act _1 = finally( &F::incr );
+        final_action _1 = finally( &F::incr );
         {
-            final_act _2 = _1;
+            final_action _2 = _1;
             EXPECT( g_i == 0 );
         }
         EXPECT( g_i == 1 );
         {
-            final_act _2 = _1;
+            final_action _2 = _1;
             EXPECT( g_i == 1 );
         }
         EXPECT( g_i == 1 );
@@ -117,7 +117,7 @@ CASE( "finally: Allows to move final_act" )
 #endif
 }
 
-CASE( "finally: Allows moving final_act to throw" "[.]")
+CASE( "finally: Allows moving final_action to throw" "[.]")
 {
 #if gsl_CPP11_OR_GREATER_WRT_FINAL
     struct action
@@ -144,7 +144,7 @@ CASE( "finally: Allows moving final_act to throw" "[.]")
 
 CASE( "on_return: Allows to perform action on leaving scope without exception (gsl_FEATURE_EXPERIMENTAL_RETURN_GUARD)" )
 {
-#if gsl_FEATURE_EXPERIMENTAL_RETURN_GUARD
+#if gsl_FEATURE( EXPERIMENTAL_RETURN_GUARD )
 #if gsl_CPP11_OR_GREATER_WRT_FINAL
     struct F { 
         static void incr() { g_i += 1; }
@@ -154,12 +154,16 @@ CASE( "on_return: Allows to perform action on leaving scope without exception (g
 #else
     struct F { 
         static void incr() { g_i += 1; }
-        static void pass() { try { final_act_return _ = on_return( &F::incr ); /*throw std::exception();*/ } catch (...) {} }
-        static void fail() { try { final_act_return _ = on_return( &F::incr );   throw std::exception();   } catch (...) {} }
+        static void pass() { try { final_action_return _ = on_return( &F::incr ); /*throw std::exception();*/ } catch (...) {} }
+        static void fail() { try { final_action_return _ = on_return( &F::incr );   throw std::exception();   } catch (...) {} }
     };
 #endif
+    struct G {
+        ~G() { F::pass(); }
+    };
     { g_i = 0; F::pass(); EXPECT( g_i == 1 ); }
     { g_i = 0; F::fail(); EXPECT( g_i == 0 ); }
+    { g_i = 0; try { G g; throw std::exception(); } catch (...) {}; EXPECT( g_i == 1 ); }
 #else
     EXPECT( !!"on_return not available (no gsl_FEATURE_EXPERIMENTAL_RETURN_GUARD)" );
 #endif
@@ -167,7 +171,7 @@ CASE( "on_return: Allows to perform action on leaving scope without exception (g
 
 CASE( "on_error: Allows to perform action on leaving scope via an exception (gsl_FEATURE_EXPERIMENTAL_RETURN_GUARD)" )
 {
-#if gsl_FEATURE_EXPERIMENTAL_RETURN_GUARD
+#if gsl_FEATURE( EXPERIMENTAL_RETURN_GUARD )
 #if gsl_CPP11_OR_GREATER_WRT_FINAL
     struct F { 
         static void incr() { g_i += 1; }
@@ -177,12 +181,16 @@ CASE( "on_error: Allows to perform action on leaving scope via an exception (gsl
 #else
     struct F { 
         static void incr() { g_i += 1; }
-        static void pass() { try { final_act_error _ = on_error( &F::incr ); /*throw std::exception();*/ } catch (...) {} }
-        static void fail() { try { final_act_error _ = on_error( &F::incr );   throw std::exception();   } catch (...) {} }
+        static void pass() { try { final_action_error _ = on_error( &F::incr ); /*throw std::exception();*/ } catch (...) {} }
+        static void fail() { try { final_action_error _ = on_error( &F::incr );   throw std::exception();   } catch (...) {} }
     };
 #endif
+    struct G {
+        ~G() { F::pass(); }
+    };
     { g_i = 0; F::pass(); EXPECT( g_i == 0 ); }
     { g_i = 0; F::fail(); EXPECT( g_i == 1 ); }
+    { g_i = 0; try { G g; throw std::exception(); } catch (...) {}; EXPECT( g_i == 0 ); }
 #else
     EXPECT( !!"on_error not available (no gsl_FEATURE_EXPERIMENTAL_RETURN_GUARD)" );
 #endif

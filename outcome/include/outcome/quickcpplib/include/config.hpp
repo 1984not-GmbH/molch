@@ -25,7 +25,10 @@ Distributed under the Boost Software License, Version 1.0.
 #define QUICKCPPLIB_CONFIG_HPP
 
 #include "cpp_feature.h"
+
+#ifndef QUICKCPPLIB_DISABLE_ABI_PERMUTATION
 #include "revision.hpp"
+#endif
 
 #define QUICKCPPLIB_VERSION_GLUE2(a, b) a##b
 #define QUICKCPPLIB_VERSION_GLUE(a, b) QUICKCPPLIB_VERSION_GLUE2(a, b)
@@ -43,6 +46,10 @@ namespace quickcpplib
 #define QUICKCPPLIB_NAMESPACE quickcpplib::_xxx
 #define QUICKCPPLIB_NAMESPACE_BEGIN namespace quickcpplib { namespace _xxx {
 #define QUICKCPPLIB_NAMESPACE_END } }
+#elif defined(QUICKCPPLIB_DISABLE_ABI_PERMUTATION)
+#define QUICKCPPLIB_NAMESPACE quickcpplib
+#define QUICKCPPLIB_NAMESPACE_BEGIN namespace quickcpplib {
+#define QUICKCPPLIB_NAMESPACE_END }
 #else
 #define QUICKCPPLIB_NAMESPACE quickcpplib::QUICKCPPLIB_VERSION_GLUE(_, QUICKCPPLIB_PREVIOUS_COMMIT_UNIQUE)
 #define QUICKCPPLIB_NAMESPACE_BEGIN namespace quickcpplib { namespace QUICKCPPLIB_VERSION_GLUE(_, QUICKCPPLIB_PREVIOUS_COMMIT_UNIQUE) {
@@ -158,6 +165,11 @@ extern "C" void _mm_pause();
 #endif
 #endif
 
+#ifndef QUICKCPPLIB_NODISCARD
+#if defined(STANDARDESE_IS_IN_THE_HOUSE) || (_HAS_CXX17 && _MSC_VER >= 1911 /* VS2017.3 */)
+#define QUICKCPPLIB_NODISCARD [[nodiscard]]
+#endif
+#endif
 #ifndef QUICKCPPLIB_NODISCARD
 #ifdef __has_cpp_attribute
 #if __has_cpp_attribute(nodiscard)

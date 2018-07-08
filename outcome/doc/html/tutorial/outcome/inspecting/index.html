@@ -479,6 +479,11 @@
         <span>Videos</span>
       </a>
     </li>
+    <li data-nav-id="/outcome/changelog/" class="dd-item">
+      <a href="/outcome/changelog/">
+        <span>Changelog</span>
+      </a>
+    </li>
     <li data-nav-id="/outcome/history/" class="dd-item">
       <a href="/outcome/history/">
         <span>History</span>
@@ -602,7 +607,7 @@ If we are storing an <code>std::error_code</code> throw it as <code>std::system_
 
 
 <p>Function <code>has_exception</code> checks if it is <code>EP</code> (<code>std::exception_ptr</code>) that is stored, function <code>exception</code> accesses it. Similarly, function <code>error</code> accesses the <code>EC</code> (<code>std::error_code</code>) if it is stored.
-<code>outcome&lt;&gt;</code> has also function <code>has_failure</code> to check if either <code>EC</code> or <code>EP</code> is being stored. In fact, the above pattern of &ldquo;unpacking&rdquo; <code>outcome&lt;&gt;</code>
+<code>outcome&lt;&gt;</code> also has a function <code>has_failure</code> to check if either <code>EC</code> or <code>EP</code> is being stored. In fact, the above pattern of &ldquo;unpacking&rdquo; <code>outcome&lt;&gt;</code>
 is so common that it has been implemented inside function <code>.value()</code>, so function <code>z</code> could be written as:</p>
 <div class="highlight"><pre class="chroma"><code class="language-c++" data-lang="c++"><span class="k">return</span> <span class="n">old</span><span class="o">::</span><span class="n">h</span><span class="p">().</span><span class="n">value</span><span class="p">();</span></code></pre></div>
 

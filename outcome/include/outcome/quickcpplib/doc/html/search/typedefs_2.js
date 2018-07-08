@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['enum_5ftype',['enum_type',['../structquickcpplib_1_1__xxx_1_1bitfield_1_1bitfield.html#a64dd70d50f5acabe2a4524022bee2a18',1,'quickcpplib::_xxx::bitfield::bitfield']]]
+  ['byte',['byte',['../namespacegsl.html#a342d07d23bff66b0a2a85c5ffe7c64d4',1,'gsl']]]
 ];

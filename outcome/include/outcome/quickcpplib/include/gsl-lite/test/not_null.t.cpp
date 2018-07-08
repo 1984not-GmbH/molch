@@ -15,7 +15,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include "gsl-lite.t.h"
+#include "gsl-lite.t.hpp"
 #include <vector>
 
 namespace {
@@ -29,7 +29,7 @@ template<typename T>
 struct RefCounted
 {
     RefCounted( T * p ) : p_( p ) {}
-    operator T *() { return p_; }
+    operator T *() const { return p_; }
     T * p_;
 };
 
@@ -37,46 +37,46 @@ struct RefCounted
 
 CASE( "not_null<>: Disallows default construction (define gsl_CONFIG_CONFIRMS_COMPILATION_ERRORS)" )
 {
-#if gsl_CONFIG_CONFIRMS_COMPILATION_ERRORS
+#if gsl_CONFIG( CONFIRMS_COMPILATION_ERRORS )
     not_null< int* > p;
 #endif
 }
 
 CASE( "not_null<>: Disallows construction from nullptr_t, NULL or 0 (define gsl_CONFIG_CONFIRMS_COMPILATION_ERRORS)" )
 {
-#if gsl_CONFIG_CONFIRMS_COMPILATION_ERRORS
-# if gsl_HAVE_NULLPTR
-    not_null< int* > p = nullptr;
+#if gsl_CONFIG( CONFIRMS_COMPILATION_ERRORS )
+# if gsl_HAVE( NULLPTR )
+    not_null< int* > p( nullptr );
 # endif
-    not_null< int* > p = NULL;
-    not_null< std::vector<char>* > q = 0;
+    not_null< int* > q( NULL );
+    not_null< std::vector<char>* > r( 0 );
 #endif
 }
 
 CASE( "not_null<>: Disallows construction from a unique pointer to underlying type (define gsl_CONFIG_CONFIRMS_COMPILATION_ERRORS)" )
 {
-#if gsl_CONFIG_CONFIRMS_COMPILATION_ERRORS
-# if gsl_HAVE_UNIQUE_PTR
-    std::unique_ptr< int > up = std::make_unique<int>( 120 );
-    not_null< int* > p4 = up;
+#if gsl_CONFIG( CONFIRMS_COMPILATION_ERRORS )
+# if gsl_HAVE( UNIQUE_PTR )
+    std::unique_ptr< int > up( new int(120) );
+    not_null< int* > p4( up );
 # endif
 #endif
 }
 
 CASE( "not_null<>: Disallows assignment from unrelated pointers (define gsl_CONFIG_CONFIRMS_COMPILATION_ERRORS)" )
 {
-#if gsl_CONFIG_CONFIRMS_COMPILATION_ERRORS
+#if gsl_CONFIG( CONFIRMS_COMPILATION_ERRORS )
     MyDerived derived;
-    not_null< MyDerived* > p = &derived;
+    not_null< MyDerived* > p( &derived );
 
-    not_null< Unrelated* > r = p;
-    not_null< Unrelated* > s = reinterpret_cast< Unrelated* >( p );
+    not_null< Unrelated* > r( p );
+    not_null< Unrelated* > s( reinterpret_cast< Unrelated* >( p ) );
 #endif
 }
 
 CASE( "not_null<>: Terminates construction from a null pointer value" )
 {
-#if gsl_HAVE_NULLPTR
+#if gsl_HAVE( NULLPTR )
     struct F { static void blow() { int * z = nullptr; not_null<int*> p(z); } };
 #else
     struct F { static void blow() { int * z = NULL; not_null<int*> p(z); } };
@@ -87,7 +87,7 @@ CASE( "not_null<>: Terminates construction from a null pointer value" )
 
 CASE( "not_null<>: Terminates construction from related pointer types for null pointer value" )
 {
-#if gsl_HAVE_NULLPTR
+#if gsl_HAVE( NULLPTR )
     struct F { static void blow() { MyDerived * z = nullptr; not_null<MyBase*> p(z); } };
 #else
     struct F { static void blow() { MyDerived * z = NULL; not_null<MyBase*> p(z); } };
@@ -99,27 +99,27 @@ CASE( "not_null<>: Terminates construction from related pointer types for null p
 CASE( "not_null<>: Terminates assignment from a null pointer value" )
 {
     int i = 12;
-    not_null<int*> p = &i;
-#if gsl_HAVE_NULLPTR
+    not_null<int*> p( &i );
+#if gsl_HAVE( NULLPTR )
     int * z = nullptr;
 #else
     int * z = NULL;
 #endif
 
-    EXPECT_THROWS( p = z );
+    EXPECT_THROWS( p = not_null<int*>( z ) );
 }
 
 CASE( "not_null<>: Terminates assignment from related pointer types for null pointer value" )
 {
-#if gsl_HAVE_NULLPTR
+#if gsl_HAVE( NULLPTR )
     MyDerived * z = nullptr;
 #else
     MyDerived * z = NULL;
 #endif
     MyDerived derived;
-    not_null< MyBase* > p = &derived;
+    not_null< MyBase* > p( &derived );
 
-    EXPECT_THROWS( p = z );
+    EXPECT_THROWS( p = not_null<MyDerived*>( z ) );
 }
 
 CASE( "not_null<>: Allows to construct from a non-null underlying pointer" )
@@ -144,7 +144,7 @@ CASE( "not_null<>: Allows to construct from a non-null user-defined ref-counted 
 CASE( "not_null<>: Allows to construct from a non-null related pointer" )
 {
     MyDerived derived;
-    not_null< MyBase* > p = &derived;
+    not_null< MyBase* > p( &derived );
 
     EXPECT( p.get() == &derived );
 }
@@ -152,7 +152,7 @@ CASE( "not_null<>: Allows to construct from a non-null related pointer" )
 CASE( "not_null<>: Allows to construct from a not_null related pointer type" )
 {
     MyDerived derived;
-    not_null< MyDerived* > p = &derived;
+    not_null< MyDerived* > p( &derived );
 
     not_null< MyBase* > q = p;
 
@@ -162,7 +162,7 @@ CASE( "not_null<>: Allows to construct from a not_null related pointer type" )
 CASE( "not_null<>: Allows assignment from a not_null related pointer type" )
 {
     MyDerived derived;
-    not_null< MyDerived* > p = &derived;
+    not_null< MyDerived* > p( &derived );
     not_null< MyBase*    > q = p;
 
     q = p;
@@ -173,11 +173,11 @@ CASE( "not_null<>: Allows assignment from a not_null related pointer type" )
 CASE( "not_null<>: Allows assignment from a non-null bare recast pointer" )
 {
     MyDerived derived;
-    not_null< MyDerived* > p = &derived;
+    not_null< MyDerived* > p( &derived );
 
-    not_null< Unrelated* > t = reinterpret_cast< Unrelated* >( p.get() );
+    not_null< Unrelated* > t( reinterpret_cast< Unrelated* >( p.get() ) );
 
-    EXPECT( p.get() == reinterpret_cast<  MyDerived* >( t.get() ) );
+    EXPECT( p.get() == reinterpret_cast< MyDerived* >( t.get() ) );
 }
 
 CASE( "not_null<>: Allows implicit conversion to underlying type" )
@@ -185,7 +185,7 @@ CASE( "not_null<>: Allows implicit conversion to underlying type" )
     struct F { static bool helper( not_null<int*> p ) { return *p == 12; } };
 
     int i = 12;
-    not_null< int* > p = &i;
+    not_null< int* > p( &i );
 
     EXPECT( F::helper( p ) );
 }
@@ -199,7 +199,7 @@ CASE( "not_null<>: Allows indirect member access" )
 {
     using namespace nonlocal;
     S s = { 'a', 7 };
-    not_null< S* > p = &s;
+    not_null< S* > p( &s );
 
     EXPECT( p->c == 'a' );
     EXPECT( p->i ==  7  );
@@ -208,7 +208,7 @@ CASE( "not_null<>: Allows indirect member access" )
 CASE( "not_null<>: Allows dereferencing" )
 {
     int i = 12;
-    not_null< int* > p = &i;
+    not_null< int* > p( &i );
 
     EXPECT( *p == i );
 }
@@ -226,10 +226,11 @@ struct NotNull
     :  v1(   7 ),  v2(  42 )
     , pv1( &v1 ), pv2( &v2 ) {}
 
-    not_null<int       *> p1() const { return pv1; }
-    not_null<int const *> p2() const { return pv2; }
+    not_null<int       *> p1() const { return not_null<int       *>( pv1 ); }
+    not_null<int const *> p2() const { return not_null<int const *>( pv2 ); }
 };
 }
+
 
 CASE( "not_null<>: Allows to compare equal to another not_null of the same type" )
 {

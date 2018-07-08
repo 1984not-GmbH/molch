@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['okay',['okay',['../classquickcpplib_1_1__xxx_1_1algorithm_1_1secdec__ecc_1_1secded__ecc.html#a216b11ac5190e7f13b63a64638c17eafacde5bb4eb8ca6e5d29a7ccdb6329ce70',1,'quickcpplib::_xxx::algorithm::secdec_ecc::secded_ecc']]],
-  ['other',['other',['../group__tribool.html#ggafe26d2adc55c3e981fc0164e20ebeb9aa795f3202b17cb6bc3d4b771d8c6c9eaf',1,'quickcpplib::_xxx::tribool']]]
+  ['early_5fglobal_5fsignals',['early_global_signals',['../namespacequickcpplib_1_1__xxx_1_1signal__guard.html#ad51cebe56c9a0718495f06b43bd71fa3a7d516600bb930c4b047b5f624f288433',1,'quickcpplib::_xxx::signal_guard']]],
+  ['error',['error',['../namespacequickcpplib_1_1__xxx_1_1ringbuffer__log.html#add4cc747a8c90cbfd538b0f07dfdd1e2acb5e100e5a9a3e7f6d1fd97512215282',1,'quickcpplib::_xxx::ringbuffer_log']]]
 ];

@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # Python C99 conforming preprocessor useful for generating single include files
-# (C) 2017 Niall Douglas http://www.nedproductions.biz/
+# (C) 2017-2018 Niall Douglas http://www.nedproductions.biz/
 # and (C) 2007-2017 David Beazley http://www.dabeaz.com/
 # Started: Feb 2017
 #
@@ -13,7 +13,7 @@ from __future__ import generators, print_function
 
 __all__ = ['Preprocessor', 'OutputDirective']
 
-import sys, traceback
+import sys, traceback, time
 
 # Some Python 3 compatibility shims
 if sys.version_info.major < 3:
@@ -88,6 +88,7 @@ def t_error(t):
     t.lexer.skip(1)
     return t
 
+import codecs
 import re
 import copy
 import time
@@ -273,6 +274,21 @@ class PreprocessorHooks(object):
         tok.type = 'CPP_WS'
 
 # ------------------------------------------------------------------
+# File inclusion timings
+#
+# Useful for figuring out how long a sequence of preprocessor inclusions actually is
+# ------------------------------------------------------------------
+
+class FileInclusionTime(object):
+    """The seconds taken to #include another file"""
+    def __init__(self,including_path,included_path,included_abspath,depth):
+        self.including_path = including_path
+        self.included_path = included_path
+        self.included_abspath = included_abspath
+        self.depth = depth
+        self.elapsed = 0.0
+
+# ------------------------------------------------------------------
 # Preprocessor object
 #
 # Object representing a preprocessor.  Contains macro definitions,
@@ -290,10 +306,13 @@ class Preprocessor(PreprocessorHooks):
         self.path = []
         self.temp_path = []
         self.include_once = {}
+        self.include_depth = 0
+        self.include_times = []  # list of FileInclusionTime
         self.return_code = 0
         self.debugout = None
         self.auto_pragma_once_enabled = True
         self.line_directive = '#line'
+        self.compress = False
 
         # Probe the lexer for selected tokens
         self.__lexprobe()
@@ -349,6 +368,14 @@ class Preprocessor(PreprocessorHooks):
             self.t_INTEGER = tok.type
             self.t_INTEGER_TYPE = type(tok.value)
 
+        # Determine the token type for character
+        self.lexer.input("'a'")
+        tok = self.lexer.token()
+        if not tok or tok.value != "'a'":
+            print("Couldn't determine character type")
+        else:
+            self.t_CHAR = tok.type
+            
         # Determine the token type for strings enclosed in double quotes
         self.lexer.input("\"filename\"")
         tok = self.lexer.token()
@@ -585,7 +612,7 @@ class Preprocessor(PreprocessorHooks):
         macro.str_patch = []             # String conversion expansion
         macro.var_comma_patch = []       # Variadic macro comma patch
         i = 0
-        #print "BEFORE", macro.value
+        #print("BEFORE", macro.value)
         while i < len(macro.value):
             if macro.value[i].type == self.t_ID and macro.value[i].value in macro.arglist:
                 argnum = macro.arglist.index(macro.value[i].value)
@@ -620,7 +647,7 @@ class Preprocessor(PreprocessorHooks):
                     macro.var_comma_patch.append(i-1)
             i += 1
         macro.patch.sort(key=lambda x: x[2],reverse=True)
-        #print "AFTER", macro.value
+        #print("AFTER", macro.value)
 
     # ----------------------------------------------------------------------
     # macro_expand_args()
@@ -671,8 +698,8 @@ class Preprocessor(PreprocessorHooks):
         # size of the replacement sequence to expand from the patch point.
         
         expanded = { }
-        #print "***", macro
-        #print macro.patch
+        #print("***", macro)
+        #print(macro.patch)
         for ptype, argnum, i in macro.patch:
             # Concatenation.   Argument is left unexpanded
             if ptype == 't':
@@ -698,6 +725,7 @@ class Preprocessor(PreprocessorHooks):
                 j = i + 1
                 while rep[j].type == self.t_DPOUND:
                     j += 1
+                rep[i-1] = copy.copy(rep[i-1])
                 rep[i-1].type = self.t_ID
                 rep[i-1].value += rep[j].value
                 while j >= i:
@@ -790,7 +818,7 @@ class Preprocessor(PreprocessorHooks):
                                     if not hasattr(e, 'expanded_from'):
                                         e.expanded_from = []
                                     e.expanded_from.append(t.value)
-                                #print "\nExpanding macro", m, "\ninto", ex, "\nreplacing", tokens[i:j+tokcount]
+                                #print("\nExpanding macro", m, "\ninto", ex, "\nreplacing", tokens[i:j+tokcount])
                                 tokens[i:j+tokcount] = ex
                     continue
                 elif t.value == '__LINE__':
@@ -821,44 +849,50 @@ class Preprocessor(PreprocessorHooks):
         # Search for defined macros
         evalfuncts = {'defined' : lambda x: True}
         evalvars = {}
-        i = 0
-        while i < len(tokens):
-            if tokens[i].type == self.t_ID and tokens[i].value == 'defined':
-                j = i + 1
-                needparen = False
-                result = "0L"
-                while j < len(tokens):
-                    if tokens[j].type in self.t_WS:
-                        j += 1
-                        continue
-                    elif tokens[j].type == self.t_ID:
-                        if tokens[j].value in self.macros:
-                            result = "1L"
-                        else:
-                            repl = self.on_unknown_macro_in_defined_expr(tokens[j])
-                            if repl is None:
-                                # Add this identifier to a dictionary of variables
-                                evalvars[tokens[j].value] = 0
-                                result = 'defined('+tokens[j].value+')'
+        def replace_defined(tokens):
+            i = 0
+            while i < len(tokens):
+                if tokens[i].type == self.t_ID and tokens[i].value == 'defined':
+                    j = i + 1
+                    needparen = False
+                    result = "0L"
+                    while j < len(tokens):
+                        if tokens[j].type in self.t_WS:
+                            j += 1
+                            continue
+                        elif tokens[j].type == self.t_ID:
+                            if tokens[j].value in self.macros:
+                                result = "1L"
                             else:
-                                result = "1L" if repl else "0L"
-                        if not needparen: break
-                    elif tokens[j].value == '(':
-                        needparen = True
-                    elif tokens[j].value == ')':
-                        break
+                                repl = self.on_unknown_macro_in_defined_expr(tokens[j])
+                                if repl is None:
+                                    # Add this identifier to a dictionary of variables
+                                    evalvars[tokens[j].value] = 0
+                                    result = 'defined('+tokens[j].value+')'
+                                else:
+                                    result = "1L" if repl else "0L"
+                            if not needparen: break
+                        elif tokens[j].value == '(':
+                            needparen = True
+                        elif tokens[j].value == ')':
+                            break
+                        else:
+                            self.on_error(tokens[i].source,tokens[i].lineno,"Malformed defined()")
+                        j += 1
+                    if result.startswith('defined'):
+                        tokens[i].type = self.t_ID
+                        tokens[i].value = result
                     else:
-                        self.on_error(tokens[i].source,tokens[i].lineno,"Malformed defined()")
-                    j += 1
-                if result.startswith('defined'):
-                    tokens[i].type = self.t_ID
-                    tokens[i].value = result
-                else:
-                    tokens[i].type = self.t_INTEGER
-                    tokens[i].value = self.t_INTEGER_TYPE(result)
-                del tokens[i+1:j+1]
-            i += 1
+                        tokens[i].type = self.t_INTEGER
+                        tokens[i].value = self.t_INTEGER_TYPE(result)
+                    del tokens[i+1:j+1]
+                i += 1
+            return tokens
+        # Replace any defined(macro) before macro expansion
+        tokens = replace_defined(tokens)
         tokens = self.expand_macros(tokens)
+        # Replace any defined(macro) after macro expansion
+        tokens = replace_defined(tokens)
         if not tokens:
             return (0, None)
         for i,t in enumerate(tokens):
@@ -878,6 +912,17 @@ class Preprocessor(PreprocessorHooks):
                 if sys.version_info.major >= 3:
                     if len(tokens[i].value) > 1 and tokens[i].value[0] == '0' and tokens[i].value[1] >= '0' and tokens[i].value[1] <= '7':
                         tokens[i].value = '0o' + tokens[i].value[1:]
+            elif t.type == self.t_CHAR:
+                tokens[i] = copy.copy(t)
+                # Strip off any leading prefixes
+                tokens[i].value = str(tokens[i].value)
+                while tokens[i].value[0] != '\'':
+                    tokens[i].value = tokens[i].value[1:]
+                # Strip off quotes
+                strip_value = tokens[i].value.strip('\'')
+                # Unescape character
+                unescape_value = codecs.getdecoder("unicode_escape")(strip_value)[0]
+                tokens[i].value = ord(unescape_value)
             elif t.type == self.t_COLON:
                 # Find the expression before the colon
                 cs = ce = i - 1
@@ -953,6 +998,10 @@ class Preprocessor(PreprocessorHooks):
         if not source:
             source = ""
             
+        my_include_times_idx = len(self.include_times)
+        self.include_times.append(FileInclusionTime(self.macros['__FILE__'] if '__FILE__' in self.macros else None, source, abssource, self.include_depth))
+        self.include_depth += 1
+        my_include_time_begin = time.clock()
         self.define("__FILE__ \"%s\"" % source)
 
         self.source = abssource
@@ -995,21 +1044,23 @@ class Preprocessor(PreprocessorHooks):
                 try:
                     # Preprocessor directive      
                     i += 1
-                    while x[i].type in self.t_WS:
+                    while i < len(x) and x[i].type in self.t_WS:
                         i += 1                    
                     dirtokens = self.tokenstrip(x[i:])
                     if dirtokens:
                         name = dirtokens[0].value
                         args = self.tokenstrip(dirtokens[1:])
+                    
+                        if self.debugout is not None:
+                            print("%d:%d:%d %s:%d #%s %s" % (enable, iftrigger, ifpassthru, dirtokens[0].source, dirtokens[0].lineno, dirtokens[0].value, "".join([tok.value for tok in args])), file = self.debugout)
+                            #print(ifstack)
+
+                        handling = self.on_directive_handle(dirtokens[0],args,ifpassthru)
                     else:
                         name = ""
                         args = []
-                    
-                    if self.debugout is not None:
-                        print("%d:%d:%d %s:%d #%s %s" % (enable, iftrigger, ifpassthru, dirtokens[0].source, dirtokens[0].lineno, dirtokens[0].value, "".join([tok.value for tok in args])), file = self.debugout)
-                        #print(ifstack)
-
-                    handling = self.on_directive_handle(dirtokens[0],args,ifpassthru)
+                        handling = False
+                        
                     if handling == False:
                         pass
                     elif name == 'define':
@@ -1233,7 +1284,9 @@ class Preprocessor(PreprocessorHooks):
         elif self.auto_pragma_once_enabled and self.source not in self.include_once:
             if self.debugout is not None:
                 print("%d:%d:%d %s:%d Did not auto apply #pragma once to this file due to auto_pragma_once_possible=%d, include_guard=%s" % (enable, iftrigger, ifpassthru, self.source, 0, auto_pragma_once_possible, repr(include_guard)), file = self.debugout)
-        
+        my_include_time_end = time.clock()
+        self.include_times[my_include_times_idx].elapsed = my_include_time_end - my_include_time_begin
+        self.include_depth -= 1
 
     # ----------------------------------------------------------------------
     # include()
@@ -1480,10 +1533,11 @@ class Preprocessor(PreprocessorHooks):
                             del toks[m]
                             first_ws -= 1
                         first_ws = None
-                        # Collapse a token of many whitespace into single
-                        if toks[m].value[0] == ' ':
-                            toks[m].value = ' '
-            if not emitlinedirective:
+                        if self.compress:
+                            # Collapse a token of many whitespace into single
+                            if toks[m].value[0] == ' ':
+                                toks[m].value = ' '
+            if not self.compress and not emitlinedirective:
                 newlinesneeded = toks[0].lineno - lastlineno - 1
                 if newlinesneeded > 6 and self.line_directive is not None:
                     emitlinedirective = True

@@ -479,6 +479,11 @@
         <span>Videos</span>
       </a>
     </li>
+    <li data-nav-id="/outcome/changelog/" class="dd-item">
+      <a href="/outcome/changelog/">
+        <span>Changelog</span>
+      </a>
+    </li>
     <li data-nav-id="/outcome/history/" class="dd-item">
       <a href="/outcome/history/">
         <span>History</span>
@@ -576,7 +581,8 @@
 <dl>
 <dt><a href="https://ned14.github.io/outcome/reference/policies/all_narrow" class="api-reference"><i class="fa fa-book" aria-hidden="true"></i> all_narrow</a>
 </dt>
-<dd><p>Wide checks call their narrow check cousins only. Narrow checks
+<dd><p>Wide checks call their narrow check cousins only. If there is an observation
+of a value/error/exception which is not present, the narrow checks
 call a function called <code>_ub()</code> which:</p>
 
 <ol>

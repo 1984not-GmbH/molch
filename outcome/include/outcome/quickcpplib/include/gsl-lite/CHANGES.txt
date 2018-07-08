@@ -1,5 +1,97 @@
 Changes for GSL Lite – Guideline Support Library for C++98/03 and later
 
+version 0.32.0 2018-05-12
+
+- Review not_null (issue #122).
+- Add not_null_ic with implicit constructor, allowing copy-initialization.
+- Enable making not_null constructor explicit via gsl_CONFIG_NOT_NULL_EXPLICIT_CTOR, default 0 (breaking, issue #46).
+- Enable not_null get() return by const & via gsl_CONFIG_NOT_NULL_GET_BY_CONST_REF (via M-GSL PR 651 @xaxxon, PR 675 @ericLemanissier).
+- Change constraint on not_null construction from is_convertible to is_constructible (via M-GSL PR 650, @xaxxon).
+- Change to take not_null constructor argument by const & when rvalue references are not available.
+- Add not_null non-is-default rvalue reference copy-constructor, copy-assignment.
+- Remove not_null converting assignment operator.
+- Rename to gsl_HAVE_EXPLICIT.
+- Adapt several compile-time tests for not_null with explicit constructor.
+- Fix GNUC C++98 compilation by making RefCounted conversion function const in not_null.t.cpp.
+
+version 0.31.0 2018-05-10
+
+- Change span towards proposal p0122r7 (issue #118).
+- Add gsl_lite_MAJOR, gsl_lite_MINOR, gsl_lite_PATCH, script/update-version.py.
+- Add configuration selector gsl_CONFIG_DEPRECATE_TO_LEVEL.
+- Add feature selector gsl_FEATURE_WITH_CONTAINER_TO_STD.
+- Add feature selector gsl_FEATURE_MAKE_SPAN_TO_STD.
+- Add feature selector gsl_FEATURE_BYTE_SPAN_TO_STD.
+- Add macros gsl_FEATURE(), gsl_CONFIG(), gsl_HAVE().
+- Add macro gsl_ADDRESSOF(x).
+- Add span::value_type.
+- Add details::can_construct_span_from<>.
+- Add convertible constraint to span C-array constructor.
+- Add class template argument deduction guides for span.
+- Add make_span( with_container_t, ...) creator functions.
+- Add byte_span() creator functions.
+- Use C++11 constexpr where possible.
+- Parenthesize macro arguments.
+- Omit macros min(), max() via -DNOMINMAX.
+- Update t-all.bat for various configuration and feature selections.
+
+version 0.30.0 2018-05-06
+
+- Add support for DJGPP cross compiler is introduced (PR #107, thanks to Tomáš Zeman, @zemasoft).
+- Add Readme.md to example/cmake-pkg.
+- Update lest test framework to v1.33.1.
+- Allow strict aliasing with Clang and GNUC for gsl::byte (issue #114).
+- Enable differentiating between MSVC 14.0 (VS 2015) and 14.1 (VS 2017), also report clang version.
+- Remove the space after ':' in FILE: LINE in reported locations (issue #112).
+- Avoid MSVC level 4 warning C4127: conditional expression is constant (issue #115, thanks to @kpeace)
+- Add a constructor to allow rvalue to const lvalue conversion (issue #113, PR #117, thanks to @theodelrieu )
+- Enable owner alias template for VC12 (Issue #111, thanks to @sg-james)
+- Fix omission of #include <algorithm>
+- Fix clang compilation by specifying C++ standard
+- Fix gsl-lite version in section "As CMake package"
+- Fix type in a test of span has been correced (PR #105, thanks to Tomáš Zeman, @zemasoft)
+
+version 0.29.0 2018-03-03
+
+- Added CMake package, thanks to @FlorianWolters (PR #100, #103).
+- Added CMake option GSL_LITE_OPT_BUILD_TESTS to ./CMakeLists.txt (default off).
+- Added CMake option GSL_LITE_OPT_BUILD_EXAMPLESto ./CMakeLists.txt (default off).
+- Added scipt/install-gsl-pkg.py
+- Added script use-gsl-pkg.py as part of an example that uses the package.
+- Added script/update-version.py to updated gsl-lite's version number in relevant files.
+- Added type `gsl::index` for container indices, subscripts and sizes.
+- Fixed padding of the output stream operator of class `string_span` to pad to the right side.
+- Deprecated span::length() and span::length_bytes() (issue #99).
+- Deprecated constructors span(shared_ptr<element_type> const & ptr) and span(unique_ptr<element_type> const & ptr)` (issue #98).
+- Added documentation section 'Deprecation'.
+- Expanded documentation section 'Installation and use'.
+- Updated documentation section 'Reported to work with'.
+
+version 0.28.0 2018-01-01
+
+- Expand Travis and Appveyor CI compiler matrices and use CMake configuration.
+- Fix to use CMAKE_CXX_COMPILER_VERSION in CMake configuration.
+- Add targets for various -std flags for MSVC to CMake configuration.
+- Add Core Guidelines checking, limited to GSL Lite.
+- Add test to compare empty to non-empty string span.
+- Suppress test to compare empty string spans.
+- Update Wandbox link for release 0.28.0.
+- Update Wandbox link for release 0.27.0.
+
+version 0.27.0 2017-12-30
+
+- Change extension of GSL Lite header file to .hpp with backwards compatibility via headers gsl.h and gsl/gsl-lite.h. See issue #94 (thanks to @AraHaan).
+- Suppress several warnings from Microsoft's CppCoreCheck. See pull request #95 (thanks to @AraHaan).
+
+version 0.26.0 2017-12-09
+
+- Rename final_act to final_action per issue #89.
+- Make clang-tidy cppcoreguidelines checks pass per PR #91 (thanks to @poconbhui).
+- Fix nullptr to gsl_nullptr in not_nul::get() per PR #90 (thanks to @poconbhui).
+- Fix -Wshadow warning per PR #84 (thanks to @MikeLankamp).
+- Add conan installation instructions and badge (thanks to @agauniyal).
+- Add CMake install target per issue #85.
+
 version 0.25.0 2017-10-22
 
 - Restrict owner<T> to pointers if possible, per issue #80.

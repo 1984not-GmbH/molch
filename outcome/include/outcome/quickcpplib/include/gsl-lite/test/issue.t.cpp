@@ -15,11 +15,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include "gsl-lite.t.h"
+#include "gsl-lite.t.hpp"
 
 CASE( "span<>: free comparation functions fail for different const-ness" "[.issue #32]" )
 {
-#if gsl_CONFIG_ALLOWS_NONSTRICT_SPAN_COMPARISON
+#if gsl_FEATURE_TO_STD( MAKE_SPAN )
+#if gsl_CONFIG( ALLOWS_NONSTRICT_SPAN_COMPARISON )
     char data[] = { 'a', 'b' };
     string_span  a = make_span( data );
     cstring_span b = make_span( data ).last( 1 );
@@ -30,9 +31,12 @@ CASE( "span<>: free comparation functions fail for different const-ness" "[.issu
 #else
     EXPECT( !!"span<>: cannot compare different types (gsl_CONFIG_ALLOWS_NONSTRICT_SPAN_COMPARISON=0)" );
 #endif
+#else
+    EXPECT( !!"span<>: make_span() is not available (gsl_FEATURE_MAKE_SPAN_TO_STD)" );
+#endif
 }
 
-CASE( "byte: aliasing rules lead to undefined behaviour when using enum class" "[.issue #34](GSL #313)" )
+CASE( "byte: aliasing rules lead to undefined behaviour when using enum class" "[.issue #34](GSL issue #313, PR #390)" )
 {
     struct F {
         static int f( int & i, gsl::byte & r )
@@ -69,9 +73,15 @@ CASE( "string_span<>: must not include terminating '\\0'" "[.issue #53]" )
 
 CASE( "string_span<>: to_string triggers SFINAE errors on basic_string_span's move & copy constructor with Clang-3.9 (define gsl_CONFIG_CONFIRMS_COMPILATION_ERRORS)" "[.issue #53a]" )
 {
-#if gsl_CONFIG_CONFIRMS_COMPILATION_ERRORS
+#if gsl_CONFIG( CONFIRMS_COMPILATION_ERRORS )
     cstring_span span = "Hello world";
     std::string str = to_string( span );
 #endif
 }
+
+CASE( "narrow<>(): Allows narrowing double to float without MSVC level 4 warning C4127: conditional expression is constant [.issue #115]" )
+{
+    try { (void) narrow<float>( 1.0 ); } catch(...) {}
+}
+
 // end of file

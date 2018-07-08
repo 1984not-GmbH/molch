@@ -477,6 +477,11 @@
         <span>Videos</span>
       </a>
     </li>
+    <li data-nav-id="/outcome/changelog/" class="dd-item">
+      <a href="/outcome/changelog/">
+        <span>Changelog</span>
+      </a>
+    </li>
     <li data-nav-id="/outcome/history/" class="dd-item">
       <a href="/outcome/history/">
         <span>History</span>
@@ -527,82 +532,70 @@
 
 <h1 id="outcome-2-0-library">Outcome 2.0 library</h1>
 
-<p>Outcome is a C++14 library for reporting and handling function failures.
-It can be used as a substitute for, or a complement to, the exception handling mechanism.</p>
-
-<p>One use case is for contexts where using C++ exception handling is unsuitable for different reasons:</p>
+<p>Outcome is a set of tools for reporting and handling function failures in contexts where using C++ exception handling is unsuitable. Such contexts include:</p>
 
 <ul>
-<li>The high relative cost of throwing and catching a C++ exception.</li>
-<li>Making some or all control paths explicitly detailed to aid code correctness auditing,
- as opposed to having hidden control paths caused by exceptions potentially thrown from any place.</li>
-<li>Company policy to compile with exceptions disabled.</li>
-<li>Maintaining a code base that was never designed with exception-safety in mind.</li>
-<li>Parts of the programs/frameworks that themselves implement exception handling and cannot
- afford to use exceptions, like propagating failure reports across threads, tasks, fibers&hellip;</li>
+<li><p>programs, or parts thereof, that are compiled with exceptions disabled;</p></li>
+
+<li><p>parts of program that have a lot of branches depending on types of failures,
+where if-statements are cleaner than try-catch blocks;</p></li>
+
+<li><p>requirement that failure path of execution should not cost more than the successful path of execution;</p></li>
+
+<li><p>situations, like in <a href="http://www.boost.org/doc/libs/1_64_0/libs/filesystem/doc/index.htm"><code>filesystem</code></a> library, where the decision whether the failure should be handled remotely
+(use exceptions) or locally cannot be made inside the function and needs to be moved onto the caller,
+and in the latter case launching stack unwinding is not desireable for the aforementioned reasons;</p></li>
+
+<li><p>parts of the programs/frameworks that themselves implement exception handling and prefer
+to not use exceptions to propagate failure reports across thread, tasks, fibers;</p></li>
+
+<li><p>propagating exceptions trough layers that do not implement exception throw safety;</p></li>
+
+<li><p>external requirement (such as company-wide policy) that failure handling paths are explicitly indicated in the code.</p></li>
 </ul>
 
-<p>Another use case is to replace &lsquo;dual&rsquo; interfaces,
-like ones in <a href="http://www.boost.org/doc/libs/1_64_0/libs/filesystem/doc/index.htm">Boost.Filesystem</a>,
-where almost every function comes in two overloads, one throwing an exception,
-the other populating an <code>error_code</code> output argument. With Outcome, you can have only one function
-returning a composite return type, and it is through using this return value that you decide whether
-to handle failures locally, or to launch stack unwinding.</p>
-
-<p>Outcome can also be used to plug components that potentially throw exceptions into parts of the program
-that are not exception-safe whilst retaining all information from the thrown exception objects.</p>
+<p>Outcome addresses failure handling through returning a special type form functions, which is able to store either a succesfully computed value (or <code>void</code>) or the information about failure. Outcome also comes with a set of idioms for dealing with such types.</p>
 
 <h2 id="sample-usage">Sample usage</h2>
 
-<p>Function that may need to report failure needs to reflect that in its return type:</p>
+<p>One of the tools in the Outcome library is <code>result&lt;T&gt;</code>: it represents either a succesfully computed value of type <code>T</code> or an <code>std::error_code</code> representing the reason for failure. You use it in the function&rsquo;s return type:</p>
 
 <div class="code-snippet"><div class="highlight"><pre class="chroma"><code class="language-c++" data-lang="c++">
-<span class="k">auto</span> <span class="nf">read_int_from_file</span><span class="p">(</span><span class="n">string_view</span> <span class="n">path</span><span class="p">)</span> <span class="k">noexcept</span>
+<span class="k">auto</span> <span class="nf">read_data_from_file</span><span class="p">(</span><span class="n">string_view</span> <span class="n">path</span><span class="p">)</span> <span class="k">noexcept</span>
+  <span class="o">-&gt;</span> <span class="n">outcome</span><span class="o">::</span><span class="n">result</span><span class="o">&lt;</span><span class="n">string</span><span class="o">&gt;</span><span class="p">;</span>
+</code></pre></div><a href="https://github.com/ned14/outcome/tree/master/doc/src/snippets/intro_example.cpp#L20" class="code-snippet-url" target="_blank">View this code on Github</a></div>
+
+
+<p>It is possible to inspect the state manualy:</p>
+
+<div class="code-snippet"><div class="highlight"><pre class="chroma"><code class="language-c++" data-lang="c++">
+<span class="k">if</span> <span class="p">(</span><span class="k">auto</span> <span class="n">rslt</span> <span class="o">=</span> <span class="n">read_data_from_file</span><span class="p">(</span><span class="sa"></span><span class="s">&#34;config.cfg&#34;</span><span class="p">))</span>
+  <span class="n">use_string</span><span class="p">(</span><span class="n">rslt</span><span class="p">.</span><span class="n">value</span><span class="p">());</span>                   <span class="c1">// returns string
+</span><span class="c1"></span><span class="k">else</span>
+  <span class="k">throw</span> <span class="n">LibError</span><span class="p">{</span><span class="n">rslt</span><span class="p">.</span><span class="n">error</span><span class="p">(),</span> <span class="sa"></span><span class="s">&#34;config.cfg&#34;</span><span class="p">};</span> <span class="c1">// returns error_code
+</span><span class="c1"></span></code></pre></div><a href="https://github.com/ned14/outcome/tree/master/doc/src/snippets/intro_example.cpp#L26" class="code-snippet-url" target="_blank">View this code on Github</a></div>
+
+
+<p>Or, if this function is called in anoter function that also returns <code>result&lt;T&gt;</code> you can use a dedicated control statement:</p>
+
+<div class="code-snippet"><div class="highlight"><pre class="chroma"><code class="language-c++" data-lang="c++">
+<span class="k">auto</span> <span class="nf">process</span><span class="p">(</span><span class="k">const</span> <span class="n">string</span><span class="o">&amp;</span> <span class="n">content</span><span class="p">)</span> <span class="k">noexcept</span>
   <span class="o">-&gt;</span> <span class="n">outcome</span><span class="o">::</span><span class="n">result</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">;</span>
-</code></pre></div><a href="https://github.com/ned14/outcome/tree/master/doc/src/snippets/intro_example.cpp#L19" class="code-snippet-url" target="_blank">View this code on Github</a></div>
 
-
-<p>Function <code>read_int_from_file</code> will either return an <code>int</code> or information about
-the reason for failure.</p>
-
-<p>It is possible to inspect the returned state manually:</p>
-
-<div class="code-snippet"><div class="highlight"><pre class="chroma"><code class="language-c++" data-lang="c++">
-<span class="k">if</span> <span class="p">(</span><span class="k">auto</span> <span class="n">rslt</span> <span class="o">=</span> <span class="n">read_int_from_file</span><span class="p">(</span><span class="sa"></span><span class="s">&#34;config.cfg&#34;</span><span class="p">))</span>
-  <span class="n">use_int</span><span class="p">(</span><span class="n">rslt</span><span class="p">.</span><span class="n">value</span><span class="p">());</span>
-<span class="k">else</span>
-  <span class="nf">report_error</span><span class="p">(</span><span class="n">rslt</span><span class="p">.</span><span class="n">error</span><span class="p">());</span> <span class="c1">// returns std::error_code
-</span><span class="c1"></span></code></pre></div><a href="https://github.com/ned14/outcome/tree/master/doc/src/snippets/intro_example.cpp#L35" class="code-snippet-url" target="_blank">View this code on Github</a></div>
-
-
-<p>But most of the time you would inspect the object indirectly through a dedicated control statement. An implementation of <code>read_int_from_file</code> that has to (1) open the file, (2) read raw data to a buffer, and (3) interpret it as <code>int</code>, using the following three functions</p>
-
-<div class="code-snippet"><div class="highlight"><pre class="chroma"><code class="language-c++" data-lang="c++">
-<span class="k">auto</span> <span class="nf">open_file</span><span class="p">(</span><span class="n">string_view</span> <span class="n">path</span><span class="p">)</span> <span class="k">noexcept</span> <span class="o">-&gt;</span> <span class="n">outcome</span><span class="o">::</span><span class="n">result</span><span class="o">&lt;</span><span class="n">Handle</span><span class="o">&gt;</span><span class="p">;</span>
-<span class="k">auto</span> <span class="nf">read_data</span><span class="p">(</span><span class="n">Handle</span><span class="o">&amp;</span> <span class="n">h</span><span class="p">)</span>        <span class="k">noexcept</span> <span class="o">-&gt;</span> <span class="n">outcome</span><span class="o">::</span><span class="n">result</span><span class="o">&lt;</span><span class="n">Buffer</span><span class="o">&gt;</span><span class="p">;</span>     
-<span class="k">auto</span> <span class="nf">parse</span><span class="p">(</span><span class="k">const</span> <span class="n">Buffer</span><span class="o">&amp;</span> <span class="n">b</span><span class="p">)</span>      <span class="k">noexcept</span> <span class="o">-&gt;</span> <span class="n">outcome</span><span class="o">::</span><span class="n">result</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">;</span>
-</code></pre></div><a href="https://github.com/ned14/outcome/tree/master/doc/src/snippets/intro_example.cpp#L24" class="code-snippet-url" target="_blank">View this code on Github</a></div>
-
-
-<p>will look like this:</p>
-
-<div class="code-snippet"><div class="highlight"><pre class="chroma"><code class="language-c++" data-lang="c++">
-<span class="k">auto</span> <span class="nf">read_int_from_file</span><span class="p">(</span><span class="n">string_view</span> <span class="n">path</span><span class="p">)</span> <span class="k">noexcept</span>
+<span class="k">auto</span> <span class="nf">get_int_from_file</span><span class="p">(</span><span class="n">string_view</span> <span class="n">path</span><span class="p">)</span> <span class="k">noexcept</span>
   <span class="o">-&gt;</span> <span class="n">outcome</span><span class="o">::</span><span class="n">result</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span>
 <span class="p">{</span>
-  <span class="n">OUTCOME_TRY</span><span class="p">(</span><span class="n">handle</span><span class="p">,</span> <span class="n">open_file</span><span class="p">(</span><span class="n">path</span><span class="p">));</span>    <span class="c1">// decltype(handle) == Handle
-</span><span class="c1"></span>  <span class="n">OUTCOME_TRY</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span> <span class="n">read_data</span><span class="p">(</span><span class="n">handle</span><span class="p">));</span>  <span class="c1">// decltype(buffer) == Buffer
-</span><span class="c1"></span>  <span class="n">OUTCOME_TRY</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">parse</span><span class="p">(</span><span class="n">buffer</span><span class="p">));</span>         <span class="c1">// decltype(val) == int
-</span><span class="c1"></span>  <span class="k">return</span> <span class="n">val</span><span class="p">;</span>
-<span class="p">}</span>
-</code></pre></div><a href="https://github.com/ned14/outcome/tree/master/doc/src/snippets/intro_example.cpp#L44" class="code-snippet-url" target="_blank">View this code on Github</a></div>
+  <span class="n">OUTCOME_TRY</span><span class="p">(</span><span class="n">str</span><span class="p">,</span> <span class="p">(</span><span class="n">read_data_from_file</span><span class="p">(</span><span class="n">path</span><span class="p">)));</span>
+  <span class="c1">// if control gets here read_data_from_file() has succeeded
+</span><span class="c1"></span>  <span class="k">return</span> <span class="n">process</span><span class="p">(</span><span class="n">str</span><span class="p">);</span>  <span class="c1">// decltype(str) == string
+</span><span class="c1"></span><span class="p">}</span>
+</code></pre></div><a href="https://github.com/ned14/outcome/tree/master/doc/src/snippets/intro_example.cpp#L34" class="code-snippet-url" target="_blank">View this code on Github</a></div>
 
 
-<p>Each occurance of <code>OUTCOME_TRY</code> is a control statement. If the returned <code>result&lt;T&gt;</code> contains an error information, the function is immediately returned with <code>result&lt;U&gt;</code> containing the same error information; otherwise object of type <code>T</code> is move-constructed on the stack.</p>
+<p><code>OUTCOME_TRY</code> is a control statement. If the returned <code>result&lt;T&gt;</code> contains an error information, the enclosing function is immediatelly returned with <code>result&lt;U&gt;</code> containing the same failure information; otherwise object of type <code>T</code> is move-constructed on the stack.</p>
 
 <div class="notices note" ><p>This is the v2 Outcome designed in response to feedback from a <a href="https://lists.boost.org/boost-announce/2017/06/0510.php">Boost peer review held in
-May 2017</a>. This library
-is expected to pass a second Boost peer review in January 2018.</p>
+May 2017</a>. This library has successfully passed the second Boost peer review, and is currently expected to become part of the Boost official release distribution before the 1.69 release.</p>
 </div>
 
 	

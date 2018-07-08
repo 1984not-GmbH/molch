@@ -1,12 +1,24 @@
 from __future__ import absolute_import, print_function
-import sys, argparse, traceback, os
+import sys, argparse, traceback, os, copy
 if __name__ == '__main__' and __package__ is None:
     sys.path.append( os.path.dirname( os.path.dirname( os.path.abspath(__file__) ) ) )
 from pcpp.preprocessor import Preprocessor, OutputDirective
 
-version='1.0.1'
+version='1.1.1'
 
 __all__ = []
+
+class FileAction(argparse.Action):
+    def __init__(self, option_strings, dest, **kwargs):
+        super(FileAction, self).__init__(option_strings, dest, **kwargs)
+        
+    def __call__(self, parser, namespace, values, option_string=None):
+        if getattr(namespace, self.dest)[0] == sys.stdin:
+            items = []
+        else:
+            items = copy.copy(getattr(namespace, self.dest))
+        items += [argparse.FileType('rt')(value) for value in values]
+        setattr(namespace, self.dest, items)
 
 class CmdPreprocessor(Preprocessor):
     def __init__(self, argv):
@@ -17,9 +29,8 @@ class CmdPreprocessor(Preprocessor):
     other such build or packaging stage malarky.''',
             epilog=
     '''Note that so pcpp can stand in for other preprocessor tooling, it
-    ignores any arguments it does not understand and any files it cannot open.''')
-        argp.add_argument('input', metavar = 'input', type = argparse.FileType('rt'), default=sys.stdin, nargs = '?', help = 'File to preprocess')
-        #argp.add_argument('inputs', metavar = 'inputs', nargs = '*', action = 'append', help = 'More files to preprocess')
+    ignores any arguments it does not understand.''')
+        argp.add_argument('inputs', metavar = 'input', default = [sys.stdin], nargs = '*', action = FileAction, help = 'Files to preprocess')
         argp.add_argument('-o', dest = 'output', metavar = 'path', type = argparse.FileType('wt'), default=sys.stdout, nargs = '?', help = 'Output to a file instead of stdout')
         argp.add_argument('-D', dest = 'defines', metavar = 'macro[=val]', nargs = 1, action = 'append', help = 'Predefine name as a macro [with value]')
         argp.add_argument('-U', dest = 'undefines', metavar = 'macro', nargs = 1, action = 'append', help = 'Pre-undefine name as a macro')
@@ -33,6 +44,9 @@ class CmdPreprocessor(Preprocessor):
         argp.add_argument('--disable-auto-pragma-once', dest = 'auto_pragma_once_disabled', action = 'store_true', default = False, help = 'Disable the heuristics which auto apply #pragma once to #include files wholly wrapped in an obvious include guard macro')
         argp.add_argument('--line-directive', dest = 'line_directive', metavar = 'form', default = '#line', nargs = '?', help = "Form of line directive to use, defaults to #line, specify nothing to disable output of line directives")
         argp.add_argument('--debug', dest = 'debug', action = 'store_true', help = 'Generate a pcpp_debug.log file logging execution')
+        argp.add_argument('--time', dest = 'time', action = 'store_true', help = 'Print the time it took to #include each file')
+        argp.add_argument('--filetimes', dest = 'filetimes', metavar = 'path', type = argparse.FileType('wt'), default=None, nargs = '?', help = 'Write CSV file with time spent inside each included file, inclusive and exclusive')
+        argp.add_argument('--compress', dest = 'compress', action = 'store_true', help = 'Make output as small as possible')
         argp.add_argument('--version', action='version', version='pcpp ' + version)
         args = argp.parse_known_args(argv[1:])
         #print(args)
@@ -50,6 +64,7 @@ class CmdPreprocessor(Preprocessor):
             self.debugout = open("pcpp_debug.log", "wt")
         self.auto_pragma_once_enabled = not self.args.auto_pragma_once_disabled
         self.line_directive = self.args.line_directive
+        self.compress = self.args.compress
         
         # My own instance variables
         self.bypass_ifpassthru = False
@@ -74,7 +89,13 @@ class CmdPreprocessor(Preprocessor):
                 self.add_path(d)
 
         try:
-            self.parse(self.args.input)
+            if len(self.args.inputs) == 1:
+                self.parse(self.args.inputs[0])
+            else:
+                input = ''
+                for i in self.args.inputs:
+                    input += '#include "' + i.name + '"\n'
+                self.parse(input)
             self.write(self.args.output)
         except:
             print(traceback.print_exc(10), file = sys.stderr)
@@ -82,6 +103,46 @@ class CmdPreprocessor(Preprocessor):
                 % (self.lastdirective.source, self.lastdirective.lineno), file = sys.stderr)
             sys.exit(-99)
         
+        if self.args.time:
+            print("\nTime report:")
+            print("============")
+            for n in range(0, len(self.include_times)):
+                if n == 0:
+                    print("top level: %f seconds" % self.include_times[n].elapsed)
+                elif self.include_times[n].depth == 1:
+                    print("\n %s: %f seconds (%f%%)" % (self.include_times[n].included_path, self.include_times[n].elapsed, 100 * self.include_times[n].elapsed / self.include_times[0].elapsed))
+                else:
+                    print("%s%s: %f seconds" % (' ' * self.include_times[n].depth, self.include_times[n].included_path, self.include_times[n].elapsed))
+            print("\nPragma once files (including heuristically applied):")
+            print("====================================================")
+            for i in self.include_once:
+                print(" ", i)
+            print()
+        if self.args.filetimes:
+            print('"Total seconds","Self seconds","File size","File path"', file = self.args.filetimes)
+            filetimes = {}
+            currentfiles = []
+            for n in range(0, len(self.include_times)):
+                while self.include_times[n].depth < len(currentfiles):
+                    currentfiles.pop()
+                if self.include_times[n].depth > len(currentfiles) - 1:
+                    currentfiles.append(self.include_times[n].included_abspath)
+                #print()
+                #for path in currentfiles:
+                #    print("currentfiles =", path)
+                path = currentfiles[-1]
+                if path in filetimes:
+                    filetimes[path][0] += self.include_times[n].elapsed
+                    filetimes[path][1] += self.include_times[n].elapsed
+                else:
+                    filetimes[path] = [self.include_times[n].elapsed, self.include_times[n].elapsed]
+                if self.include_times[n].elapsed > 0 and len(currentfiles) > 1:
+                    #print("Removing child %f from parent %s = %f" % (self.include_times[n].elapsed, currentfiles[-2], filetimes[currentfiles[-2]]))
+                    filetimes[currentfiles[-2]][1] -= self.include_times[n].elapsed
+            filetimes = [(v[0],v[1],k) for k,v in filetimes.items()]
+            filetimes.sort(reverse=True)
+            for t,s,p in filetimes:
+                print(('%f,%f,%d,"%s"' % (t, s, os.stat(p).st_size, p)), file = self.args.filetimes)
     def on_include_not_found(self,is_system_include,curdir,includepath):
         if self.args.passthru_unfound_includes:
             raise OutputDirective()

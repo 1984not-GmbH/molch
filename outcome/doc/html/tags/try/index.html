@@ -477,6 +477,11 @@
         <span>Videos</span>
       </a>
     </li>
+    <li data-nav-id="/outcome/changelog/" class="dd-item">
+      <a href="/outcome/changelog/">
+        <span>Changelog</span>
+      </a>
+    </li>
     <li data-nav-id="/outcome/history/" class="dd-item">
       <a href="/outcome/history/">
         <span>History</span>
@@ -570,8 +575,8 @@
         <h2 class="post-title"><a href="/outcome/tutorial/result/inspecting/">Inspecting result&lt;T, EC&gt;</a></h2>
     </header>
     <section class="post-excerpt">
-        <p>Suppose we will be writing function print_half that takes an integral number (however big) represented as an std::string and outputs a number which is twice smaller:
-outcome::result&lt;void&gt; print_half(const std::string&amp; text); View this code on Github Type result&lt;void&gt; means that there is no value to be retuned upon success, but that the operation might still fail, and we may be interested in inspecting the cause of the failure. Class template result&lt;&gt; is declared with attribute [[nodiscard]], which means compiler will warn you if you forget to inspect the returned object (in C++ 17 or later). <a class="read-more" href="/outcome/tutorial/result/inspecting/">&raquo;</a></p>
+        <p>Suppose we will be writing a function print_half that takes an integer number (however big) represented as an std::string and outputs a number which is twice smaller:
+outcome::result&lt;void&gt; print_half(const std::string&amp; text); View this code on Github The type result&lt;void&gt; means that there is no value to be retuned upon success, but that the operation might still fail, and we may be interested in inspecting the cause of the failure. The class template result&lt;&gt; is declared with the attribute [[nodiscard]], which means the compiler will warn you if you forget to inspect the returned object (in C++ 17 or later). <a class="read-more" href="/outcome/tutorial/result/inspecting/">&raquo;</a></p>
     </section>
     <footer class=" footline" >
          
@@ -603,9 +608,8 @@ outcome::result&lt;void&gt; print_half(const std::string&amp; text); View this c
     </header>
     <section class="post-excerpt">
         <p>In the implementation of function print_half we have seen the usage of the macro  OUTCOME_TRY :
-OUTCOME_TRY (i, BigInt::fromString(text)); This control statement is roughly equivalent to:
-auto&amp;&amp; __result = BigInt::fromString(text); if (!__result) return __result.as_failure(); auto&amp;&amp; i = __result.value(); Where __result is a unique name.
-Additionally, in GCC and Clang which provide an extension to C++ known as statement expressions it is possible to use an alternative macro: OUTCOME_TRYX, which is an expression. <a class="read-more" href="/outcome/tutorial/result/try/">&raquo;</a></p>
+OUTCOME_TRY (i, (BigInt::fromString(text))); The OUTCOME_TRY macro uses C macro overloading to select between two implementations based on the number of input parameters. If there is exactly one input parameter i.e. without the i,, the control statement is roughly equivalent to:
+auto&amp;&amp; __result = BigInt::fromString(text); if (!__result) return __result.as_failure(); Where __result is a compile time generated unique name. <a class="read-more" href="/outcome/tutorial/result/try/">&raquo;</a></p>
     </section>
     <footer class=" footline" >
          

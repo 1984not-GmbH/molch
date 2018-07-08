@@ -479,6 +479,11 @@
         <span>Videos</span>
       </a>
     </li>
+    <li data-nav-id="/outcome/changelog/" class="dd-item">
+      <a href="/outcome/changelog/">
+        <span>Changelog</span>
+      </a>
+    </li>
     <li data-nav-id="/outcome/history/" class="dd-item">
       <a href="/outcome/history/">
         <span>History</span>
@@ -589,7 +594,7 @@ in this tutorial</a>:</p>
 </span><span class="c1"></span>  <span class="kr">inline</span> <span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">error_code</span> <span class="o">&amp;</span><span class="n">make_error_code</span><span class="p">(</span><span class="k">const</span> <span class="n">failure_info</span> <span class="o">&amp;</span><span class="n">fi</span><span class="p">)</span> <span class="p">{</span> <span class="k">return</span> <span class="n">fi</span><span class="p">.</span><span class="n">ec</span><span class="p">;</span> <span class="p">}</span>
 
   <span class="c1">// Tell Outcome that no-value observation should throw a custom exception
-</span><span class="c1"></span>  <span class="kr">inline</span> <span class="kt">void</span> <span class="n">throw_as_system_error_with_payload</span><span class="p">(</span><span class="n">failure_info</span> <span class="n">fi</span><span class="p">)</span>
+</span><span class="c1"></span>  <span class="kr">inline</span> <span class="kt">void</span> <span class="n">outcome_throw_as_system_error_with_payload</span><span class="p">(</span><span class="n">failure_info</span> <span class="n">fi</span><span class="p">)</span>
   <span class="p">{</span>
     <span class="c1">// If the error code is not filesystem related e.g. ENOMEM, throw that as a standard STL exception.
 </span><span class="c1"></span>    <span class="n">OUTCOME_V2_NAMESPACE</span><span class="o">::</span><span class="n">try_throw_std_exception_from_error</span><span class="p">(</span><span class="n">fi</span><span class="p">.</span><span class="n">ec</span><span class="p">);</span>

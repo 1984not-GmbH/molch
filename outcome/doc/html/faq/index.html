@@ -112,21 +112,6 @@
         <span>Custom payloads</span><i class="fa fa-angle-right fa-lg category-icon"></i>
       </a>
         <ul>
-      <li data-nav-id="/outcome/tutorial/payload/copy_file/" class="dd-item">
-        <a href="/outcome/tutorial/payload/copy_file/">
-          <span>The Filesystem TS</span>
-        </a>
-    </li>
-      <li data-nav-id="/outcome/tutorial/payload/copy_file2/" class="dd-item">
-        <a href="/outcome/tutorial/payload/copy_file2/">
-          <span>Upgrading the Filesystem TS</span>
-        </a>
-    </li>
-      <li data-nav-id="/outcome/tutorial/payload/copy_file3/" class="dd-item">
-        <a href="/outcome/tutorial/payload/copy_file3/">
-          <span>Auto-throwing filesystem_error</span>
-        </a>
-    </li>
         </ul>
     </li>
     <li data-nav-id="/outcome/tutorial/default-actions/" class="dd-item">
@@ -477,6 +462,11 @@
         <span>Videos</span>
       </a>
     </li>
+    <li data-nav-id="/outcome/changelog/" class="dd-item">
+      <a href="/outcome/changelog/">
+        <span>Changelog</span>
+      </a>
+    </li>
     <li data-nav-id="/outcome/history/" class="dd-item">
       <a href="/outcome/history/">
         <span>History</span>
@@ -548,6 +538,7 @@
 <ul>
 <li>
 <ul>
+<li><a href="#can-i-use-outcome-to-write-zero-overhead-deterministic-exceptions-as-is-proposed-to-enter-c-23">Can I use Outcome to write zero overhead deterministic exceptions as is proposed to enter C++ 23?</a></li>
 <li><a href="#is-outcome-safe-to-use-in-extern-apis">Is Outcome safe to use in extern APIs?</a></li>
 <li><a href="#does-outcome-have-a-stable-abi-and-api">Does Outcome have a stable ABI and API?</a></li>
 <li><a href="#why-two-types-result-and-outcome-rather-than-just-one">Why two types <code>result&lt;&gt;</code>  and <code>outcome&lt;&gt;</code> rather than just one?</a></li>
@@ -580,6 +571,7 @@
 <ul>
 <li>
 <ul>
+<li><a href="#can-i-use-outcome-to-write-zero-overhead-deterministic-exceptions-as-is-proposed-to-enter-c-23">Can I use Outcome to write zero overhead deterministic exceptions as is proposed to enter C++ 23?</a></li>
 <li><a href="#is-outcome-safe-to-use-in-extern-apis">Is Outcome safe to use in extern APIs?</a></li>
 <li><a href="#does-outcome-have-a-stable-abi-and-api">Does Outcome have a stable ABI and API?</a></li>
 <li><a href="#why-two-types-result-and-outcome-rather-than-just-one">Why two types <code>result&lt;&gt;</code>  and <code>outcome&lt;&gt;</code> rather than just one?</a></li>
@@ -592,6 +584,73 @@
 </ul></li>
 </ul>
 </nav>
+
+<h2 id="can-i-use-outcome-to-write-zero-overhead-deterministic-exceptions-as-is-proposed-to-enter-c-23">Can I use Outcome to write zero overhead deterministic exceptions as is proposed to enter C++ 23?</h2>
+
+<p>Technically yes:</p>
+<div class="highlight"><pre class="chroma"><code class="language-c++" data-lang="c++"><span class="c1">// Switch this to 0 if you have deterministic exceptions support in your compiler
+</span><span class="c1"></span><span class="cp">#define OUTCOME_DETERMINISTIC_EXCEPTIONS_USE_EMULATION 1
+</span><span class="cp"></span>
+<span class="cp">#include</span> <span class="cpf">&#34;outcome/try.hpp&#34;</span><span class="cp">
+</span><span class="cp">#include</span> <span class="cpf">&#34;outcome/experimental/status_result.hpp&#34;</span><span class="cp">
+</span><span class="cp"></span>
+<span class="cm">/*! Declare an API which throws a deterministic exception. Will compile into
+</span><span class="cm">deterministic exceptions, or an emulation.
+</span><span class="cm">*/</span>
+<span class="cp">#if OUTCOME_DETERMINISTIC_EXCEPTIONS_USE_EMULATION
+</span><span class="cp">#define OUTCOME_THROWS_API(rettype, errtype, ...) ::OUTCOME_V2_NAMESPACE::experimental::erased_result&lt;rettype, errtype&gt; __VA_ARGS__ noexcept
+</span><span class="cp">#else
+</span><span class="cp">#define OUTCOME_THROWS_API(rettype, errtype, ...) rettype __VA_ARGS__ throws(errtype)
+</span><span class="cp">#endif
+</span><span class="cp"></span>
+<span class="cm">/*! Declare an API which deterministically throws the default std::error.
+</span><span class="cm">Will compile into deterministic exceptions, or an emulation.
+</span><span class="cm">*/</span>
+<span class="cp">#if OUTCOME_DETERMINISTIC_EXCEPTIONS_USE_EMULATION
+</span><span class="cp">#define OUTCOME_THROWS_ERROR_API(rettype, ...) ::OUTCOME_V2_NAMESPACE::experimental::erased_result&lt;rettype, ::SYSTEM_ERROR2_NAMESPACE::error&gt; __VA_ARGS__ noexcept
+</span><span class="cp">#else
+</span><span class="cp">#define OUTCOME_THROWS_ERROR_API(rettype, ...) rettype __VA_ARGS__ throws(std::error)
+</span><span class="cp">#endif
+</span><span class="cp"></span>
+<span class="cm">/*! Throws a deterministic exception. Will compile into deterministic exceptions,
+</span><span class="cm">or an emulation.
+</span><span class="cm">*/</span>
+<span class="cp">#if OUTCOME_DETERMINISTIC_EXCEPTIONS_USE_EMULATION
+</span><span class="cp">#define OUTCOME_THROW(...) return ::OUTCOME_V2_NAMESPACE::failure(__VA_ARGS__)
+</span><span class="cp">#else
+</span><span class="cp">#define OUTCOME_THROW(...) throw(__VA_ARGS__)
+</span><span class="cp">#endif
+</span><span class="cp"></span>
+<span class="cm">/*! Call an API. Will compile into deterministic exceptions, or an emulation.
+</span><span class="cm">*/</span>
+<span class="cp">#if OUTCOME_DETERMINISTIC_EXCEPTIONS_USE_EMULATION
+</span><span class="cp">#define OUTCOME_CALL_API(...) OUTCOME_TRY(...)
+</span><span class="cp">#else
+</span><span class="cp">#define OUTCOME_CALL_API(...) (__VA_ARGS__)
+</span><span class="cp">#endif
+</span><span class="cp"></span>
+<span class="cm">/*! Catch any deterministic exceptions thrown by an expression into a ValueOrError
+</span><span class="cm">concept matching type.
+</span><span class="cm">*/</span>
+<span class="cp">#if OUTCOME_DETERMINISTIC_EXCEPTIONS_USE_EMULATION
+</span><span class="cp">#define OUTCOME_CATCH_EXPR(...) (...)
+</span><span class="cp">#else
+</span><span class="cp">#define OUTCOME_CATCH_EXPR(...) catch(__VA_ARGS__)
+</span><span class="cp">#endif</span></code></pre></div>
+<p>You would then have to write your code in this quite unnatural form:</p>
+<div class="highlight"><pre class="chroma"><code class="language-c++" data-lang="c++"><span class="c1">// Throws ::SYSTEM_ERROR2_NAMESPACE::error, the proposed std::error for P0709 Zero
+</span><span class="c1">// overhead deterministic exceptions
+</span><span class="c1"></span><span class="n">OUTCOME_THROWS_ERROR_API</span><span class="p">(</span><span class="kt">int</span><span class="p">,</span> <span class="n">foo</span><span class="p">(</span><span class="kt">double</span> <span class="n">x</span><span class="p">))</span>
+<span class="p">{</span>
+  <span class="k">if</span><span class="p">(</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">INT_MIN</span> <span class="o">||</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">INT_MAX</span><span class="p">)</span>
+    <span class="n">OUTCOME_THROW</span><span class="p">(</span><span class="o">::</span><span class="n">SYSTEM_ERROR2_NAMESPACE</span><span class="o">::</span><span class="n">errc</span><span class="o">::</span><span class="n">result_out_of_range</span><span class="p">);</span>
+  <span class="k">return</span> <span class="k">static_cast</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span><span class="p">(</span><span class="n">x</span><span class="p">);</span>
+<span class="p">}</span>
+<span class="p">...</span>
+<span class="kt">int</span> <span class="n">v</span> <span class="o">=</span> <span class="n">OUTCOME_CALL_API</span><span class="p">(</span><span class="n">foo</span><span class="p">(</span><span class="mf">5.0</span><span class="p">));</span></code></pre></div>
+<p>As much as it is technically feasible, it is probably not worth inudating your
+C++ code with so many macros, especially as Outcome will continue to work just fine
+in future C++ compilers.</p>
 
 <h2 id="is-outcome-safe-to-use-in-extern-apis">Is Outcome safe to use in extern APIs?</h2>
 

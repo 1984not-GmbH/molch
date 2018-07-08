@@ -479,6 +479,11 @@
         <span>Videos</span>
       </a>
     </li>
+    <li data-nav-id="/outcome/changelog/" class="dd-item">
+      <a href="/outcome/changelog/">
+        <span>Changelog</span>
+      </a>
+    </li>
     <li data-nav-id="/outcome/history/" class="dd-item">
       <a href="/outcome/history/">
         <span>History</span>
@@ -655,8 +660,8 @@ Now we can implement function <code>convert</code> as follows:</p>
 
 
 <p><code>result&lt;T, EC&gt;</code> is convertible from any <code>T2</code> convertible to <code>T</code> as well as any <code>EC2</code> convertible to <code>EC</code>,
-provided that the conversion is not ambiguous. If some type <code>X</code> is both convertible to <code>T</code> and <code>EC</code>,
-conversion to <code>result&lt;T, EC&gt;</code> fails to compile. In this case you need to use one of the tagged constructors:</p>
+provided that there is no constructability possible in either direction between <code>T</code> and <code>EC</code>. If there is,
+all implicit conversion is disabled, and you will need to use one of the tagged constructors:</p>
 
 <p><div class="code-snippet"><div class="highlight"><pre class="chroma"><code class="language-c++" data-lang="c++">
 <span class="n">outcome</span><span class="o">::</span><span class="n">result</span><span class="o">&lt;</span><span class="kt">int</span><span class="o">&gt;</span> <span class="n">r</span> <span class="p">{</span><span class="n">outcome</span><span class="o">::</span><span class="n">in_place_type</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">error_code</span><span class="o">&gt;</span><span class="p">,</span> <span class="n">ConversionErrc</span><span class="o">::</span><span class="n">EmptyString</span><span class="p">};</span>

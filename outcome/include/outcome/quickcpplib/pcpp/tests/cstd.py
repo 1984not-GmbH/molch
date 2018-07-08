@@ -285,3 +285,75 @@ BOOST_OUTCOME_V1_NAMESPACE_BEGIN
 _1_0_std_std_01320023
 namespace boost { namespace outcome { inline namespace _1_0_std_std_01320023 {
 """
+
+class test13(unittest.TestCase, runner):
+    input = r"""
+#define _CRT_INTERNAL_NONSTDC_NAMES                                            \
+    (                                                                          \
+        ( defined _CRT_DECLARE_NONSTDC_NAMES && _CRT_DECLARE_NONSTDC_NAMES) || \
+        (!defined _CRT_DECLARE_NONSTDC_NAMES && !__STDC__                 )    \
+    )
+#if _CRT_INTERNAL_NONSTDC_NAMES
+foo
+#endif
+"""
+    output = r"""#line 8
+foo
+"""
+
+class test14(unittest.TestCase, runner):
+    input = r"""
+# if defined __GNUC__ // NOTE: GNUC is also defined for Clang
+#   if (__GNUC__ == 4) && (__GNUC_MINOR__ >= 8)
+#     define TR2_OPTIONAL_GCC_4_8_AND_HIGHER___
+#   elif (__GNUC__ > 4)
+#     define TR2_OPTIONAL_GCC_4_8_AND_HIGHER___
+#   endif
+# 
+#   if (__GNUC__ == 4) && (__GNUC_MINOR__ >= 7)
+#     define TR2_OPTIONAL_GCC_4_7_AND_HIGHER___
+#   elif (__GNUC__ > 4)
+#     define TR2_OPTIONAL_GCC_4_7_AND_HIGHER___
+#   endif
+#
+#   if (__GNUC__ == 4) && (__GNUC_MINOR__ == 8) && (__GNUC_PATCHLEVEL__ >= 1)
+#     define TR2_OPTIONAL_GCC_4_8_1_AND_HIGHER___
+#   elif (__GNUC__ == 4) && (__GNUC_MINOR__ >= 9)
+#     define TR2_OPTIONAL_GCC_4_8_1_AND_HIGHER___
+#   elif (__GNUC__ > 4)
+#     define TR2_OPTIONAL_GCC_4_8_1_AND_HIGHER___
+#   endif
+# endif
+foo
+"""
+    output = r"""#line 23
+foo
+"""
+
+class test15(unittest.TestCase, runner):
+    input = r"""#define f(type) type type##_base
+f(g)
+"""
+    output = r"""
+g g_base
+"""
+
+class test16(unittest.TestCase, runner):
+    # #if ((1?2:3) == 2) is known to fail
+    input = r"""#if (((1)?2:3) == 2)
+hi
+#endif
+"""
+    output = r"""
+hi
+"""
+
+class test17(unittest.TestCase, runner):
+    input = r"""#if L'\0' == 0
+hi
+#endif
+"""
+    output = r"""
+hi
+"""
+

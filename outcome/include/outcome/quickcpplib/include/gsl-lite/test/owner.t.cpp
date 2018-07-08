@@ -15,12 +15,12 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-#include "gsl-lite.t.h"
+#include "gsl-lite.t.hpp"
 
 CASE( "owner<>: Disallows construction from a non-pointer type (define gsl_CONFIG_CONFIRMS_COMPILATION_ERRORS)" )
 {
-#if  gsl_CONFIG_CONFIRMS_COMPILATION_ERRORS
-# if gsl_HAVE_TYPE_TRAITS
+#if  gsl_CONFIG( CONFIRMS_COMPILATION_ERRORS )
+# if gsl_HAVE( TYPE_TRAITS )
     owner<int> p = gsl_nullptr;
 # else
     EXPECT( !!"owner<> alias template restricted to pointer type is not available." );
@@ -30,14 +30,14 @@ CASE( "owner<>: Disallows construction from a non-pointer type (define gsl_CONFI
 
 CASE( "owner<>: Allows its use as the (pointer) type it stands for" )
 {
-#if gsl_HAVE_OWNER_TEMPLATE
+#if gsl_HAVE( OWNER_TEMPLATE )
     struct F { static void incr( int * i ) { *i += 1; } };
 
     owner<int*> p = new int( 120 );
 
     EXPECT( (p != NULL) );
     EXPECT(  p != nullptr_void() );
-# if gsl_HAVE_NULLPTR
+# if gsl_HAVE( NULLPTR )
     EXPECT(  p != nullptr );
 # endif
     EXPECT( *p == 120 );
@@ -53,14 +53,14 @@ CASE( "owner<>: Allows its use as the (pointer) type it stands for" )
 
 CASE( "Owner(): Allows its use as the (pointer) type it stands for" )
 {
-#if gsl_FEATURE_HAVE_OWNER_MACRO
+#if gsl_FEATURE( HAVE_OWNER_MACRO )
     struct F { static void incr( int * i ) { *i += 1; } };
 
     Owner(int*) p = new int( 120 );
 
     EXPECT( (p != NULL) );
     EXPECT(  p != nullptr_void() );
-# if gsl_HAVE_NULLPTR
+# if gsl_HAVE( NULLPTR )
     EXPECT(  p != nullptr );
 # endif
     EXPECT( *p == 120 );

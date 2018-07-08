@@ -479,6 +479,11 @@
         <span>Videos</span>
       </a>
     </li>
+    <li data-nav-id="/outcome/changelog/" class="dd-item">
+      <a href="/outcome/changelog/">
+        <span>Changelog</span>
+      </a>
+    </li>
     <li data-nav-id="/outcome/history/" class="dd-item">
       <a href="/outcome/history/">
         <span>History</span>
@@ -583,16 +588,16 @@
 
 
 
-<p>Suppose we will be writing function <code>print_half</code> that takes an integral number (however big) represented as an <code>std::string</code> and outputs a number which is twice smaller:</p>
+<p>Suppose we will be writing a function <code>print_half</code> that takes an integer number (however big) represented as an <code>std::string</code> and outputs a number which is twice smaller:</p>
 
 <div class="code-snippet"><div class="highlight"><pre class="chroma"><code class="language-c++" data-lang="c++">
 <span class="n">outcome</span><span class="o">::</span><span class="n">result</span><span class="o">&lt;</span><span class="kt">void</span><span class="o">&gt;</span> <span class="n">print_half</span><span class="p">(</span><span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span> <span class="n">text</span><span class="p">);</span>
 </code></pre></div><a href="https://github.com/ned14/outcome/tree/master/doc/src/snippets/using_result.cpp#L111" class="code-snippet-url" target="_blank">View this code on Github</a></div>
 
 
-<p>Type <code>result&lt;void&gt;</code> means that there is no value to be retuned upon success, but that the operation might still fail, and we may be interested in inspecting the cause of the failure. Class template <code>result&lt;&gt;</code> is declared with attribute <code>[[nodiscard]]</code>, which means compiler will warn you if you forget to inspect the returned object (in C++ 17 or later).</p>
+<p>The type <code>result&lt;void&gt;</code> means that there is no value to be retuned upon success, but that the operation might still fail, and we may be interested in inspecting the cause of the failure. The class template <code>result&lt;&gt;</code> is declared with the attribute <code>[[nodiscard]]</code>, which means the compiler will warn you if you forget to inspect the returned object (in C++ 17 or later).</p>
 
-<p>The implementation will do the following: if the integral number can be represnted by an <code>int</code>, we will convert to <code>int</code> and use its arithmetical operations. If the number is too large, we will fall back to using a custom <code>BigInt</code> implementation that needs to allocate memory. In the implementation we will use function <code>convert</code> defined in the previous section.</p>
+<p>The implementation will do the following: if the integral number can be represented by an <code>int</code>, we will convert to <code>int</code> and use its arithmetical operations. If the number is too large, we will fall back to using a custom <code>BigInt</code> implementation that needs to allocate memory. In the implementation we will use the function <code>convert</code> defined in the previous section.</p>
 
 <div class="code-snippet"><div class="highlight"><pre class="chroma"><code class="language-c++" data-lang="c++">
 <span class="n">outcome</span><span class="o">::</span><span class="n">result</span><span class="o">&lt;</span><span class="kt">void</span><span class="o">&gt;</span> <span class="n">print_half</span><span class="p">(</span><span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span> <span class="n">text</span><span class="p">)</span>
@@ -605,7 +610,7 @@
   <span class="p">{</span>
     <span class="k">if</span> <span class="p">(</span><span class="n">r</span><span class="p">.</span><span class="n">error</span><span class="p">()</span> <span class="o">==</span> <span class="n">ConversionErrc</span><span class="o">::</span><span class="n">TooLong</span><span class="p">)</span>     <span class="c1">// #3 
 </span><span class="c1"></span>    <span class="p">{</span>
-      <span class="n">OUTCOME_TRY</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">BigInt</span><span class="o">::</span><span class="n">fromString</span><span class="p">(</span><span class="n">text</span><span class="p">));</span>  <span class="c1">// #4
+      <span class="n">OUTCOME_TRY</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">BigInt</span><span class="o">::</span><span class="n">fromString</span><span class="p">(</span><span class="n">text</span><span class="p">)));</span><span class="c1">// #4
 </span><span class="c1"></span>      <span class="n">std</span><span class="o">::</span><span class="n">cout</span> <span class="o">&lt;&lt;</span> <span class="n">i</span><span class="p">.</span><span class="n">half</span><span class="p">()</span> <span class="o">&lt;&lt;</span> <span class="n">std</span><span class="o">::</span><span class="n">endl</span><span class="p">;</span>
     <span class="p">}</span>
     <span class="k">else</span>
@@ -620,21 +625,21 @@
 
 <p>#1. You test if <code>result&lt;&gt;</code> object represents a successful operation with contextual conversion to <code>bool</code>.</p>
 
-<p>#2. Function <code>.value()</code> extracts the successfully returned <code>BigInt</code>.</p>
+<p>#2. The function <code>.value()</code> extracts the successfully returned <code>int</code>.</p>
 
-<p>#3. Function <code>.error()</code> allows you to inspect the error sub-object, representing information about the reason for failure.</p>
+<p>#3. The function <code>.error()</code> allows you to inspect the error sub-object, representing information about the reason for failure.</p>
 
-<p>#4. Macro <code>OUTCOME_TRY</code> represents a control statement. It implies that the function call in the second argument returns a <code>result&lt;&gt;</code>. It is defined as:</p>
+<p>#4. Macro <code>OUTCOME_TRY</code> represents a control statement. It implies that the expression in the second argument returns a <code>result&lt;&gt;</code>. The function is defined as:</p>
 
 <p><div class="code-snippet"><div class="highlight"><pre class="chroma"><code class="language-c++" data-lang="c++">
 <span class="cm">/*static*/</span> <span class="n">outcome</span><span class="o">::</span><span class="n">result</span><span class="o">&lt;</span><span class="n">BigInt</span><span class="o">&gt;</span> <span class="n">BigInt</span><span class="o">::</span><span class="n">fromString</span><span class="p">(</span><span class="k">const</span> <span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&amp;</span> <span class="n">s</span><span class="p">)</span>
 </code></pre></div><a href="https://github.com/ned14/outcome/tree/master/doc/src/snippets/using_result.cpp#L104" class="code-snippet-url" target="_blank">View this code on Github</a></div>
 </p>
 
-<p>Our control statement means: if <code>fromString</code> returned failure, this same error information should be returned from <code>print_half</code>, even though the type of <code>result&lt;&gt;</code> is different. If <code>fromString</code> returned success, we create  variable <code>i</code> of type <code>int</code> with the value returned from <code>fromString</code>. If control goes to subsequent line, it means <code>fromString</code> succeeded and variable of type <code>int</code> is in scope.</p>
+<p>Our control statement means: if <code>fromString</code> returned failure, this same error information should be returned from <code>print_half</code>, even though the type of <code>result&lt;&gt;</code> is different. If <code>fromString</code> returned success, we create  variable <code>i</code> of type <code>BigInt</code> with the value returned from <code>fromString</code>. If control goes to subsequent line, it means <code>fromString</code> succeeded and variable of type <code>BigInt</code> is in scope.</p>
 
 <p>#5. In the return statement we extract the error information and use it to initialize the return value from <code>print_half</code>. We could have written <code>return r.error();</code> instead,
-    and it would have the same effect, but it would not work if we were using <code>outcome&lt;&gt;</code> instead of <code>result&lt;&gt;</code> &ndash; this will be covered later.</p>
+    and it would have the same effect, but <code>r.as_failure()</code> will work when implicit construction from <code>E</code> has been disabled due to <code>T</code> and <code>E</code> having a constructibility relationship.</p>
 
 <p>#6. Function <code>success()</code> returns an object of type <code>success&lt;void&gt;</code> representing success. This is implicitly converted by
 all <code>result</code> and <code>outcome</code> types into a successful return, default constructing any <code>T</code> if necessary.</p>

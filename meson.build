@@ -23,7 +23,7 @@ common_flags = [
 	'-fstack-protector-all',
 	'-Wcomma',
 	'-Wdouble-promotion',
-	'-Wparentheses',
+	'-Wno-parentheses',
 	'-fPIC',
 	'-Wunused-macros',
 	'-Wmissing-variable-declarations',

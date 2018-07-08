@@ -479,6 +479,11 @@
         <span>Videos</span>
       </a>
     </li>
+    <li data-nav-id="/outcome/changelog/" class="dd-item">
+      <a href="/outcome/changelog/">
+        <span>Changelog</span>
+      </a>
+    </li>
     <li data-nav-id="/outcome/history/" class="dd-item">
       <a href="/outcome/history/">
         <span>History</span>
@@ -578,7 +583,7 @@ marshalling at the ABI boundary:</p>
 <ol>
 <li>A C++ function may not throw exceptions if it is safe to call from C, and
 so should always be marked <code>noexcept</code>.</li>
-<li>A C++ function should annotated with <code>extern &quot;C&quot;</code> to prevent its symbol
+<li>A C++ function should be annotated with <code>extern &quot;C&quot;</code> to prevent its symbol
 being mangled, and thus give it the C rather than C++ ABI.</li>
 <li>You cannot use overloading in your <code>extern &quot;C&quot;</code> functions.</li>
 <li>You may only use types in your C++ function for which these traits are both true:

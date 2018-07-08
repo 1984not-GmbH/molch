@@ -93,7 +93,7 @@ We therefore are going to need some completely static and trivially typed storag
       
       <guid>https://ned14.github.io/outcome/tutorial/c-api/limitations/</guid>
       <description>C++ has excellent two-way compatibility with the C ABI, but there are some limitations you must observe to write C++ code which C code can call without marshalling at the ABI boundary:
- A C++ function may not throw exceptions if it is safe to call from C, and so should always be marked noexcept. A C++ function should annotated with extern &amp;quot;C&amp;quot; to prevent its symbol being mangled, and thus give it the C rather than C++ ABI.</description>
+ A C++ function may not throw exceptions if it is safe to call from C, and so should always be marked noexcept. A C++ function should be annotated with extern &amp;quot;C&amp;quot; to prevent its symbol being mangled, and thus give it the C rather than C++ ABI.</description>
     </item>
     
     <item>
@@ -204,8 +204,8 @@ struct udt { int a{0}; explicit udt(int _a) : a(_a) { } udt() = default; int ope
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://ned14.github.io/outcome/tutorial/result/inspecting/</guid>
-      <description>Suppose we will be writing function print_half that takes an integral number (however big) represented as an std::string and outputs a number which is twice smaller:
-outcome::result&amp;lt;void&amp;gt; print_half(const std::string&amp;amp; text); View this code on Github Type result&amp;lt;void&amp;gt; means that there is no value to be retuned upon success, but that the operation might still fail, and we may be interested in inspecting the cause of the failure. Class template result&amp;lt;&amp;gt; is declared with attribute [[nodiscard]], which means compiler will warn you if you forget to inspect the returned object (in C++ 17 or later).</description>
+      <description>Suppose we will be writing a function print_half that takes an integer number (however big) represented as an std::string and outputs a number which is twice smaller:
+outcome::result&amp;lt;void&amp;gt; print_half(const std::string&amp;amp; text); View this code on Github The type result&amp;lt;void&amp;gt; means that there is no value to be retuned upon success, but that the operation might still fail, and we may be interested in inspecting the cause of the failure. The class template result&amp;lt;&amp;gt; is declared with the attribute [[nodiscard]], which means the compiler will warn you if you forget to inspect the returned object (in C++ 17 or later).</description>
     </item>
     
     <item>
@@ -302,7 +302,7 @@ Seeing as we are replacing the throwing overload of copy_file() in the Filesyste
       
       <guid>https://ned14.github.io/outcome/tutorial/policies/builtin/</guid>
       <description>These are the precanned policies built into Outcome:
-  all_narrow  Wide checks call their narrow check cousins only. Narrow checks call a function called _ub() which:
+  all_narrow  Wide checks call their narrow check cousins only. If there is an observation of a value/error/exception which is not present, the narrow checks call a function called _ub() which:
  Is marked with any compiler-specific markup to say it will never return, which should cause the compiler&amp;rsquo;s optimiser to generate perfectly minimum code. Calls __builtin_unreachable() on compilers which support that intrinsic to further encourage perfectly minimum code (and to trigger the undefined behaviour sanitiser if execution ever reaches such a code path).</description>
     </item>
     
@@ -362,9 +362,8 @@ namespace app { // Specialise an exception type for httplib errors  struct httpl
       
       <guid>https://ned14.github.io/outcome/tutorial/result/try/</guid>
       <description>In the implementation of function print_half we have seen the usage of the macro  OUTCOME_TRY :
-OUTCOME_TRY (i, BigInt::fromString(text)); This control statement is roughly equivalent to:
-auto&amp;amp;&amp;amp; __result = BigInt::fromString(text); if (!__result) return __result.as_failure(); auto&amp;amp;&amp;amp; i = __result.value(); Where __result is a unique name.
-Additionally, in GCC and Clang which provide an extension to C++ known as statement expressions it is possible to use an alternative macro: OUTCOME_TRYX, which is an expression.</description>
+OUTCOME_TRY (i, (BigInt::fromString(text))); The OUTCOME_TRY macro uses C macro overloading to select between two implementations based on the number of input parameters. If there is exactly one input parameter i.e. without the i,, the control statement is roughly equivalent to:
+auto&amp;amp;&amp;amp; __result = BigInt::fromString(text); if (!__result) return __result.as_failure(); Where __result is a compile time generated unique name.</description>
     </item>
     
     <item>
@@ -720,7 +719,7 @@ Macro CXX_DECLARE_RESULT_EC
       <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
       
       <guid>https://ned14.github.io/outcome/credits/</guid>
-      <description>github contributors .ghContributors{ display:flex; flex-flow: wrap; align-content: flex-start } .ghContributors  div{ width: 50% ; display: inline-flex; margin-bottom: 5px; } .ghContributors  div label{ padding-left: 4px ; } .ghContributors  div span{ font-size: x-small; padding-left: 4px ; }  This pretty, modern C++ documentation  Hugo - static website generator of this documentation. hugo-theme-docdock - the Hugo theme used by this documentation. Standardese - the API reference generator  Special thanks for Outcome v2 For a second time, Charley Bay stepped up as review manager.</description>
+      <description>github contributors .ghContributors{ display:flex; flex-flow: wrap; align-content: flex-start } .ghContributors  div{ width: 50% ; display: inline-flex; margin-bottom: 5px; } .ghContributors  div label{ padding-left: 4px ; } .ghContributors  div span{ font-size: x-small; padding-left: 4px ; }   @ned14 890 commits   @akrzemi1 19 commits   @menuet 2 commits   @norbertwenzel 1 commits   @vinipsmaker 1 commits   @andoks 1 commits   @catskul 1 commits   @jenkins-nedprod 1 commits   This pretty, modern C++ documentation  Hugo - static website generator of this documentation.</description>
     </item>
     
   </channel>

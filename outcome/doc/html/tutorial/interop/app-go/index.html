@@ -479,6 +479,11 @@
         <span>Videos</span>
       </a>
     </li>
+    <li data-nav-id="/outcome/changelog/" class="dd-item">
+      <a href="/outcome/changelog/">
+        <span>Changelog</span>
+      </a>
+    </li>
     <li data-nav-id="/outcome/history/" class="dd-item">
       <a href="/outcome/history/">
         <span>History</span>
@@ -587,7 +592,7 @@
 </span><span class="c1"></span>    <span class="c1">// that into a httplib_error exception type which is stored as an exception ptr. The
 </span><span class="c1"></span>    <span class="c1">// TRY operation below will return that exception ptr to be rethrown in the caller.
 </span><span class="c1"></span>    <span class="c1">// Otherwise the fetched data is returned in a std::string data.
-</span><span class="c1"></span>    <span class="n">OUTCOME_TRY</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">outcome</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="p">(</span><span class="n">httplib</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="sa"></span><span class="s">&#34;http://www.nedproductions.biz/&#34;</span><span class="p">)));</span>
+</span><span class="c1"></span>    <span class="n">OUTCOME_TRY</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">outcome</span><span class="o">&lt;</span><span class="n">std</span><span class="o">::</span><span class="n">string</span><span class="o">&gt;</span><span class="p">(</span><span class="n">httplib</span><span class="o">::</span><span class="n">get</span><span class="p">(</span><span class="sa"></span><span class="s">&#34;http://www.nedproductions.biz/&#34;</span><span class="p">))));</span>
     <span class="n">string_view</span> <span class="nf">data_view</span><span class="p">(</span><span class="n">data</span><span class="p">);</span>
 
     <span class="c1">// HTML tidy the fetched data. If the C library fails due to an error corresponding to
@@ -597,11 +602,11 @@
 </span><span class="c1"></span>    <span class="c1">// TRY operation below will return that exception ptr to be rethrown in the caller.
 </span><span class="c1"></span>    <span class="c1">// Otherwise the tidied data is returned into holdmem, with the string view updated to
 </span><span class="c1"></span>    <span class="c1">// point at the tidied data.
-</span><span class="c1"></span>    <span class="n">OUTCOME_TRY</span><span class="p">(</span><span class="n">holdmem</span><span class="p">,</span> <span class="n">tidy_html</span><span class="p">(</span><span class="n">data_view</span><span class="p">));</span>
+</span><span class="c1"></span>    <span class="n">OUTCOME_TRY</span><span class="p">(</span><span class="n">holdmem</span><span class="p">,</span> <span class="p">(</span><span class="n">tidy_html</span><span class="p">(</span><span class="n">data_view</span><span class="p">)));</span>
 
     <span class="c1">// Write the tidied data to some file. If the write fails, synthesise a filesystem_error
 </span><span class="c1"></span>    <span class="c1">// exception ptr exactly as if one called filelib::write_file(data_view).value().
-</span><span class="c1"></span>    <span class="n">OUTCOME_TRY</span><span class="p">(</span><span class="n">written</span><span class="p">,</span> <span class="n">outcome</span><span class="o">&lt;</span><span class="n">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">filelib</span><span class="o">::</span><span class="n">write_file</span><span class="p">(</span><span class="n">data_view</span><span class="p">)));</span>
+</span><span class="c1"></span>    <span class="n">OUTCOME_TRY</span><span class="p">(</span><span class="n">written</span><span class="p">,</span> <span class="p">(</span><span class="n">outcome</span><span class="o">&lt;</span><span class="n">size_t</span><span class="o">&gt;</span><span class="p">(</span><span class="n">filelib</span><span class="o">::</span><span class="n">write_file</span><span class="p">(</span><span class="n">data_view</span><span class="p">))));</span>
     <span class="k">return</span> <span class="nf">success</span><span class="p">();</span>
   <span class="p">}</span>
 <span class="p">}</span>

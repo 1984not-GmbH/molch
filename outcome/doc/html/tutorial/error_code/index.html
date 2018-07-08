@@ -478,6 +478,11 @@
         <span>Videos</span>
       </a>
     </li>
+    <li data-nav-id="/outcome/changelog/" class="dd-item">
+      <a href="/outcome/changelog/">
+        <span>Changelog</span>
+      </a>
+    </li>
     <li data-nav-id="/outcome/history/" class="dd-item">
       <a href="/outcome/history/">
         <span>History</span>
@@ -571,7 +576,7 @@ the case in C++, doing this is straightforward but requires typing boilerplate
 to tell the C++ STL about your custom error type. This is not part of Outcome library,
 but we still provide this short guide here, because how to do this is not well documented [1].</p>
 
-<p>Suppose you want to report all reasons for failure in conveting an <code>std::string</code> to a non-negative <code>int</code>.
+<p>Suppose you want to report all reasons for failure in converting a <code>std::string</code> to a non-negative <code>int</code>.
 The list is:</p>
 
 <ul>
@@ -595,7 +600,7 @@ The list is:</p>
 
 <span class="k">namespace</span> <span class="n">std</span>
 <span class="p">{</span>
-  <span class="c1">// Tell the C++ 11 STL metaprogramming that enum MathError::valid_errors
+  <span class="c1">// Tell the C++ 11 STL metaprogramming that enum ConversionErrc
 </span><span class="c1"></span>  <span class="c1">// is registered with the standard error code system
 </span><span class="c1"></span>  <span class="k">template</span> <span class="o">&lt;&gt;</span> <span class="k">struct</span> <span class="n">is_error_code_enum</span><span class="o">&lt;</span><span class="n">ConversionErrc</span><span class="o">&gt;</span> <span class="o">:</span> <span class="n">std</span><span class="o">::</span><span class="n">true_type</span>
   <span class="p">{</span>
