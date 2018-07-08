@@ -71,7 +71,7 @@ namespace Molch {
 
 #define protobuf_bytes_arena_export(arena, message, name, size) \
 	(message)->name.data = (arena).allocate<unsigned char>(size);\
-	name.copyTo({uchar_to_byte((message)->name.data), (size)});\
+	TRY_VOID(copyFromTo(name,{uchar_to_byte((message)->name.data), (size)}));\
 	(message)->name.len = (size);
 
 /*

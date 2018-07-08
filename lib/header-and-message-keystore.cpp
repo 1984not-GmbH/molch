@@ -112,8 +112,10 @@ namespace Molch {
 		protobuf_arena_create(arena, ProtobufCKeyBundle, key_bundle);
 
 		//export the keys
-		key_bundle->header_key = this->header_key.exportProtobuf(arena);
-		key_bundle->message_key = this->message_key.exportProtobuf(arena);
+		TRY_WITH_RESULT(header_key_result, this->header_key.exportProtobuf(arena));
+		key_bundle->header_key = header_key_result.value();
+		TRY_WITH_RESULT(message_key_result, this->message_key.exportProtobuf(arena));
+		key_bundle->message_key = message_key_result.value();
 
 		//set expiration time
 		protobuf_optional_export(key_bundle, expiration_time, gsl::narrow<uint64_t>(this->expiration_date.count()));

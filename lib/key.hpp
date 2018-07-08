@@ -35,6 +35,7 @@
 #include "gsl.hpp"
 #include "protobuf.hpp"
 #include "protobuf-arena.hpp"
+#include "copy.hpp"
 
 namespace Molch {
 
@@ -210,13 +211,6 @@ namespace Molch {
 			this->empty = false;
 		}
 
-		//copy to a raw byte array
-		void copyTo(span<std::byte> data) const {
-			Expects(data.size() == length);
-
-			std::copy(std::cbegin(*this), std::cend(*this), std::begin(data));
-		}
-
 		void clearKey() noexcept {
 			this->zero();
 			this->empty = true;
@@ -226,16 +220,13 @@ namespace Molch {
 			sodium_memzero(*this);
 		}
 
-		ProtobufCKey* exportProtobuf(Arena& arena) const {
+		result<ProtobufCKey*> exportProtobuf(Arena& arena) const noexcept {
 			auto key{arena.allocate<ProtobufCKey>(1)};
 			molch__protobuf__key__init(key);
 
 			key->key.data = arena.allocate<uint8_t>(length);
 			key->key.len = length;
-			this->copyTo({
-					uchar_to_byte(key->key.data),
-					key->key.len
-					});
+			OUTCOME_TRY(copyFromTo(*this, {uchar_to_byte(key->key.data), key->key.len}));
 
 			return key;
 		}

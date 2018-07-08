@@ -206,7 +206,7 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 		} else {
 			users->add(Molch::User(&public_master_key_key));
 		}
-		public_master_key_key.copyTo({uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE});
+		TRY_VOID(copyFromTo(public_master_key_key, {uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE}));
 
 		user_store_created = true;
 
@@ -494,7 +494,7 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 			prekeys};
 
 		//copy the conversation id
-		conversation.id().copyTo({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
+		TRY_VOID(copyFromTo(conversation.id(), {uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
 
 		user->conversations().add(std::move(conversation));
 
@@ -593,7 +593,7 @@ cleanup:
 				user->prekeys()};
 
 			//copy the conversation id
-			conversation.id().copyTo({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
+			TRY_VOID(copyFromTo(conversation.id(), {uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
 
 			//create the prekey list
 			auto prekey_list_buffer{create_prekey_list(receiver_public_master_key_key)};
@@ -1422,7 +1422,7 @@ cleanup:
 
 			global_backup_key->fillRandom();
 
-			global_backup_key->copyTo({uchar_to_byte(new_key), BACKUP_KEY_SIZE});
+			TRY_VOID(copyFromTo(*global_backup_key, {uchar_to_byte(new_key), BACKUP_KEY_SIZE}));
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
 			goto cleanup;

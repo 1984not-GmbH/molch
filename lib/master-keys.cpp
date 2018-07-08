@@ -185,10 +185,14 @@ namespace Molch {
 			ProtobufCKey*& private_identity_key) const {
 		Unlocker unlocker{*this};
 
-		public_signing_key = this->public_signing_key.exportProtobuf(arena);
-		private_signing_key = this->private_signing_key->exportProtobuf(arena);
-		public_identity_key = this->public_identity_key.exportProtobuf(arena);
-		private_identity_key = this->private_identity_key->exportProtobuf(arena);
+		TRY_WITH_RESULT(public_signing_key_result, this->public_signing_key.exportProtobuf(arena));
+		public_signing_key = public_signing_key_result.value();
+		TRY_WITH_RESULT(private_signing_key_result, this->private_signing_key->exportProtobuf(arena));
+		private_signing_key = private_signing_key_result.value();
+		TRY_WITH_RESULT(public_identity_key_result, this->public_identity_key.exportProtobuf(arena));
+		public_identity_key = public_identity_key_result.value();
+		TRY_WITH_RESULT(private_identity_key_result, this->private_identity_key->exportProtobuf(arena));
+		private_identity_key = private_identity_key_result.value();
 	}
 
 	void MasterKeys::lock() const {
