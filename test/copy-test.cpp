@@ -54,7 +54,7 @@ int main() noexcept {
 			throw Exception(status_type::INCORRECT_DATA, "Failed to properly copy dead beef.");
 		}
 
-		auto copy_result{copyFromTo(a, c)};
+		auto copy_result = copyFromTo(a, c);
 		if (copy_result) {
 			throw Exception(status_type::INCORRECT_DATA, "Failed to detect size misalignment.");
 		}
