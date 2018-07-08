@@ -357,33 +357,13 @@ namespace Molch {
 		}
 
 		/*
-		 * Copy from a buffer to a raw array.
-		 */
-		result<void> copyToRaw(
-				std::byte * const destination,
-				const size_t destination_offset,
-				const size_t source_offset,
-				const size_t copy_length) const noexcept {
-			FulfillOrFail((source_offset <= this->content_length) && (copy_length <= (this->content_length - source_offset))
-					&& (this->buffer_length >= this->content_length));
-
-			if (this->buffer_length == 0) {
-				return outcome::success();
-			}
-
-			std::copy(this->content + source_offset, this->content + source_offset + copy_length, destination + destination_offset);
-
-			return outcome::success();
-		}
-
-		/*
 		 * Copy the entire content of a buffer
 		 * to a raw array.
 		 */
 		result<void> cloneToRaw(const span<std::byte> destination) const noexcept {
 			FulfillOrFail(destination.size() >= this->content_length);
 
-			return this->copyToRaw(destination.data(), 0, 0, this->content_length);
+			return copyFromTo(*this, destination, this->content_length);
 		}
 
 		/*

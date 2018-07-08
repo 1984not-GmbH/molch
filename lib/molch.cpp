@@ -413,7 +413,7 @@ static void verify_prekey_list(
 	}
 
 	//copy the public identity key
-	TRY_VOID(verified_prekey_list.copyToRaw(public_identity_key.data(), 0, 0, PUBLIC_KEY_SIZE));
+	TRY_VOID(copyFromTo(verified_prekey_list, {public_identity_key.data(), PUBLIC_KEY_SIZE}, PUBLIC_KEY_SIZE));
 	public_identity_key.empty = false;
 }
 

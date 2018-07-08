@@ -94,23 +94,6 @@ int main() {
 		}
 		printf("Successfully copied buffer.\n");
 
-		//copy to a raw array
-		std::byte raw_array[4];
-		TRY_VOID(buffer1.copyToRaw(
-				raw_array, //destination
-				0, //destination offset
-				1, //source offset
-				4)); //length
-		if (sodium_memcmp(raw_array, &buffer1[1], 4) != 0) {
-			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy buffer to raw array."};
-		}
-		printf("Successfully copied buffer to raw array.\n");
-
-		if (buffer2.copyToRaw(raw_array, 0, 3, 4)) {
-			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to detect out of bounds read."};
-		}
-		printf("Successfully detected out of bounds read.\n");
-
 		//copy from raw array
 		unsigned char heeelo[14]{"Hello World!\n"};
 		TRY_VOID(buffer1.copyFromRaw(
