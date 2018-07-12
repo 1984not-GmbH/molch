@@ -36,6 +36,7 @@
 #include "return-status.hpp"
 #include "key.hpp"
 #include "gsl.hpp"
+#include "result.hpp"
 
 namespace Molch {
 	/*!
@@ -51,30 +52,27 @@ namespace Molch {
 	 * \return
 	 *   The constructed header.
 	 */
-	Buffer header_construct(
+	result<Buffer> header_construct(
 			const PublicKey& our_public_ephemeral, //PUBLIC_KEY_SIZE
 			const uint32_t message_number,
 			const uint32_t previous_message_number);
 
+
+	struct ExtractedHeader {
+		PublicKey their_public_ephemeral;
+		uint32_t message_number;
+		uint32_t previous_message_number;
+	};
+
 	/*!
 	 * Extracts the data from an Axolotl-Header.
 	 *
-	 * \param their_public_ephemeral
-	 *   The public ephemeral key of the sender (theirs). Length has to be PUBLIC_KEY_SIZE.
-	 * \param message_number
-	 *   The number of the message in the current message chain.
-	 * \param previous_message_number
-	 *   The number of the messages in the previous message chain.
 	 * \param header
 	 *   A buffer containing the Axolotl-Header.
+	 *
+	 * \return extracted public ephemeral, message number and previous message number
 	 */
-	void header_extract(
-			//outputs
-			PublicKey& their_public_ephemeral, //PUBLIC_KEY_SIZE
-			uint32_t& message_number,
-			uint32_t& previous_message_number,
-			//input
-			const span<const std::byte> header);
+	result<ExtractedHeader> header_extract(const span<const std::byte> header);
 }
 
 #endif

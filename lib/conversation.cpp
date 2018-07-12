@@ -223,10 +223,11 @@ namespace Molch {
 				send_ephemeral_key,
 				send_message_key);
 
-		auto header{header_construct(
+		TRY_WITH_RESULT(header_result, header_construct(
 				send_ephemeral_key,
 				send_message_number,
-				previous_send_message_number)};
+				previous_send_message_number));
+		auto header{header_result.value()};
 
 		auto packet_type{molch_message_type::NORMAL_MESSAGE};
 		//check if this is a prekey message
@@ -283,11 +284,10 @@ namespace Molch {
 				this->ratchet_pointer->skipped_header_and_message_keys.remove(index);
 
 				PublicKey their_signed_public_ephemeral;
-				header_extract(
-						their_signed_public_ephemeral,
-						receive_message_number,
-						previous_receive_message_number,
-						*header);
+				TRY_WITH_RESULT(extracted_header, header_extract(*header));
+				their_signed_public_ephemeral = extracted_header.value().their_public_ephemeral;
+				receive_message_number = extracted_header.value().message_number;
+				previous_receive_message_number = extracted_header.value().previous_message_number;
 				return static_cast<int>(status_type::SUCCESS);
 			}
 		}
@@ -336,14 +336,7 @@ namespace Molch {
 			}
 
 			//extract data from the header
-			PublicKey their_signed_public_ephemeral;
-			uint32_t local_receive_message_number;
-			uint32_t local_previous_receive_message_number;
-			header_extract(
-					their_signed_public_ephemeral,
-					local_receive_message_number,
-					local_previous_receive_message_number,
-					*header);
+			TRY_WITH_RESULT(extracted_header, header_extract(*header));
 
 			//and now decrypt the message with the message key
 			//now we have all the data we need to advance the ratchet
@@ -351,9 +344,9 @@ namespace Molch {
 			MessageKey message_key;
 			this->ratchet_pointer->receive(
 				message_key,
-				their_signed_public_ephemeral,
-				local_receive_message_number,
-				local_previous_receive_message_number);
+				extracted_header.value().their_public_ephemeral,
+				extracted_header.value().message_number,
+				extracted_header.value().previous_message_number);
 
 			std::optional<Buffer> message_optional{packet_decrypt_message(packet, message_key)};
 			if (!message_optional) {
@@ -363,8 +356,8 @@ namespace Molch {
 
 			this->ratchet_pointer->setLastMessageAuthenticity(true);
 
-			receive_message_number = local_receive_message_number;
-			previous_receive_message_number = local_previous_receive_message_number;
+			receive_message_number = extracted_header.value().message_number;
+			previous_receive_message_number = extracted_header.value().previous_message_number;
 
 			return message;
 		} catch (const std::exception&) {

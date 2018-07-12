@@ -24,12 +24,12 @@
 #include "protobuf.hpp"
 
 namespace Molch {
-	Buffer header_construct(
+	result<Buffer> header_construct(
 			//inputs
 			const PublicKey& our_public_ephemeral, //PUBLIC_KEY_SIZE
 			const uint32_t message_number,
 			const uint32_t previous_message_number) {
-		Expects(!our_public_ephemeral.empty);
+		FulfillOrFail(!our_public_ephemeral.empty);
 
 		ProtobufCHeader header_struct;
 		molch__protobuf__header__init(&header_struct);
@@ -54,38 +54,35 @@ namespace Molch {
 		//pack it
 		auto packed_length{molch__protobuf__header__pack(&header_struct, byte_to_uchar(header.data()))};
 		if (packed_length != header_length) {
-			throw Exception{status_type::PROTOBUF_PACK_ERROR, "Packed header has incorrect length."};
+			return Error(status_type::PROTOBUF_PACK_ERROR, "Packed header has incorrect length.");
 		}
 
 		return header;
 	}
 
-	void header_extract(
-			//outputs
-			PublicKey& their_public_ephemeral, //PUBLIC_KEY_SIZE
-			uint32_t& message_number,
-			uint32_t& previous_message_number,
-			//intput
-			const span<const std::byte> header) {
+	result<ExtractedHeader> header_extract(const span<const std::byte> header) {
 		//unpack the message
 		auto header_struct{std::unique_ptr<ProtobufCHeader,HeaderDeleter>(molch__protobuf__header__unpack(&protobuf_c_allocator, header.size(), byte_to_uchar(header.data())))};
 		if (!header_struct) {
-			throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack header."};
+			return Error(status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack header.");
 		}
 
 		if (!header_struct->has_message_number || !header_struct->has_previous_message_number || !header_struct->has_public_ephemeral_key) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Missing fields in header."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "Missing fields in header.");
 		}
 
 		if (header_struct->public_ephemeral_key.len != PUBLIC_KEY_SIZE) {
-			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The public ephemeral key in the header has an incorrect size."};
+			return Error(status_type::INCORRECT_BUFFER_SIZE, "The public ephemeral key in the header has an incorrect size.");
 		}
 
-		message_number = header_struct->message_number;
-		previous_message_number = header_struct->previous_message_number;
+		ExtractedHeader extracted_header;
+		extracted_header.message_number = header_struct->message_number;
+		extracted_header.previous_message_number = header_struct->previous_message_number;
 
-		their_public_ephemeral.set({
+		extracted_header.their_public_ephemeral.set({
 				uchar_to_byte(header_struct->public_ephemeral_key.data),
 				header_struct->public_ephemeral_key.len});
+
+		return extracted_header;
 	}
 }

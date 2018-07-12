@@ -49,44 +49,37 @@ int main() {
 		putchar('\n');
 
 		//create the header
-		auto header{header_construct(
+		TRY_WITH_RESULT(header, header_construct(
 				our_public_ephemeral_key,
 				message_number,
-				previous_message_number)};
+				previous_message_number));
 
 		//print the header
-		printf("Header (%zu Bytes):\n", header.size());
-		header.printHex(std::cout);
+		printf("Header (%zu Bytes):\n", header.value().size());
+		header.value().printHex(std::cout);
 		putchar('\n');
 
 		//get data back out of the header again
-		PublicKey extracted_public_ephemeral_key;
-		uint32_t extracted_message_number;
-		uint32_t extracted_previous_message_number;
-		header_extract(
-				extracted_public_ephemeral_key,
-				extracted_message_number,
-				extracted_previous_message_number,
-				header);
+		TRY_WITH_RESULT(extracted_header, header_extract(header.value()));
 
-		printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_public_ephemeral_key.size());
-		extracted_public_ephemeral_key.printHex(std::cout);
-		printf("Extracted message number: %u\n", extracted_message_number);
-		printf("Extracted previous message number: %u\n", extracted_previous_message_number);
+		printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_header.value().their_public_ephemeral.size());
+		extracted_header.value().their_public_ephemeral.printHex(std::cout);
+		printf("Extracted message number: %u\n", extracted_header.value().message_number);
+		printf("Extracted previous message number: %u\n", extracted_header.value().previous_message_number);
 		putchar('\n');
 
 		//compare them
-		if (our_public_ephemeral_key != extracted_public_ephemeral_key) {
+		if (our_public_ephemeral_key != extracted_header.value().their_public_ephemeral) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Public ephemeral keys don't match."};
 		}
 		printf("Public ephemeral keys match.\n");
 
-		if (message_number != extracted_message_number) {
+		if (message_number != extracted_header.value().message_number) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Message number doesn't match."};
 		}
 		printf("Message numbers match.\n");
 
-		if (previous_message_number != extracted_previous_message_number) {
+		if (previous_message_number != extracted_header.value().previous_message_number) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Previous message number doesn't match."};
 		}
 		printf("Previous message numbers match.\n");
