@@ -250,57 +250,60 @@ namespace Molch {
 			PublicKey * const public_ephemeral_key,
 			PublicKey * const public_prekey) {
 		//get metadata
-		packet_get_metadata_without_verification(
-			current_protocol_version,
-			highest_supported_protocol_version,
-			packet_type,
-			packet,
-			public_identity_key,
-			public_ephemeral_key,
-			public_prekey);
+		TRY_WITH_RESULT(unverified_metadata_result, packet_get_metadata_without_verification(packet));
+		const auto& unverified_metadata{unverified_metadata_result.value()};
 
 		//decrypt the header
 		axolotl_header = packet_decrypt_header(packet, axolotl_header_key);
 
 		//decrypt the message
 		message = packet_decrypt_message(packet, message_key);
-	}
 
-	void packet_get_metadata_without_verification(
-			//outputs
-			uint32_t& current_protocol_version,
-			uint32_t& highest_supported_protocol_version,
-			molch_message_type& packet_type,
-			//input
-			const span<const std::byte> packet,
-			//optional outputs (prekey messages only)
-			PublicKey * const public_identity_key,
-			PublicKey * const public_ephemeral_key,
-			PublicKey * const public_prekey) {
-		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct{packet_unpack(packet)};
+		current_protocol_version = unverified_metadata.current_protocol_version;
+		highest_supported_protocol_version = unverified_metadata.highest_supported_protocol_version;
+		packet_type = unverified_metadata.packet_type;
 
-		if (packet_struct->packet_header->packet_type == MOLCH__PROTOBUF__PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
-			//copy the public keys
+		if ((public_identity_key != nullptr) || (public_ephemeral_key != nullptr) || (public_prekey != nullptr)) {
+			if (not unverified_metadata.prekey_metadata.has_value()) {
+				throw Molch::Exception(status_type::INVALID_VALUE, "No prekey metadata found.");
+			}
+			const auto& prekey_metadata{unverified_metadata.prekey_metadata.value()};
 			if (public_identity_key != nullptr) {
-				public_identity_key->set({
-						uchar_to_byte(packet_struct->packet_header->public_identity_key.data),
-						packet_struct->packet_header->public_identity_key.len});
+				*public_identity_key = prekey_metadata.identity;
 			}
 			if (public_ephemeral_key != nullptr) {
-				public_ephemeral_key->set({
-						uchar_to_byte(packet_struct->packet_header->public_ephemeral_key.data),
-						packet_struct->packet_header->public_ephemeral_key.len});
+				*public_ephemeral_key = prekey_metadata.ephemeral;
 			}
 			if (public_prekey != nullptr) {
-				public_prekey->set({
-						uchar_to_byte(packet_struct->packet_header->public_prekey.data),
-						packet_struct->packet_header->public_prekey.len});
+				*public_prekey = prekey_metadata.prekey;
 			}
 		}
+	}
 
-		current_protocol_version = packet_struct->packet_header->current_protocol_version;
-		highest_supported_protocol_version = packet_struct->packet_header->highest_supported_protocol_version;
-		packet_type = to_molch_message_type(packet_struct->packet_header->packet_type);
+	result<Metadata> packet_get_metadata_without_verification(const span<const std::byte> packet) {
+		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct{packet_unpack(packet)};
+
+		Metadata metadata;
+		if (packet_struct->packet_header->packet_type == MOLCH__PROTOBUF__PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
+			metadata.prekey_metadata = PrekeyMetadata();
+			auto& prekey_metadata{metadata.prekey_metadata.value()};
+			//copy the public keys
+			prekey_metadata.identity.set({
+					uchar_to_byte(packet_struct->packet_header->public_identity_key.data),
+					packet_struct->packet_header->public_identity_key.len});
+			prekey_metadata.ephemeral.set({
+					uchar_to_byte(packet_struct->packet_header->public_ephemeral_key.data),
+					packet_struct->packet_header->public_ephemeral_key.len});
+			prekey_metadata.prekey.set({
+					uchar_to_byte(packet_struct->packet_header->public_prekey.data),
+					packet_struct->packet_header->public_prekey.len});
+		}
+
+		metadata.current_protocol_version = packet_struct->packet_header->current_protocol_version;
+		metadata.highest_supported_protocol_version = packet_struct->packet_header->highest_supported_protocol_version;
+		metadata.packet_type = to_molch_message_type(packet_struct->packet_header->packet_type);
+
+		return metadata;
 	}
 
 	std::optional<Buffer> packet_decrypt_header(

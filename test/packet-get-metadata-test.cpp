@@ -62,33 +62,28 @@ int main() {
 			nullptr);
 
 		//now extract the metadata
-		molch_message_type extracted_packet_type;
-		uint32_t extracted_current_protocol_version;
-		uint32_t extracted_highest_supported_protocol_version;
-		packet_get_metadata_without_verification(
-			extracted_current_protocol_version,
-			extracted_highest_supported_protocol_version,
-			extracted_packet_type,
-			packet,
-			nullptr,
-			nullptr,
-			nullptr);
+		TRY_WITH_RESULT(normal_metadata_result, packet_get_metadata_without_verification(packet));
+		const auto& normal_metadata{normal_metadata_result.value()};
 
-		printf("extracted_packet_type = %u\n", static_cast<int>(extracted_packet_type));
-		if (packet_type != extracted_packet_type) {
+		if (normal_metadata.prekey_metadata.has_value()) {
+			throw Molch::Exception(status_type::INVALID_VALUE, "Got prekey metadata for a normal packet.");
+		}
+
+		printf("extracted_packet_type = %u\n", static_cast<int>(normal_metadata.packet_type));
+		if (packet_type != normal_metadata.packet_type) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted packet type doesn't match."};
 		}
 		printf("Packet type matches!\n");
 
-		if (extracted_current_protocol_version != 0) {
+		if (normal_metadata.current_protocol_version != 0) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted current protocol version doesn't match."};
 		}
 		printf("Current protocol version matches!\n");
 
-		if (extracted_highest_supported_protocol_version != 0) {
+		if (normal_metadata.highest_supported_protocol_version != 0) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted highest supported protocol version doesn't match."};
 		}
-		printf("Highest supoorted protocol version matches (%i)!\n", extracted_highest_supported_protocol_version);
+		printf("Highest supoorted protocol version matches (%i)!\n", normal_metadata.highest_supported_protocol_version);
 
 		//NOW A PREKEY MESSAGE
 		printf("PREKEY MESSAGE:\n");
@@ -115,45 +110,41 @@ int main() {
 			&public_prekey);
 
 		//now extract the metadata
-		PublicKey extracted_public_identity_key;
-		PublicKey extracted_public_ephemeral_key;
-		PublicKey extracted_public_prekey;
-		packet_get_metadata_without_verification(
-			extracted_current_protocol_version,
-			extracted_highest_supported_protocol_version,
-			extracted_packet_type,
-			packet,
-			&extracted_public_identity_key,
-			&extracted_public_ephemeral_key,
-			&extracted_public_prekey);
+		TRY_WITH_RESULT(prekey_packet_metadata_result, packet_get_metadata_without_verification(packet));
+		const auto& prekey_packet_metadata{prekey_packet_metadata_result.value()};
 
-		printf("extracted_type = %u\n", static_cast<int>(extracted_packet_type));
-		if (packet_type != extracted_packet_type) {
+		printf("extracted_type = %u\n", static_cast<int>(prekey_packet_metadata.packet_type));
+		if (packet_type != prekey_packet_metadata.packet_type) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted packet type doesn't match."};
 		}
 		printf("Packet type matches!\n");
 
-		if (extracted_current_protocol_version != 0) {
+		if (prekey_packet_metadata.current_protocol_version != 0) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted current protocol version doesn't match."};
 		}
 		printf("Current protocol version matches!\n");
 
-		if (extracted_highest_supported_protocol_version != 0) {
+		if (prekey_packet_metadata.highest_supported_protocol_version != 0) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted highest supported protocl version doesn't match."};
 		}
-		printf("Highest supoorted protocol version matches (%i)!\n", extracted_highest_supported_protocol_version);
+		printf("Highest supoorted protocol version matches (%i)!\n", prekey_packet_metadata.highest_supported_protocol_version);
 
-		if (public_identity_key != extracted_public_identity_key) {
+		if (not prekey_packet_metadata.prekey_metadata.has_value()) {
+			throw Molch::Exception(status_type::INVALID_VALUE, "No prekey metadata found.");
+		}
+		const auto& prekey_metadata{prekey_packet_metadata.prekey_metadata.value()};
+
+		if (public_identity_key != prekey_metadata.identity) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted public identity key doesn't match."};
 		}
 		printf("Extracted public identity key matches!\n");
 
-		if (public_ephemeral_key != extracted_public_ephemeral_key) {
+		if (public_ephemeral_key != prekey_metadata.ephemeral) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extratec public ephemeral key doesn't match."};
 		}
 		printf("Extracted public ephemeral key matches!\n");
 
-		if (public_prekey != extracted_public_prekey) {
+		if (public_prekey != prekey_metadata.prekey) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted public prekey doesn't match."};
 		}
 		printf("Extracted public prekey matches!\n");

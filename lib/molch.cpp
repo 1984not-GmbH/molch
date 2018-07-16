@@ -366,24 +366,14 @@ cleanup:
 MOLCH_PUBLIC(molch_message_type) molch_get_message_type(
 		const unsigned char * const packet,
 		const size_t packet_length) {
-	molch_message_type packet_type;
-
-	try {
-		uint32_t current_protocol_version;
-		uint32_t highest_supported_protocol_version;
-		packet_get_metadata_without_verification(
-			current_protocol_version,
-			highest_supported_protocol_version,
-			packet_type,
-			{uchar_to_byte(packet), packet_length},
-			nullptr,
-			nullptr,
-			nullptr);
-	} catch (const std::exception&) {
+	const auto unverified_metadata_result = packet_get_metadata_without_verification({uchar_to_byte(packet), packet_length});
+	if (not unverified_metadata_result.has_value()) {
 		return molch_message_type::INVALID;
 	}
 
-	return packet_type;
+	const auto& unverified_metadata{unverified_metadata_result.value()};
+
+	return unverified_metadata.packet_type;
 }
 
 /*

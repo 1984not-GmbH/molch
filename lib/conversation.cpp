@@ -158,36 +158,28 @@ namespace Molch {
 		uint32_t previous_receive_message_number{0};
 
 		//get the senders keys and our public prekey from the packet
-		PublicKey sender_public_identity;
-		PublicKey receiver_public_prekey;
-		PublicKey sender_public_ephemeral;
-		molch_message_type packet_type;
-		uint32_t current_protocol_version;
-		uint32_t highest_supported_protocol_version;
-		packet_get_metadata_without_verification(
-			current_protocol_version,
-			highest_supported_protocol_version,
-			packet_type,
-			packet,
-			&sender_public_identity,
-			&sender_public_ephemeral,
-			&receiver_public_prekey);
+		TRY_WITH_RESULT(unverified_metadata_result, packet_get_metadata_without_verification(packet));
+		const auto& unverified_metadata{unverified_metadata_result.value()};
 
-		if (packet_type != molch_message_type::PREKEY_MESSAGE) {
+		if (unverified_metadata.packet_type != molch_message_type::PREKEY_MESSAGE) {
 			throw Exception{status_type::INVALID_VALUE, "Packet is not a prekey message."};
 		}
+		if (not unverified_metadata.prekey_metadata.has_value()) {
+			throw Exception(status_type::INVALID_VALUE, "Prekey Metadata is missing.");
+		}
+		const auto& unverified_prekey_metadata{unverified_metadata.prekey_metadata.value()};
 
 		//get the private prekey that corresponds to the public prekey used in the message
 		PrivateKey receiver_private_prekey;
-		receiver_prekeys.getPrekey(receiver_public_prekey, receiver_private_prekey);
+		receiver_prekeys.getPrekey(unverified_prekey_metadata.prekey, receiver_private_prekey);
 
 		this->create(
 				receiver_private_identity,
 				receiver_public_identity,
-				sender_public_identity,
+				unverified_prekey_metadata.identity,
 				receiver_private_prekey,
-				receiver_public_prekey,
-				sender_public_ephemeral);
+				unverified_prekey_metadata.prekey,
+				unverified_prekey_metadata.ephemeral);
 
 		message = this->receive(
 				packet,

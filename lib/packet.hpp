@@ -113,35 +113,23 @@ namespace Molch {
 			PublicKey * const public_ephemeral_key,
 			PublicKey * const public_prekey);
 
+	struct PrekeyMetadata {
+		PublicKey identity;
+		PublicKey ephemeral;
+		PublicKey prekey;
+	};
+
+	struct Metadata {
+		uint32_t current_protocol_version;
+		uint32_t highest_supported_protocol_version;
+		molch_message_type packet_type;
+		std::optional<PrekeyMetadata> prekey_metadata;
+	};
+
 	/*!
 	 * Extracts the metadata from a packet without actually decrypting or verifying anything.
-	 *
-	 * \param current_protocol_version
-	 *   The protocol version currently used.
-	 * \param highest_supported_protocol_version
-	 *   The highest protocol version the client supports.
-	 * \param packet_type
-	 *   The type of the packet (prekey message, normal message ...)
-	 * \param packet
-	 *   The entire packet.
-	 * \param public_identity_key
-	 *   The public identity key of the sender in case of prekey messages. Optional for normal messages.
-	 * \param public_ephemeral_key
-	 *   The public ephemeral key of the sender in case of prekey messages. Optional for normal messages.
-	 * \param public_prekey
-	 *   The prekey of the receiver that has been selected by the sender in case of prekey messages. Optional for normal messages.
 	 */
-	void packet_get_metadata_without_verification(
-			//outputs
-			uint32_t& current_protocol_version,
-			uint32_t& highest_supported_protocol_version,
-			molch_message_type& packet_type,
-			//input
-			const span<const std::byte> packet,
-			//optional outputs (prekey messages only)
-			PublicKey * const public_identity_key,
-			PublicKey * const public_ephemeral_key,
-			PublicKey * const public_prekey);
+	result<Metadata> packet_get_metadata_without_verification(const span<const std::byte> packet);
 
 	/*!
 	 * Decrypt the axolotl header part of a packet and thereby authenticate other metadata.
