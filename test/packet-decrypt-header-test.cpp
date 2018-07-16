@@ -86,6 +86,9 @@ int main() {
 		auto decryption_failed{false};
 		try {
 			decrypted_header = packet_decrypt_header(packet, header_key);
+			if (not decrypted_header.has_value()) {
+				decryption_failed = true;
+			}
 		} catch (const Molch::Exception&) {
 			decryption_failed = true;
 		}

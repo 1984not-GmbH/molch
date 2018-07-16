@@ -71,15 +71,15 @@ namespace Molch {
 	 * \return
 	 *   The unpacked struct.
 	 */
-	static std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_unpack(const span<const std::byte> packet) {
+	static result<std::unique_ptr<ProtobufCPacket,PacketDeleter>> packet_unpack(const span<const std::byte> packet) {
 		//unpack the packet
 		auto packet_struct{std::unique_ptr<ProtobufCPacket,PacketDeleter>(molch__protobuf__packet__unpack(&protobuf_c_allocator, packet.size(), byte_to_uchar(packet.data())))};
 		if (!packet_struct) {
-			throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack packet."};
+			return Error(status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack packet.");
 		}
 
 		if (packet_struct->packet_header->current_protocol_version != 0) {
-			throw Exception{status_type::UNSUPPORTED_PROTOCOL_VERSION, "The packet has an unsuported protocol version."};
+			return Error(status_type::UNSUPPORTED_PROTOCOL_VERSION, "The packet has an unsuported protocol version.");
 		}
 
 		//check if the packet contains the necessary fields
@@ -88,13 +88,13 @@ namespace Molch {
 			|| !packet_struct->packet_header->has_packet_type
 			|| !packet_struct->packet_header->has_header_nonce
 			|| !packet_struct->packet_header->has_message_nonce) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Some fields are missing in the packet."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "Some fields are missing in the packet.");
 		}
 
 		//check the size of the nonces
 		if ((packet_struct->packet_header->header_nonce.len != HEADER_NONCE_SIZE)
 			|| (packet_struct->packet_header->message_nonce.len != MESSAGE_NONCE_SIZE)) {
-			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "At least one of the nonces has an incorrect length."};
+			return Error(status_type::INCORRECT_BUFFER_SIZE, "At least one of the nonces has an incorrect length.");
 		}
 
 		if (packet_struct->packet_header->packet_type == MOLCH__PROTOBUF__PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
@@ -102,14 +102,14 @@ namespace Molch {
 			if (!packet_struct->packet_header->has_public_identity_key
 				|| !packet_struct->packet_header->has_public_ephemeral_key
 				|| !packet_struct->packet_header->has_public_prekey) {
-				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "The prekey packet misses at least one public key."};
+				return Error(status_type::PROTOBUF_MISSING_ERROR, "The prekey packet misses at least one public key.");
 			}
 
 			//check the sizes of the public keys
 			if ((packet_struct->packet_header->public_identity_key.len != PUBLIC_KEY_SIZE)
 				|| (packet_struct->packet_header->public_ephemeral_key.len != PUBLIC_KEY_SIZE)
 				|| (packet_struct->packet_header->public_prekey.len != PUBLIC_KEY_SIZE)) {
-				throw Exception{status_type::INCORRECT_BUFFER_SIZE, "At least one of the public keys of the prekey packet has an incorrect length."};
+				return Error(status_type::INCORRECT_BUFFER_SIZE, "At least one of the public keys of the prekey packet has an incorrect length.");
 			}
 		}
 
@@ -281,7 +281,7 @@ namespace Molch {
 	}
 
 	result<Metadata> packet_get_metadata_without_verification(const span<const std::byte> packet) {
-		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct{packet_unpack(packet)};
+		OUTCOME_TRY(packet_struct, packet_unpack(packet));
 
 		Metadata metadata;
 		if (packet_struct->packet_header->packet_type == MOLCH__PROTOBUF__PACKET_HEADER__PACKET_TYPE__PREKEY_MESSAGE) {
@@ -309,14 +309,17 @@ namespace Molch {
 	std::optional<Buffer> packet_decrypt_header(
 			const span<const std::byte> packet,
 			const HeaderKey& axolotl_header_key) {
-		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct;
 
 		//check input
 		if (axolotl_header_key.empty) {
 			return std::nullopt;
 		}
 
-		packet_struct = packet_unpack(packet);
+		const auto packet_struct_result = packet_unpack(packet);
+		if (not packet_struct_result.has_value()) {
+			return std::nullopt;
+		}
+		const auto& packet_struct{packet_struct_result.value()};
 
 		if (packet_struct->encrypted_axolotl_header.len < crypto_secretbox_MACBYTES) {
 			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The ciphertext of the axolotl header is too short."};
@@ -342,7 +345,11 @@ namespace Molch {
 			return std::nullopt;
 		}
 
-		std::unique_ptr<ProtobufCPacket,PacketDeleter> packet_struct{packet_unpack(packet)};
+		const auto packet_struct_result = packet_unpack(packet);
+		if (not packet_struct_result.has_value()) {
+			return std::nullopt;
+		}
+		const auto& packet_struct{packet_struct_result.value()};
 
 		if (packet_struct->encrypted_message.len < crypto_secretbox_MACBYTES) {
 			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The ciphertext of the message is too short."};
