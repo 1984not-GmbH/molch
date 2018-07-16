@@ -64,16 +64,17 @@ int main() {
 			nullptr);
 
 		//now decrypt the header
-		auto decrypted_header{packet_decrypt_header(packet, header_key)};
+		TRY_WITH_RESULT(normal_header_result, packet_decrypt_header(packet, header_key));
+		const auto& normal_header{normal_header_result.value()};
 
 
-		if (decrypted_header.value().size() != header.size()) {
+		if (normal_header.size() != header.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length."};
 		}
 		printf("Decrypted header has the same length.\n\n");
 
 		//compare headers
-		if (header != decrypted_header.value()) {
+		if (header != normal_header) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header doesn't match."};
 		}
 		printf("Decrypted header matches.\n\n");
@@ -83,19 +84,10 @@ int main() {
 		unsigned char manipulated_byte{byte_to_uchar(packet[2])};
 		++manipulated_byte;
 		packet[2] = uchar_to_byte(manipulated_byte);
-		auto decryption_failed{false};
-		try {
-			decrypted_header = packet_decrypt_header(packet, header_key);
-			if (not decrypted_header.has_value()) {
-				decryption_failed = true;
-			}
-		} catch (const Molch::Exception&) {
-			decryption_failed = true;
-		}
-		if (!decryption_failed) {
+		const auto manipulated_metadata_header = packet_decrypt_header(packet, header_key);
+		if (manipulated_metadata_header.has_value()) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Manipulated packet was accepted."};
 		}
-
 		printf("Header manipulation detected.\n\n");
 
 		//repair manipulation
@@ -104,15 +96,10 @@ int main() {
 		//check if it decrypts manipulated packets (manipulated header)
 		printf("Manipulate header.\n");
 		packet[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= uchar_to_byte(0x12);
-		try {
-			decrypted_header = packet_decrypt_header(packet, header_key);
-		} catch (const Molch::Exception&) {
-			decryption_failed = true;
-		}
-		if (!decryption_failed) {
+		const auto manipulated_header_header = packet_decrypt_header(packet, header_key);
+		if (manipulated_header_header.has_value()) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Manipulated packet was accepted."};
 		}
-
 		printf("Header manipulation detected!\n\n");
 
 		//undo header manipulation
@@ -143,14 +130,15 @@ int main() {
 			&public_prekey);
 
 		//now decrypt the header
-		decrypted_header = packet_decrypt_header(packet, header_key);
-		if (decrypted_header.value().size() != header.size()) {
+		TRY_WITH_RESULT(prekey_header_result, packet_decrypt_header(packet, header_key));
+		const auto& prekey_header{prekey_header_result.value()};
+		if (prekey_header.size() != header.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length."};
 		}
 		printf("Decrypted header has the same length.\n\n");
 
 		//compare headers
-		if (header != decrypted_header.value()) {
+		if (header != prekey_header) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header doesn't match."};
 		}
 		printf("Decrypted header matches.\n");

@@ -142,7 +142,7 @@ namespace Molch {
 	 * \return
 	 *   A buffer for the decrypted axolotl header.
 	 */
-	std::optional<Buffer> packet_decrypt_header(
+	result<Buffer> packet_decrypt_header(
 			const span<const std::byte> packet,
 			const HeaderKey& axolotl_header_key);
 

@@ -254,7 +254,8 @@ namespace Molch {
 		const auto& unverified_metadata{unverified_metadata_result.value()};
 
 		//decrypt the header
-		axolotl_header = packet_decrypt_header(packet, axolotl_header_key);
+		TRY_WITH_RESULT(axolotl_header_result, packet_decrypt_header(packet, axolotl_header_key));
+		axolotl_header = std::move(axolotl_header_result.value());
 
 		//decrypt the message
 		message = packet_decrypt_message(packet, message_key);
@@ -306,34 +307,34 @@ namespace Molch {
 		return metadata;
 	}
 
-	std::optional<Buffer> packet_decrypt_header(
+	result<Buffer> packet_decrypt_header(
 			const span<const std::byte> packet,
 			const HeaderKey& axolotl_header_key) {
 
 		//check input
 		if (axolotl_header_key.empty) {
-			return std::nullopt;
+			return Error(status_type::INVALID_VALUE, "Header key is empty.");
 		}
 
 		const auto packet_struct_result = packet_unpack(packet);
 		if (not packet_struct_result.has_value()) {
-			return std::nullopt;
+			return Error(status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack header.");
 		}
 		const auto& packet_struct{packet_struct_result.value()};
 
 		if (packet_struct->encrypted_axolotl_header.len < crypto_secretbox_MACBYTES) {
-			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The ciphertext of the axolotl header is too short."};
+			return Error(status_type::INCORRECT_BUFFER_SIZE, "The ciphertext of the axolotl header is too short.");
 		}
 
 		const size_t axolotl_header_length{packet_struct->encrypted_axolotl_header.len - crypto_secretbox_MACBYTES};
-		auto axolotl_header{std::make_optional<Buffer>(axolotl_header_length, axolotl_header_length)};
+		Buffer axolotl_header(axolotl_header_length, axolotl_header_length);
 
 		if (!crypto_secretbox_open_easy(
-				*axolotl_header,
+				axolotl_header,
 				{uchar_to_byte(packet_struct->encrypted_axolotl_header.data), packet_struct->encrypted_axolotl_header.len},
 				{uchar_to_byte(packet_struct->packet_header->header_nonce.data), packet_struct->packet_header->header_nonce.len},
 				axolotl_header_key)) {
-			return std::nullopt;
+			return Error(status_type::DECRYPT_ERROR, "Failed to decrypt");
 		}
 
 		return axolotl_header;

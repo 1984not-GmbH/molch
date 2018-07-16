@@ -314,12 +314,15 @@ namespace Molch {
 			this->ratchet_pointer->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
 
 			//try to decrypt the packet header with the current receive header key
-			auto header{packet_decrypt_header(packet, current_receive_header_key)};
-			if (header) {
+			Buffer header;
+			auto header_result = packet_decrypt_header(packet, current_receive_header_key);
+			if (header_result.has_value()) {
+				header = std::move(header_result.value());
 				this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE);
 			} else {
-				header = packet_decrypt_header(packet, next_receive_header_key);
-				if (header) {
+				auto header_result = packet_decrypt_header(packet, next_receive_header_key);
+				if (header_result.has_value()) {
+					header = std::move(header_result.value());
 					this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE);
 				} else {
 					this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::UNDECRYPTABLE);
@@ -328,7 +331,7 @@ namespace Molch {
 			}
 
 			//extract data from the header
-			TRY_WITH_RESULT(extracted_header, header_extract(*header));
+			TRY_WITH_RESULT(extracted_header, header_extract(header));
 
 			//and now decrypt the message with the message key
 			//now we have all the data we need to advance the ratchet
