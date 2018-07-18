@@ -254,29 +254,17 @@ namespace Molch {
 
 		for (size_t index{0}; index < this->ratchet_pointer->skipped_header_and_message_keys.keys().size(); index++) {
 			auto& node = this->ratchet_pointer->skipped_header_and_message_keys.keys()[index];
-			std::optional<Buffer> header;
-			std::optional<Buffer> message_optional;
-			uint32_t current_protocol_version;
-			uint32_t highest_supported_protocol_version;
-			molch_message_type packet_type;
-			packet_decrypt(
-					current_protocol_version,
-					highest_supported_protocol_version,
-					packet_type,
-					header,
-					message_optional,
+			auto decrypted_packet_result = packet_decrypt(
 					packet,
 					node.headerKey(),
-					node.messageKey(),
-					nullptr,
-					nullptr,
-					nullptr);
-			if (header && message_optional) {
-				message = std::move(*message_optional);
+					node.messageKey());
+			if (decrypted_packet_result.has_value()) {
+				auto& decrypted_packet{decrypted_packet_result.value()};
+				message = std::move(decrypted_packet.message);
 				this->ratchet_pointer->skipped_header_and_message_keys.remove(index);
 
 				PublicKey their_signed_public_ephemeral;
-				TRY_WITH_RESULT(extracted_header, header_extract(*header));
+				TRY_WITH_RESULT(extracted_header, header_extract(decrypted_packet.header));
 				their_signed_public_ephemeral = extracted_header.value().their_public_ephemeral;
 				receive_message_number = extracted_header.value().message_number;
 				previous_receive_message_number = extracted_header.value().previous_message_number;

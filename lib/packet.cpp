@@ -234,52 +234,20 @@ namespace Molch {
 		return packet;
 	}
 
-	void packet_decrypt(
-			//outputs
-			uint32_t& current_protocol_version,
-			uint32_t& highest_supported_protocol_version,
-			molch_message_type& packet_type,
-			std::optional<Buffer>& axolotl_header,
-			std::optional<Buffer>& message,
-			//inputs
+	result<DecryptedPacket> packet_decrypt(
 			const span<const std::byte> packet,
 			const HeaderKey& axolotl_header_key,
-			const MessageKey& message_key, //MESSAGE_KEY_SIZE
-			//optional outputs (prekey messages only)
-			PublicKey * const public_identity_key,
-			PublicKey * const public_ephemeral_key,
-			PublicKey * const public_prekey) {
-		//get metadata
-		TRY_WITH_RESULT(unverified_metadata_result, packet_get_metadata_without_verification(packet));
-		const auto& unverified_metadata{unverified_metadata_result.value()};
+			const MessageKey& message_key) {
+		OUTCOME_TRY(unverified_metadata, packet_get_metadata_without_verification(packet));
+		OUTCOME_TRY(axolotl_header, packet_decrypt_header(packet, axolotl_header_key));
+		OUTCOME_TRY(message, packet_decrypt_message(packet, message_key));
 
-		//decrypt the header
-		TRY_WITH_RESULT(axolotl_header_result, packet_decrypt_header(packet, axolotl_header_key));
-		axolotl_header = std::move(axolotl_header_result.value());
+		DecryptedPacket decrypted_packet;
+		decrypted_packet.header = std::move(axolotl_header);
+		decrypted_packet.message = std::move(message);
+		decrypted_packet.metadata = std::move(unverified_metadata);
 
-		//decrypt the message
-		TRY_WITH_RESULT(message_result, packet_decrypt_message(packet, message_key));
-		message = std::move(message_result.value());
-
-		current_protocol_version = unverified_metadata.current_protocol_version;
-		highest_supported_protocol_version = unverified_metadata.highest_supported_protocol_version;
-		packet_type = unverified_metadata.packet_type;
-
-		if ((public_identity_key != nullptr) || (public_ephemeral_key != nullptr) || (public_prekey != nullptr)) {
-			if (not unverified_metadata.prekey_metadata.has_value()) {
-				throw Molch::Exception(status_type::INVALID_VALUE, "No prekey metadata found.");
-			}
-			const auto& prekey_metadata{unverified_metadata.prekey_metadata.value()};
-			if (public_identity_key != nullptr) {
-				*public_identity_key = prekey_metadata.identity;
-			}
-			if (public_ephemeral_key != nullptr) {
-				*public_ephemeral_key = prekey_metadata.ephemeral;
-			}
-			if (public_prekey != nullptr) {
-				*public_prekey = prekey_metadata.prekey;
-			}
-		}
+		return decrypted_packet;
 	}
 
 	result<Metadata> packet_get_metadata_without_verification(const span<const std::byte> packet) {

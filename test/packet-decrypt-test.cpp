@@ -64,49 +64,34 @@ int main() {
 			nullptr);
 
 		//now decrypt the packet
-		molch_message_type extracted_packet_type;
-		std::optional<Buffer> decrypted_header;
-		std::optional<Buffer> decrypted_message;
-		uint32_t extracted_current_protocol_version;
-		uint32_t extracted_highest_supported_protocol_version;
-		packet_decrypt(
-			extracted_current_protocol_version,
-			extracted_highest_supported_protocol_version,
-			extracted_packet_type,
-			decrypted_header,
-			decrypted_message,
-			packet,
-			header_key,
-			message_key,
-			nullptr,
-			nullptr,
-			nullptr);
+		TRY_WITH_RESULT(decrypted_normal_packet_result, packet_decrypt(packet, header_key, message_key));
+		const auto& decrypted_normal_packet{decrypted_normal_packet_result.value()};
 
-		if ((packet_type != extracted_packet_type)
-			|| (extracted_current_protocol_version != 0)
-			|| (extracted_highest_supported_protocol_version != 0)) {
+		if ((packet_type != decrypted_normal_packet.metadata.packet_type)
+			|| (decrypted_normal_packet.metadata.current_protocol_version != 0)
+			|| (decrypted_normal_packet.metadata.highest_supported_protocol_version != 0)) {
 			throw Molch::Exception{status_type::DATA_FETCH_ERROR, "Failed to retrieve metadata."};
 		}
 
 
-		if (decrypted_header.value().size() != header.size()) {
+		if (decrypted_normal_packet.header.size() != header.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length!"};
 		}
 		printf("Decrypted header has the same length.\n");
 
 		//compare headers
-		if (header != decrypted_header.value()) {
+		if (header != decrypted_normal_packet.header) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header doesn't match."};
 		}
 		printf("Decrypted header matches.\n\n");
 
-		if (decrypted_message.value().size() != message.size()) {
+		if (decrypted_normal_packet.message.size() != message.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message isn't of the same length."};
 		}
 		printf("Decrypted message has the same length.\n");
 
 		//compare messages
-		if (message != decrypted_message.value()) {
+		if (message != decrypted_normal_packet.message) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message doesn't match."};
 		}
 		printf("Decrypted message matches.\n");
@@ -121,8 +106,6 @@ int main() {
 		PublicKey public_prekey;
 		public_prekey.fillRandom();
 
-		decrypted_header.value().clear();
-		decrypted_message.value().clear();
 		packet.clear();
 
 		packet_type = molch_message_type::PREKEY_MESSAGE;
@@ -139,62 +122,53 @@ int main() {
 			&public_prekey);
 
 		//now decrypt the packet
-		PublicKey extracted_public_identity_key;
-		PublicKey extracted_public_ephemeral_key;
-		PublicKey extracted_public_prekey;
-		packet_decrypt(
-			extracted_current_protocol_version,
-			extracted_highest_supported_protocol_version,
-			extracted_packet_type,
-			decrypted_header,
-			decrypted_message,
-			packet,
-			header_key,
-			message_key,
-			&extracted_public_identity_key,
-			&extracted_public_ephemeral_key,
-			&extracted_public_prekey);
+		TRY_WITH_RESULT(decrypted_prekey_packet_result, packet_decrypt(packet, header_key, message_key));
+		const auto& decrypted_prekey_packet{decrypted_prekey_packet_result.value()};
 
-		if ((packet_type != extracted_packet_type)
-				|| (extracted_current_protocol_version != 0)
-				|| (extracted_highest_supported_protocol_version != 0)) {
+		if ((packet_type != decrypted_prekey_packet.metadata.packet_type)
+				|| (decrypted_prekey_packet.metadata.current_protocol_version != 0)
+				|| (decrypted_prekey_packet.metadata.highest_supported_protocol_version != 0)) {
 			throw Molch::Exception{status_type::DATA_FETCH_ERROR, "Failed to retrieve metadata."};
 		}
 
-		if (decrypted_header.value().size() != header.size()) {
+		if (decrypted_prekey_packet.header.size() != header.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length."};
 		}
 		printf("Decrypted header has the same length!\n");
 
 		//compare headers
-		if (header != decrypted_header.value()) {
+		if (header != decrypted_prekey_packet.header) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header doesn't match."};
 		}
 		printf("Decrypted header matches!\n");
 
-		if (decrypted_message.value().size() != message.size()) {
+		if (decrypted_prekey_packet.message.size() != message.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message isn't of the same length."};
 		}
 		printf("Decrypted message has the same length.\n");
 
 		//compare messages
-		if (message != decrypted_message.value()) {
+		if (message != decrypted_prekey_packet.message) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message doesn't match."};
 		}
 		printf("Decrypted message matches.\n");
 
+		if (not decrypted_prekey_packet.metadata.prekey_metadata.has_value()) {
+			throw Molch::Exception(status_type::INVALID_VALUE, "No prekey metadata found.");
+		}
+		const auto& prekey_metadata{decrypted_prekey_packet.metadata.prekey_metadata.value()};
 		//compare public keys
-		if (public_identity_key != extracted_public_identity_key) {
+		if (public_identity_key != prekey_metadata.identity) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted public identity key doesn't match."};
 		}
 		printf("Extracted public identity key matches!\n");
 
-		if (public_ephemeral_key != extracted_public_ephemeral_key) {
+		if (public_ephemeral_key != prekey_metadata.ephemeral) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted public ephemeral key doesn't match."};
 		}
 		printf("Extracted public ephemeral key matches!\n");
 
-		if (public_prekey != extracted_public_prekey) {
+		if (public_prekey != prekey_metadata.prekey) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted public prekey doesn't match."};
 		}
 		printf("Extracted public prekey matches!\n");

@@ -71,48 +71,6 @@ namespace Molch {
 			const PublicKey * const public_ephemeral_key,
 			const PublicKey * const public_prekey);
 
-	/*!
-	 * Extract and decrypt a packet and the metadata inside of it.
-	 *
-	 * \param current_protocol_version
-	 *   The protocol version currently used.
-	 * \param highest_supported_protocol_version
-	 *   The highest protocol version the client supports.
-	 * \param packet_type
-	 *   The type of the packet (prekey message, normal message ...)
-	 * \param axolotl_header
-	 *   The axolotl header containing all the necessary information for the ratchet.
-	 * \param message
-	 *   The message that should be sent.
-	 * \param packet
-	 *   The encrypted packet.
-	 * \param axolotl_header_key
-	 *   The header key with which the axolotl header is encrypted.
-	 * \param message_key
-	 *   The key to encrypt the message with.
-	 * \param public_identity_key
-	 *   The public identity key of the sender in case of prekey messages. Optional for normal messages.
-	 * \param public_ephemeral_key
-	 *   The public ephemeral key of the sender in case of prekey messages. Optional for normal messages.
-	 * \param public_prekey
-	 *   The prekey of the receiver that has been selected by the sender in case of prekey messages. Optional for normal messages.
-	 */
-	void packet_decrypt(
-			//outputs
-			uint32_t& current_protocol_version,
-			uint32_t& highest_supported_protocol_version,
-			molch_message_type& packet_type,
-			std::optional<Buffer>& axolotl_header,
-			std::optional<Buffer>& message,
-			//inputs
-			const span<const std::byte> packet,
-			const HeaderKey& axolotl_header_key,
-			const MessageKey& message_key,
-			//optional outputs (prekey messages only)
-			PublicKey * const public_identity_key,
-			PublicKey * const public_ephemeral_key,
-			PublicKey * const public_prekey);
-
 	struct PrekeyMetadata {
 		PublicKey identity;
 		PublicKey ephemeral;
@@ -125,6 +83,28 @@ namespace Molch {
 		molch_message_type packet_type;
 		std::optional<PrekeyMetadata> prekey_metadata;
 	};
+
+	struct DecryptedPacket {
+		Buffer header;
+		Buffer message;
+		Metadata metadata;
+	};
+
+	/*!
+	 * Extract and decrypt a packet and the metadata inside of it.
+	 *
+	 * \param packet
+	 *   The encrypted packet.
+	 * \param axolotl_header_key
+	 *   The header key with which the axolotl header is encrypted.
+	 * \param message_key
+	 *   The key to encrypt the message with.
+	 * \return decrypted packet with metadata
+	 */
+	result<DecryptedPacket> packet_decrypt(
+			const span<const std::byte> packet,
+			const HeaderKey& axolotl_header_key,
+			const MessageKey& message_key);
 
 	/*!
 	 * Extracts the metadata from a packet without actually decrypting or verifying anything.
