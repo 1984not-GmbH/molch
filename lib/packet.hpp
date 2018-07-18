@@ -59,6 +59,7 @@ namespace Molch {
 	 * \return
 	 *   The encrypted packet.
 	 */
+	[[deprecated]]
 	Buffer packet_encrypt(
 			//inputs
 			const molch_message_type packet_type,
@@ -89,6 +90,32 @@ namespace Molch {
 		Buffer message;
 		Metadata metadata;
 	};
+
+	/*!
+	 * Construct and encrypt a packet given the keys and metadata.
+	 *
+	 * \param packet_type
+	 *   The type of the packet (prekey message, normal message ...)
+	 * \param axolotl_header
+	 *   The axolotl header containing all the necessary information for the ratchet.
+	 * \param axolotl_header_key
+	 *   The header key with which the axolotl header is encrypted.
+	 * \param message
+	 *   The message that should be sent.
+	 * \param message_key
+	 *   The key to encrypt the message with.
+	 * \param prekey_metadata Optional prekey metadata (for prekey packets)
+	 *
+	 * \return
+	 *   The encrypted packet.
+	 */
+	result<Buffer> packet_encrypt(
+			const molch_message_type packet_type,
+			const span<const std::byte> axolotl_header,
+			const HeaderKey& axolotl_header_key,
+			const span<const std::byte> message,
+			const MessageKey& message_key,
+			const std::optional<PrekeyMetadata>& prekey_metadata);
 
 	/*!
 	 * Extract and decrypt a packet and the metadata inside of it.

@@ -222,20 +222,26 @@ namespace Molch {
 		auto header{header_result.value()};
 
 		auto packet_type{molch_message_type::NORMAL_MESSAGE};
+		auto prekey_metadata{std::make_optional<PrekeyMetadata>()};
 		//check if this is a prekey message
 		if (public_identity_key != nullptr) {
 			packet_type = molch_message_type::PREKEY_MESSAGE;
+
+			auto& metadata{prekey_metadata.value()};
+			metadata.identity = *public_identity_key;
+			metadata.ephemeral = *public_ephemeral_key;
+			metadata.prekey = *public_prekey;
 		}
 
-		return packet_encrypt(
+		TRY_WITH_RESULT(encrypted_packet_result, packet_encrypt(
 				packet_type,
 				header,
 				send_header_key,
 				message,
 				send_message_key,
-				public_identity_key,
-				public_ephemeral_key,
-				public_prekey);
+				prekey_metadata));
+
+		return encrypted_packet_result.value();
 	}
 
 	/*
