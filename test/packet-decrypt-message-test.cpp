@@ -64,16 +64,17 @@ int main() {
 			nullptr);
 
 		//now decrypt the message
-		auto decrypted_message{packet_decrypt_message(packet, message_key)};
+		TRY_WITH_RESULT(normal_message_result, packet_decrypt_message(packet, message_key));
+		const auto& normal_message{normal_message_result.value()};
 
 		//check the message size
-		if (decrypted_message.value().size() != message.size()) {
+		if (normal_message.size() != message.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message length isn't the same."};
 		}
 		printf("Decrypted message length is the same.\n");
 
 		//compare the message
-		if (message != decrypted_message.value()) {
+		if (message != normal_message) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message doesn't match."};
 		}
 		printf("Decrypted message is the same.\n\n");
@@ -82,16 +83,9 @@ int main() {
 		packet[packet.size() - crypto_secretbox_MACBYTES - 1] ^= uchar_to_byte(0xf0);
 		printf("Manipulating message.\n");
 
-		decrypted_message.value().clear();
-
 		//try to decrypt
-		auto decryption_failed{false};
-		try {
-			decrypted_message = packet_decrypt_message(packet, message_key);
-		} catch (const Molch::Exception&) {
-			decryption_failed = true;
-		}
-		if (!decryption_failed && decrypted_message) { //message was decrypted although it shouldn't
+		const auto manipulated_normal_message_result = packet_decrypt_message(packet, message_key);
+		if (manipulated_normal_message_result.has_value()) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Decrypted manipulated message."};
 		}
 		printf("Manipulation detected.\n\n");
@@ -121,16 +115,17 @@ int main() {
 			&public_prekey);
 
 		//now decrypt the message
-		decrypted_message = packet_decrypt_message(packet, message_key);
+		TRY_WITH_RESULT(prekey_message_result, packet_decrypt_message(packet, message_key));
+		const auto& prekey_message{prekey_message_result.value()};
 
 		//check the message size
-		if (decrypted_message.value().size() != message.size()) {
+		if (prekey_message.size() != message.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message length isn't the same."};
 		}
 		printf("Decrypted message length is the same.\n");
 
 		//compare the message
-		if (message != decrypted_message.value()) {
+		if (message != prekey_message) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message doesn't match."};
 		}
 		printf("Decrypted message is the same.\n");

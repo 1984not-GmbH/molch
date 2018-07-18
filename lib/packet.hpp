@@ -157,6 +157,6 @@ namespace Molch {
 	 * \return
 	 *   A buffer for the decrypted message.
 	 */
-	std::optional<Buffer> packet_decrypt_message(const span<const std::byte> packet, const MessageKey& message_key);
+	result<Buffer> packet_decrypt_message(const span<const std::byte> packet, const MessageKey& message_key);
 }
 #endif

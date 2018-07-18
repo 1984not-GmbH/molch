@@ -343,11 +343,8 @@ namespace Molch {
 				extracted_header.value().message_number,
 				extracted_header.value().previous_message_number);
 
-			std::optional<Buffer> message_optional{packet_decrypt_message(packet, message_key)};
-			if (!message_optional) {
-				throw Exception{status_type::DECRYPT_ERROR, "Failed to decrypt the message."};
-			}
-			message = std::move(*message_optional);
+			TRY_WITH_RESULT(message_result, packet_decrypt_message(packet, message_key))
+			message = std::move(message_result.value());
 
 			this->ratchet_pointer->setLastMessageAuthenticity(true);
 

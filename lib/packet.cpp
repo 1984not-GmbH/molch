@@ -258,7 +258,8 @@ namespace Molch {
 		axolotl_header = std::move(axolotl_header_result.value());
 
 		//decrypt the message
-		message = packet_decrypt_message(packet, message_key);
+		TRY_WITH_RESULT(message_result, packet_decrypt_message(packet, message_key));
+		message = std::move(message_result.value());
 
 		current_protocol_version = unverified_metadata.current_protocol_version;
 		highest_supported_protocol_version = unverified_metadata.highest_supported_protocol_version;
@@ -340,40 +341,36 @@ namespace Molch {
 		return axolotl_header;
 	}
 
-	std::optional<Buffer> packet_decrypt_message(const span<const std::byte> packet, const MessageKey& message_key) {
+	result<Buffer> packet_decrypt_message(const span<const std::byte> packet, const MessageKey& message_key) {
 		//check input
 		if (message_key.empty) {
-			return std::nullopt;
+			return Error(status_type::INVALID_VALUE, "The message key is empty.");
 		}
 
-		const auto packet_struct_result = packet_unpack(packet);
-		if (not packet_struct_result.has_value()) {
-			return std::nullopt;
-		}
-		const auto& packet_struct{packet_struct_result.value()};
+		OUTCOME_TRY(packet_struct, packet_unpack(packet));
 
 		if (packet_struct->encrypted_message.len < crypto_secretbox_MACBYTES) {
-			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The ciphertext of the message is too short."};
+			return Error(status_type::INCORRECT_BUFFER_SIZE, "The ciphertext of the message is too short.");
 		}
 
 		const size_t padded_message_length{packet_struct->encrypted_message.len - crypto_secretbox_MACBYTES};
 		if (padded_message_length < padding_blocksize) {
-			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The padded message is too short."};
+			return Error(status_type::INCORRECT_BUFFER_SIZE, "The padded message is too short.");
 		}
-		auto padded_message{std::make_optional<Buffer>(padded_message_length, padded_message_length)};
+
+		Buffer padded_message(padded_message_length, padded_message_length);
 
 		if (!crypto_secretbox_open_easy(
-				*padded_message,
+				padded_message,
 				{uchar_to_byte(packet_struct->encrypted_message.data), packet_struct->encrypted_message.len},
 				{uchar_to_byte(packet_struct->packet_header->message_nonce.data), packet_struct->packet_header->message_nonce.len},
 				message_key)) {
-			return std::nullopt;
+			return Error(status_type::DECRYPT_ERROR, "Failed to decrypt packet.");
 		}
 
 		//undo the padding
-		TRY_WITH_RESULT(result3, sodium_unpad(*padded_message, padding_blocksize));
-		auto unpadded_span{result3.value()};
-		TRY_VOID(padded_message->setSize(unpadded_span.size()));
+		OUTCOME_TRY(unpadded_span, sodium_unpad(padded_message, padding_blocksize));
+		OUTCOME_TRY(padded_message.setSize(unpadded_span.size()));
 
 		return padded_message;
 	}
