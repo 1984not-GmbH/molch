@@ -221,7 +221,7 @@ namespace Molch {
 	 * Calculates all the message keys up to the purported message number and
 	 * saves the skipped ones in the ratchet's staging area.
 	 */
-	void Ratchet::stageSkippedHeaderAndMessageKeys(
+	static void stageSkippedHeaderAndMessageKeys(
 			HeaderAndMessageKeyStore& staging_area,
 			ChainKey * const output_chain_key, //output, optional
 			MessageKey * const output_message_key, //output, optional
@@ -315,7 +315,7 @@ namespace Molch {
 			this->purported_message_number = purported_message_number;
 
 			//CKp, MK = stage_skipped_header_and_message_keys(HKr, Nr, Np, CKr)
-			Ratchet::stageSkippedHeaderAndMessageKeys(
+			stageSkippedHeaderAndMessageKeys(
 				this->staged_header_and_message_keys,
 				&storage->purported_receive_chain_key,
 				&message_key,
@@ -337,7 +337,7 @@ namespace Molch {
 			storage->their_purported_public_ephemeral = their_purported_public_ephemeral;
 
 			//stage_skipped_header_and_message_keys(HKr, Nr, PNp, CKr)
-			Ratchet::stageSkippedHeaderAndMessageKeys(
+			stageSkippedHeaderAndMessageKeys(
 					this->staged_header_and_message_keys,
 					nullptr, //output_chain_key
 					nullptr, //output_message_key
@@ -364,7 +364,7 @@ namespace Molch {
 			ChainKey purported_chain_key_backup{storage->purported_receive_chain_key};
 
 			//CKp, MK = staged_header_and_message_keys(HKp, 0, Np, CKp)
-			Ratchet::stageSkippedHeaderAndMessageKeys(
+			stageSkippedHeaderAndMessageKeys(
 					this->staged_header_and_message_keys,
 					&storage->purported_receive_chain_key,
 					&message_key,

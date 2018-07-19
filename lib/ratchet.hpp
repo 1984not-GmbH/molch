@@ -61,14 +61,6 @@ namespace Molch {
 	private:
 		void init();
 
-		static void stageSkippedHeaderAndMessageKeys(
-			HeaderAndMessageKeyStore& staging_area,
-			ChainKey * const output_chain_key, //output, optional
-			MessageKey * const output_message_key, //output, optional
-			const HeaderKey& current_header_key,
-			const uint32_t current_message_number,
-			const uint32_t future_message_number,
-			const ChainKey& chain_key);
 		void commitSkippedHeaderAndMessageKeys();
 
 	public:
