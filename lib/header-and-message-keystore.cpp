@@ -97,14 +97,14 @@ namespace Molch {
 		this->expiration_date = seconds{key_bundle.expiration_time};
 	}
 
-	const MessageKey& HeaderAndMessageKey::messageKey() const {
+	const MessageKey& HeaderAndMessageKey::messageKey() const noexcept {
 		return this->message_key;
 	}
 
-	const HeaderKey& HeaderAndMessageKey::headerKey() const {
+	const HeaderKey& HeaderAndMessageKey::headerKey() const noexcept {
 		return this->header_key;
 	}
-	seconds HeaderAndMessageKey::expirationDate() const {
+	seconds HeaderAndMessageKey::expirationDate() const noexcept {
 		return this->expiration_date;
 	}
 

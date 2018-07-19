@@ -59,9 +59,9 @@ namespace Molch {
 		HeaderAndMessageKey& operator=(const HeaderAndMessageKey& node) noexcept;
 		HeaderAndMessageKey& operator=(HeaderAndMessageKey&& node) noexcept;
 
-		const MessageKey& messageKey() const;
-		const HeaderKey& headerKey() const;
-		seconds expirationDate() const;
+		const MessageKey& messageKey() const noexcept;
+		const HeaderKey& headerKey() const noexcept;
+		seconds expirationDate() const noexcept;
 
 		ProtobufCKeyBundle* exportProtobuf(Arena& arena) const;
 
