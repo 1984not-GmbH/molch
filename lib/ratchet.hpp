@@ -142,7 +142,7 @@ namespace Molch {
 		 * Set if the header is decryptable with the current (state->receive_header_key)
 		 * or next (next_receive_header_key) header key, or isn't decryptable.
 		 */
-		void setHeaderDecryptability(const HeaderDecryptability header_decryptable);
+		result<void> setHeaderDecryptability(const HeaderDecryptability header_decryptable) noexcept;
 
 		/*
 		 * First step after receiving a message: Calculate purported keys.

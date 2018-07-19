@@ -125,7 +125,7 @@ int main() {
 
 			return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 		}()};
-		bob_receive_ratchet->setHeaderDecryptability(decryptability);
+		TRY_VOID(bob_receive_ratchet->setHeaderDecryptability(decryptability));
 
 		MessageKey receive_message_key;
 		bob_receive_ratchet->receive(
@@ -163,7 +163,7 @@ int main() {
 
 			return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 		}();
-		alice_receive_ratchet->setHeaderDecryptability(decryptability);
+		TRY_VOID(alice_receive_ratchet->setHeaderDecryptability(decryptability));
 
 		alice_receive_ratchet->receive(
 				receive_message_key,
@@ -199,7 +199,7 @@ int main() {
 
 			return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 		}();
-		alice_send_ratchet->setHeaderDecryptability(decryptability);
+		TRY_VOID(alice_send_ratchet->setHeaderDecryptability(decryptability));
 
 		alice_send_ratchet->receive(
 				receive_message_key,
@@ -235,7 +235,7 @@ int main() {
 
 			return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 		}();
-		bob_send_ratchet->setHeaderDecryptability(decryptability);
+		TRY_VOID(bob_send_ratchet->setHeaderDecryptability(decryptability));
 
 		bob_send_ratchet->receive(
 				receive_message_key,

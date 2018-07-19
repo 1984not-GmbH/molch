@@ -201,15 +201,13 @@ namespace Molch {
 		next_receive_header_key = this->storage->next_receive_header_key;
 	}
 
-	/*
-	 * Set if the header is decryptable with the current (state->receive_header_key)
-	 * or next (next_receive_header_key) header key, or isn't decryptable.
-	 */
-	void Ratchet::setHeaderDecryptability(const HeaderDecryptability header_decryptable) {
-		Expects((this->header_decryptable == HeaderDecryptability::NOT_TRIED)
+	result<void> Ratchet::setHeaderDecryptability(const HeaderDecryptability header_decryptable) noexcept {
+		FulfillOrFail((this->header_decryptable == HeaderDecryptability::NOT_TRIED)
 				&& (header_decryptable != HeaderDecryptability::NOT_TRIED));
 
 		this->header_decryptable = header_decryptable;
+
+		return outcome::success();
 	}
 
 	constexpr size_t maximum_skipped_messages{500};

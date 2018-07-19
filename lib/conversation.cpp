@@ -312,14 +312,14 @@ namespace Molch {
 			auto header_result = packet_decrypt_header(packet, current_receive_header_key);
 			if (header_result.has_value()) {
 				header = std::move(header_result.value());
-				this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE);
+				TRY_VOID(this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE));
 			} else {
 				auto header_result = packet_decrypt_header(packet, next_receive_header_key);
 				if (header_result.has_value()) {
 					header = std::move(header_result.value());
-					this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE);
+					TRY_VOID(this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE));
 				} else {
-					this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::UNDECRYPTABLE);
+					TRY_VOID(this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::UNDECRYPTABLE));
 					throw Exception{status_type::DECRYPT_ERROR, "Failed to decrypt the message."};
 				}
 			}

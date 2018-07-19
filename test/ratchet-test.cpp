@@ -235,7 +235,7 @@ int main() {
 		//now the receive end, Bob recreates the message keys
 
 		//set the header decryptability
-		bob_state->setHeaderDecryptability(decryptable);
+		TRY_VOID(bob_state->setHeaderDecryptability(decryptable));
 
 		MessageKey bob_receive_key1;
 		bob_state->receive(
@@ -273,7 +273,7 @@ int main() {
 		}
 
 		//set the header decryptability
-		bob_state->setHeaderDecryptability(decryptable);
+		TRY_VOID(bob_state->setHeaderDecryptability(decryptable));
 
 		//second receive message key
 		MessageKey bob_receive_key2;
@@ -314,7 +314,7 @@ int main() {
 		}();
 
 		//set the header decryptability
-		bob_state->setHeaderDecryptability(decryptable);
+		TRY_VOID(bob_state->setHeaderDecryptability(decryptable));
 
 		//third receive message key
 		MessageKey bob_receive_key3;
@@ -434,7 +434,7 @@ int main() {
 		//now alice receives the first, then the third message (second message skipped)
 
 		//set the header decryptability
-		alice_state->setHeaderDecryptability(decryptable);
+		TRY_VOID(alice_state->setHeaderDecryptability(decryptable));
 
 		MessageKey alice_receive_message_key1;
 		alice_state->receive(
@@ -471,7 +471,7 @@ int main() {
 		}();
 
 		//set the header decryptability
-		alice_state->setHeaderDecryptability(decryptable);
+		TRY_VOID(alice_state->setHeaderDecryptability(decryptable));
 
 		//third received message key (second message skipped)
 		MessageKey alice_receive_message_key3;
