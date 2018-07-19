@@ -150,60 +150,33 @@ int main() {
 		//--------------------------------------------------------------------------
 		puts("----------------------------------------\n");
 		//first, alice sends two messages
-		MessageKey alice_send_message_key1;
-		HeaderKey alice_send_header_key1;
-		PublicKey alice_send_ephemeral1;
-		uint32_t alice_send_message_number1;
-		uint32_t alice_previous_message_number1;
-		alice_state->send(
-				alice_send_header_key1,
-				alice_send_message_number1,
-				alice_previous_message_number1,
-				alice_send_ephemeral1,
-				alice_send_message_key1);
+		TRY_WITH_RESULT(alice_send_data1_result, alice_state->getSendData());
+		const auto& alice_send_data1{alice_send_data1_result.value()};
 		//print the send message key
 		printf("Alice Ratchet 1 send message key 1:\n");
-		alice_send_message_key1.printHex(std::cout);
+		alice_send_data1.message_key.printHex(std::cout);
 		printf("Alice Ratchet 1 send header key 1:\n");
-		alice_send_header_key1.printHex(std::cout);
+		alice_send_data1.header_key.printHex(std::cout);
 		putchar('\n');
 
 		//second message key
-		MessageKey alice_send_message_key2;
-		HeaderKey alice_send_header_key2;
-		PublicKey alice_send_ephemeral2;
-		uint32_t alice_send_message_number2;
-		uint32_t alice_previous_message_number2;
-		alice_state->send(
-				alice_send_header_key2,
-				alice_send_message_number2,
-				alice_previous_message_number2,
-				alice_send_ephemeral2,
-				alice_send_message_key2);
+		TRY_WITH_RESULT(alice_send_data2_result, alice_state->getSendData());
+		const auto& alice_send_data2{alice_send_data2_result.value()};
 		//print the send message key
 		printf("Alice Ratchet 1 send message key 2:\n");
-		alice_send_message_key2.printHex(std::cout);
+		alice_send_data2.message_key.printHex(std::cout);
 		printf("Alice Ratchet 1 send header key 2:\n");
-		alice_send_header_key2.printHex(std::cout);
+		alice_send_data2.header_key.printHex(std::cout);
 		putchar('\n');
 
 		//third message_key
-		MessageKey alice_send_message_key3;
-		HeaderKey alice_send_header_key3;
-		PublicKey alice_send_ephemeral3;
-		uint32_t alice_send_message_number3;
-		uint32_t alice_previous_message_number3;
-		alice_state->send(
-				alice_send_header_key3,
-				alice_send_message_number3,
-				alice_previous_message_number3,
-				alice_send_ephemeral3,
-				alice_send_message_key3);
+		TRY_WITH_RESULT(alice_send_data3_result, alice_state->getSendData());
+		const auto& alice_send_data3{alice_send_data3_result.value()};
 		//print the send message key
 		printf("Alice Ratchet 1 send message key 3:\n");
-		alice_send_message_key3.printHex(std::cout);
+		alice_send_data3.message_key.printHex(std::cout);
 		printf("Alice Ratchet 1 send header key 3:\n");
-		alice_send_header_key3.printHex(std::cout);
+		alice_send_data3.header_key.printHex(std::cout);
 		putchar('\n');
 
 		//--------------------------------------------------------------------------
@@ -220,10 +193,10 @@ int main() {
 
 		//check header decryptability
 		auto decryptable{[&]() {
-			if (bob_current_receive_header_key == alice_send_header_key1) {
+			if (bob_current_receive_header_key == alice_send_data1.header_key) {
 				printf("Header decryptable with current header key.\n");
 				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-			} else if (bob_next_receive_header_key == alice_send_header_key1) {
+			} else if (bob_next_receive_header_key == alice_send_data1.header_key) {
 				printf("Header decryptable with next header key.\n");
 				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			} else {
@@ -240,7 +213,7 @@ int main() {
 		MessageKey bob_receive_key1;
 		bob_state->receive(
 				bob_receive_key1,
-				alice_send_ephemeral1,
+				alice_send_data1.ephemeral,
 				0, //purported message number
 				0); //purported previous message number
 		//print it out!
@@ -261,10 +234,10 @@ int main() {
 		putchar('\n');
 
 		//check header decryptability
-		if (bob_current_receive_header_key == alice_send_header_key2) {
+		if (bob_current_receive_header_key == alice_send_data2.header_key) {
 			decryptable = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
 			printf("Header decryptable with current header key.\n");
-		} else if (bob_next_receive_header_key == alice_send_header_key2) {
+		} else if (bob_next_receive_header_key == alice_send_data1.header_key) {
 			decryptable = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			printf("Header decryptable with next header key.\n");
 		} else {
@@ -279,7 +252,7 @@ int main() {
 		MessageKey bob_receive_key2;
 		bob_state->receive(
 				bob_receive_key2,
-				alice_send_ephemeral2,
+				alice_send_data2.ephemeral,
 				1, //purported message number
 				0); //purported previous message number
 		//print it out!
@@ -301,10 +274,10 @@ int main() {
 
 		//check header decryptability
 		decryptable = [&]() {
-			if (bob_current_receive_header_key == alice_send_header_key3) {
+			if (bob_current_receive_header_key == alice_send_data3.header_key) {
 				printf("Header decryptable with current header key.\n");
 				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-			} else if (bob_next_receive_header_key == alice_send_header_key3) {
+			} else if (bob_next_receive_header_key == alice_send_data3.header_key) {
 				printf("Header decryptable with next header key.\n");
 				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			} else {
@@ -320,7 +293,7 @@ int main() {
 		MessageKey bob_receive_key3;
 		bob_state->receive(
 				bob_receive_key3,
-				alice_send_ephemeral3,
+				alice_send_data3.ephemeral,
 				2, //purported message number
 				0); //purported previous message number
 		//print it out!
@@ -333,19 +306,19 @@ int main() {
 		bob_state->setLastMessageAuthenticity(true);
 
 		//compare the message keys
-		if (alice_send_message_key1 != bob_receive_key1) {
+		if (alice_send_data1.message_key != bob_receive_key1) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's first send key and Bob's first receive key aren't the same."};
 		}
 		printf("Alice's first send key and Bob's first receive key match.\n");
 
 		//second key
-		if (alice_send_message_key2 != bob_receive_key2) {
+		if (alice_send_data2.message_key != bob_receive_key2) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's second send key and Bob's second receive key aren't the same."};
 		}
 		printf("Alice's second send key and Bob's second receive key match.\n");
 
 		//third key
-		if (alice_send_message_key3 != bob_receive_key3) {
+		if (alice_send_data3.message_key != bob_receive_key3) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's third send key and Bob's third receive key aren't the same."};
 		}
 		printf("Alice's third send key and Bob's third receive key match.\n");
@@ -354,58 +327,31 @@ int main() {
 		//--------------------------------------------------------------------------
 		puts("----------------------------------------\n");
 		//Now Bob replies with three messages
-		MessageKey bob_send_message_key1;
-		HeaderKey bob_send_header_key1;
-		PublicKey bob_send_ephemeral1;
-		uint32_t bob_send_message_number1;
-		uint32_t bob_previous_message_number1;
-		bob_state->send(
-				bob_send_header_key1,
-				bob_send_message_number1,
-				bob_previous_message_number1,
-				bob_send_ephemeral1,
-				bob_send_message_key1);
+		TRY_WITH_RESULT(bob_send_data1_result, bob_state->getSendData());
+		const auto& bob_send_data1{bob_send_data1_result.value()};
 		//print the send message key
 		printf("Bob Ratchet 2 send message key 1:\n");
-		bob_send_message_key1.printHex(std::cout);
+		bob_send_data1.message_key.printHex(std::cout);
 		printf("Bob Ratchet 2 send header key 1:\n");
-		bob_send_header_key1.printHex(std::cout) << std::endl;
+		bob_send_data1.header_key.printHex(std::cout) << std::endl;
 
 		//second message key
-		MessageKey bob_send_message_key2;
-		HeaderKey bob_send_header_key2;
-		PublicKey bob_send_ephemeral2;
-		uint32_t bob_send_message_number2;
-		uint32_t bob_previous_message_number2;
-		bob_state->send(
-				bob_send_header_key2,
-				bob_send_message_number2,
-				bob_previous_message_number2,
-				bob_send_ephemeral2,
-				bob_send_message_key2);
+		TRY_WITH_RESULT(bob_send_data2_result, bob_state->getSendData());
+		const auto& bob_send_data2{bob_send_data2_result.value()};
 		//print the send message key
 		printf("Bob Ratchet 2 send message key 1:\n");
-		bob_send_message_key2.printHex(std::cout);
+		bob_send_data2.message_key.printHex(std::cout);
 		printf("Bob Ratchet 2 send header key 1:\n");
-		bob_send_header_key2.printHex(std::cout) << std::endl;
+		bob_send_data2.header_key.printHex(std::cout) << std::endl;
 
 		//third message key
-		MessageKey bob_send_message_key3;
-		HeaderKey bob_send_header_key3;
-		PublicKey bob_send_ephemeral3;
-		uint32_t bob_send_message_number3;
-		uint32_t bob_previous_message_number3;
-		bob_state->send(
-				bob_send_header_key3,
-				bob_send_message_number3,
-				bob_previous_message_number3,
-				bob_send_ephemeral3,
-				bob_send_message_key3);
+		TRY_WITH_RESULT(bob_send_data3_result, bob_state->getSendData());
+		const auto& bob_send_data3{bob_send_data3_result.value()};
 		//print the send message key
 		printf("Bob Ratchet 2 send message key 3:\n");
-		bob_send_message_key3.printHex(std::cout);
+		bob_send_data3.message_key.printHex(std::cout);
 		printf("Bob Ratchet 2 send header key 3:\n");
-		bob_send_header_key3.printHex(std::cout) << std::endl;
+		bob_send_data3.header_key.printHex(std::cout) << std::endl;
 
 		//--------------------------------------------------------------------------
 		puts("----------------------------------------\n");
@@ -420,10 +366,10 @@ int main() {
 		alice_next_receive_header_key.printHex(std::cout) << std::endl;
 
 		//check header decryptability
-		if (alice_current_receive_header_key == bob_send_header_key1) {
+		if (alice_current_receive_header_key == bob_send_data1.header_key) {
 			decryptable = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
 			printf("Header decryptable with current header key.\n");
-		} else if (alice_next_receive_header_key == bob_send_header_key1) {
+		} else if (alice_next_receive_header_key == bob_send_data1.header_key) {
 			decryptable = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			printf("Header decryptable with next header key.\n");
 		} else {
@@ -439,7 +385,7 @@ int main() {
 		MessageKey alice_receive_message_key1;
 		alice_state->receive(
 				alice_receive_message_key1,
-				bob_send_ephemeral1,
+				bob_send_data1.ephemeral,
 				0, //purported message number
 				0); //purported previous message number
 		//print it out
@@ -458,10 +404,10 @@ int main() {
 
 		//check header decryptability
 		decryptable = [&]() {
-			if (alice_current_receive_header_key == bob_send_header_key3) {
+			if (alice_current_receive_header_key == bob_send_data3.header_key) {
 				printf("Header decryptable with current header key.\n");
 				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-			} else if (alice_next_receive_header_key == bob_send_header_key3) {
+			} else if (alice_next_receive_header_key == bob_send_data3.header_key) {
 				printf("Header decryptable with next header key.\n");
 				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			} else {
@@ -475,7 +421,7 @@ int main() {
 
 		//third received message key (second message skipped)
 		MessageKey alice_receive_message_key3;
-		alice_state->receive(alice_receive_message_key3, bob_send_ephemeral3, 2, 0);
+		alice_state->receive(alice_receive_message_key3, bob_send_data3.ephemeral, 2, 0);
 		//print it out
 		printf("Alice Ratchet 2 receive message key 3:\n");
 		alice_receive_message_key3.printHex(std::cout) << std::endl;
@@ -501,25 +447,25 @@ int main() {
 		alice_receive_header_key2.printHex(std::cout) << std::endl;
 
 		//compare header keys
-		if (alice_receive_header_key2 != bob_send_header_key2) {
+		if (alice_receive_header_key2 != bob_send_data2.header_key) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Bob's second send header key and Alice's receive header key aren't the same."};
 		}
 		printf("Bob's second send header key and Alice's receive header keys match.\n");
 
 		//compare the keys
-		if (bob_send_message_key1 != alice_receive_message_key1) {
+		if (bob_send_data1.message_key != alice_receive_message_key1) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Bob's first send key and Alice's first receive key aren't the same."};
 		}
 		printf("Bob's first send key and Alice's first receive key match.\n");
 
 		//second key
-		if (bob_send_message_key2 != alice_receive_message_key2) {
+		if (bob_send_data2.message_key != alice_receive_message_key2) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Bob's second send key and Alice's second receive key aren't the same."};
 		}
 		printf("Bob's second send key and Alice's second receive key match.\n");
 
 		//third key
-		if (bob_send_message_key3 != alice_receive_message_key3) {
+		if (bob_send_data3.message_key != alice_receive_message_key3) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Bob's third send key and Alice's third receive key aren't the same."};
 		}
 		printf("Bob's third send key and Alice's third receive key match.\n\n");

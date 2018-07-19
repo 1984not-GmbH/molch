@@ -120,19 +120,12 @@ namespace Molch {
 		this->previous_message_number = 0;
 	}
 
-	/*
-	 * Get keys and metadata to send the next message.
-	 */
-	void Ratchet::send(
-			HeaderKey& send_header_key, //HEADER_KEY_SIZE, HKs
-			uint32_t& send_message_number, //Ns
-			uint32_t& previous_send_message_number, //PNs
-			PublicKey& our_public_ephemeral, //PUBLIC_KEY_SIZE, DHRs
-			MessageKey& message_key) { //MESSAGE_KEY_SIZE, MK
+	result<Ratchet::SendData> Ratchet::getSendData() {
 		auto& storage{this->storage};
+		SendData data;
 		if (this->ratchet_flag) {
 			//DHRs = generateECDH()
-			TRY_VOID(crypto_box_keypair(
+			OUTCOME_TRY(crypto_box_keypair(
 					storage->our_public_ephemeral,
 					storage->our_private_ephemeral));
 			storage->our_public_ephemeral.empty = false;
@@ -166,21 +159,21 @@ namespace Molch {
 		}
 
 		//MK = HMAC-HASH(CKs, "0")
-		TRY_WITH_RESULT(message_key_result, storage->send_chain_key.deriveMessageKey());
-		message_key = message_key_result.value();
+		OUTCOME_TRY(message_key, storage->send_chain_key.deriveMessageKey());
+		data.message_key = message_key;
 
 		//copy the other data to the output
 		//(corresponds to
 		//  msg = Enc(HKs, Ns || PNs || DHRs) || Enc(MK, plaintext)
 		//  in the axolotl specification)
 		//HKs:
-		send_header_key = storage->send_header_key.value();
+		data.header_key = storage->send_header_key.value();
 		//Ns
-		send_message_number = this->send_message_number;
+		data.message_number = this->send_message_number;
 		//PNs
-		previous_send_message_number = this->previous_message_number;
+		data.previous_message_number = this->previous_message_number;
 		//DHRs
-		our_public_ephemeral = storage->our_public_ephemeral;
+		data.ephemeral = storage->our_public_ephemeral;
 
 		//Ns = Ns + 1
 		this->send_message_number++;
@@ -188,6 +181,8 @@ namespace Molch {
 		//CKs = HMAC-HASH(CKs, "1")
 		TRY_WITH_RESULT(send_chain_key_result, storage->send_chain_key.deriveChainKey());
 		storage->send_chain_key = send_chain_key_result.value();
+
+		return data;
 	}
 
 	/*

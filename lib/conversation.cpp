@@ -203,22 +203,13 @@ namespace Molch {
 				&& ((public_identity_key == nullptr) || !public_identity_key->empty)
 				&& ((public_prekey == nullptr) || !public_prekey->empty));
 
-		HeaderKey send_header_key;
-		MessageKey send_message_key;
-		PublicKey send_ephemeral_key;
-		uint32_t send_message_number;
-		uint32_t previous_send_message_number;
-		this->ratchet_pointer->send(
-				send_header_key,
-				send_message_number,
-				previous_send_message_number,
-				send_ephemeral_key,
-				send_message_key);
+		TRY_WITH_RESULT(send_data_result, this->ratchet_pointer->getSendData());
+		const auto& send_data{send_data_result.value()};
 
 		TRY_WITH_RESULT(header_result, header_construct(
-				send_ephemeral_key,
-				send_message_number,
-				previous_send_message_number));
+				send_data.ephemeral,
+				send_data.message_number,
+				send_data.previous_message_number));
 		auto header{header_result.value()};
 
 		auto packet_type{molch_message_type::NORMAL_MESSAGE};
@@ -236,9 +227,9 @@ namespace Molch {
 		TRY_WITH_RESULT(encrypted_packet_result, packet_encrypt(
 				packet_type,
 				header,
-				send_header_key,
+				send_data.header_key,
 				message,
-				send_message_key,
+				send_data.message_key,
 				prekey_metadata));
 
 		return encrypted_packet_result.value();

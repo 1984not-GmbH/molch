@@ -120,16 +120,18 @@ namespace Molch {
 		Ratchet& operator=(const Ratchet& ratchet) = delete;
 		Ratchet& operator=(Ratchet&& ratchet) = default;
 
+		struct SendData {
+			uint32_t message_number;
+			uint32_t previous_message_number;
+			PublicKey ephemeral;
+			MessageKey message_key;
+			HeaderKey header_key;
+		};
+
 		/*
 		 * Get keys and metadata to send the next message.
 		 */
-		void send(
-				HeaderKey& send_header_key, //HEADER_KEY_SIZE, HKs
-				uint32_t& send_message_number, //Ns
-				uint32_t& previous_send_message_number, //PNs
-				PublicKey& our_public_ephemeral, //DHRs
-				MessageKey& message_key //MESSAGE_KEY_SIZE, MK
-				);
+		result<SendData> getSendData();
 
 		/*
 		 * Get a copy of the current and the next receive header key.
