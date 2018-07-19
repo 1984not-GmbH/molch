@@ -16,3 +16,6 @@ molch.creator*
 .vscode
 *.pb-c.h
 *.pb.h
+tags.??????
+.buildconfig
+molch.iml
