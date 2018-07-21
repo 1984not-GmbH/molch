@@ -155,12 +155,11 @@ namespace Molch {
 		 * This is only staged until it is later verified that the message was
 		 * authentic.
 		 *
-		 * To verify that the message was authentic, encrypt it with the message key
+		 * To verify that the message was authentic, decrypt it with the message key
 		 * returned by this function and call ratchet_set_last_message_authenticity
 		 * after having verified the message.
 		 */
-		void receive(
-				MessageKey& message_key, //used to get the message key back
+		result<MessageKey> receive(
 				const PublicKey& their_purported_public_ephemeral,
 				const uint32_t purported_message_number,
 				const uint32_t purported_previous_message_number);

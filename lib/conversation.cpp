@@ -319,12 +319,11 @@ namespace Molch {
 			//and now decrypt the message with the message key
 			//now we have all the data we need to advance the ratchet
 			//so let's do that
-			MessageKey message_key;
-			this->ratchet_pointer->receive(
-				message_key,
+			TRY_WITH_RESULT(message_key_result, this->ratchet_pointer->receive(
 				extracted_header.value().their_public_ephemeral,
 				extracted_header.value().message_number,
-				extracted_header.value().previous_message_number);
+				extracted_header.value().previous_message_number));
+			const auto& message_key{message_key_result.value()};
 
 			TRY_WITH_RESULT(message_result, packet_decrypt_message(packet, message_key))
 			message = std::move(message_result.value());

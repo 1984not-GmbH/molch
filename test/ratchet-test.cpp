@@ -207,12 +207,12 @@ int main() {
 		//set the header decryptability
 		TRY_VOID(bob_state->setHeaderDecryptability(decryptable));
 
-		MessageKey bob_receive_key1;
-		bob_state->receive(
-				bob_receive_key1,
+		TRY_WITH_RESULT(bob_receive_key1_result, bob_state->receive(
 				alice_send_data1.ephemeral,
 				0, //purported message number
-				0); //purported previous message number
+				0)); //purported previous message number
+		const auto& bob_receive_key1{bob_receive_key1_result.value()};
+
 		//print it out!
 		printf("Bob Ratchet 1 receive message key 1:\n");
 		bob_receive_key1.printHex(std::cout);
@@ -246,12 +246,12 @@ int main() {
 		TRY_VOID(bob_state->setHeaderDecryptability(decryptable));
 
 		//second receive message key
-		MessageKey bob_receive_key2;
-		bob_state->receive(
-				bob_receive_key2,
+		TRY_WITH_RESULT(bob_receive_key2_result, bob_state->receive(
 				alice_send_data2.ephemeral,
 				1, //purported message number
-				0); //purported previous message number
+				0)); //purported previous message number
+		const auto& bob_receive_key2{bob_receive_key2_result.value()};
+
 		//print it out!
 		printf("Bob Ratchet 1 receive message key 2:\n");
 		bob_receive_key2.printHex(std::cout);
@@ -287,12 +287,12 @@ int main() {
 		TRY_VOID(bob_state->setHeaderDecryptability(decryptable));
 
 		//third receive message key
-		MessageKey bob_receive_key3;
-		bob_state->receive(
-				bob_receive_key3,
+		TRY_WITH_RESULT(bob_receive_key3_result, bob_state->receive(
 				alice_send_data3.ephemeral,
 				2, //purported message number
-				0); //purported previous message number
+				0)); //purported previous message number
+		const auto& bob_receive_key3{bob_receive_key3_result.value()};
+
 		//print it out!
 		printf("Bob Ratchet 1 receive message key 3:\n");
 		bob_receive_key3.printHex(std::cout);
@@ -377,12 +377,12 @@ int main() {
 		//set the header decryptability
 		TRY_VOID(alice_state->setHeaderDecryptability(decryptable));
 
-		MessageKey alice_receive_message_key1;
-		alice_state->receive(
-				alice_receive_message_key1,
+		TRY_WITH_RESULT(alice_receive_message_key1_result, alice_state->receive(
 				bob_send_data1.ephemeral,
 				0, //purported message number
-				0); //purported previous message number
+				0)); //purported previous message number
+		const auto& alice_receive_message_key1{alice_receive_message_key1_result.value()};
+
 		//print it out
 		printf("Alice Ratchet 2 receive message key 1:\n");
 		alice_receive_message_key1.printHex(std::cout) << std::endl;
@@ -415,8 +415,12 @@ int main() {
 		TRY_VOID(alice_state->setHeaderDecryptability(decryptable));
 
 		//third received message key (second message skipped)
-		MessageKey alice_receive_message_key3;
-		alice_state->receive(alice_receive_message_key3, bob_send_data3.ephemeral, 2, 0);
+		TRY_WITH_RESULT(alice_receive_message_key3_result, alice_state->receive(
+			bob_send_data3.ephemeral,
+			2, //purported_message_number
+			0)); //purported_previous_message_number
+		const auto& alice_receive_message_key3{alice_receive_message_key3_result.value()};
+
 		//print it out
 		printf("Alice Ratchet 2 receive message key 3:\n");
 		alice_receive_message_key3.printHex(std::cout) << std::endl;

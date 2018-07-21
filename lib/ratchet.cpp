@@ -271,35 +271,25 @@ namespace Molch {
 		this->skipped_header_and_message_keys.removeOutdatedAndTrimSize();
 	}
 
-	/*
-	 * First step after receiving a message: Calculate purported keys.
-	 *
-	 * This is only staged until it is later verified that the message was
-	 * authentic.
-	 *
-	 * To verify that the message was authentic, encrypt it with the message key
-	 * returned by this function and call ratchet_set_last_message_authenticity
-	 * after having verified the message.
-	 */
-	void Ratchet::receive(
-			MessageKey& message_key,
+	result<MessageKey> Ratchet::receive(
 			const PublicKey& their_purported_public_ephemeral,
 			const uint32_t purported_message_number,
 			const uint32_t purported_previous_message_number) {
-		Expects(!their_purported_public_ephemeral.empty);
+		FulfillOrFail(!their_purported_public_ephemeral.empty);
 
 		if (!this->received_valid) {
 			//abort because the previously received message hasn't been verified yet.
-			throw Exception{status_type::INVALID_STATE, "Previously received message hasn't been verified yet."};
+			return Error(status_type::INVALID_STATE, "Previously received message hasn't been verified yet.");
 		}
 
 		//header decryption hasn't been tried yet
 		if (this->header_decryptable == HeaderDecryptability::NOT_TRIED) {
-			throw Exception{status_type::INVALID_STATE, "Header decryption hasn't been tried yet."};
+			return Error(status_type::INVALID_STATE, "Header decryption hasn't been tried yet.");
 		}
 
 		auto& storage{this->storage};
 
+		MessageKey message_key;
 		if (!storage->receive_header_key.isNone() && (this->header_decryptable == HeaderDecryptability::CURRENT_DECRYPTABLE)) { //still the same message chain
 			//Np = read(): get the purported message number from the input
 			this->purported_message_number = purported_message_number;
@@ -316,7 +306,7 @@ namespace Molch {
 		} else { //new message chain
 			//if ratchet_flag or not Dec(NHKr, header)
 			if (this->ratchet_flag || (this->header_decryptable != HeaderDecryptability::NEXT_DECRYPTABLE)) {
-				throw Exception{status_type::DECRYPT_ERROR, "Undecryptable."};
+				return Error(status_type::DECRYPT_ERROR, "Undecryptable.");
 			}
 
 			//Np = read(): get the purported message number from the input
@@ -365,6 +355,8 @@ namespace Molch {
 		}
 
 		this->received_valid = false; //waiting for validation (feedback, if the message could actually be decrypted)
+
+		return message_key;
 	}
 
 	/*

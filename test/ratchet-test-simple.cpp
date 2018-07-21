@@ -116,15 +116,14 @@ int main() {
 		}()};
 		TRY_VOID(bob_receive_ratchet->setHeaderDecryptability(decryptability));
 
-		MessageKey receive_message_key;
-		bob_receive_ratchet->receive(
-				receive_message_key,
+		TRY_WITH_RESULT(bob_receive_message_key1_result, bob_receive_ratchet->receive(
 				alice_send_data.ephemeral,
 				alice_send_data.message_number,
-				alice_send_data.previous_message_number);
+				alice_send_data.previous_message_number));
+		const auto& bob_receive_message_key1{bob_receive_message_key1_result.value()};
 
 		//now check if the message key is the same
-		if (alice_send_data.message_key != receive_message_key) {
+		if (alice_send_data.message_key != bob_receive_message_key1) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Bobs receive message key isn't the same as Alice' send message key."};
 		}
 		printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
@@ -150,14 +149,14 @@ int main() {
 		}();
 		TRY_VOID(alice_receive_ratchet->setHeaderDecryptability(decryptability));
 
-		alice_receive_ratchet->receive(
-				receive_message_key,
+		TRY_WITH_RESULT(alice_receive_message_key1_result, alice_receive_ratchet->receive(
 				bob_send_data.ephemeral,
 				bob_send_data.message_number,
-				bob_send_data.previous_message_number);
+				bob_send_data.previous_message_number));
+		const auto& alice_receive_message_key1{alice_receive_message_key1_result.value()};
 
 		//now check if the message key is the same
-		if (bob_send_data.message_key != receive_message_key) {
+		if (bob_send_data.message_key != alice_receive_message_key1) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice' receive message key isn't the same as Bobs send message key."};
 		}
 		printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
@@ -182,14 +181,14 @@ int main() {
 		}();
 		TRY_VOID(alice_send_ratchet->setHeaderDecryptability(decryptability));
 
-		alice_send_ratchet->receive(
-				receive_message_key,
+		TRY_WITH_RESULT(alice_receive_message_key2_result, alice_send_ratchet->receive(
 				bob_send_data2.ephemeral,
 				bob_send_data2.message_number,
-				bob_send_data2.previous_message_number);
+				bob_send_data2.previous_message_number));
+		const auto& alice_receive_message_key2{alice_receive_message_key2_result.value()};
 
 		//now check if the message key is the same
-		if (bob_send_data2.message_key != receive_message_key) {
+		if (bob_send_data2.message_key != alice_receive_message_key2) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice' receive message key isn't the same as Bobs send message key."};
 		}
 		printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
@@ -214,14 +213,14 @@ int main() {
 		}();
 		TRY_VOID(bob_send_ratchet->setHeaderDecryptability(decryptability));
 
-		bob_send_ratchet->receive(
-				receive_message_key,
+		TRY_WITH_RESULT(bob_receive_message_key2_result, bob_send_ratchet->receive(
 				alice_send_data2.ephemeral,
 				alice_send_data2.message_number,
-				alice_send_data2.previous_message_number);
+				alice_send_data2.previous_message_number));
+		const auto& bob_receive_message_key2{bob_receive_message_key2_result.value()};
 
 		//now check if the message key is the same
-		if (alice_send_data2.message_key != receive_message_key) {
+		if (alice_send_data2.message_key != bob_receive_message_key2) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Bobs receive message key isn't the same as Alice' send message key."};
 		}
 		printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
