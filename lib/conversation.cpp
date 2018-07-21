@@ -32,7 +32,7 @@
 namespace Molch {
 	Conversation& Conversation::move(Conversation&& conversation) noexcept {
 		this->id_storage = conversation.id_storage;
-		this->ratchet_pointer = std::move(conversation.ratchet_pointer);
+		this->ratchet = std::move(conversation.ratchet);
 
 		return *this;
 	}
@@ -66,7 +66,7 @@ namespace Molch {
 		//create random id
 		this->id_storage.fillRandom();
 
-		this->ratchet_pointer = std::make_unique<Ratchet>(
+		this->ratchet = Ratchet(
 				our_private_identity,
 				our_public_identity,
 				their_public_identity,
@@ -203,7 +203,7 @@ namespace Molch {
 				&& ((public_identity_key == nullptr) || !public_identity_key->empty)
 				&& ((public_prekey == nullptr) || !public_prekey->empty));
 
-		TRY_WITH_RESULT(send_data_result, this->ratchet_pointer->getSendData());
+		TRY_WITH_RESULT(send_data_result, this->ratchet.getSendData());
 		const auto& send_data{send_data_result.value()};
 
 		TRY_WITH_RESULT(header_result, header_construct(
@@ -249,8 +249,8 @@ namespace Molch {
 			uint32_t& previous_receive_message_number) {
 		//create buffers
 
-		for (size_t index{0}; index < this->ratchet_pointer->skipped_header_and_message_keys.keys().size(); index++) {
-			auto& node = this->ratchet_pointer->skipped_header_and_message_keys.keys()[index];
+		for (size_t index{0}; index < this->ratchet.skipped_header_and_message_keys.keys().size(); index++) {
+			auto& node = this->ratchet.skipped_header_and_message_keys.keys()[index];
 			auto decrypted_packet_result = packet_decrypt(
 					packet,
 					node.headerKey(),
@@ -258,7 +258,7 @@ namespace Molch {
 			if (decrypted_packet_result.has_value()) {
 				auto& decrypted_packet{decrypted_packet_result.value()};
 				message = std::move(decrypted_packet.message);
-				this->ratchet_pointer->skipped_header_and_message_keys.remove(index);
+				this->ratchet.skipped_header_and_message_keys.remove(index);
 
 				PublicKey their_signed_public_ephemeral;
 				TRY_WITH_RESULT(extracted_header, header_extract(decrypted_packet.header));
@@ -294,21 +294,21 @@ namespace Molch {
 				return message;
 			}
 
-			const auto receive_header_keys{this->ratchet_pointer->getReceiveHeaderKeys()};
+			const auto receive_header_keys{this->ratchet.getReceiveHeaderKeys()};
 
 			//try to decrypt the packet header with the current receive header key
 			Buffer header;
 			auto header_result = packet_decrypt_header(packet, receive_header_keys.current);
 			if (header_result.has_value()) {
 				header = std::move(header_result.value());
-				TRY_VOID(this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE));
+				TRY_VOID(this->ratchet.setHeaderDecryptability(Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE));
 			} else {
 				auto header_result = packet_decrypt_header(packet, receive_header_keys.next);
 				if (header_result.has_value()) {
 					header = std::move(header_result.value());
-					TRY_VOID(this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE));
+					TRY_VOID(this->ratchet.setHeaderDecryptability(Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE));
 				} else {
-					TRY_VOID(this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::UNDECRYPTABLE));
+					TRY_VOID(this->ratchet.setHeaderDecryptability(Ratchet::HeaderDecryptability::UNDECRYPTABLE));
 					throw Exception{status_type::DECRYPT_ERROR, "Failed to decrypt the message."};
 				}
 			}
@@ -319,7 +319,7 @@ namespace Molch {
 			//and now decrypt the message with the message key
 			//now we have all the data we need to advance the ratchet
 			//so let's do that
-			TRY_WITH_RESULT(message_key_result, this->ratchet_pointer->receive(
+			TRY_WITH_RESULT(message_key_result, this->ratchet.receive(
 				extracted_header.value().their_public_ephemeral,
 				extracted_header.value().message_number,
 				extracted_header.value().previous_message_number));
@@ -328,21 +328,21 @@ namespace Molch {
 			TRY_WITH_RESULT(message_result, packet_decrypt_message(packet, message_key))
 			message = std::move(message_result.value());
 
-			this->ratchet_pointer->setLastMessageAuthenticity(true);
+			this->ratchet.setLastMessageAuthenticity(true);
 
 			receive_message_number = extracted_header.value().message_number;
 			previous_receive_message_number = extracted_header.value().previous_message_number;
 
 			return message;
 		} catch (const std::exception&) {
-			this->ratchet_pointer->setLastMessageAuthenticity(false);
+			this->ratchet.setLastMessageAuthenticity(false);
 			throw;
 		}
 	}
 
 	ProtobufCConversation* Conversation::exportProtobuf(Arena& arena) const {
 		//export the ratchet
-		TRY_WITH_RESULT(exported_conversation_result, this->ratchet_pointer->exportProtobuf(arena));
+		TRY_WITH_RESULT(exported_conversation_result, this->ratchet.exportProtobuf(arena));
 		const auto& exported_conversation{exported_conversation_result.value()};
 
 		//export the conversation id
@@ -359,7 +359,7 @@ namespace Molch {
 				conversation_protobuf.id.len});
 
 		//import the ratchet
-		this->ratchet_pointer = std::make_unique<Ratchet>(conversation_protobuf);
+		this->ratchet = Ratchet(conversation_protobuf);
 	}
 
 	const Key<CONVERSATION_ID_SIZE,KeyType::Key>& Conversation::id() const {

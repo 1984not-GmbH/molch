@@ -35,6 +35,10 @@ namespace Molch {
 		new (this->storage.get()) RatchetStorage{};
 	}
 
+	Ratchet::Ratchet() {
+		this->init();
+	}
+
 	/*
 	 * Start a new ratchet chain. This derives an initial root key and returns a new ratchet state.
 	 *

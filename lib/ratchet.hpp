@@ -93,6 +93,8 @@ namespace Molch {
 		HeaderAndMessageKeyStore skipped_header_and_message_keys; //skipped_HK_MK (list containing message keys for messages that weren't received)
 		HeaderAndMessageKeyStore staged_header_and_message_keys; //this represents the staging area specified in the axolotl ratchet
 
+		Ratchet();
+
 		/*
 		 * Start a new ratchet chain. This derives an initial root key and returns a new ratchet state.
 		 *
