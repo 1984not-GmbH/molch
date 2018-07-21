@@ -366,14 +366,6 @@ namespace Molch {
 		return this->id_storage;
 	}
 
-	Ratchet& Conversation::ratchet() {
-		if (!this->ratchet_pointer) {
-			throw Exception{status_type::INCORRECT_DATA, "The ratchet doesn't point to anything."};
-		}
-
-		return *this->ratchet_pointer;
-	}
-
 	std::ostream& Conversation::print(std::ostream& stream) const {
 		stream << "Conversation-ID:\n";
 		this->id_storage.printHex(stream) << "\n";

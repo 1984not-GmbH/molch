@@ -99,7 +99,6 @@ namespace Molch {
 		Conversation& operator=(const Conversation& conversation) = delete;
 
 		const Key<CONVERSATION_ID_SIZE,KeyType::Key>& id() const;
-		Ratchet& ratchet();
 
 		/*
 		 * Send a message using an existing conversation.
