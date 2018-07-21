@@ -133,12 +133,15 @@ namespace Molch {
 		 */
 		result<SendData> getSendData();
 
+		struct ReceiveHeaderKeys {
+			HeaderKey current;
+			HeaderKey next;
+		};
+
 		/*
 		 * Get a copy of the current and the next receive header key.
 		 */
-		void getReceiveHeaderKeys(
-				HeaderKey& current_receive_header_key,
-				HeaderKey& next_receive_header_key) const;
+		ReceiveHeaderKeys getReceiveHeaderKeys() const noexcept;
 
 		/*
 		 * Set if the header is decryptable with the current (state->receive_header_key)

@@ -294,18 +294,16 @@ namespace Molch {
 				return message;
 			}
 
-			HeaderKey current_receive_header_key;
-			HeaderKey next_receive_header_key;
-			this->ratchet_pointer->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
+			const auto receive_header_keys{this->ratchet_pointer->getReceiveHeaderKeys()};
 
 			//try to decrypt the packet header with the current receive header key
 			Buffer header;
-			auto header_result = packet_decrypt_header(packet, current_receive_header_key);
+			auto header_result = packet_decrypt_header(packet, receive_header_keys.current);
 			if (header_result.has_value()) {
 				header = std::move(header_result.value());
 				TRY_VOID(this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE));
 			} else {
-				auto header_result = packet_decrypt_header(packet, next_receive_header_key);
+				auto header_result = packet_decrypt_header(packet, receive_header_keys.next);
 				if (header_result.has_value()) {
 					header = std::move(header_result.value());
 					TRY_VOID(this->ratchet_pointer->setHeaderDecryptability(Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE));

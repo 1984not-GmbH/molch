@@ -185,15 +185,12 @@ namespace Molch {
 		return data;
 	}
 
-	/*
-	 * Get a copy of the current and the next receive header key.
-	 */
-	void Ratchet::getReceiveHeaderKeys(
-			HeaderKey& current_receive_header_key,
-			HeaderKey& next_receive_header_key) const {
-		//clone the header keys
-		current_receive_header_key = this->storage->receive_header_key;
-		next_receive_header_key = this->storage->next_receive_header_key;
+	Ratchet::ReceiveHeaderKeys Ratchet::getReceiveHeaderKeys() const noexcept {
+		ReceiveHeaderKeys header_keys;
+		header_keys.current = this->storage->receive_header_key;
+		header_keys.next = this->storage->next_receive_header_key;
+
+		return header_keys;
 	}
 
 	result<void> Ratchet::setHeaderDecryptability(const HeaderDecryptability header_decryptable) noexcept {

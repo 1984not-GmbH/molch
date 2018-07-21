@@ -103,14 +103,12 @@ int main() {
 		const auto& alice_send_data{alice_send_data_result.value()};
 
 		//bob receives
-		HeaderKey current_receive_header_key;
-		HeaderKey next_receive_header_key;
-		bob_receive_ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
+		const auto bob_receive_header_keys1{bob_receive_ratchet->getReceiveHeaderKeys()};
 
 		auto decryptability{[&]() {
-			if (alice_send_data.header_key == current_receive_header_key) {
+			if (alice_send_data.header_key == bob_receive_header_keys1.current) {
 				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-			} else if (alice_send_data.header_key == next_receive_header_key) {
+			} else if (alice_send_data.header_key == bob_receive_header_keys1.next) {
 				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			}
 
@@ -139,12 +137,12 @@ int main() {
 		const auto& bob_send_data{bob_send_data_result.value()};
 
 		//alice receives
-		alice_receive_ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
+		const auto alice_receive_header_keys1{alice_receive_ratchet->getReceiveHeaderKeys()};
 
 		decryptability = [&]() {
-			if (bob_send_data.header_key == current_receive_header_key) {
+			if (bob_send_data.header_key == alice_receive_header_keys1.current) {
 				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-			} else if (bob_send_data.header_key == next_receive_header_key) {
+			} else if (bob_send_data.header_key == alice_receive_header_keys1.next) {
 				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			}
 
@@ -171,12 +169,12 @@ int main() {
 		const auto& bob_send_data2{bob_send_data2_result.value()};
 
 		//alice receives
-		alice_send_ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
+		const auto alice_receive_header_keys2{alice_send_ratchet->getReceiveHeaderKeys()};
 
 		decryptability = [&]() {
-			if (bob_send_data2.header_key == current_receive_header_key) {
+			if (bob_send_data2.header_key == alice_receive_header_keys2.current) {
 				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-			} else if (bob_send_data2.header_key == next_receive_header_key) {
+			} else if (bob_send_data2.header_key == alice_receive_header_keys2.next) {
 				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			}
 
@@ -203,12 +201,12 @@ int main() {
 		const auto& alice_send_data2{alice_send_data2_result.value()};
 
 		//bob receives
-		bob_send_ratchet->getReceiveHeaderKeys(current_receive_header_key, next_receive_header_key);
+		const auto bob_receive_header_keys2{bob_send_ratchet->getReceiveHeaderKeys()};
 
 		decryptability = [&]() {
-			if (alice_send_data2.header_key == current_receive_header_key) {
+			if (alice_send_data2.header_key == bob_receive_header_keys2.current) {
 				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-			} else if (alice_send_data2.header_key == next_receive_header_key) {
+			} else if (alice_send_data2.header_key == bob_receive_header_keys2.next) {
 				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			}
 

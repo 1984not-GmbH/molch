@@ -181,22 +181,19 @@ int main() {
 
 		//--------------------------------------------------------------------------
 		puts("----------------------------------------\n");
-		//get pointers to bob's receive header keys
-		HeaderKey bob_current_receive_header_key;
-		HeaderKey bob_next_receive_header_key;
-		bob_state->getReceiveHeaderKeys(bob_current_receive_header_key, bob_next_receive_header_key);
+		const auto bob_receive_header_keys{bob_state->getReceiveHeaderKeys()};
 
 		printf("Bob's first current receive header key:\n");
-		bob_current_receive_header_key.printHex(std::cout);
+		bob_receive_header_keys.current.printHex(std::cout);
 		printf("Bob's first next receive_header_key:\n");
-		bob_next_receive_header_key.printHex(std::cout) << std::endl;
+		bob_receive_header_keys.next.printHex(std::cout) << std::endl;
 
 		//check header decryptability
 		auto decryptable{[&]() {
-			if (bob_current_receive_header_key == alice_send_data1.header_key) {
+			if (bob_receive_header_keys.current == alice_send_data1.header_key) {
 				printf("Header decryptable with current header key.\n");
 				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-			} else if (bob_next_receive_header_key == alice_send_data1.header_key) {
+			} else if (bob_receive_header_keys.next == alice_send_data1.header_key) {
 				printf("Header decryptable with next header key.\n");
 				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			} else {
@@ -225,19 +222,19 @@ int main() {
 		//and authenticating a message with the key
 		bob_state->setLastMessageAuthenticity(true);
 
-		bob_state->getReceiveHeaderKeys(bob_current_receive_header_key, bob_next_receive_header_key);
+		const auto bob_receive_header_keys2{bob_state->getReceiveHeaderKeys()};
 
 		printf("Bob's second current receive header key:\n");
-		bob_current_receive_header_key.printHex(std::cout);
+		bob_receive_header_keys2.current.printHex(std::cout);
 		printf("Bob's second next receive_header_key:\n");
-		bob_next_receive_header_key.printHex(std::cout);
+		bob_receive_header_keys2.next.printHex(std::cout);
 		putchar('\n');
 
 		//check header decryptability
-		if (bob_current_receive_header_key == alice_send_data2.header_key) {
+		if (bob_receive_header_keys2.current == alice_send_data2.header_key) {
 			decryptable = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
 			printf("Header decryptable with current header key.\n");
-		} else if (bob_next_receive_header_key == alice_send_data1.header_key) {
+		} else if (bob_receive_header_keys2.next == alice_send_data1.header_key) {
 			decryptable = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			printf("Header decryptable with next header key.\n");
 		} else {
@@ -264,20 +261,20 @@ int main() {
 		//and authenticating a message with the key
 		bob_state->setLastMessageAuthenticity(true);
 
-		bob_state->getReceiveHeaderKeys(bob_current_receive_header_key, bob_next_receive_header_key);
+		const auto bob_receive_header_keys3{bob_state->getReceiveHeaderKeys()};
 
 		printf("Bob's third current receive header key:\n");
-		bob_current_receive_header_key.printHex(std::cout);
+		bob_receive_header_keys3.current.printHex(std::cout);
 		printf("Bob's third next receive_header_key:\n");
-		bob_next_receive_header_key.printHex(std::cout);
+		bob_receive_header_keys3.next.printHex(std::cout);
 		putchar('\n');
 
 		//check header decryptability
 		decryptable = [&]() {
-			if (bob_current_receive_header_key == alice_send_data3.header_key) {
+			if (bob_receive_header_keys3.current == alice_send_data3.header_key) {
 				printf("Header decryptable with current header key.\n");
 				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-			} else if (bob_next_receive_header_key == alice_send_data3.header_key) {
+			} else if (bob_receive_header_keys3.next == alice_send_data3.header_key) {
 				printf("Header decryptable with next header key.\n");
 				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			} else {
@@ -356,20 +353,18 @@ int main() {
 		//--------------------------------------------------------------------------
 		puts("----------------------------------------\n");
 		//get pointers to alice's receive header keys
-		HeaderKey alice_current_receive_header_key;
-		HeaderKey alice_next_receive_header_key;
-		alice_state->getReceiveHeaderKeys(alice_current_receive_header_key, alice_next_receive_header_key);
+		const auto alice_receive_header_keys1{alice_state->getReceiveHeaderKeys()};
 
 		printf("Alice's first current receive header key:\n");
-		alice_current_receive_header_key.printHex(std::cout);
+		alice_receive_header_keys1.current.printHex(std::cout);
 		printf("Alice's first next receive_header_key:\n");
-		alice_next_receive_header_key.printHex(std::cout) << std::endl;
+		alice_receive_header_keys1.next.printHex(std::cout) << std::endl;
 
 		//check header decryptability
-		if (alice_current_receive_header_key == bob_send_data1.header_key) {
+		if (alice_receive_header_keys1.current == bob_send_data1.header_key) {
 			decryptable = Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
 			printf("Header decryptable with current header key.\n");
-		} else if (alice_next_receive_header_key == bob_send_data1.header_key) {
+		} else if (alice_receive_header_keys1.next == bob_send_data1.header_key) {
 			decryptable = Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			printf("Header decryptable with next header key.\n");
 		} else {
@@ -395,19 +390,19 @@ int main() {
 		//confirm validity of the message key
 		alice_state->setLastMessageAuthenticity(true);
 
-		alice_state->getReceiveHeaderKeys(alice_current_receive_header_key, alice_next_receive_header_key);
+		const auto alice_receive_header_keys2{alice_state->getReceiveHeaderKeys()};
 
 		printf("Alice's current receive header key:\n");
-		alice_current_receive_header_key.printHex(std::cout);
+		alice_receive_header_keys2.current.printHex(std::cout);
 		printf("Alice's next receive_header_key:\n");
-		alice_next_receive_header_key.printHex(std::cout) << std::endl;
+		alice_receive_header_keys2.next.printHex(std::cout) << std::endl;
 
 		//check header decryptability
 		decryptable = [&]() {
-			if (alice_current_receive_header_key == bob_send_data3.header_key) {
+			if (alice_receive_header_keys2.current == bob_send_data3.header_key) {
 				printf("Header decryptable with current header key.\n");
 				return Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE;
-			} else if (alice_next_receive_header_key == bob_send_data3.header_key) {
+			} else if (alice_receive_header_keys2.next == bob_send_data3.header_key) {
 				printf("Header decryptable with next header key.\n");
 				return Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE;
 			} else {
