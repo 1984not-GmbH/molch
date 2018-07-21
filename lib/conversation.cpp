@@ -66,13 +66,14 @@ namespace Molch {
 		//create random id
 		this->id_storage.fillRandom();
 
-		this->ratchet = Ratchet(
+		TRY_WITH_RESULT(ratchet_result, Ratchet::create(
 				our_private_identity,
 				our_public_identity,
 				their_public_identity,
 				our_private_ephemeral,
 				our_public_ephemeral,
-				their_public_ephemeral);
+				their_public_ephemeral));
+		this->ratchet = std::move(ratchet_result.value());
 	}
 
 	Conversation::Conversation(

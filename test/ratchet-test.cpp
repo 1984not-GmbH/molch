@@ -105,13 +105,14 @@ int main() {
 
 		//start new ratchet for alice
 		printf("Creating new ratchet for Alice ...\n");
-		Ratchet alice_state(
+		TRY_WITH_RESULT(alice_state_result, Ratchet::create(
 				alice_private_identity,
 				alice_public_identity,
 				bob_public_identity,
 				alice_private_ephemeral,
 				alice_public_ephemeral,
-				bob_public_ephemeral);
+				bob_public_ephemeral));
+		auto& alice_state{alice_state_result.value()};
 		putchar('\n');
 		//print Alice's initial root and chain keys
 		printf("Alice's initial root key (%zu Bytes):\n", alice_state.storage->root_key.size());
@@ -122,29 +123,30 @@ int main() {
 
 		//start new ratchet for bob
 		printf("Creating new ratchet for Bob ...\n");
-		auto bob_state{std::make_unique<Ratchet>(
+		TRY_WITH_RESULT(bob_state_result, Ratchet::create(
 				bob_private_identity,
 				bob_public_identity,
 				alice_public_identity,
 				bob_private_ephemeral,
 				bob_public_ephemeral,
-				alice_public_ephemeral)};
+				alice_public_ephemeral));
+		auto& bob_state{bob_state_result.value()};
 		putchar('\n');
 		//print Bob's initial root and chain keys
-		printf("Bob's initial root key (%zu Bytes):\n", bob_state->storage->root_key.size());
-		bob_state->storage->root_key.printHex(std::cout);
-		printf("Bob's initial chain key (%zu Bytes):\n", bob_state->storage->send_chain_key.size());
-		bob_state->storage->send_chain_key.printHex(std::cout);
+		printf("Bob's initial root key (%zu Bytes):\n", bob_state.storage->root_key.size());
+		bob_state.storage->root_key.printHex(std::cout);
+		printf("Bob's initial chain key (%zu Bytes):\n", bob_state.storage->send_chain_key.size());
+		bob_state.storage->send_chain_key.printHex(std::cout);
 		putchar('\n');
 
 		//compare Alice's and Bob's initial root and chain keys
-		if (alice_state.storage->root_key != bob_state->storage->root_key) {
+		if (alice_state.storage->root_key != bob_state.storage->root_key) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's and Bob's initial root keys arent't the same."};
 		}
 		printf("Alice's and Bob's initial root keys match!\n");
 
 		//initial chain key
-		if (alice_state.storage->receive_chain_key != bob_state->storage->send_chain_key) {
+		if (alice_state.storage->receive_chain_key != bob_state.storage->send_chain_key) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's and Bob's initial chain keys aren't the same."};
 		}
 		printf("Alice's and Bob's initial chain keys match!\n\n");
@@ -183,7 +185,7 @@ int main() {
 
 		//--------------------------------------------------------------------------
 		puts("----------------------------------------\n");
-		const auto bob_receive_header_keys{bob_state->getReceiveHeaderKeys()};
+		const auto bob_receive_header_keys{bob_state.getReceiveHeaderKeys()};
 
 		printf("Bob's first current receive header key:\n");
 		bob_receive_header_keys.current.printHex(std::cout);
@@ -207,9 +209,9 @@ int main() {
 		//now the receive end, Bob recreates the message keys
 
 		//set the header decryptability
-		TRY_VOID(bob_state->setHeaderDecryptability(decryptable));
+		TRY_VOID(bob_state.setHeaderDecryptability(decryptable));
 
-		TRY_WITH_RESULT(bob_receive_key1_result, bob_state->receive(
+		TRY_WITH_RESULT(bob_receive_key1_result, bob_state.receive(
 				alice_send_data1.ephemeral,
 				0, //purported message number
 				0)); //purported previous message number
@@ -222,9 +224,9 @@ int main() {
 
 		//confirm validity of the message key (this is normally done after successfully decrypting
 		//and authenticating a message with the key
-		bob_state->setLastMessageAuthenticity(true);
+		bob_state.setLastMessageAuthenticity(true);
 
-		const auto bob_receive_header_keys2{bob_state->getReceiveHeaderKeys()};
+		const auto bob_receive_header_keys2{bob_state.getReceiveHeaderKeys()};
 
 		printf("Bob's second current receive header key:\n");
 		bob_receive_header_keys2.current.printHex(std::cout);
@@ -245,10 +247,10 @@ int main() {
 		}
 
 		//set the header decryptability
-		TRY_VOID(bob_state->setHeaderDecryptability(decryptable));
+		TRY_VOID(bob_state.setHeaderDecryptability(decryptable));
 
 		//second receive message key
-		TRY_WITH_RESULT(bob_receive_key2_result, bob_state->receive(
+		TRY_WITH_RESULT(bob_receive_key2_result, bob_state.receive(
 				alice_send_data2.ephemeral,
 				1, //purported message number
 				0)); //purported previous message number
@@ -261,9 +263,9 @@ int main() {
 
 		//confirm validity of the message key (this is normally done after successfully decrypting
 		//and authenticating a message with the key
-		bob_state->setLastMessageAuthenticity(true);
+		bob_state.setLastMessageAuthenticity(true);
 
-		const auto bob_receive_header_keys3{bob_state->getReceiveHeaderKeys()};
+		const auto bob_receive_header_keys3{bob_state.getReceiveHeaderKeys()};
 
 		printf("Bob's third current receive header key:\n");
 		bob_receive_header_keys3.current.printHex(std::cout);
@@ -286,10 +288,10 @@ int main() {
 		}();
 
 		//set the header decryptability
-		TRY_VOID(bob_state->setHeaderDecryptability(decryptable));
+		TRY_VOID(bob_state.setHeaderDecryptability(decryptable));
 
 		//third receive message key
-		TRY_WITH_RESULT(bob_receive_key3_result, bob_state->receive(
+		TRY_WITH_RESULT(bob_receive_key3_result, bob_state.receive(
 				alice_send_data3.ephemeral,
 				2, //purported message number
 				0)); //purported previous message number
@@ -302,7 +304,7 @@ int main() {
 
 		//confirm validity of the message key (this is normally done after successfully decrypting
 		//and authenticating a message with the key
-		bob_state->setLastMessageAuthenticity(true);
+		bob_state.setLastMessageAuthenticity(true);
 
 		//compare the message keys
 		if (alice_send_data1.message_key != bob_receive_key1) {
@@ -326,7 +328,7 @@ int main() {
 		//--------------------------------------------------------------------------
 		puts("----------------------------------------\n");
 		//Now Bob replies with three messages
-		TRY_WITH_RESULT(bob_send_data1_result, bob_state->getSendData());
+		TRY_WITH_RESULT(bob_send_data1_result, bob_state.getSendData());
 		const auto& bob_send_data1{bob_send_data1_result.value()};
 		//print the send message key
 		printf("Bob Ratchet 2 send message key 1:\n");
@@ -335,7 +337,7 @@ int main() {
 		bob_send_data1.header_key.printHex(std::cout) << std::endl;
 
 		//second message key
-		TRY_WITH_RESULT(bob_send_data2_result, bob_state->getSendData());
+		TRY_WITH_RESULT(bob_send_data2_result, bob_state.getSendData());
 		const auto& bob_send_data2{bob_send_data2_result.value()};
 		//print the send message key
 		printf("Bob Ratchet 2 send message key 1:\n");
@@ -344,7 +346,7 @@ int main() {
 		bob_send_data2.header_key.printHex(std::cout) << std::endl;
 
 		//third message key
-		TRY_WITH_RESULT(bob_send_data3_result, bob_state->getSendData());
+		TRY_WITH_RESULT(bob_send_data3_result, bob_state.getSendData());
 		const auto& bob_send_data3{bob_send_data3_result.value()};
 		//print the send message key
 		printf("Bob Ratchet 2 send message key 3:\n");

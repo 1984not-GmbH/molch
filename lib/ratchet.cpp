@@ -39,31 +39,25 @@ namespace Molch {
 		this->init();
 	}
 
-	/*
-	 * Start a new ratchet chain. This derives an initial root key and returns a new ratchet state.
-	 *
-	 * All the keys will be copied so you can free the buffers afterwards. (private identity get's
-	 * immediately deleted after deriving the initial root key though!)
-	 */
-	Ratchet::Ratchet(
+	result<Ratchet> Ratchet::create(
 			const PrivateKey& our_private_identity,
 			const PublicKey& our_public_identity,
 			const PublicKey& their_public_identity,
 			const PrivateKey& our_private_ephemeral,
 			const PublicKey& our_public_ephemeral,
 			const PublicKey& their_public_ephemeral) {
-		Expects(!our_private_identity.empty
+		FulfillOrFail(!our_private_identity.empty
 				&& !our_public_identity.empty
 				&& !their_public_identity.empty
 				&& !our_private_ephemeral.empty
 				&& !our_public_ephemeral.empty
 				&& !their_public_ephemeral.empty);
 
-		this->init();
+		Ratchet ratchet;
 
 		//find out if we are alice by comparing both public keys
 		//the one with the bigger public key is alice
-		this->role = [&our_public_identity, &their_public_identity] () {
+		OUTCOME_TRY(role, [&our_public_identity, &their_public_identity] () -> result<Role> {
 			if (our_public_identity > their_public_identity) {
 				return Role::ALICE;
 			} else if (our_public_identity < their_public_identity) {
@@ -71,7 +65,8 @@ namespace Molch {
 			} else {
 				throw Exception{status_type::SHOULDNT_HAPPEN, "This mustn't happen, both conversation partners have the same public key!"};
 			}
-		}();
+		}());
+		ratchet.role = role;
 
 		//derive initial chain, root and header keys
 		auto derived_keys{derive_initial_root_chain_and_header_keys(
@@ -81,8 +76,8 @@ namespace Molch {
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral,
-			this->role)};
-		auto& storage{this->storage};
+			ratchet.role)};
+		auto& storage{ratchet.storage};
 		storage->root_key = derived_keys.root_key;
 		if (derived_keys.send_chain_key.has_value()) {
 			storage->send_chain_key = derived_keys.send_chain_key.value();
@@ -116,12 +111,14 @@ namespace Molch {
 		storage->their_public_ephemeral = their_public_ephemeral;
 
 		//set other state
-		this->ratchet_flag = static_cast<bool>(this->role);
-		this->received_valid = true; //allowing the receival of new messages
-		this->header_decryptable = HeaderDecryptability::NOT_TRIED;
-		this->send_message_number = 0;
-		this->receive_message_number = 0;
-		this->previous_message_number = 0;
+		ratchet.ratchet_flag = static_cast<bool>(ratchet.role);
+		ratchet.received_valid = true; //allowing the receival of new messages
+		ratchet.header_decryptable = HeaderDecryptability::NOT_TRIED;
+		ratchet.send_message_number = 0;
+		ratchet.receive_message_number = 0;
+		ratchet.previous_message_number = 0;
+
+		return std::move(ratchet);
 	}
 
 	result<Ratchet::SendData> Ratchet::getSendData() {

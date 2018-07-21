@@ -98,10 +98,9 @@ namespace Molch {
 		/*
 		 * Start a new ratchet chain. This derives an initial root key and returns a new ratchet state.
 		 *
-		 * All the keys will be copied so you can free the buffers afterwards. (private identity get's
-		 * immediately deleted after deriving the initial root key though!)
+		 * All the keys will be copied so you can free the buffers afterwards.
 		 */
-		Ratchet(
+		static result<Ratchet> create(
 				const PrivateKey& our_private_identity,
 				const PublicKey& our_public_identity,
 				const PublicKey& their_public_identity,

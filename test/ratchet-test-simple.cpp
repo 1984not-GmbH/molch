@@ -68,42 +68,46 @@ int main() {
 
 		//initialise the ratchets
 		//Alice
-		auto alice_send_ratchet{std::make_unique<Ratchet>(
+		TRY_WITH_RESULT(alice_send_ratchet_result, Ratchet::create(
 			alice_private_identity,
 			alice_public_identity,
 			bob_public_identity,
 			alice_private_ephemeral,
 			alice_public_ephemeral,
-			bob_public_ephemeral)};
-		auto alice_receive_ratchet{std::make_unique<Ratchet>(
+			bob_public_ephemeral));
+		auto& alice_send_ratchet{alice_send_ratchet_result.value()};
+		TRY_WITH_RESULT(alice_receive_ratchet_result, Ratchet::create(
 			alice_private_identity,
 			alice_public_identity,
 			bob_public_identity,
 			alice_private_ephemeral,
 			alice_public_ephemeral,
-			bob_public_ephemeral)};
+			bob_public_ephemeral));
+		auto& alice_receive_ratchet{alice_receive_ratchet_result.value()};
 		//Bob
-		auto bob_send_ratchet{std::make_unique<Ratchet>(
+		TRY_WITH_RESULT(bob_send_ratchet_result, Ratchet::create(
 			bob_private_identity,
 			bob_public_identity,
 			alice_public_identity,
 			bob_private_ephemeral,
 			bob_public_ephemeral,
-			alice_public_ephemeral)};
-		auto bob_receive_ratchet{std::make_unique<Ratchet>(
+			alice_public_ephemeral));
+		auto& bob_send_ratchet{bob_send_ratchet_result.value()};
+		TRY_WITH_RESULT(bob_receive_ratchet_result, Ratchet::create(
 			bob_private_identity,
 			bob_public_identity,
 			alice_public_identity,
 			bob_private_ephemeral,
 			bob_public_ephemeral,
-			alice_public_ephemeral)};
+			alice_public_ephemeral));
+		auto& bob_receive_ratchet{bob_receive_ratchet_result.value()};
 
 		// FIRST SCENARIO: ALICE SENDS A MESSAGE TO BOB
-		TRY_WITH_RESULT(alice_send_data_result, alice_send_ratchet->getSendData());
+		TRY_WITH_RESULT(alice_send_data_result, alice_send_ratchet.getSendData());
 		const auto& alice_send_data{alice_send_data_result.value()};
 
 		//bob receives
-		const auto bob_receive_header_keys1{bob_receive_ratchet->getReceiveHeaderKeys()};
+		const auto bob_receive_header_keys1{bob_receive_ratchet.getReceiveHeaderKeys()};
 
 		auto decryptability{[&]() {
 			if (alice_send_data.header_key == bob_receive_header_keys1.current) {
@@ -114,9 +118,9 @@ int main() {
 
 			return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 		}()};
-		TRY_VOID(bob_receive_ratchet->setHeaderDecryptability(decryptability));
+		TRY_VOID(bob_receive_ratchet.setHeaderDecryptability(decryptability));
 
-		TRY_WITH_RESULT(bob_receive_message_key1_result, bob_receive_ratchet->receive(
+		TRY_WITH_RESULT(bob_receive_message_key1_result, bob_receive_ratchet.receive(
 				alice_send_data.ephemeral,
 				alice_send_data.message_number,
 				alice_send_data.previous_message_number));
@@ -128,15 +132,15 @@ int main() {
 		}
 		printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
 
-		bob_receive_ratchet->setLastMessageAuthenticity(true);
+		bob_receive_ratchet.setLastMessageAuthenticity(true);
 
 
 		//SECOND SCENARIO: BOB SENDS MESSAGE TO ALICE
-		TRY_WITH_RESULT(bob_send_data_result, bob_send_ratchet->getSendData());
+		TRY_WITH_RESULT(bob_send_data_result, bob_send_ratchet.getSendData());
 		const auto& bob_send_data{bob_send_data_result.value()};
 
 		//alice receives
-		const auto alice_receive_header_keys1{alice_receive_ratchet->getReceiveHeaderKeys()};
+		const auto alice_receive_header_keys1{alice_receive_ratchet.getReceiveHeaderKeys()};
 
 		decryptability = [&]() {
 			if (bob_send_data.header_key == alice_receive_header_keys1.current) {
@@ -147,9 +151,9 @@ int main() {
 
 			return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 		}();
-		TRY_VOID(alice_receive_ratchet->setHeaderDecryptability(decryptability));
+		TRY_VOID(alice_receive_ratchet.setHeaderDecryptability(decryptability));
 
-		TRY_WITH_RESULT(alice_receive_message_key1_result, alice_receive_ratchet->receive(
+		TRY_WITH_RESULT(alice_receive_message_key1_result, alice_receive_ratchet.receive(
 				bob_send_data.ephemeral,
 				bob_send_data.message_number,
 				bob_send_data.previous_message_number));
@@ -161,14 +165,14 @@ int main() {
 		}
 		printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
 
-		alice_receive_ratchet->setLastMessageAuthenticity(true);
+		alice_receive_ratchet.setLastMessageAuthenticity(true);
 
 		//THIRD SCENARIO: BOB ANSWERS ALICE AFTER HAVING RECEIVED HER FIRST MESSAGE
-		TRY_WITH_RESULT(bob_send_data2_result, bob_receive_ratchet->getSendData());
+		TRY_WITH_RESULT(bob_send_data2_result, bob_receive_ratchet.getSendData());
 		const auto& bob_send_data2{bob_send_data2_result.value()};
 
 		//alice receives
-		const auto alice_receive_header_keys2{alice_send_ratchet->getReceiveHeaderKeys()};
+		const auto alice_receive_header_keys2{alice_send_ratchet.getReceiveHeaderKeys()};
 
 		decryptability = [&]() {
 			if (bob_send_data2.header_key == alice_receive_header_keys2.current) {
@@ -179,9 +183,9 @@ int main() {
 
 			return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 		}();
-		TRY_VOID(alice_send_ratchet->setHeaderDecryptability(decryptability));
+		TRY_VOID(alice_send_ratchet.setHeaderDecryptability(decryptability));
 
-		TRY_WITH_RESULT(alice_receive_message_key2_result, alice_send_ratchet->receive(
+		TRY_WITH_RESULT(alice_receive_message_key2_result, alice_send_ratchet.receive(
 				bob_send_data2.ephemeral,
 				bob_send_data2.message_number,
 				bob_send_data2.previous_message_number));
@@ -193,14 +197,14 @@ int main() {
 		}
 		printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
 
-		alice_send_ratchet->setLastMessageAuthenticity(true);
+		alice_send_ratchet.setLastMessageAuthenticity(true);
 
 		//FOURTH SCENARIO: ALICE ANSWERS BOB AFTER HAVING RECEIVED HER FIRST MESSAGE
-		TRY_WITH_RESULT(alice_send_data2_result, alice_receive_ratchet->getSendData());
+		TRY_WITH_RESULT(alice_send_data2_result, alice_receive_ratchet.getSendData());
 		const auto& alice_send_data2{alice_send_data2_result.value()};
 
 		//bob receives
-		const auto bob_receive_header_keys2{bob_send_ratchet->getReceiveHeaderKeys()};
+		const auto bob_receive_header_keys2{bob_send_ratchet.getReceiveHeaderKeys()};
 
 		decryptability = [&]() {
 			if (alice_send_data2.header_key == bob_receive_header_keys2.current) {
@@ -211,9 +215,9 @@ int main() {
 
 			return Ratchet::HeaderDecryptability::UNDECRYPTABLE;
 		}();
-		TRY_VOID(bob_send_ratchet->setHeaderDecryptability(decryptability));
+		TRY_VOID(bob_send_ratchet.setHeaderDecryptability(decryptability));
 
-		TRY_WITH_RESULT(bob_receive_message_key2_result, bob_send_ratchet->receive(
+		TRY_WITH_RESULT(bob_receive_message_key2_result, bob_send_ratchet.receive(
 				alice_send_data2.ephemeral,
 				alice_send_data2.message_number,
 				alice_send_data2.previous_message_number));
@@ -225,7 +229,7 @@ int main() {
 		}
 		printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
 
-		bob_send_ratchet->setLastMessageAuthenticity(true);
+		bob_send_ratchet.setLastMessageAuthenticity(true);
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;
