@@ -174,7 +174,7 @@ namespace Molch {
 		 * NOTE: This doesn't fill the Id field of the struct.
 		 * \return conversation The Conversation Protobuf-C struct.
 		 */
-		ProtobufCConversation* exportProtobuf(Arena& arena) const;
+		result<ProtobufCConversation*> exportProtobuf(Arena& arena) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

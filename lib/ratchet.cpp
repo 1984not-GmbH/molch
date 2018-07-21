@@ -408,12 +408,12 @@ namespace Molch {
 		this->storage->receive_chain_key = this->storage->purported_receive_chain_key;
 	}
 
-#define throw_if_missing(name) \
+#define error_if_missing(name) \
 	if ((name).empty) {\
-		throw Exception(status_type::EXPORT_ERROR, "Some ratchet data is missing or has an incorrect size.");\
+		return Error(status_type::EXPORT_ERROR, "Missing ");\
 	}
 
-	ProtobufCConversation* Ratchet::exportProtobuf(Arena& arena) const {
+	result<ProtobufCConversation*> Ratchet::exportProtobuf(Arena& arena) const {
 		protobuf_arena_create(arena, ProtobufCConversation, conversation);
 
 		const auto& storage{*this->storage};
@@ -421,12 +421,12 @@ namespace Molch {
 		//root keys
 		//root key
 		const auto& root_key{storage.root_key};
-		throw_if_missing(root_key);
-		protobuf_optional_bytes_arena_export(arena, conversation, root_key, ROOT_KEY_SIZE);
+		error_if_missing(root_key);
+		outcome_protobuf_optional_bytes_arena_export(arena, conversation, root_key, ROOT_KEY_SIZE);
 		//purported root key
 		const auto& purported_root_key{storage.purported_root_key};
 		if (!purported_root_key.empty) {
-			protobuf_optional_bytes_arena_export(arena, conversation, purported_root_key, ROOT_KEY_SIZE);
+			outcome_protobuf_optional_bytes_arena_export(arena, conversation, purported_root_key, ROOT_KEY_SIZE);
 		}
 
 		//header keys
@@ -434,83 +434,83 @@ namespace Molch {
 		const auto& role = this->role;
 		if (role == Role::BOB) {
 			if (!storage.send_header_key.has_value()) {
-				throw Exception{status_type::EXPORT_ERROR, "send_header_key missing or has an incorrect size."};
+				return Error(status_type::EXPORT_ERROR, "send_header_key missing or has an incorrect size.");
 			}
 			const auto& send_header_key{storage.send_header_key.value()};
-			protobuf_optional_bytes_arena_export(arena, conversation, send_header_key, HEADER_KEY_SIZE);
+			outcome_protobuf_optional_bytes_arena_export(arena, conversation, send_header_key, HEADER_KEY_SIZE);
 		}
 		//receive header key
 		const auto& receive_header_key{storage.receive_header_key};
 		if ((role == Role::ALICE) && receive_header_key.empty) {
-			throw Exception{status_type::EXPORT_ERROR, "receive_header_key missing or has an incorrect size."};
+			return Error(status_type::EXPORT_ERROR, "receive_header_key missing or has an incorrect size.");
 		}
-		protobuf_optional_bytes_arena_export(arena, conversation, receive_header_key, HEADER_KEY_SIZE);
+		outcome_protobuf_optional_bytes_arena_export(arena, conversation, receive_header_key, HEADER_KEY_SIZE);
 		//next send header key
 		const auto& next_send_header_key{storage.next_send_header_key};
-		throw_if_missing(next_send_header_key);
-		protobuf_optional_bytes_arena_export(arena, conversation, next_send_header_key, HEADER_KEY_SIZE);
+		error_if_missing(next_send_header_key);
+		outcome_protobuf_optional_bytes_arena_export(arena, conversation, next_send_header_key, HEADER_KEY_SIZE);
 		//next receive header key
 		const auto& next_receive_header_key{storage.next_receive_header_key};
-		throw_if_missing(next_receive_header_key);
-		protobuf_optional_bytes_arena_export(arena, conversation, next_receive_header_key, HEADER_KEY_SIZE);
+		error_if_missing(next_receive_header_key);
+		outcome_protobuf_optional_bytes_arena_export(arena, conversation, next_receive_header_key, HEADER_KEY_SIZE);
 		//purported receive header key
 		const auto& purported_receive_header_key{storage.purported_receive_header_key};
 		if (!purported_receive_header_key.empty) {
 			conversation->purported_receive_header_key.data = arena.allocate<unsigned char>(HEADER_KEY_SIZE);
-			protobuf_optional_bytes_arena_export(arena, conversation, purported_receive_header_key, HEADER_KEY_SIZE);
+			outcome_protobuf_optional_bytes_arena_export(arena, conversation, purported_receive_header_key, HEADER_KEY_SIZE);
 		}
 		//purported next receive header key
 		const auto& purported_next_receive_header_key{storage.purported_next_receive_header_key};
 		if (!purported_next_receive_header_key.empty) {
-			protobuf_optional_bytes_arena_export(arena, conversation, purported_next_receive_header_key, HEADER_KEY_SIZE);
+			outcome_protobuf_optional_bytes_arena_export(arena, conversation, purported_next_receive_header_key, HEADER_KEY_SIZE);
 		}
 
 		//chain keys
 		//send chain key
 		const auto& send_chain_key{storage.send_chain_key};
 		if ((role == Role::BOB) && send_chain_key.empty) {
-			throw Exception{status_type::EXPORT_ERROR, "send_chain_key missing or has an invalid size."};
+			return Error(status_type::EXPORT_ERROR, "send_chain_key missing or has an invalid size.");
 		}
-		protobuf_optional_bytes_arena_export(arena, conversation, send_chain_key, CHAIN_KEY_SIZE);
+		outcome_protobuf_optional_bytes_arena_export(arena, conversation, send_chain_key, CHAIN_KEY_SIZE);
 		//receive chain key
 		const auto& receive_chain_key{storage.receive_chain_key};
 		if ((role == Role::ALICE) && receive_chain_key.empty) {
-			throw Exception{status_type::EXPORT_ERROR, "receive_chain_key missing or has an incorrect size."};
+			return Error(status_type::EXPORT_ERROR, "receive_chain_key missing or has an incorrect size.");
 		}
-		protobuf_optional_bytes_arena_export(arena, conversation, receive_chain_key, CHAIN_KEY_SIZE);
+		outcome_protobuf_optional_bytes_arena_export(arena, conversation, receive_chain_key, CHAIN_KEY_SIZE);
 		//purported receive chain key
 		const auto& purported_receive_chain_key{storage.purported_receive_chain_key};
 		if (!purported_receive_chain_key.empty) {
-			protobuf_optional_bytes_arena_export(arena, conversation, purported_receive_chain_key, CHAIN_KEY_SIZE);
+			outcome_protobuf_optional_bytes_arena_export(arena, conversation, purported_receive_chain_key, CHAIN_KEY_SIZE);
 		}
 
 		//identity key
 		//our public identity key
 		const auto& our_public_identity_key{storage.our_public_identity};
-		throw_if_missing(our_public_identity_key);
-		protobuf_optional_bytes_arena_export(arena, conversation, our_public_identity_key, PUBLIC_KEY_SIZE);
+		error_if_missing(our_public_identity_key);
+		outcome_protobuf_optional_bytes_arena_export(arena, conversation, our_public_identity_key, PUBLIC_KEY_SIZE);
 		//their public identity key
 		const auto& their_public_identity_key{storage.their_public_identity};
-		throw_if_missing(their_public_identity_key);
-		protobuf_optional_bytes_arena_export(arena, conversation, their_public_identity_key, PUBLIC_KEY_SIZE);
+		error_if_missing(their_public_identity_key);
+		outcome_protobuf_optional_bytes_arena_export(arena, conversation, their_public_identity_key, PUBLIC_KEY_SIZE);
 
 		//ephemeral keys
 		//our private ephemeral key
 		const auto& our_private_ephemeral_key{storage.our_private_ephemeral};
-		throw_if_missing(our_private_ephemeral_key);
-		protobuf_optional_bytes_arena_export(arena, conversation, our_private_ephemeral_key, PRIVATE_KEY_SIZE);
+		error_if_missing(our_private_ephemeral_key);
+		outcome_protobuf_optional_bytes_arena_export(arena, conversation, our_private_ephemeral_key, PRIVATE_KEY_SIZE);
 		//our public ephemeral key
 		const auto& our_public_ephemeral_key{storage.our_public_ephemeral};
-		throw_if_missing(our_public_ephemeral_key);
-		protobuf_optional_bytes_arena_export(arena, conversation, our_public_ephemeral_key, PUBLIC_KEY_SIZE);
+		error_if_missing(our_public_ephemeral_key);
+		outcome_protobuf_optional_bytes_arena_export(arena, conversation, our_public_ephemeral_key, PUBLIC_KEY_SIZE);
 		//their public ephemeral key
 		const auto& their_public_ephemeral_key{storage.their_public_ephemeral};
-		throw_if_missing(their_public_ephemeral_key);
-		protobuf_optional_bytes_arena_export(arena, conversation, their_public_ephemeral_key, PUBLIC_KEY_SIZE);
+		error_if_missing(their_public_ephemeral_key);
+		outcome_protobuf_optional_bytes_arena_export(arena, conversation, their_public_ephemeral_key, PUBLIC_KEY_SIZE);
 		//their purported public ephemeral key
 		const auto& their_purported_public_ephemeral{storage.their_purported_public_ephemeral};
 		if (!their_purported_public_ephemeral.empty) {
-			protobuf_optional_bytes_arena_export(arena, conversation, their_purported_public_ephemeral, PUBLIC_KEY_SIZE);
+			outcome_protobuf_optional_bytes_arena_export(arena, conversation, their_purported_public_ephemeral, PUBLIC_KEY_SIZE);
 		}
 
 		//message numbers
@@ -526,7 +526,7 @@ namespace Molch {
 		protobuf_optional_export(conversation, received_valid, this->received_valid);
 
 		//header decryptability
-		const auto& header_decryptable{[&] () {
+		OUTCOME_TRY(header_decryptable, [&] () -> result<Molch__Protobuf__Conversation__HeaderDecryptability> {
 				switch (this->header_decryptable) {
 					case HeaderDecryptability::CURRENT_DECRYPTABLE:
 						return MOLCH__PROTOBUF__CONVERSATION__HEADER_DECRYPTABILITY__CURRENT_DECRYPTABLE;
@@ -541,9 +541,9 @@ namespace Molch {
 						return MOLCH__PROTOBUF__CONVERSATION__HEADER_DECRYPTABILITY__NOT_TRIED;
 
 					default:
-						throw Exception{status_type::INVALID_VALUE, "Invalid value of ratchet->header_decryptable."};
+						return Error(status_type::INVALID_VALUE, "Invalid value of ratchet->header_decryptable.");
 			}
-		}()};
+		}());
 		protobuf_optional_export(conversation, header_decryptable, header_decryptable);
 
 		//keystores

@@ -34,7 +34,8 @@ using namespace Molch;
 
 static Buffer protobuf_export(Ratchet& ratchet) {
 	Arena pool;
-	auto conversation{ratchet.exportProtobuf(pool)};
+	TRY_WITH_RESULT(conversation_result, ratchet.exportProtobuf(pool));
+	const auto& conversation{conversation_result.value()};
 
 	auto export_size{molch__protobuf__conversation__get_packed_size(conversation)};
 	Buffer export_buffer{export_size, 0};

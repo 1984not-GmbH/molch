@@ -74,6 +74,11 @@ namespace Molch {
 	TRY_VOID(copyFromTo(name,{uchar_to_byte((message)->name.data), (size)}));\
 	(message)->name.len = (size);
 
+#define outcome_protobuf_bytes_arena_export(arena, message, name, size) \
+	(message)->name.data = (arena).allocate<unsigned char>(size);\
+	OUTCOME_TRY(copyFromTo(name,{uchar_to_byte((message)->name.data), (size)}));\
+	(message)->name.len = (size);
+
 /*
  * Macro containing the steps to export a key 'name' of size 'size'
  * to a protobuf message 'message' on the arena allocator 'arena'.
@@ -82,6 +87,9 @@ namespace Molch {
 	protobuf_bytes_arena_export(arena, message, name, size)\
 	(message)->has_##name = true;
 
+#define outcome_protobuf_optional_bytes_arena_export(arena, message, name, size) \
+	outcome_protobuf_bytes_arena_export(arena, message, name, size)\
+	(message)->has_##name = true;
 
 /*
  * Macro containing the steps to export an optional value

@@ -342,7 +342,8 @@ namespace Molch {
 
 	ProtobufCConversation* Conversation::exportProtobuf(Arena& arena) const {
 		//export the ratchet
-		auto exported_conversation{this->ratchet_pointer->exportProtobuf(arena)};
+		TRY_WITH_RESULT(exported_conversation_result, this->ratchet_pointer->exportProtobuf(arena));
+		const auto& exported_conversation{exported_conversation_result.value()};
 
 		//export the conversation id
 		const auto& id{this->id_storage};
