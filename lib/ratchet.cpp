@@ -559,61 +559,61 @@ namespace Molch {
 		return conversation;
 	}
 
-	Ratchet::Ratchet(const ProtobufCConversation& conversation) {
-		this->init();
+	result<Ratchet> Ratchet::import(const ProtobufCConversation& conversation) {
+		Ratchet ratchet;
 
 		//import all the stuff
 		//message numbers
 		//send message number
 		if (!conversation.has_send_message_number) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "No send message number in Protobuf-C struct."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "No send message number in Protobuf-C struct.");
 		}
-		this->send_message_number = conversation.send_message_number;
+		ratchet.send_message_number = conversation.send_message_number;
 		//receive message number
 		if (!conversation.has_receive_message_number) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "No receive message number in Protobuf-C struct."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "No receive message number in Protobuf-C struct.");
 		}
-		this->receive_message_number = conversation.receive_message_number;
+		ratchet.receive_message_number = conversation.receive_message_number;
 		//purported message number
 		if (!conversation.has_purported_message_number) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "No purported message number in Protobuf-C struct."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "No purported message number in Protobuf-C struct.");
 		}
-		this->purported_message_number = conversation.purported_message_number;
+		ratchet.purported_message_number = conversation.purported_message_number;
 		//previous message number
 		if (!conversation.has_previous_message_number) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "No previous message number in Protobuf-C struct."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "No previous message number in Protobuf-C struct.");
 		}
-		this->previous_message_number = conversation.previous_message_number;
+		ratchet.previous_message_number = conversation.previous_message_number;
 		//purported previous message number
 		if (!conversation.has_purported_previous_message_number) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "No purported previous message number in Protobuf-C struct."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "No purported previous message number in Protobuf-C struct.");
 		}
-		this->purported_previous_message_number = conversation.purported_previous_message_number;
+		ratchet.purported_previous_message_number = conversation.purported_previous_message_number;
 
 
 		//flags
 		//ratchet flag
 		if (!conversation.has_ratchet_flag) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "No ratchet flag in Protobuf-C struct."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "No ratchet flag in Protobuf-C struct.");
 		}
-		this->ratchet_flag = conversation.ratchet_flag;
+		ratchet.ratchet_flag = conversation.ratchet_flag;
 		//am I Alice
 		if (!conversation.has_am_i_alice) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "No am I Alice flag in Protobuf-C struct."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "No am I Alice flag in Protobuf-C struct.");
 		}
-		this->role = static_cast<Role>(conversation.am_i_alice);
+		ratchet.role = static_cast<Role>(conversation.am_i_alice);
 		//received valid
 		if (!conversation.has_received_valid) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "No received valid flag in Protobuf-C struct."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "No received valid flag in Protobuf-C struct.");
 		}
-		this->received_valid = conversation.received_valid;
+		ratchet.received_valid = conversation.received_valid;
 
 
 		//header decryptable
 		if (!conversation.has_header_decryptable) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "No header decryptable enum in Protobuf-C struct."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "No header decryptable enum in Protobuf-C struct.");
 		}
-		this->header_decryptable = [&] () {
+		OUTCOME_TRY(header_decryptability, [&] () -> result<HeaderDecryptability> {
 			switch (conversation.header_decryptable) {
 				case MOLCH__PROTOBUF__CONVERSATION__HEADER_DECRYPTABILITY__CURRENT_DECRYPTABLE:
 					return HeaderDecryptability::CURRENT_DECRYPTABLE;
@@ -629,21 +629,22 @@ namespace Molch {
 
 				case _MOLCH__PROTOBUF__CONVERSATION__HEADER_DECRYPTABILITY_IS_INT_SIZE:
 				default:
-					throw Exception{status_type::INVALID_VALUE, "header_decryptable has an invalid value."};
+					return Error(status_type::INVALID_VALUE, "header_decryptable has an invalid value.");
 			}
-		}();
+		}());
+		ratchet.header_decryptable = header_decryptability;
 
 		//root keys
 		//root key
 		if (!conversation.has_root_key || (conversation.root_key.len != ROOT_KEY_SIZE)) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "root_key is missing from protobuf."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "root_key is missing from protobuf.");
 		}
-		this->storage->root_key.set({
+		ratchet.storage->root_key.set({
 				uchar_to_byte(conversation.root_key.data),
 				conversation.root_key.len});
 		//purported root key
 		if (conversation.has_purported_root_key && (conversation.purported_root_key.len == ROOT_KEY_SIZE)) {
-			this->storage->purported_root_key.set({
+			ratchet.storage->purported_root_key.set({
 					uchar_to_byte(conversation.purported_root_key.data),
 					conversation.purported_root_key.len});
 		}
@@ -651,70 +652,70 @@ namespace Molch {
 		//header key
 		//send header key
 		if (!conversation.has_send_header_key || (conversation.send_header_key.len != HEADER_KEY_SIZE)) {
-			if (this->role == Role::BOB) {
-				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "send_header_key is missing from the protobuf."};
+			if (ratchet.role == Role::BOB) {
+				return Error(status_type::PROTOBUF_MISSING_ERROR, "send_header_key is missing from the protobuf.");
 			}
-			this->storage->send_header_key.reset();
+			ratchet.storage->send_header_key.reset();
 		} else {
-			this->storage->send_header_key.emplace(span<std::byte>(
+			ratchet.storage->send_header_key.emplace(span<std::byte>(
 					uchar_to_byte(conversation.send_header_key.data),
 					conversation.send_header_key.len));
 		}
 		//receive header key
-		if ((this->role == Role::ALICE) &&
+		if ((ratchet.role == Role::ALICE) &&
 				(!conversation.has_receive_header_key || (conversation.receive_header_key.len != HEADER_KEY_SIZE))) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "receive_header_key is missing from protobuf."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "receive_header_key is missing from protobuf.");
 		}
-		this->storage->receive_header_key.set({
+		ratchet.storage->receive_header_key.set({
 				uchar_to_byte(conversation.receive_header_key.data),
 				conversation.receive_header_key.len});
 		//next send header key
 		if (!conversation.has_next_send_header_key || (conversation.next_send_header_key.len != HEADER_KEY_SIZE)) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "next_send_header_key is missing from protobuf."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "next_send_header_key is missing from protobuf.");
 		}
-		this->storage->next_send_header_key.set({
+		ratchet.storage->next_send_header_key.set({
 				uchar_to_byte(conversation.next_send_header_key.data),
 				conversation.next_send_header_key.len});
 		//next receive header key
 		if (!conversation.has_next_receive_header_key || (conversation.next_receive_header_key.len != HEADER_KEY_SIZE)) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "next_receive_header_key is missing from protobuf."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "next_receive_header_key is missing from protobuf.");
 		}
-		this->storage->next_receive_header_key.set({
+		ratchet.storage->next_receive_header_key.set({
 				uchar_to_byte(conversation.next_receive_header_key.data),
 				conversation.next_receive_header_key.len});
 		//purported receive header key
 		if (conversation.has_purported_receive_header_key && (conversation.purported_receive_header_key.len == HEADER_KEY_SIZE)) {
-			this->storage->purported_receive_header_key.set({
+			ratchet.storage->purported_receive_header_key.set({
 					uchar_to_byte(conversation.purported_receive_header_key.data),
 					conversation.purported_receive_header_key.len});
 		}
 		//purported next receive header key
 		if (conversation.has_purported_next_receive_header_key && (conversation.purported_next_receive_header_key.len == HEADER_KEY_SIZE)) {
-			this->storage->purported_next_receive_header_key.set({
+			ratchet.storage->purported_next_receive_header_key.set({
 					uchar_to_byte(conversation.purported_next_receive_header_key.data),
 					conversation.purported_next_receive_header_key.len});
 		}
 
 		//chain keys
 		//send chain key
-		if ((this->role == Role::BOB) &&
+		if ((ratchet.role == Role::BOB) &&
 				(!conversation.has_send_chain_key || (conversation.send_chain_key.len != CHAIN_KEY_SIZE))) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "send_chain_key is missing from the potobuf."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "send_chain_key is missing from the potobuf.");
 		}
-		this->storage->send_chain_key.set({
+		ratchet.storage->send_chain_key.set({
 				uchar_to_byte(conversation.send_chain_key.data),
 				conversation.send_chain_key.len});
 		//receive chain key
-		if ((this->role == Role::ALICE) &&
+		if ((ratchet.role == Role::ALICE) &&
 				(!conversation.has_receive_chain_key || (conversation.receive_chain_key.len != CHAIN_KEY_SIZE))) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "receive_chain_key is missing from the protobuf."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "receive_chain_key is missing from the protobuf.");
 		}
-		this->storage->receive_chain_key.set({
+		ratchet.storage->receive_chain_key.set({
 				uchar_to_byte(conversation.receive_chain_key.data),
 				conversation.receive_chain_key.len});
 		//purported receive chain key
 		if (conversation.has_purported_receive_chain_key && (conversation.purported_receive_chain_key.len == CHAIN_KEY_SIZE)) {
-			this->storage->purported_receive_chain_key.set({
+			ratchet.storage->purported_receive_chain_key.set({
 					uchar_to_byte(conversation.purported_receive_chain_key.data),
 					conversation.purported_receive_chain_key.len});
 		}
@@ -722,57 +723,59 @@ namespace Molch {
 		//identity key
 		//our public identity key
 		if (!conversation.has_our_public_identity_key || (conversation.our_public_identity_key.len != PUBLIC_KEY_SIZE)) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "our_public_identity_key is missing from the protobuf."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "our_public_identity_key is missing from the protobuf.");
 		}
-		this->storage->our_public_identity.set({
+		ratchet.storage->our_public_identity.set({
 				uchar_to_byte(conversation.our_public_identity_key.data),
 				conversation.our_public_identity_key.len});
 		//their public identity key
 		if (!conversation.has_their_public_identity_key || (conversation.their_public_identity_key.len != PUBLIC_KEY_SIZE)) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "their_public_identity is missing from the protobuf."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "their_public_identity is missing from the protobuf.");
 		}
-		this->storage->their_public_identity.set({
+		ratchet.storage->their_public_identity.set({
 				uchar_to_byte(conversation.their_public_identity_key.data),
 				conversation.their_public_identity_key.len});
 
 		//ephemeral keys
 		//our private ephemeral key
 		if (!conversation.has_our_private_ephemeral_key || (conversation.our_private_ephemeral_key.len != PRIVATE_KEY_SIZE)) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "our_private_ephemral is missing from the protobuf."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "our_private_ephemral is missing from the protobuf.");
 		}
-		this->storage->our_private_ephemeral.set({
+		ratchet.storage->our_private_ephemeral.set({
 				uchar_to_byte(conversation.our_private_ephemeral_key.data),
 				conversation.our_private_ephemeral_key.len});
 		//our public ephemeral key
 		if (!conversation.has_our_public_ephemeral_key || (conversation.our_public_ephemeral_key.len != PUBLIC_KEY_SIZE)) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "our_public_ephemeral is missing from the protobuf."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "our_public_ephemeral is missing from the protobuf.");
 		}
-		this->storage->our_public_ephemeral.set({
+		ratchet.storage->our_public_ephemeral.set({
 				uchar_to_byte(conversation.our_public_ephemeral_key.data),
 				conversation.our_public_ephemeral_key.len});
 		//their public ephemeral key
 		if (!conversation.has_their_public_ephemeral_key || (conversation.their_public_ephemeral_key.len != PUBLIC_KEY_SIZE)) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "their_public_ephemeral is missing from the protobuf."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "their_public_ephemeral is missing from the protobuf.");
 		}
-		this->storage->their_public_ephemeral.set({
+		ratchet.storage->their_public_ephemeral.set({
 				uchar_to_byte(conversation.their_public_ephemeral_key.data),
 				conversation.their_public_ephemeral_key.len});
 		//their purported public ephemeral key
 		if (conversation.has_their_purported_public_ephemeral && (conversation.their_purported_public_ephemeral.len == PUBLIC_KEY_SIZE)) {
-			this->storage->their_purported_public_ephemeral.set({
+			ratchet.storage->their_purported_public_ephemeral.set({
 					uchar_to_byte(conversation.their_purported_public_ephemeral.data),
 					conversation.their_purported_public_ephemeral.len});
 		}
 
 		//header and message keystores
 		//skipped header and message keys
-		this->skipped_header_and_message_keys = HeaderAndMessageKeyStore{{
+		ratchet.skipped_header_and_message_keys = HeaderAndMessageKeyStore{{
 			conversation.skipped_header_and_message_keys,
 			conversation.n_skipped_header_and_message_keys}};
 		//staged heeader and message keys
-		this->staged_header_and_message_keys = HeaderAndMessageKeyStore{{
+		ratchet.staged_header_and_message_keys = HeaderAndMessageKeyStore{{
 			conversation.staged_header_and_message_keys,
 			conversation.n_staged_header_and_message_keys}};
+
+		return std::move(ratchet);
 	}
 
 	std::ostream& Ratchet::print(std::ostream& stream) const {

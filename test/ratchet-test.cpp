@@ -47,7 +47,7 @@ static Buffer protobuf_export(Ratchet& ratchet) {
 	return export_buffer;
 }
 
-static std::unique_ptr<Ratchet> protobuf_import(Arena& pool, const Buffer& export_buffer) {
+static Ratchet protobuf_import(Arena& pool, const Buffer& export_buffer) {
 	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 	//unpack the buffer
 	auto conversation{molch__protobuf__conversation__unpack(
@@ -59,7 +59,8 @@ static std::unique_ptr<Ratchet> protobuf_import(Arena& pool, const Buffer& expor
 	}
 
 	//now do the import
-	return std::make_unique<Ratchet>(*conversation);
+	TRY_WITH_RESULT(ratchet_result, Ratchet::import(*conversation));
+	return std::move(ratchet_result.value());
 }
 
 int main() {
@@ -104,19 +105,19 @@ int main() {
 
 		//start new ratchet for alice
 		printf("Creating new ratchet for Alice ...\n");
-		auto alice_state{std::make_unique<Ratchet>(
+		Ratchet alice_state(
 				alice_private_identity,
 				alice_public_identity,
 				bob_public_identity,
 				alice_private_ephemeral,
 				alice_public_ephemeral,
-				bob_public_ephemeral)};
+				bob_public_ephemeral);
 		putchar('\n');
 		//print Alice's initial root and chain keys
-		printf("Alice's initial root key (%zu Bytes):\n", alice_state->storage->root_key.size());
-		alice_state->storage->root_key.printHex(std::cout);
-		printf("Alice's initial chain key (%zu Bytes):\n", alice_state->storage->send_chain_key.size());
-		alice_state->storage->send_chain_key.printHex(std::cout);
+		printf("Alice's initial root key (%zu Bytes):\n", alice_state.storage->root_key.size());
+		alice_state.storage->root_key.printHex(std::cout);
+		printf("Alice's initial chain key (%zu Bytes):\n", alice_state.storage->send_chain_key.size());
+		alice_state.storage->send_chain_key.printHex(std::cout);
 		putchar('\n');
 
 		//start new ratchet for bob
@@ -137,13 +138,13 @@ int main() {
 		putchar('\n');
 
 		//compare Alice's and Bob's initial root and chain keys
-		if (alice_state->storage->root_key != bob_state->storage->root_key) {
+		if (alice_state.storage->root_key != bob_state->storage->root_key) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's and Bob's initial root keys arent't the same."};
 		}
 		printf("Alice's and Bob's initial root keys match!\n");
 
 		//initial chain key
-		if (alice_state->storage->receive_chain_key != bob_state->storage->send_chain_key) {
+		if (alice_state.storage->receive_chain_key != bob_state->storage->send_chain_key) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's and Bob's initial chain keys aren't the same."};
 		}
 		printf("Alice's and Bob's initial chain keys match!\n\n");
@@ -151,7 +152,7 @@ int main() {
 		//--------------------------------------------------------------------------
 		puts("----------------------------------------\n");
 		//first, alice sends two messages
-		TRY_WITH_RESULT(alice_send_data1_result, alice_state->getSendData());
+		TRY_WITH_RESULT(alice_send_data1_result, alice_state.getSendData());
 		const auto& alice_send_data1{alice_send_data1_result.value()};
 		//print the send message key
 		printf("Alice Ratchet 1 send message key 1:\n");
@@ -161,7 +162,7 @@ int main() {
 		putchar('\n');
 
 		//second message key
-		TRY_WITH_RESULT(alice_send_data2_result, alice_state->getSendData());
+		TRY_WITH_RESULT(alice_send_data2_result, alice_state.getSendData());
 		const auto& alice_send_data2{alice_send_data2_result.value()};
 		//print the send message key
 		printf("Alice Ratchet 1 send message key 2:\n");
@@ -171,7 +172,7 @@ int main() {
 		putchar('\n');
 
 		//third message_key
-		TRY_WITH_RESULT(alice_send_data3_result, alice_state->getSendData());
+		TRY_WITH_RESULT(alice_send_data3_result, alice_state.getSendData());
 		const auto& alice_send_data3{alice_send_data3_result.value()};
 		//print the send message key
 		printf("Alice Ratchet 1 send message key 3:\n");
@@ -354,7 +355,7 @@ int main() {
 		//--------------------------------------------------------------------------
 		puts("----------------------------------------\n");
 		//get pointers to alice's receive header keys
-		const auto alice_receive_header_keys1{alice_state->getReceiveHeaderKeys()};
+		const auto alice_receive_header_keys1{alice_state.getReceiveHeaderKeys()};
 
 		printf("Alice's first current receive header key:\n");
 		alice_receive_header_keys1.current.printHex(std::cout);
@@ -376,9 +377,9 @@ int main() {
 		//now alice receives the first, then the third message (second message skipped)
 
 		//set the header decryptability
-		TRY_VOID(alice_state->setHeaderDecryptability(decryptable));
+		TRY_VOID(alice_state.setHeaderDecryptability(decryptable));
 
-		TRY_WITH_RESULT(alice_receive_message_key1_result, alice_state->receive(
+		TRY_WITH_RESULT(alice_receive_message_key1_result, alice_state.receive(
 				bob_send_data1.ephemeral,
 				0, //purported message number
 				0)); //purported previous message number
@@ -389,9 +390,9 @@ int main() {
 		alice_receive_message_key1.printHex(std::cout) << std::endl;
 
 		//confirm validity of the message key
-		alice_state->setLastMessageAuthenticity(true);
+		alice_state.setLastMessageAuthenticity(true);
 
-		const auto alice_receive_header_keys2{alice_state->getReceiveHeaderKeys()};
+		const auto alice_receive_header_keys2{alice_state.getReceiveHeaderKeys()};
 
 		printf("Alice's current receive header key:\n");
 		alice_receive_header_keys2.current.printHex(std::cout);
@@ -413,10 +414,10 @@ int main() {
 		}();
 
 		//set the header decryptability
-		TRY_VOID(alice_state->setHeaderDecryptability(decryptable));
+		TRY_VOID(alice_state.setHeaderDecryptability(decryptable));
 
 		//third received message key (second message skipped)
-		TRY_WITH_RESULT(alice_receive_message_key3_result, alice_state->receive(
+		TRY_WITH_RESULT(alice_receive_message_key3_result, alice_state.receive(
 			bob_send_data3.ephemeral,
 			2, //purported_message_number
 			0)); //purported_previous_message_number
@@ -426,23 +427,23 @@ int main() {
 		printf("Alice Ratchet 2 receive message key 3:\n");
 		alice_receive_message_key3.printHex(std::cout) << std::endl;
 
-		assert(alice_state->staged_header_and_message_keys.keys().size() == 1);
+		assert(alice_state.staged_header_and_message_keys.keys().size() == 1);
 
 		//confirm validity of the message key
-		alice_state->setLastMessageAuthenticity(true);
+		alice_state.setLastMessageAuthenticity(true);
 
-		assert(alice_state->staged_header_and_message_keys.keys().empty());
-		assert(alice_state->skipped_header_and_message_keys.keys().size() == 1);
+		assert(alice_state.staged_header_and_message_keys.keys().empty());
+		assert(alice_state.skipped_header_and_message_keys.keys().size() == 1);
 
 		//get the second receive message key from the message and header keystore
 		MessageKey alice_receive_message_key2;
-		alice_receive_message_key2 = alice_state->skipped_header_and_message_keys.keys().back().messageKey();
+		alice_receive_message_key2 = alice_state.skipped_header_and_message_keys.keys().back().messageKey();
 		printf("Alice Ratchet 2 receive message key 2:\n");
 		alice_receive_message_key2.printHex(std::cout) << std::endl;
 
 		//get the second receive header key from the message and header keystore
 		HeaderKey alice_receive_header_key2;
-		alice_receive_header_key2 = alice_state->skipped_header_and_message_keys.keys().back().headerKey();
+		alice_receive_header_key2 = alice_state.skipped_header_and_message_keys.keys().back().headerKey();
 		printf("Alice Ratchet 2 receive header key 2:\n");
 		alice_receive_header_key2.printHex(std::cout) << std::endl;
 
@@ -473,11 +474,9 @@ int main() {
 
 		//export Alice's ratchet to Protobuf-C
 		printf("Export to Protobuf-C!\n");
-		auto protobuf_export_buffer = protobuf_export(*alice_state);
+		auto protobuf_export_buffer = protobuf_export(alice_state);
 
 		protobuf_export_buffer.printHex(std::cout) << "\n\n" << std::flush;
-
-		alice_state.reset();
 
 		//import again
 		printf("Import from Protobuf-C!\n");
@@ -485,7 +484,7 @@ int main() {
 		alice_state = protobuf_import(pool, protobuf_export_buffer);
 
 		//export again
-		auto protobuf_second_export_buffer{protobuf_export(*alice_state)};
+		auto protobuf_second_export_buffer{protobuf_export(alice_state)};
 
 		//compare both exports
 		if (protobuf_export_buffer != protobuf_second_export_buffer) {
@@ -493,12 +492,6 @@ int main() {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Both exports don't match!"};
 		}
 		printf("Exported Protobuf-C buffers match!\n");
-
-		//destroy the ratchets again
-		printf("Destroying Alice's ratchet ...\n");
-		alice_state.reset();
-		printf("Destroying Bob's ratchet ...\n");
-		bob_state.reset();
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

@@ -359,7 +359,8 @@ namespace Molch {
 				conversation_protobuf.id.len});
 
 		//import the ratchet
-		this->ratchet = Ratchet(conversation_protobuf);
+		TRY_WITH_RESULT(ratchet_result, Ratchet::import(conversation_protobuf));
+		this->ratchet = std::move(ratchet_result.value());
 	}
 
 	const Key<CONVERSATION_ID_SIZE,KeyType::Key>& Conversation::id() const {

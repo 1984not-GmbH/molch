@@ -115,7 +115,7 @@ namespace Molch {
 		 * Protobuf-C struct
 		 * \param conversation The Protobuf-C buffer.
 		 */
-		Ratchet(const ProtobufCConversation& conversation);
+		static result<Ratchet> import(const ProtobufCConversation& conversation);
 
 		Ratchet(const Ratchet& ratchet) = delete;
 		Ratchet(Ratchet&& ratchet) = default;
