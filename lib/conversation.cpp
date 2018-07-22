@@ -298,14 +298,13 @@ namespace Molch {
 		return received_message_result;
 	}
 
-	ProtobufCConversation* Conversation::exportProtobuf(Arena& arena) const {
+	result<ProtobufCConversation*> Conversation::exportProtobuf(Arena& arena) const {
 		//export the ratchet
-		TRY_WITH_RESULT(exported_conversation_result, this->ratchet.exportProtobuf(arena));
-		const auto& exported_conversation{exported_conversation_result.value()};
+		OUTCOME_TRY(exported_conversation, this->ratchet.exportProtobuf(arena));
 
 		//export the conversation id
 		const auto& id{this->id_storage};
-		protobuf_bytes_arena_export(arena, exported_conversation, id, CONVERSATION_ID_SIZE);
+		outcome_protobuf_bytes_arena_export(arena, exported_conversation, id, CONVERSATION_ID_SIZE);
 
 		return exported_conversation;
 	}

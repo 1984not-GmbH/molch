@@ -966,7 +966,8 @@ cleanup:
 
 			//export the conversation
 			Arena arena;
-			auto conversation_struct{conversation->exportProtobuf(arena)};
+			TRY_WITH_RESULT(conversation_struct_result, conversation->exportProtobuf(arena));
+			auto conversation_struct{conversation_struct_result.value()};
 
 			//pack the struct
 			auto conversation_size{molch__protobuf__conversation__get_packed_size(conversation_struct)};

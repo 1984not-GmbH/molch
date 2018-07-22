@@ -138,7 +138,8 @@ namespace Molch {
 		auto conversations{arena.allocate<ProtobufCConversation*>(this->conversations.size())};
 		size_t index{0};
 		for (const auto& conversation : this->conversations) {
-			conversations[index] = conversation.exportProtobuf(arena);
+			TRY_WITH_RESULT(exported_conversation, conversation.exportProtobuf(arena));
+			conversations[index] = exported_conversation.value();
 			index++;
 		}
 

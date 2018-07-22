@@ -37,7 +37,8 @@ using namespace Molch;
 static Buffer protobuf_export(const Molch::Conversation& conversation) {
 	//export the conversation
 	Arena pool;
-	auto exported_conversation{conversation.exportProtobuf(pool)};
+	TRY_WITH_RESULT(exported_conversation_result, conversation.exportProtobuf(pool));
+	const auto& exported_conversation{exported_conversation_result.value()};
 
 	auto export_size{molch__protobuf__conversation__get_packed_size(exported_conversation)};
 	Buffer export_buffer{export_size, 0};
