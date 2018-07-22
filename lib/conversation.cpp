@@ -219,20 +219,7 @@ namespace Molch {
 		return encrypted_packet;
 	}
 
-	/*
-	 * Try to decrypt a packet with skipped over header and message keys.
-	 * This corresponds to "try_skipped_header_and_message_keys" from the
-	 * Axolotl protocol description.
-	 *
-	 * Returns 0, if it was able to decrypt the packet.
-	 */
-	int Conversation::trySkippedHeaderAndMessageKeys(
-			const span<const std::byte> packet,
-			Buffer& message,
-			uint32_t& receive_message_number,
-			uint32_t& previous_receive_message_number) {
-		//create buffers
-
+	result<ReceivedMessage> Conversation::trySkippedHeaderAndMessageKeys(const span<const std::byte> packet) {
 		for (size_t index{0}; index < this->ratchet.skipped_header_and_message_keys.keys().size(); index++) {
 			auto& node = this->ratchet.skipped_header_and_message_keys.keys()[index];
 			auto decrypted_packet_result = packet_decrypt(
@@ -240,20 +227,21 @@ namespace Molch {
 					node.headerKey(),
 					node.messageKey());
 			if (decrypted_packet_result.has_value()) {
+				ReceivedMessage message;
 				auto& decrypted_packet{decrypted_packet_result.value()};
-				message = std::move(decrypted_packet.message);
+				message.message = std::move(decrypted_packet.message);
 				this->ratchet.skipped_header_and_message_keys.remove(index);
 
 				PublicKey their_signed_public_ephemeral;
-				TRY_WITH_RESULT(extracted_header, header_extract(decrypted_packet.header));
-				their_signed_public_ephemeral = extracted_header.value().their_public_ephemeral;
-				receive_message_number = extracted_header.value().message_number;
-				previous_receive_message_number = extracted_header.value().previous_message_number;
-				return static_cast<int>(status_type::SUCCESS);
+				OUTCOME_TRY(extracted_header, header_extract(decrypted_packet.header));
+				message.message_number = extracted_header.message_number;
+				message.previous_message_number = extracted_header.previous_message_number;
+
+				return message;
 			}
 		}
 
-		return static_cast<int>(status_type::NOT_FOUND);
+		return Error(status_type::DECRYPT_ERROR, "No keys found for the packet.");
 	}
 
 	/*
@@ -267,17 +255,16 @@ namespace Molch {
 			uint32_t& receive_message_number,
 			uint32_t& previous_receive_message_number) {
 		try {
-			Buffer message;
-			auto status{trySkippedHeaderAndMessageKeys(
-					packet,
-					message,
-					receive_message_number,
-					previous_receive_message_number)};
-			if (status == static_cast<int>(status_type::SUCCESS)) {
-				// found a key and successfully decrypted the message
-				return message;
+			const auto received_message_result = trySkippedHeaderAndMessageKeys(packet);
+			if (received_message_result.has_value()) {
+				const auto& received_message{received_message_result.value()};
+				receive_message_number = received_message.message_number;
+				previous_receive_message_number = received_message.previous_message_number;
+
+				return received_message.message;
 			}
 
+			Buffer message;
 			const auto receive_header_keys{this->ratchet.getReceiveHeaderKeys()};
 
 			//try to decrypt the packet header with the current receive header key

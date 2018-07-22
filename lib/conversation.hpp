@@ -30,6 +30,12 @@
 #include "prekey-store.hpp"
 
 namespace Molch {
+	struct ReceivedMessage {
+		uint32_t message_number;
+		uint32_t previous_message_number;
+		Buffer message;
+	};
+
 	class Conversation {
 		friend class ConversationStore;
 	private:
@@ -43,11 +49,7 @@ namespace Molch {
 			const PublicKey& our_public_ephemeral,
 			const PublicKey& their_public_ephemeral);
 
-		int trySkippedHeaderAndMessageKeys(
-			const span<const std::byte> packet,
-			Buffer& message,
-			uint32_t& receive_message_number,
-			uint32_t& previous_receive_message_number);
+		result<ReceivedMessage> trySkippedHeaderAndMessageKeys(const span<const std::byte> packet);
 
 		Key<CONVERSATION_ID_SIZE,KeyType::Key> id_storage; //unique id of a conversation, generated randomly
 		Ratchet ratchet;
