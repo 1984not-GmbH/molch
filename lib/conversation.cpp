@@ -309,15 +309,18 @@ namespace Molch {
 		return exported_conversation;
 	}
 
-	Conversation::Conversation(const ProtobufCConversation& conversation_protobuf) {
+	result<Conversation> Conversation::import(const ProtobufCConversation& conversation_protobuf) {
+		Conversation conversation;
 		//copy the id
-		this->id_storage.set({
+		conversation.id_storage.set({
 				uchar_to_byte(conversation_protobuf.id.data),
 				conversation_protobuf.id.len});
 
 		//import the ratchet
 		TRY_WITH_RESULT(ratchet_result, Ratchet::import(conversation_protobuf));
-		this->ratchet = std::move(ratchet_result.value());
+		conversation.ratchet = std::move(ratchet_result.value());
+
+		return conversation;
 	}
 
 	const Key<CONVERSATION_ID_SIZE,KeyType::Key>& Conversation::id() const {

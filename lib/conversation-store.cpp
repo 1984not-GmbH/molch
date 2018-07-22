@@ -153,7 +153,8 @@ namespace Molch {
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Array of conversation has an empty element."};
 			}
 
-			this->conversations.emplace_back(*conversation);
+			TRY_WITH_RESULT(imported_conversation, Conversation::import(*conversation));
+			this->conversations.emplace_back(std::move(imported_conversation.value()));
 		}
 	}
 

@@ -1110,7 +1110,7 @@ cleanup:
 			}
 
 			//import the conversation
-			ProtobufCConversation conversation{*conversation_struct};
+			ProtobufCConversation conversation_pointer{*conversation_struct};
 			Molch::User* containing_user{nullptr};
 			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
 			conversation_id_key.set({
@@ -1121,7 +1121,9 @@ cleanup:
 				throw Exception{status_type::NOT_FOUND, "Containing store not found."};
 			}
 
-			containing_user->conversations().add(conversation);
+			TRY_WITH_RESULT(conversation_result, Conversation::import(conversation_pointer));
+			auto& conversation{conversation_result.value()};
+			containing_user->conversations().add(std::move(conversation));
 
 			//update the backup key
 			auto status{molch_update_backup_key(new_backup_key, new_backup_key_length)};

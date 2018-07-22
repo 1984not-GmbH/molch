@@ -50,7 +50,7 @@ static Buffer protobuf_export(const Molch::Conversation& conversation) {
 	return export_buffer;
 }
 
-static std::unique_ptr<Molch::Conversation> protobuf_import(Arena& pool, const Buffer& import_buffer) {
+static Molch::Conversation protobuf_import(Arena& pool, const Buffer& import_buffer) {
 	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
 	auto conversation_protobuf{molch__protobuf__conversation__unpack(
 		&pool_protoc_allocator,
@@ -60,7 +60,8 @@ static std::unique_ptr<Molch::Conversation> protobuf_import(Arena& pool, const B
 		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack conversation from protobuf."};
 	}
 
-	return std::make_unique<Molch::Conversation>(*conversation_protobuf);
+	TRY_WITH_RESULT(exported_conversation_result, Molch::Conversation::import(*conversation_protobuf));
+	return std::move(exported_conversation_result.value());
 }
 
 int main() noexcept {
@@ -104,14 +105,14 @@ int main() noexcept {
 			"ephemeral");
 
 		//create charlie's conversation
-		auto charlie_conversation{std::make_unique<Molch::Conversation>(
+		Molch::Conversation charlie_conversation(
 				charlie_private_identity,
 				charlie_public_identity,
 				dora_public_identity,
 				charlie_private_ephemeral,
 				charlie_public_ephemeral,
-				dora_public_ephemeral)};
-		if (!charlie_conversation || charlie_conversation->id().empty) {
+				dora_public_ephemeral);
+		if (charlie_conversation.id().empty) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Charlie's conversation has an incorrect ID length."};
 		}
 
@@ -129,12 +130,10 @@ int main() noexcept {
 
 		//test protobuf-c export
 		printf("Export to Protobuf-C\n");
-		auto protobuf_export_buffer{protobuf_export(*charlie_conversation)};
+		auto protobuf_export_buffer{protobuf_export(charlie_conversation)};
 
 		protobuf_export_buffer.printHex(std::cout);
 		puts("\n");
-
-		charlie_conversation.reset();
 
 		//import
 		printf("Import from Protobuf-C\n");
@@ -143,7 +142,7 @@ int main() noexcept {
 
 		//export again
 		printf("Export again\n");
-		auto protobuf_second_export_buffer{protobuf_export(*charlie_conversation)};
+		auto protobuf_second_export_buffer{protobuf_export(charlie_conversation)};
 
 		//compare
 		if (protobuf_export_buffer != protobuf_second_export_buffer) {

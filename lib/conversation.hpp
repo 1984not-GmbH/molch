@@ -55,6 +55,8 @@ namespace Molch {
 		Key<CONVERSATION_ID_SIZE,KeyType::Key> id_storage; //unique id of a conversation, generated randomly
 		Ratchet ratchet;
 
+		Conversation() = default;
+
 	public:
 		/*
 		 * Create a new conversation without sending or receiving anything.
@@ -93,8 +95,10 @@ namespace Molch {
 
 		/*! Import a conversatoin from a Protobuf-C struct
 		 * \param conversation_protobuf The protobuf-c struct to import from.
+		 *
+		 * \return The imported conversation
 		 */
-		Conversation(const ProtobufCConversation& conversation_protobuf);
+		static result<Conversation> import(const ProtobufCConversation& conversation_protobuf);
 
 		Conversation(Conversation&& conversation) noexcept;
 		Conversation(const Conversation& conversation) = delete;
