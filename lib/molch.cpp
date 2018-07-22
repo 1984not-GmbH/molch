@@ -474,23 +474,22 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 
 		//create the conversation and encrypt the message
 		span<const std::byte> prekeys{uchar_to_byte(prekey_list) + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t)};
-		Buffer packet_buffer;
-		Molch::Conversation conversation{
+		TRY_WITH_RESULT(send_conversation_result, Molch::Conversation::createSendConversation(
 			{uchar_to_byte(message), message_length},
-			packet_buffer,
 			user->masterKeys().getIdentityKey(),
 			user->masterKeys().getPrivateIdentityKey(),
 			receiver_public_identity,
-			prekeys};
+			prekeys));
+		auto& send_conversation{send_conversation_result.value()};
 
 		//copy the conversation id
-		TRY_VOID(copyFromTo(conversation.id(), {uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
+		TRY_VOID(copyFromTo(send_conversation.conversation.id(), {uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
 
-		user->conversations().add(std::move(conversation));
+		user->conversations().add(std::move(send_conversation.conversation));
 
 		//copy the packet to a malloced buffer output
-		MallocBuffer malloced_packet{packet_buffer.size(), 0};
-		TRY_VOID(malloced_packet.cloneFrom(packet_buffer));
+		MallocBuffer malloced_packet{send_conversation.packet.size(), 0};
+		TRY_VOID(malloced_packet.cloneFrom(send_conversation.packet));
 
 		if (backup != nullptr) {
 			*backup = nullptr;

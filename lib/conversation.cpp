@@ -92,20 +92,13 @@ namespace Molch {
 			their_public_ephemeral);
 	}
 
-	/*
-	 * Start a new conversation where we are the sender.
-	 *
-	 * Don't forget to destroy the return status with return_status_destroy_errors()
-	 * if an error has occurred.
-	 */
-	Conversation::Conversation(
+	result<SendConversation> Conversation::createSendConversation(
 			const span<const std::byte> message, //message we want to send to the receiver
-			Buffer& packet, //output
 			const PublicKey& sender_public_identity, //who is sending this message?
 			const PrivateKey& sender_private_identity,
 			const PublicKey& receiver_public_identity,
 			const span<const std::byte> receiver_prekey_list) { //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
-		Expects(!receiver_public_identity.empty
+		FulfillOrFail(!receiver_public_identity.empty
 				&& !sender_public_identity.empty
 				&& !sender_private_identity.empty
 				&& (receiver_prekey_list.size() == (PREKEY_AMOUNT * PUBLIC_KEY_SIZE)));
@@ -125,7 +118,8 @@ namespace Molch {
 				PUBLIC_KEY_SIZE});
 
 		//initialize the conversation
-		this->create(
+		SendConversation send_conversation;
+		send_conversation.conversation.create(
 				sender_private_identity,
 				sender_public_identity,
 				receiver_public_identity,
@@ -138,8 +132,11 @@ namespace Molch {
 		prekey_metadata_content.identity = sender_public_identity;
 		prekey_metadata_content.ephemeral = sender_public_ephemeral;
 		prekey_metadata_content.prekey = receiver_public_prekey;
-		TRY_WITH_RESULT(packet_result, this->send(message, prekey_metadata));
-		packet = std::move(packet_result.value());
+
+		OUTCOME_TRY(packet, send_conversation.conversation.send(message, prekey_metadata));
+		send_conversation.packet = std::move(packet);
+
+		return send_conversation;
 	}
 
 	/*

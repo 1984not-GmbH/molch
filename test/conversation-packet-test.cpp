@@ -63,22 +63,21 @@ int main() {
 
 		//start a send conversation
 		Buffer send_message{"Hello there!"};
-		Buffer packet;
-		Molch::Conversation alice_send_conversation(
+		TRY_WITH_RESULT(alice_send_conversation_result, Molch::Conversation::createSendConversation(
 				send_message,
-				packet,
 				alice_public_identity,
 				alice_private_identity,
 				bob_public_identity,
-				prekey_list);
+				prekey_list));
+		auto& alice_send_conversation{alice_send_conversation_result.value()};
 
 		printf("Packet:\n");
-		packet.printHex(std::cout) << std::endl;
+		alice_send_conversation.packet.printHex(std::cout) << std::endl;
 
 		//let bob receive the packet
 		Buffer received_message;
 		Molch::Conversation bob_receive_conversation{
-			packet,
+			alice_send_conversation.packet,
 			received_message,
 			bob_public_identity,
 			bob_private_identity,
@@ -92,7 +91,7 @@ int main() {
 		//send and receive some more messages
 		//first one
 		Buffer alice_send_message2{"How are you Bob?"};
-		TRY_WITH_RESULT(alice_send_packet2_result, alice_send_conversation.send(alice_send_message2, std::nullopt));
+		TRY_WITH_RESULT(alice_send_packet2_result, alice_send_conversation.conversation.send(alice_send_message2, std::nullopt));
 		auto& alice_send_packet2{alice_send_packet2_result.value()};
 
 		printf("Sent message: %.*s\n", static_cast<int>(alice_send_message2.size()), reinterpret_cast<const char*>(alice_send_message2.data()));
@@ -124,7 +123,7 @@ int main() {
 		bob_response_packet.printHex(std::cout) << std::endl;
 
 		//Alice receives the response
-		TRY_WITH_RESULT(alice_received_result, alice_send_conversation.receive(bob_response_packet));
+		TRY_WITH_RESULT(alice_received_result, alice_send_conversation.conversation.receive(bob_response_packet));
 		const auto& alice_received{alice_received_result.value()};
 
 		// check the message numbers
@@ -147,23 +146,22 @@ int main() {
 		alice_prekeys.list(prekey_list);
 
 		//destroy the old packet
-		packet.clear();
-		Molch::Conversation bob_send_conversation{
+		TRY_WITH_RESULT(bob_send_conversation_result, Molch::Conversation::createSendConversation(
 			send_message,
-			packet,
 			bob_public_identity,
 			bob_private_identity,
 			alice_public_identity,
-			prekey_list};
+			prekey_list));
+		auto& bob_send_conversation{bob_send_conversation_result.value()};
 
 		printf("Sent message: %.*s\n", static_cast<int>(send_message.size()), reinterpret_cast<const char*>(send_message.data()));
 		printf("Packet:\n");
-		packet.printHex(std::cout) << std::endl;
+		bob_send_conversation.packet.printHex(std::cout) << std::endl;
 
 		//let alice receive the packet
 		received_message.clear();
 		Molch::Conversation alice_receive_conversation{
-			packet,
+			bob_send_conversation.packet,
 			received_message,
 			alice_public_identity,
 			alice_private_identity,
@@ -177,7 +175,7 @@ int main() {
 		//send and receive some more messages
 		//first one
 		Buffer bob_send_message2{"How are you Alice?"};
-		TRY_WITH_RESULT(bob_send_packet2_result, bob_send_conversation.send(bob_send_message2, std::nullopt));
+		TRY_WITH_RESULT(bob_send_packet2_result, bob_send_conversation.conversation.send(bob_send_message2, std::nullopt));
 		auto& bob_send_packet2{bob_send_packet2_result.value()};
 
 		printf("Sent message: %.*s\n", static_cast<int>(bob_send_message2.size()), reinterpret_cast<const char*>(bob_send_message2.data()));
@@ -209,7 +207,7 @@ int main() {
 		alice_response_packet.printHex(std::cout) << std::endl;
 
 		//Bob receives the response
-		TRY_WITH_RESULT(bob_received_response_result, bob_send_conversation.receive(alice_response_packet));
+		TRY_WITH_RESULT(bob_received_response_result, bob_send_conversation.conversation.receive(alice_response_packet));
 		const auto& bob_received_response{bob_received_response_result.value()};
 
 		// check message numbers

@@ -36,6 +36,8 @@ namespace Molch {
 		Buffer message;
 	};
 
+	struct SendConversation;
+
 	class Conversation {
 		friend class ConversationStore;
 	private:
@@ -55,9 +57,11 @@ namespace Molch {
 		Key<CONVERSATION_ID_SIZE,KeyType::Key> id_storage; //unique id of a conversation, generated randomly
 		Ratchet ratchet;
 
-		Conversation() = default;
 
 	public:
+		/* Only for internal use */
+		Conversation() = default;
+
 		/*
 		 * Create a new conversation without sending or receiving anything.
 		 */
@@ -69,12 +73,8 @@ namespace Molch {
 			const PublicKey& our_public_ephemeral,
 			const PublicKey& their_public_ephemeral);
 
-		/*
-		 * Start a new conversation where we are the sender.
-		 */
-		Conversation(
+		static result<SendConversation> createSendConversation(
 				const span<const std::byte> message, //message we want to send to the receiver
-				Buffer& packet, //output, free after use!
 				const PublicKey& sender_public_identity, //who is sending this message?
 				const PrivateKey& sender_private_identity,
 				const PublicKey& receiver_public_identity,
@@ -131,6 +131,12 @@ namespace Molch {
 
 		std::ostream& print(std::ostream& stream) const;
 	};
+
+	struct SendConversation {
+		Buffer packet;
+		Conversation conversation;
+	};
+
 }
 #endif
 
