@@ -139,30 +139,22 @@ namespace Molch {
 		return send_conversation;
 	}
 
-	/*
-	 * Start a new conversation where we are the receiver.
-	 *
-	 * Don't forget to destroy the return status with return_status_destroy_errors()
-	 * if an error has occurred.
-	 */
-	Conversation::Conversation(
-			const span<const std::byte> packet, //received packet
-			Buffer& message, //output
+	result<ReceiveConversation> Conversation::createReceiveConversation(
+			const span<const std::byte> packet,
 			const PublicKey& receiver_public_identity,
 			const PrivateKey& receiver_private_identity,
-			PrekeyStore& receiver_prekeys) { //prekeys of the receiver
-		Expects(!receiver_public_identity.empty
+			PrekeyStore& receiver_prekeys) {
+		FulfillOrFail(!receiver_public_identity.empty
 				&& !receiver_private_identity.empty);
 
 		//get the senders keys and our public prekey from the packet
-		TRY_WITH_RESULT(unverified_metadata_result, packet_get_metadata_without_verification(packet));
-		const auto& unverified_metadata{unverified_metadata_result.value()};
+		OUTCOME_TRY(unverified_metadata, packet_get_metadata_without_verification(packet));
 
 		if (unverified_metadata.packet_type != molch_message_type::PREKEY_MESSAGE) {
-			throw Exception{status_type::INVALID_VALUE, "Packet is not a prekey message."};
+			return Error(status_type::INVALID_VALUE, "Packet is not a prekey message.");
 		}
 		if (not unverified_metadata.prekey_metadata.has_value()) {
-			throw Exception(status_type::INVALID_VALUE, "Prekey Metadata is missing.");
+			return Error(status_type::INVALID_VALUE, "Prekey Metadata is missing.");
 		}
 		const auto& unverified_prekey_metadata{unverified_metadata.prekey_metadata.value()};
 
@@ -170,7 +162,8 @@ namespace Molch {
 		PrivateKey receiver_private_prekey;
 		receiver_prekeys.getPrekey(unverified_prekey_metadata.prekey, receiver_private_prekey);
 
-		this->create(
+		ReceiveConversation receive_conversation;
+		receive_conversation.conversation.create(
 				receiver_private_identity,
 				receiver_public_identity,
 				unverified_prekey_metadata.identity,
@@ -178,9 +171,10 @@ namespace Molch {
 				unverified_prekey_metadata.prekey,
 				unverified_prekey_metadata.ephemeral);
 
-		TRY_WITH_RESULT(received_message_result, this->receive(packet));
-		auto& received_message{received_message_result.value()};
-		message = std::move(received_message.message);
+		OUTCOME_TRY(received_message, receive_conversation.conversation.receive(packet));
+		receive_conversation.message = std::move(received_message.message);
+
+		return receive_conversation;
 	}
 
 	result<Buffer> Conversation::send(const span<const std::byte> message, const std::optional<PrekeyMetadata>& prekey_metadata) {

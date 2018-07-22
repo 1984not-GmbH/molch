@@ -75,15 +75,14 @@ int main() {
 		alice_send_conversation.packet.printHex(std::cout) << std::endl;
 
 		//let bob receive the packet
-		Buffer received_message;
-		Molch::Conversation bob_receive_conversation{
+		TRY_WITH_RESULT(bob_receive_conversation_result, Molch::Conversation::createReceiveConversation(
 			alice_send_conversation.packet,
-			received_message,
 			bob_public_identity,
 			bob_private_identity,
-			bob_prekeys};
+			bob_prekeys));
+		auto& bob_receive_conversation{bob_receive_conversation_result.value()};
 
-		if (send_message != received_message) {
+		if (send_message != bob_receive_conversation.message) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Message was decrypted incorrectly."};
 		}
 		printf("Decrypted message matches with the original message.\n");
@@ -99,7 +98,7 @@ int main() {
 		alice_send_packet2.printHex(std::cout) << std::endl;
 
 		//bob receives the message
-		TRY_WITH_RESULT(bob_received2_result, bob_receive_conversation.receive(alice_send_packet2));
+		TRY_WITH_RESULT(bob_received2_result, bob_receive_conversation.conversation.receive(alice_send_packet2));
 		const auto& bob_received2{bob_received2_result.value()};
 
 		// check the message numbers
@@ -115,7 +114,7 @@ int main() {
 
 		//Bob responds to alice
 		Buffer bob_response_message{"I'm fine, thanks. How are you?"};
-		TRY_WITH_RESULT(bob_response_packet_result, bob_receive_conversation.send(bob_response_message, std::nullopt));
+		TRY_WITH_RESULT(bob_response_packet_result, bob_receive_conversation.conversation.send(bob_response_message, std::nullopt));
 		auto& bob_response_packet{bob_response_packet_result.value()};
 
 		printf("Sent message: %.*s\n", static_cast<int>(bob_response_message.size()), reinterpret_cast<const char*>(bob_response_message.data()));
@@ -159,15 +158,14 @@ int main() {
 		bob_send_conversation.packet.printHex(std::cout) << std::endl;
 
 		//let alice receive the packet
-		received_message.clear();
-		Molch::Conversation alice_receive_conversation{
+		TRY_WITH_RESULT(alice_receive_conversation_result, Molch::Conversation::createReceiveConversation(
 			bob_send_conversation.packet,
-			received_message,
 			alice_public_identity,
 			alice_private_identity,
-			alice_prekeys};
+			alice_prekeys));
+		auto& alice_receive_conversation{alice_receive_conversation_result.value()};
 
-		if (send_message != received_message) {
+		if (send_message != alice_receive_conversation.message) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Message incorrectly decrypted."};
 		}
 		printf("Decrypted message matched with the original message.\n");
@@ -183,7 +181,7 @@ int main() {
 		bob_send_packet2.printHex(std::cout) << std::endl;
 
 		//alice receives the message
-		TRY_WITH_RESULT(alice_received2_result, alice_receive_conversation.receive(bob_send_packet2));
+		TRY_WITH_RESULT(alice_received2_result, alice_receive_conversation.conversation.receive(bob_send_packet2));
 		const auto& alice_received2{alice_received2_result.value()};
 
 		// check message numbers
@@ -199,7 +197,7 @@ int main() {
 
 		//Alice responds to Bob
 		Buffer alice_response_message{"I'm fine, thanks. How are you?"};
-		TRY_WITH_RESULT(alice_response_packet_result, alice_receive_conversation.send(alice_response_message, std::nullopt));
+		TRY_WITH_RESULT(alice_response_packet_result, alice_receive_conversation.conversation.send(alice_response_message, std::nullopt));
 		auto& alice_response_packet{alice_response_packet_result.value()};
 
 		printf("Sent message: %.*s\n", static_cast<int>(alice_response_message.size()), reinterpret_cast<const char*>(alice_response_message.data()));

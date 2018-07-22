@@ -573,26 +573,25 @@ cleanup:
 			MasterKeys::Unlocker unlocker{user->masterKeys()};
 
 			//create the conversation
-			Buffer message_buffer;
-			Molch::Conversation conversation{
+			TRY_WITH_RESULT(receive_conversation_result, Molch::Conversation::createReceiveConversation(
 				{uchar_to_byte(packet), packet_length},
-				message_buffer,
 				user->masterKeys().getIdentityKey(),
 				user->masterKeys().getPrivateIdentityKey(),
-				user->prekeys()};
+				user->prekeys()));
+			auto& receive_conversation{receive_conversation_result.value()};
 
 			//copy the conversation id
-			TRY_VOID(copyFromTo(conversation.id(), {uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
+			TRY_VOID(copyFromTo(receive_conversation.conversation.id(), {uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
 
 			//create the prekey list
 			auto prekey_list_buffer{create_prekey_list(receiver_public_master_key_key)};
 
 			//add the conversation to the conversation store
-			user->conversations().add(std::move(conversation));
+			user->conversations().add(std::move(receive_conversation.conversation));
 
 			//copy the message
-			MallocBuffer malloced_message{message_buffer.size(), 0};
-			TRY_VOID(malloced_message.cloneFrom(message_buffer));
+			MallocBuffer malloced_message{receive_conversation.message.size(), 0};
+			TRY_VOID(malloced_message.cloneFrom(receive_conversation.message));
 
 			if (backup != nullptr) {
 				*backup = nullptr;

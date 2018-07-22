@@ -37,6 +37,7 @@ namespace Molch {
 	};
 
 	struct SendConversation;
+	struct ReceiveConversation;
 
 	class Conversation {
 		friend class ConversationStore;
@@ -86,12 +87,11 @@ namespace Molch {
 		 * Don't forget to destroy the return status with return_status_destroy_errors()
 		 * if an error has occurred.
 		 */
-		Conversation(
-				const span<const std::byte> packet, //received packet
-				Buffer& message, //output
+		static result<ReceiveConversation> createReceiveConversation(
+				const span<const std::byte> packet,
 				const PublicKey& receiver_public_identity,
 				const PrivateKey& receiver_private_identity,
-				PrekeyStore& receiver_prekeys); //prekeys of the receiver
+				PrekeyStore& receiver_prekeys);
 
 		/*! Import a conversatoin from a Protobuf-C struct
 		 * \param conversation_protobuf The protobuf-c struct to import from.
@@ -137,6 +137,10 @@ namespace Molch {
 		Conversation conversation;
 	};
 
+	struct ReceiveConversation {
+		Buffer message;
+		Conversation conversation;
+	};
 }
 #endif
 
