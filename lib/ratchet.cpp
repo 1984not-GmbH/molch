@@ -364,7 +364,7 @@ namespace Molch {
 	 * Call this function after trying to decrypt a message and pass it if
 	 * the decryption was successful or if it wasn't.
 	 */
-	void Ratchet::setLastMessageAuthenticity(bool valid) {
+	void Ratchet::setLastMessageAuthenticity(bool valid) noexcept {
 		//prepare for being able to receive new messages
 		this->received_valid = true;
 
