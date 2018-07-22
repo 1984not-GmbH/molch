@@ -133,11 +133,13 @@ namespace Molch {
 				sender_public_ephemeral,
 				receiver_public_prekey);
 
-		packet = this->send(
-				message,
-				&sender_public_identity,
-				&sender_public_ephemeral,
-				&receiver_public_prekey);
+		auto prekey_metadata{std::make_optional<PrekeyMetadata>()};
+		auto& prekey_metadata_content{prekey_metadata.value()};
+		prekey_metadata_content.identity = sender_public_identity;
+		prekey_metadata_content.ephemeral = sender_public_ephemeral;
+		prekey_metadata_content.prekey = receiver_public_prekey;
+		TRY_WITH_RESULT(packet_result, this->send(message, prekey_metadata));
+		packet = std::move(packet_result.value());
 	}
 
 	/*
@@ -188,44 +190,25 @@ namespace Molch {
 				previous_receive_message_number);
 	}
 
-	/*
-	 * Send a message using an existing conversation.
-	 *
-	 * Don't forget to destroy the return status with return_status_destroy_errors()
-	 * if an error has occurred.
-	 */
-	Buffer Conversation::send(
-			const span<const std::byte> message,
-			const PublicKey * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
-			const PublicKey * const public_ephemeral_key, //can be nullptr, if not nullptr, this will be a prekey message
-			const PublicKey * const public_prekey) { //can be nullptr, if not nullptr, this will be a prekey message
-		Expects((((public_identity_key != nullptr) && (public_prekey != nullptr))
-					|| ((public_prekey == nullptr) && (public_identity_key == nullptr)))
-				&& ((public_identity_key == nullptr) || !public_identity_key->empty)
-				&& ((public_prekey == nullptr) || !public_prekey->empty));
+	result<Buffer> Conversation::send(const span<const std::byte> message, const std::optional<PrekeyMetadata>& prekey_metadata) {
+		FulfillOrFail((not prekey_metadata.has_value())
+			or ((not prekey_metadata.value().identity.empty)
+				 and (not prekey_metadata.value().ephemeral.empty)
+				 and (not prekey_metadata.value().prekey.empty)));
 
-		TRY_WITH_RESULT(send_data_result, this->ratchet.getSendData());
-		const auto& send_data{send_data_result.value()};
-
-		TRY_WITH_RESULT(header_result, header_construct(
+		OUTCOME_TRY(send_data, this->ratchet.getSendData());
+		OUTCOME_TRY(header, header_construct(
 				send_data.ephemeral,
 				send_data.message_number,
 				send_data.previous_message_number));
-		auto header{header_result.value()};
 
 		auto packet_type{molch_message_type::NORMAL_MESSAGE};
-		auto prekey_metadata{std::make_optional<PrekeyMetadata>()};
 		//check if this is a prekey message
-		if (public_identity_key != nullptr) {
+		if (prekey_metadata.has_value()) {
 			packet_type = molch_message_type::PREKEY_MESSAGE;
-
-			auto& metadata{prekey_metadata.value()};
-			metadata.identity = *public_identity_key;
-			metadata.ephemeral = *public_ephemeral_key;
-			metadata.prekey = *public_prekey;
 		}
 
-		TRY_WITH_RESULT(encrypted_packet_result, packet_encrypt(
+		OUTCOME_TRY(encrypted_packet, packet_encrypt(
 				packet_type,
 				header,
 				send_data.header_key,
@@ -233,7 +216,7 @@ namespace Molch {
 				send_data.message_key,
 				prekey_metadata));
 
-		return encrypted_packet_result.value();
+		return encrypted_packet;
 	}
 
 	/*

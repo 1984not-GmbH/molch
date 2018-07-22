@@ -92,8 +92,8 @@ int main() {
 		//send and receive some more messages
 		//first one
 		Buffer alice_send_message2{"How are you Bob?"};
-		auto alice_send_packet2{alice_send_conversation.send(
-				alice_send_message2, nullptr, nullptr, nullptr)};
+		TRY_WITH_RESULT(alice_send_packet2_result, alice_send_conversation.send(alice_send_message2, std::nullopt));
+		auto& alice_send_packet2{alice_send_packet2_result.value()};
 
 		printf("Sent message: %.*s\n", static_cast<int>(alice_send_message2.size()), reinterpret_cast<const char*>(alice_send_message2.data()));
 		printf("Packet:\n");
@@ -120,11 +120,8 @@ int main() {
 
 		//Bob responds to alice
 		Buffer bob_response_message{"I'm fine, thanks. How are you?"};
-		auto bob_response_packet{bob_receive_conversation.send(
-				bob_response_message,
-				nullptr,
-				nullptr,
-				nullptr)};
+		TRY_WITH_RESULT(bob_response_packet_result, bob_receive_conversation.send(bob_response_message, std::nullopt));
+		auto& bob_response_packet{bob_response_packet_result.value()};
 
 		printf("Sent message: %.*s\n", static_cast<int>(bob_response_message.size()), reinterpret_cast<const char*>(bob_response_message.data()));
 		printf("Packet:\n");
@@ -188,11 +185,8 @@ int main() {
 		//send and receive some more messages
 		//first one
 		Buffer bob_send_message2{"How are you Alice?"};
-		auto bob_send_packet2{bob_send_conversation.send(
-				bob_send_message2,
-				nullptr,
-				nullptr,
-				nullptr)};
+		TRY_WITH_RESULT(bob_send_packet2_result, bob_send_conversation.send(bob_send_message2, std::nullopt));
+		auto& bob_send_packet2{bob_send_packet2_result.value()};
 
 		printf("Sent message: %.*s\n", static_cast<int>(bob_send_message2.size()), reinterpret_cast<const char*>(bob_send_message2.data()));
 		printf("Packet:\n");
@@ -217,11 +211,8 @@ int main() {
 
 		//Alice responds to Bob
 		Buffer alice_response_message{"I'm fine, thanks. How are you?"};
-		auto alice_response_packet{alice_receive_conversation.send(
-				alice_response_message,
-				nullptr,
-				nullptr,
-				nullptr)};
+		TRY_WITH_RESULT(alice_response_packet_result, alice_receive_conversation.send(alice_response_message, std::nullopt));
+		auto& alice_response_packet{alice_response_packet_result.value()};
 
 		printf("Sent message: %.*s\n", static_cast<int>(alice_response_message.size()), reinterpret_cast<const char*>(alice_response_message.data()));
 		printf("Packet:\n");

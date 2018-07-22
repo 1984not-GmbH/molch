@@ -26,6 +26,7 @@
 
 #include "constants.h"
 #include "ratchet.hpp"
+#include "packet.hpp"
 #include "prekey-store.hpp"
 
 namespace Molch {
@@ -103,13 +104,11 @@ namespace Molch {
 		/*
 		 * Send a message using an existing conversation.
 		 *
+		 * \param message The message to send.
+		 * \param prekey_metadata Prekey metadata in case of prekey messages
 		 * \return A packet containing the encrypted messge.
 		 */
-		Buffer send(
-				const span<const std::byte> message,
-				const PublicKey * const public_identity_key, //can be nullptr, if not nullptr, this will be a prekey message
-				const PublicKey * const public_ephemeral_key, //cann be nullptr, if not nullptr, this will be a prekey message
-				const PublicKey * const public_prekey); //can be nullptr, if not nullptr, this will be a prekey message
+		result<Buffer> send(const span<const std::byte> message, const std::optional<PrekeyMetadata>& prekey_metadata);
 
 		/*
 		 * Receive and decrypt a message using an existing conversation.

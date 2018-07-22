@@ -659,11 +659,8 @@ cleanup:
 				throw Exception{status_type::NOT_FOUND, "Failed to find a conversation for the given ID."};
 			}
 
-			auto packet_buffer{conversation->send(
-					{uchar_to_byte(message), message_length},
-					nullptr,
-					nullptr,
-					nullptr)};
+			TRY_WITH_RESULT(packet_buffer_result, conversation->send({uchar_to_byte(message), message_length}, std::nullopt));
+			auto& packet_buffer{packet_buffer_result.value()};
 
 			//copy the packet content
 			MallocBuffer malloced_packet{packet_buffer.size(), 0};
