@@ -49,6 +49,7 @@ namespace Molch {
 			const PublicKey& our_public_ephemeral,
 			const PublicKey& their_public_ephemeral);
 
+		result<ReceivedMessage> internal_receive(const span<const std::byte> packet);
 		result<ReceivedMessage> trySkippedHeaderAndMessageKeys(const span<const std::byte> packet);
 
 		Key<CONVERSATION_ID_SIZE,KeyType::Key> id_storage; //unique id of a conversation, generated randomly
@@ -117,10 +118,7 @@ namespace Molch {
 		 *
 		 * \return The message that has been decrypted.
 		 */
-		Buffer receive(
-			const span<const std::byte> packet, //received packet
-			uint32_t& receive_message_number,
-			uint32_t& previous_receive_message_number);
+		result<ReceivedMessage> receive(const span<const std::byte> packet);
 
 		/*! Export a conversation to a Protobuf-C struct.
 		 * \return exported_conversation The exported conversation protobuf-c struct.

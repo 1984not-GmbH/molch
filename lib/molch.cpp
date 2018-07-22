@@ -732,14 +732,14 @@ cleanup:
 				throw Exception{status_type::NOT_FOUND, "Failed to find conversation with the given ID."};
 			}
 
-			auto message_buffer{conversation->receive(
-					{uchar_to_byte(packet), packet_length},
-					*receive_message_number,
-					*previous_receive_message_number)};
+			TRY_WITH_RESULT(received_message_result, conversation->receive({uchar_to_byte(packet), packet_length}));
+			auto& received_message{received_message_result.value()};
+			*receive_message_number = received_message.message_number;
+			*previous_receive_message_number = received_message.previous_message_number;
 
 			//copy the message
-			MallocBuffer malloced_message{message_buffer.size(), 0};
-			TRY_VOID(malloced_message.cloneFrom(message_buffer));
+			MallocBuffer malloced_message{received_message.message.size(), 0};
+			TRY_VOID(malloced_message.cloneFrom(received_message.message));
 
 			if (conversation_backup != nullptr) {
 				*conversation_backup = nullptr;

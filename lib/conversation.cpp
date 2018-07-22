@@ -157,9 +157,6 @@ namespace Molch {
 		Expects(!receiver_public_identity.empty
 				&& !receiver_private_identity.empty);
 
-		uint32_t receive_message_number{0};
-		uint32_t previous_receive_message_number{0};
-
 		//get the senders keys and our public prekey from the packet
 		TRY_WITH_RESULT(unverified_metadata_result, packet_get_metadata_without_verification(packet));
 		const auto& unverified_metadata{unverified_metadata_result.value()};
@@ -184,10 +181,9 @@ namespace Molch {
 				unverified_prekey_metadata.prekey,
 				unverified_prekey_metadata.ephemeral);
 
-		message = this->receive(
-				packet,
-				receive_message_number,
-				previous_receive_message_number);
+		TRY_WITH_RESULT(received_message_result, this->receive(packet));
+		auto& received_message{received_message_result.value()};
+		message = std::move(received_message.message);
 	}
 
 	result<Buffer> Conversation::send(const span<const std::byte> message, const std::optional<PrekeyMetadata>& prekey_metadata) {
@@ -244,71 +240,62 @@ namespace Molch {
 		return Error(status_type::DECRYPT_ERROR, "No keys found for the packet.");
 	}
 
-	/*
-	 * Receive and decrypt a message using an existing conversation.
-	 *
-	 * Don't forget to destroy the return status with return_status_destroy_errors()
-	 * if an error has occurred.
-	 */
-	Buffer Conversation::receive(
-			const span<const std::byte> packet, //received packet
-			uint32_t& receive_message_number,
-			uint32_t& previous_receive_message_number) {
-		try {
-			const auto received_message_result = trySkippedHeaderAndMessageKeys(packet);
-			if (received_message_result.has_value()) {
-				const auto& received_message{received_message_result.value()};
-				receive_message_number = received_message.message_number;
-				previous_receive_message_number = received_message.previous_message_number;
+	result<ReceivedMessage> Conversation::internal_receive(const span<const std::byte> packet) {
+		printf("STARTING internal_receive\n");
+		const auto received_message_result = trySkippedHeaderAndMessageKeys(packet);
+		if (received_message_result.has_value()) {
+			return received_message_result.value();
+		}
 
-				return received_message.message;
-			}
+		const auto receive_header_keys{this->ratchet.getReceiveHeaderKeys()};
 
-			Buffer message;
-			const auto receive_header_keys{this->ratchet.getReceiveHeaderKeys()};
-
-			//try to decrypt the packet header with the current receive header key
-			Buffer header;
-			auto header_result = packet_decrypt_header(packet, receive_header_keys.current);
+		//try to decrypt the packet header with the current receive header key
+		Buffer header;
+		auto header_result = packet_decrypt_header(packet, receive_header_keys.current);
+		if (header_result.has_value()) {
+			header = std::move(header_result.value());
+			OUTCOME_TRY(this->ratchet.setHeaderDecryptability(Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE));
+		} else {
+			auto header_result = packet_decrypt_header(packet, receive_header_keys.next);
 			if (header_result.has_value()) {
 				header = std::move(header_result.value());
-				TRY_VOID(this->ratchet.setHeaderDecryptability(Ratchet::HeaderDecryptability::CURRENT_DECRYPTABLE));
+				OUTCOME_TRY(this->ratchet.setHeaderDecryptability(Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE));
 			} else {
-				auto header_result = packet_decrypt_header(packet, receive_header_keys.next);
-				if (header_result.has_value()) {
-					header = std::move(header_result.value());
-					TRY_VOID(this->ratchet.setHeaderDecryptability(Ratchet::HeaderDecryptability::NEXT_DECRYPTABLE));
-				} else {
-					TRY_VOID(this->ratchet.setHeaderDecryptability(Ratchet::HeaderDecryptability::UNDECRYPTABLE));
-					throw Exception{status_type::DECRYPT_ERROR, "Failed to decrypt the message."};
-				}
+				OUTCOME_TRY(this->ratchet.setHeaderDecryptability(Ratchet::HeaderDecryptability::UNDECRYPTABLE));
+				return Error(status_type::DECRYPT_ERROR, "Failed to decrypt the message.");
 			}
-
-			//extract data from the header
-			TRY_WITH_RESULT(extracted_header, header_extract(header));
-
-			//and now decrypt the message with the message key
-			//now we have all the data we need to advance the ratchet
-			//so let's do that
-			TRY_WITH_RESULT(message_key_result, this->ratchet.receive(
-				extracted_header.value().their_public_ephemeral,
-				extracted_header.value().message_number,
-				extracted_header.value().previous_message_number));
-			const auto& message_key{message_key_result.value()};
-
-			TRY_WITH_RESULT(message_result, packet_decrypt_message(packet, message_key))
-			message = std::move(message_result.value());
-
-			this->ratchet.setLastMessageAuthenticity(true);
-
-			receive_message_number = extracted_header.value().message_number;
-			previous_receive_message_number = extracted_header.value().previous_message_number;
-
-			return message;
-		} catch (const std::exception&) {
-			this->ratchet.setLastMessageAuthenticity(false);
-			throw;
 		}
+
+		//extract data from the header
+		OUTCOME_TRY(extracted_header, header_extract(header));
+
+		//and now decrypt the message with the message key
+		//now we have all the data we need to advance the ratchet
+		//so let's do that
+		OUTCOME_TRY(message_key, this->ratchet.receive(
+			extracted_header.their_public_ephemeral,
+			extracted_header.message_number,
+			extracted_header.previous_message_number));
+
+		OUTCOME_TRY(message, packet_decrypt_message(packet, message_key));
+
+		this->ratchet.setLastMessageAuthenticity(true);
+
+		ReceivedMessage received_message;
+		received_message.message = std::move(message);
+		received_message.message_number = extracted_header.message_number;
+		received_message.previous_message_number = extracted_header.previous_message_number;
+
+		return received_message;
+	}
+
+	result<ReceivedMessage> Conversation::receive(const span<const std::byte> packet) {
+		auto received_message_result = internal_receive(packet);
+		if (not received_message_result.has_value()) {
+			this->ratchet.setLastMessageAuthenticity(false);
+		}
+
+		return received_message_result;
 	}
 
 	ProtobufCConversation* Conversation::exportProtobuf(Arena& arena) const {

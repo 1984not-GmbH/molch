@@ -100,20 +100,16 @@ int main() {
 		alice_send_packet2.printHex(std::cout) << std::endl;
 
 		//bob receives the message
-		uint32_t bob_receive_message_number{UINT32_MAX};
-		uint32_t bob_previous_receive_message_number{UINT32_MAX};
-		auto bob_receive_message2{bob_receive_conversation.receive(
-				alice_send_packet2,
-				bob_receive_message_number,
-				bob_previous_receive_message_number)};
+		TRY_WITH_RESULT(bob_received2_result, bob_receive_conversation.receive(alice_send_packet2));
+		const auto& bob_received2{bob_received2_result.value()};
 
 		// check the message numbers
-		if ((bob_receive_message_number != 1) || (bob_previous_receive_message_number != 0)) {
+		if ((bob_received2.message_number != 1) || (bob_received2.previous_message_number != 0)) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Incorrect receive message number for Bob."};
 		}
 
 		//now check if the received message was correctly decrypted
-		if (bob_receive_message2 != alice_send_message2) {
+		if (bob_received2.message != alice_send_message2) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Received message doesn't match."};
 		}
 		printf("Alice' second message has been sent correctly!\n");
@@ -128,20 +124,16 @@ int main() {
 		bob_response_packet.printHex(std::cout) << std::endl;
 
 		//Alice receives the response
-		uint32_t alice_receive_message_number{UINT32_MAX};
-		uint32_t alice_previous_receive_message_number{UINT32_MAX};
-		auto alice_received_response{alice_send_conversation.receive(
-				bob_response_packet,
-				alice_receive_message_number,
-				alice_previous_receive_message_number)};
+		TRY_WITH_RESULT(alice_received_result, alice_send_conversation.receive(bob_response_packet));
+		const auto& alice_received{alice_received_result.value()};
 
 		// check the message numbers
-		if ((alice_receive_message_number != 0) || (alice_previous_receive_message_number != 0)) {
+		if ((alice_received.message_number != 0) || (alice_received.previous_message_number != 0)) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Incorrect receive message number for Alice."};
 		}
 
 		//compare sent and received messages
-		if (bob_response_message != alice_received_response) {
+		if (bob_response_message != alice_received.message) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Received response doesn't match."};
 		}
 		printf("Successfully received Bob's response!\n");
@@ -193,18 +185,16 @@ int main() {
 		bob_send_packet2.printHex(std::cout) << std::endl;
 
 		//alice receives the message
-		auto alice_receive_message2{alice_receive_conversation.receive(
-				bob_send_packet2,
-				alice_receive_message_number,
-				alice_previous_receive_message_number)};
+		TRY_WITH_RESULT(alice_received2_result, alice_receive_conversation.receive(bob_send_packet2));
+		const auto& alice_received2{alice_received2_result.value()};
 
 		// check message numbers
-		if ((alice_receive_message_number != 1) || (alice_previous_receive_message_number != 0)) {
+		if ((alice_received2.message_number != 1) || (alice_received2.previous_message_number != 0)) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Incorrect receive message numbers for Alice."};
 		}
 
 		//now check if the received message was correctly decrypted
-		if (alice_receive_message2 != bob_send_message2) {
+		if (alice_received2.message != bob_send_message2) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Received message doesn't match."};
 		}
 		printf("Bobs second message has been sent correctly!.\n");
@@ -219,18 +209,16 @@ int main() {
 		alice_response_packet.printHex(std::cout) << std::endl;
 
 		//Bob receives the response
-		auto bob_received_response{bob_send_conversation.receive(
-				alice_response_packet,
-				bob_receive_message_number,
-				bob_previous_receive_message_number)};
+		TRY_WITH_RESULT(bob_received_response_result, bob_send_conversation.receive(alice_response_packet));
+		const auto& bob_received_response{bob_received_response_result.value()};
 
 		// check message numbers
-		if ((bob_receive_message_number != 0) || (bob_previous_receive_message_number != 0)) {
+		if ((bob_received_response.message_number != 0) || (bob_received_response.previous_message_number != 0)) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Incorrect receive message numbers for Alice."};
 		}
 
 		//compare sent and received messages
-		if (alice_response_message != bob_received_response) {
+		if (alice_response_message != bob_received_response.message) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Received response doesn't match."};
 		}
 		printf("Successfully received Alice' response!\n");
