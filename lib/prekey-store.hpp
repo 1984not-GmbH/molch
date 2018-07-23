@@ -69,8 +69,7 @@ namespace Molch {
 		const PublicKey& publicKey() const noexcept;
 		const PrivateKey& privateKey() const noexcept;
 
-
-		ProtobufCPrekey* exportProtobuf(Arena& arena) const;
+		result<ProtobufCPrekey*> exportProtobuf(Arena& arena) const;
 
 		std::ostream& print(std::ostream& stream) const;
 	};

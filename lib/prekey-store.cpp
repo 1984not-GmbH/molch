@@ -95,15 +95,15 @@ namespace Molch {
 		this->expiration_date = seconds{keypair.expiration_time};
 	}
 
-	ProtobufCPrekey* Prekey::exportProtobuf(Arena& arena) const {
+	result<ProtobufCPrekey*> Prekey::exportProtobuf(Arena& arena) const {
 		protobuf_arena_create(arena, ProtobufCPrekey, prekey);
 
-		TRY_WITH_RESULT(private_key_result, this->private_key.exportProtobuf(arena));
-		prekey->private_key = private_key_result.value();
+		OUTCOME_TRY(private_key, this->private_key.exportProtobuf(arena));
+		prekey->private_key = private_key;
 
 		//export the public key
-		TRY_WITH_RESULT(public_key_result, this->public_key.exportProtobuf(arena));
-		prekey->public_key = public_key_result.value();
+		OUTCOME_TRY(public_key, this->public_key.exportProtobuf(arena));
+		prekey->public_key = public_key;
 		//export the expiration date
 		protobuf_optional_export(prekey, expiration_time, gsl::narrow<uint64_t>(this->expiration_date.count()));
 
@@ -313,7 +313,8 @@ namespace Molch {
 		auto keypairs_array{arena.allocate<ProtobufCPrekey*>(container.size())};
 		size_t index{0};
 		for (const auto& key : container) {
-			keypairs_array[index] = key.exportProtobuf(arena);
+			TRY_WITH_RESULT(exported_prekey, key.exportProtobuf(arena));
+			keypairs_array[index] = exported_prekey.value();
 			index++;
 		}
 		keypairs = {keypairs_array, container.size()};
