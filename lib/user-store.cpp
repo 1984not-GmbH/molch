@@ -245,16 +245,12 @@ namespace Molch {
 		protobuf_array_arena_export(arena, user, conversations, this->conversation_store);
 
 		//export the prekeys
-		span<ProtobufCPrekey*> exported_prekeys;
-		span<ProtobufCPrekey*> exported_deprecated_prekeys;
-		this->prekey_store.exportProtobuf(
-			arena,
-			exported_prekeys,
-			exported_deprecated_prekeys);
-		user->prekeys = exported_prekeys.data();
-		user->n_prekeys = exported_prekeys.size();
-		user->deprecated_prekeys = exported_deprecated_prekeys.data();
-		user->n_deprecated_prekeys = exported_deprecated_prekeys.size();
+		TRY_WITH_RESULT(exported_prekeys_result, this->prekey_store.exportProtobuf(arena));
+		const auto& exported_prekeys{exported_prekeys_result.value()};
+		user->prekeys = exported_prekeys.keypairs.data();
+		user->n_prekeys = exported_prekeys.keypairs.size();
+		user->deprecated_prekeys = exported_prekeys.deprecated_keypairs.data();
+		user->n_deprecated_prekeys = exported_prekeys.deprecated_keypairs.size();
 
 		return user;
 	}

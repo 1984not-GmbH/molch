@@ -37,18 +37,14 @@ static void protobuf_export(
 		PrekeyStore& store,
 		std::vector<Buffer>& key_buffers,
 		std::vector<Buffer>& deprecated_key_buffers) {
-	Arena pool;
-	span<ProtobufCPrekey*> exported_keypairs;
-	span<ProtobufCPrekey*> exported_deprecated_keypairs;
-	store.exportProtobuf(
-		pool,
-		exported_keypairs,
-		exported_deprecated_keypairs);
+	Arena arena;
+	TRY_WITH_RESULT(exported_prekeys_result, store.exportProtobuf(arena));
+	const auto& exported_prekeys{exported_prekeys_result.value()};
 
 	//export all the keypairs
 	key_buffers = std::vector<Buffer>();
-	key_buffers.reserve(exported_keypairs.size());
-	for (const auto& keypair : exported_keypairs) {
+	key_buffers.reserve(exported_prekeys.keypairs.size());
+	for (const auto& keypair : exported_prekeys.keypairs) {
 		auto export_size{molch__protobuf__prekey__get_packed_size(keypair)};
 		key_buffers.emplace_back(export_size, 0);
 
@@ -57,8 +53,8 @@ static void protobuf_export(
 
 	//export all the deprecated keypairs
 	deprecated_key_buffers = std::vector<Buffer>();
-	deprecated_key_buffers.reserve(exported_deprecated_keypairs.size());
-	for (const auto& keypair : exported_deprecated_keypairs) {
+	deprecated_key_buffers.reserve(exported_prekeys.deprecated_keypairs.size());
+	for (const auto& keypair : exported_prekeys.deprecated_keypairs) {
 		auto export_size{molch__protobuf__prekey__get_packed_size(keypair)};
 		deprecated_key_buffers.emplace_back(export_size, 0);
 
@@ -113,17 +109,16 @@ static void protobuf_no_deprecated_keys() {
 	PrekeyStore store;
 
 	//export it
-	Arena pool;
-	span<ProtobufCPrekey*> exported;
-	span<ProtobufCPrekey*> deprecated;
-	store.exportProtobuf(pool, exported, deprecated);
+	Arena arena;
+	TRY_WITH_RESULT(exported_result, store.exportProtobuf(arena));
+	const auto& exported{exported_result.value()};
 
-	if (!deprecated.empty()) {
+	if (not exported.deprecated_keypairs.empty()) {
 		throw Molch::Exception{status_type::INCORRECT_DATA, "Exported deprecated prekeys are not empty."};
 	}
 
 	//import it
-	store = PrekeyStore(exported, deprecated);
+	store = PrekeyStore(exported.keypairs, exported.deprecated_keypairs);
 
 	printf("Successful.\n");
 }

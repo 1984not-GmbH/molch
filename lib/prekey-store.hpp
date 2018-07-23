@@ -127,15 +127,17 @@ namespace Molch {
 		 */
 		result<void> rotate();
 
+		struct ExportedPrekeyStore {
+			span<ProtobufCPrekey*> keypairs;
+			span<ProtobufCPrekey*> deprecated_keypairs;
+		};
+
 		/*! Serialise a prekey store as protobuf-c struct.
 		 * \param arena A memory arena to allocate from.
-		 * \param keypairs An array of keypairs, allocated by the function.
-		 * \param deprecated_keypairs An array of deprecated keypairs, allocated by the function.
+		 *
+		 * \return Spans pointing inside the arena containing the exported prekey store.
 		 */
-		void exportProtobuf(
-				Arena& arena,
-				span<ProtobufCPrekey*>& keypairs,
-				span<ProtobufCPrekey*>& deprecated_keypairs) const;
+		result<ExportedPrekeyStore> exportProtobuf(Arena& arena) const;
 
 		const std::array<Prekey,PREKEY_AMOUNT>& prekeys() const noexcept;
 		const std::vector<Prekey,SodiumAllocator<Prekey>>& deprecatedPrekeys() const noexcept;
