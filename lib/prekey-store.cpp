@@ -361,16 +361,16 @@ namespace Molch {
 		return stream;
 	}
 
-	const std::array<Prekey,PREKEY_AMOUNT>& PrekeyStore::prekeys() const {
+	const std::array<Prekey,PREKEY_AMOUNT>& PrekeyStore::prekeys() const noexcept {
 		return *this->prekeys_storage;
 	}
-	const std::vector<Prekey,SodiumAllocator<Prekey>>& PrekeyStore::deprecatedPrekeys() const {
+	const std::vector<Prekey,SodiumAllocator<Prekey>>& PrekeyStore::deprecatedPrekeys() const noexcept {
 		return this->deprecated_prekeys_storage;
 	}
-	const seconds& PrekeyStore::oldestExpirationDate() const {
+	const seconds& PrekeyStore::oldestExpirationDate() const noexcept {
 		return this->oldest_expiration_date;
 	}
-	const seconds& PrekeyStore::oldestDeprecatedExpirationDate() const {
+	const seconds& PrekeyStore::oldestDeprecatedExpirationDate() const noexcept {
 		return this->oldest_deprecated_expiration_date;
 	}
 

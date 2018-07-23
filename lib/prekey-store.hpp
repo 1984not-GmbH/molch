@@ -137,10 +137,10 @@ namespace Molch {
 				span<ProtobufCPrekey*>& keypairs,
 				span<ProtobufCPrekey*>& deprecated_keypairs) const;
 
-		const std::array<Prekey,PREKEY_AMOUNT>& prekeys() const;
-		const std::vector<Prekey,SodiumAllocator<Prekey>>& deprecatedPrekeys() const;
-		const seconds& oldestExpirationDate() const;
-		const seconds& oldestDeprecatedExpirationDate() const;
+		const std::array<Prekey,PREKEY_AMOUNT>& prekeys() const noexcept;
+		const std::vector<Prekey,SodiumAllocator<Prekey>>& deprecatedPrekeys() const noexcept;
+		const seconds& oldestExpirationDate() const noexcept;
+		const seconds& oldestDeprecatedExpirationDate() const noexcept;
 
 		std::ostream& print(std::ostream& stream) const;
 
