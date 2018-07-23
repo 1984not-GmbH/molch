@@ -374,15 +374,17 @@ namespace Molch {
 		return this->oldest_deprecated_expiration_date;
 	}
 
-	void PrekeyStore::timeshiftForTestingOnly(size_t index, seconds timeshift) {
+	result<void> PrekeyStore::timeshiftForTestingOnly(size_t index, seconds timeshift) {
 		if (!this->prekeys_storage) {
-			throw Exception{status_type::INCORRECT_DATA, "The prekey storage is null."};
+			return Error(status_type::INCORRECT_DATA, "The prekey storage is null.");
 		}
 		(*this->prekeys_storage)[index].expiration_date += timeshift;
 		this->updateExpirationDate();
+
+		return outcome::success();
 	}
 
-	void PrekeyStore::timeshiftDeprecatedForTestingOnly(size_t index, seconds timeshift) {
+	void PrekeyStore::timeshiftDeprecatedForTestingOnly(size_t index, seconds timeshift) noexcept {
 		this->deprecated_prekeys_storage[index].expiration_date += timeshift;
 		this->updateDeprecatedExpirationDate();
 	}

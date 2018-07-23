@@ -145,8 +145,8 @@ namespace Molch {
 		std::ostream& print(std::ostream& stream) const;
 
 		//DON'T USE, THIS IS ONLY FOR TESTING!
-		void timeshiftForTestingOnly(size_t index, seconds timeshift);
-		void timeshiftDeprecatedForTestingOnly(size_t index, seconds timeshift);
+		result<void> timeshiftForTestingOnly(size_t index, seconds timeshift);
+		void timeshiftDeprecatedForTestingOnly(size_t index, seconds timeshift) noexcept;
 	};
 }
 #endif

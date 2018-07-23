@@ -256,7 +256,7 @@ int main() {
 		//test the automatic deprecation of old keys
 		public_prekey = store->prekeys()[PREKEY_AMOUNT-1].publicKey();
 
-		store->timeshiftForTestingOnly(PREKEY_AMOUNT - 1, -12_months);
+		TRY_VOID(store->timeshiftForTestingOnly(PREKEY_AMOUNT - 1, -12_months));
 
 		TRY_VOID(store->rotate());
 
