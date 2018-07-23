@@ -22,6 +22,7 @@
 #ifndef LIB_ERROR_HPP
 #define LIB_ERROR_HPP
 
+#include <string>
 #include <memory>
 
 #include "return-status.hpp"

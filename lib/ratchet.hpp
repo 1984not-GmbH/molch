@@ -23,6 +23,7 @@
 #define LIB_RATCHET_H
 
 #include <ostream>
+#include <optional>
 
 #include "constants.h"
 #include "header-and-message-keystore.hpp"

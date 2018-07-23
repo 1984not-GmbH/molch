@@ -41,7 +41,7 @@ test_library = library(
 			'common.cpp',
 			'packet-test-lib.cpp'
 		],
-		include_directories: [c_protobufs_include, gsl_include],
+		include_directories: [c_protobufs_include, gsl_include, outcome_include],
 		link_with: molch_internals,
 		dependencies: [
 			libsodium,
@@ -64,7 +64,7 @@ foreach test : unit_tests
 			protobuf_lite,
 			protobuf_c,
 		],
-		include_directories: [c_protobufs_include, gsl_include]
+		include_directories: [c_protobufs_include, gsl_include, outcome_include]
 	)
 	test(test, test_exe, workdir: meson.current_source_dir())
 endforeach
