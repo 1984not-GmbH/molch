@@ -37,7 +37,7 @@ namespace Molch {
 		this->private_key = private_key;
 	}
 
-	Prekey::Prekey(const PublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date) {
+	Prekey::Prekey(const PublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date) noexcept {
 		this->fill(public_key, private_key, expiration_date);
 	}
 
@@ -51,7 +51,7 @@ namespace Molch {
 		return this->copy(node);
 	}
 
-	Prekey::Prekey(const Prekey& node) {
+	Prekey::Prekey(const Prekey& node) noexcept {
 		this->copy(node);
 	}
 
@@ -110,13 +110,13 @@ namespace Molch {
 		return prekey;
 	}
 
-	seconds Prekey::expirationDate() const {
+	seconds Prekey::expirationDate() const noexcept {
 		return this->expiration_date;
 	}
-	const PublicKey& Prekey::publicKey() const {
+	const PublicKey& Prekey::publicKey() const noexcept {
 		return this->public_key;
 	}
-	const PrivateKey& Prekey::privateKey() const {
+	const PrivateKey& Prekey::privateKey() const noexcept {
 		return this->private_key;
 	}
 

@@ -53,9 +53,9 @@ namespace Molch {
 
 	public:
 		Prekey() = default;
-		Prekey(const PublicKey& public_key, const PrivateKey& private_key, seconds expiration_date);
+		Prekey(const PublicKey& public_key, const PrivateKey& private_key, seconds expiration_date) noexcept;
 		/* copy constructor */
-		Prekey(const Prekey& node);
+		Prekey(const Prekey& node) noexcept;
 		/* move constructor */
 		Prekey(Prekey&& node) noexcept;
 		Prekey(const ProtobufCPrekey& keypair);
@@ -65,9 +65,9 @@ namespace Molch {
 		/* move assignment */
 		Prekey& operator=(Prekey&& node) noexcept;
 
-		seconds expirationDate() const;
-		const PublicKey& publicKey() const;
-		const PrivateKey& privateKey() const;
+		seconds expirationDate() const noexcept;
+		const PublicKey& publicKey() const noexcept;
+		const PrivateKey& privateKey() const noexcept;
 
 
 		ProtobufCPrekey* exportProtobuf(Arena& arena) const;
