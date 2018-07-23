@@ -41,8 +41,8 @@ namespace Molch {
 	class Prekey {
 		friend class PrekeyStore;
 	private:
-		void fill(const PublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date);
-		void generate();
+		void fill(const PublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date) noexcept;
+		result<void> generate() noexcept;
 
 		Prekey& copy(const Prekey& node) noexcept;
 		Prekey& move(Prekey&& node) noexcept;

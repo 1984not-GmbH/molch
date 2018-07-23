@@ -31,7 +31,7 @@ namespace Molch {
 	constexpr auto prekey_expiration_time{1_months};
 	constexpr auto deprecated_prekey_expiration_time{1h};
 
-	void Prekey::fill(const PublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date) {
+	void Prekey::fill(const PublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date) noexcept {
 		this->expiration_date = expiration_date;
 		this->public_key = public_key;
 		this->private_key = private_key;
@@ -120,13 +120,15 @@ namespace Molch {
 		return this->private_key;
 	}
 
-	void Prekey::generate() {
-		TRY_VOID(crypto_box_keypair(
+	result<void> Prekey::generate() noexcept {
+		OUTCOME_TRY(crypto_box_keypair(
 				this->public_key,
 				this->private_key));
 		this->public_key.empty = false;
 		this->private_key.empty = false;
 		this->expiration_date = now() + prekey_expiration_time;
+
+		return outcome::success();
 	}
 
 	std::ostream& Prekey::print(std::ostream& stream) const {
@@ -146,7 +148,7 @@ namespace Molch {
 
 	void PrekeyStore::generateKeys() {
 		for (auto& key : *this->prekeys_storage) {
-			key.generate();
+			TRY_VOID(key.generate());
 		}
 		this->updateExpirationDate();
 	}
@@ -211,7 +213,7 @@ namespace Molch {
 		this->updateDeprecatedExpirationDate();
 
 		//generate new prekey
-		at_index.generate();
+		TRY_VOID(at_index.generate());
 	}
 
 	void PrekeyStore::getPrekey(const PublicKey& public_key, PrivateKey& private_key) {
