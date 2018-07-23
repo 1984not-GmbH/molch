@@ -119,7 +119,7 @@ namespace Molch {
 		 * Generate a list containing all public prekeys.
 		 * (this list can then be stored on a public server).
 		 */
-		void list(span<std::byte> list) const; //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
+		result<Buffer> list() const; //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 
 		/*
 		 * Automatically deprecate old keys and generate new ones

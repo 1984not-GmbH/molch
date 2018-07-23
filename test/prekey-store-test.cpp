@@ -133,8 +133,8 @@ int main() {
 		TRY_VOID(Molch::sodium_init());
 
 		auto store{std::make_unique<PrekeyStore>()};
-		Buffer prekey_list{PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE};
-		store->list(prekey_list);
+		TRY_WITH_RESULT(prekey_list_result, store->list());
+		const auto& prekey_list{prekey_list_result.value()};
 		printf("Prekey list:\n");
 		prekey_list.printHex(std::cout) << std::endl;
 

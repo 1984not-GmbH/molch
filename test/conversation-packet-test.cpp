@@ -57,9 +57,9 @@ int main() {
 			"identity");
 
 		//get the prekey list
-		Buffer prekey_list{PREKEY_AMOUNT * PUBLIC_KEY_SIZE, PREKEY_AMOUNT * PUBLIC_KEY_SIZE};
 		PrekeyStore bob_prekeys;
-		bob_prekeys.list(prekey_list);
+		TRY_WITH_RESULT(bob_prekey_list_result, bob_prekeys.list());
+		const auto& bob_prekey_list{bob_prekey_list_result.value()};
 
 		//start a send conversation
 		Buffer send_message{"Hello there!"};
@@ -68,7 +68,7 @@ int main() {
 				alice_public_identity,
 				alice_private_identity,
 				bob_public_identity,
-				prekey_list));
+				bob_prekey_list));
 		auto& alice_send_conversation{alice_send_conversation_result.value()};
 
 		printf("Packet:\n");
@@ -142,7 +142,8 @@ int main() {
 
 		//get alice prekey list
 		PrekeyStore alice_prekeys;
-		alice_prekeys.list(prekey_list);
+		TRY_WITH_RESULT(alice_prekey_list_result, alice_prekeys.list());
+		const auto& alice_prekey_list{alice_prekey_list_result.value()};
 
 		//destroy the old packet
 		TRY_WITH_RESULT(bob_send_conversation_result, Molch::Conversation::createSendConversation(
@@ -150,7 +151,7 @@ int main() {
 			bob_public_identity,
 			bob_private_identity,
 			alice_public_identity,
-			prekey_list));
+			alice_prekey_list));
 		auto& bob_send_conversation{bob_send_conversation_result.value()};
 
 		printf("Sent message: %.*s\n", static_cast<int>(send_message.size()), reinterpret_cast<const char*>(send_message.data()));

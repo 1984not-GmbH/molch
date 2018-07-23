@@ -124,8 +124,9 @@ static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_ke
 	TRY_VOID(unsigned_prekey_list.copyFromRaw(0, user->masterKeys().getIdentityKey().data(), 0, PUBLIC_KEY_SIZE));
 
 	//get the prekeys
-	span<std::byte> prekeys{&unsigned_prekey_list[PUBLIC_KEY_SIZE], PREKEY_AMOUNT * PUBLIC_KEY_SIZE};
-	user->prekeys().list(prekeys);
+	TRY_WITH_RESULT(prekey_list_buffer_result, user->prekeys().list());
+	const auto& prekey_list_buffer{prekey_list_buffer_result.value()};
+	TRY_VOID(copyFromTo(prekey_list_buffer, {&unsigned_prekey_list[PUBLIC_KEY_SIZE], PREKEY_AMOUNT * PUBLIC_KEY_SIZE}));
 
 	//add the expiration date
 	int64_t expiration_date{now().count() + seconds{3_months}.count()};
