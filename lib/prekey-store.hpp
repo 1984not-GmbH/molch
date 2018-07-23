@@ -89,7 +89,7 @@ namespace Molch {
 		/*
 		 * Helper that puts a prekey pair in the deprecated list and generates a new one.
 		 */
-		void deprecate(const size_t index);
+		result<void> deprecate(const size_t index);
 
 		std::unique_ptr<std::array<Prekey,PREKEY_AMOUNT>,SodiumDeleter<std::array<Prekey,PREKEY_AMOUNT>>> prekeys_storage;
 		std::vector<Prekey,SodiumAllocator<Prekey>> deprecated_prekeys_storage;

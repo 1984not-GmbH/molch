@@ -211,7 +211,7 @@ namespace Molch {
 		this->oldest_deprecated_expiration_date = oldest->expiration_date;
 	}
 
-	void PrekeyStore::deprecate(const size_t index) {
+	result<void> PrekeyStore::deprecate(const size_t index) {
 		auto& at_index{(*this->prekeys_storage)[index]};
 		at_index.expiration_date = now() + deprecated_prekey_expiration_time;
 		this->deprecated_prekeys_storage.push_back(at_index);
@@ -220,7 +220,9 @@ namespace Molch {
 		this->updateDeprecatedExpirationDate();
 
 		//generate new prekey
-		TRY_VOID(at_index.generate());
+		OUTCOME_TRY(at_index.generate());
+
+		return outcome::success();
 	}
 
 	void PrekeyStore::getPrekey(const PublicKey& public_key, PrivateKey& private_key) {
@@ -238,7 +240,7 @@ namespace Molch {
 
 			//and deprecate key
 			auto index{gsl::narrow_cast<size_t>(found_prekey - std::begin(*this->prekeys_storage))};
-			this->deprecate(index);
+			TRY_VOID(this->deprecate(index));
 
 			return;
 		}
@@ -290,7 +292,7 @@ namespace Molch {
 			}
 			for (const auto& prekey : *this->prekeys_storage) {
 				if (prekey.expiration_date < current_time) {
-					this->deprecate(index);
+					TRY_VOID(this->deprecate(index));
 				}
 				index++;
 			}
