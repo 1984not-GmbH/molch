@@ -93,7 +93,7 @@ namespace Molch {
 		//create an ephemeral keypair
 		PublicKey sender_public_ephemeral;
 		PrivateKey sender_private_ephemeral;
-		TRY_VOID(crypto_box_keypair(sender_public_ephemeral, sender_private_ephemeral));
+		OUTCOME_TRY(crypto_box_keypair(sender_public_ephemeral, sender_private_ephemeral));
 		sender_public_ephemeral.empty = false;
 		sender_private_ephemeral.empty = false;
 
@@ -297,8 +297,8 @@ namespace Molch {
 				conversation_protobuf.id.len});
 
 		//import the ratchet
-		TRY_WITH_RESULT(ratchet_result, Ratchet::import(conversation_protobuf));
-		conversation.ratchet = std::move(ratchet_result.value());
+		OUTCOME_TRY(ratchet, Ratchet::import(conversation_protobuf));
+		conversation.ratchet = std::move(ratchet);
 
 		return conversation;
 	}
