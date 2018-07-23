@@ -44,14 +44,6 @@ namespace Molch {
 	private:
 		Conversation& move(Conversation&& conversation) noexcept;
 
-		void create(
-			const PrivateKey& our_private_identity,
-			const PublicKey& our_public_identity,
-			const PublicKey& their_public_identity,
-			const PrivateKey& our_private_ephemeral,
-			const PublicKey& our_public_ephemeral,
-			const PublicKey& their_public_ephemeral);
-
 		result<ReceivedMessage> internal_receive(const span<const std::byte> packet);
 		result<ReceivedMessage> trySkippedHeaderAndMessageKeys(const span<const std::byte> packet);
 
@@ -63,10 +55,7 @@ namespace Molch {
 		/* Only for internal use */
 		Conversation() = default;
 
-		/*
-		 * Create a new conversation without sending or receiving anything.
-		 */
-		Conversation(
+		static result<Conversation> create(
 			const PrivateKey& our_private_identity,
 			const PublicKey& our_public_identity,
 			const PublicKey& their_public_identity,

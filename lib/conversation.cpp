@@ -49,47 +49,34 @@ namespace Molch {
 	/*
 	 * Create a new conversation.
 	 */
-	void Conversation::create(
+	result<Conversation> Conversation::create(
 			const PrivateKey& our_private_identity,
 			const PublicKey& our_public_identity,
 			const PublicKey& their_public_identity,
 			const PrivateKey& our_private_ephemeral,
 			const PublicKey& our_public_ephemeral,
 			const PublicKey& their_public_ephemeral) {
-		Expects(!our_private_identity.empty
+		FulfillOrFail(!our_private_identity.empty
 				&& !our_public_identity.empty
 				&& !their_public_identity.empty
 				&& !our_public_ephemeral.empty
 				&& !our_public_ephemeral.empty
 				&& !their_public_ephemeral.empty);
 
+		Conversation conversation;
 		//create random id
-		this->id_storage.fillRandom();
+		conversation.id_storage.fillRandom();
 
-		TRY_WITH_RESULT(ratchet_result, Ratchet::create(
+		OUTCOME_TRY(ratchet, Ratchet::create(
 				our_private_identity,
 				our_public_identity,
 				their_public_identity,
 				our_private_ephemeral,
 				our_public_ephemeral,
 				their_public_ephemeral));
-		this->ratchet = std::move(ratchet_result.value());
-	}
+		conversation.ratchet = std::move(ratchet);
 
-	Conversation::Conversation(
-			const PrivateKey& our_private_identity,
-			const PublicKey& our_public_identity,
-			const PublicKey& their_public_identity,
-			const PrivateKey& our_private_ephemeral,
-			const PublicKey& our_public_ephemeral,
-			const PublicKey& their_public_ephemeral) {
-		this->create(
-			our_private_identity,
-			our_public_identity,
-			their_public_identity,
-			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_ephemeral);
+		return conversation;
 	}
 
 	result<SendConversation> Conversation::createSendConversation(
@@ -119,13 +106,14 @@ namespace Molch {
 
 		//initialize the conversation
 		SendConversation send_conversation;
-		send_conversation.conversation.create(
+		OUTCOME_TRY(conversation, create(
 				sender_private_identity,
 				sender_public_identity,
 				receiver_public_identity,
 				sender_private_ephemeral,
 				sender_public_ephemeral,
-				receiver_public_prekey);
+				receiver_public_prekey));
+		send_conversation.conversation = std::move(conversation);
 
 		auto prekey_metadata{std::make_optional<PrekeyMetadata>()};
 		auto& prekey_metadata_content{prekey_metadata.value()};
@@ -163,13 +151,14 @@ namespace Molch {
 		receiver_prekeys.getPrekey(unverified_prekey_metadata.prekey, receiver_private_prekey);
 
 		ReceiveConversation receive_conversation;
-		receive_conversation.conversation.create(
+		OUTCOME_TRY(conversation, create(
 				receiver_private_identity,
 				receiver_public_identity,
 				unverified_prekey_metadata.identity,
 				receiver_private_prekey,
 				unverified_prekey_metadata.prekey,
-				unverified_prekey_metadata.ephemeral);
+				unverified_prekey_metadata.ephemeral));
+		receive_conversation.conversation = std::move(conversation);
 
 		OUTCOME_TRY(received_message, receive_conversation.conversation.receive(packet));
 		receive_conversation.message = std::move(received_message.message);

@@ -90,15 +90,15 @@ static void test_add_conversation(ConversationStore& store) {
 	their_public_ephemeral.fillRandom();
 
 	//create the conversation manually
-	Molch::Conversation conversation{
+	TRY_WITH_RESULT(conversation, Molch::Conversation::create(
 		our_private_identity,
 		our_public_identity,
 		their_public_identity,
 		our_private_ephemeral,
 		our_public_ephemeral,
-		their_public_ephemeral};
+		their_public_ephemeral));
 
-	store.add(std::move(conversation));
+	store.add(std::move(conversation.value()));
 }
 
 static void protobuf_empty_store() {

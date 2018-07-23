@@ -105,26 +105,28 @@ int main() noexcept {
 			"ephemeral");
 
 		//create charlie's conversation
-		Molch::Conversation charlie_conversation(
+		TRY_WITH_RESULT(charlie_conversation_result, Molch::Conversation::create(
 				charlie_private_identity,
 				charlie_public_identity,
 				dora_public_identity,
 				charlie_private_ephemeral,
 				charlie_public_ephemeral,
-				dora_public_ephemeral);
+				dora_public_ephemeral));
+		auto& charlie_conversation{charlie_conversation_result.value()};
 		if (charlie_conversation.id().empty) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Charlie's conversation has an incorrect ID length."};
 		}
 
 		//create Dora's conversation
-		auto dora_conversation{std::make_unique<Molch::Conversation>(
+		TRY_WITH_RESULT(dora_conversation_result, Molch::Conversation::create(
 				dora_private_identity,
 				dora_public_identity,
 				charlie_public_identity,
 				dora_private_ephemeral,
 				dora_public_ephemeral,
-				charlie_public_ephemeral)};
-		if (!dora_conversation || dora_conversation->id().empty) {
+				charlie_public_ephemeral));
+		auto& dora_conversation{dora_conversation_result.value()};
+		if (dora_conversation.id().empty) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Dora's conversation has an incorrect ID length."};
 		}
 
