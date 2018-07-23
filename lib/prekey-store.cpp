@@ -267,7 +267,7 @@ namespace Molch {
 		return std::move(list);
 	}
 
-	void PrekeyStore::rotate() {
+	result<void> PrekeyStore::rotate() {
 		seconds current_time{now()};
 
 		//Is the expiration date too far into the future?
@@ -294,7 +294,7 @@ namespace Molch {
 			}
 			for (const auto& prekey : *this->prekeys_storage) {
 				if (prekey.expiration_date < current_time) {
-					TRY_VOID(this->deprecate(index));
+					OUTCOME_TRY(this->deprecate(index));
 				}
 				index++;
 			}
@@ -311,6 +311,8 @@ namespace Molch {
 			}
 			this->updateDeprecatedExpirationDate();
 		}
+
+		return outcome::success();
 	}
 
 	template <class Container>

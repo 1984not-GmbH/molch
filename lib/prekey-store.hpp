@@ -125,7 +125,7 @@ namespace Molch {
 		 * Automatically deprecate old keys and generate new ones
 		 * and THROW away deprecated ones that are too old.
 		 */
-		void rotate();
+		result<void> rotate();
 
 		/*! Serialise a prekey store as protobuf-c struct.
 		 * \param arena A memory arena to allocate from.

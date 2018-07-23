@@ -115,7 +115,7 @@ static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_ke
 	}
 
 	//rotate the prekeys
-	user->prekeys().rotate();
+	TRY_VOID(user->prekeys().rotate());
 
 	//copy the public identity to the prekey list
 	MallocBuffer unsigned_prekey_list{

@@ -258,7 +258,7 @@ int main() {
 
 		store->timeshiftForTestingOnly(PREKEY_AMOUNT - 1, -12_months);
 
-		store->rotate();
+		TRY_VOID(store->rotate());
 
 		if (store->deprecatedPrekeys().back().publicKey() != public_prekey) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to deprecate outdated key."};
@@ -270,7 +270,7 @@ int main() {
 
 		store->timeshiftDeprecatedForTestingOnly(1, -1_days);
 
-		store->rotate();
+		TRY_VOID(store->rotate());
 
 		if (store->deprecatedPrekeys().size() != 1) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to remove outdated key."};
