@@ -58,7 +58,8 @@ namespace Molch {
 		Prekey(const Prekey& node) noexcept;
 		/* move constructor */
 		Prekey(Prekey&& node) noexcept;
-		Prekey(const ProtobufCPrekey& keypair);
+
+		static result<Prekey> import(const ProtobufCPrekey& keypair);
 
 		/* copy assignment */
 		Prekey& operator=(const Prekey& node) noexcept;

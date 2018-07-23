@@ -69,30 +69,33 @@ namespace Molch {
 		return *this;
 	}
 
-	Prekey::Prekey(const ProtobufCPrekey& keypair) {
+	result<Prekey> Prekey::import(const ProtobufCPrekey& keypair) {
 		//import private key
 		if ((keypair.private_key == nullptr)
 				|| (keypair.private_key->key.len != PRIVATE_KEY_SIZE)) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a private key."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a private key.");
 		}
-		this->private_key = PrivateKey{*keypair.private_key};
+		Prekey prekey;
+		prekey.private_key = PrivateKey{*keypair.private_key};
 
 		//import public key
 		if (keypair.public_key == nullptr) {
 			//public key is missing -> derive it from the private key
-			TRY_VOID(crypto_scalarmult_base(this->public_key, this->private_key));
-			this->public_key.empty = false;
+			OUTCOME_TRY(crypto_scalarmult_base(prekey.public_key, prekey.private_key));
+			prekey.public_key.empty = false;
 		} else if (keypair.public_key->key.len != PUBLIC_KEY_SIZE) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a public key."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a public key.");
 		} else {
-			this->public_key = PublicKey{*keypair.public_key};
+			prekey.public_key = PublicKey{*keypair.public_key};
 		}
 
 		//import expiration_date
 		if (!keypair.has_expiration_time) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing an expiration time."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing an expiration time.");
 		}
-		this->expiration_date = seconds{keypair.expiration_time};
+		prekey.expiration_date = seconds{keypair.expiration_time};
+
+		return prekey;
 	}
 
 	result<ProtobufCPrekey*> Prekey::exportProtobuf(Arena& arena) const {
@@ -170,7 +173,8 @@ namespace Molch {
 			if (keypair == nullptr) {
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey missing."};
 			}
-			new (&(*this->prekeys_storage)[index]) Prekey(*keypair);
+			TRY_WITH_RESULT(imported_prekey, Prekey::import(*keypair));
+			new (&(*this->prekeys_storage)[index]) Prekey(std::move(imported_prekey.value()));
 			++index;
 		}
 
@@ -178,7 +182,8 @@ namespace Molch {
 			if (keypair == nullptr) {
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Deprecated prekey missing."};
 			}
-			this->deprecated_prekeys_storage.emplace_back(*keypair);
+			TRY_WITH_RESULT(imported_prekey, Prekey::import(*keypair));
+			this->deprecated_prekeys_storage.emplace_back(std::move(imported_prekey.value()));
 		}
 
 		this->updateExpirationDate();
