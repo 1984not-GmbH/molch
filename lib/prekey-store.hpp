@@ -113,7 +113,7 @@ namespace Molch {
 		 * deprecate the requested prekey put it in the outdated key store and
 		 * generate a new one.
 		 */
-		void getPrekey(const PublicKey& public_key, PrivateKey& private_key);
+		result<PrivateKey> getPrekey(const PublicKey& public_key);
 
 		/*
 		 * Generate a list containing all public prekeys.

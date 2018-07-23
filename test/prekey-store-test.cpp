@@ -151,8 +151,8 @@ int main() {
 		const size_t prekey_index{10};
 		PublicKey public_prekey{store->prekeys()[prekey_index].publicKey()};
 
-		PrivateKey private_prekey1;
-		store->getPrekey(public_prekey, private_prekey1);
+		TRY_WITH_RESULT(private_prekey1_result, store->getPrekey(public_prekey));
+		const auto& private_prekey1{private_prekey1_result.value()};
 		printf("Get a Prekey:\n");
 		printf("Public key:\n");
 		public_prekey.printHex(std::cout);
@@ -174,8 +174,8 @@ int main() {
 		printf("Successfully deprecated requested key!\n");
 
 		//check if the prekey can be obtained from the deprecated keys
-		PrivateKey private_prekey2;
-		store->getPrekey(public_prekey, private_prekey2);
+		TRY_WITH_RESULT(private_prekey2_result, store->getPrekey(public_prekey));
+		const auto& private_prekey2{private_prekey2_result.value()};
 
 		if (private_prekey1 != private_prekey2) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Prekey from the deprecated area didn't match."};
@@ -184,13 +184,8 @@ int main() {
 
 		//try to get a nonexistent key
 		public_prekey.fillRandom();
-		auto found{true};
-		try {
-			store->getPrekey(public_prekey, private_prekey1);
-		} catch (const Molch::Exception&) {
-			found = false;
-		}
-		if (found) {
+		const auto nonexistent_prekey = store->getPrekey(public_prekey);
+		if (nonexistent_prekey.has_value()) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Didn't complain about invalid public key."};
 		}
 		printf("Detected invalid public prekey!\n");

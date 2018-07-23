@@ -225,8 +225,8 @@ namespace Molch {
 		return outcome::success();
 	}
 
-	void PrekeyStore::getPrekey(const PublicKey& public_key, PrivateKey& private_key) {
-		Expects(!public_key.empty);
+	result<PrivateKey> PrekeyStore::getPrekey(const PublicKey& public_key) {
+		FulfillOrFail(!public_key.empty);
 
 		//lambda for comparing PrekeyNodes to public_key
 		auto key_comparer{[&public_key] (const Prekey& node) -> bool {
@@ -236,22 +236,21 @@ namespace Molch {
 		auto found_prekey{std::find_if(std::cbegin(*this->prekeys_storage), std::cend(*this->prekeys_storage), key_comparer)};
 		if (found_prekey != this->prekeys_storage->end()) {
 			//copy the private key
-			private_key = found_prekey->private_key;
+			auto private_key{found_prekey->private_key};
 
 			//and deprecate key
 			auto index{gsl::narrow_cast<size_t>(found_prekey - std::begin(*this->prekeys_storage))};
-			TRY_VOID(this->deprecate(index));
+			OUTCOME_TRY(this->deprecate(index));
 
-			return;
+			return private_key;
 		}
 
 		auto found_deprecated_prekey{std::find_if(std::cbegin(this->deprecated_prekeys_storage), std::cend(this->deprecated_prekeys_storage), key_comparer)};
 		if (found_deprecated_prekey == this->deprecated_prekeys_storage.end()) {
-			private_key.empty = true;
-			throw Exception{status_type::NOT_FOUND, "No matching prekey found."};
+			return Error(status_type::NOT_FOUND, "No matching prekey found.");
 		}
 
-		private_key = found_deprecated_prekey->private_key;
+		return found_deprecated_prekey->private_key;
 	}
 
 	void PrekeyStore::list(span<std::byte> list) const { //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
