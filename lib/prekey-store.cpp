@@ -149,16 +149,18 @@ namespace Molch {
 		new (this->prekeys_storage.get()) std::array<Prekey,PREKEY_AMOUNT>;
 	}
 
-	void PrekeyStore::generateKeys() {
+	result<void> PrekeyStore::generateKeys() {
 		for (auto& key : *this->prekeys_storage) {
-			TRY_VOID(key.generate());
+			OUTCOME_TRY(key.generate());
 		}
 		this->updateExpirationDate();
+
+		return outcome::success();
 	}
 
 	PrekeyStore::PrekeyStore() {
 		this->init();
-		this->generateKeys();
+		TRY_VOID(this->generateKeys());
 	}
 
 	PrekeyStore::PrekeyStore(
@@ -190,16 +192,16 @@ namespace Molch {
 		this->updateDeprecatedExpirationDate();
 	}
 
-	static bool compare_expiration_dates(const Prekey& a, const Prekey& b) {
+	static bool compare_expiration_dates(const Prekey& a, const Prekey& b) noexcept {
 		return a.expirationDate() < b.expirationDate();
 	}
 
-	void PrekeyStore::updateExpirationDate() {
+	void PrekeyStore::updateExpirationDate() noexcept {
 		const auto& oldest{std::min_element(std::cbegin(*this->prekeys_storage), std::cend(*this->prekeys_storage), compare_expiration_dates)};
 		this->oldest_expiration_date = oldest->expiration_date;
 	}
 
-	void PrekeyStore::updateDeprecatedExpirationDate() {
+	void PrekeyStore::updateDeprecatedExpirationDate() noexcept {
 		if (this->deprecated_prekeys_storage.empty()) {
 			this->oldest_deprecated_expiration_date = 0s;
 			return;

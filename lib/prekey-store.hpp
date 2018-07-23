@@ -81,10 +81,10 @@ namespace Molch {
 		seconds oldest_deprecated_expiration_date{0};
 
 		void init();
-		void generateKeys();
+		result<void> generateKeys();
 
-		void updateExpirationDate();
-		void updateDeprecatedExpirationDate();
+		void updateExpirationDate() noexcept;
+		void updateDeprecatedExpirationDate() noexcept;
 
 		/*
 		 * Helper that puts a prekey pair in the deprecated list and generates a new one.
