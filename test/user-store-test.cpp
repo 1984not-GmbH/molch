@@ -106,7 +106,7 @@ int main() {
 
 		//create alice
 		PublicSigningKey alice_public_signing_key;
-		store.add(Molch::User(&alice_public_signing_key));
+		store.add(Molch::User(&alice_public_signing_key, nullptr));
 		{
 			auto alice_user{store.find(alice_public_signing_key)};
 			MasterKeys::Unlocker unlocker{alice_user->masterKeys()};

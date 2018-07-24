@@ -206,7 +206,7 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 		if (random_data_length != 0) {
 			users->add(Molch::User({uchar_to_byte(random_data), random_data_length}, &public_master_key_key));
 		} else {
-			users->add(Molch::User(&public_master_key_key));
+			users->add(Molch::User(&public_master_key_key, nullptr));
 		}
 		TRY_VOID(copyFromTo(public_master_key_key, {uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE}));
 
