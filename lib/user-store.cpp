@@ -31,8 +31,8 @@ namespace Molch {
 	User& User::move(User&& node) noexcept {
 		this->public_signing_key = node.public_signing_key;
 		this->master_keys = std::move(node.master_keys);
-		this->prekey_store = std::move(node.prekey_store);
-		this->conversation_store = std::move(node.conversation_store);
+		this->prekeys = std::move(node.prekeys);
+		this->conversations = std::move(node.conversations);
 
 		return *this;
 	}
@@ -64,7 +64,7 @@ namespace Molch {
 			PublicKey * const public_identity_key//output, optional, can be nullptr
 			) : master_keys(seed) {
 		TRY_WITH_RESULT(prekey_store, PrekeyStore::create())
-		this->prekey_store = std::move(prekey_store.value());
+		this->prekeys = std::move(prekey_store.value());
 		this->exportPublicKeys(public_signing_key, public_identity_key);
 		this->public_signing_key = this->master_keys.getSigningKey();
 	}
@@ -73,7 +73,7 @@ namespace Molch {
 			PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
 			PublicKey * const public_identity_key) { //output, optional, can be nullptr
 		TRY_WITH_RESULT(prekey_store, PrekeyStore::create());
-		this->prekey_store = std::move(prekey_store.value());
+		this->prekeys = std::move(prekey_store.value());
 		this->exportPublicKeys(public_signing_key, public_identity_key);
 		this->public_signing_key = this->master_keys.getSigningKey();
 	}
@@ -87,7 +87,7 @@ namespace Molch {
 		}
 
 		TRY_WITH_RESULT(prekey_store, PrekeyStore::create());
-		this->prekey_store = std::move(prekey_store.value());
+		this->prekeys = std::move(prekey_store.value());
 
 		//master keys
 		this->master_keys = MasterKeys{
@@ -101,12 +101,12 @@ namespace Molch {
 				uchar_to_byte(user.public_signing_key->key.data),
 				user.public_signing_key->key.len});
 
-		this->conversation_store = ConversationStore{{user.conversations, user.n_conversations}};
+		this->conversations = ConversationStore{{user.conversations, user.n_conversations}};
 
 		TRY_WITH_RESULT(imported_prekey_store, PrekeyStore::import(
 			{user.prekeys, user.n_prekeys},
 			{user.deprecated_prekeys, user.n_deprecated_prekeys}));
-		this->prekey_store = std::move(imported_prekey_store.value());
+		this->prekeys = std::move(imported_prekey_store.value());
 	}
 
 	std::ostream& User::print(std::ostream& stream) const {
@@ -115,24 +115,18 @@ namespace Molch {
 		stream << "\nMaster Keys:\n";
 		this->master_keys.print(stream);
 		stream << "\nPrekeys:\n";
-		this->prekey_store.print(stream);
+		this->prekeys.print(stream);
 		stream << "\nConversations:\n";
-		this->conversation_store.print(stream);
+		this->conversations.print(stream);
 
 		return stream;
 	}
 
-	const PublicSigningKey& User::id() const {
+	const PublicSigningKey& User::id() const noexcept {
 		return this->public_signing_key;
 	}
-	const MasterKeys& User::masterKeys() const {
+	const MasterKeys& User::masterKeys() const noexcept {
 		return this->master_keys;
-	}
-	PrekeyStore& User::prekeys() {
-		return this->prekey_store;
-	}
-	ConversationStore& User::conversations() {
-		return this->conversation_store;
 	}
 
 	UserStore::UserStore(const span<ProtobufCUser*> users) {
@@ -183,7 +177,7 @@ namespace Molch {
 		Conversation* conversation{nullptr};
 		auto containing_user{std::find_if(std::begin(this->users), std::end(this->users),
 				[&conversation_id, &conversation](User& user) {
-					conversation = user.conversation_store.find(conversation_id);
+					conversation = user.conversations.find(conversation_id);
 					return conversation != nullptr;
 				})};
 		if (conversation != nullptr) {
@@ -250,10 +244,10 @@ namespace Molch {
 			user->private_identity_key);
 
 		//export the conversation store
-		protobuf_array_arena_export(arena, user, conversations, this->conversation_store);
+		protobuf_array_arena_export(arena, user, conversations, this->conversations);
 
 		//export the prekeys
-		TRY_WITH_RESULT(exported_prekeys_result, this->prekey_store.exportProtobuf(arena));
+		TRY_WITH_RESULT(exported_prekeys_result, this->prekeys.exportProtobuf(arena));
 		const auto& exported_prekeys{exported_prekeys_result.value()};
 		user->prekeys = exported_prekeys.keypairs.data();
 		user->n_prekeys = exported_prekeys.keypairs.size();

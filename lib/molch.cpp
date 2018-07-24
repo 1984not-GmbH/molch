@@ -115,7 +115,7 @@ static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_ke
 	}
 
 	//rotate the prekeys
-	TRY_VOID(user->prekeys().rotate());
+	TRY_VOID(user->prekeys.rotate());
 
 	//copy the public identity to the prekey list
 	MallocBuffer unsigned_prekey_list{
@@ -124,7 +124,7 @@ static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_ke
 	TRY_VOID(unsigned_prekey_list.copyFromRaw(0, user->masterKeys().getIdentityKey().data(), 0, PUBLIC_KEY_SIZE));
 
 	//get the prekeys
-	TRY_WITH_RESULT(prekey_list_buffer_result, user->prekeys().list());
+	TRY_WITH_RESULT(prekey_list_buffer_result, user->prekeys.list());
 	const auto& prekey_list_buffer{prekey_list_buffer_result.value()};
 	TRY_VOID(copyFromTo(prekey_list_buffer, {&unsigned_prekey_list[PUBLIC_KEY_SIZE], PREKEY_AMOUNT * PUBLIC_KEY_SIZE}));
 
@@ -486,7 +486,7 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		//copy the conversation id
 		TRY_VOID(copyFromTo(send_conversation.conversation.id(), {uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
 
-		user->conversations().add(std::move(send_conversation.conversation));
+		user->conversations.add(std::move(send_conversation.conversation));
 
 		//copy the packet to a malloced buffer output
 		MallocBuffer malloced_packet{send_conversation.packet.size(), 0};
@@ -578,7 +578,7 @@ cleanup:
 				{uchar_to_byte(packet), packet_length},
 				user->masterKeys().getIdentityKey(),
 				user->masterKeys().getPrivateIdentityKey(),
-				user->prekeys()));
+				user->prekeys));
 			auto& receive_conversation{receive_conversation_result.value()};
 
 			//copy the conversation id
@@ -588,7 +588,7 @@ cleanup:
 			auto prekey_list_buffer{create_prekey_list(receiver_public_master_key_key)};
 
 			//add the conversation to the conversation store
-			user->conversations().add(std::move(receive_conversation.conversation));
+			user->conversations.add(std::move(receive_conversation.conversation));
 
 			//copy the message
 			MallocBuffer malloced_message{receive_conversation.message.size(), 0};
@@ -788,7 +788,7 @@ cleanup:
 				throw Exception{status_type::NOT_FOUND, "Couldn't find conversation."};
 			}
 
-			user->conversations().remove(conversation_id_key);
+			user->conversations.remove(conversation_id_key);
 
 			if (backup != nullptr) {
 				*backup = nullptr;
@@ -851,7 +851,7 @@ cleanup:
 				throw Exception{status_type::NOT_FOUND, "No user found for the given public identity."};
 			}
 
-			auto conversation_list_buffer{user->conversations().list()};
+			auto conversation_list_buffer{user->conversations.list()};
 			if (conversation_list_buffer.isNone()) {
 				// list is empty
 				*conversation_list = nullptr;
@@ -1122,7 +1122,7 @@ cleanup:
 
 			TRY_WITH_RESULT(conversation_result, Conversation::import(conversation_pointer));
 			auto& conversation{conversation_result.value()};
-			containing_user->conversations().add(std::move(conversation));
+			containing_user->conversations.add(std::move(conversation));
 
 			//update the backup key
 			auto status{molch_update_backup_key(new_backup_key, new_backup_key_length)};

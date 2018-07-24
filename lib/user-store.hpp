@@ -43,8 +43,6 @@ namespace Molch {
 	private:
 		PublicSigningKey public_signing_key;
 		MasterKeys master_keys;
-		PrekeyStore prekey_store;
-		ConversationStore conversation_store;
 
 		void exportPublicKeys(
 				PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
@@ -60,6 +58,9 @@ namespace Molch {
 		User& move(User&& node) noexcept;
 
 	public:
+		PrekeyStore prekeys;
+		ConversationStore conversations;
+
 		/*
 		 * Create a new user.
 		 *
@@ -81,10 +82,8 @@ namespace Molch {
 		User& operator=(const User& node) = delete;
 		User& operator=(User&& node) noexcept;
 
-		const PublicSigningKey& id() const;
-		const MasterKeys& masterKeys() const;
-		PrekeyStore& prekeys();
-		ConversationStore& conversations();
+		const PublicSigningKey& id() const noexcept;
+		const MasterKeys& masterKeys() const noexcept;
 
 		std::ostream& print(std::ostream& stream) const;
 	};
