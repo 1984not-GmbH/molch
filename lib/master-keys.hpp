@@ -56,9 +56,9 @@ namespace Molch {
 		void generate(const span<const std::byte> low_entropy_seed);
 
 		/* Manage the memory for the private keys */
-		void lock() const;
-		void unlock() const;
-		void unlock_readwrite() const;
+		result<void> lock() const noexcept;
+		result<void> unlock() const noexcept;
+		result<void> unlock_readwrite() const noexcept;
 
 		class ReadWriteUnlocker {
 		private:
