@@ -97,12 +97,6 @@ namespace Molch {
 	public:
 		PrekeyStore() = default;
 
-		struct construct_filled {
-			static construct_filled instance() {
-				return construct_filled();
-			}
-		};
-
 		/*
 		 * Create a new keystore. Generates all the keys.
 		 */
@@ -111,8 +105,10 @@ namespace Molch {
 		/*! Import a prekey store from a protobuf-c struct.
 		 * \param keypairs An array of prekey pairs.
 		 * \param deprecated_keypairs An array of deprecated prekey pairs.
+		 *
+		 * \return The imported PrekeyStore
 		 */
-		PrekeyStore(
+		static result<PrekeyStore> import(
 				const span<ProtobufCPrekey*> keypairs,
 				const span<ProtobufCPrekey*> deprecated_keypairs);
 

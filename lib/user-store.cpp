@@ -103,9 +103,10 @@ namespace Molch {
 
 		this->conversation_store = ConversationStore{{user.conversations, user.n_conversations}};
 
-		this->prekey_store = PrekeyStore{
+		TRY_WITH_RESULT(imported_prekey_store, PrekeyStore::import(
 			{user.prekeys, user.n_prekeys},
-			{user.deprecated_prekeys, user.n_deprecated_prekeys}};
+			{user.deprecated_prekeys, user.n_deprecated_prekeys}));
+		this->prekey_store = std::move(imported_prekey_store.value());
 	}
 
 	std::ostream& User::print(std::ostream& stream) const {

@@ -98,9 +98,10 @@ static PrekeyStore protobuf_import(
 	}
 
 	//now do the import
-	return PrekeyStore(
+	TRY_WITH_RESULT(prekey_store, PrekeyStore::import(
 			span<ProtobufCPrekey*>{keypairs_array.get(), keypair_buffers.size()},
-			span<ProtobufCPrekey*>{deprecated_keypairs_array.get(), deprecated_keypair_buffers.size()});
+			span<ProtobufCPrekey*>{deprecated_keypairs_array.get(), deprecated_keypair_buffers.size()}));
+	return std::move(prekey_store.value());
 }
 
 static void protobuf_no_deprecated_keys() {
@@ -118,7 +119,8 @@ static void protobuf_no_deprecated_keys() {
 	}
 
 	//import it
-	store = PrekeyStore(exported.keypairs, exported.deprecated_keypairs);
+	TRY_WITH_RESULT(imported_store, PrekeyStore::import(exported.keypairs, exported.deprecated_keypairs));
+	store = std::move(imported_store.value());
 
 	printf("Successful.\n");
 }

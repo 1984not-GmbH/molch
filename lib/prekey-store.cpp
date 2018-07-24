@@ -166,33 +166,36 @@ namespace Molch {
 		return std::move(store);
 	}
 
-	PrekeyStore::PrekeyStore(
+	result<PrekeyStore> PrekeyStore::import(
 			const span<ProtobufCPrekey*> keypairs,
 			const span<ProtobufCPrekey*> deprecated_keypairs) {
-		Expects(keypairs.size() == PREKEY_AMOUNT);
+		FulfillOrFail(keypairs.size() == PREKEY_AMOUNT);
 
-		this->init();
+		PrekeyStore store;
+		store.init();
 
 		size_t index{0};
 		for (auto const& keypair : keypairs) {
 			if (keypair == nullptr) {
-				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Prekey missing."};
+				return Error(status_type::PROTOBUF_MISSING_ERROR, "Prekey missing.");
 			}
-			TRY_WITH_RESULT(imported_prekey, Prekey::import(*keypair));
-			new (&(*this->prekeys_storage)[index]) Prekey(std::move(imported_prekey.value()));
+			OUTCOME_TRY(imported_prekey, Prekey::import(*keypair));
+			new (&(*store.prekeys_storage)[index]) Prekey(std::move(imported_prekey));
 			++index;
 		}
 
 		for (auto const& keypair : deprecated_keypairs) {
 			if (keypair == nullptr) {
-				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Deprecated prekey missing."};
+				return Error(status_type::PROTOBUF_MISSING_ERROR, "Deprecated prekey missing.");
 			}
-			TRY_WITH_RESULT(imported_prekey, Prekey::import(*keypair));
-			this->deprecated_prekeys_storage.emplace_back(std::move(imported_prekey.value()));
+			OUTCOME_TRY(imported_prekey, Prekey::import(*keypair));
+			store.deprecated_prekeys_storage.emplace_back(std::move(imported_prekey));
 		}
 
-		this->updateExpirationDate();
-		this->updateDeprecatedExpirationDate();
+		store.updateExpirationDate();
+		store.updateDeprecatedExpirationDate();
+
+		return std::move(store);
 	}
 
 	static bool compare_expiration_dates(const Prekey& a, const Prekey& b) noexcept {
