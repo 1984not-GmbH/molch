@@ -138,28 +138,28 @@ namespace Molch {
 		this->private_identity_key->empty = false;
 	}
 
-	const PublicSigningKey& MasterKeys::getSigningKey() const {
+	const PublicSigningKey& MasterKeys::getSigningKey() const noexcept {
 		return this->public_signing_key;
 	}
 
-	const PrivateSigningKey& MasterKeys::getPrivateSigningKey() const {
+	result<const PrivateSigningKey*> MasterKeys::getPrivateSigningKey() const noexcept {
 		if (this->private_signing_key == nullptr) {
-			throw Exception{status_type::INCORRECT_DATA, "The private signing key pointer doesn't point to anything."};
+			return Error(status_type::INCORRECT_DATA, "The private signing key pointer doesn't point to anything.");
 		}
 
-		return *this->private_signing_key;
+		return this->private_signing_key;
 	}
 
-	const PublicKey& MasterKeys::getIdentityKey() const {
+	const PublicKey& MasterKeys::getIdentityKey() const noexcept {
 		return this->public_identity_key;
 	}
 
-	const PrivateKey& MasterKeys::getPrivateIdentityKey() const {
+	result<const PrivateKey*> MasterKeys::getPrivateIdentityKey() const noexcept {
 		if (this->private_identity_key == nullptr) {
-			throw Exception{status_type::INCORRECT_DATA, "The private identity key pointer doesn't point to anything."};
+			return Error(status_type::INCORRECT_DATA, "The private identity key pointer doesn't point to anything.");
 		}
 
-		return *this->private_identity_key;
+		return this->private_identity_key;
 	}
 
 	/*

@@ -150,7 +150,8 @@ int main() {
 		printf("\nPrivate:\n");
 		{
 			MasterKeys::Unlocker unlocker{unspiced_master_keys};
-			unspiced_master_keys.getPrivateSigningKey().printHex(std::cout);
+			TRY_WITH_RESULT(private_signing_key, unspiced_master_keys.getPrivateSigningKey());
+			private_signing_key.value()->printHex(std::cout);
 		}
 
 		printf("\n\nIdentity keys:\n");
@@ -160,7 +161,8 @@ int main() {
 		printf("\nPrivate:\n");
 		{
 			MasterKeys::Unlocker unlocker{unspiced_master_keys};
-			unspiced_master_keys.getPrivateIdentityKey().printHex(std::cout);
+			TRY_WITH_RESULT(private_identity_key, unspiced_master_keys.getPrivateIdentityKey());
+			private_identity_key.value()->printHex(std::cout);
 		}
 
 		//check the exported public keys
@@ -186,7 +188,8 @@ int main() {
 		printf("Private:\n");
 		{
 			MasterKeys::Unlocker unlocker{spiced_master_keys};
-			spiced_master_keys.getPrivateSigningKey().printHex(std::cout) << std::endl;
+			TRY_WITH_RESULT(private_signing_key, spiced_master_keys.getPrivateSigningKey());
+			private_signing_key.value()->printHex(std::cout) << std::endl;
 		}
 
 		printf("\nIdentity keys:\n");
@@ -196,7 +199,8 @@ int main() {
 		printf("Private:\n");
 		{
 			MasterKeys::Unlocker unlocker{spiced_master_keys};
-			spiced_master_keys.getPrivateIdentityKey().printHex(std::cout);
+			TRY_WITH_RESULT(private_identity_key, spiced_master_keys.getPrivateIdentityKey());
+			private_identity_key.value()->printHex(std::cout);
 		}
 
 		//check the exported public keys

@@ -98,10 +98,10 @@ namespace Molch {
 		MasterKeys& operator=(const MasterKeys& master_keys) = delete;
 		MasterKeys& operator=(MasterKeys&& master_keys) noexcept;
 
-		const PublicSigningKey& getSigningKey() const;
-		const PrivateSigningKey& getPrivateSigningKey() const;
-		const PublicKey& getIdentityKey() const;
-		const PrivateKey& getPrivateIdentityKey() const;
+		const PublicSigningKey& getSigningKey() const noexcept;
+		result<const PrivateSigningKey*> getPrivateSigningKey() const noexcept;
+		const PublicKey& getIdentityKey() const noexcept;
+		result<const PrivateKey*> getPrivateIdentityKey() const noexcept;
 
 		/*
 		 * Sign a piece of data. Returns the data and signature in one output buffer.

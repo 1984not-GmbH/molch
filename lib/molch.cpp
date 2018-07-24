@@ -475,10 +475,11 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 
 		//create the conversation and encrypt the message
 		span<const std::byte> prekeys{uchar_to_byte(prekey_list) + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t)};
+		TRY_WITH_RESULT(private_identity_key, user->masterKeys().getPrivateIdentityKey());
 		TRY_WITH_RESULT(send_conversation_result, Molch::Conversation::createSendConversation(
 			{uchar_to_byte(message), message_length},
 			user->masterKeys().getIdentityKey(),
-			user->masterKeys().getPrivateIdentityKey(),
+			*private_identity_key.value(),
 			receiver_public_identity,
 			prekeys));
 		auto& send_conversation{send_conversation_result.value()};
@@ -574,10 +575,11 @@ cleanup:
 			MasterKeys::Unlocker unlocker{user->masterKeys()};
 
 			//create the conversation
+			TRY_WITH_RESULT(private_identity_key, user->masterKeys().getPrivateIdentityKey());
 			TRY_WITH_RESULT(receive_conversation_result, Molch::Conversation::createReceiveConversation(
 				{uchar_to_byte(packet), packet_length},
 				user->masterKeys().getIdentityKey(),
-				user->masterKeys().getPrivateIdentityKey(),
+				*private_identity_key.value(),
 				user->prekeys));
 			auto& receive_conversation{receive_conversation_result.value()};
 
