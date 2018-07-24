@@ -37,7 +37,7 @@ namespace Molch {
 		return *this;
 	}
 
-	User::User(User&& node) noexcept : prekey_store{PrekeyStore(PrekeyStore::construct_filled::instance())} {
+	User::User(User&& node) noexcept {
 		this->move(std::move(node));
 	}
 
@@ -62,25 +62,32 @@ namespace Molch {
 			const span<const std::byte> seed,
 			PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
 			PublicKey * const public_identity_key//output, optional, can be nullptr
-			) : master_keys(seed), prekey_store{PrekeyStore(PrekeyStore::construct_filled::instance())} {
+			) : master_keys(seed) {
+		TRY_WITH_RESULT(prekey_store, PrekeyStore::create())
+		this->prekey_store = std::move(prekey_store.value());
 		this->exportPublicKeys(public_signing_key, public_identity_key);
 		this->public_signing_key = this->master_keys.getSigningKey();
 	}
 
 	User::User(
 			PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
-			PublicKey * const public_identity_key) : prekey_store{PrekeyStore(PrekeyStore::construct_filled::instance())} { //output, optional, can be nullptr
+			PublicKey * const public_identity_key) { //output, optional, can be nullptr
+		TRY_WITH_RESULT(prekey_store, PrekeyStore::create());
+		this->prekey_store = std::move(prekey_store.value());
 		this->exportPublicKeys(public_signing_key, public_identity_key);
 		this->public_signing_key = this->master_keys.getSigningKey();
 	}
 
-	User::User(const ProtobufCUser& user) : prekey_store{PrekeyStore(PrekeyStore::construct_filled::instance())} {
+	User::User(const ProtobufCUser& user) {
 		if ((user.public_signing_key == nullptr)
 				|| (user.private_signing_key == nullptr)
 				|| (user.public_identity_key == nullptr)
 				|| (user.private_identity_key == nullptr)) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Missing keys."};
 		}
+
+		TRY_WITH_RESULT(prekey_store, PrekeyStore::create());
+		this->prekey_store = std::move(prekey_store.value());
 
 		//master keys
 		this->master_keys = MasterKeys{

@@ -57,7 +57,8 @@ int main() {
 			"identity");
 
 		//get the prekey list
-		PrekeyStore bob_prekeys(PrekeyStore::construct_filled::instance());
+		TRY_WITH_RESULT(bob_prekeys_result, PrekeyStore::create());
+		auto& bob_prekeys{bob_prekeys_result.value()};
 		TRY_WITH_RESULT(bob_prekey_list_result, bob_prekeys.list());
 		const auto& bob_prekey_list{bob_prekey_list_result.value()};
 
@@ -141,7 +142,8 @@ int main() {
 		//Bob sends the message to Alice.
 
 		//get alice prekey list
-		PrekeyStore alice_prekeys(PrekeyStore::construct_filled::instance());
+		TRY_WITH_RESULT(alice_prekeys_result, PrekeyStore::create());
+		auto& alice_prekeys{alice_prekeys_result.value()};
 		TRY_WITH_RESULT(alice_prekey_list_result, alice_prekeys.list());
 		const auto& alice_prekey_list{alice_prekey_list_result.value()};
 

@@ -158,9 +158,12 @@ namespace Molch {
 		return outcome::success();
 	}
 
-	PrekeyStore::PrekeyStore([[maybe_unused]] construct_filled marker) {
-		this->init();
-		TRY_VOID(this->generateKeys());
+	result<PrekeyStore> PrekeyStore::create() {
+		PrekeyStore store;
+		store.init();
+		OUTCOME_TRY(store.generateKeys());
+
+		return std::move(store);
 	}
 
 	PrekeyStore::PrekeyStore(

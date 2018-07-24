@@ -62,9 +62,8 @@ static void protobuf_export(
 	}
 }
 
-static void protobuf_import(
+static PrekeyStore protobuf_import(
 		Arena& pool,
-		std::unique_ptr<PrekeyStore>& store,
 		const std::vector<Buffer>& keypair_buffers,
 		const std::vector<Buffer>& deprecated_keypair_buffers) {
 	auto pool_protoc_allocator{pool.getProtobufCAllocator()};
@@ -99,14 +98,15 @@ static void protobuf_import(
 	}
 
 	//now do the import
-	store = std::make_unique<PrekeyStore>(
+	return PrekeyStore(
 			span<ProtobufCPrekey*>{keypairs_array.get(), keypair_buffers.size()},
 			span<ProtobufCPrekey*>{deprecated_keypairs_array.get(), deprecated_keypair_buffers.size()});
 }
 
 static void protobuf_no_deprecated_keys() {
 	printf("Testing im-/export of prekey store without deprecated keys.\n");
-	PrekeyStore store(PrekeyStore::construct_filled::instance());
+	TRY_WITH_RESULT(store_result, PrekeyStore::create());
+	auto& store{store_result.value()};
 
 	//export it
 	Arena arena;
@@ -127,15 +127,16 @@ int main() {
 	try {
 		TRY_VOID(Molch::sodium_init());
 
-		auto store{std::make_unique<PrekeyStore>(PrekeyStore::construct_filled::instance())};
-		TRY_WITH_RESULT(prekey_list_result, store->list());
+		TRY_WITH_RESULT(store_result, PrekeyStore::create());
+		auto& store{store_result.value()};
+		TRY_WITH_RESULT(prekey_list_result, store.list());
 		const auto& prekey_list{prekey_list_result.value()};
 		printf("Prekey list:\n");
 		prekey_list.printHex(std::cout) << std::endl;
 
 		//compare the public keys with the ones in the prekey store
 		for (size_t i{0}; i < PREKEY_AMOUNT; i++) {
-			TRY_WITH_RESULT(comparison, prekey_list.compareToRawPartial(PUBLIC_KEY_SIZE * i, {store->prekeys()[i].publicKey().data(), store->prekeys()[i].publicKey().size()}, 0, PUBLIC_KEY_SIZE));
+			TRY_WITH_RESULT(comparison, prekey_list.compareToRawPartial(PUBLIC_KEY_SIZE * i, {store.prekeys()[i].publicKey().data(), store.prekeys()[i].publicKey().size()}, 0, PUBLIC_KEY_SIZE));
 			if (!comparison.value()) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Key list doesn't match the prekey store."};
 			}
@@ -144,9 +145,9 @@ int main() {
 
 		//get a private key
 		const size_t prekey_index{10};
-		PublicKey public_prekey{store->prekeys()[prekey_index].publicKey()};
+		PublicKey public_prekey{store.prekeys()[prekey_index].publicKey()};
 
-		TRY_WITH_RESULT(private_prekey1_result, store->getPrekey(public_prekey));
+		TRY_WITH_RESULT(private_prekey1_result, store.getPrekey(public_prekey));
 		const auto& private_prekey1{private_prekey1_result.value()};
 		printf("Get a Prekey:\n");
 		printf("Public key:\n");
@@ -154,22 +155,22 @@ int main() {
 		printf("Private key:\n");
 		private_prekey1.printHex(std::cout) << std::endl;
 
-		if (store->deprecatedPrekeys().empty()) {
+		if (store.deprecatedPrekeys().empty()) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to deprecate requested key."};
 		}
 
-		if ((public_prekey != store->deprecatedPrekeys()[0].publicKey())
-				|| (private_prekey1 != store->deprecatedPrekeys()[0].privateKey())) {
+		if ((public_prekey != store.deprecatedPrekeys()[0].publicKey())
+				|| (private_prekey1 != store.deprecatedPrekeys()[0].privateKey())) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Deprecated key is incorrect."};
 		}
 
-		if (store->prekeys()[prekey_index].publicKey() == public_prekey) {
+		if (store.prekeys()[prekey_index].publicKey() == public_prekey) {
 			throw Molch::Exception{status_type::KEYGENERATION_FAILED, "Failed to generate new key for deprecated one."};
 		}
 		printf("Successfully deprecated requested key!\n");
 
 		//check if the prekey can be obtained from the deprecated keys
-		TRY_WITH_RESULT(private_prekey2_result, store->getPrekey(public_prekey));
+		TRY_WITH_RESULT(private_prekey2_result, store.getPrekey(public_prekey));
 		const auto& private_prekey2{private_prekey2_result.value()};
 
 		if (private_prekey1 != private_prekey2) {
@@ -179,7 +180,7 @@ int main() {
 
 		//try to get a nonexistent key
 		public_prekey.fillRandom();
-		const auto nonexistent_prekey = store->getPrekey(public_prekey);
+		const auto nonexistent_prekey = store.getPrekey(public_prekey);
 		if (nonexistent_prekey.has_value()) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Didn't complain about invalid public key."};
 		}
@@ -190,7 +191,7 @@ int main() {
 		std::vector<Buffer> protobuf_export_prekeys_buffers;
 		std::vector<Buffer> protobuf_export_deprecated_prekeys_buffers;
 		protobuf_export(
-			*store,
+			store,
 			protobuf_export_prekeys_buffers,
 			protobuf_export_deprecated_prekeys_buffers);
 
@@ -208,21 +209,18 @@ int main() {
 		}
 		puts("]\n\n");
 
-		store.reset();
-
 		printf("Import from Protobuf-C\n");
 		Arena pool;
-		protobuf_import(
+		auto imported_store{protobuf_import(
 			pool,
-			store,
 			protobuf_export_prekeys_buffers,
-			protobuf_export_deprecated_prekeys_buffers);
+			protobuf_export_deprecated_prekeys_buffers)};
 
 		printf("Protobuf-C export again\n");
 		std::vector<Buffer> protobuf_second_export_prekeys_buffers;
 		std::vector<Buffer> protobuf_second_export_deprecated_prekeys_buffers;
 		protobuf_export(
-			*store,
+			imported_store,
 			protobuf_second_export_prekeys_buffers,
 			protobuf_second_export_deprecated_prekeys_buffers);
 
@@ -249,25 +247,25 @@ int main() {
 		}
 
 		//test the automatic deprecation of old keys
-		public_prekey = store->prekeys()[PREKEY_AMOUNT-1].publicKey();
+		public_prekey = imported_store.prekeys()[PREKEY_AMOUNT-1].publicKey();
 
-		TRY_VOID(store->timeshiftForTestingOnly(PREKEY_AMOUNT - 1, -12_months));
+		TRY_VOID(imported_store.timeshiftForTestingOnly(PREKEY_AMOUNT - 1, -12_months));
 
-		TRY_VOID(store->rotate());
+		TRY_VOID(imported_store.rotate());
 
-		if (store->deprecatedPrekeys().back().publicKey() != public_prekey) {
+		if (imported_store.deprecatedPrekeys().back().publicKey() != public_prekey) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to deprecate outdated key."};
 		}
 		printf("Successfully deprecated outdated key!\n");
 
 		//test the automatic removal of old deprecated keys!
-		public_prekey = store->deprecatedPrekeys()[1].publicKey();
+		public_prekey = imported_store.deprecatedPrekeys()[1].publicKey();
 
-		store->timeshiftDeprecatedForTestingOnly(1, -1_days);
+		imported_store.timeshiftDeprecatedForTestingOnly(1, -1_days);
 
-		TRY_VOID(store->rotate());
+		TRY_VOID(imported_store.rotate());
 
-		if (store->deprecatedPrekeys().size() != 1) {
+		if (imported_store.deprecatedPrekeys().size() != 1) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to remove outdated key."};
 		}
 		printf("Successfully removed outdated deprecated key!\n");
