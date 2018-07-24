@@ -65,7 +65,7 @@ namespace Molch {
 			const MasterKeys& keys;
 		public:
 			ReadWriteUnlocker(const MasterKeys& keys);
-			~ReadWriteUnlocker();
+			~ReadWriteUnlocker() noexcept;
 		};
 
 		MasterKeys& move(MasterKeys&& master_keys) noexcept;
@@ -129,7 +129,7 @@ namespace Molch {
 			const MasterKeys& keys;
 		public:
 			Unlocker(const MasterKeys& keys);
-			~Unlocker();
+			~Unlocker() noexcept;
 		};
 
 		std::ostream& print(std::ostream& stream) const;

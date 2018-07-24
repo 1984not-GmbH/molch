@@ -226,7 +226,7 @@ namespace Molch {
 		this->keys.unlock();
 	}
 
-	MasterKeys::Unlocker::~Unlocker() {
+	MasterKeys::Unlocker::~Unlocker() noexcept {
 		try {
 			this->keys.lock();
 		} catch (...) {
@@ -238,7 +238,7 @@ namespace Molch {
 		this->keys.unlock_readwrite();
 	}
 
-	MasterKeys::ReadWriteUnlocker::~ReadWriteUnlocker() {
+	MasterKeys::ReadWriteUnlocker::~ReadWriteUnlocker() noexcept {
 		try {
 			this->keys.lock();
 		} catch (...) {
