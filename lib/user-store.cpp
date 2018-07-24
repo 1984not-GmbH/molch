@@ -37,7 +37,7 @@ namespace Molch {
 		return *this;
 	}
 
-	User::User(User&& node) noexcept {
+	User::User(User&& node) noexcept : prekey_store{PrekeyStore(PrekeyStore::construct_filled::instance())} {
 		this->move(std::move(node));
 	}
 
@@ -62,19 +62,19 @@ namespace Molch {
 			const span<const std::byte> seed,
 			PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
 			PublicKey * const public_identity_key//output, optional, can be nullptr
-			) : master_keys(seed) {
+			) : master_keys(seed), prekey_store{PrekeyStore(PrekeyStore::construct_filled::instance())} {
 		this->exportPublicKeys(public_signing_key, public_identity_key);
 		this->public_signing_key = this->master_keys.getSigningKey();
 	}
 
 	User::User(
 			PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
-			PublicKey * const public_identity_key) { //output, optional, can be nullptr
+			PublicKey * const public_identity_key) : prekey_store{PrekeyStore(PrekeyStore::construct_filled::instance())} { //output, optional, can be nullptr
 		this->exportPublicKeys(public_signing_key, public_identity_key);
 		this->public_signing_key = this->master_keys.getSigningKey();
 	}
 
-	User::User(const ProtobufCUser& user) {
+	User::User(const ProtobufCUser& user) : prekey_store{PrekeyStore(PrekeyStore::construct_filled::instance())} {
 		if ((user.public_signing_key == nullptr)
 				|| (user.private_signing_key == nullptr)
 				|| (user.public_identity_key == nullptr)

@@ -106,7 +106,7 @@ static void protobuf_import(
 
 static void protobuf_no_deprecated_keys() {
 	printf("Testing im-/export of prekey store without deprecated keys.\n");
-	PrekeyStore store;
+	PrekeyStore store(PrekeyStore::construct_filled::instance());
 
 	//export it
 	Arena arena;
@@ -127,7 +127,7 @@ int main() {
 	try {
 		TRY_VOID(Molch::sodium_init());
 
-		auto store{std::make_unique<PrekeyStore>()};
+		auto store{std::make_unique<PrekeyStore>(PrekeyStore::construct_filled::instance())};
 		TRY_WITH_RESULT(prekey_list_result, store->list());
 		const auto& prekey_list{prekey_list_result.value()};
 		printf("Prekey list:\n");

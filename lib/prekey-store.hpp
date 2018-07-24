@@ -95,10 +95,16 @@ namespace Molch {
 		std::vector<Prekey,SodiumAllocator<Prekey>> deprecated_prekeys_storage;
 
 	public:
+		PrekeyStore() = delete;
+		struct construct_filled {
+			static construct_filled instance() {
+				return construct_filled();
+			}
+		};
 		/*
 		 * Initialise a new keystore. Generates all the keys.
 		 */
-		PrekeyStore();
+		PrekeyStore(construct_filled marker);
 
 		/*! Import a prekey store from a protobuf-c struct.
 		 * \param keypairs An array of prekey pairs.

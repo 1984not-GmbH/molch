@@ -158,7 +158,7 @@ namespace Molch {
 		return outcome::success();
 	}
 
-	PrekeyStore::PrekeyStore() {
+	PrekeyStore::PrekeyStore([[maybe_unused]] construct_filled marker) {
 		this->init();
 		TRY_VOID(this->generateKeys());
 	}
