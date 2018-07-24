@@ -215,8 +215,8 @@ int main() {
 		Buffer data{"This is some data to be signed."};
 		printf("Data to be signed.\n");
 		printf("%.*s\n", static_cast<int>(data.size()), reinterpret_cast<char*>(data.data()));
-		Buffer signed_data{100, data.size() + SIGNATURE_SIZE};
-		spiced_master_keys.sign(data, signed_data);
+		TRY_WITH_RESULT(signed_data_result, spiced_master_keys.sign(data));
+		const auto& signed_data{signed_data_result.value()};
 		printf("Signed data:\n");
 		signed_data.printHex(std::cout);
 

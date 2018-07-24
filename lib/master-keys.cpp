@@ -165,16 +165,16 @@ namespace Molch {
 	/*
 	 * Sign a piece of data. Returns the data and signature in one output buffer.
 	 */
-	void MasterKeys::sign(
-			const span<const std::byte> data,
-			span<std::byte> signed_data) const { //output, length of data + SIGNATURE_SIZE
-		Expects(signed_data.size() == (data.size() + SIGNATURE_SIZE));
-
+	result<Buffer> MasterKeys::sign(const span<const std::byte> data) const {
 		Unlocker unlocker{*this};
-		TRY_VOID(crypto_sign(
+		const auto buffer_size{data.size() + SIGNATURE_SIZE};
+		Buffer signed_data(buffer_size, buffer_size);
+		OUTCOME_TRY(crypto_sign(
 				signed_data,
 				data,
 				*this->private_signing_key));
+
+		return std::move(signed_data);
 	}
 
 	void MasterKeys::exportProtobuf(

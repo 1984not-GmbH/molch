@@ -106,7 +106,7 @@ namespace Molch {
 		/*
 		 * Sign a piece of data. Returns the data and signature in one output buffer.
 		 */
-		void sign(const span<const std::byte> data, span<std::byte> signed_data) const; //output, length of data + SIGNATURE_SIZE
+		result<Buffer> sign(const span<const std::byte> data) const; //output, length of data + SIGNATURE_SIZE
 
 		/*! Export a set of master keys into a user Protobuf-C struct
 		 * \param public_signing_key Public pasrt of the signing keypair.

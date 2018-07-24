@@ -137,7 +137,8 @@ static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_ke
 	MallocBuffer prekey_list{
 			unsigned_prekey_list.size() + SIGNATURE_SIZE,
 			unsigned_prekey_list.size() + SIGNATURE_SIZE};
-	user->masterKeys().sign(unsigned_prekey_list, prekey_list);
+	TRY_WITH_RESULT(signed_data, user->masterKeys().sign(unsigned_prekey_list));
+	TRY_VOID(copyFromTo(signed_data.value(), prekey_list))
 
 	return prekey_list;
 }
