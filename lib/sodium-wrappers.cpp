@@ -360,31 +360,25 @@ namespace Molch {
 		return outcome::success();
 	}
 
-	result<void> sodium_mprotect_noaccess(void *pointer) noexcept {
+	void sodium_mprotect_noaccess(void *pointer) noexcept {
 		auto status{::sodium_mprotect_noaccess(pointer)};
 		if (status != 0) {
-			return Error(status_type::GENERIC_ERROR, "Failed to lock memory.");
+		    std::terminate();
 		}
-
-		return outcome::success();
 	}
 
-	result<void> sodium_mprotect_readonly(void *pointer) noexcept {
+	void sodium_mprotect_readonly(void *pointer) noexcept {
 		auto status{::sodium_mprotect_readonly(pointer)};
 		if (status != 0) {
-			return Error(status_type::GENERIC_ERROR, "Failed to make memory readonly.");
+		    std::terminate();
 		}
-
-		return outcome::success();
 	}
 
-	result<void> sodium_mprotect_readwrite(void *pointer) noexcept {
+	void sodium_mprotect_readwrite(void *pointer) noexcept {
 		auto status{::sodium_mprotect_readwrite(pointer)};
 		if (status != 0) {
-			return Error(status_type::GENERIC_ERROR, "Failed to make memory readwrite.");
+		    std::terminate();
 		}
-
-		return outcome::success();
 	}
 
 	result<span<std::byte>> sodium_pad(span<std::byte> buffer, const size_t unpadded_length, const size_t blocksize) noexcept {

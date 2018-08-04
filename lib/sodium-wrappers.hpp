@@ -171,9 +171,9 @@ namespace Molch {
 			const span<const std::byte> signed_message,
 			const span<const std::byte> signing_key) noexcept;
 
-	result<void> sodium_mprotect_noaccess(void *pointer) noexcept;
-	result<void> sodium_mprotect_readonly(void *pointer) noexcept;
-	result<void> sodium_mprotect_readwrite(void *pointer) noexcept;
+	void sodium_mprotect_noaccess(void *pointer) noexcept;
+	void sodium_mprotect_readonly(void *pointer) noexcept;
+	void sodium_mprotect_readwrite(void *pointer) noexcept;
 
 	result<span<std::byte>> sodium_pad(span<std::byte> buffer, const size_t unpadded_length, size_t blocksize) noexcept;
 	result<span<std::byte>> sodium_unpad(span<std::byte> buffer, const size_t blocksize) noexcept;

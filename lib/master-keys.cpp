@@ -92,7 +92,7 @@ namespace Molch {
 		this->private_signing_key = &this->private_keys->signing_key;
 
 		//lock the private key storage
-		TRY_VOID(this->lock());
+		this->lock();
 	}
 
 	void MasterKeys::generate() {
@@ -195,22 +195,16 @@ namespace Molch {
 		private_identity_key = private_identity_key_result.value();
 	}
 
-	result<void> MasterKeys::lock() const noexcept {
-		OUTCOME_TRY(sodium_mprotect_noaccess(this->private_keys.get()));
-
-		return outcome::success();
+	void MasterKeys::lock() const noexcept {
+		sodium_mprotect_noaccess(this->private_keys.get());
 	}
 
-	result<void> MasterKeys::unlock() const noexcept {
-		OUTCOME_TRY(sodium_mprotect_readonly(this->private_keys.get()));
-
-		return outcome::success();
+	void MasterKeys::unlock() const noexcept {
+		sodium_mprotect_readonly(this->private_keys.get());
 	}
 
-	result<void> MasterKeys::unlock_readwrite() const noexcept {
-		OUTCOME_TRY(sodium_mprotect_readwrite(this->private_keys.get()));
-
-		return outcome::success();
+	void MasterKeys::unlock_readwrite() const noexcept {
+		sodium_mprotect_readwrite(this->private_keys.get());
 	}
 
 	std::ostream& MasterKeys::print(std::ostream& stream) const {
@@ -229,26 +223,18 @@ namespace Molch {
 	}
 
 	MasterKeys::Unlocker::Unlocker(const MasterKeys& keys) : keys{keys} {
-		TRY_VOID(this->keys.unlock());
+		this->keys.unlock();
 	}
 
 	MasterKeys::Unlocker::~Unlocker() noexcept {
-		try {
-			TRY_VOID(this->keys.lock());
-		} catch (...) {
-			std::terminate();
-		}
+		this->keys.lock();
 	}
 
 	MasterKeys::ReadWriteUnlocker::ReadWriteUnlocker(const MasterKeys& keys) : keys{keys} {
-		TRY_VOID(this->keys.unlock_readwrite());
+		this->keys.unlock_readwrite();
 	}
 
 	MasterKeys::ReadWriteUnlocker::~ReadWriteUnlocker() noexcept {
-		try {
-			TRY_VOID(this->keys.lock());
-		} catch (...) {
-			std::terminate();
-		}
+		this->keys.lock();
 	}
 }

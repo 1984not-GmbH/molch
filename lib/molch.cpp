@@ -52,7 +52,7 @@ public:
 		if (!global_backup_key) {
 			throw Exception{status_type::GENERIC_ERROR, "No backup key to unlock!"};
 		}
-		TRY_VOID(Molch::sodium_mprotect_readonly(global_backup_key.get()));
+		Molch::sodium_mprotect_readonly(global_backup_key.get());
 	}
 
 	GlobalBackupKeyUnlocker(const GlobalBackupKeyUnlocker&) = default;
@@ -60,12 +60,8 @@ public:
 	GlobalBackupKeyUnlocker& operator=(const GlobalBackupKeyUnlocker&) = default;
 	GlobalBackupKeyUnlocker& operator=(GlobalBackupKeyUnlocker&&) = default;
 
-	~GlobalBackupKeyUnlocker() {
-		try {
-			TRY_VOID(Molch::sodium_mprotect_noaccess(global_backup_key.get()));
-		} catch (...) {
-			std::terminate();
-		}
+	~GlobalBackupKeyUnlocker() noexcept {
+        Molch::sodium_mprotect_noaccess(global_backup_key.get());
 	}
 };
 
@@ -75,7 +71,7 @@ public:
 		if (!global_backup_key) {
 			throw Exception{status_type::GENERIC_ERROR, "No backup key to unlock!"};
 		}
-		TRY_VOID(Molch::sodium_mprotect_readwrite(global_backup_key.get()));
+		Molch::sodium_mprotect_readwrite(global_backup_key.get());
 	}
 
 	GlobalBackupKeyWriteUnlocker(const GlobalBackupKeyWriteUnlocker&) = default;
@@ -83,12 +79,8 @@ public:
 	GlobalBackupKeyWriteUnlocker& operator=(const GlobalBackupKeyWriteUnlocker&) = default;
 	GlobalBackupKeyWriteUnlocker& operator=(GlobalBackupKeyWriteUnlocker&&) = default;
 
-	~GlobalBackupKeyWriteUnlocker() {
-		try {
-			TRY_VOID(Molch::sodium_mprotect_noaccess(global_backup_key.get()));
-		} catch (...) {
-			std::terminate();
-		}
+	~GlobalBackupKeyWriteUnlocker() noexcept {
+        Molch::sodium_mprotect_noaccess(global_backup_key.get());
 	}
 };
 
