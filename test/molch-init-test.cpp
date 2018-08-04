@@ -27,10 +27,9 @@
 #include <iostream>
 #include <string>
 
-#include "utils.hpp"
 #include "../include/molch.h"
+#include "integration-utils.hpp"
 
-using namespace Molch;
 
 int main(int argc, char *args[]) noexcept {
 	try {
@@ -41,30 +40,32 @@ int main(int argc, char *args[]) noexcept {
 			}
 		}
 
-		TRY_VOID(Molch::sodium_init());
+		if (::sodium_init() != 0) {
+			throw ::Exception("Failed to initialize libsodium.");
+		}
 
-		unsigned char backup_key[BACKUP_KEY_SIZE];
+		BackupKeyArray backup_key;
 		if (!recreate) {
 			//load the backup from a file
 			auto backup_file{read_file("test-data/molch-init.backup")};
 
 			//load the backup key from a file
 			auto backup_key_file{read_file("test-data/molch-init-backup.key")};
-			if (!backup_key_file.contains(BACKUP_KEY_SIZE)) {
-				throw Molch::Exception{status_type::INCORRECT_BUFFER_SIZE, "Backup key from file has an incorrect length."};
+			if (backup_key_file.size() not_eq backup_key.size()) {
+				throw ::Exception("Backup key from file has an incorrect length.");
 			}
 
 			//try to import the backup
 			{
 				auto status{molch_import(
-						backup_key,
-						BACKUP_KEY_SIZE,
-						byte_to_uchar(backup_file.data()),
+						backup_key.data(),
+						backup_key.size(),
+						backup_file.data(),
 						backup_file.size(),
-						byte_to_uchar(backup_key_file.data()),
+						backup_key_file.data(),
 						backup_key_file.size())};
-				on_error {
-					throw Molch::Exception{status};
+				if (status.status != status_type::SUCCESS) {
+					throw ::Exception("Failed to import backup.");
 				}
 			}
 
@@ -73,40 +74,32 @@ int main(int argc, char *args[]) noexcept {
 		}
 
 		//create a new user
-		std::unique_ptr<unsigned char,MallocDeleter<unsigned char>> backup;
-		std::unique_ptr<unsigned char,MallocDeleter<unsigned char>> prekey_list;
-		Buffer user_id{PUBLIC_MASTER_KEY_SIZE, PUBLIC_MASTER_KEY_SIZE};
-		size_t backup_length;
-		size_t prekey_list_length;
+		AutoFreeBuffer backup;
+		AutoFreeBuffer prekey_list;
+		PublicIdentity user_id;
 		{
-			unsigned char *backup_ptr{nullptr};
-			unsigned char *prekey_list_ptr{nullptr};
 			auto status{molch_create_user(
-					byte_to_uchar(user_id.data()),
+					user_id.data(),
 					user_id.size(),
-					&prekey_list_ptr,
-					&prekey_list_length,
-					backup_key,
-					BACKUP_KEY_SIZE,
-					&backup_ptr,
-					&backup_length,
+					&prekey_list.pointer,
+					&prekey_list.length,
+					backup_key.data(),
+					backup_key.size(),
+					&backup.pointer,
+					&backup.length,
 					reinterpret_cast<const unsigned char*>("random"),
 					sizeof("random"))};
-			on_error {
-				throw Molch::Exception{status};
+			if (status.status != status_type::SUCCESS) {
+				throw ::Exception("Failed to create user.");
 			}
-			backup.reset(backup_ptr);
-			prekey_list.reset(prekey_list_ptr);
 		}
-		if (backup == nullptr) {
-			throw Molch::Exception{status_type::EXPORT_ERROR, "Failed to export backup."};
+		if (backup.pointer == nullptr) {
+			throw ::Exception("Failed to export backup.");
 		}
 
 		//print the backup to a file
-		span<std::byte> backup_buffer{uchar_to_byte(backup.get()), backup_length};
-		span<std::byte> backup_key_buffer{uchar_to_byte(backup_key), BACKUP_KEY_SIZE};
-		print_to_file(backup_buffer, "molch-init.backup");
-		print_to_file(backup_key_buffer, "molch-init-backup.key");
+		write_to_file(backup, "molch-init.backup");
+		write_to_file(backup_key, "molch-init-backup.key");
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

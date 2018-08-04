@@ -69,17 +69,30 @@ foreach test : unit_tests
 	test(test, test_exe, workdir: meson.current_source_dir())
 endforeach
 
-#foreach test : integration_tests
-#	test_exe = executable(
-#		test,
-#		test + '.cpp',
-#		link_with: [
-#			test_library,
-#			molch,
-#		]
-#	)
-#	test(test, test_exe, workdir: meson.current_source_dir())
-#endforeach
+integration_test_library = library(
+		'integration-test-library',
+		[
+			'integration-utils.cpp',
+		],
+		dependencies: [
+			libsodium,
+		],
+		include_directories: [c_protobufs_include])
+
+foreach test : integration_tests
+	test_exe = executable(
+		test,
+		test + '.cpp',
+		link_with: [
+			molch,
+			integration_test_library,
+			c_protobufs,
+		],
+		dependencies: [libsodium, protobuf_c],
+		include_directories: [c_protobufs_include]
+	)
+	test(test, test_exe, workdir: meson.current_source_dir())
+endforeach
 
 if ['undefined', 'address,undefined'].contains(get_option('b_sanitize'))
 	ubsan_test = executable('ubsan-test', 'ubsan-test.cpp')
