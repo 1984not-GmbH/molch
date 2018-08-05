@@ -51,10 +51,10 @@ namespace Molch {
 		return *this;
 	}
 
-	MasterKeys::MasterKeys() noexcept {}
+	MasterKeys::MasterKeys([[maybe_unused]] uninitialized_t uninitialized) noexcept {}
 
 	result<MasterKeys> MasterKeys::create(const std::optional<span<const std::byte>> low_entropy_seed) {
-		MasterKeys keys;
+		MasterKeys keys(uninitialized_t::uninitialized);
 		keys.init();
 		if (low_entropy_seed.has_value()) {
 			OUTCOME_TRY(keys.generate(low_entropy_seed.value()));

@@ -71,10 +71,8 @@ namespace Molch {
 		MasterKeys& move(MasterKeys&& master_keys) noexcept;
 
 	public:
-	    /*
-	     * Constructs empty master keys. You should use MasterKeys::create.
-	     */
-		MasterKeys() noexcept;
+		MasterKeys() = delete;
+		MasterKeys(uninitialized_t uninitialized) noexcept;
 
 		/*
 		 * Create a new set of master keys.
