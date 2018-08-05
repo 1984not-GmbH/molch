@@ -52,8 +52,8 @@ namespace Molch {
 
 		/* Internally does the intialization of the buffers creation of the keys */
 		void init();
-		void generate();
-		void generate(const span<const std::byte> low_entropy_seed);
+		result<void> generate() noexcept;
+		result<void> generate(const span<const std::byte> low_entropy_seed) noexcept;
 
 		/* Manage the memory for the private keys */
 		void lock() const noexcept;
@@ -64,7 +64,7 @@ namespace Molch {
 		private:
 			const MasterKeys& keys;
 		public:
-			ReadWriteUnlocker(const MasterKeys& keys);
+			ReadWriteUnlocker(const MasterKeys& keys) noexcept;
 			~ReadWriteUnlocker() noexcept;
 		};
 
@@ -128,7 +128,7 @@ namespace Molch {
 		private:
 			const MasterKeys& keys;
 		public:
-			Unlocker(const MasterKeys& keys);
+			Unlocker(const MasterKeys& keys) noexcept;
 			~Unlocker() noexcept;
 		};
 

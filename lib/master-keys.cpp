@@ -53,12 +53,12 @@ namespace Molch {
 
 	MasterKeys::MasterKeys() {
 		this->init();
-		this->generate();
+		TRY_VOID(this->generate());
 	}
 
 	MasterKeys::MasterKeys(const span<const std::byte> low_entropy_seed) {
 		this->init();
-		this->generate(low_entropy_seed);
+		TRY_VOID(this->generate(low_entropy_seed));
 	}
 
 	MasterKeys::MasterKeys(
@@ -95,24 +95,26 @@ namespace Molch {
 		this->lock();
 	}
 
-	void MasterKeys::generate() {
+	result<void> MasterKeys::generate() noexcept {
 		ReadWriteUnlocker unlocker{*this};
 
 		//generate the signing keypair
-		TRY_VOID(crypto_sign_keypair(
+		OUTCOME_TRY(crypto_sign_keypair(
 				this->public_signing_key,
 				*this->private_signing_key));
 		this->public_signing_key.empty = false;
 		this->private_signing_key->empty = false;
 
 		//generate the identity keypair
-		TRY_VOID(crypto_box_keypair(this->public_identity_key, *this->private_identity_key));
+		OUTCOME_TRY(crypto_box_keypair(this->public_identity_key, *this->private_identity_key));
 		this->public_identity_key.empty = false;
 		this->private_identity_key->empty = false;
+
+		return outcome::success();
 	}
 
-	void MasterKeys::generate(const span<const std::byte> low_entropy_seed) {
-		Expects(!low_entropy_seed.empty());
+	result<void> MasterKeys::generate(const span<const std::byte> low_entropy_seed) noexcept {
+		FulfillOrFail(!low_entropy_seed.empty());
 
 		ReadWriteUnlocker unlocker{*this};
 
@@ -122,7 +124,7 @@ namespace Molch {
 		spiced_random(high_entropy_seed, low_entropy_seed);
 
 		//generate the signing keypair
-		TRY_VOID(crypto_sign_seed_keypair(
+		OUTCOME_TRY(crypto_sign_seed_keypair(
 				this->public_signing_key,
 				*this->private_signing_key,
 				span<std::byte>(high_entropy_seed).subspan(0, crypto_sign_SEEDBYTES)));
@@ -130,12 +132,14 @@ namespace Molch {
 		this->private_signing_key->empty = false;
 
 		//generate the identity keypair
-		TRY_VOID(crypto_box_seed_keypair(
+		OUTCOME_TRY(crypto_box_seed_keypair(
 				this->public_identity_key,
 				*this->private_identity_key,
 				span<const std::byte>{high_entropy_seed}.subspan(crypto_sign_SEEDBYTES)));
 		this->public_identity_key.empty = false;
 		this->private_identity_key->empty = false;
+
+		return outcome::success();
 	}
 
 	const PublicSigningKey& MasterKeys::getSigningKey() const noexcept {
@@ -222,7 +226,7 @@ namespace Molch {
 		return stream;
 	}
 
-	MasterKeys::Unlocker::Unlocker(const MasterKeys& keys) : keys{keys} {
+	MasterKeys::Unlocker::Unlocker(const MasterKeys& keys) noexcept : keys{keys} {
 		this->keys.unlock();
 	}
 
@@ -230,7 +234,7 @@ namespace Molch {
 		this->keys.lock();
 	}
 
-	MasterKeys::ReadWriteUnlocker::ReadWriteUnlocker(const MasterKeys& keys) : keys{keys} {
+	MasterKeys::ReadWriteUnlocker::ReadWriteUnlocker(const MasterKeys& keys) noexcept : keys{keys} {
 		this->keys.unlock_readwrite();
 	}
 
