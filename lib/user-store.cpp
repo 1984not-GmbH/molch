@@ -240,12 +240,12 @@ namespace Molch {
 	ProtobufCUser* User::exportProtobuf(Arena& arena) const {
 		protobuf_arena_create(arena, ProtobufCUser, user);
 
-		this->master_keys.exportProtobuf(
-			arena,
-			user->public_signing_key,
-			user->private_signing_key,
-			user->public_identity_key,
-			user->private_identity_key);
+		TRY_WITH_RESULT(exported_master_keys_result, this->master_keys.exportProtobuf(arena));
+		auto& exported_master_keys{exported_master_keys_result.value()};
+        user->public_signing_key = exported_master_keys.public_signing_key;
+        user->private_signing_key = exported_master_keys.private_signing_key;
+        user->public_identity_key = exported_master_keys.public_identity_key;
+        user->private_identity_key = exported_master_keys.private_identity_key;
 
 		//export the conversation store
 		protobuf_array_arena_export(arena, user, conversations, this->conversations);

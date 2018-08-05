@@ -185,22 +185,21 @@ namespace Molch {
 		return std::move(signed_data);
 	}
 
-	void MasterKeys::exportProtobuf(
-			Arena& arena,
-			ProtobufCKey*& public_signing_key,
-			ProtobufCKey*& private_signing_key,
-			ProtobufCKey*& public_identity_key,
-			ProtobufCKey*& private_identity_key) const {
+	result<MasterKeys::ExportedMasterKeys> MasterKeys::exportProtobuf(Arena& arena) const {
 		Unlocker unlocker{*this};
 
-		TRY_WITH_RESULT(public_signing_key_result, this->public_signing_key.exportProtobuf(arena));
-		public_signing_key = public_signing_key_result.value();
-		TRY_WITH_RESULT(private_signing_key_result, this->private_signing_key->exportProtobuf(arena));
-		private_signing_key = private_signing_key_result.value();
-		TRY_WITH_RESULT(public_identity_key_result, this->public_identity_key.exportProtobuf(arena));
-		public_identity_key = public_identity_key_result.value();
-		TRY_WITH_RESULT(private_identity_key_result, this->private_identity_key->exportProtobuf(arena));
-		private_identity_key = private_identity_key_result.value();
+		ExportedMasterKeys exported;
+
+		OUTCOME_TRY(public_signing_key, this->public_signing_key.exportProtobuf(arena));
+		exported.public_signing_key = public_signing_key;
+		OUTCOME_TRY(private_signing_key, this->private_signing_key->exportProtobuf(arena));
+		exported.private_signing_key = private_signing_key;
+		OUTCOME_TRY(public_identity_key, this->public_identity_key.exportProtobuf(arena));
+		exported.public_identity_key = public_identity_key;
+		OUTCOME_TRY(private_identity_key, this->private_identity_key->exportProtobuf(arena));
+		exported.private_identity_key = private_identity_key;
+
+		return exported;
 	}
 
 	void MasterKeys::lock() const noexcept {

@@ -110,18 +110,15 @@ namespace Molch {
 		 */
 		result<Buffer> sign(const span<const std::byte> data) const; //output, length of data + SIGNATURE_SIZE
 
-		/*! Export a set of master keys into a user Protobuf-C struct
-		 * \param public_signing_key Public pasrt of the signing keypair.
-		 * \param private_signing_key Private part of the signing keypair.
-		 * \param public_identity_key Public part of the identity keypair.
-		 * \param private_identity_key Private part of the idenity keypair.
-		 */
-		void exportProtobuf(
-				Arena& arena,
-				ProtobufCKey*& public_signing_key,
-				ProtobufCKey*& private_signing_key,
-				ProtobufCKey*& public_identity_key,
-				ProtobufCKey*& private_identity_key) const;
+		struct ExportedMasterKeys {
+			ProtobufCKey* public_signing_key{nullptr};
+			ProtobufCKey* private_signing_key{nullptr};
+			ProtobufCKey* public_identity_key{nullptr};
+			ProtobufCKey* private_identity_key{nullptr};
+		};
+
+		/*! Export a set of master keys into a user Protobuf-C struct */
+		result<ExportedMasterKeys> exportProtobuf(Arena& arena) const;
 
 		/*! Readonly unlocks the private keys when created and
 		 * automatically locks them if destroyed.
