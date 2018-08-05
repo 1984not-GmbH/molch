@@ -136,7 +136,8 @@ int main() {
 	try {
 		TRY_VOID(Molch::sodium_init());
 		//create the unspiced master keys
-		MasterKeys unspiced_master_keys;
+		TRY_WITH_RESULT(unspiced_master_keys_result, MasterKeys::create());
+		auto& unspiced_master_keys{unspiced_master_keys_result.value()};
 
 		//get the public keys
 		PublicSigningKey public_signing_key{unspiced_master_keys.getSigningKey()};
@@ -176,7 +177,8 @@ int main() {
 
 		//create the spiced master keys
 		Buffer seed{";a;awoeih]]pquw4t[spdif\\aslkjdf;'ihdg#)%!@))%)#)(*)@)#)h;kuhe[orih;o's':ke';sa'd;kfa';;.calijv;a/orq930u[sd9f0u;09[02;oasijd;adk"};
-		MasterKeys spiced_master_keys{seed};
+		TRY_WITH_RESULT(spiced_master_keys_result, MasterKeys::create(seed));
+		auto& spiced_master_keys{spiced_master_keys_result.value()};
 		public_signing_key = spiced_master_keys.getSigningKey();
 		public_identity_key = spiced_master_keys.getIdentityKey();
 

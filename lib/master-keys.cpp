@@ -51,14 +51,18 @@ namespace Molch {
 		return *this;
 	}
 
-	MasterKeys::MasterKeys() {
-		this->init();
-		TRY_VOID(this->generate());
-	}
+	MasterKeys::MasterKeys() noexcept {}
 
-	MasterKeys::MasterKeys(const span<const std::byte> low_entropy_seed) {
-		this->init();
-		TRY_VOID(this->generate(low_entropy_seed));
+	result<MasterKeys> MasterKeys::create(const std::optional<span<const std::byte>> low_entropy_seed) {
+		MasterKeys keys;
+		keys.init();
+		if (low_entropy_seed.has_value()) {
+			OUTCOME_TRY(keys.generate(low_entropy_seed.value()));
+		} else {
+			OUTCOME_TRY(keys.generate());
+		}
+
+		return keys;
 	}
 
 	MasterKeys::MasterKeys(

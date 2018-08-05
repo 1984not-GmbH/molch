@@ -62,7 +62,9 @@ namespace Molch {
 			const span<const std::byte> seed,
 			PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
 			PublicKey * const public_identity_key//output, optional, can be nullptr
-			) : master_keys(seed) {
+			) {
+		TRY_WITH_RESULT(master_keys_result, MasterKeys::create(seed));
+		this->master_keys = std::move(master_keys_result.value());
 		TRY_WITH_RESULT(prekey_store, PrekeyStore::create())
 		this->prekeys = std::move(prekey_store.value());
 		this->exportPublicKeys(public_signing_key, public_identity_key);
@@ -72,6 +74,8 @@ namespace Molch {
 	User::User(
 			PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
 			PublicKey * const public_identity_key) { //output, optional, can be nullptr
+		TRY_WITH_RESULT(master_keys_result, MasterKeys::create());
+		this->master_keys = std::move(master_keys_result.value());
 		TRY_WITH_RESULT(prekey_store, PrekeyStore::create());
 		this->prekeys = std::move(prekey_store.value());
 		this->exportPublicKeys(public_signing_key, public_identity_key);

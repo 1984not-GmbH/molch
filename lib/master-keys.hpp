@@ -71,6 +71,11 @@ namespace Molch {
 		MasterKeys& move(MasterKeys&& master_keys) noexcept;
 
 	public:
+	    /*
+	     * Constructs empty master keys. You should use MasterKeys::create.
+	     */
+		MasterKeys() noexcept;
+
 		/*
 		 * Create a new set of master keys.
 		 *
@@ -80,8 +85,7 @@ namespace Molch {
 		 *
 		 * WARNING: Don't use Entropy from the OSs CPRNG as seed!
 		 */
-		MasterKeys();
-		MasterKeys(const span<const std::byte> low_entropy_seed);
+		static result<MasterKeys> create(const std::optional<span<const std::byte>> low_entropy_seed = std::nullopt);
 
 		/*
 		 * import from Protobuf-C
