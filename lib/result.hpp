@@ -41,6 +41,16 @@ namespace Molch {
 	using result = outcome::result<Result,Error>;
 }
 
+/*
+ * Marker type to mark a constructor that constructs an uninitialized object.
+ * This is useful if proper construction is done using a factory function
+ * that resturns a result, but other types still need some kind of constructor
+ * to be composed of the given type.
+ */
+struct uninitialized_t {
+    static uninitialized_t uninitialized;
+};
+
 #define TRY_WITH_RESULT(result, call) \
 	auto&& result{call};\
 	if (!result) {\
