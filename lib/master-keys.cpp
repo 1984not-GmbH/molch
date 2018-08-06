@@ -208,7 +208,9 @@ namespace Molch {
 	}
 
 	void MasterKeys::lock() const noexcept {
-		sodium_mprotect_noaccess(this->private_keys.get());
+		if (this->private_keys) {
+			sodium_mprotect_noaccess(this->private_keys.get());
+		}
 	}
 
 	void MasterKeys::unlock() const noexcept {
