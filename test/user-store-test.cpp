@@ -106,11 +106,14 @@ int main() {
 
 		//create alice
 		PublicSigningKey alice_public_signing_key;
-		store.add(Molch::User(&alice_public_signing_key, nullptr));
 		{
-			auto alice_user{store.find(alice_public_signing_key)};
-			MasterKeys::Unlocker unlocker{alice_user->masterKeys()};
-			alice_user->masterKeys().print(std::cout) << std::endl;
+			TRY_WITH_RESULT(alice_user_result, Molch::User::create());
+			auto& alice_user{alice_user_result.value()};
+			alice_public_signing_key = alice_user.id();
+			store.add(std::move(alice_user));
+			auto found_user{store.find(alice_public_signing_key)};
+			MasterKeys::Unlocker unlocker{found_user->masterKeys()};
+			found_user->masterKeys().print(std::cout) << std::endl;
 		}
 		printf("Successfully created Alice to the user store.\n");
 
@@ -131,7 +134,12 @@ int main() {
 
 		//create bob
 		PublicSigningKey bob_public_signing_key;
-		store.add(Molch::User(&bob_public_signing_key));
+		{
+			TRY_WITH_RESULT(bob_user_result, Molch::User::create());
+			auto& bob_user{bob_user_result.value()};
+			bob_public_signing_key = bob_user.id();
+			store.add(std::move(bob_user));
+		}
 		printf("Successfully created Bob.\n");
 
 		//check length of the user store
@@ -154,7 +162,12 @@ int main() {
 
 		//create charlie
 		PublicSigningKey charlie_public_signing_key;
-		store.add(Molch::User(&charlie_public_signing_key));
+		{
+			TRY_WITH_RESULT(charlie_user_result, Molch::User::create());
+			auto& charlie_user{charlie_user_result.value()};
+			charlie_public_signing_key = charlie_user.id();
+			store.add(std::move(charlie_user));
+		}
 		printf("Successfully added Charlie to the user store.\n");
 
 		//check length of the user store
@@ -210,7 +223,12 @@ int main() {
 			printf("Successfully removed user.\n");
 
 			//recreate bob
-			store.add(Molch::User(&bob_public_signing_key));
+			{
+				TRY_WITH_RESULT(recreated_bob_result, Molch::User::create());
+				auto& recreated_bob{recreated_bob_result.value()};
+				bob_public_signing_key = recreated_bob.id();
+				store.add(std::move(recreated_bob));
+			}
 			printf("Successfully recreated Bob.\n");
 
 			//now find bob again

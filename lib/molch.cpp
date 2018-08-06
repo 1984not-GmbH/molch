@@ -196,11 +196,17 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 		//create the user
 		PublicSigningKey public_master_key_key;
 		if (random_data_length != 0) {
-			users->add(Molch::User({uchar_to_byte(random_data), random_data_length}, &public_master_key_key));
+			TRY_WITH_RESULT(user_result, Molch::User::create({{uchar_to_byte(random_data), random_data_length}}));
+			auto& user{user_result.value()};
+			public_master_key_key = user.id();
+			users->add(std::move(user));
 		} else {
-			users->add(Molch::User(&public_master_key_key, nullptr));
+			TRY_WITH_RESULT(user_result, Molch::User::create());
+			auto& user{user_result.value()};
+			public_master_key_key = user.id();
+			users->add(std::move(user));
 		}
-		TRY_VOID(copyFromTo(public_master_key_key, {uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE}));
+		TRY_VOID(copyFromTo(public_master_key_key, {uchar_to_byte(public_master_key), public_master_key_length}));
 
 		user_store_created = true;
 

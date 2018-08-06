@@ -28,6 +28,8 @@
 #include "destroyers.hpp"
 
 namespace Molch {
+	User::User(uninitialized_t uninitialized) noexcept : master_keys{uninitialized}, prekeys{uninitialized} {}
+
 	User& User::move(User&& node) noexcept {
 		this->public_signing_key = node.public_signing_key;
 		this->master_keys = std::move(node.master_keys);
@@ -58,28 +60,15 @@ namespace Molch {
 		}
 	}
 
-	User::User(
-			const span<const std::byte> seed,
-			PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
-			PublicKey * const public_identity_key//output, optional, can be nullptr
-			) : master_keys{uninitialized_t::uninitialized}, prekeys{uninitialized_t::uninitialized} {
-		TRY_WITH_RESULT(master_keys_result, MasterKeys::create(seed));
-		this->master_keys = std::move(master_keys_result.value());
-		TRY_WITH_RESULT(prekey_store, PrekeyStore::create())
-		this->prekeys = std::move(prekey_store.value());
-		this->exportPublicKeys(public_signing_key, public_identity_key);
-		this->public_signing_key = this->master_keys.getSigningKey();
-	}
+	result<User> User::create(const std::optional<span<const std::byte>> seed) {
+		User user(uninitialized_t::uninitialized);
+		OUTCOME_TRY(master_keys, MasterKeys::create(seed));
+		user.master_keys = std::move(master_keys);
+		OUTCOME_TRY(prekey_store, PrekeyStore::create());
+		user.prekeys = std::move(prekey_store);
+		user.public_signing_key = master_keys.getSigningKey();
 
-	User::User(
-			PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
-			PublicKey * const public_identity_key) : master_keys{uninitialized_t::uninitialized}, prekeys{uninitialized_t::uninitialized} { //output, optional, can be nullptr
-		TRY_WITH_RESULT(master_keys_result, MasterKeys::create());
-		this->master_keys = std::move(master_keys_result.value());
-		TRY_WITH_RESULT(prekey_store, PrekeyStore::create());
-		this->prekeys = std::move(prekey_store.value());
-		this->exportPublicKeys(public_signing_key, public_identity_key);
-		this->public_signing_key = this->master_keys.getSigningKey();
+		return user;
 	}
 
 	User::User(const ProtobufCUser& user) : master_keys{uninitialized_t::uninitialized}, prekeys{uninitialized_t::uninitialized} {
