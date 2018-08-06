@@ -144,6 +144,8 @@ namespace Molch {
 		return stream;
 	}
 
+	PrekeyStore::PrekeyStore([[maybe_unused]] uninitialized_t uninitialized) {}
+
 	void PrekeyStore::init() {
 		this->prekeys_storage = std::unique_ptr<std::array<Prekey,PREKEY_AMOUNT>,SodiumDeleter<std::array<Prekey,PREKEY_AMOUNT>>>(sodium_malloc<std::array<Prekey,PREKEY_AMOUNT>>(1));
 		new (this->prekeys_storage.get()) std::array<Prekey,PREKEY_AMOUNT>;
@@ -159,7 +161,7 @@ namespace Molch {
 	}
 
 	result<PrekeyStore> PrekeyStore::create() {
-		PrekeyStore store;
+		PrekeyStore store(uninitialized_t::uninitialized);
 		store.init();
 		OUTCOME_TRY(store.generateKeys());
 
@@ -171,7 +173,7 @@ namespace Molch {
 			const span<ProtobufCPrekey*> deprecated_keypairs) {
 		FulfillOrFail(keypairs.size() == PREKEY_AMOUNT);
 
-		PrekeyStore store;
+		PrekeyStore store(uninitialized_t::uninitialized);
 		store.init();
 
 		size_t index{0};

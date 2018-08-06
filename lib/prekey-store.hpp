@@ -95,7 +95,9 @@ namespace Molch {
 		std::vector<Prekey,SodiumAllocator<Prekey>> deprecated_prekeys_storage;
 
 	public:
-		PrekeyStore() = default;
+
+		PrekeyStore() = delete;
+		PrekeyStore(uninitialized_t uninitialized);
 
 		/*
 		 * Create a new keystore. Generates all the keys.
