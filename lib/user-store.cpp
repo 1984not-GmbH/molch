@@ -217,22 +217,20 @@ namespace Molch {
 		this->users.clear();
 	}
 
-	ProtobufCUser* User::exportProtobuf(Arena& arena) const {
+	result<ProtobufCUser*> User::exportProtobuf(Arena& arena) const {
 		protobuf_arena_create(arena, ProtobufCUser, user);
 
-		TRY_WITH_RESULT(exported_master_keys_result, this->master_keys.exportProtobuf(arena));
-		auto& exported_master_keys{exported_master_keys_result.value()};
-        user->public_signing_key = exported_master_keys.public_signing_key;
-        user->private_signing_key = exported_master_keys.private_signing_key;
-        user->public_identity_key = exported_master_keys.public_identity_key;
-        user->private_identity_key = exported_master_keys.private_identity_key;
+		OUTCOME_TRY(exported_master_keys, this->master_keys.exportProtobuf(arena));
+		user->public_signing_key = exported_master_keys.public_signing_key;
+		user->private_signing_key = exported_master_keys.private_signing_key;
+		user->public_identity_key = exported_master_keys.public_identity_key;
+		user->private_identity_key = exported_master_keys.private_identity_key;
 
 		//export the conversation store
 		protobuf_array_arena_export(arena, user, conversations, this->conversations);
 
 		//export the prekeys
-		TRY_WITH_RESULT(exported_prekeys_result, this->prekeys.exportProtobuf(arena));
-		const auto& exported_prekeys{exported_prekeys_result.value()};
+		OUTCOME_TRY(exported_prekeys, this->prekeys.exportProtobuf(arena));
 		user->prekeys = exported_prekeys.keypairs.data();
 		user->n_prekeys = exported_prekeys.keypairs.size();
 		user->deprecated_prekeys = exported_prekeys.deprecated_keypairs.data();
@@ -250,7 +248,9 @@ namespace Molch {
 		auto users_array{arena.allocate<ProtobufCUser*>(this->users.size())};
 		size_t index{0};
 		for (const auto& user : this->users) {
-			users_array[index] = user.exportProtobuf(arena);
+			TRY_WITH_RESULT(exported_user_result, user.exportProtobuf(arena));
+			auto& exported_user{exported_user_result.value()};
+			users_array[index] = exported_user;
 			index++;
 		}
 		return {users_array, this->users.size()};

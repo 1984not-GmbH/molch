@@ -72,7 +72,7 @@ namespace Molch {
 		 */
 		static result<User> import(const ProtobufCUser& user);
 
-		ProtobufCUser* exportProtobuf(Arena& arena) const;
+		result<ProtobufCUser*> exportProtobuf(Arena& arena) const;
 
 		const PublicSigningKey& id() const noexcept;
 		const MasterKeys& masterKeys() const noexcept;
