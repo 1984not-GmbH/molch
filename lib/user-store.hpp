@@ -132,8 +132,6 @@ namespace Molch {
 		span<ProtobufCUser*> exportProtobuf(Arena& arena) const;
 
 		size_t size() const;
-
-		std::ostream& print(std::ostream& stream) const;
 	};
 }
 

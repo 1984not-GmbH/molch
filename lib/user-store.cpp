@@ -259,14 +259,4 @@ namespace Molch {
 	size_t UserStore::size() const {
 		return this->users.size();
 	}
-
-	std::ostream& UserStore::print(std::ostream& stream) const {
-		stream << "Users: [\n";
-		for (const auto& user : this->users) {
-			stream << user << ",\n";
-		}
-		stream << "]\n";
-
-		return stream;
-	}
 }
