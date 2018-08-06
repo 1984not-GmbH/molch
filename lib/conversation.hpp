@@ -40,7 +40,6 @@ namespace Molch {
 	struct ReceiveConversation;
 
 	class Conversation {
-		friend class ConversationStore;
 	private:
 		Conversation& move(Conversation&& conversation) noexcept;
 
