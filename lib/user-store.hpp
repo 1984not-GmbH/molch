@@ -44,10 +44,6 @@ namespace Molch {
 		PublicSigningKey public_signing_key;
 		MasterKeys master_keys;
 
-		void exportPublicKeys(
-				PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
-				PublicKey * const public_identity_key); //output, optional, can be nullptr
-
 		/*! Import a user from a Protobuf-C struct
 		 * \param user The struct to import from.
 		 */

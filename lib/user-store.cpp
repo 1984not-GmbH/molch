@@ -48,18 +48,6 @@ namespace Molch {
 		return *this;
 	}
 
-	void User::exportPublicKeys(
-			PublicSigningKey * const public_signing_key, //output, optional, can be nullptr
-			PublicKey * const public_identity_key) { //output, optional, can be nullptr
-		//get the public keys
-		if (public_signing_key != nullptr) {
-			*public_signing_key = this->master_keys.getSigningKey();
-		}
-		if (public_identity_key != nullptr) {
-			*public_identity_key = this->master_keys.getIdentityKey();
-		}
-	}
-
 	result<User> User::create(const std::optional<span<const std::byte>> seed) {
 		User user(uninitialized_t::uninitialized);
 		OUTCOME_TRY(master_keys, MasterKeys::create(seed));
