@@ -49,10 +49,11 @@ namespace Molch {
 		Key<CONVERSATION_ID_SIZE,KeyType::Key> id_storage; //unique id of a conversation, generated randomly
 		Ratchet ratchet;
 
+		Conversation(uninitialized_t uninitialized) noexcept;
 
 	public:
-		/* Only for internal use */
-		Conversation() = default;
+
+		Conversation() = delete;
 
 		static result<Conversation> create(
 			const PrivateKey& our_private_identity,
@@ -123,11 +124,15 @@ namespace Molch {
 	struct SendConversation {
 		Buffer packet;
 		Conversation conversation;
+
+		SendConversation(Buffer&& packet, Conversation&& conversation) noexcept;
 	};
 
 	struct ReceiveConversation {
 		Buffer message;
 		Conversation conversation;
+
+		ReceiveConversation(Buffer&& message, Conversation&& conversation) noexcept;
 	};
 }
 #endif

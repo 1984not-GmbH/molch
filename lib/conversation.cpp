@@ -30,6 +30,8 @@
 #include "gsl.hpp"
 
 namespace Molch {
+	Conversation::Conversation([[maybe_unused]] uninitialized_t uninitialized) noexcept {}
+
 	Conversation& Conversation::move(Conversation&& conversation) noexcept {
 		this->id_storage = conversation.id_storage;
 		this->ratchet = std::move(conversation.ratchet);
@@ -63,7 +65,7 @@ namespace Molch {
 				&& !our_public_ephemeral.empty
 				&& !their_public_ephemeral.empty);
 
-		Conversation conversation;
+		Conversation conversation(uninitialized_t::uninitialized);
 		//create random id
 		conversation.id_storage.fillRandom();
 
@@ -105,7 +107,6 @@ namespace Molch {
 				PUBLIC_KEY_SIZE});
 
 		//initialize the conversation
-		SendConversation send_conversation;
 		OUTCOME_TRY(conversation, create(
 				sender_private_identity,
 				sender_public_identity,
@@ -113,18 +114,15 @@ namespace Molch {
 				sender_private_ephemeral,
 				sender_public_ephemeral,
 				receiver_public_prekey));
-		send_conversation.conversation = std::move(conversation);
 
 		auto prekey_metadata{std::make_optional<PrekeyMetadata>()};
 		auto& prekey_metadata_content{prekey_metadata.value()};
 		prekey_metadata_content.identity = sender_public_identity;
 		prekey_metadata_content.ephemeral = sender_public_ephemeral;
 		prekey_metadata_content.prekey = receiver_public_prekey;
+		OUTCOME_TRY(packet, conversation.send(message, prekey_metadata));
 
-		OUTCOME_TRY(packet, send_conversation.conversation.send(message, prekey_metadata));
-		send_conversation.packet = std::move(packet);
-
-		return send_conversation;
+		return SendConversation(std::move(packet), std::move(conversation));
 	}
 
 	result<ReceiveConversation> Conversation::createReceiveConversation(
@@ -149,7 +147,6 @@ namespace Molch {
 		//get the private prekey that corresponds to the public prekey used in the message
 		OUTCOME_TRY(receiver_private_prekey, receiver_prekeys.getPrekey(unverified_prekey_metadata.prekey));
 
-		ReceiveConversation receive_conversation;
 		OUTCOME_TRY(conversation, create(
 				receiver_private_identity,
 				receiver_public_identity,
@@ -157,12 +154,10 @@ namespace Molch {
 				receiver_private_prekey,
 				unverified_prekey_metadata.prekey,
 				unverified_prekey_metadata.ephemeral));
-		receive_conversation.conversation = std::move(conversation);
 
-		OUTCOME_TRY(received_message, receive_conversation.conversation.receive(packet));
-		receive_conversation.message = std::move(received_message.message);
+		OUTCOME_TRY(received_message, conversation.receive(packet));
 
-		return receive_conversation;
+		return ReceiveConversation(std::move(received_message.message), std::move(conversation));
 	}
 
 	result<Buffer> Conversation::send(const span<const std::byte> message, const std::optional<PrekeyMetadata>& prekey_metadata) {
@@ -289,7 +284,7 @@ namespace Molch {
 	}
 
 	result<Conversation> Conversation::import(const ProtobufCConversation& conversation_protobuf) {
-		Conversation conversation;
+		Conversation conversation(uninitialized_t::uninitialized);
 		//copy the id
 		conversation.id_storage.set({
 				uchar_to_byte(conversation_protobuf.id.data),
@@ -312,4 +307,12 @@ namespace Molch {
 
 		return stream;
 	}
+
+	SendConversation::SendConversation(Buffer&& packet, Conversation&& conversation) noexcept :
+		packet{std::move(packet)},
+		conversation{std::move(conversation)}{}
+
+	ReceiveConversation::ReceiveConversation(Molch::Buffer &&message, Molch::Conversation &&conversation) noexcept :
+		message{std::move(message)},
+		conversation{std::move(conversation)} {}
 }
