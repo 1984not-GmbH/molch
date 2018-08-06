@@ -92,15 +92,15 @@ namespace Molch {
 		return imported_user;
 	}
 
-	std::ostream& User::print(std::ostream& stream) const {
+	std::ostream& operator<<(std::ostream& stream, const User& user) {
 		stream << "Public Signing Key:\n";
-		this->public_signing_key.printHex(stream) << "\n\n";
+		user.id().printHex(stream) << "\n\n";
 		stream << "\nMaster Keys:\n";
-		this->master_keys.print(stream);
+		user.masterKeys().print(stream);
 		stream << "\nPrekeys:\n";
-		this->prekeys.print(stream);
+		user.prekeys.print(stream);
 		stream << "\nConversations:\n";
-		this->conversations.print(stream);
+		user.conversations.print(stream);
 
 		return stream;
 	}
@@ -263,7 +263,7 @@ namespace Molch {
 	std::ostream& UserStore::print(std::ostream& stream) const {
 		stream << "Users: [\n";
 		for (const auto& user : this->users) {
-			user.print(stream) << ",\n";
+			stream << user << ",\n";
 		}
 		stream << "]\n";
 

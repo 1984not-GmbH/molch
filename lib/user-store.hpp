@@ -76,9 +76,9 @@ namespace Molch {
 
 		const PublicSigningKey& id() const noexcept;
 		const MasterKeys& masterKeys() const noexcept;
-
-		std::ostream& print(std::ostream& stream) const;
 	};
+
+	std::ostream& operator<<(std::ostream& stream, const User& user);
 
 	//header of the user store
 	class UserStore {
