@@ -59,36 +59,37 @@ namespace Molch {
 		return user;
 	}
 
-	User::User(const ProtobufCUser& user) : master_keys{uninitialized_t::uninitialized}, prekeys{uninitialized_t::uninitialized} {
+	result<User> User::import(const ProtobufCUser& user) {
 		if ((user.public_signing_key == nullptr)
-				|| (user.private_signing_key == nullptr)
-				|| (user.public_identity_key == nullptr)
-				|| (user.private_identity_key == nullptr)) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Missing keys."};
+			|| (user.private_signing_key == nullptr)
+			|| (user.public_identity_key == nullptr)
+			|| (user.private_identity_key == nullptr)) {
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "Missing keys.");
 		}
 
-		TRY_WITH_RESULT(prekey_store, PrekeyStore::create());
-		this->prekeys = std::move(prekey_store.value());
+		User imported_user(uninitialized_t::uninitialized);
 
 		//master keys
-		TRY_WITH_RESULT(master_keys, MasterKeys::import(
+		OUTCOME_TRY(master_keys, MasterKeys::import(
 				*user.public_signing_key,
 				*user.private_signing_key,
 				*user.public_identity_key,
 				*user.private_identity_key));
-		this->master_keys = std::move(master_keys.value());
+		imported_user.master_keys = std::move(master_keys);
 
 		//public signing key
-		this->public_signing_key.set({
-				uchar_to_byte(user.public_signing_key->key.data),
-				user.public_signing_key->key.len});
+		imported_user.public_signing_key.set({
+											 uchar_to_byte(user.public_signing_key->key.data),
+											 user.public_signing_key->key.len});
 
-		this->conversations = ConversationStore{{user.conversations, user.n_conversations}};
+		imported_user.conversations = ConversationStore{{user.conversations, user.n_conversations}};
 
-		TRY_WITH_RESULT(imported_prekey_store, PrekeyStore::import(
-			{user.prekeys, user.n_prekeys},
-			{user.deprecated_prekeys, user.n_deprecated_prekeys}));
-		this->prekeys = std::move(imported_prekey_store.value());
+		OUTCOME_TRY(prekey_store, PrekeyStore::import(
+				{user.prekeys, user.n_prekeys},
+				{user.deprecated_prekeys, user.n_deprecated_prekeys}));
+		imported_user.prekeys = std::move(prekey_store);
+
+		return imported_user;
 	}
 
 	std::ostream& User::print(std::ostream& stream) const {
@@ -117,7 +118,8 @@ namespace Molch {
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Array of users is missing a user."};
 			}
 
-			this->add({*user});
+			TRY_WITH_RESULT(user_result, User::import(*user));
+			this->add(std::move(user_result.value()));
 		}
 	}
 

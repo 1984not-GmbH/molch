@@ -70,7 +70,7 @@ namespace Molch {
 		/*! Import a user from a Protobuf-C struct
 		 * \param user The struct to import from.
 		 */
-		User(const ProtobufCUser& user);
+		static result<User> import(const ProtobufCUser& user);
 
 		ProtobufCUser* exportProtobuf(Arena& arena) const;
 
