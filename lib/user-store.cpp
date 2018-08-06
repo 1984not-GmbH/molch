@@ -94,11 +94,12 @@ namespace Molch {
 		this->prekeys = std::move(prekey_store.value());
 
 		//master keys
-		this->master_keys = MasterKeys{
-			*user.public_signing_key,
-			*user.private_signing_key,
-			*user.public_identity_key,
-			*user.private_identity_key};
+		TRY_WITH_RESULT(master_keys, MasterKeys::import(
+				*user.public_signing_key,
+				*user.private_signing_key,
+				*user.public_identity_key,
+				*user.private_identity_key));
+		this->master_keys = std::move(master_keys.value());
 
 		//public signing key
 		this->public_signing_key.set({

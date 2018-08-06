@@ -88,7 +88,7 @@ namespace Molch {
 		/*
 		 * import from Protobuf-C
 		 */
-		MasterKeys(
+		static result<MasterKeys> import(
 			const ProtobufCKey& public_signing_key,
 			const ProtobufCKey& private_signing_key,
 			const ProtobufCKey& public_identity_key,

@@ -76,9 +76,8 @@ static void protobuf_export(
 }
 
 
-static void protobuf_import(
+static MasterKeys protobuf_import(
 		Arena& pool,
-		std::unique_ptr<MasterKeys>& keys,
 		const Buffer& public_signing_key_buffer,
 		const Buffer& private_signing_key_buffer,
 		const Buffer& public_identity_key_buffer,
@@ -115,11 +114,12 @@ static void protobuf_import(
 		throw Molch::Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack private identity key from protobuf."};
 	}
 
-	keys = std::make_unique<MasterKeys>(
-		*public_signing_key,
-		*private_signing_key,
-		*public_identity_key,
-		*private_identity_key);
+	TRY_WITH_RESULT(keys_result, MasterKeys::import(
+			*public_signing_key,
+			*private_signing_key,
+			*public_identity_key,
+			*private_identity_key));
+	return std::move(keys_result.value());
 }
 
 
@@ -258,15 +258,13 @@ int main() {
 
 		//import again
 		printf("Import from Protobuf-C:\n");
-		auto imported_master_keys{std::unique_ptr<MasterKeys>(nullptr)};
 		Arena pool;
-		protobuf_import(
+		auto imported_master_keys{protobuf_import(
 			pool,
-			imported_master_keys,
 			protobuf_export_public_signing_key,
 			protobuf_export_private_signing_key,
 			protobuf_export_public_identity_key,
-			protobuf_export_private_identity_key);
+			protobuf_export_private_identity_key)};
 
 		//export again
 		Buffer protobuf_second_export_public_signing_key;
@@ -274,7 +272,7 @@ int main() {
 		Buffer protobuf_second_export_public_identity_key;
 		Buffer protobuf_second_export_private_identity_key;
 		protobuf_export(
-			*imported_master_keys,
+			imported_master_keys,
 			protobuf_second_export_public_signing_key,
 			protobuf_second_export_private_signing_key,
 			protobuf_second_export_public_identity_key,

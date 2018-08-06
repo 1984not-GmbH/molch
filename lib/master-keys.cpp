@@ -65,24 +65,29 @@ namespace Molch {
 		return keys;
 	}
 
-	MasterKeys::MasterKeys(
+	result<MasterKeys> MasterKeys::import(
 			const ProtobufCKey& public_signing_key,
 			const ProtobufCKey& private_signing_key,
 			const ProtobufCKey& public_identity_key,
 			const ProtobufCKey& private_identity_key) {
-		this->init();
+		MasterKeys keys(uninitialized_t::uninitialized);
+		keys.init();
 
-		if ((this->private_signing_key == nullptr) || (this->private_identity_key == nullptr)) {
-			throw Exception{status_type::INCORRECT_DATA, "One of the private key pointers is nullptr."};
+		if ((keys.private_signing_key == nullptr) || (keys.private_identity_key == nullptr)) {
+			return Error(status_type::INCORRECT_DATA, "One of the private key pointers is nullptr.");
 		}
 
-		ReadWriteUnlocker unlocker{*this};
+		{
+			ReadWriteUnlocker unlocker(keys);
 
-		//copy the keys
-		this->public_signing_key = PublicSigningKey{public_signing_key};
-		*this->private_signing_key = PrivateSigningKey{private_signing_key};
-		this->public_identity_key = PublicKey{public_identity_key};
-		*this->private_identity_key = PrivateKey{private_identity_key};
+			//copy the keys
+			keys.public_signing_key = PublicSigningKey{public_signing_key};
+			*keys.private_signing_key = PrivateSigningKey{private_signing_key};
+			keys.public_identity_key = PublicKey{public_identity_key};
+			*keys.private_identity_key = PrivateKey{private_identity_key};
+		}
+
+		return keys;
 	}
 
 
