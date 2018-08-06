@@ -122,11 +122,11 @@ namespace Molch {
 	}
 
 	void UserStore::add(User&& user) {
-		const auto& public_signing_key{user.public_signing_key};
+		const auto& public_signing_key{user.id()};
 		//search if a user with this public_signing_key already exists
 		auto existing_user{std::find_if(std::cbegin(this->users), std::cend(this->users),
 				[public_signing_key](const User& user) {
-					return user.public_signing_key == public_signing_key;
+					return user.id() == public_signing_key;
 				})};
 		//if none exists, just add the conversation
 		if (existing_user == std::cend(this->users)) {
@@ -144,7 +144,7 @@ namespace Molch {
 
 		auto user{std::find_if(std::begin(this->users), std::end(this->users),
 				[public_signing_key](const User& user) {
-					return user.public_signing_key == public_signing_key;
+					return user.id() == public_signing_key;
 				})};
 		if (user == std::end(this->users)) {
 			return nullptr;
@@ -178,9 +178,9 @@ namespace Molch {
 			auto index{gsl::narrow_cast<size_t>(&user - &(*std::cbegin(this->users)))};
 			TRY_VOID(list.copyFromRaw(
 				PUBLIC_MASTER_KEY_SIZE * index,
-				user.public_signing_key.data(),
+				user.id().data(),
 				0,
-				user.public_signing_key.size()));
+				user.id().size()));
 		}
 
 		return list;
@@ -203,7 +203,7 @@ namespace Molch {
 	void UserStore::remove(const PublicSigningKey& public_signing_key) {
 		auto found_node{std::find_if(std::cbegin(this->users), std::cend(this->users),
 				[public_signing_key](const User& user) {
-					return user.public_signing_key == public_signing_key;
+					return user.id() == public_signing_key;
 				})};
 
 		if (found_node != std::cend(this->users)) {

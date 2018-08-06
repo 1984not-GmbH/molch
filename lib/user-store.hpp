@@ -39,17 +39,9 @@
 
 namespace Molch {
 	class User {
-		friend class UserStore;
 	private:
 		PublicSigningKey public_signing_key;
 		MasterKeys master_keys;
-
-		/*! Import a user from a Protobuf-C struct
-		 * \param user The struct to import from.
-		 */
-		User(const ProtobufCUser& user);
-
-		ProtobufCUser* exportProtobuf(Arena& arena) const;
 
 		User& move(User&& node) noexcept;
 
@@ -74,6 +66,13 @@ namespace Molch {
 
 		User& operator=(const User& node) = delete;
 		User& operator=(User&& node) noexcept;
+
+		/*! Import a user from a Protobuf-C struct
+		 * \param user The struct to import from.
+		 */
+		User(const ProtobufCUser& user);
+
+		ProtobufCUser* exportProtobuf(Arena& arena) const;
 
 		const PublicSigningKey& id() const noexcept;
 		const MasterKeys& masterKeys() const noexcept;
