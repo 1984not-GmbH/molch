@@ -39,10 +39,10 @@ namespace Molch {
 		return static_cast<std::byte>(character);
 	}
 
-	template <class ElementType>
-	class span : public gsl::span<ElementType> {
+	template <class ElementType,std::ptrdiff_t length = -1>
+	class span : public gsl::span<ElementType,length> {
 	private:
-		using base_class = gsl::span<ElementType>;
+		using base_class = gsl::span<ElementType,length>;
 
 	public:
 		//make base class constructors available
