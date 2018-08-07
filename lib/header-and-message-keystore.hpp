@@ -47,7 +47,8 @@ namespace Molch {
 		seconds expiration_date{0};
 
 	public:
-		HeaderAndMessageKey() = default;
+		HeaderAndMessageKey() = delete;
+		HeaderAndMessageKey(uninitialized_t uninitialized);
 		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key);
 		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date);
 		/* copy and move constructors */

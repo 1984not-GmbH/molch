@@ -29,6 +29,8 @@
 namespace Molch {
 	constexpr auto expiration_time{1_months};
 
+	HeaderAndMessageKey::HeaderAndMessageKey([[maybe_unused]] uninitialized_t uninitialized) {}
+
 	void HeaderAndMessageKey::fill(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) noexcept {
 		this->header_key = header_key;
 		this->message_key = message_key;
@@ -139,7 +141,7 @@ namespace Molch {
 
 	void HeaderAndMessageKeyStore::add(const HeaderAndMessageKeyStore& keystore) {
 		decltype(this->key_storage) merged;
-		merged.resize(this->key_storage.size() + keystore.key_storage.size());
+		merged.resize(this->key_storage.size() + keystore.key_storage.size(), HeaderAndMessageKey(uninitialized_t::uninitialized));
 
 		std::merge(
 				std::cbegin(this->key_storage), std::cend(this->key_storage),
