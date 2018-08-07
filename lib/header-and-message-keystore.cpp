@@ -82,7 +82,7 @@ namespace Molch {
 			|| (key_bundle.header_key->key.len != HEADER_KEY_SIZE)) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect header key."};
 		}
-		this->header_key = HeaderKey{*key_bundle.header_key};
+		this->header_key = *key_bundle.header_key;
 
 		//import the message key
 		if ((key_bundle.message_key == nullptr)
@@ -90,7 +90,7 @@ namespace Molch {
 			|| (key_bundle.message_key->key.len != MESSAGE_KEY_SIZE)) {
 			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect message key."};
 		}
-		this->message_key = MessageKey{*key_bundle.message_key};
+		this->message_key = *key_bundle.message_key;
 
 		//import the expiration date
 		if (!key_bundle.has_expiration_time) {

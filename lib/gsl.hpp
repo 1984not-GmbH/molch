@@ -14,6 +14,8 @@
 #include <gsl/span>
 #pragma GCC diagnostic pop
 
+#include "protobuf.hpp"
+
 namespace Molch {
 	inline unsigned char* byte_to_uchar(std::byte* byte) {
 		return reinterpret_cast<unsigned char*>(byte);
@@ -58,6 +60,8 @@ namespace Molch {
 		constexpr size_t size() const {
 			return gsl::narrow<size_t>(this->base_class::size());
 		}
+
+		span(const ProtobufCBinaryData data) : base_class{uchar_to_byte(data.data), gsl::narrow<ptrdiff_t>(data.len)} {}
 	};
 }
 

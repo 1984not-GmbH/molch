@@ -91,11 +91,11 @@ namespace Molch {
 		}
 
 		Key(const ProtobufCKey& key) {
-			this->set({uchar_to_byte(key.key.data), key.key.len});
+			*this = key.key;
 		}
 
-		Key(const span<std::byte>& key) {
-			this->set(key);
+		Key(const span<const std::byte>& key) {
+			*this = key;
 		}
 
 		~Key() noexcept {
@@ -107,6 +107,17 @@ namespace Molch {
 		}
 		Key& operator=(Key&& key) noexcept {
 			return this->move(std::move(key));
+		}
+
+		Key& operator=(const span<const std::byte> other) {
+			Expects(other.size() == key_length);
+			std::copy(std::cbegin(other), std::cend(other), this->data());
+			this->empty = false;
+			return *this;
+		}
+
+		Key& operator=(const ProtobufCKey& key) {
+			return *this = key.key;
 		}
 
 		/*
@@ -201,14 +212,6 @@ namespace Molch {
 			}
 
 			return sodium_is_zero(*this);
-		}
-
-		//copy from a raw byte array
-		void set(const span<const std::byte> data) {
-			Expects(data.size() == length);
-
-			std::copy(std::cbegin(data), std::cend(data), this->data());
-			this->empty = false;
 		}
 
 		void clearKey() noexcept {

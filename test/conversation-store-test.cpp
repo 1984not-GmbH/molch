@@ -155,7 +155,7 @@ int main() {
 		Molch::Key<CONVERSATION_ID_SIZE,Molch::KeyType::Key> last_id;
 		for (size_t i{0}; i < (conversation_list.size() / CONVERSATION_ID_SIZE); i++) {
 			Molch::Key<CONVERSATION_ID_SIZE,Molch::KeyType::Key> current_id;
-			current_id.set({&conversation_list[CONVERSATION_ID_SIZE * i], CONVERSATION_ID_SIZE});
+			current_id = {&conversation_list[CONVERSATION_ID_SIZE * i], CONVERSATION_ID_SIZE};
 			auto found_node{store.find(current_id)};
 			if (found_node == nullptr) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Exported list of conversations was incorrect."};

@@ -79,9 +79,7 @@ namespace Molch {
 		extracted_header.message_number = header_struct->message_number;
 		extracted_header.previous_message_number = header_struct->previous_message_number;
 
-		extracted_header.their_public_ephemeral.set({
-				uchar_to_byte(header_struct->public_ephemeral_key.data),
-				header_struct->public_ephemeral_key.len});
+		extracted_header.their_public_ephemeral = header_struct->public_ephemeral_key;
 
 		return extracted_header;
 	}

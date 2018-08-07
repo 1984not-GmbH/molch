@@ -78,9 +78,7 @@ namespace Molch {
 		imported_user.master_keys = std::move(master_keys);
 
 		//public signing key
-		imported_user.public_signing_key.set({
-											 uchar_to_byte(user.public_signing_key->key.data),
-											 user.public_signing_key->key.len});
+		imported_user.public_signing_key = user.public_signing_key->key;
 
 		imported_user.conversations = ConversationStore{{user.conversations, user.n_conversations}};
 

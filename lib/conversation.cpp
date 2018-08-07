@@ -102,9 +102,9 @@ namespace Molch {
 		//choose a prekey
 		auto prekey_number{randombytes_uniform(PREKEY_AMOUNT)};
 		PublicKey receiver_public_prekey;
-		receiver_public_prekey.set({
+		receiver_public_prekey = {
 				&receiver_prekey_list[gsl::narrow_cast<ptrdiff_t>(prekey_number * PUBLIC_KEY_SIZE)],
-				PUBLIC_KEY_SIZE});
+				PUBLIC_KEY_SIZE};
 
 		//initialize the conversation
 		OUTCOME_TRY(conversation, create(
@@ -286,9 +286,7 @@ namespace Molch {
 	result<Conversation> Conversation::import(const ProtobufCConversation& conversation_protobuf) {
 		Conversation conversation(uninitialized_t::uninitialized);
 		//copy the id
-		conversation.id_storage.set({
-				uchar_to_byte(conversation_protobuf.id.data),
-				conversation_protobuf.id.len});
+		conversation.id_storage = span<const std::byte>{conversation_protobuf.id};
 
 		//import the ratchet
 		OUTCOME_TRY(ratchet, Ratchet::import(conversation_protobuf));
