@@ -36,42 +36,6 @@
  */
 
 namespace Molch {
-	/*!
-	 * Construct and encrypt a packet given the keys and metadata.
-	 *
-	 * \param packet_type
-	 *   The type of the packet (prekey message, normal message ...)
-	 * \param axolotl_header
-	 *   The axolotl header containing all the necessary information for the ratchet.
-	 * \param axolotl_header_key
-	 *   The header key with which the axolotl header is encrypted.
-	 * \param message
-	 *   The message that should be sent.
-	 * \param message_key
-	 *   The key to encrypt the message with.
-	 * \param public_identity_key
-	 *   The public identity key of the sender in case of prekey messages. Optional for normal messages.
-	 * \param public_ephemeral_key
-	 *   The public ephemeral key of the sender in case of prekey messages. Optional for normal messages.
-	 * \param public_prekey
-	 *   The prekey of the receiver that has been selected by the sender in case of prekey messages. Optional for normal messages.
-	 *
-	 * \return
-	 *   The encrypted packet.
-	 */
-	[[deprecated]]
-	Buffer packet_encrypt(
-			//inputs
-			const molch_message_type packet_type,
-			const span<const std::byte> axolotl_header,
-			const HeaderKey& axolotl_header_key,
-			const span<const std::byte> message,
-			const MessageKey& message_key,
-			//optional inputs (prekey messages only)
-			const PublicKey * const public_identity_key,
-			const PublicKey * const public_ephemeral_key,
-			const PublicKey * const public_prekey);
-
 	struct PrekeyMetadata {
 		PublicKey identity;
 		PublicKey ephemeral;
