@@ -35,17 +35,17 @@ int main() {
 	try {
 		TRY_VOID(Molch::sodium_init());
 
-		Molch::Key<50,Molch::KeyType::Key> master_key;
+		Molch::EmptyableKey<50,Molch::KeyType::Key> master_key;
 		master_key.fillRandom();
 		printf("Master key:\n");
 		master_key.printHex(std::cout) << std::endl;
 
-		TRY_WITH_RESULT(subkey1_result, (master_key.deriveSubkeyWithIndex<Molch::Key<60,Molch::KeyType::Key>>(0)));
+		TRY_WITH_RESULT(subkey1_result, (master_key.deriveSubkeyWithIndex<Molch::EmptyableKey<60,Molch::KeyType::Key>>(0)));
 		const auto& subkey1{subkey1_result.value()};
 		printf("First subkey:\n");
 		subkey1.printHex(std::cout) << std::endl;
 
-		TRY_WITH_RESULT(subkey2_result, (master_key.deriveSubkeyWithIndex<Molch::Key<60,Molch::KeyType::Key>>(1)));
+		TRY_WITH_RESULT(subkey2_result, (master_key.deriveSubkeyWithIndex<Molch::EmptyableKey<60,Molch::KeyType::Key>>(1)));
 		const auto& subkey2{subkey2_result.value()};
 		printf("Second subkey:\n");
 		subkey2.printHex(std::cout) << std::endl;
@@ -54,7 +54,7 @@ int main() {
 			throw Molch::Exception{status_type::KEYGENERATION_FAILED, "Both subkeys are the same."};
 		}
 
-		TRY_WITH_RESULT(subkey1_copy_result, (master_key.deriveSubkeyWithIndex<Molch::Key<60,Molch::KeyType::Key>>(0)));
+		TRY_WITH_RESULT(subkey1_copy_result, (master_key.deriveSubkeyWithIndex<Molch::EmptyableKey<60,Molch::KeyType::Key>>(0)));
 		const auto& subkey1_copy{subkey1_copy_result.value()};
 		if (subkey1 != subkey1_copy) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Failed to reproduce subkey."};

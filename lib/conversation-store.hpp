@@ -62,14 +62,14 @@ namespace Molch {
 		 *
 		 * The conversation is identified by it's id.
 		 */
-		void remove(const Key<CONVERSATION_ID_SIZE,KeyType::Key>& id);
+		void remove(const EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key>& id);
 
 		/*
 		 * Find a conversation for a given conversation ID.
 		 *
 		 * Returns nullptr if no conversation was found.
 		 */
-		Conversation* find(const Key<CONVERSATION_ID_SIZE,KeyType::Key>& id);
+		Conversation* find(const EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key>& id);
 
 		/*
 		 * Remove all entries from a conversation store.

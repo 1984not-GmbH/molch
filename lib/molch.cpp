@@ -649,7 +649,7 @@ cleanup:
 			check_global_users_state();
 
 			//find the conversation
-			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
+			Molch::EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
 			Molch::User *user;
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
@@ -721,7 +721,7 @@ cleanup:
 			check_global_users_state();
 
 			//find the conversation
-			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
+			Molch::EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
 			conversation_id_key = {uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE};
 			Molch::User* user;
 			auto conversation{users->findConversation(user, conversation_id_key)};
@@ -779,7 +779,7 @@ cleanup:
 
 			//find the conversation
 			Molch::User *user{nullptr};
-			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
+			Molch::EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
 			conversation_id_key = {uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE};
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
@@ -954,7 +954,7 @@ cleanup:
 
 			//find the conversation
 			Molch::User *user{nullptr};
-			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
+			Molch::EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
 			conversation_id_key = {uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE};
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
@@ -1109,7 +1109,7 @@ cleanup:
 			//import the conversation
 			ProtobufCConversation conversation_pointer{*conversation_struct};
 			Molch::User* containing_user{nullptr};
-			Molch::Key<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
+			Molch::EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
 			conversation_id_key = span<const std::byte>{conversation_struct->id};
 			auto existing_conversation{users->findConversation(containing_user, conversation_id_key)};
 			if (existing_conversation == nullptr) {

@@ -40,7 +40,7 @@ namespace Molch {
 	 * Bob:   H(ECDH(our_private_key,their_public_key)|their_public_key|our_public_key)
 	 */
 	void diffie_hellman(
-			Key<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
+			EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
 			const PrivateKey& our_private_key, //needs to be PRIVATE_KEY_SIZE long
 			const PublicKey& our_public_key, //needs to be PUBLIC_KEY_SIZE long
 			const PublicKey& their_public_key, //needs to be PUBLIC_KEY_SIZE long
@@ -63,7 +63,7 @@ namespace Molch {
 	 * -->Bob: HASH(DH(their_identity, our_ephemeral)||DH(our_identity, their_ephemeral)||DH(our_ephemeral, their_ephemeral))
 	 */
 	void triple_diffie_hellman(
-			Key<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key,
+			EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key,
 			const PrivateKey& our_private_identity,
 			const PublicKey& our_public_identity,
 			const PrivateKey& our_private_ephemeral,

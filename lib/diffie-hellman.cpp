@@ -27,7 +27,7 @@
 
 namespace Molch {
 	void diffie_hellman(
-			Key<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
+			EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
 			const PrivateKey& our_private_key, //needs to be PRIVATE_KEY_SIZE long
 			const PublicKey& our_public_key, //needs to be PUBLIC_KEY_SIZE long
 			const PublicKey& their_public_key, //needs to be PUBLIC_KEY_SIZE long
@@ -42,7 +42,7 @@ namespace Molch {
 		static_assert(DIFFIE_HELLMAN_SIZE == crypto_generichash_BYTES, "crypto_generichash_bytes is not DIFFIE_HELLMAN_SIZE");
 
 		//buffer for diffie hellman shared secret
-		Key<crypto_scalarmult_SCALARBYTES,KeyType::Key> dh_secret;
+		EmptyableKey<crypto_scalarmult_SCALARBYTES,KeyType::Key> dh_secret;
 
 		//do the diffie hellman key exchange
 		TRY_VOID(crypto_scalarmult(dh_secret, our_private_key, their_public_key));
@@ -75,7 +75,7 @@ namespace Molch {
 	}
 
 	void triple_diffie_hellman(
-			Key<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key,
+			EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key,
 			const PrivateKey& our_private_identity,
 			const PublicKey& our_public_identity,
 			const PrivateKey& our_private_ephemeral,
@@ -91,9 +91,9 @@ namespace Molch {
 				&& !their_public_ephemeral.empty);
 
 		//buffers for all 3 Diffie Hellman exchanges
-		Key<DIFFIE_HELLMAN_SIZE,KeyType::Key> dh1;
-		Key<DIFFIE_HELLMAN_SIZE,KeyType::Key> dh2;
-		Key<DIFFIE_HELLMAN_SIZE,KeyType::Key> dh3;
+		EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key> dh1;
+		EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key> dh2;
+		EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key> dh3;
 		switch (role) {
 			case Ratchet::Role::ALICE:
 				//DH(our_identity, their_ephemeral)

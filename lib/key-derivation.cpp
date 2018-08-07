@@ -46,8 +46,8 @@ namespace Molch {
 				&& !previous_root_key.empty);
 
 		//create buffers
-		Key<DIFFIE_HELLMAN_SIZE,KeyType::Key> diffie_hellman_secret;
-		Key<crypto_generichash_BYTES,KeyType::Key> derivation_key;
+		EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key> diffie_hellman_secret;
+		EmptyableKey<crypto_generichash_BYTES,KeyType::Key> derivation_key;
 
 		//DH(DHRs, DHRr) or DH(DHRp, DHRs)
 		diffie_hellman(
@@ -103,7 +103,7 @@ namespace Molch {
 				&& !our_public_ephemeral.empty
 				&& !their_public_ephemeral.empty);
 
-		Key<crypto_secretbox_KEYBYTES,KeyType::Key> master_key;
+		EmptyableKey<crypto_secretbox_KEYBYTES,KeyType::Key> master_key;
 
 		//derive master_key to later derive the initial root key,
 		//header keys and chain keys from

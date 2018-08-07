@@ -42,7 +42,7 @@ namespace Molch {
 		TRY_VOID(os_random.fillRandom(output.size()));
 
 		//buffer that contains a random salt
-		Key<crypto_pwhash_SALTBYTES,KeyType::Key> salt;
+		EmptyableKey<crypto_pwhash_SALTBYTES,KeyType::Key> salt;
 		salt.fillRandom();
 
 		//derive random data from the random spice

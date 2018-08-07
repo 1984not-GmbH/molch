@@ -53,7 +53,7 @@ int main() noexcept {
 			"");
 
 		//Diffie Hellman on Alice's side
-		Molch::Key<DIFFIE_HELLMAN_SIZE,Molch::KeyType::Key> alice_shared_secret;
+		Molch::EmptyableKey<DIFFIE_HELLMAN_SIZE,Molch::KeyType::Key> alice_shared_secret;
 		diffie_hellman(
 			alice_shared_secret,
 			alice_private_key,
@@ -66,7 +66,7 @@ int main() noexcept {
 		alice_shared_secret.printHex(std::cout) << std::endl;
 
 		//Diffie Hellman on Bob's side
-		Molch::Key<DIFFIE_HELLMAN_SIZE,Molch::KeyType::Key> bob_shared_secret;
+		Molch::EmptyableKey<DIFFIE_HELLMAN_SIZE,Molch::KeyType::Key> bob_shared_secret;
 		diffie_hellman(
 			bob_shared_secret,
 			bob_private_key,

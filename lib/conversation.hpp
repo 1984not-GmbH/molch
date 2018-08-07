@@ -46,7 +46,7 @@ namespace Molch {
 		result<ReceivedMessage> internal_receive(const span<const std::byte> packet);
 		result<ReceivedMessage> trySkippedHeaderAndMessageKeys(const span<const std::byte> packet);
 
-		Key<CONVERSATION_ID_SIZE,KeyType::Key> id_storage; //unique id of a conversation, generated randomly
+		EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key> id_storage; //unique id of a conversation, generated randomly
 		Ratchet ratchet;
 
 		Conversation(uninitialized_t uninitialized) noexcept;
@@ -95,7 +95,7 @@ namespace Molch {
 		Conversation& operator=(Conversation&& conversation) noexcept;
 		Conversation& operator=(const Conversation& conversation) = delete;
 
-		const Key<CONVERSATION_ID_SIZE,KeyType::Key>& id() const;
+		const EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key>& id() const;
 
 		/*
 		 * Send a message using an existing conversation.

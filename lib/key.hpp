@@ -55,9 +55,9 @@ namespace Molch {
 	};
 
 	template <size_t key_length, KeyType keytype>
-	class Key : public std::array<std::byte,key_length> {
+	class EmptyableKey : public std::array<std::byte,key_length> {
 	private:
-		Key& copy(const Key& key) noexcept {
+		EmptyableKey& copy(const EmptyableKey& key) noexcept {
 			this->empty = key.empty;
 
 			std::copy(std::cbegin(key), std::cend(key), std::begin(*this));
@@ -65,7 +65,7 @@ namespace Molch {
 			return *this;
 		}
 
-		Key& move(Key&& key) noexcept {
+		EmptyableKey& move(EmptyableKey&& key) noexcept {
 			this->empty = key.empty;
 
 			if (key.empty) {
@@ -81,42 +81,42 @@ namespace Molch {
 
 		bool empty{true};
 
-		Key() = default;
-		Key(const Key& key) noexcept {
+		EmptyableKey() = default;
+		EmptyableKey(const EmptyableKey& key) noexcept {
 			this->copy(key);
 		}
 
-		Key(Key&& key) noexcept {
+		EmptyableKey(EmptyableKey&& key) noexcept {
 			this->move(std::move(key));
 		}
 
-		Key(const ProtobufCKey& key) {
+		EmptyableKey(const ProtobufCKey& key) {
 			*this = key.key;
 		}
 
-		Key(const span<const std::byte>& key) {
+		EmptyableKey(const span<const std::byte>& key) {
 			*this = key;
 		}
 
-		~Key() noexcept {
+		~EmptyableKey() noexcept {
 			this->zero();
 		}
 
-		Key& operator=(const Key& key) noexcept {
+		EmptyableKey& operator=(const EmptyableKey& key) noexcept {
 			return this->copy(key);
 		}
-		Key& operator=(Key&& key) noexcept {
+		EmptyableKey& operator=(EmptyableKey&& key) noexcept {
 			return this->move(std::move(key));
 		}
 
-		Key& operator=(const span<const std::byte> other) {
+		EmptyableKey& operator=(const span<const std::byte> other) {
 			Expects(other.size() == key_length);
 			std::copy(std::cbegin(other), std::cend(other), this->data());
 			this->empty = false;
 			return *this;
 		}
 
-		Key& operator=(const ProtobufCKey& key) {
+		EmptyableKey& operator=(const ProtobufCKey& key) {
 			return *this = key.key;
 		}
 
@@ -131,7 +131,7 @@ namespace Molch {
 		 *
 		 *  throws an exception if either is empty.
 		 */
-		int compare(const Key& key) const noexcept {
+		int compare(const EmptyableKey& key) const noexcept {
 			if (this->empty || key.empty) {
 				return -2;
 			}
@@ -145,26 +145,26 @@ namespace Molch {
 		}
 
 		//comparison operators
-		bool operator>(const Key& key) const noexcept {
+		bool operator>(const EmptyableKey& key) const noexcept {
 			return (this->compare(key) == 1);
 		}
-		bool operator<(const Key& key) const noexcept {
+		bool operator<(const EmptyableKey& key) const noexcept {
 			return (this->compare(key) == -1);
 		}
-		bool operator>=(const Key& key) const noexcept {
+		bool operator>=(const EmptyableKey& key) const noexcept {
 			return !(*this < key);
 		}
-		bool operator<=(const Key& key) const noexcept {
+		bool operator<=(const EmptyableKey& key) const noexcept {
 			return !(*this > key);
 		}
-		bool operator==(const Key& key) const noexcept {
+		bool operator==(const EmptyableKey& key) const noexcept {
 			if (this->empty && key.empty) { //TODO remove eventually
 				return true;
 			}
 
 			return (this->compare(key) == 0);
 		}
-		bool operator!=(const Key& key) const noexcept {
+		bool operator!=(const EmptyableKey& key) const noexcept {
 			return !(*this == key);
 		}
 
@@ -180,7 +180,7 @@ namespace Molch {
 			static_assert(length >= crypto_generichash_blake2b_KEYBYTES_MIN, "The length to derive from is smaller than crypto_generichash_blake2b_KEYBYTES_MIN");
 
 			//create a salt that contains the number of the subkey
-			Key<crypto_generichash_blake2b_SALTBYTES,KeyType::Key> salt;
+			EmptyableKey<crypto_generichash_blake2b_SALTBYTES,KeyType::Key> salt;
 			salt.zero(); //fill with zeroes
 
 			//fill the salt with a big endian representation of the subkey counter
@@ -258,12 +258,12 @@ namespace Molch {
 		}
 	};
 
-	using MessageKey = Key<MESSAGE_KEY_SIZE,KeyType::MessageKey>;
+	using MessageKey = EmptyableKey<MESSAGE_KEY_SIZE,KeyType::MessageKey>;
 
-	class ChainKey : public Key<CHAIN_KEY_SIZE,KeyType::ChainKey> {
+	class ChainKey : public EmptyableKey<CHAIN_KEY_SIZE,KeyType::ChainKey> {
 	public:
 		//inherit constructors
-		using Key<CHAIN_KEY_SIZE,KeyType::ChainKey>::Key;
+		using EmptyableKey<CHAIN_KEY_SIZE,KeyType::ChainKey>::EmptyableKey;
 
 		result<MessageKey> deriveMessageKey() const noexcept {
 			return this->deriveSubkeyWithIndex<MessageKey>(0);
@@ -274,13 +274,13 @@ namespace Molch {
 		}
 	};
 
-	using HeaderKey = Key<HEADER_KEY_SIZE,KeyType::HeaderKey>;
-	using RootKey = Key<ROOT_KEY_SIZE,KeyType::RootKey>;
-	using BackupKey = Key<BACKUP_KEY_SIZE,KeyType::BackupKey>;
-	using PublicKey = Key<PUBLIC_KEY_SIZE,KeyType::PublicKey>;
-	using PrivateKey = Key<PRIVATE_KEY_SIZE,KeyType::PrivateKey>;
-	using PublicSigningKey = Key<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey>;
-	using PrivateSigningKey = Key<PRIVATE_MASTER_KEY_SIZE,KeyType::PrivateSigningKey>;
+	using HeaderKey = EmptyableKey<HEADER_KEY_SIZE,KeyType::HeaderKey>;
+	using RootKey = EmptyableKey<ROOT_KEY_SIZE,KeyType::RootKey>;
+	using BackupKey = EmptyableKey<BACKUP_KEY_SIZE,KeyType::BackupKey>;
+	using PublicKey = EmptyableKey<PUBLIC_KEY_SIZE,KeyType::PublicKey>;
+	using PrivateKey = EmptyableKey<PRIVATE_KEY_SIZE,KeyType::PrivateKey>;
+	using PublicSigningKey = EmptyableKey<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey>;
+	using PrivateSigningKey = EmptyableKey<PRIVATE_MASTER_KEY_SIZE,KeyType::PrivateSigningKey>;
 }
 
 #endif /* LIB_KEY_HPP */

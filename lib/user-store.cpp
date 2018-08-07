@@ -153,7 +153,7 @@ namespace Molch {
 		return &(*user);
 	}
 
-	Conversation* UserStore::findConversation(User*& user, const Key<CONVERSATION_ID_SIZE,KeyType::Key>& conversation_id) {
+	Conversation* UserStore::findConversation(User*& user, const EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key>& conversation_id) {
 		Expects(!conversation_id.empty);
 
 		Conversation* conversation{nullptr};
