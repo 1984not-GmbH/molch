@@ -164,7 +164,7 @@ namespace Molch {
 
 		//generate the header nonce and add it to the packet header
 		Buffer header_nonce{HEADER_NONCE_SIZE, 0};
-		TRY_VOID(header_nonce.fillRandom(HEADER_NONCE_SIZE));
+		OUTCOME_TRY(header_nonce.fillRandom(HEADER_NONCE_SIZE));
 		packet_header_struct.has_header_nonce = true;
 		packet_header_struct.header_nonce.data = byte_to_uchar(header_nonce.data());
 		packet_header_struct.header_nonce.len = header_nonce.size();
@@ -173,7 +173,7 @@ namespace Molch {
 		Buffer encrypted_axolotl_header{
 			axolotl_header.size() + crypto_secretbox_MACBYTES,
 			axolotl_header.size() + crypto_secretbox_MACBYTES};
-		TRY_VOID(crypto_secretbox_easy(
+		OUTCOME_TRY(crypto_secretbox_easy(
 				encrypted_axolotl_header,
 				axolotl_header,
 				header_nonce,
@@ -186,7 +186,7 @@ namespace Molch {
 
 		//generate the message nonce and add it to the packet header
 		Buffer message_nonce{MESSAGE_NONCE_SIZE, 0};
-		TRY_VOID(message_nonce.fillRandom(MESSAGE_NONCE_SIZE));
+		OUTCOME_TRY(message_nonce.fillRandom(MESSAGE_NONCE_SIZE));
 		packet_header_struct.has_message_nonce = true;
 		packet_header_struct.message_nonce.data = byte_to_uchar(message_nonce.data());
 		packet_header_struct.message_nonce.len = message_nonce.size();
@@ -194,19 +194,18 @@ namespace Molch {
 		//pad the message (ISO/IEC 7816-4 padding to 255 byte blocks)
 		size_t padding_amount{padding_blocksize - (message.size() % padding_blocksize)};
 		Buffer padded_message{message.size() + padding_amount, 0};
-		TRY_VOID(padded_message.cloneFromRaw(message));
-		TRY_VOID(padded_message.setSize(padded_message.capacity()));
-		TRY_WITH_RESULT(result, sodium_pad(padded_message, message.size(), 255));
-		auto padded_span{result.value()};
+		OUTCOME_TRY(padded_message.cloneFromRaw(message));
+		OUTCOME_TRY(padded_message.setSize(padded_message.capacity()));
+		OUTCOME_TRY(padded_span, sodium_pad(padded_message, message.size(), 255));
 		if (padded_span.size() != padded_message.size()) {
-			throw Exception{status_type::GENERIC_ERROR, "Padding doesn't have the expected size."};
+			return Error(status_type::GENERIC_ERROR, "Padding doesn't have the expected size.");
 		}
 
 		//encrypt the message
 		Buffer encrypted_message{
 			padded_message.size() + crypto_secretbox_MACBYTES,
 			padded_message.size() + crypto_secretbox_MACBYTES};
-		TRY_VOID(crypto_secretbox_easy(
+		OUTCOME_TRY(crypto_secretbox_easy(
 				encrypted_message,
 				padded_message,
 				message_nonce,
@@ -221,9 +220,9 @@ namespace Molch {
 		const size_t packed_length{molch__protobuf__packet__get_packed_size(&packet_struct)};
 		//pack the packet
 		Buffer packet{packed_length, 0};
-		TRY_VOID(packet.setSize(molch__protobuf__packet__pack(&packet_struct, byte_to_uchar(packet.data()))));
+		OUTCOME_TRY(packet.setSize(molch__protobuf__packet__pack(&packet_struct, byte_to_uchar(packet.data()))));
 		if (packet.size() != packed_length) {
-			throw Exception{status_type::PROTOBUF_PACK_ERROR, "Packet packet has incorrect length."};
+			return Error(status_type::PROTOBUF_PACK_ERROR, "Packet packet has incorrect length.");
 		}
 
 		return packet;
