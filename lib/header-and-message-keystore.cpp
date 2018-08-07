@@ -125,12 +125,12 @@ namespace Molch {
 		return key_bundle;
 	}
 
-	std::ostream& HeaderAndMessageKey::print(std::ostream& stream) const {
+	std::ostream& operator<<(std::ostream& stream, const HeaderAndMessageKey& header_and_message_key) {
 		stream << "Header key:\n";
-		this->header_key.printHex(stream) << '\n';
+		header_and_message_key.headerKey().printHex(stream) << '\n';
 		stream << "Message key:\n";
-		this->message_key.printHex(stream) << '\n';
-		stream << "Expiration date:\n" << this->expiration_date.count() << 's' << '\n';
+		header_and_message_key.messageKey().printHex(stream) << '\n';
+		stream << "Expiration date:\n" << header_and_message_key.expirationDate().count() << 's' << '\n';
 
 		return stream;
 	}
@@ -252,7 +252,7 @@ namespace Molch {
 		for (const auto& key_bundle : this->key_storage) {
 			stream << "Entry " << index << '\n';
 			index++;
-			key_bundle.print(stream) << '\n';
+			stream << key_bundle << '\n';
 		}
 
 		stream << "KEYSTORE-END-------------------------------------------------------------------\n";
