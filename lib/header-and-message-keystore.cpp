@@ -29,7 +29,7 @@
 namespace Molch {
 	constexpr auto expiration_time{1_months};
 
-	HeaderAndMessageKey::HeaderAndMessageKey([[maybe_unused]] uninitialized_t uninitialized) {}
+	HeaderAndMessageKey::HeaderAndMessageKey([[maybe_unused]] uninitialized_t uninitialized) noexcept {}
 
 	void HeaderAndMessageKey::fill(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) noexcept {
 		this->header_key = header_key;
@@ -37,11 +37,11 @@ namespace Molch {
 		this->expiration_date = expiration_date;
 	}
 
-	HeaderAndMessageKey::HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key) {
+	HeaderAndMessageKey::HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key) noexcept {
 		this->fill(header_key, message_key, now() + expiration_time);
 	}
 
-	HeaderAndMessageKey::HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) {
+	HeaderAndMessageKey::HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) noexcept {
 		this->fill(header_key, message_key, expiration_date);
 	}
 

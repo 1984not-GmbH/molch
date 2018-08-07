@@ -48,9 +48,9 @@ namespace Molch {
 
 	public:
 		HeaderAndMessageKey() = delete;
-		HeaderAndMessageKey(uninitialized_t uninitialized);
-		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key);
-		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date);
+		HeaderAndMessageKey(uninitialized_t uninitialized) noexcept;
+		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key) noexcept;
+		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) noexcept;
 		/* copy and move constructors */
 		HeaderAndMessageKey(const HeaderAndMessageKey& node) noexcept;
 		HeaderAndMessageKey(HeaderAndMessageKey&& node) noexcept;
