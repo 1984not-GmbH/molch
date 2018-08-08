@@ -24,6 +24,7 @@
 
 #include <memory>
 #include <ostream>
+#include <optional>
 
 #include "constants.h"
 #include "buffer.hpp"
