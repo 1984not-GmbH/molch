@@ -38,7 +38,7 @@ std::vector<unsigned char> read_file(const std::string name) {
 	filestream.seekg(0);
 
 	std::vector<unsigned char> file(static_cast<size_t>(size), 0);
-	filestream.read(reinterpret_cast<char*>(file.data()), size);
+	filestream.read(reinterpret_cast<char*>(file.data()), static_cast<std::streamsize>(size));
 
 	return file;
 }
