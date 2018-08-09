@@ -411,7 +411,6 @@ namespace Molch {
 
 		void fillRandom() {
 			randombytes_buf(*this);
-			this->empty = false;
 		}
 
 		void zero() noexcept {
