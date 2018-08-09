@@ -35,13 +35,12 @@ namespace Molch {
 	 * RK, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
 	 */
 	DerivedRootNextHeadAndChainKey derive_root_next_header_and_chain_keys(
-			const EmptyablePrivateKey& our_private_ephemeral,
+			const PrivateKey& our_private_ephemeral,
 			const EmptyablePublicKey& our_public_ephemeral,
 			const EmptyablePublicKey& their_public_ephemeral,
 			const EmptyableRootKey& previous_root_key,
 			const Ratchet::Role role) {
-		Expects(!our_private_ephemeral.empty
-				&& !our_public_ephemeral.empty
+		Expects(!our_public_ephemeral.empty
 				&& !their_public_ephemeral.empty
 				&& !previous_root_key.empty);
 
@@ -89,17 +88,15 @@ namespace Molch {
 	 * RK, CKs/r, HKs/r, NHKs/r = KDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
 	 */
 	DerivedInitialRootChainAndHeaderKeys derive_initial_root_chain_and_header_keys(
-			const EmptyablePrivateKey& our_private_identity,
+			const PrivateKey& our_private_identity,
 			const EmptyablePublicKey& our_public_identity,
 			const EmptyablePublicKey& their_public_identity,
-			const EmptyablePrivateKey& our_private_ephemeral,
+			const PrivateKey& our_private_ephemeral,
 			const EmptyablePublicKey& our_public_ephemeral,
 			const EmptyablePublicKey& their_public_ephemeral,
 			const Ratchet::Role role) {
-		Expects(!our_private_identity.empty
-				&& !our_public_identity.empty
+		Expects(!our_public_identity.empty
 				&& !their_public_identity.empty
-				&& !our_private_ephemeral.empty
 				&& !our_public_ephemeral.empty
 				&& !their_public_ephemeral.empty);
 

@@ -41,7 +41,7 @@ namespace Molch {
 	 */
 	void diffie_hellman(
 			EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
-			const EmptyablePrivateKey& our_private_key, //needs to be PRIVATE_KEY_SIZE long
+			const PrivateKey& our_private_key, //needs to be PRIVATE_KEY_SIZE long
 			const EmptyablePublicKey& our_public_key, //needs to be PUBLIC_KEY_SIZE long
 			const EmptyablePublicKey& their_public_key, //needs to be PUBLIC_KEY_SIZE long
 			const Ratchet::Role role);
@@ -64,9 +64,9 @@ namespace Molch {
 	 */
 	void triple_diffie_hellman(
 			EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key,
-			const EmptyablePrivateKey& our_private_identity,
+			const PrivateKey& our_private_identity,
 			const EmptyablePublicKey& our_public_identity,
-			const EmptyablePrivateKey& our_private_ephemeral,
+			const PrivateKey& our_private_ephemeral,
 			const EmptyablePublicKey& our_public_ephemeral,
 			const EmptyablePublicKey& their_public_identity,
 			const EmptyablePublicKey& their_public_ephemeral,

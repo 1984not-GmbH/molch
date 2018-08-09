@@ -31,13 +31,13 @@ namespace Molch {
 	constexpr auto prekey_expiration_time{1_months};
 	constexpr auto deprecated_prekey_expiration_time{1h};
 
-	void Prekey::fill(const EmptyablePublicKey& public_key, const EmptyablePrivateKey& private_key, const seconds expiration_date) noexcept {
+	void Prekey::fill(const EmptyablePublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date) noexcept {
 		this->expiration_date = expiration_date;
 		this->public_key = public_key;
 		this->private_key = private_key;
 	}
 
-	Prekey::Prekey(const EmptyablePublicKey& public_key, const EmptyablePrivateKey& private_key, const seconds expiration_date) noexcept {
+	Prekey::Prekey(const EmptyablePublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date) noexcept {
 		this->fill(public_key, private_key, expiration_date);
 	}
 
@@ -76,7 +76,7 @@ namespace Molch {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a private key.");
 		}
 		Prekey prekey;
-		prekey.private_key = EmptyablePrivateKey{*keypair.private_key};
+		OUTCOME_TRY(prekey.private_key = *keypair.private_key);
 
 		//import public key
 		if (keypair.public_key == nullptr) {
@@ -119,7 +119,7 @@ namespace Molch {
 	const EmptyablePublicKey& Prekey::publicKey() const noexcept {
 		return this->public_key;
 	}
-	const EmptyablePrivateKey& Prekey::privateKey() const noexcept {
+	const PrivateKey& Prekey::privateKey() const noexcept {
 		return this->private_key;
 	}
 
@@ -128,7 +128,6 @@ namespace Molch {
 				this->public_key,
 				this->private_key));
 		this->public_key.empty = false;
-		this->private_key.empty = false;
 		this->expiration_date = now() + prekey_expiration_time;
 
 		return outcome::success();
@@ -139,7 +138,7 @@ namespace Molch {
 		stream << "Public Prekey:\n";
 		this->public_key.printHex(stream) << '\n';
 		stream << "Private Prekey:\n";
-		this->private_key.printHex(stream) << '\n';
+		stream << this->private_key << '\n';
 
 		return stream;
 	}
@@ -233,7 +232,7 @@ namespace Molch {
 		return outcome::success();
 	}
 
-	result<EmptyablePrivateKey> PrekeyStore::getPrekey(const EmptyablePublicKey& public_key) {
+	result<PrivateKey> PrekeyStore::getPrekey(const EmptyablePublicKey& public_key) {
 		FulfillOrFail(!public_key.empty);
 
 		//lambda for comparing PrekeyNodes to public_key

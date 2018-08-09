@@ -69,7 +69,7 @@ int main() noexcept {
 		TRY_VOID(Molch::sodium_init());
 
 		//creating charlie's identity keypair
-		EmptyablePrivateKey charlie_private_identity;
+		PrivateKey charlie_private_identity;
 		EmptyablePublicKey charlie_public_identity;
 		generate_and_print_keypair(
 			charlie_public_identity,
@@ -78,7 +78,7 @@ int main() noexcept {
 			"identity");
 
 		//creating charlie's ephemeral keypair
-		EmptyablePrivateKey charlie_private_ephemeral;
+		PrivateKey charlie_private_ephemeral;
 		EmptyablePublicKey charlie_public_ephemeral;
 		generate_and_print_keypair(
 			charlie_public_ephemeral,
@@ -87,7 +87,7 @@ int main() noexcept {
 			"ephemeral");
 
 		//creating dora's identity keypair
-		EmptyablePrivateKey dora_private_identity;
+		PrivateKey dora_private_identity;
 		EmptyablePublicKey dora_public_identity;
 		generate_and_print_keypair(
 			dora_public_identity,
@@ -96,7 +96,7 @@ int main() noexcept {
 			"identity");
 
 		//creating dora's ephemeral keypair
-		EmptyablePrivateKey dora_private_ephemeral;
+		PrivateKey dora_private_ephemeral;
 		EmptyablePublicKey dora_public_ephemeral;
 		generate_and_print_keypair(
 			dora_public_ephemeral,

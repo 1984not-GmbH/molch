@@ -38,7 +38,7 @@ namespace Molch {
 	class PrivateMasterKeyStorage {
 		friend class MasterKeys;
 		PrivateSigningKey signing_key;
-		EmptyablePrivateKey identity_key;
+		PrivateKey identity_key;
 	};
 
 	class MasterKeys {
@@ -49,7 +49,7 @@ namespace Molch {
 		PrivateSigningKey *private_signing_key{nullptr};
 		//X25519 key for deriving axolotl root keys
 		EmptyablePublicKey public_identity_key;
-		EmptyablePrivateKey *private_identity_key{nullptr};
+		PrivateKey *private_identity_key{nullptr};
 
 		/* Internally does the intialization of the buffers creation of the keys */
 		void init();
@@ -104,7 +104,7 @@ namespace Molch {
 		const EmptyablePublicSigningKey& getSigningKey() const noexcept;
 		result<const PrivateSigningKey*> getPrivateSigningKey() const noexcept;
 		const EmptyablePublicKey& getIdentityKey() const noexcept;
-		result<const EmptyablePrivateKey*> getPrivateIdentityKey() const noexcept;
+		result<const PrivateKey*> getPrivateIdentityKey() const noexcept;
 
 		/*
 		 * Sign a piece of data. Returns the data and signature in one output buffer.

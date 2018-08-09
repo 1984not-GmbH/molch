@@ -28,13 +28,11 @@
 namespace Molch {
 	void diffie_hellman(
 			EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
-			const EmptyablePrivateKey& our_private_key, //needs to be PRIVATE_KEY_SIZE long
+			const PrivateKey& our_private_key, //needs to be PRIVATE_KEY_SIZE long
 			const EmptyablePublicKey& our_public_key, //needs to be PUBLIC_KEY_SIZE long
 			const EmptyablePublicKey& their_public_key, //needs to be PUBLIC_KEY_SIZE long
 			const Ratchet::Role role) {
-		Expects(!our_private_key.empty
-				&& !our_public_key.empty
-				&& !their_public_key.empty);
+		Expects(!our_public_key.empty && !their_public_key.empty);
 
 		//make sure that the assumptions are correct
 		static_assert(PUBLIC_KEY_SIZE == crypto_scalarmult_SCALARBYTES, "crypto_scalarmult_SCALARBYTES is not PUBLIC_KEY_SIZE");
@@ -76,17 +74,15 @@ namespace Molch {
 
 	void triple_diffie_hellman(
 			EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key,
-			const EmptyablePrivateKey& our_private_identity,
+			const PrivateKey& our_private_identity,
 			const EmptyablePublicKey& our_public_identity,
-			const EmptyablePrivateKey& our_private_ephemeral,
+			const PrivateKey& our_private_ephemeral,
 			const EmptyablePublicKey& our_public_ephemeral,
 			const EmptyablePublicKey& their_public_identity,
 			const EmptyablePublicKey& their_public_ephemeral,
 			const Ratchet::Role role) {
-		Expects(!our_private_identity.empty
-				&& !our_public_identity.empty
+		Expects(!our_public_identity.empty
 				&& !their_public_identity.empty
-				&& !our_private_ephemeral.empty
 				&& !our_public_ephemeral.empty
 				&& !their_public_ephemeral.empty);
 

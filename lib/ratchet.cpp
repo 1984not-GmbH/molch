@@ -40,16 +40,14 @@ namespace Molch {
 	}
 
 	result<Ratchet> Ratchet::create(
-			const EmptyablePrivateKey& our_private_identity,
+			const PrivateKey& our_private_identity,
 			const EmptyablePublicKey& our_public_identity,
 			const EmptyablePublicKey& their_public_identity,
-			const EmptyablePrivateKey& our_private_ephemeral,
+			const PrivateKey& our_private_ephemeral,
 			const EmptyablePublicKey& our_public_ephemeral,
 			const EmptyablePublicKey& their_public_ephemeral) {
-		FulfillOrFail(!our_private_identity.empty
-				&& !our_public_identity.empty
+		FulfillOrFail(!our_public_identity.empty
 				&& !their_public_identity.empty
-				&& !our_private_ephemeral.empty
 				&& !our_public_ephemeral.empty
 				&& !their_public_ephemeral.empty);
 
@@ -130,7 +128,6 @@ namespace Molch {
 					storage->our_public_ephemeral,
 					storage->our_private_ephemeral));
 			storage->our_public_ephemeral.empty = false;
-			storage->our_private_ephemeral.empty = false;
 
 			//HKs = NHKs
 			storage->send_header_key = storage->next_send_header_key;
@@ -498,7 +495,6 @@ namespace Molch {
 		//ephemeral keys
 		//our private ephemeral key
 		const auto& our_private_ephemeral_key{storage.our_private_ephemeral};
-		error_if_missing(our_private_ephemeral_key);
 		outcome_protobuf_optional_bytes_arena_export(arena, conversation, our_private_ephemeral_key, PRIVATE_KEY_SIZE);
 		//our public ephemeral key
 		const auto& our_public_ephemeral_key{storage.our_public_ephemeral};
@@ -714,7 +710,7 @@ namespace Molch {
 		if (!conversation.has_our_private_ephemeral_key || (conversation.our_private_ephemeral_key.len != PRIVATE_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "our_private_ephemral is missing from the protobuf.");
 		}
-		ratchet.storage->our_private_ephemeral = span<const std::byte>(conversation.our_private_ephemeral_key);
+		OUTCOME_TRY(ratchet.storage->our_private_ephemeral = span<const std::byte>(conversation.our_private_ephemeral_key));
 		//our public ephemeral key
 		if (!conversation.has_our_public_ephemeral_key || (conversation.our_public_ephemeral_key.len != PUBLIC_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "our_public_ephemeral is missing from the protobuf.");
@@ -783,7 +779,7 @@ namespace Molch {
 
 		//ephemeral keys
 		stream << "Our private ephemeral key:\n";
-		storage->our_private_ephemeral.printHex(stream) << '\n';
+		stream << storage->our_private_ephemeral << '\n';
 		stream << "Our public ephemeral key:\n";
 		storage->our_public_ephemeral.printHex(stream) << '\n';
 		stream << "Their public ephemeral key:\n";

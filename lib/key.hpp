@@ -290,15 +290,8 @@ namespace Molch {
 	public:
 		static constexpr size_t length{key_length};
 
-		Key() = delete;
-		Key(uninitialized_t uninitialized) noexcept {
-			(void)uninitialized;
-		}
-
-		static Key zeros() noexcept {
-			Key key(uninitialized_t::uninitialized);
-			key.zero();
-			return key;
+		Key() {
+			this->zero();
 		}
 
 		Key(const Key& key) noexcept {
@@ -391,7 +384,7 @@ namespace Molch {
 			static_assert(length >= crypto_generichash_blake2b_KEYBYTES_MIN, "The length to derive from is smaller than crypto_generichash_blake2b_KEYBYTES_MIN");
 
 			//create a salt that contains the number of the subkey
-			auto salt{Key<crypto_generichash_blake2b_SALTBYTES,KeyType::Key>::zeros()};
+			auto salt{Key<crypto_generichash_blake2b_SALTBYTES,KeyType::Key>()};
 			//fill the salt with a big endian representation of the subkey counter
 			TRY_VOID(to_big_endian(subkey_counter, {salt.data()+ salt.size() - sizeof(uint32_t), sizeof(uint32_t)}));
 
@@ -454,7 +447,6 @@ namespace Molch {
 	using EmptyableHeaderKey = EmptyableKey<HEADER_KEY_SIZE,KeyType::HeaderKey>;
 	using EmptyableRootKey = EmptyableKey<ROOT_KEY_SIZE,KeyType::RootKey>;
 	using EmptyablePublicKey = EmptyableKey<PUBLIC_KEY_SIZE,KeyType::PublicKey>;
-	using EmptyablePrivateKey = EmptyableKey<PRIVATE_KEY_SIZE,KeyType::PrivateKey>;
 	using EmptyablePublicSigningKey = EmptyableKey<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey>;
 
 	using HeaderKey = Key<HEADER_KEY_SIZE,KeyType::HeaderKey>;

@@ -52,7 +52,7 @@ namespace Molch {
 		EmptyablePublicKey our_public_identity; //DHIs
 		EmptyablePublicKey their_public_identity; //DHIr
 		//ephemeral keys (ratchet keys)
-		EmptyablePrivateKey our_private_ephemeral; //DHRs
+		PrivateKey our_private_ephemeral; //DHRs
 		EmptyablePublicKey our_public_ephemeral; //DHRs
 		EmptyablePublicKey their_public_ephemeral; //DHRr
 		EmptyablePublicKey their_purported_public_ephemeral; //DHp
@@ -102,10 +102,10 @@ namespace Molch {
 		 * All the keys will be copied so you can free the buffers afterwards.
 		 */
 		static result<Ratchet> create(
-				const EmptyablePrivateKey& our_private_identity,
+				const PrivateKey& our_private_identity,
 				const EmptyablePublicKey& our_public_identity,
 				const EmptyablePublicKey& their_public_identity,
-				const EmptyablePrivateKey& our_private_ephemeral,
+				const PrivateKey& our_private_ephemeral,
 				const EmptyablePublicKey& our_public_ephemeral,
 				const EmptyablePublicKey& their_public_ephemeral);
 

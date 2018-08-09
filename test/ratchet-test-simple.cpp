@@ -31,9 +31,8 @@
 
 using namespace Molch;
 
-static void keypair(EmptyablePrivateKey& private_key, EmptyablePublicKey& public_key) {
+static void keypair(PrivateKey& private_key, EmptyablePublicKey& public_key) {
 	TRY_VOID(crypto_box_keypair(public_key, private_key));
-	private_key.empty = false;
 	public_key.empty = false;
 }
 
@@ -43,17 +42,17 @@ int main() {
 
 		//generate the keys
 		//Alice:
-		EmptyablePrivateKey alice_private_identity;
+		PrivateKey alice_private_identity;
 		EmptyablePublicKey alice_public_identity;
 		keypair(alice_private_identity, alice_public_identity);
-		EmptyablePrivateKey alice_private_ephemeral;
+		PrivateKey alice_private_ephemeral;
 		EmptyablePublicKey alice_public_ephemeral;
 		keypair(alice_private_ephemeral, alice_public_ephemeral);
 		//Bob:
-		EmptyablePrivateKey bob_private_identity;
+		PrivateKey bob_private_identity;
 		EmptyablePublicKey bob_public_identity;
 		keypair(bob_private_identity, bob_public_identity);
-		EmptyablePrivateKey bob_private_ephemeral;
+		PrivateKey bob_private_ephemeral;
 		EmptyablePublicKey bob_public_ephemeral;
 		keypair(bob_private_ephemeral, bob_public_ephemeral);
 

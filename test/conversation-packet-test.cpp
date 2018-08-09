@@ -38,7 +38,7 @@ int main() {
 		//create keys
 		//alice
 		//identity
-		EmptyablePrivateKey alice_private_identity;
+		PrivateKey alice_private_identity;
 		EmptyablePublicKey alice_public_identity;
 		generate_and_print_keypair(
 			alice_public_identity,
@@ -48,7 +48,7 @@ int main() {
 
 		//bob
 		//identity
-		EmptyablePrivateKey bob_private_identity;
+		PrivateKey bob_private_identity;
 		EmptyablePublicKey bob_public_identity;
 		generate_and_print_keypair(
 			bob_public_identity,

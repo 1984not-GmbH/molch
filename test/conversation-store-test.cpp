@@ -71,16 +71,14 @@ static ConversationStore protobuf_import(Arena& pool, const std::vector<Buffer> 
 }
 
 static void test_add_conversation(ConversationStore& store) {
-	EmptyablePrivateKey our_private_identity;
+	PrivateKey our_private_identity;
 	EmptyablePublicKey our_public_identity;
 	TRY_VOID(crypto_box_keypair(our_public_identity, our_private_identity));
-	our_private_identity.empty = false;
 	our_public_identity.empty = false;
 
-	EmptyablePrivateKey our_private_ephemeral;
+	PrivateKey our_private_ephemeral;
 	EmptyablePublicKey our_public_ephemeral;
 	TRY_VOID(crypto_box_keypair(our_public_ephemeral, our_private_ephemeral));
-	our_private_ephemeral.empty = false;
 	our_public_ephemeral.empty = false;
 
 	EmptyablePublicKey their_public_identity;

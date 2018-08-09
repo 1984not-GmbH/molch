@@ -34,18 +34,17 @@ using namespace Molch;
  */
 MOLCH_PUBLIC(void) generate_and_print_keypair(
 		EmptyablePublicKey& public_key,
-		EmptyablePrivateKey& private_key,
+		PrivateKey& private_key,
 		const std::string& name, //Name of the key owner (e.g. "Alice")
 		const std::string& type) { //type of the key (e.g. "ephemeral")
 	//generate keypair
 	TRY_VOID(crypto_box_keypair(public_key, private_key));
 	public_key.empty = false;
-	private_key.empty = false;
 
 	//print keypair
 	std::cout << name << "'s public " << type << " key (" << public_key.size() << ":" << std::endl;
 	public_key.printHex(std::cout);
 	putchar('\n');
 	std::cout << std::endl << name << "'s private " << type << " key (" << private_key.size() << ":" << std::endl;
-	private_key.printHex(std::cout) << std::endl;
+	std::cout << private_key << std::endl;
 }

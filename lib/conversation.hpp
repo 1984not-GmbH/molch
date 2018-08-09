@@ -56,17 +56,17 @@ namespace Molch {
 		Conversation() = delete;
 
 		static result<Conversation> create(
-			const EmptyablePrivateKey& our_private_identity,
+			const PrivateKey& our_private_identity,
 			const EmptyablePublicKey& our_public_identity,
 			const EmptyablePublicKey& their_public_identity,
-			const EmptyablePrivateKey& our_private_ephemeral,
+			const PrivateKey& our_private_ephemeral,
 			const EmptyablePublicKey& our_public_ephemeral,
 			const EmptyablePublicKey& their_public_ephemeral);
 
 		static result<SendConversation> createSendConversation(
 				const span<const std::byte> message, //message we want to send to the receiver
 				const EmptyablePublicKey& sender_public_identity, //who is sending this message?
-				const EmptyablePrivateKey& sender_private_identity,
+				const PrivateKey& sender_private_identity,
 				const EmptyablePublicKey& receiver_public_identity,
 				const span<const std::byte> receiver_prekey_list); //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 
@@ -79,7 +79,7 @@ namespace Molch {
 		static result<ReceiveConversation> createReceiveConversation(
 				const span<const std::byte> packet,
 				const EmptyablePublicKey& receiver_public_identity,
-				const EmptyablePrivateKey& receiver_private_identity,
+				const PrivateKey& receiver_private_identity,
 				PrekeyStore& receiver_prekeys);
 
 		/*! Import a conversatoin from a Protobuf-C struct

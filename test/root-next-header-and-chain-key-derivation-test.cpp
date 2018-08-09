@@ -38,7 +38,7 @@ int main() {
 
 		//create Alice's keypair
 		EmptyablePublicKey alice_public_ephemeral;
-		EmptyablePrivateKey alice_private_ephemeral;
+		PrivateKey alice_private_ephemeral;
 		generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
@@ -47,7 +47,7 @@ int main() {
 
 		//create Bob's keypair
 		EmptyablePublicKey bob_public_ephemeral;
-		EmptyablePrivateKey bob_private_ephemeral;
+		PrivateKey bob_private_ephemeral;
 		generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,

@@ -69,7 +69,7 @@ int main() {
 
 		//creating Alice's identity keypair
 		EmptyablePublicKey alice_public_identity;
-		EmptyablePrivateKey alice_private_identity;
+		PrivateKey alice_private_identity;
 		generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
@@ -78,7 +78,7 @@ int main() {
 
 		//creating Alice's ephemeral keypair
 		EmptyablePublicKey alice_public_ephemeral;
-		EmptyablePrivateKey alice_private_ephemeral;
+		PrivateKey alice_private_ephemeral;
 		generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
@@ -87,7 +87,7 @@ int main() {
 
 		//creating Bob's identity keypair
 		EmptyablePublicKey bob_public_identity;
-		EmptyablePrivateKey bob_private_identity;
+		PrivateKey bob_private_identity;
 		generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
@@ -96,7 +96,7 @@ int main() {
 
 		//creating Bob's ephemeral keypair
 		EmptyablePublicKey bob_public_ephemeral;
-		EmptyablePrivateKey bob_private_ephemeral;
+		PrivateKey bob_private_ephemeral;
 		generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,

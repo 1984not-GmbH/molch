@@ -155,7 +155,7 @@ int main() {
 		printf("Public key:\n");
 		public_prekey.printHex(std::cout);
 		printf("Private key:\n");
-		private_prekey1.printHex(std::cout) << std::endl;
+		std::cout << private_prekey1 << std::endl;
 
 		if (store.deprecatedPrekeys().empty()) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to deprecate requested key."};

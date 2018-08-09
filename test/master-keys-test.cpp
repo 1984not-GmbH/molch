@@ -154,7 +154,7 @@ int main() {
 		{
 			MasterKeys::Unlocker unlocker{unspiced_master_keys};
 			TRY_WITH_RESULT(private_identity_key, unspiced_master_keys.getPrivateIdentityKey());
-			private_identity_key.value()->printHex(std::cout);
+			std::cout << *private_identity_key.value();
 		}
 
 		//check the exported public keys
@@ -193,7 +193,7 @@ int main() {
 		{
 			MasterKeys::Unlocker unlocker{spiced_master_keys};
 			TRY_WITH_RESULT(private_identity_key, spiced_master_keys.getPrivateIdentityKey());
-			private_identity_key.value()->printHex(std::cout);
+			std::cout << *private_identity_key.value();
 		}
 
 		//check the exported public keys
