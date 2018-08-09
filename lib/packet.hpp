@@ -37,9 +37,9 @@
 
 namespace Molch {
 	struct PrekeyMetadata {
-		PublicKey identity;
-		PublicKey ephemeral;
-		PublicKey prekey;
+		EmptyablePublicKey identity;
+		EmptyablePublicKey ephemeral;
+		EmptyablePublicKey prekey;
 	};
 
 	struct Metadata {
@@ -76,7 +76,7 @@ namespace Molch {
 	result<Buffer> packet_encrypt(
 			const molch_message_type packet_type,
 			const span<const std::byte> axolotl_header,
-			const HeaderKey& axolotl_header_key,
+			const EmptyableHeaderKey& axolotl_header_key,
 			const span<const std::byte> message,
 			const MessageKey& message_key,
 			const std::optional<PrekeyMetadata>& prekey_metadata);
@@ -94,7 +94,7 @@ namespace Molch {
 	 */
 	result<DecryptedPacket> packet_decrypt(
 			const span<const std::byte> packet,
-			const HeaderKey& axolotl_header_key,
+			const EmptyableHeaderKey& axolotl_header_key,
 			const MessageKey& message_key);
 
 	/*!
@@ -115,7 +115,7 @@ namespace Molch {
 	 */
 	result<Buffer> packet_decrypt_header(
 			const span<const std::byte> packet,
-			const HeaderKey& axolotl_header_key);
+			const EmptyableHeaderKey& axolotl_header_key);
 
 	/*!
 	 * Decrypt the message part of a packet.

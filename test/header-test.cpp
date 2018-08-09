@@ -36,7 +36,7 @@ int main() {
 		TRY_VOID(Molch::sodium_init());
 
 		//create ephemeral key
-		PublicKey our_public_ephemeral_key;
+		EmptyablePublicKey our_public_ephemeral_key;
 		our_public_ephemeral_key.fillRandom();
 		printf("Our public ephemeral key (%zu Bytes):\n", our_public_ephemeral_key.size());
 		our_public_ephemeral_key.printHex(std::cout);

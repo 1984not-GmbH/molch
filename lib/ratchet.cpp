@@ -40,12 +40,12 @@ namespace Molch {
 	}
 
 	result<Ratchet> Ratchet::create(
-			const PrivateKey& our_private_identity,
-			const PublicKey& our_public_identity,
-			const PublicKey& their_public_identity,
-			const PrivateKey& our_private_ephemeral,
-			const PublicKey& our_public_ephemeral,
-			const PublicKey& their_public_ephemeral) {
+			const EmptyablePrivateKey& our_private_identity,
+			const EmptyablePublicKey& our_public_identity,
+			const EmptyablePublicKey& their_public_identity,
+			const EmptyablePrivateKey& our_private_ephemeral,
+			const EmptyablePublicKey& our_public_ephemeral,
+			const EmptyablePublicKey& their_public_ephemeral) {
 		FulfillOrFail(!our_private_identity.empty
 				&& !our_public_identity.empty
 				&& !their_public_identity.empty
@@ -136,7 +136,7 @@ namespace Molch {
 			storage->send_header_key = storage->next_send_header_key;
 
 			//clone the root key for it to not be overwritten in the next step
-			RootKey root_key_backup{storage->root_key};
+			EmptyableRootKey root_key_backup{storage->root_key};
 
 			//RK, NHKs, CKs = KDF(HMAC-HASH(RK, DH(DHRs, DHRr)))
 			auto derived_keys{derive_root_next_header_and_chain_keys(
@@ -216,7 +216,7 @@ namespace Molch {
 			HeaderAndMessageKeyStore& staging_area,
 			ChainKey * const output_chain_key, //output, optional
 			MessageKey * const output_message_key, //output, optional
-			const HeaderKey& current_header_key,
+			const EmptyableHeaderKey& current_header_key,
 			const uint32_t current_message_number,
 			const uint32_t future_message_number,
 			const ChainKey& chain_key) {
@@ -273,7 +273,7 @@ namespace Molch {
 	}
 
 	result<MessageKey> Ratchet::receive(
-			const PublicKey& their_purported_public_ephemeral,
+			const EmptyablePublicKey& their_purported_public_ephemeral,
 			const uint32_t purported_message_number,
 			const uint32_t purported_previous_message_number) {
 		FulfillOrFail(!their_purported_public_ephemeral.empty);

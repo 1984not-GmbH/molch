@@ -68,8 +68,8 @@ int main() {
 		TRY_VOID(Molch::sodium_init());
 
 		//creating Alice's identity keypair
-		PublicKey alice_public_identity;
-		PrivateKey alice_private_identity;
+		EmptyablePublicKey alice_public_identity;
+		EmptyablePrivateKey alice_private_identity;
 		generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
@@ -77,8 +77,8 @@ int main() {
 			"identity");
 
 		//creating Alice's ephemeral keypair
-		PublicKey alice_public_ephemeral;
-		PrivateKey alice_private_ephemeral;
+		EmptyablePublicKey alice_public_ephemeral;
+		EmptyablePrivateKey alice_private_ephemeral;
 		generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
@@ -86,8 +86,8 @@ int main() {
 			"ephemeral");
 
 		//creating Bob's identity keypair
-		PublicKey bob_public_identity;
-		PrivateKey bob_private_identity;
+		EmptyablePublicKey bob_public_identity;
+		EmptyablePrivateKey bob_private_identity;
 		generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
@@ -95,8 +95,8 @@ int main() {
 			"identity");
 
 		//creating Bob's ephemeral keypair
-		PublicKey bob_public_ephemeral;
-		PrivateKey bob_private_ephemeral;
+		EmptyablePublicKey bob_public_ephemeral;
+		EmptyablePrivateKey bob_private_ephemeral;
 		generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,
@@ -444,7 +444,7 @@ int main() {
 		alice_receive_message_key2.printHex(std::cout) << std::endl;
 
 		//get the second receive header key from the message and header keystore
-		HeaderKey alice_receive_header_key2;
+		EmptyableHeaderKey alice_receive_header_key2;
 		alice_receive_header_key2 = alice_state.skipped_header_and_message_keys.keys().back().headerKey();
 		printf("Alice Ratchet 2 receive header key 2:\n");
 		alice_receive_header_key2.printHex(std::cout) << std::endl;

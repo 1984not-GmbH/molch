@@ -31,7 +31,7 @@
 
 using namespace Molch;
 
-static void keypair(PrivateKey& private_key, PublicKey& public_key) {
+static void keypair(EmptyablePrivateKey& private_key, EmptyablePublicKey& public_key) {
 	TRY_VOID(crypto_box_keypair(public_key, private_key));
 	private_key.empty = false;
 	public_key.empty = false;
@@ -43,18 +43,18 @@ int main() {
 
 		//generate the keys
 		//Alice:
-		PrivateKey alice_private_identity;
-		PublicKey alice_public_identity;
+		EmptyablePrivateKey alice_private_identity;
+		EmptyablePublicKey alice_public_identity;
 		keypair(alice_private_identity, alice_public_identity);
-		PrivateKey alice_private_ephemeral;
-		PublicKey alice_public_ephemeral;
+		EmptyablePrivateKey alice_private_ephemeral;
+		EmptyablePublicKey alice_public_ephemeral;
 		keypair(alice_private_ephemeral, alice_public_ephemeral);
 		//Bob:
-		PrivateKey bob_private_identity;
-		PublicKey bob_public_identity;
+		EmptyablePrivateKey bob_private_identity;
+		EmptyablePublicKey bob_public_identity;
 		keypair(bob_private_identity, bob_public_identity);
-		PrivateKey bob_private_ephemeral;
-		PublicKey bob_public_ephemeral;
+		EmptyablePrivateKey bob_private_ephemeral;
+		EmptyablePublicKey bob_public_ephemeral;
 		keypair(bob_private_ephemeral, bob_public_ephemeral);
 
 		//compare public identity keys, the one with the bigger key will be alice

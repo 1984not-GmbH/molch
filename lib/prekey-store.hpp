@@ -41,19 +41,19 @@ namespace Molch {
 	class Prekey {
 		friend class PrekeyStore;
 	private:
-		void fill(const PublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date) noexcept;
+		void fill(const EmptyablePublicKey& public_key, const EmptyablePrivateKey& private_key, const seconds expiration_date) noexcept;
 		result<void> generate() noexcept;
 
 		Prekey& copy(const Prekey& node) noexcept;
 		Prekey& move(Prekey&& node) noexcept;
 
-		PublicKey public_key;
-		PrivateKey private_key;
+		EmptyablePublicKey public_key;
+		EmptyablePrivateKey private_key;
 		seconds expiration_date{0};
 
 	public:
 		Prekey() = default;
-		Prekey(const PublicKey& public_key, const PrivateKey& private_key, seconds expiration_date) noexcept;
+		Prekey(const EmptyablePublicKey& public_key, const EmptyablePrivateKey& private_key, seconds expiration_date) noexcept;
 		/* copy constructor */
 		Prekey(const Prekey& node) noexcept;
 		/* move constructor */
@@ -67,8 +67,8 @@ namespace Molch {
 		Prekey& operator=(Prekey&& node) noexcept;
 
 		seconds expirationDate() const noexcept;
-		const PublicKey& publicKey() const noexcept;
-		const PrivateKey& privateKey() const noexcept;
+		const EmptyablePublicKey& publicKey() const noexcept;
+		const EmptyablePrivateKey& privateKey() const noexcept;
 
 		result<ProtobufCPrekey*> exportProtobuf(Arena& arena) const;
 
@@ -119,7 +119,7 @@ namespace Molch {
 		 * deprecate the requested prekey put it in the outdated key store and
 		 * generate a new one.
 		 */
-		result<PrivateKey> getPrekey(const PublicKey& public_key);
+		result<EmptyablePrivateKey> getPrekey(const EmptyablePublicKey& public_key);
 
 		/*
 		 * Generate a list containing all public prekeys.

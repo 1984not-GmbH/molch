@@ -44,7 +44,7 @@ using namespace Molch;
 
 //global user store
 static std::unique_ptr<UserStore> users;
-static std::unique_ptr<BackupKey,SodiumDeleter<BackupKey>> global_backup_key;
+static std::unique_ptr<EmptyableBackupKey,SodiumDeleter<EmptyableBackupKey>> global_backup_key;
 
 class GlobalBackupKeyUnlocker {
 public:
@@ -99,7 +99,7 @@ static void check_global_backup_key_state() {
 /*
  * Create a prekey list.
  */
-static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_key) {
+static MallocBuffer create_prekey_list(const EmptyablePublicSigningKey& public_signing_key) {
 	//get the user
 	auto user{users->find(public_signing_key)};
 	if (user == nullptr) {
@@ -194,7 +194,7 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 		}
 
 		//create the user
-		PublicSigningKey public_master_key_key;
+		EmptyablePublicSigningKey public_master_key_key;
 		if (random_data_length != 0) {
 			TRY_WITH_RESULT(user_result, Molch::User::create({{uchar_to_byte(random_data), random_data_length}}));
 			auto& user{user_result.value()};
@@ -265,7 +265,7 @@ MOLCH_PUBLIC(return_status) molch_destroy_user(
 			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Public master key has incorrect size."};
 		}
 
-		PublicSigningKey public_master_key_key;
+		EmptyablePublicSigningKey public_master_key_key;
 		public_master_key_key = {uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE};
 		users->remove(public_master_key_key);
 
@@ -382,8 +382,8 @@ MOLCH_PUBLIC(molch_message_type) molch_get_message_type(
  */
 static void verify_prekey_list(
 		const span<const std::byte> prekey_list,
-		PublicKey& public_identity_key, //output, PUBLIC_KEY_SIZE
-		PublicSigningKey& public_signing_key) {
+		EmptyablePublicKey& public_identity_key, //output, PUBLIC_KEY_SIZE
+		EmptyablePublicSigningKey& public_signing_key) {
 	//verify the signature
 	Buffer verified_prekey_list{prekey_list.size() - SIGNATURE_SIZE, prekey_list.size() - SIGNATURE_SIZE};
 	TRY_VOID(crypto_sign_open(
@@ -453,7 +453,7 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		check_global_users_state();
 
 		//get the user that matches the public signing key of the sender
-		PublicSigningKey sender_public_master_key_key;
+		EmptyablePublicSigningKey sender_public_master_key_key;
 		sender_public_master_key_key = {uchar_to_byte(sender_public_master_key), PUBLIC_MASTER_KEY_SIZE};
 		auto user{users->find(sender_public_master_key_key)};
 		if (user == nullptr) {
@@ -461,8 +461,8 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		}
 
 		//get the receivers public ephemeral and identity
-		PublicKey receiver_public_identity;
-		PublicSigningKey receiver_public_master_key_key;
+		EmptyablePublicKey receiver_public_identity;
+		EmptyablePublicSigningKey receiver_public_master_key_key;
 		receiver_public_master_key_key = {uchar_to_byte(receiver_public_master_key), PUBLIC_MASTER_KEY_SIZE};
 		verify_prekey_list(
 				{uchar_to_byte(prekey_list), prekey_list_length},
@@ -561,7 +561,7 @@ cleanup:
 			check_global_users_state();
 
 			//get the user that matches the public signing key of the receiver
-			PublicSigningKey receiver_public_master_key_key;
+			EmptyablePublicSigningKey receiver_public_master_key_key;
 			receiver_public_master_key_key = {uchar_to_byte(receiver_public_master_key), PUBLIC_MASTER_KEY_SIZE};
 			auto user{users->find(receiver_public_master_key_key)};
 			if (user == nullptr) {
@@ -842,7 +842,7 @@ cleanup:
 
 			check_global_users_state();
 
-			PublicSigningKey user_public_master_key_key;
+			EmptyablePublicSigningKey user_public_master_key_key;
 			user_public_master_key_key = {uchar_to_byte(user_public_master_key), PUBLIC_MASTER_KEY_SIZE};
 			auto user{users->find(user_public_master_key_key)};
 			if (user == nullptr) {
@@ -1357,7 +1357,7 @@ cleanup:
 
 			check_global_users_state();
 
-			PublicSigningKey public_signing_key_key;
+			EmptyablePublicSigningKey public_signing_key_key;
 			public_signing_key_key = {uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE};
 			auto prekey_list_buffer{create_prekey_list(public_signing_key_key)};
 			MallocBuffer malloced_prekey_list{prekey_list_buffer.size(), 0};
@@ -1396,8 +1396,8 @@ cleanup:
 
 			// create a backup key buffer if it doesnt exist already
 			if (global_backup_key == nullptr) {
-				global_backup_key = std::unique_ptr<BackupKey,SodiumDeleter<BackupKey>>(sodium_malloc<BackupKey>(1));
-				new (global_backup_key.get()) BackupKey();
+				global_backup_key = std::unique_ptr<EmptyableBackupKey,SodiumDeleter<EmptyableBackupKey>>(sodium_malloc<EmptyableBackupKey>(1));
+				new (global_backup_key.get()) EmptyableBackupKey();
 			}
 
 			//make the content of the backup key writable

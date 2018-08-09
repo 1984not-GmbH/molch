@@ -35,27 +35,27 @@
 namespace Molch {
 	class RatchetStorage {
 	public:
-		RootKey root_key; //RK
-		RootKey purported_root_key; //RKp
+		EmptyableRootKey root_key; //RK
+		EmptyableRootKey purported_root_key; //RKp
 		//header keys
-		std::optional<HeaderKey> send_header_key;
-		HeaderKey receive_header_key;
-		HeaderKey next_send_header_key;
-		HeaderKey next_receive_header_key;
-		HeaderKey purported_receive_header_key;
-		HeaderKey purported_next_receive_header_key;
+		std::optional<EmptyableHeaderKey> send_header_key;
+		EmptyableHeaderKey receive_header_key;
+		EmptyableHeaderKey next_send_header_key;
+		EmptyableHeaderKey next_receive_header_key;
+		EmptyableHeaderKey purported_receive_header_key;
+		EmptyableHeaderKey purported_next_receive_header_key;
 		//chain keys
 		ChainKey send_chain_key; //CKs
 		ChainKey receive_chain_key; //CKr
 		ChainKey purported_receive_chain_key; //CKp
 		//identity keys
-		PublicKey our_public_identity; //DHIs
-		PublicKey their_public_identity; //DHIr
+		EmptyablePublicKey our_public_identity; //DHIs
+		EmptyablePublicKey their_public_identity; //DHIr
 		//ephemeral keys (ratchet keys)
-		PrivateKey our_private_ephemeral; //DHRs
-		PublicKey our_public_ephemeral; //DHRs
-		PublicKey their_public_ephemeral; //DHRr
-		PublicKey their_purported_public_ephemeral; //DHp
+		EmptyablePrivateKey our_private_ephemeral; //DHRs
+		EmptyablePublicKey our_public_ephemeral; //DHRs
+		EmptyablePublicKey their_public_ephemeral; //DHRr
+		EmptyablePublicKey their_purported_public_ephemeral; //DHp
 	};
 
 	class Ratchet {
@@ -102,12 +102,12 @@ namespace Molch {
 		 * All the keys will be copied so you can free the buffers afterwards.
 		 */
 		static result<Ratchet> create(
-				const PrivateKey& our_private_identity,
-				const PublicKey& our_public_identity,
-				const PublicKey& their_public_identity,
-				const PrivateKey& our_private_ephemeral,
-				const PublicKey& our_public_ephemeral,
-				const PublicKey& their_public_ephemeral);
+				const EmptyablePrivateKey& our_private_identity,
+				const EmptyablePublicKey& our_public_identity,
+				const EmptyablePublicKey& their_public_identity,
+				const EmptyablePrivateKey& our_private_ephemeral,
+				const EmptyablePublicKey& our_public_ephemeral,
+				const EmptyablePublicKey& their_public_ephemeral);
 
 		/*! Import a ratchet from Protobuf-C
 		 * NOTE: The public identity key is needed separately,
@@ -125,9 +125,9 @@ namespace Molch {
 		struct SendData {
 			uint32_t message_number;
 			uint32_t previous_message_number;
-			PublicKey ephemeral;
+			EmptyablePublicKey ephemeral;
 			MessageKey message_key;
-			HeaderKey header_key;
+			EmptyableHeaderKey header_key;
 		};
 
 		/*
@@ -136,8 +136,8 @@ namespace Molch {
 		result<SendData> getSendData();
 
 		struct ReceiveHeaderKeys {
-			HeaderKey current;
-			HeaderKey next;
+			EmptyableHeaderKey current;
+			EmptyableHeaderKey next;
 		};
 
 		/*
@@ -162,7 +162,7 @@ namespace Molch {
 		 * after having verified the message.
 		 */
 		result<MessageKey> receive(
-				const PublicKey& their_purported_public_ephemeral,
+				const EmptyablePublicKey& their_purported_public_ephemeral,
 				const uint32_t purported_message_number,
 				const uint32_t purported_previous_message_number);
 

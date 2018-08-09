@@ -37,20 +37,20 @@
 namespace Molch {
 	class HeaderAndMessageKey {
 	private:
-		void fill(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) noexcept;
+		void fill(const EmptyableHeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) noexcept;
 
 		HeaderAndMessageKey& copy(const HeaderAndMessageKey& node) noexcept;
 		HeaderAndMessageKey& move(HeaderAndMessageKey&& node) noexcept;
 
 		MessageKey message_key;
-		HeaderKey header_key;
+		EmptyableHeaderKey header_key;
 		seconds expiration_date{0};
 
 	public:
 		HeaderAndMessageKey() = delete;
 		HeaderAndMessageKey(uninitialized_t uninitialized) noexcept;
-		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key) noexcept;
-		HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) noexcept;
+		HeaderAndMessageKey(const EmptyableHeaderKey& header_key, const MessageKey& message_key) noexcept;
+		HeaderAndMessageKey(const EmptyableHeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) noexcept;
 		/* copy and move constructors */
 		HeaderAndMessageKey(const HeaderAndMessageKey& node) noexcept;
 		HeaderAndMessageKey(HeaderAndMessageKey&& node) noexcept;
@@ -61,7 +61,7 @@ namespace Molch {
 		HeaderAndMessageKey& operator=(HeaderAndMessageKey&& node) noexcept;
 
 		const MessageKey& messageKey() const noexcept;
-		const HeaderKey& headerKey() const noexcept;
+		const EmptyableHeaderKey& headerKey() const noexcept;
 		seconds expirationDate() const noexcept;
 
 		ProtobufCKeyBundle* exportProtobuf(Arena& arena) const;
@@ -87,7 +87,7 @@ namespace Molch {
 		HeaderAndMessageKeyStore(const span<ProtobufCKeyBundle*> key_bundles);
 
 		void add(const HeaderAndMessageKeyStore& keystore);
-		void add(const HeaderKey& header_key, const MessageKey& message_key);
+		void add(const EmptyableHeaderKey& header_key, const MessageKey& message_key);
 		void add(const HeaderAndMessageKey& key);
 		void remove(size_t index);
 		void clear();

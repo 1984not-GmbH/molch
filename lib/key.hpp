@@ -452,13 +452,13 @@ namespace Molch {
 		return stream;
 	}
 
-	using HeaderKey = EmptyableKey<HEADER_KEY_SIZE,KeyType::HeaderKey>;
-	using RootKey = EmptyableKey<ROOT_KEY_SIZE,KeyType::RootKey>;
-	using BackupKey = EmptyableKey<BACKUP_KEY_SIZE,KeyType::BackupKey>;
-	using PublicKey = EmptyableKey<PUBLIC_KEY_SIZE,KeyType::PublicKey>;
-	using PrivateKey = EmptyableKey<PRIVATE_KEY_SIZE,KeyType::PrivateKey>;
-	using PublicSigningKey = EmptyableKey<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey>;
-	using PrivateSigningKey = EmptyableKey<PRIVATE_MASTER_KEY_SIZE,KeyType::PrivateSigningKey>;
+	using EmptyableHeaderKey = EmptyableKey<HEADER_KEY_SIZE,KeyType::HeaderKey>;
+	using EmptyableRootKey = EmptyableKey<ROOT_KEY_SIZE,KeyType::RootKey>;
+	using EmptyableBackupKey = EmptyableKey<BACKUP_KEY_SIZE,KeyType::BackupKey>;
+	using EmptyablePublicKey = EmptyableKey<PUBLIC_KEY_SIZE,KeyType::PublicKey>;
+	using EmptyablePrivateKey = EmptyableKey<PRIVATE_KEY_SIZE,KeyType::PrivateKey>;
+	using EmptyablePublicSigningKey = EmptyableKey<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey>;
+	using EmptyablePrivateSigningKey = EmptyableKey<PRIVATE_MASTER_KEY_SIZE,KeyType::PrivateSigningKey>;
 }
 
 #endif /* LIB_KEY_HPP */

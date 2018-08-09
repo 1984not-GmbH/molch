@@ -103,7 +103,7 @@ namespace Molch {
 		return stream;
 	}
 
-	const PublicSigningKey& User::id() const noexcept {
+	const EmptyablePublicSigningKey& User::id() const noexcept {
 		return this->public_signing_key;
 	}
 	const MasterKeys& User::masterKeys() const noexcept {
@@ -139,7 +139,7 @@ namespace Molch {
 		this->users[existing_index] = std::move(user);
 	}
 
-	User* UserStore::find(const PublicSigningKey& public_signing_key) {
+	User* UserStore::find(const EmptyablePublicSigningKey& public_signing_key) {
 		Expects(!public_signing_key.empty);
 
 		auto user{std::find_if(std::begin(this->users), std::end(this->users),
@@ -200,7 +200,7 @@ namespace Molch {
 		}
 	}
 
-	void UserStore::remove(const PublicSigningKey& public_signing_key) {
+	void UserStore::remove(const EmptyablePublicSigningKey& public_signing_key) {
 		auto found_node{std::find_if(std::cbegin(this->users), std::cend(this->users),
 				[public_signing_key](const User& user) {
 					return user.id() == public_signing_key;

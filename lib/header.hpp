@@ -53,13 +53,13 @@ namespace Molch {
 	 *   The constructed header.
 	 */
 	result<Buffer> header_construct(
-			const PublicKey& our_public_ephemeral, //PUBLIC_KEY_SIZE
+			const EmptyablePublicKey& our_public_ephemeral, //PUBLIC_KEY_SIZE
 			const uint32_t message_number,
 			const uint32_t previous_message_number);
 
 
 	struct ExtractedHeader {
-		PublicKey their_public_ephemeral;
+		EmptyablePublicKey their_public_ephemeral;
 		uint32_t message_number;
 		uint32_t previous_message_number;
 	};

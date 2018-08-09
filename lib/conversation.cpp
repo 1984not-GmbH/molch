@@ -52,12 +52,12 @@ namespace Molch {
 	 * Create a new conversation.
 	 */
 	result<Conversation> Conversation::create(
-			const PrivateKey& our_private_identity,
-			const PublicKey& our_public_identity,
-			const PublicKey& their_public_identity,
-			const PrivateKey& our_private_ephemeral,
-			const PublicKey& our_public_ephemeral,
-			const PublicKey& their_public_ephemeral) {
+			const EmptyablePrivateKey& our_private_identity,
+			const EmptyablePublicKey& our_public_identity,
+			const EmptyablePublicKey& their_public_identity,
+			const EmptyablePrivateKey& our_private_ephemeral,
+			const EmptyablePublicKey& our_public_ephemeral,
+			const EmptyablePublicKey& their_public_ephemeral) {
 		FulfillOrFail(!our_private_identity.empty
 				&& !our_public_identity.empty
 				&& !their_public_identity.empty
@@ -83,9 +83,9 @@ namespace Molch {
 
 	result<SendConversation> Conversation::createSendConversation(
 			const span<const std::byte> message, //message we want to send to the receiver
-			const PublicKey& sender_public_identity, //who is sending this message?
-			const PrivateKey& sender_private_identity,
-			const PublicKey& receiver_public_identity,
+			const EmptyablePublicKey& sender_public_identity, //who is sending this message?
+			const EmptyablePrivateKey& sender_private_identity,
+			const EmptyablePublicKey& receiver_public_identity,
 			const span<const std::byte> receiver_prekey_list) { //PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 		FulfillOrFail(!receiver_public_identity.empty
 				&& !sender_public_identity.empty
@@ -93,15 +93,15 @@ namespace Molch {
 				&& (receiver_prekey_list.size() == (PREKEY_AMOUNT * PUBLIC_KEY_SIZE)));
 
 		//create an ephemeral keypair
-		PublicKey sender_public_ephemeral;
-		PrivateKey sender_private_ephemeral;
+		EmptyablePublicKey sender_public_ephemeral;
+		EmptyablePrivateKey sender_private_ephemeral;
 		OUTCOME_TRY(crypto_box_keypair(sender_public_ephemeral, sender_private_ephemeral));
 		sender_public_ephemeral.empty = false;
 		sender_private_ephemeral.empty = false;
 
 		//choose a prekey
 		auto prekey_number{randombytes_uniform(PREKEY_AMOUNT)};
-		PublicKey receiver_public_prekey;
+		EmptyablePublicKey receiver_public_prekey;
 		receiver_public_prekey = {
 				&receiver_prekey_list[gsl::narrow_cast<ptrdiff_t>(prekey_number * PUBLIC_KEY_SIZE)],
 				PUBLIC_KEY_SIZE};
@@ -127,8 +127,8 @@ namespace Molch {
 
 	result<ReceiveConversation> Conversation::createReceiveConversation(
 			const span<const std::byte> packet,
-			const PublicKey& receiver_public_identity,
-			const PrivateKey& receiver_private_identity,
+			const EmptyablePublicKey& receiver_public_identity,
+			const EmptyablePrivateKey& receiver_private_identity,
 			PrekeyStore& receiver_prekeys) {
 		FulfillOrFail(!receiver_public_identity.empty
 				&& !receiver_private_identity.empty);
@@ -202,7 +202,7 @@ namespace Molch {
 				message.message = std::move(decrypted_packet.message);
 				this->ratchet.skipped_header_and_message_keys.remove(index);
 
-				PublicKey their_signed_public_ephemeral;
+				EmptyablePublicKey their_signed_public_ephemeral;
 				OUTCOME_TRY(extracted_header, header_extract(decrypted_packet.header));
 				message.message_number = extracted_header.message_number;
 				message.previous_message_number = extracted_header.previous_message_number;

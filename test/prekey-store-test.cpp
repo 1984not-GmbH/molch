@@ -147,7 +147,7 @@ int main() {
 
 		//get a private key
 		const size_t prekey_index{10};
-		PublicKey public_prekey{store.prekeys()[prekey_index].publicKey()};
+		EmptyablePublicKey public_prekey{store.prekeys()[prekey_index].publicKey()};
 
 		TRY_WITH_RESULT(private_prekey1_result, store.getPrekey(public_prekey));
 		const auto& private_prekey1{private_prekey1_result.value()};

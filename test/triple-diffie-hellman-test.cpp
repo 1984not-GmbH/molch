@@ -38,8 +38,8 @@ int main() {
 		printf("Generate Alice's keys -------------------------------------------------------\n\n");
 
 		//create Alice's identity keypair
-		PublicKey alice_public_identity;
-		PrivateKey alice_private_identity;
+		EmptyablePublicKey alice_public_identity;
+		EmptyablePrivateKey alice_private_identity;
 		generate_and_print_keypair(
 			alice_public_identity,
 			alice_private_identity,
@@ -47,8 +47,8 @@ int main() {
 			"identity");
 
 		//create Alice's ephemeral keypair
-		PublicKey alice_public_ephemeral;
-		PrivateKey alice_private_ephemeral;
+		EmptyablePublicKey alice_public_ephemeral;
+		EmptyablePrivateKey alice_private_ephemeral;
 		generate_and_print_keypair(
 			alice_public_ephemeral,
 			alice_private_ephemeral,
@@ -58,8 +58,8 @@ int main() {
 		printf("Generate Bob's keys ---------------------------------------------------------\n\n");
 
 		//create Bob's identity keypair
-		PublicKey bob_public_identity;
-		PrivateKey bob_private_identity;
+		EmptyablePublicKey bob_public_identity;
+		EmptyablePrivateKey bob_private_identity;
 		generate_and_print_keypair(
 			bob_public_identity,
 			bob_private_identity,
@@ -67,8 +67,8 @@ int main() {
 			"identity");
 
 		//create Bob's ephemeral keypair
-		PublicKey bob_public_ephemeral;
-		PrivateKey bob_private_ephemeral;
+		EmptyablePublicKey bob_public_ephemeral;
+		EmptyablePrivateKey bob_private_ephemeral;
 		generate_and_print_keypair(
 			bob_public_ephemeral,
 			bob_private_ephemeral,

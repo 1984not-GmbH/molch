@@ -103,7 +103,7 @@ static void testSortingAndDeprecation() {
 
 	std::cout << "Check if Keystore is sorted properly" << std::endl;
 	for (seconds index{10}; index > 0s; --index) {
-		HeaderKey header_key;
+		EmptyableHeaderKey header_key;
 		header_key.fillRandom();
 		MessageKey message_key;
 		message_key.fillRandom();
@@ -123,7 +123,7 @@ static void testSortingAndDeprecation() {
 	}
 
 	std::cout << "Test removing outdated keys:" << std::endl;
-	sorted_store.add(HeaderAndMessageKey(HeaderKey{}, MessageKey{}));
+	sorted_store.add(HeaderAndMessageKey(EmptyableHeaderKey{}, MessageKey{}));
 	sorted_store.removeOutdatedAndTrimSize();
 	sorted_store.print(std::cout) << std::endl;
 	if (sorted_store.keys().size() != 1) {
@@ -137,7 +137,7 @@ static void testSizeLimit() {
 
 	std::cout << "Try to make too big header and message keystore:" << std::endl;
 	for (size_t i{0}; i < (2 * header_and_message_store_maximum_keys); ++i) {
-		too_big.add(HeaderAndMessageKey{HeaderKey{}, MessageKey{}});
+		too_big.add(HeaderAndMessageKey{EmptyableHeaderKey{}, MessageKey{}});
 	}
 
 	if (too_big.keys().size() != header_and_message_store_maximum_keys) {
@@ -167,7 +167,7 @@ int main() {
 		//add keys to the keystore
 		for (size_t i{0}; i < 6; i++) {
 			//create new keys
-			HeaderKey header_key;
+			EmptyableHeaderKey header_key;
 			header_key.fillRandom();
 			MessageKey message_key;
 			message_key.fillRandom();

@@ -47,7 +47,7 @@ int main() {
 		//A NORMAL MESSAGE
 		printf("NORMAL MESSAGE:\n");
 		MessageKey message_key;
-		HeaderKey header_key;
+		EmptyableHeaderKey header_key;
 		Buffer message{"Hello world!\n"};
 		Buffer packet;
 		create_and_print_message(
@@ -88,11 +88,11 @@ int main() {
 		//NOW A PREKEY MESSAGE
 		printf("PREKEY MESSAGE:\n");
 		//create the keys
-		PublicKey public_identity_key;
+		EmptyablePublicKey public_identity_key;
 		public_identity_key.fillRandom();
-		PublicKey public_ephemeral_key;
+		EmptyablePublicKey public_ephemeral_key;
 		public_ephemeral_key.fillRandom();
-		PublicKey public_prekey;
+		EmptyablePublicKey public_prekey;
 		public_prekey.fillRandom();
 
 		packet.clear();

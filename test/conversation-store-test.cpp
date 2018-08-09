@@ -71,22 +71,22 @@ static ConversationStore protobuf_import(Arena& pool, const std::vector<Buffer> 
 }
 
 static void test_add_conversation(ConversationStore& store) {
-	PrivateKey our_private_identity;
-	PublicKey our_public_identity;
+	EmptyablePrivateKey our_private_identity;
+	EmptyablePublicKey our_public_identity;
 	TRY_VOID(crypto_box_keypair(our_public_identity, our_private_identity));
 	our_private_identity.empty = false;
 	our_public_identity.empty = false;
 
-	PrivateKey our_private_ephemeral;
-	PublicKey our_public_ephemeral;
+	EmptyablePrivateKey our_private_ephemeral;
+	EmptyablePublicKey our_public_ephemeral;
 	TRY_VOID(crypto_box_keypair(our_public_ephemeral, our_private_ephemeral));
 	our_private_ephemeral.empty = false;
 	our_public_ephemeral.empty = false;
 
-	PublicKey their_public_identity;
+	EmptyablePublicKey their_public_identity;
 	their_public_identity.fillRandom();
 
-	PublicKey their_public_ephemeral;
+	EmptyablePublicKey their_public_ephemeral;
 	their_public_ephemeral.fillRandom();
 
 	//create the conversation manually

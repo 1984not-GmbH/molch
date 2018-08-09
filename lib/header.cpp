@@ -26,7 +26,7 @@
 namespace Molch {
 	result<Buffer> header_construct(
 			//inputs
-			const PublicKey& our_public_ephemeral, //PUBLIC_KEY_SIZE
+			const EmptyablePublicKey& our_public_ephemeral, //PUBLIC_KEY_SIZE
 			const uint32_t message_number,
 			const uint32_t previous_message_number) {
 		FulfillOrFail(!our_public_ephemeral.empty);

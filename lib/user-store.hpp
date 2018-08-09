@@ -40,7 +40,7 @@
 namespace Molch {
 	class User {
 	private:
-		PublicSigningKey public_signing_key;
+		EmptyablePublicSigningKey public_signing_key;
 		MasterKeys master_keys;
 
 		User& move(User&& node) noexcept;
@@ -74,7 +74,7 @@ namespace Molch {
 
 		result<ProtobufCUser*> exportProtobuf(Arena& arena) const;
 
-		const PublicSigningKey& id() const noexcept;
+		const EmptyablePublicSigningKey& id() const noexcept;
 		const MasterKeys& masterKeys() const noexcept;
 	};
 
@@ -106,7 +106,7 @@ namespace Molch {
 		 *
 		 * Returns nullptr if no user was found.
 		 */
-		User* find(const PublicSigningKey& public_signing_key);
+		User* find(const EmptyablePublicSigningKey& public_signing_key);
 
 		/*
 		 * Find a conversation with a given public signing key.
@@ -123,7 +123,7 @@ namespace Molch {
 		 */
 		Buffer list();
 
-		void remove(const PublicSigningKey& public_signing_key);
+		void remove(const EmptyablePublicSigningKey& public_signing_key);
 		void remove(const User* const user);
 
 		void clear();

@@ -37,16 +37,16 @@ using namespace Molch;
 MOLCH_PUBLIC(void) create_and_print_message(
 		//output
 		Buffer& packet,
-		HeaderKey& header_key,
+		EmptyableHeaderKey& header_key,
 		MessageKey& message_key,
 		//inputs
 		const molch_message_type packet_type,
 		const Buffer& header,
 		const Buffer& message,
 		//optional inputs (prekey messages only)
-		PublicKey * const public_identity_key,
-		PublicKey * const public_ephemeral_key,
-		PublicKey * const public_prekey) {
+		EmptyablePublicKey * const public_identity_key,
+		EmptyablePublicKey * const public_ephemeral_key,
+		EmptyablePublicKey * const public_prekey) {
 	//check input
 	Expects(packet_type != molch_message_type::INVALID);
 

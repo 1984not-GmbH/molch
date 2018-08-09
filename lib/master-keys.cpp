@@ -81,10 +81,10 @@ namespace Molch {
 			ReadWriteUnlocker unlocker(keys);
 
 			//copy the keys
-			keys.public_signing_key = PublicSigningKey{public_signing_key};
-			*keys.private_signing_key = PrivateSigningKey{private_signing_key};
-			keys.public_identity_key = PublicKey{public_identity_key};
-			*keys.private_identity_key = PrivateKey{private_identity_key};
+			keys.public_signing_key = EmptyablePublicSigningKey{public_signing_key};
+			*keys.private_signing_key = EmptyablePrivateSigningKey{private_signing_key};
+			keys.public_identity_key = EmptyablePublicKey{public_identity_key};
+			*keys.private_identity_key = EmptyablePrivateKey{private_identity_key};
 		}
 
 		return keys;
@@ -151,11 +151,11 @@ namespace Molch {
 		return outcome::success();
 	}
 
-	const PublicSigningKey& MasterKeys::getSigningKey() const noexcept {
+	const EmptyablePublicSigningKey& MasterKeys::getSigningKey() const noexcept {
 		return this->public_signing_key;
 	}
 
-	result<const PrivateSigningKey*> MasterKeys::getPrivateSigningKey() const noexcept {
+	result<const EmptyablePrivateSigningKey*> MasterKeys::getPrivateSigningKey() const noexcept {
 		if (this->private_signing_key == nullptr) {
 			return Error(status_type::INCORRECT_DATA, "The private signing key pointer doesn't point to anything.");
 		}
@@ -163,11 +163,11 @@ namespace Molch {
 		return this->private_signing_key;
 	}
 
-	const PublicKey& MasterKeys::getIdentityKey() const noexcept {
+	const EmptyablePublicKey& MasterKeys::getIdentityKey() const noexcept {
 		return this->public_identity_key;
 	}
 
-	result<const PrivateKey*> MasterKeys::getPrivateIdentityKey() const noexcept {
+	result<const EmptyablePrivateKey*> MasterKeys::getPrivateIdentityKey() const noexcept {
 		if (this->private_identity_key == nullptr) {
 			return Error(status_type::INCORRECT_DATA, "The private identity key pointer doesn't point to anything.");
 		}

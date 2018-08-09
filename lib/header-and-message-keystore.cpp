@@ -31,17 +31,17 @@ namespace Molch {
 
 	HeaderAndMessageKey::HeaderAndMessageKey([[maybe_unused]] uninitialized_t uninitialized) noexcept {}
 
-	void HeaderAndMessageKey::fill(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) noexcept {
+	void HeaderAndMessageKey::fill(const EmptyableHeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) noexcept {
 		this->header_key = header_key;
 		this->message_key = message_key;
 		this->expiration_date = expiration_date;
 	}
 
-	HeaderAndMessageKey::HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key) noexcept {
+	HeaderAndMessageKey::HeaderAndMessageKey(const EmptyableHeaderKey& header_key, const MessageKey& message_key) noexcept {
 		this->fill(header_key, message_key, now() + expiration_time);
 	}
 
-	HeaderAndMessageKey::HeaderAndMessageKey(const HeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) noexcept {
+	HeaderAndMessageKey::HeaderAndMessageKey(const EmptyableHeaderKey& header_key, const MessageKey& message_key, const seconds expiration_date) noexcept {
 		this->fill(header_key, message_key, expiration_date);
 	}
 
@@ -103,7 +103,7 @@ namespace Molch {
 		return this->message_key;
 	}
 
-	const HeaderKey& HeaderAndMessageKey::headerKey() const noexcept {
+	const EmptyableHeaderKey& HeaderAndMessageKey::headerKey() const noexcept {
 		return this->header_key;
 	}
 	seconds HeaderAndMessageKey::expirationDate() const noexcept {
@@ -153,7 +153,7 @@ namespace Molch {
 		this->removeOutdatedAndTrimSize();
 	}
 
-	void HeaderAndMessageKeyStore::add(const HeaderKey& header_key, const MessageKey& message_key) {
+	void HeaderAndMessageKeyStore::add(const EmptyableHeaderKey& header_key, const MessageKey& message_key) {
 		HeaderAndMessageKey key_bundle{header_key, message_key};
 		this->add(key_bundle);
 	}

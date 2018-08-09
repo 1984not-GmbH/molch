@@ -31,13 +31,13 @@ namespace Molch {
 	constexpr auto prekey_expiration_time{1_months};
 	constexpr auto deprecated_prekey_expiration_time{1h};
 
-	void Prekey::fill(const PublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date) noexcept {
+	void Prekey::fill(const EmptyablePublicKey& public_key, const EmptyablePrivateKey& private_key, const seconds expiration_date) noexcept {
 		this->expiration_date = expiration_date;
 		this->public_key = public_key;
 		this->private_key = private_key;
 	}
 
-	Prekey::Prekey(const PublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date) noexcept {
+	Prekey::Prekey(const EmptyablePublicKey& public_key, const EmptyablePrivateKey& private_key, const seconds expiration_date) noexcept {
 		this->fill(public_key, private_key, expiration_date);
 	}
 
@@ -76,7 +76,7 @@ namespace Molch {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a private key.");
 		}
 		Prekey prekey;
-		prekey.private_key = PrivateKey{*keypair.private_key};
+		prekey.private_key = EmptyablePrivateKey{*keypair.private_key};
 
 		//import public key
 		if (keypair.public_key == nullptr) {
@@ -86,7 +86,7 @@ namespace Molch {
 		} else if (keypair.public_key->key.len != PUBLIC_KEY_SIZE) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a public key.");
 		} else {
-			prekey.public_key = PublicKey{*keypair.public_key};
+			prekey.public_key = EmptyablePublicKey{*keypair.public_key};
 		}
 
 		//import expiration_date
@@ -116,10 +116,10 @@ namespace Molch {
 	seconds Prekey::expirationDate() const noexcept {
 		return this->expiration_date;
 	}
-	const PublicKey& Prekey::publicKey() const noexcept {
+	const EmptyablePublicKey& Prekey::publicKey() const noexcept {
 		return this->public_key;
 	}
-	const PrivateKey& Prekey::privateKey() const noexcept {
+	const EmptyablePrivateKey& Prekey::privateKey() const noexcept {
 		return this->private_key;
 	}
 
@@ -233,7 +233,7 @@ namespace Molch {
 		return outcome::success();
 	}
 
-	result<PrivateKey> PrekeyStore::getPrekey(const PublicKey& public_key) {
+	result<EmptyablePrivateKey> PrekeyStore::getPrekey(const EmptyablePublicKey& public_key) {
 		FulfillOrFail(!public_key.empty);
 
 		//lambda for comparing PrekeyNodes to public_key

@@ -37,19 +37,19 @@
 namespace Molch {
 	class PrivateMasterKeyStorage {
 		friend class MasterKeys;
-		PrivateSigningKey signing_key;
-		PrivateKey identity_key;
+		EmptyablePrivateSigningKey signing_key;
+		EmptyablePrivateKey identity_key;
 	};
 
 	class MasterKeys {
 	private:
 		mutable std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>> private_keys;
 		//Ed25519 key for signing
-		PublicSigningKey public_signing_key;
-		PrivateSigningKey *private_signing_key{nullptr};
+		EmptyablePublicSigningKey public_signing_key;
+		EmptyablePrivateSigningKey *private_signing_key{nullptr};
 		//X25519 key for deriving axolotl root keys
-		PublicKey public_identity_key;
-		PrivateKey *private_identity_key{nullptr};
+		EmptyablePublicKey public_identity_key;
+		EmptyablePrivateKey *private_identity_key{nullptr};
 
 		/* Internally does the intialization of the buffers creation of the keys */
 		void init();
@@ -101,10 +101,10 @@ namespace Molch {
 		MasterKeys& operator=(const MasterKeys& master_keys) = delete;
 		MasterKeys& operator=(MasterKeys&& master_keys) noexcept;
 
-		const PublicSigningKey& getSigningKey() const noexcept;
-		result<const PrivateSigningKey*> getPrivateSigningKey() const noexcept;
-		const PublicKey& getIdentityKey() const noexcept;
-		result<const PrivateKey*> getPrivateIdentityKey() const noexcept;
+		const EmptyablePublicSigningKey& getSigningKey() const noexcept;
+		result<const EmptyablePrivateSigningKey*> getPrivateSigningKey() const noexcept;
+		const EmptyablePublicKey& getIdentityKey() const noexcept;
+		result<const EmptyablePrivateKey*> getPrivateIdentityKey() const noexcept;
 
 		/*
 		 * Sign a piece of data. Returns the data and signature in one output buffer.

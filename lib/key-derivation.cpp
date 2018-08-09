@@ -35,10 +35,10 @@ namespace Molch {
 	 * RK, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
 	 */
 	DerivedRootNextHeadAndChainKey derive_root_next_header_and_chain_keys(
-			const PrivateKey& our_private_ephemeral,
-			const PublicKey& our_public_ephemeral,
-			const PublicKey& their_public_ephemeral,
-			const RootKey& previous_root_key,
+			const EmptyablePrivateKey& our_private_ephemeral,
+			const EmptyablePublicKey& our_public_ephemeral,
+			const EmptyablePublicKey& their_public_ephemeral,
+			const EmptyableRootKey& previous_root_key,
 			const Ratchet::Role role) {
 		Expects(!our_private_ephemeral.empty
 				&& !our_public_ephemeral.empty
@@ -69,11 +69,11 @@ namespace Molch {
 
 		//now derive the different keys from the derivation key
 		//root key
-		TRY_WITH_RESULT(root_key_result, derivation_key.deriveSubkeyWithIndex<RootKey>(0));
+		TRY_WITH_RESULT(root_key_result, derivation_key.deriveSubkeyWithIndex<EmptyableRootKey>(0));
 		output.root_key = root_key_result.value();
 
 		//next header key
-		TRY_WITH_RESULT(next_header_key_result, derivation_key.deriveSubkeyWithIndex<HeaderKey>(1));
+		TRY_WITH_RESULT(next_header_key_result, derivation_key.deriveSubkeyWithIndex<EmptyableHeaderKey>(1));
 		output.next_header_key = next_header_key_result.value();
 
 		//chain key
@@ -89,12 +89,12 @@ namespace Molch {
 	 * RK, CKs/r, HKs/r, NHKs/r = KDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
 	 */
 	DerivedInitialRootChainAndHeaderKeys derive_initial_root_chain_and_header_keys(
-			const PrivateKey& our_private_identity,
-			const PublicKey& our_public_identity,
-			const PublicKey& their_public_identity,
-			const PrivateKey& our_private_ephemeral,
-			const PublicKey& our_public_ephemeral,
-			const PublicKey& their_public_ephemeral,
+			const EmptyablePrivateKey& our_private_identity,
+			const EmptyablePublicKey& our_public_identity,
+			const EmptyablePublicKey& their_public_identity,
+			const EmptyablePrivateKey& our_private_ephemeral,
+			const EmptyablePublicKey& our_public_ephemeral,
+			const EmptyablePublicKey& their_public_ephemeral,
 			const Ratchet::Role role) {
 		Expects(!our_private_identity.empty
 				&& !our_public_identity.empty
@@ -122,7 +122,7 @@ namespace Molch {
 		DerivedInitialRootChainAndHeaderKeys output;
 		//derive root key
 		//RK = KDF(master_key, 0x00)
-		TRY_WITH_RESULT(root_key_result, master_key.deriveSubkeyWithIndex<RootKey>(0));
+		TRY_WITH_RESULT(root_key_result, master_key.deriveSubkeyWithIndex<EmptyableRootKey>(0));
 		output.root_key = root_key_result.value();
 
 		//derive chain keys and header keys
@@ -133,16 +133,16 @@ namespace Molch {
 					//HKs=<none>
 					output.send_header_key.reset();
 					//HKr = KDF(master_key, 0x01)
-					TRY_WITH_RESULT(receive_header_key_result, master_key.deriveSubkeyWithIndex<HeaderKey>(1));
+					TRY_WITH_RESULT(receive_header_key_result, master_key.deriveSubkeyWithIndex<EmptyableHeaderKey>(1));
 					output.receive_header_key.emplace(receive_header_key_result.value());
 
 					//NHKs, NHKr
 					//NHKs = KDF(master_key, 0x02)
-					TRY_WITH_RESULT(next_send_header_key_result, master_key.deriveSubkeyWithIndex<HeaderKey>(2));
+					TRY_WITH_RESULT(next_send_header_key_result, master_key.deriveSubkeyWithIndex<EmptyableHeaderKey>(2));
 					output.next_send_header_key = next_send_header_key_result.value();
 
 					//NHKr = KDF(master_key, 0x03)
-					TRY_WITH_RESULT(next_receive_header_key_result, master_key.deriveSubkeyWithIndex<HeaderKey>(3));
+					TRY_WITH_RESULT(next_receive_header_key_result, master_key.deriveSubkeyWithIndex<EmptyableHeaderKey>(3));
 					output.next_receive_header_key = next_receive_header_key_result.value();
 
 					//CKs=<none>, CKr=KDF
@@ -160,15 +160,15 @@ namespace Molch {
 					//HKr = <none>
 					output.receive_header_key.reset();
 					//HKs = KDF(master_key, 0x01)
-					TRY_WITH_RESULT(send_header_key_result, master_key.deriveSubkeyWithIndex<HeaderKey>(1));
+					TRY_WITH_RESULT(send_header_key_result, master_key.deriveSubkeyWithIndex<EmptyableHeaderKey>(1));
 					output.send_header_key.emplace(send_header_key_result.value());
 
 					//NHKr, NHKs
 					//NHKr = KDF(master_key, 0x02)
-					TRY_WITH_RESULT(next_receive_header_key_result, master_key.deriveSubkeyWithIndex<HeaderKey>(2));
+					TRY_WITH_RESULT(next_receive_header_key_result, master_key.deriveSubkeyWithIndex<EmptyableHeaderKey>(2));
 					output.next_receive_header_key = next_receive_header_key_result.value();
 					//NHKs = KDF(master_key, 0x03)
-					TRY_WITH_RESULT(next_send_header_key_result, master_key.deriveSubkeyWithIndex<HeaderKey>(3));
+					TRY_WITH_RESULT(next_send_header_key_result, master_key.deriveSubkeyWithIndex<EmptyableHeaderKey>(3));
 					output.next_send_header_key = next_send_header_key_result.value();
 
 					//CKs=KDF, CKr=<none>

@@ -51,15 +51,15 @@
 MOLCH_PUBLIC(void) create_and_print_message(
 		//output
 		Molch::Buffer& packet,
-		Molch::HeaderKey& header_key, //HEADER_KEY_SIZE
+		Molch::EmptyableHeaderKey& header_key, //HEADER_KEY_SIZE
 		Molch::MessageKey& message_key, //MESSAGE_KEY_SIZE
 		//inputs
 		const molch_message_type packet_type,
 		const Molch::Buffer& header,
 		const Molch::Buffer& message,
 		//optional inputs (prekey messages only)
-		Molch::PublicKey * const public_identity_key,
-		Molch::PublicKey * const public_ephemeral_key,
-		Molch::PublicKey * const public_prekey);
+		Molch::EmptyablePublicKey * const public_identity_key,
+		Molch::EmptyablePublicKey * const public_ephemeral_key,
+		Molch::EmptyablePublicKey * const public_prekey);
 
 #endif
