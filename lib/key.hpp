@@ -274,6 +274,184 @@ namespace Molch {
 		}
 	};
 
+	template <size_t key_length, KeyType keytype>
+	class Key : public std::array<std::byte,key_length> {
+	private:
+		Key& copy(const Key& key) noexcept {
+			std::copy(std::cbegin(key), std::cend(key), std::begin(*this));
+
+			return *this;
+		}
+
+		Key& move(Key&& key) noexcept {
+			return this->copy(key);
+		}
+
+	public:
+		static constexpr size_t length{key_length};
+
+		Key() = delete;
+		Key(uninitialized_t uninitialized) noexcept {
+			(void)uninitialized;
+		}
+
+		static Key zeros() noexcept {
+			Key key(uninitialized_t::uninitialized);
+			key.zero();
+			return key;
+		}
+
+		Key(const Key& key) noexcept {
+			this->copy(key);
+		}
+
+		Key(Key&& key) noexcept {
+			this->move(std::move(key));
+		}
+
+		static result<Key> import(const ProtobufCKey& key) noexcept {
+			Key imported_key(uninitialized_t::uninitialized);
+			OUTCOME_TRY(imported_key = key);
+			return imported_key;
+		}
+
+		static result<Key> fromSpan(const span<const std::byte>& key) noexcept {
+			Key imported_key(uninitialized_t::uninitialized);
+			OUTCOME_TRY(imported_key = key);
+			return imported_key;
+		}
+
+		~Key() noexcept {
+			this->zero();
+		}
+
+		Key& operator=(const Key& key) noexcept {
+			return this->copy(key);
+		}
+		Key& operator=(Key&& key) noexcept {
+			return this->move(std::move(key));
+		}
+
+		result<void> operator=(const span<const std::byte> other) {
+			FulfillOrFail(other.size() == key_length);
+			std::copy(std::cbegin(other), std::cend(other), this->data());
+
+			return outcome::success();
+		}
+
+		result<void> operator=(const ProtobufCKey& key) {
+			return *this = key.key;
+		}
+
+		/*
+		 * Constant time comparison of two keys.
+		 *
+		 * returns:
+		 *  -1 if this is less than key
+		 *   0 if this is equal to key
+		 *  +1 if this is greater than key
+		 *
+		 *  throws an exception if either is empty.
+		 */
+		int compare(const Key& key) const noexcept {
+			auto comparison{sodium_compare(*this, key)};
+			if (!comparison) {
+				//This can never happen because *this and key have the same length
+				std::terminate();
+			}
+			return comparison.value();
+		}
+
+		//comparison operators
+		bool operator>(const Key& key) const noexcept {
+			return (this->compare(key) == 1);
+		}
+		bool operator<(const Key& key) const noexcept {
+			return (this->compare(key) == -1);
+		}
+		bool operator>=(const Key& key) const noexcept {
+			return !(*this < key);
+		}
+		bool operator<=(const Key& key) const noexcept {
+			return !(*this > key);
+		}
+		bool operator==(const Key& key) const noexcept {
+			return (this->compare(key) == 0);
+		}
+		bool operator!=(const Key& key) const noexcept {
+			return !(*this == key);
+		}
+
+		template <typename DerivedKeyType>
+		result<DerivedKeyType> deriveSubkeyWithIndex(const uint32_t subkey_counter) const {
+			DerivedKeyType derived_key;
+			static_assert(DerivedKeyType::length <= crypto_generichash_blake2b_BYTES_MAX, "The derived length is greater than crypto_generichas_blake2b_BYTES_MAX");
+			static_assert(DerivedKeyType::length >= crypto_generichash_blake2b_BYTES_MIN, "The derived length is smaller than crypto_generichash_blake2b_BYTES_MAX");
+			static_assert(length <= crypto_generichash_blake2b_KEYBYTES_MAX, "The length to derive from is greater than crypto_generichash_blake2b_KEYBYTES_MAX");
+			static_assert(length >= crypto_generichash_blake2b_KEYBYTES_MIN, "The length to derive from is smaller than crypto_generichash_blake2b_KEYBYTES_MIN");
+
+			//create a salt that contains the number of the subkey
+			auto salt{Key<crypto_generichash_blake2b_SALTBYTES,KeyType::Key>::zeros()};
+			//fill the salt with a big endian representation of the subkey counter
+			TRY_VOID(to_big_endian(subkey_counter, {salt.data()+ salt.size() - sizeof(uint32_t), sizeof(uint32_t)}));
+
+			const unsigned char personal[]{"molch_cryptolib"};
+			static_assert(sizeof(personal) == crypto_generichash_blake2b_PERSONALBYTES, "personal string is not crypto_generichash_blake2b_PERSONALBYTES long");
+
+			//set length of output
+			TRY_VOID(crypto_generichash_blake2b_salt_personal(
+					derived_key,
+					{nullptr, static_cast<size_t>(0)}, //input
+					*this,
+					salt,
+					{uchar_to_byte(personal), sizeof(personal)}));
+
+			return derived_key;
+		}
+
+		void fillRandom() {
+			randombytes_buf(*this);
+			this->empty = false;
+		}
+
+		void zero() noexcept {
+			sodium_memzero(*this);
+		}
+
+		result<ProtobufCKey*> exportProtobuf(Arena& arena) const noexcept {
+			auto key{arena.allocate<ProtobufCKey>(1)};
+			molch__protobuf__key__init(key);
+
+			key->key.data = arena.allocate<uint8_t>(length);
+			key->key.len = length;
+			OUTCOME_TRY(copyFromTo(*this, {uchar_to_byte(key->key.data), key->key.len}));
+
+			return key;
+		}
+	};
+
+	template <size_t key_length,KeyType key_type>
+	std::ostream& operator<<(std::ostream& stream, Key<key_length,key_type> key) noexcept {
+		const size_t hex_length{key.size() * 2 + sizeof("")};
+		auto hex{std::make_unique<char[]>(hex_length)};
+		if (not sodium_bin2hex({hex.get(), hex_length}, key).has_value()) {
+			// This can't happen
+			std::terminate();
+		}
+
+		static constexpr size_t width{30};
+		for (size_t i{0}; i < hex_length; i++) {
+			if (((i % width) == 0) && (i != 0)) {
+				stream << '\n';
+			} else if ((i % 2 == 0) && (i != 0)) {
+				stream << ' ';
+			}
+			stream << hex[i];
+		}
+
+		return stream;
+	}
+
 	using HeaderKey = EmptyableKey<HEADER_KEY_SIZE,KeyType::HeaderKey>;
 	using RootKey = EmptyableKey<ROOT_KEY_SIZE,KeyType::RootKey>;
 	using BackupKey = EmptyableKey<BACKUP_KEY_SIZE,KeyType::BackupKey>;
