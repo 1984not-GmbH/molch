@@ -44,7 +44,7 @@ using namespace Molch;
 
 //global user store
 static std::unique_ptr<UserStore> users;
-static std::unique_ptr<EmptyableBackupKey,SodiumDeleter<EmptyableBackupKey>> global_backup_key;
+static std::unique_ptr<BackupKey,SodiumDeleter<BackupKey>> global_backup_key;
 
 class GlobalBackupKeyUnlocker {
 public:
@@ -1153,7 +1153,7 @@ cleanup:
 			Expects((backup != nullptr) && (backup_length != nullptr));
 
 			GlobalBackupKeyUnlocker unlocker;
-			if ((global_backup_key == nullptr) || global_backup_key->empty) {
+			if (global_backup_key == nullptr) {
 				throw Exception{status_type::INCORRECT_DATA, "No backup key found."};
 			}
 
@@ -1396,8 +1396,8 @@ cleanup:
 
 			// create a backup key buffer if it doesnt exist already
 			if (global_backup_key == nullptr) {
-				global_backup_key = std::unique_ptr<EmptyableBackupKey,SodiumDeleter<EmptyableBackupKey>>(sodium_malloc<EmptyableBackupKey>(1));
-				new (global_backup_key.get()) EmptyableBackupKey();
+				global_backup_key = std::unique_ptr<BackupKey,SodiumDeleter<BackupKey>>(sodium_malloc<BackupKey>(1));
+				new (global_backup_key.get()) BackupKey(uninitialized_t::uninitialized);
 			}
 
 			//make the content of the backup key writable
