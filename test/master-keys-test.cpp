@@ -143,7 +143,7 @@ int main() {
 		{
 			MasterKeys::Unlocker unlocker{unspiced_master_keys};
 			TRY_WITH_RESULT(private_signing_key, unspiced_master_keys.getPrivateSigningKey());
-			private_signing_key.value()->printHex(std::cout);
+			std::cout << private_signing_key.value();
 		}
 
 		printf("\n\nIdentity keys:\n");
@@ -182,7 +182,7 @@ int main() {
 		{
 			MasterKeys::Unlocker unlocker{spiced_master_keys};
 			TRY_WITH_RESULT(private_signing_key, spiced_master_keys.getPrivateSigningKey());
-			private_signing_key.value()->printHex(std::cout) << std::endl;
+			std::cout << private_signing_key.value() << '\n';
 		}
 
 		printf("\nIdentity keys:\n");

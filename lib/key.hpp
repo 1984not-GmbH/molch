@@ -456,8 +456,14 @@ namespace Molch {
 	using EmptyablePublicKey = EmptyableKey<PUBLIC_KEY_SIZE,KeyType::PublicKey>;
 	using EmptyablePrivateKey = EmptyableKey<PRIVATE_KEY_SIZE,KeyType::PrivateKey>;
 	using EmptyablePublicSigningKey = EmptyableKey<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey>;
-	using EmptyablePrivateSigningKey = EmptyableKey<PRIVATE_MASTER_KEY_SIZE,KeyType::PrivateSigningKey>;
+
+	using HeaderKey = Key<HEADER_KEY_SIZE,KeyType::HeaderKey>;
+	using RootKey = Key<ROOT_KEY_SIZE,KeyType::RootKey>;
 	using BackupKey = Key<BACKUP_KEY_SIZE,KeyType::BackupKey>;
+	using PublicKey = Key<PUBLIC_KEY_SIZE,KeyType::PublicKey>;
+	using PrivateKey = Key<PRIVATE_KEY_SIZE,KeyType::PrivateKey>;
+	using PublicSigningKey = Key<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey>;
+	using PrivateSigningKey = Key<PRIVATE_MASTER_KEY_SIZE,KeyType::PrivateSigningKey>;
 }
 
 #endif /* LIB_KEY_HPP */

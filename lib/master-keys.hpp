@@ -37,7 +37,7 @@
 namespace Molch {
 	class PrivateMasterKeyStorage {
 		friend class MasterKeys;
-		EmptyablePrivateSigningKey signing_key;
+		PrivateSigningKey signing_key;
 		EmptyablePrivateKey identity_key;
 	};
 
@@ -46,7 +46,7 @@ namespace Molch {
 		mutable std::unique_ptr<PrivateMasterKeyStorage,SodiumDeleter<PrivateMasterKeyStorage>> private_keys;
 		//Ed25519 key for signing
 		EmptyablePublicSigningKey public_signing_key;
-		EmptyablePrivateSigningKey *private_signing_key{nullptr};
+		PrivateSigningKey *private_signing_key{nullptr};
 		//X25519 key for deriving axolotl root keys
 		EmptyablePublicKey public_identity_key;
 		EmptyablePrivateKey *private_identity_key{nullptr};
@@ -102,7 +102,7 @@ namespace Molch {
 		MasterKeys& operator=(MasterKeys&& master_keys) noexcept;
 
 		const EmptyablePublicSigningKey& getSigningKey() const noexcept;
-		result<const EmptyablePrivateSigningKey*> getPrivateSigningKey() const noexcept;
+		result<const PrivateSigningKey*> getPrivateSigningKey() const noexcept;
 		const EmptyablePublicKey& getIdentityKey() const noexcept;
 		result<const EmptyablePrivateKey*> getPrivateIdentityKey() const noexcept;
 

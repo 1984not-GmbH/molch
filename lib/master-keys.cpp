@@ -82,7 +82,7 @@ namespace Molch {
 
 			//copy the keys
 			keys.public_signing_key = EmptyablePublicSigningKey{public_signing_key};
-			*keys.private_signing_key = EmptyablePrivateSigningKey{private_signing_key};
+			OUTCOME_TRY(*keys.private_signing_key = private_signing_key);
 			keys.public_identity_key = EmptyablePublicKey{public_identity_key};
 			*keys.private_identity_key = EmptyablePrivateKey{private_identity_key};
 		}
@@ -112,7 +112,6 @@ namespace Molch {
 				this->public_signing_key,
 				*this->private_signing_key));
 		this->public_signing_key.empty = false;
-		this->private_signing_key->empty = false;
 
 		//generate the identity keypair
 		OUTCOME_TRY(crypto_box_keypair(this->public_identity_key, *this->private_identity_key));
@@ -138,7 +137,6 @@ namespace Molch {
 				*this->private_signing_key,
 				span<std::byte>(high_entropy_seed).subspan(0, crypto_sign_SEEDBYTES)));
 		this->public_signing_key.empty = false;
-		this->private_signing_key->empty = false;
 
 		//generate the identity keypair
 		OUTCOME_TRY(crypto_box_seed_keypair(
@@ -155,7 +153,7 @@ namespace Molch {
 		return this->public_signing_key;
 	}
 
-	result<const EmptyablePrivateSigningKey*> MasterKeys::getPrivateSigningKey() const noexcept {
+	result<const PrivateSigningKey*> MasterKeys::getPrivateSigningKey() const noexcept {
 		if (this->private_signing_key == nullptr) {
 			return Error(status_type::INCORRECT_DATA, "The private signing key pointer doesn't point to anything.");
 		}
@@ -227,7 +225,7 @@ namespace Molch {
 		stream << "Public Signing Key:\n";
 		this->public_signing_key.printHex(stream) << '\n';
 		stream << "Private Signing Key:\n";
-		this->private_signing_key->printHex(stream) << '\n';
+		stream << *this->private_signing_key << '\n';
 		stream << "Public Identity Key:\n";
 		this->public_identity_key.printHex(stream) << '\n';
 		stream << "Private Identity Key:\n";
