@@ -54,7 +54,7 @@ namespace Molch {
 		/* copy and move constructors */
 		HeaderAndMessageKey(const HeaderAndMessageKey& node) noexcept;
 		HeaderAndMessageKey(HeaderAndMessageKey&& node) noexcept;
-		HeaderAndMessageKey(const ProtobufCKeyBundle& key_bundle);
+		static result<HeaderAndMessageKey> import(const ProtobufCKeyBundle& key_bundle) noexcept;
 
 		/* copy and move assignment operators */
 		HeaderAndMessageKey& operator=(const HeaderAndMessageKey& node) noexcept;

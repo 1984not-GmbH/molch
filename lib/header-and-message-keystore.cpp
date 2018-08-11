@@ -75,28 +75,30 @@ namespace Molch {
 		return *this;
 	}
 
-	HeaderAndMessageKey::HeaderAndMessageKey(const ProtobufCKeyBundle& key_bundle) {
+	result<HeaderAndMessageKey> HeaderAndMessageKey::import(const ProtobufCKeyBundle& key_bundle) noexcept {
+		HeaderAndMessageKey keypair(uninitialized_t::uninitialized);
 		//import the header key
 		if ((key_bundle.header_key == nullptr)
 			|| (key_bundle.header_key->key.data == nullptr)
 			|| (key_bundle.header_key->key.len != HEADER_KEY_SIZE)) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect header key."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect header key.");
 		}
-		this->header_key = *key_bundle.header_key;
+		keypair.header_key = *key_bundle.header_key;
 
 		//import the message key
 		if ((key_bundle.message_key == nullptr)
 			|| (key_bundle.message_key->key.data == nullptr)
 			|| (key_bundle.message_key->key.len != MESSAGE_KEY_SIZE)) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect message key."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect message key.");
 		}
-		this->message_key = *key_bundle.message_key;
+		keypair.message_key = *key_bundle.message_key;
 
 		//import the expiration date
 		if (!key_bundle.has_expiration_time) {
-			throw Exception{status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has no expiration time."};
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has no expiration time.");
 		}
-		this->expiration_date = seconds{key_bundle.expiration_time};
+		keypair.expiration_date = seconds{key_bundle.expiration_time};
+		return keypair;
 	}
 
 	const MessageKey& HeaderAndMessageKey::messageKey() const noexcept {
@@ -240,7 +242,8 @@ namespace Molch {
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Invalid KeyBundle."};
 			}
 
-			this->key_storage.emplace_back(*key_bundle);
+			TRY_WITH_RESULT(imported_keypair, HeaderAndMessageKey::import(*key_bundle));
+			this->key_storage.emplace_back(imported_keypair.value());
 		}
 	}
 
