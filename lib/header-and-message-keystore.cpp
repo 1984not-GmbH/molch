@@ -112,14 +112,14 @@ namespace Molch {
 		return this->expiration_date;
 	}
 
-	ProtobufCKeyBundle* HeaderAndMessageKey::exportProtobuf(Arena& arena) const {
+	result<ProtobufCKeyBundle*> HeaderAndMessageKey::exportProtobuf(Arena& arena) const {
 		protobuf_arena_create(arena, ProtobufCKeyBundle, key_bundle);
 
 		//export the keys
-		TRY_WITH_RESULT(header_key_result, this->header_key.exportProtobuf(arena));
-		key_bundle->header_key = header_key_result.value();
-		TRY_WITH_RESULT(message_key_result, this->message_key.exportProtobuf(arena));
-		key_bundle->message_key = message_key_result.value();
+		OUTCOME_TRY(header_key, this->header_key.exportProtobuf(arena));
+		key_bundle->header_key = header_key;
+		OUTCOME_TRY(message_key, this->message_key.exportProtobuf(arena));
+		key_bundle->message_key = message_key;
 
 		//set expiration time
 		protobuf_optional_export(key_bundle, expiration_time, gsl::narrow<uint64_t>(this->expiration_date.count()));
@@ -229,7 +229,8 @@ namespace Molch {
 		auto key_bundles{arena.allocate<ProtobufCKeyBundle*>(this->key_storage.size())};
 		size_t index{0};
 		for (const auto& key : this->key_storage) {
-			key_bundles[index] = key.exportProtobuf(arena);
+			TRY_WITH_RESULT(key_bundle, key.exportProtobuf(arena));
+			key_bundles[index] = key_bundle.value();
 			index++;
 		}
 

@@ -64,7 +64,7 @@ namespace Molch {
 		const EmptyableHeaderKey& headerKey() const noexcept;
 		seconds expirationDate() const noexcept;
 
-		ProtobufCKeyBundle* exportProtobuf(Arena& arena) const;
+		result<ProtobufCKeyBundle*> exportProtobuf(Arena& arena) const;
 	};
 
 	std::ostream& operator<<(std::ostream& stream, const HeaderAndMessageKey& header_and_message_Key);
