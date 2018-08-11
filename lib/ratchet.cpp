@@ -61,7 +61,7 @@ namespace Molch {
 			} else if (our_public_identity < their_public_identity) {
 				return Role::BOB;
 			} else {
-				throw Exception{status_type::SHOULDNT_HAPPEN, "This mustn't happen, both conversation partners have the same public key!"};
+				return Error(status_type::SHOULDNT_HAPPEN, "This mustn't happen, both conversation partners have the same public key!");
 			}
 		}());
 		ratchet.role = role;
@@ -177,8 +177,8 @@ namespace Molch {
 		this->send_message_number++;
 
 		//CKs = HMAC-HASH(CKs, "1")
-		TRY_WITH_RESULT(send_chain_key_result, storage->send_chain_key.deriveChainKey());
-		storage->send_chain_key = send_chain_key_result.value();
+		OUTCOME_TRY(send_chain_key, storage->send_chain_key.deriveChainKey());
+		storage->send_chain_key = send_chain_key;
 
 		return data;
 	}
@@ -209,7 +209,7 @@ namespace Molch {
 	 * Calculates all the message keys up to the purported message number and
 	 * saves the skipped ones in the ratchet's staging area.
 	 */
-	static void stageSkippedHeaderAndMessageKeys(
+	static result<void> stageSkippedHeaderAndMessageKeys(
 			HeaderAndMessageKeyStore& staging_area,
 			ChainKey * const output_chain_key, //output, optional
 			MessageKey * const output_message_key, //output, optional
@@ -219,11 +219,11 @@ namespace Molch {
 			const ChainKey& chain_key) {
 		//when chain key is <none>, do nothing
 		if (chain_key.isNone()) {
-			return;
+			return outcome::success();
 		}
 
 		if (future_message_number > (current_message_number + maximum_skipped_messages)) {
-			throw Exception{status_type::RECEIVE_ERROR, "Too many messagges in this message chain have been skipped."};
+			return Error(status_type::RECEIVE_ERROR, "Too many messagges in this message chain have been skipped.");
 		}
 
 		//set current_chain_key to chain key to initialize it for the calculation that's
@@ -233,11 +233,11 @@ namespace Molch {
 		ChainKey next_chain_key;
 		MessageKey current_message_key;
 		for (uint32_t pos{current_message_number}; pos < future_message_number; pos++) {
-			TRY_WITH_RESULT(current_message_key_result, current_chain_key.deriveMessageKey());
-			current_message_key = current_message_key_result.value();
+			OUTCOME_TRY(current_message_key, current_chain_key.deriveMessageKey());
+			current_message_key = current_message_key;
 			staging_area.add(current_header_key, current_message_key);
-			TRY_WITH_RESULT(next_chain_key_result, current_chain_key.deriveChainKey());
-			next_chain_key = next_chain_key_result.value();
+			OUTCOME_TRY(next_chain_key, current_chain_key.deriveChainKey());
+			next_chain_key = next_chain_key;
 
 			//shift chain keys
 			current_chain_key = next_chain_key;
@@ -245,15 +245,17 @@ namespace Molch {
 
 		//derive the message key that will be returned
 		if (output_message_key != nullptr) {
-			TRY_WITH_RESULT(output_message_key_result, current_chain_key.deriveMessageKey());
-			*output_message_key = output_message_key_result.value();
+			OUTCOME_TRY(output_message_key_result, current_chain_key.deriveMessageKey());
+			*output_message_key = output_message_key_result;
 		}
 
 		//derive the chain key that will be returned
 		if (output_chain_key != nullptr) {
-			TRY_WITH_RESULT(output_chain_key_result, current_chain_key.deriveChainKey());
-			*output_chain_key = output_chain_key_result.value();
+			OUTCOME_TRY(output_chain_key_result, current_chain_key.deriveChainKey());
+			*output_chain_key = output_chain_key_result;
 		}
+
+		return outcome::success();
 	}
 
 	/*
@@ -293,14 +295,14 @@ namespace Molch {
 			this->purported_message_number = purported_message_number;
 
 			//CKp, MK = stage_skipped_header_and_message_keys(HKr, Nr, Np, CKr)
-			stageSkippedHeaderAndMessageKeys(
+			OUTCOME_TRY(stageSkippedHeaderAndMessageKeys(
 				this->staged_header_and_message_keys,
 				&storage->purported_receive_chain_key,
 				&message_key,
 				storage->receive_header_key,
 				this->receive_message_number,
 				purported_message_number,
-				storage->receive_chain_key);
+				storage->receive_chain_key));
 		} else { //new message chain
 			//if ratchet_flag or not Dec(NHKr, header)
 			if (this->ratchet_flag || (this->header_decryptable != HeaderDecryptability::NEXT_DECRYPTABLE)) {
@@ -315,14 +317,14 @@ namespace Molch {
 			storage->their_purported_public_ephemeral = their_purported_public_ephemeral;
 
 			//stage_skipped_header_and_message_keys(HKr, Nr, PNp, CKr)
-			stageSkippedHeaderAndMessageKeys(
+			OUTCOME_TRY(stageSkippedHeaderAndMessageKeys(
 					this->staged_header_and_message_keys,
 					nullptr, //output_chain_key
 					nullptr, //output_message_key
 					storage->receive_header_key,
 					this->receive_message_number,
 					purported_previous_message_number,
-					storage->receive_chain_key);
+					storage->receive_chain_key));
 
 			//HKp = NHKr
 			storage->purported_receive_header_key = storage->next_receive_header_key;
@@ -342,14 +344,14 @@ namespace Molch {
 			ChainKey purported_chain_key_backup{storage->purported_receive_chain_key};
 
 			//CKp, MK = staged_header_and_message_keys(HKp, 0, Np, CKp)
-			stageSkippedHeaderAndMessageKeys(
+			OUTCOME_TRY(stageSkippedHeaderAndMessageKeys(
 					this->staged_header_and_message_keys,
 					&storage->purported_receive_chain_key,
 					&message_key,
 					this->storage->purported_receive_header_key,
 					0,
 					purported_message_number,
-					purported_chain_key_backup);
+					purported_chain_key_backup));
 		}
 
 		this->received_valid = false; //waiting for validation (feedback, if the message could actually be decrypted)
