@@ -97,7 +97,7 @@ namespace Molch {
 		const std::vector<HeaderAndMessageKey,SodiumAllocator<HeaderAndMessageKey>>& keys() const noexcept;
 
 		//! Export a header_and_message_keystore as Protobuf-C struct.
-		span<ProtobufCKeyBundle*> exportProtobuf(Arena& arena) const;
+		result<span<ProtobufCKeyBundle*>> exportProtobuf(Arena& arena) const;
 	};
 
 	std::ostream& operator<<(std::ostream& stream, const HeaderAndMessageKeyStore& keystore);

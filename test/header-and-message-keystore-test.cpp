@@ -39,7 +39,8 @@ static void protobuf_export(
 			HeaderAndMessageKeyStore& keystore,
 			std::vector<Buffer>& export_buffers) {
 	Arena pool;
-	auto exported_bundles{keystore.exportProtobuf(pool)};
+	TRY_WITH_RESULT(exported_bundles_result, keystore.exportProtobuf(pool));
+	const auto& exported_bundles{exported_bundles_result.value()};
 
 	export_buffers = std::vector<Buffer>();
 
@@ -86,15 +87,15 @@ static void protobuf_empty_store() {
 	HeaderAndMessageKeyStore store;
 
 	//export it
-	Arena pool;
-	auto exported_bundles{store.exportProtobuf(pool)};
+	Arena arena;
+	TRY_WITH_RESULT(exported_bundles, store.exportProtobuf(arena));
 
-	if (!exported_bundles.empty()) {
+	if (!exported_bundles.value().empty()) {
 		throw Molch::Exception{status_type::INCORRECT_DATA, "Exported data is not empty."};
 	}
 
 	//import it
-	TRY_WITH_RESULT(imported_store, HeaderAndMessageKeyStore::import(exported_bundles));
+	TRY_WITH_RESULT(imported_store, HeaderAndMessageKeyStore::import(exported_bundles.value()));
 	store = std::move(imported_store.value());
 
 	printf("Successful.\n");

@@ -107,4 +107,9 @@ namespace Molch {
 	(message)->name = exported_##name.data();\
 	(message)->n_##name = exported_##name.size();
 
+#define outcome_protobuf_array_arena_export(arena, message, name, value) \
+	OUTCOME_TRY(exported_##name, (value).exportProtobuf(arena));\
+	(message)->name = exported_##name.data();\
+	(message)->n_##name = exported_##name.size();
+
 #endif /* LIB_PROTOBUF_DELETERS_H */

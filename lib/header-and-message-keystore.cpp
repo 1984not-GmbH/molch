@@ -220,7 +220,7 @@ namespace Molch {
 		return this->key_storage;
 	}
 
-	span<ProtobufCKeyBundle*> HeaderAndMessageKeyStore::exportProtobuf(Arena& arena) const {
+	result<span<ProtobufCKeyBundle*>> HeaderAndMessageKeyStore::exportProtobuf(Arena& arena) const {
 		if (this->key_storage.empty()) {
 			return {nullptr, static_cast<size_t>(0)};
 		}
@@ -229,8 +229,8 @@ namespace Molch {
 		auto key_bundles{arena.allocate<ProtobufCKeyBundle*>(this->key_storage.size())};
 		size_t index{0};
 		for (const auto& key : this->key_storage) {
-			TRY_WITH_RESULT(key_bundle, key.exportProtobuf(arena));
-			key_bundles[index] = key_bundle.value();
+			OUTCOME_TRY(key_bundle, key.exportProtobuf(arena));
+			key_bundles[index] = key_bundle;
 			index++;
 		}
 

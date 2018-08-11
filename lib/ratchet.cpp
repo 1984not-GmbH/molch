@@ -547,9 +547,9 @@ namespace Molch {
 
 		//keystores
 		//skipped header and message keystore
-		protobuf_array_arena_export(arena, conversation, skipped_header_and_message_keys, this->skipped_header_and_message_keys);
+		outcome_protobuf_array_arena_export(arena, conversation, skipped_header_and_message_keys, this->skipped_header_and_message_keys);
 		//staged header and message keystore
-		protobuf_array_arena_export(arena, conversation, staged_header_and_message_keys, this->staged_header_and_message_keys);
+		outcome_protobuf_array_arena_export(arena, conversation, staged_header_and_message_keys, this->staged_header_and_message_keys);
 
 		return conversation;
 	}
