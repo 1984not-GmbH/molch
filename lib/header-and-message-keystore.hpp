@@ -94,7 +94,7 @@ namespace Molch {
 
 		void removeOutdatedAndTrimSize();
 
-		const std::vector<HeaderAndMessageKey,SodiumAllocator<HeaderAndMessageKey>>& keys() const;
+		const std::vector<HeaderAndMessageKey,SodiumAllocator<HeaderAndMessageKey>>& keys() const noexcept;
 
 		//! Export a header_and_message_keystore as Protobuf-C struct.
 		span<ProtobufCKeyBundle*> exportProtobuf(Arena& arena) const;

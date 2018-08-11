@@ -216,7 +216,7 @@ namespace Molch {
 		this->key_storage.erase(std::cbegin(this->key_storage), first_not_outdated);
 	}
 
-	const std::vector<HeaderAndMessageKey,SodiumAllocator<HeaderAndMessageKey>>& HeaderAndMessageKeyStore::keys() const {
+	const std::vector<HeaderAndMessageKey,SodiumAllocator<HeaderAndMessageKey>>& HeaderAndMessageKeyStore::keys() const noexcept {
 		return this->key_storage;
 	}
 
