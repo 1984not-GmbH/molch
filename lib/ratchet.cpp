@@ -806,9 +806,9 @@ namespace Molch {
 
 		//header and message keystores
 		stream << "Skipped header and message keys:\n";
-		this->skipped_header_and_message_keys.print(stream) << '\n';
+		stream << this->skipped_header_and_message_keys << '\n';
 		stream << "Staged header and message keys:\n";
-		this->staged_header_and_message_keys.print(stream) << '\n';
+		stream << this->staged_header_and_message_keys << '\n';
 
 		return stream;
 	}

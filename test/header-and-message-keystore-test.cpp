@@ -113,7 +113,7 @@ static void testSortingAndDeprecation() {
 	}
 
 	std::cout << "Sorted store:" << std::endl;
-	sorted_store.print(std::cout) << std::endl;
+	std::cout << sorted_store << std::endl;
 
 	auto last_date{0s};
 	for (const auto& key_bundle : sorted_store.keys()) {
@@ -127,7 +127,7 @@ static void testSortingAndDeprecation() {
 	std::cout << "Test removing outdated keys:" << std::endl;
 	sorted_store.add(HeaderAndMessageKey(EmptyableHeaderKey{}, MessageKey{}));
 	sorted_store.removeOutdatedAndTrimSize();
-	sorted_store.print(std::cout) << std::endl;
+	std::cout << sorted_store << std::endl;
 	if (sorted_store.keys().size() != 1) {
 		throw Exception{status_type::INCORRECT_DATA, "The old keys weren't removed properly."};
 	}
@@ -185,7 +185,7 @@ int main() {
 			//add keys to the keystore
 			keystore.add(header_key, message_key);
 
-			keystore.print(std::cout);
+			std::cout << keystore;
 
 			assert(keystore.keys().size() == (i + 1));
 		}
@@ -224,19 +224,19 @@ int main() {
 		printf("Remove head!\n");
 		keystore.remove(0);
 		assert(keystore.keys().size() == (protobuf_export_buffers.size() - 1));
-		keystore.print(std::cout);
+		std::cout << keystore;
 
 		//remove key from the tail
 		printf("Remove Tail:\n");
 		keystore.remove(keystore.keys().size() - 1);
 		assert(keystore.keys().size() == (protobuf_export_buffers.size() - 2));
-		keystore.print(std::cout);
+		std::cout << keystore;
 
 		//remove from inside
 		printf("Remove from inside:\n");
 		keystore.remove(1);
 		assert(keystore.keys().size() == (protobuf_export_buffers.size() - 3));
-		keystore.print(std::cout);
+		std::cout << keystore;
 
 		protobuf_empty_store();
 
@@ -244,7 +244,7 @@ int main() {
 		printf("Clear the keystore:\n");
 		keystore.clear();
 		assert(keystore.keys().empty());
-		keystore.print(std::cout);
+		std::cout << keystore;
 
 		testSortingAndDeprecation();
 		testSizeLimit();

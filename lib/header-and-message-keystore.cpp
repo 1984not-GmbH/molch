@@ -251,12 +251,12 @@ namespace Molch {
 		return store;
 	}
 
-	std::ostream& HeaderAndMessageKeyStore::print(std::ostream& stream) const {
+	std::ostream& operator<<(std::ostream& stream, const HeaderAndMessageKeyStore& keystore) {
 		stream << "KEYSTORE-START-----------------------------------------------------------------\n";
-		stream << "Length: " + std::to_string(this->key_storage.size()) + "\n\n";
+		stream << "Length: " + std::to_string(keystore.keys().size()) + "\n\n";
 
 		size_t index{0};
-		for (const auto& key_bundle : this->key_storage) {
+		for (const auto& key_bundle : keystore.keys()) {
 			stream << "Entry " << index << '\n';
 			index++;
 			stream << key_bundle << '\n';

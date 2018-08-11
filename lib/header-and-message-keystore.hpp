@@ -98,8 +98,8 @@ namespace Molch {
 
 		//! Export a header_and_message_keystore as Protobuf-C struct.
 		span<ProtobufCKeyBundle*> exportProtobuf(Arena& arena) const;
-
-		std::ostream& print(std::ostream& stream) const;
 	};
+
+	std::ostream& operator<<(std::ostream& stream, const HeaderAndMessageKeyStore& keystore);
 }
 #endif
