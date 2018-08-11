@@ -76,7 +76,8 @@ static void protobuf_import(
 	}
 
 	//now do the actual import
-	keystore = HeaderAndMessageKeyStore{{key_bundles_array.get(), exported_buffers.size()}};
+	TRY_WITH_RESULT(imported_keystore, HeaderAndMessageKeyStore::import({key_bundles_array.get(), exported_buffers.size()}));
+	keystore = std::move(imported_keystore.value());
 }
 
 static void protobuf_empty_store() {
@@ -93,7 +94,8 @@ static void protobuf_empty_store() {
 	}
 
 	//import it
-	store = HeaderAndMessageKeyStore{exported_bundles};
+	TRY_WITH_RESULT(imported_store, HeaderAndMessageKeyStore::import(exported_bundles));
+	store = std::move(imported_store.value());
 
 	printf("Successful.\n");
 }

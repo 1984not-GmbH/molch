@@ -730,13 +730,15 @@ namespace Molch {
 
 		//header and message keystores
 		//skipped header and message keys
-		ratchet.skipped_header_and_message_keys = HeaderAndMessageKeyStore{{
+		OUTCOME_TRY(skipped_header_and_message_keys, HeaderAndMessageKeyStore::import({
 			conversation.skipped_header_and_message_keys,
-			conversation.n_skipped_header_and_message_keys}};
+			conversation.n_skipped_header_and_message_keys}));
+		ratchet.skipped_header_and_message_keys = skipped_header_and_message_keys;
 		//staged heeader and message keys
-		ratchet.staged_header_and_message_keys = HeaderAndMessageKeyStore{{
-			conversation.staged_header_and_message_keys,
-			conversation.n_staged_header_and_message_keys}};
+		OUTCOME_TRY(staged_header_and_message_keys, HeaderAndMessageKeyStore::import({
+				conversation.staged_header_and_message_keys,
+				conversation.n_staged_header_and_message_keys}));
+		ratchet.staged_header_and_message_keys = staged_header_and_message_keys;
 
 		return std::move(ratchet);
 	}

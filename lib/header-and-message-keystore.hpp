@@ -84,7 +84,7 @@ namespace Molch {
 		/*
 		 * \param key_bundles An array of Protobuf-C key-bundles to import from.
 		 */
-		HeaderAndMessageKeyStore(const span<ProtobufCKeyBundle*> key_bundles);
+		static result<HeaderAndMessageKeyStore> import(const span<ProtobufCKeyBundle*> key_bundles) noexcept;
 
 		void add(const HeaderAndMessageKeyStore& keystore);
 		void add(const EmptyableHeaderKey& header_key, const MessageKey& message_key);

@@ -237,15 +237,18 @@ namespace Molch {
 		return {key_bundles, this->key_storage.size()};
 	}
 
-	HeaderAndMessageKeyStore::HeaderAndMessageKeyStore(const span<ProtobufCKeyBundle*> key_bundles) {
+	result<HeaderAndMessageKeyStore> HeaderAndMessageKeyStore::import(const span<ProtobufCKeyBundle*> key_bundles) noexcept {
+		HeaderAndMessageKeyStore store;
 		for (const auto& key_bundle : key_bundles) {
 			if (key_bundle == nullptr) {
-				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Invalid KeyBundle."};
+				return Error(status_type::PROTOBUF_MISSING_ERROR, "Invalid KeyBundle.");
 			}
 
-			TRY_WITH_RESULT(imported_keypair, HeaderAndMessageKey::import(*key_bundle));
-			this->key_storage.emplace_back(imported_keypair.value());
+			OUTCOME_TRY(imported_keypair, HeaderAndMessageKey::import(*key_bundle));
+			store.key_storage.emplace_back(imported_keypair);
 		}
+
+		return store;
 	}
 
 	std::ostream& HeaderAndMessageKeyStore::print(std::ostream& stream) const {
