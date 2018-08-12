@@ -181,7 +181,7 @@ int main() {
 
 			//print the new message key
 			printf("New message key No. %zu:\n", i);
-			message_key.printHex(std::cout) << std::endl;
+			std::cout << message_key << std::endl;
 
 			//add keys to the keystore
 			keystore.add(header_key, message_key);

@@ -50,7 +50,7 @@ int main() {
 
 		//print message key
 		printf("Message key (%zu Bytes):\n", message_key.size());
-		message_key.printHex(std::cout) << std::endl;
+		std::cout << message_key << std::endl;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

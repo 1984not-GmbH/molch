@@ -70,7 +70,11 @@ namespace Molch {
 	public:
 		static constexpr size_t length{key_length};
 
-		Key() {
+		Key(uninitialized_t uninitialized) noexcept {
+			(void)uninitialized;
+		}
+
+		Key() noexcept {
 			this->zero();
 		}
 
@@ -239,6 +243,10 @@ namespace Molch {
 			this->move(std::move(key));
 		}
 
+		EmptyableKey(const Key<key_length,keytype>& key) noexcept : empty{false} {
+			std::copy(std::cbegin(key), std::cend(key), std::begin(*this));
+		}
+
 		EmptyableKey(const ProtobufCKey& key) {
 			*this = key.key;
 		}
@@ -349,6 +357,17 @@ namespace Molch {
 			return derived_key;
 		}
 
+		std::optional<Key<key_length,keytype>> toKey() const noexcept {
+			if (this->empty) {
+				return std::nullopt;
+			}
+
+			Key<key_length,keytype> key(uninitialized_t::uninitialized);
+			std::copy(std::cbegin(*this), std::cend(*this), std::begin(key));
+
+			return key;
+		}
+
 		void fillRandom() {
 			randombytes_buf(*this);
 			this->empty = false;
@@ -407,7 +426,7 @@ namespace Molch {
 		}
 	};
 
-	using MessageKey = EmptyableKey<MESSAGE_KEY_SIZE,KeyType::MessageKey>;
+	using MessageKey = Key<MESSAGE_KEY_SIZE,KeyType::MessageKey>;
 
 	class ChainKey : public EmptyableKey<CHAIN_KEY_SIZE,KeyType::ChainKey> {
 	public:
@@ -415,7 +434,8 @@ namespace Molch {
 		using EmptyableKey<CHAIN_KEY_SIZE,KeyType::ChainKey>::EmptyableKey;
 
 		result<MessageKey> deriveMessageKey() const noexcept {
-			return this->deriveSubkeyWithIndex<MessageKey>(0);
+			OUTCOME_TRY(subkey, this->deriveSubkeyWithIndex<EmptyableKey<MESSAGE_KEY_SIZE,KeyType::MessageKey>>(0));
+			return subkey.toKey().value(); //this will never be empty
 		}
 
 		result<ChainKey> deriveChainKey() const noexcept {

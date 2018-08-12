@@ -124,8 +124,7 @@ namespace Molch {
 			const MessageKey& message_key,
 			const std::optional<PrekeyMetadata>& prekey_metadata) {
 		FulfillOrFail((packet_type != molch_message_type::INVALID)
-			&& !axolotl_header_key.empty
-			&& !message_key.empty);
+			&& !axolotl_header_key.empty);
 
 		//initialize the protobuf structs
 		ProtobufCPacket packet_struct;
@@ -298,11 +297,6 @@ namespace Molch {
 	}
 
 	result<Buffer> packet_decrypt_message(const span<const std::byte> packet, const MessageKey& message_key) {
-		//check input
-		if (message_key.empty) {
-			return Error(status_type::INVALID_VALUE, "The message key is empty.");
-		}
-
 		OUTCOME_TRY(packet_struct, packet_unpack(packet));
 
 		if (packet_struct->encrypted_message.len < crypto_secretbox_MACBYTES) {

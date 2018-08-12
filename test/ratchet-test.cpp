@@ -158,7 +158,7 @@ int main() {
 		const auto& alice_send_data1{alice_send_data1_result.value()};
 		//print the send message key
 		printf("Alice Ratchet 1 send message key 1:\n");
-		alice_send_data1.message_key.printHex(std::cout);
+		std::cout << alice_send_data1.message_key;
 		printf("Alice Ratchet 1 send header key 1:\n");
 		alice_send_data1.header_key.printHex(std::cout);
 		putchar('\n');
@@ -168,7 +168,7 @@ int main() {
 		const auto& alice_send_data2{alice_send_data2_result.value()};
 		//print the send message key
 		printf("Alice Ratchet 1 send message key 2:\n");
-		alice_send_data2.message_key.printHex(std::cout);
+		std::cout << alice_send_data2.message_key;
 		printf("Alice Ratchet 1 send header key 2:\n");
 		alice_send_data2.header_key.printHex(std::cout);
 		putchar('\n');
@@ -178,7 +178,7 @@ int main() {
 		const auto& alice_send_data3{alice_send_data3_result.value()};
 		//print the send message key
 		printf("Alice Ratchet 1 send message key 3:\n");
-		alice_send_data3.message_key.printHex(std::cout);
+		std::cout << alice_send_data3.message_key;
 		printf("Alice Ratchet 1 send header key 3:\n");
 		alice_send_data3.header_key.printHex(std::cout);
 		putchar('\n');
@@ -219,7 +219,7 @@ int main() {
 
 		//print it out!
 		printf("Bob Ratchet 1 receive message key 1:\n");
-		bob_receive_key1.printHex(std::cout);
+		std::cout << bob_receive_key1;
 		putchar('\n');
 
 		//confirm validity of the message key (this is normally done after successfully decrypting
@@ -258,7 +258,7 @@ int main() {
 
 		//print it out!
 		printf("Bob Ratchet 1 receive message key 2:\n");
-		bob_receive_key2.printHex(std::cout);
+		std::cout << bob_receive_key2;
 		putchar('\n');
 
 		//confirm validity of the message key (this is normally done after successfully decrypting
@@ -299,7 +299,7 @@ int main() {
 
 		//print it out!
 		printf("Bob Ratchet 1 receive message key 3:\n");
-		bob_receive_key3.printHex(std::cout);
+		std::cout << bob_receive_key3;
 		putchar('\n');
 
 		//confirm validity of the message key (this is normally done after successfully decrypting
@@ -332,7 +332,7 @@ int main() {
 		const auto& bob_send_data1{bob_send_data1_result.value()};
 		//print the send message key
 		printf("Bob Ratchet 2 send message key 1:\n");
-		bob_send_data1.message_key.printHex(std::cout);
+		std::cout << bob_send_data1.message_key;
 		printf("Bob Ratchet 2 send header key 1:\n");
 		bob_send_data1.header_key.printHex(std::cout) << std::endl;
 
@@ -341,7 +341,7 @@ int main() {
 		const auto& bob_send_data2{bob_send_data2_result.value()};
 		//print the send message key
 		printf("Bob Ratchet 2 send message key 1:\n");
-		bob_send_data2.message_key.printHex(std::cout);
+		std::cout << bob_send_data2.message_key;
 		printf("Bob Ratchet 2 send header key 1:\n");
 		bob_send_data2.header_key.printHex(std::cout) << std::endl;
 
@@ -350,7 +350,7 @@ int main() {
 		const auto& bob_send_data3{bob_send_data3_result.value()};
 		//print the send message key
 		printf("Bob Ratchet 2 send message key 3:\n");
-		bob_send_data3.message_key.printHex(std::cout);
+		std::cout << bob_send_data3.message_key;
 		printf("Bob Ratchet 2 send header key 3:\n");
 		bob_send_data3.header_key.printHex(std::cout) << std::endl;
 
@@ -389,7 +389,7 @@ int main() {
 
 		//print it out
 		printf("Alice Ratchet 2 receive message key 1:\n");
-		alice_receive_message_key1.printHex(std::cout) << std::endl;
+		std::cout << alice_receive_message_key1 << std::endl;
 
 		//confirm validity of the message key
 		alice_state.setLastMessageAuthenticity(true);
@@ -427,7 +427,7 @@ int main() {
 
 		//print it out
 		printf("Alice Ratchet 2 receive message key 3:\n");
-		alice_receive_message_key3.printHex(std::cout) << std::endl;
+		std::cout << alice_receive_message_key3 << std::endl;
 
 		assert(alice_state.staged_header_and_message_keys.keys().size() == 1);
 
@@ -441,7 +441,7 @@ int main() {
 		MessageKey alice_receive_message_key2;
 		alice_receive_message_key2 = alice_state.skipped_header_and_message_keys.keys().back().messageKey();
 		printf("Alice Ratchet 2 receive message key 2:\n");
-		alice_receive_message_key2.printHex(std::cout) << std::endl;
+		std::cout << alice_receive_message_key2 << std::endl;
 
 		//get the second receive header key from the message and header keystore
 		EmptyableHeaderKey alice_receive_header_key2;

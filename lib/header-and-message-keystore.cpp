@@ -91,7 +91,7 @@ namespace Molch {
 			|| (key_bundle.message_key->key.len != MESSAGE_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect message key.");
 		}
-		keypair.message_key = *key_bundle.message_key;
+		OUTCOME_TRY(keypair.message_key = *key_bundle.message_key);
 
 		//import the expiration date
 		if (!key_bundle.has_expiration_time) {
@@ -131,7 +131,7 @@ namespace Molch {
 		stream << "Header key:\n";
 		header_and_message_key.headerKey().printHex(stream) << '\n';
 		stream << "Message key:\n";
-		header_and_message_key.messageKey().printHex(stream) << '\n';
+		stream << header_and_message_key.messageKey() << '\n';
 		stream << "Expiration date:\n" << header_and_message_key.expirationDate().count() << 's' << '\n';
 
 		return stream;
