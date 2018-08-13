@@ -291,7 +291,7 @@ namespace Molch {
 		return conversation;
 	}
 
-	const EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key>& Conversation::id() const {
+	const EmptyableConversationId& Conversation::id() const {
 		return this->id_storage;
 	}
 

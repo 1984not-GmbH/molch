@@ -51,7 +51,8 @@ namespace Molch {
 		PublicKey,
 		PrivateKey,
 		PublicSigningKey,
-		PrivateSigningKey
+		PrivateSigningKey,
+		ConversationId,
 	};
 
 	template <size_t key_length, KeyType keytype>
@@ -469,6 +470,7 @@ namespace Molch {
 	using EmptyableRootKey = EmptyableKey<ROOT_KEY_SIZE,KeyType::RootKey>;
 	using EmptyablePublicKey = EmptyableKey<PUBLIC_KEY_SIZE,KeyType::PublicKey>;
 	using EmptyablePublicSigningKey = EmptyableKey<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey>;
+	using EmptyableConversationId = EmptyableKey<CONVERSATION_ID_SIZE,KeyType::ConversationId>;
 
 	using HeaderKey = Key<HEADER_KEY_SIZE,KeyType::HeaderKey>;
 	using RootKey = Key<ROOT_KEY_SIZE,KeyType::RootKey>;
@@ -477,6 +479,7 @@ namespace Molch {
 	using PrivateKey = Key<PRIVATE_KEY_SIZE,KeyType::PrivateKey>;
 	using PublicSigningKey = Key<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey>;
 	using PrivateSigningKey = Key<PRIVATE_MASTER_KEY_SIZE,KeyType::PrivateSigningKey>;
+	using ConversationId = Key<CONVERSATION_ID_SIZE,KeyType::ConversationId>;
 }
 
 #endif /* LIB_KEY_HPP */
