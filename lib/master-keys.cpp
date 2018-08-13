@@ -81,10 +81,12 @@ namespace Molch {
 			ReadWriteUnlocker unlocker(keys);
 
 			//copy the keys
-			keys.public_signing_key = EmptyablePublicSigningKey{public_signing_key};
+			OUTCOME_TRY(imported_public_signing_key, EmptyablePublicSigningKey::import(public_signing_key));
+			keys.public_signing_key = imported_public_signing_key;
 			OUTCOME_TRY(imported_private_signing_key, PrivateSigningKey::import(private_signing_key));
 			*keys.private_signing_key = imported_private_signing_key;
-			keys.public_identity_key = EmptyablePublicKey{public_identity_key};
+			OUTCOME_TRY(imported_public_identity_key, EmptyablePublicKey::import(public_identity_key));
+			keys.public_identity_key = imported_public_identity_key;
 			OUTCOME_TRY(imported_private_identity_key, PrivateKey::import(private_identity_key));
 			*keys.private_identity_key = imported_private_identity_key;
 		}

@@ -78,7 +78,8 @@ namespace Molch {
 		imported_user.master_keys = std::move(master_keys);
 
 		//public signing key
-		imported_user.public_signing_key = user.public_signing_key->key;
+		OUTCOME_TRY(imported_public_signing_key, EmptyablePublicSigningKey::fromSpan({user.public_signing_key->key}));
+		imported_user.public_signing_key = imported_public_signing_key;
 
 		imported_user.conversations = ConversationStore{{user.conversations, user.n_conversations}};
 
@@ -153,7 +154,7 @@ namespace Molch {
 		return &(*user);
 	}
 
-	Conversation* UserStore::findConversation(User*& user, const EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key>& conversation_id) {
+	Conversation* UserStore::findConversation(User*& user, const EmptyableConversationId& conversation_id) {
 		Expects(!conversation_id.empty);
 
 		Conversation* conversation{nullptr};

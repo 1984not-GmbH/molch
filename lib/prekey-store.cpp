@@ -87,7 +87,8 @@ namespace Molch {
 		} else if (keypair.public_key->key.len != PUBLIC_KEY_SIZE) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a public key.");
 		} else {
-			prekey.public_key = EmptyablePublicKey{*keypair.public_key};
+			OUTCOME_TRY(imported_public_key, EmptyablePublicKey::import(*keypair.public_key));
+			prekey.public_key = imported_public_key;
 		}
 
 		//import expiration_date

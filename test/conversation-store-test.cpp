@@ -148,12 +148,12 @@ int main() {
 		}
 
 		//check for all conversations that they exist
-		Molch::EmptyableKey<CONVERSATION_ID_SIZE,Molch::KeyType::Key> first_id;
-		Molch::EmptyableKey<CONVERSATION_ID_SIZE,Molch::KeyType::Key> middle_id;
-		Molch::EmptyableKey<CONVERSATION_ID_SIZE,Molch::KeyType::Key> last_id;
+		EmptyableConversationId first_id;
+		EmptyableConversationId middle_id;
+		EmptyableConversationId last_id;
 		for (size_t i{0}; i < (conversation_list.size() / CONVERSATION_ID_SIZE); i++) {
-			Molch::EmptyableKey<CONVERSATION_ID_SIZE,Molch::KeyType::Key> current_id;
-			current_id = {&conversation_list[CONVERSATION_ID_SIZE * i], CONVERSATION_ID_SIZE};
+		    TRY_WITH_RESULT(current_id_result, EmptyableConversationId::fromSpan({&conversation_list[CONVERSATION_ID_SIZE * i], CONVERSATION_ID_SIZE}));
+		    const auto& current_id{current_id_result.value()};
 			auto found_node{store.find(current_id)};
 			if (found_node == nullptr) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Exported list of conversations was incorrect."};

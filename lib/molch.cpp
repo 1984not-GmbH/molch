@@ -265,8 +265,8 @@ MOLCH_PUBLIC(return_status) molch_destroy_user(
 			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Public master key has incorrect size."};
 		}
 
-		EmptyablePublicSigningKey public_master_key_key;
-		public_master_key_key = {uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE};
+		TRY_WITH_RESULT(public_master_key_key_result, EmptyablePublicSigningKey::fromSpan({uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE}));
+		const auto& public_master_key_key{public_master_key_key_result.value()};
 		users->remove(public_master_key_key);
 
 		if (backup != nullptr) {
@@ -383,7 +383,7 @@ MOLCH_PUBLIC(molch_message_type) molch_get_message_type(
 static void verify_prekey_list(
 		const span<const std::byte> prekey_list,
 		EmptyablePublicKey& public_identity_key, //output, PUBLIC_KEY_SIZE
-		EmptyablePublicSigningKey& public_signing_key) {
+		const EmptyablePublicSigningKey& public_signing_key) {
 	//verify the signature
 	Buffer verified_prekey_list{prekey_list.size() - SIGNATURE_SIZE, prekey_list.size() - SIGNATURE_SIZE};
 	TRY_VOID(crypto_sign_open(
@@ -453,8 +453,8 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		check_global_users_state();
 
 		//get the user that matches the public signing key of the sender
-		EmptyablePublicSigningKey sender_public_master_key_key;
-		sender_public_master_key_key = {uchar_to_byte(sender_public_master_key), PUBLIC_MASTER_KEY_SIZE};
+		TRY_WITH_RESULT(sender_public_master_key_key_result, EmptyablePublicSigningKey::fromSpan({uchar_to_byte(sender_public_master_key), PUBLIC_MASTER_KEY_SIZE}));
+		const auto& sender_public_master_key_key{sender_public_master_key_key_result.value()};
 		auto user{users->find(sender_public_master_key_key)};
 		if (user == nullptr) {
 			throw Exception{status_type::NOT_FOUND, "User not found."};
@@ -462,8 +462,8 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 
 		//get the receivers public ephemeral and identity
 		EmptyablePublicKey receiver_public_identity;
-		EmptyablePublicSigningKey receiver_public_master_key_key;
-		receiver_public_master_key_key = {uchar_to_byte(receiver_public_master_key), PUBLIC_MASTER_KEY_SIZE};
+		TRY_WITH_RESULT(receiver_public_master_key_key_result, EmptyablePublicSigningKey::fromSpan({uchar_to_byte(receiver_public_master_key), PUBLIC_MASTER_KEY_SIZE}));
+		const auto& receiver_public_master_key_key{receiver_public_master_key_key_result.value()};
 		verify_prekey_list(
 				{uchar_to_byte(prekey_list), prekey_list_length},
 				receiver_public_identity,
@@ -561,8 +561,8 @@ cleanup:
 			check_global_users_state();
 
 			//get the user that matches the public signing key of the receiver
-			EmptyablePublicSigningKey receiver_public_master_key_key;
-			receiver_public_master_key_key = {uchar_to_byte(receiver_public_master_key), PUBLIC_MASTER_KEY_SIZE};
+			TRY_WITH_RESULT(receiver_public_master_key_key_result, EmptyablePublicSigningKey::fromSpan({uchar_to_byte(receiver_public_master_key), PUBLIC_MASTER_KEY_SIZE}));
+			const auto& receiver_public_master_key_key{receiver_public_master_key_key_result.value()};
 			auto user{users->find(receiver_public_master_key_key)};
 			if (user == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "User not found in the user store."};
@@ -649,7 +649,8 @@ cleanup:
 			check_global_users_state();
 
 			//find the conversation
-			Molch::EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE});
+			TRY_WITH_RESULT(conversation_id_key_result, EmptyableConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
+			const auto& conversation_id_key{conversation_id_key_result.value()};
 			Molch::User *user;
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
@@ -721,8 +722,8 @@ cleanup:
 			check_global_users_state();
 
 			//find the conversation
-			Molch::EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
-			conversation_id_key = {uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE};
+			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
+			const auto& conversation_id_key{conversation_id_key_result.value()};
 			Molch::User* user;
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
@@ -779,8 +780,8 @@ cleanup:
 
 			//find the conversation
 			Molch::User *user{nullptr};
-			Molch::EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
-			conversation_id_key = {uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE};
+			TRY_WITH_RESULT(conversation_id_key_result, EmptyableConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
+			const auto& conversation_id_key{conversation_id_key_result.value()};
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "Couldn't find conversation."};
@@ -842,8 +843,8 @@ cleanup:
 
 			check_global_users_state();
 
-			EmptyablePublicSigningKey user_public_master_key_key;
-			user_public_master_key_key = {uchar_to_byte(user_public_master_key), PUBLIC_MASTER_KEY_SIZE};
+			TRY_WITH_RESULT(user_public_master_key_key_result, EmptyablePublicSigningKey::fromSpan({uchar_to_byte(user_public_master_key), PUBLIC_MASTER_KEY_SIZE}));
+			const auto& user_public_master_key_key{user_public_master_key_key_result.value()};
 			auto user{users->find(user_public_master_key_key)};
 			if (user == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "No user found for the given public identity."};
@@ -954,8 +955,8 @@ cleanup:
 
 			//find the conversation
 			Molch::User *user{nullptr};
-			Molch::EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
-			conversation_id_key = {uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE};
+			TRY_WITH_RESULT(conversation_id_key_result, EmptyableConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
+			const auto& conversation_id_key{conversation_id_key_result.value()};
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "Failed to find the conversation."};
@@ -1109,8 +1110,8 @@ cleanup:
 			//import the conversation
 			ProtobufCConversation conversation_pointer{*conversation_struct};
 			Molch::User* containing_user{nullptr};
-			Molch::EmptyableKey<CONVERSATION_ID_SIZE,KeyType::Key> conversation_id_key;
-			conversation_id_key = span<const std::byte>{conversation_struct->id};
+			TRY_WITH_RESULT(conversation_id_key_result, EmptyableConversationId::fromSpan({conversation_struct->id}));
+			const auto& conversation_id_key{conversation_id_key_result.value()};
 			auto existing_conversation{users->findConversation(containing_user, conversation_id_key)};
 			if (existing_conversation == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "Containing store not found."};
@@ -1357,8 +1358,8 @@ cleanup:
 
 			check_global_users_state();
 
-			EmptyablePublicSigningKey public_signing_key_key;
-			public_signing_key_key = {uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE};
+			TRY_WITH_RESULT(public_signing_key_key_result, EmptyablePublicSigningKey::fromSpan({uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE}));
+			const auto& public_signing_key_key{public_signing_key_key_result.value()};
 			auto prekey_list_buffer{create_prekey_list(public_signing_key_key)};
 			MallocBuffer malloced_prekey_list{prekey_list_buffer.size(), 0};
 			TRY_VOID(malloced_prekey_list.cloneFrom(prekey_list_buffer));

@@ -634,10 +634,12 @@ namespace Molch {
 		if (!conversation.has_root_key || (conversation.root_key.len != ROOT_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "root_key is missing from protobuf.");
 		}
-		ratchet.storage->root_key = conversation.root_key;
+		OUTCOME_TRY(root_key, EmptyableRootKey::fromSpan({conversation.root_key}));
+		ratchet.storage->root_key = root_key;
 		//purported root key
 		if (conversation.has_purported_root_key && (conversation.purported_root_key.len == ROOT_KEY_SIZE)) {
-			ratchet.storage->purported_root_key = conversation.purported_root_key;
+			OUTCOME_TRY(purported_root_key, EmptyableRootKey::fromSpan({conversation.purported_root_key}));
+			ratchet.storage->purported_root_key = purported_root_key;
 		}
 
 		//header key
@@ -648,33 +650,37 @@ namespace Molch {
 			}
 			ratchet.storage->send_header_key.reset();
 		} else {
-			ratchet.storage->send_header_key.emplace(span<std::byte>(
-					uchar_to_byte(conversation.send_header_key.data),
-					conversation.send_header_key.len));
+		    OUTCOME_TRY(send_header_key, EmptyableHeaderKey::fromSpan({uchar_to_byte(conversation.send_header_key.data), conversation.send_header_key.len}));
+			ratchet.storage->send_header_key.emplace(send_header_key);
 		}
 		//receive header key
 		if ((ratchet.role == Role::ALICE) &&
 				(!conversation.has_receive_header_key || (conversation.receive_header_key.len != HEADER_KEY_SIZE))) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "receive_header_key is missing from protobuf.");
 		}
-		ratchet.storage->receive_header_key = conversation.receive_header_key;
+		OUTCOME_TRY(receive_header_key, EmptyableHeaderKey::fromSpan({conversation.receive_header_key}));
+		ratchet.storage->receive_header_key = receive_header_key;
 		//next send header key
 		if (!conversation.has_next_send_header_key || (conversation.next_send_header_key.len != HEADER_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "next_send_header_key is missing from protobuf.");
 		}
-		ratchet.storage->next_send_header_key = conversation.next_send_header_key;
+		OUTCOME_TRY(next_send_header_key, EmptyableHeaderKey::fromSpan({conversation.next_send_header_key}));
+		ratchet.storage->next_send_header_key = next_send_header_key;
 		//next receive header key
 		if (!conversation.has_next_receive_header_key || (conversation.next_receive_header_key.len != HEADER_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "next_receive_header_key is missing from protobuf.");
 		}
-		ratchet.storage->next_receive_header_key = conversation.next_receive_header_key;
+		OUTCOME_TRY(next_receive_header_key, EmptyableHeaderKey::fromSpan({conversation.next_receive_header_key}));
+		ratchet.storage->next_receive_header_key = next_receive_header_key;
 		//purported receive header key
 		if (conversation.has_purported_receive_header_key && (conversation.purported_receive_header_key.len == HEADER_KEY_SIZE)) {
-			ratchet.storage->purported_receive_header_key = conversation.purported_receive_header_key;
+			OUTCOME_TRY(purported_receive_header_key, EmptyableHeaderKey::fromSpan({conversation.purported_receive_header_key}));
+			ratchet.storage->purported_receive_header_key = purported_receive_header_key;
 		}
 		//purported next receive header key
 		if (conversation.has_purported_next_receive_header_key && (conversation.purported_next_receive_header_key.len == HEADER_KEY_SIZE)) {
-			ratchet.storage->purported_next_receive_header_key = conversation.purported_next_receive_header_key;
+			OUTCOME_TRY(purported_next_receive_header_key, EmptyableHeaderKey::fromSpan({conversation.purported_next_receive_header_key}));
+			ratchet.storage->purported_next_receive_header_key = purported_next_receive_header_key;
 		}
 
 		//chain keys
@@ -683,16 +689,19 @@ namespace Molch {
 				(!conversation.has_send_chain_key || (conversation.send_chain_key.len != CHAIN_KEY_SIZE))) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "send_chain_key is missing from the potobuf.");
 		}
-		ratchet.storage->send_chain_key = {conversation.send_chain_key};
+		OUTCOME_TRY(send_chain_key, ChainKey::fromSpan({conversation.send_chain_key}));
+		ratchet.storage->send_chain_key = send_chain_key;
 		//receive chain key
 		if ((ratchet.role == Role::ALICE) &&
 				(!conversation.has_receive_chain_key || (conversation.receive_chain_key.len != CHAIN_KEY_SIZE))) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "receive_chain_key is missing from the protobuf.");
 		}
-		ratchet.storage->receive_chain_key = {conversation.receive_chain_key};
+		OUTCOME_TRY(receive_chain_key, ChainKey::fromSpan({conversation.receive_chain_key}));
+		ratchet.storage->receive_chain_key = receive_chain_key;
 		//purported receive chain key
 		if (conversation.has_purported_receive_chain_key && (conversation.purported_receive_chain_key.len == CHAIN_KEY_SIZE)) {
-			ratchet.storage->purported_receive_chain_key = {conversation.purported_receive_chain_key};
+			OUTCOME_TRY(purported_receive_chain_key, ChainKey::fromSpan({conversation.purported_receive_chain_key}));
+			ratchet.storage->purported_receive_chain_key = purported_receive_chain_key;
 		}
 
 		//identity key
@@ -700,12 +709,14 @@ namespace Molch {
 		if (!conversation.has_our_public_identity_key || (conversation.our_public_identity_key.len != PUBLIC_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "our_public_identity_key is missing from the protobuf.");
 		}
-		ratchet.storage->our_public_identity = span<const std::byte>(conversation.our_public_identity_key);
+		OUTCOME_TRY(our_public_identity, EmptyablePublicKey::fromSpan({conversation.our_public_identity_key}));
+		ratchet.storage->our_public_identity = our_public_identity;
 		//their public identity key
 		if (!conversation.has_their_public_identity_key || (conversation.their_public_identity_key.len != PUBLIC_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "their_public_identity is missing from the protobuf.");
 		}
-		ratchet.storage->their_public_identity = span<const std::byte>(conversation.their_public_identity_key);
+		OUTCOME_TRY(their_public_identity, EmptyablePublicKey::fromSpan({conversation.their_public_identity_key}));
+		ratchet.storage->their_public_identity = their_public_identity;
 
 		//ephemeral keys
 		//our private ephemeral key
@@ -718,15 +729,18 @@ namespace Molch {
 		if (!conversation.has_our_public_ephemeral_key || (conversation.our_public_ephemeral_key.len != PUBLIC_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "our_public_ephemeral is missing from the protobuf.");
 		}
-		ratchet.storage->our_public_ephemeral = span<const std::byte>(conversation.our_public_ephemeral_key);
+		OUTCOME_TRY(our_public_ephemeral, EmptyablePublicKey::fromSpan({conversation.our_public_ephemeral_key}));
+		ratchet.storage->our_public_ephemeral = our_public_ephemeral;
 		//their public ephemeral key
 		if (!conversation.has_their_public_ephemeral_key || (conversation.their_public_ephemeral_key.len != PUBLIC_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "their_public_ephemeral is missing from the protobuf.");
 		}
-		ratchet.storage->their_public_ephemeral = span<const std::byte>(conversation.their_public_ephemeral_key);
+		OUTCOME_TRY(their_public_ephemeral, EmptyablePublicKey::fromSpan({conversation.their_public_ephemeral_key}));
+		ratchet.storage->their_public_ephemeral = their_public_ephemeral;
 		//their purported public ephemeral key
 		if (conversation.has_their_purported_public_ephemeral && (conversation.their_purported_public_ephemeral.len == PUBLIC_KEY_SIZE)) {
-			ratchet.storage->their_purported_public_ephemeral = span<const std::byte>(conversation.their_purported_public_ephemeral);
+			OUTCOME_TRY(their_purported_public_ephemeral, EmptyablePublicKey::fromSpan({conversation.their_purported_public_ephemeral}));
+			ratchet.storage->their_purported_public_ephemeral = their_purported_public_ephemeral;
 		}
 
 		//header and message keystores

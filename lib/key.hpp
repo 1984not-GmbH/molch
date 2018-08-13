@@ -237,14 +237,6 @@ namespace Molch {
 			std::copy(std::cbegin(key), std::cend(key), std::begin(*this));
 		}
 
-		EmptyableKey(const ProtobufCKey& key) {
-			*this = key.key;
-		}
-
-		EmptyableKey(const span<const std::byte>& key) {
-			*this = key;
-		}
-
 		~EmptyableKey() noexcept {
 			this->zero();
 		}
@@ -256,15 +248,18 @@ namespace Molch {
 			return this->move(std::move(key));
 		}
 
-		EmptyableKey& operator=(const span<const std::byte> other) {
-			Expects(other.size() == key_length);
-			std::copy(std::cbegin(other), std::cend(other), this->data());
-			this->empty = false;
-			return *this;
+		static result<EmptyableKey> fromSpan(const span<const std::byte> other) {
+			EmptyableKey<key_length,keytype> key;
+			key.empty = false;
+			OUTCOME_TRY(copyFromTo(other, key));
+			return key;
 		}
 
-		EmptyableKey& operator=(const ProtobufCKey& key) {
-			return *this = key.key;
+		static result<EmptyableKey> import(const ProtobufCKey& key) {
+			EmptyableKey<key_length,keytype> imported_key;
+			imported_key.empty = false;
+			OUTCOME_TRY(copyFromTo({key.key}, imported_key));
+			return imported_key;
 		}
 
 		/*
@@ -422,6 +417,13 @@ namespace Molch {
 	public:
 		//inherit constructors
 		using EmptyableKey<CHAIN_KEY_SIZE,KeyType::ChainKey>::EmptyableKey;
+
+		static result<ChainKey> fromSpan(const span<const std::byte> input) {
+			ChainKey key;
+			key.empty = false;
+			OUTCOME_TRY(copyFromTo(input, key));
+			return key;
+		}
 
 		result<MessageKey> deriveMessageKey() const noexcept {
 			OUTCOME_TRY(subkey, this->deriveSubkeyWithIndex<EmptyableKey<MESSAGE_KEY_SIZE,KeyType::MessageKey>>(0));

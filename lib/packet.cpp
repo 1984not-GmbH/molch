@@ -251,9 +251,12 @@ namespace Molch {
 			metadata.prekey_metadata = PrekeyMetadata();
 			auto& prekey_metadata{metadata.prekey_metadata.value()};
 			//copy the public keys
-			prekey_metadata.identity = span<const std::byte>{packet_struct->packet_header->public_identity_key};
-			prekey_metadata.ephemeral = span<const std::byte>{packet_struct->packet_header->public_ephemeral_key};
-			prekey_metadata.prekey = span<const std::byte>{packet_struct->packet_header->public_prekey};
+			OUTCOME_TRY(identity, EmptyablePublicKey::fromSpan({packet_struct->packet_header->public_identity_key}));
+			prekey_metadata.identity = identity;
+			OUTCOME_TRY(ephemeral, EmptyablePublicKey::fromSpan({packet_struct->packet_header->public_ephemeral_key}));
+			prekey_metadata.ephemeral = ephemeral;
+			OUTCOME_TRY(prekey, EmptyablePublicKey::fromSpan({packet_struct->packet_header->public_prekey}));
+			prekey_metadata.prekey = prekey;
 		}
 
 		metadata.current_protocol_version = packet_struct->packet_header->current_protocol_version;

@@ -83,7 +83,8 @@ namespace Molch {
 			|| (key_bundle.header_key->key.len != HEADER_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect header key.");
 		}
-		keypair.header_key = *key_bundle.header_key;
+		OUTCOME_TRY(imported_header_key, EmptyableHeaderKey::import(*key_bundle.header_key));
+		keypair.header_key = imported_header_key;
 
 		//import the message key
 		if ((key_bundle.message_key == nullptr)
