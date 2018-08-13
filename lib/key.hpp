@@ -461,7 +461,6 @@ namespace Molch {
 	using EmptyableRootKey = EmptyableKey<ROOT_KEY_SIZE,KeyType::RootKey>;
 	using EmptyablePublicKey = EmptyableKey<PUBLIC_KEY_SIZE,KeyType::PublicKey>;
 	using EmptyablePublicSigningKey = EmptyableKey<PUBLIC_MASTER_KEY_SIZE,KeyType::PublicSigningKey>;
-	using EmptyableConversationId = EmptyableKey<CONVERSATION_ID_SIZE,KeyType::ConversationId>;
 
 	using HeaderKey = Key<HEADER_KEY_SIZE,KeyType::HeaderKey>;
 	using RootKey = Key<ROOT_KEY_SIZE,KeyType::RootKey>;

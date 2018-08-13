@@ -279,7 +279,7 @@ namespace Molch {
 	result<Conversation> Conversation::import(const ProtobufCConversation& conversation_protobuf) {
 		Conversation conversation(uninitialized_t::uninitialized);
 		//copy the id
-		OUTCOME_TRY(id, EmptyableConversationId::fromSpan({conversation_protobuf.id}));
+		OUTCOME_TRY(id, ConversationId::fromSpan({conversation_protobuf.id}));
 		conversation.id_storage = id;
 
 		//import the ratchet
@@ -289,13 +289,13 @@ namespace Molch {
 		return conversation;
 	}
 
-	const EmptyableConversationId& Conversation::id() const {
+	const ConversationId& Conversation::id() const {
 		return this->id_storage;
 	}
 
 	std::ostream& Conversation::print(std::ostream& stream) const {
 		stream << "Conversation-ID:\n";
-		this->id_storage.printHex(stream) << "\n";
+		std::cout << this->id_storage << "\n";
 
 		return stream;
 	}

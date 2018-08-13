@@ -154,9 +154,7 @@ namespace Molch {
 		return &(*user);
 	}
 
-	Conversation* UserStore::findConversation(User*& user, const EmptyableConversationId& conversation_id) {
-		Expects(!conversation_id.empty);
-
+	Conversation* UserStore::findConversation(User*& user, const ConversationId& conversation_id) {
 		Conversation* conversation{nullptr};
 		auto containing_user{std::find_if(std::begin(this->users), std::end(this->users),
 				[&conversation_id, &conversation](User& user) {

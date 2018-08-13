@@ -113,9 +113,6 @@ int main() noexcept {
 				charlie_public_ephemeral,
 				dora_public_ephemeral));
 		auto& charlie_conversation{charlie_conversation_result.value()};
-		if (charlie_conversation.id().empty) {
-			throw Molch::Exception{status_type::INCORRECT_DATA, "Charlie's conversation has an incorrect ID length."};
-		}
 
 		//create Dora's conversation
 		TRY_WITH_RESULT(dora_conversation_result, Molch::Conversation::create(
@@ -125,10 +122,6 @@ int main() noexcept {
 				dora_private_ephemeral,
 				dora_public_ephemeral,
 				charlie_public_ephemeral));
-		auto& dora_conversation{dora_conversation_result.value()};
-		if (dora_conversation.id().empty) {
-			throw Molch::Exception{status_type::INCORRECT_DATA, "Dora's conversation has an incorrect ID length."};
-		}
 
 		//test protobuf-c export
 		printf("Export to Protobuf-C\n");

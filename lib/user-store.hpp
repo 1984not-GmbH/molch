@@ -113,7 +113,7 @@ namespace Molch {
 		 *
 		 * return nullptr if no conversation was found.
 		 */
-		Conversation* findConversation(User*& user, const EmptyableConversationId& conversation_id);
+		Conversation* findConversation(User*& user, const ConversationId& conversation_id);
 
 		/*
 		 * List all of the users.

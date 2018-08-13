@@ -68,7 +68,7 @@ namespace Molch {
 	 *
 	 * The conversation is identified by it's id.
 	 */
-	void ConversationStore::remove(const EmptyableConversationId& id) {
+	void ConversationStore::remove(const ConversationId& id) {
 		auto found_node{std::find_if(std::cbegin(this->conversations), std::cend(this->conversations),
 				[&id](const Conversation& conversation) {
 					return conversation.id() == id;
@@ -84,7 +84,7 @@ namespace Molch {
 	 *
 	 * Returns nullptr if no conversation was found.
 	 */
-	Conversation* ConversationStore::find(const EmptyableConversationId& id) {
+	Conversation* ConversationStore::find(const ConversationId& id) {
 		auto node{std::find_if(std::begin(this->conversations), std::end(this->conversations),
 				[&id](const Conversation& conversation) {
 					return conversation.id() == id;

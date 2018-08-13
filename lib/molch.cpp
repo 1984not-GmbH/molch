@@ -649,7 +649,7 @@ cleanup:
 			check_global_users_state();
 
 			//find the conversation
-			TRY_WITH_RESULT(conversation_id_key_result, EmptyableConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
+			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
 			const auto& conversation_id_key{conversation_id_key_result.value()};
 			Molch::User *user;
 			auto conversation{users->findConversation(user, conversation_id_key)};
@@ -780,7 +780,7 @@ cleanup:
 
 			//find the conversation
 			Molch::User *user{nullptr};
-			TRY_WITH_RESULT(conversation_id_key_result, EmptyableConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
+			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
 			const auto& conversation_id_key{conversation_id_key_result.value()};
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
@@ -955,7 +955,7 @@ cleanup:
 
 			//find the conversation
 			Molch::User *user{nullptr};
-			TRY_WITH_RESULT(conversation_id_key_result, EmptyableConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
+			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
 			const auto& conversation_id_key{conversation_id_key_result.value()};
 			auto conversation{users->findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
@@ -1110,7 +1110,7 @@ cleanup:
 			//import the conversation
 			ProtobufCConversation conversation_pointer{*conversation_struct};
 			Molch::User* containing_user{nullptr};
-			TRY_WITH_RESULT(conversation_id_key_result, EmptyableConversationId::fromSpan({conversation_struct->id}));
+			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({conversation_struct->id}));
 			const auto& conversation_id_key{conversation_id_key_result.value()};
 			auto existing_conversation{users->findConversation(containing_user, conversation_id_key)};
 			if (existing_conversation == nullptr) {

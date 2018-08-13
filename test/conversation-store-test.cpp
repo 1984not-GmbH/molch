@@ -148,11 +148,11 @@ int main() {
 		}
 
 		//check for all conversations that they exist
-		EmptyableConversationId first_id;
-		EmptyableConversationId middle_id;
-		EmptyableConversationId last_id;
+		ConversationId first_id;
+		ConversationId middle_id;
+		ConversationId last_id;
 		for (size_t i{0}; i < (conversation_list.size() / CONVERSATION_ID_SIZE); i++) {
-		    TRY_WITH_RESULT(current_id_result, EmptyableConversationId::fromSpan({&conversation_list[CONVERSATION_ID_SIZE * i], CONVERSATION_ID_SIZE}));
+		    TRY_WITH_RESULT(current_id_result, ConversationId::fromSpan({&conversation_list[CONVERSATION_ID_SIZE * i], CONVERSATION_ID_SIZE}));
 		    const auto& current_id{current_id_result.value()};
 			auto found_node{store.find(current_id)};
 			if (found_node == nullptr) {
