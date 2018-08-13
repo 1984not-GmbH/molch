@@ -91,7 +91,8 @@ namespace Molch {
 			|| (key_bundle.message_key->key.len != MESSAGE_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "KeyBundle has an incorrect message key.");
 		}
-		OUTCOME_TRY(keypair.message_key = *key_bundle.message_key);
+		OUTCOME_TRY(message_key, MessageKey::import(*key_bundle.message_key));
+		keypair.message_key = message_key;
 
 		//import the expiration date
 		if (!key_bundle.has_expiration_time) {

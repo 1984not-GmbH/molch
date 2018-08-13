@@ -89,13 +89,13 @@ namespace Molch {
 
 		static result<Key> import(const ProtobufCKey& key) noexcept {
 			Key imported_key(uninitialized_t::uninitialized);
-			OUTCOME_TRY(imported_key = key);
+			OUTCOME_TRY(copyFromTo({key.key}, imported_key));
 			return imported_key;
 		}
 
 		static result<Key> fromSpan(const span<const std::byte>& key) noexcept {
 			Key imported_key(uninitialized_t::uninitialized);
-			OUTCOME_TRY(imported_key = key);
+			OUTCOME_TRY(copyFromTo(key, imported_key));
 			return imported_key;
 		}
 
@@ -108,17 +108,6 @@ namespace Molch {
 		}
 		Key& operator=(Key&& key) noexcept {
 			return this->move(std::move(key));
-		}
-
-		result<void> operator=(const span<const std::byte> other) {
-			FulfillOrFail(other.size() == key_length);
-			std::copy(std::cbegin(other), std::cend(other), this->data());
-
-			return outcome::success();
-		}
-
-		result<void> operator=(const ProtobufCKey& key) {
-			return *this = key.key;
 		}
 
 		/*

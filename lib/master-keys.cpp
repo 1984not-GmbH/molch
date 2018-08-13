@@ -82,9 +82,11 @@ namespace Molch {
 
 			//copy the keys
 			keys.public_signing_key = EmptyablePublicSigningKey{public_signing_key};
-			OUTCOME_TRY(*keys.private_signing_key = private_signing_key);
+			OUTCOME_TRY(imported_private_signing_key, PrivateSigningKey::import(private_signing_key));
+			*keys.private_signing_key = imported_private_signing_key;
 			keys.public_identity_key = EmptyablePublicKey{public_identity_key};
-			OUTCOME_TRY(*keys.private_identity_key = private_identity_key);
+			OUTCOME_TRY(imported_private_identity_key, PrivateKey::import(private_identity_key));
+			*keys.private_identity_key = imported_private_identity_key;
 		}
 
 		return keys;

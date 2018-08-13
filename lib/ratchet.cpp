@@ -712,7 +712,8 @@ namespace Molch {
 		if (!conversation.has_our_private_ephemeral_key || (conversation.our_private_ephemeral_key.len != PRIVATE_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "our_private_ephemral is missing from the protobuf.");
 		}
-		OUTCOME_TRY(ratchet.storage->our_private_ephemeral = span<const std::byte>(conversation.our_private_ephemeral_key));
+		OUTCOME_TRY(our_private_ephemeral, PrivateKey::fromSpan({conversation.our_private_ephemeral_key}));
+		ratchet.storage->our_private_ephemeral = our_private_ephemeral;
 		//our public ephemeral key
 		if (!conversation.has_our_public_ephemeral_key || (conversation.our_public_ephemeral_key.len != PUBLIC_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "our_public_ephemeral is missing from the protobuf.");

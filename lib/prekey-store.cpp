@@ -76,7 +76,8 @@ namespace Molch {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "Prekey protobuf is missing a private key.");
 		}
 		Prekey prekey;
-		OUTCOME_TRY(prekey.private_key = *keypair.private_key);
+		OUTCOME_TRY(private_key, PrivateKey::import(*keypair.private_key));
+		prekey.private_key = private_key;
 
 		//import public key
 		if (keypair.public_key == nullptr) {
