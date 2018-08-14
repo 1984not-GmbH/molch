@@ -37,7 +37,7 @@ int main() {
 		TRY_VOID(Molch::sodium_init());
 
 		//create Alice's keypair
-		EmptyablePublicKey alice_public_ephemeral;
+		PublicKey alice_public_ephemeral;
 		PrivateKey alice_private_ephemeral;
 		generate_and_print_keypair(
 			alice_public_ephemeral,
@@ -46,7 +46,7 @@ int main() {
 			"ephemeral");
 
 		//create Bob's keypair
-		EmptyablePublicKey bob_public_ephemeral;
+		PublicKey bob_public_ephemeral;
 		PrivateKey bob_private_ephemeral;
 		generate_and_print_keypair(
 			bob_public_ephemeral,

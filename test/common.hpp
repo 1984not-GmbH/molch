@@ -31,7 +31,7 @@
  * Generates and prints a crypto_box keypair.
  */
 MOLCH_PUBLIC(void) generate_and_print_keypair(
-		Molch::EmptyablePublicKey& public_key,
+		Molch::PublicKey& public_key,
 		Molch::PrivateKey& private_key,
 		const std::string& name, //Name of the key owner (e.g. "Alice")
 		const std::string& type); //type of the key (e.g. "ephemeral")

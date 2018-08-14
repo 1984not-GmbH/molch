@@ -70,7 +70,7 @@ int main() noexcept {
 
 		//creating charlie's identity keypair
 		PrivateKey charlie_private_identity;
-		EmptyablePublicKey charlie_public_identity;
+		PublicKey charlie_public_identity;
 		generate_and_print_keypair(
 			charlie_public_identity,
 			charlie_private_identity,
@@ -79,7 +79,7 @@ int main() noexcept {
 
 		//creating charlie's ephemeral keypair
 		PrivateKey charlie_private_ephemeral;
-		EmptyablePublicKey charlie_public_ephemeral;
+		PublicKey charlie_public_ephemeral;
 		generate_and_print_keypair(
 			charlie_public_ephemeral,
 			charlie_private_ephemeral,
@@ -88,7 +88,7 @@ int main() noexcept {
 
 		//creating dora's identity keypair
 		PrivateKey dora_private_identity;
-		EmptyablePublicKey dora_public_identity;
+		PublicKey dora_public_identity;
 		generate_and_print_keypair(
 			dora_public_identity,
 			dora_private_identity,
@@ -97,7 +97,7 @@ int main() noexcept {
 
 		//creating dora's ephemeral keypair
 		PrivateKey dora_private_ephemeral;
-		EmptyablePublicKey dora_public_ephemeral;
+		PublicKey dora_public_ephemeral;
 		generate_and_print_keypair(
 			dora_public_ephemeral,
 			dora_private_ephemeral,

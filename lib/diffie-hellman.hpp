@@ -42,8 +42,8 @@ namespace Molch {
 	void diffie_hellman(
 			EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
 			const PrivateKey& our_private_key, //needs to be PRIVATE_KEY_SIZE long
-			const EmptyablePublicKey& our_public_key, //needs to be PUBLIC_KEY_SIZE long
-			const EmptyablePublicKey& their_public_key, //needs to be PUBLIC_KEY_SIZE long
+			const PublicKey& our_public_key, //needs to be PUBLIC_KEY_SIZE long
+			const PublicKey& their_public_key, //needs to be PUBLIC_KEY_SIZE long
 			const Ratchet::Role role);
 
 	/*

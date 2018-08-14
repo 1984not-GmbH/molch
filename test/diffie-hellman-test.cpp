@@ -35,7 +35,7 @@ int main() noexcept {
 		TRY_VOID(Molch::sodium_init());
 
 		//create Alice's keypair
-		EmptyablePublicKey alice_public_key;
+		PublicKey alice_public_key;
 		PrivateKey alice_private_key;
 		generate_and_print_keypair(
 			alice_public_key,
@@ -44,7 +44,7 @@ int main() noexcept {
 			"");
 
 		//create Bob's keypair
-		EmptyablePublicKey bob_public_key;
+		PublicKey bob_public_key;
 		PrivateKey bob_private_key;
 		generate_and_print_keypair(
 			bob_public_key,

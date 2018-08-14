@@ -29,11 +29,9 @@ namespace Molch {
 	void diffie_hellman(
 			EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
 			const PrivateKey& our_private_key, //needs to be PRIVATE_KEY_SIZE long
-			const EmptyablePublicKey& our_public_key, //needs to be PUBLIC_KEY_SIZE long
-			const EmptyablePublicKey& their_public_key, //needs to be PUBLIC_KEY_SIZE long
+			const PublicKey& our_public_key, //needs to be PUBLIC_KEY_SIZE long
+			const PublicKey& their_public_key, //needs to be PUBLIC_KEY_SIZE long
 			const Ratchet::Role role) {
-		Expects(!our_public_key.empty && !their_public_key.empty);
-
 		//make sure that the assumptions are correct
 		static_assert(PUBLIC_KEY_SIZE == crypto_scalarmult_SCALARBYTES, "crypto_scalarmult_SCALARBYTES is not PUBLIC_KEY_SIZE");
 		static_assert(PRIVATE_KEY_SIZE == crypto_scalarmult_SCALARBYTES, "crypto_scalarmult_SCALARBYTES is not PRIVATE_KEY_BYTES");
@@ -96,16 +94,16 @@ namespace Molch {
 				diffie_hellman(
 					dh1,
 					our_private_identity,
-					our_public_identity,
-					their_public_ephemeral,
+					our_public_identity.toKey().value(),
+					their_public_ephemeral.toKey().value(),
 					role);
 
 				//DH(our_ephemeral, their_identity)
 				diffie_hellman(
 					dh2,
 					our_private_ephemeral,
-					our_public_ephemeral,
-					their_public_identity,
+					our_public_ephemeral.toKey().value(),
+					their_public_identity.toKey().value(),
 					role);
 				break;
 
@@ -114,16 +112,16 @@ namespace Molch {
 				diffie_hellman(
 					dh1,
 					our_private_ephemeral,
-					our_public_ephemeral,
-					their_public_identity,
+					our_public_ephemeral.toKey().value(),
+					their_public_identity.toKey().value(),
 					role);
 
 				//DH(our_identity, their_ephemeral)
 				diffie_hellman(
 					dh2,
 					our_private_identity,
-					our_public_identity,
-					their_public_ephemeral,
+					our_public_identity.toKey().value(),
+					their_public_ephemeral.toKey().value(),
 					role);
 				break;
 
@@ -136,8 +134,8 @@ namespace Molch {
 		diffie_hellman(
 			dh3,
 			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_ephemeral,
+			our_public_ephemeral.toKey().value(),
+			their_public_ephemeral.toKey().value(),
 			role);
 
 		//now calculate HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0))

@@ -52,8 +52,8 @@ namespace Molch {
 		diffie_hellman(
 			diffie_hellman_secret,
 			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_ephemeral,
+			our_public_ephemeral.toKey().value(),
+			their_public_ephemeral.toKey().value(),
 			role);
 
 		//key to derive from
