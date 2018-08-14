@@ -109,11 +109,11 @@ namespace Molch {
 		triple_diffie_hellman(
 			master_key,
 			our_private_identity,
-			our_public_identity,
+			our_public_identity.toKey().value(),
 			our_private_ephemeral,
-			our_public_ephemeral,
-			their_public_identity,
-			their_public_ephemeral,
+			our_public_ephemeral.toKey().value(),
+			their_public_identity.toKey().value(),
+			their_public_ephemeral.toKey().value(),
 			role);
 
 		DerivedInitialRootChainAndHeaderKeys output;

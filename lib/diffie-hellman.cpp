@@ -73,17 +73,12 @@ namespace Molch {
 	void triple_diffie_hellman(
 			EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key,
 			const PrivateKey& our_private_identity,
-			const EmptyablePublicKey& our_public_identity,
+			const PublicKey& our_public_identity,
 			const PrivateKey& our_private_ephemeral,
-			const EmptyablePublicKey& our_public_ephemeral,
-			const EmptyablePublicKey& their_public_identity,
-			const EmptyablePublicKey& their_public_ephemeral,
+			const PublicKey& our_public_ephemeral,
+			const PublicKey& their_public_identity,
+			const PublicKey& their_public_ephemeral,
 			const Ratchet::Role role) {
-		Expects(!our_public_identity.empty
-				&& !their_public_identity.empty
-				&& !our_public_ephemeral.empty
-				&& !their_public_ephemeral.empty);
-
 		//buffers for all 3 Diffie Hellman exchanges
 		EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key> dh1;
 		EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key> dh2;
@@ -94,16 +89,16 @@ namespace Molch {
 				diffie_hellman(
 					dh1,
 					our_private_identity,
-					our_public_identity.toKey().value(),
-					their_public_ephemeral.toKey().value(),
+					our_public_identity,
+					their_public_ephemeral,
 					role);
 
 				//DH(our_ephemeral, their_identity)
 				diffie_hellman(
 					dh2,
 					our_private_ephemeral,
-					our_public_ephemeral.toKey().value(),
-					their_public_identity.toKey().value(),
+					our_public_ephemeral,
+					their_public_identity,
 					role);
 				break;
 
@@ -112,16 +107,16 @@ namespace Molch {
 				diffie_hellman(
 					dh1,
 					our_private_ephemeral,
-					our_public_ephemeral.toKey().value(),
-					their_public_identity.toKey().value(),
+					our_public_ephemeral,
+					their_public_identity,
 					role);
 
 				//DH(our_identity, their_ephemeral)
 				diffie_hellman(
 					dh2,
 					our_private_identity,
-					our_public_identity.toKey().value(),
-					their_public_ephemeral.toKey().value(),
+					our_public_identity,
+					their_public_ephemeral,
 					role);
 				break;
 
@@ -134,8 +129,8 @@ namespace Molch {
 		diffie_hellman(
 			dh3,
 			our_private_ephemeral,
-			our_public_ephemeral.toKey().value(),
-			their_public_ephemeral.toKey().value(),
+			our_public_ephemeral,
+			their_public_ephemeral,
 			role);
 
 		//now calculate HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0))
