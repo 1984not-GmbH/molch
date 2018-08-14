@@ -44,9 +44,6 @@ namespace Molch {
 				&& !their_public_ephemeral.empty
 				&& !previous_root_key.empty);
 
-		//create buffers
-		EmptyableKey<crypto_generichash_BYTES,KeyType::Key> derivation_key;
-
 		//DH(DHRs, DHRr) or DH(DHRp, DHRs)
 		OUTCOME_TRY(diffie_hellman_secret, diffie_hellman(
 			our_private_ephemeral,
@@ -56,25 +53,26 @@ namespace Molch {
 
 		//key to derive from
 		//HMAC-HASH(RK, DH(..., ...))
+		Key<crypto_generichash_BYTES,KeyType::Key> derivation_key;
 		OUTCOME_TRY(crypto_generichash(
 				derivation_key,
 				diffie_hellman_secret,
 				previous_root_key));
-		derivation_key.empty = false;
 
 		DerivedRootNextHeadAndChainKey output;
 
 		//now derive the different keys from the derivation key
 		//root key
-		OUTCOME_TRY(root_key, derivation_key.deriveSubkeyWithIndex<EmptyableRootKey>(0));
-		output.root_key = root_key.toKey().value();
+		OUTCOME_TRY(root_key, derivation_key.deriveSubkeyWithIndex<RootKey>(0));
+		output.root_key = root_key;
 
 		//next header key
-		OUTCOME_TRY(next_header_key, derivation_key.deriveSubkeyWithIndex<EmptyableHeaderKey>(1));
-		output.next_header_key = next_header_key.toKey().value();
+		OUTCOME_TRY(next_header_key, derivation_key.deriveSubkeyWithIndex<HeaderKey>(1));
+		output.next_header_key = next_header_key;
 
 		//chain key
-		OUTCOME_TRY(chain_key, derivation_key.deriveSubkeyWithIndex<ChainKey>(2));
+		//FIXME: Does this work?
+		OUTCOME_TRY(chain_key, derivation_key.deriveSubkeyWithIndex<Key<CHAIN_KEY_SIZE,KeyType::ChainKey>>(2));
 		output.chain_key = chain_key;
 
 		return output;
