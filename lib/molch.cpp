@@ -382,7 +382,7 @@ MOLCH_PUBLIC(molch_message_type) molch_get_message_type(
  */
 static void verify_prekey_list(
 		const span<const std::byte> prekey_list,
-		EmptyablePublicKey& public_identity_key, //output, PUBLIC_KEY_SIZE
+		PublicKey& public_identity_key, //output, PUBLIC_KEY_SIZE
 		const EmptyablePublicSigningKey& public_signing_key) {
 	//verify the signature
 	Buffer verified_prekey_list{prekey_list.size() - SIGNATURE_SIZE, prekey_list.size() - SIGNATURE_SIZE};
@@ -404,7 +404,6 @@ static void verify_prekey_list(
 
 	//copy the public identity key
 	TRY_VOID(copyFromTo(verified_prekey_list, {public_identity_key.data(), PUBLIC_KEY_SIZE}, PUBLIC_KEY_SIZE));
-	public_identity_key.empty = false;
 }
 
 /*
@@ -461,7 +460,7 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		}
 
 		//get the receivers public ephemeral and identity
-		EmptyablePublicKey receiver_public_identity;
+		PublicKey receiver_public_identity;
 		TRY_WITH_RESULT(receiver_public_master_key_key_result, EmptyablePublicSigningKey::fromSpan({uchar_to_byte(receiver_public_master_key), PUBLIC_MASTER_KEY_SIZE}));
 		const auto& receiver_public_master_key_key{receiver_public_master_key_key_result.value()};
 		verify_prekey_list(
@@ -477,7 +476,7 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		TRY_WITH_RESULT(private_identity_key, user->masterKeys().getPrivateIdentityKey());
 		TRY_WITH_RESULT(send_conversation_result, Molch::Conversation::createSendConversation(
 			{uchar_to_byte(message), message_length},
-			user->masterKeys().getIdentityKey(),
+			user->masterKeys().getIdentityKey().toKey().value(),
 			*private_identity_key.value(),
 			receiver_public_identity,
 			prekeys));
@@ -575,7 +574,7 @@ cleanup:
 			TRY_WITH_RESULT(private_identity_key, user->masterKeys().getPrivateIdentityKey());
 			TRY_WITH_RESULT(receive_conversation_result, Molch::Conversation::createReceiveConversation(
 				{uchar_to_byte(packet), packet_length},
-				user->masterKeys().getIdentityKey(),
+				user->masterKeys().getIdentityKey().toKey().value(),
 				*private_identity_key.value(),
 				user->prekeys));
 			auto& receive_conversation{receive_conversation_result.value()};
