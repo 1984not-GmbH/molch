@@ -67,14 +67,14 @@ namespace Molch {
 		ratchet.role = role;
 
 		//derive initial chain, root and header keys
-		auto derived_keys{derive_initial_root_chain_and_header_keys(
+		OUTCOME_TRY(derived_keys, derive_initial_root_chain_and_header_keys(
 			our_private_identity,
 			our_public_identity,
 			their_public_identity,
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral,
-			ratchet.role)};
+			ratchet.role));
 		auto& storage{ratchet.storage};
 		storage->root_key = derived_keys.root_key;
 		if (derived_keys.send_chain_key.has_value()) {
@@ -136,12 +136,12 @@ namespace Molch {
 			EmptyableRootKey root_key_backup{storage->root_key};
 
 			//RK, NHKs, CKs = KDF(HMAC-HASH(RK, DH(DHRs, DHRr)))
-			auto derived_keys{derive_root_next_header_and_chain_keys(
+			OUTCOME_TRY(derived_keys, derive_root_next_header_and_chain_keys(
 				storage->our_private_ephemeral,
 				storage->our_public_ephemeral,
 				storage->their_public_ephemeral,
 				root_key_backup,
-				this->role)};
+				this->role));
 			storage->root_key = derived_keys.root_key;
 			storage->next_send_header_key = derived_keys.next_header_key;
 			storage->send_chain_key = derived_keys.chain_key;
@@ -330,12 +330,12 @@ namespace Molch {
 			storage->purported_receive_header_key = storage->next_receive_header_key;
 
 			//RKp, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
-			auto derived_keys{derive_root_next_header_and_chain_keys(
+			OUTCOME_TRY(derived_keys, derive_root_next_header_and_chain_keys(
 					storage->our_private_ephemeral,
 					storage->our_public_ephemeral,
 					their_purported_public_ephemeral,
 					storage->root_key,
-					this->role)};
+					this->role));
 			storage->purported_root_key = derived_keys.root_key;
 			storage->purported_next_receive_header_key = derived_keys.next_header_key;
 			storage->purported_receive_chain_key = derived_keys.chain_key;

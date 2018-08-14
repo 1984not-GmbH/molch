@@ -63,12 +63,13 @@ int main() {
 		std::cout << previous_root_key << std::endl;
 
 		//derive root and chain key for Alice
-		const auto alice_derived_keys{derive_root_next_header_and_chain_keys(
+		TRY_WITH_RESULT(alice_derived_keys_result, derive_root_next_header_and_chain_keys(
 			alice_private_ephemeral,
 			alice_public_ephemeral,
 			bob_public_ephemeral,
 			previous_root_key,
-			Ratchet::Role::ALICE)};
+			Ratchet::Role::ALICE));
+		const auto& alice_derived_keys{alice_derived_keys_result.value()};
 
 		//print Alice's root and chain key
 		printf("Alice's root key:\n");
@@ -79,12 +80,13 @@ int main() {
 		std::cout << alice_derived_keys.next_header_key << std::endl;
 
 		//derive root and chain key for Bob
-		const auto bob_derived_keys{derive_root_next_header_and_chain_keys(
+		TRY_WITH_RESULT(bob_derived_keys_result, derive_root_next_header_and_chain_keys(
 			bob_private_ephemeral,
 			bob_public_ephemeral,
 			alice_public_ephemeral,
 			previous_root_key,
-			Ratchet::Role::BOB)};
+			Ratchet::Role::BOB));
+		const auto& bob_derived_keys{bob_derived_keys_result.value()};
 
 		//print Bob's root and chain key
 		printf("Bob's root key:\n");

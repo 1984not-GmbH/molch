@@ -73,14 +73,15 @@ int main() {
 			"ephemeral");
 
 		//derive Alice's initial root and chain key
-		auto alice_derived_keys{derive_initial_root_chain_and_header_keys(
+		TRY_WITH_RESULT(alice_derived_keys_result, derive_initial_root_chain_and_header_keys(
 			alice_private_identity,
 			alice_public_identity,
 			bob_public_identity,
 			alice_private_ephemeral,
 			alice_public_ephemeral,
 			bob_public_ephemeral,
-			Ratchet::Role::ALICE)};
+			Ratchet::Role::ALICE));
+		const auto& alice_derived_keys{alice_derived_keys_result.value()};
 
 		//print Alice's initial root and chain key
 		printf("Alice's initial root key:\n");
@@ -101,14 +102,15 @@ int main() {
 		std::cout << alice_derived_keys.next_receive_header_key << std::endl;
 
 		//derive Bob's initial root and chain key
-		auto bob_derived_keys{derive_initial_root_chain_and_header_keys(
+		TRY_WITH_RESULT(bob_derived_keys_result, derive_initial_root_chain_and_header_keys(
 			bob_private_identity,
 			bob_public_identity,
 			alice_public_identity,
 			bob_private_ephemeral,
 			bob_public_ephemeral,
 			alice_public_ephemeral,
-			Ratchet::Role::BOB)};
+			Ratchet::Role::BOB));
+		const auto& bob_derived_keys{bob_derived_keys_result.value()};
 
 		//print Bob's initial root and chain key
 		printf("Bob's initial root key:\n");

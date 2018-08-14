@@ -28,8 +28,8 @@
 
 namespace Molch {
 	struct DerivedRootNextHeadAndChainKey {
-		EmptyableRootKey root_key;
-		EmptyableHeaderKey next_header_key;
+		RootKey root_key;
+		HeaderKey next_header_key;
 		ChainKey chain_key;
 	};
 
@@ -40,7 +40,7 @@ namespace Molch {
 	 * and
 	 * RK, NHKp, CKp = KDF(HMAC-HASH(RK, DH(DHRp, DHRs)))
 	 */
-	DerivedRootNextHeadAndChainKey derive_root_next_header_and_chain_keys(
+	result<DerivedRootNextHeadAndChainKey> derive_root_next_header_and_chain_keys(
 			const PrivateKey& our_private_ephemeral,
 			const EmptyablePublicKey& our_public_ephemeral,
 			const EmptyablePublicKey& their_public_ephemeral,
@@ -48,13 +48,13 @@ namespace Molch {
 			const Ratchet::Role role);
 
 	struct DerivedInitialRootChainAndHeaderKeys {
-		EmptyableRootKey root_key;
+		RootKey root_key;
 		std::optional<ChainKey> send_chain_key;
 		std::optional<ChainKey> receive_chain_key;
-		std::optional<EmptyableHeaderKey> send_header_key;
-		std::optional<EmptyableHeaderKey> receive_header_key;
-		EmptyableHeaderKey next_send_header_key;
-		EmptyableHeaderKey next_receive_header_key;
+		std::optional<HeaderKey> send_header_key;
+		std::optional<HeaderKey> receive_header_key;
+		HeaderKey next_send_header_key;
+		HeaderKey next_receive_header_key;
 	};
 
 	/*
@@ -62,7 +62,7 @@ namespace Molch {
 	 *
 	 * RK, CKs/r, HKs/r = KDF(HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0)))
 	 */
-	DerivedInitialRootChainAndHeaderKeys derive_initial_root_chain_and_header_keys(
+	result<DerivedInitialRootChainAndHeaderKeys> derive_initial_root_chain_and_header_keys(
 			const PrivateKey& our_private_identity,
 			const EmptyablePublicKey& our_public_identity,
 			const EmptyablePublicKey& their_public_identity,
