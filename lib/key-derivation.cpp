@@ -45,16 +45,15 @@ namespace Molch {
 				&& !previous_root_key.empty);
 
 		//create buffers
-		EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key> diffie_hellman_secret;
 		EmptyableKey<crypto_generichash_BYTES,KeyType::Key> derivation_key;
 
 		//DH(DHRs, DHRr) or DH(DHRp, DHRs)
-		diffie_hellman(
-			diffie_hellman_secret,
+		TRY_WITH_RESULT(diffie_hellman_secret_result, diffie_hellman(
 			our_private_ephemeral,
 			our_public_ephemeral.toKey().value(),
 			their_public_ephemeral.toKey().value(),
-			role);
+			role));
+		const auto& diffie_hellman_secret{diffie_hellman_secret_result.value()};
 
 		//key to derive from
 		//HMAC-HASH(RK, DH(..., ...))
@@ -100,21 +99,19 @@ namespace Molch {
 				&& !our_public_ephemeral.empty
 				&& !their_public_ephemeral.empty);
 
-		EmptyableKey<crypto_secretbox_KEYBYTES,KeyType::Key> master_key;
-
 		//derive master_key to later derive the initial root key,
 		//header keys and chain keys from
 		//master_key = HASH( DH(A,B0) || DH(A0,B) || DH(A0,B0) )
 		static_assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES, "crypto_auth_BYTES is not crypto_secretbox_KEYBYTES");
-		triple_diffie_hellman(
-			master_key,
+		TRY_WITH_RESULT(master_key_result, triple_diffie_hellman(
 			our_private_identity,
 			our_public_identity.toKey().value(),
 			our_private_ephemeral,
 			our_public_ephemeral.toKey().value(),
 			their_public_identity.toKey().value(),
 			their_public_ephemeral.toKey().value(),
-			role);
+			role));
+		const auto& master_key{master_key_result.value()};
 
 		DerivedInitialRootChainAndHeaderKeys output;
 		//derive root key

@@ -26,8 +26,7 @@
 #include "gsl.hpp"
 
 namespace Molch {
-	void diffie_hellman(
-			EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key, //needs to be DIFFIE_HELLMAN_SIZE long
+	result<Key<DIFFIE_HELLMAN_SIZE,KeyType::Key>> diffie_hellman(
 			const PrivateKey& our_private_key, //needs to be PRIVATE_KEY_SIZE long
 			const PublicKey& our_public_key, //needs to be PUBLIC_KEY_SIZE long
 			const PublicKey& their_public_key, //needs to be PUBLIC_KEY_SIZE long
@@ -38,40 +37,41 @@ namespace Molch {
 		static_assert(DIFFIE_HELLMAN_SIZE == crypto_generichash_BYTES, "crypto_generichash_bytes is not DIFFIE_HELLMAN_SIZE");
 
 		//buffer for diffie hellman shared secret
-		EmptyableKey<crypto_scalarmult_SCALARBYTES,KeyType::Key> dh_secret;
+		Key<crypto_scalarmult_SCALARBYTES,KeyType::Key> dh_secret(uninitialized_t::uninitialized);
 
 		//do the diffie hellman key exchange
-		TRY_VOID(crypto_scalarmult(dh_secret, our_private_key, their_public_key));
-		dh_secret.empty = false;
+		OUTCOME_TRY(crypto_scalarmult(dh_secret, our_private_key, their_public_key));
 
 		//initialize hashing
-		TRY_WITH_RESULT(result, CryptoGenerichash::construct({nullptr, static_cast<size_t>(0)}, DIFFIE_HELLMAN_SIZE));
-		auto hash{result.value()};
-		TRY_VOID(hash.update(dh_secret));
+		OUTCOME_TRY(hash, CryptoGenerichash::construct({nullptr, static_cast<size_t>(0)}, DIFFIE_HELLMAN_SIZE));
+		OUTCOME_TRY(hash.update(dh_secret));
 
 		//add public keys to the input of the hash
 		switch (role) {
-			case Ratchet::Role::ALICE: //Alice (our_public_key|their_public_key)
-				TRY_VOID(hash.update(our_public_key));
-				TRY_VOID(hash.update(their_public_key));
+			case Ratchet::Role::ALICE: { //Alice (our_public_key|their_public_key)
+				OUTCOME_TRY(hash.update(our_public_key));
+				OUTCOME_TRY(hash.update(their_public_key));
 				break;
+			}
 
-			case Ratchet::Role::BOB: //Bob (their_public_key|our_public_key)
-				TRY_VOID(hash.update(their_public_key));
-				TRY_VOID(hash.update(our_public_key));
+			case Ratchet::Role::BOB: { //Bob (their_public_key|our_public_key)
+				OUTCOME_TRY(hash.update(their_public_key));
+				OUTCOME_TRY(hash.update(our_public_key));
 				break;
+			}
 
 			default:
 				break;
 		}
 
 		//finally write the hash to derived_key
-		TRY_VOID(hash.final(derived_key));
-		derived_key.empty = false;
+		Key<DIFFIE_HELLMAN_SIZE,KeyType::Key> derived_key;
+		OUTCOME_TRY(hash.final(derived_key));
+
+		return derived_key;
 	}
 
-	void triple_diffie_hellman(
-			EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key>& derived_key,
+	result<EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key>> triple_diffie_hellman(
 			const PrivateKey& our_private_identity,
 			const PublicKey& our_public_identity,
 			const PrivateKey& our_private_ephemeral,
@@ -80,45 +80,46 @@ namespace Molch {
 			const PublicKey& their_public_ephemeral,
 			const Ratchet::Role role) {
 		//buffers for all 3 Diffie Hellman exchanges
-		EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key> dh1;
-		EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key> dh2;
-		EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key> dh3;
+		Key<DIFFIE_HELLMAN_SIZE,KeyType::Key> dh1;
+		Key<DIFFIE_HELLMAN_SIZE,KeyType::Key> dh2;
 		switch (role) {
-			case Ratchet::Role::ALICE:
+			case Ratchet::Role::ALICE: {
 				//DH(our_identity, their_ephemeral)
-				diffie_hellman(
-					dh1,
-					our_private_identity,
-					our_public_identity,
-					their_public_ephemeral,
-					role);
+				OUTCOME_TRY(dh1_result, diffie_hellman(
+						our_private_identity,
+						our_public_identity,
+						their_public_ephemeral,
+						role));
+				dh1 = dh1_result;
 
 				//DH(our_ephemeral, their_identity)
-				diffie_hellman(
-					dh2,
-					our_private_ephemeral,
-					our_public_ephemeral,
-					their_public_identity,
-					role);
+				OUTCOME_TRY(dh2_result, diffie_hellman(
+						our_private_ephemeral,
+						our_public_ephemeral,
+						their_public_identity,
+						role));
+				dh2 = dh2_result;
 				break;
+			}
 
-			case Ratchet::Role::BOB:
+			case Ratchet::Role::BOB: {
 				//DH(our_ephemeral, their_identity)
-				diffie_hellman(
-					dh1,
-					our_private_ephemeral,
-					our_public_ephemeral,
-					their_public_identity,
-					role);
+				OUTCOME_TRY(dh1_result, diffie_hellman(
+						our_private_ephemeral,
+						our_public_ephemeral,
+						their_public_identity,
+						role));
+				dh1 = dh1_result;
 
 				//DH(our_identity, their_ephemeral)
-				diffie_hellman(
-					dh2,
-					our_private_identity,
-					our_public_identity,
-					their_public_ephemeral,
-					role);
+				OUTCOME_TRY(dh2_result, diffie_hellman(
+						our_private_identity,
+						our_public_identity,
+						their_public_ephemeral,
+						role));
+				dh2 = dh2_result;
 				break;
+			}
 
 			default:
 				break;
@@ -126,21 +127,22 @@ namespace Molch {
 
 		//DH(our_ephemeral, their_ephemeral)
 		//this is identical for both Alice and Bob
-		diffie_hellman(
-			dh3,
+		OUTCOME_TRY(dh3_result, diffie_hellman(
 			our_private_ephemeral,
 			our_public_ephemeral,
 			their_public_ephemeral,
-			role);
+			role));
+		const auto& dh3{dh3_result};
 
 		//now calculate HASH(DH(A,B0) || DH(A0,B) || DH(A0,B0))
 		//( HASH(dh1|| dh2 || dh3) )
-		TRY_WITH_RESULT(result, CryptoGenerichash::construct({nullptr, static_cast<size_t>(0)}, DIFFIE_HELLMAN_SIZE));
-		auto hash{result.value()};
-		TRY_VOID(hash.update(dh1));
-		TRY_VOID(hash.update(dh2));
-		TRY_VOID(hash.update(dh3));
-		TRY_VOID(hash.final(derived_key));
+		OUTCOME_TRY(hash, CryptoGenerichash::construct({nullptr, static_cast<size_t>(0)}, DIFFIE_HELLMAN_SIZE));
+		OUTCOME_TRY(hash.update(dh1));
+		OUTCOME_TRY(hash.update(dh2));
+		OUTCOME_TRY(hash.update(dh3));
+		EmptyableKey<DIFFIE_HELLMAN_SIZE,KeyType::Key> derived_key;
+		OUTCOME_TRY(hash.final(derived_key));
 		derived_key.empty = false;
+		return derived_key;
 	}
 }

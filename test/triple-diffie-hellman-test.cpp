@@ -78,32 +78,30 @@ int main() {
 		printf("Calculate shared secret via Triple Diffie Hellman ---------------------------\n\n");
 
 		//Triple Diffie Hellman on Alice's side
-		Molch::EmptyableKey<DIFFIE_HELLMAN_SIZE,Molch::KeyType::Key> alice_shared_secret;
-		triple_diffie_hellman(
-			alice_shared_secret,
+		TRY_WITH_RESULT(alice_shared_secret_result, triple_diffie_hellman(
 			alice_private_identity,
 			alice_public_identity,
 			alice_private_ephemeral,
 			alice_public_ephemeral,
 			bob_public_identity,
 			bob_public_ephemeral,
-			Ratchet::Role::ALICE);
+			Ratchet::Role::ALICE));
+		const auto& alice_shared_secret{alice_shared_secret_result.value()};
 
 		//print Alice's shared secret
 		printf("Alice's shared secret H(DH(A_priv,B0_pub)||DH(A0_priv,B_pub)||DH(A0_priv,B0_pub)):\n");
 		std::cout << alice_shared_secret << std::endl;
 
 		//Triple Diffie Hellman on Bob's side
-		Molch::EmptyableKey<DIFFIE_HELLMAN_SIZE,Molch::KeyType::Key> bob_shared_secret;
-		triple_diffie_hellman(
-			bob_shared_secret,
+		TRY_WITH_RESULT(bob_shared_secret_result, triple_diffie_hellman(
 			bob_private_identity,
 			bob_public_identity,
 			bob_private_ephemeral,
 			bob_public_ephemeral,
 			alice_public_identity,
 			alice_public_ephemeral,
-			Ratchet::Role::BOB);
+			Ratchet::Role::BOB));
+		const auto& bob_shared_secret{bob_shared_secret_result.value()};
 
 		//print Bob's shared secret
 		printf("Bob's shared secret H(DH(B0_priv, A_pub)||DH(B_priv, A0_pub)||DH(B0_priv, A0_pub)):\n");

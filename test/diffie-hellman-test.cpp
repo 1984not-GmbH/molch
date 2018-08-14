@@ -53,26 +53,24 @@ int main() noexcept {
 			"");
 
 		//Diffie Hellman on Alice's side
-		Molch::EmptyableKey<DIFFIE_HELLMAN_SIZE,Molch::KeyType::Key> alice_shared_secret;
-		diffie_hellman(
-			alice_shared_secret,
+		TRY_WITH_RESULT(alice_shared_secret_result, diffie_hellman(
 			alice_private_key,
 			alice_public_key,
 			bob_public_key,
-			Ratchet::Role::ALICE);
+			Ratchet::Role::ALICE));
+		const auto& alice_shared_secret{alice_shared_secret_result.value()};
 
 		//print Alice's shared secret
 		printf("Alice's shared secret ECDH(A_priv, B_pub) (%zu Bytes):\n", alice_shared_secret.size());
 		std::cout << alice_shared_secret << std::endl;
 
 		//Diffie Hellman on Bob's side
-		Molch::EmptyableKey<DIFFIE_HELLMAN_SIZE,Molch::KeyType::Key> bob_shared_secret;
-		diffie_hellman(
-			bob_shared_secret,
+		TRY_WITH_RESULT(bob_shared_secret_result, diffie_hellman(
 			bob_private_key,
 			bob_public_key,
 			alice_public_key,
-			Ratchet::Role::BOB);
+			Ratchet::Role::BOB));
+		const auto& bob_shared_secret{bob_shared_secret_result.value()};
 
 		//print Bob's shared secret
 		printf("Bob's shared secret ECDH(B_priv, A_pub) (%zu Bytes):\n", bob_shared_secret.size());
