@@ -211,12 +211,12 @@ namespace Molch {
 	 */
 	static result<void> stageSkippedHeaderAndMessageKeys(
 			HeaderAndMessageKeyStore& staging_area,
-			ChainKey * const output_chain_key, //output, optional
+			EmptyableChainKey * const output_chain_key, //output, optional
 			MessageKey * const output_message_key, //output, optional
 			const EmptyableHeaderKey& current_header_key,
 			const uint32_t current_message_number,
 			const uint32_t future_message_number,
-			const ChainKey& chain_key) {
+			const EmptyableChainKey& chain_key) {
 		//when chain key is <none>, do nothing
 		if (chain_key.isNone()) {
 			return outcome::success();
@@ -228,9 +228,9 @@ namespace Molch {
 
 		//set current_chain_key to chain key to initialize it for the calculation that's
 		//following
-		ChainKey current_chain_key{chain_key};
+		EmptyableChainKey current_chain_key{chain_key};
 
-		ChainKey next_chain_key;
+		EmptyableChainKey next_chain_key;
 		MessageKey current_message_key;
 		for (uint32_t pos{current_message_number}; pos < future_message_number; pos++) {
 			OUTCOME_TRY(current_message_key, current_chain_key.deriveMessageKey());
@@ -341,7 +341,7 @@ namespace Molch {
 			storage->purported_receive_chain_key = derived_keys.chain_key;
 
 			//backup the purported chain key because it will get overwritten in the next step
-			ChainKey purported_chain_key_backup{storage->purported_receive_chain_key};
+			EmptyableChainKey purported_chain_key_backup{storage->purported_receive_chain_key};
 
 			//CKp, MK = staged_header_and_message_keys(HKp, 0, Np, CKp)
 			OUTCOME_TRY(stageSkippedHeaderAndMessageKeys(
@@ -687,18 +687,18 @@ namespace Molch {
 				(!conversation.has_send_chain_key || (conversation.send_chain_key.len != CHAIN_KEY_SIZE))) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "send_chain_key is missing from the potobuf.");
 		}
-		OUTCOME_TRY(send_chain_key, ChainKey::fromSpan({conversation.send_chain_key}));
+		OUTCOME_TRY(send_chain_key, EmptyableChainKey::fromSpan({conversation.send_chain_key}));
 		ratchet.storage->send_chain_key = send_chain_key;
 		//receive chain key
 		if ((ratchet.role == Role::ALICE) &&
 				(!conversation.has_receive_chain_key || (conversation.receive_chain_key.len != CHAIN_KEY_SIZE))) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "receive_chain_key is missing from the protobuf.");
 		}
-		OUTCOME_TRY(receive_chain_key, ChainKey::fromSpan({conversation.receive_chain_key}));
+		OUTCOME_TRY(receive_chain_key, EmptyableChainKey::fromSpan({conversation.receive_chain_key}));
 		ratchet.storage->receive_chain_key = receive_chain_key;
 		//purported receive chain key
 		if (conversation.has_purported_receive_chain_key && (conversation.purported_receive_chain_key.len == CHAIN_KEY_SIZE)) {
-			OUTCOME_TRY(purported_receive_chain_key, ChainKey::fromSpan({conversation.purported_receive_chain_key}));
+			OUTCOME_TRY(purported_receive_chain_key, EmptyableChainKey::fromSpan({conversation.purported_receive_chain_key}));
 			ratchet.storage->purported_receive_chain_key = purported_receive_chain_key;
 		}
 

@@ -36,7 +36,7 @@ int main() {
 		TRY_VOID(Molch::sodium_init());
 
 		//create random chain key
-		ChainKey chain_key;
+		EmptyableChainKey chain_key;
 		chain_key.fillRandom();
 
 		//print first chain key

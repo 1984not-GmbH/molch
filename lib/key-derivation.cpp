@@ -139,7 +139,7 @@ namespace Molch {
 					//CKs=<none>
 					output.send_chain_key.reset();
 					//CKr = KDF(master_key, 0x04)
-					OUTCOME_TRY(receive_chain_key, master_key.deriveSubkeyWithIndex<ChainKey>(4));
+					OUTCOME_TRY(receive_chain_key, master_key.deriveSubkeyWithIndex<EmptyableChainKey>(4));
 					output.receive_chain_key.emplace(receive_chain_key);
 				}
 				break;
@@ -165,7 +165,7 @@ namespace Molch {
 					//CKr = <none>
 					output.receive_chain_key.reset();
 					//CKs = KDF(master_key, 0x04)
-					OUTCOME_TRY(send_chain_key, master_key.deriveSubkeyWithIndex<ChainKey>(4));
+					OUTCOME_TRY(send_chain_key, master_key.deriveSubkeyWithIndex<EmptyableChainKey>(4));
 					output.send_chain_key.emplace(send_chain_key);
 				}
 				break;

@@ -35,7 +35,7 @@ int main() {
 		TRY_VOID(Molch::sodium_init());
 
 		//create random initial chain key
-		ChainKey last_chain_key;
+		EmptyableChainKey last_chain_key;
 		last_chain_key.fillRandom();
 
 		//print first chain key
@@ -44,7 +44,7 @@ int main() {
 
 
 		//derive a chain of chain keys
-		ChainKey next_chain_key;
+		EmptyableChainKey next_chain_key;
 		unsigned int counter;
 		for (counter = 1; counter <= 5; counter++) {
 			TRY_WITH_RESULT(next_chain_key_result, last_chain_key.deriveChainKey());

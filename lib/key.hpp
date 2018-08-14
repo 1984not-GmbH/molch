@@ -414,14 +414,35 @@ namespace Molch {
 
 	using MessageKey = Key<MESSAGE_KEY_SIZE,KeyType::MessageKey>;
 
-	class ChainKey : public EmptyableKey<CHAIN_KEY_SIZE,KeyType::ChainKey> {
+	class EmptyableChainKey : public EmptyableKey<CHAIN_KEY_SIZE,KeyType::ChainKey> {
 	public:
 		//inherit constructors
 		using EmptyableKey<CHAIN_KEY_SIZE,KeyType::ChainKey>::EmptyableKey;
 
+		static result<EmptyableChainKey> fromSpan(const span<const std::byte> input) {
+			EmptyableChainKey key;
+			key.empty = false;
+			OUTCOME_TRY(copyFromTo(input, key));
+			return key;
+		}
+
+		result<MessageKey> deriveMessageKey() const noexcept {
+			OUTCOME_TRY(subkey, this->deriveSubkeyWithIndex<EmptyableKey<MESSAGE_KEY_SIZE,KeyType::MessageKey>>(0));
+			return subkey.toKey().value(); //this will never be empty
+		}
+
+		result<EmptyableChainKey> deriveChainKey() const noexcept {
+			return this->deriveSubkeyWithIndex<EmptyableChainKey>(1);
+		}
+	};
+
+	class ChainKey : public Key<CHAIN_KEY_SIZE,KeyType::ChainKey> {
+	public:
+		//inherit constructors
+		using Key<CHAIN_KEY_SIZE,KeyType::ChainKey>::Key;
+
 		static result<ChainKey> fromSpan(const span<const std::byte> input) {
 			ChainKey key;
-			key.empty = false;
 			OUTCOME_TRY(copyFromTo(input, key));
 			return key;
 		}

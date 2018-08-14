@@ -45,9 +45,9 @@ namespace Molch {
 		EmptyableHeaderKey purported_receive_header_key;
 		EmptyableHeaderKey purported_next_receive_header_key;
 		//chain keys
-		ChainKey send_chain_key; //CKs
-		ChainKey receive_chain_key; //CKr
-		ChainKey purported_receive_chain_key; //CKp
+		EmptyableChainKey send_chain_key; //CKs
+		EmptyableChainKey receive_chain_key; //CKr
+		EmptyableChainKey purported_receive_chain_key; //CKp
 		//identity keys
 		PublicKey our_public_identity; //DHIs
 		PublicKey their_public_identity; //DHIr

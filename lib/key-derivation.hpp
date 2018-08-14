@@ -30,7 +30,7 @@ namespace Molch {
 	struct DerivedRootNextHeadAndChainKey {
 		RootKey root_key;
 		HeaderKey next_header_key;
-		ChainKey chain_key;
+		EmptyableChainKey chain_key;
 	};
 
 	/*
@@ -49,8 +49,8 @@ namespace Molch {
 
 	struct DerivedInitialRootChainAndHeaderKeys {
 		RootKey root_key;
-		std::optional<ChainKey> send_chain_key;
-		std::optional<ChainKey> receive_chain_key;
+		std::optional<EmptyableChainKey> send_chain_key;
+		std::optional<EmptyableChainKey> receive_chain_key;
 		std::optional<HeaderKey> send_header_key;
 		std::optional<HeaderKey> receive_header_key;
 		HeaderKey next_send_header_key;
