@@ -131,7 +131,7 @@ namespace Molch {
 
 	std::ostream& operator<<(std::ostream& stream, const HeaderAndMessageKey& header_and_message_key) {
 		stream << "Header key:\n";
-		header_and_message_key.headerKey().printHex(stream) << '\n';
+		stream << header_and_message_key.headerKey() << '\n';
 		stream << "Message key:\n";
 		stream << header_and_message_key.messageKey() << '\n';
 		stream << "Expiration date:\n" << header_and_message_key.expirationDate().count() << 's' << '\n';

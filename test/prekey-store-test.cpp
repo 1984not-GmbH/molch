@@ -153,7 +153,7 @@ int main() {
 		const auto& private_prekey1{private_prekey1_result.value()};
 		printf("Get a Prekey:\n");
 		printf("Public key:\n");
-		public_prekey.printHex(std::cout);
+		std::cout << public_prekey;
 		printf("Private key:\n");
 		std::cout << private_prekey1 << std::endl;
 

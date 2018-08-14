@@ -53,7 +53,7 @@ MOLCH_PUBLIC(void) create_and_print_message(
 	//create header key
 	header_key.fillRandom();
 	printf("Header key (%zu Bytes):\n", header_key.size());
-	header_key.printHex(std::cout);
+	std::cout << header_key;
 	putchar('\n');
 
 	//create message key

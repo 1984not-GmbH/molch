@@ -41,7 +41,7 @@ int main() {
 
 		//print first chain key
 		printf("Chain key (%zu Bytes):\n", chain_key.size());
-		chain_key.printHex(std::cout) << std::endl;
+		std::cout << chain_key << std::endl;
 
 		//derive message key from chain key
 

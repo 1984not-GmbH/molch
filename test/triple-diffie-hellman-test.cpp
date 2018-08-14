@@ -91,7 +91,7 @@ int main() {
 
 		//print Alice's shared secret
 		printf("Alice's shared secret H(DH(A_priv,B0_pub)||DH(A0_priv,B_pub)||DH(A0_priv,B0_pub)):\n");
-		alice_shared_secret.printHex(std::cout) << std::endl;
+		std::cout << alice_shared_secret << std::endl;
 
 		//Triple Diffie Hellman on Bob's side
 		Molch::EmptyableKey<DIFFIE_HELLMAN_SIZE,Molch::KeyType::Key> bob_shared_secret;
@@ -107,7 +107,7 @@ int main() {
 
 		//print Bob's shared secret
 		printf("Bob's shared secret H(DH(B0_priv, A_pub)||DH(B_priv, A0_pub)||DH(B0_priv, A0_pub)):\n");
-		bob_shared_secret.printHex(std::cout) << std::endl;
+		std::cout << bob_shared_secret << std::endl;
 
 		//compare both shared secrets
 		if (alice_shared_secret != bob_shared_secret) {

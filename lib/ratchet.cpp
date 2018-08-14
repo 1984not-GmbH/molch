@@ -762,49 +762,49 @@ namespace Molch {
 		const auto& storage{this->storage};
 		//root keys
 		stream << "Root key:\n";
-		storage->root_key.printHex(stream) << '\n';
+		stream << storage->root_key << '\n';
 		stream << "Purported root key:\n";
-		storage->purported_root_key.printHex(stream) << '\n';
+		stream << storage->purported_root_key << '\n';
 
 		//header keys
 		if (storage->send_header_key.has_value()) {
 			stream << "Send header key:\n";
-			storage->send_header_key.value().printHex(stream) << '\n';
+			stream << storage->send_header_key.value() << '\n';
 		}
 		stream << "Receive header key:\n";
-		storage->receive_header_key.printHex(stream) << '\n';
+		stream << storage->receive_header_key << '\n';
 		stream << "Next send header key:\n";
-		storage->next_send_header_key.printHex(stream) << '\n';
+		stream << storage->next_send_header_key << '\n';
 		stream << "Next receive header key:\n";
-		storage->next_receive_header_key.printHex(stream) << '\n';
+		stream << storage->next_receive_header_key << '\n';
 		stream << "Purported receive header key:\n";
-		storage->purported_receive_header_key.printHex(stream) << '\n';
+		stream << storage->purported_receive_header_key << '\n';
 		stream << "Purported next receive header key:\n";
-		storage->purported_next_receive_header_key.printHex(stream) << '\n';
+		stream << storage->purported_next_receive_header_key << '\n';
 
 		//chain keys
 		stream << "Send chain key:\n";
-		storage->send_chain_key.printHex(stream) << '\n';
+		stream << storage->send_chain_key << '\n';
 		stream << "Receive chain key:\n";
-		storage->receive_chain_key.printHex(stream) << '\n';
+		stream << storage->receive_chain_key << '\n';
 		stream << "Purported receive chain key:\n";
-		storage->purported_receive_chain_key.printHex(stream) << '\n';
+		stream << storage->purported_receive_chain_key << '\n';
 
 		//identity keys
 		stream << "Our public identity key:\n";
-		storage->our_public_identity.printHex(stream) << '\n';
+		stream << storage->our_public_identity << '\n';
 		stream << "Their public identity key:\n";
-		storage->their_public_identity.printHex(stream) << '\n';
+		stream << storage->their_public_identity << '\n';
 
 		//ephemeral keys
 		stream << "Our private ephemeral key:\n";
 		stream << storage->our_private_ephemeral << '\n';
 		stream << "Our public ephemeral key:\n";
-		storage->our_public_ephemeral.printHex(stream) << '\n';
+		stream << storage->our_public_ephemeral << '\n';
 		stream << "Their public ephemeral key:\n";
-		storage->their_public_ephemeral.printHex(stream) << '\n';
+		stream << storage->their_public_ephemeral << '\n';
 		stream << "Their purported public ephemeral key:\n";
-		storage->their_purported_public_ephemeral.printHex(stream) << '\n';
+		stream << storage->their_purported_public_ephemeral << '\n';
 
 		//numbers
 		stream << "Send message number: " << this->send_message_number << '\n';

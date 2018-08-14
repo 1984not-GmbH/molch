@@ -63,7 +63,7 @@ int main() noexcept {
 
 		//print Alice's shared secret
 		printf("Alice's shared secret ECDH(A_priv, B_pub) (%zu Bytes):\n", alice_shared_secret.size());
-		alice_shared_secret.printHex(std::cout) << std::endl;
+		std::cout << alice_shared_secret << std::endl;
 
 		//Diffie Hellman on Bob's side
 		Molch::EmptyableKey<DIFFIE_HELLMAN_SIZE,Molch::KeyType::Key> bob_shared_secret;
@@ -76,7 +76,7 @@ int main() noexcept {
 
 		//print Bob's shared secret
 		printf("Bob's shared secret ECDH(B_priv, A_pub) (%zu Bytes):\n", bob_shared_secret.size());
-		bob_shared_secret.printHex(std::cout) << std::endl;
+		std::cout << bob_shared_secret << std::endl;
 
 		//compare both shared secrets
 		if (alice_shared_secret != bob_shared_secret) {

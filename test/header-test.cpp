@@ -39,7 +39,7 @@ int main() {
 		EmptyablePublicKey our_public_ephemeral_key;
 		our_public_ephemeral_key.fillRandom();
 		printf("Our public ephemeral key (%zu Bytes):\n", our_public_ephemeral_key.size());
-		our_public_ephemeral_key.printHex(std::cout);
+		std::cout << our_public_ephemeral_key;
 
 		//message numbers
 		uint32_t message_number{2};
@@ -63,7 +63,7 @@ int main() {
 		TRY_WITH_RESULT(extracted_header, header_extract(header.value()));
 
 		printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_header.value().their_public_ephemeral.size());
-		extracted_header.value().their_public_ephemeral.printHex(std::cout);
+		std::cout << extracted_header.value().their_public_ephemeral;
 		printf("Extracted message number: %u\n", extracted_header.value().message_number);
 		printf("Extracted previous message number: %u\n", extracted_header.value().previous_message_number);
 		putchar('\n');

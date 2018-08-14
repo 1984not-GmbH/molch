@@ -60,7 +60,7 @@ int main() {
 
 		//print previous root key
 		printf("Previous root key (%zu Bytes):\n", previous_root_key.size());
-		previous_root_key.printHex(std::cout) << std::endl;
+		std::cout << previous_root_key << std::endl;
 
 		//derive root and chain key for Alice
 		const auto alice_derived_keys{derive_root_next_header_and_chain_keys(
@@ -72,11 +72,11 @@ int main() {
 
 		//print Alice's root and chain key
 		printf("Alice's root key:\n");
-		alice_derived_keys.root_key.printHex(std::cout);
+		std::cout << alice_derived_keys.root_key;
 		printf("Alice's chain key:\n");
-		alice_derived_keys.chain_key.printHex(std::cout);
+		std::cout << alice_derived_keys.chain_key;
 		printf("Alice's header key:\n");
-		alice_derived_keys.next_header_key.printHex(std::cout) << std::endl;
+		std::cout << alice_derived_keys.next_header_key << std::endl;
 
 		//derive root and chain key for Bob
 		const auto bob_derived_keys{derive_root_next_header_and_chain_keys(
@@ -88,11 +88,11 @@ int main() {
 
 		//print Bob's root and chain key
 		printf("Bob's root key:\n");
-		bob_derived_keys.root_key.printHex(std::cout);
+		std::cout << bob_derived_keys.root_key;
 		printf("Bob's chain key:\n");
-		bob_derived_keys.chain_key.printHex(std::cout);
+		std::cout << bob_derived_keys.chain_key;
 		printf("Bob's header key:\n");
-		bob_derived_keys.next_header_key.printHex(std::cout) << std::endl;
+		std::cout << bob_derived_keys.next_header_key << std::endl;
 
 		//compare Alice's and Bob's root keys
 		if (alice_derived_keys.root_key == bob_derived_keys.root_key) {

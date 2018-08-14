@@ -177,7 +177,7 @@ int main() {
 
 			//print the new header key
 			printf("New Header Key No. %zu:\n", i);
-			header_key.printHex(std::cout) << std::endl;
+			std::cout << header_key << std::endl;
 
 			//print the new message key
 			printf("New message key No. %zu:\n", i);

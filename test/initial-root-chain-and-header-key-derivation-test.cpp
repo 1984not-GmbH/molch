@@ -84,21 +84,21 @@ int main() {
 
 		//print Alice's initial root and chain key
 		printf("Alice's initial root key:\n");
-		alice_derived_keys.root_key.printHex(std::cout) << std::endl;
+		std::cout << alice_derived_keys.root_key << std::endl;
 		if (alice_derived_keys.send_chain_key.has_value()) {
 			throw Exception(status_type::INCORRECT_DATA, "Alice should not have a send chain key.");
 		}
 		printf("Alice's initial receive chain key:\n");
-		alice_derived_keys.receive_chain_key.value().printHex(std::cout) << std::endl;
+		std::cout << alice_derived_keys.receive_chain_key.value() << std::endl;
 		if (alice_derived_keys.send_header_key.has_value()) {
 			throw Exception(status_type::INCORRECT_DATA, "Alice should not have a send header key.");
 		}
 		printf("Alice's initial receive header key:n");
-		alice_derived_keys.receive_header_key.value().printHex(std::cout) << std::endl;
+		std::cout << alice_derived_keys.receive_header_key.value() << std::endl;
 		printf("Alice's initial next send header key:\n");
-		alice_derived_keys.next_send_header_key.printHex(std::cout) << std::endl;
+		std::cout << alice_derived_keys.next_send_header_key << std::endl;
 		printf("Alice's initial next receive header key\n");
-		alice_derived_keys.next_receive_header_key.printHex(std::cout) << std::endl;
+		std::cout << alice_derived_keys.next_receive_header_key << std::endl;
 
 		//derive Bob's initial root and chain key
 		auto bob_derived_keys{derive_initial_root_chain_and_header_keys(
@@ -112,21 +112,21 @@ int main() {
 
 		//print Bob's initial root and chain key
 		printf("Bob's initial root key:\n");
-		bob_derived_keys.root_key.printHex(std::cout) << std::endl;
+		std::cout << bob_derived_keys.root_key << std::endl;
 		printf("Bob's initial send chain key:\n");
-		bob_derived_keys.send_chain_key.value().printHex(std::cout) << std::endl;
+		std::cout << bob_derived_keys.send_chain_key.value() << std::endl;
 		if (bob_derived_keys.receive_chain_key.has_value()) {
 			throw Exception(status_type::INCORRECT_DATA, "Bob should not have a receive chain key.");
 		}
 		printf("Bob's initial send header key:\n");
-		bob_derived_keys.send_header_key.value().printHex(std::cout) << std::endl;
+		std::cout << bob_derived_keys.send_header_key.value() << std::endl;
 		if (bob_derived_keys.receive_header_key.has_value()) {
 			throw Exception(status_type::INCORRECT_DATA, "Bob should not have a receive header key.");
 		}
 		printf("Bob's initial next send header key:\n");
-		bob_derived_keys.next_send_header_key.printHex(std::cout) << std::endl;
+		std::cout << bob_derived_keys.next_send_header_key << std::endl;
 		printf("Bob's initial next receive header key:\n");
-		bob_derived_keys.next_receive_header_key.printHex(std::cout) << std::endl;
+		std::cout << bob_derived_keys.next_receive_header_key << std::endl;
 
 		//compare Alice's and Bob's initial root key
 		if (alice_derived_keys.root_key != bob_derived_keys.root_key) {

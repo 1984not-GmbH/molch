@@ -116,9 +116,9 @@ int main() {
 		putchar('\n');
 		//print Alice's initial root and chain keys
 		printf("Alice's initial root key (%zu Bytes):\n", alice_state.storage->root_key.size());
-		alice_state.storage->root_key.printHex(std::cout);
+		std::cout << alice_state.storage->root_key;
 		printf("Alice's initial chain key (%zu Bytes):\n", alice_state.storage->send_chain_key.size());
-		alice_state.storage->send_chain_key.printHex(std::cout);
+		std::cout << alice_state.storage->send_chain_key;
 		putchar('\n');
 
 		//start new ratchet for bob
@@ -134,9 +134,9 @@ int main() {
 		putchar('\n');
 		//print Bob's initial root and chain keys
 		printf("Bob's initial root key (%zu Bytes):\n", bob_state.storage->root_key.size());
-		bob_state.storage->root_key.printHex(std::cout);
+		std::cout << bob_state.storage->root_key;
 		printf("Bob's initial chain key (%zu Bytes):\n", bob_state.storage->send_chain_key.size());
-		bob_state.storage->send_chain_key.printHex(std::cout);
+		std::cout << bob_state.storage->send_chain_key;
 		putchar('\n');
 
 		//compare Alice's and Bob's initial root and chain keys
@@ -160,7 +160,7 @@ int main() {
 		printf("Alice Ratchet 1 send message key 1:\n");
 		std::cout << alice_send_data1.message_key;
 		printf("Alice Ratchet 1 send header key 1:\n");
-		alice_send_data1.header_key.printHex(std::cout);
+		std::cout << alice_send_data1.header_key;
 		putchar('\n');
 
 		//second message key
@@ -170,7 +170,7 @@ int main() {
 		printf("Alice Ratchet 1 send message key 2:\n");
 		std::cout << alice_send_data2.message_key;
 		printf("Alice Ratchet 1 send header key 2:\n");
-		alice_send_data2.header_key.printHex(std::cout);
+		std::cout << alice_send_data2.header_key;
 		putchar('\n');
 
 		//third message_key
@@ -180,7 +180,7 @@ int main() {
 		printf("Alice Ratchet 1 send message key 3:\n");
 		std::cout << alice_send_data3.message_key;
 		printf("Alice Ratchet 1 send header key 3:\n");
-		alice_send_data3.header_key.printHex(std::cout);
+		std::cout << alice_send_data3.header_key;
 		putchar('\n');
 
 		//--------------------------------------------------------------------------
@@ -188,9 +188,9 @@ int main() {
 		const auto bob_receive_header_keys{bob_state.getReceiveHeaderKeys()};
 
 		printf("Bob's first current receive header key:\n");
-		bob_receive_header_keys.current.printHex(std::cout);
+		std::cout << bob_receive_header_keys.current;
 		printf("Bob's first next receive_header_key:\n");
-		bob_receive_header_keys.next.printHex(std::cout) << std::endl;
+		std::cout << bob_receive_header_keys.next << std::endl;
 
 		//check header decryptability
 		auto decryptable{[&]() {
@@ -229,9 +229,9 @@ int main() {
 		const auto bob_receive_header_keys2{bob_state.getReceiveHeaderKeys()};
 
 		printf("Bob's second current receive header key:\n");
-		bob_receive_header_keys2.current.printHex(std::cout);
+		std::cout << bob_receive_header_keys2.current;
 		printf("Bob's second next receive_header_key:\n");
-		bob_receive_header_keys2.next.printHex(std::cout);
+		std::cout << bob_receive_header_keys2.next;
 		putchar('\n');
 
 		//check header decryptability
@@ -268,9 +268,9 @@ int main() {
 		const auto bob_receive_header_keys3{bob_state.getReceiveHeaderKeys()};
 
 		printf("Bob's third current receive header key:\n");
-		bob_receive_header_keys3.current.printHex(std::cout);
+		std::cout << bob_receive_header_keys3.current;
 		printf("Bob's third next receive_header_key:\n");
-		bob_receive_header_keys3.next.printHex(std::cout);
+		std::cout << bob_receive_header_keys3.next;
 		putchar('\n');
 
 		//check header decryptability
@@ -334,7 +334,7 @@ int main() {
 		printf("Bob Ratchet 2 send message key 1:\n");
 		std::cout << bob_send_data1.message_key;
 		printf("Bob Ratchet 2 send header key 1:\n");
-		bob_send_data1.header_key.printHex(std::cout) << std::endl;
+		std::cout << bob_send_data1.header_key << std::endl;
 
 		//second message key
 		TRY_WITH_RESULT(bob_send_data2_result, bob_state.getSendData());
@@ -343,7 +343,7 @@ int main() {
 		printf("Bob Ratchet 2 send message key 1:\n");
 		std::cout << bob_send_data2.message_key;
 		printf("Bob Ratchet 2 send header key 1:\n");
-		bob_send_data2.header_key.printHex(std::cout) << std::endl;
+		std::cout << bob_send_data2.header_key << std::endl;
 
 		//third message key
 		TRY_WITH_RESULT(bob_send_data3_result, bob_state.getSendData());
@@ -352,7 +352,7 @@ int main() {
 		printf("Bob Ratchet 2 send message key 3:\n");
 		std::cout << bob_send_data3.message_key;
 		printf("Bob Ratchet 2 send header key 3:\n");
-		bob_send_data3.header_key.printHex(std::cout) << std::endl;
+		std::cout << bob_send_data3.header_key << std::endl;
 
 		//--------------------------------------------------------------------------
 		puts("----------------------------------------\n");
@@ -360,9 +360,9 @@ int main() {
 		const auto alice_receive_header_keys1{alice_state.getReceiveHeaderKeys()};
 
 		printf("Alice's first current receive header key:\n");
-		alice_receive_header_keys1.current.printHex(std::cout);
+		std::cout << alice_receive_header_keys1.current;
 		printf("Alice's first next receive_header_key:\n");
-		alice_receive_header_keys1.next.printHex(std::cout) << std::endl;
+		std::cout << alice_receive_header_keys1.next << std::endl;
 
 		//check header decryptability
 		if (alice_receive_header_keys1.current == bob_send_data1.header_key) {
@@ -397,9 +397,9 @@ int main() {
 		const auto alice_receive_header_keys2{alice_state.getReceiveHeaderKeys()};
 
 		printf("Alice's current receive header key:\n");
-		alice_receive_header_keys2.current.printHex(std::cout);
+		std::cout << alice_receive_header_keys2.current;
 		printf("Alice's next receive_header_key:\n");
-		alice_receive_header_keys2.next.printHex(std::cout) << std::endl;
+		std::cout << alice_receive_header_keys2.next << std::endl;
 
 		//check header decryptability
 		decryptable = [&]() {
@@ -447,7 +447,7 @@ int main() {
 		EmptyableHeaderKey alice_receive_header_key2;
 		alice_receive_header_key2 = alice_state.skipped_header_and_message_keys.keys().back().headerKey();
 		printf("Alice Ratchet 2 receive header key 2:\n");
-		alice_receive_header_key2.printHex(std::cout) << std::endl;
+		std::cout << alice_receive_header_key2 << std::endl;
 
 		//compare header keys
 		if (alice_receive_header_key2 != bob_send_data2.header_key) {

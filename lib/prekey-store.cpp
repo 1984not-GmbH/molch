@@ -138,7 +138,7 @@ namespace Molch {
 	std::ostream& Prekey::print(std::ostream& stream) const {
 		stream << "Expiration Date = " << this->expiration_date.count() << "s" << '\n';
 		stream << "Public Prekey:\n";
-		this->public_key.printHex(stream) << '\n';
+		stream << this->public_key << '\n';
 		stream << "Private Prekey:\n";
 		stream << this->private_key << '\n';
 

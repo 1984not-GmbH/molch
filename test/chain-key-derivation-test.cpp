@@ -40,7 +40,7 @@ int main() {
 
 		//print first chain key
 		printf("Initial chain key (%i Bytes):\n", crypto_auth_BYTES);
-		last_chain_key.printHex(std::cout) << std::endl;
+		std::cout << last_chain_key << std::endl;
 
 
 		//derive a chain of chain keys
@@ -52,7 +52,7 @@ int main() {
 
 			//print the derived chain key
 			printf("Chain key Nr. %i:\n", counter);
-			next_chain_key.printHex(std::cout) << std::endl;
+			std::cout << next_chain_key << std::endl;
 
 			//check that chain keys are different
 			if (last_chain_key == next_chain_key) {

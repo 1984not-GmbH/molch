@@ -93,7 +93,7 @@ namespace Molch {
 
 	std::ostream& operator<<(std::ostream& stream, const User& user) {
 		stream << "Public Signing Key:\n";
-		user.id().printHex(stream) << "\n\n";
+		stream << user.id() << "\n\n";
 		stream << "\nMaster Keys:\n";
 		user.masterKeys().print(stream);
 		stream << "\nPrekeys:\n";

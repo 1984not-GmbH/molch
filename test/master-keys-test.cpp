@@ -137,7 +137,7 @@ int main() {
 		//print the keys
 		printf("Signing keypair:\n");
 		printf("Public:\n");
-		unspiced_master_keys.getSigningKey().printHex(std::cout);
+		std::cout << unspiced_master_keys.getSigningKey();
 
 		printf("\nPrivate:\n");
 		{
@@ -148,7 +148,7 @@ int main() {
 
 		printf("\n\nIdentity keys:\n");
 		printf("Public:\n");
-		unspiced_master_keys.getIdentityKey().printHex(std::cout);
+		std::cout << unspiced_master_keys.getIdentityKey();
 
 		printf("\nPrivate:\n");
 		{
@@ -176,7 +176,7 @@ int main() {
 		//print the keys
 		printf("Signing keypair:\n");
 		printf("Public:\n");
-		spiced_master_keys.getSigningKey().printHex(std::cout) << std::endl;
+		std::cout << spiced_master_keys.getSigningKey() << std::endl;
 
 		printf("Private:\n");
 		{
@@ -187,7 +187,7 @@ int main() {
 
 		printf("\nIdentity keys:\n");
 		printf("Public:\n");
-		spiced_master_keys.getIdentityKey().printHex(std::cout) << std::endl;
+		std::cout << spiced_master_keys.getIdentityKey() << std::endl;
 
 		printf("Private:\n");
 		{

@@ -225,11 +225,11 @@ namespace Molch {
 		Unlocker unlocker{*this};
 
 		stream << "Public Signing Key:\n";
-		this->public_signing_key.printHex(stream) << '\n';
+		stream << this->public_signing_key << '\n';
 		stream << "Private Signing Key:\n";
 		stream << *this->private_signing_key << '\n';
 		stream << "Public Identity Key:\n";
-		this->public_identity_key.printHex(stream) << '\n';
+		stream << this->public_identity_key << '\n';
 		stream << "Private Identity Key:\n";
 		stream << this->private_identity_key << '\n';
 

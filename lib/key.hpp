@@ -386,30 +386,31 @@ namespace Molch {
 
 			return key;
 		}
-
-		std::ostream& printHex(std::ostream& stream) const {
-			static constexpr size_t width{30};
-
-			if (this->empty) {
-				return stream << "(empty)";
-			}
-
-			const size_t hex_length{this->size() * 2 + sizeof("")};
-			auto hex{std::make_unique<char[]>(hex_length)};
-			TRY_VOID(sodium_bin2hex({hex.get(), hex_length}, *this));
-
-			for (size_t i{0}; i < hex_length; i++) {
-				if ((width != 0) && ((i % width) == 0) && (i != 0)) {
-					stream << '\n';
-				} else if ((i % 2 == 0) && (i != 0)) {
-					stream << ' ';
-				}
-				stream << hex[i];
-			}
-
-			return stream;
-		}
 	};
+
+	template <size_t key_length,KeyType keytype>
+	std::ostream& operator<<(std::ostream& stream, const EmptyableKey<key_length,keytype> key) {
+		static constexpr size_t width{30};
+
+		if (key.empty) {
+			return stream << "(empty)";
+		}
+
+		const size_t hex_length{key.size() * 2 + sizeof("")};
+		auto hex{std::make_unique<char[]>(hex_length)};
+		TRY_VOID(sodium_bin2hex({hex.get(), hex_length}, key));
+
+		for (size_t i{0}; i < hex_length; i++) {
+			if ((width != 0) && ((i % width) == 0) && (i != 0)) {
+				stream << '\n';
+			} else if ((i % 2 == 0) && (i != 0)) {
+				stream << ' ';
+			}
+			stream << hex[i];
+		}
+
+		return stream;
+	}
 
 	using MessageKey = Key<MESSAGE_KEY_SIZE,KeyType::MessageKey>;
 
