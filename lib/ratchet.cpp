@@ -41,16 +41,11 @@ namespace Molch {
 
 	result<Ratchet> Ratchet::create(
 			const PrivateKey& our_private_identity,
-			const EmptyablePublicKey& our_public_identity,
-			const EmptyablePublicKey& their_public_identity,
+			const PublicKey& our_public_identity,
+			const PublicKey& their_public_identity,
 			const PrivateKey& our_private_ephemeral,
-			const EmptyablePublicKey& our_public_ephemeral,
-			const EmptyablePublicKey& their_public_ephemeral) {
-		FulfillOrFail(!our_public_identity.empty
-				&& !their_public_identity.empty
-				&& !our_public_ephemeral.empty
-				&& !their_public_ephemeral.empty);
-
+			const PublicKey& our_public_ephemeral,
+			const PublicKey& their_public_ephemeral) {
 		Ratchet ratchet;
 
 		//find out if we are alice by comparing both public keys
@@ -98,9 +93,9 @@ namespace Molch {
 
 		//copy keys into state
 		//our public identity
-		storage->our_public_identity = our_public_identity.toKey().value();
+		storage->our_public_identity = our_public_identity;
 		//their_public_identity
-		storage->their_public_identity = their_public_identity.toKey().value();
+		storage->their_public_identity = their_public_identity;
 		//our_private_ephemeral
 		storage->our_private_ephemeral = our_private_ephemeral;
 		//our_public_ephemeral

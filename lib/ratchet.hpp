@@ -103,11 +103,11 @@ namespace Molch {
 		 */
 		static result<Ratchet> create(
 				const PrivateKey& our_private_identity,
-				const EmptyablePublicKey& our_public_identity,
-				const EmptyablePublicKey& their_public_identity,
+				const PublicKey& our_public_identity,
+				const PublicKey& their_public_identity,
 				const PrivateKey& our_private_ephemeral,
-				const EmptyablePublicKey& our_public_ephemeral,
-				const EmptyablePublicKey& their_public_ephemeral);
+				const PublicKey& our_public_ephemeral,
+				const PublicKey& their_public_ephemeral);
 
 		/*! Import a ratchet from Protobuf-C
 		 * NOTE: The public identity key is needed separately,

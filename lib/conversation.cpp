@@ -70,11 +70,11 @@ namespace Molch {
 
 		OUTCOME_TRY(ratchet, Ratchet::create(
 				our_private_identity,
-				our_public_identity,
-				their_public_identity,
+				our_public_identity.toKey().value(),
+				their_public_identity.toKey().value(),
 				our_private_ephemeral,
-				our_public_ephemeral,
-				their_public_ephemeral));
+				our_public_ephemeral.toKey().value(),
+				their_public_ephemeral.toKey().value()));
 		conversation.ratchet = std::move(ratchet);
 
 		return conversation;
