@@ -49,8 +49,8 @@ namespace Molch {
 		ChainKey receive_chain_key; //CKr
 		ChainKey purported_receive_chain_key; //CKp
 		//identity keys
-		EmptyablePublicKey our_public_identity; //DHIs
-		EmptyablePublicKey their_public_identity; //DHIr
+		PublicKey our_public_identity; //DHIs
+		PublicKey their_public_identity; //DHIr
 		//ephemeral keys (ratchet keys)
 		PrivateKey our_private_ephemeral; //DHRs
 		EmptyablePublicKey our_public_ephemeral; //DHRs

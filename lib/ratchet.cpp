@@ -98,9 +98,9 @@ namespace Molch {
 
 		//copy keys into state
 		//our public identity
-		storage->our_public_identity = our_public_identity;
+		storage->our_public_identity = our_public_identity.toKey().value();
 		//their_public_identity
-		storage->their_public_identity = their_public_identity;
+		storage->their_public_identity = their_public_identity.toKey().value();
 		//our_private_ephemeral
 		storage->our_private_ephemeral = our_private_ephemeral;
 		//our_public_ephemeral
@@ -487,11 +487,9 @@ namespace Molch {
 		//identity key
 		//our public identity key
 		const auto& our_public_identity_key{storage.our_public_identity};
-		error_if_missing(our_public_identity_key);
 		outcome_protobuf_optional_bytes_arena_export(arena, conversation, our_public_identity_key, PUBLIC_KEY_SIZE);
 		//their public identity key
 		const auto& their_public_identity_key{storage.their_public_identity};
-		error_if_missing(their_public_identity_key);
 		outcome_protobuf_optional_bytes_arena_export(arena, conversation, their_public_identity_key, PUBLIC_KEY_SIZE);
 
 		//ephemeral keys
@@ -709,13 +707,13 @@ namespace Molch {
 		if (!conversation.has_our_public_identity_key || (conversation.our_public_identity_key.len != PUBLIC_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "our_public_identity_key is missing from the protobuf.");
 		}
-		OUTCOME_TRY(our_public_identity, EmptyablePublicKey::fromSpan({conversation.our_public_identity_key}));
+		OUTCOME_TRY(our_public_identity, PublicKey::fromSpan({conversation.our_public_identity_key}));
 		ratchet.storage->our_public_identity = our_public_identity;
 		//their public identity key
 		if (!conversation.has_their_public_identity_key || (conversation.their_public_identity_key.len != PUBLIC_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "their_public_identity is missing from the protobuf.");
 		}
-		OUTCOME_TRY(their_public_identity, EmptyablePublicKey::fromSpan({conversation.their_public_identity_key}));
+		OUTCOME_TRY(their_public_identity, PublicKey::fromSpan({conversation.their_public_identity_key}));
 		ratchet.storage->their_public_identity = their_public_identity;
 
 		//ephemeral keys
