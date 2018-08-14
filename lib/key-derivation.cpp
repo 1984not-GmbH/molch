@@ -72,7 +72,7 @@ namespace Molch {
 
 		//chain key
 		//FIXME: Does this work?
-		OUTCOME_TRY(chain_key, derivation_key.deriveSubkeyWithIndex<Key<CHAIN_KEY_SIZE,KeyType::ChainKey>>(2));
+		OUTCOME_TRY(chain_key, derivation_key.deriveSubkeyWithIndex<ChainKey>(2));
 		output.chain_key = chain_key;
 
 		return output;
@@ -139,7 +139,7 @@ namespace Molch {
 					//CKs=<none>
 					output.send_chain_key.reset();
 					//CKr = KDF(master_key, 0x04)
-					OUTCOME_TRY(receive_chain_key, master_key.deriveSubkeyWithIndex<EmptyableChainKey>(4));
+					OUTCOME_TRY(receive_chain_key, master_key.toKey().value().deriveSubkeyWithIndex<ChainKey>(4));
 					output.receive_chain_key.emplace(receive_chain_key);
 				}
 				break;
@@ -165,7 +165,7 @@ namespace Molch {
 					//CKr = <none>
 					output.receive_chain_key.reset();
 					//CKs = KDF(master_key, 0x04)
-					OUTCOME_TRY(send_chain_key, master_key.deriveSubkeyWithIndex<EmptyableChainKey>(4));
+					OUTCOME_TRY(send_chain_key, master_key.toKey().value().deriveSubkeyWithIndex<ChainKey>(4));
 					output.send_chain_key.emplace(send_chain_key);
 				}
 				break;
