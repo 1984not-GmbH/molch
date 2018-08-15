@@ -36,7 +36,8 @@ int main() {
 		TRY_VOID(Molch::sodium_init());
 
 		Molch::EmptyableKey<50,Molch::KeyType::Key> master_key;
-		master_key.fillRandom();
+		randombytes_buf(master_key);
+		master_key.empty = false;
 		printf("Master key:\n");
 		std::cout << master_key << std::endl;
 

@@ -109,11 +109,14 @@ int main() {
 		printf("PREKEY_MESSAGE\n");
 		//create the public keys
 		EmptyablePublicKey public_identity_key;
-		public_identity_key.fillRandom();
+		randombytes_buf(public_identity_key);
+		public_identity_key.empty = false;
 		EmptyablePublicKey public_ephemeral_key;
-		public_ephemeral_key.fillRandom();
+		randombytes_buf(public_ephemeral_key);
+		public_ephemeral_key.empty = false;
 		EmptyablePublicKey public_prekey;
-		public_prekey.fillRandom();
+		randombytes_buf(public_prekey);
+		public_prekey.empty = false;
 
 		packet.clear();
 

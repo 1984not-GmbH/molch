@@ -349,11 +349,6 @@ namespace Molch {
 			return key;
 		}
 
-		void fillRandom() {
-			randombytes_buf(*this);
-			this->empty = false;
-		}
-
 		//TODO get rid of this
 		bool isNone() const noexcept {
 			if (this->empty) {

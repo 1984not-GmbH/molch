@@ -51,7 +51,8 @@ MOLCH_PUBLIC(void) create_and_print_message(
 	Expects(packet_type != molch_message_type::INVALID);
 
 	//create header key
-	header_key.fillRandom();
+	randombytes_buf(header_key);
+	header_key.empty = false;
 	printf("Header key (%zu Bytes):\n", header_key.size());
 	std::cout << header_key;
 	putchar('\n');

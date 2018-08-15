@@ -107,7 +107,8 @@ static void testSortingAndDeprecation() {
 	std::cout << "Check if Keystore is sorted properly" << std::endl;
 	for (seconds index{10}; index > 0s; --index) {
 		EmptyableHeaderKey header_key;
-		header_key.fillRandom();
+		randombytes_buf(header_key);
+		header_key.empty = false;
 		MessageKey message_key;
 		randombytes_buf(message_key);
 		sorted_store.add(HeaderAndMessageKey{header_key, message_key, index});
@@ -171,7 +172,8 @@ int main() {
 		for (size_t i{0}; i < 6; i++) {
 			//create new keys
 			EmptyableHeaderKey header_key;
-			header_key.fillRandom();
+			randombytes_buf(header_key);
+			header_key.empty = false;
 			MessageKey message_key;
 			randombytes_buf(message_key);
 

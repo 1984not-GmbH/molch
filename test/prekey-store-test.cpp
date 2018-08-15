@@ -181,7 +181,8 @@ int main() {
 		printf("Successfully got prekey from the deprecated area!\n");
 
 		//try to get a nonexistent key
-		public_prekey.fillRandom();
+		randombytes_buf(public_prekey);
+		public_prekey.empty = false;
 		const auto nonexistent_prekey = store.getPrekey(public_prekey);
 		if (nonexistent_prekey.has_value()) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Didn't complain about invalid public key."};

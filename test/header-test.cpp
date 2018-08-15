@@ -37,7 +37,8 @@ int main() {
 
 		//create ephemeral key
 		EmptyablePublicKey our_public_ephemeral_key;
-		our_public_ephemeral_key.fillRandom();
+		randombytes_buf(our_public_ephemeral_key);
+		our_public_ephemeral_key.empty = false;
 		printf("Our public ephemeral key (%zu Bytes):\n", our_public_ephemeral_key.size());
 		std::cout << our_public_ephemeral_key;
 

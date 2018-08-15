@@ -56,7 +56,8 @@ int main() {
 
 		//create previous root key
 		EmptyableRootKey previous_root_key;
-		previous_root_key.fillRandom();
+		randombytes_buf(previous_root_key);
+		previous_root_key.empty = false;
 
 		//print previous root key
 		printf("Previous root key (%zu Bytes):\n", previous_root_key.size());

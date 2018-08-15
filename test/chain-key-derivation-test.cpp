@@ -36,7 +36,8 @@ int main() {
 
 		//create random initial chain key
 		EmptyableChainKey last_chain_key;
-		last_chain_key.fillRandom();
+		randombytes_buf(last_chain_key);
+		last_chain_key.empty = false;
 
 		//print first chain key
 		printf("Initial chain key (%i Bytes):\n", crypto_auth_BYTES);

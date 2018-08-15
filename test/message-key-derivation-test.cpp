@@ -37,7 +37,8 @@ int main() {
 
 		//create random chain key
 		EmptyableChainKey chain_key;
-		chain_key.fillRandom();
+		randombytes_buf(chain_key);
+		chain_key.empty = false;
 
 		//print first chain key
 		printf("Chain key (%zu Bytes):\n", chain_key.size());
