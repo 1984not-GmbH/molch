@@ -129,10 +129,7 @@ namespace Molch {
 
 		ReadWriteUnlocker unlocker{*this};
 
-		SodiumBuffer high_entropy_seed{
-				crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES,
-				crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES};
-		spiced_random(high_entropy_seed, low_entropy_seed);
+		OUTCOME_TRY(high_entropy_seed, spiced_random(low_entropy_seed, crypto_sign_SEEDBYTES + crypto_box_SEEDBYTES));
 
 		//generate the signing keypair
 		OUTCOME_TRY(crypto_sign_seed_keypair(

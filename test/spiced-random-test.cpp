@@ -42,16 +42,16 @@ int main() noexcept {
 		spice.printHex(std::cout) << std::endl;
 
 		//fill buffer with spiced random data
-		Buffer output1{42, 42};
-		spiced_random(output1, spice);
+		TRY_WITH_RESULT(output1_result, spiced_random(spice, 42));
+		const auto& output1{output1_result.value()};
 
 		printf("Spiced random data 1 (%zu Bytes):\n", output1.size());
 		output1.printHex(std::cout) << std::endl;
 
 
 		//fill buffer with spiced random data
-		Buffer output2{42, 42};
-		spiced_random(output2, spice);
+		TRY_WITH_RESULT(output2_result, spiced_random(spice, 42));
+		const auto& output2{output2_result.value()};
 
 		printf("Spiced random data 2 (%zu Bytes):\n", output2.size());
 		output2.printHex(std::cout);
@@ -63,10 +63,8 @@ int main() noexcept {
 		}
 
 		//don't crash with output length 0
-		try {
-			spiced_random({nullptr, static_cast<size_t>(0)}, spice);
-		} catch (const std::exception&) {
-			//on newer libsodium versions, output lengths of zero aren't supported
+		if (spiced_random(spice, 0).has_value()) {
+			throw Exception(status_type::GENERIC_ERROR, "");
 		}
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;

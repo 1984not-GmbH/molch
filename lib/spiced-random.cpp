@@ -34,20 +34,20 @@ namespace Molch {
 	 * WARNING: Don't feed this with random numbers from the OSs random
 	 * source because it might annihilate the randomness.
 	 */
-	void spiced_random(span<std::byte> output, const span<const std::byte> low_entropy_spice) {
-		Expects(!output.empty() && !low_entropy_spice.empty());
+	result<SodiumBuffer> spiced_random(const span<const std::byte> low_entropy_spice, const size_t output_length) {
+		FulfillOrFail((not low_entropy_spice.empty()) and (output_length != 0));
 
 		//buffer that contains the random data from the OS
-		SodiumBuffer os_random{output.size(), output.size()};
-		TRY_VOID(os_random.fillRandom(output.size()));
+		SodiumBuffer os_random{output_length, output_length};
+		OUTCOME_TRY(os_random.fillRandom(output_length));
 
 		//buffer that contains a random salt
-		EmptyableKey<crypto_pwhash_SALTBYTES,KeyType::Key> salt;
+		Key<crypto_pwhash_SALTBYTES,KeyType::Key> salt(uninitialized_t::uninitialized);
 		salt.fillRandom();
 
 		//derive random data from the random spice
-		SodiumBuffer spice{output.size(), output.size()};
-		TRY_VOID(crypto_pwhash(
+		SodiumBuffer spice{output_length, output_length};
+		OUTCOME_TRY(crypto_pwhash(
 				spice,
 				low_entropy_spice,
 				salt,
@@ -62,7 +62,6 @@ namespace Molch {
 			++spice_iterator;
 		}
 
-		//copy the random data to the output
-		TRY_VOID(copyFromTo(os_random, output));
+		return std::move(os_random);
 	}
 }
