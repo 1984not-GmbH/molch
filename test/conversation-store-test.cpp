@@ -80,10 +80,10 @@ static void test_add_conversation(ConversationStore& store) {
 	TRY_VOID(crypto_box_keypair(our_public_ephemeral, our_private_ephemeral));
 
 	PublicKey their_public_identity;
-	their_public_identity.fillRandom();
+	randombytes_buf(their_public_identity);
 
 	PublicKey their_public_ephemeral;
-	their_public_ephemeral.fillRandom();
+	randombytes_buf(their_public_ephemeral);
 
 	//create the conversation manually
 	TRY_WITH_RESULT(conversation, Molch::Conversation::create(

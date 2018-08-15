@@ -43,7 +43,7 @@ namespace Molch {
 
 		//buffer that contains a random salt
 		Key<crypto_pwhash_SALTBYTES,KeyType::Key> salt(uninitialized_t::uninitialized);
-		salt.fillRandom();
+		randombytes_buf(salt);
 
 		//derive random data from the random spice
 		SodiumBuffer spice{output_length, output_length};

@@ -1403,7 +1403,7 @@ cleanup:
 			//make the content of the backup key writable
 			GlobalBackupKeyWriteUnlocker unlocker;
 
-			global_backup_key->fillRandom();
+			randombytes_buf(*global_backup_key);
 
 			TRY_VOID(copyFromTo(*global_backup_key, {uchar_to_byte(new_key), BACKUP_KEY_SIZE}));
 		} catch (const Exception& exception) {

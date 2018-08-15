@@ -57,7 +57,7 @@ MOLCH_PUBLIC(void) create_and_print_message(
 	putchar('\n');
 
 	//create message key
-	message_key.fillRandom();
+	randombytes_buf(message_key);
 	printf("Message key (%zu Bytes):\n", message_key.size());
 	std::cout << message_key;
 	putchar('\n');

@@ -176,10 +176,6 @@ namespace Molch {
 			return derived_key;
 		}
 
-		void fillRandom() {
-			randombytes_buf(*this);
-		}
-
 		void zero() noexcept {
 			sodium_memzero(*this);
 		}

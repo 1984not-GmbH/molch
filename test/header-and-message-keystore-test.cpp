@@ -109,7 +109,7 @@ static void testSortingAndDeprecation() {
 		EmptyableHeaderKey header_key;
 		header_key.fillRandom();
 		MessageKey message_key;
-		message_key.fillRandom();
+		randombytes_buf(message_key);
 		sorted_store.add(HeaderAndMessageKey{header_key, message_key, index});
 	}
 
@@ -173,7 +173,7 @@ int main() {
 			EmptyableHeaderKey header_key;
 			header_key.fillRandom();
 			MessageKey message_key;
-			message_key.fillRandom();
+			randombytes_buf(message_key);
 
 			//print the new header key
 			printf("New Header Key No. %zu:\n", i);

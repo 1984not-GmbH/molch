@@ -60,7 +60,7 @@ namespace Molch {
 			const PublicKey& their_public_ephemeral) {
 		Conversation conversation(uninitialized_t::uninitialized);
 		//create random id
-		conversation.id_storage.fillRandom();
+		randombytes_buf(conversation.id_storage);
 
 		OUTCOME_TRY(ratchet, Ratchet::create(
 				our_private_identity,
