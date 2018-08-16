@@ -124,7 +124,8 @@ int main() {
 
 		// list an empty conversation store
 		ConversationStore store;
-		auto empty_list{store.list()};
+		TRY_WITH_RESULT(empty_list_result, store.list());
+		const auto& empty_list{empty_list_result.value()};
 		if (!empty_list.isNone()) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "List of empty conversation store is not nullptr."};
 		}
@@ -140,7 +141,8 @@ int main() {
 		}
 
 		//test list export feature
-		auto conversation_list{store.list()};
+		TRY_WITH_RESULT(conversation_list_result, store.list());
+		const auto& conversation_list{conversation_list_result.value()};
 		if (conversation_list.size() != (CONVERSATION_ID_SIZE * store.size())) {
 			throw Molch::Exception{status_type::DATA_FETCH_ERROR, "Failed to get list of conversations."};
 		}

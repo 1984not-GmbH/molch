@@ -81,7 +81,7 @@ namespace Molch {
 		 *
 		 * Returns nullptr if empty.
 		 */
-		Buffer list() const;
+		result<Buffer> list() const;
 
 		/*! Export a conversation store to Protobuf-C */
 		span<ProtobufCConversation*> exportProtobuf(Arena& arena) const;

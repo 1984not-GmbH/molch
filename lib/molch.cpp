@@ -849,7 +849,8 @@ cleanup:
 				throw Exception{status_type::NOT_FOUND, "No user found for the given public identity."};
 			}
 
-			auto conversation_list_buffer{user->conversations.list()};
+			TRY_WITH_RESULT(conversation_list_buffer_result, user->conversations.list());
+			const auto& conversation_list_buffer{conversation_list_buffer_result.value()};
 			if (conversation_list_buffer.isNone()) {
 				// list is empty
 				*conversation_list = nullptr;

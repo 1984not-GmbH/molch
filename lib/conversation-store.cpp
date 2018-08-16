@@ -109,7 +109,7 @@ namespace Molch {
 	 *
 	 * Returns nullptr if empty.
 	 */
-	Buffer ConversationStore::list() const {
+	result<Buffer> ConversationStore::list() const {
 		if (this->conversations.empty()) {
 			return Buffer();
 		}
@@ -118,7 +118,7 @@ namespace Molch {
 
 		size_t index{0};
 		for (const auto& conversation : this->conversations) {
-			TRY_VOID(list.copyFromRaw(
+			OUTCOME_TRY(list.copyFromRaw(
 				CONVERSATION_ID_SIZE * index,
 				conversation.id().data(),
 				0,
