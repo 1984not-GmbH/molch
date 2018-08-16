@@ -68,7 +68,8 @@ static ConversationStore protobuf_import(Arena& pool, const std::vector<Buffer> 
 	}
 
 	//import
-	return ConversationStore({conversation_array.get(), buffers.size()});
+	TRY_WITH_RESULT(imported_conversation_store, ConversationStore::import({conversation_array.get(), buffers.size()}));
+	return std::move(imported_conversation_store.value());
 }
 
 static void test_add_conversation(ConversationStore& store) {
@@ -113,7 +114,8 @@ static void protobuf_empty_store() {
 	}
 
 	//import it
-	store = ConversationStore{exported_conversations};
+	TRY_WITH_RESULT(imported_conversation_store, ConversationStore::import(exported_conversations));
+	store = std::move(imported_conversation_store.value());
 	printf("Successful.\n");
 }
 

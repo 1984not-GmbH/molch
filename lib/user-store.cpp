@@ -81,7 +81,8 @@ namespace Molch {
 		OUTCOME_TRY(imported_public_signing_key, EmptyablePublicSigningKey::fromSpan({user.public_signing_key->key}));
 		imported_user.public_signing_key = imported_public_signing_key;
 
-		imported_user.conversations = ConversationStore{{user.conversations, user.n_conversations}};
+		OUTCOME_TRY(imported_conversation_store, ConversationStore::import({user.conversations, user.n_conversations}));
+		imported_user.conversations = std::move(imported_conversation_store);
 
 		OUTCOME_TRY(prekey_store, PrekeyStore::import(
 				{user.prekeys, user.n_prekeys},

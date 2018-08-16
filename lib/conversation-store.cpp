@@ -146,16 +146,19 @@ namespace Molch {
 		return {conversations, this->conversations.size()};
 	}
 
-	ConversationStore::ConversationStore(const span<ProtobufCConversation*> conversations) {
+	result<ConversationStore> ConversationStore::import(const span<ProtobufCConversation*> conversations) {
+		ConversationStore store;
 		//import all the conversations
 		for (const auto& conversation : conversations) {
 			if (conversation == nullptr) {
 				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Array of conversation has an empty element."};
 			}
 
-			TRY_WITH_RESULT(imported_conversation, Conversation::import(*conversation));
-			this->conversations.emplace_back(std::move(imported_conversation.value()));
+			OUTCOME_TRY(imported_conversation, Conversation::import(*conversation));
+			store.conversations.emplace_back(std::move(imported_conversation));
 		}
+
+		return store;
 	}
 
 	std::ostream& ConversationStore::print(std::ostream& stream) const {

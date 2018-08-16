@@ -38,7 +38,7 @@ namespace Molch {
 		ConversationStore() = default;
 
 		/*! Import a conversation store from a Protobuf-C struct.  */
-		ConversationStore(const span<ProtobufCConversation*> conversations);
+		static result<ConversationStore> import(const span<ProtobufCConversation*> conversations);
 
 		ConversationStore(const ConversationStore& store) = delete;
 		ConversationStore(ConversationStore&& store) noexcept = default;
