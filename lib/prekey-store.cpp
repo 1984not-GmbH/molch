@@ -330,8 +330,8 @@ namespace Molch {
 		auto keypairs_array{arena.allocate<ProtobufCPrekey*>(container.size())};
 		size_t index{0};
 		for (const auto& key : container) {
-			TRY_WITH_RESULT(exported_prekey, key.exportProtobuf(arena));
-			keypairs_array[index] = exported_prekey.value();
+			OUTCOME_TRY(exported_prekey, key.exportProtobuf(arena));
+			keypairs_array[index] = exported_prekey;
 			index++;
 		}
 		return {keypairs_array, container.size()};
