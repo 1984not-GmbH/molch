@@ -150,11 +150,12 @@ namespace Molch {
 		const seconds& oldestExpirationDate() const noexcept;
 		const seconds& oldestDeprecatedExpirationDate() const noexcept;
 
-		std::ostream& print(std::ostream& stream) const;
-
 		//DON'T USE, THIS IS ONLY FOR TESTING!
 		result<void> timeshiftForTestingOnly(size_t index, seconds timeshift);
 		void timeshiftDeprecatedForTestingOnly(size_t index, seconds timeshift) noexcept;
 	};
+
+	std::ostream& operator<<(std::ostream& stream, const PrekeyStore& store);
+
 }
 #endif

@@ -97,7 +97,7 @@ namespace Molch {
 		stream << "\nMaster Keys:\n";
 		user.masterKeys().print(stream);
 		stream << "\nPrekeys:\n";
-		user.prekeys.print(stream);
+		stream << user.prekeys;
 		stream << "\nConversations:\n";
 		user.conversations.print(stream);
 

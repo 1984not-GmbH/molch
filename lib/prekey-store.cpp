@@ -351,16 +351,15 @@ namespace Molch {
 		return prekey_store;
 	}
 
-	std::ostream& PrekeyStore::print(std::ostream& stream) const {
-
+	std::ostream& operator<<(std::ostream& stream, const PrekeyStore& store) {
 		stream << "Prekeys: [\n";
-		for (const auto& prekey : *this->prekeys_storage) {
+		for (const auto& prekey : store.prekeys()) {
 			stream << prekey <<  ",\n";
 		}
 		stream << "]\n";
 
 		stream << "Deprecated Prekeys: [\n";
-		for (const auto& prekey : this->deprecated_prekeys_storage) {
+		for (const auto& prekey : store.deprecatedPrekeys()) {
 			stream << prekey << ",\n";
 		}
 		stream << "]\n";
