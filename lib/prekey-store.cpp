@@ -135,12 +135,12 @@ namespace Molch {
 		return outcome::success();
 	}
 
-	std::ostream& Prekey::print(std::ostream& stream) const {
-		stream << "Expiration Date = " << this->expiration_date.count() << "s" << '\n';
+	std::ostream& operator<<(std::ostream& stream, const Prekey& prekey) {
+		stream << "Expiration Date = " << prekey.expirationDate().count() << "s" << '\n';
 		stream << "Public Prekey:\n";
-		stream << this->public_key << '\n';
+		stream << prekey.publicKey() << '\n';
 		stream << "Private Prekey:\n";
-		stream << this->private_key << '\n';
+		stream << prekey.privateKey() << '\n';
 
 		return stream;
 	}
@@ -355,13 +355,13 @@ namespace Molch {
 
 		stream << "Prekeys: [\n";
 		for (const auto& prekey : *this->prekeys_storage) {
-			prekey.print(stream) <<  ",\n";
+			stream << prekey <<  ",\n";
 		}
 		stream << "]\n";
 
 		stream << "Deprecated Prekeys: [\n";
 		for (const auto& prekey : this->deprecated_prekeys_storage) {
-			prekey.print(stream) << ",\n";
+			stream << prekey << ",\n";
 		}
 		stream << "]\n";
 

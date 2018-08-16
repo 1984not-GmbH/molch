@@ -71,9 +71,9 @@ namespace Molch {
 		const PrivateKey& privateKey() const noexcept;
 
 		result<ProtobufCPrekey*> exportProtobuf(Arena& arena) const;
-
-		std::ostream& print(std::ostream& stream) const;
 	};
+
+	std::ostream& operator<<(std::ostream& stream, const Prekey& prekey);
 
 	class PrekeyStore {
 	private:
