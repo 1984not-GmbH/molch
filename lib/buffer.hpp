@@ -415,10 +415,6 @@ namespace Molch {
 		size_t capacity() const noexcept {
 			return this->buffer_length;
 		}
-
-		bool fits(const size_t size) const noexcept {
-			return this->buffer_length >= size;
-		}
 	};
 
 	using Buffer = BaseBuffer<std::allocator<std::byte>>;

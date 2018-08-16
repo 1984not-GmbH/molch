@@ -178,11 +178,6 @@ int main() {
 		if (custom_allocated_empty_buffer.data() != nullptr) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Customly allocated empty buffer has content."};
 		}
-
-		Buffer four_two{4, 2};
-		if ((!four_two.fits(4)) || (!four_two.fits(2)) || four_two.fits(5)) {
-			throw Molch::Exception{status_type::BUFFER_ERROR, "Buffer doesn't detect correctly what fits in it."};
-		}
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;
