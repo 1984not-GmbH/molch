@@ -127,7 +127,7 @@ namespace Molch {
 		const auto& unverified_prekey_metadata{unverified_metadata.prekey_metadata.value()};
 
 		//get the private prekey that corresponds to the public prekey used in the message
-		OUTCOME_TRY(receiver_private_prekey, receiver_prekeys.getPrekey(unverified_prekey_metadata.prekey));
+		OUTCOME_TRY(receiver_private_prekey, receiver_prekeys.getPrekey(unverified_prekey_metadata.prekey.toKey().value()));
 
 		OUTCOME_TRY(conversation, create(
 				receiver_private_identity,

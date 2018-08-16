@@ -147,7 +147,7 @@ int main() {
 
 		//get a private key
 		const size_t prekey_index{10};
-		EmptyablePublicKey public_prekey{store.prekeys()[prekey_index].publicKey()};
+		PublicKey public_prekey{store.prekeys()[prekey_index].publicKey()};
 
 		TRY_WITH_RESULT(private_prekey1_result, store.getPrekey(public_prekey));
 		const auto& private_prekey1{private_prekey1_result.value()};
@@ -182,7 +182,6 @@ int main() {
 
 		//try to get a nonexistent key
 		randombytes_buf(public_prekey);
-		public_prekey.empty = false;
 		const auto nonexistent_prekey = store.getPrekey(public_prekey);
 		if (nonexistent_prekey.has_value()) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Didn't complain about invalid public key."};
