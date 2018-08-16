@@ -412,10 +412,6 @@ namespace Molch {
 			return !(*this == buffer);
 		}
 
-		bool isNone() const noexcept {
-			return (this->content_length == 0) || sodium_is_zero(*this);
-		}
-
 		size_t capacity() const noexcept {
 			return this->buffer_length;
 		}

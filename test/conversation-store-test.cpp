@@ -126,7 +126,7 @@ int main() {
 		ConversationStore store;
 		TRY_WITH_RESULT(empty_list_result, store.list());
 		const auto& empty_list{empty_list_result.value()};
-		if (!empty_list.isNone()) {
+		if (not empty_list.empty()) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "List of empty conversation store is not nullptr."};
 		}
 
