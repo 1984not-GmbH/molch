@@ -176,7 +176,7 @@ int main() {
 		//print
 		puts("[\n");
 		for (size_t i{0}; i < protobuf_export_buffers.size(); i++) {
-			protobuf_export_buffers[i].printHex(std::cout);
+			std::cout << protobuf_export_buffers[i];
 			puts(",\n");
 		}
 		puts("]\n\n");

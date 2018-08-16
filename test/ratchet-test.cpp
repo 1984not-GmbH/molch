@@ -478,7 +478,7 @@ int main() {
 		printf("Export to Protobuf-C!\n");
 		auto protobuf_export_buffer = protobuf_export(alice_state);
 
-		protobuf_export_buffer.printHex(std::cout) << "\n\n" << std::flush;
+		std::cout << protobuf_export_buffer << "\n\n" << std::flush;
 
 		//import again
 		printf("Import from Protobuf-C!\n");
@@ -490,7 +490,7 @@ int main() {
 
 		//compare both exports
 		if (protobuf_export_buffer != protobuf_second_export_buffer) {
-			protobuf_second_export_buffer.printHex(std::cout);
+			std::cout << protobuf_second_export_buffer;
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Both exports don't match!"};
 		}
 		printf("Exported Protobuf-C buffers match!\n");

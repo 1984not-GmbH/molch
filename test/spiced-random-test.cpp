@@ -39,14 +39,14 @@ int main() noexcept {
 		printf("\"Random\" input from the user (%zu Bytes):\n", spice.size());
 		printf("String: %.*s\n", static_cast<int>(spice.size()), byte_to_uchar(spice.data()));
 		printf("Hex:\n");
-		spice.printHex(std::cout) << std::endl;
+		std::cout << spice << std::endl;
 
 		//fill buffer with spiced random data
 		TRY_WITH_RESULT(output1_result, spiced_random(spice, 42));
 		const auto& output1{output1_result.value()};
 
 		printf("Spiced random data 1 (%zu Bytes):\n", output1.size());
-		output1.printHex(std::cout) << std::endl;
+		std::cout << output1 << std::endl;
 
 
 		//fill buffer with spiced random data
@@ -54,7 +54,7 @@ int main() noexcept {
 		const auto& output2{output2_result.value()};
 
 		printf("Spiced random data 2 (%zu Bytes):\n", output2.size());
-		output2.printHex(std::cout);
+		std::cout << output2;
 		putchar('\n');
 
 		//compare the two (mustn't be identical!)

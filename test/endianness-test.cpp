@@ -42,7 +42,7 @@ int main() {
 		uint32_t uint32_from_big_endian{0};
 		TRY_VOID(to_big_endian(uint32, buffer32));
 		printf("uint32_t %llu to big endian:\n", static_cast<unsigned long long>(uint32));
-		buffer32.printHex(std::cout);
+		std::cout << buffer32;
 
 		TRY_WITH_RESULT(big_endian_result, buffer32.compareToRaw({reinterpret_cast<const std::byte*>("\x04\x03\x02\x01"), sizeof(uint32_t)}));
 		if (!big_endian_result.value()) {
@@ -61,7 +61,7 @@ int main() {
 		int32_t int32_from_big_endian;
 		TRY_VOID(to_big_endian(int32, buffer32));
 		printf("int32_t %lli to big endian:\n", static_cast<signed long long>(int32));
-		buffer32.printHex(std::cout);
+		std::cout << buffer32;
 
 		{
 			TRY_WITH_RESULT(buffer32_comparison, buffer32.compareToRaw({reinterpret_cast<const std::byte*>("\xFF\xFE\xFD\xFC"), sizeof(int32_t)}));
@@ -83,7 +83,7 @@ int main() {
 		uint64_t uint64_from_big_endian;
 		TRY_VOID(to_big_endian(uint64, buffer64));
 		printf("uint64_t %llu to big endian:\n", static_cast<unsigned long long>(uint64));
-		buffer64.printHex(std::cout);
+		std::cout << buffer64;
 
 		{
 			TRY_WITH_RESULT(buffer64_comparison, buffer64.compareToRaw({reinterpret_cast<const std::byte*>("\x08\x07\x06\x05\x04\x03\x02\x01"), sizeof(uint64_t)}));
@@ -104,7 +104,7 @@ int main() {
 		int64_t int64_from_big_endian;
 		TRY_VOID(to_big_endian(int64, buffer64));
 		printf("int64_t %lli to big endian:\n", static_cast<signed long long>(int64));
-		buffer64.printHex(std::cout);
+		std::cout << buffer64;
 
 		{
 			TRY_WITH_RESULT(buffer64_comparison, buffer64.compareToRaw({reinterpret_cast<const std::byte*>("\xFF\xFE\xFD\xFC\xFB\xFA\xF9\xF8"), sizeof(int64_t)}));

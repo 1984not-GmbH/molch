@@ -211,7 +211,7 @@ int main() {
 		TRY_WITH_RESULT(signed_data_result, spiced_master_keys.sign(data));
 		const auto& signed_data{signed_data_result.value()};
 		printf("Signed data:\n");
-		signed_data.printHex(std::cout);
+		std::cout << signed_data;
 
 		//now check the signature
 		Buffer unwrapped_data{100, 0};
@@ -245,16 +245,16 @@ int main() {
 			protobuf_export_private_identity_key);
 
 		printf("Public signing key:\n");
-		protobuf_export_public_signing_key.printHex(std::cout) << "\n\n";
+		std::cout << protobuf_export_public_signing_key << "\n\n";
 
 		printf("Private signing key:\n");
-		protobuf_export_private_signing_key.printHex(std::cout) << "\n\n";
+		std::cout << protobuf_export_private_signing_key << "\n\n";
 
 		printf("Public identity key:\n");
-		protobuf_export_public_identity_key.printHex(std::cout) << "\n\n";
+		std::cout << protobuf_export_public_identity_key << "\n\n";
 
 		printf("Private identity key:\n");
-		protobuf_export_private_identity_key.printHex(std::cout) << "\n\n";
+		std::cout << protobuf_export_private_identity_key << "\n\n";
 
 		//import again
 		printf("Import from Protobuf-C:\n");

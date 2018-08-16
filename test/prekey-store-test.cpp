@@ -134,7 +134,7 @@ int main() {
 		TRY_WITH_RESULT(prekey_list_result, store.list());
 		const auto& prekey_list{prekey_list_result.value()};
 		printf("Prekey list:\n");
-		prekey_list.printHex(std::cout) << std::endl;
+		std::cout << prekey_list << std::endl;
 
 		//compare the public keys with the ones in the prekey store
 		for (size_t i{0}; i < PREKEY_AMOUNT; i++) {
@@ -200,14 +200,14 @@ int main() {
 		printf("Prekeys:\n");
 		puts("[\n");
 		for (size_t i{0}; i < protobuf_export_prekeys_buffers.size(); i++) {
-			protobuf_export_prekeys_buffers[i].printHex(std::cout) << ",\n";
+			std::cout << protobuf_export_prekeys_buffers[i] << ",\n";
 		}
 		puts("]\n\n");
 
 		printf("Deprecated Prekeys:\n");
 		puts("[\n");
 		for (size_t i{0}; i < protobuf_export_deprecated_prekeys_buffers.size(); i++) {
-			protobuf_export_deprecated_prekeys_buffers[i].printHex(std::cout) << ",\n";
+			std::cout << protobuf_export_deprecated_prekeys_buffers[i] << ",\n";
 		}
 		puts("]\n\n");
 

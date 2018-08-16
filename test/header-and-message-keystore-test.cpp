@@ -199,7 +199,7 @@ int main() {
 
 		puts("[\n");
 		for (const auto& buffer : protobuf_export_buffers) {
-			buffer.printHex(std::cout) << ",\n";
+			std::cout << buffer << ",\n";
 		}
 		puts("]\n\n");
 

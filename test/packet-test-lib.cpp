@@ -65,7 +65,7 @@ MOLCH_PUBLIC(void) create_and_print_message(
 
 	//print the header (as hex):
 	printf("Header (%zu Bytes):\n", header.size());
-	header.printHex(std::cout);
+	std::cout << header;
 	putchar('\n');
 
 	//print the message (as string):
@@ -94,6 +94,6 @@ MOLCH_PUBLIC(void) create_and_print_message(
 
 	//print encrypted packet
 	printf("Encrypted Packet (%zu Bytes):\n", packet.size());
-	packet.printHex(std::cout);
+	std::cout << packet;
 	putchar('\n');
 }

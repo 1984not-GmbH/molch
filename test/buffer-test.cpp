@@ -62,14 +62,14 @@ int main() {
 		printf("Here\n");
 
 		std::cout << "Random buffer (" << buffer1.size() << " Bytes):\n";
-		buffer1.printHex(std::cout) << '\n';
+		std::cout << buffer1 << '\n';
 
 		unsigned char buffer2_content[]{0xde, 0xad, 0xbe, 0xef, 0x00};
 		Buffer buffer2{sizeof(buffer2_content), sizeof(buffer2_content)};
 		TRY_VOID(buffer2.cloneFromRaw({uchar_to_byte(buffer2_content), sizeof(buffer2_content)}));
 
 		printf("Second buffer (%zu Bytes):\n", buffer2.size());
-		buffer2.printHex(std::cout) << std::endl;
+		std::cout << buffer2 << std::endl;
 
 		Buffer empty{static_cast<size_t>(0), 0};
 		Buffer empty2{static_cast<size_t>(0), 0};

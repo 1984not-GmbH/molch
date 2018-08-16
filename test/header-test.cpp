@@ -57,7 +57,7 @@ int main() {
 
 		//print the header
 		printf("Header (%zu Bytes):\n", header.value().size());
-		header.value().printHex(std::cout);
+		std::cout << header.value();
 		putchar('\n');
 
 		//get data back out of the header again

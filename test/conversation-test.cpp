@@ -127,7 +127,7 @@ int main() noexcept {
 		printf("Export to Protobuf-C\n");
 		auto protobuf_export_buffer{protobuf_export(charlie_conversation)};
 
-		protobuf_export_buffer.printHex(std::cout);
+		std::cout << protobuf_export_buffer;
 		puts("\n");
 
 		//import

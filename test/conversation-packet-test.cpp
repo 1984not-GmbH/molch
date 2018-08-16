@@ -73,7 +73,7 @@ int main() {
 		auto& alice_send_conversation{alice_send_conversation_result.value()};
 
 		printf("Packet:\n");
-		alice_send_conversation.packet.printHex(std::cout) << std::endl;
+		std::cout << alice_send_conversation.packet << std::endl;
 
 		//let bob receive the packet
 		TRY_WITH_RESULT(bob_receive_conversation_result, Molch::Conversation::createReceiveConversation(
@@ -96,7 +96,7 @@ int main() {
 
 		printf("Sent message: %.*s\n", static_cast<int>(alice_send_message2.size()), reinterpret_cast<const char*>(alice_send_message2.data()));
 		printf("Packet:\n");
-		alice_send_packet2.printHex(std::cout) << std::endl;
+		std::cout << alice_send_packet2 << std::endl;
 
 		//bob receives the message
 		TRY_WITH_RESULT(bob_received2_result, bob_receive_conversation.conversation.receive(alice_send_packet2));
@@ -120,7 +120,7 @@ int main() {
 
 		printf("Sent message: %.*s\n", static_cast<int>(bob_response_message.size()), reinterpret_cast<const char*>(bob_response_message.data()));
 		printf("Packet:\n");
-		bob_response_packet.printHex(std::cout) << std::endl;
+		std::cout << bob_response_packet << std::endl;
 
 		//Alice receives the response
 		TRY_WITH_RESULT(alice_received_result, alice_send_conversation.conversation.receive(bob_response_packet));
@@ -158,7 +158,7 @@ int main() {
 
 		printf("Sent message: %.*s\n", static_cast<int>(send_message.size()), reinterpret_cast<const char*>(send_message.data()));
 		printf("Packet:\n");
-		bob_send_conversation.packet.printHex(std::cout) << std::endl;
+		std::cout << bob_send_conversation.packet << std::endl;
 
 		//let alice receive the packet
 		TRY_WITH_RESULT(alice_receive_conversation_result, Molch::Conversation::createReceiveConversation(
@@ -181,7 +181,7 @@ int main() {
 
 		printf("Sent message: %.*s\n", static_cast<int>(bob_send_message2.size()), reinterpret_cast<const char*>(bob_send_message2.data()));
 		printf("Packet:\n");
-		bob_send_packet2.printHex(std::cout) << std::endl;
+		std::cout << bob_send_packet2 << std::endl;
 
 		//alice receives the message
 		TRY_WITH_RESULT(alice_received2_result, alice_receive_conversation.conversation.receive(bob_send_packet2));
@@ -205,7 +205,7 @@ int main() {
 
 		printf("Sent message: %.*s\n", static_cast<int>(alice_response_message.size()), reinterpret_cast<const char*>(alice_response_message.data()));
 		printf("Packet:\n");
-		alice_response_packet.printHex(std::cout) << std::endl;
+		std::cout << alice_response_packet << std::endl;
 
 		//Bob receives the response
 		TRY_WITH_RESULT(bob_received_response_result, bob_send_conversation.conversation.receive(alice_response_packet));

@@ -358,25 +358,6 @@ namespace Molch {
 			return stream;
 		}
 
-		std::ostream& printHex(std::ostream& stream) const {
-			static const int width{30};
-			//buffer for the hex string
-			const size_t hex_length{this->content_length * 2 + sizeof("")};
-			auto hex{std::make_unique<char[]>(hex_length)};
-			TRY_VOID(sodium_bin2hex({hex.get(), hex_length}, *this));
-
-			for (size_t i{0}; i < hex_length; i++) {
-				if ((width != 0) && ((i % width) == 0) && (i != 0)) {
-					stream << '\n';
-				} else if ((i % 2 == 0) && (i != 0)) {
-					stream << ' ';
-				}
-				stream << hex[i];
-			}
-
-			return stream;
-		}
-
 		template <typename OtherAllocator>
 		bool operator ==(const BaseBuffer<OtherAllocator>& buffer) const noexcept {
 			auto result{this->compare(buffer)};
@@ -395,6 +376,27 @@ namespace Molch {
 			return this->buffer_length;
 		}
 	};
+
+	template <typename Allocator>
+	std::ostream& operator<<(std::ostream& stream, const BaseBuffer<Allocator> buffer) {
+		static const int width{30};
+		//buffer for the hex string
+		const size_t hex_length{buffer.size() * 2 + sizeof("")};
+		auto hex{std::make_unique<char[]>(hex_length)};
+		TRY_VOID(sodium_bin2hex({hex.get(), hex_length}, buffer));
+
+		for (size_t i{0}; i < hex_length; i++) {
+			if (((i % width) == 0) and (i != 0)) {
+				stream << '\n';
+			} else if ((i % 2 == 0) and (i != 0)) {
+				stream << ' ';
+			}
+			stream << hex[i];
+		}
+
+		return stream;
+	}
+
 
 	using Buffer = BaseBuffer<std::allocator<std::byte>>;
 	using SodiumBuffer = BaseBuffer<SodiumAllocator<std::byte>>;
