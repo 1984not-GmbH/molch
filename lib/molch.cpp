@@ -974,8 +974,8 @@ cleanup:
 			molch__protobuf__conversation__pack(conversation_struct, byte_to_uchar(conversation_buffer.data()));
 
 			//generate the nonce
-			Buffer backup_nonce{BACKUP_NONCE_SIZE, 0};
-			TRY_VOID(backup_nonce.fillRandom(BACKUP_NONCE_SIZE));
+			Buffer backup_nonce(BACKUP_NONCE_SIZE, BACKUP_NONCE_SIZE);
+			randombytes_buf(backup_nonce);
 
 			//allocate the output
 			Buffer backup_buffer{conversation_size + crypto_secretbox_MACBYTES, conversation_size + crypto_secretbox_MACBYTES};
@@ -1174,8 +1174,8 @@ cleanup:
 			molch__protobuf__backup__pack(backup_struct, byte_to_uchar(users_buffer.data()));
 
 			//generate the nonce
-			Buffer backup_nonce{BACKUP_NONCE_SIZE, 0};
-			TRY_VOID(backup_nonce.fillRandom(BACKUP_NONCE_SIZE));
+			Buffer backup_nonce(BACKUP_NONCE_SIZE, BACKUP_NONCE_SIZE);
+			randombytes_buf(backup_nonce);
 
 			//allocate the output
 			Buffer backup_buffer{backup_struct_size + crypto_secretbox_MACBYTES, backup_struct_size + crypto_secretbox_MACBYTES};

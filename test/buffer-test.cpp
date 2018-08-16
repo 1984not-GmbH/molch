@@ -137,20 +137,6 @@ int main() {
 		}
 		printf("Buffer successfully erased.\n");
 
-		//fill a buffer with random numbers
-		Buffer random{10, 0};
-		TRY_VOID(random.fillRandom(5));
-
-		if (random.size() != 5) {
-			throw Molch::Exception{status_type::BUFFER_ERROR, "Wrong content length.\n"};
-		}
-		printf("Buffer with %zu random bytes:\n", random.size());
-		random.printHex(std::cout);
-
-		if (random.fillRandom(20)) {
-			throw Molch::Exception(status_type::BUFFER_ERROR, "Failed to detect too long write to buffer.");
-		}
-
 		//compare buffer to an array
 		Buffer true_buffer{"true"};
 		{

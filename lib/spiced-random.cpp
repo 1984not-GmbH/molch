@@ -39,7 +39,7 @@ namespace Molch {
 
 		//buffer that contains the random data from the OS
 		SodiumBuffer os_random{output_length, output_length};
-		OUTCOME_TRY(os_random.fillRandom(output_length));
+		randombytes_buf(os_random);
 
 		//buffer that contains a random salt
 		Key<crypto_pwhash_SALTBYTES,KeyType::Key> salt(uninitialized_t::uninitialized);

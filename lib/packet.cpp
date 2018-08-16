@@ -162,8 +162,8 @@ namespace Molch {
 		}
 
 		//generate the header nonce and add it to the packet header
-		Buffer header_nonce{HEADER_NONCE_SIZE, 0};
-		OUTCOME_TRY(header_nonce.fillRandom(HEADER_NONCE_SIZE));
+		Buffer header_nonce(HEADER_NONCE_SIZE, HEADER_NONCE_SIZE);
+		randombytes_buf(header_nonce);
 		packet_header_struct.has_header_nonce = true;
 		packet_header_struct.header_nonce.data = byte_to_uchar(header_nonce.data());
 		packet_header_struct.header_nonce.len = header_nonce.size();
@@ -184,8 +184,8 @@ namespace Molch {
 		packet_struct.encrypted_axolotl_header.len = encrypted_axolotl_header.size();
 
 		//generate the message nonce and add it to the packet header
-		Buffer message_nonce{MESSAGE_NONCE_SIZE, 0};
-		OUTCOME_TRY(message_nonce.fillRandom(MESSAGE_NONCE_SIZE));
+		Buffer message_nonce{MESSAGE_NONCE_SIZE, MESSAGE_NONCE_SIZE};
+		randombytes_buf(message_nonce);
 		packet_header_struct.has_message_nonce = true;
 		packet_header_struct.message_nonce.data = byte_to_uchar(message_nonce.data());
 		packet_header_struct.message_nonce.len = message_nonce.size();

@@ -205,22 +205,6 @@ namespace Molch {
 		}
 
 		/*
-		 * Fill a buffer with random numbers.
-		 */
-		result<void> fillRandom(const size_t length) noexcept {
-			FulfillOrFail(length <= this->buffer_length);
-
-			if (this->buffer_length == 0) {
-				return outcome::success();
-			}
-
-			this->content_length = length;
-			randombytes_buf({this->content, length});
-
-			return outcome::success();
-		}
-
-		/*
 		 * Compare two buffers.
 		 *
 		 * Returns 0 if both buffers match.
