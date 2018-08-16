@@ -224,7 +224,7 @@ namespace Molch {
 		user->private_identity_key = exported_master_keys.private_identity_key;
 
 		//export the conversation store
-		protobuf_array_arena_export(arena, user, conversations, this->conversations);
+		outcome_protobuf_array_arena_export(arena, user, conversations, this->conversations);
 
 		//export the prekeys
 		OUTCOME_TRY(exported_prekeys, this->prekeys.exportProtobuf(arena));
