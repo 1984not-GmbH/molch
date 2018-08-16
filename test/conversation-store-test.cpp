@@ -101,9 +101,6 @@ static void test_add_conversation(ConversationStore& store) {
 static void protobuf_empty_store() {
 	printf("Testing im-/export of empty conversation store.\n");
 
-	ProtobufCConversation **exported = nullptr;
-	size_t exported_length{0};
-
 	ConversationStore store;
 
 	//export it
@@ -111,7 +108,7 @@ static void protobuf_empty_store() {
 	TRY_WITH_RESULT(exported_conversations_result, store.exportProtobuf(pool));
 	const auto& exported_conversations{exported_conversations_result.value()};
 
-	if ((exported != nullptr) || (exported_length != 0)) {
+	if (not exported_conversations.empty()) {
 		throw Molch::Exception{status_type::INCORRECT_DATA, "Exported data is not empty."};
 	}
 
