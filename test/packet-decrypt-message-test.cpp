@@ -59,9 +59,7 @@ int main() {
 			packet_type,
 			header,
 			message,
-			nullptr,
-			nullptr,
-			nullptr);
+			std::nullopt);
 
 		//now decrypt the message
 		TRY_WITH_RESULT(normal_message_result, packet_decrypt_message(packet, message_key));
@@ -93,12 +91,10 @@ int main() {
 		//PREKEY MESSAGE
 		printf("PREKEY MESSAGE\n");
 		//create the public keys
-		PublicKey public_identity_key;
-		randombytes_buf(public_identity_key);
-		PublicKey public_ephemeral_key;
-		randombytes_buf(public_ephemeral_key);
-		PublicKey public_prekey;
-		randombytes_buf(public_prekey);
+		auto prekey_metadata{std::make_optional<PrekeyMetadata>()};
+		randombytes_buf(prekey_metadata.value().identity);
+		randombytes_buf(prekey_metadata.value().ephemeral);
+		randombytes_buf(prekey_metadata.value().prekey);
 
 		packet.clear();
 
@@ -110,9 +106,7 @@ int main() {
 			packet_type,
 			header,
 			message,
-			&public_identity_key,
-			&public_ephemeral_key,
-			&public_prekey);
+			prekey_metadata);
 
 		//now decrypt the message
 		TRY_WITH_RESULT(prekey_message_result, packet_decrypt_message(packet, message_key));

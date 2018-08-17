@@ -57,9 +57,7 @@ int main() {
 			packet_type,
 			header,
 			message,
-			nullptr,
-			nullptr,
-			nullptr);
+			std::nullopt);
 
 		//now extract the metadata
 		TRY_WITH_RESULT(normal_metadata_result, packet_get_metadata_without_verification(packet));
@@ -88,12 +86,10 @@ int main() {
 		//NOW A PREKEY MESSAGE
 		printf("PREKEY MESSAGE:\n");
 		//create the keys
-		PublicKey public_identity_key;
-		randombytes_buf(public_identity_key);
-		PublicKey public_ephemeral_key;
-		randombytes_buf(public_ephemeral_key);
-		PublicKey public_prekey;
-		randombytes_buf(public_prekey);
+		auto prekey_metadata{std::make_optional<PrekeyMetadata>()};
+		randombytes_buf(prekey_metadata.value().identity);
+		randombytes_buf(prekey_metadata.value().ephemeral);
+		randombytes_buf(prekey_metadata.value().prekey);
 
 		packet.clear();
 
@@ -105,9 +101,7 @@ int main() {
 			packet_type,
 			header,
 			message,
-			&public_identity_key,
-			&public_ephemeral_key,
-			&public_prekey);
+			prekey_metadata);
 
 		//now extract the metadata
 		TRY_WITH_RESULT(prekey_packet_metadata_result, packet_get_metadata_without_verification(packet));
@@ -132,19 +126,19 @@ int main() {
 		if (not prekey_packet_metadata.prekey_metadata.has_value()) {
 			throw Molch::Exception(status_type::INVALID_VALUE, "No prekey metadata found.");
 		}
-		const auto& prekey_metadata{prekey_packet_metadata.prekey_metadata.value()};
+		const auto& unverified_prekey_metadata{prekey_packet_metadata.prekey_metadata.value()};
 
-		if (public_identity_key != prekey_metadata.identity) {
+		if (prekey_metadata.value().identity != unverified_prekey_metadata.identity) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted public identity key doesn't match."};
 		}
 		printf("Extracted public identity key matches!\n");
 
-		if (public_ephemeral_key != prekey_metadata.ephemeral) {
+		if (prekey_metadata.value().ephemeral != unverified_prekey_metadata.ephemeral) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extratec public ephemeral key doesn't match."};
 		}
 		printf("Extracted public ephemeral key matches!\n");
 
-		if (public_prekey != prekey_metadata.prekey) {
+		if (prekey_metadata.value().prekey != unverified_prekey_metadata.prekey) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted public prekey doesn't match."};
 		}
 		printf("Extracted public prekey matches!\n");

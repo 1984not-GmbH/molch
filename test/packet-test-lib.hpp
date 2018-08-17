@@ -25,6 +25,7 @@
 #include "../include/molch.h"
 #include "../lib/buffer.hpp"
 #include "../lib/key.hpp"
+#include "../lib/packet.hpp"
 
 /*!
  * Create message and header keys, encrypt header and message
@@ -58,9 +59,6 @@ MOLCH_PUBLIC(void) create_and_print_message(
 		const molch_message_type packet_type,
 		const Molch::Buffer& header,
 		const Molch::Buffer& message,
-		//optional inputs (prekey messages only)
-		Molch::PublicKey * const public_identity_key,
-		Molch::PublicKey * const public_ephemeral_key,
-		Molch::PublicKey * const public_prekey);
+		const std::optional<Molch::PrekeyMetadata>& prekey_metadata);
 
 #endif
