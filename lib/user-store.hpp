@@ -40,7 +40,7 @@
 namespace Molch {
 	class User {
 	private:
-		EmptyablePublicSigningKey public_signing_key;
+		PublicSigningKey public_signing_key;
 		MasterKeys master_keys;
 
 		User& move(User&& node) noexcept;
@@ -74,7 +74,7 @@ namespace Molch {
 
 		result<ProtobufCUser*> exportProtobuf(Arena& arena) const;
 
-		const EmptyablePublicSigningKey& id() const noexcept;
+		const PublicSigningKey& id() const noexcept;
 		const MasterKeys& masterKeys() const noexcept;
 	};
 

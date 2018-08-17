@@ -131,7 +131,7 @@ int main() {
 		auto& unspiced_master_keys{unspiced_master_keys_result.value()};
 
 		//get the public keys
-		EmptyablePublicSigningKey public_signing_key{unspiced_master_keys.getSigningKey()};
+		PublicSigningKey public_signing_key{unspiced_master_keys.getSigningKey()};
 		EmptyablePublicKey public_identity_key{unspiced_master_keys.getIdentityKey()};
 
 		//print the keys

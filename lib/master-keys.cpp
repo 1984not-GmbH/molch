@@ -81,7 +81,7 @@ namespace Molch {
 			ReadWriteUnlocker unlocker(keys);
 
 			//copy the keys
-			OUTCOME_TRY(imported_public_signing_key, EmptyablePublicSigningKey::import(public_signing_key));
+			OUTCOME_TRY(imported_public_signing_key, PublicSigningKey::import(public_signing_key));
 			keys.public_signing_key = imported_public_signing_key;
 			OUTCOME_TRY(imported_private_signing_key, PrivateSigningKey::import(private_signing_key));
 			*keys.private_signing_key = imported_private_signing_key;
@@ -115,7 +115,6 @@ namespace Molch {
 		OUTCOME_TRY(crypto_sign_keypair(
 				this->public_signing_key,
 				*this->private_signing_key));
-		this->public_signing_key.empty = false;
 
 		//generate the identity keypair
 		OUTCOME_TRY(crypto_box_keypair(this->public_identity_key, *this->private_identity_key));
@@ -136,7 +135,6 @@ namespace Molch {
 				this->public_signing_key,
 				*this->private_signing_key,
 				span<std::byte>(high_entropy_seed).subspan(0, crypto_sign_SEEDBYTES)));
-		this->public_signing_key.empty = false;
 
 		//generate the identity keypair
 		OUTCOME_TRY(crypto_box_seed_keypair(
@@ -148,7 +146,7 @@ namespace Molch {
 		return outcome::success();
 	}
 
-	const EmptyablePublicSigningKey& MasterKeys::getSigningKey() const noexcept {
+	const PublicSigningKey& MasterKeys::getSigningKey() const noexcept {
 		return this->public_signing_key;
 	}
 

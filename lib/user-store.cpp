@@ -78,7 +78,7 @@ namespace Molch {
 		imported_user.master_keys = std::move(master_keys);
 
 		//public signing key
-		OUTCOME_TRY(imported_public_signing_key, EmptyablePublicSigningKey::fromSpan({user.public_signing_key->key}));
+		OUTCOME_TRY(imported_public_signing_key, PublicSigningKey::fromSpan({user.public_signing_key->key}));
 		imported_user.public_signing_key = imported_public_signing_key;
 
 		OUTCOME_TRY(imported_conversation_store, ConversationStore::import({user.conversations, user.n_conversations}));
@@ -105,7 +105,7 @@ namespace Molch {
 		return stream;
 	}
 
-	const EmptyablePublicSigningKey& User::id() const noexcept {
+	const PublicSigningKey& User::id() const noexcept {
 		return this->public_signing_key;
 	}
 	const MasterKeys& User::masterKeys() const noexcept {
