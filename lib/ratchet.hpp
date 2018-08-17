@@ -53,7 +53,7 @@ namespace Molch {
 		PublicKey their_public_identity; //DHIr
 		//ephemeral keys (ratchet keys)
 		PrivateKey our_private_ephemeral; //DHRs
-		EmptyablePublicKey our_public_ephemeral; //DHRs
+		PublicKey our_public_ephemeral; //DHRs
 		EmptyablePublicKey their_public_ephemeral; //DHRr
 		EmptyablePublicKey their_purported_public_ephemeral; //DHp
 	};
@@ -125,7 +125,7 @@ namespace Molch {
 		struct SendData {
 			uint32_t message_number;
 			uint32_t previous_message_number;
-			EmptyablePublicKey ephemeral;
+			PublicKey ephemeral;
 			MessageKey message_key;
 			EmptyableHeaderKey header_key;
 		};

@@ -122,7 +122,6 @@ namespace Molch {
 			OUTCOME_TRY(crypto_box_keypair(
 					storage->our_public_ephemeral,
 					storage->our_private_ephemeral));
-			storage->our_public_ephemeral.empty = false;
 
 			//HKs = NHKs
 			storage->send_header_key = storage->next_send_header_key;
@@ -493,7 +492,6 @@ namespace Molch {
 		outcome_protobuf_optional_bytes_arena_export(arena, conversation, our_private_ephemeral_key, PRIVATE_KEY_SIZE);
 		//our public ephemeral key
 		const auto& our_public_ephemeral_key{storage.our_public_ephemeral};
-		error_if_missing(our_public_ephemeral_key);
 		outcome_protobuf_optional_bytes_arena_export(arena, conversation, our_public_ephemeral_key, PUBLIC_KEY_SIZE);
 		//their public ephemeral key
 		const auto& their_public_ephemeral_key{storage.their_public_ephemeral};
@@ -722,7 +720,7 @@ namespace Molch {
 		if (!conversation.has_our_public_ephemeral_key || (conversation.our_public_ephemeral_key.len != PUBLIC_KEY_SIZE)) {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "our_public_ephemeral is missing from the protobuf.");
 		}
-		OUTCOME_TRY(our_public_ephemeral, EmptyablePublicKey::fromSpan({conversation.our_public_ephemeral_key}));
+		OUTCOME_TRY(our_public_ephemeral, PublicKey::fromSpan({conversation.our_public_ephemeral_key}));
 		ratchet.storage->our_public_ephemeral = our_public_ephemeral;
 		//their public ephemeral key
 		if (!conversation.has_their_public_ephemeral_key || (conversation.their_public_ephemeral_key.len != PUBLIC_KEY_SIZE)) {
