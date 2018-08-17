@@ -59,7 +59,7 @@ namespace Molch {
 
 
 	struct ExtractedHeader {
-		EmptyablePublicKey their_public_ephemeral;
+		PublicKey their_public_ephemeral;
 		uint32_t message_number;
 		uint32_t previous_message_number;
 	};

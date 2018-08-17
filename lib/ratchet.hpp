@@ -55,7 +55,7 @@ namespace Molch {
 		PrivateKey our_private_ephemeral; //DHRs
 		PublicKey our_public_ephemeral; //DHRs
 		PublicKey their_public_ephemeral; //DHRr
-		EmptyablePublicKey their_purported_public_ephemeral; //DHp
+		std::optional<PublicKey> their_purported_public_ephemeral; //DHp
 	};
 
 	class Ratchet {
@@ -162,7 +162,7 @@ namespace Molch {
 		 * after having verified the message.
 		 */
 		result<MessageKey> receive(
-				const EmptyablePublicKey& their_purported_public_ephemeral,
+				const PublicKey& their_purported_public_ephemeral,
 				const uint32_t purported_message_number,
 				const uint32_t purported_previous_message_number);
 

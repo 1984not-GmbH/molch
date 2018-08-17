@@ -77,7 +77,7 @@ namespace Molch {
 		extracted_header.message_number = header_struct->message_number;
 		extracted_header.previous_message_number = header_struct->previous_message_number;
 
-		OUTCOME_TRY(their_public_ephemeral, EmptyablePublicKey::fromSpan({header_struct->public_ephemeral_key}));
+		OUTCOME_TRY(their_public_ephemeral, PublicKey::fromSpan({header_struct->public_ephemeral_key}));
 		extracted_header.their_public_ephemeral = their_public_ephemeral;
 
 		return extracted_header;

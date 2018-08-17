@@ -266,11 +266,9 @@ namespace Molch {
 	}
 
 	result<MessageKey> Ratchet::receive(
-			const EmptyablePublicKey& their_purported_public_ephemeral,
+			const PublicKey& their_purported_public_ephemeral,
 			const uint32_t purported_message_number,
 			const uint32_t purported_previous_message_number) {
-		FulfillOrFail(!their_purported_public_ephemeral.empty);
-
 		if (!this->received_valid) {
 			//abort because the previously received message hasn't been verified yet.
 			return Error(status_type::INVALID_STATE, "Previously received message hasn't been verified yet.");
@@ -387,10 +385,10 @@ namespace Molch {
 			//NHKr = NHKp
 			this->storage->next_receive_header_key = this->storage->purported_next_receive_header_key;
 			//DHRr = DHRp
-			if (this->storage->their_purported_public_ephemeral.empty) {
+			if (not this->storage->their_purported_public_ephemeral.has_value()) {
 				return Error(status_type::INVALID_VALUE, "Their purported public ephemeral key is missing.");
 			}
-			this->storage->their_public_ephemeral = this->storage->their_purported_public_ephemeral.toKey().value();
+			this->storage->their_public_ephemeral = this->storage->their_purported_public_ephemeral.value();
 			//erase(DHRs)
 			this->storage->our_private_ephemeral.zero();
 			//ratchet_flag = True
@@ -501,8 +499,9 @@ namespace Molch {
 		const auto& their_public_ephemeral_key{storage.their_public_ephemeral};
 		outcome_protobuf_optional_bytes_arena_export(arena, conversation, their_public_ephemeral_key, PUBLIC_KEY_SIZE);
 		//their purported public ephemeral key
-		const auto& their_purported_public_ephemeral{storage.their_purported_public_ephemeral};
-		if (!their_purported_public_ephemeral.empty) {
+		const auto& their_purported_public_ephemeral_optional{storage.their_purported_public_ephemeral};
+		if (their_purported_public_ephemeral_optional.has_value()) {
+			const auto& their_purported_public_ephemeral{their_purported_public_ephemeral_optional.value()};
 			outcome_protobuf_optional_bytes_arena_export(arena, conversation, their_purported_public_ephemeral, PUBLIC_KEY_SIZE);
 		}
 
@@ -733,7 +732,7 @@ namespace Molch {
 		ratchet.storage->their_public_ephemeral = their_public_ephemeral;
 		//their purported public ephemeral key
 		if (conversation.has_their_purported_public_ephemeral && (conversation.their_purported_public_ephemeral.len == PUBLIC_KEY_SIZE)) {
-			OUTCOME_TRY(their_purported_public_ephemeral, EmptyablePublicKey::fromSpan({conversation.their_purported_public_ephemeral}));
+			OUTCOME_TRY(their_purported_public_ephemeral, PublicKey::fromSpan({conversation.their_purported_public_ephemeral}));
 			ratchet.storage->their_purported_public_ephemeral = their_purported_public_ephemeral;
 		}
 
@@ -798,7 +797,11 @@ namespace Molch {
 		stream << "Their public ephemeral key:\n";
 		stream << storage->their_public_ephemeral << '\n';
 		stream << "Their purported public ephemeral key:\n";
-		stream << storage->their_purported_public_ephemeral << '\n';
+		if (storage->their_purported_public_ephemeral.has_value()) {
+			stream << storage->their_purported_public_ephemeral.value() << '\n';
+		} else {
+			stream << "(empty)\n";
+		}
 
 		//numbers
 		stream << "Send message number: " << this->send_message_number << '\n';
