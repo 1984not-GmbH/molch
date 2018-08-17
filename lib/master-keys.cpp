@@ -85,7 +85,7 @@ namespace Molch {
 			keys.public_signing_key = imported_public_signing_key;
 			OUTCOME_TRY(imported_private_signing_key, PrivateSigningKey::import(private_signing_key));
 			*keys.private_signing_key = imported_private_signing_key;
-			OUTCOME_TRY(imported_public_identity_key, EmptyablePublicKey::import(public_identity_key));
+			OUTCOME_TRY(imported_public_identity_key, PublicKey::import(public_identity_key));
 			keys.public_identity_key = imported_public_identity_key;
 			OUTCOME_TRY(imported_private_identity_key, PrivateKey::import(private_identity_key));
 			*keys.private_identity_key = imported_private_identity_key;
@@ -118,7 +118,6 @@ namespace Molch {
 
 		//generate the identity keypair
 		OUTCOME_TRY(crypto_box_keypair(this->public_identity_key, *this->private_identity_key));
-		this->public_identity_key.empty = false;
 
 		return outcome::success();
 	}
@@ -141,7 +140,6 @@ namespace Molch {
 				this->public_identity_key,
 				*this->private_identity_key,
 				span<const std::byte>{high_entropy_seed}.subspan(crypto_sign_SEEDBYTES)));
-		this->public_identity_key.empty = false;
 
 		return outcome::success();
 	}
@@ -158,7 +156,7 @@ namespace Molch {
 		return this->private_signing_key;
 	}
 
-	const EmptyablePublicKey& MasterKeys::getIdentityKey() const noexcept {
+	const PublicKey& MasterKeys::getIdentityKey() const noexcept {
 		return this->public_identity_key;
 	}
 

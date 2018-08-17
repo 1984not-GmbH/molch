@@ -476,7 +476,7 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		TRY_WITH_RESULT(private_identity_key, user->masterKeys().getPrivateIdentityKey());
 		TRY_WITH_RESULT(send_conversation_result, Molch::Conversation::createSendConversation(
 			{uchar_to_byte(message), message_length},
-			user->masterKeys().getIdentityKey().toKey().value(),
+			user->masterKeys().getIdentityKey(),
 			*private_identity_key.value(),
 			receiver_public_identity,
 			prekeys));
@@ -574,7 +574,7 @@ cleanup:
 			TRY_WITH_RESULT(private_identity_key, user->masterKeys().getPrivateIdentityKey());
 			TRY_WITH_RESULT(receive_conversation_result, Molch::Conversation::createReceiveConversation(
 				{uchar_to_byte(packet), packet_length},
-				user->masterKeys().getIdentityKey().toKey().value(),
+				user->masterKeys().getIdentityKey(),
 				*private_identity_key.value(),
 				user->prekeys));
 			auto& receive_conversation{receive_conversation_result.value()};

@@ -48,7 +48,7 @@ namespace Molch {
 		PublicSigningKey public_signing_key;
 		PrivateSigningKey *private_signing_key{nullptr};
 		//X25519 key for deriving axolotl root keys
-		EmptyablePublicKey public_identity_key;
+		PublicKey public_identity_key;
 		PrivateKey *private_identity_key{nullptr};
 
 		/* Internally does the intialization of the buffers creation of the keys */
@@ -103,7 +103,7 @@ namespace Molch {
 
 		const PublicSigningKey& getSigningKey() const noexcept;
 		result<const PrivateSigningKey*> getPrivateSigningKey() const noexcept;
-		const EmptyablePublicKey& getIdentityKey() const noexcept;
+		const PublicKey& getIdentityKey() const noexcept;
 		result<const PrivateKey*> getPrivateIdentityKey() const noexcept;
 
 		/*

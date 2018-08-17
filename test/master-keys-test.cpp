@@ -132,7 +132,7 @@ int main() {
 
 		//get the public keys
 		PublicSigningKey public_signing_key{unspiced_master_keys.getSigningKey()};
-		EmptyablePublicKey public_identity_key{unspiced_master_keys.getIdentityKey()};
+		PublicKey public_identity_key{unspiced_master_keys.getIdentityKey()};
 
 		//print the keys
 		printf("Signing keypair:\n");
