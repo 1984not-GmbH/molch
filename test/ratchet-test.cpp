@@ -224,7 +224,7 @@ int main() {
 
 		//confirm validity of the message key (this is normally done after successfully decrypting
 		//and authenticating a message with the key
-		bob_state.setLastMessageAuthenticity(true);
+		TRY_VOID(bob_state.setLastMessageAuthenticity(true));
 
 		const auto bob_receive_header_keys2{bob_state.getReceiveHeaderKeys()};
 
@@ -263,7 +263,7 @@ int main() {
 
 		//confirm validity of the message key (this is normally done after successfully decrypting
 		//and authenticating a message with the key
-		bob_state.setLastMessageAuthenticity(true);
+		TRY_VOID(bob_state.setLastMessageAuthenticity(true));
 
 		const auto bob_receive_header_keys3{bob_state.getReceiveHeaderKeys()};
 
@@ -304,7 +304,7 @@ int main() {
 
 		//confirm validity of the message key (this is normally done after successfully decrypting
 		//and authenticating a message with the key
-		bob_state.setLastMessageAuthenticity(true);
+		TRY_VOID(bob_state.setLastMessageAuthenticity(true));
 
 		//compare the message keys
 		if (alice_send_data1.message_key != bob_receive_key1) {
@@ -392,7 +392,7 @@ int main() {
 		std::cout << alice_receive_message_key1 << std::endl;
 
 		//confirm validity of the message key
-		alice_state.setLastMessageAuthenticity(true);
+		TRY_VOID(alice_state.setLastMessageAuthenticity(true));
 
 		const auto alice_receive_header_keys2{alice_state.getReceiveHeaderKeys()};
 
@@ -432,7 +432,7 @@ int main() {
 		assert(alice_state.staged_header_and_message_keys.keys().size() == 1);
 
 		//confirm validity of the message key
-		alice_state.setLastMessageAuthenticity(true);
+		TRY_VOID(alice_state.setLastMessageAuthenticity(true));
 
 		assert(alice_state.staged_header_and_message_keys.keys().empty());
 		assert(alice_state.skipped_header_and_message_keys.keys().size() == 1);

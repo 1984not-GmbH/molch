@@ -54,7 +54,7 @@ namespace Molch {
 		//ephemeral keys (ratchet keys)
 		PrivateKey our_private_ephemeral; //DHRs
 		PublicKey our_public_ephemeral; //DHRs
-		EmptyablePublicKey their_public_ephemeral; //DHRr
+		PublicKey their_public_ephemeral; //DHRr
 		EmptyablePublicKey their_purported_public_ephemeral; //DHp
 	};
 
@@ -170,7 +170,7 @@ namespace Molch {
 		 * Call this function after trying to decrypt a message and pass it if
 		 * the decryption was successful or if it wasn't.
 		 */
-		void setLastMessageAuthenticity(const bool valid) noexcept;
+		result<void> setLastMessageAuthenticity(const bool valid) noexcept;
 
 		/*! Export a ratchet state to Protobuf-C
 		 * NOTE: This doesn't fill the Id field of the struct.

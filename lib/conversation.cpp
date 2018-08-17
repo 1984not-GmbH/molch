@@ -235,7 +235,7 @@ namespace Molch {
 
 		OUTCOME_TRY(message, packet_decrypt_message(packet, message_key));
 
-		this->ratchet.setLastMessageAuthenticity(true);
+		OUTCOME_TRY(this->ratchet.setLastMessageAuthenticity(true));
 
 		ReceivedMessage received_message;
 		received_message.message = std::move(message);
@@ -248,7 +248,7 @@ namespace Molch {
 	result<ReceivedMessage> Conversation::receive(const span<const std::byte> packet) {
 		auto received_message_result = internal_receive(packet);
 		if (not received_message_result.has_value()) {
-			this->ratchet.setLastMessageAuthenticity(false);
+			OUTCOME_TRY(this->ratchet.setLastMessageAuthenticity(false));
 		}
 
 		return received_message_result;

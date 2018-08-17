@@ -130,7 +130,7 @@ int main() {
 		}
 		printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
 
-		bob_receive_ratchet.setLastMessageAuthenticity(true);
+		TRY_VOID(bob_receive_ratchet.setLastMessageAuthenticity(true));
 
 
 		//SECOND SCENARIO: BOB SENDS MESSAGE TO ALICE
@@ -163,7 +163,7 @@ int main() {
 		}
 		printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
 
-		alice_receive_ratchet.setLastMessageAuthenticity(true);
+		TRY_VOID(alice_receive_ratchet.setLastMessageAuthenticity(true));
 
 		//THIRD SCENARIO: BOB ANSWERS ALICE AFTER HAVING RECEIVED HER FIRST MESSAGE
 		TRY_WITH_RESULT(bob_send_data2_result, bob_receive_ratchet.getSendData());
@@ -195,7 +195,7 @@ int main() {
 		}
 		printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
 
-		alice_send_ratchet.setLastMessageAuthenticity(true);
+		TRY_VOID(alice_send_ratchet.setLastMessageAuthenticity(true));
 
 		//FOURTH SCENARIO: ALICE ANSWERS BOB AFTER HAVING RECEIVED HER FIRST MESSAGE
 		TRY_WITH_RESULT(alice_send_data2_result, alice_receive_ratchet.getSendData());
@@ -227,7 +227,7 @@ int main() {
 		}
 		printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
 
-		bob_send_ratchet.setLastMessageAuthenticity(true);
+		TRY_VOID(bob_send_ratchet.setLastMessageAuthenticity(true));
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;
