@@ -127,15 +127,15 @@ namespace Molch {
 		const auto& unverified_prekey_metadata{unverified_metadata.prekey_metadata.value()};
 
 		//get the private prekey that corresponds to the public prekey used in the message
-		OUTCOME_TRY(receiver_private_prekey, receiver_prekeys.getPrekey(unverified_prekey_metadata.prekey.toKey().value()));
+		OUTCOME_TRY(receiver_private_prekey, receiver_prekeys.getPrekey(unverified_prekey_metadata.prekey));
 
 		OUTCOME_TRY(conversation, create(
 				receiver_private_identity,
 				receiver_public_identity,
-				unverified_prekey_metadata.identity.toKey().value(),
+				unverified_prekey_metadata.identity,
 				receiver_private_prekey,
-				unverified_prekey_metadata.prekey.toKey().value(),
-				unverified_prekey_metadata.ephemeral.toKey().value()));
+				unverified_prekey_metadata.prekey,
+				unverified_prekey_metadata.ephemeral));
 
 		OUTCOME_TRY(received_message, conversation.receive(packet));
 
@@ -143,11 +143,6 @@ namespace Molch {
 	}
 
 	result<Buffer> Conversation::send(const span<const std::byte> message, const std::optional<PrekeyMetadata>& prekey_metadata) {
-		FulfillOrFail((not prekey_metadata.has_value())
-			or ((not prekey_metadata.value().identity.empty)
-				 and (not prekey_metadata.value().ephemeral.empty)
-				 and (not prekey_metadata.value().prekey.empty)));
-
 		OUTCOME_TRY(send_data, this->ratchet.getSendData());
 		OUTCOME_TRY(header, header_construct(
 				send_data.ephemeral,
@@ -184,7 +179,7 @@ namespace Molch {
 				message.message = std::move(decrypted_packet.message);
 				this->ratchet.skipped_header_and_message_keys.remove(index);
 
-				EmptyablePublicKey their_signed_public_ephemeral;
+				PublicKey their_signed_public_ephemeral;
 				OUTCOME_TRY(extracted_header, header_extract(decrypted_packet.header));
 				message.message_number = extracted_header.message_number;
 				message.previous_message_number = extracted_header.previous_message_number;

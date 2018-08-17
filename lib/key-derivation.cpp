@@ -36,19 +36,17 @@ namespace Molch {
 	 */
 	result<DerivedRootNextHeadAndChainKey> derive_root_next_header_and_chain_keys(
 			const PrivateKey& our_private_ephemeral,
-			const EmptyablePublicKey& our_public_ephemeral,
-			const EmptyablePublicKey& their_public_ephemeral,
+			const PublicKey& our_public_ephemeral,
+			const PublicKey& their_public_ephemeral,
 			const EmptyableRootKey& previous_root_key,
 			const Ratchet::Role role) {
-		FulfillOrFail(!our_public_ephemeral.empty
-				&& !their_public_ephemeral.empty
-				&& !previous_root_key.empty);
+		FulfillOrFail(not previous_root_key.empty);
 
 		//DH(DHRs, DHRr) or DH(DHRp, DHRs)
 		OUTCOME_TRY(diffie_hellman_secret, diffie_hellman(
 			our_private_ephemeral,
-			our_public_ephemeral.toKey().value(),
-			their_public_ephemeral.toKey().value(),
+			our_public_ephemeral,
+			their_public_ephemeral,
 			role));
 
 		//key to derive from
@@ -85,28 +83,23 @@ namespace Molch {
 	 */
 	result<DerivedInitialRootChainAndHeaderKeys> derive_initial_root_chain_and_header_keys(
 			const PrivateKey& our_private_identity,
-			const EmptyablePublicKey& our_public_identity,
-			const EmptyablePublicKey& their_public_identity,
+			const PublicKey& our_public_identity,
+			const PublicKey& their_public_identity,
 			const PrivateKey& our_private_ephemeral,
-			const EmptyablePublicKey& our_public_ephemeral,
-			const EmptyablePublicKey& their_public_ephemeral,
+			const PublicKey& our_public_ephemeral,
+			const PublicKey& their_public_ephemeral,
 			const Ratchet::Role role) {
-		FulfillOrFail(!our_public_identity.empty
-				&& !their_public_identity.empty
-				&& !our_public_ephemeral.empty
-				&& !their_public_ephemeral.empty);
-
 		//derive master_key to later derive the initial root key,
 		//header keys and chain keys from
 		//master_key = HASH( DH(A,B0) || DH(A0,B) || DH(A0,B0) )
 		static_assert(crypto_secretbox_KEYBYTES == crypto_auth_BYTES, "crypto_auth_BYTES is not crypto_secretbox_KEYBYTES");
 		OUTCOME_TRY(master_key, triple_diffie_hellman(
 			our_private_identity,
-			our_public_identity.toKey().value(),
+			our_public_identity,
 			our_private_ephemeral,
-			our_public_ephemeral.toKey().value(),
-			their_public_identity.toKey().value(),
-			their_public_ephemeral.toKey().value(),
+			our_public_ephemeral,
+			their_public_identity,
+			their_public_ephemeral,
 			role));
 
 		DerivedInitialRootChainAndHeaderKeys output;

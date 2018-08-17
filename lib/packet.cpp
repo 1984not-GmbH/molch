@@ -251,11 +251,11 @@ namespace Molch {
 			metadata.prekey_metadata = PrekeyMetadata();
 			auto& prekey_metadata{metadata.prekey_metadata.value()};
 			//copy the public keys
-			OUTCOME_TRY(identity, EmptyablePublicKey::fromSpan({packet_struct->packet_header->public_identity_key}));
+			OUTCOME_TRY(identity, PublicKey::fromSpan({packet_struct->packet_header->public_identity_key}));
 			prekey_metadata.identity = identity;
-			OUTCOME_TRY(ephemeral, EmptyablePublicKey::fromSpan({packet_struct->packet_header->public_ephemeral_key}));
+			OUTCOME_TRY(ephemeral, PublicKey::fromSpan({packet_struct->packet_header->public_ephemeral_key}));
 			prekey_metadata.ephemeral = ephemeral;
-			OUTCOME_TRY(prekey, EmptyablePublicKey::fromSpan({packet_struct->packet_header->public_prekey}));
+			OUTCOME_TRY(prekey, PublicKey::fromSpan({packet_struct->packet_header->public_prekey}));
 			prekey_metadata.prekey = prekey;
 		}
 

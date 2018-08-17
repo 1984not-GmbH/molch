@@ -44,9 +44,9 @@ MOLCH_PUBLIC(void) create_and_print_message(
 		const Buffer& header,
 		const Buffer& message,
 		//optional inputs (prekey messages only)
-		EmptyablePublicKey * const public_identity_key,
-		EmptyablePublicKey * const public_ephemeral_key,
-		EmptyablePublicKey * const public_prekey) {
+		PublicKey * const public_identity_key,
+		PublicKey * const public_ephemeral_key,
+		PublicKey * const public_prekey) {
 	//check input
 	Expects(packet_type != molch_message_type::INVALID);
 
@@ -72,9 +72,7 @@ MOLCH_PUBLIC(void) create_and_print_message(
 	printf("Message (%zu Bytes):\n%.*s\n\n", message.size(), static_cast<int>(message.size()), byte_to_uchar(message.data()));
 
 	std::optional<PrekeyMetadata> prekey_metadata;
-	if ((public_identity_key != nullptr) and (not public_identity_key->empty)
-			and (public_ephemeral_key != nullptr) and (not public_ephemeral_key->empty)
-			and (public_prekey != nullptr) and (not public_prekey->empty)) {
+	if ((public_identity_key != nullptr) and (public_ephemeral_key != nullptr) and (public_prekey != nullptr)) {
 		prekey_metadata = std::make_optional<PrekeyMetadata>();
 		auto& metadata{prekey_metadata.value()};
 		metadata.identity = *public_identity_key;

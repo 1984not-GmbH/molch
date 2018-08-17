@@ -93,15 +93,12 @@ int main() {
 		//PREKEY MESSAGE
 		printf("PREKEY MESSAGE\n");
 		//create the public keys
-		EmptyablePublicKey public_identity_key;
+		PublicKey public_identity_key;
 		randombytes_buf(public_identity_key);
-		public_identity_key.empty = false;
-		EmptyablePublicKey public_ephemeral_key;
+		PublicKey public_ephemeral_key;
 		randombytes_buf(public_ephemeral_key);
-		public_ephemeral_key.empty = false;
-		EmptyablePublicKey public_prekey;
+		PublicKey public_prekey;
 		randombytes_buf(public_prekey);
-		public_prekey.empty = false;
 
 		packet.clear();
 

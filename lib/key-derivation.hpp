@@ -42,8 +42,8 @@ namespace Molch {
 	 */
 	result<DerivedRootNextHeadAndChainKey> derive_root_next_header_and_chain_keys(
 			const PrivateKey& our_private_ephemeral,
-			const EmptyablePublicKey& our_public_ephemeral,
-			const EmptyablePublicKey& their_public_ephemeral,
+			const PublicKey& our_public_ephemeral,
+			const PublicKey& their_public_ephemeral,
 			const EmptyableRootKey& previous_root_key,
 			const Ratchet::Role role);
 
@@ -64,11 +64,11 @@ namespace Molch {
 	 */
 	result<DerivedInitialRootChainAndHeaderKeys> derive_initial_root_chain_and_header_keys(
 			const PrivateKey& our_private_identity,
-			const EmptyablePublicKey& our_public_identity,
-			const EmptyablePublicKey& their_public_identity,
+			const PublicKey& our_public_identity,
+			const PublicKey& their_public_identity,
 			const PrivateKey& our_private_ephemeral,
-			const EmptyablePublicKey& our_public_ephemeral,
-			const EmptyablePublicKey& their_public_ephemeral,
+			const PublicKey& our_public_ephemeral,
+			const PublicKey& their_public_ephemeral,
 			const Ratchet::Role role);
 }
 

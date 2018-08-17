@@ -37,9 +37,9 @@
 
 namespace Molch {
 	struct PrekeyMetadata {
-		EmptyablePublicKey identity;
-		EmptyablePublicKey ephemeral;
-		EmptyablePublicKey prekey;
+		PublicKey identity;
+		PublicKey ephemeral;
+		PublicKey prekey;
 	};
 
 	struct Metadata {
