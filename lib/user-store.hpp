@@ -106,7 +106,7 @@ namespace Molch {
 		 *
 		 * Returns nullptr if no user was found.
 		 */
-		User* find(const EmptyablePublicSigningKey& public_signing_key);
+		User* find(const PublicSigningKey& public_signing_key);
 
 		/*
 		 * Find a conversation with a given public signing key.
@@ -123,7 +123,7 @@ namespace Molch {
 		 */
 		Buffer list();
 
-		void remove(const EmptyablePublicSigningKey& public_signing_key);
+		void remove(const PublicSigningKey& public_signing_key);
 		void remove(const User* const user);
 
 		void clear();

@@ -105,7 +105,7 @@ int main() {
 		list.clear();
 
 		//create alice
-		EmptyablePublicSigningKey alice_public_signing_key;
+		PublicSigningKey alice_public_signing_key;
 		{
 			TRY_WITH_RESULT(alice_user_result, Molch::User::create());
 			auto& alice_user{alice_user_result.value()};
@@ -133,7 +133,7 @@ int main() {
 		printf("Successfully listed users.\n");
 
 		//create bob
-		EmptyablePublicSigningKey bob_public_signing_key;
+		PublicSigningKey bob_public_signing_key;
 		{
 			TRY_WITH_RESULT(bob_user_result, Molch::User::create());
 			auto& bob_user{bob_user_result.value()};
@@ -161,7 +161,7 @@ int main() {
 		printf("Successfully listed users.\n");
 
 		//create charlie
-		EmptyablePublicSigningKey charlie_public_signing_key;
+		PublicSigningKey charlie_public_signing_key;
 		{
 			TRY_WITH_RESULT(charlie_user_result, Molch::User::create());
 			auto& charlie_user{charlie_user_result.value()};

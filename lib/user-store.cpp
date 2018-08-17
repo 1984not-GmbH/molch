@@ -141,9 +141,7 @@ namespace Molch {
 		this->users[existing_index] = std::move(user);
 	}
 
-	User* UserStore::find(const EmptyablePublicSigningKey& public_signing_key) {
-		Expects(!public_signing_key.empty);
-
+	User* UserStore::find(const PublicSigningKey& public_signing_key) {
 		auto user{std::find_if(std::begin(this->users), std::end(this->users),
 				[public_signing_key](const User& user) {
 					return user.id() == public_signing_key;
@@ -200,7 +198,7 @@ namespace Molch {
 		}
 	}
 
-	void UserStore::remove(const EmptyablePublicSigningKey& public_signing_key) {
+	void UserStore::remove(const PublicSigningKey& public_signing_key) {
 		auto found_node{std::find_if(std::cbegin(this->users), std::cend(this->users),
 				[public_signing_key](const User& user) {
 					return user.id() == public_signing_key;
