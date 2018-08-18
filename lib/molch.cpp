@@ -43,7 +43,7 @@
 using namespace Molch;
 
 //global user store
-static std::unique_ptr<UserStore> users;
+static UserStore users;
 static std::unique_ptr<BackupKey,SodiumDeleter<BackupKey>> global_backup_key;
 
 class GlobalBackupKeyUnlocker {
@@ -61,7 +61,7 @@ public:
 	GlobalBackupKeyUnlocker& operator=(GlobalBackupKeyUnlocker&&) = default;
 
 	~GlobalBackupKeyUnlocker() noexcept {
-        Molch::sodium_mprotect_noaccess(global_backup_key.get());
+		Molch::sodium_mprotect_noaccess(global_backup_key.get());
 	}
 };
 
@@ -80,15 +80,9 @@ public:
 	GlobalBackupKeyWriteUnlocker& operator=(GlobalBackupKeyWriteUnlocker&&) = default;
 
 	~GlobalBackupKeyWriteUnlocker() noexcept {
-        Molch::sodium_mprotect_noaccess(global_backup_key.get());
+		Molch::sodium_mprotect_noaccess(global_backup_key.get());
 	}
 };
-
-static void check_global_users_state() {
-	if (!users) {
-		throw Exception{status_type::INIT_ERROR, "Molch hasn't been initialized yet."};
-	}
-}
 
 static void check_global_backup_key_state() {
 	if ((global_backup_key == nullptr) || (global_backup_key->size() != BACKUP_KEY_SIZE)) {
@@ -101,7 +95,7 @@ static void check_global_backup_key_state() {
  */
 static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_key) {
 	//get the user
-	auto user{users->find(public_signing_key)};
+	auto user{users.find(public_signing_key)};
 	if (user == nullptr) {
 		throw Exception{status_type::NOT_FOUND, "Couldn't find the user to create a prekey list from."};
 	}
@@ -170,8 +164,6 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 		const size_t random_data_length) {
 	auto status{return_status_init()};
 
-	auto user_store_created{false};
-
 	try {
 		Expects((public_master_key != nullptr)
 			&& (prekey_list != nullptr)
@@ -179,11 +171,7 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 			&& (backup_key_length == BACKUP_KEY_SIZE)
 			&& (public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
 
-		//initialise libsodium and create user store
-		if (!users) {
-			TRY_VOID(Molch::sodium_init());
-			users = std::make_unique<UserStore>();
-		}
+		TRY_VOID(Molch::sodium_init());
 
 		//create a new backup key
 		{
@@ -199,16 +187,14 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 			TRY_WITH_RESULT(user_result, Molch::User::create({{uchar_to_byte(random_data), random_data_length}}));
 			auto& user{user_result.value()};
 			public_master_key_key = user.id();
-			users->add(std::move(user));
+			users.add(std::move(user));
 		} else {
 			TRY_WITH_RESULT(user_result, Molch::User::create());
 			auto& user{user_result.value()};
 			public_master_key_key = user.id();
-			users->add(std::move(user));
+			users.add(std::move(user));
 		}
 		TRY_VOID(copyFromTo(public_master_key_key, {uchar_to_byte(public_master_key), public_master_key_length}));
-
-		user_store_created = true;
 
 		auto prekey_list_buffer = create_prekey_list(public_master_key_key);
 
@@ -226,20 +212,12 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 		*prekey_list_length = prekey_list_buffer.size();
 		*prekey_list = byte_to_uchar(prekey_list_buffer.release());
 	} catch (const Exception& exception) {
-		status = exception.toReturnStatus();
-		goto cleanup;
+		return exception.toReturnStatus();
 	} catch (const std::exception& exception) {
 		THROW(status_type::EXCEPTION, exception.what());
 	}
 
 cleanup:
-	on_error {
-		if (user_store_created) {
-			return_status new_status = molch_destroy_user(public_master_key, public_master_key_length, nullptr, nullptr);
-			return_status_destroy_errors(new_status);
-		}
-	}
-
 	return status;
 }
 
@@ -259,15 +237,13 @@ MOLCH_PUBLIC(return_status) molch_destroy_user(
 	auto status{return_status_init()};
 
 	try {
-		check_global_users_state();
-
 		if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
 			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Public master key has incorrect size."};
 		}
 
 		TRY_WITH_RESULT(public_master_key_key_result, PublicSigningKey::fromSpan({uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE}));
 		const auto& public_master_key_key{public_master_key_key_result.value()};
-		users->remove(public_master_key_key);
+		users.remove(public_master_key_key);
 
 		if (backup != nullptr) {
 			*backup = nullptr;
@@ -293,20 +269,14 @@ cleanup:
  * Get the number of users.
  */
 MOLCH_PUBLIC(size_t) molch_user_count() {
-	if (!users) {
-		return 0;
-	}
-
-	return users->size();
+	return users.size();
 }
 
 /*
  * Delete all users.
  */
 MOLCH_PUBLIC(void) molch_destroy_all_users() {
-	if (users) {
-		users->clear();
-	}
+	users.clear();
 }
 
 /*
@@ -325,10 +295,10 @@ MOLCH_PUBLIC(return_status) molch_list_users(
 	auto status{return_status_init()};
 
 	try {
-		Expects(users && (user_list_length != nullptr));
+		Expects(user_list_length != nullptr);
 
 		//get the list of users and copy it
-		auto list{users->list()};
+		auto list{users.list()};
 
 		*count = molch_user_count();
 
@@ -449,12 +419,10 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 				&& (sender_public_master_key_length == PUBLIC_MASTER_KEY_SIZE)
 				&& (receiver_public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
 
-		check_global_users_state();
-
 		//get the user that matches the public signing key of the sender
 		TRY_WITH_RESULT(sender_public_master_key_key_result, PublicSigningKey::fromSpan({uchar_to_byte(sender_public_master_key), PUBLIC_MASTER_KEY_SIZE}));
 		const auto& sender_public_master_key_key{sender_public_master_key_key_result.value()};
-		auto user{users->find(sender_public_master_key_key)};
+		auto user{users.find(sender_public_master_key_key)};
 		if (user == nullptr) {
 			throw Exception{status_type::NOT_FOUND, "User not found."};
 		}
@@ -557,12 +525,10 @@ cleanup:
 				&& (sender_public_master_key_length == PUBLIC_MASTER_KEY_SIZE)
 				&& (receiver_public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
 
-			check_global_users_state();
-
 			//get the user that matches the public signing key of the receiver
 			TRY_WITH_RESULT(receiver_public_master_key_key_result, PublicSigningKey::fromSpan({uchar_to_byte(receiver_public_master_key), PUBLIC_MASTER_KEY_SIZE}));
 			const auto& receiver_public_master_key_key{receiver_public_master_key_key_result.value()};
-			auto user{users->find(receiver_public_master_key_key)};
+			auto user{users.find(receiver_public_master_key_key)};
 			if (user == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "User not found in the user store."};
 			}
@@ -645,13 +611,11 @@ cleanup:
 				&& (conversation_id != nullptr)
 				&& (conversation_id_length == CONVERSATION_ID_SIZE));
 
-			check_global_users_state();
-
 			//find the conversation
 			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
 			const auto& conversation_id_key{conversation_id_key_result.value()};
 			Molch::User *user;
-			auto conversation{users->findConversation(user, conversation_id_key)};
+			auto conversation{users.findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "Failed to find a conversation for the given ID."};
 			}
@@ -718,13 +682,11 @@ cleanup:
 					&& (previous_receive_message_number != nullptr)
 					&& (conversation_id_length == CONVERSATION_ID_SIZE));
 
-			check_global_users_state();
-
 			//find the conversation
 			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
 			const auto& conversation_id_key{conversation_id_key_result.value()};
 			Molch::User* user;
-			auto conversation{users->findConversation(user, conversation_id_key)};
+			auto conversation{users.findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "Failed to find conversation with the given ID."};
 			}
@@ -775,13 +737,11 @@ cleanup:
 			Expects((conversation_id != nullptr)
 					&& (conversation_id_length == CONVERSATION_ID_SIZE));
 
-			check_global_users_state();
-
 			//find the conversation
 			Molch::User *user{nullptr};
 			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
 			const auto& conversation_id_key{conversation_id_key_result.value()};
-			auto conversation{users->findConversation(user, conversation_id_key)};
+			auto conversation{users.findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "Couldn't find conversation."};
 			}
@@ -840,11 +800,9 @@ cleanup:
 					&& (number != nullptr)
 					&& (user_public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
 
-			check_global_users_state();
-
 			TRY_WITH_RESULT(user_public_master_key_key_result, PublicSigningKey::fromSpan({uchar_to_byte(user_public_master_key), PUBLIC_MASTER_KEY_SIZE}));
 			const auto& user_public_master_key_key{user_public_master_key_key_result.value()};
-			auto user{users->find(user_public_master_key_key)};
+			auto user{users.find(user_public_master_key_key)};
 			if (user == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "No user found for the given public identity."};
 			}
@@ -950,14 +908,13 @@ cleanup:
 			ProtobufCEncryptedBackup encrypted_backup_struct;
 			molch__protobuf__encrypted_backup__init(&encrypted_backup_struct);
 
-			check_global_users_state();
 			check_global_backup_key_state();
 
 			//find the conversation
 			Molch::User *user{nullptr};
 			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
 			const auto& conversation_id_key{conversation_id_key_result.value()};
-			auto conversation{users->findConversation(user, conversation_id_key)};
+			auto conversation{users.findConversation(user, conversation_id_key)};
 			if (conversation == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "Failed to find the conversation."};
 			}
@@ -1060,8 +1017,6 @@ cleanup:
 					&& (backup_key_length == BACKUP_KEY_SIZE)
 					&& (new_backup_key_length == BACKUP_KEY_SIZE));
 
-			check_global_users_state();
-
 			//unpack the encrypted backup
 			auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(molch__protobuf__encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup))};
 			if (encrypted_backup_struct == nullptr) {
@@ -1112,7 +1067,7 @@ cleanup:
 			Molch::User* containing_user{nullptr};
 			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({conversation_struct->id}));
 			const auto& conversation_id_key{conversation_id_key_result.value()};
-			auto existing_conversation{users->findConversation(containing_user, conversation_id_key)};
+			auto existing_conversation{users.findConversation(containing_user, conversation_id_key)};
 			if (existing_conversation == nullptr) {
 				throw Exception{status_type::NOT_FOUND, "Containing store not found."};
 			}
@@ -1158,14 +1113,12 @@ cleanup:
 				throw Exception{status_type::INCORRECT_DATA, "No backup key found."};
 			}
 
-			check_global_users_state();
-
 			Arena arena;
 			auto backup_struct{arena.allocate<ProtobufCBackup>(1)};
 			molch__protobuf__backup__init(backup_struct);
 
 			//export the conversation
-			protobuf_array_arena_export(arena, backup_struct, users, *users);
+			protobuf_array_arena_export(arena, backup_struct, users, users);
 
 			//pack the struct
 			auto backup_struct_size{molch__protobuf__backup__get_packed_size(backup_struct)};
@@ -1264,9 +1217,7 @@ cleanup:
 					&& (backup_key_length == BACKUP_KEY_SIZE)
 					&& (new_backup_key_length == BACKUP_KEY_SIZE));
 
-			if (!users) {
-				TRY_VOID(Molch::sodium_init());
-			}
+			TRY_VOID(Molch::sodium_init());
 
 			//unpack the encrypted backup
 			auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(molch__protobuf__encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup))};
@@ -1315,7 +1266,6 @@ cleanup:
 
 			//import the user store
 			TRY_WITH_RESULT(imported_user_store, UserStore::import({backup_struct->users, backup_struct->n_users}));
-			auto store{std::make_unique<UserStore>(std::move(imported_user_store.value()))};
 
 			//update the backup key
 			auto status{molch_update_backup_key(new_backup_key, new_backup_key_length)};
@@ -1324,7 +1274,7 @@ cleanup:
 			}
 
 			//everyting worked, switch to the new user store
-			users.reset(store.release());
+			users = std::move(imported_user_store.value());
 		} catch (const Exception& exception) {
 			status = exception.toReturnStatus();
 			goto cleanup;
@@ -1356,8 +1306,6 @@ cleanup:
 					&& (prekey_list != nullptr)
 					&& (prekey_list_length != nullptr)
 					&& (public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
-
-			check_global_users_state();
 
 			TRY_WITH_RESULT(public_signing_key_key_result, PublicSigningKey::fromSpan({uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE}));
 			const auto& public_signing_key_key{public_signing_key_key_result.value()};
@@ -1391,10 +1339,7 @@ cleanup:
 		try {
 			Expects((new_key != nullptr) && (new_key_length == BACKUP_KEY_SIZE));
 
-			if (!users) {
-				TRY_VOID(Molch::sodium_init());
-				users = std::make_unique<UserStore>();
-			}
+			TRY_VOID(Molch::sodium_init());
 
 			// create a backup key buffer if it doesnt exist already
 			if (global_backup_key == nullptr) {
