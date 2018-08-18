@@ -121,7 +121,7 @@ namespace Molch {
 		 * Returns a buffer containing a list of all the public
 		 * signing keys of the user.
 		 */
-		Buffer list();
+		result<Buffer> list();
 
 		void remove(const PublicSigningKey& public_signing_key);
 		void remove(const User* const user);

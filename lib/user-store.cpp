@@ -172,12 +172,12 @@ namespace Molch {
 		return nullptr;
 	}
 
-	Buffer UserStore::list() {
+	result<Buffer> UserStore::list() {
 		Buffer list{this->users.size() * PUBLIC_MASTER_KEY_SIZE, 0};
 
 		for (const auto& user : this->users) {
 			auto index{gsl::narrow_cast<size_t>(&user - &(*std::cbegin(this->users)))};
-			TRY_VOID(list.copyFromRaw(
+			OUTCOME_TRY(list.copyFromRaw(
 				PUBLIC_MASTER_KEY_SIZE * index,
 				user.id().data(),
 				0,

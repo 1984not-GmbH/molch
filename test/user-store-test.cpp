@@ -99,11 +99,11 @@ int main() {
 		UserStore store;
 
 		//check the content
-		auto list{store.list()};
-		if (!list.empty()) {
+		TRY_WITH_RESULT(list1_result, store.list());
+		const auto& list1{list1_result.value()};
+		if (not list1.empty()) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "List of users is not empty."};
 		}
-		list.clear();
 
 		//create alice
 		PublicSigningKey alice_public_signing_key;
@@ -125,12 +125,12 @@ int main() {
 		printf("Length of the user store matches.");
 
 		//list user store
-		list = store.list();
-		TRY_WITH_RESULT(first_comparison, list.compareToRaw(alice_public_signing_key))
+		TRY_WITH_RESULT(list2_result, store.list());
+		const auto& list2{list2_result.value()};
+		TRY_WITH_RESULT(first_comparison, list2.compareToRaw(alice_public_signing_key))
 		if (!first_comparison.value()) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Failed to list users."};
 		}
-		list.clear();
 		printf("Successfully listed users.\n");
 
 		//create bob
@@ -150,15 +150,15 @@ int main() {
 		printf("Length of the user store matches.");
 
 		//list user store
-		list = store.list();
+		TRY_WITH_RESULT(list3_result, store.list());
+		const auto& list3{list3_result.value()};
 		{
-			TRY_WITH_RESULT(list_alice_comparison, list.compareToRawPartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
-			TRY_WITH_RESULT(list_bob_comparison, list.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
+			TRY_WITH_RESULT(list_alice_comparison, list3.compareToRawPartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
+			TRY_WITH_RESULT(list_bob_comparison, list3.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
 			if (!list_alice_comparison.value() || !list_bob_comparison.value()) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Failed to list users."};
 			}
 		}
-		list.clear();
 		printf("Successfully listed users.\n");
 
 		//create charlie
@@ -178,16 +178,16 @@ int main() {
 		printf("Length of the user store matches.");
 
 		//list user store
-		list = store.list();
+		TRY_WITH_RESULT(list4_result, store.list());
+		const auto& list4{list4_result.value()};
 		{
-			TRY_WITH_RESULT(list_alice_comparison, list.compareToRawPartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
-			TRY_WITH_RESULT(list_bob_comparison, list.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
-			TRY_WITH_RESULT(list_charlie_comparison, list.compareToRawPartial(2 * PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
+			TRY_WITH_RESULT(list_alice_comparison, list4.compareToRawPartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
+			TRY_WITH_RESULT(list_bob_comparison, list4.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, bob_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
+			TRY_WITH_RESULT(list_charlie_comparison, list4.compareToRawPartial(2 * PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
 			if (!list_alice_comparison.value() || !list_bob_comparison.value() || !list_charlie_comparison.value()) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Failed to list users."};
 			}
 		}
-		list.clear();
 		printf("Successfully listed users.\n");
 
 		//find node
@@ -212,15 +212,15 @@ int main() {
 			}
 			printf("Length of the user store matches.");
 			//check the user list
-			list = store.list();
+			TRY_WITH_RESULT(list5_result, store.list());
+			const auto& list5{list5_result.value()};
 			{
-				TRY_WITH_RESULT(list_alice_comparison, list.compareToRawPartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
-				TRY_WITH_RESULT(list_charlie_comparison, list.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
+				TRY_WITH_RESULT(list_alice_comparison, list5.compareToRawPartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
+				TRY_WITH_RESULT(list_charlie_comparison, list5.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
 				if (!list_alice_comparison.value() || !list_charlie_comparison.value()) {
 					throw Molch::Exception{status_type::INCORRECT_DATA, "Removing user failed."};
 				}
 			}
-			list.clear();
 			printf("Successfully removed user.\n");
 
 			//recreate bob
@@ -284,15 +284,15 @@ int main() {
 		printf("Both exports match.\n");
 
 		//check the user list
-		list = store.list();
+		TRY_WITH_RESULT(list6_result, store.list());
+		const auto& list6{list6_result.value()};
 		{
-			TRY_WITH_RESULT(list_alice_comparison, list.compareToRawPartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
-			TRY_WITH_RESULT(list_charlie_comparison, list.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
+			TRY_WITH_RESULT(list_alice_comparison, list6.compareToRawPartial(0, alice_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
+			TRY_WITH_RESULT(list_charlie_comparison, list6.compareToRawPartial(PUBLIC_MASTER_KEY_SIZE, charlie_public_signing_key, 0, PUBLIC_MASTER_KEY_SIZE));
 			if (!list_alice_comparison.value() || !list_charlie_comparison.value()) {
 				throw Molch::Exception{status_type::REMOVE_ERROR, "Removing user failed."};
 			}
 		}
-		list.clear();
 		printf("Successfully removed user.\n");
 
 		//clear the user store

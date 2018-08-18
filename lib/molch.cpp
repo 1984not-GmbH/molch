@@ -285,7 +285,8 @@ MOLCH_PUBLIC(return_status) molch_list_users(
 		Expects(user_list_length != nullptr);
 
 		//get the list of users and copy it
-		auto list{users.list()};
+		TRY_WITH_RESULT(list_result, users.list());
+		const auto& list{list_result.value()};
 
 		*count = molch_user_count();
 
