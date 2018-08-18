@@ -1042,6 +1042,70 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		return success_status;
 	}
 
+	static result<MallocBuffer> export_all() {
+		GlobalBackupKeyUnlocker unlocker;
+		if (global_backup_key == nullptr) {
+			throw Exception{status_type::INCORRECT_DATA, "No backup key found."};
+		}
+
+		Arena arena;
+		auto backup_struct{arena.allocate<ProtobufCBackup>(1)};
+		molch__protobuf__backup__init(backup_struct);
+
+		//export the conversation
+		protobuf_array_arena_export(arena, backup_struct, users, users);
+
+		//pack the struct
+		auto backup_struct_size{molch__protobuf__backup__get_packed_size(backup_struct)};
+		auto users_buffer_content{arena.allocate<std::byte>(backup_struct_size)};
+		span<std::byte> users_buffer{users_buffer_content, backup_struct_size};
+		molch__protobuf__backup__pack(backup_struct, byte_to_uchar(users_buffer.data()));
+
+		//generate the nonce
+		Buffer backup_nonce(BACKUP_NONCE_SIZE, BACKUP_NONCE_SIZE);
+		randombytes_buf(backup_nonce);
+
+		//allocate the output
+		Buffer backup_buffer{backup_struct_size + crypto_secretbox_MACBYTES, backup_struct_size + crypto_secretbox_MACBYTES};
+
+		//encrypt the backup
+		auto status{crypto_secretbox_easy(
+				byte_to_uchar(backup_buffer.data()),
+				byte_to_uchar(users_buffer.data()),
+				users_buffer.size(),
+				byte_to_uchar(backup_nonce.data()),
+				byte_to_uchar(global_backup_key->data()))};
+		if (status != 0) {
+			throw Exception{status_type::ENCRYPT_ERROR, "Failed to enrypt conversation state."};
+		}
+
+		//fill in the encrypted backup struct
+		ProtobufCEncryptedBackup encrypted_backup_struct;
+		molch__protobuf__encrypted_backup__init(&encrypted_backup_struct);
+		//metadata
+		encrypted_backup_struct.backup_version = 0;
+		encrypted_backup_struct.has_backup_type = true;
+		encrypted_backup_struct.backup_type = MOLCH__PROTOBUF__ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP;
+		//nonce
+		encrypted_backup_struct.has_encrypted_backup_nonce = true;
+		encrypted_backup_struct.encrypted_backup_nonce.data = byte_to_uchar(backup_nonce.data());
+		encrypted_backup_struct.encrypted_backup_nonce.len = backup_nonce.size();
+		//encrypted backup
+		encrypted_backup_struct.has_encrypted_backup = true;
+		encrypted_backup_struct.encrypted_backup.data = byte_to_uchar(backup_buffer.data());
+		encrypted_backup_struct.encrypted_backup.len = backup_buffer.size();
+
+		//now pack the entire backup
+		const auto encrypted_backup_size{molch__protobuf__encrypted_backup__get_packed_size(&encrypted_backup_struct)};
+		MallocBuffer malloced_encrypted_backup{encrypted_backup_size, 0};
+		OUTCOME_TRY(malloced_encrypted_backup.setSize(molch__protobuf__encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data()))));
+		if (malloced_encrypted_backup.size() != encrypted_backup_size) {
+			throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation."};
+		}
+
+		return malloced_encrypted_backup;
+	}
+
 	/*
 	 * Serialise molch's internal state. The output is encrypted with the backup key.
 	 *
@@ -1053,92 +1117,24 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 	MOLCH_PUBLIC(return_status) molch_export(
 			unsigned char ** const backup,
 			size_t *backup_length) {
-		auto status{success_status};
+		if ((backup == nullptr) or (backup_length == nullptr)) {
+			return Exception(status_type::INVALID_VALUE, "backup or backup_length are NULL").toReturnStatus();
+		}
 
 		try {
-			Expects((backup != nullptr) && (backup_length != nullptr));
-
-			GlobalBackupKeyUnlocker unlocker;
-			if (global_backup_key == nullptr) {
-				throw Exception{status_type::INCORRECT_DATA, "No backup key found."};
+			auto exported_backup_result{export_all()};
+			if (exported_backup_result.has_error()) {
+				return Exception(exported_backup_result.error()).toReturnStatus();
 			}
-
-			Arena arena;
-			auto backup_struct{arena.allocate<ProtobufCBackup>(1)};
-			molch__protobuf__backup__init(backup_struct);
-
-			//export the conversation
-			protobuf_array_arena_export(arena, backup_struct, users, users);
-
-			//pack the struct
-			auto backup_struct_size{molch__protobuf__backup__get_packed_size(backup_struct)};
-			auto users_buffer_content{arena.allocate<std::byte>(backup_struct_size)};
-			span<std::byte> users_buffer{users_buffer_content, backup_struct_size};
-			molch__protobuf__backup__pack(backup_struct, byte_to_uchar(users_buffer.data()));
-
-			//generate the nonce
-			Buffer backup_nonce(BACKUP_NONCE_SIZE, BACKUP_NONCE_SIZE);
-			randombytes_buf(backup_nonce);
-
-			//allocate the output
-			Buffer backup_buffer{backup_struct_size + crypto_secretbox_MACBYTES, backup_struct_size + crypto_secretbox_MACBYTES};
-
-			//encrypt the backup
-			auto status{crypto_secretbox_easy(
-					byte_to_uchar(backup_buffer.data()),
-					byte_to_uchar(users_buffer.data()),
-					users_buffer.size(),
-					byte_to_uchar(backup_nonce.data()),
-					byte_to_uchar(global_backup_key->data()))};
-			if (status != 0) {
-				throw Exception{status_type::ENCRYPT_ERROR, "Failed to enrypt conversation state."};
-			}
-
-			//fill in the encrypted backup struct
-			ProtobufCEncryptedBackup encrypted_backup_struct;
-			molch__protobuf__encrypted_backup__init(&encrypted_backup_struct);
-			//metadata
-			encrypted_backup_struct.backup_version = 0;
-			encrypted_backup_struct.has_backup_type = true;
-			encrypted_backup_struct.backup_type = MOLCH__PROTOBUF__ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP;
-			//nonce
-			encrypted_backup_struct.has_encrypted_backup_nonce = true;
-			encrypted_backup_struct.encrypted_backup_nonce.data = byte_to_uchar(backup_nonce.data());
-			encrypted_backup_struct.encrypted_backup_nonce.len = backup_nonce.size();
-			//encrypted backup
-			encrypted_backup_struct.has_encrypted_backup = true;
-			encrypted_backup_struct.encrypted_backup.data = byte_to_uchar(backup_buffer.data());
-			encrypted_backup_struct.encrypted_backup.len = backup_buffer.size();
-
+			auto& exported_backup{exported_backup_result.value()};
 			//now pack the entire backup
-			const auto encrypted_backup_size{molch__protobuf__encrypted_backup__get_packed_size(&encrypted_backup_struct)};
-			MallocBuffer malloced_encrypted_backup{encrypted_backup_size, 0};
-			TRY_VOID(malloced_encrypted_backup.setSize(molch__protobuf__encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data()))));
-			if (malloced_encrypted_backup.size() != encrypted_backup_size) {
-				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation."};
-			}
-			*backup_length = malloced_encrypted_backup.size();
-			*backup = byte_to_uchar(malloced_encrypted_backup.release());
-		} catch (const Exception& exception) {
-			status = exception.toReturnStatus();
-			goto cleanup;
+			*backup_length = exported_backup.size();
+			*backup = byte_to_uchar(exported_backup.release());
 		} catch (const std::exception& exception) {
-			status = Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
-			goto cleanup;
+			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
 		}
 
-	cleanup:
-		on_error {
-			if ((backup != nullptr) && (*backup != nullptr)) {
-				free(*backup);
-				*backup = nullptr;
-			}
-			if (backup_length != nullptr) {
-				*backup_length = 0;
-			}
-		}
-
-		return status;
+		return success_status;
 	}
 
 	/*
