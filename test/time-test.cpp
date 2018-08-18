@@ -58,7 +58,7 @@ int main() noexcept {
 		std::cout << "Successfully tested months\n";
 
 	} catch (const Exception& exception) {
-		exception.print(std::cerr) << std::endl;
+		std::cerr << exception << '\n';
 	}
 
 	return EXIT_SUCCESS;

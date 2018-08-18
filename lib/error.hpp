@@ -28,18 +28,12 @@
 #include "return-status.hpp"
 
 namespace Molch {
-	class Error {
-	public:
+	struct Error {
 		status_type type{status_type::SUCCESS};
-		const std::string message;
+		const char* message{nullptr};
 
-		Error();
-		Error(const status_type type, const std::string& message);
-
-		/*
-		 * \return An error message allocated with malloc
-		 */
-		error_message* toErrorMessage();
+		Error() = default;
+		Error(const status_type type, const char* message);
 	};
 }
 

@@ -35,57 +35,6 @@
 #include "gsl.hpp"
 
 namespace Molch {
-
-	extern return_status return_status_init() noexcept {
-		return {
-			status_type::SUCCESS,
-			nullptr
-		};
-	}
-
-	status_type return_status_add_error_message(
-			return_status& status_object,
-			const char *const message,
-			const status_type status_to_add) noexcept {
-		if (message == nullptr) {
-			return status_type::SUCCESS;
-		}
-
-		std::unique_ptr<error_message> error;
-		std::unique_ptr<char[]> copied_message;
-		size_t message_length{strlen(message) + sizeof("")};
-
-		// allocate the memory
-		try {
-			error = std::make_unique<error_message>();
-			copied_message = std::make_unique<char[]>(message_length);
-		} catch (const std::bad_alloc&) {
-			return status_type::ALLOCATION_FAILED;
-		}
-
-		error->message = copied_message.release();
-		std::copy(message, message + message_length, error->message);
-
-		error->next = status_object.error;
-		error->status = status_to_add;
-
-		status_object.error = error.release();
-		status_object.status = status_to_add;
-
-		return status_type::SUCCESS;
-	}
-
-	void return_status_destroy_errors(return_status& status) noexcept {
-		while (status.error != nullptr) {
-			error_message *next_error = status.error->next;
-
-			delete[] status.error->message;
-			delete status.error;
-
-			status.error = next_error;
-		}
-	}
-
 	/*
 	 * Get the name of a status type as a string.
 	 */
@@ -204,7 +153,7 @@ namespace Molch {
 		try {
 			std::stringstream stream;
 			static const unsigned char success_string[]{"SUCCESS"};
-			static const unsigned char error_string[]{"ERROR\nerror stack trace:\n"};
+			static const unsigned char error_string[]{"ERROR: "};
 			static const unsigned char null_string[]{"(nullptr)"};
 
 			// now fill the output
@@ -213,24 +162,13 @@ namespace Molch {
 			} else {
 				stream << error_string;
 
-				// iterate over error stack
-				size_t i{0};
-				for (error_message *current_error = status.error;
-						current_error != nullptr;
-						current_error = current_error->next, i++) {
-
-					stream << i << ": ";
-					stream << return_status_get_name(current_error->status);
-					stream << ", ";
-
-					if (current_error->message == nullptr) {
-						stream << null_string;
-					} else {
-						stream << current_error->message;
-					}
-
-					stream << std::endl;
+				if (status.error == nullptr) {
+					stream << null_string;
+				} else {
+					stream << status.error;
 				}
+
+				stream << '\n';
 			}
 
 			//Copy the string to the output

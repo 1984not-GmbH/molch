@@ -24,7 +24,6 @@ unit_tests = [
 		'endianness-test',
 		'return-status-test',
 		'buffer-test',
-		'molch-exception-test',
 		'time-test',
 		'copy-test',
 ]

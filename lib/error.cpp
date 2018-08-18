@@ -22,38 +22,7 @@
 #include "error.hpp"
 
 namespace Molch {
-	Error::Error() :
-		type{status_type::SUCCESS},
-		message{""} {}
-
-	Error::Error(const status_type type, const std::string& message) :
+	Error::Error(const status_type type, const char* message) :
 		type{type},
 		message{message} {}
-
-	error_message* Error::toErrorMessage() {
-		std::unique_ptr<error_message> error;
-		std::unique_ptr<char[]> copied_message;
-
-		//allocate memory
-		try {
-			error = std::make_unique<error_message>();
-			copied_message = std::make_unique<char[]>(message.length() + sizeof(""));
-		} catch (const std::bad_alloc&) {
-			return nullptr;
-		}
-
-		error->message = nullptr;
-		error->next = nullptr;
-
-		// copy the message if it isn't empty
-		if (!this->message.empty()) {
-			error->message = copied_message.release();
-
-			this->message.copy(error->message, this->message.length());
-			error->message[this->message.length()] = '\0';
-		}
-
-		return error.release();
-	}
-
 }

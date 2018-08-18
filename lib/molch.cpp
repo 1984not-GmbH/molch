@@ -162,8 +162,6 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 		//optional input (can be nullptr)
 		const unsigned char *const random_data,
 		const size_t random_data_length) {
-	auto status{return_status_init()};
-
 	try {
 		Expects((public_master_key != nullptr)
 			&& (prekey_list != nullptr)
@@ -177,7 +175,7 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 		{
 			auto status{molch_update_backup_key(backup_key, backup_key_length)};
 			on_error {
-				throw Exception{status};
+				throw Exception(status);
 			}
 		}
 
@@ -214,18 +212,14 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 	} catch (const Exception& exception) {
 		return exception.toReturnStatus();
 	} catch (const std::exception& exception) {
-		THROW(status_type::EXCEPTION, exception.what());
+		return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
 	}
 
-cleanup:
-	return status;
+	return success_status;
 }
 
 /*
  * Destroy a user.
- *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
  */
 MOLCH_PUBLIC(return_status) molch_destroy_user(
 		const unsigned char *const public_master_key,
@@ -234,8 +228,6 @@ MOLCH_PUBLIC(return_status) molch_destroy_user(
 		unsigned char **const backup, //exports the entire library state, free after use, check if nullptr before use!
 		size_t *const backup_length
 ) {
-	auto status{return_status_init()};
-
 	try {
 		if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
 			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Public master key has incorrect size."};
@@ -255,14 +247,12 @@ MOLCH_PUBLIC(return_status) molch_destroy_user(
 			}
 		}
 	} catch (const Exception& exception) {
-		status = exception.toReturnStatus();
-		goto cleanup;
+		return exception.toReturnStatus();
 	} catch (const std::exception& exception) {
-		THROW(status_type::EXCEPTION, exception.what());
+		return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
 	}
 
-cleanup:
-	return status;
+	return success_status;
 }
 
 /*
@@ -284,15 +274,12 @@ MOLCH_PUBLIC(void) molch_destroy_all_users() {
  * nullptr if there are no users.
  *
  * The list is accessible via the return status' 'data' property.
- *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
  */
 MOLCH_PUBLIC(return_status) molch_list_users(
 		unsigned char **const user_list,
 		size_t * const user_list_length, //length in bytes
 		size_t * const count) {
-	auto status{return_status_init()};
+	auto status{success_status};
 
 	try {
 		Expects(user_list_length != nullptr);
@@ -312,6 +299,9 @@ MOLCH_PUBLIC(return_status) molch_list_users(
 		*user_list_length = list.size();
 	} catch (const Exception& exception) {
 		status = exception.toReturnStatus();
+		goto cleanup;
+	} catch (const std::exception& exception) {
+		status = Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
 		goto cleanup;
 	}
 
@@ -382,10 +372,6 @@ static void verify_prekey_list(
  * The conversation can be identified by it's ID
  *
  * This requires a new set of prekeys from the receiver.
- *
- *
- * Don't forget to destroy the return status with return_status_destroy_errors()
- * if an error has occurred.
  */
 MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		//outputs
@@ -406,8 +392,6 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		unsigned char **const backup, //exports the entire library state, free after use, check if nullptr before use!
 		size_t *const backup_length
 ) {
-	auto status{return_status_init()};
-
 	try {
 		Expects((conversation_id != nullptr)
 				&& (packet != nullptr)
@@ -472,14 +456,12 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		*packet_length = malloced_packet.size();
 		*packet = byte_to_uchar(malloced_packet.release());
 	} catch (const Exception& exception) {
-		status = exception.toReturnStatus();
-		goto cleanup;
+		return exception.toReturnStatus();
 	} catch (const std::exception& exception) {
-		THROW(status_type::EXCEPTION, exception.what());
+		return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
 	}
 
-cleanup:
-	return status;
+	return success_status;
 }
 
 	/*
@@ -488,9 +470,6 @@ cleanup:
 	 * This also generates a new set of prekeys to be uploaded to the server.
 	 *
 	 * This function is called after receiving a prekey message.
-	 *
-	 * Don't forget to destroy the return status with return_status_destroy_errors()
-	 * if an error has occurred.
 	 */
 	MOLCH_PUBLIC(return_status) molch_start_receive_conversation(
 			//outputs
@@ -511,9 +490,6 @@ cleanup:
 			unsigned char ** const backup, //exports the entire library state, free after use, check if nullptr before use!
 			size_t * const backup_length
 			) {
-
-		auto status{return_status_init()};
-
 		try {
 			Expects((conversation_id != nullptr)
 				&& (message != nullptr) && (message_length != nullptr)
@@ -574,21 +550,16 @@ cleanup:
 			*prekey_list_length = prekey_list_buffer.size();
 			*prekey_list = byte_to_uchar(prekey_list_buffer.release());
 		} catch (const Exception& exception) {
-			status = exception.toReturnStatus();
-			goto cleanup;
+			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			THROW(status_type::EXCEPTION, exception.what());
+			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
 		}
 
-	cleanup:
-		return status;
+		return success_status;
 	}
 
 	/*
 	 * Encrypt a message and create a packet that can be sent to the receiver.
-	 *
-	 * Don't forget to destroy the return status with return_status_destroy_errors()
-	 * if an error has occurred.
 	 */
 	MOLCH_PUBLIC(return_status) molch_encrypt_message(
 			//output
@@ -603,8 +574,6 @@ cleanup:
 			unsigned char ** const conversation_backup, //exports the conversation, free after use, check if nullptr before use!
 			size_t * const conversation_backup_length
 			) {
-		auto status{return_status_init()};
-
 		try {
 			Expects((packet != nullptr) && (packet_length != nullptr)
 				&& (message != nullptr)
@@ -640,21 +609,16 @@ cleanup:
 			*packet_length = malloced_packet.size();
 			*packet = byte_to_uchar(malloced_packet.release());
 		} catch (const Exception& exception) {
-			status = exception.toReturnStatus();
-			goto cleanup;
+			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			THROW(status_type::EXCEPTION, exception.what());
+			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
 		}
 
-	cleanup:
-		return status;
+		return success_status;
 	}
 
 	/*
 	 * Decrypt a message.
-	 *
-	 * Don't forget to destroy the return status with return_status_destroy_errors()
-	 * if an error has occurred.
 	 */
 	MOLCH_PUBLIC(return_status) molch_decrypt_message(
 			//outputs
@@ -671,8 +635,6 @@ cleanup:
 			unsigned char ** const conversation_backup, //exports the conversation, free after use, check if nullptr before use!
 			size_t * const conversation_backup_length
 		) {
-		auto status{return_status_init()};
-
 		try {
 			Expects((message != nullptr)
 					&& (message_length != nullptr)
@@ -713,14 +675,12 @@ cleanup:
 			*message_length = malloced_message.size();
 			*message = byte_to_uchar(malloced_message.release());
 		} catch (const Exception& exception) {
-			status = exception.toReturnStatus();
-			goto cleanup;
+			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			THROW(status_type::EXCEPTION, exception.what());
+			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
 		}
 
-	cleanup:
-		return status;
+		return success_status;
 	}
 
 	MOLCH_PUBLIC(return_status) molch_end_conversation(
@@ -731,8 +691,6 @@ cleanup:
 			unsigned char ** const backup,
 			size_t * const backup_length
 			) {
-		auto status{return_status_init()};
-
 		try {
 			Expects((conversation_id != nullptr)
 					&& (conversation_id_length == CONVERSATION_ID_SIZE));
@@ -758,14 +716,12 @@ cleanup:
 				}
 			}
 		} catch (const Exception& exception) {
-			status = exception.toReturnStatus();
-			goto cleanup;
+			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			THROW(status_type::EXCEPTION, exception.what());
+			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
 		}
 
-	cleanup:
-		return status;
+		return success_status;
 	}
 
 	/*
@@ -775,9 +731,6 @@ cleanup:
 	 * (all the conversation ids in one big list).
 	 *
 	 * Don't forget to free conversation_list after use.
-	 *
-	 * Don't forget to destroy the return status with return_status_destroy_errors()
-	 * if an error has occurred.
 	 */
 	MOLCH_PUBLIC(return_status) molch_list_conversations(
 			//outputs
@@ -787,7 +740,7 @@ cleanup:
 			//inputs
 			const unsigned char * const user_public_master_key,
 			const size_t user_public_master_key_length) {
-		auto status{return_status_init()};
+		auto status{success_status};
 
 		try {
 			if (conversation_list != nullptr) {
@@ -829,7 +782,8 @@ cleanup:
 			status = exception.toReturnStatus();
 			goto cleanup;
 		} catch (const std::exception& exception) {
-			THROW(status_type::EXCEPTION, exception.what());
+			status = Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+			goto cleanup;
 		}
 
 	cleanup:
@@ -877,8 +831,6 @@ cleanup:
 		if (status == nullptr) {
 			return;
 		}
-
-		return_status_destroy_errors(*status);
 	}
 
 	/*
@@ -896,7 +848,7 @@ cleanup:
 			//input
 			const unsigned char * const conversation_id,
 			const size_t conversation_id_length) {
-		auto status{return_status_init()};
+		auto status{success_status};
 
 		try {
 			Expects(
@@ -977,7 +929,8 @@ cleanup:
 			status = exception.toReturnStatus();
 			goto cleanup;
 		} catch (const std::exception& exception) {
-			THROW(status_type::EXCEPTION, exception.what());
+			status = Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+			goto cleanup;
 		}
 
 	cleanup:
@@ -1009,8 +962,6 @@ cleanup:
 			const size_t backup_length,
 			const unsigned char * backup_key,
 			const size_t backup_key_length) {
-		auto status{return_status_init()};
-
 		try {
 			Expects((backup != nullptr)
 					&& (backup_key != nullptr)
@@ -1082,14 +1033,12 @@ cleanup:
 				throw Exception{status_type::KEYGENERATION_FAILED, "Failed to update backup key."};
 			}
 		} catch (const Exception& exception) {
-			status = exception.toReturnStatus();
-			goto cleanup;
+			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			THROW(status_type::EXCEPTION, exception.what());
+			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
 		}
 
-	cleanup:
-		return status;
+		return success_status;
 	}
 
 	/*
@@ -1103,7 +1052,7 @@ cleanup:
 	MOLCH_PUBLIC(return_status) molch_export(
 			unsigned char ** const backup,
 			size_t *backup_length) {
-		auto status{return_status_init()};
+		auto status{success_status};
 
 		try {
 			Expects((backup != nullptr) && (backup_length != nullptr));
@@ -1173,7 +1122,8 @@ cleanup:
 			status = exception.toReturnStatus();
 			goto cleanup;
 		} catch (const std::exception& exception) {
-			THROW(status_type::EXCEPTION, exception.what());
+			status = Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+			goto cleanup;
 		}
 
 	cleanup:
@@ -1209,8 +1159,6 @@ cleanup:
 			const unsigned char * const backup_key, //BACKUP_KEY_SIZE
 			const size_t backup_key_length
 			) {
-		auto status{return_status_init()};
-
 		try {
 			Expects((backup != nullptr)
 					&& (backup_key != nullptr)
@@ -1276,14 +1224,12 @@ cleanup:
 			//everyting worked, switch to the new user store
 			users = std::move(imported_user_store.value());
 		} catch (const Exception& exception) {
-			status = exception.toReturnStatus();
-			goto cleanup;
+			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			THROW(status_type::EXCEPTION, exception.what());
+			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
 		}
 
-	cleanup:
-		return status;
+		return success_status;
 	}
 
 	/*
@@ -1299,8 +1245,6 @@ cleanup:
 			//input
 			unsigned char * const public_master_key,
 			const size_t public_master_key_length) {
-		auto status{return_status_init()};
-
 		try {
 			Expects((public_master_key != nullptr)
 					&& (prekey_list != nullptr)
@@ -1315,14 +1259,12 @@ cleanup:
 			*prekey_list_length = malloced_prekey_list.size();
 			*prekey_list = byte_to_uchar(malloced_prekey_list.release());
 		} catch (const Exception& exception) {
-			status = exception.toReturnStatus();
-			goto cleanup;
+			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			THROW(status_type::EXCEPTION, exception.what());
+			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
 		}
 
-	cleanup:
-		return status;
+		return success_status;
 	}
 
 	/*
@@ -1334,8 +1276,6 @@ cleanup:
 	MOLCH_PUBLIC(return_status) molch_update_backup_key(
 			unsigned char * const new_key, //output, BACKUP_KEY_SIZE
 			const size_t new_key_length) {
-		auto status{return_status_init()};
-
 		try {
 			Expects((new_key != nullptr) && (new_key_length == BACKUP_KEY_SIZE));
 
@@ -1354,12 +1294,10 @@ cleanup:
 
 			TRY_VOID(copyFromTo(*global_backup_key, {uchar_to_byte(new_key), BACKUP_KEY_SIZE}));
 		} catch (const Exception& exception) {
-			status = exception.toReturnStatus();
-			goto cleanup;
+			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			THROW(status_type::EXCEPTION, exception.what());
+			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
 		}
 
-	cleanup:
-		return status;
-}
+		return success_status;
+	}

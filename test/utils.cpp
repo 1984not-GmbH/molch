@@ -44,15 +44,6 @@ MOLCH_PUBLIC(void) print_to_file(const gsl::span<const std::byte> data, const st
 	filestream.write(reinterpret_cast<const char*>(data.data()), gsl::narrow<std::streamsize>(data.size()));
 }
 
-MOLCH_PUBLIC(void) print_errors(const return_status& status) {
-	fprintf(stderr, "ERROR STACK:\n");
-	error_message *error = status.error;
-	for (size_t i{1}; error != nullptr; i++, error = error->next) {
-		fprintf(stderr, "%zu: %s\n", i, error->message);
-	}
-}
-
-
 MOLCH_PUBLIC(Buffer) read_file(const std::string& filename) {
 	std::ifstream filestream{filename, std::ios_base::in | std::ios_base::binary};
 	if (!filestream.is_open()) {

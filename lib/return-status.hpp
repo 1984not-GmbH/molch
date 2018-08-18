@@ -26,14 +26,7 @@
 #include "gsl.hpp"
 
 namespace Molch {
-	return_status return_status_init(void) noexcept;
-
-	status_type return_status_add_error_message(
-			return_status& status_object,
-			const char *const message,
-			const status_type status_to_add) noexcept __attribute__((warn_unused_result));
-
-	void return_status_destroy_errors(return_status& status) noexcept;
+	constexpr return_status success_status{status_type::SUCCESS, nullptr};
 
 	/*
 	 * Get the name of a status type as a string.
@@ -48,26 +41,7 @@ namespace Molch {
 	span<char> return_status_print(const return_status& status) noexcept __attribute__((warn_unused_result));
 }
 
-//This assumes that there is a return_status struct and there is a "cleanup" label to jump to.
-#define THROW(status_type_value, message) {\
-	status.status = status_type_value;\
-	if (message != nullptr) {\
-		status_type THROW_type = return_status_add_error_message(status, message, status_type_value);\
-		if (THROW_type != status_type::SUCCESS) {\
-			status.status = THROW_type;\
-		} else {\
-			status.status = status_type::SHOULDNT_HAPPEN; /*I hope this makes clang analyzer accept my code!*/\
-		}\
-	} else {\
-		status.error = nullptr;\
-	}\
-\
-	goto cleanup;\
-}
-
 //Execute code on error
 #define on_error if (status.status != status_type::SUCCESS)
-
-#define THROW_on_error(status_type_value, message) on_error{THROW(status_type_value, message)}
 
 #endif /* LIB_RETURN_STATUS_HPP */

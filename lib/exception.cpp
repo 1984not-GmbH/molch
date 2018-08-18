@@ -29,72 +29,32 @@
 
 namespace Molch {
 	Exception::Exception(const Error& error) {
-		this->add(error);
+		this->error = error;
 	}
 
-	Exception::Exception(const status_type type, const std::string& message) {
-		this->error_stack.push_front(Error(type, message));
+	Exception::Exception(const status_type type, const char* message) {
+		this->error = Error(type, message);
 	}
 
-	Exception::Exception(return_status& status) {
-		auto *error{status.error};
-		while (error != nullptr) {
-			this->error_stack.emplace_back(error->status, error->message);
-			error = error->next;
-		}
-
-		return_status_destroy_errors(status);
+	Exception::Exception(const return_status status) {
+		this->error = Error(status.status, status.error);
 	}
 
 	const char* Exception::what() const noexcept {
-		if (this->printed.empty()) {
-			std::stringstream sstream;
-			this->print(sstream);
-			this->printed = sstream.str();
-		}
-
-		return this->printed.c_str();
-	}
-
-	Exception& Exception::add(const Exception& exception) {
-		for (const auto& error : exception.error_stack) {
-			this->error_stack.push_back(error);
-		}
-
-		return *this;
-	}
-
-	Exception& Exception::add(const Error& error) {
-		this->error_stack.push_front(error);
-
-		return *this;
+		return this->error.message;
 	}
 
 	return_status Exception::toReturnStatus() const {
-		auto status{return_status_init()};
-
-		// add the error messages in reverse order
-		for (auto&& error = std::crbegin(this->error_stack); error != std::crend(this->error_stack); ++error) {
-			auto add_status{return_status_add_error_message(status, error->message.c_str(), error->type)};
-			if (add_status != status_type::SUCCESS) {
-				return_status_destroy_errors(status);
-				status.status = add_status;
-				return status;
-			}
-		}
+		auto status{success_status};
+		status.status = error.type;
+		status.error = error.message;
 
 		return status;
 	}
 
-	std::ostream& Exception::print(std::ostream& stream) const {
-		stream << "ERROR\nerror stack trace:\n";
-
-		size_t i{0};
-		for (const auto& error : this->error_stack) {
-			stream << i << ": " << return_status_get_name(error.type) << ", " << error.message << '\n';
-			i++;
-		}
-
+	std::ostream& operator<<(std::ostream& stream, const Exception& exception) {
+		stream << "ERROR: ";
+		stream << exception.error.message;
 		return stream;
 	}
 }

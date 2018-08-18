@@ -65,16 +65,9 @@ typedef enum class status_type { //TODO add more error types
 	EXPECTATION_FAILED
 } status_type;
 
-typedef struct error_message error_message;
-struct error_message {
-	char * message;
-	status_type status;
-	error_message *next;
-};
-
 typedef struct return_status {
 	status_type status;
-	error_message *error;
+	const char *error;
 } return_status;
 
 #ifdef __cplusplus

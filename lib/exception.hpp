@@ -30,32 +30,18 @@
 #include "error.hpp"
 
 namespace Molch {
-	class Exception : public std::exception {
-	private:
-		std::deque<Error> error_stack;
-		mutable std::string printed;
-
-	public:
+	struct Exception : public std::exception {
+		Error error;
 
 		Exception(const Error& error);
-		Exception(const status_type type, const std::string& message);
-		Exception(return_status& status);
+		Exception(const status_type type, const char* message);
+		Exception(const return_status status);
 
 		virtual const char* what() const noexcept override;
-
-		Exception& add(const Exception& exception);
-		Exception& add(const Error& error);
 		return_status toReturnStatus() const;
-		std::ostream& print(std::ostream& stream) const;
 	};
 
-	//throw std::bad_alloc if something is nullptr
-	template <typename T>
-	inline void exception_on_failed_alloc(const T* const& object) {
-		if (object == nullptr) {
-			throw std::bad_alloc();
-		}
-	}
+	std::ostream& operator<<(std::ostream& stream, const Exception& exception);
 }
 
 #endif /* LIB_EXCEPTION_H */
