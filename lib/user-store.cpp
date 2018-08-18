@@ -112,15 +112,18 @@ namespace Molch {
 		return this->master_keys;
 	}
 
-	UserStore::UserStore(const span<ProtobufCUser*> users) {
+	result<UserStore> UserStore::import(const span<ProtobufCUser*> users) {
+		UserStore store;
 		for (const auto& user : users) {
 			if (user == nullptr) {
-				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Array of users is missing a user."};
+				return Error(status_type::PROTOBUF_MISSING_ERROR, "Array of users is missing a user.");
 			}
 
-			TRY_WITH_RESULT(user_result, User::import(*user));
-			this->add(std::move(user_result.value()));
+			OUTCOME_TRY(imported_user, User::import(*user));
+			store.add(std::move(imported_user));
 		}
+
+		return store;
 	}
 
 	void UserStore::add(User&& user) {

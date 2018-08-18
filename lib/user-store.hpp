@@ -91,7 +91,7 @@ namespace Molch {
 		/*! Import a user store from an array of Protobuf-C structs
 		 * \param users The array to import from.
 		 */
-		UserStore(const span<ProtobufCUser*> users);
+		static result<UserStore> import(const span<ProtobufCUser*> users);
 
 		UserStore(const UserStore& store) = delete;
 		UserStore(UserStore&& store) = default;

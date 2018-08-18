@@ -70,7 +70,8 @@ static UserStore protobuf_import(Arena& pool, const std::vector<Buffer> buffers)
 	}
 
 	//import
-	return UserStore({user_array.get(), buffers.size()});
+	TRY_WITH_RESULT(imported_user_store, UserStore::import({user_array.get(), buffers.size()}));
+	return std::move(imported_user_store.value());
 }
 
 static void protobuf_empty_store() {
@@ -86,7 +87,7 @@ static void protobuf_empty_store() {
 	}
 
 	//import it
-	store = UserStore(exported);
+	TRY_WITH_RESULT(imported_store, UserStore::import(exported));
 	printf("Successful.\n");
 }
 

@@ -1314,7 +1314,8 @@ cleanup:
 			}
 
 			//import the user store
-			auto store{std::make_unique<UserStore>(span<ProtobufCUser*>{backup_struct->users, backup_struct->n_users})};
+			TRY_WITH_RESULT(imported_user_store, UserStore::import({backup_struct->users, backup_struct->n_users}));
+			auto store{std::make_unique<UserStore>(std::move(imported_user_store.value()))};
 
 			//update the backup key
 			auto status{molch_update_backup_key(new_backup_key, new_backup_key_length)};
