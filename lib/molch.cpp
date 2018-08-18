@@ -1053,7 +1053,7 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		molch__protobuf__backup__init(backup_struct);
 
 		//export the conversation
-		protobuf_array_arena_export(arena, backup_struct, users, users);
+		outcome_protobuf_array_arena_export(arena, backup_struct, users, users);
 
 		//pack the struct
 		auto backup_struct_size{molch__protobuf__backup__get_packed_size(backup_struct)};

@@ -34,7 +34,8 @@ using namespace Molch;
 
 static std::vector<Buffer> protobuf_export(UserStore& store) {
 	Arena pool;
-	auto exported_users{store.exportProtobuf(pool)};
+	TRY_WITH_RESULT(exported_users_result, store.exportProtobuf(pool));
+	const auto& exported_users{exported_users_result.value()};
 	auto users{exported_users.data()};
 	auto length{exported_users.size()};
 
@@ -79,10 +80,11 @@ static void protobuf_empty_store() {
 	UserStore store;
 
 	//export it
-	Arena pool;
-	auto exported{store.exportProtobuf(pool)};
+	Arena arena;
+	TRY_WITH_RESULT(exported_result, store.exportProtobuf(arena));
+	const auto& exported{exported_result.value()};
 
-	if (!exported.empty()) {
+	if (not exported.empty()) {
 		throw Molch::Exception{status_type::INCORRECT_DATA, "Exported data is not empty."};
 	}
 

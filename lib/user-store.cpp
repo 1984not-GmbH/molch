@@ -238,7 +238,7 @@ namespace Molch {
 		return user;
 	}
 
-	span<ProtobufCUser*> UserStore::exportProtobuf(Arena& arena) const {
+	result<span<ProtobufCUser*>> UserStore::exportProtobuf(Arena& arena) const {
 		if (this->users.empty()) {
 			return {nullptr, static_cast<size_t>(0)};
 		}
@@ -247,8 +247,7 @@ namespace Molch {
 		auto users_array{arena.allocate<ProtobufCUser*>(this->users.size())};
 		size_t index{0};
 		for (const auto& user : this->users) {
-			TRY_WITH_RESULT(exported_user_result, user.exportProtobuf(arena));
-			auto& exported_user{exported_user_result.value()};
+			OUTCOME_TRY(exported_user, user.exportProtobuf(arena));
 			users_array[index] = exported_user;
 			index++;
 		}

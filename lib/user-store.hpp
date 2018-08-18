@@ -129,7 +129,7 @@ namespace Molch {
 		void clear();
 
 		/*! Export a user store to an array of Protobuf-C structs */
-		span<ProtobufCUser*> exportProtobuf(Arena& arena) const;
+		result<span<ProtobufCUser*>> exportProtobuf(Arena& arena) const;
 
 		size_t size() const;
 	};
