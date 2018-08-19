@@ -84,16 +84,10 @@ public:
 	}
 };
 
-static void check_global_backup_key_state() {
-	if ((global_backup_key == nullptr) || (global_backup_key->size() != BACKUP_KEY_SIZE)) {
-		throw Exception{status_type::INCORRECT_DATA, "No backup key found."};
-	}
-}
-
 /*
  * Create a prekey list.
  */
-static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_key) {
+static result<MallocBuffer> create_prekey_list(const PublicSigningKey& public_signing_key) {
 	//get the user
 	auto user{users.find(public_signing_key)};
 	if (user == nullptr) {
@@ -101,30 +95,29 @@ static MallocBuffer create_prekey_list(const PublicSigningKey& public_signing_ke
 	}
 
 	//rotate the prekeys
-	TRY_VOID(user->prekeys.rotate());
+	OUTCOME_TRY(user->prekeys.rotate());
 
 	//copy the public identity to the prekey list
 	MallocBuffer unsigned_prekey_list{
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t),
 			PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE + sizeof(uint64_t)};
-	TRY_VOID(unsigned_prekey_list.copyFromRaw(0, user->masterKeys().getIdentityKey().data(), 0, PUBLIC_KEY_SIZE));
+	OUTCOME_TRY(unsigned_prekey_list.copyFromRaw(0, user->masterKeys().getIdentityKey().data(), 0, PUBLIC_KEY_SIZE));
 
 	//get the prekeys
-	TRY_WITH_RESULT(prekey_list_buffer_result, user->prekeys.list());
-	const auto& prekey_list_buffer{prekey_list_buffer_result.value()};
-	TRY_VOID(copyFromTo(prekey_list_buffer, {&unsigned_prekey_list[PUBLIC_KEY_SIZE], PREKEY_AMOUNT * PUBLIC_KEY_SIZE}));
+	OUTCOME_TRY(prekey_list_buffer, user->prekeys.list());
+	OUTCOME_TRY(copyFromTo(prekey_list_buffer, {&unsigned_prekey_list[PUBLIC_KEY_SIZE], PREKEY_AMOUNT * PUBLIC_KEY_SIZE}));
 
 	//add the expiration date
 	int64_t expiration_date{now().count() + seconds{3_months}.count()};
 	span<std::byte> big_endian_expiration_date{&unsigned_prekey_list[PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE], sizeof(int64_t)};
-	TRY_VOID(to_big_endian(expiration_date, big_endian_expiration_date));
+	OUTCOME_TRY(to_big_endian(expiration_date, big_endian_expiration_date));
 
 	//sign the prekey list with the current identity key
 	MallocBuffer prekey_list{
 			unsigned_prekey_list.size() + SIGNATURE_SIZE,
 			unsigned_prekey_list.size() + SIGNATURE_SIZE};
-	TRY_WITH_RESULT(signed_data, user->masterKeys().sign(unsigned_prekey_list));
-	TRY_VOID(copyFromTo(signed_data.value(), prekey_list))
+	OUTCOME_TRY(signed_data, user->masterKeys().sign(unsigned_prekey_list));
+	OUTCOME_TRY(copyFromTo(signed_data, prekey_list));
 
 	return prekey_list;
 }
@@ -194,7 +187,8 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 		}
 		TRY_VOID(copyFromTo(public_master_key_key, {uchar_to_byte(public_master_key), public_master_key_length}));
 
-		auto prekey_list_buffer = create_prekey_list(public_master_key_key);
+		TRY_WITH_RESULT(prekey_list_buffer_result, create_prekey_list(public_master_key_key));
+		auto& prekey_list_buffer{prekey_list_buffer_result.value()};
 
 		if (backup != nullptr) {
 			*backup = nullptr;
@@ -341,13 +335,12 @@ MOLCH_PUBLIC(molch_message_type) molch_get_message_type(
  * Verify prekey list and extract the public identity
  * and choose a prekey.
  */
-static void verify_prekey_list(
+static result<PublicKey> verify_prekey_list(
 		const span<const std::byte> prekey_list,
-		PublicKey& public_identity_key, //output, PUBLIC_KEY_SIZE
 		const PublicSigningKey& public_signing_key) {
 	//verify the signature
 	Buffer verified_prekey_list{prekey_list.size() - SIGNATURE_SIZE, prekey_list.size() - SIGNATURE_SIZE};
-	TRY_VOID(crypto_sign_open(
+	OUTCOME_TRY(crypto_sign_open(
 			verified_prekey_list,
 			prekey_list,
 			public_signing_key));
@@ -355,16 +348,19 @@ static void verify_prekey_list(
 	//get the expiration date
 	int64_t expiration_date{0};
 	span<std::byte> big_endian_expiration_date{&verified_prekey_list[PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE], sizeof(int64_t)};
-	TRY_VOID(from_big_endian(expiration_date, big_endian_expiration_date));
+	OUTCOME_TRY(from_big_endian(expiration_date, big_endian_expiration_date));
 
 	//make sure the prekey list isn't too old
 	int64_t current_time{now().count()};
 	if (expiration_date < current_time) {
-		throw Exception{status_type::OUTDATED, "Prekey list has expired (older than 3 months)."};
+		return Error(status_type::OUTDATED, "Prekey list has expired (older than 3 months).");
 	}
 
 	//copy the public identity key
-	TRY_VOID(copyFromTo(verified_prekey_list, {public_identity_key.data(), PUBLIC_KEY_SIZE}, PUBLIC_KEY_SIZE));
+	PublicKey public_identity_key;
+	OUTCOME_TRY(copyFromTo(verified_prekey_list, {public_identity_key.data(), PUBLIC_KEY_SIZE}, PUBLIC_KEY_SIZE));
+
+	return public_identity_key;
 }
 
 /*
@@ -413,13 +409,12 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		}
 
 		//get the receivers public ephemeral and identity
-		PublicKey receiver_public_identity;
 		TRY_WITH_RESULT(receiver_public_master_key_key_result, PublicSigningKey::fromSpan({uchar_to_byte(receiver_public_master_key), PUBLIC_MASTER_KEY_SIZE}));
 		const auto& receiver_public_master_key_key{receiver_public_master_key_key_result.value()};
-		verify_prekey_list(
+		TRY_WITH_RESULT(receiver_public_identity_result, verify_prekey_list(
 				{uchar_to_byte(prekey_list), prekey_list_length},
-				receiver_public_identity,
-				receiver_public_master_key_key);
+				receiver_public_master_key_key));
+		const auto& receiver_public_identity{receiver_public_identity_result.value()};
 
 		//unlock the master keys
 		MasterKeys::Unlocker unlocker{user->masterKeys()};
@@ -526,7 +521,8 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 			TRY_VOID(copyFromTo(receive_conversation.conversation.id(), {uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
 
 			//create the prekey list
-			auto prekey_list_buffer{create_prekey_list(receiver_public_master_key_key)};
+			TRY_WITH_RESULT(prekey_list_buffer_result, create_prekey_list(receiver_public_master_key_key));
+			auto& prekey_list_buffer{prekey_list_buffer_result.value()};
 
 			//add the conversation to the conversation store
 			user->conversations.add(std::move(receive_conversation.conversation));
@@ -861,7 +857,9 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 			ProtobufCEncryptedBackup encrypted_backup_struct;
 			molch__protobuf__encrypted_backup__init(&encrypted_backup_struct);
 
-			check_global_backup_key_state();
+			if ((global_backup_key == nullptr) || (global_backup_key->size() != BACKUP_KEY_SIZE)) {
+				throw Exception(status_type::INCORRECT_DATA, "No backup key found.");
+			}
 
 			//find the conversation
 			Molch::User *user{nullptr};
@@ -1250,7 +1248,8 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 
 			TRY_WITH_RESULT(public_signing_key_key_result, PublicSigningKey::fromSpan({uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE}));
 			const auto& public_signing_key_key{public_signing_key_key_result.value()};
-			auto prekey_list_buffer{create_prekey_list(public_signing_key_key)};
+			TRY_WITH_RESULT(prekey_list_buffer_result, create_prekey_list(public_signing_key_key));
+			auto& prekey_list_buffer{prekey_list_buffer_result.value()};
 			MallocBuffer malloced_prekey_list{prekey_list_buffer.size(), 0};
 			TRY_VOID(malloced_prekey_list.cloneFrom(prekey_list_buffer));
 			*prekey_list_length = malloced_prekey_list.size();
