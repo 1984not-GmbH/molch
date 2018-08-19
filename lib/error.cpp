@@ -25,4 +25,8 @@ namespace Molch {
 	Error::Error(const status_type type, const char* message) :
 		type{type},
 		message{message} {}
+
+	return_status Error::toReturnStatus() const {
+		return {this->type, this->message};
+	}
 }

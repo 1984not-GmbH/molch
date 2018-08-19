@@ -122,6 +122,26 @@ static result<MallocBuffer> create_prekey_list(const PublicSigningKey& public_si
 	return prekey_list;
 }
 
+	static result<void> update_backup_key(unsigned char * const new_key, const size_t new_key_length) {
+		if ((new_key == nullptr) or (new_key_length != BACKUP_KEY_SIZE)) {
+			return Error(status_type::INVALID_VALUE, "The new key is null or doesn't have the correct size.");
+		}
+
+		OUTCOME_TRY(Molch::sodium_init());
+
+		// create a backup key buffer if it doesnt exist already
+		if (global_backup_key == nullptr) {
+			global_backup_key = std::unique_ptr<BackupKey,SodiumDeleter<BackupKey>>(sodium_malloc<BackupKey>(1));
+			new (global_backup_key.get()) BackupKey();
+		}
+
+		//make the content of the backup key writable
+		GlobalBackupKeyWriteUnlocker unlocker;
+
+		randombytes_buf(*global_backup_key);
+		return copyFromTo(*global_backup_key, {uchar_to_byte(new_key), new_key_length});
+	}
+
 MOLCH_PUBLIC(return_status) molch_create_user(
 		//outputs
 		unsigned char *const public_master_key, //PUBLIC_MASTER_KEY_SIZE
@@ -146,12 +166,7 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 		TRY_VOID(Molch::sodium_init());
 
 		//create a new backup key
-		{
-			auto status{molch_update_backup_key(backup_key, backup_key_length)};
-			on_error {
-				throw Exception(status);
-			}
-		}
+		TRY_VOID(update_backup_key(backup_key, backup_key_length));
 
 		//create the user
 		PublicSigningKey public_master_key_key;
@@ -931,11 +946,7 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 			auto& conversation{conversation_result.value()};
 			containing_user->conversations.add(std::move(conversation));
 
-			//update the backup key
-			auto status{molch_update_backup_key(new_backup_key, new_backup_key_length)};
-			on_error {
-				throw Exception{status_type::KEYGENERATION_FAILED, "Failed to update backup key."};
-			}
+			TRY_VOID(update_backup_key(new_backup_key, new_backup_key_length));
 		} catch (const Exception& exception) {
 			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
@@ -1098,11 +1109,7 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 			//import the user store
 			TRY_WITH_RESULT(imported_user_store, UserStore::import({backup_struct->users, backup_struct->n_users}));
 
-			//update the backup key
-			auto status{molch_update_backup_key(new_backup_key, new_backup_key_length)};
-			on_error {
-				throw Exception{status};
-			}
+			TRY_VOID(update_backup_key(new_backup_key, new_backup_key_length));
 
 			//everyting worked, switch to the new user store
 			users = std::move(imported_user_store.value());
@@ -1148,25 +1155,12 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 	MOLCH_PUBLIC(return_status) molch_update_backup_key(
 			unsigned char * const new_key, //output, BACKUP_KEY_SIZE
 			const size_t new_key_length) {
+
 		try {
-			Expects((new_key != nullptr) && (new_key_length == BACKUP_KEY_SIZE));
-
-			TRY_VOID(Molch::sodium_init());
-
-			// create a backup key buffer if it doesnt exist already
-			if (global_backup_key == nullptr) {
-				global_backup_key = std::unique_ptr<BackupKey,SodiumDeleter<BackupKey>>(sodium_malloc<BackupKey>(1));
-				new (global_backup_key.get()) BackupKey();
+			const auto result{update_backup_key(new_key, new_key_length)};
+			if (result.has_error()) {
+				return result.error().toReturnStatus();
 			}
-
-			//make the content of the backup key writable
-			GlobalBackupKeyWriteUnlocker unlocker;
-
-			randombytes_buf(*global_backup_key);
-
-			TRY_VOID(copyFromTo(*global_backup_key, {uchar_to_byte(new_key), BACKUP_KEY_SIZE}));
-		} catch (const Exception& exception) {
-			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
 			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
 		}

@@ -34,6 +34,7 @@ namespace Molch {
 
 		Error() = default;
 		Error(const status_type type, const char* message);
+		return_status toReturnStatus() const;
 	};
 }
 
