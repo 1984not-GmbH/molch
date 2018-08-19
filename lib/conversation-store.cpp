@@ -151,7 +151,7 @@ namespace Molch {
 		//import all the conversations
 		for (const auto& conversation : conversations) {
 			if (conversation == nullptr) {
-				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "Array of conversation has an empty element."};
+				return Error(status_type::PROTOBUF_MISSING_ERROR, "Array of conversation has an empty element.");
 			}
 
 			OUTCOME_TRY(imported_conversation, Conversation::import(*conversation));
