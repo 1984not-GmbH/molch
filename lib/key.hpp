@@ -160,13 +160,13 @@ namespace Molch {
 			//create a salt that contains the number of the subkey
 			auto salt{Key<crypto_generichash_blake2b_SALTBYTES,KeyType::Key>()};
 			//fill the salt with a big endian representation of the subkey counter
-			TRY_VOID(to_big_endian(subkey_counter, {salt.data()+ salt.size() - sizeof(uint32_t), sizeof(uint32_t)}));
+			OUTCOME_TRY(to_big_endian(subkey_counter, {salt.data()+ salt.size() - sizeof(uint32_t), sizeof(uint32_t)}));
 
 			const unsigned char personal[]{"molch_cryptolib"};
 			static_assert(sizeof(personal) == crypto_generichash_blake2b_PERSONALBYTES, "personal string is not crypto_generichash_blake2b_PERSONALBYTES long");
 
 			//set length of output
-			TRY_VOID(crypto_generichash_blake2b_salt_personal(
+			OUTCOME_TRY(crypto_generichash_blake2b_salt_personal(
 					derived_key,
 					{nullptr, static_cast<size_t>(0)}, //input
 					*this,
@@ -322,13 +322,13 @@ namespace Molch {
 			salt.zero(); //fill with zeroes
 
 			//fill the salt with a big endian representation of the subkey counter
-			TRY_VOID(to_big_endian(subkey_counter, {salt.data()+ salt.size() - sizeof(uint32_t), sizeof(uint32_t)}));
+			OUTCOME_TRY(to_big_endian(subkey_counter, {salt.data()+ salt.size() - sizeof(uint32_t), sizeof(uint32_t)}));
 
 			const unsigned char personal[]{"molch_cryptolib"};
 			static_assert(sizeof(personal) == crypto_generichash_blake2b_PERSONALBYTES, "personal string is not crypto_generichash_blake2b_PERSONALBYTES long");
 
 			//set length of output
-			TRY_VOID(crypto_generichash_blake2b_salt_personal(
+			OUTCOME_TRY(crypto_generichash_blake2b_salt_personal(
 					derived_key,
 					{nullptr, static_cast<size_t>(0)}, //input
 					*this,
@@ -389,7 +389,9 @@ namespace Molch {
 
 		const size_t hex_length{key.size() * 2 + sizeof("")};
 		auto hex{std::make_unique<char[]>(hex_length)};
-		TRY_VOID(sodium_bin2hex({hex.get(), hex_length}, key));
+		if (sodium_bin2hex({hex.get(), hex_length}, key).has_error()) {
+			std::terminate();
+		}
 
 		for (size_t i{0}; i < hex_length; i++) {
 			if ((width != 0) && ((i % width) == 0) && (i != 0)) {

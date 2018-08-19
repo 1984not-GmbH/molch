@@ -383,7 +383,9 @@ namespace Molch {
 		//buffer for the hex string
 		const size_t hex_length{buffer.size() * 2 + sizeof("")};
 		auto hex{std::make_unique<char[]>(hex_length)};
-		TRY_VOID(sodium_bin2hex({hex.get(), hex_length}, buffer));
+		if (sodium_bin2hex({hex.get(), hex_length}, buffer).has_error()) {
+			std::terminate();
+		}
 
 		for (size_t i{0}; i < hex_length; i++) {
 			if (((i % width) == 0) and (i != 0)) {
