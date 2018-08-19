@@ -122,25 +122,6 @@ static result<MallocBuffer> create_prekey_list(const PublicSigningKey& public_si
 	return prekey_list;
 }
 
-/*
- * Create a new user. The user is identified by the public master key.
- *
- * Get's random input (can be in any format and doesn't have
- * to be uniformly distributed) and uses it in combination
- * with the OS's random number generator to generate a
- * signing and identity keypair for the user.
- *
- * IMPORTANT: Don't put random numbers provided by the operating
- * system in there.
- *
- * This also creates a signed list of prekeys to be uploaded to
- * the server.
- *
- * A new backup key is generated that subsequent backups of the library state will be encrypted with.
- *
- * Don't forget to destroy the return status with molch_destroy_return_status()
- * if an error has occurred.
- */
 MOLCH_PUBLIC(return_status) molch_create_user(
 		//outputs
 		unsigned char *const public_master_key, //PUBLIC_MASTER_KEY_SIZE
@@ -212,9 +193,6 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 	return success_status;
 }
 
-/*
- * Destroy a user.
- */
 MOLCH_PUBLIC(return_status) molch_destroy_user(
 		const unsigned char *const public_master_key,
 		const size_t public_master_key_length,
@@ -249,26 +227,14 @@ MOLCH_PUBLIC(return_status) molch_destroy_user(
 	return success_status;
 }
 
-/*
- * Get the number of users.
- */
 MOLCH_PUBLIC(size_t) molch_user_count() {
 	return users.size();
 }
 
-/*
- * Delete all users.
- */
 MOLCH_PUBLIC(void) molch_destroy_all_users() {
 	users.clear();
 }
 
-/*
- * List all of the users (list of the public keys),
- * nullptr if there are no users.
- *
- * The list is accessible via the return status' 'data' property.
- */
 MOLCH_PUBLIC(return_status) molch_list_users(
 		unsigned char **const user_list,
 		size_t * const user_list_length, //length in bytes
@@ -312,12 +278,6 @@ cleanup:
 	return status;
 }
 
-/*
- * Get the type of a message.
- *
- * This is either a normal message or a prekey message.
- * Prekey messages mark the start of a new conversation.
- */
 MOLCH_PUBLIC(molch_message_type) molch_get_message_type(
 		const unsigned char * const packet,
 		const size_t packet_length) {
@@ -363,13 +323,6 @@ static result<PublicKey> verify_prekey_list(
 	return public_identity_key;
 }
 
-/*
- * Start a new conversation. (sending)
- *
- * The conversation can be identified by it's ID
- *
- * This requires a new set of prekeys from the receiver.
- */
 MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		//outputs
 		unsigned char *const conversation_id, //CONVERSATION_ID_SIZE long (from conversation.h)
@@ -460,13 +413,6 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 	return success_status;
 }
 
-	/*
-	 * Start a new conversation. (receiving)
-	 *
-	 * This also generates a new set of prekeys to be uploaded to the server.
-	 *
-	 * This function is called after receiving a prekey message.
-	 */
 	MOLCH_PUBLIC(return_status) molch_start_receive_conversation(
 			//outputs
 			unsigned char * const conversation_id, //CONVERSATION_ID_SIZE long (from conversation.h)
@@ -555,9 +501,6 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		return success_status;
 	}
 
-	/*
-	 * Encrypt a message and create a packet that can be sent to the receiver.
-	 */
 	MOLCH_PUBLIC(return_status) molch_encrypt_message(
 			//output
 			unsigned char ** const packet, //free after use
@@ -614,9 +557,6 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		return success_status;
 	}
 
-	/*
-	 * Decrypt a message.
-	 */
 	MOLCH_PUBLIC(return_status) molch_decrypt_message(
 			//outputs
 			unsigned char ** const message, //free after use
@@ -721,14 +661,6 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		return success_status;
 	}
 
-	/*
-	 * List the conversations of a user.
-	 *
-	 * Returns the number of conversations and a list of conversations for a given user.
-	 * (all the conversation ids in one big list).
-	 *
-	 * Don't forget to free conversation_list after use.
-	 */
 	MOLCH_PUBLIC(return_status) molch_list_conversations(
 			//outputs
 			unsigned char ** const conversation_list,
@@ -797,11 +729,6 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		return status;
 	}
 
-	/*
-	 * Print a return status into a nice looking error message.
-	 *
-	 * Don't forget to free the output after use.
-	 */
 	MOLCH_PUBLIC(char*) molch_print_status(size_t * const output_length, return_status status) {
 		if (output_length == nullptr) {
 			return nullptr;
@@ -812,32 +739,16 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		return printed.data();
 	}
 
-	/*
-	 * Get a string describing the return status type.
-	 *
-	 * (return_status.status)
-	 */
 	MOLCH_PUBLIC(const char*) molch_print_status_type(status_type type) {
 		return return_status_get_name(type);
 	}
 
-	/*
-	 * Destroy a return status (only needs to be called if there was an error).
-	 */
 	MOLCH_PUBLIC(void) molch_destroy_return_status(return_status * const status) {
 		if (status == nullptr) {
 			return;
 		}
 	}
 
-	/*
-	 * Serialize a conversation.
-	 *
-	 * Don't forget to free the output after use.
-	 *
-	 * Don't forget to destroy the return status with molch_destroy_return_status()
-	 * if an error has occurred.
-	 */
 	MOLCH_PUBLIC(return_status) molch_conversation_export(
 			//output
 			unsigned char ** const backup,
@@ -946,12 +857,6 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		return status;
 	}
 
-	/*
-	 * Import a conversation from a backup (overwrites the current one if it exists).
-	 *
-	 * Don't forget to destroy the return status with molch_destroy_return_status()
-	 * if an error has occurred.
-	 */
 	MOLCH_PUBLIC(return_status) molch_conversation_import(
 			//output
 			unsigned char * new_backup_key,
@@ -1104,14 +1009,6 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		return malloced_encrypted_backup;
 	}
 
-	/*
-	 * Serialise molch's internal state. The output is encrypted with the backup key.
-	 *
-	 * Don't forget to free the output after use.
-	 *
-	 * Don't forget to destroy the return status with molch_destroy_return_status()
-	 * if an error has occured.
-	 */
 	MOLCH_PUBLIC(return_status) molch_export(
 			unsigned char ** const backup,
 			size_t *backup_length) {
@@ -1135,15 +1032,6 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		return success_status;
 	}
 
-	/*
-	 * Import molch's internal state from a backup (overwrites the current state)
-	 * and generates a new backup key.
-	 *
-	 * The backup key is needed to decrypt the backup.
-	 *
-	 * Don't forget to destroy the return status with molch_destroy_return_status()
-	 * if an error has occured.
-	 */
 	MOLCH_PUBLIC(return_status) molch_import(
 			//output
 			unsigned char * const new_backup_key, //BACKUP_KEY_SIZE, can be the same pointer as the backup key
@@ -1227,12 +1115,6 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		return success_status;
 	}
 
-	/*
-	 * Get a signed list of prekeys for a given user.
-	 *
-	 * Don't forget to destroy the return status with molch_destroy_return_status()
-	 * if an error has occured.
-	 */
 	MOLCH_PUBLIC(return_status) molch_get_prekey_list(
 			//output
 			unsigned char ** const prekey_list,  //free after use
@@ -1263,12 +1145,6 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		return success_status;
 	}
 
-	/*
-	 * Generate and return a new key for encrypting the exported library state.
-	 *
-	 * Don't forget to destroy the return status with molch_destroy_return_status()
-	 * if an error has occured.
-	 */
 	MOLCH_PUBLIC(return_status) molch_update_backup_key(
 			unsigned char * const new_key, //output, BACKUP_KEY_SIZE
 			const size_t new_key_length) {
