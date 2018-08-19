@@ -516,6 +516,77 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		return success_status;
 	}
 
+	static result<MallocBuffer> export_conversation(const span<const std::byte> conversation_id) {
+		ProtobufCEncryptedBackup encrypted_backup_struct;
+		molch__protobuf__encrypted_backup__init(&encrypted_backup_struct);
+
+		if ((global_backup_key == nullptr) || (global_backup_key->size() != BACKUP_KEY_SIZE)) {
+			return Error(status_type::INCORRECT_DATA, "No backup key found.");
+		}
+
+		//find the conversation
+		Molch::User *user{nullptr};
+		OUTCOME_TRY(conversation_id_key, ConversationId::fromSpan(conversation_id));
+		auto conversation{users.findConversation(user, conversation_id_key)};
+		if (conversation == nullptr) {
+			throw Exception{status_type::NOT_FOUND, "Failed to find the conversation."};
+		}
+
+		//export the conversation
+		Arena arena;
+		OUTCOME_TRY(conversation_struct, conversation->exportProtobuf(arena));
+
+		//pack the struct
+		auto conversation_size{molch__protobuf__conversation__get_packed_size(conversation_struct)};
+		auto conversation_buffer_content{arena.allocate<std::byte>(conversation_size)};
+		span<std::byte> conversation_buffer{conversation_buffer_content, conversation_size};
+		molch__protobuf__conversation__pack(conversation_struct, byte_to_uchar(conversation_buffer.data()));
+
+		//generate the nonce
+		Buffer backup_nonce(BACKUP_NONCE_SIZE, BACKUP_NONCE_SIZE);
+		randombytes_buf(backup_nonce);
+
+		//allocate the output
+		Buffer backup_buffer{conversation_size + crypto_secretbox_MACBYTES, conversation_size + crypto_secretbox_MACBYTES};
+
+		//encrypt the backup
+		GlobalBackupKeyUnlocker unlocker;
+		auto status{crypto_secretbox_easy(
+				byte_to_uchar(backup_buffer.data()),
+				byte_to_uchar(conversation_buffer.data()),
+				conversation_buffer.size(),
+				byte_to_uchar(backup_nonce.data()),
+				byte_to_uchar(global_backup_key->data()))};
+		if (status != 0) {
+			OUTCOME_TRY(backup_buffer.setSize(0));
+			return Error(status_type::ENCRYPT_ERROR, "Failed to enrypt conversation state.");
+		}
+
+		//fill in the encrypted backup struct
+		//metadata
+		encrypted_backup_struct.backup_version = 0;
+		encrypted_backup_struct.has_backup_type = true;
+		encrypted_backup_struct.backup_type = MOLCH__PROTOBUF__ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP;
+		//nonce
+		encrypted_backup_struct.has_encrypted_backup_nonce = true;
+		encrypted_backup_struct.encrypted_backup_nonce.data = byte_to_uchar(backup_nonce.data());
+		encrypted_backup_struct.encrypted_backup_nonce.len = backup_nonce.size();
+		//encrypted backup
+		encrypted_backup_struct.has_encrypted_backup = true;
+		encrypted_backup_struct.encrypted_backup.data = byte_to_uchar(backup_buffer.data());
+		encrypted_backup_struct.encrypted_backup.len = backup_buffer.size();
+
+		//now pack the entire backup
+		const auto encrypted_backup_size{molch__protobuf__encrypted_backup__get_packed_size(&encrypted_backup_struct)};
+		MallocBuffer malloced_encrypted_backup{encrypted_backup_size, 0};
+		OUTCOME_TRY(malloced_encrypted_backup.setSize(molch__protobuf__encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data()))));
+		if (malloced_encrypted_backup.size() != encrypted_backup_size) {
+			return Error(status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
+		}
+
+		return std::move(malloced_encrypted_backup);
+	}
+
 	MOLCH_PUBLIC(return_status) molch_encrypt_message(
 			//output
 			unsigned char ** const packet, //free after use
@@ -530,10 +601,11 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 			size_t * const conversation_backup_length
 			) {
 		try {
-			Expects((packet != nullptr) && (packet_length != nullptr)
-				&& (message != nullptr)
-				&& (conversation_id != nullptr)
-				&& (conversation_id_length == CONVERSATION_ID_SIZE));
+			Expects((packet != nullptr) and (packet_length != nullptr)
+				and (message != nullptr)
+				and (conversation_id != nullptr)
+				and (conversation_id_length == CONVERSATION_ID_SIZE)
+				and ((conversation_backup == nullptr) or (conversation_backup != nullptr)));
 
 			//find the conversation
 			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
@@ -553,12 +625,10 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 
 			if (conversation_backup != nullptr) {
 				*conversation_backup = nullptr;
-				if (conversation_backup_length != nullptr) {
-					auto status{molch_conversation_export(conversation_backup, conversation_backup_length, byte_to_uchar(conversation->id().data()), conversation->id().size())};
-					on_error {
-						throw Exception{status};
-					}
-				}
+				TRY_WITH_RESULT(exported_conversation_result, export_conversation(conversation->id()));
+				auto& exported_conversation{exported_conversation_result.value()};
+				*conversation_backup_length = exported_conversation.size();
+				*conversation_backup = byte_to_uchar(exported_conversation.release());
 			}
 
 			*packet_length = malloced_packet.size();
@@ -589,12 +659,13 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		) {
 		try {
 			Expects((message != nullptr)
-					&& (message_length != nullptr)
-					&& (packet != nullptr)
-					&& (conversation_id != nullptr)
-					&& (receive_message_number != nullptr)
-					&& (previous_receive_message_number != nullptr)
-					&& (conversation_id_length == CONVERSATION_ID_SIZE));
+					and (message_length != nullptr)
+					and (packet != nullptr)
+					and (conversation_id != nullptr)
+					and (receive_message_number != nullptr)
+					and (previous_receive_message_number != nullptr)
+					and (conversation_id_length == CONVERSATION_ID_SIZE)
+					and ((conversation_backup == nullptr) or (conversation_backup_length != nullptr)));
 
 			//find the conversation
 			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
@@ -616,12 +687,10 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 
 			if (conversation_backup != nullptr) {
 				*conversation_backup = nullptr;
-				if (conversation_backup_length != nullptr) {
-					auto status{molch_conversation_export(conversation_backup, conversation_backup_length, byte_to_uchar(conversation->id().data()), conversation->id().size())};
-					on_error {
-						throw Exception{status};
-					}
-				}
+				TRY_WITH_RESULT(exported_conversation_result, export_conversation(conversation_id_key));
+				auto& exported_conversation{exported_conversation_result.value()};
+				*conversation_backup_length = exported_conversation.size();
+				*conversation_backup = byte_to_uchar(exported_conversation.release());
 			}
 
 			*message_length = malloced_message.size();
@@ -771,105 +840,26 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 			//input
 			const unsigned char * const conversation_id,
 			const size_t conversation_id_length) {
-		auto status{success_status};
+		if ((backup == nullptr) or (backup_length == nullptr)
+			or (conversation_id == nullptr) or (conversation_id_length != CONVERSATION_ID_SIZE)) {
+			return {status_type::INVALID_VALUE, "One of the inputs to molch_conversation_export was NULL or of incorrect length."};
+		}
 
 		try {
-			Expects(
-					(backup != nullptr)
-					&& (backup_length != nullptr)
-					&& (conversation_id != nullptr)
-					&& (conversation_id_length == CONVERSATION_ID_SIZE));
-
-			ProtobufCEncryptedBackup encrypted_backup_struct;
-			molch__protobuf__encrypted_backup__init(&encrypted_backup_struct);
-
-			if ((global_backup_key == nullptr) || (global_backup_key->size() != BACKUP_KEY_SIZE)) {
-				throw Exception(status_type::INCORRECT_DATA, "No backup key found.");
+			auto encrypted_backup_result{export_conversation({uchar_to_byte(conversation_id), conversation_id_length})};
+			if (encrypted_backup_result.has_error()) {
+				return encrypted_backup_result.error().toReturnStatus();
 			}
-
-			//find the conversation
-			Molch::User *user{nullptr};
-			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
-			const auto& conversation_id_key{conversation_id_key_result.value()};
-			auto conversation{users.findConversation(user, conversation_id_key)};
-			if (conversation == nullptr) {
-				throw Exception{status_type::NOT_FOUND, "Failed to find the conversation."};
-			}
-
-			//export the conversation
-			Arena arena;
-			TRY_WITH_RESULT(conversation_struct_result, conversation->exportProtobuf(arena));
-			auto conversation_struct{conversation_struct_result.value()};
-
-			//pack the struct
-			auto conversation_size{molch__protobuf__conversation__get_packed_size(conversation_struct)};
-			auto conversation_buffer_content{arena.allocate<std::byte>(conversation_size)};
-			span<std::byte> conversation_buffer{conversation_buffer_content, conversation_size};
-			molch__protobuf__conversation__pack(conversation_struct, byte_to_uchar(conversation_buffer.data()));
-
-			//generate the nonce
-			Buffer backup_nonce(BACKUP_NONCE_SIZE, BACKUP_NONCE_SIZE);
-			randombytes_buf(backup_nonce);
-
-			//allocate the output
-			Buffer backup_buffer{conversation_size + crypto_secretbox_MACBYTES, conversation_size + crypto_secretbox_MACBYTES};
-
-			//encrypt the backup
-			GlobalBackupKeyUnlocker unlocker;
-			auto status{crypto_secretbox_easy(
-					byte_to_uchar(backup_buffer.data()),
-					byte_to_uchar(conversation_buffer.data()),
-					conversation_buffer.size(),
-					byte_to_uchar(backup_nonce.data()),
-					byte_to_uchar(global_backup_key->data()))};
-			if (status != 0) {
-				TRY_VOID(backup_buffer.setSize(0));
-				throw Exception{status_type::ENCRYPT_ERROR, "Failed to enrypt conversation state."};
-			}
-
-			//fill in the encrypted backup struct
-			//metadata
-			encrypted_backup_struct.backup_version = 0;
-			encrypted_backup_struct.has_backup_type = true;
-			encrypted_backup_struct.backup_type = MOLCH__PROTOBUF__ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP;
-			//nonce
-			encrypted_backup_struct.has_encrypted_backup_nonce = true;
-			encrypted_backup_struct.encrypted_backup_nonce.data = byte_to_uchar(backup_nonce.data());
-			encrypted_backup_struct.encrypted_backup_nonce.len = backup_nonce.size();
-			//encrypted backup
-			encrypted_backup_struct.has_encrypted_backup = true;
-			encrypted_backup_struct.encrypted_backup.data = byte_to_uchar(backup_buffer.data());
-			encrypted_backup_struct.encrypted_backup.len = backup_buffer.size();
-
-			//now pack the entire backup
-			const auto encrypted_backup_size{molch__protobuf__encrypted_backup__get_packed_size(&encrypted_backup_struct)};
-			MallocBuffer malloced_encrypted_backup{encrypted_backup_size, 0};
-			TRY_VOID(malloced_encrypted_backup.setSize(molch__protobuf__encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data()))));
-			if (malloced_encrypted_backup.size() != encrypted_backup_size) {
-				throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation."};
-			}
-			*backup_length = malloced_encrypted_backup.size();
-			*backup = byte_to_uchar(malloced_encrypted_backup.release());
+			auto& encrypted_backup{encrypted_backup_result.value()};
+			*backup_length = encrypted_backup.size();
+			*backup = byte_to_uchar(encrypted_backup.release());
 		} catch (const Exception& exception) {
-			status = exception.toReturnStatus();
-			goto cleanup;
+			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			status = Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
-			goto cleanup;
+			return {status_type::EXCEPTION, exception.what()};
 		}
 
-	cleanup:
-		on_error {
-			if ((backup != nullptr) && (*backup != nullptr)) {
-				free(*backup);
-				*backup = nullptr;
-			}
-			if (backup_length != nullptr) {
-				*backup_length = 0;
-			}
-		}
-
-		return status;
+		return success_status;
 	}
 
 	MOLCH_PUBLIC(return_status) molch_conversation_import(
