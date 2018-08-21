@@ -122,11 +122,7 @@ static result<MallocBuffer> create_prekey_list(const PublicSigningKey& public_si
 	return prekey_list;
 }
 
-	static result<void> update_backup_key(unsigned char * const new_key, const size_t new_key_length) {
-		if ((new_key == nullptr) or (new_key_length != BACKUP_KEY_SIZE)) {
-			return Error(status_type::INVALID_VALUE, "The new key is null or doesn't have the correct size.");
-		}
-
+	static result<BackupKey> update_backup_key() {
 		OUTCOME_TRY(Molch::sodium_init());
 
 		// create a backup key buffer if it doesnt exist already
@@ -139,7 +135,7 @@ static result<MallocBuffer> create_prekey_list(const PublicSigningKey& public_si
 		GlobalBackupKeyWriteUnlocker unlocker;
 
 		randombytes_buf(*global_backup_key);
-		return copyFromTo(*global_backup_key, {uchar_to_byte(new_key), new_key_length});
+		return *global_backup_key;
 	}
 
 MOLCH_PUBLIC(return_status) molch_create_user(
@@ -158,15 +154,19 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 		const size_t random_data_length) {
 	try {
 		Expects((public_master_key != nullptr)
-			&& (prekey_list != nullptr)
-			&& (prekey_list_length != nullptr)
-			&& (backup_key_length == BACKUP_KEY_SIZE)
-			&& (public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
+			and (prekey_list != nullptr)
+			and (prekey_list_length != nullptr)
+			and (backup_key != nullptr)
+			and (backup_key_length == BACKUP_KEY_SIZE)
+			and (public_master_key_length == PUBLIC_MASTER_KEY_SIZE)
+			and ((backup == nullptr) or (backup_length != nullptr)));
 
 		TRY_VOID(Molch::sodium_init());
 
 		//create a new backup key
-		TRY_VOID(update_backup_key(backup_key, backup_key_length));
+		TRY_WITH_RESULT(updated_backup_key_result, update_backup_key());
+		const auto& updated_backup_key{updated_backup_key_result.value()};
+		std::copy(std::cbegin(updated_backup_key), std::cend(updated_backup_key), uchar_to_byte(backup_key));
 
 		//create the user
 		PublicSigningKey public_master_key_key;
@@ -873,9 +873,10 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 			const size_t backup_key_length) {
 		try {
 			Expects((backup != nullptr)
-					&& (backup_key != nullptr)
-					&& (backup_key_length == BACKUP_KEY_SIZE)
-					&& (new_backup_key_length == BACKUP_KEY_SIZE));
+					and (backup_key != nullptr)
+					and (backup_key_length == BACKUP_KEY_SIZE)
+					and (new_backup_key != nullptr)
+					and (new_backup_key_length == BACKUP_KEY_SIZE));
 
 			//unpack the encrypted backup
 			auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(molch__protobuf__encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup))};
@@ -936,7 +937,9 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 			auto& conversation{conversation_result.value()};
 			containing_user->conversations.add(std::move(conversation));
 
-			TRY_VOID(update_backup_key(new_backup_key, new_backup_key_length));
+			TRY_WITH_RESULT(updated_backup_key_result, update_backup_key());
+			const auto& updated_backup_key{updated_backup_key_result.value()};
+			std::copy(std::cbegin(updated_backup_key), std::cend(updated_backup_key), uchar_to_byte(new_backup_key));
 		} catch (const Exception& exception) {
 			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
@@ -1045,9 +1048,10 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 			) {
 		try {
 			Expects((backup != nullptr)
-					&& (backup_key != nullptr)
-					&& (backup_key_length == BACKUP_KEY_SIZE)
-					&& (new_backup_key_length == BACKUP_KEY_SIZE));
+					and (backup_key != nullptr)
+					and (backup_key_length == BACKUP_KEY_SIZE)
+					and (new_backup_key != nullptr)
+					and (new_backup_key_length == BACKUP_KEY_SIZE));
 
 			TRY_VOID(Molch::sodium_init());
 
@@ -1099,7 +1103,9 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 			//import the user store
 			TRY_WITH_RESULT(imported_user_store, UserStore::import({backup_struct->users, backup_struct->n_users}));
 
-			TRY_VOID(update_backup_key(new_backup_key, new_backup_key_length));
+			TRY_WITH_RESULT(updated_backup_key_result, update_backup_key());
+			const auto& updated_backup_key{updated_backup_key_result.value()};
+			std::copy(std::cbegin(updated_backup_key), std::cend(updated_backup_key), uchar_to_byte(new_backup_key));
 
 			//everyting worked, switch to the new user store
 			users = std::move(imported_user_store.value());
@@ -1145,12 +1151,17 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 	MOLCH_PUBLIC(return_status) molch_update_backup_key(
 			unsigned char * const new_key, //output, BACKUP_KEY_SIZE
 			const size_t new_key_length) {
+		if ((new_key == nullptr) or (new_key_length != BACKUP_KEY_SIZE)) {
+			return {status_type::INVALID_VALUE, "No new backup key or invalid size"};
+		}
 
 		try {
-			const auto result{update_backup_key(new_key, new_key_length)};
-			if (result.has_error()) {
-				return result.error().toReturnStatus();
+			const auto updated_backup_key_result{update_backup_key()};
+			if (updated_backup_key_result.has_error()) {
+				return updated_backup_key_result.error().toReturnStatus();
 			}
+			const auto& updated_backup_key{updated_backup_key_result.value()};
+			std::copy(std::cbegin(updated_backup_key), std::cend(updated_backup_key), uchar_to_byte(new_key));
 		} catch (const std::exception& exception) {
 			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
 		}
