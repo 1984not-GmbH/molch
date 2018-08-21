@@ -31,24 +31,13 @@
  * Create message and header keys, encrypt header and message
  * and print them.
  *
- * \param packet
- *   The resulting packet.
- * \param header_key
- *   A header key that will be generated. Has a length of HEADER_KEY_SIZE.
- * \param message_key
- *   A message key that will be generated. Has a length of MESSAGE_KEY_SIZE.
- * \param packet_type
- *   Prekey or normal packet?
- * \param header
- *   The header to encrypt.
- * \param message
- *   The message to encrypt.
- * \param public_identity_key
- *   Optional. Public identity key of the sender. For prekey messages only.
- * \param public_ephemeral_key
- *   Optional. Public ephemeral key of the sender. For prekey messages only.
- * \param public_prekey
- *   Optional. Prekey of the receiver. For prekey messages only.
+ * \param packet The resulting packet.
+ * \param header_key A header key that will be generated. Has a length of HEADER_KEY_SIZE.
+ * \param message_key A message key that will be generated. Has a length of MESSAGE_KEY_SIZE.
+ * \param packet_type Prekey or normal packet?
+ * \param header The header to encrypt.
+ * \param message The message to encrypt.
+ * \param prekey_metadata Optional metadata for prekey packets
  */
 MOLCH_PUBLIC(void) create_and_print_message(
 		//output
