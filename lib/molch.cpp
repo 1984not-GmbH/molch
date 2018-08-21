@@ -356,48 +356,43 @@ MOLCH_PUBLIC(void) molch_destroy_all_users() {
 	users.clear();
 }
 
-MOLCH_PUBLIC(return_status) molch_list_users(
-		unsigned char **const user_list,
-		size_t * const user_list_length, //length in bytes
-		size_t * const count) {
-	auto status{success_status};
+	struct ListedUsers {
+		MallocBuffer list;
+		size_t count;
+	};
 
-	try {
-		Expects(user_list_length != nullptr);
-
-		//get the list of users and copy it
-		TRY_WITH_RESULT(list_result, users.list());
-		const auto& list{list_result.value()};
-
-		*count = molch_user_count();
-
-		if (*count == 0) {
-			*user_list = nullptr;
-		} else {
-			*user_list = throwing_malloc<unsigned char>(*count * PUBLIC_MASTER_KEY_SIZE);
-			std::copy(std::cbegin(list), std::cend(list), uchar_to_byte(*user_list));
-		}
-
-		*user_list_length = list.size();
-	} catch (const Exception& exception) {
-		status = exception.toReturnStatus();
-		goto cleanup;
-	} catch (const std::exception& exception) {
-		status = Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
-		goto cleanup;
+	static result<ListedUsers> list_users() {
+		ListedUsers listed_users;
+		OUTCOME_TRY(list, users.list());
+		listed_users.list = list;
+		listed_users.count = (list.size() / PUBLIC_MASTER_KEY_SIZE);
+		return std::move(listed_users);
 	}
 
-cleanup:
-	on_error {
-		if (user_list != nullptr) {
-			free_and_null_if_valid(*user_list);
+	MOLCH_PUBLIC(return_status) molch_list_users(
+			unsigned char **const user_list,
+			size_t * const user_list_length, //length in bytes
+			size_t * const count) {
+		if ((user_list == nullptr) or (user_list_length == nullptr) or (count == nullptr)) {
+			return {status_type::INVALID_VALUE, "Invalid input to molch_list_users"};
+		}
+		try {
+			auto listed_users_result = list_users();
+			if (listed_users_result.has_error()) {
+				return listed_users_result.error().toReturnStatus();
+			}
+			auto& listed_users{listed_users_result.value()};
+			*count = listed_users.count;
+			*user_list_length = listed_users.list.size();
+			*user_list = byte_to_uchar(listed_users.list.release());
+		} catch (const Exception& exception) {
+			return exception.toReturnStatus();
+		} catch (const std::exception& exception) {
+			return {status_type::EXCEPTION, exception.what()};
 		}
 
-		*count = 0;
+		return success_status;
 	}
-
-	return status;
-}
 
 MOLCH_PUBLIC(molch_message_type) molch_get_message_type(
 		const unsigned char * const packet,
