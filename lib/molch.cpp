@@ -846,7 +846,7 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		}
 
 		try {
-			auto encrypted_backup_result{export_conversation({uchar_to_byte(conversation_id), conversation_id_length})};
+			auto encrypted_backup_result = export_conversation({uchar_to_byte(conversation_id), conversation_id_length});
 			if (encrypted_backup_result.has_error()) {
 				return encrypted_backup_result.error().toReturnStatus();
 			}
@@ -1156,7 +1156,7 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		}
 
 		try {
-			const auto updated_backup_key_result{update_backup_key()};
+			const auto updated_backup_key_result = update_backup_key();
 			if (updated_backup_key_result.has_error()) {
 				return updated_backup_key_result.error().toReturnStatus();
 			}
