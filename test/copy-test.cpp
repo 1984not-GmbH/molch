@@ -55,7 +55,7 @@ int main() noexcept {
 		}
 
 		auto copy_result = copyFromTo(a, c);
-		if (copy_result) {
+		if (copy_result.has_value()) {
 			throw Exception(status_type::INCORRECT_DATA, "Failed to detect size misalignment.");
 		}
 
@@ -67,7 +67,7 @@ int main() noexcept {
 		TRY_VOID(copyFromTo(a, c, 3));
 
 		auto copy_result2{copyFromTo(a, c, 4)};
-		if (copy_result) {
+		if (copy_result2.has_value()) {
 			throw Exception(status_type::INCORRECT_DATA, "Failed to copy over the end.");
 		}
 
