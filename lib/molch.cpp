@@ -299,6 +299,17 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 	return success_status;
 }
 
+	static result<std::optional<MallocBuffer>> destroy_user(const span<const std::byte> user_id, CreateBackup create_backup) {
+		OUTCOME_TRY(id, PublicSigningKey::fromSpan(user_id));
+		users.remove(id);
+		if (create_backup == CreateBackup::YES) {
+			OUTCOME_TRY(backup, export_all());
+			return std::move(backup);
+		}
+
+		return std::nullopt;
+	}
+
 MOLCH_PUBLIC(return_status) molch_destroy_user(
 		const unsigned char *const public_master_key,
 		const size_t public_master_key_length,
@@ -306,23 +317,27 @@ MOLCH_PUBLIC(return_status) molch_destroy_user(
 		unsigned char **const backup, //exports the entire library state, free after use, check if nullptr before use!
 		size_t *const backup_length
 ) {
+	if ((public_master_key == nullptr) or (public_master_key_length != PUBLIC_MASTER_KEY_SIZE)
+			or ((backup != nullptr) and (backup_length == nullptr))) {
+		return {status_type::INVALID_VALUE, "Invalid input to molch_destroy_user."};
+	}
+
 	try {
-		if (public_master_key_length != PUBLIC_MASTER_KEY_SIZE) {
-			throw Exception{status_type::INCORRECT_BUFFER_SIZE, "Public master key has incorrect size."};
-		}
-
-		TRY_WITH_RESULT(public_master_key_key_result, PublicSigningKey::fromSpan({uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE}));
-		const auto& public_master_key_key{public_master_key_key_result.value()};
-		users.remove(public_master_key_key);
-
-		if (backup != nullptr) {
-			*backup = nullptr;
-			if (backup_length != nullptr) {
-				auto status{molch_export(backup, backup_length)};
-				on_error {
-					throw Exception{status};
-				}
+		const auto create_backup{[&](){
+			if (backup == nullptr) {
+				return CreateBackup::NO;
 			}
+
+			return CreateBackup::YES;
+		}()};
+		auto backup_result = destroy_user({uchar_to_byte(public_master_key), public_master_key_length}, create_backup);
+		if (backup_result.has_error()) {
+			return backup_result.error().toReturnStatus();
+		}
+		if (create_backup == CreateBackup::YES) {
+			auto& created_backup{backup_result.value().value()};
+			*backup_length = created_backup.size();
+			*backup = byte_to_uchar(created_backup.release());
 		}
 	} catch (const Exception& exception) {
 		return exception.toReturnStatus();
