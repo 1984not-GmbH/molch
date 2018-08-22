@@ -828,6 +828,25 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 		return success_status;
 	}
 
+	static result<std::optional<MallocBuffer>> end_conversation(const span<const std::byte> conversation_id_span, CreateBackup create_backup) {
+		//find the conversation
+		OUTCOME_TRY(conversation_id, ConversationId::fromSpan(conversation_id_span));
+		Molch::User *user{nullptr};
+		auto conversation{users.findConversation(user, conversation_id)};
+		if (conversation == nullptr) {
+			throw Exception{status_type::NOT_FOUND, "Couldn't find conversation."};
+		}
+
+		user->conversations.remove(conversation_id);
+
+		if (create_backup == CreateBackup::YES) {
+			OUTCOME_TRY(created_backup, export_all());
+			return {std::move(created_backup)};
+		}
+
+		return std::nullopt;
+	}
+
 	MOLCH_PUBLIC(return_status) molch_end_conversation(
 			//input
 			const unsigned char * const conversation_id,
@@ -836,29 +855,27 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 			unsigned char ** const backup,
 			size_t * const backup_length
 			) {
+		if ((conversation_id == nullptr) or (conversation_id_length != CONVERSATION_ID_SIZE)
+				or ((backup != nullptr) and (backup_length == nullptr))) {
+			return {status_type::INVALID_VALUE, "Invalid input to molch_end_conversation"};
+		}
 		try {
-			Expects((conversation_id != nullptr)
-					&& (conversation_id_length == CONVERSATION_ID_SIZE));
-
-			//find the conversation
-			Molch::User *user{nullptr};
-			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
-			const auto& conversation_id_key{conversation_id_key_result.value()};
-			auto conversation{users.findConversation(user, conversation_id_key)};
-			if (conversation == nullptr) {
-				throw Exception{status_type::NOT_FOUND, "Couldn't find conversation."};
-			}
-
-			user->conversations.remove(conversation_id_key);
-
-			if (backup != nullptr) {
-				*backup = nullptr;
-				if (backup_length != nullptr) {
-					auto status{molch_export(backup, backup_length)};
-					on_error {
-						throw Exception{status};
-					}
+			const auto create_backup{[&](){
+				if (backup == nullptr) {
+					return CreateBackup::NO;
 				}
+
+				return CreateBackup::YES;
+			}()};
+
+			auto backup_result = end_conversation({uchar_to_byte(conversation_id), conversation_id_length}, create_backup);
+			if (backup_result.has_error()) {
+				return backup_result.error().toReturnStatus();
+			}
+			if (create_backup == CreateBackup::YES) {
+				auto& created_backup{backup_result.value().value()};
+				*backup_length = created_backup.size();
+				*backup = byte_to_uchar(created_backup.release());
 			}
 		} catch (const Exception& exception) {
 			return exception.toReturnStatus();
