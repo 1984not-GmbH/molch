@@ -439,87 +439,110 @@ static result<PublicKey> verify_prekey_list(
 	return public_identity_key;
 }
 
-MOLCH_PUBLIC(return_status) molch_start_send_conversation(
-		//outputs
-		unsigned char *const conversation_id, //CONVERSATION_ID_SIZE long (from conversation.h)
-		const size_t conversation_id_length,
-		unsigned char **const packet, //free after use
-		size_t *packet_length,
-		//inputs
-		const unsigned char *const sender_public_master_key, //signing key of the sender (user)
-		const size_t sender_public_master_key_length,
-		const unsigned char *const receiver_public_master_key, //signing key of the receiver
-		const size_t receiver_public_master_key_length,
-		const unsigned char *const prekey_list, //prekey list of the receiver
-		const size_t prekey_list_length,
-		const unsigned char *const message,
-		const size_t message_length,
-		//optional output (can be nullptr)
-		unsigned char **const backup, //exports the entire library state, free after use, check if nullptr before use!
-		size_t *const backup_length
-) {
-	try {
-		Expects((conversation_id != nullptr)
-				&& (packet != nullptr)
-				&& (packet_length != nullptr)
-				&& (prekey_list != nullptr)
-				&& (sender_public_master_key != nullptr)
-				&& (receiver_public_master_key != nullptr)
-				&& (conversation_id_length == CONVERSATION_ID_SIZE)
-				&& (sender_public_master_key_length == PUBLIC_MASTER_KEY_SIZE)
-				&& (receiver_public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
+	struct SendConversationResult {
+		ConversationId conversation_id;
+		MallocBuffer packet;
+		std::optional<MallocBuffer> backup;
+	};
 
+	static result<SendConversationResult> start_send_conversation(
+			const span<const std::byte> sender_id,
+			const span<const std::byte> receiver_id,
+			const span<const std::byte> prekey_list,
+			const span<const std::byte> message,
+			const CreateBackup create_backup) {
 		//get the user that matches the public signing key of the sender
-		TRY_WITH_RESULT(sender_public_master_key_key_result, PublicSigningKey::fromSpan({uchar_to_byte(sender_public_master_key), PUBLIC_MASTER_KEY_SIZE}));
-		const auto& sender_public_master_key_key{sender_public_master_key_key_result.value()};
-		auto user{users.find(sender_public_master_key_key)};
+		OUTCOME_TRY(sender_public_master_key, PublicSigningKey::fromSpan(sender_id));
+		auto user{users.find(sender_public_master_key)};
 		if (user == nullptr) {
-			throw Exception{status_type::NOT_FOUND, "User not found."};
+			return Error(status_type::NOT_FOUND, "User not found.");
 		}
 
 		//get the receivers public ephemeral and identity
-		TRY_WITH_RESULT(receiver_public_master_key_key_result, PublicSigningKey::fromSpan({uchar_to_byte(receiver_public_master_key), PUBLIC_MASTER_KEY_SIZE}));
-		const auto& receiver_public_master_key_key{receiver_public_master_key_key_result.value()};
-		TRY_WITH_RESULT(receiver_public_identity_result, verify_prekey_list(
-				{uchar_to_byte(prekey_list), prekey_list_length},
-				receiver_public_master_key_key));
-		const auto& receiver_public_identity{receiver_public_identity_result.value()};
+		OUTCOME_TRY(receiver_public_master_key, PublicSigningKey::fromSpan(receiver_id));
+		OUTCOME_TRY(receiver_public_identity, verify_prekey_list(prekey_list, receiver_public_master_key));
 
-		//unlock the master keys
 		MasterKeys::Unlocker unlocker{user->masterKeys()};
 
 		//create the conversation and encrypt the message
-		span<const std::byte> prekeys{uchar_to_byte(prekey_list) + PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list_length - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t)};
-		TRY_WITH_RESULT(private_identity_key, user->masterKeys().getPrivateIdentityKey());
-		TRY_WITH_RESULT(send_conversation_result, Molch::Conversation::createSendConversation(
-			{uchar_to_byte(message), message_length},
-			user->masterKeys().getIdentityKey(),
-			*private_identity_key.value(),
-			receiver_public_identity,
-			prekeys));
-		auto& send_conversation{send_conversation_result.value()};
+		const auto prekeys{prekey_list.subspan(PUBLIC_KEY_SIZE + SIGNATURE_SIZE, static_cast<ptrdiff_t>(prekey_list.size() - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t)))};
+		OUTCOME_TRY(private_identity_key, user->masterKeys().getPrivateIdentityKey());
+		OUTCOME_TRY(send_conversation, Molch::Conversation::createSendConversation(
+				message,
+				user->masterKeys().getIdentityKey(),
+				*private_identity_key,
+				receiver_public_identity,
+				prekeys));
 
-		//copy the conversation id
-		TRY_VOID(copyFromTo(send_conversation.conversation.id(), {uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
-
+		SendConversationResult conversation_result;
+		conversation_result.conversation_id = send_conversation.conversation.id();
 		user->conversations.add(std::move(send_conversation.conversation));
 
-		//copy the packet to a malloced buffer output
-		MallocBuffer malloced_packet{send_conversation.packet.size(), 0};
-		TRY_VOID(malloced_packet.cloneFrom(send_conversation.packet));
+		conversation_result.packet = send_conversation.packet;
 
-		if (backup != nullptr) {
-			*backup = nullptr;
-			if (backup_length != nullptr) {
-				auto status{molch_export(backup, backup_length)};
-				on_error {
-					throw Exception{status};
-				}
-			}
+		if (create_backup == CreateBackup::YES) {
+			OUTCOME_TRY(backup, export_all());
+			conversation_result.backup = std::move(backup);
 		}
 
-		*packet_length = malloced_packet.size();
-		*packet = byte_to_uchar(malloced_packet.release());
+		return conversation_result;
+	}
+
+MOLCH_PUBLIC(return_status) molch_start_send_conversation(
+			//outputs
+			unsigned char *const conversation_id, //CONVERSATION_ID_SIZE long (from conversation.h)
+			const size_t conversation_id_length,
+			unsigned char **const packet, //free after use
+			size_t *packet_length,
+			//inputs
+			const unsigned char *const sender_public_master_key, //signing key of the sender (user)
+			const size_t sender_public_master_key_length,
+			const unsigned char *const receiver_public_master_key, //signing key of the receiver
+			const size_t receiver_public_master_key_length,
+			const unsigned char *const prekey_list, //prekey list of the receiver
+			const size_t prekey_list_length,
+			const unsigned char *const message,
+			const size_t message_length,
+			//optional output (can be nullptr)
+			unsigned char **const backup, //exports the entire library state, free after use, check if nullptr before use!
+			size_t *const backup_length
+) {
+		if ((conversation_id == nullptr) or (conversation_id_length != CONVERSATION_ID_SIZE)
+				or (packet == nullptr) or (packet_length == nullptr)
+				or (sender_public_master_key == nullptr) or (sender_public_master_key_length != PUBLIC_MASTER_KEY_SIZE)
+				or (receiver_public_master_key == nullptr) or (receiver_public_master_key_length != PUBLIC_MASTER_KEY_SIZE)
+				or (prekey_list == nullptr) or (prekey_list_length < (PUBLIC_KEY_SIZE + SIGNATURE_SIZE + sizeof(int64_t)))
+				or (message == nullptr)
+				or ((backup != nullptr) and (backup_length == nullptr))) {
+			return {status_type::INVALID_VALUE, "Invalid input to molch_start_send_conversation"};
+		}
+
+	try {
+		const auto create_backup{[&](){
+			if (backup == nullptr) {
+				return CreateBackup::NO;
+			}
+
+			return CreateBackup::YES;
+		}()};
+		auto conversation_result = start_send_conversation(
+				{uchar_to_byte(sender_public_master_key), sender_public_master_key_length},
+				{uchar_to_byte(receiver_public_master_key), receiver_public_master_key_length},
+				{uchar_to_byte(prekey_list), prekey_list_length},
+				{uchar_to_byte(message), message_length},
+				create_backup);
+		if (conversation_result.has_error()) {
+			return conversation_result.error().toReturnStatus();
+		}
+		auto& conversation{conversation_result.value()};
+		std::copy(std::cbegin(conversation.conversation_id), std::cend(conversation.conversation_id), uchar_to_byte(conversation_id));
+		if (create_backup == CreateBackup::YES) {
+			auto& created_backup{conversation.backup.value()};
+			*backup_length = created_backup.size();
+			*backup = byte_to_uchar(created_backup.release());
+		}
+		*packet_length = conversation.packet.size();
+		*packet = byte_to_uchar(conversation.packet.release());
 	} catch (const Exception& exception) {
 		return exception.toReturnStatus();
 	} catch (const std::exception& exception) {
