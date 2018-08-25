@@ -25,6 +25,7 @@
 #include <iostream>
 #include <exception>
 #include <iostream>
+#include <string_view>
 
 #include "../lib/packet.hpp"
 #include "../lib/constants.h"
@@ -50,23 +51,23 @@ MOLCH_PUBLIC(void) create_and_print_message(
 	//create header key
 	randombytes_buf(header_key);
 	header_key.empty = false;
-	printf("Header key (%zu Bytes):\n", header_key.size());
+	std::cout << "Header key (" << header_key.size() << " Bytes):\n";
 	std::cout << header_key;
 	putchar('\n');
 
 	//create message key
 	randombytes_buf(message_key);
-	printf("Message key (%zu Bytes):\n", message_key.size());
+	std::cout << "Message key (" << message_key.size() << " Bytes):\n";
 	std::cout << message_key;
 	putchar('\n');
 
 	//print the header (as hex):
-	printf("Header (%zu Bytes):\n", header.size());
+	std::cout << "Header (" << header.size() << "%zu Bytes):\n";
 	std::cout << header;
 	putchar('\n');
 
 	//print the message (as string):
-	printf("Message (%zu Bytes):\n%.*s\n\n", message.size(), static_cast<int>(message.size()), byte_to_uchar(message.data()));
+	std::cout << "Message (" << message.size() << " Bytes):\n" << std::string_view(byte_to_char(message.data()), message.size()) << "\n\n";
 
 	//now encrypt the message
 	TRY_WITH_RESULT(packet_result, packet_encrypt(
@@ -79,7 +80,7 @@ MOLCH_PUBLIC(void) create_and_print_message(
 	packet = std::move(packet_result.value());
 
 	//print encrypted packet
-	printf("Encrypted Packet (%zu Bytes):\n", packet.size());
+	std::cout << "Encrypted Packet (" << packet.size() << " Bytes):\n";
 	std::cout << packet;
 	putchar('\n');
 }

@@ -43,11 +43,11 @@ int main() {
 		header[1] = uchar_to_byte(0x02);
 		header[2] = uchar_to_byte(0x03);
 		header[3] = uchar_to_byte(0x04);
-		printf("Packet type: %02x\n", static_cast<int>(packet_type));
+		std::cout << "Packet type: " << static_cast<int>(packet_type) << '\n';
 		putchar('\n');
 
 		//NORMAL MESSAGE
-		printf("NORMAL MESSAGE\n");
+		std::cout << "NORMAL MESSAGE\n";
 		Buffer packet;
 		Buffer message{"Hello world!\n"};
 		EmptyableHeaderKey header_key;
@@ -69,16 +69,16 @@ int main() {
 		if (normal_header.size() != header.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length."};
 		}
-		printf("Decrypted header has the same length.\n\n");
+		std::cout << "Decrypted header has the same length.\n\n";
 
 		//compare headers
 		if (header != normal_header) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header doesn't match."};
 		}
-		printf("Decrypted header matches.\n\n");
+		std::cout << "Decrypted header matches.\n\n";
 
 		//check if it decrypts manipulated packets (manipulated metadata)
-		printf("Manipulating header length.\n");
+		std::cout << "Manipulating header length.\n";
 		unsigned char manipulated_byte{byte_to_uchar(packet[2])};
 		++manipulated_byte;
 		packet[2] = uchar_to_byte(manipulated_byte);
@@ -86,25 +86,25 @@ int main() {
 		if (manipulated_metadata_header.has_value()) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Manipulated packet was accepted."};
 		}
-		printf("Header manipulation detected.\n\n");
+		std::cout << "Header manipulation detected.\n\n";
 
 		//repair manipulation
 		--manipulated_byte;
 		packet[2] = uchar_to_byte(manipulated_byte);
 		//check if it decrypts manipulated packets (manipulated header)
-		printf("Manipulate header.\n");
+		std::cout << "Manipulate header.\n";
 		packet[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= uchar_to_byte(0x12);
 		const auto manipulated_header_header = packet_decrypt_header(packet, header_key);
 		if (manipulated_header_header.has_value()) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Manipulated packet was accepted."};
 		}
-		printf("Header manipulation detected!\n\n");
+		std::cout << "Header manipulation detected!\n\n";
 
 		//undo header manipulation
 		packet[3 + crypto_aead_chacha20poly1305_NPUBBYTES + 1] ^= uchar_to_byte(0x12);
 
 		//PREKEY MESSAGE
-		printf("PREKEY_MESSAGE\n");
+		std::cout << "PREKEY_MESSAGE\n";
 		//create the public keys
 		auto prekey_metadata{std::make_optional<PrekeyMetadata>()};
 		randombytes_buf(prekey_metadata.value().identity);
@@ -129,13 +129,13 @@ int main() {
 		if (prekey_header.size() != header.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length."};
 		}
-		printf("Decrypted header has the same length.\n\n");
+		std::cout << "Decrypted header has the same length.\n\n";
 
 		//compare headers
 		if (header != prekey_header) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header doesn't match."};
 		}
-		printf("Decrypted header matches.\n");
+		std::cout << "Decrypted header matches.\n";
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

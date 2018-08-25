@@ -84,21 +84,21 @@ int main() {
 		const auto& alice_derived_keys{alice_derived_keys_result.value()};
 
 		//print Alice's initial root and chain key
-		printf("Alice's initial root key:\n");
+		std::cout << "Alice's initial root key:\n";
 		std::cout << alice_derived_keys.root_key << std::endl;
 		if (alice_derived_keys.send_chain_key.has_value()) {
 			throw Exception(status_type::INCORRECT_DATA, "Alice should not have a send chain key.");
 		}
-		printf("Alice's initial receive chain key:\n");
+		std::cout << "Alice's initial receive chain key:\n";
 		std::cout << alice_derived_keys.receive_chain_key.value() << std::endl;
 		if (alice_derived_keys.send_header_key.has_value()) {
 			throw Exception(status_type::INCORRECT_DATA, "Alice should not have a send header key.");
 		}
-		printf("Alice's initial receive header key:n");
+		std::cout << "Alice's initial receive header key:n";
 		std::cout << alice_derived_keys.receive_header_key.value() << std::endl;
-		printf("Alice's initial next send header key:\n");
+		std::cout << "Alice's initial next send header key:\n";
 		std::cout << alice_derived_keys.next_send_header_key << std::endl;
-		printf("Alice's initial next receive header key\n");
+		std::cout << "Alice's initial next receive header key\n";
 		std::cout << alice_derived_keys.next_receive_header_key << std::endl;
 
 		//derive Bob's initial root and chain key
@@ -113,63 +113,63 @@ int main() {
 		const auto& bob_derived_keys{bob_derived_keys_result.value()};
 
 		//print Bob's initial root and chain key
-		printf("Bob's initial root key:\n");
+		std::cout << "Bob's initial root key:\n";
 		std::cout << bob_derived_keys.root_key << std::endl;
-		printf("Bob's initial send chain key:\n");
+		std::cout << "Bob's initial send chain key:\n";
 		std::cout << bob_derived_keys.send_chain_key.value() << std::endl;
 		if (bob_derived_keys.receive_chain_key.has_value()) {
 			throw Exception(status_type::INCORRECT_DATA, "Bob should not have a receive chain key.");
 		}
-		printf("Bob's initial send header key:\n");
+		std::cout << "Bob's initial send header key:\n";
 		std::cout << bob_derived_keys.send_header_key.value() << std::endl;
 		if (bob_derived_keys.receive_header_key.has_value()) {
 			throw Exception(status_type::INCORRECT_DATA, "Bob should not have a receive header key.");
 		}
-		printf("Bob's initial next send header key:\n");
+		std::cout << "Bob's initial next send header key:\n";
 		std::cout << bob_derived_keys.next_send_header_key << std::endl;
-		printf("Bob's initial next receive header key:\n");
+		std::cout << "Bob's initial next receive header key:\n";
 		std::cout << bob_derived_keys.next_receive_header_key << std::endl;
 
 		//compare Alice's and Bob's initial root key
 		if (alice_derived_keys.root_key != bob_derived_keys.root_key) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's and Bob's initial root keys don't match."};
 		}
-		printf("Alice's and Bob's initial root keys match.\n");
+		std::cout << "Alice's and Bob's initial root keys match.\n";
 
 		//compare Alice's and Bob's initial chain keys
 		if (alice_derived_keys.send_chain_key != bob_derived_keys.receive_chain_key) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's and Bob's initial chain keys don't match."};
 		}
-		printf("Alice's and Bob's initial chain keys match.\n");
+		std::cout << "Alice's and Bob's initial chain keys match.\n";
 
 		if (alice_derived_keys.receive_chain_key != bob_derived_keys.send_chain_key) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's and Bob's initial chain keys don't match."};
 		}
-		printf("Alice's and Bob's initial chain keys match.\n");
+		std::cout << "Alice's and Bob's initial chain keys match.\n";
 
 		//compare Alice's and Bob's initial header keys 1/2
 		if (alice_derived_keys.send_header_key != bob_derived_keys.receive_header_key) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's initial send and Bob's initial receive header keys don't match."};
 		}
-		printf("Alice's initial send and Bob's initial receive header keys match.\n");
+		std::cout << "Alice's initial send and Bob's initial receive header keys match.\n";
 
 		//compare Alice's and Bob's initial header keys 2/2
 		if (alice_derived_keys.receive_header_key != bob_derived_keys.send_header_key) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's initial receive and Bob's initial send header keys don't match."};
 		}
-		printf("Alice's initial receive and Bob's initial send header keys match.\n");
+		std::cout << "Alice's initial receive and Bob's initial send header keys match.\n";
 
 		//compare Alice's and Bob's initial next header keys 1/2
 		if (alice_derived_keys.next_send_header_key != bob_derived_keys.next_receive_header_key) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's initial next send and Bob's initial next receive header keys don't match."};
 		}
-		printf("Alice's initial next send and Bob's initial next receive header keys match.\n");
+		std::cout << "Alice's initial next send and Bob's initial next receive header keys match.\n";
 
 		//compare Alice's and Bob's initial next header keys 2/2
 		if (alice_derived_keys.next_receive_header_key != bob_derived_keys.next_send_header_key) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's initial next receive and Bob's initial next send header keys don't match."};
 		}
-		printf("Alice's initial next receive and Bob's initial next send header keys match.\n");
+		std::cout << "Alice's initial next receive and Bob's initial next send header keys match.\n";
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

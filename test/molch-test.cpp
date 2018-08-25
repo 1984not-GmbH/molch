@@ -197,7 +197,7 @@ int main() {
 
 		backup_key = new_backup_key;
 
-		printf("Alice public identity (%zu Bytes):\n", alice_public_identity.size());
+		std::cout << "Alice public identity (" << alice_public_identity.size() << " Bytes):\n";
 		std::cout << buffer_to_hex(alice_public_identity) << std::endl;
 		if (complete_export.data() == nullptr) {
 			throw Exception("Failed to export the librarys state after creating alice.");
@@ -217,7 +217,7 @@ int main() {
 			}
 		}
 
-		printf("Updated backup key:\n");
+		std::cout << "Updated backup key:\n";
 		std::cout << buffer_to_hex(backup_key) << std::endl;
 
 		//create another user
@@ -241,7 +241,7 @@ int main() {
 			}
 		}
 
-		printf("Bob public identity (%zu Bytes):\n", bob_public_identity.size());
+		std::cout << "Bob public identity (" << bob_public_identity.size() << " Bytes):\n";
 		std::cout << buffer_to_hex(bob_public_identity) << std::endl;
 
 		//check user count
@@ -351,8 +351,8 @@ int main() {
 		}
 
 		//compare sent and received messages
-		printf("sent (Alice): %.*s\n", static_cast<int>(alice_send_message.size()), alice_send_message.data());
-		printf("received (Bob): %.*s\n", static_cast<int>(bob_receive_message.size()), bob_receive_message.data());
+		std::cout << "sent (Alice): " << alice_send_message << '\n';
+		std::cout << "received (Bob): " << std::string_view(uchar_to_char(bob_receive_message.data()), bob_receive_message.size()) << '\n';
 		if ((alice_send_message.size() != bob_receive_message.size())
 				|| (memcmp(alice_send_message.data(), bob_receive_message.data(), bob_receive_message.size()) != 0)) {
 			throw Exception("Incorrect message received.");
@@ -412,15 +412,15 @@ int main() {
 		}
 
 		//compare sent and received messages
-		printf("sent (Bob): %.*s\n", static_cast<int>(bob_send_message.size()), bob_send_message.data());
-		printf("received (Alice): %.*s\n", static_cast<int>(alice_receive_message.size()), alice_receive_message.data());
+		std::cout << "sent (Bob): " << bob_send_message << '\n';
+		std::cout << "received (Alice): " << std::string_view(uchar_to_char(alice_receive_message.data()), alice_receive_message.size()) << '\n';
 		if ((bob_send_message.size() != alice_receive_message.size())
 				|| (memcmp(bob_send_message.data(), alice_receive_message.data(), alice_receive_message.size()) != 0)) {
 			throw Exception("Incorrect message received.");
 		}
 
 		//test export
-		printf("Test export!\n");
+		std::cout << "Test export!\n";
 		AutoFreeBuffer backup;
 		{
 			auto status{molch_export(&backup.pointer, &backup.length)};
@@ -430,7 +430,7 @@ int main() {
 		}
 
 		//test import
-		printf("Test import!\n");
+		std::cout << "Test import!\n";
 		{
 			auto status{molch_import(
 					new_backup_key.data(),
@@ -483,7 +483,7 @@ int main() {
 			}
 		}
 
-		printf("Alice' conversation exported!\n");
+		std::cout << "Alice' conversation exported!\n";
 
 		//import again
 		{
@@ -556,7 +556,7 @@ int main() {
 		if ((number_of_conversations != 0) || (second_conversation_list.pointer != nullptr)) {
 			throw Exception("Failed to end conversation.");
 		}
-		printf("Alice' conversation has ended successfully.\n");
+		std::cout << "Alice' conversation has ended successfully.\n";
 
 		//destroy the users again
 		molch_destroy_all_users();

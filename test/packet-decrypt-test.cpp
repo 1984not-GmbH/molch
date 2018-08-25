@@ -43,11 +43,11 @@ int main() {
 		header[1] = uchar_to_byte(0x02);
 		header[2] = uchar_to_byte(0x03);
 		header[3] = uchar_to_byte(0x04);
-		printf("Packet type: %02x\n", static_cast<int>(packet_type));
+		std::cout << "Packet type: " << static_cast<int>(packet_type) << '\n';
 		putchar('\n');
 
 		//NORMAL MESSAGE
-		printf("NORMAL MESSAGE\n");
+		std::cout << "NORMAL MESSAGE\n";
 		Buffer message{"Hello world!\n"};
 		EmptyableHeaderKey header_key;
 		MessageKey message_key;
@@ -75,27 +75,27 @@ int main() {
 		if (decrypted_normal_packet.header.size() != header.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length!"};
 		}
-		printf("Decrypted header has the same length.\n");
+		std::cout << "Decrypted header has the same length.\n";
 
 		//compare headers
 		if (header != decrypted_normal_packet.header) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header doesn't match."};
 		}
-		printf("Decrypted header matches.\n\n");
+		std::cout << "Decrypted header matches.\n\n";
 
 		if (decrypted_normal_packet.message.size() != message.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message isn't of the same length."};
 		}
-		printf("Decrypted message has the same length.\n");
+		std::cout << "Decrypted message has the same length.\n";
 
 		//compare messages
 		if (message != decrypted_normal_packet.message) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message doesn't match."};
 		}
-		printf("Decrypted message matches.\n");
+		std::cout << "Decrypted message matches.\n";
 
 		//PREKEY MESSAGE
-		printf("PREKEY MESSAGE\n");
+		std::cout << "PREKEY MESSAGE\n";
 		//create the public keys
 		auto prekey_metadata{std::make_optional<PrekeyMetadata>()};
 		randombytes_buf(prekey_metadata.value().identity);
@@ -128,24 +128,24 @@ int main() {
 		if (decrypted_prekey_packet.header.size() != header.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header isn't of the same length."};
 		}
-		printf("Decrypted header has the same length!\n");
+		std::cout << "Decrypted header has the same length!\n";
 
 		//compare headers
 		if (header != decrypted_prekey_packet.header) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted header doesn't match."};
 		}
-		printf("Decrypted header matches!\n");
+		std::cout << "Decrypted header matches!\n";
 
 		if (decrypted_prekey_packet.message.size() != message.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message isn't of the same length."};
 		}
-		printf("Decrypted message has the same length.\n");
+		std::cout << "Decrypted message has the same length.\n";
 
 		//compare messages
 		if (message != decrypted_prekey_packet.message) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message doesn't match."};
 		}
-		printf("Decrypted message matches.\n");
+		std::cout << "Decrypted message matches.\n";
 
 		if (not decrypted_prekey_packet.metadata.prekey_metadata.has_value()) {
 			throw Molch::Exception(status_type::INVALID_VALUE, "No prekey metadata found.");
@@ -155,17 +155,17 @@ int main() {
 		if (prekey_metadata.value().identity != decrypted_prekey_metadata.identity) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted public identity key doesn't match."};
 		}
-		printf("Extracted public identity key matches!\n");
+		std::cout << "Extracted public identity key matches!\n";
 
 		if (prekey_metadata.value().ephemeral != decrypted_prekey_metadata.ephemeral) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted public ephemeral key doesn't match."};
 		}
-		printf("Extracted public ephemeral key matches!\n");
+		std::cout << "Extracted public ephemeral key matches!\n";
 
 		if (prekey_metadata.value().prekey != decrypted_prekey_metadata.prekey) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Extracted public prekey doesn't match."};
 		}
-		printf("Extracted public prekey matches!\n");
+		std::cout << "Extracted public prekey matches!\n";
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

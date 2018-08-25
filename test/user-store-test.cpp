@@ -76,7 +76,7 @@ static UserStore protobuf_import(Arena& pool, const std::vector<Buffer> buffers)
 }
 
 static void protobuf_empty_store() {
-	printf("Testing im-/export of empty user store.\n");
+	std::cout << "Testing im-/export of empty user store.\n";
 	UserStore store;
 
 	//export it
@@ -90,7 +90,7 @@ static void protobuf_empty_store() {
 
 	//import it
 	TRY_WITH_RESULT(imported_store, UserStore::import(exported));
-	printf("Successful.\n");
+	std::cout << "Successful.\n";
 }
 
 int main() {
@@ -118,13 +118,13 @@ int main() {
 			MasterKeys::Unlocker unlocker{found_user->masterKeys()};
 			found_user->masterKeys().print(std::cout) << std::endl;
 		}
-		printf("Successfully created Alice to the user store.\n");
+		std::cout << "Successfully created Alice to the user store.\n";
 
 		//check length of the user store
 		if (store.size() != 1) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "User store has incorrect length."};
 		}
-		printf("Length of the user store matches.");
+		std::cout << "Length of the user store matches.";
 
 		//list user store
 		TRY_WITH_RESULT(list2_result, store.list());
@@ -133,7 +133,7 @@ int main() {
 		if (!first_comparison.value()) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Failed to list users."};
 		}
-		printf("Successfully listed users.\n");
+		std::cout << "Successfully listed users.\n";
 
 		//create bob
 		PublicSigningKey bob_public_signing_key;
@@ -143,13 +143,13 @@ int main() {
 			bob_public_signing_key = bob_user.id();
 			store.add(std::move(bob_user));
 		}
-		printf("Successfully created Bob.\n");
+		std::cout << "Successfully created Bob.\n";
 
 		//check length of the user store
 		if (store.size() != 2) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "User store has incorrect length."};
 		}
-		printf("Length of the user store matches.");
+		std::cout << "Length of the user store matches.";
 
 		//list user store
 		TRY_WITH_RESULT(list3_result, store.list());
@@ -161,7 +161,7 @@ int main() {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Failed to list users."};
 			}
 		}
-		printf("Successfully listed users.\n");
+		std::cout << "Successfully listed users.\n";
 
 		//create charlie
 		PublicSigningKey charlie_public_signing_key;
@@ -171,13 +171,13 @@ int main() {
 			charlie_public_signing_key = charlie_user.id();
 			store.add(std::move(charlie_user));
 		}
-		printf("Successfully added Charlie to the user store.\n");
+		std::cout << "Successfully added Charlie to the user store.\n";
 
 		//check length of the user store
 		if (store.size() != 3) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "User store has incorrect length."};
 		}
-		printf("Length of the user store matches.");
+		std::cout << "Length of the user store matches.";
 
 		//list user store
 		TRY_WITH_RESULT(list4_result, store.list());
@@ -190,7 +190,7 @@ int main() {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Failed to list users."};
 			}
 		}
-		printf("Successfully listed users.\n");
+		std::cout << "Successfully listed users.\n";
 
 		//find node
 		{
@@ -199,12 +199,12 @@ int main() {
 			if (bob_node == nullptr) {
 				throw Molch::Exception{status_type::NOT_FOUND, "Failed to find Bob's node."};
 			}
-			printf("Node found.\n");
+			std::cout << "Node found.\n";
 
 			if (bob_node->id() != bob_public_signing_key) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Bob's data from the user store doesn't match."};
 			}
-			printf("Data from the node matches.\n");
+			std::cout << "Data from the node matches.\n";
 
 			//remove a user identified by it's key
 			store.remove(bob_public_signing_key);
@@ -212,7 +212,7 @@ int main() {
 			if (store.size() != 2) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "User store has incorrect length."};
 			}
-			printf("Length of the user store matches.");
+			std::cout << "Length of the user store matches.";
 			//check the user list
 			TRY_WITH_RESULT(list5_result, store.list());
 			const auto& list5{list5_result.value()};
@@ -223,7 +223,7 @@ int main() {
 					throw Molch::Exception{status_type::INCORRECT_DATA, "Removing user failed."};
 				}
 			}
-			printf("Successfully removed user.\n");
+			std::cout << "Successfully removed user.\n";
 
 			//recreate bob
 			{
@@ -232,14 +232,14 @@ int main() {
 				bob_public_signing_key = recreated_bob.id();
 				store.add(std::move(recreated_bob));
 			}
-			printf("Successfully recreated Bob.\n");
+			std::cout << "Successfully recreated Bob.\n";
 
 			//now find bob again
 			bob_node = store.find(bob_public_signing_key);
 			if (bob_node == nullptr) {
 				throw Molch::Exception{status_type::NOT_FOUND, "Failed to find Bob's node."};
 			}
-			printf("Bob's node found again.\n");
+			std::cout << "Bob's node found again.\n";
 
 			//remove bob by it's node
 			store.remove(bob_node);
@@ -247,12 +247,12 @@ int main() {
 			if (store.size() != 2) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "User store has incorrect length."};
 			}
-			printf("Length of the user store matches.");
+			std::cout << "Length of the user store matches.";
 		}
 
 
 		//test Protobuf-C export
-		printf("Export to Protobuf-C\n");
+		std::cout << "Export to Protobuf-C\n";
 		auto protobuf_export_buffers{protobuf_export(store)};
 
 		//print the exported data
@@ -266,12 +266,12 @@ int main() {
 		store.clear();
 
 		//import from Protobuf-C
-		printf("Import from Protobuf-C\n");
+		std::cout << "Import from Protobuf-C\n";
 		Arena pool;
 		store = protobuf_import(pool, protobuf_export_buffers);
 
 		//export again
-		printf("Export to Protobuf-C\n");
+		std::cout << "Export to Protobuf-C\n";
 		auto protobuf_second_export_buffers{protobuf_export(store)};
 
 		//compare
@@ -283,7 +283,7 @@ int main() {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Buffers don't match."};
 			}
 		}
-		printf("Both exports match.\n");
+		std::cout << "Both exports match.\n";
 
 		//check the user list
 		TRY_WITH_RESULT(list6_result, store.list());
@@ -295,7 +295,7 @@ int main() {
 				throw Molch::Exception{status_type::REMOVE_ERROR, "Removing user failed."};
 			}
 		}
-		printf("Successfully removed user.\n");
+		std::cout << "Successfully removed user.\n";
 
 		//clear the user store
 		store.clear();
@@ -303,7 +303,7 @@ int main() {
 		if (store.size() != 0) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "User store has incorrect length."};
 		}
-		printf("Successfully cleared user store.\n");
+		std::cout << "Successfully cleared user store.\n";
 
 		protobuf_empty_store();
 	} catch (const std::exception& exception) {

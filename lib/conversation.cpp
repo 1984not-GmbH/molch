@@ -192,7 +192,6 @@ namespace Molch {
 	}
 
 	result<ReceivedMessage> Conversation::internal_receive(const span<const std::byte> packet) {
-		printf("STARTING internal_receive\n");
 		const auto received_message_result = trySkippedHeaderAndMessageKeys(packet);
 		if (received_message_result.has_value()) {
 			return received_message_result.value();

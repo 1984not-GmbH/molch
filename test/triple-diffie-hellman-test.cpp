@@ -35,7 +35,7 @@ int main() {
 	try {
 		TRY_VOID(Molch::sodium_init());
 
-		printf("Generate Alice's keys -------------------------------------------------------\n\n");
+		std::cout << "Generate Alice's keys -------------------------------------------------------\n\n";
 
 		//create Alice's identity keypair
 		PublicKey alice_public_identity;
@@ -55,7 +55,7 @@ int main() {
 			"Alice",
 			"ephemeral");
 
-		printf("Generate Bob's keys ---------------------------------------------------------\n\n");
+		std::cout << "Generate Bob's keys ---------------------------------------------------------\n\n";
 
 		//create Bob's identity keypair
 		PublicKey bob_public_identity;
@@ -75,7 +75,7 @@ int main() {
 			"Bob",
 			"ephemeral");
 
-		printf("Calculate shared secret via Triple Diffie Hellman ---------------------------\n\n");
+		std::cout << "Calculate shared secret via Triple Diffie Hellman ---------------------------\n\n";
 
 		//Triple Diffie Hellman on Alice's side
 		TRY_WITH_RESULT(alice_shared_secret_result, triple_diffie_hellman(
@@ -89,7 +89,7 @@ int main() {
 		const auto& alice_shared_secret{alice_shared_secret_result.value()};
 
 		//print Alice's shared secret
-		printf("Alice's shared secret H(DH(A_priv,B0_pub)||DH(A0_priv,B_pub)||DH(A0_priv,B0_pub)):\n");
+		std::cout << "Alice's shared secret H(DH(A_priv,B0_pub)||DH(A0_priv,B_pub)||DH(A0_priv,B0_pub)):\n";
 		std::cout << alice_shared_secret << std::endl;
 
 		//Triple Diffie Hellman on Bob's side
@@ -104,7 +104,7 @@ int main() {
 		const auto& bob_shared_secret{bob_shared_secret_result.value()};
 
 		//print Bob's shared secret
-		printf("Bob's shared secret H(DH(B0_priv, A_pub)||DH(B_priv, A0_pub)||DH(B0_priv, A0_pub)):\n");
+		std::cout << "Bob's shared secret H(DH(B0_priv, A_pub)||DH(B_priv, A0_pub)||DH(B0_priv, A0_pub)):\n";
 		std::cout << bob_shared_secret << std::endl;
 
 		//compare both shared secrets
@@ -112,7 +112,7 @@ int main() {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Triple Diffie Hellman didn't produce the same shared secret."};
 		}
 
-		printf("Both shared secrets match!\n");
+		std::cout << "Both shared secrets match!\n";
 	} catch (const std::exception& exception) {
 		std::cout << exception.what() << std::endl;
 		return EXIT_FAILURE;

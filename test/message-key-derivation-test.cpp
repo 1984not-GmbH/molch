@@ -41,7 +41,7 @@ int main() {
 		chain_key.empty = false;
 
 		//print first chain key
-		printf("Chain key (%zu Bytes):\n", chain_key.size());
+		std::cout << "Chain key (" << chain_key.size() << " Bytes):\n";
 		std::cout << chain_key << std::endl;
 
 		//derive message key from chain key
@@ -50,7 +50,7 @@ int main() {
 		const auto& message_key{message_key_result.value()};
 
 		//print message key
-		printf("Message key (%zu Bytes):\n", message_key.size());
+		std::cout << "Message key (" << message_key.size() << " Bytes):\n";
 		std::cout << message_key << std::endl;
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;

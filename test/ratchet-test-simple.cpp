@@ -128,7 +128,7 @@ int main() {
 		if (alice_send_data.message_key != bob_receive_message_key1) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Bobs receive message key isn't the same as Alice' send message key."};
 		}
-		printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
+		std::cout << "SUCCESS: Bobs receive message key is the same as Alice' send message key.\n";
 
 		TRY_VOID(bob_receive_ratchet.setLastMessageAuthenticity(true));
 
@@ -161,7 +161,7 @@ int main() {
 		if (bob_send_data.message_key != alice_receive_message_key1) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice' receive message key isn't the same as Bobs send message key."};
 		}
-		printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
+		std::cout << "SUCCESS: Alice' receive message key is the same as Bobs send message key.\n";
 
 		TRY_VOID(alice_receive_ratchet.setLastMessageAuthenticity(true));
 
@@ -193,7 +193,7 @@ int main() {
 		if (bob_send_data2.message_key != alice_receive_message_key2) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice' receive message key isn't the same as Bobs send message key."};
 		}
-		printf("SUCCESS: Alice' receive message key is the same as Bobs send message key.\n");
+		std::cout << "SUCCESS: Alice' receive message key is the same as Bobs send message key.\n";
 
 		TRY_VOID(alice_send_ratchet.setLastMessageAuthenticity(true));
 
@@ -225,7 +225,7 @@ int main() {
 		if (alice_send_data2.message_key != bob_receive_message_key2) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Bobs receive message key isn't the same as Alice' send message key."};
 		}
-		printf("SUCCESS: Bobs receive message key is the same as Alice' send message key.\n");
+		std::cout << "SUCCESS: Bobs receive message key is the same as Alice' send message key.\n";
 
 		TRY_VOID(bob_send_ratchet.setLastMessageAuthenticity(true));
 	} catch (const std::exception& exception) {

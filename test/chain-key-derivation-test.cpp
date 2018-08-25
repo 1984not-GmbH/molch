@@ -40,7 +40,7 @@ int main() {
 		last_chain_key.empty = false;
 
 		//print first chain key
-		printf("Initial chain key (%i Bytes):\n", crypto_auth_BYTES);
+		std::cout << "Initial chain key (" << crypto_auth_BYTES << " Bytes):\n";
 		std::cout << last_chain_key << std::endl;
 
 
@@ -52,7 +52,7 @@ int main() {
 			next_chain_key = next_chain_key_result.value();
 
 			//print the derived chain key
-			printf("Chain key Nr. %i:\n", counter);
+			std::cout << "Chain key Nr. " << counter << ":\n";
 			std::cout << next_chain_key << std::endl;
 
 			//check that chain keys are different

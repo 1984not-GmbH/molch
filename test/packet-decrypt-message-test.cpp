@@ -44,13 +44,13 @@ int main() {
 		header[2] = uchar_to_byte(0x03);
 		header[3] = uchar_to_byte(0x04);
 		molch_message_type packet_type{molch_message_type::NORMAL_MESSAGE};
-		printf("Packet type: %02x\n", static_cast<int>(packet_type));
+		std::cout << "Packet type:" << static_cast<int>(packet_type) << '\n';
 		putchar('\n');
 
 		//NORMAL MESSAGE
 		EmptyableHeaderKey header_key;
 		MessageKey message_key;
-		printf("NORMAL MESSAGE\n");
+		std::cout << "NORMAL MESSAGE\n";
 		Buffer packet;
 		create_and_print_message(
 			packet,
@@ -69,27 +69,27 @@ int main() {
 		if (normal_message.size() != message.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message length isn't the same."};
 		}
-		printf("Decrypted message length is the same.\n");
+		std::cout << "Decrypted message length is the same.\n";
 
 		//compare the message
 		if (message != normal_message) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message doesn't match."};
 		}
-		printf("Decrypted message is the same.\n\n");
+		std::cout << "Decrypted message is the same.\n\n";
 
 		//manipulate the message
 		packet[packet.size() - crypto_secretbox_MACBYTES - 1] ^= uchar_to_byte(0xf0);
-		printf("Manipulating message.\n");
+		std::cout << "Manipulating message.\n";
 
 		//try to decrypt
 		const auto manipulated_normal_message_result = packet_decrypt_message(packet, message_key);
 		if (manipulated_normal_message_result.has_value()) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Decrypted manipulated message."};
 		}
-		printf("Manipulation detected.\n\n");
+		std::cout << "Manipulation detected.\n\n";
 
 		//PREKEY MESSAGE
-		printf("PREKEY MESSAGE\n");
+		std::cout << "PREKEY MESSAGE\n";
 		//create the public keys
 		auto prekey_metadata{std::make_optional<PrekeyMetadata>()};
 		randombytes_buf(prekey_metadata.value().identity);
@@ -116,13 +116,13 @@ int main() {
 		if (prekey_message.size() != message.size()) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message length isn't the same."};
 		}
-		printf("Decrypted message length is the same.\n");
+		std::cout << "Decrypted message length is the same.\n";
 
 		//compare the message
 		if (message != prekey_message) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Decrypted message doesn't match."};
 		}
-		printf("Decrypted message is the same.\n");
+		std::cout << "Decrypted message is the same.\n";
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

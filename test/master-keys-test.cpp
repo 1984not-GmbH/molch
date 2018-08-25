@@ -24,6 +24,7 @@
 #include <sodium.h>
 #include <memory>
 #include <iostream>
+#include <string_view>
 
 #include "../lib/master-keys.hpp"
 #include "../lib/constants.h"
@@ -136,22 +137,22 @@ int main() {
 		PublicKey public_identity_key{unspiced_master_keys.getIdentityKey()};
 
 		//print the keys
-		printf("Signing keypair:\n");
-		printf("Public:\n");
+		std::cout << "Signing keypair:\n";
+		std::cout << "Public:\n";
 		std::cout << unspiced_master_keys.getSigningKey();
 
-		printf("\nPrivate:\n");
+		std::cout << "\nPrivate:\n";
 		{
 			MasterKeys::Unlocker unlocker{unspiced_master_keys};
 			TRY_WITH_RESULT(private_signing_key, unspiced_master_keys.getPrivateSigningKey());
 			std::cout << private_signing_key.value();
 		}
 
-		printf("\n\nIdentity keys:\n");
-		printf("Public:\n");
+		std::cout << "\n\nIdentity keys:\n";
+		std::cout << "Public:\n";
 		std::cout << unspiced_master_keys.getIdentityKey();
 
-		printf("\nPrivate:\n");
+		std::cout << "\nPrivate:\n";
 		{
 			MasterKeys::Unlocker unlocker{unspiced_master_keys};
 			TRY_WITH_RESULT(private_identity_key, unspiced_master_keys.getPrivateIdentityKey());
@@ -175,22 +176,22 @@ int main() {
 		public_identity_key = spiced_master_keys.getIdentityKey();
 
 		//print the keys
-		printf("Signing keypair:\n");
-		printf("Public:\n");
+		std::cout << "Signing keypair:\n";
+		std::cout << "Public:\n";
 		std::cout << spiced_master_keys.getSigningKey() << std::endl;
 
-		printf("Private:\n");
+		std::cout << "Private:\n";
 		{
 			MasterKeys::Unlocker unlocker{spiced_master_keys};
 			TRY_WITH_RESULT(private_signing_key, spiced_master_keys.getPrivateSigningKey());
 			std::cout << private_signing_key.value() << '\n';
 		}
 
-		printf("\nIdentity keys:\n");
-		printf("Public:\n");
+		std::cout << "\nIdentity keys:\n";
+		std::cout << "Public:\n";
 		std::cout << spiced_master_keys.getIdentityKey() << std::endl;
 
-		printf("Private:\n");
+		std::cout << "Private:\n";
 		{
 			MasterKeys::Unlocker unlocker{spiced_master_keys};
 			TRY_WITH_RESULT(private_identity_key, spiced_master_keys.getPrivateIdentityKey());
@@ -207,11 +208,11 @@ int main() {
 
 		//sign some data
 		Buffer data{"This is some data to be signed."};
-		printf("Data to be signed.\n");
-		printf("%.*s\n", static_cast<int>(data.size()), byte_to_char(data.data()));
+		std::cout << "Data to be signed.\n";
+		std::cout << std::string_view(byte_to_char(data.data()), data.size()) << '\n';
 		TRY_WITH_RESULT(signed_data_result, spiced_master_keys.sign(data));
 		const auto& signed_data{signed_data_result.value()};
-		printf("Signed data:\n");
+		std::cout << "Signed data:\n";
 		std::cout << signed_data;
 
 		//now check the signature
@@ -228,10 +229,10 @@ int main() {
 		}
 		TRY_VOID(unwrapped_data.setSize(static_cast<size_t>(unwrapped_data_length)));
 
-		printf("\nSignature was successfully verified!\n");
+		std::cout << "\nSignature was successfully verified!\n";
 
 		//Test Export to Protobuf-C
-		printf("Export to Protobuf-C:\n");
+		std::cout << "Export to Protobuf-C:\n";
 
 		//export buffers
 		Buffer protobuf_export_public_signing_key;
@@ -245,20 +246,20 @@ int main() {
 			protobuf_export_public_identity_key,
 			protobuf_export_private_identity_key);
 
-		printf("Public signing key:\n");
+		std::cout << "Public signing key:\n";
 		std::cout << protobuf_export_public_signing_key << "\n\n";
 
-		printf("Private signing key:\n");
+		std::cout << "Private signing key:\n";
 		std::cout << protobuf_export_private_signing_key << "\n\n";
 
-		printf("Public identity key:\n");
+		std::cout << "Public identity key:\n";
 		std::cout << protobuf_export_public_identity_key << "\n\n";
 
-		printf("Private identity key:\n");
+		std::cout << "Private identity key:\n";
 		std::cout << protobuf_export_private_identity_key << "\n\n";
 
 		//import again
-		printf("Import from Protobuf-C:\n");
+		std::cout << "Import from Protobuf-C:\n";
 		Arena pool;
 		auto imported_master_keys{protobuf_import(
 			pool,
@@ -293,7 +294,7 @@ int main() {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "The private identity keys do not match."};
 		}
 
-		printf("Successfully exported to Protobuf-C and imported again.");
+		std::cout << "Successfully exported to Protobuf-C and imported again.";
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

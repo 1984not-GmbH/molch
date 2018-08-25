@@ -36,16 +36,16 @@ int main() noexcept {
 
 		//some random user input (idiot bashing his head on the keyboard)
 		Buffer spice{"aaeipoewur+ue 093+2ss3+2ue+ ss09234rt #2ss 0iw4eraep9ui23+ 03943"};
-		printf("\"Random\" input from the user (%zu Bytes):\n", spice.size());
-		printf("String: %.*s\n", static_cast<int>(spice.size()), byte_to_uchar(spice.data()));
-		printf("Hex:\n");
+		std::cout << "\"Random\" input from the user (" << spice.size() << " Bytes):\n";
+		std::cout << "String: " << std::string_view(byte_to_char(spice.data()), spice.size()) << "\n";
+		std::cout << "Hex:\n";
 		std::cout << spice << std::endl;
 
 		//fill buffer with spiced random data
 		TRY_WITH_RESULT(output1_result, spiced_random(spice, 42));
 		const auto& output1{output1_result.value()};
 
-		printf("Spiced random data 1 (%zu Bytes):\n", output1.size());
+		std::cout << "Spiced random data 1 (" << output1.size() << " Bytes):\n";
 		std::cout << output1 << std::endl;
 
 
@@ -53,7 +53,7 @@ int main() noexcept {
 		TRY_WITH_RESULT(output2_result, spiced_random(spice, 42));
 		const auto& output2{output2_result.value()};
 
-		printf("Spiced random data 2 (%zu Bytes):\n", output2.size());
+		std::cout << "Spiced random data 2 (" << output2.size() << " Bytes):\n";
 		std::cout << output2;
 		putchar('\n');
 

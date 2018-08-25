@@ -73,7 +73,7 @@ int main() {
 				bob_prekey_list));
 		auto& alice_send_conversation{alice_send_conversation_result.value()};
 
-		printf("Packet:\n");
+		std::cout << "Packet:\n";
 		std::cout << alice_send_conversation.packet << std::endl;
 
 		//let bob receive the packet
@@ -87,7 +87,7 @@ int main() {
 		if (send_message != bob_receive_conversation.message) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Message was decrypted incorrectly."};
 		}
-		printf("Decrypted message matches with the original message.\n");
+		std::cout << "Decrypted message matches with the original message.\n";
 
 		//send and receive some more messages
 		//first one
@@ -95,8 +95,8 @@ int main() {
 		TRY_WITH_RESULT(alice_send_packet2_result, alice_send_conversation.conversation.send(alice_send_message2, std::nullopt));
 		auto& alice_send_packet2{alice_send_packet2_result.value()};
 
-		printf("Sent message: %.*s\n", static_cast<int>(alice_send_message2.size()), byte_to_char(alice_send_message2.data()));
-		printf("Packet:\n");
+		std::cout << "Sent message: " << std::string_view(byte_to_char(alice_send_message2.data()), alice_send_message2.size()) << '\n';
+		std::cout << "Packet:\n";
 		std::cout << alice_send_packet2 << std::endl;
 
 		//bob receives the message
@@ -112,15 +112,15 @@ int main() {
 		if (bob_received2.message != alice_send_message2) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Received message doesn't match."};
 		}
-		printf("Alice' second message has been sent correctly!\n");
+		std::cout << "Alice' second message has been sent correctly!\n";
 
 		//Bob responds to alice
 		Buffer bob_response_message{"I'm fine, thanks. How are you?"};
 		TRY_WITH_RESULT(bob_response_packet_result, bob_receive_conversation.conversation.send(bob_response_message, std::nullopt));
 		auto& bob_response_packet{bob_response_packet_result.value()};
 
-		printf("Sent message: %.*s\n", static_cast<int>(bob_response_message.size()), byte_to_char(bob_response_message.data()));
-		printf("Packet:\n");
+		std::cout << "Sent message: " << std::string_view(byte_to_char(bob_response_message.data()), bob_response_message.size()) << '\n';
+		std::cout << "Packet:\n";
 		std::cout << bob_response_packet << std::endl;
 
 		//Alice receives the response
@@ -136,7 +136,7 @@ int main() {
 		if (bob_response_message != alice_received.message) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Received response doesn't match."};
 		}
-		printf("Successfully received Bob's response!\n");
+		std::cout << "Successfully received Bob's response!\n";
 
 		//---------------------------------------------------------------------------------------------
 		//now test it the other way round (because Axolotl is assymetric in this regard)
@@ -157,8 +157,8 @@ int main() {
 			alice_prekey_list));
 		auto& bob_send_conversation{bob_send_conversation_result.value()};
 
-		printf("Sent message: %.*s\n", static_cast<int>(send_message.size()), byte_to_char(send_message.data()));
-		printf("Packet:\n");
+		std::cout << "Sent message: " << std::string_view(byte_to_char(send_message.data()), send_message.size()) << '\n';
+		std::cout << "Packet:\n";
 		std::cout << bob_send_conversation.packet << std::endl;
 
 		//let alice receive the packet
@@ -172,7 +172,7 @@ int main() {
 		if (send_message != alice_receive_conversation.message) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Message incorrectly decrypted."};
 		}
-		printf("Decrypted message matched with the original message.\n");
+		std::cout << "Decrypted message matched with the original message.\n";
 
 		//send and receive some more messages
 		//first one
@@ -180,8 +180,8 @@ int main() {
 		TRY_WITH_RESULT(bob_send_packet2_result, bob_send_conversation.conversation.send(bob_send_message2, std::nullopt));
 		auto& bob_send_packet2{bob_send_packet2_result.value()};
 
-		printf("Sent message: %.*s\n", static_cast<int>(bob_send_message2.size()), byte_to_char(bob_send_message2.data()));
-		printf("Packet:\n");
+		std::cout << "Sent message: " << std::string_view(byte_to_char(bob_send_message2.data()), bob_send_message2.size()) << '\n';
+		std::cout << "Packet:\n";
 		std::cout << bob_send_packet2 << std::endl;
 
 		//alice receives the message
@@ -197,15 +197,15 @@ int main() {
 		if (alice_received2.message != bob_send_message2) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Received message doesn't match."};
 		}
-		printf("Bobs second message has been sent correctly!.\n");
+		std::cout << "Bobs second message has been sent correctly!.\n";
 
 		//Alice responds to Bob
 		Buffer alice_response_message{"I'm fine, thanks. How are you?"};
 		TRY_WITH_RESULT(alice_response_packet_result, alice_receive_conversation.conversation.send(alice_response_message, std::nullopt));
 		auto& alice_response_packet{alice_response_packet_result.value()};
 
-		printf("Sent message: %.*s\n", static_cast<int>(alice_response_message.size()), byte_to_char(alice_response_message.data()));
-		printf("Packet:\n");
+		std::cout << "Sent message: " << std::string_view(byte_to_char(alice_response_message.data()), alice_response_message.size()) << '\n';
+		std::cout << "Packet:\n";
 		std::cout << alice_response_packet << std::endl;
 
 		//Bob receives the response
@@ -221,7 +221,7 @@ int main() {
 		if (alice_response_message != bob_received_response.message) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Received response doesn't match."};
 		}
-		printf("Successfully received Alice' response!\n");
+		std::cout << "Successfully received Alice' response!\n";
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

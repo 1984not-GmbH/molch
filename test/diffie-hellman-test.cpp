@@ -61,7 +61,7 @@ int main() noexcept {
 		const auto& alice_shared_secret{alice_shared_secret_result.value()};
 
 		//print Alice's shared secret
-		printf("Alice's shared secret ECDH(A_priv, B_pub) (%zu Bytes):\n", alice_shared_secret.size());
+		std::cout << "Alice's shared secret ECDH(A_priv, B_pub) (" << alice_shared_secret.size() << "%zu Bytes):\n";
 		std::cout << alice_shared_secret << std::endl;
 
 		//Diffie Hellman on Bob's side
@@ -73,7 +73,7 @@ int main() noexcept {
 		const auto& bob_shared_secret{bob_shared_secret_result.value()};
 
 		//print Bob's shared secret
-		printf("Bob's shared secret ECDH(B_priv, A_pub) (%zu Bytes):\n", bob_shared_secret.size());
+		std::cout << "Bob's shared secret ECDH(B_priv, A_pub) (" << bob_shared_secret.size() << " Bytes):\n";
 		std::cout << bob_shared_secret << std::endl;
 
 		//compare both shared secrets
@@ -81,7 +81,7 @@ int main() noexcept {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Diffie Hellman didn't produce the same shared secret."};
 		}
 
-		printf("Both shared secrets match!\n");
+		std::cout << "Both shared secrets match!\n";
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

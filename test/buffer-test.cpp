@@ -60,7 +60,6 @@ int main() {
 		std::byte buffer1_content[10];
 		randombytes_buf(buffer1_content, sizeof(buffer1_content));
 		std::copy(std::cbegin(buffer1_content), std::cend(buffer1_content), std::begin(buffer1));
-		printf("Here\n");
 
 		std::cout << "Random buffer (" << buffer1.size() << " Bytes):\n";
 		std::cout << buffer1 << '\n';
@@ -69,7 +68,7 @@ int main() {
 		Buffer buffer2{sizeof(buffer2_content), sizeof(buffer2_content)};
 		TRY_VOID(buffer2.cloneFromRaw({uchar_to_byte(buffer2_content), sizeof(buffer2_content)}));
 
-		printf("Second buffer (%zu Bytes):\n", buffer2.size());
+		std::cout << "Second buffer (" << buffer2.size() << " Bytes):\n";
 		std::cout << buffer2 << std::endl;
 
 		Buffer empty{static_cast<size_t>(0), 0};
@@ -82,18 +81,18 @@ int main() {
 		if (buffer2 != buffer3) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy buffer."};
 		}
-		printf("Buffer successfully copied.\n");
+		std::cout << "Buffer successfully copied.\n";
 
 		if (buffer3.copyFrom(buffer2.size(), buffer2, 0, buffer2.size())) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to detect out of bounds buffer copying."};
 		}
-		printf("Detected out of bounds buffer copying.\n");
+		std::cout << "Detected out of bounds buffer copying.\n";
 
 		TRY_VOID(buffer3.copyFrom(1, buffer2, 0, buffer2.size() - 1));
 		if ((buffer3[0] != buffer2[0]) || (sodium_memcmp(buffer2.data(), buffer3.data() + 1, buffer2.size() - 1) != 0)) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy buffer."};
 		}
-		printf("Successfully copied buffer.\n");
+		std::cout << "Successfully copied buffer.\n";
 
 		//copy from raw array
 		unsigned char heeelo[14]{"Hello World!\n"};
@@ -105,12 +104,12 @@ int main() {
 		if (sodium_memcmp(heeelo, buffer1.data(), sizeof(heeelo))) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to copy from raw array to buffer."};
 		}
-		printf("Successfully copied raw array to buffer.\n");
+		std::cout << "Successfully copied raw array to buffer.\n";
 
 		if (buffer1.copyFromRaw(1, uchar_to_byte(heeelo), 0, sizeof(heeelo))) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to detect out of bounds read."};
 		}
-		printf("Out of bounds read detected.\n");
+		std::cout << "Out of bounds read detected.\n";
 
 		//create a buffer from a string
 		Buffer string{"This is a string!"};
@@ -120,10 +119,10 @@ int main() {
 		if (sodium_memcmp(string.data(), "This is a string!", string.size()) != 0) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to create buffer from string."};
 		}
-		printf("Successfully created buffer from string.\n");
+		std::cout << "Successfully created buffer from string.\n";
 
 		//erase the buffer
-		printf("Erasing buffer.\n");
+		std::cout << "Erasing buffer.\n";
 		buffer1.clear();
 
 		//check if the buffer was properly cleared
@@ -136,7 +135,7 @@ int main() {
 		if (!buffer1.empty()) {
 			throw Molch::Exception{status_type::BUFFER_ERROR, "The content length of the buffer hasn't been set to zero."};
 		}
-		printf("Buffer successfully erased.\n");
+		std::cout << "Buffer successfully erased.\n";
 
 		//compare buffer to an array
 		Buffer true_buffer{"true"};

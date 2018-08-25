@@ -82,7 +82,7 @@ static void protobuf_import(
 }
 
 static void protobuf_empty_store() {
-	printf("Testing im-/export of empty header and message keystore.\n");
+	std::cout << "Testing im-/export of empty header and message keystore.\n";
 
 	HeaderAndMessageKeyStore store;
 
@@ -98,7 +98,7 @@ static void protobuf_empty_store() {
 	TRY_WITH_RESULT(imported_store, HeaderAndMessageKeyStore::import(exported_bundles.value()));
 	store = std::move(imported_store.value());
 
-	printf("Successful.\n");
+	std::cout << "Successful.\n";
 }
 
 static void testSortingAndDeprecation() {
@@ -178,11 +178,11 @@ int main() {
 			randombytes_buf(message_key);
 
 			//print the new header key
-			printf("New Header Key No. %zu:\n", i);
+			std::cout << "New Header Key No. " << i << ":\n";
 			std::cout << header_key << std::endl;
 
 			//print the new message key
-			printf("New message key No. %zu:\n", i);
+			std::cout << "New message key No. " << i << ":\n";
 			std::cout << message_key << std::endl;
 
 			//add keys to the keystore
@@ -194,7 +194,7 @@ int main() {
 		}
 
 		//Protobuf-C export
-		printf("Test Protobuf-C export:\n");
+		std::cout << "Test Protobuf-C export:\n";
 		protobuf_export(keystore, protobuf_export_buffers);
 
 		puts("[\n");
@@ -203,17 +203,17 @@ int main() {
 		}
 		puts("]\n\n");
 
-		printf("Import from Protobuf-C\n");
+		std::cout << "Import from Protobuf-C\n";
 		keystore.clear();
 		Arena pool;
 		protobuf_import(pool, keystore, protobuf_export_buffers);
 
 		//now export again
-		printf("Export imported as Protobuf-C\n");
+		std::cout << "Export imported as Protobuf-C\n";
 		protobuf_export(keystore, protobuf_second_export_buffers);
 
 		//compare both exports
-		printf("Compare\n");
+		std::cout << "Compare\n";
 		if (protobuf_export_buffers.size() != protobuf_second_export_buffers.size()) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Both exports contain different amounts of keys."};
 		}
@@ -224,19 +224,19 @@ int main() {
 		}
 
 		//remove key from the head
-		printf("Remove head!\n");
+		std::cout << "Remove head!\n";
 		keystore.remove(0);
 		assert(keystore.keys().size() == (protobuf_export_buffers.size() - 1));
 		std::cout << keystore;
 
 		//remove key from the tail
-		printf("Remove Tail:\n");
+		std::cout << "Remove Tail:\n";
 		keystore.remove(keystore.keys().size() - 1);
 		assert(keystore.keys().size() == (protobuf_export_buffers.size() - 2));
 		std::cout << keystore;
 
 		//remove from inside
-		printf("Remove from inside:\n");
+		std::cout << "Remove from inside:\n";
 		keystore.remove(1);
 		assert(keystore.keys().size() == (protobuf_export_buffers.size() - 3));
 		std::cout << keystore;
@@ -244,7 +244,7 @@ int main() {
 		protobuf_empty_store();
 
 		//clear the keystore
-		printf("Clear the keystore:\n");
+		std::cout << "Clear the keystore:\n";
 		keystore.clear();
 		assert(keystore.keys().empty());
 		std::cout << keystore;

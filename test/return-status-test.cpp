@@ -38,10 +38,10 @@ int main() {
 
 	//check if it was correctly initialized
 	if ((status.status != status_type::SUCCESS) || (status.error != nullptr)) {
-		fprintf(stderr, "ERROR: Failed to initialize return statu!\n");
+		std::cerr << "ERROR: Failed to initialize return status!\n";
 		return EXIT_FAILURE;
 	}
-	printf("Initialized return status!\n");
+	std::cout << "Initialized return status!\n";
 
 	//more tests for return_status_print()
 	{

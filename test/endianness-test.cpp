@@ -32,9 +32,9 @@ using namespace Molch;
 int main() {
 	try {
 		if (endianness_is_little_endian()) {
-			printf("Current byte order: Little Endian!\n");
+			std::cout << "Current byte order: Little Endian!\n";
 		} else {
-			printf("Current_byte_oder: Big Endian!\n");
+			std::cout << "Current_byte_oder: Big Endian!\n";
 		}
 
 		//uint32_t -> big endian
@@ -42,7 +42,7 @@ int main() {
 		uint32_t uint32{67305985ULL};
 		uint32_t uint32_from_big_endian{0};
 		TRY_VOID(to_big_endian(uint32, buffer32));
-		printf("uint32_t %llu to big endian:\n", static_cast<unsigned long long>(uint32));
+		std::cout << "uint32_t " << uint32 << " to big endian:\n";
 		std::cout << buffer32;
 
 		TRY_WITH_RESULT(big_endian_result, buffer32.compareToRaw({char_to_byte("\x04\x03\x02\x01"), sizeof(uint32_t)}));
@@ -55,13 +55,13 @@ int main() {
 		if (uint32 != uint32_from_big_endian) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "uint32_t from big endian is incorrect."};
 		}
-		printf("Successfully converted back!\n\n");
+		std::cout << "Successfully converted back!\n\n";
 
 		//int32_t -> big endian
 		int32_t int32{-66052LL};
 		int32_t int32_from_big_endian;
 		TRY_VOID(to_big_endian(int32, buffer32));
-		printf("int32_t %lli to big endian:\n", static_cast<signed long long>(int32));
+		std::cout << "int32_t " << int32 << " to big endian:\n";
 		std::cout << buffer32;
 
 		{
@@ -76,14 +76,14 @@ int main() {
 		if (int32 != int32_from_big_endian) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "uint32_t from big endian is incorrect."};
 		}
-		printf("Successfully converted back!\n\n");
+		std::cout << "Successfully converted back!\n\n";
 
 		//uint64_t -> big endian
 		Buffer buffer64{8, 8};
 		uint64_t uint64{578437695752307201ULL};
 		uint64_t uint64_from_big_endian;
 		TRY_VOID(to_big_endian(uint64, buffer64));
-		printf("uint64_t %llu to big endian:\n", static_cast<unsigned long long>(uint64));
+		std::cout << "uint64_t " << uint64 << " to big endian:\n";
 		std::cout << buffer64;
 
 		{
@@ -98,13 +98,13 @@ int main() {
 		if (uint64 != uint64_from_big_endian) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "uint64_t from big endian is incorrect."};
 		}
-		printf("Successfully converted back!\n\n");
+		std::cout << "Successfully converted back!\n\n";
 
 		//int64_t -> big endian
 		int64_t int64{-283686952306184LL};
 		int64_t int64_from_big_endian;
 		TRY_VOID(to_big_endian(int64, buffer64));
-		printf("int64_t %lli to big endian:\n", static_cast<signed long long>(int64));
+		std::cout << "int64_t " << int64 << " to big endian:\n";
 		std::cout << buffer64;
 
 		{
@@ -119,7 +119,7 @@ int main() {
 		if (int64 != int64_from_big_endian) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "unit64_t from big endian is incorrect."};
 		}
-		printf("Successfully converted back!\n\n");
+		std::cout << "Successfully converted back!\n\n";
 	} catch (const std::exception& exception) {
 		std::cout << exception.what() << std::endl;
 		return EXIT_FAILURE;

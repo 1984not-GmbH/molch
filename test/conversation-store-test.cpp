@@ -100,7 +100,7 @@ static void test_add_conversation(ConversationStore& store) {
 }
 
 static void protobuf_empty_store() {
-	printf("Testing im-/export of empty conversation store.\n");
+	std::cout << "Testing im-/export of empty conversation store.\n";
 
 	ConversationStore store;
 
@@ -116,7 +116,7 @@ static void protobuf_empty_store() {
 	//import it
 	TRY_WITH_RESULT(imported_conversation_store, ConversationStore::import(exported_conversations));
 	store = std::move(imported_conversation_store.value());
-	printf("Successful.\n");
+	std::cout << "Successful.\n";
 }
 
 int main() {
@@ -132,9 +132,9 @@ int main() {
 		}
 
 		// add five conversations
-		printf("Add five conversations.\n");
+		std::cout << "Add five conversations.\n";
 		for (size_t i{0}; i < 5; i++) {
-			printf("%zu\n", i);
+			std::cout << i;
 			test_add_conversation(store);
 			if (store.size() != (i + 1)) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Conversation store has incorrect length."};
@@ -170,10 +170,10 @@ int main() {
 		}
 
 		//test protobuf export
-		printf("Export to Protobuf-C\n");
+		std::cout << "Export to Protobuf-C\n";
 		auto protobuf_export_buffers{protobuf_export(store)};
 
-		printf("protobuf_export_buffers_length = %zu\n", protobuf_export_buffers.size());
+		std::cout << "protobuf_export_buffers_length = " << protobuf_export_buffers.size() << '\n';
 		//print
 		puts("[\n");
 		for (size_t i{0}; i < protobuf_export_buffers.size(); i++) {
@@ -195,23 +195,23 @@ int main() {
 		if (protobuf_export_buffers != protobuf_second_export_buffers) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Exported protobuf-c strings don't match."};
 		}
-		printf("Exported Protobuf-C strings match.\n");
+		std::cout << "Exported Protobuf-C strings match.\n";
 
 		//remove nodes
 		auto first{store.find(first_id)};
 		store.remove(first);
-		printf("Removed head.\n");
+		std::cout << "Removed head.\n";
 		store.remove(middle_id);
-		printf("Removed tail.\n");
+		std::cout << "Removed tail.\n";
 		store.remove(last_id);
 
 		if (store.size() != 2) {
 			throw Molch::Exception{status_type::REMOVE_ERROR, "Failed to remove nodes."};
 		}
-		printf("Successfully removed nodes.\n");
+		std::cout << "Successfully removed nodes.\n";
 
 		//clear the conversation store
-		printf("Clear the conversation store.\n");
+		std::cout << "Clear the conversation store.\n";
 
 		protobuf_empty_store();
 	} catch (const std::exception& exception) {

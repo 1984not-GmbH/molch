@@ -38,17 +38,17 @@ int main() {
 		Molch::EmptyableKey<50,Molch::KeyType::Key> master_key;
 		randombytes_buf(master_key);
 		master_key.empty = false;
-		printf("Master key:\n");
+		std::cout << "Master key:\n";
 		std::cout << master_key << std::endl;
 
 		TRY_WITH_RESULT(subkey1_result, (master_key.deriveSubkeyWithIndex<Molch::EmptyableKey<60,Molch::KeyType::Key>>(0)));
 		const auto& subkey1{subkey1_result.value()};
-		printf("First subkey:\n");
+		std::cout << "First subkey:\n";
 		std::cout << subkey1 << std::endl;
 
 		TRY_WITH_RESULT(subkey2_result, (master_key.deriveSubkeyWithIndex<Molch::EmptyableKey<60,Molch::KeyType::Key>>(1)));
 		const auto& subkey2{subkey2_result.value()};
-		printf("Second subkey:\n");
+		std::cout << "Second subkey:\n";
 		std::cout << subkey2 << std::endl;
 
 		if (subkey1 == subkey2) {

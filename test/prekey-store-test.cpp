@@ -105,7 +105,7 @@ static PrekeyStore protobuf_import(
 }
 
 static void protobuf_no_deprecated_keys() {
-	printf("Testing im-/export of prekey store without deprecated keys.\n");
+	std::cout << "Testing im-/export of prekey store without deprecated keys.\n";
 	TRY_WITH_RESULT(store_result, PrekeyStore::create());
 	auto& store{store_result.value()};
 
@@ -122,7 +122,7 @@ static void protobuf_no_deprecated_keys() {
 	TRY_WITH_RESULT(imported_store, PrekeyStore::import(exported.keypairs, exported.deprecated_keypairs));
 	store = std::move(imported_store.value());
 
-	printf("Successful.\n");
+	std::cout << "Successful.\n";
 }
 
 int main() {
@@ -133,7 +133,7 @@ int main() {
 		auto& store{store_result.value()};
 		TRY_WITH_RESULT(prekey_list_result, store.list());
 		const auto& prekey_list{prekey_list_result.value()};
-		printf("Prekey list:\n");
+		std::cout << "Prekey list:\n";
 		std::cout << prekey_list << std::endl;
 
 		//compare the public keys with the ones in the prekey store
@@ -143,7 +143,7 @@ int main() {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Key list doesn't match the prekey store."};
 			}
 		}
-		printf("Prekey list matches the prekey store!\n");
+		std::cout << "Prekey list matches the prekey store!\n";
 
 		//get a private key
 		const size_t prekey_index{10};
@@ -151,10 +151,10 @@ int main() {
 
 		TRY_WITH_RESULT(private_prekey1_result, store.getPrekey(public_prekey));
 		const auto& private_prekey1{private_prekey1_result.value()};
-		printf("Get a Prekey:\n");
-		printf("Public key:\n");
+		std::cout << "Get a Prekey:\n";
+		std::cout << "Public key:\n";
 		std::cout << public_prekey;
-		printf("Private key:\n");
+		std::cout << "Private key:\n";
 		std::cout << private_prekey1 << std::endl;
 
 		if (store.deprecatedPrekeys().empty()) {
@@ -169,7 +169,7 @@ int main() {
 		if (store.prekeys()[prekey_index].publicKey() == public_prekey) {
 			throw Molch::Exception{status_type::KEYGENERATION_FAILED, "Failed to generate new key for deprecated one."};
 		}
-		printf("Successfully deprecated requested key!\n");
+		std::cout << "Successfully deprecated requested key!\n";
 
 		//check if the prekey can be obtained from the deprecated keys
 		TRY_WITH_RESULT(private_prekey2_result, store.getPrekey(public_prekey));
@@ -178,7 +178,7 @@ int main() {
 		if (private_prekey1 != private_prekey2) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Prekey from the deprecated area didn't match."};
 		}
-		printf("Successfully got prekey from the deprecated area!\n");
+		std::cout << "Successfully got prekey from the deprecated area!\n";
 
 		//try to get a nonexistent key
 		randombytes_buf(public_prekey);
@@ -186,10 +186,10 @@ int main() {
 		if (nonexistent_prekey.has_value()) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Didn't complain about invalid public key."};
 		}
-		printf("Detected invalid public prekey!\n");
+		std::cout << "Detected invalid public prekey!\n";
 
 		//Protobuf-C export
-		printf("Protobuf-C export\n");
+		std::cout << "Protobuf-C export\n";
 		std::vector<Buffer> protobuf_export_prekeys_buffers;
 		std::vector<Buffer> protobuf_export_deprecated_prekeys_buffers;
 		protobuf_export(
@@ -197,28 +197,28 @@ int main() {
 			protobuf_export_prekeys_buffers,
 			protobuf_export_deprecated_prekeys_buffers);
 
-		printf("Prekeys:\n");
+		std::cout << "Prekeys:\n";
 		puts("[\n");
 		for (size_t i{0}; i < protobuf_export_prekeys_buffers.size(); i++) {
 			std::cout << protobuf_export_prekeys_buffers[i] << ",\n";
 		}
 		puts("]\n\n");
 
-		printf("Deprecated Prekeys:\n");
+		std::cout << "Deprecated Prekeys:\n";
 		puts("[\n");
 		for (size_t i{0}; i < protobuf_export_deprecated_prekeys_buffers.size(); i++) {
 			std::cout << protobuf_export_deprecated_prekeys_buffers[i] << ",\n";
 		}
 		puts("]\n\n");
 
-		printf("Import from Protobuf-C\n");
+		std::cout << "Import from Protobuf-C\n";
 		Arena pool;
 		auto imported_store{protobuf_import(
 			pool,
 			protobuf_export_prekeys_buffers,
 			protobuf_export_deprecated_prekeys_buffers)};
 
-		printf("Protobuf-C export again\n");
+		std::cout << "Protobuf-C export again\n";
 		std::vector<Buffer> protobuf_second_export_prekeys_buffers;
 		std::vector<Buffer> protobuf_second_export_deprecated_prekeys_buffers;
 		protobuf_export(
@@ -227,7 +227,7 @@ int main() {
 			protobuf_second_export_deprecated_prekeys_buffers);
 
 		//compare both prekey lists
-		printf("Compare normal prekeys\n");
+		std::cout << "Compare normal prekeys\n";
 		if (protobuf_export_prekeys_buffers.size() != protobuf_second_export_prekeys_buffers.size()) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Both prekey exports contain different amounts of keys."};
 		}
@@ -238,7 +238,7 @@ int main() {
 		}
 
 		//compare both deprecated prekey lists
-		printf("Compare deprecated prekeys\n");
+		std::cout << "Compare deprecated prekeys\n";
 		if (protobuf_export_deprecated_prekeys_buffers.size() != protobuf_second_export_deprecated_prekeys_buffers.size()) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Both depcated prekey exports contain different amounts of keys."};
 		}
@@ -258,7 +258,7 @@ int main() {
 		if (imported_store.deprecatedPrekeys().back().publicKey() != public_prekey) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to deprecate outdated key."};
 		}
-		printf("Successfully deprecated outdated key!\n");
+		std::cout << "Successfully deprecated outdated key!\n";
 
 		//test the automatic removal of old deprecated keys!
 		public_prekey = imported_store.deprecatedPrekeys()[1].publicKey();
@@ -270,7 +270,7 @@ int main() {
 		if (imported_store.deprecatedPrekeys().size() != 1) {
 			throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to remove outdated key."};
 		}
-		printf("Successfully removed outdated deprecated key!\n");
+		std::cout << "Successfully removed outdated deprecated key!\n";
 
 		protobuf_no_deprecated_keys();
 	} catch (const std::exception& exception) {

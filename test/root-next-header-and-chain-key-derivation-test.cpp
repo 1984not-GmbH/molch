@@ -60,7 +60,7 @@ int main() {
 		previous_root_key.empty = false;
 
 		//print previous root key
-		printf("Previous root key (%zu Bytes):\n", previous_root_key.size());
+		std::cout << "Previous root key (" << previous_root_key.size() << "%zu Bytes):\n";
 		std::cout << previous_root_key << std::endl;
 
 		//derive root and chain key for Alice
@@ -73,11 +73,11 @@ int main() {
 		const auto& alice_derived_keys{alice_derived_keys_result.value()};
 
 		//print Alice's root and chain key
-		printf("Alice's root key:\n");
+		std::cout << "Alice's root key:\n";
 		std::cout << alice_derived_keys.root_key;
-		printf("Alice's chain key:\n");
+		std::cout << "Alice's chain key:\n";
 		std::cout << alice_derived_keys.chain_key;
-		printf("Alice's header key:\n");
+		std::cout << "Alice's header key:\n";
 		std::cout << alice_derived_keys.next_header_key << std::endl;
 
 		//derive root and chain key for Bob
@@ -90,30 +90,30 @@ int main() {
 		const auto& bob_derived_keys{bob_derived_keys_result.value()};
 
 		//print Bob's root and chain key
-		printf("Bob's root key:\n");
+		std::cout << "Bob's root key:\n";
 		std::cout << bob_derived_keys.root_key;
-		printf("Bob's chain key:\n");
+		std::cout << "Bob's chain key:\n";
 		std::cout << bob_derived_keys.chain_key;
-		printf("Bob's header key:\n");
+		std::cout << "Bob's header key:\n";
 		std::cout << bob_derived_keys.next_header_key << std::endl;
 
 		//compare Alice's and Bob's root keys
 		if (alice_derived_keys.root_key == bob_derived_keys.root_key) {
-			printf("Alice's and Bob's root keys match.\n");
+			std::cout << "Alice's and Bob's root keys match.\n";
 		} else {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's and Bob's root keys don't match."};
 		}
 
 		//compare Alice's and Bob's chain keys
 		if (alice_derived_keys.chain_key == bob_derived_keys.chain_key) {
-			printf("Alice's and Bob's chain keys match.\n");
+			std::cout << "Alice's and Bob's chain keys match.\n";
 		} else {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's and Bob's chain keys don't match."};
 		}
 
 		//compare Alice's and Bob's header keys
 		if (alice_derived_keys.next_header_key == bob_derived_keys.next_header_key) {
-			printf("Alice's and Bob's header keys match.\n");
+			std::cout << "Alice's and Bob's header keys match.\n";
 		} else {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Alice's and Bob's header keys don't match."};
 		}

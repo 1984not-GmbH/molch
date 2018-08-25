@@ -124,26 +124,26 @@ int main() noexcept {
 				charlie_public_ephemeral));
 
 		//test protobuf-c export
-		printf("Export to Protobuf-C\n");
+		std::cout << "Export to Protobuf-C\n";
 		auto protobuf_export_buffer{protobuf_export(charlie_conversation)};
 
 		std::cout << protobuf_export_buffer;
 		puts("\n");
 
 		//import
-		printf("Import from Protobuf-C\n");
+		std::cout << "Import from Protobuf-C\n";
 		Arena pool;
 		charlie_conversation = protobuf_import(pool, protobuf_export_buffer);
 
 		//export again
-		printf("Export again\n");
+		std::cout << "Export again\n";
 		auto protobuf_second_export_buffer{protobuf_export(charlie_conversation)};
 
 		//compare
 		if (protobuf_export_buffer != protobuf_second_export_buffer) {
 			throw Molch::Exception{status_type::EXPORT_ERROR, "Both exported buffers are not the same."};
 		}
-		printf("Both exported buffers are identitcal.\n\n");
+		std::cout << "Both exported buffers are identitcal.\n\n";
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;

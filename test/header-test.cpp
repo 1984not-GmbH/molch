@@ -38,14 +38,14 @@ int main() {
 		//create ephemeral key
 		PublicKey our_public_ephemeral_key;
 		randombytes_buf(our_public_ephemeral_key);
-		printf("Our public ephemeral key (%zu Bytes):\n", our_public_ephemeral_key.size());
+		std::cout << "Our public ephemeral key (" << our_public_ephemeral_key.size() << " Bytes):\n";
 		std::cout << our_public_ephemeral_key;
 
 		//message numbers
 		uint32_t message_number{2};
 		uint32_t previous_message_number{10};
-		printf("Message number: %u\n", message_number);
-		printf("Previous message number: %u\n", previous_message_number);
+		std::cout << "Message number: " << message_number << '\n';
+		std::cout << "Previous message number: " << previous_message_number << '\n';
 		putchar('\n');
 
 		//create the header
@@ -55,34 +55,34 @@ int main() {
 				previous_message_number));
 
 		//print the header
-		printf("Header (%zu Bytes):\n", header.value().size());
+		std::cout << "Header (" << header.value().size() << " Bytes):\n";
 		std::cout << header.value();
 		putchar('\n');
 
 		//get data back out of the header again
 		TRY_WITH_RESULT(extracted_header, header_extract(header.value()));
 
-		printf("Extracted public ephemeral key (%zu Bytes):\n", extracted_header.value().their_public_ephemeral.size());
+		std::cout << "Extracted public ephemeral key (" << extracted_header.value().their_public_ephemeral.size() << " Bytes):\n";
 		std::cout << extracted_header.value().their_public_ephemeral;
-		printf("Extracted message number: %u\n", extracted_header.value().message_number);
-		printf("Extracted previous message number: %u\n", extracted_header.value().previous_message_number);
+		std::cout << "Extracted message number: " << extracted_header.value().message_number << '\n';
+		std::cout << "Extracted previous message number: " << extracted_header.value().previous_message_number << '\n';
 		putchar('\n');
 
 		//compare them
 		if (our_public_ephemeral_key != extracted_header.value().their_public_ephemeral) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Public ephemeral keys don't match."};
 		}
-		printf("Public ephemeral keys match.\n");
+		std::cout << "Public ephemeral keys match.\n";
 
 		if (message_number != extracted_header.value().message_number) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Message number doesn't match."};
 		}
-		printf("Message numbers match.\n");
+		std::cout << "Message numbers match.\n";
 
 		if (previous_message_number != extracted_header.value().previous_message_number) {
 			throw Molch::Exception{status_type::INVALID_VALUE, "Previous message number doesn't match."};
 		}
-		printf("Previous message numbers match.\n");
+		std::cout << "Previous message numbers match.\n";
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;
