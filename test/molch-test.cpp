@@ -36,10 +36,10 @@
 
 static ProtobufCAllocator protobuf_c_allocator = {
 		[]([[maybe_unused]] void* userdata, size_t size) -> void* {
-			return malloc(size);
+			return malloc(size); //NOLINT
         },
 		[]([[maybe_unused]] void* userdata, void* pointer) {
-			free(pointer);
+			free(pointer); //NOLINT
         },
 		nullptr
 };
