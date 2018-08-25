@@ -358,7 +358,7 @@ MOLCH_PUBLIC(void) molch_destroy_all_users() {
 
 	struct ListedUsers {
 		MallocBuffer list;
-		size_t count;
+		size_t count{0};
 	};
 
 	static result<ListedUsers> list_users() {

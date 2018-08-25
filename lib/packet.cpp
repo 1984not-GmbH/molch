@@ -147,17 +147,17 @@ namespace Molch {
 
 			//set the public identity key
 			packet_header_struct.has_public_identity_key = true;
-			packet_header_struct.public_identity_key.data = const_cast<uint8_t*>(byte_to_uchar(metadata.identity.data()));
+			packet_header_struct.public_identity_key.data = const_cast<uint8_t*>(byte_to_uchar(metadata.identity.data())); //NOLINT
 			packet_header_struct.public_identity_key.len = metadata.identity.size();
 
 			//set the public ephemeral key
 			packet_header_struct.has_public_ephemeral_key = true;
-			packet_header_struct.public_ephemeral_key.data = const_cast<uint8_t*>(byte_to_uchar(metadata.ephemeral.data()));
+			packet_header_struct.public_ephemeral_key.data = const_cast<uint8_t*>(byte_to_uchar(metadata.ephemeral.data())); //NOLINT
 			packet_header_struct.public_ephemeral_key.len = metadata.ephemeral.size();
 
 			//set the public prekey
 			packet_header_struct.has_public_prekey = true;
-			packet_header_struct.public_prekey.data = const_cast<uint8_t*>(byte_to_uchar(metadata.prekey.data()));
+			packet_header_struct.public_prekey.data = const_cast<uint8_t*>(byte_to_uchar(metadata.prekey.data())); //NOLINT
 			packet_header_struct.public_prekey.len = metadata.prekey.size();
 		}
 

@@ -35,7 +35,7 @@ namespace Molch {
 		//create buffer for our public ephemeral
 		ProtobufCBinaryData protobuf_our_public_ephemeral;
 		protobuf_our_public_ephemeral.len = our_public_ephemeral.size();
-		protobuf_our_public_ephemeral.data = const_cast<uint8_t*>(byte_to_uchar(our_public_ephemeral.data()));
+		protobuf_our_public_ephemeral.data = const_cast<uint8_t*>(byte_to_uchar(our_public_ephemeral.data())); //NOLINT
 
 		//fill the struct
 		header_struct.message_number = message_number;
