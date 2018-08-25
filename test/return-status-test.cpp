@@ -27,6 +27,7 @@
 #include "../include/molch/return-status.h"
 #include "../lib/destroyers.hpp"
 #include "utils.hpp"
+#include "inline-utils.hpp"
 
 using namespace Molch;
 
@@ -49,7 +50,7 @@ int main() {
 		auto printed{return_status_print(successful_status)};
 		auto printed_status_length{printed.size()};
 		printed_status = printed.data();
-		TRY_WITH_RESULT(comparison, success_buffer.compareToRaw({reinterpret_cast<std::byte*>(printed_status), printed_status_length}));
+		TRY_WITH_RESULT(comparison, success_buffer.compareToRaw({char_to_byte(printed_status), printed_status_length}));
 		if (!comparison.value()) {
 			status.status = status_type::INCORRECT_DATA;
 			status.error = "molch_print_status produces incorrect output.";

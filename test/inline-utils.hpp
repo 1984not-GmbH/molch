@@ -19,27 +19,23 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "integration-utils.hpp"
-#include "inline-utils.hpp"
+#ifndef TEST_INLINE_UTILS_HPP
+#define TEST_INLINE_UTILS_HPP
 
-#include <fstream>
-
-std::vector<unsigned char> read_file(const std::string name) {
-	std::ifstream filestream(name, std::ios_base::binary);
-	if (!filestream.is_open()) {
-		throw Exception("Failed to open file '" + name + "' for reading.");
-	}
-
-	filestream.seekg(0, std::ios_base::end);
-	auto size{filestream.tellg()};
-	if (size < 0) {
-		throw Exception("Filesize i smaller than zero.");
-	}
-
-	filestream.seekg(0);
-
-	std::vector<unsigned char> file(static_cast<size_t>(size), 0);
-	filestream.read(uchar_to_char(file.data()), static_cast<std::streamsize>(size));
-
-	return file;
+inline unsigned char* char_to_uchar(char* pointer) noexcept {
+    return reinterpret_cast<unsigned char*>(pointer); //NOLINT
 }
+
+inline const unsigned char* char_to_uchar(const char* pointer) noexcept {
+    return reinterpret_cast<const unsigned char*>(pointer); //NOLINT
+}
+
+inline char* uchar_to_char(unsigned char* pointer) noexcept {
+    return reinterpret_cast<char*>(pointer); //NOLINT
+}
+
+inline const char* uchar_to_char(const unsigned char* pointer) noexcept {
+    return reinterpret_cast<const char*>(pointer); //NOLINT
+}
+
+#endif /* TEST_INLINE_UTILS_HPP */

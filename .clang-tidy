@@ -1,0 +1,7 @@
+---
+Checks:          'clang-diagnostic-*,clang-analyzer-*,-clang-diagnostic-*,modernize-*,-modernize-raw-string-literal,-modernize-pass-by-value,cppcoreguidelines-*,-cppcoreguidelines-pro-type-vararg,cppcoreguidelines-pro-type-reinterpret-cast,-cppcoreguidelines-pro-bounds-array-to-pointer-decay,-cppcoreguidelines-pro-bounds-constant-array-index,-cppcoreguidelines-pro-bounds-pointer-arithmetic,-cppcoreguidelines-pro-type-const-cast,-cppcoreguidelines-no-malloc,-cppcoreguidelines-pro-type-member-init,readability-*,-readability-else-after-return,-readability-implicit-bool-cast,-readability-implicit-bool-conversion,llvm-header-guard,misc-noexcept-move-constructor,misc-move-const-arg,-cppcoreguidelines-owning-memory,'
+WarningsAsErrors: '*'
+HeaderFilterRegex: '(.*lib/.*\\.h(pp)?|.*test/.*\\.h(pp)?)'
+AnalyzeTemporaryDtors: false
+FormatStyle:     none
+...

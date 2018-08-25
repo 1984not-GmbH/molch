@@ -27,6 +27,7 @@
 #include "../lib/buffer.hpp"
 #include "../lib/destroyers.hpp"
 #include "utils.hpp"
+#include "inline-utils.hpp"
 
 using namespace Molch;
 
@@ -140,19 +141,19 @@ int main() {
 		//compare buffer to an array
 		Buffer true_buffer{"true"};
 		{
-			TRY_WITH_RESULT(comparison, true_buffer.compareToRaw({reinterpret_cast<const std::byte*>("true"), sizeof("true")}));
+			TRY_WITH_RESULT(comparison, true_buffer.compareToRaw({char_to_byte("true"), sizeof("true")}));
 			if (!comparison.value()) {
 				throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to compare buffer to array."};
 			}
 		}
 		{
-			TRY_WITH_RESULT(comparison, true_buffer.compareToRaw({reinterpret_cast<const std::byte*>("fals"), sizeof("fals")}));
+			TRY_WITH_RESULT(comparison, true_buffer.compareToRaw({char_to_byte("fals"), sizeof("fals")}));
 			if (comparison.value()) {
 				throw Molch::Exception{status_type::BUFFER_ERROR, "Failed to detect difference in buffer and array."};
 			}
 		}
 		{
-			TRY_WITH_RESULT(comparison, true_buffer.compareToRaw({reinterpret_cast<const std::byte*>("false"), sizeof("false")}));
+			TRY_WITH_RESULT(comparison, true_buffer.compareToRaw({char_to_byte("false"), sizeof("false")}));
 			if (comparison.value()) {
 				throw Molch::Exception{status_type::BUFFER_ERROR, "ERROR: Failed to detect difference in buffer and array."};
 			}

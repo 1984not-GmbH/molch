@@ -47,9 +47,9 @@ namespace Molch {
 
 			return (size / sizeof(max_align_t)) + 1;
 		}();
-		auto pointer{reinterpret_cast<Arena*>(arena)->allocate<max_align_t>(elements)};
+		auto pointer{reinterpret_cast<Arena*>(arena)->allocate<max_align_t>(elements)}; //NOLINT
 
-		return reinterpret_cast<void*>(pointer);
+		return reinterpret_cast<void*>(pointer); //NOLINT
 	}
 
 	static void protobufCDeallocate([[maybe_unused]] void* arena, [[maybe_unused]] void* pointer) {}
@@ -60,7 +60,7 @@ namespace Molch {
 		return {
 			protobufCAllocate,
 			protobufCDeallocate,
-			reinterpret_cast<void*>(this)
+			reinterpret_cast<void*>(this) //NOLINT
 		};
 	}
 }

@@ -67,7 +67,7 @@ namespace Molch {
 		result<ProtobufCKeyBundle*> exportProtobuf(Arena& arena) const;
 	};
 
-	std::ostream& operator<<(std::ostream& stream, const HeaderAndMessageKey& header_and_message_Key);
+	std::ostream& operator<<(std::ostream& stream, const HeaderAndMessageKey& header_and_message_key);
 
 	static constexpr size_t header_and_message_store_maximum_keys{1000};
 	static constexpr seconds header_and_message_store_maximum_age{1_months};

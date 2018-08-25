@@ -31,6 +31,7 @@
 #include <cstring>
 
 #include "integration-utils.hpp"
+#include "inline-utils.hpp"
 #include "../include/molch.h"
 
 static ProtobufCAllocator protobuf_c_allocator = {
@@ -183,7 +184,7 @@ int main() {
 					new_backup_key.size(),
 					&complete_export.pointer,
 					&complete_export.length,
-					reinterpret_cast<unsigned char*>(alice_head_on_keyboard.data()),
+					char_to_uchar(alice_head_on_keyboard.data()),
 					alice_head_on_keyboard.size())};
 			if (status.status != status_type::SUCCESS) {
 				throw Exception("Failed to create Alice");
@@ -233,7 +234,7 @@ int main() {
 					backup_key.size(),
 					nullptr,
 					nullptr,
-					reinterpret_cast<unsigned char*>(bob_head_on_keyboard.data()),
+					char_to_uchar(bob_head_on_keyboard.data()),
 					bob_head_on_keyboard.size())};
 			if (status.status != status_type::SUCCESS) {
 				throw Exception("Failed to create Bob.");
@@ -279,7 +280,7 @@ int main() {
 					bob_public_identity.size(),
 					bob_public_prekeys.data(),
 					bob_public_prekeys.size(),
-					reinterpret_cast<unsigned char*>(alice_send_message.data()),
+					char_to_uchar(alice_send_message.data()),
 					alice_send_message.size(),
 					nullptr,
 					nullptr)};
@@ -367,7 +368,7 @@ int main() {
 					&bob_send_packet.length,
 					bob_conversation.data(),
 					bob_conversation.size(),
-					reinterpret_cast<unsigned char*>(bob_send_message.data()),
+					char_to_uchar(bob_send_message.data()),
 					bob_send_message.size(),
 					&conversation_export.pointer,
 					&conversation_export.length)};
@@ -569,7 +570,7 @@ int main() {
 
 		std::string success_buffer("SUCCESS");
 		AutoFreeBuffer printed_status;
-		printed_status.pointer = reinterpret_cast<unsigned char*>(molch_print_status(&printed_status.length, {status_type::SUCCESS, nullptr}));
+		printed_status.pointer = char_to_uchar(molch_print_status(&printed_status.length, {status_type::SUCCESS, nullptr}));
 		if ((printed_status.size() != (success_buffer.size() + sizeof('\0'))) || (memcmp(printed_status.data(), std::data(success_buffer), std::size(success_buffer)) != 0)) {
 			throw Exception("molch_print_status produces incorrect output.");
 		}

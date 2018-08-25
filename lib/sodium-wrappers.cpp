@@ -206,7 +206,7 @@ namespace Molch {
 
 		auto status{::crypto_pwhash(
 				byte_to_uchar(output.data()), output.size(),
-				reinterpret_cast<const char*>(password.data()), password.size(),
+				byte_to_char(password.data()), password.size(),
 				byte_to_uchar(salt.data()),
 				opslimit,
 				memlimit,

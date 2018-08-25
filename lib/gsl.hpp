@@ -18,11 +18,11 @@
 
 namespace Molch {
 	inline unsigned char* byte_to_uchar(std::byte* byte) {
-		return reinterpret_cast<unsigned char*>(byte);
+		return reinterpret_cast<unsigned char*>(byte); //NOLINT
 	}
 
 	inline const unsigned char* byte_to_uchar(const std::byte* byte) {
-		return reinterpret_cast<const unsigned char*>(byte);
+		return reinterpret_cast<const unsigned char*>(byte); //NOLINT
 	}
 
 	constexpr unsigned char byte_to_uchar(const std::byte byte) {
@@ -30,15 +30,31 @@ namespace Molch {
 	}
 
 	inline std::byte* uchar_to_byte(unsigned char* character) {
-		return reinterpret_cast<std::byte*>(character);
+		return reinterpret_cast<std::byte*>(character); //NOLINT
 	}
 
 	inline const std::byte* uchar_to_byte(const unsigned char* character) {
-		return reinterpret_cast<const std::byte*>(character);
+		return reinterpret_cast<const std::byte*>(character); //NOLINT
 	}
 
 	constexpr std::byte uchar_to_byte(const unsigned char character) {
 		return static_cast<std::byte>(character);
+	}
+
+	inline char* byte_to_char(std::byte* pointer) noexcept {
+		return reinterpret_cast<char*>(pointer); //NOLINT
+	}
+
+	inline const char* byte_to_char(const std::byte* pointer) noexcept {
+		return reinterpret_cast<const char*>(pointer); //NOLINT
+	}
+
+	inline const std::byte* char_to_byte(const char* pointer) noexcept {
+		return reinterpret_cast<const std::byte*>(pointer); //NOLINT
+	}
+
+	inline std::byte* char_to_byte(char* pointer) noexcept {
+		return reinterpret_cast<std::byte*>(pointer); //NOLINT
 	}
 
 	template <class ElementType,std::ptrdiff_t length = -1>

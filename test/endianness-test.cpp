@@ -25,6 +25,7 @@
 
 #include "../lib/endianness.hpp"
 #include "utils.hpp"
+#include "inline-utils.hpp"
 
 using namespace Molch;
 
@@ -44,7 +45,7 @@ int main() {
 		printf("uint32_t %llu to big endian:\n", static_cast<unsigned long long>(uint32));
 		std::cout << buffer32;
 
-		TRY_WITH_RESULT(big_endian_result, buffer32.compareToRaw({reinterpret_cast<const std::byte*>("\x04\x03\x02\x01"), sizeof(uint32_t)}));
+		TRY_WITH_RESULT(big_endian_result, buffer32.compareToRaw({char_to_byte("\x04\x03\x02\x01"), sizeof(uint32_t)}));
 		if (!big_endian_result.value()) {
 			throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of uint32_t is incorrect."};
 		}
@@ -64,7 +65,7 @@ int main() {
 		std::cout << buffer32;
 
 		{
-			TRY_WITH_RESULT(buffer32_comparison, buffer32.compareToRaw({reinterpret_cast<const std::byte*>("\xFF\xFE\xFD\xFC"), sizeof(int32_t)}));
+			TRY_WITH_RESULT(buffer32_comparison, buffer32.compareToRaw({char_to_byte("\xFF\xFE\xFD\xFC"), sizeof(int32_t)}));
 			if (!buffer32_comparison.value()) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of int32_t is incorrect."};
 			}
@@ -86,7 +87,7 @@ int main() {
 		std::cout << buffer64;
 
 		{
-			TRY_WITH_RESULT(buffer64_comparison, buffer64.compareToRaw({reinterpret_cast<const std::byte*>("\x08\x07\x06\x05\x04\x03\x02\x01"), sizeof(uint64_t)}));
+			TRY_WITH_RESULT(buffer64_comparison, buffer64.compareToRaw({char_to_byte("\x08\x07\x06\x05\x04\x03\x02\x01"), sizeof(uint64_t)}));
 			if (!buffer64_comparison.value()) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of uint64_t is incorrect."};
 			}
@@ -107,7 +108,7 @@ int main() {
 		std::cout << buffer64;
 
 		{
-			TRY_WITH_RESULT(buffer64_comparison, buffer64.compareToRaw({reinterpret_cast<const std::byte*>("\xFF\xFE\xFD\xFC\xFB\xFA\xF9\xF8"), sizeof(int64_t)}));
+			TRY_WITH_RESULT(buffer64_comparison, buffer64.compareToRaw({char_to_byte("\xFF\xFE\xFD\xFC\xFB\xFA\xF9\xF8"), sizeof(int64_t)}));
 			if (!buffer64_comparison.value()) {
 				throw Molch::Exception{status_type::INCORRECT_DATA, "Big endian of int64_t is incorrect."};
 			}

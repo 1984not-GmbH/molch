@@ -37,11 +37,11 @@ namespace Molch {
 
 	void *protobuf_c_new(void *allocator_data, size_t size) {
 		(void)allocator_data;
-		return reinterpret_cast<void*>(new std::byte[size]);
+		return reinterpret_cast<void*>(new std::byte[size]); //NOLINT
 	}
 	void protobuf_c_delete(void *allocator_data, void *pointer) {
 		(void)allocator_data;
-		delete[] reinterpret_cast<std::byte*>(pointer);
+		delete[] reinterpret_cast<std::byte*>(pointer); //NOLINT
 	}
 
 	ProtobufCAllocator protobuf_c_allocator = {

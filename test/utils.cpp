@@ -27,6 +27,7 @@
 
 #include "utils.hpp"
 #include "../lib/destroyers.hpp"
+#include "inline-utils.hpp"
 
 using namespace Molch;
 
@@ -41,7 +42,7 @@ MOLCH_PUBLIC(void) print_to_file(const gsl::span<const std::byte> data, const st
 	if (data.size() > std::numeric_limits<std::streamsize>::max()) {
 		throw Molch::Exception{status_type::GENERIC_ERROR, "The buffer size exceeds std::streamsize."};
 	}
-	filestream.write(reinterpret_cast<const char*>(data.data()), gsl::narrow<std::streamsize>(data.size()));
+	filestream.write(byte_to_char(data.data()), gsl::narrow<std::streamsize>(data.size()));
 }
 
 MOLCH_PUBLIC(Buffer) read_file(const std::string& filename) {
@@ -65,7 +66,7 @@ MOLCH_PUBLIC(Buffer) read_file(const std::string& filename) {
 	filestream.seekg(0);
 
 	Buffer data{gsl::narrow_cast<size_t>(size), gsl::narrow_cast<size_t>(size)};
-	filestream.read(reinterpret_cast<char*>(data.data()), gsl::narrow<std::streamsize>(filesize));
+	filestream.read(byte_to_char(data.data()), gsl::narrow<std::streamsize>(filesize));
 
 	return data;
 }

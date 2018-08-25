@@ -27,6 +27,7 @@
 
 #include "common.hpp"
 #include "utils.hpp"
+#include "inline-utils.hpp"
 #include "../lib/conversation.hpp"
 
 using namespace Molch;
@@ -94,7 +95,7 @@ int main() {
 		TRY_WITH_RESULT(alice_send_packet2_result, alice_send_conversation.conversation.send(alice_send_message2, std::nullopt));
 		auto& alice_send_packet2{alice_send_packet2_result.value()};
 
-		printf("Sent message: %.*s\n", static_cast<int>(alice_send_message2.size()), reinterpret_cast<const char*>(alice_send_message2.data()));
+		printf("Sent message: %.*s\n", static_cast<int>(alice_send_message2.size()), byte_to_char(alice_send_message2.data()));
 		printf("Packet:\n");
 		std::cout << alice_send_packet2 << std::endl;
 
@@ -118,7 +119,7 @@ int main() {
 		TRY_WITH_RESULT(bob_response_packet_result, bob_receive_conversation.conversation.send(bob_response_message, std::nullopt));
 		auto& bob_response_packet{bob_response_packet_result.value()};
 
-		printf("Sent message: %.*s\n", static_cast<int>(bob_response_message.size()), reinterpret_cast<const char*>(bob_response_message.data()));
+		printf("Sent message: %.*s\n", static_cast<int>(bob_response_message.size()), byte_to_char(bob_response_message.data()));
 		printf("Packet:\n");
 		std::cout << bob_response_packet << std::endl;
 
@@ -156,7 +157,7 @@ int main() {
 			alice_prekey_list));
 		auto& bob_send_conversation{bob_send_conversation_result.value()};
 
-		printf("Sent message: %.*s\n", static_cast<int>(send_message.size()), reinterpret_cast<const char*>(send_message.data()));
+		printf("Sent message: %.*s\n", static_cast<int>(send_message.size()), byte_to_char(send_message.data()));
 		printf("Packet:\n");
 		std::cout << bob_send_conversation.packet << std::endl;
 
@@ -179,7 +180,7 @@ int main() {
 		TRY_WITH_RESULT(bob_send_packet2_result, bob_send_conversation.conversation.send(bob_send_message2, std::nullopt));
 		auto& bob_send_packet2{bob_send_packet2_result.value()};
 
-		printf("Sent message: %.*s\n", static_cast<int>(bob_send_message2.size()), reinterpret_cast<const char*>(bob_send_message2.data()));
+		printf("Sent message: %.*s\n", static_cast<int>(bob_send_message2.size()), byte_to_char(bob_send_message2.data()));
 		printf("Packet:\n");
 		std::cout << bob_send_packet2 << std::endl;
 
@@ -203,7 +204,7 @@ int main() {
 		TRY_WITH_RESULT(alice_response_packet_result, alice_receive_conversation.conversation.send(alice_response_message, std::nullopt));
 		auto& alice_response_packet{alice_response_packet_result.value()};
 
-		printf("Sent message: %.*s\n", static_cast<int>(alice_response_message.size()), reinterpret_cast<const char*>(alice_response_message.data()));
+		printf("Sent message: %.*s\n", static_cast<int>(alice_response_message.size()), byte_to_char(alice_response_message.data()));
 		printf("Packet:\n");
 		std::cout << alice_response_packet << std::endl;
 

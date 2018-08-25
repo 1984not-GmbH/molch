@@ -28,6 +28,7 @@
 #include "../lib/master-keys.hpp"
 #include "../lib/constants.h"
 #include "utils.hpp"
+#include "inline-utils.hpp"
 
 using namespace Molch;
 
@@ -207,7 +208,7 @@ int main() {
 		//sign some data
 		Buffer data{"This is some data to be signed."};
 		printf("Data to be signed.\n");
-		printf("%.*s\n", static_cast<int>(data.size()), reinterpret_cast<char*>(data.data()));
+		printf("%.*s\n", static_cast<int>(data.size()), byte_to_char(data.data()));
 		TRY_WITH_RESULT(signed_data_result, spiced_master_keys.sign(data));
 		const auto& signed_data{signed_data_result.value()};
 		printf("Signed data:\n");

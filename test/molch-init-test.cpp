@@ -29,6 +29,7 @@
 
 #include "../include/molch.h"
 #include "integration-utils.hpp"
+#include "inline-utils.hpp"
 
 
 int main(int argc, char *args[]) noexcept {
@@ -87,7 +88,7 @@ int main(int argc, char *args[]) noexcept {
 					backup_key.size(),
 					&backup.pointer,
 					&backup.length,
-					reinterpret_cast<const unsigned char*>("random"),
+					char_to_uchar("random"),
 					sizeof("random"))};
 			if (status.status != status_type::SUCCESS) {
 				throw ::Exception("Failed to create user.");
