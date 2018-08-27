@@ -552,6 +552,59 @@ static result<PublicKey> verify_prekey_list(
 		return success_status;
 	}
 
+	struct ReceiveConversationResult {
+		ConversationId conversation_id;
+		MallocBuffer prekey_list;
+		MallocBuffer message;
+		std::optional<MallocBuffer> backup;
+	};
+
+	static result<ReceiveConversationResult> start_receive_conversation(
+			const span<const std::byte> receiver_id,
+			const span<const std::byte> sender_id,
+			const span<const std::byte> packet,
+			CreateBackup create_backup) {
+		(void)sender_id;
+		//get the user that matches the public signing key of the receiver
+		OUTCOME_TRY(receiver_public_master_key, PublicSigningKey::fromSpan(receiver_id));
+		auto user{users.find(receiver_public_master_key)};
+		if (user == nullptr) {
+			return Error(status_type::NOT_FOUND, "User not found in the user store.");
+		}
+
+		//unlock the master keys
+		MasterKeys::Unlocker unlocker(user->masterKeys());
+
+		//create the conversation
+		OUTCOME_TRY(private_identity_key, user->masterKeys().getPrivateIdentityKey());
+		OUTCOME_TRY(receive_conversation, Molch::Conversation::createReceiveConversation(
+				packet,
+				user->masterKeys().getIdentityKey(),
+				*private_identity_key,
+				user->prekeys));
+
+		//copy the conversation id
+		ReceiveConversationResult conversation_result;
+		conversation_result.conversation_id = receive_conversation.conversation.id();
+
+		//create the prekey list
+		OUTCOME_TRY(prekey_list, create_prekey_list(receiver_public_master_key));
+		conversation_result.prekey_list = std::move(prekey_list);
+
+		//add the conversation to the conversation store
+		user->conversations.add(std::move(receive_conversation.conversation));
+
+		//copy the message
+		conversation_result.message = receive_conversation.message;
+
+		if (create_backup == CreateBackup::YES) {
+			OUTCOME_TRY(backup, export_all());
+			conversation_result.backup = std::move(backup);
+		}
+
+		return conversation_result;
+	}
+
 	MOLCH_PUBLIC(return_status) molch_start_receive_conversation(
 			//outputs
 			unsigned char * const conversation_id, //CONVERSATION_ID_SIZE long (from conversation.h)
@@ -571,66 +624,46 @@ static result<PublicKey> verify_prekey_list(
 			unsigned char ** const backup, //exports the entire library state, free after use, check if nullptr before use!
 			size_t * const backup_length
 			) {
+		if ((conversation_id == nullptr) or (conversation_id_length != CONVERSATION_ID_SIZE)
+				or (prekey_list == nullptr) or (prekey_list_length == nullptr)
+				or (message == nullptr) or (message_length == nullptr)
+				or (receiver_public_master_key == nullptr) or (receiver_public_master_key_length != PUBLIC_MASTER_KEY_SIZE)
+				or (sender_public_master_key == nullptr) or (sender_public_master_key_length != PUBLIC_MASTER_KEY_SIZE)
+				or (packet == nullptr)
+				or ((backup != nullptr) and (backup_length == nullptr))) {
+			return {status_type::INVALID_VALUE, "Invalid input to molch_start_receive_conversation"};
+		}
+
 		try {
-			Expects((conversation_id != nullptr)
-				&& (message != nullptr) && (message_length != nullptr)
-				&& (packet != nullptr)
-				&& (prekey_list != nullptr) && (prekey_list_length != nullptr)
-				&& (sender_public_master_key != nullptr)
-				&& (receiver_public_master_key != nullptr)
-				&& (conversation_id_length == CONVERSATION_ID_SIZE)
-				&& (sender_public_master_key_length == PUBLIC_MASTER_KEY_SIZE)
-				&& (receiver_public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
-
-			//get the user that matches the public signing key of the receiver
-			TRY_WITH_RESULT(receiver_public_master_key_key_result, PublicSigningKey::fromSpan({uchar_to_byte(receiver_public_master_key), PUBLIC_MASTER_KEY_SIZE}));
-			const auto& receiver_public_master_key_key{receiver_public_master_key_key_result.value()};
-			auto user{users.find(receiver_public_master_key_key)};
-			if (user == nullptr) {
-				throw Exception{status_type::NOT_FOUND, "User not found in the user store."};
-			}
-
-			//unlock the master keys
-			MasterKeys::Unlocker unlocker{user->masterKeys()};
-
-			//create the conversation
-			TRY_WITH_RESULT(private_identity_key, user->masterKeys().getPrivateIdentityKey());
-			TRY_WITH_RESULT(receive_conversation_result, Molch::Conversation::createReceiveConversation(
-				{uchar_to_byte(packet), packet_length},
-				user->masterKeys().getIdentityKey(),
-				*private_identity_key.value(),
-				user->prekeys));
-			auto& receive_conversation{receive_conversation_result.value()};
-
-			//copy the conversation id
-			TRY_VOID(copyFromTo(receive_conversation.conversation.id(), {uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
-
-			//create the prekey list
-			TRY_WITH_RESULT(prekey_list_buffer_result, create_prekey_list(receiver_public_master_key_key));
-			auto& prekey_list_buffer{prekey_list_buffer_result.value()};
-
-			//add the conversation to the conversation store
-			user->conversations.add(std::move(receive_conversation.conversation));
-
-			//copy the message
-			MallocBuffer malloced_message{receive_conversation.message.size(), 0};
-			TRY_VOID(malloced_message.cloneFrom(receive_conversation.message));
-
-			if (backup != nullptr) {
-				*backup = nullptr;
-				if (backup_length != nullptr) {
-					auto status{molch_export(backup, backup_length)};
-					on_error {
-						throw Exception{status};
-					}
+			const auto create_backup{[&](){
+				if (backup == nullptr) {
+					return CreateBackup::NO;
 				}
+
+				return CreateBackup::YES;
+			}()};
+			auto conversation_result = start_receive_conversation(
+					{uchar_to_byte(receiver_public_master_key), receiver_public_master_key_length},
+					{uchar_to_byte(sender_public_master_key), sender_public_master_key_length},
+					{uchar_to_byte(packet), packet_length},
+					create_backup);
+			if (conversation_result.has_error()) {
+				return conversation_result.error().toReturnStatus();
 			}
+			auto& conversation{conversation_result.value()};
+			std::copy(std::cbegin(conversation.conversation_id), std::cend(conversation.conversation_id), uchar_to_byte(conversation_id));
 
-			*message_length = malloced_message.size();
-			*message = byte_to_uchar(malloced_message.release());
+			*prekey_list_length = conversation.prekey_list.size();
+			*prekey_list = byte_to_uchar(conversation.prekey_list.release());
 
-			*prekey_list_length = prekey_list_buffer.size();
-			*prekey_list = byte_to_uchar(prekey_list_buffer.release());
+			*message_length = conversation.message.size();
+			*message = byte_to_uchar(conversation.message.release());
+
+			if (create_backup == CreateBackup::YES) {
+				auto& created_backup{conversation.backup.value()};
+				*backup_length = created_backup.size();
+				*backup = byte_to_uchar(created_backup.release());
+			}
 		} catch (const Exception& exception) {
 			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
