@@ -488,7 +488,7 @@ static result<PublicKey> verify_prekey_list(
 		return conversation_result;
 	}
 
-MOLCH_PUBLIC(return_status) molch_start_send_conversation(
+	MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 			//outputs
 			unsigned char *const conversation_id, //CONVERSATION_ID_SIZE long (from conversation.h)
 			const size_t conversation_id_length,
@@ -506,7 +506,7 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 			//optional output (can be nullptr)
 			unsigned char **const backup, //exports the entire library state, free after use, check if nullptr before use!
 			size_t *const backup_length
-) {
+	) {
 		if ((conversation_id == nullptr) or (conversation_id_length != CONVERSATION_ID_SIZE)
 				or (packet == nullptr) or (packet_length == nullptr)
 				or (sender_public_master_key == nullptr) or (sender_public_master_key_length != PUBLIC_MASTER_KEY_SIZE)
@@ -517,40 +517,40 @@ MOLCH_PUBLIC(return_status) molch_start_send_conversation(
 			return {status_type::INVALID_VALUE, "Invalid input to molch_start_send_conversation"};
 		}
 
-	try {
-		const auto create_backup{[&](){
-			if (backup == nullptr) {
-				return CreateBackup::NO;
+		try {
+			const auto create_backup{[&](){
+				if (backup == nullptr) {
+					return CreateBackup::NO;
+				}
+
+				return CreateBackup::YES;
+			}()};
+			auto conversation_result = start_send_conversation(
+					{uchar_to_byte(sender_public_master_key), sender_public_master_key_length},
+					{uchar_to_byte(receiver_public_master_key), receiver_public_master_key_length},
+					{uchar_to_byte(prekey_list), prekey_list_length},
+					{uchar_to_byte(message), message_length},
+					create_backup);
+			if (conversation_result.has_error()) {
+				return conversation_result.error().toReturnStatus();
 			}
+			auto& conversation{conversation_result.value()};
+			std::copy(std::cbegin(conversation.conversation_id), std::cend(conversation.conversation_id), uchar_to_byte(conversation_id));
+			if (create_backup == CreateBackup::YES) {
+				auto& created_backup{conversation.backup.value()};
+				*backup_length = created_backup.size();
+				*backup = byte_to_uchar(created_backup.release());
+			}
+			*packet_length = conversation.packet.size();
+			*packet = byte_to_uchar(conversation.packet.release());
+		} catch (const Exception& exception) {
+			return exception.toReturnStatus();
+		} catch (const std::exception& exception) {
+			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+		}
 
-			return CreateBackup::YES;
-		}()};
-		auto conversation_result = start_send_conversation(
-				{uchar_to_byte(sender_public_master_key), sender_public_master_key_length},
-				{uchar_to_byte(receiver_public_master_key), receiver_public_master_key_length},
-				{uchar_to_byte(prekey_list), prekey_list_length},
-				{uchar_to_byte(message), message_length},
-				create_backup);
-		if (conversation_result.has_error()) {
-			return conversation_result.error().toReturnStatus();
-		}
-		auto& conversation{conversation_result.value()};
-		std::copy(std::cbegin(conversation.conversation_id), std::cend(conversation.conversation_id), uchar_to_byte(conversation_id));
-		if (create_backup == CreateBackup::YES) {
-			auto& created_backup{conversation.backup.value()};
-			*backup_length = created_backup.size();
-			*backup = byte_to_uchar(created_backup.release());
-		}
-		*packet_length = conversation.packet.size();
-		*packet = byte_to_uchar(conversation.packet.release());
-	} catch (const Exception& exception) {
-		return exception.toReturnStatus();
-	} catch (const std::exception& exception) {
-		return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+		return success_status;
 	}
-
-	return success_status;
-}
 
 	MOLCH_PUBLIC(return_status) molch_start_receive_conversation(
 			//outputs
