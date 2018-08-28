@@ -744,6 +744,36 @@ static result<PublicKey> verify_prekey_list(
 		return std::move(malloced_encrypted_backup);
 	}
 
+	struct EncryptResult {
+		MallocBuffer packet;
+		std::optional<MallocBuffer> conversation_backup;
+	};
+
+	static result<EncryptResult> encrypt_message(
+			const span<const std::byte> conversation_id,
+			const span<const std::byte> message,
+			const CreateBackup create_backup) {
+		//find the conversation
+		OUTCOME_TRY(conversation_id_key, ConversationId::fromSpan(conversation_id));
+		Molch::User *user;
+		auto conversation{users.findConversation(user, conversation_id_key)};
+		if (conversation == nullptr) {
+			return Error(status_type::NOT_FOUND, "Failed to find a conversation for the given ID.");
+		}
+
+		OUTCOME_TRY(packet, conversation->send(message, std::nullopt));
+
+		EncryptResult encrypt_result;
+		encrypt_result.packet = packet;
+
+		if (create_backup == CreateBackup::YES) {
+			OUTCOME_TRY(conversation_backup, export_conversation(conversation_id));
+			encrypt_result.conversation_backup = std::move(conversation_backup);
+		}
+
+		return encrypt_result;
+	}
+
 	MOLCH_PUBLIC(return_status) molch_encrypt_message(
 			//output
 			unsigned char ** const packet, //free after use
@@ -757,39 +787,38 @@ static result<PublicKey> verify_prekey_list(
 			unsigned char ** const conversation_backup, //exports the conversation, free after use, check if nullptr before use!
 			size_t * const conversation_backup_length
 			) {
+		if ((packet == nullptr) or (packet_length == nullptr)
+				or (conversation_id == nullptr) or (conversation_id_length != CONVERSATION_ID_SIZE)
+				or (message == nullptr)
+				or ((conversation_backup != nullptr) and (conversation_backup_length == nullptr))) {
+			return {status_type::INVALID_VALUE, "Invalid input to molch_encrypt_message"};
+		}
+
 		try {
-			Expects((packet != nullptr) and (packet_length != nullptr)
-				and (message != nullptr)
-				and (conversation_id != nullptr)
-				and (conversation_id_length == CONVERSATION_ID_SIZE)
-				and ((conversation_backup == nullptr) or (conversation_backup != nullptr)));
+			const auto create_backup{[&](){
+				if (conversation_backup == nullptr) {
+					return CreateBackup::NO;
+				}
 
-			//find the conversation
-			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
-			const auto& conversation_id_key{conversation_id_key_result.value()};
-			Molch::User *user;
-			auto conversation{users.findConversation(user, conversation_id_key)};
-			if (conversation == nullptr) {
-				throw Exception{status_type::NOT_FOUND, "Failed to find a conversation for the given ID."};
+				return CreateBackup::YES;
+			}()};
+			auto encrypted_message_result = encrypt_message(
+					{uchar_to_byte(conversation_id), conversation_id_length},
+					{uchar_to_byte(message), message_length},
+					create_backup);
+			if (encrypted_message_result.has_error()) {
+				return encrypted_message_result.error().toReturnStatus();
 			}
+			auto& encrypted_message{encrypted_message_result.value()};
 
-			TRY_WITH_RESULT(packet_buffer_result, conversation->send({uchar_to_byte(message), message_length}, std::nullopt));
-			auto& packet_buffer{packet_buffer_result.value()};
+			*packet_length = encrypted_message.packet.size();
+			*packet = byte_to_uchar(encrypted_message.packet.release());
 
-			//copy the packet content
-			MallocBuffer malloced_packet{packet_buffer.size(), 0};
-			TRY_VOID(malloced_packet.cloneFrom(packet_buffer));
-
-			if (conversation_backup != nullptr) {
-				*conversation_backup = nullptr;
-				TRY_WITH_RESULT(exported_conversation_result, export_conversation(conversation->id()));
-				auto& exported_conversation{exported_conversation_result.value()};
-				*conversation_backup_length = exported_conversation.size();
-				*conversation_backup = byte_to_uchar(exported_conversation.release());
+			if (create_backup == CreateBackup::YES) {
+				auto& backup{encrypted_message.conversation_backup.value()};
+				*conversation_backup_length = backup.size();
+				*conversation_backup = byte_to_uchar(backup.release());
 			}
-
-			*packet_length = malloced_packet.size();
-			*packet = byte_to_uchar(malloced_packet.release());
 		} catch (const Exception& exception) {
 			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
