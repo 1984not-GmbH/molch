@@ -828,6 +828,41 @@ static result<PublicKey> verify_prekey_list(
 		return success_status;
 	}
 
+	struct DecryptResult {
+		uint32_t message_number;
+		uint32_t previous_message_number;
+		MallocBuffer message;
+		std::optional<MallocBuffer> conversation_backup;
+	};
+
+	static result<DecryptResult> decrypt_message(
+			const span<const std::byte> conversation_id,
+			const span<const std::byte> packet,
+			const CreateBackup create_backup) {
+		//find the conversation
+		OUTCOME_TRY(conversation_id_key, ConversationId::fromSpan(conversation_id));
+		Molch::User* user;
+		auto conversation{users.findConversation(user, conversation_id_key)};
+		if (conversation == nullptr) {
+			return Error(status_type::NOT_FOUND, "Failed to find conversation with the given ID.");
+		}
+
+		OUTCOME_TRY(received_message, conversation->receive(packet));
+
+		DecryptResult decrypt_result;
+
+		decrypt_result.message = received_message.message;
+		decrypt_result.message_number = received_message.message_number;
+		decrypt_result.previous_message_number = received_message.previous_message_number;
+
+		if (create_backup == CreateBackup::YES) {
+			OUTCOME_TRY(created_backup, export_conversation(conversation_id));
+			decrypt_result.conversation_backup = std::move(created_backup);
+		}
+
+		return decrypt_result;
+	}
+
 	MOLCH_PUBLIC(return_status) molch_decrypt_message(
 			//outputs
 			unsigned char ** const message, //free after use
@@ -841,46 +876,43 @@ static result<PublicKey> verify_prekey_list(
 			const size_t packet_length,
 			//optional output (can be nullptr)
 			unsigned char ** const conversation_backup, //exports the conversation, free after use, check if nullptr before use!
-			size_t * const conversation_backup_length
-		) {
+			size_t * const conversation_backup_length) {
+		if ((message == nullptr) or (message_length == nullptr)
+				or (receive_message_number == nullptr) or (previous_receive_message_number == nullptr)
+				or (conversation_id == nullptr) or (conversation_id_length != CONVERSATION_ID_SIZE)
+				or (packet == nullptr)
+				or ((conversation_backup != nullptr) and (conversation_backup_length == nullptr))) {
+			return {status_type::INVALID_VALUE, "Invalid input to molch_decrypt_message."};
+		}
+
 		try {
-			Expects((message != nullptr)
-					and (message_length != nullptr)
-					and (packet != nullptr)
-					and (conversation_id != nullptr)
-					and (receive_message_number != nullptr)
-					and (previous_receive_message_number != nullptr)
-					and (conversation_id_length == CONVERSATION_ID_SIZE)
-					and ((conversation_backup == nullptr) or (conversation_backup_length != nullptr)));
+			const auto create_backup{[&](){
+				if (conversation_backup == nullptr) {
+					return CreateBackup::NO;
+				}
 
-			//find the conversation
-			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({uchar_to_byte(conversation_id), CONVERSATION_ID_SIZE}));
-			const auto& conversation_id_key{conversation_id_key_result.value()};
-			Molch::User* user;
-			auto conversation{users.findConversation(user, conversation_id_key)};
-			if (conversation == nullptr) {
-				throw Exception{status_type::NOT_FOUND, "Failed to find conversation with the given ID."};
+				return CreateBackup::YES;
+			}()};
+			auto decrypted_message_result = decrypt_message(
+					{uchar_to_byte(conversation_id), conversation_id_length},
+					{uchar_to_byte(packet), packet_length},
+					create_backup);
+			if (decrypted_message_result.has_error()) {
+				return decrypted_message_result.error().toReturnStatus();
 			}
+			auto& decrypted_message = decrypted_message_result.value();
 
-			TRY_WITH_RESULT(received_message_result, conversation->receive({uchar_to_byte(packet), packet_length}));
-			auto& received_message{received_message_result.value()};
-			*receive_message_number = received_message.message_number;
-			*previous_receive_message_number = received_message.previous_message_number;
+			*message_length = decrypted_message.message.size();
+			*message = byte_to_uchar(decrypted_message.message.release());
 
-			//copy the message
-			MallocBuffer malloced_message{received_message.message.size(), 0};
-			TRY_VOID(malloced_message.cloneFrom(received_message.message));
+			*receive_message_number = decrypted_message.message_number;
+			*previous_receive_message_number = decrypted_message.previous_message_number;
 
-			if (conversation_backup != nullptr) {
-				*conversation_backup = nullptr;
-				TRY_WITH_RESULT(exported_conversation_result, export_conversation(conversation_id_key));
-				auto& exported_conversation{exported_conversation_result.value()};
-				*conversation_backup_length = exported_conversation.size();
-				*conversation_backup = byte_to_uchar(exported_conversation.release());
+			if (create_backup == CreateBackup::YES) {
+				auto& created_backup = decrypted_message.conversation_backup.value();
+				*conversation_backup_length = created_backup.size();
+				*conversation_backup = byte_to_uchar(created_backup.release());
 			}
-
-			*message_length = malloced_message.size();
-			*message = byte_to_uchar(malloced_message.release());
 		} catch (const Exception& exception) {
 			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
