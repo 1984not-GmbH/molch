@@ -78,6 +78,17 @@ namespace Molch {
 		}
 
 		span(const ProtobufCBinaryData data) : base_class{uchar_to_byte(data.data), gsl::narrow<ptrdiff_t>(data.len)} {}
+
+		const span subspan(size_t offset, size_t size) const {
+			const auto signed_offset = gsl::narrow_cast<ptrdiff_t>(offset);
+			const auto signed_size = gsl::narrow_cast<ptrdiff_t>(size);
+			return this->base_class::subspan(signed_offset, signed_size);
+		}
+
+		const span subspan(size_t offset) const {
+			const auto signed_offset = gsl::narrow_cast<ptrdiff_t>(offset);
+			return this->base_class::subspan(signed_offset);
+		}
 	};
 }
 
