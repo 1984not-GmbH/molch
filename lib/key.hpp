@@ -27,6 +27,7 @@
 #include <sodium.h>
 #include <iterator>
 #include <algorithm>
+#include <optional>
 
 #include "buffer.hpp"
 #include "constants.h"
