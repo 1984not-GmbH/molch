@@ -84,6 +84,9 @@ public:
 	}
 };
 
+constexpr auto PREKEYS_SIZE = PREKEY_AMOUNT * PUBLIC_KEY_SIZE;
+constexpr auto PREKEY_LIST_EXPIRATION_DATE_OFFSET = PUBLIC_KEY_SIZE + PREKEYS_SIZE;
+
 /*
  * Create a prekey list.
  */
@@ -105,11 +108,12 @@ static result<MallocBuffer> create_prekey_list(const PublicSigningKey& public_si
 
 	//get the prekeys
 	OUTCOME_TRY(prekey_list_buffer, user->prekeys.list());
-	OUTCOME_TRY(copyFromTo(prekey_list_buffer, {&unsigned_prekey_list[PUBLIC_KEY_SIZE], PREKEY_AMOUNT * PUBLIC_KEY_SIZE}));
+	auto prekey_subspan = span<std::byte>(unsigned_prekey_list).subspan(PUBLIC_KEY_SIZE, PREKEYS_SIZE);
+	OUTCOME_TRY(copyFromTo(prekey_list_buffer, prekey_subspan));
 
 	//add the expiration date
 	int64_t expiration_date{now().count() + seconds{3_months}.count()};
-	span<std::byte> big_endian_expiration_date{&unsigned_prekey_list[PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE], sizeof(int64_t)};
+	auto big_endian_expiration_date = span<std::byte>(unsigned_prekey_list).subspan(PREKEY_LIST_EXPIRATION_DATE_OFFSET, sizeof(int64_t));
 	OUTCOME_TRY(to_big_endian(expiration_date, big_endian_expiration_date));
 
 	//sign the prekey list with the current identity key
@@ -423,7 +427,9 @@ static result<PublicKey> verify_prekey_list(
 
 	//get the expiration date
 	int64_t expiration_date{0};
-	span<std::byte> big_endian_expiration_date{&verified_prekey_list[PUBLIC_KEY_SIZE + PREKEY_AMOUNT * PUBLIC_KEY_SIZE], sizeof(int64_t)};
+	constexpr auto prekeys_size = PREKEY_AMOUNT * PUBLIC_KEY_SIZE;
+	constexpr auto expiration_date_offset = PUBLIC_KEY_SIZE + prekeys_size;
+	const auto big_endian_expiration_date = span<std::byte>(verified_prekey_list).subspan(expiration_date_offset, sizeof(int64_t));
 	OUTCOME_TRY(from_big_endian(expiration_date, big_endian_expiration_date));
 
 	//make sure the prekey list isn't too old
@@ -465,7 +471,7 @@ static result<PublicKey> verify_prekey_list(
 		MasterKeys::Unlocker unlocker{user->masterKeys()};
 
 		//create the conversation and encrypt the message
-		const auto prekeys{prekey_list.subspan(PUBLIC_KEY_SIZE + SIGNATURE_SIZE, static_cast<ptrdiff_t>(prekey_list.size() - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t)))};
+		const auto prekeys{prekey_list.subspan(PUBLIC_KEY_SIZE + SIGNATURE_SIZE, prekey_list.size() - PUBLIC_KEY_SIZE - SIGNATURE_SIZE - sizeof(int64_t))};
 		OUTCOME_TRY(private_identity_key, user->masterKeys().getPrivateIdentityKey());
 		OUTCOME_TRY(send_conversation, Molch::Conversation::createSendConversation(
 				message,
