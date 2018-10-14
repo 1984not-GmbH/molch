@@ -163,7 +163,7 @@ namespace Molch {
 				send_data.message_key,
 				prekey_metadata));
 
-		return encrypted_packet;
+		return std::move(encrypted_packet);
 	}
 
 	result<ReceivedMessage> Conversation::trySkippedHeaderAndMessageKeys(const span<const std::byte> packet) {
