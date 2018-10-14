@@ -94,7 +94,7 @@ static result<MallocBuffer> create_prekey_list(const PublicSigningKey& public_si
 	//get the user
 	auto user{users.find(public_signing_key)};
 	if (user == nullptr) {
-		throw Exception{status_type::NOT_FOUND, "Couldn't find the user to create a prekey list from."};
+		return Error(status_type::NOT_FOUND, "Couldn't find the user to create a prekey list from.");
 	}
 
 	//rotate the prekeys
@@ -145,7 +145,7 @@ static result<MallocBuffer> create_prekey_list(const PublicSigningKey& public_si
 	static result<MallocBuffer> export_all() {
 		GlobalBackupKeyUnlocker unlocker;
 		if (global_backup_key == nullptr) {
-			throw Exception{status_type::INCORRECT_DATA, "No backup key found."};
+			return Error(status_type::INCORRECT_DATA, "No backup key found.");
 		}
 
 		Arena arena;
@@ -176,7 +176,7 @@ static result<MallocBuffer> create_prekey_list(const PublicSigningKey& public_si
 				byte_to_uchar(backup_nonce.data()),
 				byte_to_uchar(global_backup_key->data()))};
 		if (status != 0) {
-			throw Exception{status_type::ENCRYPT_ERROR, "Failed to enrypt conversation state."};
+			return Error(status_type::ENCRYPT_ERROR, "Failed to enrypt conversation state.");
 		}
 
 		//fill in the encrypted backup struct
@@ -200,7 +200,7 @@ static result<MallocBuffer> create_prekey_list(const PublicSigningKey& public_si
 		MallocBuffer malloced_encrypted_backup{encrypted_backup_size, 0};
 		OUTCOME_TRY(malloced_encrypted_backup.setSize(molch__protobuf__encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data()))));
 		if (malloced_encrypted_backup.size() != encrypted_backup_size) {
-			throw Exception{status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation."};
+			return Error(status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
 		}
 
 		return malloced_encrypted_backup;
@@ -692,7 +692,7 @@ static result<PublicKey> verify_prekey_list(
 		OUTCOME_TRY(conversation_id_key, ConversationId::fromSpan(conversation_id));
 		auto conversation{users.findConversation(user, conversation_id_key)};
 		if (conversation == nullptr) {
-			throw Exception{status_type::NOT_FOUND, "Failed to find the conversation."};
+			return Error(status_type::NOT_FOUND, "Failed to find the conversation.");
 		}
 
 		//export the conversation
@@ -934,7 +934,7 @@ static result<PublicKey> verify_prekey_list(
 		Molch::User *user{nullptr};
 		auto conversation{users.findConversation(user, conversation_id)};
 		if (conversation == nullptr) {
-			throw Exception{status_type::NOT_FOUND, "Couldn't find conversation."};
+			return Error(status_type::NOT_FOUND, "Couldn't find conversation.");
 		}
 
 		user->conversations.remove(conversation_id);
