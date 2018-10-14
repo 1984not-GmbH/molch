@@ -87,8 +87,8 @@ foreach test : integration_tests
 			integration_test_library,
 			c_protobufs,
 		],
-		dependencies: [libsodium, protobuf_c],
-		include_directories: [c_protobufs_include]
+		dependencies: [libsodium, protobuf_c, protobuf_lite],
+		include_directories: [c_protobufs_include, outcome_include, gsl_include]
 	)
 	test(test, test_exe, workdir: meson.current_source_dir())
 endforeach
