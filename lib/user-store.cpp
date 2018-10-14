@@ -51,10 +51,10 @@ namespace Molch {
 	result<User> User::create(const std::optional<span<const std::byte>> seed) {
 		User user(uninitialized_t::uninitialized);
 		OUTCOME_TRY(master_keys, MasterKeys::create(seed));
+		user.public_signing_key = master_keys.getSigningKey();
 		user.master_keys = std::move(master_keys);
 		OUTCOME_TRY(prekey_store, PrekeyStore::create());
 		user.prekeys = std::move(prekey_store);
-		user.public_signing_key = master_keys.getSigningKey();
 
 		return user;
 	}
