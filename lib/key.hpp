@@ -117,8 +117,6 @@ namespace Molch {
 		 *  -1 if this is less than key
 		 *   0 if this is equal to key
 		 *  +1 if this is greater than key
-		 *
-		 *  throws an exception if either is empty.
 		 */
 		int compare(const Key& key) const noexcept {
 			auto comparison{sodium_compare(*this, key)};
@@ -266,8 +264,6 @@ namespace Molch {
 		 *  -1 if this is less than key
 		 *   0 if this is equal to key
 		 *  +1 if this is greater than key
-		 *
-		 *  throws an exception if either is empty.
 		 */
 		int compare(const EmptyableKey& key) const noexcept {
 			if (this->empty || key.empty) {
