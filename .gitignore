@@ -19,3 +19,6 @@ molch.creator*
 tags.??????
 .buildconfig
 molch.iml
+cmake-build-debug
+CMakeLists.txt
+generated
