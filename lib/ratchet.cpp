@@ -224,14 +224,10 @@ namespace Molch {
 		//following
 		EmptyableChainKey current_chain_key{chain_key};
 
-		EmptyableChainKey next_chain_key;
-		MessageKey current_message_key;
 		for (uint32_t pos{current_message_number}; pos < future_message_number; pos++) {
 			OUTCOME_TRY(current_message_key, current_chain_key.deriveMessageKey());
-			current_message_key = current_message_key;
 			staging_area.add(current_header_key, current_message_key);
 			OUTCOME_TRY(next_chain_key, current_chain_key.deriveChainKey());
-			next_chain_key = next_chain_key;
 
 			//shift chain keys
 			current_chain_key = next_chain_key;
