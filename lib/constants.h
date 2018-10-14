@@ -26,10 +26,6 @@
 
 #include <sodium.h>
 
-#ifdef __cplusplus
-#else
-#endif
-
 //use C style cast only in C code
 #ifdef __cplusplus
 	#define CONSTANT(number) static_cast<size_t>(number)
