@@ -19,14 +19,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <cstdio>
-#include <cstdlib>
 #include <sodium.h>
-#include <memory>
 #include <iostream>
-#include <array>
 #include <string>
-#include <protobuf-c/protobuf-c.h>
 #include <encrypted_backup.pb-c.h>
 #include <cstring>
 

@@ -19,11 +19,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <cstdio>
-#include <cstdlib>
 #include <sodium.h>
 #include <cstring>
-#include <exception>
 #include <iostream>
 #include <string>
 
