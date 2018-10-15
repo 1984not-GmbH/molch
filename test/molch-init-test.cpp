@@ -28,7 +28,6 @@
 #include <string>
 
 #include "../include/molch.h"
-#include "../lib/result.hpp"
 #include "integration-utils.hpp"
 #include "inline-utils.hpp"
 

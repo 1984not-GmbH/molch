@@ -33,7 +33,6 @@
 #include "integration-utils.hpp"
 #include "inline-utils.hpp"
 #include "../include/molch.h"
-#include "../lib/result.hpp"
 
 static ProtobufCAllocator protobuf_c_allocator = {
 		[]([[maybe_unused]] void* userdata, size_t size) -> void* {
