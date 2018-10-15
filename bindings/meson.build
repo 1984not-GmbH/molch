@@ -45,8 +45,7 @@ if get_option('lua_bindings') and not ['address', 'undefined', 'address,undefine
 			c_args: swig_flags)
 
 	#install molch.lua
-	empty_configuration = configuration_data()
-	configure_file(input: 'molch.lua', output: 'molch.lua', configuration: empty_configuration)
+	configure_file(input: 'molch.lua', output: 'molch.lua', copy: true)
 
 	# [name, should_fail]
 	scenarios = [
