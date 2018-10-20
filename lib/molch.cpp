@@ -1291,6 +1291,15 @@ static result<PublicKey> verify_prekey_list(
 		return success_status;
 	}
 
+	static result<MallocBuffer> get_prekey_list(const span<const std::byte> public_master_key) {
+		OUTCOME_TRY(public_signing_key_key, PublicSigningKey::fromSpan(public_master_key));
+		OUTCOME_TRY(prekey_list_buffer, create_prekey_list(public_signing_key_key));
+		MallocBuffer malloced_prekey_list{prekey_list_buffer.size(), 0};
+		OUTCOME_TRY(malloced_prekey_list.cloneFrom(prekey_list_buffer));
+
+		return std::move(malloced_prekey_list);
+	}
+
 	MOLCH_PUBLIC(return_status) molch_get_prekey_list(
 			//output
 			unsigned char ** const prekey_list,  //free after use
@@ -1298,18 +1307,18 @@ static result<PublicKey> verify_prekey_list(
 			//input
 			unsigned char * const public_master_key,
 			const size_t public_master_key_length) {
-		try {
-			Expects((public_master_key != nullptr)
-					&& (prekey_list != nullptr)
-					&& (prekey_list_length != nullptr)
-					&& (public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
+		if ((public_master_key == nullptr) || (public_master_key_length != PUBLIC_MASTER_KEY_SIZE)
+				|| (prekey_list == nullptr)
+				|| (prekey_list_length == nullptr)) {
+			return {status_type::INVALID_VALUE, "Invalid input to molch_get_prekey_list."};
+		}
 
-			TRY_WITH_RESULT(public_signing_key_key_result, PublicSigningKey::fromSpan({uchar_to_byte(public_master_key), PUBLIC_MASTER_KEY_SIZE}));
-			const auto& public_signing_key_key{public_signing_key_key_result.value()};
-			TRY_WITH_RESULT(prekey_list_buffer_result, create_prekey_list(public_signing_key_key));
-			auto& prekey_list_buffer{prekey_list_buffer_result.value()};
-			MallocBuffer malloced_prekey_list{prekey_list_buffer.size(), 0};
-			TRY_VOID(malloced_prekey_list.cloneFrom(prekey_list_buffer));
+		try {
+			auto malloced_prekey_list_result = get_prekey_list({uchar_to_byte(public_master_key), public_master_key_length});
+			if (malloced_prekey_list_result.has_error()) {
+				return malloced_prekey_list_result.error().toReturnStatus();
+			}
+			auto& malloced_prekey_list = malloced_prekey_list_result.value();
 			*prekey_list_length = malloced_prekey_list.size();
 			*prekey_list = byte_to_uchar(malloced_prekey_list.release());
 		} catch (const Exception& exception) {

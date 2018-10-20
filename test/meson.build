@@ -33,7 +33,7 @@ integration_tests = [
 	'molch-init-test',
 ]
 
-test_library = library(
+test_library = static_library(
 		'test-library',
 		[
 			'utils.cpp',
@@ -68,7 +68,7 @@ foreach test : unit_tests
 	test(test, test_exe, workdir: meson.current_source_dir())
 endforeach
 
-integration_test_library = library(
+integration_test_library = static_library(
 		'integration-test-library',
 		[
 			'integration-utils.cpp',

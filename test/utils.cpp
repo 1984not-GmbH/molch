@@ -31,7 +31,7 @@
 
 using namespace Molch;
 
-MOLCH_PUBLIC(void) print_to_file(const gsl::span<const std::byte> data, const std::string& filename) {
+void print_to_file(const gsl::span<const std::byte> data, const std::string& filename) {
 	std::ofstream filestream{filename, std::ios_base::out | std::ios_base::binary};
 	if (!filestream.is_open()) {
 		throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to open output file."};
@@ -45,7 +45,7 @@ MOLCH_PUBLIC(void) print_to_file(const gsl::span<const std::byte> data, const st
 	filestream.write(byte_to_char(data.data()), gsl::narrow<std::streamsize>(data.size()));
 }
 
-MOLCH_PUBLIC(Buffer) read_file(const std::string& filename) {
+Buffer read_file(const std::string& filename) {
 	std::ifstream filestream{filename, std::ios_base::in | std::ios_base::binary};
 	if (!filestream.is_open()) {
 		throw Molch::Exception{status_type::GENERIC_ERROR, "Failed to open file."};

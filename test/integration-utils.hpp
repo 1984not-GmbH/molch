@@ -106,7 +106,7 @@ inline std::string buffer_to_hex(const BufferType& buffer) {
 	return hex;
 }
 
-MOLCH_PUBLIC(std::vector<unsigned char>) read_file(const std::string name);
+std::vector<unsigned char> read_file(const std::string name);
 
 template <typename BufferType>
 inline void write_to_file(const BufferType& content, std::string name) {

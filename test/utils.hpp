@@ -29,7 +29,7 @@
 #include "../lib/buffer.hpp"
 #include "../lib/gsl.hpp"
 
-MOLCH_PUBLIC(void) print_to_file(const gsl::span<const std::byte> data, const std::string& filename);
+void print_to_file(const gsl::span<const std::byte> data, const std::string& filename);
 
-MOLCH_PUBLIC(Molch::Buffer) read_file(const std::string& filename);
+Molch::Buffer read_file(const std::string& filename);
 #endif

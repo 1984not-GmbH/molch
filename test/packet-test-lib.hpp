@@ -39,7 +39,7 @@
  * \param message The message to encrypt.
  * \param prekey_metadata Optional metadata for prekey packets
  */
-MOLCH_PUBLIC(void) create_and_print_message(
+void create_and_print_message(
 		//output
 		Molch::Buffer& packet,
 		Molch::EmptyableHeaderKey& header_key, //HEADER_KEY_SIZE

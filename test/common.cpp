@@ -32,7 +32,7 @@ using namespace Molch;
 /*
  * Generates and prints a crypto_box keypair.
  */
-MOLCH_PUBLIC(void) generate_and_print_keypair(
+void generate_and_print_keypair(
 		PublicKey& public_key,
 		PrivateKey& private_key,
 		const std::string& name, //Name of the key owner (e.g. "Alice")
