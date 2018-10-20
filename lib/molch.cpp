@@ -986,6 +986,34 @@ static result<PublicKey> verify_prekey_list(
 		return success_status;
 	}
 
+	struct ConversationList {
+		MallocBuffer list;
+		size_t amount;
+	};
+
+	static result<ConversationList> list_conversations(const span<const std::byte> user_public_master_key_span) {
+		OUTCOME_TRY(user_public_master_key, PublicSigningKey::fromSpan(user_public_master_key_span));
+		auto user = users.find(user_public_master_key);
+		if (user == nullptr) {
+			return Error(status_type::NOT_FOUND, "No user found for the given public identity.");
+		}
+
+		ConversationList conversation_list;
+		OUTCOME_TRY(conversation_list_buffer, user->conversations.list());
+		if (conversation_list_buffer.empty()) {
+			conversation_list.amount = 0;
+			return conversation_list;
+		}
+
+		if ((conversation_list_buffer.size() % CONVERSATION_ID_SIZE) != 0) {
+			return Error(status_type::INCORRECT_BUFFER_SIZE, "The conversation ID buffer has an incorrect length.");
+		}
+		conversation_list.amount = conversation_list_buffer.size() / CONVERSATION_ID_SIZE;
+
+		conversation_list.list = conversation_list_buffer;
+		return conversation_list;
+	}
+
 	MOLCH_PUBLIC(return_status) molch_list_conversations(
 			//outputs
 			unsigned char ** const conversation_list,
@@ -994,64 +1022,31 @@ static result<PublicKey> verify_prekey_list(
 			//inputs
 			const unsigned char * const user_public_master_key,
 			const size_t user_public_master_key_length) {
-		auto status{success_status};
+		if ((user_public_master_key == nullptr)
+				|| (user_public_master_key_length != PUBLIC_MASTER_KEY_SIZE)
+				|| (conversation_list == nullptr)
+				|| (conversation_list_length == nullptr)
+				|| (number == nullptr)) {
+			return {status_type::INVALID_VALUE, "Invalid input to molch_list_conversations."};
+		}
 
 		try {
-			if (conversation_list != nullptr) {
-				*conversation_list = nullptr;
+			auto conversation_list_result = list_conversations({uchar_to_byte(user_public_master_key), user_public_master_key_length});
+			if (conversation_list_result.has_error()) {
+				return conversation_list_result.error().toReturnStatus();
 			}
+			auto& conversation_list_value = conversation_list_result.value();
 
-			Expects((user_public_master_key != nullptr)
-					&& (conversation_list != nullptr)
-					&& (conversation_list_length != nullptr)
-					&& (number != nullptr)
-					&& (user_public_master_key_length == PUBLIC_MASTER_KEY_SIZE));
-
-			TRY_WITH_RESULT(user_public_master_key_key_result, PublicSigningKey::fromSpan({uchar_to_byte(user_public_master_key), PUBLIC_MASTER_KEY_SIZE}));
-			const auto& user_public_master_key_key{user_public_master_key_key_result.value()};
-			auto user{users.find(user_public_master_key_key)};
-			if (user == nullptr) {
-				throw Exception{status_type::NOT_FOUND, "No user found for the given public identity."};
-			}
-
-			TRY_WITH_RESULT(conversation_list_buffer_result, user->conversations.list());
-			const auto& conversation_list_buffer{conversation_list_buffer_result.value()};
-			if (conversation_list_buffer.empty()) {
-				// list is empty
-				*conversation_list = nullptr;
-				*number = 0;
-			} else {
-				if ((conversation_list_buffer.size() % CONVERSATION_ID_SIZE) != 0) {
-					throw Exception{status_type::INCORRECT_BUFFER_SIZE, "The conversation ID buffer has an incorrect length."};
-				}
-				*number = conversation_list_buffer.size() / CONVERSATION_ID_SIZE;
-
-				//allocate the conversation list output and copy it over
-				MallocBuffer malloced_conversation_list{conversation_list_buffer.size(), 0};
-				TRY_VOID(malloced_conversation_list.cloneFrom(conversation_list_buffer));
-				*conversation_list_length = malloced_conversation_list.size();
-				*conversation_list = byte_to_uchar(malloced_conversation_list.release());
-			}
+			*number = conversation_list_value.amount;
+			*conversation_list_length = conversation_list_value.list.size();
+			*conversation_list = byte_to_uchar(conversation_list_value.list.release());
 		} catch (const Exception& exception) {
-			status = exception.toReturnStatus();
-			goto cleanup;
+			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			status = Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
-			goto cleanup;
+			return Error(status_type::EXCEPTION, exception.what()).toReturnStatus();
 		}
 
-	cleanup:
-		on_error {
-			if (number != nullptr) {
-				*number = 0;
-			}
-
-			if (conversation_list_length != nullptr) {
-				*conversation_list_length = 0;
-			}
-		}
-
-		return status;
+		return success_status;
 	}
 
 	MOLCH_PUBLIC(char*) molch_print_status(size_t * const output_length, return_status status) {
