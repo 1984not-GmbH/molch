@@ -160,7 +160,7 @@ namespace Molch {
 	}
 
 	result<PrekeyStore> PrekeyStore::create() {
-		PrekeyStore store(uninitialized_t::uninitialized);
+		PrekeyStore store(uninitialized);
 		store.init();
 		OUTCOME_TRY(store.generateKeys());
 
@@ -172,7 +172,7 @@ namespace Molch {
 			const span<ProtobufCPrekey*> deprecated_keypairs) {
 		FulfillOrFail(keypairs.size() == PREKEY_AMOUNT);
 
-		PrekeyStore store(uninitialized_t::uninitialized);
+		PrekeyStore store(uninitialized);
 		store.init();
 
 		size_t index{0};

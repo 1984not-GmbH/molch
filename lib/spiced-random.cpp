@@ -42,7 +42,7 @@ namespace Molch {
 		randombytes_buf(os_random);
 
 		//buffer that contains a random salt
-		Key<crypto_pwhash_SALTBYTES,KeyType::Key> salt(uninitialized_t::uninitialized);
+		Key<crypto_pwhash_SALTBYTES,KeyType::Key> salt(uninitialized);
 		randombytes_buf(salt);
 
 		//derive random data from the random spice

@@ -54,7 +54,7 @@ namespace Molch {
 	MasterKeys::MasterKeys([[maybe_unused]] uninitialized_t uninitialized) noexcept {}
 
 	result<MasterKeys> MasterKeys::create(const std::optional<span<const std::byte>> low_entropy_seed) {
-		MasterKeys keys(uninitialized_t::uninitialized);
+		MasterKeys keys(uninitialized);
 		keys.init();
 		if (low_entropy_seed.has_value()) {
 			OUTCOME_TRY(keys.generate(low_entropy_seed.value()));
@@ -70,7 +70,7 @@ namespace Molch {
 			const ProtobufCKey& private_signing_key,
 			const ProtobufCKey& public_identity_key,
 			const ProtobufCKey& private_identity_key) {
-		MasterKeys keys(uninitialized_t::uninitialized);
+		MasterKeys keys(uninitialized);
 		keys.init();
 
 		if ((keys.private_signing_key == nullptr) || (keys.private_identity_key == nullptr)) {

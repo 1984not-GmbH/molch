@@ -39,7 +39,7 @@ namespace Molch {
 		return *this;
 	}
 
-	User::User(User&& node) noexcept : master_keys{uninitialized_t::uninitialized}, prekeys{uninitialized_t::uninitialized} {
+	User::User(User&& node) noexcept : master_keys{uninitialized}, prekeys{uninitialized} {
 		this->move(std::move(node));
 	}
 
@@ -49,7 +49,7 @@ namespace Molch {
 	}
 
 	result<User> User::create(const std::optional<span<const std::byte>> seed) {
-		User user(uninitialized_t::uninitialized);
+		User user(uninitialized);
 		OUTCOME_TRY(master_keys, MasterKeys::create(seed));
 		user.public_signing_key = master_keys.getSigningKey();
 		user.master_keys = std::move(master_keys);
@@ -67,7 +67,7 @@ namespace Molch {
 			return Error(status_type::PROTOBUF_MISSING_ERROR, "Missing keys.");
 		}
 
-		User imported_user(uninitialized_t::uninitialized);
+		User imported_user(uninitialized);
 
 		//master keys
 		OUTCOME_TRY(master_keys, MasterKeys::import(

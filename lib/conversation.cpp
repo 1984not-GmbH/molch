@@ -58,7 +58,7 @@ namespace Molch {
 			const PrivateKey& our_private_ephemeral,
 			const PublicKey& our_public_ephemeral,
 			const PublicKey& their_public_ephemeral) {
-		Conversation conversation(uninitialized_t::uninitialized);
+		Conversation conversation(uninitialized);
 		//create random id
 		randombytes_buf(conversation.id_storage);
 
@@ -260,7 +260,7 @@ namespace Molch {
 	}
 
 	result<Conversation> Conversation::import(const ProtobufCConversation& conversation_protobuf) {
-		Conversation conversation(uninitialized_t::uninitialized);
+		Conversation conversation(uninitialized);
 		//copy the id
 		OUTCOME_TRY(id, ConversationId::fromSpan({conversation_protobuf.id}));
 		conversation.id_storage = id;

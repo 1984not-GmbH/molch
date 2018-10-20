@@ -1130,7 +1130,7 @@ static result<PublicKey> verify_prekey_list(
 		containing_user->conversations.add(std::move(conversation));
 
 		OUTCOME_TRY(updated_backup_key, update_backup_key());
-		return updated_backup_key;
+		return std::move(updated_backup_key);
 	}
 
 	MOLCH_PUBLIC(return_status) molch_conversation_import(

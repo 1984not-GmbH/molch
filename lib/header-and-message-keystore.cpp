@@ -75,7 +75,7 @@ namespace Molch {
 	}
 
 	result<HeaderAndMessageKey> HeaderAndMessageKey::import(const ProtobufCKeyBundle& key_bundle) noexcept {
-		HeaderAndMessageKey keypair(uninitialized_t::uninitialized);
+		HeaderAndMessageKey keypair(uninitialized);
 		//import the header key
 		if ((key_bundle.header_key == nullptr)
 			|| (key_bundle.header_key->key.data == nullptr)
@@ -144,7 +144,7 @@ namespace Molch {
 
 	void HeaderAndMessageKeyStore::add(const HeaderAndMessageKeyStore& keystore) {
 		decltype(this->key_storage) merged;
-		merged.resize(this->key_storage.size() + keystore.key_storage.size(), HeaderAndMessageKey(uninitialized_t::uninitialized));
+		merged.resize(this->key_storage.size() + keystore.key_storage.size(), HeaderAndMessageKey(uninitialized));
 
 		std::merge(
 				std::cbegin(this->key_storage), std::cend(this->key_storage),

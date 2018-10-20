@@ -48,8 +48,10 @@ namespace Molch {
  * to be composed of the given type.
  */
 struct uninitialized_t {
-    static uninitialized_t uninitialized;
+	explicit uninitialized_t() = default;
 };
+
+inline constexpr uninitialized_t uninitialized;
 
 #define FulfillOrFailWithLine(condition, line)\
 	if (!(condition)) {\

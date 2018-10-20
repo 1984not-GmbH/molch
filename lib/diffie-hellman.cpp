@@ -36,7 +36,7 @@ namespace Molch {
 		static_assert(DIFFIE_HELLMAN_SIZE == crypto_generichash_BYTES, "crypto_generichash_bytes is not DIFFIE_HELLMAN_SIZE");
 
 		//buffer for diffie hellman shared secret
-		Key<crypto_scalarmult_SCALARBYTES,KeyType::Key> dh_secret(uninitialized_t::uninitialized);
+		Key<crypto_scalarmult_SCALARBYTES,KeyType::Key> dh_secret(uninitialized);
 
 		//do the diffie hellman key exchange
 		OUTCOME_TRY(crypto_scalarmult(dh_secret, our_private_key, their_public_key));
