@@ -1098,6 +1098,61 @@ static result<PublicKey> verify_prekey_list(
 		return success_status;
 	}
 
+	static result<BackupKey> import_conversation(const span<const std::byte> backup, const span<const std::byte> backup_key) {
+		//unpack the encrypted backup
+		auto encrypted_backup_struct = std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(molch__protobuf__encrypted_backup__unpack(&protobuf_c_allocator, std::size(backup), byte_to_uchar(std::data(backup))));
+		if (encrypted_backup_struct == nullptr) {
+			return Error(status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
+		}
+
+		//check the backup
+		if (encrypted_backup_struct->backup_version != 0) {
+			return Error(status_type::INCORRECT_DATA, "Incompatible backup.");
+		}
+		if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != MOLCH__PROTOBUF__ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP)) {
+			return Error(status_type::INCORRECT_DATA, "Backup is not a conversation backup.");
+		}
+		if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state.");
+		}
+		if (!encrypted_backup_struct->has_encrypted_backup_nonce || (encrypted_backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
+		}
+
+		Arena arena;
+		auto decrypted_backup_content = arena.allocate<std::byte>(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES);
+		auto decrypted_backup = span<std::byte>(decrypted_backup_content, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES);
+
+		//decrypt the backup
+		OUTCOME_TRY(crypto_secretbox_open_easy(
+				decrypted_backup,
+				{uchar_to_byte(encrypted_backup_struct->encrypted_backup.data), encrypted_backup_struct->encrypted_backup.len},
+				{uchar_to_byte(encrypted_backup_struct->encrypted_backup_nonce.data), encrypted_backup_struct->encrypted_backup_nonce.len},
+				backup_key));
+
+		//unpack the struct
+		auto arena_protoc_allocator = arena.getProtobufCAllocator();
+		auto conversation_struct = molch__protobuf__conversation__unpack(&arena_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()));
+		if (conversation_struct == nullptr) {
+			return Error(status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack conversations protobuf-c.");
+		}
+
+		//import the conversation
+		ProtobufCConversation conversation_pointer{*conversation_struct};
+		Molch::User* containing_user{nullptr};
+		OUTCOME_TRY(conversation_id_key, ConversationId::fromSpan({conversation_struct->id}));
+		auto existing_conversation{users.findConversation(containing_user, conversation_id_key)};
+		if (existing_conversation == nullptr) {
+			return Error(status_type::NOT_FOUND, "Containing store not found.");
+		}
+
+		OUTCOME_TRY(conversation, Conversation::import(conversation_pointer));
+		containing_user->conversations.add(std::move(conversation));
+
+		OUTCOME_TRY(updated_backup_key, update_backup_key());
+		return updated_backup_key;
+	}
+
 	MOLCH_PUBLIC(return_status) molch_conversation_import(
 			//output
 			unsigned char * new_backup_key,
@@ -1107,79 +1162,23 @@ static result<PublicKey> verify_prekey_list(
 			const size_t backup_length,
 			const unsigned char * backup_key,
 			const size_t backup_key_length) {
+		if ((backup == nullptr)
+				|| (backup_key == nullptr) || (backup_key_length != BACKUP_KEY_SIZE)
+				|| (new_backup_key == nullptr) || (new_backup_key_length != BACKUP_KEY_SIZE)) {
+			return {status_type::INVALID_VALUE, "Invalid input to molch_conversation_import"};
+		}
+
 		try {
-			Expects((backup != nullptr)
-					and (backup_key != nullptr)
-					and (backup_key_length == BACKUP_KEY_SIZE)
-					and (new_backup_key != nullptr)
-					and (new_backup_key_length == BACKUP_KEY_SIZE));
-
-			//unpack the encrypted backup
-			auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(molch__protobuf__encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup))};
-			if (encrypted_backup_struct == nullptr) {
-				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf."};
+			const auto new_backup_key_key_result = import_conversation({uchar_to_byte(backup), backup_length}, {uchar_to_byte(backup_key), backup_key_length});
+			if (new_backup_key_key_result.has_error()) {
+				return new_backup_key_key_result.error().toReturnStatus();
 			}
-
-			//check the backup
-			if (encrypted_backup_struct->backup_version != 0) {
-				throw Exception{status_type::INCORRECT_DATA, "Incompatible backup."};
-			}
-			if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != MOLCH__PROTOBUF__ENCRYPTED_BACKUP__BACKUP_TYPE__CONVERSATION_BACKUP)) {
-				throw Exception{status_type::INCORRECT_DATA, "Backup is not a conversation backup."};
-			}
-			if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
-				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted conversation state."};
-			}
-			if (!encrypted_backup_struct->has_encrypted_backup_nonce || (encrypted_backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
-				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
-			}
-
-			Arena arena;
-			auto decrypted_backup_content{arena.allocate<std::byte>(
-						encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
-			span<std::byte> decrypted_backup{
-					decrypted_backup_content,
-					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES};
-
-			//decrypt the backup
-			auto status_int{crypto_secretbox_open_easy(
-					byte_to_uchar(decrypted_backup.data()),
-					encrypted_backup_struct->encrypted_backup.data,
-					encrypted_backup_struct->encrypted_backup.len,
-					encrypted_backup_struct->encrypted_backup_nonce.data,
-					backup_key)};
-			if (status_int != 0) {
-				throw Exception{status_type::DECRYPT_ERROR, "Failed to decrypt conversation backup."};
-			}
-
-			//unpack the struct
-			auto arena_protoc_allocator{arena.getProtobufCAllocator()};
-			auto conversation_struct{molch__protobuf__conversation__unpack(&arena_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
-			if (conversation_struct == nullptr) {
-				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack conversations protobuf-c."};
-			}
-
-			//import the conversation
-			ProtobufCConversation conversation_pointer{*conversation_struct};
-			Molch::User* containing_user{nullptr};
-			TRY_WITH_RESULT(conversation_id_key_result, ConversationId::fromSpan({conversation_struct->id}));
-			const auto& conversation_id_key{conversation_id_key_result.value()};
-			auto existing_conversation{users.findConversation(containing_user, conversation_id_key)};
-			if (existing_conversation == nullptr) {
-				throw Exception{status_type::NOT_FOUND, "Containing store not found."};
-			}
-
-			TRY_WITH_RESULT(conversation_result, Conversation::import(conversation_pointer));
-			auto& conversation{conversation_result.value()};
-			containing_user->conversations.add(std::move(conversation));
-
-			TRY_WITH_RESULT(updated_backup_key_result, update_backup_key());
-			const auto& updated_backup_key{updated_backup_key_result.value()};
-			std::copy(std::cbegin(updated_backup_key), std::cend(updated_backup_key), uchar_to_byte(new_backup_key));
+			const auto& new_backup_key_key = new_backup_key_key_result.value();
+			std::copy(std::cbegin(new_backup_key_key), std::cend(new_backup_key_key), uchar_to_byte(new_backup_key));
 		} catch (const Exception& exception) {
 			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+			return Error(status_type::EXCEPTION, exception.what()).toReturnStatus();
 		}
 
 		return success_status;
