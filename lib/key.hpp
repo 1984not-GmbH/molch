@@ -31,7 +31,6 @@
 
 #include "buffer.hpp"
 #include "constants.h"
-#include "exception.hpp"
 #include "endianness.hpp"
 #include "gsl.hpp"
 #include "protobuf.hpp"

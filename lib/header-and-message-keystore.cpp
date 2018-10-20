@@ -23,7 +23,6 @@
 
 #include "constants.h"
 #include "header-and-message-keystore.hpp"
-#include "exception.hpp"
 #include "gsl.hpp"
 
 namespace Molch {

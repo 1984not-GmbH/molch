@@ -51,17 +51,6 @@ struct uninitialized_t {
     static uninitialized_t uninitialized;
 };
 
-#define TRY_WITH_RESULT(result, call) \
-	auto&& result{call};\
-	if (!result) {\
-		throw Exception(result.error());\
-	}
-
-#define TRY_VOID(call)\
-	{\
-		TRY_WITH_RESULT(result, call)\
-	}
-
 #define FulfillOrFailWithLine(condition, line)\
 	if (!(condition)) {\
 		return Error(status_type::EXPECTATION_FAILED, "An expectation failed in line " #line " of file " __FILE__);\

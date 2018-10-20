@@ -28,6 +28,7 @@
 
 #include "common.hpp"
 #include "utils.hpp"
+#include "exception.hpp"
 #include "../lib/conversation.hpp"
 #include "../lib/destroyers.hpp"
 #include "../lib/key.hpp"

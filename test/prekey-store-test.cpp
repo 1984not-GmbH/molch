@@ -30,6 +30,7 @@
 #include "../lib/constants.h"
 #include "../lib/destroyers.hpp"
 #include "utils.hpp"
+#include "exception.hpp"
 
 using namespace Molch;
 

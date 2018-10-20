@@ -29,6 +29,7 @@
 #include "../lib/conversation-store.hpp"
 #include "../lib/destroyers.hpp"
 #include "utils.hpp"
+#include "exception.hpp"
 
 using namespace Molch;
 

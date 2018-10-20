@@ -38,7 +38,8 @@ test_library = static_library(
 		[
 			'utils.cpp',
 			'common.cpp',
-			'packet-test-lib.cpp'
+			'packet-test-lib.cpp',
+			'exception.cpp',
 		],
 		include_directories: [c_protobufs_include, gsl_include, outcome_include],
 		link_with: molch_internals,

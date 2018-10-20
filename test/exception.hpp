@@ -26,8 +26,8 @@
 #include <ostream>
 #include <deque>
 
-#include "return-status.hpp"
-#include "error.hpp"
+#include "../lib/return-status.hpp"
+#include "../lib/error.hpp"
 
 namespace Molch {
 	struct Exception : public std::exception {
@@ -43,5 +43,16 @@ namespace Molch {
 
 	std::ostream& operator<<(std::ostream& stream, const Exception& exception);
 }
+
+#define TRY_WITH_RESULT(result, call) \
+	auto&& result{call};\
+	if (!result) {\
+		throw Exception(result.error());\
+	}
+
+#define TRY_VOID(call)\
+	{\
+		TRY_WITH_RESULT(result, call)\
+	}
 
 #endif /* LIB_EXCEPTION_H */

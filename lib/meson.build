@@ -19,7 +19,6 @@ lib_sources = files(
 		'prekey-store.cpp',
 		'master-keys.cpp',
 		'return-status.cpp',
-		'exception.cpp',
 		'error.cpp',
 		'protobuf.cpp',
 		'sodium-wrappers.cpp',

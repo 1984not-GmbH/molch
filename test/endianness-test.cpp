@@ -26,6 +26,7 @@
 #include "../lib/endianness.hpp"
 #include "utils.hpp"
 #include "inline-utils.hpp"
+#include "exception.hpp"
 
 using namespace Molch;
 

@@ -32,6 +32,7 @@
 #include "../lib/gsl.hpp"
 #include "utils.hpp"
 #include "packet-test-lib.hpp"
+#include "exception.hpp"
 
 using namespace Molch;
 

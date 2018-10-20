@@ -30,7 +30,6 @@
 #include <stdexcept>
 
 #include "gsl.hpp"
-#include "exception.hpp"
 #include "malloc.hpp"
 #include "sodium-wrappers.hpp"
 

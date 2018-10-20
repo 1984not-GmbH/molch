@@ -27,6 +27,7 @@
 
 #include "../lib/spiced-random.hpp"
 #include "utils.hpp"
+#include "exception.hpp"
 
 using namespace Molch;
 

@@ -49,8 +49,8 @@ static std::unique_ptr<BackupKey,SodiumDeleter<BackupKey>> global_backup_key;
 class GlobalBackupKeyUnlocker {
 public:
 	GlobalBackupKeyUnlocker() {
-		if (!global_backup_key) {
-			throw Exception{status_type::GENERIC_ERROR, "No backup key to unlock!"};
+		if (global_backup_key == nullptr) {
+			std::terminate();
 		}
 		Molch::sodium_mprotect_readonly(global_backup_key.get());
 	}
@@ -69,7 +69,7 @@ class GlobalBackupKeyWriteUnlocker {
 public:
 	GlobalBackupKeyWriteUnlocker() {
 		if (!global_backup_key) {
-			throw Exception{status_type::GENERIC_ERROR, "No backup key to unlock!"};
+			std::terminate();
 		}
 		Molch::sodium_mprotect_readwrite(global_backup_key.get());
 	}
@@ -294,10 +294,8 @@ MOLCH_PUBLIC(return_status) molch_create_user(
 		*prekey_list = byte_to_uchar(created_user.prekey_list.release());
 		std::copy(std::cbegin(created_user.backup_key), std::cend(created_user.backup_key), uchar_to_byte(backup_key));
 		std::copy(std::cbegin(created_user.user_id), std::cend(created_user.user_id), uchar_to_byte(public_master_key));
-	} catch (const Exception& exception) {
-		return exception.toReturnStatus();
 	} catch (const std::exception& exception) {
-		return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+		return {status_type::EXCEPTION, exception.what()};
 	}
 
 	return success_status;
@@ -343,10 +341,8 @@ MOLCH_PUBLIC(return_status) molch_destroy_user(
 			*backup_length = created_backup.size();
 			*backup = byte_to_uchar(created_backup.release());
 		}
-	} catch (const Exception& exception) {
-		return exception.toReturnStatus();
 	} catch (const std::exception& exception) {
-		return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+		return {status_type::EXCEPTION, exception.what()};
 	}
 
 	return success_status;
@@ -389,8 +385,6 @@ MOLCH_PUBLIC(void) molch_destroy_all_users() {
 			*count = listed_users.count;
 			*user_list_length = listed_users.list.size();
 			*user_list = byte_to_uchar(listed_users.list.release());
-		} catch (const Exception& exception) {
-			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
 			return {status_type::EXCEPTION, exception.what()};
 		}
@@ -549,10 +543,8 @@ static result<PublicKey> verify_prekey_list(
 			}
 			*packet_length = conversation.packet.size();
 			*packet = byte_to_uchar(conversation.packet.release());
-		} catch (const Exception& exception) {
-			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+			return {status_type::EXCEPTION, exception.what()};
 		}
 
 		return success_status;
@@ -670,10 +662,8 @@ static result<PublicKey> verify_prekey_list(
 				*backup_length = created_backup.size();
 				*backup = byte_to_uchar(created_backup.release());
 			}
-		} catch (const Exception& exception) {
-			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+			return {status_type::EXCEPTION, exception.what()};
 		}
 
 		return success_status;
@@ -825,10 +815,8 @@ static result<PublicKey> verify_prekey_list(
 				*conversation_backup_length = backup.size();
 				*conversation_backup = byte_to_uchar(backup.release());
 			}
-		} catch (const Exception& exception) {
-			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+			return {status_type::EXCEPTION, exception.what()};
 		}
 
 		return success_status;
@@ -919,10 +907,8 @@ static result<PublicKey> verify_prekey_list(
 				*conversation_backup_length = created_backup.size();
 				*conversation_backup = byte_to_uchar(created_backup.release());
 			}
-		} catch (const Exception& exception) {
-			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+			return {status_type::EXCEPTION, exception.what()};
 		}
 
 		return success_status;
@@ -977,10 +963,8 @@ static result<PublicKey> verify_prekey_list(
 				*backup_length = created_backup.size();
 				*backup = byte_to_uchar(created_backup.release());
 			}
-		} catch (const Exception& exception) {
-			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+			return {status_type::EXCEPTION, exception.what()};
 		}
 
 		return success_status;
@@ -1040,10 +1024,8 @@ static result<PublicKey> verify_prekey_list(
 			*number = conversation_list_value.amount;
 			*conversation_list_length = conversation_list_value.list.size();
 			*conversation_list = byte_to_uchar(conversation_list_value.list.release());
-		} catch (const Exception& exception) {
-			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			return Error(status_type::EXCEPTION, exception.what()).toReturnStatus();
+			return {status_type::EXCEPTION, exception.what()};
 		}
 
 		return success_status;
@@ -1089,8 +1071,6 @@ static result<PublicKey> verify_prekey_list(
 			auto& encrypted_backup{encrypted_backup_result.value()};
 			*backup_length = encrypted_backup.size();
 			*backup = byte_to_uchar(encrypted_backup.release());
-		} catch (const Exception& exception) {
-			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
 			return {status_type::EXCEPTION, exception.what()};
 		}
@@ -1175,10 +1155,8 @@ static result<PublicKey> verify_prekey_list(
 			}
 			const auto& new_backup_key_key = new_backup_key_key_result.value();
 			std::copy(std::cbegin(new_backup_key_key), std::cend(new_backup_key_key), uchar_to_byte(new_backup_key));
-		} catch (const Exception& exception) {
-			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			return Error(status_type::EXCEPTION, exception.what()).toReturnStatus();
+			return {status_type::EXCEPTION, exception.what()};
 		}
 
 		return success_status;
@@ -1188,20 +1166,20 @@ static result<PublicKey> verify_prekey_list(
 			unsigned char ** const backup,
 			size_t *backup_length) {
 		if ((backup == nullptr) or (backup_length == nullptr)) {
-			return Exception(status_type::INVALID_VALUE, "backup or backup_length are NULL").toReturnStatus();
+			return {status_type::INVALID_VALUE, "backup or backup_length are NULL"};
 		}
 
 		try {
 			auto exported_backup_result{export_all()};
 			if (exported_backup_result.has_error()) {
-				return Exception(exported_backup_result.error()).toReturnStatus();
+				return exported_backup_result.error().toReturnStatus();
 			}
 			auto& exported_backup{exported_backup_result.value()};
 			//now pack the entire backup
 			*backup_length = exported_backup.size();
 			*backup = byte_to_uchar(exported_backup.release());
 		} catch (const std::exception& exception) {
-			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+			return {status_type::EXCEPTION, exception.what()};
 		}
 
 		return success_status;
@@ -1282,10 +1260,8 @@ static result<PublicKey> verify_prekey_list(
 			}
 			const auto& new_backup_key_key = new_backup_key_key_result.value();
 			std::copy(std::cbegin(new_backup_key_key), std::cend(new_backup_key_key), uchar_to_byte(new_backup_key));
-		} catch (const Exception& exception) {
-			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			return Error(status_type::EXCEPTION, exception.what()).toReturnStatus();
+			return {status_type::EXCEPTION, exception.what()};
 		}
 
 		return success_status;
@@ -1321,10 +1297,8 @@ static result<PublicKey> verify_prekey_list(
 			auto& malloced_prekey_list = malloced_prekey_list_result.value();
 			*prekey_list_length = malloced_prekey_list.size();
 			*prekey_list = byte_to_uchar(malloced_prekey_list.release());
-		} catch (const Exception& exception) {
-			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+			return {status_type::EXCEPTION, exception.what()};
 		}
 
 		return success_status;
@@ -1345,7 +1319,7 @@ static result<PublicKey> verify_prekey_list(
 			const auto& updated_backup_key{updated_backup_key_result.value()};
 			std::copy(std::cbegin(updated_backup_key), std::cend(updated_backup_key), uchar_to_byte(new_key));
 		} catch (const std::exception& exception) {
-			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+			return {status_type::EXCEPTION, exception.what()};
 		}
 
 		return success_status;

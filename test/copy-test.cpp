@@ -26,6 +26,7 @@
 #include "../lib/copy.hpp"
 #include "utils.hpp"
 #include "common.hpp"
+#include "exception.hpp"
 
 using namespace Molch;
 

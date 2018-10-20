@@ -22,7 +22,6 @@
 
 #include "constants.h"
 #include "diffie-hellman.hpp"
-#include "exception.hpp"
 #include "gsl.hpp"
 
 namespace Molch {

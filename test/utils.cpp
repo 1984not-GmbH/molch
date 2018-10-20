@@ -28,6 +28,7 @@
 #include "utils.hpp"
 #include "../lib/destroyers.hpp"
 #include "inline-utils.hpp"
+#include "exception.hpp"
 
 using namespace Molch;
 

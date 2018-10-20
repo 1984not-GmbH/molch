@@ -29,6 +29,7 @@
 #include "../lib/constants.h"
 #include "utils.hpp"
 #include "common.hpp"
+#include "exception.hpp"
 
 using namespace Molch;
 

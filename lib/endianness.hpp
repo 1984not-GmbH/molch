@@ -31,7 +31,6 @@
 #include <iterator>
 
 #include "buffer.hpp"
-#include "exception.hpp"
 #include "gsl.hpp"
 
 namespace Molch {

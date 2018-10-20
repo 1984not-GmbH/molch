@@ -28,6 +28,7 @@
 
 #include "../lib/ratchet.hpp"
 #include "utils.hpp"
+#include "exception.hpp"
 
 using namespace Molch;
 
