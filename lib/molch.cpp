@@ -1207,6 +1207,58 @@ static result<PublicKey> verify_prekey_list(
 		return success_status;
 	}
 
+	static result<BackupKey> import_all(const span<const std::byte> backup, const span<const std::byte> backup_key) {
+		OUTCOME_TRY(Molch::sodium_init());
+
+		//unpack the encrypted backup
+		auto encrypted_backup_struct = std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(molch__protobuf__encrypted_backup__unpack(&protobuf_c_allocator, backup.size(), byte_to_uchar(backup.data())));
+		if (encrypted_backup_struct == nullptr) {
+			return Error(status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf.");
+		}
+
+		//check the backup
+		if (encrypted_backup_struct->backup_version != 0) {
+			return Error(status_type::INCORRECT_DATA, "Incompatible backup.");
+		}
+		if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != MOLCH__PROTOBUF__ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP)) {
+			return Error(status_type::INCORRECT_DATA, "Backup is not a full backup.");
+		}
+		if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted state.");
+		}
+		if (!encrypted_backup_struct->has_encrypted_backup_nonce || (encrypted_backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
+			return Error(status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce.");
+		}
+
+		Arena arena;
+		auto decrypted_backup_content = arena.allocate<std::byte>(encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES);
+		auto decrypted_backup = span<std::byte>(decrypted_backup_content, encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES);
+
+		//decrypt the backup
+		OUTCOME_TRY(crypto_secretbox_open_easy(
+				decrypted_backup,
+				{uchar_to_byte(encrypted_backup_struct->encrypted_backup.data), encrypted_backup_struct->encrypted_backup.len},
+				{uchar_to_byte(encrypted_backup_struct->encrypted_backup_nonce.data), encrypted_backup_struct->encrypted_backup_nonce.len},
+				backup_key));
+
+		//unpack the struct
+		auto arena_protoc_allocator = arena.getProtobufCAllocator();
+		auto backup_struct{molch__protobuf__backup__unpack(&arena_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
+		if (backup_struct == nullptr) {
+			return Error(status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack backups protobuf-c.");
+		}
+
+		//import the user store
+		OUTCOME_TRY(imported_user_store, UserStore::import({backup_struct->users, backup_struct->n_users}));
+
+		OUTCOME_TRY(updated_backup_key, update_backup_key());
+
+		//everything worked, switch to the new user store
+		users = std::move(imported_user_store);
+
+		return std::move(updated_backup_key);
+	}
+
 	MOLCH_PUBLIC(return_status) molch_import(
 			//output
 			unsigned char * const new_backup_key, //BACKUP_KEY_SIZE, can be the same pointer as the backup key
@@ -1217,73 +1269,23 @@ static result<PublicKey> verify_prekey_list(
 			const unsigned char * const backup_key, //BACKUP_KEY_SIZE
 			const size_t backup_key_length
 			) {
+		if ((backup == nullptr)
+				|| (backup_key == nullptr) || (backup_key_length != BACKUP_KEY_SIZE)
+				|| (new_backup_key == nullptr) || (new_backup_key_length != BACKUP_KEY_SIZE)) {
+			return {status_type::INVALID_VALUE, "Invalid input to molch_import"};
+		}
+
 		try {
-			Expects((backup != nullptr)
-					and (backup_key != nullptr)
-					and (backup_key_length == BACKUP_KEY_SIZE)
-					and (new_backup_key != nullptr)
-					and (new_backup_key_length == BACKUP_KEY_SIZE));
-
-			TRY_VOID(Molch::sodium_init());
-
-			//unpack the encrypted backup
-			auto encrypted_backup_struct{std::unique_ptr<ProtobufCEncryptedBackup,EncryptedBackupDeleter>(molch__protobuf__encrypted_backup__unpack(&protobuf_c_allocator, backup_length, backup))};
-			if (encrypted_backup_struct == nullptr) {
-				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack encrypted backup from protobuf."};
+			const auto new_backup_key_key_result = import_all({uchar_to_byte(backup), backup_length}, {uchar_to_byte(backup_key), backup_key_length});
+			if (new_backup_key_key_result.has_error()) {
+				return new_backup_key_key_result.error().toReturnStatus();
 			}
-
-			//check the backup
-			if (encrypted_backup_struct->backup_version != 0) {
-				throw Exception{status_type::INCORRECT_DATA, "Incompatible backup."};
-			}
-			if (!encrypted_backup_struct->has_backup_type || (encrypted_backup_struct->backup_type != MOLCH__PROTOBUF__ENCRYPTED_BACKUP__BACKUP_TYPE__FULL_BACKUP)) {
-				throw Exception{status_type::INCORRECT_DATA, "Backup is not a full backup."};
-			}
-			if (!encrypted_backup_struct->has_encrypted_backup || (encrypted_backup_struct->encrypted_backup.len < crypto_secretbox_MACBYTES)) {
-				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the encrypted state."};
-			}
-			if (!encrypted_backup_struct->has_encrypted_backup_nonce || (encrypted_backup_struct->encrypted_backup_nonce.len != BACKUP_NONCE_SIZE)) {
-				throw Exception{status_type::PROTOBUF_MISSING_ERROR, "The backup is missing the nonce."};
-			}
-
-			Arena arena;
-			auto decrypted_backup_content{arena.allocate<std::byte>(
-					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES)};
-			span<std::byte> decrypted_backup{
-					decrypted_backup_content,
-					encrypted_backup_struct->encrypted_backup.len - crypto_secretbox_MACBYTES};
-
-			//decrypt the backup
-			auto status_int{crypto_secretbox_open_easy(
-					byte_to_uchar(decrypted_backup.data()),
-					encrypted_backup_struct->encrypted_backup.data,
-					encrypted_backup_struct->encrypted_backup.len,
-					encrypted_backup_struct->encrypted_backup_nonce.data,
-					backup_key)};
-			if (status_int != 0) {
-				throw Exception{status_type::DECRYPT_ERROR, "Failed to decrypt backup."};
-			}
-
-			//unpack the struct
-			auto arena_protoc_allocator{arena.getProtobufCAllocator()};
-			auto backup_struct{molch__protobuf__backup__unpack(&arena_protoc_allocator, decrypted_backup.size(), byte_to_uchar(decrypted_backup.data()))};
-			if (backup_struct == nullptr) {
-				throw Exception{status_type::PROTOBUF_UNPACK_ERROR, "Failed to unpack backups protobuf-c."};
-			}
-
-			//import the user store
-			TRY_WITH_RESULT(imported_user_store, UserStore::import({backup_struct->users, backup_struct->n_users}));
-
-			TRY_WITH_RESULT(updated_backup_key_result, update_backup_key());
-			const auto& updated_backup_key{updated_backup_key_result.value()};
-			std::copy(std::cbegin(updated_backup_key), std::cend(updated_backup_key), uchar_to_byte(new_backup_key));
-
-			//everyting worked, switch to the new user store
-			users = std::move(imported_user_store.value());
+			const auto& new_backup_key_key = new_backup_key_key_result.value();
+			std::copy(std::cbegin(new_backup_key_key), std::cend(new_backup_key_key), uchar_to_byte(new_backup_key));
 		} catch (const Exception& exception) {
 			return exception.toReturnStatus();
 		} catch (const std::exception& exception) {
-			return Exception(status_type::EXCEPTION, exception.what()).toReturnStatus();
+			return Error(status_type::EXCEPTION, exception.what()).toReturnStatus();
 		}
 
 		return success_status;
