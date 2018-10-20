@@ -823,8 +823,8 @@ static result<PublicKey> verify_prekey_list(
 	}
 
 	struct DecryptResult {
-		uint32_t message_number;
-		uint32_t previous_message_number;
+		uint32_t message_number = 0;
+		uint32_t previous_message_number = 0;
 		MallocBuffer message;
 		std::optional<MallocBuffer> conversation_backup;
 	};
@@ -972,7 +972,7 @@ static result<PublicKey> verify_prekey_list(
 
 	struct ConversationList {
 		MallocBuffer list;
-		size_t amount;
+		size_t amount = 0;
 	};
 
 	static result<ConversationList> list_conversations(const span<const std::byte> user_public_master_key_span) {

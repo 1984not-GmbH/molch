@@ -55,7 +55,7 @@ int main() {
 		if (!comparison.value()) {
 			status.status = status_type::INCORRECT_DATA;
 			status.error = "molch_print_status produces incorrect output.";
-			goto cleanup;
+			goto cleanup; //NOLINT
 		}
 	}
 
