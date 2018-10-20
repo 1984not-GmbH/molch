@@ -566,7 +566,7 @@ int main() {
 		std::string success_buffer("SUCCESS");
 		AutoFreeBuffer printed_status;
 		printed_status.pointer = char_to_uchar(molch_print_status(&printed_status.length, {status_type::SUCCESS, nullptr}));
-		if ((printed_status.size() != (success_buffer.size() + sizeof('\0'))) || (memcmp(printed_status.data(), std::data(success_buffer), std::size(success_buffer)) != 0)) {
+		if ((printed_status.size() != (success_buffer.size() + sizeof('\0'))) || (memcmp(printed_status.data(), success_buffer.data(), std::size(success_buffer)) != 0)) {
 			throw Exception("molch_print_status produces incorrect output.");
 		}
 	} catch (const std::exception& exception) {
