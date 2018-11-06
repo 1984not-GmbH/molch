@@ -400,6 +400,22 @@ int main() {
 			if (status.status != status_type::SUCCESS) {
 				throw Exception("Failed to decrypt Bob's message.");
 			}
+
+			// Try to receive the message a second time
+			status = molch_decrypt_message(
+					&alice_receive_message.pointer,
+					&alice_receive_message.length,
+					&alice_receive_message_number,
+					&alice_previous_receive_message_number,
+					alice_conversation.data(),
+					alice_conversation.size(),
+					bob_send_packet.data(),
+					bob_send_packet.size(),
+					nullptr,
+					nullptr);
+			if (status.status == status_type::SUCCESS) {
+				throw Exception("Failed to reject repeated message.");
+			}
 		}
 
 		if ((alice_receive_message_number != 0) || (alice_previous_receive_message_number != 0)) {
@@ -555,6 +571,27 @@ int main() {
 
 		//destroy the users again
 		molch_destroy_all_users();
+
+		// try receiving a message with destroyed users
+		{
+			uint32_t receive_message_number{UINT32_MAX};
+			uint32_t previous_receive_message_number{UINT32_MAX};
+			AutoFreeBuffer receive_message;
+			auto status{molch_decrypt_message(
+					&receive_message.pointer,
+					&receive_message.length,
+					&receive_message_number,
+					&previous_receive_message_number,
+					alice_conversation.data(),
+					alice_conversation.size(),
+					bob_send_packet.data(),
+					bob_send_packet.size(),
+					nullptr,
+					nullptr)};
+			if (status.status == status_type::SUCCESS) {
+				throw Exception("Failed to detect invalid message.");
+			}
+		}
 
 		//check user count
 		if (molch_user_count() != 0) {
