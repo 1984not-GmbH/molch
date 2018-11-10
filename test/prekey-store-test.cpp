@@ -27,7 +27,7 @@
 #include <exception>
 
 #include "../lib/prekey-store.hpp"
-#include "../lib/constants.h"
+#include "molch/constants.h"
 #include "../lib/destroyers.hpp"
 #include "utils.hpp"
 #include "exception.hpp"

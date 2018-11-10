@@ -20,7 +20,7 @@
  */
 #include <sodium.h>
 
-#include "constants.h"
+#include "molch/constants.h"
 #include "diffie-hellman.hpp"
 #include "gsl.hpp"
 

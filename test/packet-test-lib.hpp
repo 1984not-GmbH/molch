@@ -22,7 +22,7 @@
 #ifndef TEST_PACKET_TEST_LIB_H
 #define TEST_PACKET_TEST_LIB_H
 
-#include "../include/molch.h"
+#include "molch.h"
 #include "../lib/buffer.hpp"
 #include "../lib/key.hpp"
 #include "../lib/packet.hpp"

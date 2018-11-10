@@ -37,7 +37,10 @@ if get_option('lua_bindings') and not ['address', 'undefined', 'address,undefine
 	molch_interface = library(
 			'molch-interface',
 			molch_interface_source,
-			include_directories: root_includes,
+			include_directories: [
+				root_includes,
+				molch_include,
+			],
 			link_with: molch,
 			dependencies: [liblua, libsodium],
 			name_prefix: '', #so that lua loads the correct library file

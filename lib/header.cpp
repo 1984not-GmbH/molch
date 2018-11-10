@@ -20,7 +20,7 @@
  */
 
 #include "header.hpp"
-#include "constants.h"
+#include "molch/constants.h"
 #include "protobuf.hpp"
 
 namespace Molch {

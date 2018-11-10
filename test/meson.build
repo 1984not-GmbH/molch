@@ -41,7 +41,12 @@ test_library = static_library(
 			'packet-test-lib.cpp',
 			'exception.cpp',
 		],
-		include_directories: [c_protobufs_include, gsl_include, outcome_include],
+		include_directories: [
+			c_protobufs_include,
+			gsl_include,
+			outcome_include,
+			molch_include,
+		],
 		link_with: molch_internals,
 		dependencies: [
 			libsodium,
@@ -64,7 +69,12 @@ foreach test : unit_tests
 			protobuf_lite,
 			protobuf_c,
 		],
-		include_directories: [c_protobufs_include, gsl_include, outcome_include]
+		include_directories: [
+			c_protobufs_include,
+			gsl_include,
+			outcome_include,
+			molch_include,
+		]
 	)
 	test(test, test_exe, workdir: meson.current_source_dir())
 endforeach
@@ -77,7 +87,10 @@ integration_test_library = static_library(
 		dependencies: [
 			libsodium,
 		],
-		include_directories: [c_protobufs_include])
+		include_directories: [
+			c_protobufs_include,
+			molch_include,
+		])
 
 foreach test : integration_tests
 	test_exe = executable(
@@ -89,7 +102,12 @@ foreach test : integration_tests
 			c_protobufs,
 		],
 		dependencies: [libsodium, protobuf_c, protobuf_lite],
-		include_directories: [c_protobufs_include, outcome_include, gsl_include]
+		include_directories: [
+			c_protobufs_include,
+			outcome_include,
+			gsl_include,
+			molch_include,
+		]
 	)
 	test(test, test_exe, workdir: meson.current_source_dir())
 endforeach

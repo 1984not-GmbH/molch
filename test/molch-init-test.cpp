@@ -24,7 +24,7 @@
 #include <iostream>
 #include <string>
 
-#include "../include/molch.h"
+#include "molch.h"
 #include "integration-utils.hpp"
 #include "inline-utils.hpp"
 

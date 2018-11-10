@@ -26,7 +26,7 @@
 #include <iostream>
 
 #include "../lib/key-derivation.hpp"
-#include "../lib/constants.h"
+#include "molch/constants.h"
 #include "utils.hpp"
 #include "exception.hpp"
 

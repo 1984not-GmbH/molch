@@ -22,13 +22,13 @@
 %module molch
 
 %{
-#include <include/molch.h>
-#include <lib/constants.h>
+#include <molch.h>
+#include <molch/constants.h>
 #include <stdlib.h>
 #include <string.h>
 %}
 
-%include <lib/constants.h>
+%include <include/molch/constants.h>
 
 
 // tell SWIG to treat size_t as an integer

@@ -24,7 +24,7 @@
 #include <cstring>
 #include <iostream>
 
-#include "../include/molch/return-status.h"
+#include "molch/return-status.h"
 #include "../lib/destroyers.hpp"
 #include "utils.hpp"
 #include "inline-utils.hpp"

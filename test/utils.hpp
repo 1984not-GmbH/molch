@@ -25,7 +25,7 @@
 #include <string>
 #include <memory>
 
-#include "../include/molch.h"
+#include "molch.h"
 #include "../lib/buffer.hpp"
 #include "../lib/gsl.hpp"
 

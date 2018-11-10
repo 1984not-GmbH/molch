@@ -22,7 +22,7 @@
 #include <sodium.h>
 #include <exception>
 
-#include "constants.h"
+#include "molch/constants.h"
 #include "key-derivation.hpp"
 #include "diffie-hellman.hpp"
 

@@ -22,7 +22,7 @@
 #include <exception>
 #include <iterator>
 
-#include "constants.h"
+#include "molch/constants.h"
 #include "conversation.hpp"
 #include "packet.hpp"
 #include "header.hpp"

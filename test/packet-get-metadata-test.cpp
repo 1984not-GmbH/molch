@@ -26,7 +26,7 @@
 #include <iostream>
 
 #include "../lib/packet.hpp"
-#include "../lib/constants.h"
+#include "molch/constants.h"
 #include "utils.hpp"
 #include "packet-test-lib.hpp"
 #include "exception.hpp"

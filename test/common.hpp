@@ -23,7 +23,7 @@
 #define TEST_COMMON_H
 
 #include <string>
-#include "../include/molch.h"
+#include "molch.h"
 #include "../lib/header-and-message-keystore.hpp"
 #include "../lib/key.hpp"
 
