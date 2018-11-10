@@ -23,7 +23,7 @@
 #include <exception>
 
 #include "packet.hpp"
-#include "constants.h"
+#include "molch/constants.h"
 #include "protobuf.hpp"
 #include "gsl.hpp"
 

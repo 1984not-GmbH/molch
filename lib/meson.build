@@ -41,6 +41,7 @@ molch_internals = static_library(
 		c_protobufs_include,
 		gsl_include,
 		outcome_include,
+		molch_include,
 	],
 	implicit_include_directories: false,
 )
@@ -57,6 +58,7 @@ molch = library(
 			c_protobufs_include,
 			gsl_include,
 			outcome_include,
+			molch_include,
 		],
 		implicit_include_directories: false,
 		install: true)

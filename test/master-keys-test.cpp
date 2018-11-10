@@ -27,7 +27,7 @@
 #include <string_view>
 
 #include "../lib/master-keys.hpp"
-#include "../lib/constants.h"
+#include "molch/constants.h"
 #include "utils.hpp"
 #include "inline-utils.hpp"
 #include "exception.hpp"

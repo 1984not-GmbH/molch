@@ -24,7 +24,7 @@
 
 #include <ostream>
 
-#include "constants.h"
+#include "molch/constants.h"
 #include "ratchet.hpp"
 #include "packet.hpp"
 #include "prekey-store.hpp"

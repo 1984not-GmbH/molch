@@ -21,7 +21,7 @@
 
 #include <algorithm>
 
-#include "constants.h"
+#include "molch/constants.h"
 #include "header-and-message-keystore.hpp"
 #include "gsl.hpp"
 

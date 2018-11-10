@@ -27,7 +27,7 @@
 #include <exception>
 #include <fstream>
 
-#include "../include/molch.h"
+#include "molch.h"
 
 class BackupKeyArray : public std::array<unsigned char,32> {};
 class PublicIdentity : public std::array<unsigned char,32> {};

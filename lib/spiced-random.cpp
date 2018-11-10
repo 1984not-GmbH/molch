@@ -21,7 +21,7 @@
 
 #include <sodium.h>
 
-#include "constants.h"
+#include "molch/constants.h"
 #include "spiced-random.hpp"
 #include "key.hpp"
 

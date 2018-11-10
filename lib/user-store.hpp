@@ -26,7 +26,7 @@
 #include <memory>
 #include <ostream>
 
-#include "constants.h"
+#include "molch/constants.h"
 #include "buffer.hpp"
 #include "conversation-store.hpp"
 #include "prekey-store.hpp"
