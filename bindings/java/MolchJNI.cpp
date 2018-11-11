@@ -21,6 +21,7 @@
 
 #include <cstring>
 #include <limits>
+#include <algorithm>
 
 #include "de_hz1984not_crypto_Molch.h"
 #include "1984notlib.hpp"
@@ -176,46 +177,37 @@ extern "C" {
 		return jresult;
 	}
 
-	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_getUserName(JNIEnv *env, jobject jObj, jbyteArray jarg1, jint jlen1, jbyteArray jarg2, jint jlen2, jbyteArray jarg3, jint jlen3, jbyteArray jarg4, jint jlen4) {
-		(void)jlen1;
-		(void)jlen2;
-		(void)jlen3;
-		(void)jlen4;
-		unsigned char *arg1 = nullptr;
-		unsigned char *arg2 = nullptr;
-		unsigned char *arg3 = nullptr;
-		unsigned char *arg4 = nullptr;
-		(void)env;
-		(void)jObj;
-		arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-		arg2 = (unsigned char *) env->GetByteArrayElements(jarg2, nullptr);
-		env->ReleaseByteArrayElements(jarg2, (jbyte *) arg2, 0);
-		arg3 = (unsigned char *) env->GetByteArrayElements(jarg3, nullptr);
-		env->ReleaseByteArrayElements(jarg3, (jbyte *) arg3, 0);
-		arg4 = (unsigned char *) env->GetByteArrayElements(jarg4, nullptr);
-		env->ReleaseByteArrayElements(jarg4, (jbyte *) arg4, 0);
-
-
-		jbyte byteUrl[] = {41,42,43,43,44};
-		int sizeByteUrl = 5;
-
-		jbyteArray data = env->NewByteArray(sizeByteUrl);
-		if (data == nullptr) {
-			return nullptr; //  out of memory error thrown
+	static auto jbyteArray_from_uchars(JNIEnv& environment, const unsigned char* byte_array, const size_t length) -> jbyteArray {
+		if (length > std::numeric_limits<jsize>::max()) {
+			return nullptr;
 		}
 
-	// creat bytes from byteUrl
-		jbyte *bytes = env->GetByteArrayElements(data, nullptr);
-		int i;
-		for (i = 0; i < sizeByteUrl; i++) {
-			bytes[i] = byteUrl[i];
+		auto java_array = environment.NewByteArray(static_cast<jsize>(length));
+		if (java_array == nullptr) {
+			return nullptr;
 		}
+		jboolean isCopy = JNI_FALSE;
+		auto data = environment.GetByteArrayElements(java_array, &isCopy);
+		std::copy(byte_array, byte_array + length, data);
 
-	// move from the temp structure to the java structure
-		env->SetByteArrayRegion(data, 0, sizeByteUrl, bytes);
+		environment.ReleaseByteArrayElements(java_array, data, 0);
 
-		return data;
+		return java_array;
+	}
+
+	JNIEXPORT auto JNICALL Java_de_hz1984not_crypto_Molch_getUserName(
+			JNIEnv *env,
+			[[maybe_unused]] jobject jObj,
+			[[maybe_unused]] jbyteArray jarg1,
+			[[maybe_unused]] jint jlen1,
+			[[maybe_unused]] jbyteArray jarg2,
+			[[maybe_unused]] jint jlen2,
+			[[maybe_unused]] jbyteArray jarg3,
+			[[maybe_unused]] jint jlen3,
+			[[maybe_unused]] jbyteArray jarg4,
+			[[maybe_unused]] jint jlen4) -> jbyteArray {
+		const unsigned char byteUrl[] = {41,42,43,43,44};
+		return jbyteArray_from_uchars(*env, byteUrl, sizeof(byteUrl));
 	}
 
 	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_getvCardInfoAvatar(JNIEnv *env, jobject jObj, jbyteArray jarg1, jint jlen1, jbyteArray jarg2, jint jlen2, jbyteArray jarg3, jint jlen3) {
