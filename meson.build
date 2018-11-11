@@ -3,7 +3,8 @@ project('molch', ['cpp', 'c'],
 		'cpp_std=c++17',
 		'c_std=c99',
 		'werror=true',
-		'b_pch=true'
+		'b_pch=true',
+		'b_pie=true',
 	  ],
 	license: ['ISC'])
 
