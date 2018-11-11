@@ -82,3 +82,5 @@ if get_option('lua_bindings') and not ['address', 'undefined', 'address,undefine
 	endforeach
 
 endif
+
+subdir('java')
