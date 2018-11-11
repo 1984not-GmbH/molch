@@ -1,6 +1,6 @@
 jni_sources = files([
-	'MolchJNI.c',
-	'1984notlib.c',
+	'MolchJNI.cpp',
+	'1984notlib.cpp',
 ])
 
 java_include_candidates = [
