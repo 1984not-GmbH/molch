@@ -36,7 +36,7 @@
 #define INFO_PUB_KEY_LEN 5
 #define INFO_PRE_KEYS_LENGTH 5
 
-extern "C" {
+namespace Molch::JNI {
 
 	/*
 	 * Determine the current endianness at runtime.
@@ -47,9 +47,15 @@ extern "C" {
 		return (number_pointer[0] == 0x1);
 	}
 
-	int getvCardInfoAvatar(unsigned char *public_identity_key, const size_t publicLength, unsigned char *preKeyList,
-						   const size_t preKeysLength, unsigned char *avatarData, const size_t avatarLength,
-						   unsigned char **newVcard, size_t *retLength) {
+	auto getvCardInfoAvatar(
+			const unsigned char *public_identity_key,
+			const size_t publicLength,
+			const unsigned char *preKeyList,
+			const size_t preKeysLength,
+			const unsigned char *avatarData,
+			const size_t avatarLength,
+			unsigned char **newVcard,
+			size_t *retLength) -> int {
 		unsigned char infoPubKey[INFO_PUB_KEY_LEN] = {42, 0, 42, 0, 42};
 		unsigned char infoPreKeys[INFO_PRE_KEYS_LENGTH] = {0, 42, 0, 42, 0};
 
@@ -95,7 +101,11 @@ extern "C" {
 		return 0;
 	}
 
-	int getvCardPubKey(unsigned char *avatarData, const size_t avatarLength, unsigned char **newpubKey, size_t *retLength) {
+	auto getvCardPubKey(
+			const unsigned char *avatarData,
+			const size_t avatarLength,
+			unsigned char **newpubKey,
+			size_t *retLength) -> int {
 		unsigned char infoPubKey[INFO_PUB_KEY_LEN] = {42, 0, 42, 0, 42};
 
 		if (avatarLength > INFO_PUB_KEY_LEN) {
@@ -124,8 +134,11 @@ extern "C" {
 		return 0;
 	}
 
-	int
-	getvCardPreKeys(unsigned char *avatarData, const size_t avatarLength, unsigned char **newpreKeys, size_t *retLength) {
+	auto getvCardPreKeys(
+			const unsigned char *avatarData,
+			const size_t avatarLength,
+			unsigned char **newpreKeys,
+			size_t *retLength) -> int {
 		unsigned char infoPubKey[INFO_PUB_KEY_LEN] = {42, 0, 42, 0, 42};
 		unsigned char infoPreKeys[INFO_PRE_KEYS_LENGTH] = {0, 42, 0, 42, 0};
 

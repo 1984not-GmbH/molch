@@ -234,7 +234,7 @@ extern "C" {
 		unsigned char *newVcard = nullptr;
 		size_t retLength = 0;
 		int retVal = 0;
-		retVal = getvCardInfoAvatar(arg1, len1, arg2, len2, arg3, len3, &newVcard, &retLength);
+		retVal = Molch::JNI::getvCardInfoAvatar(arg1, len1, arg2, len2, arg3, len3, &newVcard, &retLength);
 		if (retVal < 0) {
 			return nullptr;
 		}
@@ -308,7 +308,7 @@ extern "C" {
 		unsigned char *newPubKey = nullptr;
 		size_t retLength = 0;
 		int retValue = 0;
-		retValue = getvCardPubKey(arg1, len1, &newPubKey, &retLength);
+		retValue = Molch::JNI::getvCardPubKey(arg1, len1, &newPubKey, &retLength);
 		(void)retValue;
         env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
 
@@ -346,7 +346,7 @@ extern "C" {
 		unsigned char *newPreKey = nullptr;
 		size_t retLength = 0;
 		int retValue = 0;
-		retValue = getvCardPreKeys(arg1, len1, &newPreKey, &retLength);
+		retValue = Molch::JNI::getvCardPreKeys(arg1, len1, &newPreKey, &retLength);
 		(void)retValue;
         env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
 

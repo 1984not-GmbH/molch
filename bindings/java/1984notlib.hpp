@@ -22,12 +22,28 @@
 #ifndef LIB_1984NOTLIB_H
 #define LIB_1984NOTLIB_H
 
-extern "C" {
-	int getvCardInfoAvatar(unsigned char *public_identity_key, const size_t publicLength, unsigned char *preKeyList,
-							const size_t preKeysLength, unsigned char *avatarData, const size_t avatarLength,
-							unsigned char **newVcard, size_t *retLength);
-	int getvCardPubKey(unsigned char *avatarData, const size_t avatarLength, unsigned char **newpubKey, size_t *retLength);
-	int getvCardPreKeys(unsigned char *avatarData, const size_t avatarLength, unsigned char **newpubKey, size_t *retLength);
+#include <cstddef>
+
+namespace Molch::JNI {
+	auto getvCardInfoAvatar(
+			const unsigned char *public_identity_key,
+			const size_t publicLength,
+			const unsigned char *preKeyList,
+			const size_t preKeysLength,
+			const unsigned char *avatarData,
+			const size_t avatarLength,
+			unsigned char **newVcard,
+			size_t *retLength) -> int;
+	auto getvCardPubKey(
+			const unsigned char *avatarData,
+			const size_t avatarLength,
+			unsigned char **newpubKey,
+			size_t *retLength) -> int;
+	auto getvCardPreKeys(
+			const unsigned char *avatarData,
+			const size_t avatarLength,
+			unsigned char **newpubKey,
+			size_t *retLength) -> int;
 }
 
 #endif
