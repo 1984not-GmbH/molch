@@ -30,6 +30,11 @@ else
 	java_include = include_directories(winning_java_include)
 endif
 
+jni_flag_candidates = [
+	'-Wno-old-style-cast',
+]
+jni_flags = cpp_compiler.get_supported_arguments(jni_flag_candidates)
+
 jni = library(
 	'molchJNI',
 	jni_sources,
@@ -37,4 +42,5 @@ jni = library(
 	include_directories: [
 		java_include,
 		molch_include,
-	])
+	],
+	cpp_args: jni_flags)

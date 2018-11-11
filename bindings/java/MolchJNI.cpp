@@ -94,7 +94,7 @@ extern "C" {
 		*jarr = jenv->GetIntArrayElements(input, nullptr);
 		if (!*jarr)
 			return 0;
-		*carr = (long*) calloc(sz, sizeof(long));
+		*carr = (long*) calloc((size_t)sz, sizeof(long));
 		if (!*carr) {
 			SWIG_JavaThrowException(jenv, SWIG_JavaOutOfMemoryError, "array memory allocation failed");
 			return 0;
@@ -217,8 +217,8 @@ extern "C" {
 		int sizeByteUrl = 5;
 
 		jbyteArray data = env->NewByteArray(sizeByteUrl);
-		if (data == NULL) {
-			return NULL; //  out of memory error thrown
+		if (data == nullptr) {
+			return nullptr; //  out of memory error thrown
 		}
 
 	// creat bytes from byteUrl
@@ -264,7 +264,7 @@ extern "C" {
 		int retVal = 0;
 		retVal = getvCardInfoAvatar(arg1, len1, arg2, len2, arg3, len3, &newVcard, &retLength);
 		if (retVal < 0) {
-			return NULL;
+			return nullptr;
 		}
 		if (retLength > std::numeric_limits<jsize>::max()) {
 			return nullptr;
@@ -282,14 +282,14 @@ extern "C" {
 		}
 
 		jbyteArray data = env->NewByteArray((jsize)retLength);
-		if (data == NULL) {
-			return NULL; //  out of memory error thrown
+		if (data == nullptr) {
+			return nullptr; //  out of memory error thrown
 		}
 
 		// creat bytes from byteUrl
 		jbyte *bytes = env->GetByteArrayElements(data, nullptr);
 		for (size_t index = 0; index < retLength; index++) {
-			bytes[index] = newVcard[index];
+			bytes[index] = (jbyte)newVcard[index];
 		}
 		free(newVcard);
 
@@ -315,8 +315,8 @@ extern "C" {
 		int sizeByteUrl = 5;
 
 		jbyteArray data = env->NewByteArray(sizeByteUrl);
-		if (data == NULL) {
-			return NULL; //  out of memory error thrown
+		if (data == nullptr) {
+			return nullptr; //  out of memory error thrown
 		}
 
 	// creat bytes from byteUrl
@@ -358,14 +358,14 @@ extern "C" {
 		}
 
 		jbyteArray data = env->NewByteArray((jsize)retLength);
-		if (data == NULL) {
-			return NULL; //  out of memory error thrown
+		if (data == nullptr) {
+			return nullptr; //  out of memory error thrown
 		}
 
 		// creat bytes from byteUrl
 		jbyte *bytes = env->GetByteArrayElements(data, nullptr);
 		for (size_t index = 0; index < retLength; index++) {
-			bytes[index] = newPubKey[index];
+			bytes[index] = (jbyte)newPubKey[index];
 		}
 		free(newPubKey);
 
@@ -407,7 +407,7 @@ extern "C" {
 		// creat bytes from byteUrl
 		jbyte *bytes = env->GetByteArrayElements(data, nullptr);
 		for (size_t index = 0; index < retLength; index++) {
-			bytes[index] = newPreKey[index];
+			bytes[index] = (jbyte)newPreKey[index];
 		}
 		free(newPreKey);
 
@@ -443,9 +443,9 @@ extern "C" {
 			arg5 = (unsigned char *) env->GetByteArrayElements(backup_keyin, nullptr);
 		}
 
-		unsigned char *public_prekeys = NULL;
+		unsigned char *public_prekeys = nullptr;
 		size_t public_prekeys_length = pubPreKeyLenth;
-		unsigned char *complete_json_export = NULL;
+		unsigned char *complete_json_export = nullptr;
 		size_t complete_json_export_length = 0;
 		return_status retStatus;
 
@@ -465,8 +465,8 @@ extern "C" {
 
 		android_only(__android_log_print(ANDROID_LOG_DEBUG, ": ", "%d", (int) retStatus.status);)
 
-		jbyteArray data = NULL;
-		if (public_prekeys == NULL) {
+		jbyteArray data = nullptr;
+		if (public_prekeys == nullptr) {
 			retVal = -1;
 		}
 		else {
@@ -486,17 +486,17 @@ extern "C" {
 
 		android_only(__android_log_print(ANDROID_LOG_DEBUG, ": ", "next %d", (int) complete_json_export_length);)
 
-		if (complete_json_export == NULL) {
+		if (complete_json_export == nullptr) {
 			retVal = -1;
 		}
 		else if (retVal != -1){
 			jbyteArray data = env->NewByteArray((jsize)complete_json_export_length);
-			if (data == NULL) {
-				return NULL; //  out of memory error thrown
+			if (data == nullptr) {
+				return nullptr; //  out of memory error thrown
 			}
 			jbyte *bytes = env->GetByteArrayElements(data, nullptr);
 			for (size_t index = 0; index < complete_json_export_length; index++) {
-				bytes[index] = complete_json_export[index];
+				bytes[index] = (jbyte)complete_json_export[index];
 			}
 			env->SetByteArrayRegion(data, 0, (jsize)complete_json_export_length, bytes);
 
@@ -505,8 +505,8 @@ extern "C" {
 
 		android_only(__android_log_print(ANDROID_LOG_DEBUG, ": ", "%d", (int) retVal);)
 
-		if (backup_key == NULL) {
-			android_only(__android_log_print(ANDROID_LOG_DEBUG, ": ", "backup_key == NULL");)
+		if (backup_key == nullptr) {
+			android_only(__android_log_print(ANDROID_LOG_DEBUG, ": ", "backup_key == nullptr");)
 		}
 		else if (retVal != -1) {
 			arg5 = (unsigned char *) env->GetByteArrayElements(backup_keyin, nullptr);
@@ -586,12 +586,12 @@ extern "C" {
 	}
 
 	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_molchUserListFromNativeCode(JNIEnv *env, jobject jOgj, jintArray count) {
-		jint *jarr2;
-		unsigned long long *arg2 = nullptr;
 		(void)env;
 		(void)jOgj;
+		jint* jarr2 = nullptr;
+		long* arg2 = nullptr;
 
-		if (!SWIG_JavaArrayInLong(env, &jarr2, (long **)&arg2, count)) {
+		if (!SWIG_JavaArrayInLong(env, &jarr2, &arg2, count)) {
 			return nullptr;
 		}
 
@@ -600,27 +600,31 @@ extern "C" {
 		return_status retStatus;
 		size_t user_list_length = 0;
 		retStatus = molch_list_users(&retptr, &user_list_length, &tmpCount);
+		if ((tmpCount > std::numeric_limits<jint>::max())
+				or (tmpCount > std::numeric_limits<long>::max())) {
+			return nullptr;
+		}
 		if (arg2) {
-			*arg2 = (unsigned long long) tmpCount;
+			*arg2 = (long) tmpCount;
 		}
 
-		size_t sizeByteUrl = *arg2;
+		size_t sizeByteUrl = tmpCount;
 
 		if ((retStatus.status != status_type::SUCCESS)
 				or (sizeByteUrl > std::numeric_limits<jsize>::max())) {
 			print_info_error("Java_de_hz1984not_crypto_Molch_molchUserListFromNativeCode: ", retStatus);
 			molch_destroy_return_status(&retStatus);
-			return NULL;
+			return nullptr;
 		}
 
 		jbyteArray data = env->NewByteArray((jsize)sizeByteUrl);
-		if (data == NULL) {
-			return NULL; //  out of memory error thrown
+		if (data == nullptr) {
+			return nullptr; //  out of memory error thrown
 		}
 
 		jbyte *bytes = env->GetByteArrayElements(data, nullptr);
 		for (size_t index = 0; index < sizeByteUrl; index++) {
-			bytes[index] = retptr[index];
+			bytes[index] = (jbyte)retptr[index];
 		}
 		free(retptr);
 
@@ -695,11 +699,11 @@ extern "C" {
 			arg6 = (unsigned char *) env->GetByteArrayElements(jarg6, nullptr);
 		}
 
-		unsigned char *alice_send_packet = NULL;
+		unsigned char *alice_send_packet = nullptr;
 		size_t packet_length = 0;
-		unsigned char * json_export = NULL;
+		unsigned char * json_export = nullptr;
 		return_status retStatus;
-		retStatus = molch_start_send_conversation(arg1, conversation_id_length, &alice_send_packet, &packet_length, arg5, sender_public_master_key_length, arg6, receiver_public_master_key_length, arg4, prekey_list_length, arg2, arg3, NULL, NULL);
+		retStatus = molch_start_send_conversation(arg1, conversation_id_length, &alice_send_packet, &packet_length, arg5, sender_public_master_key_length, arg6, receiver_public_master_key_length, arg4, prekey_list_length, arg2, arg3, nullptr, nullptr);
 		{
 			env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
 		}
@@ -719,24 +723,24 @@ extern "C" {
 				or (packet_length > std::numeric_limits<jsize>::max())) {
 			print_info_error("Java_de_hz1984not_crypto_Molch_molchCreateSendConversationFromNativeCode: ", retStatus);
 			molch_destroy_return_status(&retStatus);
-			return NULL;
+			return nullptr;
 		}
 
 		jbyteArray data = env->NewByteArray((jsize)packet_length);
-		if (data == NULL) {
-			return NULL; //  out of memory error thrown
+		if (data == nullptr) {
+			return nullptr; //  out of memory error thrown
 		}
 
 		// creat bytes from byteUrl
 		jbyte *bytes = env->GetByteArrayElements(data, nullptr);
 		for (size_t index = 0; index < packet_length; index++) {
-			bytes[index] = alice_send_packet[index];
+			bytes[index] = (jbyte)alice_send_packet[index];
 		}
 		// move from the temp structure to the java structure
 		env->SetByteArrayRegion(data, 0, (jsize)packet_length, bytes);
 		free(alice_send_packet);
 
-		if (json_export != NULL) {
+		if (json_export != nullptr) {
 			free(json_export);
 		}
 
@@ -781,8 +785,8 @@ extern "C" {
 		unsigned char *alice_receive_packet;
 		size_t alice_message_length = 0;
 		size_t pre_keys_length = (size_t) jpre_keys_length;
-		unsigned char *my_public_prekeys = NULL;  //arg4
-		unsigned char * json_export = NULL;
+		unsigned char *my_public_prekeys = nullptr;  //arg4
+		unsigned char * json_export = nullptr;
 		size_t json_export_length = 0;
 		return_status retStatus;
 		retStatus = molch_start_receive_conversation(arg1, conversation_id_length, &my_public_prekeys, &pre_keys_length, &alice_receive_packet, &alice_message_length, arg6, receiver_public_master_key_length, arg5, sender_public_master_key_length, arg2, arg3, &json_export, &json_export_length);
@@ -792,10 +796,10 @@ extern "C" {
 		}
 		int preKeyerrorCode = 0;
 		if (retStatus.status == status_type::SUCCESS) {
-			if (my_public_prekeys == NULL) {
+			if (my_public_prekeys == nullptr) {
 				android_only(__android_log_print(ANDROID_LOG_DEBUG, "Java_de_hz1984not_crypto_Molch_molchCreateReceiveConversationFromNativeCode: notNewPreKeyList;", "error: %d\n", retStatus.status);)
 				preKeyerrorCode = -10;
-				//return NULL;
+				//return nullptr;
 			}
 			else {
 				if (jpre_keys_length == (jsize)pre_keys_length) {
@@ -826,22 +830,22 @@ extern "C" {
 		if ((retStatus.status != status_type::SUCCESS) or (preKeyerrorCode != 0)) {
 			print_info_error("Java_de_hz1984not_crypto_Molch_molchCreateReceiveConversationFromNativeCode: ", retStatus);
 			molch_destroy_return_status(&retStatus);
-			return NULL;
+			return nullptr;
 		}
 
 		jbyteArray data = env->NewByteArray((jsize)alice_message_length);
-		if (data == NULL) {
-			return NULL; //  out of memory error thrown
+		if (data == nullptr) {
+			return nullptr; //  out of memory error thrown
 		}
 
 		jbyte *bytes = env->GetByteArrayElements(data, nullptr);
 		for (size_t index = 0; index < alice_message_length; index++) {
-			bytes[index] = alice_receive_packet[index];
+			bytes[index] = (jbyte)alice_receive_packet[index];
 		}
 		env->SetByteArrayRegion(data, 0, (jsize)alice_message_length, bytes);
 		free(alice_receive_packet);
 
-		if (json_export != NULL)
+		if (json_export != nullptr)
 		{
 			free(json_export);
 		}
@@ -880,7 +884,7 @@ extern "C" {
 		//size_t conversation_id_length = CONVERSATION_ID_SIZE;
 		unsigned char *packet;
 		size_t packet_length = 0;
-		unsigned char * conversation_json_export = NULL;
+		unsigned char * conversation_json_export = nullptr;
 		size_t json_export_conversation_length = 0;
 		return_status retStatus;
 		retStatus = molch_encrypt_message(&packet, &packet_length, arg3, conversation_id_length, (const unsigned char*)arg1, arg2, &conversation_json_export, &json_export_conversation_length);
@@ -894,24 +898,24 @@ extern "C" {
 				or (packet_length > std::numeric_limits<jsize>::max())) {
 			print_info_error("Java_de_hz1984not_crypto_Molch_molchEncryptMessageFromNativeCode: ", retStatus);
 			molch_destroy_return_status(&retStatus);
-			return NULL;
+			return nullptr;
 		}
 
 		jbyteArray data = env->NewByteArray((jsize)packet_length);
-		if (data == NULL) {
-			return NULL; //  out of memory error thrown
+		if (data == nullptr) {
+			return nullptr; //  out of memory error thrown
 		}
 
 		// creat bytes from byteUrl
 		jbyte *bytes = env->GetByteArrayElements(data, nullptr);
 		for (size_t index = 0; index < packet_length; index++) {
-			bytes[index] = packet[index];
+			bytes[index] = (jbyte)packet[index];
 		}
 	// move from the temp structure to the java structure
 		env->SetByteArrayRegion(data, 0, (jsize)packet_length, bytes);
 		free(packet);
 
-		if (conversation_json_export != NULL)
+		if (conversation_json_export != nullptr)
 		{
 			free(conversation_json_export);
 		}
@@ -940,7 +944,7 @@ extern "C" {
 		uint32_t receive_message_number = 0;
 		uint32_t previous_receive_message_number = 0;
 		//size_t conversation_id_length = CONVERSATION_ID_SIZE;
-		unsigned char * conversation_json_export = NULL;
+		unsigned char * conversation_json_export = nullptr;
 		size_t conversation_json_export_length = 0;
 		return_status retStatus;
 		//retStatus = molch_decrypt_message(&packet, &packet_length, arg1, arg2, arg3, &conversation_json_export, &conversation_json_export_length);
@@ -956,21 +960,21 @@ extern "C" {
 				or (packet_length > std::numeric_limits<jsize>::max())) {
 			print_info_error("Java_de_hz1984not_crypto_Molch_molchDecryptMessageFromNativeCode: ", retStatus);
 			molch_destroy_return_status(&retStatus);
-			return NULL;
+			return nullptr;
 		}
 
 		jbyteArray data = env->NewByteArray((jsize)packet_length);
-		if (data == NULL) {
-			return NULL; //  out of memory error thrown
+		if (data == nullptr) {
+			return nullptr; //  out of memory error thrown
 		}
 		jbyte *bytes = env->GetByteArrayElements(data, nullptr);
 		for (size_t index = 0; index < packet_length; index++) {
-			bytes[index] = packet[index];
+			bytes[index] = (jbyte)packet[index];
 		}
 		env->SetByteArrayRegion(data, 0, (jsize)packet_length, bytes);
 		free(packet);
 
-		if (conversation_json_export != NULL)
+		if (conversation_json_export != nullptr)
 		{
 			free(conversation_json_export);
 		}
@@ -1000,14 +1004,14 @@ extern "C" {
 		jbyteArray data = nullptr;
 		if ((json_export_length != 0) && (json_export_length < std::numeric_limits<jsize>::max())) {
 			data = env->NewByteArray((jsize)json_export_length);
-			if (data == NULL) {
-				return NULL; //  out of memory error thrown
+			if (data == nullptr) {
+				return nullptr; //  out of memory error thrown
 			}
 
 			// creat bytes from byteUrl
 			jbyte *bytes = env->GetByteArrayElements(data, nullptr);
 			for (size_t index = 0; index < json_export_length; index++) {
-				bytes[index] = json_export[index];
+				bytes[index] = (jbyte)json_export[index];
 			}
 
 			// move from the temp structure to the java structure
@@ -1027,7 +1031,7 @@ extern "C" {
 
 		size_t conversation_list_length = 0;
 		size_t number_of_conversations = 0;
-		unsigned char *conversation_list = NULL;
+		unsigned char *conversation_list = nullptr;
 
 		android_only(__android_log_print(ANDROID_LOG_DEBUG, "Java_de_hz1984not_crypto_Molch_molchListConversationsFromNativeCode: ", "arg2: %d\n", (int) arg2);)
 
@@ -1054,14 +1058,14 @@ extern "C" {
 		}
 
 		jbyteArray data = env->NewByteArray((jsize)arg2);
-		if (data == NULL) {
+		if (data == nullptr) {
 			return nullptr; //  out of memory error thrown
 		}
 
 		// creat bytes from byteUrl
 		jbyte *bytes = env->GetByteArrayElements(data, nullptr);
 		for (size_t index = 0; index < arg2; index++) {
-			bytes[index] = conversation_list[(number_of_conversations - 1) + index];
+			bytes[index] = (jbyte)conversation_list[(number_of_conversations - 1) + index];
 		}
 
 		// move from the temp structure to the java structure
@@ -1082,18 +1086,18 @@ extern "C" {
 				or (imported_json_length > std::numeric_limits<jsize>::max())) {
 			print_info_error("Java_de_hz1984not_crypto_Molch_molchJsonExportFromNativeCode: ", retStatus);
 			molch_destroy_return_status(&retStatus);
-			return NULL;
+			return nullptr;
 		}
 
 		jbyteArray data = env->NewByteArray((jsize)imported_json_length);
-		if (data == NULL) {
-			return NULL; //  out of memory error thrown
+		if (data == nullptr) {
+			return nullptr; //  out of memory error thrown
 		}
 
 		// creat bytes from byteUrl
 		jbyte *bytes = env->GetByteArrayElements(data, nullptr);
 		for (size_t index = 0; index < imported_json_length; index++) {
-			bytes[index] = imported_json[index];
+			bytes[index] = (jbyte)imported_json[index];
 		}
 
 		// move from the temp structure to the java structure
