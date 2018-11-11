@@ -187,31 +187,15 @@ extern "C" {
 		unsigned char *arg4 = nullptr;
 		(void)env;
 		(void)jObj;
-		{
-			arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		}
-		{
-			arg2 = (unsigned char *) env->GetByteArrayElements(jarg2, nullptr);
-		}
-		{
-			arg3 = (unsigned char *) env->GetByteArrayElements(jarg3, nullptr);
-		}
-		{
-			arg4 = (unsigned char *) env->GetByteArrayElements(jarg4, nullptr);
-		}
+		arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
+		env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
+		arg2 = (unsigned char *) env->GetByteArrayElements(jarg2, nullptr);
+		env->ReleaseByteArrayElements(jarg2, (jbyte *) arg2, 0);
+		arg3 = (unsigned char *) env->GetByteArrayElements(jarg3, nullptr);
+		env->ReleaseByteArrayElements(jarg3, (jbyte *) arg3, 0);
+		arg4 = (unsigned char *) env->GetByteArrayElements(jarg4, nullptr);
+		env->ReleaseByteArrayElements(jarg4, (jbyte *) arg4, 0);
 
-		{
-			env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-		}
-		{
-			env->ReleaseByteArrayElements(jarg2, (jbyte *) arg2, 0);
-		}
-		{
-			env->ReleaseByteArrayElements(jarg3, (jbyte *) arg3, 0);
-		}
-		{
-			env->ReleaseByteArrayElements(jarg4, (jbyte *) arg4, 0);
-		}
 
 		jbyte byteUrl[] = {41,42,43,43,44};
 		int sizeByteUrl = 5;
@@ -248,12 +232,8 @@ extern "C" {
 		unsigned long long  len3;
 		len3 = (unsigned long long)jlen3;
 
-		{
-			arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		}
-		{
-			arg2 = (unsigned char *) env->GetByteArrayElements(jarg2, nullptr);
-		}
+		arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
+		arg2 = (unsigned char *) env->GetByteArrayElements(jarg2, nullptr);
 		if (len3 > 0)
 		{
 			arg3 = (unsigned char *) env->GetByteArrayElements(jarg3, nullptr);
@@ -270,12 +250,8 @@ extern "C" {
 			return nullptr;
 		}
 
-		{
-			env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-		}
-		{
-			env->ReleaseByteArrayElements(jarg2, (jbyte *) arg2, 0);
-		}
+		env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
+		env->ReleaseByteArrayElements(jarg2, (jbyte *) arg2, 0);
 		if (len3 > 0)
 		{
 			env->ReleaseByteArrayElements(jarg3, (jbyte *) arg3, 0);
@@ -303,13 +279,8 @@ extern "C" {
 		(void)jlen1;
 		unsigned char *arg1 = nullptr;
 		(void)jObj;
-		{
-			arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		}
-
-		{
-			env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-		}
+		arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
+		env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
 
 		jbyte byteUrl[] = {41,42,43,43,44};
 		int sizeByteUrl = 5;
@@ -319,14 +290,14 @@ extern "C" {
 			return nullptr; //  out of memory error thrown
 		}
 
-	// creat bytes from byteUrl
+		// creat bytes from byteUrl
 		jbyte *bytes = env->GetByteArrayElements(data, nullptr);
 		int i;
 		for (i = 0; i < sizeByteUrl; i++) {
 			bytes[i] = byteUrl[i];
 		}
 
-	// move from the temp structure to the java structure
+		// move from the temp structure to the java structure
 		env->SetByteArrayRegion(data, 0, sizeByteUrl, bytes);
 
 		return data;
@@ -337,9 +308,7 @@ extern "C" {
 		unsigned char *arg1 = nullptr;
 		(void)env;
 		(void)jObj;
-		{
-			arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		}
+        arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
 
 		unsigned long long len1;
 		len1 = (unsigned long long)jlen1;
@@ -349,9 +318,7 @@ extern "C" {
 		int retValue = 0;
 		retValue = getvCardPubKey(arg1, len1, &newPubKey, &retLength);
 		(void)retValue;
-		{
-			env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-		}
+        env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
 
 		if (retLength > std::numeric_limits<jsize>::max()) {
 			return nullptr;
@@ -379,9 +346,7 @@ extern "C" {
 		unsigned char *arg1 = nullptr;
 		(void)env;
 		(void)jObj;
-		{
-			arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		}
+        arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
 
 		unsigned long long len1;
 		len1 = (unsigned long long)jlen1;
@@ -391,9 +356,7 @@ extern "C" {
 		int retValue = 0;
 		retValue = getvCardPreKeys(arg1, len1, &newPreKey, &retLength);
 		(void)retValue;
-		{
-			env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-		}
+        env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
 
 		if (retLength > std::numeric_limits<jsize>::max()) {
 			return nullptr;
@@ -433,15 +396,9 @@ extern "C" {
 
 		(void)env;
 		(void)jOgj;
-		{
-			arg1 = (unsigned char *) env->GetByteArrayElements(public_identity_key, nullptr);
-		}
-		{
-			arg3 = (unsigned char *) env->GetByteArrayElements(random_data, nullptr);
-		}
-		{
-			arg5 = (unsigned char *) env->GetByteArrayElements(backup_keyin, nullptr);
-		}
+		arg1 = (unsigned char *) env->GetByteArrayElements(public_identity_key, nullptr);
+		arg3 = (unsigned char *) env->GetByteArrayElements(random_data, nullptr);
+		arg5 = (unsigned char *) env->GetByteArrayElements(backup_keyin, nullptr);
 
 		unsigned char *public_prekeys = nullptr;
 		size_t public_prekeys_length = pubPreKeyLenth;
@@ -525,12 +482,8 @@ extern "C" {
 			}
 		}
 
-		{
-			env->ReleaseByteArrayElements(public_identity_key, (jbyte *) arg1, 0);
-		}
-		{
-			env->ReleaseByteArrayElements(random_data, (jbyte *) arg3, 0);
-		}
+		env->ReleaseByteArrayElements(public_identity_key, (jbyte *) arg1, 0);
+		env->ReleaseByteArrayElements(random_data, (jbyte *) arg3, 0);
 
 		return data;
 	}
@@ -541,20 +494,14 @@ extern "C" {
 		unsigned char *arg2 = nullptr;
 		(void)env;
 		(void)jOgj;
-		{
-			arg1 = (unsigned char *) env->GetByteArrayElements(public_identity_key, nullptr);
-		}
-		{
-			arg2 = (unsigned char *) env->GetByteArrayElements(jarg2, nullptr);
-		}
+		arg1 = (unsigned char *) env->GetByteArrayElements(public_identity_key, nullptr);
+		arg2 = (unsigned char *) env->GetByteArrayElements(jarg2, nullptr);
 		unsigned long long public_master_key_length;
 		public_master_key_length = (unsigned long long)public_master_key_lengthin;
 
 		size_t json_export_length = 0;
 		return_status retStatus;
-		//public_master_key_length = crypto_box_PUBLICKEYBYTES;
 		int retVal = 0;
-		//retStatus = molch_destroy_user(arg1, &arg2, &json_export_length);
 		retStatus = molch_destroy_user(arg1, public_master_key_length, &arg2, &json_export_length);
 
 		if (retStatus.status != status_type::SUCCESS) {
@@ -564,12 +511,8 @@ extern "C" {
 		}
 
 		jresult = (jint) retVal;
-		{
-			env->ReleaseByteArrayElements(public_identity_key, (jbyte *) arg1, 0);
-		}
-		{
-			env->ReleaseByteArrayElements(jarg2, (jbyte *) arg2, 0);
-		}
+		env->ReleaseByteArrayElements(public_identity_key, (jbyte *) arg1, 0);
+		env->ReleaseByteArrayElements(jarg2, (jbyte *) arg2, 0);
 
 		return jresult;
 	}
@@ -645,18 +588,14 @@ extern "C" {
 		unsigned char *arg1 = nullptr;
 		(void)env;
 		(void)jOgj;
-		{
-			arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		}
+		arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
 		unsigned long long arg2 ;
 		arg2 = (unsigned long long)jarg2;
 		molch_message_type tmpResult = molch_get_message_type(arg1, arg2);
 
 		int result = (int) tmpResult;
 		jresult = (jint)result;
-		{
-			env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-		}
+		env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
 
 		return jresult;
 	}
@@ -665,9 +604,7 @@ extern "C" {
 		unsigned char *arg1 = nullptr;
 		(void)env;
 		(void)jOgj;
-		{
-			arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		}
+		arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
 		const unsigned char *arg2 = nullptr;
 		if (jarg2) {
 			arg2 = (const unsigned char *)env->GetStringUTFChars(jarg2, nullptr);
@@ -686,38 +623,21 @@ extern "C" {
 		receiver_public_master_key_length = (unsigned long long)receiver_public_master_key_lengthin;
 		prekey_list_length = (unsigned long long)prekey_list_lengthin;
 
-		unsigned char *arg4 = nullptr;
-		{
-			arg4 = (unsigned char *) env->GetByteArrayElements(jarg4, nullptr);
-		}
-		unsigned char *arg5 = nullptr;
-		{
-			arg5 = (unsigned char *) env->GetByteArrayElements(jarg5, nullptr);
-		}
-		unsigned char *arg6 = nullptr;
-		{
-			arg6 = (unsigned char *) env->GetByteArrayElements(jarg6, nullptr);
-		}
+		unsigned char *arg4 = (unsigned char *) env->GetByteArrayElements(jarg4, nullptr);
+		unsigned char *arg5 = (unsigned char *) env->GetByteArrayElements(jarg5, nullptr);
+		unsigned char *arg6 = (unsigned char *) env->GetByteArrayElements(jarg6, nullptr);
 
 		unsigned char *alice_send_packet = nullptr;
 		size_t packet_length = 0;
 		unsigned char * json_export = nullptr;
 		return_status retStatus;
 		retStatus = molch_start_send_conversation(arg1, conversation_id_length, &alice_send_packet, &packet_length, arg5, sender_public_master_key_length, arg6, receiver_public_master_key_length, arg4, prekey_list_length, arg2, arg3, nullptr, nullptr);
-		{
-			env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-		}
+		env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
 		if (arg2) env->ReleaseStringUTFChars(jarg2, (const char *)arg2);
 
-		{
-			env->ReleaseByteArrayElements(jarg4, (jbyte *) arg4, 0);
-		}
-		{
-			env->ReleaseByteArrayElements(jarg5, (jbyte *) arg5, 0);
-		}
-		{
-			env->ReleaseByteArrayElements(jarg6, (jbyte *) arg6, 0);
-		}
+		env->ReleaseByteArrayElements(jarg4, (jbyte *) arg4, 0);
+		env->ReleaseByteArrayElements(jarg5, (jbyte *) arg5, 0);
+		env->ReleaseByteArrayElements(jarg6, (jbyte *) arg6, 0);
 
 		if ((retStatus.status != status_type::SUCCESS)
 				or (packet_length > std::numeric_limits<jsize>::max())) {
@@ -751,36 +671,20 @@ extern "C" {
 		(void)jpre_keys_lengthin;
 		(void)env;
 		(void)jOgj;
-		unsigned char *arg1 = nullptr;
-		{
-			arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		}
-		unsigned char *arg2 = nullptr;
-		{
-			arg2 = (unsigned char *) env->GetByteArrayElements(jarg2, nullptr);
-		}
-		unsigned long long arg3;
-		unsigned long long conversation_id_length;
-		unsigned long long sender_public_master_key_length;
-		unsigned long long receiver_public_master_key_length;
-		arg3 = (unsigned long long)jarg3;
-		conversation_id_length = (unsigned long long)conversation_id_lengthin;
-		sender_public_master_key_length = (unsigned long long)sender_public_master_key_lengthin;
-		receiver_public_master_key_length = (unsigned long long)receiver_public_master_key_lengthin;
+		unsigned char *arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
+		unsigned char *arg2 = (unsigned char *) env->GetByteArrayElements(jarg2, nullptr);
+		unsigned long long arg3 = (unsigned long long)jarg3;
+		unsigned long long conversation_id_length = (unsigned long long)conversation_id_lengthin;
+		unsigned long long sender_public_master_key_length = (unsigned long long)sender_public_master_key_lengthin;
+		unsigned long long receiver_public_master_key_length = (unsigned long long)receiver_public_master_key_lengthin;
 		jsize jpre_keys_length = 0;
 		unsigned char *arg4 = nullptr;
-		{
-			arg4 = (unsigned char *) env->GetByteArrayElements(jarg4, nullptr);
-			jpre_keys_length = env->GetArrayLength(jarg4);
-		}
+		arg4 = (unsigned char *) env->GetByteArrayElements(jarg4, nullptr);
+		jpre_keys_length = env->GetArrayLength(jarg4);
 		unsigned char *arg5 = nullptr;
-		{
-			arg5 = (unsigned char *) env->GetByteArrayElements(jarg5, nullptr);
-		}
+		arg5 = (unsigned char *) env->GetByteArrayElements(jarg5, nullptr);
 		unsigned char *arg6 = nullptr;
-		{
-			arg6 = (unsigned char *) env->GetByteArrayElements(jarg6, nullptr);
-		}
+		arg6 = (unsigned char *) env->GetByteArrayElements(jarg6, nullptr);
 
 		unsigned char *alice_receive_packet;
 		size_t alice_message_length = 0;
@@ -814,18 +718,10 @@ extern "C" {
 				}
 			}
 		}
-		{
-			env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-		}
-		{
-			env->ReleaseByteArrayElements(jarg2, (jbyte *) arg2, 0);
-		}
-		{
-			env->ReleaseByteArrayElements(jarg5, (jbyte *) arg5, 0);
-		}
-		{
-			env->ReleaseByteArrayElements(jarg6, (jbyte *) arg6, 0);
-		}
+		env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
+		env->ReleaseByteArrayElements(jarg2, (jbyte *) arg2, 0);
+		env->ReleaseByteArrayElements(jarg5, (jbyte *) arg5, 0);
+		env->ReleaseByteArrayElements(jarg6, (jbyte *) arg6, 0);
 
 		if ((retStatus.status != status_type::SUCCESS) or (preKeyerrorCode != 0)) {
 			print_info_error("Java_de_hz1984not_crypto_Molch_molchCreateReceiveConversationFromNativeCode: ", retStatus);
@@ -868,31 +764,18 @@ extern "C" {
 		arg2 = (unsigned long long)jarg2;
 		conversation_id_length = (unsigned long long)conversation_id_lengthin;
 		unsigned char *arg3 = nullptr;
-		{
-			arg3 = (unsigned char *) env->GetByteArrayElements(jarg3, nullptr);
-		}
+		arg3 = (unsigned char *) env->GetByteArrayElements(jarg3, nullptr);
 
-		//int ix = 0;
-		//for (ix = 0; ix < CONVERSATION_ID_SIZE; ix++) {
-		//	__android_log_print(ANDROID_LOG_DEBUG, "Java_de_hz1984not_crypto_Molch_molchEncryptMessageFromNativeCode: ", "0x%02X ", (int) arg3[ix]);
-		//}
-		//__android_log_print(ANDROID_LOG_DEBUG, "Java_de_hz1984not_crypto_Molch_molchEncryptMessageFromNativeCode: ", "-------");
-		//for (ix = 0; ix < arg2; ix++) {
-		//	__android_log_print(ANDROID_LOG_DEBUG, "Java_de_hz1984not_crypto_Molch_molchEncryptMessageFromNativeCode: ", "0x%02X ", (int) arg1[ix]);
-		//}
-
-		//size_t conversation_id_length = CONVERSATION_ID_SIZE;
 		unsigned char *packet;
 		size_t packet_length = 0;
 		unsigned char * conversation_json_export = nullptr;
 		size_t json_export_conversation_length = 0;
 		return_status retStatus;
 		retStatus = molch_encrypt_message(&packet, &packet_length, arg3, conversation_id_length, (const unsigned char*)arg1, arg2, &conversation_json_export, &json_export_conversation_length);
-		if (arg1)
+		if (arg1) {
 			env->ReleaseStringUTFChars(jarg1, (const char *)arg1);
-		{
-			env->ReleaseByteArrayElements(jarg3, (jbyte *) arg3, 0);
 		}
+		env->ReleaseByteArrayElements(jarg3, (jbyte *) arg3, 0);
 
 		if ((retStatus.status != status_type::SUCCESS)
 				or (packet_length > std::numeric_limits<jsize>::max())) {
@@ -911,7 +794,7 @@ extern "C" {
 		for (size_t index = 0; index < packet_length; index++) {
 			bytes[index] = (jbyte)packet[index];
 		}
-	// move from the temp structure to the java structure
+		// move from the temp structure to the java structure
 		env->SetByteArrayRegion(data, 0, (jsize)packet_length, bytes);
 		free(packet);
 
@@ -926,35 +809,21 @@ extern "C" {
 	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_molchDecryptMessageFromNativeCode(JNIEnv *env, jobject jOgj, jbyteArray jarg1, jint jarg2, jbyteArray jarg3, jint conversation_id_lengthin) {
 		(void)env;
 		(void)jOgj;
-		unsigned char *arg1 = nullptr;
-		{
-			arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		}
-		unsigned long long arg2 ;
-		arg2 = (unsigned long long)jarg2;
-		unsigned long long conversation_id_length;
-		conversation_id_length = (unsigned long long)conversation_id_lengthin;
-		unsigned char *arg3 = nullptr;
-		{
-			arg3 = (unsigned char *) env->GetByteArrayElements(jarg3, nullptr);
-		}
+		unsigned char *arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
+		unsigned long long arg2 = (unsigned long long)jarg2;
+		unsigned long long conversation_id_length = (unsigned long long)conversation_id_lengthin;
+		unsigned char *arg3 = (unsigned char *) env->GetByteArrayElements(jarg3, nullptr);
 
 		unsigned char *packet;
 		size_t packet_length = 0;
 		uint32_t receive_message_number = 0;
 		uint32_t previous_receive_message_number = 0;
-		//size_t conversation_id_length = CONVERSATION_ID_SIZE;
 		unsigned char * conversation_json_export = nullptr;
 		size_t conversation_json_export_length = 0;
 		return_status retStatus;
-		//retStatus = molch_decrypt_message(&packet, &packet_length, arg1, arg2, arg3, &conversation_json_export, &conversation_json_export_length);
 		retStatus = molch_decrypt_message(&packet, &packet_length, &receive_message_number, &previous_receive_message_number, arg3, conversation_id_length, arg1, arg2, &conversation_json_export, &conversation_json_export_length);
-		{
-			env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-		}
-		{
-			env->ReleaseByteArrayElements(jarg3, (jbyte *) arg3, 0);
-		}
+		env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
+		env->ReleaseByteArrayElements(jarg3, (jbyte *) arg3, 0);
 
 		if ((retStatus.status != status_type::SUCCESS)
 				or (packet_length > std::numeric_limits<jsize>::max())) {
@@ -986,20 +855,14 @@ extern "C" {
 		unsigned char *arg1 = nullptr;
 		(void)env;
 		(void)jOgj;
-		{
-			arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		}
+		arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
 		unsigned long long conversation_id_length;
 		conversation_id_length = (unsigned long long)conversation_id_lengthin;
 
-		//size_t conversation_id_length = CONVERSATION_ID_SIZE;
 		size_t json_export_length = 0;
 		unsigned char * json_export = nullptr;
-		//molch_end_conversation(arg1, &json_export, &json_export_length);
 		molch_end_conversation(arg1, conversation_id_length, &json_export, &json_export_length);
-		{
-			env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-		}
+		env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
 
 		jbyteArray data = nullptr;
 		if ((json_export_length != 0) && (json_export_length < std::numeric_limits<jsize>::max())) {
@@ -1025,9 +888,7 @@ extern "C" {
 		unsigned char *arg1 = nullptr;
 		(void)env;
 		(void)jOgj;
-		{
-			arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		}
+		arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
 
 		size_t conversation_list_length = 0;
 		size_t number_of_conversations = 0;
@@ -1042,9 +903,7 @@ extern "C" {
 		}
 		size_t arg2 = (size_t)jarg2;
 		retStatus = molch_list_conversations(&conversation_list, &conversation_list_length, &number_of_conversations, arg1, arg2);
-		{
-			env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-		}
+		env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
 
 		android_only(__android_log_print(ANDROID_LOG_DEBUG, "Java_de_hz1984not_crypto_Molch_molchListConversationsFromNativeCode: ", "retStatus.status: %d; number_of_conversations: %d\n", (int) retStatus.status, (int) number_of_conversations);)
 
@@ -1108,16 +967,11 @@ extern "C" {
 
 	JNIEXPORT jint JNICALL Java_de_hz1984not_crypto_Molch_molchJsonImportFromNativeCode(JNIEnv *env, jobject jOgj, jbyteArray jarg1, jint jarg2, jbyteArray jnewbackupkeyin, jint jnewbackupkeyin_length, jbyteArray joldbackupkeyin, jint joldbackupkeyin_length) {
 		jint jresult = 0 ;
-		unsigned char *arg1 = nullptr;
-		unsigned char *newbackupkey = nullptr;
-		unsigned char *oldbackupkey = nullptr;
 		(void)env;
 		(void)jOgj;
-		{
-			arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-			newbackupkey = (unsigned char *) env->GetByteArrayElements(jnewbackupkeyin, nullptr);
-			oldbackupkey = (unsigned char *) env->GetByteArrayElements(joldbackupkeyin, nullptr);
-		}
+		unsigned char *arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
+		unsigned char *newbackupkey = (unsigned char *) env->GetByteArrayElements(jnewbackupkeyin, nullptr);
+		unsigned char *oldbackupkey = (unsigned char *) env->GetByteArrayElements(joldbackupkeyin, nullptr);
 
 		unsigned long long arg2;
 		arg2 = (unsigned long long)jarg2;
@@ -1139,11 +993,9 @@ extern "C" {
 		retStatus = molch_import(newbackupkey, newbackupkeyin_length, arg1, arg2, oldbackupkey, oldbackupkeyin_length);
 		android_only(__android_log_print(ANDROID_LOG_DEBUG, "Java_de_hz1984not_crypto_Molch_molchJsonImportFromNativeCode: ", "retStatus.status: %d;\n", (int) retStatus.status);)
 		jresult = (jint) retStatus.status;
-		{
-			env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-			env->ReleaseByteArrayElements(jnewbackupkeyin, (jbyte *) newbackupkey, 0);
-			env->ReleaseByteArrayElements(joldbackupkeyin, (jbyte *) oldbackupkey, 0);
-		}
+		env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
+		env->ReleaseByteArrayElements(jnewbackupkeyin, (jbyte *) newbackupkey, 0);
+		env->ReleaseByteArrayElements(joldbackupkeyin, (jbyte *) oldbackupkey, 0);
 
 		for (size_t index = 0; index < newbackupkeyin_length; ++index) {
 			android_only(__android_log_print(ANDROID_LOG_DEBUG, ": ", "0x%02X ", (int) newbackupkey[index]);)
