@@ -37,6 +37,24 @@
 #include "molch/constants.h"
 #include "molch/return-status.h"
 
+template <size_t length>
+auto array_from_jbyteArray(JNIEnv& environment, jbyteArray byte_array) -> std::optional<std::array<unsigned char,length>> {
+	if (environment.GetArrayLength(byte_array) != length) {
+		return std::nullopt;
+	}
+
+	jboolean isCopy = JNI_FALSE;
+	const auto bytes = environment.GetByteArrayElements(byte_array, &isCopy);
+	if (bytes == nullptr) {
+		return std::nullopt;
+	}
+	auto copied_array = std::array<unsigned char,length>();
+	std::copy(bytes, bytes + length, std::begin(copied_array));
+	environment.ReleaseByteArrayElements(byte_array, bytes, JNI_ABORT);
+
+	return copied_array;
+}
+
 extern "C" {
 	/* Support for throwing Java exceptions */
 	typedef enum {
@@ -195,6 +213,20 @@ extern "C" {
 		return java_array;
 	}
 
+	static auto vector_from_jbyteArray(JNIEnv& environment, const jbyteArray byte_array) -> std::optional<std::vector<unsigned char>> {
+		const auto size = static_cast<size_t>(environment.GetArrayLength(byte_array));
+		jboolean isCopy = JNI_FALSE;
+		const auto bytes = environment.GetByteArrayElements(byte_array, &isCopy);
+		if (bytes == nullptr) {
+			return std::nullopt;
+		}
+		auto uchars = std::vector<unsigned char>(size, '\0');
+		std::copy(bytes, bytes + size, std::data(uchars));
+		environment.ReleaseByteArrayElements(byte_array, bytes, JNI_ABORT);
+
+		return uchars;
+	}
+
 	JNIEXPORT auto JNICALL Java_de_hz1984not_crypto_Molch_getUserName(
 			JNIEnv *env,
 			[[maybe_unused]] jobject jObj,
@@ -210,61 +242,35 @@ extern "C" {
 		return jbyteArray_from_uchars(*env, byteUrl, sizeof(byteUrl));
 	}
 
-	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_getvCardInfoAvatar(JNIEnv *env, jobject jObj, jbyteArray jarg1, jint jlen1, jbyteArray jarg2, jint jlen2, jbyteArray jarg3, jint jlen3) {
-		unsigned char *arg1 = nullptr;
-		unsigned char *arg2 = nullptr;
-		unsigned char *arg3 = nullptr;
-		(void)env;
-		(void)jObj;
+	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_getvCardInfoAvatar(
+			JNIEnv *env,
+			[[maybe_unused]] jobject jObj,
+			jbyteArray public_key,
+			[[maybe_unused]] jint public_key_length,
+			jbyteArray prekey_list,
+			[[maybe_unused]] jint prekey_list_length,
+			jbyteArray avatar_data,
+			[[maybe_unused]] jint jlen3) {
+		const auto public_key_array_optional = array_from_jbyteArray<PUBLIC_MASTER_KEY_SIZE>(*env, public_key);
+		const auto prekey_list_vector_optional = vector_from_jbyteArray(*env, prekey_list);
+		const auto avatar_data_vector_optional = vector_from_jbyteArray(*env, avatar_data);
 
-		unsigned long long  len1;
-		len1 = (unsigned long long)jlen1;
-		unsigned long long  len2;
-		len2 = (unsigned long long)jlen2;
-		unsigned long long  len3;
-		len3 = (unsigned long long)jlen3;
-
-		arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		arg2 = (unsigned char *) env->GetByteArrayElements(jarg2, nullptr);
-		if (len3 > 0)
-		{
-			arg3 = (unsigned char *) env->GetByteArrayElements(jarg3, nullptr);
-		}
-
-		unsigned char *newVcard = nullptr;
-		size_t retLength = 0;
-		int retVal = 0;
-		retVal = Molch::JNI::getvCardInfoAvatar(arg1, len1, arg2, len2, arg3, len3, &newVcard, &retLength);
-		if (retVal < 0) {
+		if ((not public_key_array_optional.has_value())
+				or (not prekey_list_vector_optional.has_value())
+				or (not avatar_data_vector_optional.has_value())) {
 			return nullptr;
 		}
-		if (retLength > std::numeric_limits<jsize>::max()) {
+		const auto& public_key_array = public_key_array_optional.value();
+		const auto& prekey_list_vector = prekey_list_vector_optional.value();
+		const auto& avatar_data_vector = avatar_data_vector_optional.value();
+
+		const auto optional_new_vcard = Molch::JNI::getvCardInfoAvatar(public_key_array, prekey_list_vector, avatar_data_vector);
+		if (not optional_new_vcard.has_value()) {
 			return nullptr;
 		}
+		const auto& new_vcard = optional_new_vcard.value();
 
-		env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-		env->ReleaseByteArrayElements(jarg2, (jbyte *) arg2, 0);
-		if (len3 > 0)
-		{
-			env->ReleaseByteArrayElements(jarg3, (jbyte *) arg3, 0);
-		}
-
-		jbyteArray data = env->NewByteArray((jsize)retLength);
-		if (data == nullptr) {
-			return nullptr; //  out of memory error thrown
-		}
-
-		// creat bytes from byteUrl
-		jbyte *bytes = env->GetByteArrayElements(data, nullptr);
-		for (size_t index = 0; index < retLength; index++) {
-			bytes[index] = (jbyte)newVcard[index];
-		}
-		free(newVcard);
-
-		// move from the temp structure to the java structure
-		env->SetByteArrayRegion(data, 0, (jsize)retLength, bytes);
-
-		return data;
+		return jbyteArray_from_uchars(*env, std::data(new_vcard), std::size(new_vcard));
 	}
 
 	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_getvCardAvatar(JNIEnv *env, jobject jObj, jbyteArray jarg1, jint jlen1) {

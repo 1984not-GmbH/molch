@@ -19,9 +19,9 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <string.h>
-#include <assert.h>
-#include <alloca.h>
+#include <cstring>
+#include <algorithm>
+
 #ifdef __ANDROID__
 #include <android/log.h>
 #define android_only(code) code
@@ -48,57 +48,34 @@ namespace Molch::JNI {
 	}
 
 	auto getvCardInfoAvatar(
-			const unsigned char *public_identity_key,
-			const size_t publicLength,
-			const unsigned char *preKeyList,
-			const size_t preKeysLength,
-			const unsigned char *avatarData,
-			const size_t avatarLength,
-			unsigned char **newVcard,
-			size_t *retLength) -> int {
-		unsigned char infoPubKey[INFO_PUB_KEY_LEN] = {42, 0, 42, 0, 42};
-		unsigned char infoPreKeys[INFO_PRE_KEYS_LENGTH] = {0, 42, 0, 42, 0};
+	        const std::array<unsigned char,PUBLIC_MASTER_KEY_SIZE>& public_identity_key,
+			const std::vector<unsigned char>& prekey_list,
+			const std::vector<unsigned char>& avatar_data) -> std::optional<std::vector<unsigned char>> {
+		auto public_key_info = std::array<unsigned char,INFO_PUB_KEY_LEN>{42, 0, 42, 0, 42};
+		auto prekey_list_info = std::array<unsigned char,INFO_PRE_KEYS_LENGTH>{0, 42, 0, 42, 0};
 
-		*retLength = INFO_PUB_KEY_LEN + publicLength + INFO_PRE_KEYS_LENGTH + preKeysLength + avatarLength;
-		android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar: ", "%zu;", *retLength);)
+		// store public key size as 16 bit little endian
+		public_key_info[INFO_DATA_LENGTH] = static_cast<unsigned char>(std::size(public_identity_key) bitand 0xFFU);
+		public_key_info[INFO_DATA_LENGTH + 1] = static_cast<unsigned char>((std::size(public_identity_key) >> 8U) bitand 0xFFU);
+		android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar: ", "%zu;", std::size(public_identity_key));)
 
-		*newVcard = (unsigned char*)malloc(*retLength);
-		unsigned short tmpLength = (unsigned short) publicLength;
-		if (endianness_is_little_endian()) {
-			memcpy(&infoPubKey[INFO_DATA_LENGTH], &tmpLength, sizeof(tmpLength));
-			android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar_little_endian: ", "%d;", tmpLength);)
-		} else {
-			android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar_big_endian_todo: ", "%d;",
-											 tmpLength);) //BHR:TODO 22032016
+		// store prekey list size as little endian
+		if (std::size(prekey_list) > std::numeric_limits<uint16_t>::max()) {
+			return std::nullopt;
 		}
-		if (tmpLength == 0) {
-			return -1;
-		}
+		prekey_list_info[INFO_DATA_LENGTH] = static_cast<unsigned char>(std::size(prekey_list) bitand 0xFFU);
+		prekey_list_info[INFO_DATA_LENGTH + 1] = static_cast<unsigned char>((std::size(prekey_list) >> 8U) bitand 0xFFU);
+		android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar_little_endian: ", "%zu;", std::size(prekey_list));)
 
-		tmpLength = (unsigned short) preKeysLength;
-		if (endianness_is_little_endian()) {
-			memcpy(&infoPreKeys[INFO_DATA_LENGTH], &tmpLength, sizeof(tmpLength));
-			android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar_little_endian: ", "%d;", tmpLength);)
-		} else {
-			android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar_big_endian_todo: ", "%d;",
-											 tmpLength);) //BHR:TODO 22032016
-		}
+		auto new_vcard = std::vector<unsigned char>();
+		new_vcard.insert(std::end(new_vcard), std::begin(public_key_info), std::end(public_key_info));
+		new_vcard.insert(std::end(new_vcard), std::begin(public_identity_key), std::end(public_identity_key));
+		new_vcard.insert(std::end(new_vcard), std::begin(prekey_list_info), std::end(prekey_list_info));
+		new_vcard.insert(std::end(new_vcard), std::begin(prekey_list), std::end(prekey_list));
+		new_vcard.insert(std::end(new_vcard), std::begin(avatar_data), std::end(avatar_data));
+		android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar: ", "%zu;", std::size(new_vcard));)
 
-		if (avatarLength > 0) {
-			memcpy(*newVcard, &infoPubKey[0], INFO_PUB_KEY_LEN);
-			memcpy(*newVcard + INFO_PUB_KEY_LEN, public_identity_key, publicLength);
-			memcpy(*newVcard + INFO_PUB_KEY_LEN + publicLength, &infoPreKeys[0], INFO_PRE_KEYS_LENGTH);
-			memcpy(*newVcard + INFO_PUB_KEY_LEN + publicLength + INFO_PRE_KEYS_LENGTH, preKeyList, preKeysLength);
-			memcpy(*newVcard + INFO_PUB_KEY_LEN + publicLength + INFO_PRE_KEYS_LENGTH + preKeysLength, avatarData,
-				   avatarLength);
-		} else {
-			memcpy(*newVcard, &infoPubKey[0], INFO_PUB_KEY_LEN);
-			memcpy(*newVcard + INFO_PUB_KEY_LEN, public_identity_key, publicLength);
-			memcpy(*newVcard + INFO_PUB_KEY_LEN + publicLength, &infoPreKeys[0], INFO_PRE_KEYS_LENGTH);
-			memcpy(*newVcard + INFO_PUB_KEY_LEN + publicLength + INFO_PRE_KEYS_LENGTH, preKeyList, preKeysLength);
-		}
-
-		return 0;
+		return new_vcard;
 	}
 
 	auto getvCardPubKey(

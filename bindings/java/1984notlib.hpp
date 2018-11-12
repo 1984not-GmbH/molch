@@ -23,17 +23,17 @@
 #define LIB_1984NOTLIB_H
 
 #include <cstddef>
+#include <vector>
+#include <array>
+#include <optional>
+
+#include "molch/constants.h"
 
 namespace Molch::JNI {
 	auto getvCardInfoAvatar(
-			const unsigned char *public_identity_key,
-			const size_t publicLength,
-			const unsigned char *preKeyList,
-			const size_t preKeysLength,
-			const unsigned char *avatarData,
-			const size_t avatarLength,
-			unsigned char **newVcard,
-			size_t *retLength) -> int;
+			const std::array<unsigned char,PUBLIC_MASTER_KEY_SIZE>& public_identity_key,
+			const std::vector<unsigned char>& prekey_list,
+			const std::vector<unsigned char>& avatar_data) -> std::optional<std::vector<unsigned char>>;
 	auto getvCardPubKey(
 			const unsigned char *avatarData,
 			const size_t avatarLength,
