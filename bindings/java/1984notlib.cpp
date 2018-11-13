@@ -47,6 +47,11 @@ namespace Molch::JNI {
 		return (number_pointer[0] == 0x1);
 	}
 
+	template <typename Container>
+	auto operator+=(ByteVector& vector, const Container& container) -> void {
+		vector.insert(std::end(vector), std::begin(container), std::end(container));
+	}
+
 	auto getvCardInfoAvatar(
 	        const ByteArray<PUBLIC_MASTER_KEY_SIZE>& public_identity_key,
 			const ByteVector& prekey_list,
@@ -68,11 +73,11 @@ namespace Molch::JNI {
 		android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar_little_endian: ", "%zu;", std::size(prekey_list));)
 
 		auto new_vcard = ByteVector();
-		new_vcard.insert(std::end(new_vcard), std::begin(public_key_info), std::end(public_key_info));
-		new_vcard.insert(std::end(new_vcard), std::begin(public_identity_key), std::end(public_identity_key));
-		new_vcard.insert(std::end(new_vcard), std::begin(prekey_list_info), std::end(prekey_list_info));
-		new_vcard.insert(std::end(new_vcard), std::begin(prekey_list), std::end(prekey_list));
-		new_vcard.insert(std::end(new_vcard), std::begin(avatar_data), std::end(avatar_data));
+		new_vcard += public_key_info;
+		new_vcard += public_identity_key;
+		new_vcard += prekey_list_info;
+		new_vcard += prekey_list;
+		new_vcard += avatar_data;
 		android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar: ", "%zu;", std::size(new_vcard));)
 
 		return new_vcard;
