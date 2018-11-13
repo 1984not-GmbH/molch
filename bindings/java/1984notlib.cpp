@@ -52,24 +52,33 @@ namespace Molch::JNI {
 		vector.insert(std::end(vector), std::begin(container), std::end(container));
 	}
 
+	template <size_t array_length>
+	[[nodiscard]] auto put_length_in_last_two_bytes(ByteArray<array_length>& array, size_t length) -> bool {
+		if (length > std::numeric_limits<uint16_t>::max()) {
+			return false;
+		}
+
+		// little endian
+		array[std::size(array) - 2] = static_cast<unsigned char>(length bitand 0xFFU);
+		array[std::size(array) - 1] = static_cast<unsigned char>((length >> 8U) bitand 0xFFU);
+
+		return true;
+	}
+
 	auto getvCardInfoAvatar(
 	        const ByteArray<PUBLIC_MASTER_KEY_SIZE>& public_identity_key,
 			const ByteVector& prekey_list,
 			const ByteVector& avatar_data) -> std::optional<ByteVector> {
 		auto public_key_info = ByteArray<INFO_PUB_KEY_LEN>{42, 0, 42, 0, 42};
-		auto prekey_list_info = ByteArray<INFO_PRE_KEYS_LENGTH>{0, 42, 0, 42, 0};
-
-		// store public key size as 16 bit little endian
-		public_key_info[INFO_DATA_LENGTH] = static_cast<unsigned char>(std::size(public_identity_key) bitand 0xFFU);
-		public_key_info[INFO_DATA_LENGTH + 1] = static_cast<unsigned char>((std::size(public_identity_key) >> 8U) bitand 0xFFU);
-		android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar: ", "%zu;", std::size(public_identity_key));)
-
-		// store prekey list size as little endian
-		if (std::size(prekey_list) > std::numeric_limits<uint16_t>::max()) {
+		if (not put_length_in_last_two_bytes(public_key_info, std::size(public_identity_key))) {
 			return std::nullopt;
 		}
-		prekey_list_info[INFO_DATA_LENGTH] = static_cast<unsigned char>(std::size(prekey_list) bitand 0xFFU);
-		prekey_list_info[INFO_DATA_LENGTH + 1] = static_cast<unsigned char>((std::size(prekey_list) >> 8U) bitand 0xFFU);
+		android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar: ", "%zu;", std::size(public_identity_key));)
+
+		auto prekey_list_info = ByteArray<INFO_PRE_KEYS_LENGTH>{0, 42, 0, 42, 0};
+		if (not put_length_in_last_two_bytes(prekey_list_info, std::size(prekey_list))) {
+			return std::nullopt;
+		}
 		android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar_little_endian: ", "%zu;", std::size(prekey_list));)
 
 		auto new_vcard = ByteVector();
