@@ -30,10 +30,12 @@
 #include "molch/constants.h"
 
 namespace Molch::JNI {
+	using ByteVector = std::vector<unsigned char>;
+
 	auto getvCardInfoAvatar(
 			const std::array<unsigned char,PUBLIC_MASTER_KEY_SIZE>& public_identity_key,
-			const std::vector<unsigned char>& prekey_list,
-			const std::vector<unsigned char>& avatar_data) -> std::optional<std::vector<unsigned char>>;
+			const ByteVector& prekey_list,
+			const ByteVector& avatar_data) -> std::optional<ByteVector>;
 	auto getvCardPubKey(
 			const unsigned char *avatarData,
 			const size_t avatarLength,

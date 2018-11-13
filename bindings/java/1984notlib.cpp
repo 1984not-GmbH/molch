@@ -49,8 +49,8 @@ namespace Molch::JNI {
 
 	auto getvCardInfoAvatar(
 	        const std::array<unsigned char,PUBLIC_MASTER_KEY_SIZE>& public_identity_key,
-			const std::vector<unsigned char>& prekey_list,
-			const std::vector<unsigned char>& avatar_data) -> std::optional<std::vector<unsigned char>> {
+			const ByteVector& prekey_list,
+			const ByteVector& avatar_data) -> std::optional<ByteVector> {
 		auto public_key_info = std::array<unsigned char,INFO_PUB_KEY_LEN>{42, 0, 42, 0, 42};
 		auto prekey_list_info = std::array<unsigned char,INFO_PRE_KEYS_LENGTH>{0, 42, 0, 42, 0};
 
@@ -67,7 +67,7 @@ namespace Molch::JNI {
 		prekey_list_info[INFO_DATA_LENGTH + 1] = static_cast<unsigned char>((std::size(prekey_list) >> 8U) bitand 0xFFU);
 		android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar_little_endian: ", "%zu;", std::size(prekey_list));)
 
-		auto new_vcard = std::vector<unsigned char>();
+		auto new_vcard = ByteVector();
 		new_vcard.insert(std::end(new_vcard), std::begin(public_key_info), std::end(public_key_info));
 		new_vcard.insert(std::end(new_vcard), std::begin(public_identity_key), std::end(public_identity_key));
 		new_vcard.insert(std::end(new_vcard), std::begin(prekey_list_info), std::end(prekey_list_info));

@@ -213,14 +213,14 @@ extern "C" {
 		return java_array;
 	}
 
-	static auto vector_from_jbyteArray(JNIEnv& environment, const jbyteArray byte_array) -> std::optional<std::vector<unsigned char>> {
+	static auto vector_from_jbyteArray(JNIEnv& environment, const jbyteArray byte_array) -> std::optional<Molch::JNI::ByteVector> {
 		const auto size = static_cast<size_t>(environment.GetArrayLength(byte_array));
 		jboolean isCopy = JNI_FALSE;
 		const auto bytes = environment.GetByteArrayElements(byte_array, &isCopy);
 		if (bytes == nullptr) {
 			return std::nullopt;
 		}
-		auto uchars = std::vector<unsigned char>(size, '\0');
+		auto uchars = Molch::JNI::ByteVector(size, '\0');
 		std::copy(bytes, bytes + size, std::data(uchars));
 		environment.ReleaseByteArrayElements(byte_array, bytes, JNI_ABORT);
 
