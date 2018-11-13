@@ -31,9 +31,11 @@
 
 namespace Molch::JNI {
 	using ByteVector = std::vector<unsigned char>;
+	template <size_t length>
+	using ByteArray = std::array<unsigned char,length>;
 
 	auto getvCardInfoAvatar(
-			const std::array<unsigned char,PUBLIC_MASTER_KEY_SIZE>& public_identity_key,
+			const ByteArray<PUBLIC_MASTER_KEY_SIZE>& public_identity_key,
 			const ByteVector& prekey_list,
 			const ByteVector& avatar_data) -> std::optional<ByteVector>;
 	auto getvCardPubKey(

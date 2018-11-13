@@ -48,11 +48,11 @@ namespace Molch::JNI {
 	}
 
 	auto getvCardInfoAvatar(
-	        const std::array<unsigned char,PUBLIC_MASTER_KEY_SIZE>& public_identity_key,
+	        const ByteArray<PUBLIC_MASTER_KEY_SIZE>& public_identity_key,
 			const ByteVector& prekey_list,
 			const ByteVector& avatar_data) -> std::optional<ByteVector> {
-		auto public_key_info = std::array<unsigned char,INFO_PUB_KEY_LEN>{42, 0, 42, 0, 42};
-		auto prekey_list_info = std::array<unsigned char,INFO_PRE_KEYS_LENGTH>{0, 42, 0, 42, 0};
+		auto public_key_info = ByteArray<INFO_PUB_KEY_LEN>{42, 0, 42, 0, 42};
+		auto prekey_list_info = ByteArray<INFO_PRE_KEYS_LENGTH>{0, 42, 0, 42, 0};
 
 		// store public key size as 16 bit little endian
 		public_key_info[INFO_DATA_LENGTH] = static_cast<unsigned char>(std::size(public_identity_key) bitand 0xFFU);

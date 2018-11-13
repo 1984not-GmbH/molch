@@ -38,7 +38,7 @@
 #include "molch/return-status.h"
 
 template <size_t length>
-auto array_from_jbyteArray(JNIEnv& environment, jbyteArray byte_array) -> std::optional<std::array<unsigned char,length>> {
+auto array_from_jbyteArray(JNIEnv& environment, jbyteArray byte_array) -> std::optional<Molch::JNI::ByteArray<length>> {
 	if (environment.GetArrayLength(byte_array) != length) {
 		return std::nullopt;
 	}
@@ -48,7 +48,7 @@ auto array_from_jbyteArray(JNIEnv& environment, jbyteArray byte_array) -> std::o
 	if (bytes == nullptr) {
 		return std::nullopt;
 	}
-	auto copied_array = std::array<unsigned char,length>();
+	auto copied_array = Molch::JNI::ByteArray<length>();
 	std::copy(bytes, bytes + length, std::begin(copied_array));
 	environment.ReleaseByteArrayElements(byte_array, bytes, JNI_ABORT);
 
