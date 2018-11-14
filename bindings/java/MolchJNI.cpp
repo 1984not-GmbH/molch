@@ -55,6 +55,25 @@ auto array_from_jbyteArray(JNIEnv& environment, jbyteArray byte_array) -> std::o
 	return copied_array;
 }
 
+template <typename Container>
+static auto jbyteArray_from(JNIEnv& environment, const Container& container) -> jbyteArray {
+	if (std::size(container) > std::numeric_limits<jsize>::max()) {
+		return nullptr;
+	}
+
+	auto java_array = environment.NewByteArray(static_cast<jsize>(std::size(container)));
+	if (java_array == nullptr) {
+		return nullptr;
+	}
+	jboolean isCopy = JNI_FALSE;
+	auto data = environment.GetByteArrayElements(java_array, &isCopy);
+	std::copy(std::begin(container), std::end(container), data);
+
+	environment.ReleaseByteArrayElements(java_array, data, 0);
+
+	return java_array;
+}
+
 extern "C" {
 	/* Support for throwing Java exceptions */
 	typedef enum {
@@ -195,24 +214,6 @@ extern "C" {
 		return jresult;
 	}
 
-	static auto jbyteArray_from_uchars(JNIEnv& environment, const unsigned char* byte_array, const size_t length) -> jbyteArray {
-		if (length > std::numeric_limits<jsize>::max()) {
-			return nullptr;
-		}
-
-		auto java_array = environment.NewByteArray(static_cast<jsize>(length));
-		if (java_array == nullptr) {
-			return nullptr;
-		}
-		jboolean isCopy = JNI_FALSE;
-		auto data = environment.GetByteArrayElements(java_array, &isCopy);
-		std::copy(byte_array, byte_array + length, data);
-
-		environment.ReleaseByteArrayElements(java_array, data, 0);
-
-		return java_array;
-	}
-
 	static auto vector_from_jbyteArray(JNIEnv& environment, const jbyteArray byte_array) -> std::optional<Molch::JNI::ByteVector> {
 		const auto size = static_cast<size_t>(environment.GetArrayLength(byte_array));
 		jboolean isCopy = JNI_FALSE;
@@ -238,8 +239,8 @@ extern "C" {
 			[[maybe_unused]] jint jlen3,
 			[[maybe_unused]] jbyteArray jarg4,
 			[[maybe_unused]] jint jlen4) -> jbyteArray {
-		const unsigned char byteUrl[] = {41,42,43,43,44};
-		return jbyteArray_from_uchars(*env, byteUrl, sizeof(byteUrl));
+		constexpr auto byte_array = Molch::JNI::ByteArray<5>{41,42,43,43,44};
+		return jbyteArray_from(*env, byte_array);
 	}
 
 	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_getvCardInfoAvatar(
@@ -270,7 +271,7 @@ extern "C" {
 		}
 		const auto& new_vcard = optional_new_vcard.value();
 
-		return jbyteArray_from_uchars(*env, std::data(new_vcard), std::size(new_vcard));
+		return jbyteArray_from(*env, new_vcard);
 	}
 
 	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_getvCardAvatar(JNIEnv *env, jobject jObj, jbyteArray jarg1, jint jlen1) {
@@ -319,7 +320,7 @@ extern "C" {
 		}
 		const auto& public_key = public_key_optional.value();
 
-		return jbyteArray_from_uchars(*env, std::data(public_key), std::size(public_key));
+		return jbyteArray_from(*env, public_key);
 	}
 
 	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_getvCardpreKeys(JNIEnv *env, jobject jObj, jbyteArray jarg1, jint jlen1) {
