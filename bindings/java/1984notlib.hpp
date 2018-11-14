@@ -38,11 +38,7 @@ namespace Molch::JNI {
 			const ByteArray<PUBLIC_MASTER_KEY_SIZE>& public_identity_key,
 			const ByteVector& prekey_list,
 			const ByteVector& avatar_data) -> std::optional<ByteVector>;
-	auto getvCardPubKey(
-			const unsigned char *avatarData,
-			const size_t avatarLength,
-			unsigned char **newpubKey,
-			size_t *retLength) -> int;
+	auto getvCardPubKey(const ByteVector& avatar_data) -> std::optional<ByteArray<PUBLIC_MASTER_KEY_SIZE>>;
 	auto getvCardPreKeys(
 			const unsigned char *avatarData,
 			const size_t avatarLength,

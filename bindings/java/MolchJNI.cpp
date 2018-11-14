@@ -302,42 +302,24 @@ extern "C" {
 
 	}
 
-	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_getvCardPubKey(JNIEnv *env, jobject jObj, jbyteArray jarg1, jint jlen1) {
-		unsigned char *arg1 = nullptr;
-		(void)env;
-		(void)jObj;
-        arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-
-		unsigned long long len1;
-		len1 = (unsigned long long)jlen1;
-
-		unsigned char *newPubKey = nullptr;
-		size_t retLength = 0;
-		int retValue = 0;
-		retValue = Molch::JNI::getvCardPubKey(arg1, len1, &newPubKey, &retLength);
-		(void)retValue;
-        env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-
-		if (retLength > std::numeric_limits<jsize>::max()) {
+	JNIEXPORT auto JNICALL Java_de_hz1984not_crypto_Molch_getvCardPubKey(
+			JNIEnv *env,
+			[[maybe_unused]] jobject jObj,
+			jbyteArray jarg1,
+			[[maybe_unused]] jint jlen1) -> jbyteArray {
+		const auto avatar_data_vector_optional = vector_from_jbyteArray(*env, jarg1);
+		if (not avatar_data_vector_optional.has_value()) {
 			return nullptr;
 		}
+		const auto& avatar_data_vector = avatar_data_vector_optional.value();
 
-		jbyteArray data = env->NewByteArray((jsize)retLength);
-		if (data == nullptr) {
-			return nullptr; //  out of memory error thrown
+		const auto public_key_optional = Molch::JNI::getvCardPubKey(avatar_data_vector);
+		if (not public_key_optional.has_value()) {
+			return nullptr;
 		}
+		const auto& public_key = public_key_optional.value();
 
-		// creat bytes from byteUrl
-		jbyte *bytes = env->GetByteArrayElements(data, nullptr);
-		for (size_t index = 0; index < retLength; index++) {
-			bytes[index] = (jbyte)newPubKey[index];
-		}
-		free(newPubKey);
-
-		// move from the temp structure to the java structure
-		env->SetByteArrayRegion(data, 0, (jsize)retLength, bytes);
-
-		return data;
+		return jbyteArray_from_uchars(*env, std::data(public_key), std::size(public_key));
 	}
 
 	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_getvCardpreKeys(JNIEnv *env, jobject jObj, jbyteArray jarg1, jint jlen1) {

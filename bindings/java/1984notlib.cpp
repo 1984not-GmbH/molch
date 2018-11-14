@@ -65,6 +65,17 @@ namespace Molch::JNI {
 		return true;
 	}
 
+	template <size_t array_length>
+	auto get_length_from_last_two_byes(const ByteArray<array_length>& array) -> size_t {
+		static_assert(array_length >= 2);
+
+		const auto first_byte = array[std::size(array) - 2];
+		const auto second_byte = array[std::size(array) - 1];
+
+		// little endian
+		return first_byte + (second_byte << 8U);
+	}
+
 	auto getvCardInfoAvatar(
 	        const ByteArray<PUBLIC_MASTER_KEY_SIZE>& public_identity_key,
 			const ByteVector& prekey_list,
@@ -92,37 +103,25 @@ namespace Molch::JNI {
 		return new_vcard;
 	}
 
-	auto getvCardPubKey(
-			const unsigned char *avatarData,
-			const size_t avatarLength,
-			unsigned char **newpubKey,
-			size_t *retLength) -> int {
-		unsigned char infoPubKey[INFO_PUB_KEY_LEN] = {42, 0, 42, 0, 42};
+	auto getvCardPubKey(const ByteVector& avatar_data) -> std::optional<ByteArray<PUBLIC_MASTER_KEY_SIZE>> {
+		auto public_key_info = ByteArray<INFO_PUB_KEY_LEN>{42, 0, 42, 0, 42};
 
-		if (avatarLength > INFO_PUB_KEY_LEN) {
-			memcpy(infoPubKey, avatarData, INFO_PUB_KEY_LEN);
-			unsigned short tmpLength = 0;
-			if (endianness_is_little_endian()) {
-				memcpy(&tmpLength, &infoPubKey[INFO_DATA_LENGTH], sizeof(tmpLength));
-				android_only(
-						__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar_little_endian: ", "%d;", tmpLength);)
-			} else {
-				//if already big endian, just copy
-				android_only(
-						__android_log_print(ANDROID_LOG_DEBUG, "getvCardPubKey_big_endian_todo: ", "%d; %zu", tmpLength,
-											sizeof(tmpLength));) //BHR:TODO 22032016
-			}
-			if (tmpLength < SIZE_MAX && tmpLength < (avatarLength + INFO_PUB_KEY_LEN)) {
-				*newpubKey = (unsigned char*)malloc(tmpLength);
-				memcpy(*newpubKey, &avatarData[INFO_PUB_KEY_LEN], tmpLength);
-				*retLength = tmpLength;
-			} else {
-				return -2;
-			}
-		} else {
-			return -1;
+		if (std::size(avatar_data) < std::size(public_key_info)) {
+			return std::nullopt;
 		}
-		return 0;
+
+		std::copy(std::begin(avatar_data), std::end(avatar_data), std::begin(public_key_info));
+		if (get_length_from_last_two_byes(public_key_info) != PUBLIC_MASTER_KEY_SIZE) {
+			return std::nullopt;
+		}
+		android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar_little_endian: ", "%zu;", PUBLIC_MASTER_KEY_SIZE);)
+		auto public_key = ByteArray<PUBLIC_MASTER_KEY_SIZE>();
+		std::copy(
+				std::begin(avatar_data) + std::size(public_key_info),
+				std::begin(avatar_data) + std::size(public_key_info) + std::size(public_key),
+				std::begin(public_key));
+
+		return public_key;
 	}
 
 	auto getvCardPreKeys(
