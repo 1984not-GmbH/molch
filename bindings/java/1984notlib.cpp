@@ -32,20 +32,10 @@
 #include "1984notlib.hpp"
 #include "molch/constants.h"
 
-#define INFO_DATA_LENGTH 3
 #define INFO_PUB_KEY_LEN 5
 #define INFO_PRE_KEYS_LENGTH 5
 
 namespace Molch::JNI {
-
-	/*
-	 * Determine the current endianness at runtime.
-	 */
-	static bool endianness_is_little_endian() {
-		const uint16_t number = 0x1;
-		const unsigned char *const number_pointer = (const unsigned char *) &number;
-		return (number_pointer[0] == 0x1);
-	}
 
 	template <typename Container>
 	auto operator+=(ByteVector& vector, const Container& container) -> void {
@@ -124,52 +114,37 @@ namespace Molch::JNI {
 		return public_key;
 	}
 
-	auto getvCardPreKeys(
-			const unsigned char *avatarData,
-			const size_t avatarLength,
-			unsigned char **newpreKeys,
-			size_t *retLength) -> int {
-		unsigned char infoPubKey[INFO_PUB_KEY_LEN] = {42, 0, 42, 0, 42};
-		unsigned char infoPreKeys[INFO_PRE_KEYS_LENGTH] = {0, 42, 0, 42, 0};
+	auto getvCardPreKey(const ByteVector& avatar_data) -> std::optional<ByteVector> {
+		auto public_key_info = ByteArray<INFO_PUB_KEY_LEN>{42, 0, 42, 0, 42};
+		auto prekey_list_info = ByteArray<INFO_PRE_KEYS_LENGTH>{0, 42, 0, 42, 0};
 
-		if (avatarLength > INFO_PRE_KEYS_LENGTH) {
-			memcpy(infoPubKey, avatarData, INFO_PUB_KEY_LEN);
-			unsigned short tmpLengthPubKey = 0;
-			if (endianness_is_little_endian()) {
-				memcpy(&tmpLengthPubKey, &infoPubKey[INFO_DATA_LENGTH], sizeof(tmpLengthPubKey));
-				android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar_little_endian: ", "%d;",
-												 tmpLengthPubKey);)
-			} else {
-				//if already big endian, just copy
-				android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardPreKeys_big_endian_todo: ", "%d;",
-												 tmpLengthPubKey);) //BHR:TODO 22032016
-			}
-
-			int startPreKeys = INFO_PUB_KEY_LEN + tmpLengthPubKey;
-			memcpy(infoPreKeys, avatarData + startPreKeys, INFO_PRE_KEYS_LENGTH);
-			unsigned short tmpLength = 0;
-			if (endianness_is_little_endian()) {
-				memcpy(&tmpLength, &infoPreKeys[INFO_DATA_LENGTH], sizeof(tmpLength));
-				android_only(
-						__android_log_print(ANDROID_LOG_DEBUG, "getvCardInfoAvatar_little_endian: ", "%d;", tmpLength);)
-			} else {
-				//if already big endian, just copy
-				android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardPreKeys_big_endian_todo: ", "%d;",
-												 tmpLength);) //BHR:TODO 22032016
-			}
-			if (tmpLength < SIZE_MAX && tmpLengthPubKey < SIZE_MAX && tmpLength < avatarLength &&
-				tmpLengthPubKey < avatarLength) {
-				android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardPreKeys: ", "%d; %d ", (int) tmpLength,
-												 (int) tmpLengthPubKey);)
-				*retLength = tmpLength;
-				*newpreKeys = (unsigned char*)malloc(*retLength);
-				memcpy(*newpreKeys, &avatarData[INFO_PUB_KEY_LEN + tmpLengthPubKey + INFO_PRE_KEYS_LENGTH], *retLength);
-			} else {
-				return -2;
-			}
-		} else {
-			return -1;
+		const auto prekey_list_info_offset = std::size(public_key_info) + PUBLIC_MASTER_KEY_SIZE;
+		const auto prekey_list_offset = prekey_list_info_offset + std::size(prekey_list_info);
+		if (std::size(avatar_data) < prekey_list_offset) {
+			return std::nullopt;
 		}
-		return 0;
+
+		std::copy(std::begin(avatar_data), std::end(avatar_data), std::begin(public_key_info));
+		if (get_length_from_last_two_byes(public_key_info) != PUBLIC_MASTER_KEY_SIZE) {
+			return std::nullopt;
+		}
+
+		std::copy(
+				std::begin(avatar_data) + prekey_list_info_offset,
+				std::begin(avatar_data) + prekey_list_info_offset + std::size(prekey_list_info),
+				std::begin(prekey_list_info));
+		const auto prekey_list_length = get_length_from_last_two_byes(prekey_list_info);
+		if ((std::size(avatar_data) - prekey_list_offset) < prekey_list_length) {
+			return std::nullopt;
+		}
+
+		android_only(__android_log_print(ANDROID_LOG_DEBUG, "getvCardPreKeys: ", "%zu; %zu ", prekey_list_length, PUBLIC_MASTER_KEY_SIZE);)
+		auto prekey_list = ByteVector(prekey_list_length, '\0');
+		std::copy(
+				std::begin(avatar_data) + prekey_list_offset,
+				std::begin(avatar_data) + prekey_list_offset + prekey_list_length,
+				std::begin(prekey_list));
+
+		return prekey_list;
 	}
 }

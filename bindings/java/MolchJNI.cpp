@@ -303,42 +303,24 @@ extern "C" {
 		return jbyteArray_from(*env, public_key);
 	}
 
-	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_getvCardpreKeys(JNIEnv *env, jobject jObj, jbyteArray jarg1, jint jlen1) {
-		unsigned char *arg1 = nullptr;
-		(void)env;
-		(void)jObj;
-        arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-
-		unsigned long long len1;
-		len1 = (unsigned long long)jlen1;
-
-		unsigned char *newPreKey = nullptr;
-		size_t retLength = 0;
-		int retValue = 0;
-		retValue = Molch::JNI::getvCardPreKeys(arg1, len1, &newPreKey, &retLength);
-		(void)retValue;
-        env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-
-		if (retLength > std::numeric_limits<jsize>::max()) {
+	JNIEXPORT auto JNICALL Java_de_hz1984not_crypto_Molch_getvCardpreKeys(
+			JNIEnv *env,
+			[[maybe_unused]] jobject jObj,
+			jbyteArray avatar_data,
+			[[maybe_unused]] jint jlen1) -> jbyteArray {
+		const auto avatar_data_vector_optional = vector_from_jbyteArray(*env, avatar_data);
+		if (not avatar_data_vector_optional.has_value()) {
 			return nullptr;
 		}
+		const auto& avatar_data_vector = avatar_data_vector_optional.value();
 
-		jbyteArray data = env->NewByteArray((jsize)retLength);
-		if (data == nullptr) {
+		const auto prekey_list_optional = Molch::JNI::getvCardPreKey(avatar_data_vector);
+		if (not prekey_list_optional.has_value()) {
 			return nullptr;
 		}
+		const auto& prekey_list = prekey_list_optional.value();
 
-		// creat bytes from byteUrl
-		jbyte *bytes = env->GetByteArrayElements(data, nullptr);
-		for (size_t index = 0; index < retLength; index++) {
-			bytes[index] = (jbyte)newPreKey[index];
-		}
-		free(newPreKey);
-
-		// move from the temp structure to the java structure
-		env->SetByteArrayRegion(data, 0, (jsize)retLength, bytes);
-
-		return data;
+		return jbyteArray_from(*env, prekey_list);
 	}
 
 	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_molchCreateUserFromNativeCode(JNIEnv * env, jobject jOgj, jbyteArray public_identity_key, jint public_master_key_length, jbyteArray prekey_list, jint public_prekeys_length_inp, jbyteArray random_data, jint random_data_length, jbyteArray backup_keyin, jint backup_key_lengthin) {
