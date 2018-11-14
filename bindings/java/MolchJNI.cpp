@@ -163,64 +163,34 @@ extern "C" {
 		android_only(__android_log_print(ANDROID_LOG_DEBUG, callFunct, "%s\n", message.pointer);)
 	}
 
-	JNIEXPORT jstring JNICALL Java_de_hz1984not_crypto_Molch_getMolchVersion(JNIEnv * env, jobject jObj) {
-		(void)jObj;
+	JNIEXPORT auto JNICALL Java_de_hz1984not_crypto_Molch_getMolchVersion(JNIEnv * env, [[maybe_unused]] jobject jObj) -> jstring {
 		return env->NewStringUTF("Molch first Version 00.00.01");
 	}
 
-	JNIEXPORT jstring JNICALL Java_de_hz1984not_crypto_Molch_getMolchLastError(JNIEnv * env, jobject jObj) {
+	JNIEXPORT auto JNICALL Java_de_hz1984not_crypto_Molch_getMolchLastError(JNIEnv * env, [[maybe_unused]] jobject jObj) -> jstring {
 		(void)jObj;
 		return env->NewStringUTF(molchLastError);
 	}
 
-	JNIEXPORT jint JNICALL Java_de_hz1984not_crypto_Molch_getNunbercrypto_1box_1PUBLICKEYBYTES(JNIEnv *env, jobject jObj) {
-		jint jresult = 0;
-		(void)env;
-		(void)jObj;
-
-		jresult = (jint) (crypto_box_PUBLICKEYBYTES);
-
-		return jresult;
+	JNIEXPORT auto JNICALL Java_de_hz1984not_crypto_Molch_getNunbercrypto_1box_1PUBLICKEYBYTES([[maybe_unused]] JNIEnv *env, [[maybe_unused]] jobject jObj) -> jint {
+	    return static_cast<jint>(crypto_box_PUBLICKEYBYTES);
 	}
 
-	JNIEXPORT jint JNICALL Java_de_hz1984not_crypto_Molch_getNunberprekey_1list(JNIEnv *env, jobject jObj) {
-		jint jresult = 0;
-		(void)env;
-		(void)jObj;
-
-		jresult = (jint) ((PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES) + 104);  //BHR:TODO
-
-		return jresult;
+	JNIEXPORT auto JNICALL Java_de_hz1984not_crypto_Molch_getNunberprekey_1list([[maybe_unused]] JNIEnv *env, [[maybe_unused]] jobject jObj) -> jint {
+		// FIXME: This must never be used because the format of the prekey list is an implementation detail
+		return static_cast<jint>((PREKEY_AMOUNT * crypto_box_PUBLICKEYBYTES) + 104);
 	}
 
-	JNIEXPORT jint JNICALL Java_de_hz1984not_crypto_Molch_getCONVERSATION_1ID_1SIZE(JNIEnv *env, jobject jObj) {
-		jint jresult = 0;
-		(void)env;
-		(void)jObj;
-
-		jresult = (jint) (CONVERSATION_ID_SIZE);
-
-		return jresult;
+	JNIEXPORT auto JNICALL Java_de_hz1984not_crypto_Molch_getCONVERSATION_1ID_1SIZE([[maybe_unused]] JNIEnv *env, [[maybe_unused]] jobject jObj) -> jint {
+		return static_cast<jint>(CONVERSATION_ID_SIZE);
 	}
 
-	JNIEXPORT jint JNICALL Java_de_hz1984not_crypto_Molch_getPREKEY_1AMOUNT(JNIEnv *env, jobject jObj) {
-		jint jresult = 0;
-		(void)env;
-		(void)jObj;
-
-		jresult = (jint) (PREKEY_AMOUNT);
-
-		return jresult;
+	JNIEXPORT auto JNICALL Java_de_hz1984not_crypto_Molch_getPREKEY_1AMOUNT([[maybe_unused]] JNIEnv *env, [[maybe_unused]] jobject jObj) -> jint {
+		return static_cast<jint>(PREKEY_AMOUNT);
 	}
 
-	JNIEXPORT jint JNICALL Java_de_hz1984not_crypto_Molch_getBackupKeySize(JNIEnv *env, jobject jObj) {
-		jint jresult = 0;
-		(void)env;
-		(void)jObj;
-
-		jresult = (jint) (BACKUP_KEY_SIZE);
-
-		return jresult;
+	JNIEXPORT auto JNICALL Java_de_hz1984not_crypto_Molch_getBackupKeySize([[maybe_unused]] JNIEnv *env, [[maybe_unused]] jobject jObj) -> jint {
+		return static_cast<jint>(BACKUP_KEY_SIZE);
 	}
 
 	static auto vector_from_jbyteArray(JNIEnv& environment, const jbyteArray byte_array) -> std::optional<Molch::JNI::ByteVector> {
