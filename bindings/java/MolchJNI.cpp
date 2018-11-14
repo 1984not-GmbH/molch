@@ -74,7 +74,7 @@ static auto jbyteArray_from(JNIEnv& environment, const Container& container) -> 
 	return java_array;
 }
 
-template <typename Pointer>
+template <typename Pointer, typename = std::enable_if_t<std::is_pointer<Pointer>::value>>
 struct AutoFreePointer {
 	Pointer pointer = nullptr;
 
