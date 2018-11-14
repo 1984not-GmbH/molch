@@ -274,33 +274,13 @@ extern "C" {
 		return jbyteArray_from(*env, new_vcard);
 	}
 
-	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_getvCardAvatar(JNIEnv *env, jobject jObj, jbyteArray jarg1, jint jlen1) {
-		(void)jlen1;
-		unsigned char *arg1 = nullptr;
-		(void)jObj;
-		arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		env->ReleaseByteArrayElements(jarg1, (jbyte *) arg1, 0);
-
-		jbyte byteUrl[] = {41,42,43,43,44};
-		int sizeByteUrl = 5;
-
-		jbyteArray data = env->NewByteArray(sizeByteUrl);
-		if (data == nullptr) {
-			return nullptr; //  out of memory error thrown
-		}
-
-		// creat bytes from byteUrl
-		jbyte *bytes = env->GetByteArrayElements(data, nullptr);
-		int i;
-		for (i = 0; i < sizeByteUrl; i++) {
-			bytes[i] = byteUrl[i];
-		}
-
-		// move from the temp structure to the java structure
-		env->SetByteArrayRegion(data, 0, sizeByteUrl, bytes);
-
-		return data;
-
+	JNIEXPORT auto JNICALL Java_de_hz1984not_crypto_Molch_getvCardAvatar(
+			JNIEnv *env,
+			[[maybe_unused]] jobject jObj,
+			[[maybe_unused]] jbyteArray jarg1,
+			[[maybe_unused]] jint jlen1) -> jbyteArray {
+		const auto bytes = Molch::JNI::ByteArray<5>{41, 42, 43, 43, 44};
+		return jbyteArray_from(*env, bytes);
 	}
 
 	JNIEXPORT auto JNICALL Java_de_hz1984not_crypto_Molch_getvCardPubKey(
