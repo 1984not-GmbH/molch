@@ -74,6 +74,17 @@ static auto jbyteArray_from(JNIEnv& environment, const Container& container) -> 
 	return java_array;
 }
 
+template <typename Pointer>
+struct AutoFreePointer {
+	Pointer pointer = nullptr;
+
+	~AutoFreePointer() {
+		if (this->pointer == nullptr) {
+			free(this->pointer);
+		}
+	}
+};
+
 extern "C" {
 	/* Support for throwing Java exceptions */
 	typedef enum {
@@ -142,16 +153,14 @@ extern "C" {
 		return 1;
 	}
 
-	static void print_info_error(const char *callFunct, return_status retStatus) {
-		(void)callFunct;
+	static void print_info_error([[maybe_unused]] const std::string& calling_function, const return_status status) {
 		size_t message_length = 0;
-		auto message = molch_print_status(&message_length, retStatus);
-		if (message == nullptr) {
-			android_only(__android_log_print(ANDROID_LOG_DEBUG, callFunct, "ERROR: Failed to print error."));
+		const auto message = AutoFreePointer<char*>{molch_print_status(&message_length, status)};
+		if (message.pointer == nullptr) {
+			android_only(__android_log_print(ANDROID_LOG_DEBUG, calling_function.c_str(), "ERROR: Failed to print error."));
 			return;
 		}
-		android_only(__android_log_print(ANDROID_LOG_DEBUG, callFunct, "%s\n", message);)
-		free(message);
+		android_only(__android_log_print(ANDROID_LOG_DEBUG, callFunct, "%s\n", message.pointer);)
 	}
 
 	JNIEXPORT jstring JNICALL Java_de_hz1984not_crypto_Molch_getMolchVersion(JNIEnv * env, jobject jObj) {
