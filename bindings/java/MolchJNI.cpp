@@ -222,7 +222,7 @@ extern "C" {
 		return jbyteArray_from(*env, byte_array);
 	}
 
-	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_getvCardInfoAvatar(
+	JNIEXPORT auto JNICALL Java_de_hz1984not_crypto_Molch_getvCardInfoAvatar(
 			JNIEnv *env,
 			[[maybe_unused]] jobject jObj,
 			jbyteArray public_key,
@@ -230,7 +230,7 @@ extern "C" {
 			jbyteArray prekey_list,
 			[[maybe_unused]] jint prekey_list_length,
 			jbyteArray avatar_data,
-			[[maybe_unused]] jint jlen3) {
+			[[maybe_unused]] jint jlen3) -> jbyteArray {
 		const auto public_key_array_optional = array_from_jbyteArray<PUBLIC_MASTER_KEY_SIZE>(*env, public_key);
 		const auto prekey_list_vector_optional = vector_from_jbyteArray(*env, prekey_list);
 		const auto avatar_data_vector_optional = vector_from_jbyteArray(*env, avatar_data);
