@@ -83,6 +83,41 @@ struct AutoFreePointer {
 	}
 };
 
+class AutoReleaseJavaByteArray {
+public:
+	AutoReleaseJavaByteArray(JNIEnv& env, jbyteArray array) noexcept
+			: env{env},
+			array{array},
+			bytes{reinterpret_cast<unsigned char*>(env.GetByteArrayElements(array, nullptr))},
+			length{static_cast<size_t>(env.GetArrayLength(array))} {
+		if (this->bytes == nullptr) {
+			this->length = 0;
+		}
+	}
+
+	auto size() const noexcept {
+		return length;
+	}
+
+	auto data() noexcept -> unsigned char* {
+		return bytes;
+	}
+
+	auto data() const noexcept -> const unsigned char* {
+		return bytes;
+	}
+
+	~AutoReleaseJavaByteArray() noexcept {
+		env.ReleaseByteArrayElements(array, reinterpret_cast<jbyte*>(bytes), 0);
+	}
+
+private:
+	JNIEnv& env;
+	jbyteArray array{nullptr};
+	unsigned char* bytes{nullptr};
+	size_t length{0};
+};
+
 extern "C" {
 	/* Support for throwing Java exceptions */
 	typedef enum {
