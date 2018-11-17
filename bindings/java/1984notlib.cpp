@@ -63,7 +63,7 @@ namespace Molch::JNI {
 		const auto second_byte = array[std::size(array) - 1];
 
 		// little endian
-		return first_byte + (second_byte << 8U);
+		return static_cast<size_t>(first_byte + (second_byte << 8U));
 	}
 
 	auto getvCardInfoAvatar(
@@ -142,7 +142,7 @@ namespace Molch::JNI {
 		auto prekey_list = ByteVector(prekey_list_length, '\0');
 		std::copy(
 				std::begin(avatar_data) + prekey_list_offset,
-				std::begin(avatar_data) + prekey_list_offset + prekey_list_length,
+				std::begin(avatar_data) + prekey_list_offset + static_cast<ptrdiff_t>(prekey_list_length),
 				std::begin(prekey_list));
 
 		return prekey_list;
