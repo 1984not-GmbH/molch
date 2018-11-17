@@ -43,4 +43,5 @@ jni = library(
 		java_include,
 		molch_include,
 	],
+	dependencies: [libsodium],
 	cpp_args: jni_flags)

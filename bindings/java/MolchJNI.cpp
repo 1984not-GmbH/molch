@@ -118,6 +118,16 @@ private:
 	size_t length{0};
 };
 
+static void print_info_error([[maybe_unused]] const char* calling_function, const return_status status) {
+	size_t message_length = 0;
+	const auto message = AutoFreePointer<char*>{molch_print_status(&message_length, status)};
+	if (message.pointer == nullptr) {
+		android_only(__android_log_print(ANDROID_LOG_DEBUG, calling_function, "ERROR: Failed to print error."));
+		return;
+	}
+	android_only(__android_log_print(ANDROID_LOG_DEBUG, calling_function, "%s\n", message.pointer);)
+}
+
 extern "C" {
 	/* Support for throwing Java exceptions */
 	typedef enum {
@@ -184,16 +194,6 @@ extern "C" {
 		for (i=0; i<sz; i++)
 			(*carr)[i] = (long)(*jarr)[i];
 		return 1;
-	}
-
-	static void print_info_error([[maybe_unused]] const std::string& calling_function, const return_status status) {
-		size_t message_length = 0;
-		const auto message = AutoFreePointer<char*>{molch_print_status(&message_length, status)};
-		if (message.pointer == nullptr) {
-			android_only(__android_log_print(ANDROID_LOG_DEBUG, calling_function.c_str(), "ERROR: Failed to print error."));
-			return;
-		}
-		android_only(__android_log_print(ANDROID_LOG_DEBUG, callFunct, "%s\n", message.pointer);)
 	}
 
 	JNIEXPORT auto JNICALL Java_de_hz1984not_crypto_Molch_getMolchVersion(JNIEnv * env, [[maybe_unused]] jobject jObj) -> jstring {
@@ -400,8 +400,8 @@ extern "C" {
 		(void)jOgj;
 		arg1 = (unsigned char *) env->GetByteArrayElements(public_identity_key, nullptr);
 		arg2 = (unsigned char *) env->GetByteArrayElements(jarg2, nullptr);
-		unsigned long long public_master_key_length;
-		public_master_key_length = (unsigned long long)public_master_key_lengthin;
+		size_t public_master_key_length;
+		public_master_key_length = (size_t)public_master_key_lengthin;
 
 		size_t json_export_length = 0;
 		return_status retStatus;
@@ -409,7 +409,7 @@ extern "C" {
 		retStatus = molch_destroy_user(arg1, public_master_key_length, &arg2, &json_export_length);
 
 		if (retStatus.status != status_type::SUCCESS) {
-			print_info_error("Java_de_hz1984not_crypto_Molch_molchDestroyUserFromNativeCode: ", retStatus);
+			print_info_error(__FUNCTION__, retStatus);
 			molch_destroy_return_status(&retStatus);
 			retVal = -1;
 		}
@@ -459,7 +459,7 @@ extern "C" {
 
 		if ((retStatus.status != status_type::SUCCESS)
 				or (sizeByteUrl > std::numeric_limits<jsize>::max())) {
-			print_info_error("Java_de_hz1984not_crypto_Molch_molchUserListFromNativeCode: ", retStatus);
+			print_info_error(__FUNCTION__, retStatus);
 			molch_destroy_return_status(&retStatus);
 			return nullptr;
 		}
@@ -493,8 +493,8 @@ extern "C" {
 		(void)env;
 		(void)jOgj;
 		arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		unsigned long long arg2 ;
-		arg2 = (unsigned long long)jarg2;
+		size_t arg2 ;
+		arg2 = (size_t)jarg2;
 		molch_message_type tmpResult = molch_get_message_type(arg1, arg2);
 
 		int result = (int) tmpResult;
@@ -516,16 +516,16 @@ extern "C" {
 				return nullptr;
 			}
 		}
-		unsigned long long arg3 ;
-		unsigned long long conversation_id_length;
-		unsigned long long sender_public_master_key_length;
-		unsigned long long receiver_public_master_key_length;
-		unsigned long long prekey_list_length;
-		arg3 = (unsigned long long)jarg3;
-		conversation_id_length = (unsigned long long)conversation_id_lengthin;
-		sender_public_master_key_length = (unsigned long long)sender_public_master_key_lengthin;
-		receiver_public_master_key_length = (unsigned long long)receiver_public_master_key_lengthin;
-		prekey_list_length = (unsigned long long)prekey_list_lengthin;
+		size_t arg3 ;
+		size_t conversation_id_length;
+		size_t sender_public_master_key_length;
+		size_t receiver_public_master_key_length;
+		size_t prekey_list_length;
+		arg3 = (size_t)jarg3;
+		conversation_id_length = (size_t)conversation_id_lengthin;
+		sender_public_master_key_length = (size_t)sender_public_master_key_lengthin;
+		receiver_public_master_key_length = (size_t)receiver_public_master_key_lengthin;
+		prekey_list_length = (size_t)prekey_list_lengthin;
 
 		unsigned char *arg4 = (unsigned char *) env->GetByteArrayElements(jarg4, nullptr);
 		unsigned char *arg5 = (unsigned char *) env->GetByteArrayElements(jarg5, nullptr);
@@ -545,7 +545,7 @@ extern "C" {
 
 		if ((retStatus.status != status_type::SUCCESS)
 				or (packet_length > std::numeric_limits<jsize>::max())) {
-			print_info_error("Java_de_hz1984not_crypto_Molch_molchCreateSendConversationFromNativeCode: ", retStatus);
+			print_info_error(__FUNCTION__, retStatus);
 			molch_destroy_return_status(&retStatus);
 			return nullptr;
 		}
@@ -577,10 +577,10 @@ extern "C" {
 		(void)jOgj;
 		unsigned char *arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
 		unsigned char *arg2 = (unsigned char *) env->GetByteArrayElements(jarg2, nullptr);
-		unsigned long long arg3 = (unsigned long long)jarg3;
-		unsigned long long conversation_id_length = (unsigned long long)conversation_id_lengthin;
-		unsigned long long sender_public_master_key_length = (unsigned long long)sender_public_master_key_lengthin;
-		unsigned long long receiver_public_master_key_length = (unsigned long long)receiver_public_master_key_lengthin;
+		auto arg3 = static_cast<size_t>(jarg3);
+		auto conversation_id_length = static_cast<size_t>(conversation_id_lengthin);
+		auto sender_public_master_key_length = static_cast<size_t>(sender_public_master_key_lengthin);
+		auto receiver_public_master_key_length = static_cast<size_t>(receiver_public_master_key_lengthin);
 		jsize jpre_keys_length = 0;
 		unsigned char *arg4 = nullptr;
 		arg4 = (unsigned char *) env->GetByteArrayElements(jarg4, nullptr);
@@ -628,7 +628,7 @@ extern "C" {
 		env->ReleaseByteArrayElements(jarg6, (jbyte *) arg6, 0);
 
 		if ((retStatus.status != status_type::SUCCESS) or (preKeyerrorCode != 0)) {
-			print_info_error("Java_de_hz1984not_crypto_Molch_molchCreateReceiveConversationFromNativeCode: ", retStatus);
+			print_info_error(__FUNCTION__, retStatus);
 			molch_destroy_return_status(&retStatus);
 			return nullptr;
 		}
@@ -663,10 +663,10 @@ extern "C" {
 				return nullptr;
 			}
 		}
-		unsigned long long arg2 ;
-		unsigned long long conversation_id_length;
-		arg2 = (unsigned long long)jarg2;
-		conversation_id_length = (unsigned long long)conversation_id_lengthin;
+		size_t arg2 ;
+		size_t conversation_id_length;
+		arg2 = (size_t)jarg2;
+		conversation_id_length = (size_t)conversation_id_lengthin;
 		unsigned char *arg3 = nullptr;
 		arg3 = (unsigned char *) env->GetByteArrayElements(jarg3, nullptr);
 
@@ -683,7 +683,7 @@ extern "C" {
 
 		if ((retStatus.status != status_type::SUCCESS)
 				or (packet_length > std::numeric_limits<jsize>::max())) {
-			print_info_error("Java_de_hz1984not_crypto_Molch_molchEncryptMessageFromNativeCode: ", retStatus);
+			print_info_error(__FUNCTION__, retStatus);
 			molch_destroy_return_status(&retStatus);
 			return nullptr;
 		}
@@ -714,8 +714,8 @@ extern "C" {
 		(void)env;
 		(void)jOgj;
 		unsigned char *arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		unsigned long long arg2 = (unsigned long long)jarg2;
-		unsigned long long conversation_id_length = (unsigned long long)conversation_id_lengthin;
+		auto arg2 = (size_t)jarg2;
+		auto conversation_id_length = (size_t)conversation_id_lengthin;
 		unsigned char *arg3 = (unsigned char *) env->GetByteArrayElements(jarg3, nullptr);
 
 		unsigned char *packet;
@@ -731,7 +731,7 @@ extern "C" {
 
 		if ((retStatus.status != status_type::SUCCESS)
 				or (packet_length > std::numeric_limits<jsize>::max())) {
-			print_info_error("Java_de_hz1984not_crypto_Molch_molchDecryptMessageFromNativeCode: ", retStatus);
+			print_info_error(__FUNCTION__, retStatus);
 			molch_destroy_return_status(&retStatus);
 			return nullptr;
 		}
@@ -760,8 +760,8 @@ extern "C" {
 		(void)env;
 		(void)jOgj;
 		arg1 = (unsigned char *) env->GetByteArrayElements(jarg1, nullptr);
-		unsigned long long conversation_id_length;
-		conversation_id_length = (unsigned long long)conversation_id_lengthin;
+		size_t conversation_id_length;
+		conversation_id_length = (size_t)conversation_id_lengthin;
 
 		size_t json_export_length = 0;
 		unsigned char * json_export = nullptr;
@@ -798,11 +798,11 @@ extern "C" {
 		size_t number_of_conversations = 0;
 		unsigned char *conversation_list = nullptr;
 
-		android_only(__android_log_print(ANDROID_LOG_DEBUG, "Java_de_hz1984not_crypto_Molch_molchListConversationsFromNativeCode: ", "arg2: %d\n", (int) arg2);)
+		android_only(__android_log_print(ANDROID_LOG_DEBUG, "Java_de_hz1984not_crypto_Molch_molchListConversationsFromNativeCode: ", "arg2: %d\n", (int) jarg2);)
 
 		return_status retStatus;
 		if (jarg2 < 0) {
-			print_info_error("Java_de_hz1984not_crypto_Molch_molchListConversationsFromNativeCode: ", retStatus);
+			print_info_error(__FUNCTION__, retStatus);
 			return nullptr;
 		}
 		size_t arg2 = (size_t)jarg2;
@@ -815,7 +815,7 @@ extern "C" {
 				or (number_of_conversations == 0)
 				or (retStatus.status != status_type::SUCCESS)
 				or (arg2 > std::numeric_limits<jsize>::max())) {
-			print_info_error("Java_de_hz1984not_crypto_Molch_molchListConversationsFromNativeCode: ", retStatus);
+			print_info_error(__FUNCTION__, retStatus);
 			molch_destroy_return_status(&retStatus);
 			return nullptr;
 		}
@@ -847,7 +847,7 @@ extern "C" {
 		if ((imported_json == nullptr)
 				or (retStatus.status != status_type::SUCCESS)
 				or (imported_json_length > std::numeric_limits<jsize>::max())) {
-			print_info_error("Java_de_hz1984not_crypto_Molch_molchJsonExportFromNativeCode: ", retStatus);
+			print_info_error(__FUNCTION__, retStatus);
 			molch_destroy_return_status(&retStatus);
 			return nullptr;
 		}
@@ -877,12 +877,12 @@ extern "C" {
 		unsigned char *newbackupkey = (unsigned char *) env->GetByteArrayElements(jnewbackupkeyin, nullptr);
 		unsigned char *oldbackupkey = (unsigned char *) env->GetByteArrayElements(joldbackupkeyin, nullptr);
 
-		unsigned long long arg2;
-		arg2 = (unsigned long long)jarg2;
-		unsigned long long newbackupkeyin_length;
-		newbackupkeyin_length = (unsigned long long)jnewbackupkeyin_length;
-		unsigned long long oldbackupkeyin_length;
-		oldbackupkeyin_length = (unsigned long long)joldbackupkeyin_length;
+		size_t arg2;
+		arg2 = (size_t)jarg2;
+		size_t newbackupkeyin_length;
+		newbackupkeyin_length = (size_t)jnewbackupkeyin_length;
+		size_t oldbackupkeyin_length;
+		oldbackupkeyin_length = (size_t)joldbackupkeyin_length;
 
 		for (size_t index = 0; index < newbackupkeyin_length; ++index) {
 			android_only(__android_log_print(ANDROID_LOG_DEBUG, ": ", "0x%02X ", (int) newbackupkey[index]);)
@@ -906,7 +906,7 @@ extern "C" {
 		}
 
 		if (retStatus.status != status_type::SUCCESS) {
-			print_info_error("Java_de_hz1984not_crypto_Molch_molchJsonImportFromNativeCode: ", retStatus);
+			print_info_error(__FUNCTION__, retStatus);
 			molch_destroy_return_status(&retStatus);
 		}
 
