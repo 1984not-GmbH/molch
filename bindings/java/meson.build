@@ -1,4 +1,4 @@
-jni_sources = files([
+jnipp_sources = files([
 	'MolchJNI.cpp',
 	'1984notlib.cpp',
 ])
@@ -30,10 +30,41 @@ else
 	java_include = include_directories(winning_java_include)
 endif
 
-jni_flag_candidates = [
+jnipp_flag_candidates = [
 	'-Wno-old-style-cast',
 ]
-jni_flags = cpp_compiler.get_supported_arguments(jni_flag_candidates)
+jnipp_flags = cpp_compiler.get_supported_arguments(jnipp_flag_candidates)
+
+jnipp = library(
+	'molchJNI++',
+	jnipp_sources,
+	link_with: molch,
+	include_directories: [
+		java_include,
+		molch_include,
+	],
+	dependencies: [libsodium],
+	cpp_args: jnipp_flags)
+
+jni_sources = files([
+	'1984notlib.c',
+	'MolchJNI.c'
+])
+
+jni_flag_candidates = [
+	'-Wno-discarded-qualifiers',
+	'-Wno-sign-compare',
+	'-Wno-unused-variable',
+	'-Wno-sign-conversion',
+	'-Wno-conversion',
+	'-Wno-pointer-sign',
+	'-Wno-cast-qual',
+	'-Wno-unused-parameter',
+	'-Wno-unused-but-set-variable',
+	'-Wno-incompatible-pointer-types-discards-qualifiers',
+]
+
+jni_flags = c_compiler.get_supported_arguments(jni_flag_candidates)
 
 jni = library(
 	'molchJNI',
@@ -44,4 +75,4 @@ jni = library(
 		molch_include,
 	],
 	dependencies: [libsodium],
-	cpp_args: jni_flags)
+	c_args: jni_flags)
