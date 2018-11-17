@@ -77,7 +77,7 @@ struct AutoFreePointer {
 	Pointer pointer = nullptr;
 
 	~AutoFreePointer() noexcept {
-		if (this->pointer == nullptr) {
+		if (this->pointer != nullptr) {
 			free(this->pointer);
 		}
 	}
