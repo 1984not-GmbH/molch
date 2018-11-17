@@ -334,112 +334,62 @@ extern "C" {
 		return jbyteArray_from(*env, prekey_list);
 	}
 
-	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_molchCreateUserFromNativeCode(JNIEnv * env, jobject jOgj, jbyteArray public_identity_key, jint public_master_key_length, jbyteArray prekey_list, jint public_prekeys_length_inp, jbyteArray random_data, jint random_data_length, jbyteArray backup_keyin, jint backup_key_lengthin) {
-		unsigned char *arg1 = nullptr;
-		unsigned char *arg2 = nullptr;
-		unsigned char *arg3 = nullptr;
-		unsigned char *arg5 = nullptr;
-		unsigned long long arg4;
-		unsigned long long pubMasterKeyLenth;
-		unsigned long long pubPreKeyLenth;
-		unsigned long long backup_key_lengthtmp;
-		arg4 = (unsigned long long)random_data_length;
-		pubMasterKeyLenth = (unsigned long long)public_master_key_length;
-		pubPreKeyLenth = (unsigned long long)public_prekeys_length_inp;
-		backup_key_lengthtmp = (unsigned long long)backup_key_lengthin;
+	JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_molchCreateUserFromNativeCode(
+			JNIEnv * env,
+			[[maybe_unused]] jobject jOgj,
+			jbyteArray public_master_key_jarray,
+			[[maybe_unused]] jint unused_public_master_key_length,
+			jbyteArray prekey_list_jarray,
+			[[maybe_unused]] jint unused_prekey_list_length,
+			jbyteArray random_data_jarray,
+			[[maybe_unused]] jint unused_random_data_length,
+			[[maybe_unused]] jbyteArray unused_backup_key_jarray,
+			[[maybe_unused]] jint unused_backup_key_length) {
+		auto public_master_key = AutoReleaseJavaByteArray(*env, public_master_key_jarray);
+		const auto random_data = AutoReleaseJavaByteArray(*env, random_data_jarray);
 
-		(void)env;
-		(void)jOgj;
-		arg1 = (unsigned char *) env->GetByteArrayElements(public_identity_key, nullptr);
-		arg3 = (unsigned char *) env->GetByteArrayElements(random_data, nullptr);
-		arg5 = (unsigned char *) env->GetByteArrayElements(backup_keyin, nullptr);
+		unsigned char* prekey_list = nullptr;
+		size_t prekey_list_length = 0;
 
-		unsigned char *public_prekeys = nullptr;
-		size_t public_prekeys_length = pubPreKeyLenth;
-		unsigned char *complete_json_export = nullptr;
-		size_t complete_json_export_length = 0;
-		return_status retStatus;
+		auto backup_key = std::array<unsigned char,BACKUP_KEY_SIZE>();
 
-		unsigned char *backup_key = (unsigned char*)malloc(crypto_secretbox_KEYBYTES);
-		size_t backup_key_length = backup_key_lengthtmp;
-
-		android_only(__android_log_print(ANDROID_LOG_DEBUG, ": ", "%d ; %d ; %d", (int) backup_key_length, (int) public_prekeys_length, (int) arg4);)
-
-		int retVal = 0;
-		retStatus = molch_create_user(arg1, pubMasterKeyLenth, &public_prekeys, &public_prekeys_length, backup_key, backup_key_length, &complete_json_export, &complete_json_export_length, arg3, arg4);
-		if ((retStatus.status != status_type::SUCCESS)
-				or (complete_json_export_length > std::numeric_limits<jsize>::max())) {
-			print_info_error("Java_de_hz1984not_crypto_Molch_molchCreateUserFromNativeCode: ", retStatus);
-			molch_destroy_return_status(&retStatus);
-			retVal = -1;
+		auto status = molch_create_user(
+				std::data(public_master_key),
+				std::size(public_master_key),
+				&prekey_list,
+				&prekey_list_length,
+				std::data(backup_key),
+				std::size(backup_key),
+				nullptr,
+				nullptr,
+				std::data(random_data),
+				std::size(random_data));
+		if (status.status != status_type::SUCCESS) {
+			print_info_error(__FUNCTION__, status);
+			molch_destroy_return_status(&status);
+			return nullptr;
 		}
 
-		android_only(__android_log_print(ANDROID_LOG_DEBUG, ": ", "%d", (int) retStatus.status);)
-
-		jbyteArray data = nullptr;
-		if (public_prekeys == nullptr) {
-			retVal = -1;
-		}
-		else {
-			arg2 = (unsigned char *) env->GetByteArrayElements(prekey_list, nullptr);
-			jsize length = env->GetArrayLength(prekey_list);
-			android_only(__android_log_print(ANDROID_LOG_DEBUG, ": ", "%d = %d ", (int) length, (int) public_prekeys_length);)
-			if ((size_t)length == public_prekeys_length) {
-				jsize i;
-				for (i = 0; i < length; ++i) {
-					arg2[i] = public_prekeys[i];
-				}
-				{
-					env->ReleaseByteArrayElements(prekey_list, (jbyte *) arg2, 0);
-				}
-			}
+		if (prekey_list == nullptr) {
+			return nullptr;
 		}
 
-		android_only(__android_log_print(ANDROID_LOG_DEBUG, ": ", "next %d", (int) complete_json_export_length);)
-
-		if (complete_json_export == nullptr) {
-			retVal = -1;
+		auto prekey_list_jarray_data = reinterpret_cast<unsigned char*>(env->GetByteArrayElements(prekey_list_jarray, nullptr));
+		if (prekey_list_jarray_data == nullptr) {
+			return nullptr;
 		}
-		else if (retVal != -1){
-			jbyteArray data = env->NewByteArray((jsize)complete_json_export_length);
-			if (data == nullptr) {
-				return nullptr; //  out of memory error thrown
-			}
-			jbyte *bytes = env->GetByteArrayElements(data, nullptr);
-			for (size_t index = 0; index < complete_json_export_length; index++) {
-				bytes[index] = (jbyte)complete_json_export[index];
-			}
-			env->SetByteArrayRegion(data, 0, (jsize)complete_json_export_length, bytes);
-
-			free(complete_json_export);
+		const auto prekey_list_jarray_length = static_cast<size_t>(env->GetArrayLength(prekey_list_jarray));
+		if (prekey_list_length != prekey_list_jarray_length) {
+			return nullptr;
 		}
 
-		android_only(__android_log_print(ANDROID_LOG_DEBUG, ": ", "%d", (int) retVal);)
+		std::copy(
+				prekey_list,
+				prekey_list + prekey_list_length,
+				prekey_list_jarray_data);
+		env->ReleaseByteArrayElements(prekey_list_jarray, reinterpret_cast<jbyte*>(prekey_list_jarray_data), 0);
 
-		if (backup_key == nullptr) {
-			android_only(__android_log_print(ANDROID_LOG_DEBUG, ": ", "backup_key == nullptr");)
-		}
-		else if (retVal != -1) {
-			arg5 = (unsigned char *) env->GetByteArrayElements(backup_keyin, nullptr);
-			jsize length = env->GetArrayLength(backup_keyin);
-			android_only(__android_log_print(ANDROID_LOG_DEBUG, ": ", "%d = %d ", (int) length, (int) backup_key_length);)
-			if ((size_t)length == backup_key_length) {
-				jsize i;
-				for (i = 0; i < length; ++i) {
-					arg5[i] = backup_key[i];
-					android_only(__android_log_print(ANDROID_LOG_DEBUG, ": ", "0x%02X ", (int) arg5[i]);)
-				}
-				free(backup_key);
-				{
-					env->ReleaseByteArrayElements(backup_keyin, (jbyte *) arg5, 0);
-				}
-			}
-		}
-
-		env->ReleaseByteArrayElements(public_identity_key, (jbyte *) arg1, 0);
-		env->ReleaseByteArrayElements(random_data, (jbyte *) arg3, 0);
-
-		return data;
+		return nullptr;
 	}
 
 	JNIEXPORT jint JNICALL Java_de_hz1984not_crypto_Molch_molchDestroyUserFromNativeCode(JNIEnv *env, jobject jOgj, jbyteArray public_identity_key, jint public_master_key_lengthin, jbyteArray jarg2) {
