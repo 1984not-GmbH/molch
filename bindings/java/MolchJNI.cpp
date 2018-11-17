@@ -43,8 +43,7 @@ auto array_from_jbyteArray(JNIEnv& environment, jbyteArray byte_array) -> std::o
 		return std::nullopt;
 	}
 
-	jboolean isCopy = JNI_FALSE;
-	const auto bytes = environment.GetByteArrayElements(byte_array, &isCopy);
+	const auto bytes = environment.GetByteArrayElements(byte_array, nullptr);
 	if (bytes == nullptr) {
 		return std::nullopt;
 	}
@@ -65,8 +64,7 @@ static auto jbyteArray_from(JNIEnv& environment, const Container& container) -> 
 	if (java_array == nullptr) {
 		return nullptr;
 	}
-	jboolean isCopy = JNI_FALSE;
-	auto data = environment.GetByteArrayElements(java_array, &isCopy);
+	auto data = environment.GetByteArrayElements(java_array, nullptr);
 	std::copy(std::begin(container), std::end(container), data);
 
 	environment.ReleaseByteArrayElements(java_array, data, 0);
@@ -195,8 +193,7 @@ extern "C" {
 
 	static auto vector_from_jbyteArray(JNIEnv& environment, const jbyteArray byte_array) -> std::optional<Molch::JNI::ByteVector> {
 		const auto size = static_cast<size_t>(environment.GetArrayLength(byte_array));
-		jboolean isCopy = JNI_FALSE;
-		const auto bytes = environment.GetByteArrayElements(byte_array, &isCopy);
+		const auto bytes = environment.GetByteArrayElements(byte_array, nullptr);
 		if (bytes == nullptr) {
 			return std::nullopt;
 		}
