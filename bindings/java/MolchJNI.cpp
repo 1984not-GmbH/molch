@@ -38,7 +38,7 @@
 #include "molch/return-status.h"
 
 template <size_t length>
-auto array_from_jbyteArray(JNIEnv& environment, jbyteArray byte_array) -> std::optional<Molch::JNI::ByteArray<length>> {
+auto array_from_jbyteArray(JNIEnv& environment, jbyteArray byte_array) noexcept -> std::optional<Molch::JNI::ByteArray<length>> {
 	if (environment.GetArrayLength(byte_array) != length) {
 		return std::nullopt;
 	}
@@ -55,7 +55,7 @@ auto array_from_jbyteArray(JNIEnv& environment, jbyteArray byte_array) -> std::o
 }
 
 template <typename Container>
-static auto jbyteArray_from(JNIEnv& environment, const Container& container) -> jbyteArray {
+static auto jbyteArray_from(JNIEnv& environment, const Container& container) noexcept -> jbyteArray {
 	if (std::size(container) > std::numeric_limits<jsize>::max()) {
 		return nullptr;
 	}
@@ -76,7 +76,7 @@ template <typename Pointer, typename = std::enable_if_t<std::is_pointer<Pointer>
 struct AutoFreePointer {
 	Pointer pointer = nullptr;
 
-	~AutoFreePointer() {
+	~AutoFreePointer() noexcept {
 		if (this->pointer == nullptr) {
 			free(this->pointer);
 		}
