@@ -9,6 +9,30 @@ extern "C" {
 #endif
 /*
  * Class:     de_nineteen_eighty_four_not_molch_Molch
+ * Method:    getUserIdSize
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_getUserIdSize
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     de_nineteen_eighty_four_not_molch_Molch
+ * Method:    getConversationIdSize
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_getConversationIdSize
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     de_nineteen_eighty_four_not_molch_Molch
+ * Method:    getBackupKeySize
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_getBackupKeySize
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     de_nineteen_eighty_four_not_molch_Molch
  * Method:    createUser
  * Signature: (ZLjava/util/Optional;)Lde/nineteen/eighty/four/not/molch/Molch/CreateUserResult;
  */

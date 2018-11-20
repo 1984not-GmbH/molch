@@ -21,6 +21,10 @@ class Molch {
 		public Optional<byte[]> backup;
 	}
 
+	static native long getUserIdSize();
+	static native long getConversationIdSize();
+	static native long getBackupKeySize();
+
 	static native CreateUserResult createUser(boolean createBackup, Optional<byte[]> randomSpice) throws Exception;
 	static native Optional<byte[]> destroyUser(byte[] id, boolean createBackup) throws Exception;
 	static native long countUsers();
