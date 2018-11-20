@@ -1,1 +1,3 @@
 option('lua_bindings', type: 'boolean', value: true, description: 'Enable Lua bindings')
+option('enable_java_bindings', type: 'boolean', value: true, description: 'Enable Java bindings')
+option('jni_include_paths', type: 'array', description: 'JNI include path')
