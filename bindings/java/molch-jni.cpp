@@ -53,7 +53,7 @@ namespace Molch::JNI {
 
 		const auto result = environment->NewObject(CreateUserResult_class, CreateUserResult_Constructor);
 		const auto userId_fieldId = environment->GetFieldID(CreateUserResult_class, "userId", "[B");
-		const auto userId_jarray = environment->NewByteArray(0);
+		const auto userId_jarray = environment->NewByteArray(PUBLIC_MASTER_KEY_SIZE);
 		environment->SetObjectField(result, userId_fieldId, userId_jarray);
 
 		return result;

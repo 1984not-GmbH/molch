@@ -40,5 +40,6 @@ class MolchTest {
 		Molch.CreateUserResult createUserResult = Molch.createUser(false, Optional.empty());
 		assertThat(createUserResult, is(notNullValue()));
 		assertThat(createUserResult.userId, is(notNullValue()));
+		assertThat(createUserResult.userId.length, is(32));
 	}
 }
