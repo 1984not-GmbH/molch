@@ -24,4 +24,10 @@ class MolchTest {
 	void testGetConversationIdSize() {
 		assertEquals(32, Molch.getConversationIdSize());
 	}
+
+	@Test
+	@DisplayName("Test getBackupKeySize")
+	void testGetBackupKeySize() {
+		assertEquals(32, Molch.getBackupKeySize());
+	}
 }
