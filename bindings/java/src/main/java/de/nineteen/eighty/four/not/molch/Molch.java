@@ -14,7 +14,7 @@ class Molch {
 		System.loadLibrary("molch-jni");
 	}
 
-	class CreateUserResult {
+	static class CreateUserResult {
 		public byte[] userId;
 		public byte[] prekeyList;
 		public byte[] backupKey;
@@ -33,7 +33,7 @@ class Molch {
 
 	static native MessageType getMessageType(byte[] packet);
 
-	class SendConversationResult {
+	static class SendConversationResult {
 		public byte[] conversationId;
 		public byte[] packet;
 		public Optional<byte[]> backup;
@@ -46,7 +46,7 @@ class Molch {
 			byte[] message,
 			boolean createBackup) throws Exception;
 
-	class ReceiveConversationResult {
+	static class ReceiveConversationResult {
 		public byte[] conversationId;
 		public byte[] prekeyList;
 		public byte[] message;
@@ -59,7 +59,7 @@ class Molch {
 			byte[] packet,
 			boolean createBackup) throws Exception;
 
-	class EncryptResult {
+	static class EncryptResult {
 		public byte[] packet;
 		public Optional<byte[]> conversationBackup;
 	}
@@ -69,7 +69,7 @@ class Molch {
 			byte[] message,
 			boolean createConversationBackup) throws Exception;
 
-	class DecryptResult {
+	static class DecryptResult {
 		public long messageNumber;
 		public long previousMessageNumber;
 		public byte[] message;
