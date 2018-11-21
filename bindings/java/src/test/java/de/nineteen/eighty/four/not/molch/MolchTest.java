@@ -18,4 +18,10 @@ class MolchTest {
 	void testGetUserIdSize() {
 		assertEquals(32, Molch.getUserIdSize() );
 	}
+
+	@Test
+	@DisplayName("Test getConversationIdSize")
+	void testGetConversationIdSize() {
+		assertEquals(32, Molch.getConversationIdSize());
+	}
 }

@@ -28,4 +28,8 @@ namespace Molch::JNI {
 	extern "C" JNIEXPORT auto JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_getUserIdSize([[maybe_unused]] JNIEnv *, [[maybe_unused]] jclass) -> jlong {
 		return PUBLIC_MASTER_KEY_SIZE;
 	}
+
+	extern "C" JNIEXPORT auto JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_getConversationIdSize([[maybe_unused]] JNIEnv *, [[maybe_unused]] jclass) -> jlong {
+		return CONVERSATION_ID_SIZE;
+	}
 }
