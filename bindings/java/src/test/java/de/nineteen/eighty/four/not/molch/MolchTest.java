@@ -3,8 +3,11 @@ package de.nineteen.eighty.four.not.molch;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.*;
+import static org.hamcrest.core.IsNull.notNullValue;
 
 class MolchTest {
 	@Test
@@ -29,5 +32,12 @@ class MolchTest {
 	@DisplayName("Test getBackupKeySize")
 	void testGetBackupKeySize() {
 		assertThat(Molch.getBackupKeySize(), is(32L));
+	}
+
+	@Test
+	@DisplayName("Test createUser without backup and spice")
+	void testCreateUser() throws Exception {
+		Molch.CreateUserResult createUserResult = Molch.createUser(false, Optional.empty());
+		assertThat(createUserResult, is(notNullValue()));
 	}
 }

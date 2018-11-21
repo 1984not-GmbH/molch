@@ -36,4 +36,21 @@ namespace Molch::JNI {
 	extern "C" JNIEXPORT auto JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_getBackupKeySize([[maybe_unused]] JNIEnv *, [[maybe_unused]] jclass) -> jlong {
 		return BACKUP_KEY_SIZE;
 	}
+
+	extern "C" JNIEXPORT auto JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_createUser(
+			JNIEnv *environment,
+			[[maybe_unused]] jclass,
+			[[maybe_unused]] jboolean create_backup_jboolean,
+			[[maybe_unused]] jobject random_spice_optional_jobject) -> jobject {
+		const auto CreateUserResult_class = environment->FindClass("de/nineteen/eighty/four/not/molch/Molch$CreateUserResult");
+		if (CreateUserResult_class == nullptr) {
+			return nullptr;
+		}
+		const auto CreateUserResult_Constructor = environment->GetMethodID(CreateUserResult_class, "<init>", "()V");
+		if (CreateUserResult_Constructor == nullptr) {
+			return nullptr;
+		}
+
+		return environment->NewObject(CreateUserResult_class, CreateUserResult_Constructor);
+	}
 }
