@@ -39,5 +39,6 @@ class MolchTest {
 	void testCreateUser() throws Exception {
 		Molch.CreateUserResult createUserResult = Molch.createUser(false, Optional.empty());
 		assertThat(createUserResult, is(notNullValue()));
+		assertThat(createUserResult.userId, is(notNullValue()));
 	}
 }

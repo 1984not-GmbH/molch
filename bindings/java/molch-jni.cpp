@@ -51,6 +51,11 @@ namespace Molch::JNI {
 			return nullptr;
 		}
 
-		return environment->NewObject(CreateUserResult_class, CreateUserResult_Constructor);
+		const auto result = environment->NewObject(CreateUserResult_class, CreateUserResult_Constructor);
+		const auto userId_fieldId = environment->GetFieldID(CreateUserResult_class, "userId", "[B");
+		const auto userId_jarray = environment->NewByteArray(0);
+		environment->SetObjectField(result, userId_fieldId, userId_jarray);
+
+		return result;
 	}
 }
