@@ -80,8 +80,7 @@ namespace Molch::JNI {
 	extern "C" JNIEXPORT auto JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_createUser(
 			JNIEnv *environment,
 			[[maybe_unused]] jclass,
-			[[maybe_unused]] jboolean create_backup_jboolean,
-			[[maybe_unused]] jobject random_spice_optional_jobject) -> jobject {
+			[[maybe_unused]] jbyteArray random_spice_optional_jobject) -> jobject {
 		if (environment == nullptr) {
 			return nullptr;
 		}

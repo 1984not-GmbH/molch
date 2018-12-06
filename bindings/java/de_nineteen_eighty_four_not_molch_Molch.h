@@ -34,17 +34,17 @@ JNIEXPORT jlong JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_getBackupKe
 /*
  * Class:     de_nineteen_eighty_four_not_molch_Molch
  * Method:    createUser
- * Signature: (ZLjava/util/Optional;)Lde/nineteen/eighty/four/not/molch/Molch/CreateUserResult;
+ * Signature: ([B)Lde/nineteen/eighty/four/not/molch/Molch/CreateUserResult;
  */
 JNIEXPORT jobject JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_createUser
-  (JNIEnv *, jclass, jboolean, jobject);
+  (JNIEnv *, jclass, jbyteArray);
 
 /*
  * Class:     de_nineteen_eighty_four_not_molch_Molch
  * Method:    destroyUser
- * Signature: ([BZ)Ljava/util/Optional;
+ * Signature: ([BZ)[B
  */
-JNIEXPORT jobject JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_destroyUser
+JNIEXPORT jbyteArray JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_destroyUser
   (JNIEnv *, jclass, jbyteArray, jboolean);
 
 /*
@@ -114,9 +114,9 @@ JNIEXPORT jobject JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_decrypt
 /*
  * Class:     de_nineteen_eighty_four_not_molch_Molch
  * Method:    endConversation
- * Signature: ([BZ)Ljava/util/Optional;
+ * Signature: ([BZ)[B
  */
-JNIEXPORT jobject JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_endConversation
+JNIEXPORT jbyteArray JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_endConversation
   (JNIEnv *, jclass, jbyteArray, jboolean);
 
 /*
