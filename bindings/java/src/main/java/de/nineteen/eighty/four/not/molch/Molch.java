@@ -14,18 +14,18 @@ abstract class Molch {
 		System.loadLibrary("molch-jni");
 	}
 
-	static class CreateUserResult {
-		public byte[] userId;
-		public byte[] prekeyList;
-		public byte[] backupKey;
-		public Optional<byte[]> backup;
-	}
-
 	static native long getUserIdSize();
 	static native long getConversationIdSize();
 	static native long getBackupKeySize();
 
-	static native CreateUserResult createUser(boolean createBackup, Optional<byte[]> randomSpice) throws Exception;
+	static class CreateUserResult {
+		public byte[] userId;
+		public byte[] prekeyList;
+		public byte[] backupKey;
+		public byte[] backup;
+	}
+
+	static native CreateUserResult createUser(byte[] randomSpice /* optional */) throws Exception;
 	static native Optional<byte[]> destroyUser(byte[] id, boolean createBackup) throws Exception;
 	static native long countUsers();
 	static native void destroyAllUsers();

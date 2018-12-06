@@ -39,7 +39,7 @@ class MolchTest {
 	@Test
 	@DisplayName("Test createUser without backup and spice")
 	void testCreateUser() throws Exception {
-		Molch.CreateUserResult aliceResult = Molch.createUser(false, Optional.empty());
+		Molch.CreateUserResult aliceResult = Molch.createUser(null);
 
 		assertThat(aliceResult, is(notNullValue()));
 
@@ -51,15 +51,16 @@ class MolchTest {
 
 		assertThat(Arrays.equals(aliceResult.userId, aliceResult.backupKey), is(false));
 
-		assertThat(aliceResult.backup, is(Optional.empty()));
+		assertThat(aliceResult.backup, is(notNullValue()));
+		assertThat(aliceResult.backup.length, is(greaterThan(0)));
 
 		assertThat(aliceResult.prekeyList, is(notNullValue()));
 		assertThat(aliceResult.prekeyList.length, is(not(0)));
 
-		Molch.CreateUserResult bobResult = Molch.createUser(false, Optional.empty());
+		Molch.CreateUserResult bobResult = Molch.createUser(null);
 		assertThat(Arrays.equals(aliceResult.userId, bobResult.userId), is(false));
-		assertThat(Arrays.equals(aliceResult.backupKey, bobResult.backupKey), is(false));
-		assertThat(bobResult.backup, is(Optional.empty()));
 		assertThat(Arrays.equals(aliceResult.prekeyList, bobResult.prekeyList), is(false));
+		assertThat(Arrays.equals(aliceResult.backupKey, bobResult.backupKey), is(false));
+		assertThat(Arrays.equals(aliceResult.backup, bobResult.backup), is(false));
 	}
 }

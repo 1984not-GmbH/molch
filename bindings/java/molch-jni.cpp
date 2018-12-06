@@ -119,18 +119,10 @@ namespace Molch::JNI {
 			return nullptr;
 		}
 
-		// result.backup = Optional.empty()
-		auto empty_optional{Optional::empty(*environment)};
-		if (not empty_optional.has_value()) {
-			return nullptr;
-		}
-		auto& empty{empty_optional.value()};
-		if (not result.set("backup", "Ljava/util/Optional;", empty.object())) {
-			return nullptr;
-		}
-
-		auto prekey_list = AutoFreePointer<unsigned char>();
-		auto prekey_list_length = static_cast<size_t>(0);
+		auto prekey_list{AutoFreePointer<unsigned char>()};
+		auto prekey_list_length{static_cast<size_t>(0)};
+		auto backup{AutoFreePointer<unsigned char>()};
+		auto backup_length{static_cast<size_t>(0)};
 		const auto status = molch_create_user(
 				reinterpret_cast<unsigned char*>(std::data(userId_array)),
 				std::size(userId_array),
@@ -138,11 +130,12 @@ namespace Molch::JNI {
 				&prekey_list_length,
 				reinterpret_cast<unsigned char*>(std::data(backupKey_array)),
 				std::size(backupKey_array),
-				nullptr, // backup
-				nullptr, // backup_length
+				backup.meta_pointer(),
+				&backup_length,
 				nullptr, // random_spice
 				0); // random_spice_length
 		if (status.status != status_type::SUCCESS) {
+			//TODO: Throw exception
 			return nullptr;
 		}
 
@@ -157,6 +150,16 @@ namespace Molch::JNI {
 			return nullptr;
 		}
 
+		// result.backup = backup
+		auto backup_array_optional{Array<jbyte>::Create(*environment, backup_length)};
+		if (not backup_array_optional.has_value()) {
+			return nullptr;
+		}
+		auto& backup_array{backup_array_optional.value()};
+		std::copy(backup.get(), backup.get() + backup_length, std::data(backup_array));
+		if (not result.set("backup", "[B", backup_array.array())) {
+			return nullptr;
+		}
 
 		return result.object();
 	}
