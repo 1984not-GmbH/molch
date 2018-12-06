@@ -120,6 +120,18 @@ namespace Molch::JNI {
 			return Object(environment, our_class, object);
 		}
 
+		static auto Create(JNIEnv& environment, Class our_class, jobject object) -> std::optional<Object> {
+			if (object == nullptr) {
+				return std::nullopt;
+			}
+
+			if (not environment.IsInstanceOf(object, our_class.class_object())) {
+				return std::nullopt;
+			}
+
+			return Object(environment, our_class, object);
+		}
+
 		Object(const Object&) = delete;
 
 		Object(Object&& other) noexcept

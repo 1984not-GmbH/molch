@@ -30,6 +30,7 @@
 #include "jni_type_traits.hpp"
 #include "jni_array.hpp"
 #include "jni_class.hpp"
+#include "jni_optional.hpp"
 
 namespace Molch::JNI {
 	extern "C" JNIEXPORT auto JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_getUserIdSize([[maybe_unused]] JNIEnv *, [[maybe_unused]] jclass) -> jlong {
@@ -90,13 +91,15 @@ namespace Molch::JNI {
 			return nullptr;
 		}
 		const auto& CreateUserResult{CreateUserResult_optional.value()};
+
+		// result = new CreateUserResult()
 		auto result_optional{Object::Create(*environment, CreateUserResult, "()V")};
 		if (not result_optional.has_value()) {
 			return nullptr;
 		}
 		auto& result{result_optional.value()};
 
-		// userId
+		// result.userId = new byte[PUBLIC_MASTER_KEY_SIZE];
 		auto userId_array_optional{Array<jbyte>::Create(*environment, PUBLIC_MASTER_KEY_SIZE)};
 		if (not userId_array_optional.has_value()) {
 			return nullptr;
@@ -106,7 +109,7 @@ namespace Molch::JNI {
 			return nullptr;
 		}
 
-		// backupKey
+		// result.backupKey = new byte[BACKUP_KEY_SIZE]
 		auto backupKey_array_optional{Array<jbyte>::Create(*environment, BACKUP_KEY_SIZE)};
 		if (not backupKey_array_optional.has_value()) {
 			return nullptr;
@@ -116,21 +119,15 @@ namespace Molch::JNI {
 			return nullptr;
 		}
 
-		auto Optional_optional{Class::Create(*environment, "java/util/Optional")};
-		if (not Optional_optional.has_value()) {
-			return nullptr;
-		}
-		auto& Optional{Optional_optional.value()};
-
-		auto empty_optional{Optional.call<jobject>("empty", "()Ljava/util/Optional;")};
+		// result.backup = Optional.empty()
+		auto empty_optional{Optional::empty(*environment)};
 		if (not empty_optional.has_value()) {
 			return nullptr;
 		}
 		auto& empty{empty_optional.value()};
-		if (not result.set("backup", "Ljava/util/Optional;", empty)) {
+		if (not result.set("backup", "Ljava/util/Optional;", empty.object())) {
 			return nullptr;
 		}
-
 
 		auto prekey_list = AutoFreePointer<unsigned char>();
 		auto prekey_list_length = static_cast<size_t>(0);
@@ -149,6 +146,7 @@ namespace Molch::JNI {
 			return nullptr;
 		}
 
+		// result.prekey_list = prekey_list
 		auto prekey_list_array_optional{Array<jbyte>::Create(*environment, prekey_list_length)};
 		if (not prekey_list_array_optional.has_value()) {
 			return nullptr;
