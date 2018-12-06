@@ -21,8 +21,15 @@
 
 #include "de_nineteen_eighty_four_not_molch_Molch.h"
 
+#include <type_traits>
+#include <iterator>
+
 #include <molch.h>
 #include <molch/constants.h>
+
+#include "jni_type_traits.hpp"
+#include "jni_array.hpp"
+#include "jni_class.hpp"
 
 namespace Molch::JNI {
 	extern "C" JNIEXPORT auto JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_getUserIdSize([[maybe_unused]] JNIEnv *, [[maybe_unused]] jclass) -> jlong {
@@ -37,25 +44,109 @@ namespace Molch::JNI {
 		return BACKUP_KEY_SIZE;
 	}
 
+
+	template <typename Type>
+	class AutoFreePointer {
+	public:
+		AutoFreePointer() = default;
+		AutoFreePointer(Type* pointer) noexcept : pointer{pointer} {}
+
+		AutoFreePointer(const AutoFreePointer&) = delete;
+		AutoFreePointer(AutoFreePointer&&) = delete;
+
+		auto get() noexcept -> Type* {
+			return pointer;
+		}
+
+		auto get() const noexcept -> const Type* {
+			return pointer;
+		}
+
+		auto meta_pointer() noexcept -> Type** {
+			return &pointer;
+		}
+
+		~AutoFreePointer() {
+			if (pointer != nullptr) {
+				free(nullptr);
+			}
+		}
+
+	private:
+		Type* pointer{nullptr};
+	};
+
 	extern "C" JNIEXPORT auto JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_createUser(
 			JNIEnv *environment,
 			[[maybe_unused]] jclass,
 			[[maybe_unused]] jboolean create_backup_jboolean,
 			[[maybe_unused]] jobject random_spice_optional_jobject) -> jobject {
-		const auto CreateUserResult_class = environment->FindClass("de/nineteen/eighty/four/not/molch/Molch$CreateUserResult");
-		if (CreateUserResult_class == nullptr) {
-			return nullptr;
-		}
-		const auto CreateUserResult_Constructor = environment->GetMethodID(CreateUserResult_class, "<init>", "()V");
-		if (CreateUserResult_Constructor == nullptr) {
+		if (environment == nullptr) {
 			return nullptr;
 		}
 
-		const auto result = environment->NewObject(CreateUserResult_class, CreateUserResult_Constructor);
-		const auto userId_fieldId = environment->GetFieldID(CreateUserResult_class, "userId", "[B");
-		const auto userId_jarray = environment->NewByteArray(PUBLIC_MASTER_KEY_SIZE);
-		environment->SetObjectField(result, userId_fieldId, userId_jarray);
+		const auto CreateUserResult_optional{Class::Create(*environment, "de/nineteen/eighty/four/not/molch/Molch$CreateUserResult")};
+		if (not CreateUserResult_optional.has_value()) {
+			return nullptr;
+		}
+		const auto& CreateUserResult{CreateUserResult_optional.value()};
+		auto result_optional{Object::Create(*environment, CreateUserResult, "()V")};
+		if (not result_optional.has_value()) {
+			return nullptr;
+		}
+		auto& result{result_optional.value()};
 
-		return result;
+		// userId
+		auto userId_array_optional{Array<jbyte>::Create(*environment, PUBLIC_MASTER_KEY_SIZE)};
+		if (not userId_array_optional.has_value()) {
+			return nullptr;
+		}
+		auto& userId_array{userId_array_optional.value()};
+		if (not result.set("userId", "[B", userId_array.array())) {
+			return nullptr;
+		}
+
+		// backupKey
+		auto backupKey_array_optional{Array<jbyte>::Create(*environment, BACKUP_KEY_SIZE)};
+		if (not backupKey_array_optional.has_value()) {
+			return nullptr;
+		}
+		auto& backupKey_array{backupKey_array_optional.value()};
+		if (not result.set("backupKey", "[B", backupKey_array.array())) {
+			return nullptr;
+		}
+
+		auto Optional_optional{Class::Create(*environment, "java/util/Optional")};
+		if (not Optional_optional.has_value()) {
+			return nullptr;
+		}
+		auto& Optional{Optional_optional.value()};
+
+		auto empty_optional{Optional.call<jobject>("empty", "()Ljava/util/Optional;")};
+		if (not empty_optional.has_value()) {
+			return nullptr;
+		}
+		auto& empty{empty_optional.value()};
+		if (not result.set("backup", "Ljava/util/Optional;", empty)) {
+			return nullptr;
+		}
+
+
+		auto prekey_list = AutoFreePointer<unsigned char>();
+		auto prekey_list_length = static_cast<size_t>(0);
+		const auto status = molch_create_user(
+				reinterpret_cast<unsigned char*>(std::data(userId_array)),
+				std::size(userId_array),
+				prekey_list.meta_pointer(),
+				&prekey_list_length,
+				reinterpret_cast<unsigned char*>(std::data(backupKey_array)),
+				std::size(backupKey_array),
+				nullptr, // backup
+				nullptr, // backup_length
+				nullptr, // random_spice
+				0); // random_spice_length
+		(void)status;
+
+		return result.object();
 	}
 }
