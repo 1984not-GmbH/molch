@@ -145,7 +145,20 @@ namespace Molch::JNI {
 				nullptr, // backup_length
 				nullptr, // random_spice
 				0); // random_spice_length
-		(void)status;
+		if (status.status != status_type::SUCCESS) {
+			return nullptr;
+		}
+
+		auto prekey_list_array_optional{Array<jbyte>::Create(*environment, prekey_list_length)};
+		if (not prekey_list_array_optional.has_value()) {
+			return nullptr;
+		}
+		auto& prekey_list_array{prekey_list_array_optional.value()};
+		std::copy(prekey_list.get(), prekey_list.get() + prekey_list_length, std::data(prekey_list_array));
+		if (not result.set("prekeyList", "[B", prekey_list_array.array())) {
+			return nullptr;
+		}
+
 
 		return result.object();
 	}

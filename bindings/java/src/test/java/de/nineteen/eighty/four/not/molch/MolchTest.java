@@ -1,5 +1,6 @@
 package de.nineteen.eighty.four.not.molch;
 
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -52,9 +53,13 @@ class MolchTest {
 
 		assertThat(aliceResult.backup, is(Optional.empty()));
 
+		assertThat(aliceResult.prekeyList, is(notNullValue()));
+		assertThat(aliceResult.prekeyList.length, is(not(0)));
+
 		Molch.CreateUserResult bobResult = Molch.createUser(false, Optional.empty());
 		assertThat(Arrays.equals(aliceResult.userId, bobResult.userId), is(false));
 		assertThat(Arrays.equals(aliceResult.backupKey, bobResult.backupKey), is(false));
 		assertThat(bobResult.backup, is(Optional.empty()));
+		assertThat(Arrays.equals(aliceResult.prekeyList, bobResult.prekeyList), is(false));
 	}
 }

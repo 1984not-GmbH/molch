@@ -9,7 +9,7 @@ enum MessageType {
 }
 
 
-class Molch {
+abstract class Molch {
 	static {
 		System.loadLibrary("molch-jni");
 	}
