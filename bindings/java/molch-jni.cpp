@@ -80,7 +80,7 @@ namespace Molch::JNI {
 	extern "C" JNIEXPORT auto JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_createUser(
 			JNIEnv *environment,
 			[[maybe_unused]] jclass,
-			[[maybe_unused]] jbyteArray random_spice_optional_jobject) -> jobject {
+			jbyteArray random_spice_jarray) -> jobject {
 		if (environment == nullptr) {
 			return nullptr;
 		}
@@ -118,6 +118,15 @@ namespace Molch::JNI {
 			return nullptr;
 		}
 
+		auto random_spice_array_optional{Array<jbyte>::Create(*environment, random_spice_jarray)};
+		auto random_spice_pointer{static_cast<unsigned char*>(nullptr)};
+		auto random_spice_length{static_cast<size_t>(0)};
+		if (random_spice_array_optional.has_value()) {
+			auto& random_spice_array{random_spice_array_optional.value()};
+			random_spice_pointer = reinterpret_cast<unsigned char*>(std::data(random_spice_array));
+			random_spice_length = std::size(random_spice_array);
+		}
+
 		auto prekey_list{AutoFreePointer<unsigned char>()};
 		auto prekey_list_length{static_cast<size_t>(0)};
 		auto backup{AutoFreePointer<unsigned char>()};
@@ -131,8 +140,8 @@ namespace Molch::JNI {
 				std::size(backupKey_array),
 				backup.meta_pointer(),
 				&backup_length,
-				nullptr, // random_spice
-				0); // random_spice_length
+				random_spice_pointer,
+				random_spice_length);
 		if (status.status != status_type::SUCCESS) {
 			//TODO: Throw exception
 			return nullptr;

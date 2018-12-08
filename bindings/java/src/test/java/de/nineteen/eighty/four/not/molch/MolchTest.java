@@ -1,11 +1,9 @@
 package de.nineteen.eighty.four.not.molch;
 
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
-import java.util.Optional;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -62,5 +60,27 @@ class MolchTest {
 		assertThat(Arrays.equals(aliceResult.prekeyList, bobResult.prekeyList), is(false));
 		assertThat(Arrays.equals(aliceResult.backupKey, bobResult.backupKey), is(false));
 		assertThat(Arrays.equals(aliceResult.backup, bobResult.backup), is(false));
+	}
+
+	@Test
+	@DisplayName("Test createUser with spice")
+	void testCreateUserWithSpice() throws Exception {
+		// Ensure that the native library is loaded
+		assertThat(Molch.getBackupKeySize(), is(32L));
+
+		byte[] aliceSpice = {0x6d, 0x6f, 0x6c, 0x63, 0x68};
+
+		long beforeAlice = System.currentTimeMillis();
+		Molch.CreateUserResult aliceResult = Molch.createUser(aliceSpice);
+		long afterAlice = System.currentTimeMillis();
+		assertThat(aliceResult, is(notNullValue()));
+
+		long beforeBob = System.currentTimeMillis();
+		Molch.CreateUserResult bobResult = Molch.createUser(null);
+		long afterBob = System.currentTimeMillis();
+		assertThat(bobResult, is(notNullValue()));
+
+		assertThat(afterAlice - beforeAlice, is(greaterThan(50L)));
+		assertThat(afterAlice - beforeAlice, is(greaterThan(5 * (afterBob - beforeBob))));
 	}
 }
