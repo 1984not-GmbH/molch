@@ -1,5 +1,6 @@
 package de.nineteen.eighty.four.not.molch;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -10,6 +11,11 @@ import static org.hamcrest.Matchers.*;
 import static org.hamcrest.core.IsNull.notNullValue;
 
 class MolchTest {
+	@BeforeEach
+	void destroyAllUsers() {
+		Molch.destroyAllUsers();
+	}
+
 	@Test
 	@DisplayName("Test that JUnit works")
 	void testThatJUnitWorks() {
@@ -92,5 +98,16 @@ class MolchTest {
 		assertThat(Molch.countUsers(), is(1L));
 		Molch.CreateUserResult bob = Molch.createUser(null);
 		assertThat(Molch.countUsers(), is(2L));
+	}
+
+	@Test
+	@DisplayName("Test destroyAllUsers")
+	void testDestroyAllUsers() throws Exception {
+		Molch.destroyAllUsers();
+		assertThat(Molch.countUsers(), is(0L));
+		Molch.CreateUserResult alice = Molch.createUser(null);
+		assertThat(Molch.countUsers(), is(1L));
+		Molch.destroyAllUsers();
+		assertThat(Molch.countUsers(), is(0L));
 	}
 }

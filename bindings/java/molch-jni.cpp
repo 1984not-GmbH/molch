@@ -177,4 +177,10 @@ namespace Molch::JNI {
 			[[maybe_unused]] jclass) -> jlong {
 		return static_cast<jlong>(molch_user_count());
 	}
+
+	extern "C" JNIEXPORT auto JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_destroyAllUsers(
+			[[maybe_unused]] JNIEnv*,
+			[[maybe_unused]] jclass) -> void {
+		molch_destroy_all_users();
+	}
 }
