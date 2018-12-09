@@ -83,4 +83,14 @@ class MolchTest {
 		assertThat(afterAlice - beforeAlice, is(greaterThan(50L)));
 		assertThat(afterAlice - beforeAlice, is(greaterThan(2 * (afterBob - beforeBob))));
 	}
+
+	@Test
+	@DisplayName("Test countUsers")
+	void testCountUsers() throws Exception {
+		assertThat(Molch.countUsers(), is(0L));
+		Molch.CreateUserResult alice = Molch.createUser(null);
+		assertThat(Molch.countUsers(), is(1L));
+		Molch.CreateUserResult bob = Molch.createUser(null);
+		assertThat(Molch.countUsers(), is(2L));
+	}
 }

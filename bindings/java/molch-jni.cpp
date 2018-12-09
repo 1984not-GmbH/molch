@@ -171,4 +171,10 @@ namespace Molch::JNI {
 
 		return result.object();
 	}
+
+	extern "C" JNIEXPORT auto JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_countUsers(
+			[[maybe_unused]] JNIEnv*,
+			[[maybe_unused]] jclass) -> jlong {
+		return static_cast<jlong>(molch_user_count());
+	}
 }
