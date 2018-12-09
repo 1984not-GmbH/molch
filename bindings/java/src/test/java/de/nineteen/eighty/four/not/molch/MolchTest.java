@@ -81,6 +81,6 @@ class MolchTest {
 		assertThat(bobResult, is(notNullValue()));
 
 		assertThat(afterAlice - beforeAlice, is(greaterThan(50L)));
-		assertThat(afterAlice - beforeAlice, is(greaterThan(5 * (afterBob - beforeBob))));
+		assertThat(afterAlice - beforeAlice, is(greaterThan(2 * (afterBob - beforeBob))));
 	}
 }
