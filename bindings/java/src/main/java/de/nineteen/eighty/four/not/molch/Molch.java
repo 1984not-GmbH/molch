@@ -1,7 +1,5 @@
 package de.nineteen.eighty.four.not.molch;
 
-import java.util.Optional;
-
 enum MessageType {
 	PREKEY,
 	NORMAL,
@@ -9,24 +7,24 @@ enum MessageType {
 }
 
 
-class Molch {
+abstract class Molch {
 	static {
 		System.loadLibrary("molch-jni");
-	}
-
-	static class CreateUserResult {
-		public byte[] userId;
-		public byte[] prekeyList;
-		public byte[] backupKey;
-		public Optional<byte[]> backup;
 	}
 
 	static native long getUserIdSize();
 	static native long getConversationIdSize();
 	static native long getBackupKeySize();
 
-	static native CreateUserResult createUser(boolean createBackup, Optional<byte[]> randomSpice) throws Exception;
-	static native Optional<byte[]> destroyUser(byte[] id, boolean createBackup) throws Exception;
+	static class CreateUserResult {
+		public byte[] userId;
+		public byte[] prekeyList;
+		public byte[] backupKey;
+		public byte[] backup;
+	}
+
+	static native CreateUserResult createUser(byte[] randomSpice /* optional */) throws Exception;
+	static native byte[] destroyUser(byte[] id, boolean createBackup) throws Exception; /* optionaly returns backup */
 	static native long countUsers();
 	static native void destroyAllUsers();
 	static native byte[][] listUsers();
@@ -36,7 +34,7 @@ class Molch {
 	static class SendConversationResult {
 		public byte[] conversationId;
 		public byte[] packet;
-		public Optional<byte[]> backup;
+		public byte[] backup;
 	}
 
 	static native SendConversationResult startSendConversation(
@@ -50,7 +48,7 @@ class Molch {
 		public byte[] conversationId;
 		public byte[] prekeyList;
 		public byte[] message;
-		public Optional<byte[]> backup;
+		public byte[] backup;
 	}
 
 	static native ReceiveConversationResult startReceiveConversation(
@@ -61,7 +59,7 @@ class Molch {
 
 	static class EncryptResult {
 		public byte[] packet;
-		public Optional<byte[]> conversationBackup;
+		public byte[] conversationBackup;
 	}
 
 	static native EncryptResult encrypt(
@@ -73,7 +71,7 @@ class Molch {
 		public long messageNumber;
 		public long previousMessageNumber;
 		public byte[] message;
-		public Optional<byte[]> conversationBackup;
+		public byte[] conversationBackup;
 	}
 
 	static native DecryptResult decrypt(
@@ -81,7 +79,7 @@ class Molch {
 			byte[] packet,
 			boolean createConversationBackup) throws Exception;
 
-	static native Optional<byte[]> endConversation(byte[] conversationId, boolean createBackup) throws Exception;
+	static native byte[] endConversation(byte[] conversationId, boolean createBackup) throws Exception;
 	static native byte[][] listConversations(byte[] userId) throws Exception;
 	static native byte[] exportConversation(byte[] conversationId) throws Exception;
 	static native byte[] importConversation(byte[] conversationBackup, byte[] backupKey) throws Exception;

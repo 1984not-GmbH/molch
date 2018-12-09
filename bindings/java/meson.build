@@ -36,6 +36,9 @@ if get_option('enable_java_bindings') and not ['address', 'undefined', 'address,
 		'molch-jni',
 		molch_jni_sources,
 		link_with: molch,
+		dependencies: [
+			libsodium,
+		],
 		include_directories: [
 			java_include_paths,
 			molch_include,
