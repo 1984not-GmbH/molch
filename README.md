@@ -75,6 +75,13 @@ Or you can run the scripts separately:
 * `static-analysis.`: To run clang static analyzer
 * `doxygen.sh`: To create the documentation
 
+docker container
+----------------
+1. Build image with `docker build . -t molch:latest`
+2. Create container with `docker run --name molch_builder -it molch:latest bash`
+3. Start the container with `docker start molch_builder` in the future.
+4. If already running `docker exec -it molch_builder bash`
+
 format of a packet
 ----------------
 Molch uses [Googles Protocol Buffers](https://developers.google.com/protocol-buffers/) via the [Protobuf-C](https://github.com/protobuf-c/protobuf-c) library. You can find the protocol descriptions in `lib/protobuf`.
