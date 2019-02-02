@@ -14,7 +14,15 @@ if get_option('lua_bindings') and not ['address', 'undefined', 'address,undefine
 			input: 'molch.i',
 			output: '@BASENAME@_wrap.c')
 
-	liblua = dependency('lua', version: '>=5.2')
+	foreach name : ['lua', 'lua5.3', 'lua-5.3', 'lua53']
+		liblua_candidate = dependency(name, version: '>=5.3', required: false)
+		if liblua_candidate.found()
+			liblua = liblua_candidate
+		endif
+	endforeach
+	if not liblua.found()
+		error('Lua could not be found')
+	endif
 
 	proposed_swig_flags = [
 		'-Wno-conversion',
