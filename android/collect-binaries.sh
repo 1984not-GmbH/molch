@@ -6,7 +6,7 @@ rm -r binaries
 mkdir -p binaries
 find . -type f -name '*.so' -exec cp {} binaries/ \;
 cp test/*-test binaries/
-cp "../../subprojects/libsodium/$cpu/libsodium.so" binaries/
+cp "../../subprojects/libsodium/$cpu/lib/libsodium.so" binaries/
 rm "binaries/libprotobuf.so"
 
 case $cpu in
