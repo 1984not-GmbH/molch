@@ -629,11 +629,11 @@ JNIEXPORT jint JNICALL Java_de_hz1984not_crypto_Molch_molchUserCountFromNativeCo
 JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_molchUserListFromNativeCode(JNIEnv *env, jobject jOgj, jintArray count) {
 	jint jresult = 0;
 	jint *jarr2;
-	unsigned long long *arg2 = (unsigned long long *) 0 ;
+	long *arg2 = NULL;
 	(void)env;
 	(void)jOgj;
 
-	if (!SWIG_JavaArrayInLong(env, &jarr2, (long **)&arg2, count)) {
+	if (!SWIG_JavaArrayInLong(env, &jarr2, &arg2, count)) {
 		return 0;
 	}
 
@@ -650,7 +650,7 @@ JNIEXPORT jbyteArray JNICALL Java_de_hz1984not_crypto_Molch_molchUserListFromNat
 		retVal = -1;
 	}
 	if (arg2) {
-		*arg2 = (unsigned long long) tmpCount;
+		*arg2 = (long)tmpCount;
 	}
 
 	int sizeByteUrl = *arg2;
