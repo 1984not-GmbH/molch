@@ -311,7 +311,7 @@ MOLCH_PUBLIC(return_status) molch_import(
 		unsigned char * const new_backup_key, //BACKUP_KEY_SIZE, can be the same pointer as the backup key
 		const size_t new_backup_key_length,
 		//inputs
-		unsigned char * const backup,
+		const unsigned char * const backup,
 		const size_t backup_length,
 		const unsigned char * const backup_key, //BACKUP_KEY_SIZE
 		const size_t backup_key_length
