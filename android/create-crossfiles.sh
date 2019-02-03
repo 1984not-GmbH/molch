@@ -14,7 +14,7 @@ cpp = '${PWD}/${architecture}/bin/workaround-clang++'
 strip = '${PWD}/${architecture}/bin/${isa}-linux-${abi}-strip'
 ar = '${PWD}/${architecture}/bin/${isa}-linux-${abi}-ar'
 ld = '${PWD}/${architecture}/bin/${isa}-linux-${abi}-ld.gold'
-pkgconfig = '/usr/bin/false'
+pkgconfig = '/bin/false'
 
 [properties]
 c_link_args = ['-pie', '-llog'${linker_flags}]
