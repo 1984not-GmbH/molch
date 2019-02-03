@@ -6,12 +6,16 @@ jnipp_sources = files([
 java_include_candidates = [
 	'/usr/lib/jvm/java-8-jdk/include',
 	'/usr/lib/jvm/java-8-openjdk/include',
+	'/usr/lib/jvm/java-8-openjdk-amd64/include',
 	'/usr/lib/jvm/java-9-jdk/include',
 	'/usr/lib/jvm/java-9-openjdk/include',
+	'/usr/lib/jvm/java-9-openjdk-amd64/include',
 	'/usr/lib/jvm/java-10-jdk/include',
 	'/usr/lib/jvm/java-10-openjdk/include',
+	'/usr/lib/jvm/java-10-openjdk-amd64/include',
 	'/usr/lib/jvm/java-11-jdk/include',
 	'/usr/lib/jvm/java-11-openjdk/include',
+	'/usr/lib/jvm/java-11-openjdk-amd64/include',
 ]
 
 winning_java_include = ''
