@@ -158,6 +158,9 @@ namespace Molch {
 		//  msg = Enc(HKs, Ns || PNs || DHRs) || Enc(MK, plaintext)
 		//  in the axolotl specification)
 		//HKs:
+		if (not storage->send_header_key.has_value()) {
+			return {status_type::INVALID_STATE, "Send header key is missing."};
+		}
 		data.header_key = storage->send_header_key.value();
 		//Ns
 		data.message_number = this->send_message_number;
@@ -423,13 +426,15 @@ namespace Molch {
 		//header keys
 		//send header key
 		const auto& role = this->role;
-		if (role == Role::BOB) {
-			if (!storage.send_header_key.has_value()) {
+		if (not storage.send_header_key.has_value()) {
+			if (role == Role::BOB) {
 				return Error(status_type::EXPORT_ERROR, "send_header_key missing or has an incorrect size.");
 			}
+		} else {
 			const auto& send_header_key{storage.send_header_key.value()};
 			outcome_protobuf_optional_bytes_arena_export(arena, conversation, send_header_key, HEADER_KEY_SIZE);
 		}
+
 		//receive header key
 		const auto& receive_header_key{storage.receive_header_key};
 		if ((role == Role::ALICE) && receive_header_key.empty) {
