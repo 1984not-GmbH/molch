@@ -4,6 +4,7 @@ build-clang/
 clang-tidy/
 static-analysis/
 .idea/
+ide-build/
 *.orig
 sanitizers
 *.swp
