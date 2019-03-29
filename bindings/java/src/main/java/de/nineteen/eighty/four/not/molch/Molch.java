@@ -27,7 +27,7 @@ abstract class Molch {
 	static native byte[] destroyUser(byte[] id, boolean createBackup) throws Exception; /* optionaly returns backup */
 	static native long countUsers();
 	static native void destroyAllUsers();
-	static native byte[][] listUsers();
+	static native byte[][] listUsers() throws Exception;
 
 	static native MessageType getMessageType(byte[] packet);
 
