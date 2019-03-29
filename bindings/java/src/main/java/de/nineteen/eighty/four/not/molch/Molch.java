@@ -1,0 +1,90 @@
+package de.nineteen.eighty.four.not.molch;
+
+enum MessageType {
+	PREKEY,
+	NORMAL,
+	INVALID,
+}
+
+
+abstract class Molch {
+	static {
+		System.loadLibrary("molch-jni");
+	}
+
+	static native long getUserIdSize();
+	static native long getConversationIdSize();
+	static native long getBackupKeySize();
+
+	static class CreateUserResult {
+		public byte[] userId;
+		public byte[] prekeyList;
+		public byte[] backupKey;
+		public byte[] backup;
+	}
+
+	static native CreateUserResult createUser(byte[] randomSpice /* optional */) throws Exception;
+	static native byte[] destroyUser(byte[] id, boolean createBackup) throws Exception; /* optionaly returns backup */
+	static native long countUsers();
+	static native void destroyAllUsers();
+	static native byte[][] listUsers() throws Exception;
+
+	static native MessageType getMessageType(byte[] packet);
+
+	static class SendConversationResult {
+		public byte[] conversationId;
+		public byte[] packet;
+		public byte[] backup;
+	}
+
+	static native SendConversationResult startSendConversation(
+			byte[] senderId,
+			byte[] receiverId,
+			byte[] prekeyList,
+			byte[] message,
+			boolean createBackup) throws Exception;
+
+	static class ReceiveConversationResult {
+		public byte[] conversationId;
+		public byte[] prekeyList;
+		public byte[] message;
+		public byte[] backup;
+	}
+
+	static native ReceiveConversationResult startReceiveConversation(
+			byte[] receiverId,
+			byte[] senderId,
+			byte[] packet,
+			boolean createBackup) throws Exception;
+
+	static class EncryptResult {
+		public byte[] packet;
+		public byte[] conversationBackup;
+	}
+
+	static native EncryptResult encrypt(
+			byte[] conversationId,
+			byte[] message,
+			boolean createConversationBackup) throws Exception;
+
+	static class DecryptResult {
+		public long messageNumber;
+		public long previousMessageNumber;
+		public byte[] message;
+		public byte[] conversationBackup;
+	}
+
+	static native DecryptResult decrypt(
+			byte[] conversationId,
+			byte[] packet,
+			boolean createConversationBackup) throws Exception;
+
+	static native byte[] endConversation(byte[] conversationId, boolean createBackup) throws Exception;
+	static native byte[][] listConversations(byte[] userId) throws Exception;
+	static native byte[] exportConversation(byte[] conversationId) throws Exception;
+	static native byte[] importConversation(byte[] conversationBackup, byte[] backupKey) throws Exception;
+	static native byte[] exportUsers() throws Exception;
+	static native byte[] importUsers(byte[] backup, byte[] backupKey) throws Exception;
+	static native byte[] getPrekeyList(byte[] userId) throws Exception;
+	static native byte[] updateBackupKey();
+}
