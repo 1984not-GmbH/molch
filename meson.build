@@ -52,6 +52,7 @@ common_flags = [
 	'-Wno-tautological-constant-compare',
 	'-Wno-pragmas',
 	'-Wnewline-eof',
+	'-fstack-clash-protection',
 ]
 
 c_flags = [
