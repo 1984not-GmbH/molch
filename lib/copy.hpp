@@ -44,4 +44,4 @@ namespace Molch {
 	}
 }
 
- #endif /* LIB_COPY_HPP */
+#endif /* LIB_COPY_HPP */

@@ -51,6 +51,7 @@ common_flags = [
 	'-Wno-unknown-warning-option',
 	'-Wno-tautological-constant-compare',
 	'-Wno-pragmas',
+	'-Wnewline-eof',
 ]
 
 c_flags = [
