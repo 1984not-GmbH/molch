@@ -126,6 +126,23 @@ static void protobuf_no_deprecated_keys() {
 	std::cout << "Successful.\n";
 }
 
+static void test_prekey_list_expiration_dates() {
+	std::cout << "Testing list of prekey expiration dates.\n";
+
+	const auto current_time{now()};
+	TRY_WITH_RESULT(prekey_store_result, PrekeyStore::create());
+	const auto& prekey_store{prekey_store_result.value()};
+
+	const auto expiration_date_list{prekey_store.listExpirationDates()};
+	for (const auto date : expiration_date_list) {
+		const auto expected_date{current_time + prekey_expiration_time};
+		if ((date > (expected_date + seconds{1})) or (date < expected_date)) {
+			std::cout << "Expected " << expected_date.count() << " got " << date.count() << "\n";
+			throw Exception(status_type::INVALID_VALUE, "Invalid expiration date.");
+		}
+	}
+}
+
 int main() {
 	try {
 		TRY_VOID(Molch::sodium_init());
@@ -274,6 +291,7 @@ int main() {
 		std::cout << "Successfully removed outdated deprecated key!\n";
 
 		protobuf_no_deprecated_keys();
+		test_prekey_list_expiration_dates();
 	} catch (const std::exception& exception) {
 		std::cerr << exception.what() << std::endl;
 		return EXIT_FAILURE;
