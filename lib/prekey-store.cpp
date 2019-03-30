@@ -28,9 +28,6 @@
 #include "gsl.hpp"
 
 namespace Molch {
-	constexpr auto prekey_expiration_time{1_months};
-	constexpr auto deprecated_prekey_expiration_time{1h};
-
 	void Prekey::fill(const PublicKey& public_key, const PrivateKey& private_key, const seconds expiration_date) noexcept {
 		this->expiration_date = expiration_date;
 		this->public_key = public_key;

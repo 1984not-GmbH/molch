@@ -38,6 +38,9 @@
 #include "protobuf-arena.hpp"
 
 namespace Molch {
+	constexpr auto prekey_expiration_time{1_months};
+	constexpr auto deprecated_prekey_expiration_time{1h};
+
 	class Prekey {
 		friend class PrekeyStore;
 	private:
