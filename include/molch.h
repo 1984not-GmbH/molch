@@ -329,6 +329,17 @@ MOLCH_PUBLIC(return_status) molch_get_prekey_list(
 		const size_t public_master_key_length) __attribute__((warn_unused_result));
 
 /*
+ * Get a the list of expiration dates in the prekey list.
+ */
+MOLCH_PUBLIC(return_status) molch_get_prekey_list_expiration_seconds(
+		//output
+		int64_t ** const prekey_expiration_seconds, //free after use
+		size_t * const prekey_expiration_seconds_length,
+		//input
+		unsigned char * const public_master_key,
+		const size_t public_master_key_length) __attribute__((warn_unused_result));
+
+/*
  * Generate and return a new key for encrypting the exported library state.
  */
 MOLCH_PUBLIC(return_status) molch_update_backup_key(

@@ -1325,3 +1325,56 @@ static result<PublicKey> verify_prekey_list(
 
 		return success_status;
 	}
+
+
+	static result<std::array<int64_t,PREKEY_AMOUNT>> get_prekey_list_expiration_seconds(const span<const std::byte> user_id) {
+		OUTCOME_TRY(public_signing_key, PublicSigningKey::fromSpan(user_id));
+		auto user{users.find(public_signing_key)};
+		if (user == nullptr) {
+			return Error(status_type::NOT_FOUND, "User not found.");
+		}
+
+		auto expiration_dates{user->prekeys.listExpirationDates()};
+		std::array<int64_t,PREKEY_AMOUNT> expiration_date_ints;
+		// TODO: Is this cast correct?
+		std::transform(std::begin(expiration_dates), std::end(expiration_dates), std::begin(expiration_date_ints),
+				[](auto date) { return static_cast<int64_t>(date.count()); });
+
+		return expiration_date_ints;
+	}
+
+	MOLCH_PUBLIC(return_status) molch_get_prekey_list_expiration_seconds(
+			//output
+			int64_t ** const prekey_expiration_seconds, //free after use
+			size_t * const prekey_expiration_seconds_length,
+			//input
+			unsigned char * const public_master_key,
+			const size_t public_master_key_length) {
+		if ((prekey_expiration_seconds == nullptr) or (prekey_expiration_seconds_length == nullptr)) {
+			return {status_type::INVALID_VALUE, "No prekey_expiration_seconds output or length specified."};
+		}
+
+		if (public_master_key == nullptr) {
+			return {status_type::INVALID_VALUE, "No public_master_key given."};
+		}
+
+		const auto expiration_date_list_result{get_prekey_list_expiration_seconds({uchar_to_byte(public_master_key), public_master_key_length})};
+		if (expiration_date_list_result.has_error()) {
+			return expiration_date_list_result.error().toReturnStatus();
+		}
+		const auto expiration_date_list{expiration_date_list_result.value()};
+
+		auto malloced_list{reinterpret_cast<int64_t*>(malloc(sizeof(int64_t) * std::size(expiration_date_list)))};
+		if (malloced_list == nullptr) {
+			*prekey_expiration_seconds = nullptr;
+			*prekey_expiration_seconds_length = 0;
+			return {status_type::ALLOCATION_FAILED, "Failed to allocate list of expiration dates."};
+		}
+
+		std::copy(std::begin(expiration_date_list), std::end(expiration_date_list), malloced_list);
+		*prekey_expiration_seconds = malloced_list;
+		*prekey_expiration_seconds_length = std::size(expiration_date_list);
+
+
+		return success_status;
+	}
