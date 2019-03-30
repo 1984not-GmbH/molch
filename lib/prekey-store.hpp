@@ -131,6 +131,11 @@ namespace Molch {
 		result<Buffer> list() const; //output, PREKEY_AMOUNT * PUBLIC_KEY_SIZE
 
 		/*
+		 * Generate a list containing all the expiration dates of the prekeys.
+		 */
+		std::array<seconds,PREKEY_AMOUNT> listExpirationDates() const;
+
+		/*
 		 * Automatically deprecate old keys and generate new ones
 		 * and THROW away deprecated ones that are too old.
 		 */

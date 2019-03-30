@@ -269,6 +269,16 @@ namespace Molch {
 		return std::move(list);
 	}
 
+	std::array<seconds,PREKEY_AMOUNT> PrekeyStore::listExpirationDates() const {
+		std::array<seconds,PREKEY_AMOUNT> expiration_dates;
+
+		const auto& prekeys_storage{*this->prekeys_storage};
+		std::transform(std::begin(prekeys_storage), std::end(prekeys_storage), std::begin(expiration_dates),
+			[](const auto& prekey) { return prekey.expiration_date; });
+
+		return expiration_dates;
+	}
+
 	result<void> PrekeyStore::rotate() {
 		seconds current_time{now()};
 
