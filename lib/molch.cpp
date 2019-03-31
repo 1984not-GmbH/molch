@@ -1348,7 +1348,7 @@ static result<PublicKey> verify_prekey_list(
 			int64_t ** const prekey_expiration_seconds, //free after use
 			size_t * const prekey_expiration_seconds_length,
 			//input
-			unsigned char * const public_master_key,
+			const unsigned char * const public_master_key,
 			const size_t public_master_key_length) {
 		if ((prekey_expiration_seconds == nullptr) or (prekey_expiration_seconds_length == nullptr)) {
 			return {status_type::INVALID_VALUE, "No prekey_expiration_seconds output or length specified."};
