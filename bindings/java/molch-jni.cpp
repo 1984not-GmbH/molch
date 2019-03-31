@@ -183,4 +183,43 @@ namespace Molch::JNI {
 			[[maybe_unused]] jclass) -> void {
 		molch_destroy_all_users();
 	}
+
+	extern "C" JNIEXPORT auto JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_getPrekeyListExpirationDateSeconds(
+			JNIEnv *environment,
+			[[maybe_unused]] jclass,
+			jbyteArray user_id) -> jlongArray {
+		static_assert(sizeof(int64_t) == sizeof(jlong));
+
+		const auto user_id_array_optional{Array<jbyte>::Create(*environment, user_id)};
+		if (not user_id_array_optional.has_value()) {
+			return nullptr;
+		}
+		const auto& user_id_array{user_id_array_optional.value()};
+
+		auto malloced_expiration_seconds{AutoFreePointer<int64_t>()};
+		size_t malloced_expiration_seconds_length{0};
+		const auto status{molch_get_prekey_list_expiration_seconds(
+				malloced_expiration_seconds.meta_pointer(),
+				&malloced_expiration_seconds_length,
+				reinterpret_cast<const unsigned char*>(std::data(user_id_array)),
+				std::size(user_id_array))};
+		if (status.status != status_type::SUCCESS) {
+			// TODO: Throw exception!
+			return nullptr;
+		}
+
+		auto expiration_date_array_optional{Array<jlong>::Create(*environment, malloced_expiration_seconds_length)};
+		if (not expiration_date_array_optional.has_value()) {
+			return nullptr;
+		}
+		auto& expiration_date_array{expiration_date_array_optional.value()};
+
+		std::copy(
+				malloced_expiration_seconds.get(),
+				malloced_expiration_seconds.get() + malloced_expiration_seconds_length,
+				std::data(expiration_date_array));
+
+
+		return expiration_date_array.array();
+	}
 }

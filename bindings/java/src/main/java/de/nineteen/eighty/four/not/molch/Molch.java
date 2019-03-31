@@ -112,6 +112,7 @@ abstract class Molch {
 	static byte[] getPrekeyList(byte[] userId) throws Exception {
 		throw notImplemented();
 	}
+	static native long[] getPrekeyListExpirationDateSeconds(byte[] userId);
 	static byte[] updateBackupKey() {
 		throw notImplemented();
 	}

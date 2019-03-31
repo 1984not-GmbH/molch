@@ -63,6 +63,14 @@ JNIEXPORT void JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_destroyAllUs
 JNIEXPORT jobject JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_encrypt
   (JNIEnv *, jclass, jbyteArray, jbyteArray, jboolean);
 
+/*
+ * Class:     de_nineteen_eighty_four_not_molch_Molch
+ * Method:    getPrekeyListExpirationDateSeconds
+ * Signature: ([B)[J
+ */
+JNIEXPORT jlongArray JNICALL Java_de_nineteen_eighty_four_not_molch_Molch_getPrekeyListExpirationDateSeconds
+  (JNIEnv *, jclass, jbyteArray);
+
 #ifdef __cplusplus
 }
 #endif

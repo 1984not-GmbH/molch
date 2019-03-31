@@ -4,7 +4,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.sql.Time;
 import java.util.Arrays;
+import java.util.Date;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
@@ -109,5 +111,20 @@ class MolchTest {
 		assertThat(Molch.countUsers(), is(1L));
 		Molch.destroyAllUsers();
 		assertThat(Molch.countUsers(), is(0L));
+	}
+
+	@Test
+	@DisplayName("Test getPrekeyListExpirationDateSeconds")
+	void testGetPrekeyListExpirationDateSeconds() throws Exception {
+		long currentTime = new Date().getTime() / 1000;
+		final long oneMonth = 3600 * 24 * 30;
+
+		Molch.CreateUserResult user = Molch.createUser(null);
+		long[] expirationDates = Molch.getPrekeyListExpirationDateSeconds(user.userId);
+
+		assertThat(expirationDates.length, is(100));
+		for (long expirationDate : expirationDates) {
+			assertThat(expirationDate, is(greaterThanOrEqualTo(currentTime + oneMonth)));
+		}
 	}
 }
