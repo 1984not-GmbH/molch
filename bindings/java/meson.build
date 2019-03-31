@@ -43,16 +43,18 @@ if get_option('enable_java_bindings') and not ['address', 'undefined', 'address,
 		'1984notlib.cpp',
 	])
 
-	molchJNI_cpp = library(
-		'molchJNI++',
-		molchJNI_cpp_sources,
-		link_with: molch,
-		include_directories: [
-			java_include_paths,
-			molch_include,
-		],
-		dependencies: [libsodium],
-		cpp_args: cpp_jni_flags)
+	if get_option('enable_old_java_bindings')
+		molchJNI_cpp = library(
+			'molchJNI++',
+			molchJNI_cpp_sources,
+			link_with: molch,
+			include_directories: [
+				java_include_paths,
+				molch_include,
+			],
+			dependencies: [libsodium],
+			cpp_args: cpp_jni_flags)
+	endif
 
 	c_jni_flag_candidates = [
 		'-Wno-discarded-qualifiers',
@@ -73,16 +75,18 @@ if get_option('enable_java_bindings') and not ['address', 'undefined', 'address,
 		'MolchJNI.c',
 	])
 
-	molchJNI = library(
-		'molchJNI',
-		molchJNI_sources,
-		link_with: molch,
-		include_directories: [
-			java_include_paths,
-			molch_include,
-		],
-		dependencies: [libsodium],
-		c_args: c_jni_flags)
+	if get_option('enable_old_java_bindings')
+		molchJNI = library(
+			'molchJNI',
+			molchJNI_sources,
+			link_with: molch,
+			include_directories: [
+				java_include_paths,
+				molch_include,
+			],
+			dependencies: [libsodium],
+			c_args: c_jni_flags)
+	endif
 
 	molch_jni_sources = files([
 		'molch-jni.cpp',

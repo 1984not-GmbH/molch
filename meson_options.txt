@@ -1,3 +1,4 @@
 option('lua_bindings', type: 'boolean', value: true, description: 'Enable Lua bindings')
 option('enable_java_bindings', type: 'boolean', value: true, description: 'Enable Java bindings')
+option('enable_old_java_bindings', type: 'boolean', value: true, description: 'Enable the old Java bindings. Only works if the New ones are enabled as well.')
 option('jni_include_paths', type: 'array', description: 'JNI include path')
