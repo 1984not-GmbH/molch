@@ -20,7 +20,9 @@ protobuf_definitions = [
 	'key',
 	'key_bundle',
 	'prekey',
-	'user'
+	'user',
+	'public_prekey',
+	'prekey_list',
 ]
 
 generated_c_protobufs = []

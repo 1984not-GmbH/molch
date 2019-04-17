@@ -1,0 +1,13 @@
+syntax = "proto2";
+
+option cc_enable_arenas = true;
+option optimize_for = LITE_RUNTIME;
+
+package Molch.Protobuf;
+
+import "key.proto";
+
+message PublicPrekey {
+	required Key public_prekey = 1;
+	required uint64 expiration_seconds = 2;
+}
