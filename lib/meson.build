@@ -23,7 +23,8 @@ lib_sources = files(
 		'protobuf.cpp',
 		'sodium-wrappers.cpp',
 		'time.cpp',
-		'protobuf-arena.cpp'
+		'protobuf-arena.cpp',
+		'public-prekey-list.cpp',
 )
 
 gsl_include = include_directories('../gsl/include')
