@@ -36,6 +36,7 @@
 #include "gsl.hpp"
 #include "time.hpp"
 #include "protobuf-arena.hpp"
+#include "public-prekey-list.hpp"
 
 namespace Molch {
 	constexpr auto prekey_expiration_time{1_months};
@@ -134,6 +135,11 @@ namespace Molch {
 		 * Generate a list containing all the expiration dates of the prekeys.
 		 */
 		std::array<seconds,PREKEY_AMOUNT> listExpirationDates() const;
+
+		/*
+		 * Export a PublicPrekeyList
+		 */
+		auto exportPublicPrekeyList() const -> PublicPrekeyList;
 
 		/*
 		 * Automatically deprecate old keys and generate new ones

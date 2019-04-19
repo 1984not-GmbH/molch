@@ -279,6 +279,23 @@ namespace Molch {
 		return expiration_dates;
 	}
 
+	auto PrekeyStore::exportPublicPrekeyList() const -> PublicPrekeyList {
+		const auto& prekeys_storage{*this->prekeys_storage};
+
+		auto public_prekeys{std::vector<PublicPrekey>{}};
+		public_prekeys.reserve(std::size(prekeys_storage));
+
+		std::transform(
+				std::begin(prekeys_storage),
+				std::end(prekeys_storage),
+				std::back_inserter(public_prekeys),
+				[](const auto& prekey) {
+					return PublicPrekey{prekey.publicKey(), prekey.expirationDate()};
+				});
+
+		return PublicPrekeyList{std::move(public_prekeys)};
+	}
+
 	result<void> PrekeyStore::rotate() {
 		seconds current_time{now()};
 
