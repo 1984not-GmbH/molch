@@ -27,6 +27,7 @@
 #include "key.hpp"
 #include "time.hpp"
 #include "protobuf.hpp"
+#include "master-keys.hpp"
 
 namespace Molch {
 	struct PublicPrekey {
@@ -47,6 +48,8 @@ namespace Molch {
 		static auto import(const ProtobufCPrekeyList& prekey_list_protobuf) noexcept -> result<PublicPrekeyList>;
 
 		auto chooseRandom() const noexcept -> result<PublicPrekey>;
+
+		auto exportSignedList(const MasterKeys& master_keys) const -> result<Buffer>;
 
 		auto exportProtobuf(Arena& arena) const noexcept -> result<ProtobufCPrekeyList*>;
 

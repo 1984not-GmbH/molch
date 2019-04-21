@@ -89,6 +89,17 @@ namespace Molch {
 		return non_expired_prekeys[prekey_index];
 	}
 
+	auto PublicPrekeyList::exportSignedList(const MasterKeys& master_keys) const -> result<Buffer> {
+		auto arena{Arena()};
+		OUTCOME_TRY(protobuf_prekey_list, this->exportProtobuf(arena));
+
+		const auto unsigned_prekey_list_size{molch__protobuf__prekey_list__get_packed_size(protobuf_prekey_list)};
+		auto unsigned_prekey_list{arena.allocate<std::byte>(unsigned_prekey_list_size)};
+		molch__protobuf__prekey_list__pack(protobuf_prekey_list, byte_to_uchar(unsigned_prekey_list));
+
+		return master_keys.sign({unsigned_prekey_list, unsigned_prekey_list_size});
+	}
+
 	auto PublicPrekeyList::import(const ProtobufCPrekeyList& prekey_list_protobuf) noexcept -> result<PublicPrekeyList> {
 		FulfillOrFail((prekey_list_protobuf.prekeys != nullptr) or (prekey_list_protobuf.n_prekeys == 0));
 
