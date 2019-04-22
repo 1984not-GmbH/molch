@@ -30,7 +30,7 @@ namespace Molch {
 			const uint32_t message_number,
 			const uint32_t previous_message_number) {
 		ProtobufCHeader header_struct;
-		molch__protobuf__header__init(&header_struct);
+		protobuf_init(&header_struct);
 
 		//create buffer for our public ephemeral
 		ProtobufCBinaryData protobuf_our_public_ephemeral;

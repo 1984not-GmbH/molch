@@ -179,8 +179,7 @@ namespace Molch {
 		}
 
 		result<ProtobufCKey*> exportProtobuf(Arena& arena) const noexcept {
-			auto key{arena.allocate<ProtobufCKey>(1)};
-			molch__protobuf__key__init(key);
+			auto key{protobuf_create<ProtobufCKey>(arena)};
 
 			key->key.data = arena.allocate<uint8_t>(length);
 			key->key.len = length;
@@ -364,8 +363,7 @@ namespace Molch {
 		}
 
 		result<ProtobufCKey*> exportProtobuf(Arena& arena) const noexcept {
-			auto key{arena.allocate<ProtobufCKey>(1)};
-			molch__protobuf__key__init(key);
+			auto key{protobuf_create<ProtobufCKey>(arena)};
 
 			key->key.data = arena.allocate<uint8_t>(length);
 			key->key.len = length;

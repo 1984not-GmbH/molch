@@ -128,9 +128,9 @@ namespace Molch {
 
 		//initialize the protobuf structs
 		ProtobufCPacket packet_struct;
-		molch__protobuf__packet__init(&packet_struct);
+		protobuf_init(&packet_struct);
 		ProtobufCPacketHeader packet_header_struct;
-		molch__protobuf__packet_header__init(&packet_header_struct);
+		protobuf_init(&packet_header_struct);
 		packet_struct.packet_header = &packet_header_struct;
 
 		//set the protocol version

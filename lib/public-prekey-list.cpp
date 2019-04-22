@@ -41,8 +41,7 @@ namespace Molch {
 	}
 
 	auto PublicPrekey::exportProtobuf(Arena &arena) const noexcept -> result<ProtobufCPublicPrekey*> {
-		auto public_prekey_struct{arena.allocate<ProtobufCPublicPrekey>(1)};
-		molch__protobuf__public_prekey__init(public_prekey_struct);
+		auto public_prekey_struct{protobuf_create<ProtobufCPublicPrekey>(arena)};
 
 		auto public_prekey_bytes{arena.allocate<uint8_t>(std::size(this->key))};
 		if (public_prekey_bytes == nullptr) {
@@ -107,11 +106,7 @@ namespace Molch {
 	auto PublicPrekeyList::exportSignedList(Arena& arena, const MasterKeys& master_keys) const -> result<span<const std::byte>> {
 		OUTCOME_TRY(signed_prekey_list_bytes, exportSignedListSpan(arena, master_keys));
 
-		auto signed_prekey_list_protobuf{arena.allocate<ProtobufCSignedPrekeyList>(1)};
-		molch__protobuf__signed_prekey_list__init(signed_prekey_list_protobuf);
-
-		// TODO: Check all the arena allocations in this file for possible NULL pointers
-		// and if it is actually necessary to check them
+		auto signed_prekey_list_protobuf{protobuf_create<ProtobufCSignedPrekeyList>(arena)};
 
 		signed_prekey_list_protobuf->prekey_list_version = 0;
 
@@ -119,8 +114,7 @@ namespace Molch {
 		signed_prekey_list_protobuf->signed_prekey_list.len = std::size(signed_prekey_list_bytes);
 
 		// allocate signing key
-		auto signing_key{arena.allocate<ProtobufCKey>(1)};
-		molch__protobuf__key__init(signing_key);
+		auto signing_key{protobuf_create<ProtobufCKey>(arena)};
 
 		// copy the signing key
 		const auto& public_signing_key{master_keys.getSigningKey()};
@@ -151,9 +145,6 @@ namespace Molch {
 
 		for (size_t index{0}; index < prekey_list_protobuf.n_prekeys; ++index) {
 			const auto protobuf_prekey{prekey_list_protobuf.prekeys[index]};
-			if (protobuf_prekey == nullptr) {
-				return {status_type::PROTOBUF_MISSING_ERROR, "Missing public prekey in prekey list"};
-			}
 
 			OUTCOME_TRY(public_prekey, PublicPrekey::import(*protobuf_prekey));
 			prekeys.emplace_back(std::move(public_prekey));
@@ -163,14 +154,9 @@ namespace Molch {
 	}
 
 	auto PublicPrekeyList::exportProtobuf(Arena &arena) const noexcept -> result<ProtobufCPrekeyList*> {
-		auto prekey_list_struct{arena.allocate<ProtobufCPrekeyList>(1)};
-		molch__protobuf__prekey_list__init(prekey_list_struct);
+		auto prekey_list_struct{protobuf_create<ProtobufCPrekeyList>(arena)};
 
 		auto prekey_list{arena.allocate<ProtobufCPublicPrekey*>(std::size(this->prekeys))};
-		if (prekey_list == nullptr) {
-			return {status_type::ALLOCATION_FAILED, "Failed to allocate pointers to public prekeys."};
-		}
-
 		for (size_t index{0}; index < std::size(this->prekeys); ++index) {
 			const auto& prekey{this->prekeys[index]};
 			OUTCOME_TRY(exported_prekey, prekey.exportProtobuf(arena));

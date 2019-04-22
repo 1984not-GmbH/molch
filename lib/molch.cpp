@@ -150,8 +150,7 @@ static result<MallocBuffer> create_prekey_list(const PublicSigningKey& public_si
 		}
 
 		Arena arena;
-		auto backup_struct{arena.allocate<ProtobufCBackup>(1)};
-		molch__protobuf__backup__init(backup_struct);
+		auto backup_struct{protobuf_create<ProtobufCBackup>(arena)};
 
 		//export the conversation
 		outcome_protobuf_array_arena_export(arena, backup_struct, users, users);
@@ -182,7 +181,7 @@ static result<MallocBuffer> create_prekey_list(const PublicSigningKey& public_si
 
 		//fill in the encrypted backup struct
 		ProtobufCEncryptedBackup encrypted_backup_struct;
-		molch__protobuf__encrypted_backup__init(&encrypted_backup_struct);
+		protobuf_init(&encrypted_backup_struct);
 		//metadata
 		encrypted_backup_struct.backup_version = 0;
 		encrypted_backup_struct.has_backup_type = true;
@@ -672,7 +671,7 @@ static result<PublicKey> verify_prekey_list(
 
 	static result<MallocBuffer> export_conversation(const span<const std::byte> conversation_id) {
 		ProtobufCEncryptedBackup encrypted_backup_struct;
-		molch__protobuf__encrypted_backup__init(&encrypted_backup_struct);
+		protobuf_init(&encrypted_backup_struct);
 
 		if ((global_backup_key == nullptr) || (global_backup_key->size() != BACKUP_KEY_SIZE)) {
 			return Error(status_type::INCORRECT_DATA, "No backup key found.");
