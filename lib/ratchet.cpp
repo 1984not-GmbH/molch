@@ -408,7 +408,7 @@ namespace Molch {
 	}
 
 	result<ProtobufCConversation*> Ratchet::exportProtobuf(Arena& arena) const {
-		protobuf_arena_create(arena, ProtobufCConversation, conversation);
+		auto conversation{protobuf_create<ProtobufCConversation>(arena)};
 
 		const auto& storage{*this->storage};
 

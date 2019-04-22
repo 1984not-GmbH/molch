@@ -217,7 +217,7 @@ namespace Molch {
 	}
 
 	result<ProtobufCUser*> User::exportProtobuf(Arena& arena) const {
-		protobuf_arena_create(arena, ProtobufCUser, user);
+		auto user{protobuf_create<ProtobufCUser>(arena)};
 
 		OUTCOME_TRY(exported_master_keys, this->master_keys.exportProtobuf(arena));
 		user->public_signing_key = exported_master_keys.public_signing_key;

@@ -114,7 +114,7 @@ namespace Molch {
 	}
 
 	result<ProtobufCKeyBundle*> HeaderAndMessageKey::exportProtobuf(Arena& arena) const {
-		protobuf_arena_create(arena, ProtobufCKeyBundle, key_bundle);
+		auto key_bundle{protobuf_create<ProtobufCKeyBundle>(arena)};
 
 		//export the keys
 		OUTCOME_TRY(header_key, this->header_key.exportProtobuf(arena));

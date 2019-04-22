@@ -97,7 +97,7 @@ namespace Molch {
 	}
 
 	result<ProtobufCPrekey*> Prekey::exportProtobuf(Arena& arena) const {
-		protobuf_arena_create(arena, ProtobufCPrekey, prekey);
+		auto prekey{protobuf_create<ProtobufCPrekey>(arena)};
 
 		OUTCOME_TRY(private_key, this->private_key.exportProtobuf(arena));
 		prekey->private_key = private_key;

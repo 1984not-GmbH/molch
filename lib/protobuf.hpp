@@ -19,6 +19,8 @@
 #ifndef LIB_PROTOBUF_DELETERS_H
 #define LIB_PROTOBUF_DELETERS_H
 
+#include "protobuf-arena.hpp"
+
 extern "C" {
 	#include <backup.pb-c.h>
 	#include <conversation.pb-c.h>
@@ -75,11 +77,15 @@ ProtobufDefinition(SignedPrekeyList, signed_prekey_list)
 	void protobuf_c_delete(void *allocator_data, void *pointer);
 
 	extern ProtobufCAllocator protobuf_c_allocator;
-}
 
-#define protobuf_arena_create(arena, type, name) \
-	auto name{(arena).allocate<type>(1)}; \
-	protobuf_init(name);
+	template <typename ProtobufType>
+	inline auto protobuf_create(Arena& arena) -> ProtobufType* {
+		auto allocated_type{arena.allocate<ProtobufType>(1)};
+		protobuf_init(allocated_type);
+
+		return allocated_type;
+	}
+}
 
 #define outcome_protobuf_bytes_arena_export(arena, message, name, size) \
 	(message)->name.data = (arena).allocate<unsigned char>(size);\
