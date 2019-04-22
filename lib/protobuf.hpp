@@ -30,6 +30,7 @@ extern "C" {
 	#include <packet_header.pb-c.h>
 	#include <prekey.pb-c.h>
 	#include <user.pb-c.h>
+	#include <signed_prekey_list.pb-c.h>
 	#include <prekey_list.pb-c.h>
 	#include <public_prekey.pb-c.h>
 }
@@ -46,6 +47,7 @@ using ProtobufCPrekey = Molch__Protobuf__Prekey;
 using ProtobufCUser = Molch__Protobuf__User;
 using ProtobufCPublicPrekey = Molch__Protobuf__PublicPrekey;
 using ProtobufCPrekeyList = Molch__Protobuf__PrekeyList;
+using ProtobufCSignedPrekeyList = Molch__Protobuf__SignedPrekeyList;
 
 namespace Molch {
 	class EncryptedBackupDeleter {

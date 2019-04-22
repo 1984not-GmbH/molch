@@ -1,0 +1,14 @@
+syntax = "proto2";
+
+option cc_enable_arenas = true;
+option optimize_for = LITE_RUNTIME;
+
+package Molch.Protobuf;
+
+import "key.proto";
+
+message SignedPrekeyList {
+	required uint32 prekey_list_version = 1;
+	required bytes signed_prekey_list = 2;
+	required Key sining_key = 3;
+}
