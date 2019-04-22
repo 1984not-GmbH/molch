@@ -38,6 +38,9 @@ extern "C" {
 namespace Molch {
 #define ProtobufDefinition(camel_case_name, snake_case_name) \
 	using ProtobufC##camel_case_name = Molch__Protobuf__##camel_case_name;\
+	inline auto protobuf_init(ProtobufC##camel_case_name* protobuf_struct) {\
+		molch__protobuf__##snake_case_name##__init(protobuf_struct);\
+	}
 
 ProtobufDefinition(Backup, backup)
 ProtobufDefinition(Conversation, conversation)
@@ -76,7 +79,7 @@ ProtobufDefinition(SignedPrekeyList, signed_prekey_list)
 
 #define protobuf_arena_create(arena, type, name) \
 	auto name{(arena).allocate<type>(1)}; \
-	molch__protobuf__##name##__init(name);
+	protobuf_init(name);
 
 #define outcome_protobuf_bytes_arena_export(arena, message, name, size) \
 	(message)->name.data = (arena).allocate<unsigned char>(size);\
