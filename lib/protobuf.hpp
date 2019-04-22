@@ -42,6 +42,9 @@ namespace Molch {
 	using ProtobufC##camel_case_name = Molch__Protobuf__##camel_case_name;\
 	inline auto protobuf_init(ProtobufC##camel_case_name* protobuf_struct) {\
 		molch__protobuf__##snake_case_name##__init(protobuf_struct);\
+	} \
+	inline auto protobuf_packed_size(ProtobufC##camel_case_name* protobuf_struct) -> size_t {\
+		return molch__protobuf__##snake_case_name##__get_packed_size(protobuf_struct);\
 	}
 
 ProtobufDefinition(Backup, backup)

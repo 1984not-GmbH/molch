@@ -45,7 +45,7 @@ static std::vector<Buffer> protobuf_export(UserStore& store) {
 
 	//unpack all the users
 	for (size_t i{0}; i < length; i++) {
-		auto unpacked_size{molch__protobuf__user__get_packed_size(users[i])};
+		auto unpacked_size{protobuf_packed_size(users[i])};
 		export_buffers.emplace_back(unpacked_size, 0);
 		TRY_VOID(export_buffers.back().setSize(molch__protobuf__user__pack(users[i], byte_to_uchar(export_buffers.back().data()))));
 	}

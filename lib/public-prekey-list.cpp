@@ -93,7 +93,7 @@ namespace Molch {
 	auto PublicPrekeyList::exportSignedListSpan(Arena& arena, const MasterKeys& master_keys) const -> result<Buffer> {
 		OUTCOME_TRY(protobuf_prekey_list, this->exportProtobuf(arena));
 
-		const auto unsigned_prekey_list_size{molch__protobuf__prekey_list__get_packed_size(protobuf_prekey_list)};
+		const auto unsigned_prekey_list_size{protobuf_packed_size(protobuf_prekey_list)};
 		auto unsigned_prekey_list{arena.allocate<std::byte>(unsigned_prekey_list_size)};
 		auto packed_size{molch__protobuf__prekey_list__pack(protobuf_prekey_list, byte_to_uchar(unsigned_prekey_list))};
 		if (packed_size != unsigned_prekey_list_size) {
@@ -127,7 +127,7 @@ namespace Molch {
 		signed_prekey_list_protobuf->sining_key = signing_key;
 
 		// Pack the result
-		const auto packed_signed_prekey_list_size{molch__protobuf__signed_prekey_list__get_packed_size(signed_prekey_list_protobuf)};
+		const auto packed_signed_prekey_list_size{protobuf_packed_size(signed_prekey_list_protobuf)};
 		auto packed_signed_prekey_list{arena.allocate<std::byte>(packed_signed_prekey_list_size)};
 		auto packed_size{molch__protobuf__signed_prekey_list__pack(signed_prekey_list_protobuf, reinterpret_cast<uint8_t*>(packed_signed_prekey_list))};
 		if (packed_size != packed_signed_prekey_list_size) {

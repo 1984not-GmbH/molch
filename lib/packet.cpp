@@ -216,7 +216,7 @@ namespace Molch {
 		packet_struct.encrypted_message.len = encrypted_message.size();
 
 		//calculate the required length
-		const size_t packed_length{molch__protobuf__packet__get_packed_size(&packet_struct)};
+		const size_t packed_length{protobuf_packed_size(&packet_struct)};
 		//pack the packet
 		Buffer packet{packed_length, 0};
 		OUTCOME_TRY(packet.setSize(molch__protobuf__packet__pack(&packet_struct, byte_to_uchar(packet.data()))));

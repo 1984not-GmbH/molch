@@ -46,7 +46,7 @@ namespace Molch {
 		header_struct.has_public_ephemeral_key = true;
 
 		//allocate the header buffer
-		auto header_length{molch__protobuf__header__get_packed_size(&header_struct)};
+		auto header_length{protobuf_packed_size(&header_struct)};
 		Buffer header{header_length, header_length};
 
 		//pack it

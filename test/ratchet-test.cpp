@@ -38,7 +38,7 @@ static Buffer protobuf_export(Ratchet& ratchet) {
 	TRY_WITH_RESULT(conversation_result, ratchet.exportProtobuf(pool));
 	const auto& conversation{conversation_result.value()};
 
-	auto export_size{molch__protobuf__conversation__get_packed_size(conversation)};
+	auto export_size{protobuf_packed_size(conversation)};
 	Buffer export_buffer{export_size, 0};
 	TRY_VOID(export_buffer.setSize(molch__protobuf__conversation__pack(conversation, byte_to_uchar(export_buffer.data()))));
 	if (export_size != export_buffer.size()) {

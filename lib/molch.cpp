@@ -156,7 +156,7 @@ static result<MallocBuffer> create_prekey_list(const PublicSigningKey& public_si
 		outcome_protobuf_array_arena_export(arena, backup_struct, users, users);
 
 		//pack the struct
-		auto backup_struct_size{molch__protobuf__backup__get_packed_size(backup_struct)};
+		auto backup_struct_size{protobuf_packed_size(backup_struct)};
 		auto users_buffer_content{arena.allocate<std::byte>(backup_struct_size)};
 		span<std::byte> users_buffer{users_buffer_content, backup_struct_size};
 		molch__protobuf__backup__pack(backup_struct, byte_to_uchar(users_buffer.data()));
@@ -196,7 +196,7 @@ static result<MallocBuffer> create_prekey_list(const PublicSigningKey& public_si
 		encrypted_backup_struct.encrypted_backup.len = backup_buffer.size();
 
 		//now pack the entire backup
-		const auto encrypted_backup_size{molch__protobuf__encrypted_backup__get_packed_size(&encrypted_backup_struct)};
+		const auto encrypted_backup_size{protobuf_packed_size(&encrypted_backup_struct)};
 		MallocBuffer malloced_encrypted_backup{encrypted_backup_size, 0};
 		OUTCOME_TRY(malloced_encrypted_backup.setSize(molch__protobuf__encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data()))));
 		if (malloced_encrypted_backup.size() != encrypted_backup_size) {
@@ -690,7 +690,7 @@ static result<PublicKey> verify_prekey_list(
 		OUTCOME_TRY(conversation_struct, conversation->exportProtobuf(arena));
 
 		//pack the struct
-		auto conversation_size{molch__protobuf__conversation__get_packed_size(conversation_struct)};
+		auto conversation_size{protobuf_packed_size(conversation_struct)};
 		auto conversation_buffer_content{arena.allocate<std::byte>(conversation_size)};
 		span<std::byte> conversation_buffer{conversation_buffer_content, conversation_size};
 		molch__protobuf__conversation__pack(conversation_struct, byte_to_uchar(conversation_buffer.data()));
@@ -730,7 +730,7 @@ static result<PublicKey> verify_prekey_list(
 		encrypted_backup_struct.encrypted_backup.len = backup_buffer.size();
 
 		//now pack the entire backup
-		const auto encrypted_backup_size{molch__protobuf__encrypted_backup__get_packed_size(&encrypted_backup_struct)};
+		const auto encrypted_backup_size{protobuf_packed_size(&encrypted_backup_struct)};
 		MallocBuffer malloced_encrypted_backup{encrypted_backup_size, 0};
 		OUTCOME_TRY(malloced_encrypted_backup.setSize(molch__protobuf__encrypted_backup__pack(&encrypted_backup_struct, byte_to_uchar(malloced_encrypted_backup.data()))));
 		if (malloced_encrypted_backup.size() != encrypted_backup_size) {

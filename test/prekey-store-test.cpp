@@ -46,7 +46,7 @@ static void protobuf_export(
 	key_buffers = std::vector<Buffer>();
 	key_buffers.reserve(exported_prekeys.keypairs.size());
 	for (const auto& keypair : exported_prekeys.keypairs) {
-		auto export_size{molch__protobuf__prekey__get_packed_size(keypair)};
+		auto export_size{protobuf_packed_size(keypair)};
 		key_buffers.emplace_back(export_size, 0);
 
 		TRY_VOID(key_buffers.back().setSize(molch__protobuf__prekey__pack(keypair, byte_to_uchar(key_buffers.back().data()))));
@@ -56,7 +56,7 @@ static void protobuf_export(
 	deprecated_key_buffers = std::vector<Buffer>();
 	deprecated_key_buffers.reserve(exported_prekeys.deprecated_keypairs.size());
 	for (const auto& keypair : exported_prekeys.deprecated_keypairs) {
-		auto export_size{molch__protobuf__prekey__get_packed_size(keypair)};
+		auto export_size{protobuf_packed_size(keypair)};
 		deprecated_key_buffers.emplace_back(export_size, 0);
 
 		TRY_VOID(deprecated_key_buffers.back().setSize(molch__protobuf__prekey__pack(keypair, byte_to_uchar(deprecated_key_buffers.back().data()))));

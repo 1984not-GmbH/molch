@@ -43,7 +43,7 @@ static std::vector<Buffer> protobuf_export(const ConversationStore& store) {
 
 	//unpack all the conversations
 	for (const auto& conversation : exported_conversations) {
-		auto unpacked_size{molch__protobuf__conversation__get_packed_size(conversation)};
+		auto unpacked_size{protobuf_packed_size(conversation)};
 		export_buffers.emplace_back(unpacked_size, 0);
 		TRY_VOID(export_buffers.back().setSize(molch__protobuf__conversation__pack(conversation, byte_to_uchar(export_buffers.back().data()))));
 	}
