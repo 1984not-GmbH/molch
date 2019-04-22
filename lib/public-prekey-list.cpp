@@ -19,9 +19,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include "public-prekey-list.hpp"
-
 #include <algorithm>
+
+#include "public-prekey-list.hpp"
+#include "protobuf-arena.hpp"
+
 #include "sodium-wrappers.hpp"
 
 namespace Molch {
@@ -38,7 +40,7 @@ namespace Molch {
 		return PublicPrekey{public_key, seconds{public_prekey_protobuf.expiration_seconds}};
 	}
 
-	auto PublicPrekey::exportProtobuf(Molch::Arena &arena) const noexcept -> result<ProtobufCPublicPrekey*> {
+	auto PublicPrekey::exportProtobuf(Arena &arena) const noexcept -> result<ProtobufCPublicPrekey*> {
 		auto public_prekey_struct{arena.allocate<ProtobufCPublicPrekey>(1)};
 		molch__protobuf__public_prekey__init(public_prekey_struct);
 
@@ -89,15 +91,56 @@ namespace Molch {
 		return non_expired_prekeys[prekey_index];
 	}
 
-	auto PublicPrekeyList::exportSignedList(const MasterKeys& master_keys) const -> result<Buffer> {
-		auto arena{Arena()};
+	auto PublicPrekeyList::exportSignedListSpan(Arena& arena, const MasterKeys& master_keys) const -> result<Buffer> {
 		OUTCOME_TRY(protobuf_prekey_list, this->exportProtobuf(arena));
 
 		const auto unsigned_prekey_list_size{molch__protobuf__prekey_list__get_packed_size(protobuf_prekey_list)};
 		auto unsigned_prekey_list{arena.allocate<std::byte>(unsigned_prekey_list_size)};
-		molch__protobuf__prekey_list__pack(protobuf_prekey_list, byte_to_uchar(unsigned_prekey_list));
+		auto packed_size{molch__protobuf__prekey_list__pack(protobuf_prekey_list, byte_to_uchar(unsigned_prekey_list))};
+		if (packed_size != unsigned_prekey_list_size) {
+			return {status_type::PROTOBUF_PACK_ERROR, "Failed to pack unsigned prekey list"};
+		}
 
 		return master_keys.sign({unsigned_prekey_list, unsigned_prekey_list_size});
+	}
+
+	auto PublicPrekeyList::exportSignedList(Arena& arena, const MasterKeys& master_keys) const -> result<span<const std::byte>> {
+		OUTCOME_TRY(signed_prekey_list_bytes, exportSignedListSpan(arena, master_keys));
+
+		auto signed_prekey_list_protobuf{arena.allocate<ProtobufCSignedPrekeyList>(1)};
+		molch__protobuf__signed_prekey_list__init(signed_prekey_list_protobuf);
+
+		// TODO: Check all the arena allocations in this file for possible NULL pointers
+		// and if it is actually necessary to check them
+
+		signed_prekey_list_protobuf->prekey_list_version = 0;
+
+		signed_prekey_list_protobuf->signed_prekey_list.data = reinterpret_cast<uint8_t*>(std::data(signed_prekey_list_bytes));
+		signed_prekey_list_protobuf->signed_prekey_list.len = std::size(signed_prekey_list_bytes);
+
+		// allocate signing key
+		auto signing_key{arena.allocate<ProtobufCKey>(1)};
+		molch__protobuf__key__init(signing_key);
+
+		// copy the signing key
+		const auto& public_signing_key{master_keys.getSigningKey()};
+		auto signing_key_data{arena.allocate<std::byte>(std::size(public_signing_key))};
+		OUTCOME_TRY(copyFromTo(public_signing_key, {signing_key_data, std::size(public_signing_key)}));
+
+		signing_key->key.data = reinterpret_cast<uint8_t*>(signing_key_data);
+		signing_key->key.len = std::size(public_signing_key);
+
+		signed_prekey_list_protobuf->sining_key = signing_key;
+
+		// Pack the result
+		const auto packed_signed_prekey_list_size{molch__protobuf__signed_prekey_list__get_packed_size(signed_prekey_list_protobuf)};
+		auto packed_signed_prekey_list{arena.allocate<std::byte>(packed_signed_prekey_list_size)};
+		auto packed_size{molch__protobuf__signed_prekey_list__pack(signed_prekey_list_protobuf, reinterpret_cast<uint8_t*>(packed_signed_prekey_list))};
+		if (packed_size != packed_signed_prekey_list_size) {
+			return {status_type::PROTOBUF_PACK_ERROR, "Failed to pack signed prekey list."};
+		}
+
+		return {packed_signed_prekey_list, packed_signed_prekey_list_size};
 	}
 
 	auto PublicPrekeyList::import(const ProtobufCPrekeyList& prekey_list_protobuf) noexcept -> result<PublicPrekeyList> {
@@ -119,7 +162,7 @@ namespace Molch {
 		return PublicPrekeyList{std::move(prekeys)};
 	}
 
-	auto PublicPrekeyList::exportProtobuf(Molch::Arena &arena) const noexcept -> result<ProtobufCPrekeyList*> {
+	auto PublicPrekeyList::exportProtobuf(Arena &arena) const noexcept -> result<ProtobufCPrekeyList*> {
 		auto prekey_list_struct{arena.allocate<ProtobufCPrekeyList>(1)};
 		molch__protobuf__prekey_list__init(prekey_list_struct);
 

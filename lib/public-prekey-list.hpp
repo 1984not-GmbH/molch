@@ -19,8 +19,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#ifndef LIB_PublicPrekeyList
-#define LIB_PublicPrekeyList
+#ifndef LIB_PUBLIC_PREKEY_LIST
+#define LIB_PUBLIC_PREKEY_LIST
 
 #include <vector>
 
@@ -49,12 +49,15 @@ namespace Molch {
 
 		auto chooseRandom() const noexcept -> result<PublicPrekey>;
 
-		auto exportSignedList(const MasterKeys& master_keys) const -> result<Buffer>;
+		auto exportSignedList(Arena& arena, const MasterKeys& master_keys) const -> result<span<const std::byte>>;
 
 		auto exportProtobuf(Arena& arena) const noexcept -> result<ProtobufCPrekeyList*>;
 
 		auto operator==(const PublicPrekeyList& other) const noexcept -> bool;
+
+	private:
+		auto exportSignedListSpan(Arena& arena, const MasterKeys& master_keys) const -> result<Buffer>;
 	};
 }
 
-#endif /* LIB_PublicPrekeyList */
+#endif /* LIB_PUBLIC_PREKEY_LIST */
