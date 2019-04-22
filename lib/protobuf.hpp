@@ -35,6 +35,7 @@ extern "C" {
 	#include <public_prekey.pb-c.h>
 }
 
+namespace Molch {
 #define ProtobufDefinition(camel_case_name, snake_case_name) \
 	using ProtobufC##camel_case_name = Molch__Protobuf__##camel_case_name;\
 
@@ -52,7 +53,6 @@ ProtobufDefinition(PublicPrekey, public_prekey)
 ProtobufDefinition(PrekeyList, prekey_list)
 ProtobufDefinition(SignedPrekeyList, signed_prekey_list)
 
-namespace Molch {
 	class EncryptedBackupDeleter {
 		public:
 			void operator ()(ProtobufCEncryptedBackup* backup);
