@@ -35,19 +35,22 @@ extern "C" {
 	#include <public_prekey.pb-c.h>
 }
 
-using ProtobufCBackup = Molch__Protobuf__Backup;
-using ProtobufCConversation = Molch__Protobuf__Conversation;
-using ProtobufCEncryptedBackup = Molch__Protobuf__EncryptedBackup;
-using ProtobufCHeader = Molch__Protobuf__Header;
-using ProtobufCKey = Molch__Protobuf__Key;
-using ProtobufCKeyBundle = Molch__Protobuf__KeyBundle;
-using ProtobufCPacket = Molch__Protobuf__Packet;
-using ProtobufCPacketHeader = Molch__Protobuf__PacketHeader;
-using ProtobufCPrekey = Molch__Protobuf__Prekey;
-using ProtobufCUser = Molch__Protobuf__User;
-using ProtobufCPublicPrekey = Molch__Protobuf__PublicPrekey;
-using ProtobufCPrekeyList = Molch__Protobuf__PrekeyList;
-using ProtobufCSignedPrekeyList = Molch__Protobuf__SignedPrekeyList;
+#define ProtobufDefinition(camel_case_name, snake_case_name) \
+	using ProtobufC##camel_case_name = Molch__Protobuf__##camel_case_name;\
+
+ProtobufDefinition(Backup, backup)
+ProtobufDefinition(Conversation, conversation)
+ProtobufDefinition(EncryptedBackup, encrypted_backup)
+ProtobufDefinition(Header, header)
+ProtobufDefinition(Key, key)
+ProtobufDefinition(KeyBundle, key_bundle)
+ProtobufDefinition(Packet, packet)
+ProtobufDefinition(PacketHeader, packet_header)
+ProtobufDefinition(Prekey, prekey)
+ProtobufDefinition(User, user)
+ProtobufDefinition(PublicPrekey, public_prekey)
+ProtobufDefinition(PrekeyList, prekey_list)
+ProtobufDefinition(SignedPrekeyList, signed_prekey_list)
 
 namespace Molch {
 	class EncryptedBackupDeleter {
