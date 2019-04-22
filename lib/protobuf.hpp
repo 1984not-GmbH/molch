@@ -108,14 +108,6 @@ ProtobufDefinition(SignedPrekeyList, signed_prekey_list)
 	(message)->has_##name = true;\
 	(message)->name = value;
 
-/*
- * Macro containing the steps to export an array to a protobuf messsage.
- */
-#define protobuf_array_arena_export(arena, message, name, value) \
-	auto exported_##name{(value).exportProtobuf(arena)};\
-	(message)->name = exported_##name.data();\
-	(message)->n_##name = exported_##name.size();
-
 #define outcome_protobuf_array_arena_export(arena, message, name, value) \
 	OUTCOME_TRY(exported_##name, (value).exportProtobuf(arena));\
 	(message)->name = exported_##name.data();\
