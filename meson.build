@@ -28,7 +28,6 @@ common_flags = [
 	'-fPIC',
 	'-Wunused-macros',
 	'-Wmissing-variable-declarations',
-	'-Wchkp',
 	'-Wnull-dereference',
 	'-Wimplicit-fallthrough',
 	'-Wunused-parameter',
