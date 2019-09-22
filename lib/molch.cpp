@@ -367,7 +367,7 @@ MOLCH_PUBLIC(void) molch_destroy_all_users() {
 		OUTCOME_TRY(list, users.list());
 		listed_users.list = list;
 		listed_users.count = (list.size() / PUBLIC_MASTER_KEY_SIZE);
-		return std::move(listed_users);
+		return listed_users;
 	}
 
 	MOLCH_PUBLIC(return_status) molch_list_users(
@@ -738,7 +738,7 @@ static result<PublicKey> verify_prekey_list(
 			return Error(status_type::PROTOBUF_PACK_ERROR, "Failed to pack encrypted conversation.");
 		}
 
-		return std::move(malloced_encrypted_backup);
+		return malloced_encrypted_backup;
 	}
 
 	struct EncryptResult {
@@ -1274,7 +1274,7 @@ static result<PublicKey> verify_prekey_list(
 		MallocBuffer malloced_prekey_list{prekey_list_buffer.size(), 0};
 		OUTCOME_TRY(malloced_prekey_list.cloneFrom(prekey_list_buffer));
 
-		return std::move(malloced_prekey_list);
+		return malloced_prekey_list;
 	}
 
 	MOLCH_PUBLIC(return_status) molch_get_prekey_list(

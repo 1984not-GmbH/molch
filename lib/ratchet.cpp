@@ -110,7 +110,7 @@ namespace Molch {
 		ratchet.receive_message_number = 0;
 		ratchet.previous_message_number = 0;
 
-		return std::move(ratchet);
+		return ratchet;
 	}
 
 	result<Ratchet::SendData> Ratchet::getSendData() {
@@ -748,7 +748,7 @@ namespace Molch {
 				conversation.n_staged_header_and_message_keys}));
 		ratchet.staged_header_and_message_keys = staged_header_and_message_keys;
 
-		return std::move(ratchet);
+		return ratchet;
 	}
 
 	std::ostream& Ratchet::print(std::ostream& stream) const {

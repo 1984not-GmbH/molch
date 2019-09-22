@@ -31,7 +31,7 @@
 
 namespace Molch {
 	inline result<void> copyFromTo(span<const std::byte> source, span<std::byte> destination, size_t length) {
-		FulfillOrFail((source.size() >= length) && (destination.size() >= length) && (length < std::numeric_limits<ptrdiff_t>::max()));
+		FulfillOrFail((source.size() >= length) && (destination.size() >= length) && (length < static_cast<size_t>(std::numeric_limits<ptrdiff_t>::max())));
 		std::copy(std::begin(source), std::begin(source) + static_cast<ptrdiff_t>(length), std::begin(destination));
 
 		return outcome::success();

@@ -62,6 +62,6 @@ namespace Molch {
 			++spice_iterator;
 		}
 
-		return std::move(os_random);
+		return os_random;
 	}
 }

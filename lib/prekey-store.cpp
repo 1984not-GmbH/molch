@@ -164,7 +164,7 @@ namespace Molch {
 		store.init();
 		OUTCOME_TRY(store.generateKeys());
 
-		return std::move(store);
+		return store;
 	}
 
 	result<PrekeyStore> PrekeyStore::import(
@@ -196,7 +196,7 @@ namespace Molch {
 		store.updateExpirationDate();
 		store.updateDeprecatedExpirationDate();
 
-		return std::move(store);
+		return store;
 	}
 
 	static bool compare_expiration_dates(const Prekey& a, const Prekey& b) noexcept {
@@ -269,7 +269,7 @@ namespace Molch {
 			index++;
 		}
 
-		return std::move(list);
+		return list;
 	}
 
 	result<void> PrekeyStore::rotate() {

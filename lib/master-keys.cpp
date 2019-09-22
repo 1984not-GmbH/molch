@@ -180,7 +180,7 @@ namespace Molch {
 				data,
 				*this->private_signing_key));
 
-		return std::move(signed_data);
+		return signed_data;
 	}
 
 	result<MasterKeys::ExportedMasterKeys> MasterKeys::exportProtobuf(Arena& arena) const {
