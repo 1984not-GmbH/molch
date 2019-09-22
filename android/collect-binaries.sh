@@ -7,7 +7,7 @@ rm -r "$binary_directory"
 mkdir -p "$binary_directory"
 find "$build_directory" -type f -name '*.so' -exec cp {} "${binary_directory}/" \;
 cp "${build_directory}"/test/*-test "${binary_directory}/"
-cp "../subprojects/libsodium/$cpu/lib/libsodium.so" "${binary_directory}/"
+cp "../subprojects/libsodium/libsodium-android-$cpu/lib/libsodium.so" "${binary_directory}/"
 rm "${binary_directory}/libprotobuf.so" # This is not used
 
 library_path="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib"
