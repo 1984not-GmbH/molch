@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
 cpu=$1
-builddir="${cpu}-build"
+builddir="build/${cpu}"
 
 mkdir -p "$builddir"
 cd "$builddir" || exit 1
-meson ../.. --cross-file "../${cpu}-cross.txt" --buildtype release -Db_lto=true -Dlua_bindings=false
+meson "../../.." --cross-file "../../crossfiles/${cpu}.txt" --buildtype release -Db_lto=true -Dlua_bindings=false
 ninja

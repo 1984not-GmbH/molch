@@ -1,32 +1,32 @@
 #!/usr/bin/env bash
 
 cpu=$1
-cd "$cpu-build" || exit 1
-rm -r binaries
-mkdir -p binaries
-find . -type f -name '*.so' -exec cp {} binaries/ \;
-cp test/*-test binaries/
-cp "../../subprojects/libsodium/$cpu/lib/libsodium.so" binaries/
-rm "binaries/libprotobuf.so"
+build_directory="${PWD}/build/${cpu}"
+binary_directory="${PWD}/binaries/${cpu}-binaries"
+rm -r "$binary_directory"
+mkdir -p "$binary_directory"
+find "$build_directory" -type f -name '*.so' -exec cp {} "${binary_directory}/" \;
+cp "${build_directory}"/test/*-test "${binary_directory}/"
+cp "../subprojects/libsodium/$cpu/lib/libsodium.so" "${binary_directory}/"
+rm "${binary_directory}/libprotobuf.so" # This is not used
+
+library_path="${ANDROID_NDK_HOME}/toolchains/llvm/prebuilt/linux-x86_64/sysroot/usr/lib"
 
 case $cpu in
-	armv6)
-		cp ../arm/sysroot/usr/lib/arm-linux-androideabi/libc++_shared.so binaries/
-		;;
 	armv7-a)
-		cp ../arm/sysroot/usr/lib/arm-linux-androideabi/libc++_shared.so binaries/
+		cp "${library_path}/arm-linux-androideabi/libc++_shared.so" "${binary_directory}/"
 		;;
 
 	armv8-a)
-		cp ../arm64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so binaries/
+		cp "${library_path}/aarch64-linux-android/libc++_shared.so" "${binary_directory}/"
 		;;
 
 	westmere)
-		cp ../x86_64/sysroot/usr/lib/x86_64-linux-android/libc++_shared.so binaries/
+		cp "${library_path}/x86_64-linux-android/libc++_shared.so" "${binary_directory}/"
 		;;
 
 	i686)
-		cp ../x86/sysroot/usr/lib/i686-linux-android/libc++_shared.so binaries/
+		cp "${library_path}/i686-linux-android/libc++_shared.so" "${binary_directory}/"
 		;;
 
 	*)
