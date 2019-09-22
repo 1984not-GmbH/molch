@@ -16,6 +16,9 @@ java_include_candidates = [
 	'/usr/lib/jvm/java-11-jdk/include',
 	'/usr/lib/jvm/java-11-openjdk/include',
 	'/usr/lib/jvm/java-11-openjdk-amd64/include',
+	'/usr/lib/jvm/java-12-jdk/include',
+	'/usr/lib/jvm/java-12-openjdk/include',
+	'/usr/lib/jvm/java-12-openjdk-amd64/include',
 ]
 
 winning_java_include = ''
