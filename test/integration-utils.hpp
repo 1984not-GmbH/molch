@@ -115,7 +115,7 @@ inline void write_to_file(const BufferType& content, std::string name) {
 		throw Exception("Failed to open file '" + name + "' for writing.");
 	}
 
-	if (content.size() > std::numeric_limits<std::streamsize>::max()) {
+	if (content.size() > static_cast<size_t>(std::numeric_limits<std::streamsize>::max())) {
 		throw Exception("File content is to large for the file stream.");
 	}
 
