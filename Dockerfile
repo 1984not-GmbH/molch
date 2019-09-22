@@ -1,5 +1,4 @@
 FROM ubuntu:eoan
-COPY . /root/molch
 
 ENV DEBIAN_FRONTEND="noninteractive"
 ENV PATH="${PATH}:/opt/android-ndk"
@@ -17,6 +16,8 @@ RUN apt update -y && \
 	apt update -y && \
 	apt install -y sudo ca-certificates git neovim libsodium-dev build-essential libprotobuf-dev libprotobuf-c-dev protobuf-compiler protobuf-c-compiler meson liblua5.3-dev lua5.3 swig valgrind doxygen graphviz clang clang-tools clang-tidy unzip tmux curl openjdk-8-jdk-headless
 RUN curl -o android-ndk.zip https://dl.google.com/android/repository/android-ndk-r20-linux-x86_64.zip
+ADD https://dl.google.com/android/repository/android-ndk-r20-linux-x86_64.zip android-ndk.zip
 RUN unzip android-ndk.zip && \
 	mkdir -p /opt && \
 	mv android-ndk-r20 /opt/android-ndk
+COPY . /root/molch
