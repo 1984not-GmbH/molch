@@ -58,6 +58,7 @@ c_flags = [
 
 cpp_flags = [
 	'-Wnoexcept',
+	'-Wno-error=noexcept',
 	'-Wstrict-null-sentinel',
 	'-Wold-style-cast',
 	'-Woverloaded-virtual',
