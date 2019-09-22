@@ -11,22 +11,22 @@ rm "binaries/libprotobuf.so"
 
 case $cpu in
 	armv6)
-		cp ../arm/arm-linux-androideabi/lib/armv7-a/thumb/libc++_shared.so binaries/
+		cp ../arm/sysroot/usr/lib/arm-linux-androideabi/libc++_shared.so binaries/
 		;;
 	armv7-a)
-		cp ../arm/arm-linux-androideabi/lib/armv7-a/thumb/libc++_shared.so binaries/
+		cp ../arm/sysroot/usr/lib/arm-linux-androideabi/libc++_shared.so binaries/
 		;;
 
 	armv8-a)
-		cp ../arm64/aarch64-linux-android/lib/libc++_shared.so binaries/
+		cp ../arm64/sysroot/usr/lib/aarch64-linux-android/libc++_shared.so binaries/
 		;;
 
 	westmere)
-		cp ../x86_64/x86_64-linux-android/lib64/libc++_shared.so binaries/
+		cp ../x86_64/sysroot/usr/lib/x86_64-linux-android/libc++_shared.so binaries/
 		;;
 
 	i686)
-		cp ../x86/i686-linux-android/lib/libc++_shared.so binaries/
+		cp ../x86/sysroot/usr/lib/i686-linux-android/libc++_shared.so binaries/
 		;;
 
 	*)
