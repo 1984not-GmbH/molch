@@ -39,6 +39,7 @@ endif
 
 jnipp_flag_candidates = [
 	'-Wno-old-style-cast',
+	'-Wno-sign-compare',
 ]
 jnipp_flags = cpp_compiler.get_supported_arguments(jnipp_flag_candidates)
 
