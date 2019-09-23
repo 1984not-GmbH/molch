@@ -75,12 +75,15 @@ Or you can run the scripts separately:
 * `static-analysis.`: To run clang static analyzer
 * `doxygen.sh`: To create the documentation
 
-docker container
-----------------
-1. Build image with `docker build . -t molch:latest`
-2. Create container with `docker run --name molch_builder -it molch:latest bash`
-3. Start the container with `docker start molch_builder` in the future.
-4. If already running `docker exec -it molch_builder bash`
+on android
+----------
+1. `./build-container.sh`
+2. `./run-container.sh`
+3. `cd molch`
+4. `./build-android.sh`
+4. `exit`
+5. `./copy-binaries-from-container.sh`
+6. `./stop-and-remove-container.sh`
 
 format of a packet
 ----------------
